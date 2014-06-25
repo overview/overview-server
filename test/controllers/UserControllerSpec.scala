@@ -18,7 +18,7 @@ import models.{PotentialNewUser, OverviewUser, ConfirmationRequest}
 class UserControllerSpec extends Specification {
   step(start(FakeApplication()))
 
-  implicit val timeout : Timeout = Timeout(999999)
+  implicit val timeout : Timeout = Timeout(999999, scala.concurrent.duration.MILLISECONDS)
 
   trait OurScope extends Scope with Mockito {
     val validEmail = "user@example.org"

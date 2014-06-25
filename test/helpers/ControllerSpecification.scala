@@ -1,5 +1,6 @@
 package controllers
 
+import akka.util.Timeout
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.{Fragments, Step}
@@ -100,7 +101,7 @@ trait ControllerSpecification extends Specification with Mockito {
     )
   }
 
-  implicit val timeout = akka.util.Timeout(999999)
+  implicit val timeout : Timeout = Timeout(999999, scala.concurrent.duration.MILLISECONDS)
 
   val h = play.api.test.Helpers // rrgh, this should be a trait
 }
