@@ -193,7 +193,9 @@ views.DocumentCloudProject.index.loading=Loading…
 views.DocumentCloudProject.index.help1=Overview can analyze and display your files from DocumentCloud. Import a project from this page.
 views.DocumentCloudProject.index.help2=You must import at least three documents to create a document set. Overview can treat each page from DocumentCloud as a separate document.
 
-views.DocumentProcessingError.index.failed_because=Failed with error “{0}”
+views.DocumentProcessingError.index.h4=Documents with errors
+views.DocumentProcessingError.index.failedBecause=Failed with error “{0}”
+views.DocumentProcessingError.index.close=Close
 
 views.DocumentSet._dcimport.preamble_html=Enter your <span class="documentcloud-logo">DocumentCloud</span> email and password to access your projects.
 views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
@@ -221,8 +223,6 @@ views.DocumentSet._documentSet.share=Share
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.toggle_public=Share with all Overview users
-
-views.DocumentSet._errorList.h3=Documents with errors
 
 views.DocumentSet._manualForm.title=Import a DocumentCloud project
 views.DocumentSet._manualForm.label.title=Title

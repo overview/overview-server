@@ -1,18 +1,27 @@
 @(documentProcessingErrors: Seq[(String, Seq[models.OverviewDocumentProcessingError])])(implicit lang: Lang)
 
 @defining(scopedMessages("views.DocumentProcessingError.index")) { m =>
-  @documentProcessingErrors.map { errorGroup => 
-    <h2>@m("failed_because", errorGroup._1)</h2>
-    <ul class="list-unstyled error-list">
-      @errorGroup._2.map { error =>
-        <li>
-          @if(error.url.contains("/")) {
-            <a href=@error.url>@helper.DocumentProcessingErrorDisplay.url(error.url)</a>
-          } else {
-            @error.url
-          }
-        </li>
-      }
-    </ul>
-  }
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">@m("h4")</h4>
+  </div>
+  <div class="modal-body">
+    @documentProcessingErrors.map { errorGroup =>
+      <h2>@m("failedBecause", errorGroup._1)</h2>
+      <ul class="list-unstyled error-list">
+        @errorGroup._2.map { error =>
+          <li>
+            @if(error.url.contains("/")) {
+              <a href=@error.url>@helper.DocumentProcessingErrorDisplay.url(error.url)</a>
+            } else {
+              @error.url
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+  <div class="modal-footer">
+    <a href="#" data-dismiss="modal" class="btn">@m("close")</a>
+  </div>
 }
