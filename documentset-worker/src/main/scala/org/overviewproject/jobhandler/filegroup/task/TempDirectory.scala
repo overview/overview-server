@@ -3,6 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task
 import java.nio.file.Path
 import java.nio.file.Paths
 
+/** Refers to the temporary directory where the documentset-worker stores files during document conversion */
 object TempDirectory {
 
   def path: Path = {

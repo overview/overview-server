@@ -1,22 +1,36 @@
 package org.overviewproject.jobhandler.filegroup.task
 
+import java.io.InputStream
+import java.util.UUID
+
 import scala.util.control.Exception._
+
+import org.overviewproject.database.DB
+import org.overviewproject.database.Database
+import org.overviewproject.database.orm.Schema
+import org.overviewproject.database.orm.stores.FileStore
+import org.overviewproject.postgres.LO
 import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.tree.orm.File
-import java.io.InputStream
 import org.overviewproject.tree.orm.GroupedFileUpload
-import java.util.UUID
-import org.overviewproject.database.Database
-import org.overviewproject.database.orm.stores.FileStore
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.database.orm.Schema
 import org.overviewproject.tree.orm.TempDocumentSetFile
-import org.overviewproject.postgres.LO
-import org.overviewproject.database.DB
+import org.overviewproject.tree.orm.stores.BaseStore
 
+/**
+ * Creates a [[File]] from a [[GroupedFileUpload]].
+ * If necessary, the uploaded document is converted to PDF in order to provide a `File.view`.
+ */
 trait CreateFile {
   val PdfMagicNumber: Array[Byte] = "%PDF".getBytes
 
+  /**
+   * Creates a [[File]] from an [[GroupedFileUpload]]
+   * If the first 4 bytes of the uploaded document correspond to "%PDF", the upload is used as the `File.view`.
+   * Otherwise, the document is converted to PDF, if possible, and `File.view` is set to point to the PDF version
+   * of the document. `File.contentsOid` refers to the original upload.
+   * 
+   * @throws Exception on error. See [[DocumentConverter]] for details on conversion errors.
+   */
   def apply(documentSetId: Long, upload: GroupedFileUpload): File = {
     val stream = storage.getLargeObjectInputStream(upload.contentsOid)
 

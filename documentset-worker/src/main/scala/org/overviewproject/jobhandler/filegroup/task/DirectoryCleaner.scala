@@ -1,10 +1,17 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import java.nio.file.Path
 import java.nio.file.Files
+import java.nio.file.Path
 
+/** Utility to  create a fresh, empty directory */
 trait DirectoryCleaner {
 
+  
+  /** 
+   * Creates a new, empty directory at the specified path. If the directory already exists,
+   * it is deleted with all its contents.
+   * If the directory cannot be deleted or created, exceptions are thrown.
+   */
   def createCleanDirectory(directory: Path): Unit = {
     if (fileSystem.isDirectory(directory)) deleteDirectory(directory)
     fileSystem.createDirectory(directory)

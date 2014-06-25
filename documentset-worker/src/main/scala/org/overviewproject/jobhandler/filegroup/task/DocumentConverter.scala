@@ -1,25 +1,55 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import java.util.UUID
-import java.io.InputStream
-import java.io.FileInputStream
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption._
-import java.nio.file.Path
 import java.io.File
-import scala.util.control.Exception._
-import java.nio.file.Paths
+import java.io.FileInputStream
 import java.io.FileNotFoundException
+import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption._
+import java.util.UUID
+
+import scala.util.control.Exception._
+
 import org.overviewproject.util.Configuration
 
+/**
+ * Converts the content of a [[InputStream]] to a PDF [[InputStream]] using `LibreOffice`.
+ * The location of `LibreOffice` must be specified by the `LIBRE_OFFICE_PATH` environment variable,
+ * or directly in the worker configuration file.
+ * Files created during the conversion are written to a temp directory, and are deleted when the conversion is
+ * complete, if possible.
+ *
+ * If another instance of `LibreOffice` (including quick-starter) is running on the same system, the conversion will fail.
+ */
 trait DocumentConverter {
-  
+
+  /**
+   *  Exception thrown if the call to `LibreOffice` resulted in an error code
+   *  (including if no `soffice` binary was found).
+   */
   case class ConverterFailedException(reason: String) extends Exception(reason)
+
+  /**
+   * Exception thrown if conversion completed with no error code, but no output file was found.
+   * The most likely reason is that another instance of `LibreOffice` is running.
+   */
   case class NoConverterOutputException(reason: String) extends Exception(reason)
-  
+
   private val LibreOfficeLocation = Configuration.getString("libre_office_path")
   private val OutputFileExtension = "pdf"
 
+  /**
+   * Converts the given `inputStream` into a PDF [[InputStream]].
+   * @param guid A unique id used to create working file filenames
+   * @param inputStream The document data to be converted
+   * @param f A function that will be passed an [[InputStream]] containing the converted PDF document
+   * @tparam T the return type of `f`
+   * 
+   * @returns the return value of `f`
+   * @throws ConverterFailedException If the call to `LibreOffice` resulted in an error
+   * @throws NoConverterOutputException If the conversion completed with no error, but no output was generated
+   */
   def convertToPdfStream[T](guid: UUID, inputStream: InputStream)(f: InputStream => T): T = {
 
     writeStreamToInputFile(inputName(guid), inputStream) { filename =>
@@ -65,9 +95,9 @@ trait DocumentConverter {
   // Closes the stream after call to f
   // If output file does not exist, a NoConverterOutput exception is thrown
   private def readOutputFile[T](outputFile: File)(f: InputStream => T): T = {
-    val detectingNoFile = handling(classOf[FileNotFoundException]) by { e => throw NoConverterOutputException(e.getMessage) } 
+    val detectingNoFile = handling(classOf[FileNotFoundException]) by { e => throw NoConverterOutputException(e.getMessage) }
     def fileStream = detectingNoFile { fileSystem.readFile(outputFile) }
-    
+
     ultimately(fileStream.close) {
       f(fileStream)
     }
@@ -75,7 +105,6 @@ trait DocumentConverter {
 
   private def conversionCommand(inputFile: String): String =
     s"$LibreOfficeLocation --headless --invisible --norestore --nolockcheck --convert-to pdf --outdir ${TempDirectory.path} $inputFile"
-
 
   private def outputFile(inputFile: File): File = {
     val inputName = inputFile.getName
@@ -98,6 +127,7 @@ trait DocumentConverter {
   }
 }
 
+/** Implements [[DocumentConverter]] with components that perform filesystem and command runner functions */
 object DocumentConverter extends DocumentConverter {
 
   override protected val runner: Runner = new ShellRunner

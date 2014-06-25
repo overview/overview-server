@@ -1,11 +1,12 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import org.specs2.mutable.Specification
-import org.specs2.mock.Mockito
-import java.nio.file.Paths
-import org.specs2.specification.Scope
 import java.nio.file.Path
+import java.nio.file.Paths
+
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
+
+import org.specs2.mutable.Specification
 
 class DirectoryCleanerSpec extends Specification with Mockito {
 
