@@ -105,9 +105,9 @@ views.admin.User.index.new.submit=Create
 views.components.importNav.documentSets=Your document sets
 views.components.importNav.documentSetCount=You have {0,choice,0#no document sets|1#one document set|1<{0,number,integer} document sets}
 views.components.importNav.create=Create a document set:
-views.components.importNav.create.csv=Upload a CSV file
-views.components.importNav.create.pdf=Upload PDF files
+views.components.importNav.create.csv=Import from a CSV file
 views.components.importNav.create.documentCloud_html=Import from <span class="documentcloud-logo">DocumentCloud</span>
+views.components.importNav.create.files=Upload files
 views.components.importNav.copy=Copy a document set:
 views.components.importNav.copy.public=Copy an example document set
 views.components.importNav.copy.shared=Copy document sets shared with you
