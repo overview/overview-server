@@ -36,7 +36,7 @@ case class ContentDisposition(contentDisposition: String) {
         = parmname ~ ('*' ~> LWSP ~> '=' ~> LWSP ~> extValue) ^^
         { kv => Some(kv._1 -> kv._2) }
 
-      def parmname = attrChars
+      def parmname = attrChars ^^ { _.toLowerCase }
 
       // a String value like "blah.txt", from "blah.txt" or "\"blah.txt\""
       def value : Parser[String]
@@ -71,10 +71,9 @@ case class ContentDisposition(contentDisposition: String) {
       def token : Parser[String]
         = regex("""[^\s()<>,;:\\"\/\[\]?=]+""".r)
 
-      // a bunch of ASCII characters, as a String (attrChar, in bulk), lowercase
+      // a bunch of ASCII characters, as a String (attrChar, in bulk)
       def attrChars : Parser[String]
-        = regex("""[a-zA-Z0-9!#$&+\-\.^_`|~]+""".r) ^^
-        { _.toLowerCase }
+        = regex("""[a-zA-Z0-9!#$&+\-\.^_`|~]+""".r)
 
       // the contents of a quoted string, unescaped
       def quotedString : Parser[String]

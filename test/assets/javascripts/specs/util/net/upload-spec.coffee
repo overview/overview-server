@@ -21,7 +21,7 @@ define [
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
       fakeFile =
-        name: 'foo bar "baz".pdf' # filename with spaces and quotes
+        name: 'FOO bar "baz".pdf' # filename with spaces and quotes
         size: 1000
         lastModifiedDate:
           toString: sinon.stub().returns('last-modified-date')
@@ -64,6 +64,11 @@ define [
         @fakeStartUploadWithFilename("file*name.txt")
         expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''file%2Aname.txt")
 
+      it 'keeps capitals', ->
+        # https://www.pivotaltracker.com/story/show/71501834
+        @fakeStartUploadWithFilename("FILE*name.txt")
+        expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''FILE%2Aname.txt")
+
       it 'does not escape the pipe, caret or backtick', ->
         @fakeStartUploadWithFilename("file*|^`name.txt") # trigger encoding
         expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''file%2A|^`name.txt")
@@ -84,7 +89,7 @@ define [
         expect(@sandbox.server.requests[0].url).to.contain('/upload/')
 
       it 'computes a correct guid for the file', ->
-        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('foo bar "baz".pdf::last-modified-date::1000'))
+        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('FOO bar "baz".pdf::last-modified-date::1000'))
 
       it 'attempts to find the file before uploading', ->
         expect(@sandbox.server.requests[0].method).to.eq('HEAD')

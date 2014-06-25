@@ -138,6 +138,12 @@ class ContentDispositionSpec extends Specification {
       ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
+    "Decode mixed-case filenames" in new ContentDispositionContext with DispositionParameter {
+      override val name = "FILE,name.pdf"
+      override lazy val dispParams: String = """attachment; filename*=UTF-8''FILE%2Cname.pdf"""
+      ContentDisposition(contentDisposition).filename must beSome(name)
+    }
+
     // Encoding tests are from test/assets/javascripts/specs/util/net/upload-spec.coffee
     "Encode a filename" in new EncodingScope {
       check("filename.txt", "attachment; filename=\"filename.txt\"")
@@ -149,6 +155,10 @@ class ContentDispositionSpec extends Specification {
 
     "Encode an even slightly not-HTTP-friendly filename" in new EncodingScope {
       check("file,name.txt", "attachment; filename*=UTF-8''file%2Cname.txt")
+    }
+
+    "Encode capitals" in new EncodingScope {
+      check("FILE,name.txt", "attachment; filename*=UTF-8''FILE%2Cname.txt")
     }
 
     "Encode pipe, caret or backtick as-is" in new EncodingScope {
