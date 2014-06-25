@@ -36,10 +36,10 @@ define [
       """)
 
       documentCloud: _.template("""
+        <ul class="actions">
+          <li><%= showBooleanPref('sidebar') %></li>
+        </ul>
         <div class="page type-documentcloud">
-          <ul class="actions">
-            <li><%= showBooleanPref('sidebar') %></li>
-          </ul>
           <iframe class="document" src="<%- url.url + '?sidebar=' + (getPref('sidebar') && 'true' || 'false') + (url.page || '') %>"></iframe>
         </div>
       """)
@@ -68,7 +68,6 @@ define [
 
       localObject: _.template("""
         <div class="page type-local">
-
           <object data="<%- url.url + '#scrollbar=1&toolbar=1&navpanes=1&view=FitH' %>" type="application/pdf" width="100%" height="100%">
             <div class='missing-plugin'>
               <a href="<%- url.url %>"><i class="icon-cloud-download"></i></a>
@@ -79,14 +78,14 @@ define [
       """)
 
       secure: _.template("""
+        <ul class="actions">
+          <% if (!getPref('iframe')) { %>
+            <!-- show wrap before iframe, so iframe doesn't move when disabled -->
+            <li><%= showBooleanPref('wrap') %></li>
+          <% } %>
+          <li><%= showBooleanPref('iframe') %></li>
+        </ul>
         <div class="page type-secure">
-          <ul class="actions">
-            <% if (!getPref('iframe')) { %>
-              <!-- show wrap before iframe, so iframe doesn't move when disabled -->
-              <li><%= showBooleanPref('wrap') %></li>
-            <% } %>
-            <li><%= showBooleanPref('iframe') %></li>
-          </ul>
           <p class="source">
             <span class="label"><%- t('source') %></span>
             <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
@@ -100,10 +99,10 @@ define [
       """)
 
       insecure: _.template("""
+        <ul class="actions">
+          <li><%= showBooleanPref('wrap') %></li>
+        </ul>
         <div class="page type-insecure">
-          <ul class="actions">
-            <li><%= showBooleanPref('wrap') %></li>
-          </ul>
           <p class="source">
             <span class="label"><%- t('source') %></span>
             <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
@@ -113,10 +112,10 @@ define [
       """)
 
       default: _.template("""
+        <ul class="actions">
+          <li><%= showBooleanPref('wrap') %></li>
+        </ul>
         <div class="page type-default">
-          <ul class="actions">
-            <li><%= showBooleanPref('wrap') %></li>
-          </ul>
           <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
         </div>
       """)

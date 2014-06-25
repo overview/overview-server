@@ -2,7 +2,7 @@
 @import "../../mixins.less";
 
 #tree-app-document-cursor {
-  @navWidth: 15%;
+  @navWidth: 8em;
 
   position: absolute;
   z-index: 1;
@@ -39,6 +39,8 @@
     right: 0;
     bottom: 0;
     background: @body-bg-dark;
+    .display-flex();
+    .flex-direction-column();
 
     i {
       display: block;
@@ -83,6 +85,12 @@
 
   header {
     padding: 1em 1em 0;
+    .flex(0 0 auto);
+  }
+
+  article {
+    position: relative;
+    .flex(1 0 auto);
   }
 
   div.position, div.selection {
@@ -115,14 +123,6 @@
     margin: 0;
     padding: 0 0 .5em;
     .text-muted;
-  }
-
-  article {
-    position: absolute;
-    top: 6.5em;
-    left: 0;
-    right: 0;
-    bottom: 0;
   }
 
   ul.tags {

@@ -112,8 +112,6 @@ define [
 
       @$headerEl.html(html)
 
-      @$documentEl.css({ top: @$headerEl.outerHeight() })
-
     _getDocument: ->
       cursorIndex = @selection.get('cursorIndex')
       cursorIndex? && @documentList?.documents?.at(cursorIndex) || undefined
