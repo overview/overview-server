@@ -28,18 +28,16 @@ trait CreateFile {
    * If the first 4 bytes of the uploaded document correspond to "%PDF", the upload is used as the `File.view`.
    * Otherwise, the document is converted to PDF, if possible, and `File.view` is set to point to the PDF version
    * of the document. `File.contentsOid` refers to the original upload.
-   * 
+   *
    * @throws Exception on error. See [[DocumentConverter]] for details on conversion errors.
    */
-  def apply(documentSetId: Long, upload: GroupedFileUpload): File = {
-    val stream = storage.getLargeObjectInputStream(upload.contentsOid)
+  def apply(documentSetId: Long, upload: GroupedFileUpload): File =
+    withLargeObjectInputStream(upload.contentsOid) { stream =>
+      val magicNumber = peekAtMagicNumber(stream)
 
-    val magicNumber = peekAtMagicNumber(stream)
-
-    if (magicNumber.sameElements(PdfMagicNumber)) storage.createFile(documentSetId, upload.name, upload.contentsOid)
-    else converter.convertStreamToPdf(upload.guid, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
-
-  }
+      if (magicNumber.sameElements(PdfMagicNumber)) storage.createFile(documentSetId, upload.name, upload.contentsOid)
+      else converter.convertStreamToPdf(upload.guid, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
+    }
 
   private def peekAtMagicNumber(inputStream: InputStream): Array[Byte] = {
     val magicNumberBytes = 4
@@ -76,6 +74,7 @@ trait CreateFile {
   }
 }
 
+/** Implements [[CreateFile]] with database and conversion components */
 object CreateFile extends CreateFile {
   override protected val storage: Storage = new DatabaseStorage
   override protected val converter: DocumentConverter = new LibreOfficeDocumentConverter
