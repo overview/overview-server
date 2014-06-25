@@ -77,9 +77,6 @@ define [
       it 'has a file input', ->
         expect(view.$('.upload-prompt input[type=file]').length).to.eq(1)
 
-      it 'only shows pdf files by default', ->
-        expect(view.$('.upload-prompt input[type=file]').attr('accept')).to.eq('application/pdf')
-
       it 'has a folder input iff folder upload is supported', ->
         expect(view.$('.upload-folder-prompt').length).to.eq(isFolderUploadSupported && 1 || 0)
 

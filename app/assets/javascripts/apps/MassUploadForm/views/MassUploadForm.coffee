@@ -22,7 +22,7 @@ define [
                 <i class="overview-icon-plus"></i>
                 <%- t('upload_prompt') %>
               </button>
-              <input type="file" class="invisible-file-input" accept="application/pdf" multiple="multiple" />
+              <input type="file" class="invisible-file-input" multiple="multiple" />
             </div>
 
             <% if (isFolderUploadSupported) { %>
@@ -31,7 +31,7 @@ define [
                   <i class="overview-icon-plus"></i>
                   <%- t('upload_folder_prompt') %>
                 </button>
-                <input type="file" class="invisible-file-input" accept="application/pdf" multiple webkitdirectory />
+                <input type="file" class="invisible-file-input" multiple webkitdirectory />
               </div>
             <% } %>
 
@@ -103,9 +103,7 @@ define [
 
     _addFiles: (e) ->
       input = e.currentTarget
-      accept = input.getAttribute('accept')
-      goodFiles = (file for file in input.files when file.type == accept)
-      @model.addFiles(goodFiles)
+      @model.addFiles(input.files)
 
       input.value = '' # so the user can select files again
 
