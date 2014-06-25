@@ -18,7 +18,6 @@ trait DocumentConverter {
   case class NoConverterOutputException(reason: String) extends Exception(reason)
   
   private val LibreOfficeLocation = Configuration.getString("libre_office_path")
-  private val TempDirectory = "overview-documentset-worker"
   private val OutputFileExtension = "pdf"
 
   def convertToPdfStream[T](guid: UUID, inputStream: InputStream)(f: InputStream => T): T = {
@@ -37,7 +36,7 @@ trait DocumentConverter {
   // The input file is deleted after the call to f
   // Exceptions are not caught, and are assumed to be handled by caller
   private def writeStreamToInputFile[T](inputFileName: String, inputStream: InputStream)(f: File => T): T = {
-    val inputFilePath = tempFilePath(inputFileName)
+    val inputFilePath = TempDirectory.filePath(inputFileName)
     val input = fileSystem.saveToFile(inputStream, inputFilePath)
 
     ultimately(fileSystem.deleteFile(input)) {
@@ -75,27 +74,14 @@ trait DocumentConverter {
   }
 
   private def conversionCommand(inputFile: String): String =
-    s"$LibreOfficeLocation --headless --invisible --norestore --nolockcheck --convert-to pdf --outdir $tempDirectory $inputFile"
+    s"$LibreOfficeLocation --headless --invisible --norestore --nolockcheck --convert-to pdf --outdir ${TempDirectory.path} $inputFile"
 
-  // TODO: throw exception if property not found
-  private def tempDirectory: Path = {
-    val tmpDir = System.getProperty("java.io.tmpdir")
-
-    Paths.get(tmpDir, TempDirectory)
-  }
-
-  private def tempFilePath(fileName: String): Path = {
-    val tmpDir = System.getProperty("java.io.tmpdir")
-    Paths.get(tmpDir, TempDirectory, fileName)
-
-    tempDirectory.resolve(fileName)
-  }
 
   private def outputFile(inputFile: File): File = {
     val inputName = inputFile.getName
     val outputName = s"$inputName.$OutputFileExtension"
 
-    tempFilePath(outputName).toFile
+    TempDirectory.filePath(outputName).toFile
   }
 
   protected val runner: Runner
