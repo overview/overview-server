@@ -3,7 +3,6 @@ package org.overviewproject.fileupload
 import scala.language.postfixOps
 import scala.concurrent.Await
 import scala.concurrent.duration._
-
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.DocumentRetrievalError
 import org.overviewproject.persistence._
@@ -18,6 +17,9 @@ import org.overviewproject.tree.orm.finders.ResultPage
 import org.overviewproject.util.{ DocumentConsumer, DocumentSetIndexingSession }
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.overviewproject.util.SearchIndex
+import org.overviewproject.tree.orm.DocumentProcessingError
+import org.overviewproject.persistence.orm.finders.DocumentProcessingErrorFinder
+import org.overviewproject.persistence.orm.stores.DocumentSetStore
 
 
 /**
@@ -57,6 +59,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     updateDocumentSetCounts(documentSetId, numberOfDocumentsRead, 0)
 
     Database.inTransaction {
+      updateErrorCountWithUploadProcessingErrors(documentSetId)      
       DocRetrievalErrorWriter.write(documentSetId, fileErrors)
     }
 
@@ -106,6 +109,12 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     fileErrors = DocumentRetrievalError(fileName, error) +: fileErrors
   }
 
+
+  private def updateErrorCountWithUploadProcessingErrors(documentSetId: Long): Unit = {
+    val uploadProcessingErrorCount = DocumentProcessingErrorFinder.countByDocumentSet(documentSetId)
+    
+    DocumentSetStore.updateErrorCount(documentSetId, uploadProcessingErrorCount.toInt)
+  }
   
   // Create one document from the pages. If one of the pages has an error, the entire document 
   // is assumed to have failed. The result is either a Document with the combined text of all the documents

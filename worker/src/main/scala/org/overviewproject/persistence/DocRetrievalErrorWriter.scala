@@ -15,7 +15,7 @@ object DocRetrievalErrorWriter {
 
     update(Schema.documentSets)(ds =>
       where(ds.id === documentSetId)
-      set (ds.documentProcessingErrorCount := documentProcessingErrors.length)
+      set (ds.documentProcessingErrorCount := ds.documentProcessingErrorCount.~ + documentProcessingErrors.length)
     )
   }
 }
