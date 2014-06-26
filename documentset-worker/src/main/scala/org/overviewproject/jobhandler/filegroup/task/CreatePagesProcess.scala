@@ -8,6 +8,8 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.File
+import org.overviewproject.jobhandler.filegroup.task.DocumentConverter.ConverterFailedException
+import org.overviewproject.util.Logger
 
 /**
  * Generates the steps needed to process uploaded files:
@@ -83,12 +85,16 @@ trait CreatePagesProcess {
 
     protected def saveError(error: Throwable): FileGroupTaskStep = {
       val errorMessage = Option(error.getMessage).getOrElse(UnknownError)
-
+      logError(error)
+      
       storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, errorMessage)
       CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
 
     private val runSavingError = handling(classOf[Exception]) by saveError
+    
+    private def logError(error: Throwable): Unit = Logger.error(s"Conversion Error: ${error.getMessage}")
+    
   }
 
   protected val createFile: CreateFile
