@@ -1,4 +1,4 @@
-asUserUploadingPdfDocuments = require('../support/asUserUploadingPdfDocuments')
+asUserUploadingFiles = require('../support/asUserUploadingFiles')
 shouldBehaveLikeATree = require('../support/behave/likeATree')
 testMethods = require('../support/testMethods')
 wd = require('wd')
@@ -10,7 +10,7 @@ Url =
 
 describe 'PdfUpload', ->
 
-  asUserUploadingPdfDocuments('PdfUpload')
+  asUserUploadingFiles('PdfUpload')
 
   testMethods.usingPromiseChainMethods
     waitForJobsToComplete: ->
@@ -34,7 +34,7 @@ describe 'PdfUpload', ->
   describe 'after uploading pdfs', ->
     before ->
       @userBrowser
-        .openPdfUploadPage()
+        .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
         .chooseFile('PdfUpload/Cat2.pdf')
         .chooseFile('PdfUpload/Cat3.pdf')
@@ -61,7 +61,7 @@ describe 'PdfUpload', ->
     describe 'in the default tree', ->
       before ->
         @userBrowser
-          .openPdfUploadPage()
+          .openFileUploadPage()
           .get(Url.index)
           .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
 
@@ -79,7 +79,7 @@ describe 'PdfUpload', ->
   describe 'after uploading one pdf', ->
     before ->
       @userBrowser
-        .openPdfUploadPage()
+        .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
@@ -103,7 +103,7 @@ describe 'PdfUpload', ->
   describe 'after uploading three pdfs', ->
     before ->
       @userBrowser
-        .openPdfUploadPage()
+        .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
         .chooseFile('PdfUpload/Cat2.pdf')        
         .chooseFile('PdfUpload/Cat3.pdf')        

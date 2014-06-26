@@ -9,7 +9,7 @@ Url =
 
 module.exports = (title) ->
   testMethods.usingPromiseChainMethods
-    openPdfUploadPage: ->
+    openFileUploadPage: ->
       @
         .get(Url.pdfUpload)
         .waitForJqueryReady()

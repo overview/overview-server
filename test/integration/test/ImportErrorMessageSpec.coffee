@@ -1,4 +1,4 @@
-asUserUploadingPdfDocuments = require('../support/asUserUploadingPdfDocuments')
+asUserUploadingFiles = require('../support/asUserUploadingFiles')
 shouldBehaveLikeATree = require('../support/behave/likeATree')
 testMethods = require('../support/testMethods')
 wd = require('wd')
@@ -10,7 +10,7 @@ Url =
 
 
 describe 'ImportError', ->
-  asUserUploadingPdfDocuments('ImportErrorMessage')
+  asUserUploadingFiles('ImportErrorMessage')
   
   testMethods.usingPromiseChainMethods
   
@@ -23,7 +23,7 @@ describe 'ImportError', ->
   describe 'after importing too few documents', ->
     before ->
       @userBrowser
-        .openPdfUploadPage()
+        .openFileUploadPage()
         .chooseFile('PdfUpload/OnePage.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
@@ -44,7 +44,7 @@ describe 'ImportError', ->
   describe 'after entering a bad regex in Important Words', ->
     before ->
       @userBrowser
-        .openPdfUploadPage()
+        .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
