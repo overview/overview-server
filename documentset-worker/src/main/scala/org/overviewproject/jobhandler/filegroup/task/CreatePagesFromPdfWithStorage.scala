@@ -52,8 +52,11 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
       }
 
       def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit = Database.inTransaction {
+        val upload = GroupedFileUploadFinder.byId(uploadedFileId).headOption
+        val filename = upload.map(_.name).getOrElse(s"Uploaded File Id: $uploadedFileId")
+        
         val documentProcessingErrorStore = BaseStore(Schema.documentProcessingErrors)
-        val error = DocumentProcessingError(documentSetId, s"UploadedFileId: $uploadedFileId", errorMessage)
+        val error = DocumentProcessingError(documentSetId, filename, errorMessage)
 
         documentProcessingErrorStore.insertOrUpdate(error)
       }
