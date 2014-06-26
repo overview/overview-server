@@ -12,7 +12,7 @@ class BaseGroupedFileUploadStore(groupedFileUploads: Table[GroupedFileUpload]) e
       where(u.fileGroupId === fileGroupId)
         select (&(lo_unlink(Some(u.contentsOid)))))
 
-    query.headOption.get // force execution
+    query.headOption.getOrElse("nothing found") // force execution. getOrElse is needed, in case no uploads are found
   }
 
   def deleteByFileGroup(fileGroupId: Long) = {

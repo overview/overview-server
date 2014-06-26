@@ -132,7 +132,7 @@ trait FileGroupJobQueue extends Actor {
       }
     }
     case Terminated(worker) => {
-      Logger.info("Removing ${worker.path.toString} from worker pool")
+      Logger.info(s"Removing ${worker.path.toString} from worker pool")
       workerPool -= worker
       busyWorkers.get(worker).map { task => 
         busyWorkers -= worker
