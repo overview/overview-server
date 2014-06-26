@@ -93,7 +93,7 @@ trait CreatePagesProcess {
 
     private val runSavingError = handling(classOf[Exception]) by saveError
     
-    private def logError(error: Throwable): Unit = Logger.error(s"Conversion Error: ${error.getMessage}")
+    private def logError(error: Throwable): Unit = Logger.error(s"Conversion Error: ${error}")
     
   }
 
