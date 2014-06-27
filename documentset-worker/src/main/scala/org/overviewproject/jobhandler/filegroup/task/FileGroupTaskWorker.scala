@@ -45,6 +45,9 @@ object FileGroupTaskWorkerFSM {
 /**
  * A worker that registers with the [[FileGroupJobQueue]] and can handle [[CreatePagesTask]]s 
  * and [[DeleteFileUploadTask]]s.
+ * The worker handles [[Exception]]s during file processing by creating [[DocumentProcessingError]]s for the
+ * [[File]] being processed. If an [[Exception]] is thrown during a [[DeleteFileUploadJob]], it's logged and ignored.
+ * 
  * @todo Move to separate JVM and instance
  * @todo Add Death Watch on [[FileGroupJobQueue]]. If the queue dies, the task should be abandoned, and 
  *   the worker should wait for its rebirth.
