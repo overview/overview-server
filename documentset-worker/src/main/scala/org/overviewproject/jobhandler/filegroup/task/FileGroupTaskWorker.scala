@@ -7,7 +7,7 @@ import scala.language.postfixOps
 import scala.concurrent.Future
 import org.overviewproject.util.Logger
 import FileGroupTaskWorkerFSM._
-
+import scala.util.control.Exception._
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -93,7 +93,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
-      deleteFileUploadJob(documentSetId, fileGroupId)
+      ignoringExceptions { deleteFileUploadJob(documentSetId, fileGroupId) }
       jobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
       
       stay
@@ -131,6 +131,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private def lookForJobQueue = jobQueueSelection ! Identify(JobQueueId)
 
   private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
+  
+  private def ignoringExceptions = handling(classOf[Exception]) by {e => Logger.error(e.toString) }
 }
 
 object FileGroupTaskWorker {

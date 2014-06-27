@@ -26,14 +26,15 @@ class TaskWorkerSupervisor(jobQueuePath: String) extends Actor {
 
   override def preStart = taskWorkers.foreach(context.watch) 
     
-  override def supervisorStrategy = OneForOneStrategy(0, Duration.Inf) {
-    case _: Exception => Restart
+  // If an error escapes out of the workers, it is sufficiently serious 
+  // that the JVM should be shut down
+  override def supervisorStrategy = OneForOneStrategy(-1, Duration.Inf) {
     case _ => Escalate
   }
 
   def receive = {
     case Terminated(a) =>
-      Logger.error(s"Task Worker ${a.path} died unexpectedly. Restarting.")
+      Logger.error(s"Task Worker ${a.path} died unexpectedly.")
   }
 }
 
