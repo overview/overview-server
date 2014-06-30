@@ -49,11 +49,11 @@
 )}
 
 @defining(scopedMessages("views.FileUpload.new")) { m =>
-  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="pdf-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="file-import-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"), m("help2"))
   } {
-    <form class="pdf-upload" method="post" action="@routes.MassUploadController.startClustering">
+    <form class="file-import" method="post" action="@routes.MassUploadController.startClustering">
       @helper.Form.csrfToken
     </form>
   }

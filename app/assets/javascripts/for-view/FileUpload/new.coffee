@@ -1,6 +1,6 @@
 define [ 'jquery', 'apps/MassUploadForm/app' ], ($, MassUploadApp) ->
   $ ->
-    $form = $('form.pdf-upload')
+    $form = $('form.file-import')
     baseUrl = $form.attr('action').match(/// ^(.*)/[^/]*$ ///)[1]
     app = new MassUploadApp
       baseUrl: baseUrl
