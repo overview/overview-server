@@ -23,7 +23,7 @@ class NodeStoreSpec extends DbSpecification {
       }
       
       private def createTree(documentSetId: Long, treeId: Long): Unit = {
-        val tree = trees.insert(Tree(treeId, documentSet.id, "title", 100, "en", "", ""))
+        val tree = trees.insert(Tree(treeId, documentSet.id, 0L, "title", 100, "en", "", ""))
         val nodesInTree = Seq.tabulate(10)(n => Node(treeId << 32 | n, tree.id, None, "desc", 1, Array.empty, false ))
         nodes.insert(nodesInTree)
       }

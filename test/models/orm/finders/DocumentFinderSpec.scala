@@ -21,6 +21,7 @@ class DocumentFinderSpec extends Specification {
       val tree = TestSchema.trees.insert(Tree(
         id=0L,
         documentSetId=documentSet.id,
+        jobId=0L,
         title="tree",
         documentCount=documents.length,
         lang="en"

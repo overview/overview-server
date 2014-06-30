@@ -58,7 +58,7 @@ class NodeWriterSpec extends DbSpecification {
         job = documentSetCreationJobs.insert(
             DocumentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster,
                 treeTitle = Some("title"), state = NotStarted))
-        tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
+        tree = Tree(nextTreeId(documentSet.id), documentSet.id, job.id, "tree", 100, "en", "", "")
         writer = new NodeWriter(job.id, tree)
       }
 
@@ -79,11 +79,6 @@ class NodeWriterSpec extends DbSpecification {
           where(nd.nodeId === nodeId)
             select (nd)).toSeq
 
-      protected def findJobTreeEntry: Option[DocumentSetCreationJobTree] =
-        from(documentSetCreationJobTrees)(jt =>
-          where(jt.documentSetCreationJobId === job.id)
-            select (jt)).headOption
-
       protected def createNode(idSet: Set[Long] = Set(), description: String = "root"): DocTreeNode = {
         val node = new DocTreeNode(idSet)
         node.description = description
@@ -103,10 +98,10 @@ class NodeWriterSpec extends DbSpecification {
 
       override def setupWithDb = {
         super.setupWithDb
-        tree2 = Tree(nextTreeId(documentSet.id), documentSet.id, "tree2", 100, "en", "", "")
         val job2 = documentSetCreationJobs.insert(
             DocumentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster,
                 treeTitle = Some("title"), state = NotStarted))
+        tree2 = Tree(nextTreeId(documentSet.id), documentSet.id, job2.id, "tree2", 100, "en", "", "")
         
         writer2 = new NodeWriter(job2.id, tree2)
       }
@@ -176,14 +171,6 @@ class NodeWriterSpec extends DbSpecification {
       }
     }
 
-    "add an entry into document_set_creation_job_tree" in new NodeWriterContext {
-      val expectedEntry = DocumentSetCreationJobTree(job.id, tree.id)
-      val node = createNode()
-      writer.write(node)
-
-      findJobTreeEntry must beSome(expectedEntry)
-
-    }
     "write nodes into second tree for the same document set" in new MultipleTreeContext {
       val root1 = createNode()
       writer.write(root1)

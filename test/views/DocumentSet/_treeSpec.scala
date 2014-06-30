@@ -9,6 +9,7 @@ class _treeSpec extends views.html.ViewSpecification {
     def tree: Tree = Tree(
       id=1L,
       documentSetId=2L,
+      jobId=0L,
       title="title",
       documentCount=4,
       lang="en",

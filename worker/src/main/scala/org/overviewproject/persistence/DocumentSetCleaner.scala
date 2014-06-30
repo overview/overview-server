@@ -9,15 +9,13 @@ package org.overviewproject.persistence
 
 import org.overviewproject.persistence.orm.stores.NodeDocumentStore
 import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.persistence.orm.Schema.{ documents, documentSetCreationJobTrees, nodes, trees }
+import org.overviewproject.persistence.orm.Schema.{ documents, nodes, trees }
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.squeryl.Table
 import org.overviewproject.tree.orm.DocumentSetComponent
 import org.overviewproject.tree.orm.stores.BaseNodeStore
-import org.overviewproject.persistence.orm.finders.DocumentSetCreationJobTreeFinder
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
-import org.overviewproject.persistence.orm.finders.NodeFinder
-import org.overviewproject.persistence.orm.finders.TreeFinder
+import org.overviewproject.persistence.orm.finders.{NodeFinder,TreeFinder}
 
 /**
  * Deletes all data associated with a document set in the database
@@ -29,22 +27,21 @@ class DocumentSetCleaner {
   def clean(jobId: Long, documentSetId: Long) {
     val tree = findTreeId(jobId)
     tree.foreach(removeNodeData)
-    
+
     if (noRemainingTrees(documentSetId))
       removeDocumentData(documentSetId)
   }
 
-  private def findTreeId(jobId: Long): Option[Long] = 
-    DocumentSetCreationJobTreeFinder.byJob(jobId).headOption.map(_.treeId)
-    
+  private def findTreeId(jobId: Long): Option[Long] =
+    TreeFinder.byJobId(jobId).headOption.map(_.id)
+
   private def noRemainingTrees(documentSetId: Long): Boolean =
     TreeFinder.byDocumentSet(documentSetId).count == 0
-    
+
   private def removeNodeData(treeId: Long): Unit = {
     val nodeStore = BaseNodeStore(nodes, trees)
     NodeDocumentStore.deleteByTree(treeId)
     deleteByQuery(nodes, NodeFinder.byTree(treeId))
-    deleteByQuery(documentSetCreationJobTrees, DocumentSetCreationJobTreeFinder.byTree(treeId))
     deleteByQuery(trees, TreeFinder.byId(treeId))
   }
 
@@ -54,7 +51,7 @@ class DocumentSetCleaner {
 
   private def deleteByQuery[A](table: Table[A], queryResult: FinderResult[A]): Int =
     table.delete(queryResult.toQuery)
-    
+
   private def deleteByDocumentSetId[A <: DocumentSetComponent](table: Table[A], documentSetId: Long): Int =
     BaseStore(table).delete(DocumentSetComponentFinder(table).byDocumentSet(documentSetId))
 }

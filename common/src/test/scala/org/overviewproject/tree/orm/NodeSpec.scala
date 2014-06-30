@@ -10,7 +10,7 @@ class NodeSpec extends DbSpecification {
   "Node" should {
     "write and read from the database" in new DbTestContext {
       val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "NodeSpec"))
-      val tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
+      val tree = Tree(nextTreeId(documentSet.id), documentSet.id, 0L, "tree", 100, "en", "", "")
       Schema.trees.insert(tree)
       val node = Node(
         id=nextNodeId(documentSet.id),

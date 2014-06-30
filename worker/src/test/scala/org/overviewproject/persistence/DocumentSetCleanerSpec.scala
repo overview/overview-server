@@ -13,7 +13,7 @@ import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument,
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.persistence.orm.Schema._
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobTree }
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
@@ -33,18 +33,27 @@ class DocumentSetCleanerSpec extends DbSpecification {
 
       override def setupWithDb = {
         documentSet = documentSets.insert(DocumentSet(title = "DocumentSetCleanerSpec"))
-        job = documentSetCreationJobs.insert(DocumentSetCreationJob(documentSetId = documentSet.id,
-          jobType = Recluster, treeTitle = Some("cluster"), state = InProgress))
-        tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
+        job = documentSetCreationJobs.insert(DocumentSetCreationJob(
+          documentSetId = documentSet.id,
+          jobType = Recluster,
+          treeTitle = Some("cluster"),
+          state = InProgress
+        ))
+        tree = Tree(
+          id = nextTreeId(documentSet.id),
+          documentSetId = documentSet.id,
+          jobId = job.id,
+          title = "tree",
+          documentCount = 100,
+          lang = "en"
+        )
         node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, Array.empty, false)
         document = Document(documentSet.id, "description")
         val nodeDocument = NodeDocument(node.id, document.id)
-        val jobTree = DocumentSetCreationJobTree(job.id, tree.id)
         trees.insert(tree)
         nodes.insert(node)
         documents.insert(document)
         nodeDocuments.insert(nodeDocument)
-        documentSetCreationJobTrees.insert(jobTree)
       }
     }
 
@@ -53,9 +62,8 @@ class DocumentSetCleanerSpec extends DbSpecification {
 
       override def setupWithDb = {
         super.setupWithDb
-        otherTree = Tree(nextTreeId(documentSet.id), documentSet.id, "other tree", 100, "en", "", "")
+        otherTree = Tree(nextTreeId(documentSet.id), documentSet.id, job.id + 1, "other tree", 100, "en", "", "")
         trees.insert(otherTree)
-
       }
     }
 
@@ -94,7 +102,6 @@ class DocumentSetCleanerSpec extends DbSpecification {
       cleaner.clean(job.id, documentSet.id)
 
       findTree(otherTree.id) must beSome
-
     }
 
     "don't delete document related data if there are multiple trees" in new MultipleTreeContext {

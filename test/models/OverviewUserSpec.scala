@@ -38,7 +38,7 @@ class OverviewUserSpec  extends Specification {
     
     override def setupWithDb = {
       val documentSet = Schema.documentSets.insert(DocumentSet(title = "OverviewUserSpec"))
-      Schema.trees.insert(Tree(treeId, documentSet.id, "title", 100, "en", "", ""))
+      Schema.trees.insert(Tree(treeId, documentSet.id, 0L, "title", 100, "en", "", ""))
       Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, email, Owner))
     }
   }

@@ -43,7 +43,7 @@ class NodeClonerSpec extends DbSpecification {
       documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "clone"))
       
       val treeIds = new DocumentSetIdGenerator(documentSet.id)
-      val tree = Tree(treeIds.next, documentSet.id, "tree", 100, "en", "", "")
+      val tree = Tree(treeIds.next, documentSet.id, 0L, "tree", 100, "en", "", "")
   
       val cloneTreeIds = new DocumentSetIdGenerator(documentSetClone.id)
       val cloneTree = tree.copy(id = cloneTreeIds.next)

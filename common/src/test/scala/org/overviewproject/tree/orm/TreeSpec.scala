@@ -3,7 +3,7 @@ package org.overviewproject.tree.orm
 import org.specs2.mutable.Specification
 
 class TreeSpec extends Specification {
-  private def baseTree = Tree(1L, 2L, "title", 3, "en")
+  private def baseTree = Tree(1L, 2L, 0L, "title", 3, "en")
   "Tree.properties" should {
     "have lang by default" in {
       val data = baseTree.creationData.toSeq

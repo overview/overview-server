@@ -39,7 +39,7 @@ class NodeDocumentClonerSpec extends DbSpecification {
   
   def insertTree(documentSetId: Long, title: String): Long = {
     import org.overviewproject.postgres.SquerylEntrypoint._
-    val tree = Tree(documentSetId, documentSetId, title, 100, "en", "", "")
+    val tree = Tree(documentSetId, documentSetId, 0L, title, 100, "en", "", "")
     trees.insert(tree)
     
     tree.id

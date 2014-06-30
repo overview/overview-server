@@ -30,7 +30,7 @@ class TreeClonerSpec extends DbSpecification {
         val sourceIds = new DocumentSetIdGenerator(sourceDocumentSet.id)
         val cloneIds = new DocumentSetIdGenerator(cloneDocumentSet.id)
         
-        sourceTree = Tree(sourceIds.next, sourceDocumentSet.id, "title", 100, "lang", "stopwords", "importantwords")
+        sourceTree = Tree(sourceIds.next, sourceDocumentSet.id, 0L, "title", 100, "lang", "stopwords", "importantwords")
         TreeStore.insert(sourceTree)
         
         expectedCloneTree = sourceTree.copy(id = cloneIds.next, documentSetId = cloneDocumentSet.id)

@@ -23,8 +23,8 @@ class TreeIdGeneratorSpec extends DbSpecification {
       
       override def setupWithDb = {
         super.setupWithDb
-        val tree1 = Tree((documentSet.id << 32) | 1, documentSet.id, "tree1", 100, "en", "", "")
-        val treeN = Tree((documentSet.id << 32) | treeIndex, documentSet.id, "treeN", 100, "en", "", "")
+        val tree1 = Tree((documentSet.id << 32) | 1, documentSet.id, 0L, "tree1", 100, "en", "", "")
+        val treeN = Tree((documentSet.id << 32) | treeIndex, documentSet.id, 0L, "treeN", 100, "en", "", "")
         
         trees.insert(tree1)
         trees.insert(treeN)

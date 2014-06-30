@@ -11,13 +11,12 @@ import java.sql.Timestamp
 import java.util.Date
 import com.github.t3hnar.bcrypt._
 import models.orm.User
-import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder, DocumentSetCreationJobFinder }
+import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder, DocumentSetCreationJobFinder, TreeFinder }
 import models.orm.UserRole
 import models.orm.UserRole._
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import models.orm.finders.TreeFinder
 
 /**
  * A user that exists in the database

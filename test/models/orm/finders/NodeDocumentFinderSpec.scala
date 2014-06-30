@@ -29,7 +29,7 @@ class NodeDocumentFinderSpec extends Specification {
         documents.insert(Document(id = id, documentSetId = documentSetId))
 
       def createTree(documentSetId: Long): Tree = {
-        val tree = Tree(documentSetId, documentSetId, "title", 100, "en", "", "")
+        val tree = Tree(documentSetId, documentSetId, 0L, "title", 100, "en", "", "")
         trees.insert(tree)
 
         tree

@@ -35,6 +35,7 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
     def fakeViz(id: Long) : Viz = Tree(
       id=id,
       documentSetId=1L,
+      jobId=0L,
       title=s"title${id}",
       documentCount=10,
       lang="en",

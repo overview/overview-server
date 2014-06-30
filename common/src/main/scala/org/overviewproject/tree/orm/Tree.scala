@@ -9,6 +9,7 @@ import org.overviewproject.models.Viz
 case class Tree(
     id: Long,
     documentSetId: Long,
+    jobId: Long,
     title: String,
     documentCount: Int,
     lang: String,
