@@ -41,6 +41,6 @@ requirejs.config
     'mass-upload': 'vendor/mass-upload'
 
 require [
-  'for-view/PdfUpload/new'
+  'for-view/FileUpload/new'
   'elements/twitter-bootstrap'
 ], ->

@@ -4,7 +4,7 @@
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  @requireJsBundle("PdfUpload/new")
+  @requireJsBundle("FileUpload/new")
 
   @* Let's hope there is no end-script tag in _supportedLanguages.... *@
   <script>
@@ -48,7 +48,7 @@
   "views.DocumentSet._uploadProgress.uploading"
 )}
 
-@defining(scopedMessages("views.PdfUpload.new")) { m =>
+@defining(scopedMessages("views.FileUpload.new")) { m =>
   @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="pdf-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"), m("help2"))

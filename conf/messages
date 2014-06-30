@@ -319,10 +319,10 @@ views.DocumentSet.show.VizTabs.viz.suppliedStopWords.dd={0}
 views.DocumentSet.show.VizTabs.viz.importantWords.dt=Important words
 views.DocumentSet.show.VizTabs.viz.importantWords.dd={0}
 
-views.PdfUpload.new.title=Upload PDF files
-views.PdfUpload.new.h1=Upload PDF files
-views.PdfUpload.new.help1=Overview can analyze and display your PDF files.
-views.PdfUpload.new.help2=You must import at least three documents.
+views.FileUpload.new.title=Upload PDF files
+views.FileUpload.new.h1=Upload PDF files
+views.FileUpload.new.help1=Overview can analyze and display your PDF files.
+views.FileUpload.new.help2=You must import at least three documents.
 
 views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words: {0}
