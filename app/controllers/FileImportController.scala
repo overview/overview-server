@@ -14,7 +14,7 @@ trait FileImportController extends Controller {
   def new_() = AuthorizedAction(anyUser) { implicit request =>
     val count = storage.countUserOwnedDocumentSets(request.user.email)
 
-    Ok(views.html.FileUpload.new_(request.user, count))
+    Ok(views.html.FileImport.new_(request.user, count))
   }
 
   val storage : Storage
