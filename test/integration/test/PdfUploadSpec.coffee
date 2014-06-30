@@ -6,7 +6,7 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
-  pdfUpload: '/imports/pdf'
+  pdfUpload: '/imports/file'
 
 describe 'PdfUpload', ->
 

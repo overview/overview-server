@@ -39,7 +39,7 @@ DELETE /files         controllers.MassUploadController.cancelUpload()
 GET    /imports.json controllers.ImportJobController.index()
 
 GET    /imports/csv                        controllers.CsvUploadController.new_()
-GET    /imports/pdf                        controllers.PdfUploadController.new_()
+GET    /imports/file                        controllers.FileImportController.new_()
 GET    /imports/documentcloud-project      controllers.DocumentCloudProjectController.index()
 POST   /imports/documentcloud              controllers.DocumentCloudImportJobController.create()
 GET    /imports/documentcloud/new/:query   controllers.DocumentCloudImportJobController.new_(query: String)

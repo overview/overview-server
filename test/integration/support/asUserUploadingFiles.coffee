@@ -5,7 +5,7 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
-  pdfUpload: '/imports/pdf'
+  pdfUpload: '/imports/file'
 
 module.exports = (title) ->
   testMethods.usingPromiseChainMethods
