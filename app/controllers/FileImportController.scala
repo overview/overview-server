@@ -6,7 +6,7 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.anyUser
 import models.orm.finders.DocumentSetFinder
 
-trait PdfUploadController extends Controller {
+trait FileImportController extends Controller {
   trait Storage {
     def countUserOwnedDocumentSets(user: String) : Long
   }
@@ -20,8 +20,8 @@ trait PdfUploadController extends Controller {
   val storage : Storage
 }
 
-object PdfUploadController extends PdfUploadController {
-  object DatabaseStorage extends PdfUploadController.Storage {
+object FileImportController extends FileImportController {
+  object DatabaseStorage extends FileImportController.Storage {
     override def countUserOwnedDocumentSets(owner: String) = {
       DocumentSetFinder.byOwner(owner).count
     }

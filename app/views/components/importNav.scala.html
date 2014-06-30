@@ -31,7 +31,7 @@
 
     <h6>@m("create")</h6>
     <ul class="import-nav">
-      <li>@linkTo(m("create.files"), routes.PdfUploadController.new_())</li>
+      <li>@linkTo(m("create.files"), routes.FileImportController.new_())</li>
       <li>@linkTo(m("create.csv"), routes.CsvUploadController.new_())</li>
       <li>@linkToHtml(Html(m("create.documentCloud_html")), routes.DocumentCloudProjectController.index())</li>
     </ul>
