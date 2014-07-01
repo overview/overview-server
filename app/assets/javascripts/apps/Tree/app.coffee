@@ -158,26 +158,16 @@ define [
       els = @_buildHtml()
       keyboardController = new KeyboardController(document)
 
-      # Start with a null viz. That's because we need State itself to change
-      # documentListParams, as explained in the terrible hack section of
-      # State.coffee.
-      #
-      # The bad: we make an extra request to /documents. The good: we can let
-      # somebody else fix this bug later. (The proper solution is to make
-      # rootNodeId a property of every Tree object on the server, which means
-      # a database change and a bit of redundancy.)
-      state = new State(documentListParams: documentSet.documentListParams(null).all(), viz: null)
-
       treeId = +window.location.pathname.split('/')[4]
       viz = documentSet.vizs.get("viz-#{treeId}") || documentSet.vizs.at(0)
+
+      state = new State(documentListParams: documentSet.documentListParams(viz).all(), viz: viz)
 
       state.on 'change:viz', (__, viz) ->
         if (id = viz?.get('id'))?
           # Change URL so a page refresh brings us to this viz
           url = window.location.pathname.replace(/\/\d+$/, "/#{id}")
           window.history?.replaceState(url, '', url)
-
-      state.setViz(viz)
 
       controller = new VizsController(documentSet.vizs, state)
       els.vizs.appendChild(controller.el)
