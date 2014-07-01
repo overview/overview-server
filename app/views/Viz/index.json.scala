@@ -41,6 +41,7 @@ object index {
     Json.obj(
       "type" -> "viz",
       "id" -> viz.id,
+      "jobId" -> viz.jobId,
       "title" -> viz.title,
       "createdAt" -> dateToISO8601(viz.createdAt),
       "creationData" -> creationData.toSeq

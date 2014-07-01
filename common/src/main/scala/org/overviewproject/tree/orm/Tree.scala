@@ -9,7 +9,7 @@ import org.overviewproject.models.Viz
 case class Tree(
     id: Long,
     documentSetId: Long,
-    jobId: Long,
+    override val jobId: Long,
     title: String,
     documentCount: Int,
     lang: String,

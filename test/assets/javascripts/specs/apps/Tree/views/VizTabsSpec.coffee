@@ -183,3 +183,10 @@ define [
       it 'should update progress', ->
         @job.set(progress: { fraction: 0.4, state: 'IN_PROGRESS', description: 'retrieving_documents:1141:4691' })
         expect(@view.$('li:eq(0) progress')).to.have.attr('value', '0.4')
+
+      it 'should switch from job to viz', ->
+        @job.set(type: 'viz', createdAt: new Date())
+        $li = @view.$('li:eq(0)')
+        expect($li.find('a')).to.contain('foo')
+        expect($li).not.to.have.class('job')
+        expect($li).to.have.class('viz')

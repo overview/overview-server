@@ -29,7 +29,7 @@ define [
 
     templates:
       viz: _.template('''
-        <li data-id="<%- viz.type %>-<%- viz.id %>" class="<%- viz.type %> <%- isSelected ? 'active' : '' %>">
+        <li data-id="<%- id %>" class="<%- viz.type %> <%- isSelected ? 'active' : '' %>">
           <a href="#">
             <span class="title"><%- viz.title %></span>
             <span class="toggle-popover viz-info-icon icon-info-sign"></span>
@@ -69,7 +69,7 @@ define [
 
       main: _.template('''
         <% vizs.forEach(function(viz) { %>
-          <%= templates.viz({ t: t, templates: templates, isSelected: viz == selectedViz, viz: viz.attributes }) %>
+          <%= templates.viz({ t: t, templates: templates, isSelected: viz == selectedViz, id: viz.id, viz: viz.attributes }) %>
         <% }); %>
         <li class="new-viz">
           <a href="#" class="new-viz">
@@ -109,16 +109,20 @@ define [
       if id
         @$("li[data-id=#{id}]").addClass('active')
 
-    _onAdd: (model, __, options) ->
-      html = @templates.viz
+    _modelToHtml: (model) ->
+      @templates.viz
         t: t
+        id: model.id
         templates: @templates
         isSelected: false
         viz: model.attributes
 
+    _onAdd: (model) ->
       # While we _expect_ the change won't break ordering of the set, we aren't
       # entirely certain; don't use binary search.
       index = @collection.indexOf(model)
+
+      html = @_modelToHtml(model)
       
       @$("li:eq(#{index})").before(html)
 
@@ -129,9 +133,14 @@ define [
       # While we _expect_ the change won't break ordering of the set, we aren't
       # entirely certain; don't use binary search.
       index = @collection.indexOf(model)
-
       $li = @$("li:eq(#{index})")
-      $li.find('progress').attr('value', model.attributes.progress?.fraction || '')
+
+      if model.hasChanged('progress')
+        $li.find('progress').attr('value', model.attributes.progress?.fraction || '')
+
+      if model.hasChanged('type')
+        html = @_modelToHtml(model)
+        $li.replaceWith(html)
 
     _onClick: (e) ->
       e.preventDefault()

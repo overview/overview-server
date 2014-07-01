@@ -22,7 +22,10 @@ define [
       else
         attrs = _.extend({}, attrs)
 
-      attrs.typeAndId = "#{attrs.type}-#{attrs.id}"
+      attrs.clientId = if attrs.jobId > 0
+        "job-#{attrs.jobId}"
+      else
+        "#{attrs.type}-#{attrs.id}"
 
       for [ k, v ] in (attrs.creationData || [])
         if k == 'rootNodeId'
@@ -30,7 +33,7 @@ define [
 
       super(attrs)
 
-    idAttribute: 'typeAndId'
+    idAttribute: 'clientId'
 
     scopeApiParams: (params) ->
       _.extend({ nodes: String(@get('rootNodeId')) }, params)
