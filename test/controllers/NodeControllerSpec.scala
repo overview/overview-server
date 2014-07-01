@@ -27,7 +27,6 @@ class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
       parentId=None,
       description="description",
       cachedSize=0,
-      cachedDocumentIds=Array[Long](),
       isLeaf=false
     )
   }

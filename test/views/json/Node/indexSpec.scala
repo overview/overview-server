@@ -7,14 +7,13 @@ import org.specs2.mutable.Specification
 import org.overviewproject.tree.orm.Node
 
 class indexSpec extends Specification with JsonMatchers {
-  private def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
+  private def buildNode(id: Long, parentId: Option[Long], cachedSize: Int) : Node = {
     Node(
       id=id,
       treeId = 1L,
       parentId=parentId,
       description="description",
       cachedSize=cachedSize,
-      cachedDocumentIds=cachedDocumentIds,
       isLeaf=false
     )
   }
@@ -22,9 +21,9 @@ class indexSpec extends Specification with JsonMatchers {
   "Tree view generated Json" should {
     "contain all nodes" in {
       val nodes = List(
-        buildNode(1, None, 2, Array(1L, 2L)),
-        buildNode(2, Some(1L), 1, Array(1L)),
-        buildNode(3, Some(1L), 1, Array(2L))
+        buildNode(1, None, 2),
+        buildNode(2, Some(1L), 1),
+        buildNode(3, Some(1L), 1)
       )
 
       val treeJson = index(nodes).toString

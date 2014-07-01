@@ -31,7 +31,6 @@ class DocumentFinderSpec extends Specification {
         parentId=None,
         description="node",
         cachedSize=documents.length,
-        cachedDocumentIds=documents.map(_.id).toArray,
         isLeaf=true
       ))
       val tag = TestSchema.tags.insertOrUpdate(Tag(

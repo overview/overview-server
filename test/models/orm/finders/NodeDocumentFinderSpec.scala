@@ -17,10 +17,14 @@ class NodeDocumentFinderSpec extends Specification {
     trait NodeSetup {
       import org.overviewproject.postgres.SquerylEntrypoint._
 
-      def createNode(nodeId: Long, documentSetId: Long, treeId: Long): Unit = nodes.insert(
-        Node(id = nodeId,
-          treeId = treeId,
-          parentId = None, description = "", cachedSize = 0, cachedDocumentIds = Array.empty, isLeaf = true))
+      def createNode(nodeId: Long, documentSetId: Long, treeId: Long): Unit = nodes.insert(Node(
+        id = nodeId,
+        treeId = treeId,
+        parentId = None,
+        description = "",
+        cachedSize = 0,
+        isLeaf = true
+      ))
 
       def addDocumentsToNode(documentIds: Seq[Long], nodeId: Int): Unit =
         nodeDocuments.insert(documentIds.map(d => NodeDocument(nodeId, d)))
