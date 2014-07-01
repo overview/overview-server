@@ -23,7 +23,6 @@ class NodeClonerSpec extends DbSpecification {
           parentId=parentId,
           description="node height: " + depth,
           cachedSize=100,
-          cachedDocumentIds=documentCache,
           isLeaf=(depth == 1)
         )
 
@@ -62,21 +61,19 @@ class NodeClonerSpec extends DbSpecification {
 
   "NodeCloner" should {
 
-    "create node clones" in new CloneContext {
+    "clone descriptions" in new CloneContext {
       cloneNodes.sortBy(_.id).map(_.description) must be equalTo sourceNodes.map(_.description)
     }
 
-    "create clones with ids matching source ids" in new CloneContext {
-      val sourceIndeces = sourceNodes.map(n => (n.id << 32) >> 32)
-      val cloneIndeces = cloneNodes.map(n => (n.id << 32) >> 32)
-
-      cloneIndeces must containTheSameElementsAs(sourceIndeces)
+    "clone cachedSizes" in new CloneContext {
+      cloneNodes.sortBy(_.id).map(_.cachedSize) must be equalTo sourceNodes.map(_.cachedSize)
     }
 
-    "map document id cache" in new CloneContext {
-      val cloneCache = documentCache.map((documentSetClone.id << 32) | _)
+    "create clones with ids matching source ids" in new CloneContext {
+      val sourceIndices = sourceNodes.map(n => (n.id << 32) >> 32)
+      val cloneIndices = cloneNodes.map(n => (n.id << 32) >> 32)
 
-      cloneNodes.head.cachedDocumentIds.toSeq must containTheSameElementsAs(cloneCache)
+      cloneIndices must containTheSameElementsAs(sourceIndices)
     }
   }
 

@@ -64,7 +64,6 @@ class NodeDocumentClonerSpec extends DbSpecification {
         parentId=None,
         description="node-" + i,
         cachedSize=100,
-        cachedDocumentIds=Array(),
         isLeaf=false
       ))
       val sourceDocuments = Seq.tabulate(10)(i => Document(

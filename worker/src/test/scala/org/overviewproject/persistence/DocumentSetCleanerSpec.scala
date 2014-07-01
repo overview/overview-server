@@ -47,7 +47,7 @@ class DocumentSetCleanerSpec extends DbSpecification {
           documentCount = 100,
           lang = "en"
         )
-        node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, Array.empty, false)
+        node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, false)
         document = Document(documentSet.id, "description")
         val nodeDocument = NodeDocument(node.id, document.id)
         trees.insert(tree)

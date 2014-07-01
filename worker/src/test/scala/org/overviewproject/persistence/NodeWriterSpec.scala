@@ -8,7 +8,7 @@
 package org.overviewproject.persistence
 
 import scala.collection.mutable.Set
-import org.overviewproject.clustering.{ DocTreeNode, DocumentIdCache }
+import org.overviewproject.clustering.DocTreeNode
 import org.overviewproject.test.DbSpecification
 import org.specs2.execute.PendingUntilFixed
 import org.overviewproject.tree.orm._
@@ -24,16 +24,10 @@ class NodeWriterSpec extends DbSpecification {
 
   private def addChildren(parent: DocTreeNode, description: String): Seq[DocTreeNode] = {
     val children = for (i <- 1 to 2) yield new DocTreeNode(Set())
-    children.foreach(addCache)
     children.foreach(_.description = description)
     children.foreach(parent.children.add)
 
     children
-  }
-
-  // add a dummy cache that's not used for anything
-  private def addCache(node: DocTreeNode) {
-    node.documentIdCache = new DocumentIdCache(10, Array[Long](1l, 2l, 3l, 4l))
   }
 
   "NodeWriter" should {
@@ -82,7 +76,6 @@ class NodeWriterSpec extends DbSpecification {
       protected def createNode(idSet: Set[Long] = Set(), description: String = "root"): DocTreeNode = {
         val node = new DocTreeNode(idSet)
         node.description = description
-        addCache(node)
 
         node
       }

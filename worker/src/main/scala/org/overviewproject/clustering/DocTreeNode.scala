@@ -13,13 +13,10 @@ package org.overviewproject.clustering
 import scala.collection.mutable.Set
 import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
 
-class DocumentIdCache(val numberOfDocuments: Int, val documentIds: Array[DocumentID])
-
 // Document tree node. Contains items, children, and a description which lists top terms in all docs of this node
 class DocTreeNode(val docs: Set[DocumentID]) {
   var description = ""
   var children: Set[DocTreeNode] = Set[DocTreeNode]()
-  var documentIdCache: DocumentIdCache = _
   
   var components = Set[DocumentComponent]() // used during clustering by KMeansComponentDocTreeBuilder, cleared after
   

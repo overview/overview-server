@@ -24,7 +24,6 @@ class NodeWriter(jobId: Long, tree: Tree) {
   val batchInserter = new BatchInserter[NodeDocument](500, Schema.nodeDocuments)
   val ids = new NodeIdGenerator(tree.id)
 
-  
   def write(root: DocTreeNode)(implicit c: Connection) {
     TreeStore.insert(tree)
     writeSubTree(root, None)
@@ -37,8 +36,7 @@ class NodeWriter(jobId: Long, tree: Tree) {
       treeId = tree.id,
       parentId=parentId,
       description=node.description,
-      cachedSize=node.documentIdCache.numberOfDocuments,
-      cachedDocumentIds=node.documentIdCache.documentIds,
+      cachedSize=node.docs.size,
       isLeaf = node.children.isEmpty
     )
 
@@ -48,5 +46,4 @@ class NodeWriter(jobId: Long, tree: Tree) {
 
     node.children.foreach(writeSubTree(_, Some(n.id)))
   }
-  
 }
