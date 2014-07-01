@@ -11,12 +11,10 @@ import scala.collection.mutable.Set
 import org.overviewproject.clustering.DocTreeNode
 import org.overviewproject.test.DbSpecification
 import org.specs2.execute.PendingUntilFixed
-import org.overviewproject.tree.orm._
-import org.overviewproject.persistence.orm.Schema._
-import org.overviewproject.test.IdGenerator._
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-
+import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.orm.{Document, DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Node, NodeDocument}
+import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.test.IdGenerator
 
 class NodeWriterSpec extends DbSpecification {
 
@@ -36,9 +34,8 @@ class NodeWriterSpec extends DbSpecification {
       import org.overviewproject.postgres.SquerylEntrypoint._
 
       var documentSet: DocumentSet = _
-      var writer: NodeWriter = _
-      var tree: Tree = _
       var job: DocumentSetCreationJob = _
+      var writer: NodeWriter = _
 
       implicit object NodeDocumentOrdering extends math.Ordering[NodeDocument] {
         override def compare(a: NodeDocument, b: NodeDocument) = {
@@ -48,28 +45,30 @@ class NodeWriterSpec extends DbSpecification {
       }
 
       override def setupWithDb = {
-        documentSet = documentSets.insert(DocumentSet(title = "NodeWriterSpec"))
-        job = documentSetCreationJobs.insert(
-            DocumentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster,
-                treeTitle = Some("title"), state = NotStarted))
-        tree = Tree(nextTreeId(documentSet.id), documentSet.id, job.id, "tree", 100, "en", "", "")
-        writer = new NodeWriter(job.id, tree)
+        documentSet = Schema.documentSets.insert(DocumentSet(title = "NodeWriterSpec"))
+        job = Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(
+          documentSetId=documentSet.id,
+          jobType=DocumentSetCreationJobType.Recluster,
+          state=DocumentSetCreationJobState.InProgress,
+          treeTitle=Some("title")
+        ))
+        writer = new NodeWriter(job.id, IdGenerator.nextTreeId(documentSet.id))
       }
 
       protected def findAllRootNodes: Iterable[Node] =
-        from(nodes)(n =>
+        from(Schema.nodes)(n =>
           where(n.parentId isNull)
             select (n))
 
       protected def findRootNode: Option[Node] = findAllRootNodes.headOption
 
       protected def findChildNodes(parentIds: Iterable[Long]): Seq[Node] =
-        from(nodes)(n =>
+        from(Schema.nodes)(n =>
           where(n.parentId in parentIds)
             select (n)).toSeq
 
       protected def findNodeDocuments(nodeId: Long): Seq[NodeDocument] =
-        from(nodeDocuments)(nd =>
+        from(Schema.nodeDocuments)(nd =>
           where(nd.nodeId === nodeId)
             select (nd)).toSeq
 
@@ -81,22 +80,22 @@ class NodeWriterSpec extends DbSpecification {
       }
 
       protected def insertDocument(documentSetId: Long): Document =
-        documents.insert(Document(documentSetId = documentSetId, title = Some("title"),
-          documentcloudId = Some("documentCloud ID"), id = nextDocumentId(documentSetId)))
+        Schema.documents.insert(Document(documentSetId = documentSetId, title = Some("title"),
+          documentcloudId = Some("documentCloud ID"), id = IdGenerator.nextDocumentId(documentSetId)))
     }
 
     trait MultipleTreeContext extends NodeWriterContext {
       var writer2: NodeWriter = _
-      var tree2: Tree = _
 
       override def setupWithDb = {
         super.setupWithDb
-        val job2 = documentSetCreationJobs.insert(
-            DocumentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster,
-                treeTitle = Some("title"), state = NotStarted))
-        tree2 = Tree(nextTreeId(documentSet.id), documentSet.id, job2.id, "tree2", 100, "en", "", "")
-        
-        writer2 = new NodeWriter(job2.id, tree2)
+        val job2 = Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(
+          documentSetId=documentSet.id,
+          jobType=DocumentSetCreationJobType.Recluster,
+          state=DocumentSetCreationJobState.InProgress,
+          treeTitle=Some("title")
+        ))
+        writer2 = new NodeWriter(job2.id, IdGenerator.nextTreeId(documentSet.id))
       }
     }
 
@@ -162,6 +161,14 @@ class NodeWriterSpec extends DbSpecification {
       savedNode must beSome.like {
         case n => (n.id >> 32) must be equalTo (documentSet.id)
       }
+    }
+
+    "return a rootNodeId" in new NodeWriterContext {
+      val node = createNode()
+      writer.write(node)
+      val savedNode = findRootNode
+
+      Some(writer.rootNodeId) must beEqualTo(savedNode.map(_.id))
     }
 
     "write nodes into second tree for the same document set" in new MultipleTreeContext {

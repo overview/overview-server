@@ -18,20 +18,23 @@ class DocumentFinderSpec extends Specification {
 
       val documentSet = TestSchema.documentSets.insertOrUpdate(DocumentSet())
       val documents = Seq.tabulate(10)(n => TestSchema.documents.insert(Document(id=n, documentSetId=documentSet.id)))
+      val rootNodeId = 3L
+      val node = TestSchema.nodes.insert(Node(
+        id=rootNodeId,
+        rootId=rootNodeId,
+        parentId=None,
+        description="root",
+        cachedSize=documents.length,
+        isLeaf=true
+      ))
       val tree = TestSchema.trees.insert(Tree(
         id=0L,
         documentSetId=documentSet.id,
+        rootNodeId=rootNodeId,
         jobId=0L,
         title="tree",
         documentCount=documents.length,
         lang="en"
-      ))
-      val node = TestSchema.nodes.insert(Node(
-        treeId=tree.id,
-        parentId=None,
-        description="node",
-        cachedSize=documents.length,
-        isLeaf=true
       ))
       val tag = TestSchema.tags.insertOrUpdate(Tag(
         documentSetId=documentSet.id,

@@ -3,23 +3,19 @@ package org.overviewproject.clone
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.Node
-import org.overviewproject.persistence.DocumentSetIdGenerator
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.tree.orm.Tree
+import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeIdGenerator }
 
 class NodeClonerSpec extends DbSpecification {
   step(setupDb)
 
   trait CloneContext extends DbTestContext {
-    val documentCache: Array[Long] = Seq.tabulate[Long](10)(identity).toArray
-
-    def createTreeNodes(treeId: Long, parentId: Option[Long], depth: Int): Seq[Node] = {
+    def createTreeNodes(ids: NodeIdGenerator, parentId: Option[Long], depth: Int): Seq[Node] = {
       import org.overviewproject.postgres.SquerylEntrypoint._
       if (depth == 0) Nil
       else {
         val child = Node(
           id=ids.next,
-          treeId = treeId,
+          rootId = ids.rootId,
           parentId=parentId,
           description="node height: " + depth,
           cachedSize=100,
@@ -27,40 +23,33 @@ class NodeClonerSpec extends DbSpecification {
         )
 
         Schema.nodes.insert(child)
-        child +: createTreeNodes(treeId, Some(child.id), depth - 1)
+        child +: createTreeNodes(ids, Some(child.id), depth - 1)
       }
     }
 
-    var documentSetClone: DocumentSet = _
     var sourceNodes: Seq[Node] = _
     var cloneNodes: Seq[Node] = _
-    var ids: DocumentSetIdGenerator = _
 
     override def setupWithDb = {
       import org.overviewproject.postgres.SquerylEntrypoint._
-      val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "NodeClonerSpec"))
-      documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "clone"))
-      
-      val treeIds = new DocumentSetIdGenerator(documentSet.id)
-      val tree = Tree(treeIds.next, documentSet.id, 0L, "tree", 100, "en", "", "")
-  
-      val cloneTreeIds = new DocumentSetIdGenerator(documentSetClone.id)
-      val cloneTree = tree.copy(id = cloneTreeIds.next)
-      
-      Schema.trees.insert(tree)
-      Schema.trees.insert(cloneTree)
-      
-      ids = new DocumentSetIdGenerator(documentSet.id)
 
-      sourceNodes = createTreeNodes(tree.id, None, 10)
+      val documentSetId = 1L
+      val cloneDocumentSetId = 2L
 
-      NodeCloner.clone(documentSet.id, documentSetClone.id)
-      cloneNodes = Schema.nodes.where(n => n.treeId === cloneTree.id).toSeq
+      val treeId = new DocumentSetIdGenerator(documentSetId).next
+      val cloneTreeId = new DocumentSetIdGenerator(cloneDocumentSetId).next
+
+      val ids = new NodeIdGenerator(treeId)
+      sourceNodes = createTreeNodes(ids, None, 10)
+
+      val cloneRootNodeId = new NodeIdGenerator(cloneTreeId).rootId
+      NodeCloner.clone(documentSetId, cloneDocumentSetId)
+
+      cloneNodes = Schema.nodes.where(n => n.rootId === cloneRootNodeId).toIndexedSeq
     }
   }
 
   "NodeCloner" should {
-
     "clone descriptions" in new CloneContext {
       cloneNodes.sortBy(_.id).map(_.description) must be equalTo sourceNodes.map(_.description)
     }
@@ -70,10 +59,10 @@ class NodeClonerSpec extends DbSpecification {
     }
 
     "create clones with ids matching source ids" in new CloneContext {
-      val sourceIndices = sourceNodes.map(n => (n.id << 32) >> 32)
-      val cloneIndices = cloneNodes.map(n => (n.id << 32) >> 32)
+      val sourceIndices = sourceNodes.map(n => (n.id << 32) >> 32).toSeq.sorted
+      val cloneIndices = cloneNodes.map(n => (n.id << 32) >> 32).toSeq.sorted
 
-      cloneIndices must containTheSameElementsAs(sourceIndices)
+      cloneIndices must beEqualTo(sourceIndices)
     }
   }
 

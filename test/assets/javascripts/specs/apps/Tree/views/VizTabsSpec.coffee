@@ -114,7 +114,7 @@ define [
           longId: 'viz-1'
           title: 'foo'
           createdAt: new Date()
-          creationData: [[ 'thing1', 'value2' ], [ 'thing2', 'value3' ]]
+          creationData: [[ 'rootNodeId', '123' ], [ 'thing1', 'value2' ], [ 'thing2', 'value3' ]]
 
         @state = new State(viz: @viz)
 

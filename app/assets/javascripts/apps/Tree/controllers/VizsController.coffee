@@ -20,12 +20,12 @@ define [
         @vizs.unshift(id: 0, type: 'job', title: data?[0]?.value, progress: {})
         @vizs.pollUntilStable()
 
-      @view.on 'cancel', (job) ->
+      @view.on 'cancel', (job) =>
         jobId = job.get('id')
         $.ajax
           type: 'delete'
           url: "/trees/jobs/#{jobId}"
-          complete: refresh
+          complete: => @vizs.pollUntilStable()
 
       @view.on 'click-new', ->
         m = /\/documentsets\/([^\/]+)\//.exec(document.location.pathname)

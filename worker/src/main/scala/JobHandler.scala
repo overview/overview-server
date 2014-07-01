@@ -111,6 +111,7 @@ object JobHandler {
 
       Logger.info(s"Cleaning up job ${j.documentSetId}")
       Database.inTransaction {
+        deleteJobCleanupData(j)
         j.delete
         deleteFileGroupData(j)
       }
@@ -138,10 +139,9 @@ object JobHandler {
     Logger.info(documentSetInfo(documentSet))
 
     documentSet.map { ds =>
+      val treeId = TreeIdGenerator.next(ds.id)
 
-      val tree = createTree(ds, job)
-
-      val nodeWriter = new NodeWriter(job.id, tree)
+      val nodeWriter = new NodeWriter(job.id, treeId)
 
       val opts = DocumentSetIndexerOptions(job.lang, job.suppliedStopWords, job.importantWords)
 
@@ -150,9 +150,23 @@ object JobHandler {
 
       val numberOfDocuments = producer.produce()
 
-      updateTreeDocumentCount(tree, numberOfDocuments)
+      if (job.state != Cancelled) {
+        Database.inTransaction {
+          TreeStore.insert(Tree(
+            id=treeId,
+            documentSetId=ds.id,
+            rootNodeId=nodeWriter.rootNodeId,
+            jobId=job.id,
+            title=job.treeTitle.getOrElse(ds.title),
+            documentCount=numberOfDocuments,
+            lang=job.lang,
+            description=job.treeDescription.getOrElse(""),
+            suppliedStopWords=job.suppliedStopWords.getOrElse(""),
+            importantWords=job.importantWords.getOrElse("")
+          ))
+        }
+      }
     }
-
   }
 
   private def handleCloneJob(job: PersistentDocumentSetCreationJob) {
@@ -178,10 +192,10 @@ object JobHandler {
     val validSourceDocumentSet = for {
       ds <- DocumentSetFinder.byId(sourceDocumentSetId).headOption if !ds.deleted
     } yield ds
-      
+
     validSourceDocumentSet.getOrElse { throw new DisplayedError("source_documentset_deleted") }
   }
-  
+
   private def restartInterruptedJobs: Unit = Database.inTransaction {
     val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
     val restarter = new JobRestarter(new DocumentSetCleaner, SearchIndex)
@@ -213,7 +227,7 @@ object JobHandler {
     import anorm._
     import anorm.SqlParser._
     import org.overviewproject.persistence.orm.Schema._
-    import org.squeryl.PrimitiveTypeMode._
+    import org.overviewproject.postgres.SquerylEntrypoint._
 
     Logger.info(s"[${job.documentSetId}] Deleting cancelled job")
     Database.inTransaction {
@@ -223,6 +237,7 @@ object JobHandler {
       SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
       SQL("DELETE FROM document_set_creation_job WHERE id = {jobId}").on('jobId -> job.id).executeUpdate()
 
+      deleteJobCleanupData(job)
       deleteFileGroupData(job)
     }
   }
@@ -230,9 +245,9 @@ object JobHandler {
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
     t match {
       case e: DisplayedError => Logger.info(s"Job for DocumentSetId ${job.documentSetId} failed: $e")
-      case _ => Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")  
+      case _ => Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")
     }
-    
+
     job.state = Error
     job.statusDescription = Some(ExceptionStatusMessage(t))
     Database.inTransaction {
@@ -241,38 +256,23 @@ object JobHandler {
     }
   }
 
+  private def deleteJobCleanupData(job: PersistentDocumentSetCreationJob): Unit = {
+    import org.overviewproject.persistence.orm.Schema
+    import org.overviewproject.postgres.SquerylEntrypoint._
+
+    Schema.documentSetCreationJobNodes.deleteWhere(_.documentSetCreationJobId === job.id)
+  }
+
   private def deleteFileGroupData(job: PersistentDocumentSetCreationJob): Unit = {
     import org.overviewproject.persistence.orm.Schema._
-    
+
     val tempDocumentSetFileStore = BaseStore(tempDocumentSetFiles)
-    
+
     job.fileGroupId.map { fileGroupId =>
       tempDocumentSetFileStore.delete(TempDocumentSetFileFinder.byDocumentSet(job.documentSetId).toQuery)
       GroupedFileUploadStore.delete(GroupedFileUploadFinder.byFileGroup(fileGroupId).toQuery)
 
       FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
-    }
-  }
-
-  private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
-    val tree = Tree(
-      id=TreeIdGenerator.next(documentSet.id),
-      documentSetId=job.documentSetId, 
-      jobId=job.id,
-      title=job.treeTitle.getOrElse(documentSet.title),
-      documentCount=0,
-      lang=job.lang, 
-      description=job.treeDescription.getOrElse(""),
-      suppliedStopWords=job.suppliedStopWords.getOrElse(""), 
-      importantWords=job.importantWords.getOrElse("")
-    )
-
-    tree
-  }
-
-  private def updateTreeDocumentCount(tree: Tree, documentCount: Int): Option[Tree] = Database.inTransaction {
-    TreeFinder.byId(tree.id).headOption.map { t =>
-      TreeStore.update(t.copy(documentCount = documentCount))
     }
   }
 
@@ -284,6 +284,4 @@ object JobHandler {
       where(ds.id === documentSetId)
         select (ds)).headOption
   }
-
 }
-

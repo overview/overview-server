@@ -70,13 +70,10 @@ class DocumentSetDeleterSpec extends DbSpecification {
       }
 
       def addClusteringGeneratedInformation = {
-        val tree = Tree(nextTreeId(documentSet.id), documentSet.id, 0L, "title", 100, "en", "", "")
-        trees.insert(tree)
-        val node = Node(nextNodeId(documentSet.id),
-          tree.id, None, "", 1, Array(document.id), true)
-
-        nodes.insert(node)
+        val nodeId = nextNodeId(documentSet.id)
+        val node = nodes.insert(Node(nodeId, nodeId, None, "", 1, true))
         nodeDocuments.insert(NodeDocument(node.id, document.id))
+        trees.insert(Tree(nextTreeId(documentSet.id), documentSet.id, node.id, 0L, "title", 100, "en"))
 
         documentProcessingErrors.insert(
           DocumentProcessingError(documentSet.id, "url", "message", None, None))

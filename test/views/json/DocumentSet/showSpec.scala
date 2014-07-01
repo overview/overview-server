@@ -9,13 +9,14 @@ import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreation
 import org.overviewproject.tree.DocumentSetCreationJobType
 
 class showSpec extends Specification with JsonMatchers {
-  private def buildViz(aId: Long, aTitle: String, aJobId: Long, aCreatedAt: Date, aCreationData: Seq[(String,String)]) : Viz = {
+  private def buildViz(aId: Long, aTitle: String, aJobId: Long, aNDocuments: Int, aCreatedAt: Date, aCreationData: Seq[(String,String)]) : Viz = {
     new Viz {
       override val id = aId
       override val title = aTitle
       override val jobId = aJobId
       override val createdAt = aCreatedAt
       override def creationData = aCreationData
+      override val documentCount = aNDocuments
     }
   }
 
@@ -35,7 +36,7 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "contain vizs" in {
-      val viz = buildViz(2L, "title", 4L, new Date(1000), Seq("foo" -> "bar"))
+      val viz = buildViz(2L, "title", 4L, 100, new Date(1000), Seq("foo" -> "bar"))
 
       val json = show(Seq(viz), Seq(), Seq(), Seq()).toString
 
@@ -46,6 +47,7 @@ class showSpec extends Specification with JsonMatchers {
       json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
       json must /("vizs") */("creationData") /#(0) /#(0) / "foo"
       json must /("vizs") */("creationData") /#(0) /#(1) / "bar"
+      json must /("vizs") */("nDocuments" -> 100)
     }
 
     "contain viz jobs" in {

@@ -10,15 +10,6 @@ class _documentSetSpec extends views.html.ViewSpecification {
     def nTrees: Int = 3
 
     def result = _documentSet(documentSet, nTrees, fakeUser)
-
-    def fakeTree(documentSetId: Long, id: Long) = Tree(
-      id=id,
-      documentSetId=documentSetId,
-      jobId=0L,
-      title="title",
-      documentCount=10,
-      lang="en"
-    )
   }
 
   trait DocumentSetWithErrorsContext extends BaseScope {

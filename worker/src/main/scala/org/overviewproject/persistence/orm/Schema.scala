@@ -10,6 +10,7 @@ object Schema extends org.squeryl.Schema {
   
   val documentProcessingErrors = table[DocumentProcessingError]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
+  val documentSetCreationJobNodes = table[DocumentSetCreationJobNode]
   val documentSets = table[DocumentSet]
   val documents = table[Document]
   val documentTags = table[DocumentTag]

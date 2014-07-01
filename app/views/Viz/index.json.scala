@@ -44,7 +44,8 @@ object index {
       "jobId" -> viz.jobId,
       "title" -> viz.title,
       "createdAt" -> dateToISO8601(viz.createdAt),
-      "creationData" -> creationData.toSeq
+      "creationData" -> creationData.toSeq,
+      "nDocuments" -> viz.documentCount
     )
   }
 

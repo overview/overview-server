@@ -7,11 +7,10 @@
 
 package org.overviewproject.persistence
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.IdGenerator._
+import org.overviewproject.test.{ DbSpecification, IdGenerator }
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import org.overviewproject.persistence.orm.Schema._
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType._
@@ -32,28 +31,32 @@ class DocumentSetCleanerSpec extends DbSpecification {
       val cleaner = new DocumentSetCleaner
 
       override def setupWithDb = {
-        documentSet = documentSets.insert(DocumentSet(title = "DocumentSetCleanerSpec"))
-        job = documentSetCreationJobs.insert(DocumentSetCreationJob(
+        documentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentSetCleanerSpec"))
+        job = Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(
           documentSetId = documentSet.id,
           jobType = Recluster,
           treeTitle = Some("cluster"),
           state = InProgress
         ))
-        tree = Tree(
-          id = nextTreeId(documentSet.id),
+
+        val rootId = IdGenerator.nextNodeId(documentSet.id)
+
+        node = Schema.nodes.insert(Node(rootId, rootId, None, "description", 0, true))
+        tree = Schema.trees.insert(Tree(
+          id = IdGenerator.nextTreeId(documentSet.id),
           documentSetId = documentSet.id,
+          rootNodeId = rootId,
           jobId = job.id,
           title = "tree",
           documentCount = 100,
           lang = "en"
-        )
-        node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, false)
-        document = Document(documentSet.id, "description")
-        val nodeDocument = NodeDocument(node.id, document.id)
-        trees.insert(tree)
-        nodes.insert(node)
-        documents.insert(document)
-        nodeDocuments.insert(nodeDocument)
+        ))
+        document = Schema.documents.insert(Document(
+          id=IdGenerator.nextDocumentId(documentSet.id),
+          documentSetId=documentSet.id,
+          description="description"
+        ))
+        Schema.nodeDocuments.insert(NodeDocument(node.id, document.id))
       }
     }
 
@@ -62,60 +65,37 @@ class DocumentSetCleanerSpec extends DbSpecification {
 
       override def setupWithDb = {
         super.setupWithDb
-        otherTree = Tree(nextTreeId(documentSet.id), documentSet.id, job.id + 1, "other tree", 100, "en", "", "")
-        trees.insert(otherTree)
+        val otherNodeId = IdGenerator.nextNodeId(documentSet.id)
+        val otherNode = Schema.nodes.insert(Node(otherNodeId, otherNodeId, None, "description", 0, true))
+        otherTree = Schema.trees.insert(Tree(IdGenerator.nextTreeId(documentSet.id), documentSet.id, otherNodeId, job.id + 1, "other tree", 100, "en"))
       }
     }
 
-    def findNodeWithTree(treeId: Long): Option[NodeDocument] = {
-      val nodeIdQuery = from(nodes)(n =>
-        where(n.treeId === treeId)
-          select (n.id))
-
-      from(nodeDocuments)(nd =>
-        where(nd.nodeId in nodeIdQuery)
-          select (nd)).headOption
-    }
-
-    def findNode(nodeId: Long): Option[Node] =
-      from(nodes)(n =>
-        where(n.id === nodeId)
-          select (n)).headOption
-
-    def findDocument(documentSetId: Long): Option[Document] =
-      DocumentSetComponentFinder(documents).byDocumentSet(documentSetId).headOption
-
-    def findTree(id: Long): Option[Tree] =
-      from(trees)(t =>
-        where(t.id === id)
-          select (t)).headOption
-
-    "delete node related data" in new DocumentSetContext {
+    "delete node-related data" in new DocumentSetContext {
       cleaner.clean(job.id, documentSet.id)
 
-      findNodeWithTree(tree.id) must beNone
-      findNode(node.id) must beNone
-      findTree(tree.id) must beNone
+      Schema.nodes.lookup(node.id) must beNone
+      Schema.trees.lookup(tree.id) must beNone
     }
 
     "only delete specified tree" in new MultipleTreeContext {
       cleaner.clean(job.id, documentSet.id)
 
-      findTree(otherTree.id) must beSome
+      Schema.trees.lookup(otherTree.id) must beSome
     }
 
     "don't delete document related data if there are multiple trees" in new MultipleTreeContext {
       cleaner.clean(job.id, documentSet.id)
 
-      findDocument(documentSet.id) must beSome
+      //Schema.documentSets.lookup(documentSet.id) must beSome
+      Schema.documents.lookup(document.id) must beSome
     }
 
-    "delete document related data" in new DocumentSetContext {
+    "delete document related data if there is one tree" in new DocumentSetContext {
       cleaner.clean(job.id, documentSet.id)
 
-      val noDocument = findDocument(documentSet.id)
-
-      noDocument must beNone
+      //Schema.documentSets.lookup(documentSet.id) must beNone
+      Schema.documents.lookup(document.id) must beNone
     }
   }
 

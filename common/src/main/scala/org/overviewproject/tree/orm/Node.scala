@@ -5,7 +5,7 @@ import org.squeryl.PrimitiveTypeMode._
 
 case class Node(
   val id: Long = 0L,
-  val treeId: Long,
+  val rootId: Long,
   val parentId: Option[Long],
   val description: String,
   val cachedSize: Int,

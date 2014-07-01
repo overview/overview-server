@@ -17,9 +17,9 @@ class NodeDocumentFinderSpec extends Specification {
     trait NodeSetup {
       import org.overviewproject.postgres.SquerylEntrypoint._
 
-      def createNode(nodeId: Long, documentSetId: Long, treeId: Long): Unit = nodes.insert(Node(
+      def createNode(nodeId: Long, rootId: Long): Unit = nodes.insert(Node(
         id = nodeId,
-        treeId = treeId,
+        rootId = rootId,
         parentId = None,
         description = "",
         cachedSize = 0,
@@ -32,8 +32,8 @@ class NodeDocumentFinderSpec extends Specification {
       def createDocument(id: Long, documentSetId: Long): Unit =
         documents.insert(Document(id = id, documentSetId = documentSetId))
 
-      def createTree(documentSetId: Long): Tree = {
-        val tree = Tree(documentSetId, documentSetId, 0L, "title", 100, "en", "", "")
+      def createTree(documentSetId: Long, rootNodeId: Long): Tree = {
+        val tree = Tree(documentSetId, documentSetId, rootNodeId, 0L, "title", 100, "en")
         trees.insert(tree)
 
         tree
@@ -51,10 +51,9 @@ class NodeDocumentFinderSpec extends Specification {
         import org.overviewproject.postgres.SquerylEntrypoint._
 
         documentSet = documentSets.insertOrUpdate(DocumentSet())
-        val tree = createTree(documentSet.id)
-        
         documentIds.foreach(n => createDocument(n, documentSet.id))
-        nodeIds.foreach(n => createNode(n, documentSet.id, tree.id))
+        nodeIds.foreach(n => createNode(n, nodeIds.head))
+        val tree = createTree(documentSet.id, nodeIds.head)
         val tag = tags.insertOrUpdate(Tag(documentSetId = documentSet.id, name = "tag", color = "000000"))
 
         documentTags.insert(documentIds.take(7).map(d => DocumentTag(d, tag.id)))
@@ -80,14 +79,15 @@ class NodeDocumentFinderSpec extends Specification {
 
         documentSet1 = documentSets.insertOrUpdate(DocumentSet())
         documentSet2 = documentSets.insertOrUpdate(DocumentSet())
-        tree1 = createTree(documentSet1.id)
-        val tree2 = createTree(documentSet2.id)
-        
+
+        createNode(nodeId1, nodeId1)
+        createNode(nodeId2, nodeId2)
+
+        tree1 = createTree(documentSet1.id, nodeId1)
+        val tree2 = createTree(documentSet2.id, nodeId2)
+
         documentIds1.foreach(n => createDocument(n, documentSet1.id))
         documentIds2.foreach(n => createDocument(n, documentSet2.id))
-
-        createNode(nodeId1, documentSet1.id, tree1.id)
-        createNode(nodeId2, documentSet2.id, tree2.id)
 
         addDocumentsToNode(documentIds1, nodeId1)
         addDocumentsToNode(documentIds2, nodeId2)
@@ -103,10 +103,10 @@ class NodeDocumentFinderSpec extends Specification {
     }
 
     "find NodeDocuments in Tree only" in new NodesInTwoDocumentSets {
-      val nd = NodeDocumentFinder.byNodeIdsInTree(documentIds1 ++ documentIds2, tree1.id)
+      val nd = NodeDocumentFinder.byNodeIdsInTree(documentIds1 ++ documentIds2, tree1.id).toSeq
 
-      nd.toSeq must beEqualTo(documentIds1.map(NodeDocument(nodeId1, _)))
-
+      nd.map(_.nodeId).distinct must beEqualTo(Seq(nodeId1))
+      nd.map(_.documentId).sorted must beEqualTo(documentIds1)
     }
   }
 

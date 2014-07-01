@@ -10,11 +10,11 @@ class indexSpec extends Specification with JsonMatchers {
   private def buildNode(id: Long, parentId: Option[Long], cachedSize: Int) : Node = {
     Node(
       id=id,
-      treeId = 1L,
+      rootId = 1L,
       parentId=parentId,
       description="description",
       cachedSize=cachedSize,
-      isLeaf=false
+      isLeaf=parentId.isDefined
     )
   }
 

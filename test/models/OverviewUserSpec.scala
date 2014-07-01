@@ -8,7 +8,7 @@ import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 import helpers.DbTestContext
 import org.overviewproject.tree.Ownership._
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetUser, Tree }
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetUser, Node, Tree }
 import models.orm.Schema
 
 class OverviewUserSpec  extends Specification {
@@ -38,7 +38,9 @@ class OverviewUserSpec  extends Specification {
     
     override def setupWithDb = {
       val documentSet = Schema.documentSets.insert(DocumentSet(title = "OverviewUserSpec"))
-      Schema.trees.insert(Tree(treeId, documentSet.id, 0L, "title", 100, "en", "", ""))
+      val rootNodeId = 3L
+      Schema.nodes.insert(Node(rootNodeId, rootNodeId, None, "root", 0, true))
+      Schema.trees.insert(Tree(treeId, documentSet.id, rootNodeId, 0L, "title", 100, "en"))
       Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, email, Owner))
     }
   }

@@ -58,8 +58,10 @@ define [
           <% } %>
 
           <% viz.creationData.forEach(function(d) { %>
-            <dt><%- t('viz.' + d[0] + '.dt') %></dt>
-            <dd><%- t('viz.' + d[0] + '.dd', d[1]) %></dd>
+            <% if (d[0] != 'rootNodeId') { %>
+              <dt><%- t('viz.' + d[0] + '.dt') %></dt>
+              <dd><%- t('viz.' + d[0] + '.dd', d[1]) %></dd>
+            <% } %>
           <% }); %>
         </dl>
         <% if (viz.type == 'job' || viz.type == 'error') { %>

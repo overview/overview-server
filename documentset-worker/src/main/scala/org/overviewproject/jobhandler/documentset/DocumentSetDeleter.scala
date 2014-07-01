@@ -2,9 +2,8 @@ package org.overviewproject.jobhandler.documentset
 
 import org.overviewproject.tree.orm.UploadedFile
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import org.overviewproject.tree.orm.stores.BaseNodeStore
 import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
 
 /**
  * Methods for deleting all the data associated with document sets in the database
@@ -60,8 +59,9 @@ object DocumentSetDeleter {
       implicit val id = documentSetId
 
       delete(nodeDocuments, NodeDocumentFinder)
-      deleteNodes
+      val rootIds = DocumentSetComponentFinder(trees).byDocumentSet(documentSetId).map(_.rootNodeId).toSeq
       delete(trees)
+      BaseStore(nodes).delete(NodeFinder.byRootIds(rootIds).toQuery)
       delete(documentProcessingErrors)
     }
 
@@ -91,11 +91,6 @@ object DocumentSetDeleter {
       deleteUploadedFile(uploadedFile)
 
     }
-  }
-
-  private def deleteNodes(implicit documentSetId: Long): Unit = {
-    val nodeStore = BaseNodeStore(nodes, trees)
-    nodeStore.deleteByDocumentSet(documentSetId)
   }
 
   private def findFileIds(implicit documentSetId: Long): Seq[Long] =

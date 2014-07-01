@@ -18,8 +18,8 @@ object NodeFinder extends Finder {
 
   /** @return All Nodes in the given tree with the specified parent. */
   def byTreeAndParent(treeId: Long, parentId: Option[Long]): NodeFinderResult = {
-    from(Schema.nodes)(n =>
-      where(n.treeId === treeId and n.parentId === parentId)
+    from(Schema.trees, Schema.nodes)((t, n) =>
+      where(t.id === treeId and t.rootNodeId === n.rootId and n.parentId === parentId)
       select(n)
       orderBy(n.cachedSize desc)
     )
@@ -36,8 +36,8 @@ object NodeFinder extends Finder {
   
   /** @return All Nodes with the given ID in the given Tree */
   def byTreeAndId(treeId: Long, id: Long): NodeFinderResult = {
-    from(Schema.nodes)(n =>
-      where(n.treeId === treeId and n.id === id)
+    from(Schema.trees, Schema.nodes)((t, n) =>
+      where(t.id === treeId and t.rootNodeId === n.rootId and n.id === id)
       select(n)
     )
   }

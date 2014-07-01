@@ -9,9 +9,9 @@ import org.overviewproject.persistence.orm.Schema.nodes
 object NodeFinder extends Finder {
   type NodeFinderResult = FinderResult[Node]
 
-  def byTree(treeId: Long): NodeFinderResult =
+  def byRoot(rootId: Long): NodeFinderResult =
     from(nodes)(n =>
-      where (n.treeId === treeId)
+      where (n.rootId === rootId)
       select(n)
     )
 }

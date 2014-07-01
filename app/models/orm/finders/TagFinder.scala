@@ -47,13 +47,14 @@ object TagFinder extends Finder {
      *
      * This may be slow.
      */
-    join(Schema.documentTags, Schema.nodeDocuments, Schema.nodes)((dt, nd, n) =>
-      where((n.treeId === tree) and n.parentId.isNull)
+    join(Schema.documentTags, Schema.nodeDocuments, Schema.nodes, Schema.trees)((dt, nd, n, t) =>
+      where(t.id === tree)
       groupBy(dt.tagId)
       compute(count(dt.documentId))
       on(
         dt.documentId === nd.documentId,
-        nd.nodeId === n.id
+        nd.nodeId === n.id,
+        n.id === t.rootNodeId // we only count for the root node
       )
     )
   }

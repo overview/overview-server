@@ -5,6 +5,7 @@ import java.util.Date
 trait Viz {
   val id: Long
   val title: String
+  val documentCount: Int
   val createdAt: Date
 
   /** Helps the client track what created this Viz.

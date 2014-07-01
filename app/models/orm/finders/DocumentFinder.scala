@@ -124,26 +124,22 @@ object DocumentFinder extends Finder {
     }
 
     if (selection.untagged) {
-      val treesInDocumentSet = from(Schema.trees)(t =>
-        where(t.documentSetId === selection.documentSetId)
-        select(t.id))
-        
-      val parentNode = from(Schema.nodes)(n =>
-        where((n.treeId in treesInDocumentSet) and (n.parentId isNull))
-          select (n.id))
-      val documentsInNodes = from(Schema.nodeDocuments)(nd =>
-        where(nd.nodeId in parentNode)
-          select (nd.documentId))
+      val allDocumentIds = from(Schema.documents)(d =>
+        where(d.documentSetId === selection.documentSetId)
+        select(d.id)
+      )
 
-      val tags = from(Schema.tags)(t =>
+      val tagIds = from(Schema.tags)(t =>
         where(t.documentSetId === selection.documentSetId)
-          select (t.id))
-          
-      val taggedDocuments = from(Schema.documentTags)(dt =>
-        where (dt.tagId in tags)
-        select (dt.documentId))
-        
-      query = query.where(d => (d.id notIn taggedDocuments) and (d.id in documentsInNodes))
+        select(t.id)
+      )
+
+      val taggedDocumentIds = from(Schema.documentTags)(dt =>
+        where(dt.tagId in tagIds)
+        select(dt.documentId)
+      )
+
+      query = query.where(d => (d.id notIn taggedDocumentIds) and (d.id in allDocumentIds))
     }
 
     query

@@ -1,19 +1,18 @@
 /*
  * NodeDocumentBatchInserterSpec.scala
- * 
+ *
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
 
 package org.overviewproject.persistence
 
-import org.overviewproject.persistence.orm.Schema._
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.IdGenerator._
-import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
+import org.overviewproject.test.IdGenerator
+import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument }
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
-
   step(setupDb)
 
   trait DocumentsSetup extends DbTestContext {
@@ -22,28 +21,25 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
     var node: Node = _
 
     val threshold = 5
-    val inserter = new BatchInserter[NodeDocument](threshold, nodeDocuments)
+    val inserter = new BatchInserter[NodeDocument](threshold, Schema.nodeDocuments)
 
     def insertDocumentIds(documentIds: Iterable[Long]): Unit =
       documentIds.foreach(docId => inserter.insert(NodeDocument(node.id, docId)))
 
     override def setupWithDb = {
-      documentSet = documentSets.insert(DocumentSet(title = "NodeDocumentBatchInserterSpec"))
-      val tree = Tree(nextTreeId(documentSet.id), documentSet.id, 0L, "tree", 100, "en", "", "")
-      node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 1, false)
-
-      trees.insert(tree)
-      nodes.insert(node)
+      documentSet = Schema.documentSets.insert(DocumentSet(title = "NodeDocumentBatchInserterSpec"))
+      val nodeId = IdGenerator.nextNodeId(documentSet.id)
+      node = Schema.nodes.insert(Node(nodeId, nodeId, None, "description", 1, true))
     }
 
     protected def findNodeDocumentIds: Seq[(Long, Long)] =
-      from(nodeDocuments)(select(_)).iterator.map(nd => (nd.nodeId, nd.documentId)).toSeq
+      from(Schema.nodeDocuments)(select(_)).iterator.map(nd => (nd.nodeId, nd.documentId)).toSeq
 
     protected def insertDocuments(documentSetId: Long, numDocuments: Int): Seq[Long] = {
-      val ids = Seq.fill(numDocuments)(nextDocumentId(documentSetId))
+      val ids = Seq.fill(numDocuments)(IdGenerator.nextDocumentId(documentSetId))
 
       val docs = ids.map { id => Document(id = id, documentSetId = documentSetId) }
-      documents.insert(docs)
+      Schema.documents.insert(docs)
 
       ids
     }
@@ -51,7 +47,6 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
   }
 
   "NodeDocumentBatchInserter" should {
-
     "insert data after threshold is reached" in new DocumentsSetup {
       val documentIds = insertDocuments(documentSet.id, 5)
 

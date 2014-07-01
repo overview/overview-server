@@ -108,6 +108,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val sampleTree = Tree(
           id = 1L,
           documentSetId = 1L,
+          rootNodeId = 3L,
           jobId = 0L,
           title = "Tree title",
           documentCount = 10,

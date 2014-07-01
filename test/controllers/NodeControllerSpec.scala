@@ -23,7 +23,7 @@ class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
 
     val sampleNode = Node(
       id=1L,
-      treeId = 1L,
+      rootId=1L,
       parentId=None,
       description="description",
       cachedSize=0,

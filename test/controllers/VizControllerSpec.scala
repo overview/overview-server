@@ -32,10 +32,11 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
       state=DocumentSetCreationJobState.Error
     )
 
-    def fakeViz(id: Long) : Viz = Tree(
+    def fakeViz(id: Long, jobId: Long) : Viz = Tree( // TODO don't rely on Tree
       id=id,
       documentSetId=1L,
-      jobId=0L,
+      rootNodeId=3L,
+      jobId=jobId,
       title=s"title${id}",
       documentCount=10,
       lang="en",
@@ -66,16 +67,18 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
       }
 
       "show a viz" in new IndexJsonScope {
-        lazy val viz = fakeViz(1L)
+        lazy val viz = fakeViz(1L, 3L)
         override lazy val vizs = Seq(viz)
         val json = h.contentAsString(result)
 
         json must /#(0) /("type" -> "viz")
         json must /#(0) /("id" -> 1.0)
+        json must /#(0) /("jobId" -> 3.0)
         json must /#(0) /("title" -> "title1")
         json must /#(0) /("createdAt" -> "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ".r)
-        json must /#(0) /("creationData") /#(0) /("lang")
-        json must /#(0) /("creationData") /#(0) /("en")
+        json must /#(0) /("creationData") /#(1) /("lang")
+        json must /#(0) /("creationData") /#(1) /("en")
+        json must /#(0) /("nDocuments" -> 10)
       }
 
       "show a job" in new IndexJsonScope {

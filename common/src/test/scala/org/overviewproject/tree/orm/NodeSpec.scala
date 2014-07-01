@@ -1,20 +1,19 @@
 package org.overviewproject.tree.orm
 
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.IdGenerator._
-import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.test.IdGenerator
 
 class NodeSpec extends DbSpecification {
   step(setupDb)
 
   "Node" should {
     "write and read from the database" in new DbTestContext {
-      val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "NodeSpec"))
-      val tree = Tree(nextTreeId(documentSet.id), documentSet.id, 0L, "tree", 100, "en", "", "")
-      Schema.trees.insert(tree)
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
+      val id = IdGenerator.nextNodeId(1L)
       val node = Node(
-        id=nextNodeId(documentSet.id),
-        treeId=tree.id,
+        id=id,
+        rootId=id,
         parentId=None,
         description="description",
         cachedSize=10,
@@ -23,10 +22,7 @@ class NodeSpec extends DbSpecification {
 
       Schema.nodes.insert(node)
 
-      node.id must not be equalTo(0)
-
-      val foundNode = Schema.nodes.lookup(node.id)
-      foundNode must beSome(node)
+      Schema.nodes.lookup(node.id) must beSome(node)
     }
   }
 
