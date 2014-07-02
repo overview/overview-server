@@ -14,6 +14,14 @@
   z-index: 2; // hover descriptions go above everything
   .display-flex();
   .flex-direction-column();
+
+  &>* {
+    .flex(0 0 auto);
+  }
+
+  &>#tree-app-tree {
+    .flex(1 1 auto);
+  }
 }
 
 #tree-app-right {
@@ -24,10 +32,6 @@
   left: 50%;
   bottom: 0;
   margin: 5px;
-}
-
-#tree-app-tree {
-  .flex(1 0 auto);
 }
 
 .search-disabled #tree-app-left-middle {
