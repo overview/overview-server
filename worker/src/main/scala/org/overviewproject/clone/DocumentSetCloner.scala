@@ -127,8 +127,8 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
     stepInTransaction(0.15, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
     val indexing = stepInTransaction(0.20, Saving)(indexDocuments(cloneDocumentSetId))
     stepInTransaction(0.40, Saving) {
-      cloneTrees(sourceDocumentSetId, cloneDocumentSetId)
       cloneNodes(sourceDocumentSetId, cloneDocumentSetId)
+      cloneTrees(sourceDocumentSetId, cloneDocumentSetId)
     }
 
     for (tagIdMapping <- stepInTransaction(0.50, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
