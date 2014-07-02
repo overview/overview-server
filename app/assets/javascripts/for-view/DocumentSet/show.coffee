@@ -1,6 +1,6 @@
 define [
   'jquery'
-  'apps/Tree/app'
+  'apps/Show/app'
 ], ($, App) ->
   $ ->
     el = (id) -> document.getElementById(id)
