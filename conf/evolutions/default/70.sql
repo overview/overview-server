@@ -25,6 +25,10 @@ FROM (
 ) roots
 WHERE tree.id = roots.tree_id;
 
+-- Failed jobs sometimes left node-less trees in the database.
+-- Those can't happen any more.
+DELETE FROM tree WHERE root_node_id IS NULL;
+
 ALTER TABLE node ALTER COLUMN root_id SET NOT NULL;
 ALTER TABLE tree ALTER COLUMN root_node_id SET NOT NULL;
 
