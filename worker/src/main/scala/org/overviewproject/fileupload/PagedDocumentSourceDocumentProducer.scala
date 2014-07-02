@@ -63,8 +63,12 @@ trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
     else produceDocumentsFromPage(currentPage + 1, numberOfDocumentsProcessedInPage + numberOfDocumentsProcessed)
   }
 
+  // It's possible that totalNumberOfDocuments is 0. In that case, force it to be 1
+  // The job will fail eventually
   private def reportProgress(documentIndex: Int): Boolean = { 
-    val completionFraction = PreparingFraction + FetchingFraction * documentIndex / totalNumberOfDocuments
+    val saneTotal = if (totalNumberOfDocuments == 0) 1 else totalNumberOfDocuments
+    
+    val completionFraction = PreparingFraction + FetchingFraction * documentIndex / saneTotal
     val status = Retrieving(documentIndex, totalNumberOfDocuments.toInt)
     progAbort(Progress(completionFraction, status))
   }

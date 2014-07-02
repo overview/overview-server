@@ -34,8 +34,15 @@ class PagedDocumentSourceDocumentProducerSpec extends Specification with Mockito
     
   }
 
+  class NoDocumentsProduced(cancellationCheck: ProgressAbortFn) extends TestPagedDocumentProducer(cancellationCheck) {
+    override protected val totalNumberOfDocuments = 0L
+  }
+  
   def neverCancel(p: Progress): Boolean = false
   def cancelImmediately(p: Progress): Boolean = true
+  def checkForInfinity(p: Progress): Boolean = 
+    if (p.fraction.isInfinite) throw new Exception
+    else false
   
   "PagedDocumentSourceDocumentProducer" should {
     
@@ -55,7 +62,12 @@ class PagedDocumentSourceDocumentProducerSpec extends Specification with Mockito
       val numberOfDocumentsProduced = pagedDocumentProducer.produce()
       numberOfDocumentsProduced must be equalTo(0)
       numberOfDocumentsProduced must be equalTo(pagedDocumentProducer.documentsProcessed)
-      
+    }
+    
+    "not fail if there are 0 documents in document set" in {
+       val pagedDocumentProducer = new NoDocumentsProduced(checkForInfinity)
+       
+       pagedDocumentProducer.produce must not(throwA[Exception])
     }
   }
 }
