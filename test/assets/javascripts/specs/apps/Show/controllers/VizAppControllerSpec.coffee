@@ -1,7 +1,8 @@
 define [
+  'jquery'
   'backbone'
   'apps/Show/controllers/VizAppController'
-], (Backbone, VizAppController) ->
+], ($, Backbone, VizAppController) ->
   class MockState extends Backbone.Model
 
   class MockViz extends Backbone.Model
@@ -38,16 +39,28 @@ define [
         job: sinon.stub().returns(@jobVizApp)
         tree: sinon.stub().returns(@treeVizApp)
 
+      @el = document.createElement('div')
+
       @init = =>
         @subject = new VizAppController
           state: @state
           documentSet: @documentSet
           transactionQueue: @transactionQueue
           vizAppConstructors: @vizAppConstructors
-          el: 'el'
+          el: @el
 
     afterEach ->
       @subject?.stopListening()
+
+    it 'should give each VizApp a new el', ->
+      @state.set(viz: @jobViz)
+      @init()
+      args1 = @vizAppConstructors.job.lastCall.args[0]
+      expect(args1.el.parentNode).to.eq(@el)
+      @state.set(viz: @treeViz)
+      args2 = @vizAppConstructors.tree.lastCall.args[0]
+      expect(args2.el).not.to.eq(args1.el)
+      expect(args2.el.parentNode).to.eq(@el)
 
     describe 'starting with a null viz', ->
       it 'should not crash', ->
@@ -88,10 +101,6 @@ define [
         expect(app).to.respondTo('resetDocumentListParams')
         expect(app).to.respondTo('getTag')
         expect(app).to.respondTo('getSearchResult')
-
-      it 'should pass an element to the vizApp', ->
-        expect(@vizAppConstructors.job).to.have.been.calledWithMatch
-          el: 'el'
 
       it 'should use VizAppClient to notify the vizApp of changes', ->
         @state.set(document: 'document2')

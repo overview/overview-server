@@ -319,6 +319,9 @@ views.DocumentSet.show.VizTabs.viz.suppliedStopWords.dd={0}
 views.DocumentSet.show.VizTabs.viz.importantWords.dt=Important words
 views.DocumentSet.show.VizTabs.viz.importantWords.dd={0}
 
+views.DocumentSet.show.apps.Job.heading=Clustering…
+views.DocumentSet.show.apps.Job.description=Overview is organizing your documents. You may wait, or you may browse elsewhere and let Overview work in the background.
+
 views.FileImport.new.title=Upload files
 views.FileImport.new.h1=Upload files
 views.FileImport.new.help1=Overview can read many file formats, including PDF, Word, HTML and text.

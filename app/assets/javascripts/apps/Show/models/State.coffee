@@ -85,10 +85,13 @@ define [ 'backbone' ], (Backbone) ->
       ret
 
     setViz: (viz) ->
-      newParams = @get('documentListParams')?.reset.withViz(viz).all()
+      params = @get('documentListParams')
+      type = viz.get('type')
+      if type != 'job' && type != 'error'
+        params = params?.reset.withViz(viz).all()
 
       @set
-        documentListParams: newParams
+        documentListParams: params
         document: null
         oneDocumentSelected: false
         viz: viz

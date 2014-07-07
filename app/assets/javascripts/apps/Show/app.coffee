@@ -17,6 +17,7 @@ define [
   './views/TransactionQueueErrorMonitor'
   './views/Mode'
   '../Tree/app'
+  '../Job/app'
 ], (_, $, Backbone, \
     TransactionQueue, DocumentSet, State, \
     KeyboardController, Logger, \
@@ -26,7 +27,7 @@ define [
     TourController, \
     TransactionQueueErrorMonitor, \
     ModeView, \
-    TreeApp) ->
+    TreeApp, JobApp) ->
 
   class App
     constructor: (options) ->
@@ -200,6 +201,8 @@ define [
         transactionQueue: documentSet.transactionQueue
         vizAppConstructors:
           viz: TreeApp
+          job: JobApp
+          error: JobApp
 
       new TransactionQueueErrorMonitor
         model: documentSet.transactionQueue

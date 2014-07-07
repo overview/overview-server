@@ -1,9 +1,10 @@
 define [
+  'jquery'
   'underscore'
   'backbone'
   '../models/ShowAppFacade'
   '../models/VizAppClient'
-], (_, Backbone, ShowAppFacade, VizAppClient) ->
+], ($, _, Backbone, ShowAppFacade, VizAppClient) ->
   class VizAppController
     _.extend(@::, Backbone.Events)
 
@@ -15,6 +16,7 @@ define [
       throw 'Must pass options.vizAppConstructors, an Object mapping viz type to an App' if !options.vizAppConstructors
 
       @el = options.el
+      @$el = $(@el)
       @state = options.state
       @documentSet = options.documentSet
       @transactionQueue = options.transactionQueue
@@ -35,8 +37,13 @@ define [
 
       vizApp = null
 
+      @$el.empty()
+
       if viz?
         type = viz.get('type')
+
+        el = $('<div class="viz"></div>').appendTo(@el)[0]
+
         vizApp = new @vizAppConstructors[type]
           app: @facade
           viz: viz
@@ -44,9 +51,10 @@ define [
           documentListParams: @state.attributes.documentListParams
           document: @state.attributes.document
           taglikeCid: @state.attributes.taglikeCid
-          el: @el
+          el: el
           documentSet: @documentSet
           state: @state
+
         @vizAppClient = new VizAppClient
           vizApp: vizApp
           state: @state

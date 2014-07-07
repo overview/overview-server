@@ -51,25 +51,22 @@ define [
   #
   # * cache_size (default 5000): number of nodes to *not* remove
   class OnDemandTree
-    constructor: (@documentSet, @state, options={}) ->
+    constructor: (@documentSet, @viz, options={}) ->
       _.extend(@, Backbone.Events)
 
       @transactionQueue = @documentSet.transactionQueue
-      @viz = null
       @options = options
 
       @id_tree = new IdTree()
-
-      @resetViz()
-      @listenTo(@state, 'change:viz', @resetViz)
-
-    resetViz: ->
-      @viz = @state.get('viz')
-      @id_tree.reset()
       @nodes = {}
       @_paging_strategy = new LruPagingStrategy(@options.cache_size || DEFAULT_OPTIONS.cache_size)
       @demandRoot()
         .then(=> @viz.set(rootNodeId: @id_tree.root))
+
+    remove: ->
+      unloadNodeChildren(@id_tree.root)
+      @id_tree.reset()
+      @nodes = {}
 
     getNode: (id) -> @nodes[String(id)]
     getChildren: (id) ->

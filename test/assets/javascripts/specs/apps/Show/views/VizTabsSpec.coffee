@@ -130,23 +130,33 @@ define [
       it 'should give the job class "job"', -> expect(@view.$('li:eq(0)')).to.have.class('job')
       it 'should give the viz class "viz"', -> expect(@view.$('li:eq(1)')).to.have.class('viz')
 
+      it 'should emit click on a job', ->
+        spy = sinon.spy()
+        @view.on('click', spy)
+        @view.$('a:eq(0)').click()
+        expect(spy).to.have.been.calledWith(@job)
+
+      it 'should switch to viewing the job', ->
+        @state.set(viz: @job)
+        expect(@view.$('li:eq(0)')).to.have.class('active')
+
       it 'should give the job progress', ->
         $progress = @view.$('li:eq(0) progress')
         expect($progress.length).to.eq(1)
         expect($progress).to.have.attr(value: 0.32)
 
       it 'should show a popover when clicking on the job', ->
-        @view.$('li:eq(0) a').click()
+        @view.$('li:eq(0) span.viz-info-icon').click()
         $popover = @view.$('li:eq(0) .popover.in')
         expect($popover).to.be.visible
 
       it 'should hide a popover on second click', ->
-        @view.$('li:eq(0) a').click()
-        @view.$('li:eq(0) a').click()
+        @view.$('li:eq(0) span.viz-info-icon').click()
+        @view.$('li:eq(0) span.viz-info-icon').click()
         expect(@view.$('.popover.in')).not.to.be.visible
 
       it 'should have a cancel button in the job popover', ->
-        @view.$('li:eq(0) a').click()
+        @view.$('li:eq(0) span.viz-info-icon').click()
         $button = @view.$('li:eq(0) .popover.in button.cancel')
         expect($button.length).to.eq(1)
         spy = sinon.spy()
@@ -161,7 +171,7 @@ define [
         $popover = $li.find('.popover')
         $popover.css(display: 'inline-block', position: 'absolute', height: '100px', width: '50px')
         $popover.find('.arrow').css(position: 'absolute')
-        @view.$('li:eq(0) a').click()
+        @view.$('li:eq(0) span.viz-info-icon').click()
         expect($popover.position().top).to.eq(21)
         expect($popover.position().left).to.eq(164) # 164-214 -- centers on 189
         expect($popover.find('.arrow').position().left).to.eq(189-164)
@@ -175,7 +185,7 @@ define [
         $popover = $li.find('.popover')
         $popover.css(display: 'inline-block', position: 'absolute', height: '100px', width: '250px')
         $popover.find('.arrow').css(position: 'absolute')
-        @view.$('li:eq(0) a').click()
+        @view.$('li:eq(0) span.viz-info-icon').click()
         expect($popover.position().top).to.eq(21)
         expect($popover.position().left).to.eq(0) # 0-250 -- centering on 89
         expect($popover.find('.arrow').position().left).to.eq(89)

@@ -22,8 +22,8 @@ define [
     className: 'viz-tabs nav nav-tabs'
 
     events:
-      'click .toggle-popover,.job,.error': '_onClickPopover'
-      'click .viz[data-id]>a': '_onClick'
+      'click .toggle-popover': '_onClickPopover'
+      'click li[data-id]>a': '_onClick'
       'click a.new-viz': '_onClickNew'
       'click button.cancel': '_onClickCancel'
 

@@ -36,7 +36,7 @@ define [
       animator = new Animator(interpolator)
       focus = new AnimatedFocus({}, { animator: animator })
 
-      @onDemandTree = new OnDemandTree(options.documentSet, options.state)
+      @onDemandTree = new OnDemandTree(options.documentSet, options.viz)
       treeLayout = new TreeLayout()
       animatedTree = new AnimatedTree(@onDemandTree, options.state, animator, treeLayout, 1, 1)
 
@@ -63,3 +63,4 @@ define [
       @treeView.stopListening()#@treeView.remove()
       @focusController.stopListening()
       @treeController.stopListening()
+      @$el.remove()
