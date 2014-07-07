@@ -44,7 +44,12 @@
 }
 
 #tree-app-tags {
-  max-height: 50%; // for huge tag list
+  // We *should* set max-height; 50% to support multiple screen sizes.
+  // But we can't: Google Chrome has a bug (unfiled) in flexbox that makes it
+  // sometimes determine that max-height: 0 in that case. I haven't figured out
+  // a reduction.
+  //max-height: 50%; // for huge tag list
+  max-height: 20em; // should work for most users.
   overflow: auto;
   overflow-x: hidden;
   overflow-y: auto;
