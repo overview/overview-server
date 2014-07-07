@@ -59,6 +59,13 @@ trait DocumentSetController extends Controller {
 
     /** All SearchResults for the document set. */
     def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
+
+    /** Returns true iff we can search the document set.
+      *
+      * This is a '''hack'''. All document sets ''should'' be searchable, but
+      * document sets imported before indexing was implemented are not.
+      */
+    def isDocumentSetSearchable(documentSet: DocumentSet): Boolean
   }
 
   trait JobMessageQueue {
@@ -89,8 +96,13 @@ trait DocumentSetController extends Controller {
   }
 
   def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
-    val treeId = storage.findNewestTreeId(id)
-    Redirect(routes.TreeController.show(id, treeId))
+    storage.findDocumentSet(id) match {
+      case None => NotFound
+      case Some(documentSet) => {
+        val isSearchable = storage.isDocumentSetSearchable(documentSet)
+        Ok(views.html.DocumentSet.show(request.user, documentSet, isSearchable))
+      }
+    }
   }
 
   def showHtmlInJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
@@ -194,6 +206,8 @@ trait DocumentSetController extends Controller {
 
 object DocumentSetController extends DocumentSetController with DocumentSetDeletionComponents {
   object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
+    private val FirstSearchableDocumentSetVersion = 2
+
     override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
 
     override def findNewestTreeId(documentSetId: Long) = {
@@ -256,6 +270,8 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
         .onlyNewest
         .toSeq
     }
+
+    override def isDocumentSetSearchable(documentSet: DocumentSet) = documentSet.version >= FirstSearchableDocumentSetVersion
   }
 
   object ApolloJobMessageQueue extends JobMessageQueue with DocumentSetDeletionJobMessageQueue

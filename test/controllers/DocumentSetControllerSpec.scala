@@ -174,16 +174,34 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     }
 
     "show" should {
-      trait ShowScope extends BaseScope {
-        val documentSetId = 2L
+      trait ValidShowScope extends BaseScope {
+        mockStorage.findDocumentSet(1) returns Some(mock[DocumentSet])
+        val documentSetId = 1L
         def request = fakeAuthorizedRequest
         lazy val result = controller.show(documentSetId)(request)
       }
 
-      "redirect to the newest tree" in new ShowScope {
-        mockStorage.findNewestTreeId(documentSetId) returns 5L
-        h.status(result) must beEqualTo(h.SEE_OTHER)
-        h.header("Location", result) must beSome("/documentsets/2/trees/5")
+      "return NotFound when the DocumentSet is not present" in new ValidShowScope {
+        mockStorage.findDocumentSet(1) returns None
+        h.status(result) must beEqualTo(h.NOT_FOUND)
+      }
+
+      "return Ok when okay" in new ValidShowScope {
+        h.status(result) must beEqualTo(h.OK)
+      }
+
+      "return some HTML when okay" in new ValidShowScope {
+        h.contentType(result) must beSome("text/html")
+      }
+
+      "return data-is-searchable=false when it is not" in new ValidShowScope {
+        mockStorage.isDocumentSetSearchable(any[DocumentSet]) returns false
+        h.contentAsString(result) must contain("""<div id="main" data-is-searchable="false"""")
+      }
+
+      "return data-is-searchable=true when it is" in new ValidShowScope {
+        mockStorage.isDocumentSetSearchable(any[DocumentSet]) returns true
+        h.contentAsString(result) must contain("""<div id="main" data-is-searchable="true"""")
       }
     }
 
