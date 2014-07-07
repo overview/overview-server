@@ -75,6 +75,12 @@ define [
         expect(@vizAppConstructors.job).to.have.been.calledWithMatch
           transactionQueue: @transactionQueue
 
+      it 'should pass a DocumentSet and State to the vizApp', ->
+        # These parameters won't work across iframes. We should deprecate them.
+        options = @vizAppConstructors.job.lastCall.args[0]
+        expect(options.documentSet).to.eq(@documentSet)
+        expect(options.state).to.eq(@state)
+
       it 'should pass an app facade to the vizApp', ->
         app = @vizAppConstructors.job.lastCall.args[0].app
         expect(app).not.to.be.undefined

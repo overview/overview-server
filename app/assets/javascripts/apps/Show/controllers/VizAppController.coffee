@@ -43,6 +43,8 @@ define [
           document: @state.attributes.document
           taglikeCid: @state.attributes.taglikeCid
           el: @el
+          documentSet: @documentSet
+          state: @state
         @vizAppClient = new VizAppClient
           vizApp: vizApp
           state: @state
