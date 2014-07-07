@@ -22,7 +22,7 @@ object FileGroupTaskWorkerProtocol {
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
   
   
-  case class CreatePagesTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  case class CreatePagesTaskDone(documentSetId: Long, uploadedFileId: Long)
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long)  extends TaskWorkerTask
   case class DeleteFileUploadJobDone(documentSetId: Long, fileGroupId: Long)
 }
@@ -105,8 +105,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Working) {
-    case Event(CreatePagesProcessComplete(documentSetId, fileGroupId, uploadedFileId), TaskInfo(jobQueue, _, _, _)) => {
-      jobQueue ! CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId)
+    case Event(CreatePagesProcessComplete(documentSetId, uploadedFileId), TaskInfo(jobQueue, _, _, _)) => {
+      jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId)
       jobQueue ! ReadyForTask
 
       goto(Ready) using JobQueue(jobQueue)
@@ -123,7 +123,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   when(Cancelled) {
     case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)) => {
       step.cancel
-      jobQueue ! CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId)
+      jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId)
       jobQueue ! ReadyForTask
 
       goto(Ready) using JobQueue(jobQueue)

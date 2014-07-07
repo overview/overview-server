@@ -98,12 +98,12 @@ trait FileGroupJobQueue extends Actor {
         }
       }
     }
-    case CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId) => {
-      Logger.info(s"($documentSetId:$fileGroupId) Task ${uploadedFileId} Done")
+    case CreatePagesTaskDone(documentSetId, uploadedFileId) => {
+      Logger.info(s"($documentSetId) Task ${uploadedFileId} Done")
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       busyWorkers -= sender
 
-      whenTaskIsComplete(documentSetId, fileGroupId, uploadedFileId) {
+      whenTaskIsComplete(documentSetId, uploadedFileId) {
         notifyRequesterIfJobIsDone
       }
     }
@@ -158,14 +158,14 @@ trait FileGroupJobQueue extends Actor {
     jobTasks += (documentSetId -> uploadedFileIds)
   }
 
-  private def whenTaskIsComplete(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Long, Set[Long]) => Unit) =
+  private def whenTaskIsComplete(documentSetId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Set[Long]) => Unit) =
     for {
       tasks <- jobTasks.get(documentSetId)
       request <- jobRequests.get(documentSetId)
       remainingTasks = tasks - uploadedFileId
-    } f(request, documentSetId, fileGroupId, remainingTasks)
+    } f(request, documentSetId, remainingTasks)
 
-  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, fileGroupId: Long, remainingTasks: Set[Long]): Unit =
+  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, remainingTasks: Set[Long]): Unit =
     if (remainingTasks.isEmpty) {
       jobTasks -= documentSetId
       jobRequests -= documentSetId

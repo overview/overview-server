@@ -40,7 +40,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       val finalStep = thirdStep.execute
       
       there was one(createPagesProcess.storage).savePages(any)
-      finalStep must beLike { case CreatePagesProcessComplete(d, f, u) => ok }
+      finalStep must beLike { case CreatePagesProcessComplete(d, u) => ok }
     }
 
     "store errors if exceptions occur" in new CreatePagesContext {

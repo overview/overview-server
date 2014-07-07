@@ -224,7 +224,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       }
 
       def completeTask(jobQueue: ActorRef, uploadedFileId: Long) = {
-        jobQueue ! CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId)
+        jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId)
       }
     }
 
@@ -233,7 +233,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
           case CreatePagesTask(ds, fg, uf) => {
-            sender.tell(CreatePagesTaskDone(ds, fg, uf), worker)
+            sender.tell(CreatePagesTaskDone(ds, uf), worker)
             sender.tell(ReadyForTask, worker)
           }
         }

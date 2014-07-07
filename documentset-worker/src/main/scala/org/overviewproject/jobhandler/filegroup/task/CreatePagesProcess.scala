@@ -22,10 +22,10 @@ import org.overviewproject.util.Logger
  */
 trait CreatePagesProcess {
 
-  protected case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  protected case class TaskInformation(documentSetId: Long, uploadedFileId: Long)
 
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    CreateViewableFile(TaskInformation(documentSetId, fileGroupId, uploadedFileId))
+    CreateViewableFile(TaskInformation(documentSetId, uploadedFileId))
 
   // Create the file with a view
   private case class CreateViewableFile(taskInformation: TaskInformation) extends ErrorSavingTaskStep {
@@ -55,7 +55,7 @@ trait CreatePagesProcess {
       storage.savePages(pages)
       pdfDocument.close
       
-      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)      
+      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.uploadedFileId)      
     }
 
     private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] = {
@@ -88,7 +88,7 @@ trait CreatePagesProcess {
       logError(error)
       
       storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, errorMessage)
-      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
+      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.uploadedFileId)
     }
 
     private val runSavingError = handling(classOf[Exception]) by saveError
