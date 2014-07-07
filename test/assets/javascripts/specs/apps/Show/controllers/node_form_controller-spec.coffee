@@ -27,7 +27,11 @@ define [
         @node = { id: 1, description: 'node', color: '#abcdef' }
         @onDemandTree =
           saveNode: sinon.spy()
-        @controller = node_form_controller(@node, @onDemandTree, options)
+        # XXX hack: 
+        @state =
+          get: sinon.stub().withArgs('vizApp').returns
+            onDemandTree: @onDemandTree
+        @controller = node_form_controller(@node, @state, options)
 
       afterEach ->
         @sandbox.restore()

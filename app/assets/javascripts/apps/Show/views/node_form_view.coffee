@@ -6,6 +6,8 @@ define [
 ], ($, _, i18n, observable) ->
   # A modal dialog that allows editing a node.
   #
+  # FIXME move to TreeApp
+  #
   # Usage:
   #
   #   node = { id: 3, description: 'description' }

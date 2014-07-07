@@ -33,6 +33,8 @@ define [
         @vizAppClient.remove()
         @vizAppClient = null
 
+      vizApp = null
+
       if viz?
         type = viz.get('type')
         vizApp = new @vizAppConstructors[type]
@@ -49,3 +51,5 @@ define [
           vizApp: vizApp
           state: @state
           documentSet: @documentSet
+
+      @state.set('vizApp', vizApp)

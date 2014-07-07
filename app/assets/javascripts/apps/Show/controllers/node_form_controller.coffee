@@ -18,10 +18,10 @@ define [
 
   # Pops up a modal dialog to modify/delete a node
   #
-  # Handles logging and hiding the dialog. Just call and forget.
+  # FIXME move to TreeApp
   #
-  # TODO: merge code (and tests) with tag_form_controller
-  node_form_controller = (node, onDemandTree, options=undefined) ->
+  # Handles logging and hiding the dialog. Just call and forget.
+  node_form_controller = (node, state, options=undefined) ->
     log = options?.log || Logger.for_component('node_form')
 
     log('began editing node', node_to_short_string(node))
@@ -34,6 +34,7 @@ define [
 
     form.observe 'change', (attrs) ->
       log('edited node', "#{node.id}:#{node_diff_to_string(node, attrs)}")
-      onDemandTree.saveNode(node, attrs)
+      onDemandTree = state.get('vizApp')?.onDemandTree
+      onDemandTree?.saveNode(node, attrs)
 
     undefined

@@ -162,7 +162,7 @@ define [
 
       @listenTo view, 'edit-node', (node) =>
         log('began editing node', node_to_short_string(node))
-        node_form_controller(node, @onDemandTree)
+        node_form_controller(node, @state)
 
       @listenTo view, 'edit-tag', (tag) ->
         log('clicked edit tag', tag_to_short_string(tag))

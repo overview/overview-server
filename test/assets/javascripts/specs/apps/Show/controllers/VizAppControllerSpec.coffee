@@ -60,6 +60,7 @@ define [
         @init()
 
       it 'should construct a vizApp', -> expect(@vizAppConstructors.job).to.have.been.called
+      it 'should set state.vizApp', -> expect(@state.get('vizApp')).to.eq(@jobVizApp)
 
       it 'should pass viz to the vizApp', ->
         expect(@vizAppConstructors.job).to.have.been.calledWithMatch
@@ -101,6 +102,7 @@ define [
 
         it 'should call .remove() on the old vizApp', -> expect(@jobVizApp.remove).to.have.been.called
         it 'should construct the new vizApp', -> expect(@vizAppConstructors.tree).to.have.been.called
+        it 'should set state.vizApp', -> expect(@state.get('vizApp')).to.eq(@treeVizApp)
 
         it 'should use VizAppClient to notify the new vizApp of changes', ->
           @state.set(document: 'document2')
@@ -114,3 +116,4 @@ define [
         beforeEach -> @state.set(viz: null)
 
         it 'should call .remove() on the old vizApp', -> expect(@jobVizApp.remove).to.have.been.called
+        it 'should set state.vizApp to null', -> expect(@state.get('vizApp')).to.be.null

@@ -36,9 +36,9 @@ define [
       animator = new Animator(interpolator)
       focus = new AnimatedFocus({}, { animator: animator })
 
-      onDemandTree = new OnDemandTree(options.documentSet, options.state)
+      @onDemandTree = new OnDemandTree(options.documentSet, options.state)
       treeLayout = new TreeLayout()
-      animatedTree = new AnimatedTree(onDemandTree, options.state, animator, treeLayout, 1, 1)
+      animatedTree = new AnimatedTree(@onDemandTree, options.state, animator, treeLayout, 1, 1)
 
       @focusView = new FocusView(el: els.zoom, model: focus)
       @treeView = new TreeView(els.tree, options.documentSet, animatedTree, focus)
@@ -55,7 +55,7 @@ define [
         log: log
         state: options.state
         focus: focus
-        tree: onDemandTree
+        tree: @onDemandTree
         view: @treeView
 
     remove: ->
