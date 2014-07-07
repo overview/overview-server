@@ -248,7 +248,7 @@ define [
         if (tag = @documentSet.tags.get(taglikeCid))?
           { tagIds: [ tag.id ], color: tag.get('color') }
         else if (searchResult = @documentSet.searchResults.get(taglikeCid))?
-          { searchResultIds: [ searchResult.id ], color: '#50ade5' }
+          { searchResultIds: [ searchResult.get('id') ], color: '#50ade5' }
         else if taglikeCid == 'untagged'
           { tagIds: [ 0 ], color: '#dddddd' }
         else
