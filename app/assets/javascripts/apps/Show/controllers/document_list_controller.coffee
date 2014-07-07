@@ -74,11 +74,9 @@ define [
       throw 'Must specify options.state, a State' if !options.state
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
-      throw 'FIXME must specify options.onDemandtree for now, an OnDemandTree' if !options.onDemandTree
 
       @tags = options.tags
       @state = options.state
-      @onDemandTree = options.onDemandTree
       @listEl = options.listEl
       @cursorEl = options.cursorEl
 
@@ -238,12 +236,10 @@ define [
 
       @cursorView = view
 
-  document_list_controller = (listDiv, cursorDiv, documentSet, state, onDemandTree) ->
-    # FIXME remove onDemandTree requirement by making Node a Backbone.Model
+  document_list_controller = (listDiv, cursorDiv, documentSet, state) ->
     controller = new Controller({},
       tags: documentSet.tags
       state: state
-      onDemandTree: onDemandTree
       listEl: listDiv
       cursorEl: cursorDiv
     )

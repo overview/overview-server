@@ -29,8 +29,8 @@ define [
   # Usage:
   #
   #     tree = new OnDemandTree()
-  #     tree.demand_root() # will notify :added (with IDs) and :root
-  #     deferred = tree.demand_node(id) # will demand node and fire :add if it's new
+  #     tree.demandRoot() # will notify :added (with IDs) and :root
+  #     deferred = tree.demandNode(id) # will demand node and fire :add if it's new
   #     node = tree.nodes[id] # will return node, only if present
   #     nodeids = tree.id_tree.children[node.id] # valid for all nodes
   #     tree.demand(id).then(-> tree.id_tree.children[node.id]) # guaranteed
@@ -68,7 +68,7 @@ define [
       @id_tree.reset()
       @nodes = {}
       @_paging_strategy = new LruPagingStrategy(@options.cache_size || DEFAULT_OPTIONS.cache_size)
-      @demand_root()
+      @demandRoot()
         .then(=> @viz.set(rootNodeId: @id_tree.root))
 
     getNode: (id) -> @nodes[String(id)]
@@ -222,8 +222,8 @@ define [
 
         undefined
 
-    demand_root: -> @_demand("nodes")
-    demand_node: (id) -> @_demand("nodes/#{id}")
+    demandRoot: -> @_demand("nodes")
+    demandNode: (id) -> @_demand("nodes/#{id}")
 
     _demand: (arg) ->
       @transactionQueue.ajax
@@ -244,7 +244,7 @@ define [
       undefined
 
     # "Collapse" a node (public-facing method)
-    unload_node_children: (id) ->
+    unloadNodeChildren: (id) ->
       @id_tree.batchRemove (idTreeRemove) =>
         this._collapse_node(idTreeRemove, id)
 

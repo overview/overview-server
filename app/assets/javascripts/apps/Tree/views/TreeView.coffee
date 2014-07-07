@@ -2,10 +2,9 @@ define [
   'jquery'
   'underscore'
   'backbone'
-  '../models/observable'
   './DrawOperation'
   'jquery.mousewheel' # to catch the 'mousewheel' event properly
-], ($, _, Backbone, observable, DrawOperation) ->
+], ($, _, Backbone, DrawOperation) ->
   DEFAULT_OPTIONS = {
     lineStyles:
       # Just a hash
@@ -58,8 +57,6 @@ define [
   """)
 
   class TreeView
-    observable(this)
-
     constructor: (@div, @documentSet, @tree, @focus, options={}) ->
       _.extend(@, Backbone.Events)
 
@@ -136,16 +133,16 @@ define [
       $(@zoomInButton).on 'click', (e) =>
         e.preventDefault()
         e.stopPropagation() # don't pan
-        @_notify('zoom-pan', { zoom: @focus.get('zoom') * 0.5, pan: @focus.get('pan') }, { animate: true })
+        @trigger('zoom-pan', { zoom: @focus.get('zoom') * 0.5, pan: @focus.get('pan') }, { animate: true })
       $(@zoomOutButton).on 'click', (e) =>
         e.preventDefault()
         e.stopPropagation() # don't pan
-        @_notify('zoom-pan', { zoom: @focus.get('zoom') * 2, pan: @focus.get('pan') }, { animate: true })
+        @trigger('zoom-pan', { zoom: @focus.get('zoom') * 2, pan: @focus.get('pan') }, { animate: true })
 
       $(@canvas).on 'mousedown', (e) =>
         action = this._event_to_action(e)
         @set_hover_node(undefined) # on click, un-hover
-        this._notify(action.event, action.node) if action
+        @trigger(action.event, action.node) if action
 
       this._handle_hover()
       this._handle_drag()
@@ -181,7 +178,7 @@ define [
 
           d_pan = (dx / width) * zoom
 
-          this._notify('zoom-pan', { zoom: zoom, pan: start_pan - d_pan })
+          @trigger('zoom-pan', { zoom: zoom, pan: start_pan - d_pan })
 
         $('body').append('<div id="focus-view-mousemove-handler"></div>')
         $(document).on 'mousemove.tree-view', (e) ->
@@ -225,7 +222,7 @@ define [
         else
           pan2 = pan1 + relative_cursor_fraction * zoom1 - relative_cursor_fraction * zoom2
 
-        this._notify('zoom-pan', { zoom: zoom2, pan: pan2 })
+        @trigger('zoom-pan', { zoom: zoom2, pan: pan2 })
 
     _event_to_px: (e) ->
       offset = $(@canvas).offset()
@@ -269,13 +266,13 @@ define [
       this._redraw()
       @_needs_update = @tree.needsUpdate() || @focus.needsUpdate()
 
-    needs_update: () ->
+    needsUpdate: () ->
       @_needs_update
 
     _set_needs_update: () ->
       if !@_needs_update
         @_needs_update = true
-        this._notify('needs-update')
+        @trigger('needs-update')
 
     _refresh_zoom_button_status: ->
       @zoomInButton.className = @focus.isZoomedInFully() && 'disabled' || ''

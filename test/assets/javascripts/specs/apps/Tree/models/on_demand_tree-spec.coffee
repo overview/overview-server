@@ -36,14 +36,14 @@ define [
       req.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(json))
 
     add_nodes_through_deferred = (nodes) ->
-      tree.demand_node(nodes[0].id)
+      tree.demandNode(nodes[0].id)
       respondWithJson(nodes: nodes)
 
     # HACK to convert from old-style IdTree to new-style
     # Before, each node would have a "children" property; now it does not.
     # There are so many reasons this is bad and should be removed... :)
     add_node_through_deferred = (parentId, childIds) ->
-      tree.demand_node(parentId)
+      tree.demandNode(parentId)
       childNodes = ({ id: id, parentId: parentId } for id in childIds)
       childNodes.unshift(tree.getNode(parentId)) if parentId isnt null
       respondWithJson(nodes: childNodes)
@@ -55,8 +55,8 @@ define [
       it 'should start with id_tree empty', ->
         expect(tree.id_tree.root).to.eq(null)
 
-      it 'should demand_root()', ->
-        deferred = tree.demand_root()
+      it 'should demandRoot()', ->
+        deferred = tree.demandRoot()
         expect(sandbox.server.requests[0].url).to.eq('/trees/2/nodes.json')
         expect(deferred.done).not.to.be.undefined
 
@@ -83,16 +83,16 @@ define [
       it 'should not get unresolved node objects', ->
         expect(tree.getNode(20)).to.be.undefined
 
-      it 'should allow demand_node() on unresolved nodes', ->
-        deferred = tree.demand_node(4)
+      it 'should allow demandNode() on unresolved nodes', ->
+        deferred = tree.demandNode(4)
         expect(sandbox.server.requests[sandbox.server.requests.length - 1].url).to.eq('/trees/2/nodes/4.json')
 
-      it 'should allow demand_node() on resolved nodes', ->
-        deferred = tree.demand_node(1)
+      it 'should allow demandNode() on resolved nodes', ->
+        deferred = tree.demandNode(1)
         expect(sandbox.server.requests[sandbox.server.requests.length - 1].url).to.eq('/trees/2/nodes/1.json')
 
-      it 'should add nodes added through demand_node()', ->
-        tree.demand_node(4)
+      it 'should add nodes added through demandNode()', ->
+        tree.demandNode(4)
         respondWithJson({ nodes: [
           id: 6, parentId: 4, size: 10
           id: 7, parentId: 4, size: 2
@@ -101,8 +101,8 @@ define [
 
       it 'should not add child nodes if their parent disappeared before they were resolved', ->
         # GitHub: https://github.com/overview/overview-server/issues/222
-        tree.demand_node(4)
-        tree.unload_node_children(1)
+        tree.demandNode(4)
+        tree.unloadNodeChildren(1)
         respondWithJson({ nodes: [
           id: 6, parentId: 4, size: 10
           id: 7, parentId: 4, size: 2
@@ -112,8 +112,8 @@ define [
           1: { id: 1, parentId: null, size: 50 }
         })
 
-      it 'should unload nodes through unload_node_children()', ->
-        tree.unload_node_children(1)
+      it 'should unload nodes through unloadNodeChildren()', ->
+        tree.unloadNodeChildren(1)
         expect(tree.id_tree.children[1]).to.be.undefined
         expect(tree.nodes[2]).to.be.undefined
 

@@ -5,31 +5,28 @@ define [
   './models/TransactionQueue'
   './models/DocumentSet'
   './models/State'
-  '../Tree/models/on_demand_tree'
-  '../Tree/models/AnimatedFocus'
-  '../Tree/models/animator'
-  '../Tree/models/property_interpolator'
   './controllers/keyboard_controller'
   './controllers/logger'
   './controllers/VizsController'
   './controllers/tag_list_controller'
   './controllers/search_result_list_controller'
-  '../Tree/controllers/focus_controller'
-  '../Tree/controllers/tree_controller'
   './controllers/document_list_controller'
   './controllers/document_contents_controller'
+  './controllers/VizAppController'
   './controllers/TourController'
   './views/TransactionQueueErrorMonitor'
   './views/Mode'
+  '../Tree/app'
 ], (_, $, Backbone, \
-    TransactionQueue, DocumentSet, State, OnDemandTree, \
-    AnimatedFocus, Animator, PropertyInterpolator, \
+    TransactionQueue, DocumentSet, State, \
     KeyboardController, Logger, \
     VizsController, tag_list_controller, search_result_list_controller, \
-    focus_controller, tree_controller, document_list_controller, document_contents_controller, \
+    document_list_controller, document_contents_controller, \
+    VizAppController, \
     TourController, \
     TransactionQueueErrorMonitor, \
-    ModeView) ->
+    ModeView, \
+    TreeApp) ->
 
   class App
     constructor: (options) ->
@@ -106,8 +103,7 @@ define [
         <div id="tree-app-left">
           <div id="tree-app-search"></div>
           <div id="tree-app-vizs"></div>
-          <div id="tree-app-tree"></div>
-          <div id="tree-app-zoom-slider"></div>
+          <div id="tree-app-viz"></div>
           <div id="tree-app-tags"></div>
         </div>
         <div id="tree-app-right">
@@ -127,9 +123,8 @@ define [
       el = (id) -> document.getElementById(id)
 
       main: @el
-      tree: el('tree-app-tree')
       vizs: el('tree-app-vizs')
-      zoomSlider: el('tree-app-zoom-slider')
+      viz: el('tree-app-viz')
       tags: el('tree-app-tags')
       search: el('tree-app-search')
       documentList: el('tree-app-document-list')
@@ -179,11 +174,6 @@ define [
 
       new ModeView(el: @el, state: state)
 
-      interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
-      animator = new Animator(interpolator)
-      focus = new AnimatedFocus({}, { animator: animator })
-      focus_controller(els.zoomSlider, focus)
-
       tag_list_controller
         documentSet: documentSet
         state: state
@@ -198,14 +188,18 @@ define [
       @_listenForRefocus()
       @_listenForResize(els.document)
 
-      onDemandTree = new OnDemandTree(documentSet, state)
-      onDemandTree.id_tree.observe('reset', -> focus.setPanAndZoom(0, 1))
+      #keyboardController.add_controller('TreeController', controller)
 
-      controller = tree_controller(els.tree, documentSet, onDemandTree, focus, state, animator)
-      keyboardController.add_controller('TreeController', controller)
-
-      controller = document_list_controller(els.documentList, els.documentCursor, documentSet, state, onDemandTree)
+      controller = document_list_controller(els.documentList, els.documentCursor, documentSet, state)
       keyboardController.add_controller('DocumentListController', controller)
+
+      new VizAppController
+        el: els.viz
+        state: state
+        documentSet: documentSet
+        transactionQueue: documentSet.transactionQueue
+        vizAppConstructors:
+          viz: TreeApp
 
       new TransactionQueueErrorMonitor
         model: documentSet.transactionQueue
