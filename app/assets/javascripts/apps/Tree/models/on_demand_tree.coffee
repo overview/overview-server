@@ -299,7 +299,7 @@ define [
 
       url = {
         'tag': "/documentsets/#{@documentSet.id}/tags/#{objectId}/node-counts"
-        'untagged': "/trees/#{@viz.id}/tags/untagged-node-counts"
+        'untagged': "/trees/#{@viz.get('id')}/tags/untagged-node-counts"
         'search': "/documentsets/#{@documentSet.id}/searches/#{objectId}/node-counts"
       }[endpoint]
 
