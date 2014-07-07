@@ -105,7 +105,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Working) {
-    case Event(CreatePagesProcessComplete(documentSetId, uploadedFileId), TaskInfo(jobQueue, _, _, _)) => {
+    case Event(CreatePagesProcessComplete(documentSetId, uploadedFileId, fileId), TaskInfo(jobQueue, _, _, _)) => {
       jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId)
       jobQueue ! ReadyForTask
 

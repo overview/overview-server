@@ -40,7 +40,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       val finalStep = thirdStep.execute
       
       there was one(createPagesProcess.storage).savePages(any)
-      finalStep must beLike { case CreatePagesProcessComplete(d, u) => ok }
+      finalStep must beLike { case CreatePagesProcessComplete(d, u, f) => f must beSome(fileId) }
     }
 
     "store errors if exceptions occur" in new CreatePagesContext {
@@ -67,12 +67,14 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       val documentSetId = 1l
       val fileGroupId = 10l
       val uploadedFileId = 15l
+      val fileId = 17l
       val viewOid = 20l
       val upload = smartMock[GroupedFileUpload]
       val file = smartMock[File]
       val page = PdfPage(Array[Byte](10, 11, 12), "Text")
       val pdfDocument = smartMock[PdfDocument]
       
+      file.id returns fileId
       file.viewOid returns viewOid
       pdfDocument.pages returns Seq(page)
     }

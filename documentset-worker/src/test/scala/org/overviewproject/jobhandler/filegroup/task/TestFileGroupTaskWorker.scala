@@ -17,7 +17,7 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String) exten
   }
 
   override protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    StepInSequence(1, CreatePagesProcessComplete(documentSetId, uploadedFileId))
+    StepInSequence(1, CreatePagesProcessComplete(documentSetId, uploadedFileId, None))
 
   override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit =
     deleteFileUploadJobFn.store((documentSetId, fileGroupId))

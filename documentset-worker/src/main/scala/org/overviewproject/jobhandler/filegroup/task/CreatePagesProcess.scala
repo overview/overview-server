@@ -55,7 +55,7 @@ trait CreatePagesProcess {
       storage.savePages(pages)
       pdfDocument.close
       
-      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.uploadedFileId)      
+      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.uploadedFileId, Some(file.id))      
     }
 
     private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] = {
@@ -88,7 +88,7 @@ trait CreatePagesProcess {
       logError(error)
       
       storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, errorMessage)
-      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.uploadedFileId)
+      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.uploadedFileId, None)
     }
 
     private val runSavingError = handling(classOf[Exception]) by saveError
