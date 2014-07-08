@@ -319,9 +319,9 @@ views.DocumentSet.show.VizTabs.viz.suppliedStopWords.dd={0}
 views.DocumentSet.show.VizTabs.viz.importantWords.dt=Important words
 views.DocumentSet.show.VizTabs.viz.importantWords.dd={0}
 
-views.FileImport.new.title=Upload PDF files
-views.FileImport.new.h1=Upload PDF files
-views.FileImport.new.help1=Overview can analyze and display your PDF files.
+views.FileImport.new.title=Upload files
+views.FileImport.new.h1=Upload files
+views.FileImport.new.help1=Overview can read many file formats, including PDF, Word, HTML and text.
 views.FileImport.new.help2=You must import at least three documents.
 
 views.Tree.show.DocumentList.description.empty=(no key words)
