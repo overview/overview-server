@@ -367,7 +367,6 @@ define [
       @resetTaglikeUrlPartFromTaglike(type, taglike)
 
     resetTaglikeUrlPartFromTaglike: (type, taglike) ->
-      console.log(type, taglike)
       part = if type == 'untagged'
         'untagged'
       else if type == 'searchResult' && taglike.get('id')
