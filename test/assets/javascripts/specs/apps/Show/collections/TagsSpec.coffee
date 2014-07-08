@@ -4,6 +4,9 @@ define [ 'apps/Show/collections/Tags' ], (Tags) ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
       @subject = new Tags([], url: '/documentsets/4/tags')
 
+    afterEach ->
+      @sandbox.restore()
+
     it 'should fetch from the correct url', ->
       @subject.fetch()
       req = @sandbox.server.requests[0]
