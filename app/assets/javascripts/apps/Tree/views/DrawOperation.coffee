@@ -26,7 +26,7 @@ define [], ->
     ctx.closePath()
 
   class DrawOperation
-    constructor: (@canvas, @tree, @colorLogic, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
+    constructor: (@canvas, @tree, @taglikeColor, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
       parent = @canvas.parentNode
       style = parent.ownerDocument.defaultView.getComputedStyle(parent, null)
       @canvas.width = @width = parseInt(style.width)
@@ -155,28 +155,13 @@ define [], ->
 
       ctx.save()
 
+      color = @taglikeColor
+
       for px in drawableNodes
         json = px.json
+        count = json.taglikeCount
 
-        # Use the first tagid for which there's a count
-        count = 0
-        color = null
-
-        if @colorLogic?
-          if @colorLogic.searchResultIds?
-            for id in @colorLogic.searchResultIds
-              count = json.searchResultCounts?[id]
-              if count
-                color = @colorLogic.color
-                break
-          else if @colorLogic.tagIds?
-            for id in @colorLogic.tagIds
-              count = json.tagCounts?[id]
-              if count
-                color = @colorLogic.color
-                break
-
-        if color
+        if count
           @_draw_tagcount(px.left, px.top, px.width, px.height, color, count / json.size)
 
       ctx.restore()

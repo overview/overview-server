@@ -85,22 +85,19 @@ GET    /documentsets/:id/trees/:treeId/tags      controllers.TagController.index
 POST   /documentsets/:id/tags                    controllers.TagController.create(id: Long)
 POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
+
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
-POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeCounts(id: Long, tagId: Long)
-POST   /trees/:id/tags/untagged-node-counts      controllers.UntaggedDocumentsController.nodeCounts(id: Long)
+POST   /documentsets/:id/node-counts/tags/:tagId              controllers.TagController.nodeCounts(id: Long, tagId: Long)
+POST   /documentsets/:id/node-counts/untagged                 controllers.UntaggedDocumentsController.nodeCounts(id: Long)
+POST   /documentsets/:id/node-counts/searches/:searchResultId controllers.SearchResultController.nodeCounts(id: Long, searchResultId: Long)
 
-POST   /documentsets/:id/searches                             controllers.SearchController.create(id: Long)
-GET    /documentsets/:id/searches                             controllers.SearchResultController.index(id: Long)
-# We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
-POST   /documentsets/:id/searches/:searchResultId/node-counts controllers.SearchResultController.nodeCounts(id: Long, searchResultId: Long)
+POST   /documentsets/:id/searches controllers.SearchController.create(id: Long)
+GET    /documentsets/:id/searches controllers.SearchResultController.index(id: Long)
 
-GET    /documentsets/:id/error-list              controllers.DocumentProcessingErrorController.index(id: Long)
+GET    /documentsets/:id/error-list controllers.DocumentProcessingErrorController.index(id: Long)
 
-# Routes for public document sets
-GET    /public-document-sets                     controllers.PublicDocumentSetController.index()
-
-# Routes for shared document sets
-GET    /shared-document-sets                     controllers.SharedDocumentSetController.index()
+GET    /public-document-sets controllers.PublicDocumentSetController.index()
+GET    /shared-document-sets controllers.SharedDocumentSetController.index()
 
 # Admin section
 GET    /admin/users        controllers.admin.UserController.index()

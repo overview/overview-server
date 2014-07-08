@@ -51,9 +51,8 @@ define [
   #
   # * cache_size (default 5000): number of nodes to *not* remove
   class OnDemandTree
+    _.extend(@::, Backbone.Events)
     constructor: (@documentSet, @viz, options={}) ->
-      _.extend(@, Backbone.Events)
-
       @transactionQueue = @documentSet.transactionQueue
       @options = options
 
@@ -226,7 +225,11 @@ define [
       @transactionQueue.ajax
         type: 'get'
         url: "/trees/#{@viz.get('id')}/#{arg}.json"
-        success: (json) => @_add_json(json)
+        success: (json) =>
+          @_add_json(json)
+          if @taglikeUrlPart
+            nodeIds = (n.id for n in json.nodes)
+            @_refreshTaglikeCounts(@taglikeUrlPart, nodeIds)
         debugInfo: 'OnDemandTree._demand'
 
     _collapse_node: (idTreeRemove, id) ->
@@ -274,64 +277,44 @@ define [
         success: => @id_tree.batchAdd(->) # refresh
         debugInfo: 'OnDemandTree.saveNode'
 
-    # Requests new node counts from the server, and updates the cache
-    #
-    # Params:
-    #
-    # * tag: tag (or tag ID) to refresh.
-    # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
-    #   every loaded node ID.
-    _refreshTagCounts: (tag, onlyNodeIds=undefined) ->
-      @transactionQueue.ajax(=> @_refreshPost('tagCounts', 'tag', (-> tag.id), onlyNodeIds))
+    setTaglikeUrlPart: (urlPart) ->
+      return if @taglikeUrlPart == urlPart
 
-    _refreshUntaggedCounts: (onlyNodeIds=undefined) ->
-      @transactionQueue.ajax(=> @_refreshPost('tagCounts', 'untagged', (-> 0), onlyNodeIds))
+      @taglikeUrlPart = urlPart
 
-    _refreshSearchResultCounts: (searchResult, onlyNodeIds=undefined) ->
-      @transactionQueue.ajax(@_refreshPost('searchResultCounts', 'search', (-> searchResult.get('id')), onlyNodeIds))
+      # Find IDs and drop existing counts
+      nodeIds = []
+      for id, node of @nodes
+        node.taglikeCount = null
+        nodeIds.push(id)
 
-    _refreshPost: (countsKey, endpoint, objectIdCallback, onlyNodeIds) ->
-      objectId = objectIdCallback()
-      onlyNodeIds ||= (k for k, __ of @nodes) # all loaded nodes by default
+      @_refreshTaglikeCounts(@taglikeUrlPart, nodeIds) if @taglikeUrlPart
 
-      url = {
-        'tag': "/documentsets/#{@documentSet.id}/tags/#{objectId}/node-counts"
-        'untagged': "/trees/#{@viz.get('id')}/tags/untagged-node-counts"
-        'search': "/documentsets/#{@documentSet.id}/searches/#{objectId}/node-counts"
-      }[endpoint]
+    refreshCurrentTaglikeCountsOnCurrentNodes: ->
+      if @taglikeUrlPart
+        nodeIds = []
+        nodeIds.push(id) for id, __ of @nodes
+        @_refreshTaglikeCounts(@taglikeUrlPart, nodeIds)
 
-      type: 'post'
-      url: url
-      data: { nodes: onlyNodeIds.join(',') }
-      debugInfo: 'OnDemandTree._refreshPost'
-      success: (data) =>
-        i = 0
-        while i < data.length
-          nodeid = data[i++]
-          count = data[i++]
+    _refreshTaglikeCounts: (urlPart, nodeIds) ->
+      return if !nodeIds?.length
 
-          node = @nodes[nodeid]
+      @transactionQueue.ajax
+        type: 'POST'
+        url: "/documentsets/#{@documentSet.id}/node-counts/#{urlPart}" # at the time the transaction was _scheduled_
+        data: { nodes: nodeIds.join(',') } # at the time the transaction was _scheduled_
+        debugInfo: 'OnDemandTree._refreshTaglikeCounts'
+        success: (data) =>
+          # Data is an Array of [ nodeId1, count1, nodeId2, count2, ... ]
+          #
+          # It's guaranteed to contain an entry for every nodeId requested.
+          i = 0
+          while i < data.length
+            nodeId = data[i++]
+            count = data[i++]
 
-          if node?
-            counts = (node[countsKey] ||= {})
+            node = @nodes[nodeId]
+            if node? # it might have been unloaded since
+              node.taglikeCount = count
 
-            if count
-              counts[objectId] = count
-            else
-              delete counts[objectId]
-
-        @id_tree.batchAdd(->) # trigger update
-
-        undefined
-
-    refreshTaglikeCounts: (taglikeCid, onlyNodeIds=undefined) ->
-      if taglikeCid
-        if taglikeCid == 'untagged'
-          @_refreshUntaggedCounts(onlyNodeIds)
-        else if (searchResult = @documentSet.searchResults.get(taglikeCid))?
-          if searchResult.get('id')
-            @_refreshSearchResultCounts(searchResult, onlyNodeIds)
-        else if (tag = @documentSet.tags.get(taglikeCid))?
-          @_refreshTagCounts(tag, onlyNodeIds)
-        else
-          throw new Error('Unknown taglikeCid', taglikeCid)
+          @id_tree.batchAdd(->) # trigger update

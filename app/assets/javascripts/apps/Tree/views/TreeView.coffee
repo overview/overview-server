@@ -63,11 +63,9 @@ define [
       @options = _.extend({}, DEFAULT_OPTIONS, options)
       @state = @tree.state
 
-      @_taglikeAndType = { type: 'null', taglike: null }
-      @listenTo(@state, 'change:taglikeCid', (state, taglikeCid) => @_onStateTaglikeCidChanged(taglikeCid))
-      # Right now, it's hard to track tag counts across viz changes. Avoid the
-      # problem by pretending it's intentional.
-      @listenTo(@state, 'change:viz', (state) -> state.set('taglikeCid', null))
+      @setTaglikeCid(@state.get('taglikeCid'))
+
+      @listenTo(@state, 'change:taglikeCid', (state, taglikeCid) => @setTaglikeCid(taglikeCid))
       @listenTo(@documentSet, 'tag', @_onTag)
       @listenTo(@documentSet, 'untag', @_onUntag)
 
@@ -240,24 +238,24 @@ define [
 
       @last_draw?.pixel_to_action(x, y)
 
-    _getColorLogic: ->
+    _getTaglikeColor: ->
       if (taglikeCid = @tree.state.get('taglikeCid'))?
         if (tag = @documentSet.tags.get(taglikeCid))?
-          { tagIds: [ tag.id ], color: tag.get('color') }
-        else if (searchResult = @documentSet.searchResults.get(taglikeCid))?
-          { searchResultIds: [ searchResult.get('id') ], color: '#50ade5' }
+          tag.get('color')
+        else if @documentSet.searchResults.get(taglikeCid)?
+          '#50ade5'
         else if taglikeCid == 'untagged'
-          { tagIds: [ 0 ], color: '#dddddd' }
+          '#dddddd'
         else
           throw new Error('unreachable code')
       else
         null
 
     _redraw: ->
-      colorLogic = @_getColorLogic()
+      taglikeColor = @_getTaglikeColor()
       highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('documentListParams'), @state.get('document'), @tree.on_demand_tree)
 
-      @last_draw = new DrawOperation(@canvas, @tree, colorLogic, highlightedNodeIds, @hoverNodeId, @focus, @options)
+      @last_draw = new DrawOperation(@canvas, @tree, taglikeColor, highlightedNodeIds, @hoverNodeId, @focus, @options)
       @last_draw.draw()
 
     update: ->
@@ -330,17 +328,17 @@ define [
 
     _onTag: (tag, documentListParams) ->
       if @_isCurrent(tag.cid) || @_isCurrent('untagged')
-        @tree.on_demand_tree._refreshTagCounts(tag)
+        @tree.on_demand_tree.refreshCurrentTaglikeCountsOnCurrentNodes()
 
     _onUntag: (tag, documentListParams) ->
       if @_isCurrent(tag.cid) || @_isCurrent('untagged')
-        @tree.on_demand_tree._refreshTagCounts(tag)
+        @tree.on_demand_tree.refreshCurrentTaglikeCountsOnCurrentNodes()
 
     _isCurrent: (taglikeCid) -> @state.get('taglikeCid') == taglikeCid
 
     _findTaglikeAndType: (cid) ->
       if cid == 'untagged'
-        { type: 'untagged', taglike: null }
+        { type: 'untagged', taglike: 'untagged' }
       else if (searchResult = @documentSet.searchResults.get(cid))?
         { type: 'searchResult', taglike: searchResult }
       else if (tag = @documentSet.tags.get(cid))?
@@ -348,19 +346,39 @@ define [
       else
         { type: 'null', taglike: null }
 
-    _onStateTaglikeCidChanged: (taglikeCid) ->
-      if @_taglikeAndType.taglike?
-        @stopListening(@_taglikeAndType.taglike)
+    setTaglikeCid: (taglikeCid) ->
+      @stopListening(@_taglike) if @_taglike?
 
-      @_taglikeAndType = @_findTaglikeAndType(taglikeCid)
+      taglikeAndType = @_findTaglikeAndType(taglikeCid)
+      taglike = taglikeAndType.taglike
+      type = taglikeAndType.type
 
-      if @_taglikeAndType.type == 'searchResult'
-        searchResult = @_taglikeAndType.taglike
-        if !searchResult.get('id')
-          @listenTo searchResult, 'change:id change:state', =>
-            @tree.on_demand_tree.refreshTaglikeCounts(searchResult.cid)
+      @_taglike = taglike
 
-      @tree.on_demand_tree.refreshTaglikeCounts(taglikeCid)
+      if type == 'tag' && !taglike.get('id')
+        @listenTo taglike, 'change:id', =>
+          @resetTaglikeUrlPartFromTaglike(type, taglike)
+
+      if type == 'searchResult' && taglike.get('state') != 'Complete'
+        @listenTo taglike, 'change:id change:state', =>
+          if taglike.get('state') == 'Complete'
+            @resetTaglikeUrlPartFromTaglike(type, taglike)
+
+      @resetTaglikeUrlPartFromTaglike(type, taglike)
+
+    resetTaglikeUrlPartFromTaglike: (type, taglike) ->
+      console.log(type, taglike)
+      part = if type == 'untagged'
+        'untagged'
+      else if type == 'searchResult' && taglike.get('id')
+        "searches/#{taglike.get('id')}"
+      else if type == 'tag' && taglike.get('id')
+        "tags/#{taglike.get('id')}"
+      else
+        null
+
+      @tree.on_demand_tree.setTaglikeUrlPart(null) # flush counts
+      @tree.on_demand_tree.setTaglikeUrlPart(part) if part?
 
   TreeView.helpers =
     # Returns a set of { nodeid: null }.
