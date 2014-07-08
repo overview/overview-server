@@ -63,15 +63,14 @@ define [
         .then(=> @viz.set(rootNodeId: @id_tree.root))
 
     remove: ->
-      unloadNodeChildren(@id_tree.root)
-      @id_tree.reset()
-      @nodes = {}
+      n.off() for __, n of @nodes
+      undefined
 
-    getNode: (id) -> @nodes[String(id)]
+    getNode: (id) -> @nodes[id]
     getChildren: (id) ->
       id = id.id? && id.id || id
       childIds = @id_tree.children[id]
-      childIds?.map((id) => @nodes[String(id)]) || undefined
+      childIds?.map((id) => @nodes[id]) || undefined
     getParent: (id) ->
       id = id.id? && id.id || id
       parentId = @nodes[id]?.parentId
@@ -141,6 +140,7 @@ define [
 
     _remove_leaf_node: (idTreeRemove, leafid) ->
       idTreeRemove(leafid)
+      @nodes[leafid].off()
       delete @nodes[leafid]
       @_paging_strategy.free(leafid)
 
@@ -173,6 +173,7 @@ define [
       # Actually add to the tree
       @id_tree.batchAdd (idTreeAdd) =>
         for node in json.nodes when (!node.parentId? || node.parentId of @nodes) and node.id not of @nodes
+          _.extend(node, Backbone.Events)
           @nodes[node.id] = node
           idTreeAdd(node.parentId, node.id)
           added_ids.push(node.id)
@@ -194,7 +195,6 @@ define [
         overflowIdSet[id] = null for id in overflow_ids
         frozenIdSet = {}
         for id in added_ids.concat(overflow_ids)
-          id = String(id)
           loop
             parentId = @id_tree.parent[id]
             break if parentId is null
@@ -239,6 +239,7 @@ define [
       for idToRemove in idsToRemove
         @_paging_strategy.free(idToRemove)
         idTreeRemove(idToRemove)
+        @nodes[idToRemove].off()
         delete @nodes[idToRemove]
 
       undefined
@@ -251,12 +252,11 @@ define [
     get_loaded_node_children: (node) ->
       _.compact(@nodes[child_id] for child_id in @id_tree.children[node.id])
 
-    getNode: (id) ->
-      @nodes[String(id)]
+    getNode: (id) -> @nodes[id]
 
     getRoot: ->
       id = @id_tree.root
-      id? && @get_node(id) || undefined
+      id? && @getNode(id) || undefined
 
     getNodeParent: (node) ->
       parent_id = @id_tree.parent[node.id]
@@ -270,10 +270,14 @@ define [
       for k, v of newAttributes
         node[k] = v
 
+      node.trigger('change', node)
+
+      nodeJson = _.pick(node, 'description')
+
       @transactionQueue.ajax
         type: 'POST'
         url: "/trees/#{@viz.get('id')}/nodes/#{node.id}"
-        data: node
+        data: nodeJson
         success: => @id_tree.batchAdd(->) # refresh
         debugInfo: 'OnDemandTree.saveNode'
 
