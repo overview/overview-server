@@ -116,7 +116,7 @@ define [
         t: t
         id: model.id
         templates: @templates
-        isSelected: false
+        isSelected: model == @state.get('viz')
         viz: model.attributes
 
     _onAdd: (model) ->

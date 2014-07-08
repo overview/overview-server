@@ -32,6 +32,7 @@ define [
 
     _setViz: (viz) ->
       if @vizAppClient?
+        @stopListening(@viz)
         @vizAppClient.remove()
         @vizAppClient = null
 
@@ -59,5 +60,9 @@ define [
           vizApp: vizApp
           state: @state
           documentSet: @documentSet
+
+        @viz = viz
+        # When changing from "job" to "tree", reset everything
+        @listenTo(@viz, 'change:type', @_setViz)
 
       @state.set('vizApp', vizApp)

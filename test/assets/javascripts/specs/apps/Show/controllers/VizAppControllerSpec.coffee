@@ -106,7 +106,7 @@ define [
         @state.set(document: 'document2')
         expect(@jobVizApp.onDocumentChanged).to.have.been.calledWith('document2')
 
-      describe 'when the viz changes', ->
+      describe 'when a new Viz is set', ->
         beforeEach -> @state.set(viz: @treeViz)
 
         it 'should call .remove() on the old vizApp', -> expect(@jobVizApp.remove).to.have.been.called
@@ -120,6 +120,14 @@ define [
         it 'should stop notifying the original VizAppClient of changes', ->
           @state.set(document: 'document2')
           expect(@jobVizApp.onDocumentChanged).not.to.have.been.called
+
+      describe 'when the Viz changes type', ->
+        # This should do the same stuff as "when a new Viz is set"
+        beforeEach -> @jobViz.set(type: 'tree')
+
+        it 'should call .remove() on the old vizApp', -> expect(@jobVizApp.remove).to.have.been.called
+        it 'should construct the new vizApp', -> expect(@vizAppConstructors.tree).to.have.been.called
+        it 'should set state.vizApp', -> expect(@state.get('vizApp')).to.eq(@treeVizApp)
 
       describe 'when the viz changes to null', ->
         beforeEach -> @state.set(viz: null)

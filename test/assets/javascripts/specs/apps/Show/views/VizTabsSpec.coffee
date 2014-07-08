@@ -200,3 +200,8 @@ define [
         expect($li.find('a')).to.contain('foo')
         expect($li).not.to.have.class('job')
         expect($li).to.have.class('viz')
+
+      it 'should keep "active" class when switching from job to viz', ->
+        @state.set(viz: @job)
+        @job.set(type: 'viz', createdAt: new Date())
+        expect(@view.$('li:eq(0)')).to.have.class('active')
