@@ -11,9 +11,9 @@ define [
       isJob = (x) -> x.attributes.type == 'job' && 1 || 0
       isError = (x) -> x.attributes.type == 'error' && 1 || 0
 
-      isJob(b) - isJob(a) \
-        || isError(b) - isError(a) \
-        || b.attributes.createdAt - a.attributes.createdAt
+      isJob(a) - isJob(b) \
+        || isError(a) - isError(b) \
+        || a.attributes.createdAt - b.attributes.createdAt
 
     initialize: (models, options) ->
       throw 'Must pass options.url, a String like "/documentsets/3/searches"' if !options?.url

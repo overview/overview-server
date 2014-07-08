@@ -43,7 +43,7 @@ define [
         # Add a placeholder job so pollUntilStable will actually send an
         # initial poll. When the server responds to the poll, this will
         # disappear and the real job will appear instead.
-        @vizs.unshift(id: 0, type: 'job', title: data?[0]?.value, progress: {})
+        @vizs.add(id: 0, type: 'job', title: data?[0]?.value, progress: {})
         @vizs.pollUntilStable()
 
       @view.on 'click-new', ->
