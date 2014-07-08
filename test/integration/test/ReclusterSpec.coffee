@@ -15,8 +15,8 @@ describe 'Recluster', ->
         .waitForElementBy(tag: 'a', contains: 'New tree…').click()
         .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('viz1')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForElementBy({ tag: 'li', class: 'viz', contains: 'viz1', visible: true }, 5000)
-        .elementBy(tag: 'a', contains: 'viz1').click()
+        .sleep(100) # Overview will select the new Job; wait for that to happen
+        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a Viz
 
     shouldBehaveLikeATree
       documents: [
@@ -34,9 +34,8 @@ describe 'Recluster', ->
         .waitForElementBy(tag: 'option', contains: 'foo').click()
         .elementBy(tag: 'input', name: 'tree_title', visible: true).type('viz2')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForElementBy({ tag: 'li', class: 'viz', contains: 'viz2', visible: true }, 5000)
-        .elementBy(tag: 'a', contains: 'viz2').click()
-        .waitForElementByCss('canvas')
+        .sleep(100) # Overview will select the new Job; wait for that to happen
+        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a Viz
 
     shouldBehaveLikeATree
       documents: [
