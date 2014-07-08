@@ -8,6 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.overviewproject.models.Viz
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
+import views.helper.DocumentSetHelper.jobDescriptionKeyToMessage
 
 object index {
   private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)
@@ -29,7 +30,7 @@ object index {
       "progress" -> Json.obj(
         "fraction" -> job.fractionComplete,
         "state" -> job.state.toString,
-        "description" -> job.statusDescription
+        "description" -> jobDescriptionKeyToMessage(job.statusDescription)
       ),
       "creationData" -> creationData
     )
