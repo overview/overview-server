@@ -1,14 +1,9 @@
 define [
   '../models/DocumentListParams'
   '../views/InlineSearchResultList'
-  './logger'
   'i18n'
-], (DocumentListParams, InlineSearchResultListView, Logger, i18n) ->
+], (DocumentListParams, InlineSearchResultListView, i18n) ->
   t = i18n.namespaced('views.Tree.show.SearchResultList')
-  log = Logger.for_component('search_result_list')
-
-  search_result_to_short_string = (search_result) ->
-    "#{search_result.id} (#{search_result.attributes.query})"
 
   searchResultToTagName = (searchResultModel) ->
     t('tag_name', searchResultModel.get('query'))
@@ -39,18 +34,15 @@ define [
       el: el
 
     view.on 'search-result-clicked', (searchResult) ->
-      log('clicked search result', "#{search_result_to_short_string(searchResult)}")
       state.resetDocumentListParams().bySearchResult(searchResult)
 
     view.on 'create-tag-clicked', (searchResult) ->
       tag = tags.create(name: searchResultToTagName(searchResult))
-      log('created tag', tag.attributes.name)
       params = state.get('documentListParams').reset.bySearchResult(searchResult)
       documentSet.tag(tag, params)
 
     view.on 'create-submitted', (query) ->
       searchResult = searchResults.create(query: query)
-      log('created search', "#{search_result_to_short_string(searchResult)}")
       searchResults.pollUntilStable()
       state.set(oneDocumentSelected: false) # https://www.pivotaltracker.com/story/show/65130854
       state.resetDocumentListParams().bySearchResult(searchResult)

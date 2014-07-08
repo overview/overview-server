@@ -16,16 +16,13 @@ define [
 
   describe 'controllers/tag_form_controller', ->
     describe 'tag_form_controller', ->
-      log_values = null
       view = null
 
       options = {
-        log: (s1, s2) -> log_values.push([s1, s2])
         create_form: (tag) -> view = new MockTagFormView(tag)
       }
 
       beforeEach ->
-        log_values = []
         @tag = new Tag(id: 1, name: 'tag', color: '#abcdef')
         @tag.save = sinon.spy()
         @tag.destroy = sinon.spy()
@@ -69,28 +66,3 @@ define [
         @state.set(documentListParams: { type: 'foo' })
         view.delete()
         expect(@state.resetDocumentListParams.all).not.to.have.been.called
-
-      it 'should log on start', ->
-        expect(log_values[0]).to.deep.eq(['began editing tag', '1 (tag)'])
-
-      it 'should log on exit', ->
-        view.close()
-        expect(log_values[1]).to.deep.eq(['stopped editing tag', '1 (tag)'])
-
-      it 'should log on change', ->
-        view.change({ name: 'new-name', color: '#fedcba' })
-        expect(log_values[1]).to.deep.eq(['edited tag', '1: name: <<tag>> to <<new-name>> color: <<#abcdef>> to <<#fedcba>>'])
-
-      it 'should log on half-change', ->
-        view.change({ name: 'new-name', color: '#abcdef' })
-        expect(log_values[1]).to.deep.eq(['edited tag', '1: name: <<tag>> to <<new-name>>'])
-        view.change({ name: 'tag', color: '#fedcba' })
-        expect(log_values[2]).to.deep.eq(['edited tag', '1: color: <<#abcdef>> to <<#fedcba>>'])
-
-      it 'should log on no-change', ->
-        view.change({ name: 'tag', color: '#abcdef' })
-        expect(log_values[1]).to.deep.eq(['edited tag', '1: (no change)'])
-
-      it 'should log on delete', ->
-        view.delete()
-        expect(log_values[1]).to.deep.eq(['deleted tag', '1 (tag)'])

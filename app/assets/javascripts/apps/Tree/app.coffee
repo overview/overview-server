@@ -41,8 +41,6 @@ define [
       @$el = $(options.el)
       @$el.html('<div id="tree-app-tree"></div><div id="tree-app-zoom-slider"></div>')
 
-      log = (->)
-
       els =
         tree: @$el.children('#tree-app-tree')
         zoom: @$el.children('#tree-app-zoom-slider')
@@ -59,7 +57,6 @@ define [
       @treeView = new TreeView(els.tree, options.documentSet, animatedTree, focus)
 
       @focusController = new FocusController
-        log: log
         animatedTree: animatedTree
         focus: focus
         treeView: @treeView
@@ -67,7 +64,6 @@ define [
         state: options.state
 
       @treeController = new TreeController
-        log: log
         state: options.state
         focus: focus
         tree: @onDemandTree

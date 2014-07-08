@@ -10,8 +10,6 @@ define [
       @animatedTree =
         getAnimatedNode: sinon.stub()
 
-      @log = sinon.spy()
-
       @state = new Backbone.Model
         documentListParams: {}
 
@@ -27,7 +25,6 @@ define [
       _.extend(@focusView, Backbone.Events)
 
       @subject = new FocusController
-        log: @log
         state: @state
         animatedTree: @animatedTree
         focus: @focus
@@ -61,19 +58,6 @@ define [
         @treeView.trigger('zoom-pan', { pan: 0.1, zoom: 0.3 })
         expect(@focus.setPanAndZoom).to.have.been.calledWith(0.1, 0.3)
 
-      it 'should log', ->
-        @treeView.trigger('zoom-pan', { pan: 0.1, zoom: 0.3 })
-        @sandbox.clock.tick(2000)
-        expect(@log).to.have.been.calledWith('zoomed/panned', 'zoom 0.3, pan 0.1')
-
-      it 'should throttle logs', ->
-        @treeView.trigger('zoom-pan', { pan: 0.1, zoom: 0.3 })
-        @treeView.trigger('zoom-pan', { pan: 0.11, zoom: 0.3 })
-        @treeView.trigger('zoom-pan', { pan: 0.12, zoom: 0.3 })
-        @sandbox.clock.tick(2000)
-        expect(@log).to.have.been.calledWith('zoomed/panned', 'zoom 0.3, pan 0.12')
-        expect(@log).to.have.callCount(1)
-
     describe 'on FocusView zoom-pan', ->
       it 'should animate pan+zoom when options.animate', ->
         @focusView.trigger('zoom-pan', { pan: 0.1, zoom: 0.3}, { animate: true })
@@ -82,16 +66,3 @@ define [
       it 'should set pan+zoom', ->
         @focusView.trigger('zoom-pan', { pan: 0.1, zoom: 0.3 })
         expect(@focus.setPanAndZoom).to.have.been.calledWith(0.1, 0.3)
-
-      it 'should log', ->
-        @focusView.trigger('zoom-pan', { pan: 0.1, zoom: 0.3 })
-        @sandbox.clock.tick(2000)
-        expect(@log).to.have.been.calledWith('zoomed/panned', 'zoom 0.3, pan 0.1')
-
-      it 'should throttle logs', ->
-        @focusView.trigger('zoom-pan', { pan: 0.1, zoom: 0.3 })
-        @focusView.trigger('zoom-pan', { pan: 0.11, zoom: 0.3 })
-        @focusView.trigger('zoom-pan', { pan: 0.12, zoom: 0.3 })
-        @sandbox.clock.tick(2000)
-        expect(@log).to.have.been.calledWith('zoomed/panned', 'zoom 0.3, pan 0.12')
-        expect(@log).to.have.callCount(1)

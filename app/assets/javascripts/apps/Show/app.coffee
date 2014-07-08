@@ -6,7 +6,6 @@ define [
   './models/DocumentSet'
   './models/State'
   './controllers/KeyboardController'
-  './controllers/logger'
   './controllers/VizsController'
   './controllers/tag_list_controller'
   './controllers/search_result_list_controller'
@@ -20,7 +19,7 @@ define [
   '../Job/app'
 ], (_, $, Backbone, \
     TransactionQueue, DocumentSet, State, \
-    KeyboardController, Logger, \
+    KeyboardController, \
     VizsController, tag_list_controller, search_result_list_controller, \
     document_list_controller, document_contents_controller, \
     VizAppController, \

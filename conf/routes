@@ -74,9 +74,6 @@ GET    /trees/:treeId/nodes.json         controllers.NodeController.index(treeId
 GET    /trees/:treeId/nodes/:nodeId.json controllers.NodeController.show(treeId: Long, nodeId: Long)
 POST   /trees/:treeId/nodes/:nodeId      controllers.NodeController.update(treeId: Long, nodeId: Long)
 
-POST   /documentsets/:id/log-entries/create-many              controllers.LogEntryController.createMany(id: Long)
-GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
-
 PUT    /documentsets/:id/tags/:tagId             controllers.TagController.update(id: Long, tagId: Long)
 DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
 GET    /documentsets/:id/tags.csv                controllers.TagController.indexCsv(id: Long)

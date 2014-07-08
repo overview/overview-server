@@ -10,10 +10,8 @@ define [
   './ListSelectionController'
   './node_form_controller'
   './tag_form_controller'
-  './logger'
   'apps/DocumentDisplay/app'
-], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger, DocumentDisplayApp) ->
-  log = Logger.for_component('document_list')
+], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, DocumentDisplayApp) ->
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
   DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
@@ -161,11 +159,9 @@ define [
         view.setDocumentList(documentList)
 
       @listenTo view, 'edit-node', (node) =>
-        log('began editing node', node_to_short_string(node))
         node_form_controller(node, @state)
 
       @listenTo view, 'edit-tag', (tag) ->
-        log('clicked edit tag', tag_to_short_string(tag))
         tag_form_controller(tag)
 
       @titleView = view
@@ -178,7 +174,6 @@ define [
         tags: @tags
 
       @listenTo view, 'click-document', (model, index, options) =>
-        log('clicked document', "#{model.id} index:#{index} meta:#{options.meta} shift: #{options.shift}")
         @listSelection.onClick(index, options)
 
       pageSizeBuffer = 5 # how far from the end we begin a request for more
@@ -255,7 +250,6 @@ define [
       func = up_or_down == 'down' && 'onDown' || 'onUp'
 
       docid = controller.get('documentList')?.documents?.at?(new_index)?.id
-      log("went #{up_or_down}", "docid:#{docid} index:#{new_index} meta:#{options.meta} shift: #{options.shift}")
 
       listSelection[func](options)
 

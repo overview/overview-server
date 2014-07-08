@@ -28,7 +28,6 @@ define [
         byNode: (node) =>
           @state.set(documentListParams: new Params(node: node))
 
-      @log = sinon.spy()
       @focus =
         animateNode: sinon.spy()
         animatePanAndZoom: sinon.spy()
@@ -64,7 +63,6 @@ define [
 
         @subject = new TreeController
           state: @state
-          log: @log
           focus: @focus
           tree: @tree
           view: @view
@@ -92,7 +90,6 @@ define [
       beforeEach ->
         @subject = new TreeController
           state: @state
-          log: @log
           focus: @focus
           tree: @tree
           view: @view
@@ -205,10 +202,6 @@ define [
         beforeEach ->
           @node = { id: 3, description: 'description' }
 
-        it 'should log the collapse', ->
-          @view.trigger('collapse', @node)
-          expect(@log).to.have.been.calledWith('collapsed node', @node.id)
-
         it 'should unload the node children', ->
           @view.trigger('collapse', @node)
           expect(@tree.unloadNodeChildren).to.have.been.calledWith(@node.id)
@@ -231,10 +224,6 @@ define [
       describe 'when clicking a node', ->
         beforeEach ->
           @node = { id: 3, description: 'description' }
-
-        it 'should log the click', ->
-          @view.trigger('click', @node)
-          expect(@log).to.have.been.calledWith('clicked node', 3)
 
         it 'should expand the node when its children are undefined', ->
           @view.trigger('click', @node)
