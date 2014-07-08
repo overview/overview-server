@@ -5,7 +5,7 @@ define [
   './models/TransactionQueue'
   './models/DocumentSet'
   './models/State'
-  './controllers/keyboard_controller'
+  './controllers/KeyboardController'
   './controllers/logger'
   './controllers/VizsController'
   './controllers/tag_list_controller'
@@ -169,10 +169,9 @@ define [
       controller = new VizsController(documentSet.vizs, state)
       els.vizs.appendChild(controller.el)
 
-      controller = document_contents_controller
+      document_contents_controller
         state: state
-        el: els.document
-      keyboardController.add_controller('DocumentContentsController', controller)
+        keyboardController: keyboardController
 
       new ModeView(el: @el, state: state)
 
@@ -190,16 +189,14 @@ define [
       @_listenForRefocus()
       @_listenForResize(els.document)
 
-      #keyboardController.add_controller('TreeController', controller)
-
-      controller = document_list_controller(els.documentList, els.documentCursor, documentSet, state)
-      keyboardController.add_controller('DocumentListController', controller)
+      document_list_controller(els.documentList, els.documentCursor, documentSet, state, keyboardController)
 
       new VizAppController
         el: els.viz
         state: state
         documentSet: documentSet
         transactionQueue: documentSet.transactionQueue
+        keyboardController: keyboardController
         vizAppConstructors:
           viz: TreeApp
           job: JobApp

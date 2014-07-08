@@ -15,13 +15,28 @@ define [
     FocusController, TreeController, \
     FocusView, TreeView) ->
 
+  class TreeKeyBindings
+    constructor: (@treeController) ->
+
+    A: => @treeController.goLeft()
+    S: => @treeController.goDown()
+    D: => @treeController.goRight()
+    W: => @treeController.goUp()
+    Left: => @treeController.goLeft()
+    Right: => @treeController.goRight()
+    Up: => @treeController.goUp()
+    Down: => @treeController.goDown()
+
   class TreeApp
     constructor: (options) ->
       throw 'Must pass el, an HTMLElement' if !options.el
       throw 'Must pass app, a Show app' if !options.app
       throw 'Must pass viz, a Viz' if !options.viz
       throw 'Must pass documentSet, a DocumentSet' if !options.documentSet
+      throw 'Must pass options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must pass state, a State' if !options.state
+
+      @keyboardController = options.keyboardController
 
       @$el = $(options.el)
       @$el.html('<div id="tree-app-tree"></div><div id="tree-app-zoom-slider"></div>')
@@ -58,7 +73,11 @@ define [
         tree: @onDemandTree
         view: @treeView
 
+      @treeKeyBindings = new TreeKeyBindings(@treeController)
+      @keyboardController.register(@treeKeyBindings)
+
     remove: ->
+      @keyboardController.unregister(@treeKeyBindings)
       @focusView.remove()
       @treeView.stopListening()#@treeView.remove()
       @focusController.stopListening()

@@ -76,34 +76,27 @@ define [
           document: null
           documentListParams: params.reset.byNode(node)
 
-  #log = Logger.for_component('tree')
+    _selectNode: (node) ->
+      @state.resetDocumentListParams().byNode(node)
+      @tree.demandNode(node.id)
 
-  #log_pan_zoom = _.throttle(((args...) -> log('zoomed/panned', args...)), 500)
+    _findNodeRelativeToSelectedNode: (finder) ->
+      nodeId = @state.get('documentListParams')?.node?.id || null
+      return @tree.getRoot() if !nodeId?
+      newId = @view[finder](nodeId)
+      if newId?
+        @tree.getNode(newId)
+      else
+        null
 
-  #tree_controller = (div, documentSet, onDemandTree, focus, state, animator) ->
+    _go: (finder) ->
+      newNode = @_findNodeRelativeToSelectedNode(finder)
+      @_selectNode(newNode) if newNode?
 
-  #  select_node = (node) ->
-  #    state.resetDocumentListParams().byNode(node)
-
-  #  selected_node = ->
-  #    state.get('documentListParams')?.node || onDemandTree.getRoot()
-
-  #  # Moves selection in the given direction.
-  #  #
-  #  # Returns the new nodeid, which may be undefined
-  #  go = (finder, e) ->
-  #    view.set_hover_node(undefined)
-  #    nodeId = selected_node()?.id
-  #    return if !nodeId
-  #    newNodeId = view[finder](nodeId)
-  #    if newNodeId?
-  #      newNode = onDemandTree.getNode(newNodeId)
-  #      log("moved to #{finder}", "nodeid_before:#{nodeId} nodeid_after:#{newNodeId}")
-  #      select_node(newNode)
-  #      expand_promise(newNode)
-  #    else
-  #      log("failed to move to #{finder}", "nodeid_before:#{nodeId}")
-  #    newNode
+    goUp: -> @_go('nodeid_above')
+    goDown: -> @_go('nodeid_below')
+    goLeft: -> @_go('nodeid_left')
+    goRight: -> @_go('nodeid_right')
 
   #  # Returns a Promise which will resolve when the node is expanded.
   #  #
@@ -184,5 +177,3 @@ define [
   #    collapse: collapse
   #    toggle_expand: toggle_expand
   #  }
-
-  TreeController

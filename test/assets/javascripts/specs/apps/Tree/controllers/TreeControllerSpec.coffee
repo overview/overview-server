@@ -6,18 +6,27 @@ define [
   describe 'apps/Tree/controllers/TreeController', ->
     class MockState extends Backbone.Model
 
+    class Params
+      constructor: (@stuff) ->
+        @node = @stuff.node
+        @reset =
+          byNode: (node) -> new Params(node: node)
+
+      equals: (rhs) ->
+        _.isEqual(@, rhs)
+
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeTimers: true)
 
-      @params =
-        equals: -> true
-        reset:
-          byNode: => @params
+      @params = new Params({})
 
       @state = new MockState
         document: 'document'
         documentListParams: @params
         oneDocumentSelected: false
+      @state.resetDocumentListParams = =>
+        byNode: (node) =>
+          @state.set(documentListParams: new Params(node: node))
 
       @log = sinon.spy()
       @focus =
@@ -30,7 +39,9 @@ define [
         getRoot: sinon.stub()
         getNode: sinon.stub()
         id_tree:
+          root: null
           children: {}
+          parent: {}
           is_id_ancestor_of_id: sinon.stub().returns(false)
       @view =
         needsUpdate: sinon.stub()
@@ -87,6 +98,12 @@ define [
           view: @view
           requestAnimationFrame: (f) -> window.setTimeout(f, 1)
 
+        @selectedNodeId = =>
+          params = @state.get('documentListParams')
+          stuff = params.stuff
+          throw "No stuff in params #{JSON.stringify(params)}" if !stuff?
+          stuff.node?.id
+
       it 'should not update when it does not need an update on init', ->
         @sandbox.clock.tick(1)
         expect(@view.update).not.to.have.been.called
@@ -104,12 +121,84 @@ define [
         @sandbox.clock.tick(1)
         expect(@view.update).not.to.have.been.calledThrice
 
+      it 'should select nothing when navigating with no tree', ->
+        @params.reset.byNode = sinon.spy()
+        expect(=>
+          @subject.goDown()
+          @subject.goUp()
+          @subject.goLeft()
+          @subject.goRight()
+        ).not.to.throw
+        expect(@params.reset.byNode).not.to.have.been.called
+
+      describe 'when navigating Down from no selection', ->
+        beforeEach ->
+          @tree.id_tree.root = 1
+          @tree.getRoot.returns(id: 1)
+          @subject.goDown()
+
+        it 'should select the root node', -> expect(@selectedNodeId()).to.eq(1)
+        it 'should expand the root node', -> expect(@tree.demandNode).to.have.been.calledWith(1)
+
+      describe 'when navigating Down from a node', ->
+        beforeEach ->
+          @tree.id_tree.root = 1
+          @view.nodeid_below.withArgs(1).returns(2)
+          @tree.id_tree.children[1] = [ 2, 3, 4 ]
+          @tree.getNode.withArgs(2).returns(id: 2)
+          @state.set(documentListParams: new Params(node: { id: 1 }))
+          @subject.goDown()
+
+        it 'should select the node', -> expect(@selectedNodeId()).to.eq(2)
+        it 'should expand the node', -> expect(@tree.demandNode).to.have.been.calledWith(2)
+
+      describe 'when navigating Up from a node', ->
+        beforeEach ->
+          @tree.id_tree.root = 1
+          @tree.id_tree.parent[2] = 1
+          @view.nodeid_above.withArgs(2).returns(1)
+          @tree.getNode.withArgs(1).returns(id: 1)
+          @state.set(documentListParams: new Params(node: { id: 2 }))
+          @subject.goUp()
+
+        it 'should select the parent node', -> expect(@selectedNodeId()).to.eq(1)
+
+      describe 'when navigating left and right', ->
+        beforeEach ->
+          @tree.id_tree.root = 1
+          @tree.id_tree.parent[3] = 1
+          @tree.id_tree.children[1] = [ 2, 3, 4 ]
+          @view.nodeid_left.withArgs(3).returns(2)
+          @view.nodeid_left.withArgs(2).returns(null)
+          @view.nodeid_right.withArgs(3).returns(4)
+          @view.nodeid_right.withArgs(4).returns(null)
+          @tree.getNode.withArgs(2).returns(id: 2)
+          @tree.getNode.withArgs(4).returns(id: 4)
+          @state.set(documentListParams: new Params(node: { id: 3 }))
+
+        it 'should go Right', ->
+          @subject.goRight()
+          expect(@selectedNodeId()).to.eq(4)
+          expect(@tree.demandNode).to.have.been.calledWith(4)
+
+        it 'should go Left', ->
+          @subject.goLeft()
+          expect(@selectedNodeId()).to.eq(2)
+          expect(@tree.demandNode).to.have.been.calledWith(2)
+
+        it 'should not go too far Right', ->
+          @subject.goRight(); @subject.goRight()
+          expect(@selectedNodeId()).to.eq(4)
+
+        it 'should not go too far Left', ->
+          @subject.goLeft(); @subject.goLeft()
+          expect(@selectedNodeId()).to.eq(2)
+
       describe 'on expand', ->
         beforeEach ->
           @node = { id: 3, description: 'description' }
           @view.trigger('expand', @node)
 
-        it 'should log the expand', -> expect(@log).to.have.been.calledWith('expanded node', @node.id)
         it 'should expand the node', -> expect(@tree.demandNode).to.have.been.calledWith(@node.id)
 
       describe 'on collapse', ->

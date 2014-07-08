@@ -236,7 +236,7 @@ define [
 
       @cursorView = view
 
-  document_list_controller = (listDiv, cursorDiv, documentSet, state) ->
+  document_list_controller = (listDiv, cursorDiv, documentSet, state, keyboardController) ->
     controller = new Controller({},
       tags: documentSet.tags
       state: state
@@ -276,8 +276,8 @@ define [
       view.$el.on('mouseleave', -> $listView.removeClass('hover'))
     )()
 
-    {
-      go_up: go_up
-      go_down: go_down
-      select_all: select_all
-    }
+    keyboardController.register
+      J: go_down    # GMail
+      K: go_up      # GMail
+      U: select_all # GMail
+      'Control+A': select_all # Windows, Mac, Linux

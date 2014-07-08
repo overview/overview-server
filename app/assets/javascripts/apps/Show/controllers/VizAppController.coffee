@@ -12,6 +12,7 @@ define [
       throw 'Must pass options.el, an HTMLElement' if !options.el
       throw 'Must pass options.state, a State' if !options.state
       throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet
+      throw 'Must pass options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue
       throw 'Must pass options.vizAppConstructors, an Object mapping viz type to an App' if !options.vizAppConstructors
 
@@ -19,6 +20,7 @@ define [
       @$el = $(@el)
       @state = options.state
       @documentSet = options.documentSet
+      @keyboardController = options.keyboardController
       @transactionQueue = options.transactionQueue
       @vizAppConstructors = options.vizAppConstructors
 
@@ -49,6 +51,7 @@ define [
           app: @facade
           viz: viz
           transactionQueue: @transactionQueue
+          keyboardController: @keyboardController
           documentListParams: @state.attributes.documentListParams
           document: @state.attributes.document
           taglikeCid: @state.attributes.taglikeCid

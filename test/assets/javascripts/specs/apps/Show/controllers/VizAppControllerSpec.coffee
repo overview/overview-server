@@ -41,11 +41,14 @@ define [
 
       @el = document.createElement('div')
 
+      @keyboardController = {}
+
       @init = =>
         @subject = new VizAppController
           state: @state
           documentSet: @documentSet
           transactionQueue: @transactionQueue
+          keyboardController: @keyboardController
           vizAppConstructors: @vizAppConstructors
           el: @el
 
@@ -88,6 +91,10 @@ define [
       it 'should pass transactionQueue to the vizApp', ->
         expect(@vizAppConstructors.job).to.have.been.calledWithMatch
           transactionQueue: @transactionQueue
+
+      it 'should pass keyboardController to the vizApp', ->
+        expect(@vizAppConstructors.job).to.have.been.calledWithMatch
+          keyboardController: @keyboardController
 
       it 'should pass a DocumentSet and State to the vizApp', ->
         # These parameters won't work across iframes. We should deprecate them.

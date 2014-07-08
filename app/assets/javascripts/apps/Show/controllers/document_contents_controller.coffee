@@ -1,9 +1,8 @@
 define [ '../views/DocumentContents' ], (DocumentContentsView) ->
   document_contents_controller = (options) ->
     view = new DocumentContentsView(options)
+    keyboardController = options.keyboardController
 
-    {
-      el: view.el
-      page_up: -> view.scroll_by_pages(-1)
-      page_down: -> view.scroll_by_pages(1)
-    }
+    keyboardController.register
+      PageUp: -> view.scroll_by_pages(-1)
+      PageDown: -> view.scroll_by_pages(1)
