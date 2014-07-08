@@ -95,6 +95,17 @@ trait DocumentSetController extends Controller {
     }
   }
 
+  /** Shows a DocumentSet to the user.
+    *
+    * This is a shell of a page with a giant JavaScript application inside it.
+    *
+    * Ignore the silly "jsParams" argument. It's so users can bookmark URLs.
+    *
+    * * GET /documentsets/123 -&gt; load the first Viz
+    * * GET /documentsets/123/trees/456 -&gt; load a specific Viz
+    *
+    * JavaScript will parse the rest of the URL.
+    */
   def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {
       case None => NotFound
@@ -104,6 +115,8 @@ trait DocumentSetController extends Controller {
       }
     }
   }
+
+  def showWithJsParams(id: Long, jsParams: String) = show(id)
 
   def showHtmlInJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {

@@ -52,6 +52,8 @@ GET    /documentsets                      controllers.DocumentSetController.inde
 GET    /documentsets/:id.html.json        controllers.DocumentSetController.showHtmlInJson(id: Long)
 GET    /documentsets/:id.json             controllers.DocumentSetController.showJson(id: Long)
 GET    /documentsets/:id                  controllers.DocumentSetController.show(id: Long)
+# URLs like "/documentsets/123/job-456"
+GET    /documentsets/:id/$jsParams<[a-zA-Z]+-[0-9]+> controllers.DocumentSetController.showWithJsParams(id: Long, jsParams: String)
 DELETE /documentsets/:id                  controllers.DocumentSetController.delete(id: Long)
 PUT    /documentsets/:id                  controllers.DocumentSetController.update(id: Long)
 

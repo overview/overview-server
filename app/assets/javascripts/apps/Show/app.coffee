@@ -154,16 +154,17 @@ define [
       els = @_buildHtml()
       keyboardController = new KeyboardController(document)
 
-      treeId = +window.location.pathname.split('/')[4]
-      viz = documentSet.vizs.get("viz-#{treeId}") || documentSet.vizs.at(0)
+      viz = null
+      if (m = ///^\/documentsets\/#{documentSet.id}\/([a-zA-Z]+-[0-9]+)$///.exec(document.location.pathname))?
+        viz = documentSet.vizs.get(m[1])
+      viz ||= documentSet.vizs.at(0)
 
       state = new State(documentListParams: documentSet.documentListParams(viz).all(), viz: viz)
 
       state.on 'change:viz', (__, viz) ->
-        if (id = viz?.get('id'))?
-          # Change URL so a page refresh brings us to this viz
-          url = window.location.pathname.replace(/\/\d+$/, "/#{id}")
-          window.history?.replaceState(url, '', url)
+        # Change URL so a page refresh brings us to this viz
+        url = "/documentsets/#{documentSet.id}/#{viz.id}"
+        window.history?.replaceState(url, '', url)
 
       controller = new VizsController(documentSet.vizs, state)
       els.vizs.appendChild(controller.el)
