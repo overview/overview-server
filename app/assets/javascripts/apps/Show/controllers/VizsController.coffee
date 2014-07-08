@@ -1,31 +1,50 @@
 define [
+  'underscore'
   'jquery'
+  'backbone'
   '../collections/Vizs'
   '../views/VizTabs'
   'apps/ImportOptions/app'
-], ($, Vizs, VizTabs, OptionsApp) ->
+], (_, $, Backbone, Vizs, VizTabs, OptionsApp) ->
   class VizsController
+    _.extend(@::, Backbone.Events)
+
     constructor: (@vizs, @state) ->
       @view = new VizTabs
         collection: @vizs
         state: @state
       @view.render()
 
-      @view.on('click', (viz) => @state.setViz(viz))
+      @listenTo(@view, 'click', @_onClickViz)
+      @listenTo(@view, 'cancel', @_onCancel)
+      @listenTo(@view, 'click-new', @_onClickNew)
+      @listenTo(@vizs, 'add', @_onAdd)
 
+      @el = @view.el
+
+    _onClickViz: (viz) -> @state.setViz(viz)
+    _onAdd: (viz) ->
+      # Always switch to a brand-new Viz.
+      #
+      # Notice, in _onClickNew, that we create a "dummy" viz before the real
+      # one gets loaded. That means we'll see two "add" events, and the current
+      # Viz will always be the most recent one.
+      @state.set(viz: viz)
+
+    _onCancel: (job) ->
+      jobId = job.get('id')
+      $.ajax
+        type: 'delete'
+        url: "/trees/jobs/#{jobId}"
+        complete: => @vizs.pollUntilStable()
+
+    _onClickNew: ->
       onSubmit = (data) =>
         # Add a placeholder job so pollUntilStable will actually send an
         # initial poll. When the server responds to the poll, this will
         # disappear and the real job will appear instead.
         @vizs.unshift(id: 0, type: 'job', title: data?[0]?.value, progress: {})
         @vizs.pollUntilStable()
-
-      @view.on 'cancel', (job) =>
-        jobId = job.get('id')
-        $.ajax
-          type: 'delete'
-          url: "/trees/jobs/#{jobId}"
-          complete: => @vizs.pollUntilStable()
 
       @view.on 'click-new', ->
         m = /\/documentsets\/([^\/]+)\//.exec(document.location.pathname)
@@ -49,5 +68,3 @@ define [
             url: submitUrl
             data: data
             complete: -> onSubmit(data)
-
-      @el = @view.el
