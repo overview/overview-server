@@ -17,18 +17,16 @@ define [
       expect(view.$el.html()).to.eq('')
 
     it 'should render a document heading when the document changes', ->
-      document = new Backbone.Model({ heading: 'Heading' })
-      state.set('document', document)
+      state.set(document: { heading: 'Heading' })
       expect(view.$el.html()).to.eq('Heading')
 
     it 'should escape HTML', ->
-      document = new Backbone.Model({ heading: '<>\'"&' })
-      state.set('document', document)
+      state.set(document: { heading: '<>\'"&' })
       expect(view.$el.text()).to.eq('<>\'"&')
 
     it 'should render special text on empty', ->
       i18n.reset_messages({
         'views.Document.show.heading.empty': 'empty'
       })
-      state.set('document', new Backbone.Model({ heading: '' }))
+      state.set(document: { heading: '' })
       expect(view.$el.html()).to.eq('empty')

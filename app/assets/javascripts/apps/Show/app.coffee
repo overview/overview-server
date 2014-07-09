@@ -168,9 +168,9 @@ define [
       controller = new VizsController(documentSet.vizs, state)
       els.vizs.appendChild(controller.el)
 
-      document_contents_controller
-        state: state
-        keyboardController: keyboardController
+      #document_contents_controller
+      #  state: state
+      #  keyboardController: keyboardController
 
       new ModeView(el: @el, state: state)
 

@@ -27,7 +27,7 @@ define [
       throw 'must set options.state, a State' if !@options.state
 
       @state = @options.state
-      @app = @options.documentDisplayApp ? new DocumentDisplayApp()
+      @app = @options.documentDisplayApp || new DocumentDisplayApp()
 
       @listenTo(@state, 'change:document change:oneDocumentSelected', @render)
 

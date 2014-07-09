@@ -29,6 +29,9 @@ define [
       # Note that the t() call is "backward": for instance, when showing the
       # sidebar pref and it's enabled, t("sidebar.disable") will be the link.
       # That's because these links describe what will happen on click.
+      #
+      # Any ".document-text" in the result will get filled in with the document
+      # text (which may be requested separately).
       showBooleanPref: _.template("""
         <a href="#" class="boolean-preference" data-preference="<%- pref %>" data-enabled="<%= enabled && 'true' || 'false' %>">
           <%- t(pref + '.' + (enabled && 'disable' || 'enable')) %>
@@ -48,7 +51,7 @@ define [
         <div class="page type-twitter">
           <div class="twitter-tweet-container">
             <blockquote class="twitter-tweet" data-tweet-id="<%- url.id %>">
-              <p><%- document.text %></p>
+              <p class="document-text"></p>
               &mdash;<%- url.username %>
               <a href="<%- url.url %>">...</a>
             </blockquote>
@@ -62,7 +65,7 @@ define [
             <span class="label"><%- t('source') %></span>
             <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
           </p>
-          <pre class="wrap"><%- document.text %></pre>
+          <pre class="document-text wrap"></pre>
         </div>
       """)
 
@@ -91,7 +94,7 @@ define [
             <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
           </p>
           <% if (!getPref('iframe')) { %>
-            <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
+            <pre class="document-text <%- getPref('wrap') && 'wrap' || 'nowrap' %>"></pre>
           <% } else { %>
             <iframe class="document"  src="<%- url.url %>" width="100" height="100"></iframe>
           <% } %>
@@ -107,7 +110,7 @@ define [
             <span class="label"><%- t('source') %></span>
             <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
           </p>
-          <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
+          <pre class="document-text <%- getPref('wrap') && 'wrap' || 'nowrap' %>"></pre>
         </div>
       """)
 
@@ -116,7 +119,7 @@ define [
           <li><%= showBooleanPref('wrap') %></li>
         </ul>
         <div class="page type-default">
-          <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
+          <pre class="document-text <%- getPref('wrap') && 'wrap' || 'nowrap' %>"></pre>
         </div>
       """)
 
@@ -171,7 +174,7 @@ define [
       @render()
 
     render: () ->
-      document = @model.get('document')?.attributes
+      document = @model.get('document')
 
       type = undefined
 
@@ -189,17 +192,20 @@ define [
         type = url.type
         template = @templates[type] || @templates.default
 
-        html = template(
+        html = template
           document: document
           url: document.urlProperties
           t: t
           getPref: getPref
           showBooleanPref: showBooleanPref
-        )
       else
         ''
 
       @$el.html(html)
+
+      $text = @$('.document-text')
+      if $text.length
+        document.getText().then((text) -> $text.text(text))
 
       @postRender[type]?.call(this) if type
 

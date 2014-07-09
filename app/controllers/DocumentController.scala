@@ -35,6 +35,13 @@ trait DocumentController extends Controller {
     }
   }
 
+  def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
+    storage.find(documentId) match {
+      case Some(document) => Ok(document.text.getOrElse(""))
+      case None => NotFound
+    }
+  }
+
   def contents(documentId: Long, contentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
     val result = for {
       document <- storage.find(documentId)

@@ -24,7 +24,8 @@ define [
       type: 'document'
       title: ''
       description: ''
-      page_number: null
+      pageNumber: null
+      url: null
 
     hasTag: (tag) ->
       inDocument = @attributes.tagCids?[tag.cid]

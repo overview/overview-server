@@ -40,6 +40,7 @@ define [
         title: json.title
         description: json.description
         pageNumber: json.page_number || null
+        url: json.url || null
         tagIds: parseJsonTagIds(json.tagids || [])
         nodeids: json.nodeids || []
 

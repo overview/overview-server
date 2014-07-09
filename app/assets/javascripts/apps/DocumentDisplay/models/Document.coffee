@@ -1,18 +1,20 @@
 define [
-  'backbone'
-], (Backbone) ->
-  class Document extends Backbone.Model
-    defaults:
-      id: 0 # ID from Overview
-      title: ''
-      description: ''
-      text: '' # Text, if it's not a DocumentCloud document
-      url: '' # The server gives this URL, but we should not display it. Use
-              # urlProperties.url instead (it may be https rather than http)
-      urlProperties: undefined # Object; must be passed
+  'jquery'
+  'rsvp'
+], ($, RSVP) ->
+  class Document
+    constructor: (options) ->
+      @id = options.id || 0
+      @title = options.title || ''
+      @description = options.description || ''
+      @url = options.url || null
+      @urlProperties = options.urlProperties
+      @heading = @title || @description
 
-    initialize: ->
-      throw 'Must set urlProperties' if !@get('urlProperties')
+    equals: (rhs) -> @id == rhs.id
 
-      if !@get('heading')
-        @set('heading', @get('title') || @get('description'))
+    getText: ->
+      @text ||= RSVP.resolve($.ajax(
+        url: "/documents/#{@id}.txt"
+        dataType: 'text'
+      ))

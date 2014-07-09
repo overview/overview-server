@@ -5,6 +5,9 @@ define [
   'apps/DocumentDisplay/views/Page'
 ], ($, Backbone, i18n, Page) ->
   describe 'apps/DocumentDisplay/views/Page', ->
+    textPromise =
+      then: (cb) -> cb('text')
+
     preferences = undefined
     state = undefined
     view = undefined
@@ -15,7 +18,7 @@ define [
       setPreference: (args...) -> @set.apply(this, args)
 
     beforeEach ->
-      i18n.reset_messages({
+      i18n.reset_messages
         'views.Document.show.source': 'source'
         'views.Document.show.iframe.enable': 'enable-iframe'
         'views.Document.show.iframe.disable': 'disable-iframe'
@@ -26,10 +29,9 @@ define [
         'views.Document.show.buttons.document': 'document-button'
         'views.Document.show.buttons.text': 'text-button'
         'views.Document.show.missing_plugin': 'missing-plugin'
-      })
       preferences = new Preferences()
-      state = new Backbone.Model({ preferences: preferences })
-      view = new Page({ model: state })
+      state = new Backbone.Model(preferences: preferences)
+      view = new Page(model: state)
       @sandbox = sinon.sandbox.create()
 
     afterEach ->
@@ -41,7 +43,7 @@ define [
 
     it 'should render when the document changes', ->
       view.render = sinon.spy()
-      state.set('document', new Backbone.Model())
+      state.set('document', {})
       expect(view.render).to.have.been.called
 
     it 'should render when the preferences change', ->
@@ -53,11 +55,10 @@ define [
       document = undefined
 
       beforeEach ->
-        document = new Backbone.Model({
+        document =
           urlProperties:
             type: 'documentCloud'
             url: 'https://www.documentcloud.org/documents/675478-letter-from-glen-burnie-high-school-principal'
-        })
         state.set('document', document)
 
       it 'should render an iframe', ->
@@ -104,21 +105,19 @@ define [
 
       beforeEach ->
         window.twttr = undefined
-        document = new Backbone.Model({
-          text: 'text'
+        document =
+          getText: -> textPromise
           urlProperties:
             type: 'twitter'
             username: 'username'
             id: 124512312
             url: '//twitter.com'
-        })
         twttrDeferred = new $.Deferred()
         @sandbox.stub($, 'getScript').returns(twttrDeferred)
         state.set('document', document)
 
       it 'should render a blockquote', ->
-        $blockquote = view.$('blockquote')
-        expect($blockquote.length).to.eq(1)
+        expect(view.$('blockquote')).to.contain('text')
 
       it 'should load a Twitter script', ->
         expect($.getScript).to.have.been.called
@@ -140,27 +139,26 @@ define [
       it 'should call twttr.widgets.createTweetEmbed if twttr.widgets.loaded', ->
         window.twttr = { widgets: { loaded: true, createTweetEmbed: sinon.spy() } }
         twttrDeferred.resolve()
-        state.set('document', new Backbone.Model({
-          text: 'text'
+        state.set(document: {
+          getText: -> textPromise
           urlProperties:
             type: 'twitter'
             username: 'username'
             id: 124512313
             url: '//twitter.com'
-        }))
+        })
         expect(window.twttr.widgets.createTweetEmbed).to.have.been.called
 
     describe 'with a secure document', ->
       document = undefined
 
       beforeEach ->
-        document = new Backbone.Model({
-          text: 'text'
+        document =
+          getText: -> textPromise
           urlProperties:
             type: 'secure'
             url: 'https://example.org'
-        })
-        state.set('document', document)
+        state.set(document: document)
 
       it 'should show an enable-iframe link', ->
         expect(view.$('a.boolean-preference[data-preference=iframe]').length).to.eq(1)
@@ -180,12 +178,11 @@ define [
 
     describe 'with a Facebook object', ->
       beforeEach ->
-        document = new Backbone.Model({
-          text: 'text'
+        document =
+          getText: -> textPromise
           urlProperties:
             type: 'facebook'
             url: '//www.facebook.com/adam.hooper/posts/10101122388042297'
-        })
         state.set('document', document)
 
       it 'should link to the source', ->
@@ -195,18 +192,19 @@ define [
       it 'should render a <pre> that wraps', ->
         expect(view.$('pre.wrap').length).to.eq(1)
 
-      it 'should not have anny preferences', ->
+      it 'should render content in the <pre>', ->
+        expect(view.$('pre')).to.contain('text')
+
+      it 'should not have any preferences', ->
         expect(view.$('a.boolean-preference').length).to.eq(0)
 
     describe 'with a locally-stored PDF document', ->
       beforeEach ->
-        document = new Backbone.Model({
-          text: 'text'
+        document =
           urlProperties:
             type: 'localObject'
             url: '/documents/1234/contents/4567'
-        })
-        state.set('document', document)
+        state.set(document: document)
 
       it 'creates an object pointing to the document, with pdf viewer settings', ->
         expect(view.$('object')).to.have.attr('data', '/documents/1234/contents/4567#scrollbar=1&toolbar=1&navpanes=1&view=FitH')
@@ -219,21 +217,19 @@ define [
 
     describe 'with an insecure document', ->
       beforeEach ->
-        document = new Backbone.Model({
-          text: 'text'
+        document =
+          getText: -> textPromise
           urlProperties:
             type: 'insecure'
             url: 'http://example.org'
-        })
-        state.set('document', document)
+        state.set(document: document)
 
       it 'should link to the source', ->
         $a = view.$('a[href="http://example.org"]')
         expect($a.length).to.eq(1)
 
       it 'should render a <pre>', ->
-        $pre = view.$('pre')
-        expect($pre.length).to.eq(1)
+        expect(view.$('pre')).to.contain('text')
 
       it 'should have an enable-wrap link', ->
         preferences.set('wrap', false)
@@ -241,17 +237,15 @@ define [
 
     describe 'with an unknown URL', ->
       beforeEach ->
-        document = new Backbone.Model({
-          text: 'text'
+        document =
+          getText: -> textPromise
           urlProperties:
             type: 'unknown'
             url: 'abc123'
-        })
-        state.set('document', document)
+        state.set(document: document)
 
       it 'should render a <pre>', ->
-        $pre = view.$('pre')
-        expect($pre.length).to.eq(1)
+        expect(view.$('pre')).to.contain('text')
 
       it 'should have an enable-wrap link', ->
         preferences.set('wrap', false)
@@ -259,17 +253,15 @@ define [
 
     describe 'with no URL', ->
       beforeEach ->
-        document = new Backbone.Model({
-          text: 'text'
+        document =
+          getText: -> textPromise
           urlProperties:
             type: 'none'
             url: ''
-        })
-        state.set('document', document)
+        state.set(document: document)
 
       it 'should render a <pre>', ->
-        $pre = view.$('pre')
-        expect($pre.length).to.eq(1)
+        expect(view.$('pre')).to.contain('text')
 
       it 'should have an enable-wrap link', ->
         preferences.set('wrap', false)

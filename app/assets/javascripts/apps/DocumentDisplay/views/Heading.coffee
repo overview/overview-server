@@ -1,7 +1,7 @@
 define [ 'backbone', 'i18n' ], (Backbone, i18n) ->
   t = i18n.namespaced('views.Document.show')
 
-  Backbone.View.extend
+  class Heading extends Backbone.View
     tagName: 'h3'
 
     initialize: ->
@@ -11,7 +11,7 @@ define [ 'backbone', 'i18n' ], (Backbone, i18n) ->
     render: ->
       document = @model.get('document')
       heading = if document?
-        document.get('heading') || t('heading.empty')
+        document.heading || t('heading.empty')
       else
         ''
       @$el.text(heading)

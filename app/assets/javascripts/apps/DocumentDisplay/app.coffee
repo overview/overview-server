@@ -1,18 +1,22 @@
 define [
+  'underscore'
   'jquery'
+  './models/Document'
   './models/State'
-  './models/DocumentFinder'
+  './models/UrlPropertiesExtractor'
   './views/Heading'
   './views/Page'
-], ($, State, DocumentFinder, Heading, Page) ->
+], (_, $, Document, State, UrlPropertiesExtractor, Heading, Page) ->
+  alreadyLoaded = false
+
   class App
     # Creates a new DocumentDisplay.
     #
     # Callers should access the "el" property to insert it into
     # the page. Then they can call setDocument() to show a document.
     constructor: (options = undefined) ->
-      @finder = new DocumentFinder(documentCloudUrl: window.documentCloudUrl)
       @state = new State()
+      @urlPropertiesExtractor = new UrlPropertiesExtractor(documentCloudUrl: window.documentCloudUrl)
       @el = options?.el || document.createElement('div')
 
       heading = new Heading({
@@ -35,12 +39,17 @@ define [
     # * A JSON object with an id property (in our database)
     # * undefined
     setDocument: (json) ->
-      if json?
-        @finder.findDocumentFromJson(json)
-          .done((document) => @state.set('document', document))
-          .fail(=> @state.set('document', undefined))
+      oldDocument = @state.get('document')
+
+      if !json? || !json.id?
+        return if !oldDocument? # null => null
+        @state.set(document: null)
       else
-        @state.set('document', undefined)
+        urlProperties = @urlPropertiesExtractor.urlToProperties(json.url)
+        json = _.extend({ urlProperties: urlProperties }, json)
+        newDocument = new Document(json)
+        return if oldDocument?.equals(newDocument)
+        @state.set(document: newDocument)
 
     # Scroll the view by the specified number of pages.
     #

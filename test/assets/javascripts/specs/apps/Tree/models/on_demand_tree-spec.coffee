@@ -73,7 +73,10 @@ define [
         ])
 
       it 'should get node objects from ids', ->
-        expect(tree.getNode(1)).to.deep.eq({ id: 1, parentId: null, size: 50 })
+        node = tree.getNode(1)
+        expect(node.id).to.eq(1)
+        expect(node.parentId).to.be.null
+        expect(node.size).to.eq(50)
 
       it 'should not get unresolved node objects', ->
         expect(tree.getNode(20)).to.be.undefined
@@ -103,9 +106,6 @@ define [
           id: 7, parentId: 4, size: 2
         ]})
         expect(tree.getNode(7)).to.be.undefined
-        expect(tree.nodes).to.deep.eq({
-          1: { id: 1, parentId: null, size: 50 }
-        })
 
       it 'should unload nodes through unloadNodeChildren()', ->
         tree.unloadNodeChildren(1)
