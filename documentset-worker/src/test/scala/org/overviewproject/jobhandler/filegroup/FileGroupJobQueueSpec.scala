@@ -52,7 +52,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     }
 
     "notify requester when all tasks for a fileGroupId are complete" in new JobQueueContext {
-      ActAsImmediateJobCompleter(worker)
+      ActAsImmediateJobCompleter(worker, fileId)
       submitJob(documentSetId)
 
       fileGroupJobQueue ! RegisterWorker(worker.ref)
@@ -72,7 +72,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     }
 
     "report progress" in new JobQueueContext {
-      ActAsImmediateJobCompleter(worker)
+      ActAsImmediateJobCompleter(worker, fileId)
       fileGroupJobQueue ! RegisterWorker(worker.ref)
       submitJob(documentSetId)
 
@@ -109,7 +109,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
 
-      worker.completeTask(fileGroupJobQueue, task.uploadedFileId)
+      worker.completeTask(fileGroupJobQueue, task.uploadedFileId, fileId)
       expectMsg(FileGroupDocumentsCreated(documentSetId))
     }
 
@@ -174,7 +174,8 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       protected val fileGroupId = 2l
       protected val numberOfUploadedFiles = 10
       protected val uploadedFileIds: Seq[Long] = Seq.tabulate(numberOfUploadedFiles)(_.toLong)
-
+      protected val fileId = 20l
+      
       protected var fileGroupJobQueue: ActorRef = _
       protected var worker: WorkerTestProbe = _
       protected var progressReporter: TestProbe = _
@@ -223,17 +224,17 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectNoMsg(500 millis)
       }
 
-      def completeTask(jobQueue: ActorRef, uploadedFileId: Long) = {
-        jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId)
+      def completeTask(jobQueue: ActorRef, uploadedFileId: Long, outputFileId: Long) = {
+        jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId, Some(outputFileId))
       }
     }
 
-    class ImmediateJobCompleter(worker: ActorRef) extends TestActor.AutoPilot {
+    class ImmediateJobCompleter(worker: ActorRef, outputFileId: Long) extends TestActor.AutoPilot {
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
           case CreatePagesTask(ds, fg, uf) => {
-            sender.tell(CreatePagesTaskDone(ds, uf), worker)
+            sender.tell(CreatePagesTaskDone(ds, uf, Some(outputFileId)), worker)
             sender.tell(ReadyForTask, worker)
           }
         }
@@ -242,8 +243,8 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     }
 
     object ActAsImmediateJobCompleter {
-      def apply(probe: TestProbe): TestProbe = {
-        probe.setAutoPilot(new ImmediateJobCompleter(probe.ref))
+      def apply(probe: TestProbe, outputFileId: Long): TestProbe = {
+        probe.setAutoPilot(new ImmediateJobCompleter(probe.ref, outputFileId))
         probe
       }
     }

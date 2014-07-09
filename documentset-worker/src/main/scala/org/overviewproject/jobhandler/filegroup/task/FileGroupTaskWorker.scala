@@ -22,7 +22,7 @@ object FileGroupTaskWorkerProtocol {
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
   
   
-  case class CreatePagesTaskDone(documentSetId: Long, uploadedFileId: Long, outputFileId: Option[Long] = None)
+  case class CreatePagesTaskDone(documentSetId: Long, uploadedFileId: Long, outputFileId: Option[Long])
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long)  extends TaskWorkerTask
   case class DeleteFileUploadJobDone(documentSetId: Long, fileGroupId: Long)
 }

@@ -75,7 +75,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       
       worker ! CompleteTaskStep
 
-      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId))
+      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId, None))
       
     }
     
