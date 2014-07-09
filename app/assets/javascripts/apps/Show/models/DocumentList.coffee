@@ -85,14 +85,17 @@ define [
 
     isComplete: ->
       length = @get('length')
-      length? && @nDocumentsPerPage * @get('nPagesFetched') >= length
+      ret = length? && @nDocumentsPerPage * @get('nPagesFetched') >= length
+      ret
 
     fetchNextPage: ->
-      @_fetchNextPagePromise ||= if @isComplete()
-        RSVP.Promise.resolve(null)
+      if @_fetchNextPagePromise?
+        @_fetchNextPagePromise
+      else if @isComplete()
+        RSVP.resolve(null)
       else
-        @_doFetch()
-          .then((ret) => @_fetchNextPagePromise = null; ret)
+        @_fetchNextPagePromise = @_doFetch()
+          .then(=> @_fetchNextPagePromise = null) # returns null
 
     _doFetch: ->
       new RSVP.Promise (resolve, reject) =>

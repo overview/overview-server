@@ -14,6 +14,10 @@ module.exports = (config) ->
     reportSlowerThan: 15
     verbose: true
 
+    client:
+      mocha:
+        timeout: 5000 # some unit tests stub the clock and advance 2000ms+.
+
     files: [
       { pattern: "#{src}/**/*.js", included: false }
       { pattern: "#{src}/**/*.coffee", included: false }

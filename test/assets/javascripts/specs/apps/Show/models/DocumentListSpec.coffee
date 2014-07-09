@@ -10,6 +10,7 @@ define [
 
     describe 'normally', ->
       beforeEach ->
+        @sandbox = sinon.sandbox.create(useFakeServer: true, useFakeTimers: true)
         @documentSet = new DocumentSet()
         @params =
           documentSet: @documentSet
@@ -28,10 +29,12 @@ define [
         @docs = @list.documents
 
       afterEach ->
+        @sandbox.clock.tick(1) # let things settle
         @documentSet.off()
         @list.stopListening()
         @list.off()
         @docs.off()
+        @sandbox.restore()
 
       it 'should set params', -> expect(@list.params).to.eq(@params)
       it 'should be empty', -> expect(@docs.pluck('type')).to.deep.eq([])
@@ -41,11 +44,8 @@ define [
 
       describe 'on first .fetchNextPage()', ->
         beforeEach ->
-          @sandbox = sinon.sandbox.create(useFakeServer: true, useFakeTimers: true)
           @list.fetchNextPage()
           @sandbox.clock.tick(1)
-
-        afterEach -> @sandbox.restore()
 
         it 'should have a loading placeholder', -> expect(@docs.pluck('type')).to.deep.eq(['loading'])
         it 'should have length=null', -> expect(@list.get('length')).to.be.null
@@ -93,9 +93,11 @@ define [
           it 'should set length', -> expect(@list.get('length')).to.eq(0)
           it 'should have nPagesFetched=1', -> expect(@list.get('nPagesFetched')).to.eq(1)
           it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
-          it 'should return a resolved promise on fetchNextPage()', (done) ->
-            @list.fetchNextPage().then((x) -> expect(x).to.be.null; done())
+          it 'should return a resolved promise on fetchNextPage()', ->
+            @list.fetchNextPage().then(spy = sinon.spy())
             @sandbox.clock.tick(1)
+            expect(spy).to.have.been.calledWith(null)
+            expect(@sandbox.server.requests.length).to.eq(1) # no spurious request
 
         describe 'on a-few-docs success', ->
           beforeEach ->
@@ -173,8 +175,10 @@ define [
               it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
               it 'should have all documents', -> expect(@docs.pluck('id')).to.deep.eq([ 1 .. (@list.nDocumentsPerPage + 1) ])
               it 'should return a resolved promise on fetchNextPage()', ->
-                @list.fetchNextPage().then((x) -> expect(x).to.be.null; done())
+                @list.fetchNextPage().then(spy = sinon.spy())
                 @sandbox.clock.tick(1)
+                expect(spy).to.have.been.calledWith(null)
+                expect(@sandbox.server.requests.length).to.eq(1) # no spurious request
 
     describe 'with an unfinished SearchResult', ->
       class SearchResult extends Backbone.Model
