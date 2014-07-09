@@ -12,7 +12,7 @@ before_install:
   - time ./auto/setup-coffee-tests.sh
   - time ./auto/setup-integration-tests.sh
 install:
-  - time sudo apt-get install -qq postgresql openjdk-7-jdk
+  - time sudo apt-get install -qq postgresql openjdk-7-jdk libreoffice-writer
 before_script:
   - free
   - cat /proc/cpuinfo
