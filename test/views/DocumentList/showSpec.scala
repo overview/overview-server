@@ -44,15 +44,6 @@ class showSpec extends Specification with JsonMatchers {
       result must /("documents") /#(0) /("title" -> "aTitle")
     }
 
-    "default to null documentcloud_id" in new BaseScope {
-      result must /("documents") /#(0) /("documentcloud_id" -> null)
-    }
-
-    "set a documentcloud_id" in new BaseScope {
-      override def doc1 = super.doc1.copy(documentcloudId=Some("foo#p1"))
-      result must /("documents") /#(0) /("documentcloud_id" -> "foo#p1")
-    }
-
     "default to null page_number" in new BaseScope {
       result must /("documents") /#(0) /("page_number" -> null)
     }
@@ -70,6 +61,11 @@ class showSpec extends Specification with JsonMatchers {
     "set tag IDs" in new BaseScope {
       override def doc1AndIds = (doc1, Seq[Long](), Seq[Long](5L, 6L, 7L))
       result must /("documents") /#(0) /("tagids") /#(1) /(6)
+    }
+
+    "set a URL" in new BaseScope {
+      override def doc1 = super.doc1.copy(url=Some("http://example.org"))
+      result must /("documents") /#(0) /("url" -> "http://example.org")
     }
   }
 }
