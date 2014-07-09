@@ -14,9 +14,6 @@ before_install:
 install:
   - time sudo apt-get install -qq postgresql openjdk-7-jdk libreoffice-writer
 before_script:
-  - free
-  - cat /proc/cpuinfo
-  - ulimit -a
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
   # Suppress excessive output from Sbt (resolving / downloading). Either it works or it doesn't; all errors are the same to us.
@@ -34,7 +31,7 @@ before_script:
   # TODO: turn off Artifactory and enable caching on Travis. First we need
   # Travis to support it for our repository. They've told us they're working
   # on it.
-  - time ./sbt -Dsbt.log.noformat=true -Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories '; set every logLevel := Level.Warn; common/update; show version; version; overview-server/update; show version; documentset-worker/update; show version; worker/update; show version; runner/update; show version; db-evolution-applier/update; search-index/update; show version; message-broker/update'
+  - time ./sbt -Dsbt.log.noformat=true -Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories '; set every logLevel := Level.Warn; common/update; common-test/update; overview-server/update; documentset-worker/update; worker/update; runner/update; db-evolution-applier/update; search-index/update; message-broker/update'
 script:
   # CoffeeScript tests are the fastest, so we put them first
   - time ./auto/test-coffee-once.sh
@@ -44,7 +41,7 @@ script:
   # The build must succeed
   - time SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" ./build overview-server.zip
   # Now that we've built, we can run integration tests with the resulting jars
-  - time (cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M -Ddocumentset-worker.jvm.Xmx200M -Dsearchindex.jvm.Xmx200M -Dmessage-broker.jvm.Xmx200M -Doverview-server.jvm.Xmx200M --sh ../travis/wait-and-test-integration.sh)
+  - time (cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M= -Ddocumentset-worker.jvm.Xmx200M= -Dsearchindex.jvm.Xmx200M= -Dmessage-broker.jvm.Xmx200M= -Doverview-server.jvm.Xmx200M= --sh ../travis/wait-and-test-integration.sh)
 notifications:
   irc:
     - irc.freenode.net#overviewproject
