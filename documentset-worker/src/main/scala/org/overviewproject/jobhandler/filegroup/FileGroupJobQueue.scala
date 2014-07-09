@@ -98,7 +98,7 @@ trait FileGroupJobQueue extends Actor {
         }
       }
     }
-    case CreatePagesTaskDone(documentSetId, uploadedFileId) => {
+    case CreatePagesTaskDone(documentSetId, uploadedFileId, _) => {
       Logger.info(s"($documentSetId) Task ${uploadedFileId} Done")
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       busyWorkers -= sender

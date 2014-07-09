@@ -40,7 +40,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       createWorker
 
-      jobQueueProbe.expectTaskDone(documentSetId, fileGroupId, uploadedFileId)
+      jobQueueProbe.expectTaskDone(documentSetId, fileGroupId, uploadedFileId, fileId)
       jobQueueProbe.expectReadyForTask
 
       createPagesTaskStepsWereExecuted
@@ -57,7 +57,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       worker ! CancelYourself
       worker ! CompleteTaskStep
 
-      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId))
+      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId, None))
       
       taskWasCancelled
     }
@@ -105,6 +105,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       protected val documentSetId: Long = 1l
       protected val fileGroupId: Long = 2l
       protected val uploadedFileId: Long = 10l
+      protected val fileId: Long = 20l
 
       var jobQueue: ActorRef = _
       var jobQueueProbe: JobQueueTestProbe = _
@@ -126,7 +127,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       var worker: TestActorRef[TestFileGroupTaskWorker] = _
 
-      protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath))
+      protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath, fileId))
 
       protected def createPagesTaskStepsWereExecuted = 
         worker.underlyingActor.executeFn.wasCalledNTimes(2)
@@ -157,10 +158,10 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       def expectReadyForTask = expectMsg(ReadyForTask)
 
-      def expectTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) = {
+      def expectTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long, outputFileId: Long) = {
         expectMsgClass(classOf[RegisterWorker])
         expectMsg(ReadyForTask)
-        expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId))
+        expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId, Some(outputFileId)))
       }
 
       def withTaskAvailable: JobQueueTestProbe = {
