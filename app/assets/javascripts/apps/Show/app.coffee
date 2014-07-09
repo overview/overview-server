@@ -10,7 +10,6 @@ define [
   './controllers/tag_list_controller'
   './controllers/search_result_list_controller'
   './controllers/document_list_controller'
-  './controllers/document_contents_controller'
   './controllers/VizAppController'
   './controllers/TourController'
   './views/TransactionQueueErrorMonitor'
@@ -20,8 +19,7 @@ define [
 ], (_, $, Backbone, \
     TransactionQueue, DocumentSet, State, \
     KeyboardController, \
-    VizsController, tag_list_controller, search_result_list_controller, \
-    document_list_controller, document_contents_controller, \
+    VizsController, tag_list_controller, search_result_list_controller, document_list_controller, \
     VizAppController, \
     TourController, \
     TransactionQueueErrorMonitor, \
@@ -167,10 +165,6 @@ define [
 
       controller = new VizsController(documentSet.vizs, state)
       els.vizs.appendChild(controller.el)
-
-      #document_contents_controller
-      #  state: state
-      #  keyboardController: keyboardController
 
       new ModeView(el: @el, state: state)
 
