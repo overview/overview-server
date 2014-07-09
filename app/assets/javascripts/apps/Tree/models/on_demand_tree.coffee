@@ -223,7 +223,7 @@ define [
     demandNode: (id) ->
       if @nodes[id]?.isLeaf || @id_tree.children[id]?
         # it's already loaded
-        RSVP.resolve(@nodes[id] for id in @id_tree.children[id])
+        RSVP.resolve(@nodes[id] for id in (@id_tree.children[id] || []))
       else
         @_demand("nodes/#{id}")
 
