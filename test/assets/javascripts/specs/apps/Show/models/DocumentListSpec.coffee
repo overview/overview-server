@@ -10,7 +10,7 @@ define [
 
     describe 'normally', ->
       beforeEach ->
-        @sandbox = sinon.sandbox.create(useFakeServer: true, useFakeTimers: true)
+        @sandbox = sinon.sandbox.create(useFakeServer: true)
         @documentSet = new DocumentSet()
         @params =
           documentSet: @documentSet
@@ -29,7 +29,6 @@ define [
         @docs = @list.documents
 
       afterEach ->
-        @sandbox.clock.tick(1) # let things settle
         @documentSet.off()
         @list.stopListening()
         @list.off()
@@ -44,8 +43,8 @@ define [
 
       describe 'on first .fetchNextPage()', ->
         beforeEach ->
-          @list.fetchNextPage()
-          @sandbox.clock.tick(1)
+          @promise1 = @list.fetchNextPage()
+          undefined
 
         it 'should have a loading placeholder', -> expect(@docs.pluck('type')).to.deep.eq(['loading'])
         it 'should have length=null', -> expect(@list.get('length')).to.be.null
@@ -59,15 +58,15 @@ define [
         it 'should return the same promise and not change anything when calling again', ->
           p1 = @list.fetchNextPage()
           p2 = @list.fetchNextPage()
-          @sandbox.clock.tick(1)
           expect(p1).to.eq(p2)
           expect(@docs.pluck('type')).to.deep.eq([ 'loading' ])
 
         describe 'on error', ->
           beforeEach ->
+            @sandbox.useFakeTimers()
             @sandbox.stub(console, 'log')
             @sandbox.server.requests[0].respond(404, {}, '')
-            @sandbox.clock.tick(1)
+            # @promise1 will be unfulfilled
 
           it 'should log the error', -> expect(console.log).to.have.been.called
           it 'should leave the loading document there', -> expect(@docs.pluck('type')).to.deep.eq([ 'loading' ])
@@ -87,17 +86,13 @@ define [
               documents: []
               total_items: 0
             ))
-            @sandbox.clock.tick(1)
+            @promise1 # mocha-as-promised
 
           it 'should remove the loading document', -> expect(@docs.length).to.eq(0)
           it 'should set length', -> expect(@list.get('length')).to.eq(0)
           it 'should have nPagesFetched=1', -> expect(@list.get('nPagesFetched')).to.eq(1)
           it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
-          it 'should return a resolved promise on fetchNextPage()', ->
-            @list.fetchNextPage().then(spy = sinon.spy())
-            @sandbox.clock.tick(1)
-            expect(spy).to.have.been.calledWith(null)
-            expect(@sandbox.server.requests.length).to.eq(1) # no spurious request
+          it 'should return a resolved promise on fetchNextPage()', -> expect(@list.fetchNextPage()).to.be.fulfilled
 
         describe 'on a-few-docs success', ->
           beforeEach ->
@@ -105,7 +100,7 @@ define [
               documents: [ { id: 1 }, { id: 2 }, { id: 3 } ]
               total_items: 3
             ))
-            @sandbox.clock.tick(1)
+            @promise1 # mocha-as-promised
 
           it 'should populate with the documents', -> expect(@docs.pluck('id')).to.deep.eq([ 1, 2, 3 ])
           it 'should set length', -> expect(@list.get('length')).to.eq(3)
@@ -118,7 +113,7 @@ define [
               documents: ({ id: x } for x in [ 1 .. @list.nDocumentsPerPage ])
               total_items: @list.nDocumentsPerPage + 1
             ))
-            @sandbox.clock.tick(1)
+            @promise1 # mocha-as-promised
 
           it 'should populate with the documents', -> expect(@docs.length).to.eq(@list.nDocumentsPerPage)
           it 'should set length', -> expect(@list.get('length')).to.eq(@list.nDocumentsPerPage + 1)
@@ -152,15 +147,17 @@ define [
 
           describe 'on subsequent fetchNextPage()', ->
             beforeEach ->
-              @list.fetchNextPage()
-              @sandbox.clock.tick(1)
+              @promise2 = @list.fetchNextPage()
+              undefined # mocha-as-promised
 
             it 'should have nPagesFetched=1', -> expect(@list.get('nPagesFetched')).to.eq(1)
+
             it 'should send a new request', ->
               expect(@sandbox.server.requests.length).to.eq(2)
               req = @sandbox.server.requests[1]
               expect(req.method).to.eq('GET')
               expect(req.url).to.eq('/documentsets/1/documents?tags=2&pageSize=20&page=2')
+
             it 'should add a loading document', -> expect(@docs.last().get('type')).to.eq('loading')
 
             describe 'on success', ->
@@ -169,16 +166,12 @@ define [
                   documents: [ { id: @list.nDocumentsPerPage + 1 } ]
                   total_items: @list.nDocumentsPerPage + 1
                 ))
-                @sandbox.clock.tick(1)
+                @promise2
 
               it 'should have nPagesFetched=2', -> expect(@list.get('nPagesFetched')).to.eq(2)
               it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
               it 'should have all documents', -> expect(@docs.pluck('id')).to.deep.eq([ 1 .. (@list.nDocumentsPerPage + 1) ])
-              it 'should return a resolved promise on fetchNextPage()', ->
-                @list.fetchNextPage().then(spy = sinon.spy())
-                @sandbox.clock.tick(1)
-                expect(spy).to.have.been.calledWith(null)
-                expect(@sandbox.server.requests.length).to.eq(1) # no spurious request
+              it 'should return a resolved promise on fetchNextPage()', -> expect(@list.fetchNextPage()).to.be.fulfilled
 
     describe 'with an unfinished SearchResult', ->
       class SearchResult extends Backbone.Model

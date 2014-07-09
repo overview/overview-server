@@ -60,12 +60,10 @@ define [
 
     # Returns a Promise
     _disableTooltipsOnServer: ->
-      new rsvp.Promise (resolve, reject) =>
-        $.ajax
-          type: 'DELETE'
-          url: DoneUrl
-          success: resolve
-          error: reject
+      rsvp.resolve($.ajax(
+        type: 'DELETE'
+        url: DoneUrl
+      ))
 
     _parseTour: (input) ->
       outputPlusNull = for item in input

@@ -7,7 +7,7 @@ for file, __ of window.__karma__.files
 requirejs.config
   baseUrl: '/base/app/assets/javascripts'
 
-  shim: {
+  shim:
     'backbone':
       deps: [ 'jquery', 'underscore' ]
       exports: 'Backbone'
@@ -31,9 +31,8 @@ requirejs.config
     'jquery.mousewheel':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.mousewheel'
-  }
 
-  paths: {
+  paths:
     'backbone': 'vendor/backbone'
     'base64': 'vendor/base64'
     'bootstrap-alert': 'vendor/bootstrap-alert'
@@ -44,7 +43,7 @@ requirejs.config
     'bootstrap-tab': 'vendor/bootstrap-tab'
     'bootstrap-tooltip': 'vendor/bootstrap-tooltip'
     'bootstrap-transition': 'vendor/bootstrap-transition'
-    jquery: '../../../test/assets/javascripts/framework/jquery-hack'
+    'jquery': 'vendor/jquery-2-1-0'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
@@ -53,10 +52,27 @@ requirejs.config
     underscore: 'vendor/underscore'
     rsvp: 'vendor/rsvp'
     MassUpload: 'vendor/mass-upload'
-  }
+    'chai': '../../../test/assets/javascripts/autotest/node_modules/chai/chai'
+    'sinon': '../../../test/assets/javascripts/autotest/node_modules/sinon/pkg/sinon'
+    'sinon-chai': '../../../test/assets/javascripts/autotest/node_modules/sinon-chai/lib/sinon-chai'
+    'chai-as-promised': '../../../test/assets/javascripts/autotest/node_modules/chai-as-promised/lib/chai-as-promised'
+    'chai-jquery': '../../../test/assets/javascripts/autotest/node_modules/chai-jquery/chai-jquery'
 
   # ask Require.js to load these files (all our tests)
   deps: tests,
 
   # start test run, once Require.js is done
-  callback: window.__karma__.start
+  callback: ->
+    require [
+      'chai'
+      'sinon'
+      'sinon-chai'
+      'chai-jquery'
+      'chai-as-promised'
+    ], (chai, sinon, sinonChai, chaiJquery, chaiAsPromised) ->
+      window.expect = chai.expect
+      #window.sinon = sinon -- this happens on its own
+      chai.use(chaiAsPromised) # first, so other chai plugins will work
+      chai.use(sinonChai)
+      chai.use(chaiJquery)
+      window.__karma__.start()

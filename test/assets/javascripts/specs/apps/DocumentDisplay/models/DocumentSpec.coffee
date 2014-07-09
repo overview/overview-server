@@ -54,22 +54,15 @@ define [
 
     describe 'text()', ->
       beforeEach ->
-        @sandbox = sinon.sandbox.create(useFakeServer: true, useFakeTimers: true)
+        @sandbox = sinon.sandbox.create(useFakeServer: true)
         @document = new Document
           id: 3
 
         @textPromise = @document.getText()
-        @textPromise.then(@thenSpy = sinon.spy(), @catchSpy = sinon.spy())
-        @sandbox.clock.tick(1)
+        undefined
 
       afterEach ->
-        @sandbox.clock.tick(1)
-        for req in @sandbox.server.requests when !req.status?
-          req.respond(500, {}, '')
-        @sandbox.clock.tick(1)
         @sandbox.restore()
-
-      it 'should return a Promise', -> expect(@textPromise).to.respondTo('then')
 
       it 'should send a request for text', ->
         r = @sandbox.server.requests[0]
@@ -80,13 +73,10 @@ define [
       it 'should return the same Promise from every getText()', ->
         expect(@document.getText()).to.eq(@textPromise)
 
-      it 'should call .then() with the text', ->
+      it 'should become fulfilled with the text', ->
         @sandbox.server.requests[0].respond(200, { 'Content-Type': 'text/plain' }, 'foo')
-        @sandbox.clock.tick(1)
-        expect(@thenSpy).to.have.been.calledWith('foo')
+        expect(@textPromise).to.eventually.eq('foo')
 
       it 'should call .then() with an error', ->
         @sandbox.server.requests[0].respond(500, { 'Content-Type': 'text/plain' }, 'no')
-        @sandbox.clock.tick(1)
-        expect(@catchSpy).to.have.been.called
-        expect(@catchSpy.lastCall.args[0].responseText).to.eq('no')
+        expect(@textPromise).to.eventually.be.rejectedWith(responseText: 'no')

@@ -127,3 +127,4 @@ define [
             error: onError
 
         fetch()
+        undefined

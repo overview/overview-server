@@ -34,14 +34,10 @@ define [
         'views.Tree.show.Tour.skip': 'skip'
         'views.Tree.show.Tour.tipNumber': 'tipNumber,{0},{1}'
 
-      # We tick manually. Otherwise there's a big delay in resolving promises
-      @sandbox = sinon.sandbox.create(useFakeServer: true, useFakeTimers: true)
+      @sandbox = sinon.sandbox.create(useFakeServer: true)
+      @sandbox.server.autoRespond = true
 
     afterEach ->
-      @sandbox.clock.tick(1)
-      for req in @sandbox.server.requests when !req.status?
-        req.respond(500, {}, '')
-      @sandbox.clock.tick(1)
       @sandbox.restore()
 
     describe 'when all elements are present', ->
@@ -54,34 +50,21 @@ define [
 
       describe 'donePromise()', ->
         beforeEach ->
-          @thenSpy = sinon.spy()
-          @promise = @app.donePromise().then(@thenSpy)
+          @promise = @app.donePromise()
           undefined # avoid mocha-as-promised
 
-        it 'should be a promise', ->
-          expect(typeof(@promise.then)).to.eq('function')
-
         it 'should not be resolved', ->
-          @sandbox.clock.tick(1)
-          expect(@thenSpy).not.to.have.been.called
+          expect(@promise).not.to.be.fulfilled
+          undefined
 
         describe 'when done() is called', ->
-          beforeEach ->
-            @app.done()
-            @sandbox.clock.tick(1)
-
-          it 'should DELETE /tour', ->
-            request = @sandbox.server.requests[0]
-            expect(request.url).to.eq('/tour')
-            expect(request.method).to.eq('DELETE')
-
           it 'should not resolve donePromise before the DELETE returns', ->
-            expect(@thenSpy).not.to.have.been.called
+            @app.done()
+            expect(@promise).not.to.be.fulfilled
 
           it 'should resolve donePromise when DELETE returns', ->
-            @sandbox.server.requests[0].respond([ 204, {}, '' ])
-            @sandbox.clock.tick(1)
-            expect(@thenSpy).to.have.been.called
+            @sandbox.server.respondWith([ 204, {}, '' ])
+            expect(@app.done()).to.eventually.be.fulfilled
 
       describe 'on load', ->
         it 'should display the first tooltip', ->
@@ -99,16 +82,12 @@ define [
         it 'should not call done()', -> expect(@sandbox.server.requests.length).to.eq(0)
 
       it 'should exit tour and resolve promise when clicking skip', ->
-        spy = sinon.spy()
-        @app.donePromise().then(spy)
+        @sandbox.server.respondWith([ 204, {}, '' ])
 
         @$html.find('.popover.in a.skip').click()
-        expect(@$html.find('.popover').length).to.eq(0)
 
-        @sandbox.clock.tick(1)
-        @sandbox.server.requests[0].respond(204, {}, '')
-        @sandbox.clock.tick(1)
-        expect(spy).to.have.been.called
+        expect(@$html.find('.popover').length).to.eq(0)
+        expect(@app.donePromise()).to.eventually.be.fulfilled
 
       describe 'after clicking next', ->
         beforeEach -> @$html.find('.popover.in a.next').click()
@@ -145,19 +124,14 @@ define [
           expect(@$html.find('.popover.in a.done')).to.exist
 
       it 'should exit tour and resolve promise when clicking done link', ->
-        spy = sinon.spy()
-        @app.donePromise().then(spy)
+        @sandbox.server.respondWith([ 204, {}, '' ])
 
         @$html.find('.popover.in a.next').click()
         @$html.find('.popover.in a.next').click()
         @$html.find('.popover.in a.done').click()
-        @sandbox.clock.tick(1)
 
         expect(@$html.find('.popover')).not.to.exist
-
-        @sandbox.server.requests[0].respond(204, {}, '')
-        @sandbox.clock.tick(1)
-        expect(spy).to.have.been.called
+        expect(@app.donePromise()).to.eventually.be.fulfilled
 
     describe 'when an element is missing', ->
       beforeEach ->

@@ -16,8 +16,6 @@ define [
         _.isEqual(@, rhs)
 
     beforeEach ->
-      @sandbox = sinon.sandbox.create(useFakeTimers: true)
-
       @params = new Params({})
 
       @state = new MockState
@@ -54,11 +52,10 @@ define [
       _.extend(@view, Backbone.Events)
 
     afterEach ->
-      @sandbox.restore()
       @subject?.stopListening()
 
     describe 'when it needs an update on init', ->
-      beforeEach ->
+      beforeEach (done) ->
         @view.needsUpdate.returns(true)
 
         @subject = new TreeController
@@ -66,25 +63,28 @@ define [
           focus: @focus
           tree: @tree
           view: @view
-          requestAnimationFrame: (f) -> window.setTimeout(f, 1)
-        @sandbox.clock.tick(1)
+          requestAnimationFrame: _.defer
+        _.defer(done)
 
       it 'should update', ->
         expect(@view.update).to.have.been.called
 
-      it 'should keep updating until needsUpdate is false', ->
-        @sandbox.clock.tick(1)
-        expect(@view.update).to.have.been.calledTwice
-        @view.needsUpdate.returns(false)
-        @sandbox.clock.tick(1)
-        expect(@view.update).not.to.have.been.calledThrice
+      it 'should keep updating until needsUpdate is false', (done) ->
+        _.defer =>
+          expect(@view.update).to.have.been.calledTwice
+          @view.needsUpdate.returns(false)
+          _.defer =>
+            expect(@view.update).not.to.have.been.calledThrice
+            done()
 
-      it 'should not double-animate if the view triggers needs-update', ->
-        @sandbox.clock.tick(1)
-        expect(@view.update).to.have.been.calledTwice
-        @view.trigger('needs-update')
-        @sandbox.clock.tick(1)
-        expect(@view.update).to.have.callCount(3)
+      it 'should not double-animate if the view triggers needs-update', (done) ->
+        _.defer =>
+          expect(@view.update).to.have.been.calledTwice
+          @view.trigger('needs-update')
+          _.defer =>
+            expect(@view.update).to.have.callCount(3)
+            @view.needsUpdate.returns(false) # avoid leaking
+            done()
 
     describe 'normally', ->
       beforeEach ->
@@ -101,22 +101,22 @@ define [
           throw "No stuff in params #{JSON.stringify(params)}" if !stuff?
           stuff.node?.id
 
-      it 'should not update when it does not need an update on init', ->
-        @sandbox.clock.tick(1)
-        expect(@view.update).not.to.have.been.called
+      it 'should not update when it does not need an update on init', (done) ->
+        _.defer =>
+          expect(@view.update).not.to.have.been.called
+          done()
 
-      it 'should animate from when the tree triggers needs-update until needsUpdate returns false', ->
-        @sandbox.clock.tick(1)
-        expect(@view.update).not.to.have.been.called
+      it 'should animate from when the tree triggers needs-update until needsUpdate returns false', (done) ->
         @view.needsUpdate.returns(true)
         @view.trigger('needs-update')
-        @sandbox.clock.tick(1)
-        expect(@view.update).to.have.been.called
-        @sandbox.clock.tick(1)
-        expect(@view.update).to.have.been.calledTwice
-        @view.needsUpdate.returns(false)
-        @sandbox.clock.tick(1)
-        expect(@view.update).not.to.have.been.calledThrice
+        _.defer =>
+          expect(@view.update).to.have.been.called
+          _.defer =>
+            expect(@view.update).to.have.been.calledTwice
+            @view.needsUpdate.returns(false)
+            _.defer =>
+              expect(@view.update).not.to.have.been.calledThrice
+              done()
 
       it 'should select nothing when navigating with no tree', ->
         @params.reset.byNode = sinon.spy()

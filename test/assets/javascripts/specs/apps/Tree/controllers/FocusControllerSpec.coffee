@@ -5,8 +5,6 @@ define [
 ], (_, Backbone, FocusController) ->
   describe 'apps/Tree/controllers/FocusController', ->
     beforeEach ->
-      @sandbox = sinon.sandbox.create(useFakeTimers: true)
-
       @animatedTree =
         getAnimatedNode: sinon.stub()
 
@@ -32,7 +30,6 @@ define [
         focusView: @focusView
 
     afterEach ->
-      @sandbox.restore()
       @subject?.stopListening()
 
     describe 'when selecting a node', ->

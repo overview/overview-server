@@ -10,16 +10,15 @@ define [
     describe 'AnimatedFocus', ->
       animator = undefined
       focus = undefined
-      sandbox = undefined
 
       beforeEach ->
         interpolator = new PropertyInterpolator(1000, (x) -> x)
         animator = new Animator(interpolator)
         focus = new AnimatedFocus({ zoom: 0.5, pan: 0 }, { animator: animator })
-        sandbox = sinon.sandbox.create(useFakeTimers: true)
+        @sandbox = sinon.sandbox.create(useFakeTimers: true)
 
       afterEach ->
-        sandbox.restore()
+        @sandbox.restore()
 
       it 'should set target zoom and pan', ->
         focus.setPanAndZoom(0.25, 0.1)
@@ -143,7 +142,7 @@ define [
 
       it 'should set needs_update=true when changing something', ->
         focus.animateZoom(0.1)
-        sandbox.clock.tick(1)
+        @sandbox.clock.tick(1)
         expect(focus.needsUpdate()).to.be.true
 
       it 'should keep needs_update=false when setting something', ->
@@ -152,7 +151,7 @@ define [
 
       it 'should set needs_update=false when animation has finished', ->
         focus.animateZoom(0.1)
-        sandbox.clock.tick(1000)
+        @sandbox.clock.tick(1000)
         focus.update()
-        sandbox.clock.tick(10)
+        @sandbox.clock.tick(10)
         expect(focus.needsUpdate()).to.be.false
