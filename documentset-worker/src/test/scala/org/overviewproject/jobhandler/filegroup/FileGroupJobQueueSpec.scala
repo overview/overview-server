@@ -113,6 +113,14 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       expectMsg(FileGroupDocumentsCreated(documentSetId))
     }
 
+    "cancel not started job" in new JobQueueContext {
+      submitJob(documentSetId)
+      
+      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+      
+      expectMsg(FileGroupDocumentsCreated(documentSetId))
+    }
+    
     "delete file upload" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
       fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)

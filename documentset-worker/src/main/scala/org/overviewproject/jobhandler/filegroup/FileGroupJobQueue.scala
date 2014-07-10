@@ -113,7 +113,9 @@ trait FileGroupJobQueue extends Actor {
         sender ! FileGroupDocumentsCreated(documentSetId)
       } { r =>
         busyWorkersWithTask(documentSetId).foreach { _ ! CancelTask }
-        removeTasksInQueue(documentSetId)
+        val remainingTasks = removeTasksInQueue(documentSetId)
+        
+        notifyRequesterIfJobIsDone(r, documentSetId, remainingTasks)
       }
     }
     case DeleteFileUpload(documentSetId, fileGroupId) => {
@@ -181,7 +183,7 @@ trait FileGroupJobQueue extends Actor {
       (worker, task) <- busyWorkers if task.documentSetId == documentSetId
     } yield worker
 
-  private def removeTasksInQueue(documentSetId: Long): Unit = {
+  private def removeTasksInQueue(documentSetId: Long): Set[Long] = {
     val notStarted = taskQueue.dequeueAll(_.documentSetId == documentSetId)
     val notStartedUploadIds = notStarted.collect {
       case CreatePagesTask(_, _, uploadedFileId) => uploadedFileId
@@ -190,7 +192,8 @@ trait FileGroupJobQueue extends Actor {
     for (tasks <- jobTasks.get(documentSetId)) {
       jobTasks += (documentSetId -> tasks.diff(notStartedUploadIds.toSet))
     }
-
+    
+    jobTasks.getOrElse(documentSetId, Set.empty)
   }
 }
 
