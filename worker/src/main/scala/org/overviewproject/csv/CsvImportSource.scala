@@ -58,7 +58,7 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
 
       readRow match {
         case null => null
-        case c => new CsvImportDocument(text(c), suppliedId(c), url(c), title(c), tags(c))
+        case c => new CsvImportDocument(text(c), suppliedId(c), url(c), title(c), tags(c).toSet)
       }
     }
 

@@ -99,7 +99,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     }
   }
   
-  private def writeTags(document: Document, tagNames: Iterable[String]): Unit = {
+  private def writeTags(document: Document, tagNames: Set[String]): Unit = {
     val tags = tagNames.map(PersistentTag.findOrCreate(documentSetId, _))
     
     documentTagWriter.write(document, tags)

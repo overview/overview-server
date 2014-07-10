@@ -113,6 +113,15 @@ class CsvImportSourceSpec extends Specification {
         rows.mkString("text,tags\n", "\n", "")
       }
     }
+    
+    trait ValidInputWithRepeatedTags extends CsvImportContext {
+      def tags = Seq("tag1", "tag2")
+      def repeatedTags = tags.head +: tags
+      def tagString = repeatedTags.mkString(",")
+      def input = s"""|text,tags
+                      |"Some text", "$tagString"""".stripMargin
+                   
+    }
 
     "skip the first line of column headers" in new ValidInput {
       val numDocuments = csvImportSource.size
@@ -206,6 +215,12 @@ class CsvImportSourceSpec extends Specification {
 
     "add tags to Documents" in new ValidInputWithTags {
       csvImportSource.map(d => (d.text -> d.tags.toList)).toMap must beEqualTo(tags)
+    }
+    
+    "ensure tags are distinct" in new ValidInputWithRepeatedTags {
+      val doc = csvImportSource.head
+
+      doc.tags must containTheSameElementsAs(tags)
     }
   }
 }
