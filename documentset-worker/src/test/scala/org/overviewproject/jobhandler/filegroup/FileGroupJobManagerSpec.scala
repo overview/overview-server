@@ -88,6 +88,12 @@ class FileGroupJobManagerSpec extends Specification {
 
       fileGroupJobQueue.expectNoMsg
     }
+    
+    "try again if no job is found initially" in new DelayedJobContext {
+      fileGroupJobManager ! clusterCommand
+      
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(documentSetId, fileGroupId))
+    }
 
     "delete cancelled job after cancellation is complete" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
@@ -166,6 +172,17 @@ class FileGroupJobManagerSpec extends Specification {
 
     abstract class NoJobContext extends FileGroupJobManagerContext {
       override protected def uploadJob: Option[DocumentSetCreationJob] = None
+    }
+    
+    abstract class DelayedJobContext extends FileGroupJobManagerContext {
+      private var callCount = 0
+      
+      override protected def uploadJob: Option[DocumentSetCreationJob] = {
+        callCount += 1
+        
+        if (callCount > 1) super.uploadJob
+        else None
+      }
     }
 
     abstract class RestartLimitContext extends FileGroupJobManagerContext {

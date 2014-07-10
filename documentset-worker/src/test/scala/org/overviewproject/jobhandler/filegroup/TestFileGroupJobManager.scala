@@ -36,7 +36,7 @@ trait StorageMonitor extends JobParameters {
 
     override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = {
       updateJobStateFn.store(documentSetId)
-      uploadJob
+      produceUploadJob
     }
     
     override def failJob(job: DocumentSetCreationJob): Unit = failJobFn.store(job)
@@ -51,10 +51,12 @@ trait StorageMonitor extends JobParameters {
 class TestFileGroupJobManager(
     override protected val fileGroupJobQueue: ActorRef,
     override protected val clusteringJobQueue: ActorRef,
-    val uploadJob: Option[DocumentSetCreationJob],
+    uploadJobProducer: => Option[DocumentSetCreationJob],
     interruptedJobs: Seq[(Long, Long, Int)],
     cancelledJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
 
+  protected def produceUploadJob = uploadJobProducer
+  
   protected def loadInterruptedJobs: Seq[DocumentSetCreationJob] =
     for ((ds, fg, n) <- interruptedJobs)
       yield DocumentSetCreationJob(jobType = FileUpload, state = InProgress, 

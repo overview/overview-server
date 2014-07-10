@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
+import scala.concurrent.duration._
 import scala.collection.mutable
 import scala.language.postfixOps
 import akka.actor.{ Actor, ActorRef }
@@ -42,6 +43,8 @@ trait FileGroupJobManager extends Actor {
 
   private val textExtractionJobsPendingCancellation: mutable.Map[Long, Long] = mutable.Map.empty
 
+  private case class UpdateJobStateRetryAttempt(command: ClusterFileGroupCommand, count: Int)
+
   trait Storage {
     def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob]
     def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob]
@@ -62,13 +65,9 @@ trait FileGroupJobManager extends Actor {
 
   def receive = {
 
-    case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
-      storage.updateJobState(documentSetId).fold(
-        Logger.error(s"Trying to cluster non-existent job for document set $documentSetId")) { _ =>
-          queueJob(documentSetId, fileGroupId)
-        }
+    case command: ClusterFileGroupCommand => attemptUpdateJobState(command, 0)
 
-    }
+    case UpdateJobStateRetryAttempt(command, count) => attemptUpdateJobState(command, count)
 
     case FileGroupDocumentsCreated(documentSetId) =>
       textExtractionJobsPendingCancellation.get(documentSetId).fold {
@@ -83,15 +82,27 @@ trait FileGroupJobManager extends Actor {
 
   }
 
-  private def retryJob(job: DocumentSetCreationJob): Unit = { 
-    storage.increaseRetryAttempts(job)
-    queueJob(job.documentSetId, job.fileGroupId.get)
+  private def attemptUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit =
+    storage.updateJobState(command.documentSetId).fold(limitedRetryUpdateJobState(command, count))(queueJob)
+
+  private def limitedRetryUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit =
+    if (count < MaxRetryAttempts) retryUpdateJobState(command, count + 1)
+    else Logger.error(s"Trying to cluster non-existent job for document set ${command.documentSetId}")
+
+  private def retryUpdateJobState(command: ClusterFileGroupCommand, attempt: Int): Unit = {
+    import context.dispatcher
+    context.system.scheduler.scheduleOnce(1 seconds, self, UpdateJobStateRetryAttempt(command, attempt))
   }
-  
+
+  private def retryJob(job: DocumentSetCreationJob): Unit = {
+    storage.increaseRetryAttempts(job)
+    queueJob(job)
+  }
+
   private def failJob(job: DocumentSetCreationJob): Unit = storage.failJob(job)
 
-  private def queueJob(documentSetId: Long, fileGroupId: Long): Unit =
-    fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
+  private def queueJob(job: DocumentSetCreationJob): Unit =
+    fileGroupJobQueue ! CreateDocumentsFromFileGroup(job.documentSetId, job.fileGroupId.get)
 
   private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit = {
     textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
@@ -123,7 +134,7 @@ class FileGroupJobManagerImpl(
         DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
       }
     }
-    
+
     override def failJob(job: DocumentSetCreationJob): Unit = Database.inTransaction {
       DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = Error, statusDescription = "max_retry_attempts"))
     }
