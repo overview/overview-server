@@ -80,7 +80,7 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
     
     // return a list of tag names
     private def tags(row: Array[String]): Iterable[String] =  getOptColumn(row, "tags") match {
-      case Some(tags) => tags.split(",")
+      case Some(tags) => tags.split(",").map(_.trim).filterNot(_.isEmpty)
       case None => Array.empty[String]
     }
     

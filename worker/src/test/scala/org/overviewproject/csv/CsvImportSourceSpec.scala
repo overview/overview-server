@@ -123,6 +123,12 @@ class CsvImportSourceSpec extends Specification {
                    
     }
 
+    trait BlankTags extends CsvImportContext {
+      def tags = Seq("tag1")
+      def input = s"""|text,tags
+                      |"Some text",",${tags.head}"""".stripMargin
+    }
+    
     "skip the first line of column headers" in new ValidInput {
       val numDocuments = csvImportSource.size
 
@@ -220,6 +226,12 @@ class CsvImportSourceSpec extends Specification {
     "ensure tags are distinct" in new ValidInputWithRepeatedTags {
       val doc = csvImportSource.head
 
+      doc.tags must containTheSameElementsAs(tags)
+    }
+    
+    "ignore blank tags" in new BlankTags {
+      val doc = csvImportSource.head
+      
       doc.tags must containTheSameElementsAs(tags)
     }
   }
