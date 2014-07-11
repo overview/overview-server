@@ -21,7 +21,7 @@ class CommandRunner(command: String) {
 
     // catch Exception thrown if command is not found
     val result = allCatch either {
-       commandProcess ! //outputCatcher.log
+       commandProcess ! outputCatcher.log
     }
     
     // Return output, converting exception to failure 
