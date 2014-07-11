@@ -28,7 +28,7 @@ class CommandRunner(command: String) {
     result match {
       case r @ Right(exitCode) if success(exitCode) => Right(outputCatcher.output)
       case r @ Left(e) => Left(s"${e.getMessage()}\nOutput: ${outputCatcher.output}\n")
-      case _ => Left(s"Output: {outputCatcher.output}")
+      case _ => Left(s"Output: ${outputCatcher.output}")
     }
     
   }
