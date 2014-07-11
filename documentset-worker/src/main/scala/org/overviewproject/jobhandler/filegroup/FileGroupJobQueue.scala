@@ -57,6 +57,7 @@ trait FileGroupJobQueue extends Actor {
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[TaskWorkerTask] = mutable.Queue.empty
   private val jobTasks: mutable.Map[DocumentSetId, Set[Long]] = mutable.Map.empty
+  private val documentCreationTrackers: mutable.Map[DocumentSetId, TaskTracker] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
   private val busyWorkers: mutable.Map[ActorRef, TaskWorkerTask] = mutable.Map.empty
 
@@ -76,6 +77,8 @@ trait FileGroupJobQueue extends Actor {
         progressReporter ! StartJob(documentSetId, fileIds.size)
 
         addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
+        trackDocumentCreation(documentSetId, fileIds)
+
         jobRequests += (documentSetId -> JobRequest(sender))
 
         notifyWorkers
@@ -86,6 +89,7 @@ trait FileGroupJobQueue extends Actor {
         taskQueue.dequeue match {
           case task @ CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
             Logger.info(s"($documentSetId:$fileGroupId) Sending task $uploadedFileId to ${sender.path.toString}")
+            documentCreationTrackers.get(documentSetId).map(_.startTask(uploadedFileId))
             progressReporter ! StartTask(documentSetId, uploadedFileId)
             sender ! task
             busyWorkers += (sender -> task)
@@ -113,9 +117,11 @@ trait FileGroupJobQueue extends Actor {
         sender ! FileGroupDocumentsCreated(documentSetId)
       } { r =>
         busyWorkersWithTask(documentSetId).foreach { _ ! CancelTask }
-        val remainingTasks = removeTasksInQueue(documentSetId)
-        
-        notifyRequesterIfJobIsDone(r, documentSetId, remainingTasks)
+        for (tracker <- documentCreationTrackers.get(documentSetId)) {
+          removeTasksInQueue(documentSetId)
+          tracker.removeNotStartedTasks
+          notifyRequesterIfJobIsDone(r, documentSetId, tracker)
+        }
       }
     }
     case DeleteFileUpload(documentSetId, fileGroupId) => {
@@ -136,20 +142,20 @@ trait FileGroupJobQueue extends Actor {
     case Terminated(worker) => {
       Logger.info(s"Removing ${worker.path.toString} from worker pool")
       workerPool -= worker
-      busyWorkers.get(worker).map { task => 
+      busyWorkers.get(worker).map { task =>
         busyWorkers -= worker
         taskQueue += task
       }
-      
+
       notifyWorkers
     }
 
   }
-  
+
   private def notifyWorkers: Unit = workerPool.filter(workerIsFree).map { _ ! TaskAvailable }
 
   private def workerIsFree(worker: ActorRef): Boolean = busyWorkers.get(worker).isEmpty
-  
+
   private def isNewRequest(documentSetId: Long): Boolean = !jobRequests.contains(documentSetId)
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
@@ -157,25 +163,30 @@ trait FileGroupJobQueue extends Actor {
   private def addNewTasksToQueue(documentSetId: Long, fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
     val newTasks = uploadedFileIds.map(CreatePagesTask(documentSetId, fileGroupId, _))
     taskQueue ++= newTasks
+
     jobTasks += (documentSetId -> uploadedFileIds)
+
   }
 
-  private def whenTaskIsComplete(documentSetId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Set[Long]) => Unit) =
-    for {
-      tasks <- jobTasks.get(documentSetId)
-      request <- jobRequests.get(documentSetId)
-      remainingTasks = tasks - uploadedFileId
-    } f(request, documentSetId, remainingTasks)
+  private def trackDocumentCreation(documentSetId: Long, uploadedFileIds: Set[Long]): Unit =
+    documentCreationTrackers += (documentSetId -> new TaskTracker(uploadedFileIds))
 
-  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, remainingTasks: Set[Long]): Unit =
-    if (remainingTasks.isEmpty) {
+  private def whenTaskIsComplete(documentSetId: Long, uploadedFileId: Long)(f: (JobRequest, Long, TaskTracker) => Unit) =
+    for {
+      request <- jobRequests.get(documentSetId)
+      tracker <- documentCreationTrackers.get(documentSetId)
+    } {
+      tracker.completeTask(uploadedFileId)
+      f(request, documentSetId, tracker)
+    }
+
+  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, tracker: TaskTracker): Unit =
+    if (tracker.allTasksComplete) {
       jobTasks -= documentSetId
       jobRequests -= documentSetId
 
       progressReporter ! CompleteJob(documentSetId)
       request.requester ! FileGroupDocumentsCreated(documentSetId)
-    } else {
-      jobTasks += (documentSetId -> remainingTasks)
     }
 
   private def busyWorkersWithTask(documentSetId: Long): Iterable[ActorRef] =
@@ -192,7 +203,7 @@ trait FileGroupJobQueue extends Actor {
     for (tasks <- jobTasks.get(documentSetId)) {
       jobTasks += (documentSetId -> tasks.diff(notStartedUploadIds.toSet))
     }
-    
+
     jobTasks.getOrElse(documentSetId, Set.empty)
   }
 }
