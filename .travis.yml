@@ -8,6 +8,7 @@ branches:
   - master
   - /^deploy.*$/
 before_install:
+  - time sudo add-apt-repository ppa:libreoffice/ppa
   - time sudo apt-get update -qq
   - time ./auto/setup-coffee-tests.sh
   - time ./auto/setup-integration-tests.sh
