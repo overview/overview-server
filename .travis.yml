@@ -12,7 +12,7 @@ before_install:
   - time ./auto/setup-coffee-tests.sh
   - time ./auto/setup-integration-tests.sh
 install:
-  - time sudo apt-get install -qq postgresql openjdk-7-jdk libreoffice-writer
+  - time sudo apt-get install -qq postgresql openjdk-7-jdk libreoffice
 before_script:
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
