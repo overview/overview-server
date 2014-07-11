@@ -27,8 +27,8 @@ class CommandRunner(command: String) {
     // Return output, converting exception to failure 
     result match {
       case r @ Right(exitCode) if success(exitCode) => Right(outputCatcher.output)
-      case r @ Left(e) => Left(e.getMessage())
-      case _ => Left(outputCatcher.output)
+      case r @ Left(e) => Left(s"${e.getMessage()}\nOutput: ${outputCatcher.output}\n")
+      case _ => Left(s"Output: {outputCatcher.output}")
     }
     
   }
