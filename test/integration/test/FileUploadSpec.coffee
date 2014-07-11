@@ -31,7 +31,7 @@ describe 'FileUpload', ->
         .waitForElementBy(tag: 'a', contains: name, visible: true).click()
       
 
-  describe 'after uploading pdfs', ->
+  describe 'after uploading files', ->
     before ->
       @userBrowser
         .openFileUploadPage()
