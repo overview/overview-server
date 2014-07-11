@@ -8,7 +8,7 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.File
-import org.overviewproject.jobhandler.filegroup.task.DocumentConverter.ConverterFailedException
+import org.overviewproject.jobhandler.filegroup.task.DocumentConverter._
 import org.overviewproject.util.Logger
 
 /**
@@ -93,7 +93,11 @@ trait CreatePagesProcess {
 
     private val runSavingError = handling(classOf[Exception]) by saveError
     
-    private def logError(error: Throwable): Unit = Logger.error(s"Conversion Error: ${error}")
+    private def logError(error: Throwable): Unit = error match {
+      case e: ConverterFailedException => Logger.error(s"Conversion Error: $error")
+      case e: NoConverterOutputException => Logger.error(s"No Conversion Output: $error")
+      case e => Logger.info(s"Text extraction failed: $error")
+    }
     
   }
 
