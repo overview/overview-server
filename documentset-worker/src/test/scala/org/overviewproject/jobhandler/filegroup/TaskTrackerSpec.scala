@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package org.overviewproject.jobhandler.filegroup
 
 import org.specs2.mutable.Specification
 
