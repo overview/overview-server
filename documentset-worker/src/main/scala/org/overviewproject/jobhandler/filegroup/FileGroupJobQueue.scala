@@ -56,7 +56,6 @@ trait FileGroupJobQueue extends Actor {
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[TaskWorkerTask] = mutable.Queue.empty
-  private val jobTasks: mutable.Map[DocumentSetId, Set[Long]] = mutable.Map.empty
   private val documentCreationTrackers: mutable.Map[DocumentSetId, TaskTracker] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
   private val busyWorkers: mutable.Map[ActorRef, TaskWorkerTask] = mutable.Map.empty
@@ -163,9 +162,6 @@ trait FileGroupJobQueue extends Actor {
   private def addNewTasksToQueue(documentSetId: Long, fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
     val newTasks = uploadedFileIds.map(CreatePagesTask(documentSetId, fileGroupId, _))
     taskQueue ++= newTasks
-
-    jobTasks += (documentSetId -> uploadedFileIds)
-
   }
 
   private def trackDocumentCreation(documentSetId: Long, uploadedFileIds: Set[Long]): Unit =
@@ -182,7 +178,6 @@ trait FileGroupJobQueue extends Actor {
 
   private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, tracker: TaskTracker): Unit =
     if (tracker.allTasksComplete) {
-      jobTasks -= documentSetId
       jobRequests -= documentSetId
 
       progressReporter ! CompleteJob(documentSetId)
@@ -194,18 +189,9 @@ trait FileGroupJobQueue extends Actor {
       (worker, task) <- busyWorkers if task.documentSetId == documentSetId
     } yield worker
 
-  private def removeTasksInQueue(documentSetId: Long): Set[Long] = {
-    val notStarted = taskQueue.dequeueAll(_.documentSetId == documentSetId)
-    val notStartedUploadIds = notStarted.collect {
-      case CreatePagesTask(_, _, uploadedFileId) => uploadedFileId
-    }
+  private def removeTasksInQueue(documentSetId: Long): Unit =
+    taskQueue.dequeueAll(_.documentSetId == documentSetId)
 
-    for (tasks <- jobTasks.get(documentSetId)) {
-      jobTasks += (documentSetId -> tasks.diff(notStartedUploadIds.toSet))
-    }
-
-    jobTasks.getOrElse(documentSetId, Set.empty)
-  }
 }
 
 class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJobQueue {
