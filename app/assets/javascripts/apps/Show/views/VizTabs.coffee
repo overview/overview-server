@@ -32,6 +32,9 @@ define [
         <li data-id="<%- id %>" class="<%- viz.type %> <%- isSelected ? 'active' : '' %>">
           <a href="#">
             <span class="title"><%- viz.title %></span>
+            <% if (viz.nDocuments) { %>
+              <abbr class="count" title="<%- t('nDocuments.title', viz.nDocuments) %>"><%- t('nDocuments.abbr', viz.nDocuments) %></abbr>
+            <% } %>
             <span class="toggle-popover viz-info-icon icon-info-sign"></span>
             <% if (viz.type == 'job' || viz.type == 'error') { %>
               <progress value="<%- viz.progress.fraction %>"></progress>

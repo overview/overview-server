@@ -22,6 +22,8 @@ define [
       i18n.reset_messages
         'views.DocumentSet.show.VizTabs.cancelJob': 'cancelJob'
         'views.DocumentSet.show.VizTabs.new_viz': 'new_viz'
+        'views.DocumentSet.show.VizTabs.nDocuments.abbr': 'nDocuments.abbr,{0}'
+        'views.DocumentSet.show.VizTabs.nDocuments.title': 'nDocuments.title,{0}'
         'views.DocumentSet.show.VizTabs.viz.title.dt': 'viz.title.dt'
         'views.DocumentSet.show.VizTabs.viz.title.dd': 'viz.title.dd,{0}'
         'views.DocumentSet.show.VizTabs.viz.createdAt.dt': 'viz.createdAt.dt'
@@ -33,8 +35,8 @@ define [
 
     describe 'starting with two vizs', ->
       beforeEach ->
-        @viz1 = new Viz(type: 'viz', id: 1, longId: 'viz-1', title: 'foo', createdAt: new Date(), creationData: [[ 'thing1', 'value1' ], [ 'thing2', 'value2' ]])
-        @viz2 = new Viz(type: 'viz', id: 2, longId: 'viz-2', title: 'bar', createdAt: new Date(), creationData: [])
+        @viz1 = new Viz(type: 'viz', id: 1, longId: 'viz-1', title: 'foo', nDocuments: 10, createdAt: new Date(), creationData: [[ 'thing1', 'value1' ], [ 'thing2', 'value2' ]])
+        @viz2 = new Viz(type: 'viz', id: 2, longId: 'viz-2', title: 'bar', nDocuments: 10, createdAt: new Date(), creationData: [])
         @vizList = new VizList([@viz1, @viz2])
         @state = new State(viz: @viz1)
         @view = new VizTabs(collection: @vizList, state: @state)
@@ -48,6 +50,11 @@ define [
       it 'should contain an li per viz', -> expect(@view.$('li.viz').length).to.eq(2)
       it 'should contain the vizualization', -> expect(@view.$('a:eq(0)')).to.contain('foo')
       it 'should have an info bubble per visualization', -> expect(@view.$('li.viz span.viz-info-icon').length).to.eq(2)
+
+      it 'should show nDocuments', ->
+        $abbr = $('a:eq(0) abbr.count')
+        expect($abbr).to.contain('nDocuments.abbr,10')
+        expect($abbr).to.have.attr('title', 'nDocuments.title,10')
 
       it 'should set "active" on selected viz', ->
         expect(@view.$('li:eq(0)')).to.have.class('active')
@@ -129,6 +136,7 @@ define [
 
       it 'should give the job class "job"', -> expect(@view.$('li:eq(0)')).to.have.class('job')
       it 'should give the viz class "viz"', -> expect(@view.$('li:eq(1)')).to.have.class('viz')
+      it 'should not show nDocuments for the job', -> expect($('li:eq(0) abbr.count')).not.to.exist
 
       it 'should emit click on a job', ->
         spy = sinon.spy()
@@ -168,6 +176,7 @@ define [
         $li = @view.$('li:eq(0)')
         $li.find('a').css(display: 'inline-block', position: 'relative', width: '200px')
         $li.find('span').css(display: 'inline-block', position: 'absolute', left: '180px', top: '0px', height: '20px', width: '20px')
+        $li.find('abbr').css(display: 'none')
         $popover = $li.find('.popover')
         $popover.css(display: 'inline-block', position: 'absolute', height: '100px', width: '50px')
         $popover.find('.arrow').css(position: 'absolute')
@@ -182,6 +191,7 @@ define [
         $li.offset(left: 0, top: 0)
         $li.find('a').css(display: 'inline-block', position: 'relative', width: '100px')
         $li.find('span').css(display: 'inline-block', position: 'absolute', left: '80px', top: '0px', height: '20px', width: '20px')
+        $li.find('abbr').css(display: 'none')
         $popover = $li.find('.popover')
         $popover.css(display: 'inline-block', position: 'absolute', height: '100px', width: '250px')
         $popover.find('.arrow').css(position: 'absolute')
