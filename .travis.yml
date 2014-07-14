@@ -7,10 +7,6 @@ branches:
   only:
   - master
   - /^deploy.*$/
-before_install:
-  # XXX this is just a debugging thing...
-  # Our processes aren't dying as they should. Which one is staying open?
-  - ./travis/ps-every-minute.sh &
 install:
   - time sudo add-apt-repository ppa:libreoffice/ppa -y
   - time sudo apt-get update -qq
@@ -20,8 +16,8 @@ install:
 before_script:
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
-  # Suppress excessive output from Sbt (resolving / downloading). Either it works or it doesn't; all errors are the same to us.
-  # Add "show version" calls so Travis sees output; otherwise, if we exceed 10min Travis will bail.
+  # Suppress excessive output from Sbt (resolving / downloading). Either it
+  # works or it doesn't; all errors are the same to us.
   #
   # We cache with Artifactory. Configure repos here: http://repo-proxy.overviewproject.org.
   # Any repo that's in Build.scala, plugins.sbt or default sbt needs to be in
@@ -45,7 +41,7 @@ script:
   # The build must succeed
   - time SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" ./build overview-server.zip
   # Now that we've built, we can run integration tests with the resulting jars
-  - time (cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M= -Ddocumentset-worker.jvm.Xmx200M= -Dsearchindex.jvm.Xmx200M= -Dmessage-broker.jvm.Xmx200M= -Doverview-server.jvm.Xmx200M= --sh ../travis/wait-and-test-integration.sh)
+  - time (cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M= -Ddocumentset-worker.jvm.Xmx200M= -Dsearchindex.jvm.Xmx200M= -Dmessage-broker.jvm.Xmx200M= -Doverview-server.jvm.Xmx200M= --sh ../travis/wait-and-test-integration-and-killall-java.sh)
 notifications:
   irc:
     - irc.freenode.net#overviewproject
