@@ -170,22 +170,29 @@ define [
           expect($button).not.to.have.class('hover')
 
     describe 'uploading files', ->
-      fileList = undefined
-      $fileInput = undefined
-
       beforeEach ->
         view.render()
 
-        fileList = [ { type: 'application/pdf' }, { type: 'application/pdf' } ]  # two things
-        $fileInput = mockFileInput('.upload-prompt :file')
-        $fileInput[0].files = fileList
-        $fileInput.trigger('change')
+        @fileList = [
+          { name: 'foo.pdf', type: 'application/pdf' }
+          { name: 'bar.pdf', type: 'application/pdf' }
+        ]
+        @fileList.filter = -> throw 'FileList is not Array; it has no .filter() method'
+        @$fileInput = mockFileInput('.upload-prompt :file')
+        @$fileInput[0].files = @fileList
 
       it 'queues files for uploading', ->
-        expect(model.addFiles).to.have.been.calledWith(fileList)
+        @$fileInput.trigger('change')
+        expect(model.addFiles).to.have.been.calledWith(@fileList)
+
+      it 'queues hidden files', ->
+        @fileList[0].name = '.foo.pdf'
+        @$fileInput.trigger('change')
+        expect(model.addFiles.lastCall.args[0]).to.deep.eq(@fileList)
 
       it 'clears the file input once files have been queued', ->
-        expect($fileInput[0].value).to.eq('')
+        @$fileInput.trigger('change')
+        expect(@$fileInput[0].value).to.eq('')
 
     if isFolderUploadSupported
       describe 'uploading folders', ->
@@ -195,24 +202,37 @@ define [
         beforeEach ->
           view.render()
 
-          fileList = [
+          @fileList = [
             { name: '.', type: '', webkitRelativePath: 'x/.' }
             { name: 'a.pdf', type: 'application/pdf', webkitRelativePath: 'x/foo/a.pdf' }
             { name: 'b.exe', type: 'application/octet-stream', webkitRelativePath: 'x/foo/b.exe' }
             { name: 'c.pdf.t', type: 'application/pdf', webkitRelativePath: 'x/bar/c.pdf.t' }
           ]
-          $fileInput = mockFileInput('.upload-folder-prompt :file')
-          $fileInput[0].files = fileList
-          $fileInput.trigger('change')
+          @fileList.filter = -> throw 'FileList is not Array; it has no .filter() method'
+          @$fileInput = mockFileInput('.upload-folder-prompt :file')
+          @$fileInput[0].webkitdirectory = true
+          @$fileInput[0].files = @fileList
 
         it 'queues files for uploading', ->
-          expect(model.addFiles).to.have.been.calledWith([
+          @$fileInput.trigger('change')
+          expect(model.addFiles).to.have.been.called
+          expect(model.addFiles.lastCall.args[0]).to.deep.eq([
             { name: 'a.pdf', type: 'application/pdf', webkitRelativePath: 'x/foo/a.pdf' }
+            { name: 'b.exe', type: 'application/octet-stream', webkitRelativePath: 'x/foo/b.exe' }
             { name: 'c.pdf.t', type: 'application/pdf', webkitRelativePath: 'x/bar/c.pdf.t' }
           ])
 
+        it 'does not queue hidden files', ->
+          @fileList[2].name = '.b.exe'
+          @fileList[2].webkitRelativePath = 'x/foo/.b.exe'
+          @$fileInput.trigger('change')
+          expect(model.addFiles.lastCall.args[0]).to.deep.eq [
+            { name: 'a.pdf', type: 'application/pdf', webkitRelativePath: 'x/foo/a.pdf' }
+            { name: 'c.pdf.t', type: 'application/pdf', webkitRelativePath: 'x/bar/c.pdf.t' }
+          ]
+
         it 'clears the file input once files have been queued', ->
-          expect($fileInput[0].value).to.eq('')
+          expect(@$fileInput[0].value).to.eq('')
 
     describe 'buttons', ->
       beforeEach ->

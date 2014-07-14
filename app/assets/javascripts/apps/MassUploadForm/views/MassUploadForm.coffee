@@ -103,6 +103,13 @@ define [
 
     _addFiles: (e) ->
       input = e.currentTarget
+
+      files = input.files
+
+      if input.webkitdirectory
+        # remove hidden files
+        files = (f for f in files when f.name.charAt(0) != '.')
+
       @model.addFiles(input.files)
 
       input.value = '' # so the user can select files again

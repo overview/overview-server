@@ -8,13 +8,18 @@ define [
 ], ($, MassUploadForm, MassUploadTransport, UploadCollectionView, RedirectConfirmer, MassUpload) ->
   class App
     constructor: (options) ->
-      model = new MassUpload( MassUploadTransport({url: options.baseUrl, csrfToken: options.csrfToken}) )
-      view = new MassUploadForm(
+      transport = MassUploadTransport
+        url: options.baseUrl
+        csrfToken: options.csrfToken
+
+      model = new MassUpload(transport)
+
+      view = new MassUploadForm
         model: model
         uploadCollectionViewClass: UploadCollectionView
         supportedLanguages: options.supportedLanguages
         defaultLanguageCode: options.defaultLanguageCode
-      )
+
       view.render()
 
       redirectConfirmer = new RedirectConfirmer
