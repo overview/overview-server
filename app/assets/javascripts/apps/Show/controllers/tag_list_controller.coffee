@@ -1,9 +1,8 @@
 define [
   '../models/DocumentListParams'
   '../views/InlineTagList'
-  './tag_form_controller'
   './TagDialogController'
-], (DocumentListParams, InlineTagListView, tag_form_controller, TagDialogController) ->
+], (DocumentListParams, InlineTagListView, TagDialogController) ->
   tag_list_controller = (options) ->
     documentSet = options.documentSet
     tags = documentSet.tags

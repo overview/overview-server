@@ -2,7 +2,7 @@ define [ '../views/tag_form_view' ], (TagFormView) ->
   # Pops up a modal dialog to modify/delete a tag
   #
   # Handles logging and hiding the dialog. Just call and forget.
-  tag_form_controller = (tag, cache, state, options=undefined) ->
+  tag_form_controller = (tag, state, options=undefined) ->
     form = options?.create_form?(tag) || new TagFormView(tag)
 
     form.observe 'closed', ->
@@ -16,7 +16,7 @@ define [ '../views/tag_form_view' ], (TagFormView) ->
       if state.get('taglikeCid') == tag.cid
         state.set('taglikeCid', null)
       if (params = state.get('documentListParams'))? && params.type == 'tag' && params.tag == tag
-        state.resetDocumentListParams.all()
+        state.resetDocumentListParams().all()
       tag.destroy()
 
     undefined

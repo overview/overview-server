@@ -162,7 +162,7 @@ define [
         node_form_controller(node, @state)
 
       @listenTo view, 'edit-tag', (tag) ->
-        tag_form_controller(tag)
+        tag_form_controller(tag, @state)
 
       @titleView = view
       view.$el.appendTo(@listEl)

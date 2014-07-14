@@ -28,9 +28,9 @@ define [
         @tag.destroy = sinon.spy()
         @tag.collection = { sort: sinon.spy() }
         @state = new Backbone.Model
-        @state.resetDocumentListParams =
-          all: sinon.spy()
-        @controller = tag_form_controller(@tag, @cache, @state, options)
+        @resetSpy = sinon.spy()
+        @state.resetDocumentListParams = => { all: @resetSpy }
+        @controller = tag_form_controller(@tag, @state, options)
 
       it 'should create a view when called', ->
         expect(view).to.exist
@@ -60,9 +60,9 @@ define [
       it 'should change documentListParams if necessary on delete', ->
         @state.set(documentListParams: { type: 'tag', tag: @tag })
         view.delete()
-        expect(@state.resetDocumentListParams.all).to.have.been.called
+        expect(@resetSpy).to.have.been.called
 
       it 'should not change documentListParams if unnecessary on delete', ->
         @state.set(documentListParams: { type: 'foo' })
         view.delete()
-        expect(@state.resetDocumentListParams.all).not.to.have.been.called
+        expect(@resetSpy).not.to.have.been.called
