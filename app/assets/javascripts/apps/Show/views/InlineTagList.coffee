@@ -70,15 +70,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     _onChangeDocumentListParams: ->
       @_renderSelected()
 
-    _documentListParamsToTagCid: (params) ->
-      return null if !params? || params.type != 'tag'
-
-      tag = @collection.get(params.tagId)
-
-      return null if !tag?
-
-      tag.cid
-
     # Adds a 'selected' class to the selection (either a tag or "untagged").
     _renderSelected: ->
       @_renderTagSelected()
@@ -87,7 +78,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     # Adds a 'selected' class to the selected tag's <li>
     _renderTagSelected: ->
       oldCid = @$('li.selected').attr('data-cid') ? null
-      newCid = @_documentListParamsToTagCid(@state.get('documentListParams'))
+      newCid = @state.get('documentListParams')?.tag?.cid
 
       return if oldCid == newCid
 
