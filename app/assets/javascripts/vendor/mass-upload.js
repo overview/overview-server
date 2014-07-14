@@ -16,12 +16,12 @@ define('MassUpload/FileInfo',[],function() {
     return new FileInfo(obj.name, new Date(obj.lastModifiedDate), obj.total, obj.loaded);
   };
   FileInfo.fromFile = function(obj) {
-    return new FileInfo(obj.name, obj.lastModifiedDate, obj.size, 0);
+    return new FileInfo(obj.webkitRelativePath || obj.name, obj.lastModifiedDate, obj.size, 0);
   };
   return FileInfo;
 });
 
-define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileInfo) {
+define('MassUpload/Upload',['underscore', 'backbone', './FileInfo'], function(_, Backbone, FileInfo) {
   var Upload;
   return Upload = (function() {
     Upload.prototype = Object.create(Backbone.Events);
@@ -35,13 +35,13 @@ define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileIn
     };
 
     function Upload(attributes) {
-      var _ref, _ref1, _ref2, _ref3;
+      var _ref, _ref1, _ref2;
       this.file = (_ref = attributes.file) != null ? _ref : null;
       this.fileInfo = (_ref1 = attributes.fileInfo) != null ? _ref1 : null;
       this.error = (_ref2 = attributes.error) != null ? _ref2 : null;
       this.uploading = attributes.uploading || false;
       this.deleting = attributes.deleting || false;
-      this.id = ((_ref3 = this.fileInfo) != null ? _ref3 : this.file).name;
+      this.id = this.file != null ? this.file.webkitRelativePath || this.file.name : this.fileInfo.name;
       this.attributes = this;
     }
 
@@ -244,6 +244,14 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
     UploadCollection.prototype.get = function(id) {
       var _ref;
       return (_ref = this._idToModel[id]) != null ? _ref : null;
+    };
+
+    UploadCollection.prototype.forFile = function(file) {
+      return this.get(file.webkitRelativePath || file.name);
+    };
+
+    UploadCollection.prototype.forFileInfo = function(fileInfo) {
+      return this.get(fileInfo.name);
     };
 
     UploadCollection.prototype.addFiles = function(files) {
@@ -929,7 +937,7 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
 
     MassUpload.prototype._onUploaderStart = function(file) {
       var upload;
-      upload = this.uploads.get(file.name);
+      upload = this.uploads.forFile(file);
       return upload.set({
         uploading: true,
         error: null
@@ -938,7 +946,7 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
 
     MassUpload.prototype._onUploaderStop = function(file) {
       var upload;
-      upload = this.uploads.get(file.name);
+      upload = this.uploads.forFile(file);
       upload.set({
         uploading: false
       });
@@ -947,13 +955,13 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
 
     MassUpload.prototype._onUploaderProgress = function(file, progressEvent) {
       var upload;
-      upload = this.uploads.get(file.name);
+      upload = this.uploads.forFile(file);
       return upload.updateWithProgress(progressEvent);
     };
 
     MassUpload.prototype._onUploaderError = function(file, errorDetail) {
       var upload;
-      upload = this.uploads.get(file.name);
+      upload = this.uploads.forFile(file);
       return upload.set({
         error: errorDetail
       });
@@ -961,7 +969,7 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
 
     MassUpload.prototype._onUploaderSuccess = function(file) {
       var upload;
-      upload = this.uploads.get(file.name);
+      upload = this.uploads.forFile(file);
       return upload.updateWithProgress({
         loaded: upload.size(),
         total: upload.size()
@@ -976,13 +984,13 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
 
     MassUpload.prototype._onDeleterSuccess = function(fileInfo) {
       var upload;
-      upload = this.uploads.get(fileInfo.name);
+      upload = this.uploads.forFileInfo(fileInfo);
       return this.uploads.remove(upload);
     };
 
     MassUpload.prototype._onDeleterError = function(fileInfo, errorDetail) {
       var upload;
-      upload = this.uploads.get(fileInfo.name);
+      upload = this.uploads.forFileInfo(fileInfo);
       return upload.set({
         error: errorDetail
       });
