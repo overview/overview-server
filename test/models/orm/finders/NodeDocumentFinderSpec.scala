@@ -102,8 +102,8 @@ class NodeDocumentFinderSpec extends Specification {
       counts.get(2) must beSome(3)
     }
 
-    "find NodeDocuments in Tree only" in new NodesInTwoDocumentSets {
-      val nd = NodeDocumentFinder.byNodeIdsInTree(documentIds1 ++ documentIds2, tree1.id).toSeq
+    "find NodeDocuments in DocumentSet only" in new NodesInTwoDocumentSets {
+      val nd = NodeDocumentFinder.byNodeIdsInDocumentSet(documentIds1 ++ documentIds2, documentSet1.id).toSeq
 
       nd.map(_.nodeId).distinct must beEqualTo(Seq(nodeId1))
       nd.map(_.documentId).sorted must beEqualTo(documentIds1)
