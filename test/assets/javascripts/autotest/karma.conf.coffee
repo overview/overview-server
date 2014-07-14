@@ -30,7 +30,6 @@ module.exports = (config) ->
       { pattern: "#{modules}/chai-as-promised/lib/chai-as-promised.js", included: false }
       { pattern: "#{modules}/sinon/pkg/sinon.js", included: false }
       { pattern: "#{modules}/sinon-chai/lib/**/*.js", included: false }
-      { pattern: "#{framework}/init.coffee", included: false }
       "#{framework}/bind.js"
       "#{framework}/requirejs_config.coffee"
     ]
