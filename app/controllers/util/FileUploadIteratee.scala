@@ -15,7 +15,6 @@ import models.upload.OverviewUpload
  * is in sync with the LargeObject where the file is stored.
  */
 trait FileUploadIteratee {
-  private def X_MSHACK_CONTENT_RANGE: String = "X-MSHACK-Content-Range"
   private def DefaultBufferSize: Int = 1024 * 1024
 
   /** package for information extracted from request header */
@@ -30,7 +29,7 @@ trait FileUploadIteratee {
       val contentType = headers.get(CONTENT_TYPE).getOrElse("")
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
       for {
-        contentRange <- headers.get(CONTENT_RANGE).orElse(headers.get(X_MSHACK_CONTENT_RANGE))
+        contentRange <- headers.get(CONTENT_RANGE)
         rangeMatch <- range.findFirstMatchIn(contentRange)
       } yield {
         val List(start, end, length) = rangeMatch.subgroups.take(3)
