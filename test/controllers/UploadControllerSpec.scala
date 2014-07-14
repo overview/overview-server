@@ -149,7 +149,7 @@ class UploadControllerSpec extends Specification with Mockito {
 
     "return PARTIAL_CONTENT with upload info in headers if upload is not complete" in new HeadRequest with IncompleteUpload {
       status(result) must be equalTo (PARTIAL_CONTENT)
-      header(CONTENT_RANGE, result) must beSome("0-99/1000")
+      header(CONTENT_RANGE, result) must beSome("bytes 0-99/1000")
       header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
     }
 
