@@ -161,13 +161,6 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       )
     }
 
-    trait MsHackHeader extends UploadHeader {
-      def headers = Seq(
-        ("X-MSHACK-Content-Range", Seq("0-999/1000")),
-        (CONTENT_DISPOSITION, Seq(contentDisposition)),
-        (CONTENT_LENGTH, Seq("100")))
-    }
-
     trait NoOptionalContentHeader extends UploadHeader {
       def headers = Seq(("Content-Range", Seq("0-999/1000")))
     }
@@ -239,10 +232,6 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       restartedUpload.uploadedFile.size must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
       uploadIteratee.uploadTruncated must beTrue
-    }
-
-    "use X-MSHACK-Content-Range if Content-Range header not specified" in new GoodUpload with SingleChunk with MsHackHeader {
-      upload.uploadedFile.size must be equalTo (chunk.size)
     }
 
     "set contentDisposition to raw value of Content-Dispositon" in new GoodUpload with SingleChunk with GoodHeader {
