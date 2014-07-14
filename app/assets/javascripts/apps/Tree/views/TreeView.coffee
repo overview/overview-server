@@ -75,13 +75,16 @@ define [
       @$hover_node_description = $('<div class="hover-node-description" style="display:none;"></div>')
       $div.append(@$hover_node_description) # FIXME find a better place for this
 
-      $zoom_buttons = $("""<div class="zoom-buttons">
-          <button class="zoom-in">+</button>
-          <button class="zoom-out">-</button>
+      $refresh_button = $("""<div class="refresh-button"><button type="button" class="refresh"></button></div>""")
+      $div.append($refresh_button)
+
+      $zoom_buttons = $("""<div class="buttons">
+          <button type="button" class="refresh"><i class="icon-refresh"/></button>
+          <button type="button" class="zoom-in"><i class="icon-zoom-in"/></button>
+          <button type="button" class="zoom-out" disabled><i class="icon-zoom-out"/></button>
         </div>""")
       $div.append($zoom_buttons)
-      @zoomInButton = $zoom_buttons.find('.zoom-in')[0]
-      @zoomOutButton = $zoom_buttons.find('.zoom-out')[0]
+      [ @refreshButton, @zoomInButton, @zoomOutButton ] = $zoom_buttons.children()
 
       this._attach()
       this._set_needs_update()
@@ -128,6 +131,10 @@ define [
 
       @focus.on('change:zoom', this._refresh_zoom_button_status.bind(this))
 
+      $(@refreshButton).on 'click', (e) =>
+        e.preventDefault()
+        e.stopPropagation() # don't pan
+        @trigger('refresh')
       $(@zoomInButton).on 'click', (e) =>
         e.preventDefault()
         e.stopPropagation() # don't pan
@@ -273,8 +280,8 @@ define [
         @trigger('needs-update')
 
     _refresh_zoom_button_status: ->
-      @zoomInButton.className = @focus.isZoomedInFully() && 'disabled' || ''
-      @zoomOutButton.className = @focus.isZoomedOutFully() && 'disabled' || ''
+      $(@zoomInButton).prop('disabled', @focus.isZoomedInFully())
+      $(@zoomOutButton).prop('disabled', @focus.isZoomedOutFully())
 
     # Sets the node being hovered.
     #

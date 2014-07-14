@@ -159,6 +159,7 @@ define [
       state = new State(documentListParams: documentSet.documentListParams(viz).all(), viz: viz)
 
       state.on 'change:viz', (__, viz) ->
+        return if !viz?
         # Change URL so a page refresh brings us to this viz
         url = "/documentsets/#{documentSet.id}/#{viz.id}"
         window.history?.replaceState(url, '', url)

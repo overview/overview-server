@@ -1,5 +1,7 @@
 define [
+  'underscore'
   'jquery'
+  'backbone'
   './models/on_demand_tree'
   './models/property_interpolator'
   './models/animator'
@@ -10,7 +12,7 @@ define [
   './controllers/TreeController'
   './views/FocusView'
   './views/TreeView'
-], ($, \
+], (_, $, Backbone, \
     OnDemandTree, PropertyInterpolator, Animator, AnimatedFocus, AnimatedTree, TreeLayout, \
     FocusController, TreeController, \
     FocusView, TreeView) ->
@@ -28,6 +30,8 @@ define [
     Down: => @treeController.goDown()
 
   class TreeApp
+    _.extend(@::, Backbone.Events)
+
     constructor: (options) ->
       throw 'Must pass el, an HTMLElement' if !options.el
       throw 'Must pass app, a Show app' if !options.app
@@ -72,7 +76,13 @@ define [
       @treeKeyBindings = new TreeKeyBindings(@treeController)
       @keyboardController.register(@treeKeyBindings)
 
+      @listenTo @treeView, 'refresh', ->
+        # Kill this VizApp and build a new one
+        options.state.setViz(null)
+        options.state.setViz(options.viz)
+
     remove: ->
+      @stopListening()
       @keyboardController.unregister(@treeKeyBindings)
       @focusView.remove()
       @treeView.stopListening()#@treeView.remove()

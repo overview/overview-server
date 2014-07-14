@@ -86,7 +86,7 @@ define [ 'backbone' ], (Backbone) ->
 
     setViz: (viz) ->
       params = @get('documentListParams')
-      type = viz.get('type')
+      type = viz?.get?('type')
       if type != 'job' && type != 'error'
         params = params?.reset.withViz(viz).all()
 
