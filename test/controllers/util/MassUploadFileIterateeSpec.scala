@@ -9,7 +9,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
-import play.api.mvc.RequestHeader
+import play.api.mvc.{RequestHeader, Result}
 import play.api.mvc.Results._
 import play.api.test.{ FakeApplication, FakeHeaders }
 import play.api.test.Helpers._
@@ -132,14 +132,14 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
       override val headers: Seq[(String, Seq[String])] = Seq(
         (CONTENT_TYPE, Seq(contentType)),
-        (CONTENT_RANGE, Seq(s"$start-$end/$total")),
+        (CONTENT_RANGE, Seq(s"bytes $start-$end/$total")),
         (CONTENT_LENGTH, Seq(s"$total")),
         (CONTENT_DISPOSITION, Seq(contentDisposition)))
     }
 
     trait MissingOptionalHeaders extends Headers {
       override val headers: Seq[(String, Seq[String])] = Seq(
-        (CONTENT_RANGE, Seq(s"$start-$end/$total")))
+        (CONTENT_RANGE, Seq(s"bytes $start-$end/$total")))
     }
 
     trait RestartHeaders extends Headers {
@@ -147,7 +147,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
       override val headers: Seq[(String, Seq[String])] = Seq(
         (CONTENT_TYPE, Seq(contentType)),
-        (CONTENT_RANGE, Seq(s"$restart-$end/$total")),
+        (CONTENT_RANGE, Seq(s"bytes $restart-$end/$total")),
         (CONTENT_LENGTH, Seq(s"${total - restart}")),
         (CONTENT_DISPOSITION, Seq(contentDisposition)))
 
@@ -279,9 +279,36 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     "return an error if start of content range is past uploadedSize" in new RestartContext {
       iteratee.storage.findUpload(fileGroupId, guid) returns Some(fileUpload.copy(uploadedSize = restart - 10))
 
-      result must beLeft(BadRequest)
+      result must beLeft((r: Result) => r.header.status must beEqualTo(BAD_REQUEST))
     }
 
+    "succeed if request has zero length" in new UploadContext {
+      override val bufferSize = 10
+      override val enumerator = Enumerator.eof[Array[Byte]]
+      override val headers = Seq(
+        CONTENT_LENGTH -> Seq("0"),
+        CONTENT_DISPOSITION -> Seq(contentDisposition),
+        CONTENT_TYPE -> Seq(contentType)
+      )
+      override val createFileGroup = false
+
+      override lazy val iteratee = new TestMassUploadFileIteratee {
+        storage.findCurrentFileGroup(any) returns Some(fileGroup)
+        storage.findUpload(any, any) returns None
+        storage.createUpload(fileGroupId, contentType, filename, guid, 0L) returns GroupedFileUpload(
+          fileGroupId=1L,
+          guid=guid,
+          contentType=contentType,
+          name=filename,
+          size=0L,
+          uploadedSize=0L,
+          contentsOid=0L,
+          id=1L
+        )
+      }
+
+      result must beRight
+    }
   }
   
   step(stop)

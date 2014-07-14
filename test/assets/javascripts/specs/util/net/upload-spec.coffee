@@ -3,7 +3,6 @@ define [
   'md5'
 ], (Upload, md5) ->
   describe 'util/net/Upload', ->
-    fakeFile = undefined
     upload = undefined
     md5 = CryptoJS.MD5
 
@@ -20,7 +19,7 @@ define [
 
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
-      fakeFile =
+      @fakeFile =
         name: 'FOO bar "baz".pdf' # filename with spaces and quotes
         size: 1000
         lastModifiedDate:
@@ -36,8 +35,8 @@ define [
       beforeEach ->
         @fakeStartUploadWithFilename = (filename) =>
           # If the filename isn't an HTTP "token", we UTF-8-escape it
-          fakeFile.name = filename
-          upload = new Upload(fakeFile, '/upload/')
+          @fakeFile.name = filename
+          upload = new Upload(@fakeFile, '/upload/')
           upload.start()
           @sandbox.server.requests[@sandbox.server.requests.length - 1].respond([ 404, {}, '' ]) # not found, go ahead and upload
 
@@ -79,7 +78,7 @@ define [
 
     describe 'starting an upload', ->
       beforeEach ->
-        upload = new Upload(fakeFile, '/upload/')
+        upload = new Upload(@fakeFile, '/upload/')
         upload.start()
 
       it 'moves into the starting state', ->
@@ -103,7 +102,7 @@ define [
           expect(@sandbox.server.requests[1].method).to.eq('POST')
 
         it 'correctly specifies the content-range', ->
-          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('0-999/1000')
+          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('bytes 0-999/1000')
 
       describe 'when the server has 0 bytes of the file uploaded', ->
         beforeEach ->
@@ -114,25 +113,36 @@ define [
           expect(@sandbox.server.requests[1].method).to.eq('POST')
 
         it 'should specify the correct content-range', ->
-          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('0-999/1000')
+          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('bytes 0-999/1000')
 
       describe 'when part of the file has been uploaded already', ->
         beforeEach ->
-          @sandbox.server.requests[0].respond(204, { 'Content-Type': 'application/json', 'Content-Range': '0-499/1000' }, '')
+          @sandbox.server.requests[0].respond(204, { 'Content-Type': 'application/json', 'Content-Range': 'bytes 0-499/1000' }, '')
 
         it 'should start the upload', ->
           expect(upload.state).to.eq(3)
           expect(@sandbox.server.requests[1].method).to.eq('POST')
 
         it 'correctly specifies the content-range', ->
-          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('500-999/1000')
+          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('bytes 500-999/1000')
 
     describe 'with a zero-length file', ->
       beforeEach ->
-        fakeFile.size = 0
-        upload = new Upload(fakeFile, '/upload/')
+        @fakeFile.size = 0
+        upload = new Upload(@fakeFile, '/upload/')
         upload.start()
-        @sandbox.server.requests[0].respond(404, {}, '') # not found, go ahead and upload
 
-      it 'correctly specifies the content-range', ->
-        expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('0-0/0')
+      describe 'when the server does not have the file', ->
+        beforeEach ->
+          @sandbox.server.requests[0].respond(404, {}, '') # not found, go ahead and upload
+          # Now the client starts uploading
+
+        it 'has no content-range', ->
+          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.be.undefined
+
+      describe 'when server has the file', ->
+        beforeEach ->
+          @sandbox.server.requests[0].respond(204, {}, '')
+
+        it 'moves to the done state', -> expect(upload.state).to.eq(4)
+        it 'does not request any more', -> expect(@sandbox.server.requests[1]).to.be.undefined

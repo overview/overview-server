@@ -23,9 +23,8 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
   # The "end" byte is inclusive in HTTP/1.1, but it's exclusive everywhere else
   # we deal with strings in our code. This method adds one to the provided number.
   content_range_to_end = (s) ->
-    if s?
-      i = parseInt(s.split(/-/)[1], 10)
-      i + 1
+    if (m = /bytes (\d+)-(\d+)\/(\d+)/.exec(s))?
+      parseInt(m[2], 10) + 1
     else
       0
 
@@ -255,17 +254,18 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
           return if !jqxhr? or jqxhr isnt @uploading_jqxhr
           @deferred.notify({ state: 'uploading', loaded: @uploaded_offset + loaded, total: @uploaded_offset + total })
 
-      sendOffset = @file.size - 1
-      sendOffset = 0 if sendOffset < 0
-
-      headers = { 'Content-Range': "#{@uploaded_offset}-#{sendOffset}/#{@file.size}" }
+      headers = {}
 
       filename = @file.name
-      if /[^ !#$&+\-\.^_`|~0-9a-zA-Z]/.test(filename)
+      headers['Content-Disposition'] = if /[^ !#$&+\-\.^_`|~0-9a-zA-Z]/.test(filename)
         # There's a non-"token", as defined in http://tools.ietf.org/html/rfc2616#section-2.2
-        headers['Content-Disposition'] = "attachment; filename*=UTF-8''#{encodeRfc5987ValueChars(filename)}"
+        "attachment; filename*=UTF-8''#{encodeRfc5987ValueChars(filename)}"
       else
-        headers['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+        "attachment; filename=\"#{filename}\""
+
+      if @file.size > 0
+        sendOffset = @file.size - 1
+        headers['Content-Range'] = "bytes #{@uploaded_offset}-#{sendOffset}/#{@file.size}"
 
       @uploading_jqxhr = ajax({
         url: @url

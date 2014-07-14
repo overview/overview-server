@@ -28,17 +28,19 @@ trait MassUploadFileIteratee {
     val fileGroup = storage.findCurrentFileGroup(userEmail)
       .getOrElse(storage.createFileGroup(userEmail))
 
-    val infoAttempt = Try(RequestInformation(request))
-    val validUploadStart = infoAttempt match {
-      case Success(info) => {
+    val validUploadStart = RequestInformation.fromRequest(request) match {
+      case Some(info) => {
         val initialUpload = storage.findUpload(fileGroup.id, guid)
           .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
-        if (info.start > initialUpload.uploadedSize) Left(BadRequest)
-        else Right(initialUpload.copy(uploadedSize = info.start))
+        if (info.start > initialUpload.uploadedSize) {
+          Left(BadRequest("Trying to resume upload past the last known byte"))
+        } else {
+          Right(initialUpload.copy(uploadedSize = info.start))
+        }
       }
-      case Failure(e) => {
+      case None => {
         Logger.error(s"Failed to parse upload request headers ${request.headers}")
-        Left(BadRequest)
+        Left(BadRequest("Request did not specify Content-Range or Content-Length"))
       }
     }
 
@@ -80,20 +82,33 @@ trait MassUploadFileIteratee {
     }
   }
 
-  private case class RequestInformation(filename: String, contentType: String,
-                                        start: Long, end: Long, total: Long)
+  private case class RequestInformation(filename: String, contentType: String, start: Long, total: Long)
 
   private object RequestInformation {
-    def apply(request: RequestHeader): RequestInformation = {
+    def fromRequest(request: RequestHeader): Option[RequestInformation] = {
       val contentType = request.headers.get(CONTENT_TYPE).getOrElse("")
       val contentDisposition = request.headers.get(CONTENT_DISPOSITION)
       val filename: String = contentDisposition.flatMap(ContentDisposition(_).filename).getOrElse("")
-      val contentRange = request.headers.get(CONTENT_RANGE).get
-      val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
-      val rangeMatch = range.findFirstMatchIn(contentRange).get
-      val List(start, end, length) = rangeMatch.subgroups.take(3)
 
-      RequestInformation(filename, contentType, start.toLong, end.toLong, length.toLong)
+      def one(start: Long, total: Long) = RequestInformation(filename, contentType, start, total)
+
+      // A string matching "(\d{0,18})" cannot throw an exception when converted to Long.
+      val rangeResults = request.headers.get(CONTENT_RANGE).flatMap { contentRanges =>
+        """^bytes (\d{0,18})-\d+/(\d{0,18})$""".r.findFirstMatchIn(contentRanges).map { rangeMatch =>
+          val List(start, total) = rangeMatch.subgroups.take(2)
+
+          one(start.toLong, total.toLong)
+        }
+      }
+      
+      val lengthResults = request.headers.get(CONTENT_LENGTH).flatMap { contentLengths =>
+        """^(\d{0,18})$""".r.findFirstMatchIn(contentLengths).map { lengthMatch =>
+          val List(total) = lengthMatch.subgroups.take(1)
+          one(0L, total.toLong)
+        }
+      }
+
+      (rangeResults ++ lengthResults).headOption
     }
   }
 }

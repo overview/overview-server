@@ -67,7 +67,7 @@ trait UploadController extends Controller {
   }
 
   def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
-    def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
+    def contentRange(upload: OverviewUpload): String = "bytes 0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
 
     findUpload(request.user.id, guid).map { u =>

@@ -44,7 +44,7 @@ trait MassUploadController extends Controller {
       status.withHeaders((CONTENT_DISPOSITION, upload.contentDisposition))
 
     findUploadInCurrentFileGroup(request.user.email, guid) match {
-      case Some(u) if (isUploadComplete(u)) => resultWithHeaders(Ok, u)
+      case Some(u) if (isUploadComplete(u) && !isUploadEmpty(u)) => resultWithHeaders(Ok, u)
       case Some(u) if (isUploadEmpty(u)) => resultWithContentDisposition(NoContent, u)
       case Some(u) => resultWithHeaders(PartialContent, u)
       case None => NotFound
@@ -121,7 +121,7 @@ trait MassUploadController extends Controller {
     } yield upload
 
   private def isUploadComplete(upload: GroupedFileUpload): Boolean =
-    (upload.uploadedSize == upload.size) && (upload.size > 0)
+    upload.uploadedSize == upload.size
 
   private def isUploadEmpty(upload: GroupedFileUpload): Boolean =
     upload.uploadedSize == 0
@@ -133,7 +133,7 @@ trait MassUploadController extends Controller {
 
     Seq(
       (CONTENT_LENGTH, s"${upload.uploadedSize}"),
-      (CONTENT_RANGE, s"0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
+      (CONTENT_RANGE, s"bytes 0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
       (CONTENT_DISPOSITION, upload.contentDisposition))
   }
 

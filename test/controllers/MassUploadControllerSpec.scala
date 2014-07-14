@@ -112,7 +112,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
   }
 
   trait EmptyUpload extends UploadProvider with UploadInfo {
-    val uploadSize = 0
+    val uploadSize = 0L
 
     override def createUpload = {
       val upload = smartMock[GroupedFileUpload]
@@ -144,6 +144,12 @@ class MassUploadControllerSpec extends Specification with Mockito {
     "return BadRequest if upload is not complete" in new CreateRequest with IncompleteUpload with InProgressFileGroup {
       status(result) must be equalTo (BAD_REQUEST)
     }
+
+    "return Ok when the upload is an empty file" in new CreateRequest with EmptyUpload with InProgressFileGroup {
+      override val size = 0L
+      override val uploadSize = 0L
+      status(result) must be equalTo (OK)
+    }
   }
 
   "MassUploadController.show" should {
@@ -171,7 +177,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
     "return PartialContent with content range if upload is not complete" in new ShowRequest with IncompleteUpload with InProgressFileGroup {
       status(result) must be equalTo (PARTIAL_CONTENT)
-      header(CONTENT_RANGE, result) must beSome(s"0-${uploadSize - 1}/$size")
+      header(CONTENT_RANGE, result) must beSome(s"bytes 0-${uploadSize - 1}/$size")
     }
 
     "return NoContent uploaded file is empty" in new ShowRequest with EmptyUpload with InProgressFileGroup {
