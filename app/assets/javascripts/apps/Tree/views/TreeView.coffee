@@ -354,7 +354,7 @@ define [
         { type: 'null', taglike: null }
 
     setTaglikeCid: (taglikeCid) ->
-      @stopListening(@_taglike) if @_taglike?
+      @stopListening(@_taglike) if @_taglike?.get? # if it's a Backbone.Model
 
       taglikeAndType = @_findTaglikeAndType(taglikeCid)
       taglike = taglikeAndType.taglike
