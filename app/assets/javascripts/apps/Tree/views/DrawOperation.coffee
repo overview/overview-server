@@ -29,8 +29,12 @@ define [], ->
     constructor: (@canvas, @tree, @taglikeColor, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
       parent = @canvas.parentNode
       style = parent.ownerDocument.defaultView.getComputedStyle(parent, null)
-      @canvas.width = @width = parseInt(style.width)
-      @canvas.height = @height = parseInt(style.height)
+
+      @width = parseInt(style.width)
+      @height = parseInt(style.height)
+
+      @canvas.style.width = "#{@width}px"
+      @canvas.style.height = "#{@height}px"
 
       @ctx = @canvas.getContext('2d')
 
@@ -45,18 +49,14 @@ define [], ->
                             @ctx.backingStorePixelRatio ||
                             1
 
-      @device_to_backing_store_ratio = ratio = device_pixel_ratio / backing_store_ratio
-      if ratio != 1
-        old_width = @canvas.width
-        old_height = @canvas.height
+      ratio = device_pixel_ratio / backing_store_ratio
 
-        @canvas.width = Math.floor(old_width * ratio)
-        @canvas.height = Math.floor(old_height * ratio)
+      # Number of pixels _inside_ the canvas -- not same as CSS
+      @canvas.width = Math.floor(@width * ratio)
+      @canvas.height = Math.floor(@height * ratio)
 
-        @canvas.style.width = "#{old_width}px"
-        @canvas.style.height = "#{old_height}px"
-
-        @ctx.scale(ratio, ratio)
+      # The rest of this file will be unaware of the true number of pixels
+      @ctx.scale(ratio, ratio)
 
       @ctx.font = '12px "Open Sans", Helvetica, Arial, sans-serif'
       @ctx.textBaseline = 'top'
