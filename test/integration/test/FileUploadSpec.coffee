@@ -16,7 +16,7 @@ describe 'FileUpload', ->
     waitForJobsToComplete: (sleepTime) ->
       @
         .sleep(sleepTime) # async requests can time out; this won't
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 19000)
 
     deleteTopUpload: ->
       @
