@@ -73,10 +73,12 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @initialRender()
 
     _getSelectedSearchResult: ->
-      if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
+      ret = if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
         params.searchResult
       else
         null
+      console.log('_getSelectedSearchResult', ret)
+      ret
 
     _renderCreateTag: ->
       model = @_getSelectedSearchResult()
@@ -108,12 +110,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
 
       if model
         @_setInputClass("state-#{(model.get('state') || 'InProgress').toLowerCase()}")
-        @_$els.input
-          .prop('value', model.get('query'))
+        @_$els.input.val(model.get('query'))
       else
         @_setInputClass(null)
-        @_$els.input
-          .prop('value', '')
+        @_$els.input.val('')
 
     initialRender: ->
       selectedSearchResult = @_getSelectedSearchResult()
@@ -164,14 +164,14 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
     _onSubmit: (e) ->
       e.preventDefault()
 
-      $input = @$('input[type=text]')
+      $input = @_$els.input
       query = $input.val().replace(/^\s*(.*?)\s*$/, '$1')
 
-      existing = @collection.findWhere({ query: query })
+      existing = @collection.findWhere(query: query)
 
       if existing?
         @trigger('search-result-clicked', existing)
       else if query
         @trigger('create-submitted', query)
 
-      $input.val('')
+      @render()
