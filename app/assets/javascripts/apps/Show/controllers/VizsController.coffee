@@ -32,11 +32,13 @@ define [
       @state.set(viz: viz)
 
     _onCancel: (job) ->
+      @vizs.remove(job)
+      @state.set(viz: @vizs.at(0) || null)
+
       jobId = job.get('id')
       $.ajax
         type: 'delete'
         url: "/trees/jobs/#{jobId}"
-        complete: => @vizs.pollUntilStable()
 
     _onClickNew: ->
       onSubmit = (data) =>
