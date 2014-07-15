@@ -6,7 +6,7 @@ module.exports = (opts) ->
     waitForDocumentListToLoad: ->
       # It's loaded when "#document-list-title.loading" changes to
       # "#document-list-title.loaded"
-      @waitForElementByCss('#document-list-title.loaded')
+      @waitForElementByCss('#document-list-title.loaded', 5000)
 
   before ->
     @likeATree = {}
