@@ -9,6 +9,7 @@ define [
     beforeEach ->
       i18n.reset_messages
         'views.DocumentSet.show.apps.Job.heading': 'heading'
+        'views.DocumentSet.show.apps.Job.heading.error': 'heading.error'
         'views.DocumentSet.show.apps.Job.description': 'description'
 
       @viz = new Job
@@ -34,7 +35,9 @@ define [
 
     describe 'when progress changes', ->
       beforeEach ->
-        @viz.set(progress: { fraction: 0.4, description: 'foo' })
+        @viz.set(type: 'error', progress: { state: 'ERROR', fraction: 0.4, description: 'foo' })
 
       it 'should change progress', -> expect(@vizApp.$('progress').prop('value')).to.eq(0.4)
       it 'should change status', -> expect(@vizApp.$('p.status')).to.contain('foo')
+      it 'should change state', -> expect(@vizApp.$el.children()).to.have.class('error')
+      it 'should set heading', -> expect(@vizApp.$('h3')).to.contain('heading.error')

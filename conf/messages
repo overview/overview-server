@@ -56,7 +56,7 @@ mailers.Password.createErrorUserDoesNotExist.signoff=Happy analyzing,
 mailers.Password.createErrorUserDoesNotExist.signature=The Overview team
 
 
-models.DocumentSetCreationJob.state.CANCELLED=canceling
+models.DocumentSetCreationJob.state.CANCELLED=cancelling
 models.DocumentSetCreationJob.state.ERROR=stalled
 models.DocumentSetCreationJob.state.IN_PROGRESS=importing
 models.DocumentSetCreationJob.state.NOT_STARTED=queued
@@ -322,6 +322,7 @@ views.DocumentSet.show.VizTabs.viz.importantWords.dt=Important words
 views.DocumentSet.show.VizTabs.viz.importantWords.dd={0}
 
 views.DocumentSet.show.apps.Job.heading=Clustering…
+views.DocumentSet.show.apps.Job.heading.error=Clustering failed
 views.DocumentSet.show.apps.Job.description=Overview is organizing your documents. You may wait, or you may browse elsewhere and let Overview work in the background.
 
 views.FileImport.new.title=Upload files
