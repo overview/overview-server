@@ -15,9 +15,7 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedRequest
 import models.OverviewUser
 import models.orm.{ Session, User }
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.tree.orm.FileGroup
-import org.overviewproject.tree.orm.GroupedFileUpload
+import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,FileGroup,GroupedFileUpload}
 
 class MassUploadControllerSpec extends Specification with Mockito {
 
@@ -223,8 +221,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(
         documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
-      there was one(controller.messageQueue)
-        .startClustering(documentSetId, fileGroupId, fileGroupName, lang, splitDocuments, stopWords, importantWords)
+      there was one(controller.messageQueue).startClustering(any[DocumentSetCreationJob], fileGroupName)
       failure
     }.pendingUntilFixed("Until we figure out how to send messages outside transaction")
 

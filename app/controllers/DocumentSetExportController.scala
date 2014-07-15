@@ -46,7 +46,7 @@ trait DocumentSetExportController extends Controller {
     new Export(rows, format)
   }
 
-  def index(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
+  def index(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)) { implicit request =>
     storage.findDocumentSet(documentSetId) match {
       case Some(documentSet) => Ok(views.html.DocumentSetExport.index(documentSet))
       case None => NotFound
@@ -70,7 +70,7 @@ trait DocumentSetExportController extends Controller {
       )
   }
 
-  def documentsWithStringTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def documentsWithStringTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     Future(OverviewDatabase.inTransaction {
       val documents = storage.loadDocumentsWithStringTags(documentSetId)
       val rows = rowsCreator.documentsWithStringTags(documents)
@@ -80,7 +80,7 @@ trait DocumentSetExportController extends Controller {
     })
   }
 
-  def documentsWithColumnTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def documentsWithColumnTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     Future(OverviewDatabase.inTransaction {
       val tags = storage.loadTags(documentSetId)
       val documents = storage.loadDocumentsWithTagIds(documentSetId)

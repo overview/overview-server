@@ -23,14 +23,14 @@ trait SessionController extends Controller {
 
   protected val storage : SessionController.Storage
 
-  def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def new_() = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
     request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
       case _ => Ok(views.html.Session.new_(loginForm, registrationForm))
     }
   }
 
-  def delete = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def delete = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
     request.userSession.foreach(storage.deleteSession)
     AuthResults.logoutSucceeded(request).flashing(
       "success" -> m("delete.success"),

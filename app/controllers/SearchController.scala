@@ -17,7 +17,7 @@ trait SearchController extends Controller {
   val jobQueue: SearchController.JobQueue
   val form = SearchForm
 
-  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def create(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     form(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       search => {

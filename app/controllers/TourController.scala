@@ -13,7 +13,7 @@ trait TourController extends Controller {
     def disableTreeTooltipsForEmail(email: String) : Unit
   }
 
-  def delete() = AuthorizedAction(anyUser) { implicit request =>
+  def delete() = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     storage.disableTreeTooltipsForEmail(request.user.email)
     NoContent
   }

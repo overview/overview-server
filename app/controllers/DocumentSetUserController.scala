@@ -25,7 +25,7 @@ trait DocumentSetUserController extends Controller {
     * Errors:
     * * Exception if there's an unknown storage error.
     */
-  def indexJson(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val viewers = storage.loadDocumentSetUsers(documentSetId, Some(Ownership.Viewer))
     Ok(views.json.DocumentSetUser.index(viewers))
   }
@@ -41,7 +41,7 @@ trait DocumentSetUserController extends Controller {
     * * Exception if the DocumentSet disappears mid-request.
     * * Exception if there's an unknown storage error.
     */
-  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def create(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     DocumentSetUserForm(documentSetId).bindFromRequest().fold(
       f => BadRequest,
       { dsu =>
@@ -64,7 +64,7 @@ trait DocumentSetUserController extends Controller {
     * * BadRequest if the user is trying to delete him/herself.
     * * 500 if there's an unknown storage error.
     */
-  def delete(documentSetId: Long, userEmail: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def delete(documentSetId: Long, userEmail: String) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     if (userEmail == request.user.email) {
       BadRequest
     } else {

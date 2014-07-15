@@ -17,6 +17,7 @@ import controllers.util.{ JobQueueSender, MassUploadFileIteratee, TransactionAct
 import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore, FileGroupStore }
 import models.orm.stores.GroupedFileUploadStore
+import models.OverviewDatabase
 
 trait MassUploadController extends Controller {
 
@@ -36,7 +37,7 @@ trait MassUploadController extends Controller {
    * @returns information about the upload specified by `guid` in the headers of the response.
    * content_range and content_length are provided.
    */
-  def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
+  def show(guid: UUID) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     def resultWithHeaders(status: Status, upload: GroupedFileUpload): Result =
       status.withHeaders(showRequestHeaders(upload): _*)
 
@@ -58,13 +59,14 @@ trait MassUploadController extends Controller {
   def startClustering = AuthorizedAction(anyUser) { implicit request =>
     MassUploadControllerForm().bindFromRequest.fold(
       e => BadRequest,
-      startClusteringFileGroupWithOptions(request.user.email, _))
+      startClusteringFileGroupWithOptions(request.user.email, _)
+    )
   }
 
   /**
    * Cancel the upload and notify the worker to delete all uploaded files
    */
-  def cancelUpload = AuthorizedAction(anyUser) { implicit request =>
+  def cancelUpload = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     storage.deleteFileGroupByUser(request.user.email)
     Ok
   }
@@ -100,10 +102,8 @@ trait MassUploadController extends Controller {
   }
 
   trait MessageQueue {
-
     /** Notify the worker that clustering can start */
-    def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String,
-                        splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit
+    def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Unit
   }
 
   private def authorizedUploadBodyParser(guid: UUID) =
@@ -139,17 +139,21 @@ trait MassUploadController extends Controller {
 
   private def startClusteringFileGroupWithOptions(userEmail: String,
                                                   options: (String, String, Boolean, String, String)): Result = {
-    storage.findCurrentFileGroup(userEmail) match {
-      case Some(fileGroup) => {
+    val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
+
+    val dbResult : Option[DocumentSetCreationJob] = OverviewDatabase.inTransaction {
+      storage.findCurrentFileGroup(userEmail).map { fileGroup =>
         storage.completeFileGroup(fileGroup)
 
-        val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
         val documentSet = storage.createDocumentSet(userEmail, name, lang)
         storage.createMassUploadDocumentSetCreationJob(
           documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
+      }
+    }
 
-        sendAsynchronousStartClusteringMessage(documentSet.id, fileGroup.id, name, lang, splitDocuments, suppliedStopWords, importantWords)
-
+    dbResult match {
+      case Some(job) => {
+        messageQueue.startClustering(job, name)
         Redirect(routes.DocumentSetController.index())
       }
       case None => NotFound
@@ -161,24 +165,6 @@ trait MassUploadController extends Controller {
     Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
 
     BadRequest
-  }
-
-  private def sendAsynchronousStartClusteringMessage(documentSetId: Long, fileGroupId: Long, name: String, lang: String,
-                                                     splitDocuments: Boolean, suppliedStopWords: String,
-                                                     importantWords: String) = {
-    import play.api.Play.current
-    import play.api.libs.concurrent.Execution.Implicits._
-    /*
-     * We want to send the message _after_ we've committed the job to the
-     * database. This is the easiest way.
-     *
-     * FIXME make the _correct_ way easier than this stupid way.
-     */
-    val MessageSendDelay = Duration(10, MILLISECONDS)
-    Akka.system.scheduler.scheduleOnce(MessageSendDelay) {
-      messageQueue.startClustering(documentSetId, fileGroupId, name, lang, splitDocuments, suppliedStopWords, importantWords)
-    }
-
   }
 }
 
@@ -240,13 +226,19 @@ object MassUploadController extends MassUploadController {
   }
 
   class ApolloQueue extends MessageQueue {
-
-    override def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String,
-                                 splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit = {
-      val command = ClusterFileGroup(documentSetId, fileGroupId, title, lang, splitDocuments, suppliedStopWords, importantWords)
+    override def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Unit = {
+      val command = ClusterFileGroup(
+        documentSetId=job.documentSetId,
+        fileGroupId=job.fileGroupId.get,
+        name=documentSetTitle,
+        lang=job.lang,
+        splitDocuments=job.splitDocuments,
+        stopWords=job.suppliedStopWords,
+        importantWords=job.importantWords
+      )
 
       if (JobQueueSender.send(command).isLeft)
-        throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $splitDocuments, $suppliedStopWords, $importantWords)")
+        throw new Exception(s"Could not send StartClustering(${command.toString()})")
     }
   }
 }

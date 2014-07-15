@@ -13,7 +13,7 @@ trait CloneImportJobController extends Controller {
     def insertJob(job: CloneImportJob) : Unit
   }
 
-  def create(sourceDocumentSetId: Long) = AuthorizedAction(userViewingDocumentSet(sourceDocumentSetId)) { implicit request =>
+  def create(sourceDocumentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(sourceDocumentSetId)) { implicit request =>
     val job = CloneImportJob(ownerEmail=request.user.email, sourceDocumentSetId=sourceDocumentSetId)
     storage.insertJob(job)
     Redirect(routes.DocumentSetController.index()).flashing(

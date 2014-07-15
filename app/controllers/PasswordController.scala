@@ -28,14 +28,14 @@ trait PasswordController extends Controller {
   private lazy val editForm = controllers.forms.EditPasswordForm()
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
 
-  def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def new_() = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
     request.user match {
       case None => Ok(views.html.Password.new_(newForm))
       case Some(_) => doRedirect
     }
   }
 
-  def edit(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def edit(token: String) = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
     request.user match {
       case Some(_) => doRedirect
       case None => {

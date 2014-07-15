@@ -14,7 +14,7 @@ trait VizController extends Controller {
     def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
   }
 
-  def indexJson(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
+  def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)) { implicit request =>
     val vizs = storage.findVizs(documentSetId)
     val jobs = storage.findVizJobs(documentSetId)
 

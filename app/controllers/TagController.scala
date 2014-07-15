@@ -79,7 +79,7 @@ trait TagController extends Controller {
   }
   val storage : TagController.Storage
 
-  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def create(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     TagForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       unsavedTag => {
@@ -89,19 +89,19 @@ trait TagController extends Controller {
     )
   }
 
-  def indexJsonWithTree(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def indexJsonWithTree(documentSetId: Long, treeId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val tagsWithCounts = storage.findTagsWithCounts(documentSetId, treeId)
     Ok(views.json.Tag.index(tagsWithCounts))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  def indexJson(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val tagsWithCounts = storage.findTagsWithCounts(documentSetId)
     Ok(views.json.Tag.index(tagsWithCounts))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  def indexCsv(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def indexCsv(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val tagsWithCounts = storage.findTagsWithCounts(documentSetId)
 
     val stringWriter = new StringWriter()
@@ -119,7 +119,7 @@ trait TagController extends Controller {
       )
   }
 
-  def add(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def add(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     SelectionForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       selection => {
@@ -134,7 +134,7 @@ trait TagController extends Controller {
     )
   }
 
-  def remove(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def remove(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     SelectionForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       selection => {
@@ -149,7 +149,7 @@ trait TagController extends Controller {
     )
   }
 
-  def delete(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def delete(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     storage.findTag(documentSetId, tagId) match {
       case None => NotFound
       case Some(tag) => {
@@ -160,7 +160,7 @@ trait TagController extends Controller {
     }
   }
 
-  def update(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def update(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     storage.findTag(documentSetId, tagId) match {
       case None => NotFound
       case Some(tag) => {
@@ -175,7 +175,7 @@ trait TagController extends Controller {
     }
   }
 
-  def nodeCounts(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def nodeCounts(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     NodeIdsForm().bindFromRequest.fold(
       formWithErrors => BadRequest,
       nodeIds => {

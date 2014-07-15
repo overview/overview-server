@@ -38,7 +38,7 @@ trait UploadController extends Controller {
     }
   }
 
-  def startClustering(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
+  def startClustering(guid: UUID) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
 
     UploadControllerForm().bindFromRequest().fold(
       f => BadRequest,
@@ -66,7 +66,7 @@ trait UploadController extends Controller {
     upload.uploadedFile.size == upload.size && upload.size > 0
   }
 
-  def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
+  def show(guid: UUID) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     def contentRange(upload: OverviewUpload): String = "bytes 0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
 

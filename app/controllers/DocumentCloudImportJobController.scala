@@ -14,11 +14,11 @@ trait DocumentCloudImportJobController extends Controller {
     def insertJob(job: DocumentCloudImportJob) : Unit
   }
 
-  def new_(query: String) = AuthorizedAction(anyUser) { implicit request =>
+  def new_(query: String) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     Ok(views.html.DocumentCloudImportJob.new_(request.user, query))
   }
 
-  def create() = AuthorizedAction(anyUser) { implicit request =>
+  def create() = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     val form = DocumentCloudImportJobForm(request.user.email)
     form.bindFromRequest().fold(
       f => BadRequest,

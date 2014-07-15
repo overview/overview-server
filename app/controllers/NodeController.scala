@@ -31,7 +31,7 @@ trait NodeController extends Controller {
   }
   val storage : NodeController.Storage
 
-  def index(treeId: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+  def index(treeId: Long) = AuthorizedAction.inTransaction(userOwningTree(treeId)) { implicit request =>
     storage.findTree(treeId) match {
       case None => NotFound
       case Some(tree) => {
@@ -47,14 +47,14 @@ trait NodeController extends Controller {
     }
   }
 
-  def show(treeId: Long, id: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+  def show(treeId: Long, id: Long) = AuthorizedAction.inTransaction(userOwningTree(treeId)) { implicit request =>
     val nodes = storage.findChildNodes(treeId, id)
 
     Ok(views.json.Node.index(nodes))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  def update(treeId: Long, id: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+  def update(treeId: Long, id: Long) = AuthorizedAction.inTransaction(userOwningTree(treeId)) { implicit request =>
     storage.findNode(treeId, id).headOption match {
       case None => NotFound
       case Some(node) =>

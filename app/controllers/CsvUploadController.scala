@@ -11,7 +11,7 @@ trait CsvUploadController extends Controller {
     def countUserOwnedDocumentSets(user: String) : Long
   }
 
-  def new_() = AuthorizedAction(anyUser) { implicit request =>
+  def new_() = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     val count = storage.countUserOwnedDocumentSets(request.user.email)
 
     Ok(views.html.CsvUpload.new_(request.user, count))

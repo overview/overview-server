@@ -9,7 +9,7 @@ import models.orm.finders.DocumentSetCreationJobFinder
 trait ImportJobController extends Controller {
   import Authorities._
 
-  def index() = AuthorizedAction(anyUser) { implicit request =>
+  def index() = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     val tuples = loadDocumentSetCreationJobs(request.user.email)
 
     Ok(views.json.ImportJob.index(tuples))

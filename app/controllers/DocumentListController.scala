@@ -20,7 +20,7 @@ trait DocumentListController extends Controller {
 
   def index(documentSetId: Long, nodes: String, tags: String,
             documents: String, searchResults: String, pageSize: Int, page: Int)
-            = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+            = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
 
     val realPageSize = math.max(0, math.min(pageSize, MaxPageSize))
     val realPage = math.max(1, page)

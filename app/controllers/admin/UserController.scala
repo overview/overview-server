@@ -23,16 +23,16 @@ trait UserController extends Controller {
   private[admin] val PageSize = 50
   private val m = views.Magic.scopedMessages("controllers.admin.UserController")
 
-  def index() = AuthorizedAction(adminUser) { implicit request =>
+  def index() = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     Ok(views.html.admin.User.index(request.user))
   }
 
-  def indexJson(page: Int) = AuthorizedAction(adminUser) { implicit request =>
+  def indexJson(page: Int) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     val users = storage.findUsers(page)
     Ok(views.json.admin.User.index(users))
   }
 
-  def create() = AuthorizedAction(adminUser) { implicit request =>
+  def create() = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     NewUserForm().bindFromRequest().fold(
       formWithErrors => BadRequest,
       newUser => {
@@ -47,7 +47,7 @@ trait UserController extends Controller {
     )
   }
 
-  def update(email: String) = AuthorizedAction(adminUser) { implicit request =>
+  def update(email: String) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     if (email == request.user.email) {
       BadRequest
     } else {
@@ -66,7 +66,7 @@ trait UserController extends Controller {
     }
   }
 
-  def delete(email: String) = AuthorizedAction(adminUser) { implicit request =>
+  def delete(email: String) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     if (email == request.user.email) {
       BadRequest
     } else {

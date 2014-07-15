@@ -7,7 +7,7 @@ import controllers.auth.Authorities.anyUser
 import models.OverviewUser
 
 object HelpController extends Controller {
-  def show() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def show() = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
     Ok(views.html.Help.show(request.user))
   }
 }

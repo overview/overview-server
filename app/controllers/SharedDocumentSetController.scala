@@ -16,7 +16,7 @@ trait SharedDocumentSetController extends Controller {
     def countUserOwnedDocumentSets(user: String) : Long
   }
 
-  def index = AuthorizedAction(anyUser) { implicit request =>
+  def index = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     val sharedDocumentSets = storage.findDocumentSets(request.user.email).toSeq
     val count = storage.countUserOwnedDocumentSets(request.user.email)
 

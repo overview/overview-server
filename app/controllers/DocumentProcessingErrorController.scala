@@ -7,7 +7,7 @@ import models.OverviewDocumentProcessingError
 
 trait DocumentProcessingErrorController extends Controller {
 
-  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def index(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val errors = findDocumentProcessingErrors(documentSetId)
 
     Ok(views.html.DocumentProcessingError.index(errors))

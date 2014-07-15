@@ -28,7 +28,7 @@ object ConfirmationController extends Controller {
     *
     * 1) The user is found
     */
-  def show(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def show(token: String) = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
     request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
       case None => OverviewUser.findByConfirmationToken(token) match {

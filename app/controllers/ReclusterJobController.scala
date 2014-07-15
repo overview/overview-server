@@ -31,7 +31,7 @@ trait ReclusterJobController extends Controller {
   val storage : ReclusterJobController.Storage
   val jobQueue: ReclusterJobController.JobQueue
 
-  def delete(jobId: Long) = AuthorizedAction(userOwningJob(jobId)) {
+  def delete(jobId: Long) = AuthorizedAction.inTransaction(userOwningJob(jobId)) {
     val cancelResult = storage.cancelJob(jobId)
     cancelResult match {
       case ReclusterJobController.JobWasNotRunning => jobQueue.send(DeleteTreeJob(jobId))

@@ -34,14 +34,14 @@ trait SearchResultController extends Controller {
 
   val storage : SearchResultController.Storage
 
-  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def index(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val searchResults = storage.findSearchResults(documentSetId)
 
     Ok(views.json.SearchResult.index(searchResults))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  def nodeCounts(documentSetId: Long, searchResultId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def nodeCounts(documentSetId: Long, searchResultId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     NodeIdsForm().bindFromRequest.fold(
       formWithErrors => BadRequest,
       nodeIds => {

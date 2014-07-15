@@ -15,7 +15,7 @@ trait UntaggedDocumentsController extends Controller {
 
   val storage: Storage
 
-  def nodeCounts(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def nodeCounts(id: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(id)) { implicit request =>
     NodeIdsForm().bindFromRequest.fold(
       formWithErrors => BadRequest,
       nodeIds => {

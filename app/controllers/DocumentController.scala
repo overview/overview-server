@@ -21,28 +21,28 @@ trait DocumentController extends Controller {
     def viewStream(document: OverviewDocument, contentId: Long): Option[InputStream]
   }
 
-  def showJson(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
+  def showJson(documentId: Long) = AuthorizedAction.inTransaction(userOwningDocument(documentId)) { implicit request =>
     storage.find(documentId) match {
       case Some(document) => Ok(views.json.Document.show(document))
       case None => NotFound
     }
   }
 
-  def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
+  def show(documentId: Long) = AuthorizedAction.inTransaction(userOwningDocument(documentId)) { implicit request =>
     storage.find(documentId) match {
       case Some(document) => Ok(views.html.Document.show(document))
       case None => NotFound
     }
   }
 
-  def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
+  def showText(documentId: Long) = AuthorizedAction.inTransaction(userOwningDocument(documentId)) { implicit request =>
     storage.find(documentId) match {
       case Some(document) => Ok(document.text.getOrElse(""))
       case None => NotFound
     }
   }
 
-  def contents(documentId: Long, contentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
+  def contents(documentId: Long, contentId: Long) = AuthorizedAction.inTransaction(userOwningDocument(documentId)) { implicit request =>
     val result = for {
       document <- storage.find(documentId)
       data <- storage.viewStream(document, contentId)

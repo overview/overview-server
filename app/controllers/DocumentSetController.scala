@@ -75,7 +75,7 @@ trait DocumentSetController extends Controller {
 
   protected val indexPageSize = 10
 
-  def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
+  def index(page: Int) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
     val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
     val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
@@ -106,7 +106,7 @@ trait DocumentSetController extends Controller {
     *
     * JavaScript will parse the rest of the URL.
     */
-  def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
+  def show(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {
       case None => NotFound
       case Some(documentSet) => {
@@ -118,7 +118,7 @@ trait DocumentSetController extends Controller {
 
   def showWithJsParams(id: Long, jsParams: String) = show(id)
 
-  def showHtmlInJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
+  def showHtmlInJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {
       case None => NotFound
       case Some(documentSet) => {
@@ -128,7 +128,7 @@ trait DocumentSetController extends Controller {
     }
   }
 
-  def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
+  def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)) { implicit request =>
     val vizs = storage.findVizs(id)
     val vizJobs = storage.findVizJobs(id)
     val tags = storage.findTags(id)
@@ -137,7 +137,7 @@ trait DocumentSetController extends Controller {
     Ok(views.json.DocumentSet.show(vizs, vizJobs, tags, searchResults))
   }
 
-  def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def delete(id: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
 
     // FIXME: Move all deletion to worker and remove database access here
@@ -185,7 +185,7 @@ trait DocumentSetController extends Controller {
     } else BadRequest // all cases should be covered..
   }
 
-  def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
+  def update(id: Long) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     storage.findDocumentSet(id).map { documentSet =>
       DocumentSetUpdateForm(documentSet).bindFromRequest().fold(
         f => BadRequest, { updatedDocumentSet =>

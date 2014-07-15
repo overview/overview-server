@@ -33,13 +33,13 @@ trait ImportJobController extends Controller with JobContextChecker {
   val storage: Storage
   val jobQueue: JobMessageQueue
 
-  def index() = AuthorizedAction(adminUser) { implicit request =>
+  def index() = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     val jobs = storage.findAllDocumentSetCreationJobs
 
     Ok(views.html.admin.ImportJob.index(request.user, jobs))
   }
 
-  def delete(importJobId: Long) = AuthorizedAction(adminUser) { implicit request =>
+  def delete(importJobId: Long) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
 
     val documentSet = storage.findDocumentSetByJob(importJobId)
     def onDocumentSet[A](f: DocumentSet => A): Option[A] =

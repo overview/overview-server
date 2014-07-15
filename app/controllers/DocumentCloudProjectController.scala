@@ -11,7 +11,7 @@ trait DocumentCloudProjectController extends Controller {
     def countUserOwnedDocumentSets(user: String) : Long
   }
 
-  def index = AuthorizedAction(anyUser) { implicit request =>
+  def index = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     val count = storage.countUserOwnedDocumentSets(request.user.email)
 
     Ok(views.html.DocumentCloudProject.index(request.user, count))

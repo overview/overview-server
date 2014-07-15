@@ -39,7 +39,7 @@ trait TreeController extends Controller {
     }
   }
 
-  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def create(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val form = TreeCreationJobForm(documentSetId)
     form.bindFromRequest.fold(
       f => BadRequest,
