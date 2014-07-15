@@ -3,10 +3,10 @@ Q = require('q')
 escapeRegexp = require('escape-regexp')
 
 Constants =
-  ajaxTimeout: 7000 # timeout waiting for AJAX requests
-  asyncTimeout: 8000 # timeout waiting for JavaScript; might involve waiting for HTTP requests
-  pageLoadTimeout: 20000 # Travis+SauceLabs is slow, especially for Vimeo
-  redirectTimeout: 8000 # timeout waiting for a redirect
+  ajaxTimeout: 10000 # timeout waiting for AJAX requests
+  asyncTimeout: 12000 # timeout waiting for JavaScript; might involve waiting for HTTP requests
+  pageLoadTimeout: 30000 # Travis+SauceLabs is slow, especially for Vimeo
+  redirectTimeout: 10000 # timeout waiting for a redirect
   pollLength: 200 # milliseconds between condition checks
 
 options =

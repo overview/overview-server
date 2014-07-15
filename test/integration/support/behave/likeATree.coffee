@@ -20,8 +20,7 @@ module.exports = (opts) ->
 
   afterEach ->
     @userBrowser
-      .get(@likeATree.url)
-      .waitForElementBy(tag: 'canvas')
+      .elementByCss('#tree-app-tree button.refresh').click()
 
   it 'should show a document list title', ->
     @userBrowser
