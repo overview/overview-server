@@ -51,7 +51,6 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
   #                          interested in size, position, size2 and position2.
   # * bounds: { left, right, top, bottom } in arbitrary units. bottom > top.
   # * transform: { translateX, translateY, scaleX, scaleY } to get to pixels
-  # * setSizeInPixels(width, height): used to adjust transform
   class AnimatedTree
     observable(this)
 
@@ -63,7 +62,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     # * animator: an Animator (to animate the selection)
     # * layout: a Layout (to set sizes and positions of nodes)
     # * width, height: pixel width and height
-    constructor: (@on_demand_tree, @state, @animator, @layout, @width, @height) ->
+    constructor: (@on_demand_tree, @state, @animator, @layout) ->
       @id_tree = @on_demand_tree.id_tree
       @root = undefined
       @nodes = {} # id -> AnimatedNode
@@ -72,12 +71,6 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
 
       this._attachIdTree()
       this._attachState()
-
-    setSizeInPixels: (width, height) ->
-      return if width == @width && height == @height
-      @_maybe_notifying_needs_update =>
-        @width = width
-        @height = height
 
     needsUpdate: ->
       @_needsUpdate || @root?.updatedAt? || @animator.needs_update()
