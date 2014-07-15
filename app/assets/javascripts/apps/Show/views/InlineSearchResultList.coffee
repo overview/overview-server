@@ -73,12 +73,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @initialRender()
 
     _getSelectedSearchResult: ->
-      ret = if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
+      if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
         params.searchResult
       else
         null
-      console.log('_getSelectedSearchResult', ret)
-      ret
 
     _renderCreateTag: ->
       model = @_getSelectedSearchResult()
