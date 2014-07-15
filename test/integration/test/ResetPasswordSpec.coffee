@@ -25,9 +25,8 @@ describe 'ResetPassword', ->
 
     startResetPassword: (email) ->
       @
-        .waitForElementBy(tag: 'a', contains: 'Reset')
-        .elementBy(tag: 'a', contains: 'Reset').click()
-        .elementByCss('body.password-new input[name=email]').type(email)
+        .waitForElementBy(tag: 'a', contains: 'Reset').click()
+        .waitForElementByCss('body.password-new input[name=email]', 5000).type(email)
         .elementByCss('[type=submit]').click()
 
     shouldShowResetPasswordForm: ->
