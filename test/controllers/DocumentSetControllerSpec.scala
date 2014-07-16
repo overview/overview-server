@@ -7,18 +7,15 @@
 package controllers
 
 import org.specs2.matcher.JsonMatchers
-
-import org.overviewproject.jobs.models.Delete
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm._
-import org.overviewproject.tree.orm.finders.ResultPage
 import org.specs2.specification.Scope
-import org.overviewproject.tree.orm.DocumentSetCreationJobState
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+
+import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.jobs.models.DeleteTreeJob
-import org.overviewproject.jobs.models.CancelFileUpload
+import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,SearchResult,SearchResultState,Tag,Tree}
+import org.overviewproject.tree.orm.DocumentSetCreationJobState
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.finders.ResultPage
 
 class DocumentSetControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
