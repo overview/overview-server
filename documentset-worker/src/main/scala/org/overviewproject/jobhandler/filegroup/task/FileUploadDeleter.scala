@@ -20,6 +20,7 @@ trait FileUploadDeleter {
     def deletePages(documentSetId: Long): Unit
     def deleteFiles(documentSetId: Long): Unit
     def deleteTempDocumentSetFiles(documentSetId: Long): Unit
+    def deleteDocumentProcessingErrors(documentSetId: Long): Unit
     def deleteDocumentSet(documentSetId: Long): Unit
     def deleteDocumentSetCreationJob(documentSetId: Long): Unit
   }
@@ -30,6 +31,7 @@ trait FileUploadDeleter {
     storage.deletePages(documentSetId)
     storage.deleteFiles(documentSetId)
     storage.deleteTempDocumentSetFiles(documentSetId)
+    storage.deleteDocumentProcessingErrors(documentSetId)
     storage.deleteDocumentSetCreationJob(documentSetId)
     storage.deleteDocumentSet(documentSetId)
     storage.deleteGroupedFileUploads(fileGroupId)
@@ -69,6 +71,13 @@ object FileUploadDeleter {
         tempDocumentSetFileStore.delete(tempDocumentSetFileFinder.byDocumentSet(documentSetId).toQuery)
       }
 
+      override def deleteDocumentProcessingErrors(documentSetId: Long): Unit = Database.inTransaction {
+        val documentProcessingErrorFinder = DocumentSetComponentFinder(documentProcessingErrors)
+        val documentProcessingErrorStore = BaseStore(documentProcessingErrors)
+        
+        documentProcessingErrorStore.delete(documentProcessingErrorFinder.byDocumentSet(documentSetId).toQuery)
+      }
+      
       override def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
         val documentSetFinder = new FinderById(documentSets)
         val documentSetUserFinder = DocumentSetComponentFinder(documentSetUsers)
