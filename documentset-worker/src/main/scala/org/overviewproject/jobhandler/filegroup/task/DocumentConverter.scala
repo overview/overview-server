@@ -8,10 +8,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption._
 import java.util.UUID
-
 import scala.util.control.Exception._
-
 import org.overviewproject.util.Configuration
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
  * Converts the content of a [[InputStream]] to a PDF [[InputStream]] using `LibreOffice`.
@@ -45,7 +45,7 @@ trait DocumentConverter {
    * @param inputStream The document data to be converted
    * @param f A function that will be passed an [[InputStream]] containing the converted PDF document
    * @tparam T the return type of `f`
-   * 
+   *
    * @returns the return value of `f`
    * @throws ConverterFailedException If the call to `LibreOffice` resulted in an error
    * @throws NoConverterOutputException If the conversion completed with no error, but no output was generated
@@ -129,14 +129,31 @@ trait DocumentConverter {
 
 /** Implements [[DocumentConverter]] with components that perform filesystem and command runner functions */
 object DocumentConverter extends DocumentConverter {
+  import scala.language.postfixOps
+  import scala.concurrent.duration._
+  import scala.concurrent.TimeoutException
 
   override protected val runner: Runner = new ShellRunner
   override protected val fileSystem: FileSystem = new DefaultFileSystem
 
   class ShellRunner extends Runner {
+    private val ConversionTimeout = Configuration.getInt("document_conversion_timeout") millis 
+    private val TimeoutErrorMessage = "Conversion timeout exceeded"
+
     override def run(command: String): Either[String, String] = {
+      def cancellingProcessAfterTimeout(process: RunningCommand) =
+        handling(classOf[TimeoutException]) by { _ =>
+          process.cancel
+          Left(TimeoutErrorMessage)
+        }
+
       val commandRunner = new CommandRunner(command)
-      commandRunner.run
+
+      val runningCommand = commandRunner.runAsync
+
+      cancellingProcessAfterTimeout(runningCommand) {
+        Await.result(runningCommand.result, ConversionTimeout)
+      }
     }
   }
 
