@@ -98,6 +98,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
       ignoringExceptions { deleteFileUploadJob(documentSetId, fileGroupId) }
       jobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
+      jobQueue ! ReadyForTask
       
       stay
     }

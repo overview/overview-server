@@ -88,6 +88,8 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       jobQueueProbe.expectMsg(DeleteFileUploadJobDone(documentSetId, fileGroupId))
       deleteFileUploadJobWasCalled(documentSetId, fileGroupId)
+      
+      jobQueueProbe.expectMsg(ReadyForTask)
     }
 
     "ignore CancelTask message if not working on a task" in new RunningTaskWorkerContext {
