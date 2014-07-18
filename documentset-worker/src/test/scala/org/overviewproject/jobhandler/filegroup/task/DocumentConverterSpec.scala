@@ -81,7 +81,7 @@ class DocumentConverterSpec extends Specification with Mockito {
     
     val officeCommandPieces = Seq(
       Configuration.getString("libre_office_path"),
-      "--headless --invisible --norestore --nolockcheck --convert-to pdf",
+      "--headless --nologo --invisible --norestore --nolockcheck --convert-to pdf",
       s"--outdir $tempDir $inputFilePath")
     val libreOfficeCommand = officeCommandPieces.mkString(" ")
 

@@ -104,7 +104,7 @@ trait DocumentConverter {
   }
 
   private def conversionCommand(inputFile: String): String =
-    s"$LibreOfficeLocation --headless --invisible --norestore --nolockcheck --convert-to pdf --outdir ${TempDirectory.path} $inputFile"
+    s"$LibreOfficeLocation --headless --nologo --invisible --norestore --nolockcheck --convert-to pdf --outdir ${TempDirectory.path} $inputFile"
 
   private def outputFile(inputFile: File): File = {
     val inputName = inputFile.getName
