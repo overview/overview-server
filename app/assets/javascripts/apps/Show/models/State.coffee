@@ -85,13 +85,19 @@ define [ 'backbone' ], (Backbone) ->
       ret
 
     setViz: (viz) ->
-      params = @get('documentListParams')
-      type = viz?.get?('type')
-      if type != 'job' && type != 'error'
+      reset = =>
+        params = @get('documentListParams')
         params = params?.reset.withViz(viz).all()
 
-      @set
-        documentListParams: params
-        document: null
-        oneDocumentSelected: false
-        viz: viz
+        @set
+          documentListParams: params
+          document: null
+          oneDocumentSelected: false
+          viz: viz
+
+      @stopListening(@get('viz'))
+
+      if viz.get('type') == 'job'
+        @listenToOnce(viz, 'change:type', reset)
+
+      reset()

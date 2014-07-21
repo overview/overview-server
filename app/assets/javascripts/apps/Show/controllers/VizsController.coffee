@@ -24,16 +24,11 @@ define [
 
     _onClickViz: (viz) -> @state.setViz(viz)
     _onAdd: (viz) ->
-      # Always switch to a brand-new Viz.
-      #
-      # Notice, in _onClickNew, that we create a "dummy" viz before the real
-      # one gets loaded. That means we'll see two "add" events, and the current
-      # Viz will always be the most recent one.
-      @state.set(viz: viz)
+      @state.setViz(viz)
 
     _onCancel: (job) ->
       @vizs.remove(job)
-      @state.set(viz: @vizs.at(0) || null)
+      @state.setViz(@vizs.at(0) || null)
 
       jobId = job.get('id')
       $.ajax

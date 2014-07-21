@@ -36,4 +36,7 @@ define [
     idAttribute: 'clientId'
 
     scopeApiParams: (params) ->
-      _.extend({ nodes: String(@get('rootNodeId')) }, params)
+      if (rootNodeId = @get('rootNodeId'))?
+        _.extend({ nodes: String(rootNodeId) }, params)
+      else
+        params
