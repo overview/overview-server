@@ -54,12 +54,6 @@ trait FileGroupJobQueue extends Actor {
 
   type DocumentSetId = Long
 
-  protected val storage: Storage
-
-  trait Storage {
-    def uploadedFileIds(fileGroupId: Long): Set[Long]
-  }
-
   protected val progressReporter: ActorRef
   protected val jobTrackerFactory: JobTrackerFactory
 
@@ -173,12 +167,6 @@ trait FileGroupJobQueue extends Actor {
 
   private def isNewRequest(documentSetId: Long): Boolean = !jobRequests.contains(documentSetId)
 
-  private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
-
-  private def addNewTasksToQueue(documentSetId: Long, fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
-    val newTasks = uploadedFileIds.map(CreatePagesTask(documentSetId, fileGroupId, _))
-    taskQueue ++= newTasks
-  }
 
   private def whenTaskIsComplete(documentSetId: Long, uploadedFileId: Long)(f: (JobRequest, Long, JobTracker) => Unit) =
     for {
@@ -209,13 +197,6 @@ trait FileGroupJobQueue extends Actor {
 
 class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJobQueue {
 
-  class DatabaseStorage extends Storage {
-    override def uploadedFileIds(fileGroupId: Long): Set[Long] = Database.inTransaction {
-      GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toSet
-    }
-  }
-
-  override protected val storage: Storage = new DatabaseStorage
   override protected val progressReporter: ActorRef = progressReporterActor
   override protected val jobTrackerFactory = new FileGroupJobTrackerFactory
 

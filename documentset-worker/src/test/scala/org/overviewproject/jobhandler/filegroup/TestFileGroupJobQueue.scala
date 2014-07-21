@@ -7,12 +7,6 @@ class TestFileGroupJobQueue(
     tasks: Seq[Long],
     override protected val progressReporter: ActorRef) extends FileGroupJobQueue {
 
-  
-  class TestStorage extends Storage {
-    override def uploadedFileIds(fileGroupId: Long): Set[Long] = tasks.toSet
-  }
-
-  override protected val storage = new TestStorage
   override protected val jobTrackerFactory = new TestJobTrackerFactory
   
   class TestJobTrackerFactory extends JobTrackerFactory {
