@@ -381,6 +381,8 @@ views.Tree.show.InlineSearchResultList.query_placeholder=Search all documents
 views.Tree.show.InlineSearchResultList.search=Search
 views.Tree.show.InlineSearchResultList.create_tag=Create tag from search results
 
+views.Tree.show.SearchResultList.tag_name=contains “{0}”
+
 views.Tree.show.Tour.documentList.title=Document list
 views.Tree.show.Tour.documentList.body_html=<p>The <strong>document list</strong> shows the documents you’ve selected.</p><p>Click a document to read it.</p><p>You can change this list by searching, clicking a folder or choosing a tag.</p>
 views.Tree.show.Tour.folders1.title=Folders
@@ -397,7 +399,9 @@ views.Tree.show.Tour.previous=Previous
 views.Tree.show.Tour.done=Done
 views.Tree.show.Tour.skip=Don’t show any more tips
 
-views.Tree.show.SearchResultList.tag_name=contains “{0}”
+views.Tree.show.Tree.refresh=Back to top
+views.Tree.show.Tree.zoomIn=Zoom in
+views.Tree.show.Tree.zoomOut=Zoom out
 
 views.Tree.show.helpers.DocumentHelper.title={0}
 views.Tree.show.helpers.DocumentHelper.title.empty=(no title)

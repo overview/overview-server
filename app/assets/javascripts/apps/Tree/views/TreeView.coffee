@@ -3,8 +3,11 @@ define [
   'underscore'
   'backbone'
   './DrawOperation'
+  'i18n'
   'jquery.mousewheel' # to catch the 'mousewheel' event properly
-], ($, _, Backbone, DrawOperation) ->
+], ($, _, Backbone, DrawOperation, i18n) ->
+  t = i18n.namespaced('views.Tree.show.Tree')
+
   DEFAULT_OPTIONS = {
     lineStyles:
       # Just a hash
@@ -78,11 +81,11 @@ define [
       $refresh_button = $("""<div class="refresh-button"><button type="button" class="refresh"></button></div>""")
       $div.append($refresh_button)
 
-      $zoom_buttons = $("""<div class="buttons">
-          <button type="button" class="refresh"><i class="overview-icon-refresh"/></button>
-          <button type="button" class="zoom-in"><i class="icon-zoom-in"/></button>
-          <button type="button" class="zoom-out" disabled><i class="icon-zoom-out"/></button>
-        </div>""")
+      $zoom_buttons = $(_.template('''<div class="buttons">
+          <button type="button" title="<%- t('refresh') %>" class="refresh"><i class="overview-icon-refresh"/></button>
+          <button type="button" title="<%- t('zoomIn') %>" class="zoom-in"><i class="icon-zoom-in"/></button>
+          <button type="button" title="<%- t('zoomOut') %>" class="zoom-out" disabled><i class="icon-zoom-out"/></button>
+        </div>''', t: t))
       $div.append($zoom_buttons)
       [ @refreshButton, @zoomInButton, @zoomOutButton ] = $zoom_buttons.children()
 
