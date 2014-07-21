@@ -5,7 +5,7 @@ import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTimeZone
 import play.api.libs.json.{Json, JsValue}
 
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,SearchResult,Tag}
+import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,SearchResult,Tag}
 import org.overviewproject.models.Viz
 
 object show {
@@ -24,12 +24,14 @@ object show {
   }
 
   def apply(
+    documentSet: DocumentSet,
     vizs: Iterable[Viz],
     vizJobs: Iterable[DocumentSetCreationJob],
     tags: Iterable[Tag],
     searchResults: Iterable[SearchResult]) : JsValue = {
 
     Json.obj(
+      "nDocuments" -> documentSet.documentCount,
       "vizs" -> views.json.Viz.index(vizs, vizJobs),
       "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
       "tags" -> tags.map(writeTag)

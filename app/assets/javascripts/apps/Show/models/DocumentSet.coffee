@@ -7,7 +7,7 @@ define [
   '../collections/Vizs'
   './DocumentListParams'
 ], (_, $, Backbone, Tags, SearchResults, Vizs, DocumentListParams) ->
-  # Holds Tags, SearchResults and Vizs.
+  # Holds Tags, SearchResults and Vizs. Oh, and nDocuments.
   #
   # On the client, a DocumentSet doesn't hold a list of Documents because
   # there are way too many of them. To fetch a sample, use a DocumentList.
@@ -43,6 +43,7 @@ define [
 
       @url = "/documentsets/#{@id}"
 
+      @nDocuments = null
       @tags = new Tags([], url: "#{@url}/tags")
       @searchResults = new SearchResults([], url: "#{@url}/searches")
       @vizs = new Vizs([], url: "#{@url}/vizs")
@@ -60,6 +61,7 @@ define [
         error: (xhr) => @_onError(xhr)
 
     _onSuccess: (data) ->
+      @nDocuments = data.nDocuments
       @tags.reset(data.tags)
       @searchResults.reset(data.searchResults)
       @vizs.reset(data.vizs)

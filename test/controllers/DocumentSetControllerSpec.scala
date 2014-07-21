@@ -128,16 +128,18 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
           state=SearchResultState.Complete
         )
 
+        mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(documentCount=10))
         mockStorage.findVizs(documentSetId) returns Seq(sampleTree)
         mockStorage.findVizJobs(documentSetId) returns Seq()
         mockStorage.findSearchResults(documentSetId) returns Seq(sampleSearchResult)
         mockStorage.findTags(documentSetId) returns Seq(sampleTag)
       }
 
-      "encode the vizs, tags, and search results into the json result" in new ShowJsonScope {
+      "encode the count, vizs, tags, and search results into the json result" in new ShowJsonScope {
         h.status(result) must beEqualTo(h.OK)
 
         val resultJson = h.contentAsString(result)
+        resultJson must /("nDocuments" -> 10)
         resultJson must /("vizs") */("type" -> "viz")
         resultJson must /("vizs") */("title" -> sampleTree.title)
         resultJson must /("tags") */("name" -> "a tag")

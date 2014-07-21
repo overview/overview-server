@@ -321,10 +321,11 @@ views.DocumentSet.show.TransactionQueueErrorMonitor.retry=Reconnect
 
 views.DocumentSet.show.VizTabs.cancelJob=Cancel this reclustering…
 views.DocumentSet.show.VizTabs.new_viz=New tree…
-views.DocumentSet.show.VizTabs.nDocuments.abbr=({0})
-views.DocumentSet.show.VizTabs.nDocuments.title={0} documents
+views.DocumentSet.show.VizTabs.nDocuments=({0,number,integer})
 views.DocumentSet.show.VizTabs.viz.title.dt=Title
 views.DocumentSet.show.VizTabs.viz.title.dd={0}
+views.DocumentSet.show.VizTabs.viz.nDocuments.dt=Number of documents
+views.DocumentSet.show.VizTabs.viz.nDocuments.dd={0,number,integer} (whole document set has {1,number,integer})
 views.DocumentSet.show.VizTabs.viz.createdAt.dt=Created
 views.DocumentSet.show.VizTabs.viz.createdAt.dd={0,date,medium} at {0,time,medium}
 views.DocumentSet.show.VizTabs.viz.lang.dt=Language

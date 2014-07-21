@@ -164,7 +164,7 @@ define [
         url = "/documentsets/#{documentSet.id}/#{viz.id}"
         window.history?.replaceState(url, '', url)
 
-      controller = new VizsController(documentSet.vizs, state)
+      controller = new VizsController(documentSet, documentSet.vizs, state)
       els.vizs.appendChild(controller.el)
 
       new ModeView(el: @el, state: state)

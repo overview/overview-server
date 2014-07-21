@@ -9,8 +9,9 @@ define [
   class VizsController
     _.extend(@::, Backbone.Events)
 
-    constructor: (@vizs, @state) ->
+    constructor: (@documentSet, @vizs, @state) ->
       @view = new VizTabs
+        documentSet: @documentSet
         collection: @vizs
         state: @state
       @view.render()

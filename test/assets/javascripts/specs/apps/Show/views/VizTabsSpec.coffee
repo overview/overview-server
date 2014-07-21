@@ -22,10 +22,11 @@ define [
       i18n.reset_messages
         'views.DocumentSet.show.VizTabs.cancelJob': 'cancelJob'
         'views.DocumentSet.show.VizTabs.new_viz': 'new_viz'
-        'views.DocumentSet.show.VizTabs.nDocuments.abbr': 'nDocuments.abbr,{0}'
-        'views.DocumentSet.show.VizTabs.nDocuments.title': 'nDocuments.title,{0}'
+        'views.DocumentSet.show.VizTabs.nDocuments': 'nDocuments,{0}'
         'views.DocumentSet.show.VizTabs.viz.title.dt': 'viz.title.dt'
         'views.DocumentSet.show.VizTabs.viz.title.dd': 'viz.title.dd,{0}'
+        'views.DocumentSet.show.VizTabs.viz.nDocuments.dt': 'viz.nDocuments.dt'
+        'views.DocumentSet.show.VizTabs.viz.nDocuments.dd': 'viz.nDocuments.dd,{0},{1}'
         'views.DocumentSet.show.VizTabs.viz.createdAt.dt': 'viz.createdAt.dt'
         'views.DocumentSet.show.VizTabs.viz.createdAt.dd': 'viz.createdAt.dd,{0}'
         'views.DocumentSet.show.VizTabs.viz.thing1.dt': 'viz.thing1.dt'
@@ -35,11 +36,12 @@ define [
 
     describe 'starting with two vizs', ->
       beforeEach ->
+        @documentSet = { nDocuments: 1234 }
         @viz1 = new Viz(type: 'viz', id: 1, longId: 'viz-1', title: 'foo', nDocuments: 10, createdAt: new Date(), creationData: [[ 'thing1', 'value1' ], [ 'thing2', 'value2' ]])
         @viz2 = new Viz(type: 'viz', id: 2, longId: 'viz-2', title: 'bar', nDocuments: 10, createdAt: new Date(), creationData: [])
         @vizList = new VizList([@viz1, @viz2])
         @state = new State(viz: @viz1)
-        @view = new VizTabs(collection: @vizList, state: @state)
+        @view = new VizTabs(collection: @vizList, state: @state, documentSet: @documentSet)
         $('body').append(@view.el)
 
       afterEach ->
@@ -51,10 +53,9 @@ define [
       it 'should contain the vizualization', -> expect(@view.$('a:eq(0)')).to.contain('foo')
       it 'should have an info bubble per visualization', -> expect(@view.$('li.viz span.viz-info-icon').length).to.eq(2)
 
-      it 'should show nDocuments', ->
-        $abbr = $('a:eq(0) abbr.count')
-        expect($abbr).to.contain('nDocuments.abbr,10')
-        expect($abbr).to.have.attr('title', 'nDocuments.title,10')
+      it 'should show nDocuments in tab', ->
+        $span = $('a:eq(0) span.count')
+        expect($span).to.contain('nDocuments,10')
 
       it 'should set "active" on selected viz', ->
         expect(@view.$('li:eq(0)')).to.have.class('active')
@@ -81,6 +82,10 @@ define [
         @view.$('span.viz-info-icon:eq(0)').click()
         $popover = $('.popover.in')
         expect($popover).to.contain('foo')
+        expect($popover.find('dt.title')).to.contain('viz.title.dt')
+        expect($popover.find('dd.title')).to.contain('viz.title.dd,foo')
+        expect($popover.find('dt.n-documents')).to.contain('viz.nDocuments.dt')
+        expect($popover.find('dd.n-documents')).to.contain('viz.nDocuments.dd,10,1234')
         expect($popover.find('dt')).to.contain('viz.thing1.dt')
         expect($popover.find('dd')).to.contain('viz.thing1.dd,value1')
 
@@ -108,6 +113,7 @@ define [
 
     describe 'starting with a Viz and a Job', ->
       beforeEach ->
+        @documentSet = { nDocuments: 1234 }
         @job = new Viz
           type: 'job'
           id: 1
@@ -126,7 +132,7 @@ define [
         @state = new State(viz: @viz)
 
         @vizList = new VizList([@job, @viz])
-        @view = new VizTabs(collection: @vizList, state: @state)
+        @view = new VizTabs(collection: @vizList, state: @state, documentSet: @documentSet)
         $('body').append(@view.el)
 
       afterEach ->

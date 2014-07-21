@@ -5,7 +5,7 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.models.Viz
-import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState, Tag}
+import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag}
 import org.overviewproject.tree.DocumentSetCreationJobType
 
 class showSpec extends Specification with JsonMatchers {
@@ -20,6 +20,10 @@ class showSpec extends Specification with JsonMatchers {
     }
   }
 
+  private def buildDocumentSet(nDocuments: Int) : DocumentSet = {
+    DocumentSet(documentCount=nDocuments)
+  }
+
   "Tree view generated Json" should {
     "contain tags" in {
       val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color="ffffff")
@@ -28,17 +32,22 @@ class showSpec extends Specification with JsonMatchers {
         baseTag.copy(id=5L, name="tag1"),
         baseTag.copy(id=15L, name="tag2")
       )
-      val treeJson = show(Seq(), Seq(), tags, Seq()).toString
+      val treeJson = show(buildDocumentSet(10), Seq(), Seq(), tags, Seq()).toString
       
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")
       treeJson must /("tags") */("id" -> 15L)
     }
 
+    "show nDocuments" in {
+      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(), Seq()).toString
+      json must /("nDocuments" -> 10L)
+    }
+
     "contain vizs" in {
       val viz = buildViz(2L, "title", 4L, 100, new Date(1000), Seq("foo" -> "bar"))
 
-      val json = show(Seq(viz), Seq(), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(viz), Seq(), Seq(), Seq()).toString
 
       json must /("vizs") */("type" -> "viz")
       json must /("vizs") */("id" -> 2L)
@@ -59,7 +68,7 @@ class showSpec extends Specification with JsonMatchers {
         state=DocumentSetCreationJobState.InProgress
       )
 
-      val json = show(Seq(), Seq(vizJob), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(), Seq(vizJob), Seq(), Seq()).toString
 
       json must /("vizs") /#(0) /("id" -> 2.0)
       json must /("vizs") /#(0) /("type" -> "job")

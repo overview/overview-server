@@ -33,7 +33,7 @@ define [
           <a href="#">
             <span class="title"><%- viz.title %></span>
             <% if (viz.nDocuments) { %>
-              <abbr class="count" title="<%- t('nDocuments.title', viz.nDocuments) %>"><%- t('nDocuments.abbr', viz.nDocuments) %></abbr>
+              <span class="count"><%- t('nDocuments', viz.nDocuments) %></span>
             <% } %>
             <span class="toggle-popover viz-info-icon icon-info-sign"></span>
             <% if (viz.type == 'job' || viz.type == 'error') { %>
@@ -44,7 +44,7 @@ define [
           <div class="popover bottom">
             <div class="arrow"></div>
             <div class="popover-content">
-              <%= templates.vizDetails({ t: t, viz: viz }) %>
+              <%= templates.vizDetails({ t: t, viz: viz, documentSet: documentSet }) %>
             </div>
           </div>
         </li>
@@ -52,12 +52,15 @@ define [
 
       vizDetails: _.template('''
         <dl class="viz-details">
-          <dt><%- t('viz.title.dt') %></dt>
-          <dd><%- t('viz.title.dd', viz.title) %></dd>
+          <dt class="title"><%- t('viz.title.dt') %></dt>
+          <dd class="title"><%- t('viz.title.dd', viz.title) %></dd>
+
+          <dt class="n-documents"><%- t('viz.nDocuments.dt') %></dt>
+          <dd class="n-documents"><%- t('viz.nDocuments.dd', viz.nDocuments, documentSet.nDocuments) %></dd>
 
           <% if (viz.createdAt) { %>
-            <dt><%- t('viz.createdAt.dt') %></dt>
-            <dd><%- t('viz.createdAt.dd', viz.createdAt) %></dd>
+            <dt class="created-at"><%- t('viz.createdAt.dt') %></dt>
+            <dd class="created-at"><%- t('viz.createdAt.dd', viz.createdAt) %></dd>
           <% } %>
 
           <% viz.creationData.forEach(function(d) { %>
@@ -74,7 +77,14 @@ define [
 
       main: _.template('''
         <% vizs.forEach(function(viz) { %>
-          <%= templates.viz({ t: t, templates: templates, isSelected: viz == selectedViz, id: viz.id, viz: viz.attributes }) %>
+          <%= templates.viz({
+            t: t,
+            templates: templates,
+            isSelected: viz == selectedViz,
+            id: viz.id,
+            viz: viz.attributes,
+            documentSet: documentSet
+          }) %>
         <% }); %>
         <li class="new-viz">
           <a href="#" class="new-viz">
@@ -85,10 +95,12 @@ define [
         ''')
 
     initialize: ->
+      throw 'must set options.documentSet' if !@options.documentSet
       throw 'must set options.collection' if !@options.collection
       throw 'must set options.state, a State' if !@options.state
 
       @state = @options.state
+      @documentSet = @options.documentSet
 
       @listenTo(@collection, 'remove', @_onRemove)
       @listenTo(@collection, 'add', @_onAdd)
@@ -100,6 +112,7 @@ define [
     render: ->
       html = @templates.main
         vizs: @collection
+        documentSet: @documentSet
         selectedViz: @state.get('viz')
         templates: @templates
         t: t
@@ -121,6 +134,7 @@ define [
         templates: @templates
         isSelected: model == @state.get('viz')
         viz: model.attributes
+        documentSet: @documentSet
 
     _onAdd: (model) ->
       # While we _expect_ the change won't break ordering of the set, we aren't

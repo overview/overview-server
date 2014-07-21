@@ -129,12 +129,17 @@ trait DocumentSetController extends Controller {
   }
 
   def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)) { implicit request =>
-    val vizs = storage.findVizs(id)
-    val vizJobs = storage.findVizJobs(id)
-    val tags = storage.findTags(id)
-    val searchResults = storage.findSearchResults(id)
+    storage.findDocumentSet(id) match {
+      case None => NotFound
+      case Some(documentSet) => {
+        val vizs = storage.findVizs(id)
+        val vizJobs = storage.findVizJobs(id)
+        val tags = storage.findTags(id)
+        val searchResults = storage.findSearchResults(id)
 
-    Ok(views.json.DocumentSet.show(vizs, vizJobs, tags, searchResults))
+        Ok(views.json.DocumentSet.show(documentSet, vizs, vizJobs, tags, searchResults))
+      }
+    }
   }
 
   def delete(id: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(id)) { implicit request =>
