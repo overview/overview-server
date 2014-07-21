@@ -102,7 +102,7 @@ trait FileGroupJobManager extends Actor {
   private def failJob(job: DocumentSetCreationJob): Unit = storage.failJob(job)
 
   private def queueJob(job: DocumentSetCreationJob): Unit =
-    fileGroupJobQueue ! CreateDocumentsFromFileGroup(job.documentSetId, job.fileGroupId.get)
+    fileGroupJobQueue ! SubmitJob(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get))
 
   private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit = {
     textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)

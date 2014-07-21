@@ -212,7 +212,7 @@ trait FileGroupJobQueue extends Actor {
 
       progressReporter ! CompleteJob(documentSetId)
       request.requester ! FileGroupDocumentsCreated(documentSetId)
-    }
+    } 
 
   private def busyWorkersWithTask(documentSetId: Long): Iterable[ActorRef] =
     for {
