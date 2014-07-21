@@ -26,6 +26,10 @@ define [
           toString: sinon.stub().returns('last-modified-date')
         slice: sinon.stub().returns('a file blob')
 
+      @mostRecentContentDisposition = =>
+        request = @sandbox.server.requests[@sandbox.server.requests.length - 1]
+        request.requestHeaders['Content-Disposition']
+
     afterEach ->
       @sandbox.restore()
 
@@ -39,10 +43,6 @@ define [
           upload = new Upload(@fakeFile, '/upload/')
           upload.start()
           @sandbox.server.requests[@sandbox.server.requests.length - 1].respond([ 404, {}, '' ]) # not found, go ahead and upload
-
-        @mostRecentContentDisposition = =>
-          request = @sandbox.server.requests[@sandbox.server.requests.length - 1]
-          request.requestHeaders['Content-Disposition']
 
       it 'starts the upload, and properly unicode-escapes the filename', ->
         @fakeStartUploadWithFilename('元気なですか？.pdf') # filename with unicode
@@ -146,3 +146,16 @@ define [
 
         it 'moves to the done state', -> expect(upload.state).to.eq(4)
         it 'does not request any more', -> expect(@sandbox.server.requests[1]).to.be.undefined
+
+    describe 'with a webkitRelativePath', ->
+      beforeEach ->
+        @fakeFile.webkitRelativePath = 'foo/bar.txt'
+        upload = new Upload(@fakeFile, '/upload/')
+        upload.start()
+
+      it 'computes a guid based on the relative path', ->
+        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('foo/bar.txt::last-modified-date::1000'))
+
+      it 'sends the correct filename', ->
+        @sandbox.server.requests[@sandbox.server.requests.length - 1].respond([ 404, {}, '' ]) # not found, go ahead and upload
+        expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''foo%2Fbar.txt")

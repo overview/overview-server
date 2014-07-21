@@ -106,6 +106,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     #                    signature function(bytes_loaded, bytes_total) and returns
     #                    an XMLHttpRequest. (Defaults to HTML5-only code.)
     constructor: (@file, url_prefix, options={}) ->
+      @filename = @file.webkitRelativePath || @file.name
       @url = url_prefix + this._generate_uuid()
       @url += "?csrfToken=#{encodeURIComponent(options.csrfToken)}" if options.csrfToken?
       @state = states.WAITING
@@ -133,7 +134,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     _generate_uuid: () ->
       # UUID v3: xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
       # where x is any hexadecimal digit and y is one of 8, 9, A, or B
-      hash = md5("#{@file.name}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
+      hash = md5("#{@filename}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
       parts = []
       parts.push(hash[0...8])
       parts.push(hash[8...12])
@@ -256,12 +257,11 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
 
       headers = {}
 
-      filename = @file.name
-      headers['Content-Disposition'] = if /[^ !#$&+\-\.^_`|~0-9a-zA-Z]/.test(filename)
+      headers['Content-Disposition'] = if /[^ !#$&+\-\.^_`|~0-9a-zA-Z]/.test(@filename)
         # There's a non-"token", as defined in http://tools.ietf.org/html/rfc2616#section-2.2
-        "attachment; filename*=UTF-8''#{encodeRfc5987ValueChars(filename)}"
+        "attachment; filename*=UTF-8''#{encodeRfc5987ValueChars(@filename)}"
       else
-        "attachment; filename=\"#{filename}\""
+        "attachment; filename=\"#{@filename}\""
 
       if @file.size > 0
         sendOffset = @file.size - 1
