@@ -7,11 +7,19 @@ class TestFileGroupJobQueue(
     tasks: Seq[Long],
     override protected val progressReporter: ActorRef) extends FileGroupJobQueue {
 
+  
   class TestStorage extends Storage {
     override def uploadedFileIds(fileGroupId: Long): Set[Long] = tasks.toSet
   }
 
   override protected val storage = new TestStorage
+  override protected val jobTrackerFactory = new TestJobTrackerFactory
+  
+  class TestJobTrackerFactory extends JobTrackerFactory {
+    override def createTracker(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef): JobTracker = 
+      new TestCreateDocumentsJobTracker(documentSetId, job.fileGroupId, taskQueue, tasks)     
+    
+  }
 }
 
 object TestFileGroupJobQueue {
@@ -19,3 +27,13 @@ object TestFileGroupJobQueue {
     Props(new TestFileGroupJobQueue(tasks, progressReporter))
 }
 
+
+class TestCreateDocumentsJobTracker(val documentSetId: Long, val fileGroupId: Long, val taskQueue: ActorRef, tasks: Seq[Long]) extends CreateDocumentsJobTracker {
+  
+  override protected val storage = new TestStorage
+  
+  class TestStorage extends Storage {
+    override def uploadedFileIds(fileGroupId: Long): Set[Long] = tasks.toSet
+  }
+  
+}
