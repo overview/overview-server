@@ -67,7 +67,6 @@ trait FileGroupJobQueue extends Actor {
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[TaskWorkerTask] = mutable.Queue.empty
-  private val documentCreationTrackers: mutable.Map[DocumentSetId, TaskTracker] = mutable.Map.empty
   private val jobTrackers: mutable.Map[DocumentSetId, JobTracker] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
   private val busyWorkers: mutable.Map[ActorRef, TaskWorkerTask] = mutable.Map.empty
@@ -92,27 +91,6 @@ trait FileGroupJobQueue extends Actor {
         jobRequests += (documentSetId -> JobRequest(sender))
       }
 
-    case AddTasks(tasks) => {
-      taskQueue ++= tasks
-
-      notifyWorkers
-    }
-
-    case CreateDocumentsFromFileGroup(documentSetId, fileGroupId) => {
-      Logger.info(s"Extract text task for FileGroup [$fileGroupId]")
-      if (isNewRequest(documentSetId)) {
-        val fileIds = uploadedFilesInFileGroup(fileGroupId)
-
-        progressReporter ! StartJob(documentSetId, fileIds.size)
-
-        addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
-        trackDocumentCreation(documentSetId, fileIds)
-
-        jobRequests += (documentSetId -> JobRequest(sender))
-
-        notifyWorkers
-      }
-    }
     case ReadyForTask => {
       if (workerIsFree(sender) && !taskQueue.isEmpty) {
         taskQueue.dequeue match {
@@ -168,6 +146,14 @@ trait FileGroupJobQueue extends Actor {
         jobRequests -= documentSetId
       }
     }
+
+    case AddTasks(tasks) => {
+      taskQueue ++= tasks
+
+      notifyWorkers
+    }
+    
+    
     case Terminated(worker) => {
       Logger.info(s"Removing ${worker.path.toString} from worker pool")
       workerPool -= worker
@@ -193,9 +179,6 @@ trait FileGroupJobQueue extends Actor {
     val newTasks = uploadedFileIds.map(CreatePagesTask(documentSetId, fileGroupId, _))
     taskQueue ++= newTasks
   }
-
-  private def trackDocumentCreation(documentSetId: Long, uploadedFileIds: Set[Long]): Unit =
-    documentCreationTrackers += (documentSetId -> new TaskTracker(uploadedFileIds))
 
   private def whenTaskIsComplete(documentSetId: Long, uploadedFileId: Long)(f: (JobRequest, Long, JobTracker) => Unit) =
     for {
