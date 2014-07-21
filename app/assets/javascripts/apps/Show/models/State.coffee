@@ -97,7 +97,7 @@ define [ 'backbone' ], (Backbone) ->
 
       @stopListening(@get('viz'))
 
-      if viz.get('type') == 'job'
+      if viz?.get('type') == 'job'
         @listenToOnce(viz, 'change:type', reset)
 
       reset()

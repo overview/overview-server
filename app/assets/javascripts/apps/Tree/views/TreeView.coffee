@@ -79,7 +79,7 @@ define [
       $div.append($refresh_button)
 
       $zoom_buttons = $("""<div class="buttons">
-          <button type="button" class="refresh"><i class="icon-refresh"/></button>
+          <button type="button" class="refresh"><i class="overview-icon-refresh"/></button>
           <button type="button" class="zoom-in"><i class="icon-zoom-in"/></button>
           <button type="button" class="zoom-out" disabled><i class="icon-zoom-out"/></button>
         </div>""")

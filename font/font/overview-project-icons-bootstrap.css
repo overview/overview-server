@@ -60,14 +60,15 @@ li[class^="overview-icon-"].overview-icon-large:before, li[class*=" overview-ico
   text-indent: -1.333em;
 }
 
-.overview-icon-plus:before { content: "\f100"; }
-.overview-icon-edit:before { content: "\f101"; }
-.overview-icon-download:before { content: "\f102"; }
-.overview-icon-minus:before { content: "\f103"; }
-.overview-icon-chevron-right:before { content: "\f104"; }
-.overview-icon-tag:before { content: "\f105"; }
-.overview-icon-chevron-left:before { content: "\f106"; }
-.overview-icon-list:before { content: "\f107"; }
-.overview-icon-trash:before { content: "\f108"; }
-.overview-icon-share:before { content: "\f109"; }
-.overview-icon-upload:before { content: "\f10a"; }
+.overview-icon-list:before { content: "\f100"; }
+.overview-icon-upload:before { content: "\f101"; }
+.overview-icon-chevron-left:before { content: "\f102"; }
+.overview-icon-share:before { content: "\f103"; }
+.overview-icon-tag:before { content: "\f104"; }
+.overview-icon-plus:before { content: "\f105"; }
+.overview-icon-minus:before { content: "\f106"; }
+.overview-icon-refresh:before { content: "\f107"; }
+.overview-icon-download:before { content: "\f108"; }
+.overview-icon-chevron-right:before { content: "\f109"; }
+.overview-icon-trash:before { content: "\f10a"; }
+.overview-icon-edit:before { content: "\f10b"; }
