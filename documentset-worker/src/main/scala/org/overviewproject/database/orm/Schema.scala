@@ -1,13 +1,22 @@
 package org.overviewproject.database.orm
 
+import org.squeryl.KeyedEntityDef
+
+import org.overviewproject.models.ApiToken
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm._
-
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName (propertyName: String) = NamingConventionTransforms.snakify(propertyName) 
   override def tableNameFromClassName(className: String) = NamingConventionTransforms.snakify(className)
 
+  implicit object ApiTokenKED extends KeyedEntityDef[ApiToken, String] {
+    override def getId(t: ApiToken) = t.token
+    override def idPropertyName = "token"
+    override def isPersisted(t: ApiToken) = false // Only INSERT -- no UPDATE
+  }
+
+  val apiTokens = table[ApiToken]
   val searchResults = table[SearchResult]
   val documentSearchResults = table[DocumentSearchResult]
   val documents = table[Document]
@@ -34,6 +43,7 @@ object Schema extends org.squeryl.Schema {
   val pages = table[Page]
   val tempDocumentSetFiles = table[TempDocumentSetFile]
   
+  on(apiTokens)(t => declare(t.token is (primaryKey)))
   on(documents)(d => declare(d.id is(primaryKey)))  
   on(nodes)(n => declare(n.id is(primaryKey)))
   on(trees)(t => declare(t.id is(primaryKey)))

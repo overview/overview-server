@@ -58,6 +58,10 @@ GET    /documentsets/:id/$jsParams<[a-zA-Z]+-[0-9]+> controllers.DocumentSetCont
 DELETE /documentsets/:id                  controllers.DocumentSetController.delete(id: Long)
 PUT    /documentsets/:id                  controllers.DocumentSetController.update(id: Long)
 
+GET    /documentsets/:id/api-tokens        controllers.ApiTokenController.index(id: Long)
+POST   /documentsets/:id/api-tokens        controllers.ApiTokenController.create(id: Long)
+DELETE /documentsets/:id/api-tokens/:token controllers.ApiTokenController.destroy(id: Long, token: String)
+
 GET    /documentsets/:id/users.json   controllers.DocumentSetUserController.indexJson(id: Long)
 POST   /documentsets/:id/users        controllers.DocumentSetUserController.create(id: Long)
 DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.delete(id: Long, email: String)

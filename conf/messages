@@ -122,6 +122,21 @@ views.components.navbar.logged_in={0}
 views.components.navbar.link_document_sets=Your document sets
 views.components.navbar.link_logout=Log out
 
+views.ApiToken.index.title=API Tokens
+views.ApiToken.index.h1=API Tokens
+views.ApiToken.index.description=You can access this document set via scripts or plugins using an API token. Here is an example request:
+
+views.ApiTokens.form.heading=Generate a new token
+views.ApiTokens.form.description.label=App name
+views.ApiTokens.form.description.placeholder=Hello World App
+views.ApiTokens.form.submit.label=Generate token
+views.ApiTokens.table.caption=Your existing tokens
+views.ApiTokens.th.token=Token
+views.ApiTokens.th.createdAt=Generated
+views.ApiTokens.th.description=App name
+views.ApiTokens.delete=Delete
+views.ApiTokens.delete.confirm=Are you sure you want to delete this token? Apps that use it will be locked out of this document set.
+
 views.Confirmation.index.title=Check your email
 views.Confirmation.index.h1=Check your email
 views.Confirmation.index.body_html=<p>Thank you for registering. You’re almost done.</p><p>We’ve sent an email to you at <strong>@email</strong>. Click the link in your email to start using Overview.</p><p><small>Is the email missing? Remember to check your spam folder.</small></p>

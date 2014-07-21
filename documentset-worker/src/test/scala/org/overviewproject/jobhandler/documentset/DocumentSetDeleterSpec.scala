@@ -1,6 +1,6 @@
 package org.overviewproject.jobhandler.documentset
 
-import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.models.ApiToken
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
@@ -25,6 +25,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
   "DocumentSetDeleter" should {
 
     trait DocumentSetContext extends DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       var documentSet: DocumentSet = _
 
       protected var document: Document = _
@@ -67,6 +68,14 @@ class DocumentSetDeleterSpec extends DbSpecification {
         documentTags.insert(DocumentTag(document.id, tag.id))
         val searchResult = searchResults.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSet.id, "query"))
         documentSearchResults.insert(DocumentSearchResult(document.id, searchResult.id))
+        val apiToken = ApiToken(
+          token="12345",
+          documentSetId=documentSet.id,
+          description="description",
+          createdAt=new Timestamp(0L),
+          createdBy="user@example.org"
+        )
+        apiTokens.insert(apiToken)
       }
 
       def addClusteringGeneratedInformation = {
@@ -95,6 +104,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     }
 
     trait CsvUploadContext extends DocumentSetContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       var uploadedFile: UploadedFile = _
 
       override protected def createDocumentSet = {
@@ -114,7 +124,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     }
 
     trait PdfUploadContext extends DocumentSetContext {
-
+      import org.overviewproject.postgres.SquerylEntrypoint._
       var file: File = _
       var page: Page = _
 
@@ -158,6 +168,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     }
 
     trait FailedPdfUploadContext extends PdfUploadContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       override protected def createDocumentSet = {
         super.createDocumentSet
         tempDocumentSetFiles.insertOrUpdate(TempDocumentSetFile(documentSet.id, file.id))
@@ -188,6 +199,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
       addClientGeneratedInformation
       DocumentSetDeleter().deleteClientGeneratedInformation(documentSet.id)
 
+      findAll(apiTokens) must beEmpty
       findAll(logEntries) must beEmpty
       findAllWithFinder(DocumentTagFinder) must beEmpty
       findAll(tags) must beEmpty

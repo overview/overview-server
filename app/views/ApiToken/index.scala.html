@@ -1,0 +1,38 @@
+@(
+  user: OverviewUser,
+  documentSetId: Long
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+
+@javascripts = {
+  @requireJsBundle("ApiToken/index")
+}
+
+@jsMessageKeys = @{Seq(
+  "time_display.datetime.medium",
+  "views.ApiTokens.form.heading",
+  "views.ApiTokens.form.description.label",
+  "views.ApiTokens.form.description.placeholder",
+  "views.ApiTokens.form.submit.label",
+  "views.ApiTokens.table.caption",
+  "views.ApiTokens.th.token",
+  "views.ApiTokens.th.createdAt",
+  "views.ApiTokens.th.description",
+  "views.ApiTokens.delete",
+  "views.ApiTokens.delete.confirm"
+)}
+
+@defining(scopedMessages("views.ApiToken.index")) { m =>
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="api-token-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    <p class="description">@m("description")</p>
+    <pre class="example">val token = "TOKEN";
+val documentSetId = @documentSetId;
+$.ajax({
+  type: 'GET',
+  url: "https://www.overviewproject.org/api/v1/documentsets/" + documentSetId + "/tags",
+  username: token,
+  password: "x-auth-basic",
+  success: console.log
+});</pre>
+    <div id="api-tokens-app" data-document-set-id="@documentSetId"></div>
+  }
+}

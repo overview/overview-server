@@ -178,6 +178,7 @@ object ApplicationBuild extends Build with ProjectSettings {
         RjsKeys.modules := Seq(
           WebJs.JS.Object("name" -> "bundle/admin/ImportJob/index"),
           WebJs.JS.Object("name" -> "bundle/admin/User/index"),
+          WebJs.JS.Object("name" -> "bundle/ApiToken/index"),
           WebJs.JS.Object("name" -> "bundle/CsvUpload/new"),
           WebJs.JS.Object("name" -> "bundle/DocumentCloudImportJob/new"),
           WebJs.JS.Object("name" -> "bundle/DocumentCloudProject/index"),

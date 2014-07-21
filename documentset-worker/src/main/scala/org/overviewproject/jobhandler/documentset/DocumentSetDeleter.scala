@@ -16,7 +16,6 @@ trait DocumentSetDeleter {
   def deleteClientGeneratedInformation(documentSetId: Long): Unit
   def deleteClusteringGeneratedInformation(documentSetId: Long): Unit
   def deleteDocumentSet(documentSetId: Long): Unit
-
 }
 
 object DocumentSetDeleter {
@@ -48,6 +47,7 @@ object DocumentSetDeleter {
     def deleteClientGeneratedInformation(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
 
+      delete(apiTokens)
       delete(logEntries)
       delete(documentTags, DocumentTagFinder)
       delete(tags)
