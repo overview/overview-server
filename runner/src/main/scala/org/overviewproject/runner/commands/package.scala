@@ -91,18 +91,31 @@ package object commands {
     )
 
     /** A Command for "sbt [task]" */
-    override def sbt(task: String) = new JvmCommand(
-      Seq(),
-      Seq(
-        "-Dsbt.log.format=false",
-        "-XX:MaxPermSize=512M",
-        "-Xmx2g"
-      ),
-      Seq(
-        "-jar", sbtLaunchPath,
-        task
-      )
-    ).with32BitSafe
+    override def sbt(task: String) = {
+      val currentSbtArgs = sys.props
+        .toIterable
+        .map { case (k: String, v: String) =>
+          if (k.startsWith("sbt.")) {
+            Seq("-D" + k + "=" + v)
+          } else {
+            Seq()
+          }
+        }
+        .flatten.toSeq
+
+      new JvmCommand(
+        Seq(),
+        currentSbtArgs ++ Seq(
+          "-Dsbt.log.format=false",
+          "-XX:MaxPermSize=512M",
+          "-Xmx2g"
+        ),
+        Seq(
+          "-jar", sbtLaunchPath,
+          task
+        )
+      ).with32BitSafe
+    }
   }
 
   object production extends UsefulCommands {
