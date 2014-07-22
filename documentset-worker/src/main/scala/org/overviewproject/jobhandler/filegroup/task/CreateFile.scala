@@ -5,6 +5,7 @@ import java.util.UUID
 
 import scala.util.control.Exception._
 
+import org.overviewproject.util.Logger
 import org.overviewproject.database.DB
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.Schema
@@ -35,8 +36,13 @@ trait CreateFile {
     withLargeObjectInputStream(upload.contentsOid) { stream =>
       val magicNumber = peekAtMagicNumber(stream)
 
-      if (magicNumber.sameElements(PdfMagicNumber)) storage.createFile(documentSetId, upload.name, upload.contentsOid)
-      else converter.convertStreamToPdf(upload.guid, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
+      if (magicNumber.sameElements(PdfMagicNumber)) {
+        storage.createFile(documentSetId, upload.name, upload.contentsOid)
+      } else {
+        Logger.logExecutionTime(s"Converting ${upload.name} (${upload.guid}, ${"%.1f".format(upload.size * 1.0 / 1024)}kb) to PDF") {
+          converter.convertStreamToPdf(upload.guid, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
+        }
+      }
     }
 
   private def peekAtMagicNumber(inputStream: InputStream): Array[Byte] = {

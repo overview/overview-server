@@ -19,17 +19,24 @@ object Logger {
   def warn(msg: String, t: Throwable) = logger.warn(msg, t)
   def error(msg: String, t: Throwable) = logger.error(msg, t)
 
-  def logElapsedTime(op: String, t0: Long) { 
+  def logElapsedTime(op: String, t0: Long) {
     val t1 = System.nanoTime()
-    info(op + ", time: " + ("%.3f" format (t1 - t0) / 1e9) + " seconds")
+    info(op + ", time: " + ("%.3f" format (t1 - t0) / 1e6) + "ms")
   }
 
-  // Version of the above that can be used as a custom control structure. Takes a string and a code block
-  // optional boolean can be used for conditional logging
-  def logExecutionTime(op:String, logIt:Boolean = true)(fn : => Unit) : Unit = {
+  /** Runs the given block and then logs the time taken.
+    *
+    * The message will still be logged, even if the block throws an exception.
+    */
+  def logExecutionTime[T](op:String, logIt:Boolean = true)(fn : => T) : T = {
     val t0 = System.nanoTime()
-    fn
-    if (logIt)
-      logElapsedTime(op, t0)
+
+    try {
+      fn
+    } finally {
+      if (logIt) {
+        logElapsedTime(op, t0)
+      }
+    }
   }
 }
