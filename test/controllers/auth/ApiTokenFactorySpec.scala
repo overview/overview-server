@@ -76,7 +76,7 @@ class ApiTokenFactorySpec extends test.InAppSpecification with Mockito with Json
       override def requestToken = wrongToken.token
       result must beLeft((r: Result) => {
         h.status(Future(r)) must beEqualTo(h.FORBIDDEN)
-        h.contentAsString(Future(r)) must /("message" -> "Your API token is valid, but it does not grant you access to this action")
+        h.contentAsString(Future(r)) must /("message" -> "Your API token is valid, but it does not grant you access to this endpoint with these parameters")
       })
     }
 

@@ -27,28 +27,6 @@ trait ApiTokenFactory {
     Results.Forbidden(views.json.api.auth.forbidden())
   }
 
-  /** Returns either a Result (no access) or an ApiToken (access). */
-  def loadAuthorizedApiToken(request: RequestHeader, authority: Authority) : Future[Either[Result,ApiToken]] = {
-    request.headers.get("Authorization").toRight(unauthenticated)
-      .right.flatMap(ApiTokenFactory.authorizationHeaderToToken(_).toRight(unauthenticated))
-      match {
-        case Left(result) => Future(Left(result))
-        case Right(tokenString) => {
-          storage.loadApiToken(tokenString).flatMap(_ match {
-            case None => Future(Left(unauthenticated))
-            case Some(apiToken) => {
-              authority(apiToken).map((allowed: Boolean) => allowed match {
-                case true => Right(apiToken)
-                case false => Left(forbidden)
-              })
-            }
-          })
-        }
-      }
-  }
-}
-
-object ApiTokenFactory {
   private val ascii = Charset.forName("US-ASCII")
 
   private def getEncodedUsernameAndPassword(s: String) : Option[String] = {
@@ -80,7 +58,43 @@ object ApiTokenFactory {
     ret
   }
 
+  /** Returns either a Result (no access) or an ApiToken (access). */
+  def loadAuthorizedApiToken(request: RequestHeader, authority: Authority) : Future[Either[Result,ApiToken]] = {
+    request.headers.get("Authorization").toRight(unauthenticated)
+      .right.flatMap(authorizationHeaderToToken(_).toRight(unauthenticated))
+      match {
+        case Left(result) => Future(Left(result))
+        case Right(tokenString) => {
+          storage.loadApiToken(tokenString).flatMap(_ match {
+            case None => Future(Left(unauthenticated))
+            case Some(apiToken) => {
+              authority(apiToken).map((allowed: Boolean) => allowed match {
+                case true => Right(apiToken)
+                case false => Left(forbidden)
+              })
+            }
+          })
+        }
+      }
+  }
+}
+
+object ApiTokenFactory extends ApiTokenFactory {
   trait Storage {
     def loadApiToken(token: String) : Future[Option[ApiToken]]
+  }
+
+  override protected val storage = new Storage {
+    import models.OverviewDatabase
+
+    override def loadApiToken(token: String) = Future {
+      import models.orm.Schema
+      import models.orm.Schema.ApiTokenKED
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
+      OverviewDatabase.inTransaction {
+        Schema.apiTokens.lookup(token)
+      }
+    }
   }
 }

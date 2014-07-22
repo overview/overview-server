@@ -1,7 +1,6 @@
 package org.overviewproject.tree.orm
 
 import org.squeryl.KeyedEntity
-import org.overviewproject.postgres.SquerylEntrypoint._
 
 case class Tag(
   documentSetId: Long,

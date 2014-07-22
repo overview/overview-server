@@ -111,6 +111,11 @@ DELETE /admin/users/:email controllers.admin.UserController.delete(email: String
 GET    /admin/imports        controllers.admin.ImportJobController.index()
 DELETE /admin/imports/:jobId controllers.admin.ImportJobController.delete(jobId: Long)
 
+# API V1
+#
+# Each is documented at https://github.com/overview/overview-server/wiki/API-v1
+GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(id: Long)
+
 # Map static resources from the /public folder to the /assets URL path
 GET    /$file<robots\.txt>      controllers.Assets.at(path="/public", file)
 GET    /assets/*file            controllers.Assets.at(path="/public", file)

@@ -29,3 +29,7 @@ trait ApiAuthorizedAction {
     }
   }
 }
+
+object ApiAuthorizedAction extends ApiAuthorizedAction {
+  override protected val apiTokenFactory = ApiTokenFactory
+}
