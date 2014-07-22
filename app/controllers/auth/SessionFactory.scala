@@ -30,10 +30,6 @@ import org.overviewproject.postgres.InetAddress
   */
 trait SessionFactory {
   private[auth] val SessionIdKey = AuthResults.SessionIdKey // TODO find a sensible place for this constant
-
-  trait Storage {
-    def loadSessionAndUser(sessionId: UUID) : Option[(Session,User)]
-  }
   protected val storage : SessionFactory.Storage
 
   /** Returns either a Result (no access) or a (Session,User) (access).
@@ -69,6 +65,10 @@ object SingleUserSessionFactory extends SessionFactory {
 }
 
 object SessionFactory extends SessionFactory {
+  trait Storage {
+    def loadSessionAndUser(sessionId: UUID) : Option[(Session,User)]
+  }
+
   object DatabaseStorage extends SessionFactory.Storage {
     override def loadSessionAndUser(sessionId: UUID) = {
       SessionFinder.byId(sessionId).notExpired.withUsers.headOption
