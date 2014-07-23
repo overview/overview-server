@@ -4,8 +4,6 @@ import org.squeryl.Query
 import org.overviewproject.postgres.SquerylEntrypoint
 import scala.language.implicitConversions
 
-import org.overviewproject.postgres.SquerylEntrypoint
-
 /** An SQL query with useful conversions.
   *
   * A FinderResult is a query that has not yet been run. It may be created
@@ -29,6 +27,6 @@ class FinderResult[A](val query: Query[A]) {
 object FinderResult {
   def apply[A](query: Query[A]) = new FinderResult(query)
 
-  implicit def finderResultToQuery[A](r: FinderResult[A]) = r.toQuery
-  implicit def finderResultToIterable[A](r: FinderResult[A]) = r.toIterable
+  implicit def finderResultToQuery[A](r: FinderResult[A]): Query[A] = r.toQuery
+  implicit def finderResultToIterable[A](r: FinderResult[A]): Iterable[A] = r.toIterable
 }
