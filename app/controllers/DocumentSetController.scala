@@ -77,6 +77,19 @@ trait DocumentSetController extends Controller {
 
   def index(page: Int) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
+
+    /*
+     * Find the DocumentSetCreationJobs first, and lock them.
+     *
+     * The only difference between a DocumentSet and a DocumentSetCreationJob
+     * is that a DocumentSet is _missing_ a DocumentSetCreationJob. We want to
+     * find all DocumentSets _with_ and all DocumentSets _without_, in two
+     * separate queries, so we need to avoid races. The only races that can
+     * happen are when jobs are deleted. So if we prevent the jobs from being
+     * deleted during this transaction, there's no more race.
+     */
+    val jobs = storage.findDocumentSetCreationJobs(request.user.email).toSeq
+
     val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
     val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
 
@@ -85,8 +98,6 @@ trait DocumentSetController extends Controller {
     val documentSetsWithNTrees = documentSets.zip(nTrees)
 
     val resultPage = ResultPage(documentSetsWithNTrees, documentSetsPage.pageDetails)
-
-    val jobs = storage.findDocumentSetCreationJobs(request.user.email).toSeq
 
     if (resultPage.pageDetails.totalLength == 0 && jobs.length == 0) {
       Redirect(routes.PublicDocumentSetController.index).flashing(request.flash)
@@ -257,10 +268,10 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     override def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)] = {
       DocumentSetCreationJobFinder
         .byUser(userEmail)
+        .forUpdate // See comment in index(). Should be "forShare" but Squeryl doesn't support that
         .excludeTreeCreationJobs
         .excludeCancelledJobs
         .withDocumentSetsAndQueuePositions
-        .toSeq
     }
 
     override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {

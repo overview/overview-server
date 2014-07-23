@@ -14,6 +14,8 @@ import models.orm.{ Schema, User }
 
 object DocumentSetCreationJobFinder extends Finder {
   class DocumentSetCreationJobFinderResult(query: Query[DocumentSetCreationJob]) extends FinderResult(query) {
+    def forUpdate: DocumentSetCreationJobFinderResult = toQuery.forUpdate
+
     def byState(states: DocumentSetCreationJobState.Value*): DocumentSetCreationJobFinderResult = {
       from(toQuery)(dscj =>
         where(dscj.state in states)
