@@ -62,7 +62,6 @@ object JobQueueSender {
 
   /**
    * Send a `ClusterFileGroup` message to the Clustering message queue.
-   * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
   def send(clusterFileGroup: ClusterFileGroup): Future[Unit] = {
     implicit val clusterFileGroupWrites: Writes[ClusterFileGroup] = (
