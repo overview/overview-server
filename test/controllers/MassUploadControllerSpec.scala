@@ -28,6 +28,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
     override val storage = smartMock[Storage]
     override val messageQueue = smartMock[MessageQueue]
+    messageQueue.startClustering(any, any) returns Future.successful(Unit)
   }
 
   trait FileGroupProvider {

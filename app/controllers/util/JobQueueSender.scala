@@ -6,8 +6,9 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import plugins.StompPlugin
-import org.overviewproject.jobs.models._
+import scala.concurrent.Future
 
+import org.overviewproject.jobs.models._
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.
@@ -20,9 +21,8 @@ object JobQueueSender {
 
   /**
    * Send the message to the message queue.
-   * @return a `Left[Unit]` if the connection to the queue is down, `Right[Unit]` otherwise.
    */
-  def send(search: Search): Either[Unit, Unit] = {
+  def send(search: Search): Future[Unit] = {
 
     val jsonMessage = toJson(Map(
       "cmd" -> toJson("search"),
@@ -33,9 +33,8 @@ object JobQueueSender {
 
   /**
    * Send a `Delete` message to the message queue.
-   * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
-  def send(delete: Delete): Either[Unit, Unit] = {
+  def send(delete: Delete): Future[Unit] = {
     implicit val deleteArgWrites: Writes[Delete] = (
       (__ \ "documentSetId").write[Long] and
       (__ \ "waitForJobRemoval").write[Boolean])(unlift(Delete.unapply))
@@ -49,9 +48,8 @@ object JobQueueSender {
 
   /**
    * Send a `DeleteTreeJob` message to the message queue.
-   * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
-  def send(deleteTreeJob: DeleteTreeJob): Either[Unit, Unit] = {
+  def send(deleteTreeJob: DeleteTreeJob): Future[Unit] = {
     val jsonMessage = Json.obj(
       "cmd" -> "delete_tree_job",
       "args" -> Json.obj("jobId" -> deleteTreeJob.jobId)
@@ -66,7 +64,7 @@ object JobQueueSender {
    * Send a `ClusterFileGroup` message to the Clustering message queue.
    * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
-  def send(clusterFileGroup: ClusterFileGroup): Either[Unit, Unit] = {
+  def send(clusterFileGroup: ClusterFileGroup): Future[Unit] = {
     implicit val clusterFileGroupWrites: Writes[ClusterFileGroup] = (
       (__ \ "documentSetId").write[Long] and
       (__ \ "fileGroupId").write[Long] and
@@ -86,7 +84,7 @@ object JobQueueSender {
   /**
    * Send a `CancelFileUpload` message to the Clustering message queue.
    */
-  def send(cancelFileUpload: CancelFileUpload): Either[Unit, Unit] = {
+  def send(cancelFileUpload: CancelFileUpload): Future[Unit] = {
     implicit val cancelFileUploadWrites: Writes[CancelFileUpload] = (
       (__ \ "documentSetId").write[Long] and
       (__ \ "fileGroupId").write[Long])(unlift(CancelFileUpload.unapply))
@@ -99,19 +97,19 @@ object JobQueueSender {
   }
 
   
-  private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Either[Unit, Unit] = {
+  private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Future[Unit] = {
     val connection = use[StompPlugin].documentSetCommandQueue
 
     connection.send(jsonMessage.toString, s"$documentSetId")
   }
 
-  private def sendMessageToFileGroupJobQueue(jsonMessage: JsValue): Either[Unit, Unit] = {
+  private def sendMessageToFileGroupJobQueue(jsonMessage: JsValue): Future[Unit] = {
     val connection = use[StompPlugin].fileGroupCommandQueue
 
     connection.send(jsonMessage.toString)
   }
 
-  private def sendMessageToClusteringQueue(jsonMessage: JsValue): Either[Unit, Unit] = {
+  private def sendMessageToClusteringQueue(jsonMessage: JsValue): Future[Unit] = {
     val connection = use[StompPlugin].clusteringCommandQueue
 
     connection.send(jsonMessage.toString)

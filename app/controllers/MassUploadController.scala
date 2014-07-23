@@ -2,8 +2,10 @@ package controllers
 
 import java.util.UUID
 import scala.concurrent.duration.{Duration, MILLISECONDS}
+import scala.concurrent.Future
 import play.api.Logger
 import play.api.libs.concurrent.Akka
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
 import org.overviewproject.jobs.models.ClusterFileGroup
@@ -56,9 +58,9 @@ trait MassUploadController extends Controller {
    * Notify the worker that clustering can start as soon as all currently uploaded files
    * have been processed
    */
-  def startClustering = AuthorizedAction(anyUser) { implicit request =>
+  def startClustering = AuthorizedAction(anyUser).async { implicit request =>
     MassUploadControllerForm().bindFromRequest.fold(
-      e => BadRequest,
+      e => Future(BadRequest),
       startClusteringFileGroupWithOptions(request.user.email, _)
     )
   }
@@ -103,7 +105,7 @@ trait MassUploadController extends Controller {
 
   trait MessageQueue {
     /** Notify the worker that clustering can start */
-    def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Unit
+    def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit]
   }
 
   private def authorizedUploadBodyParser(guid: UUID) =
@@ -138,7 +140,7 @@ trait MassUploadController extends Controller {
   }
 
   private def startClusteringFileGroupWithOptions(userEmail: String,
-                                                  options: (String, String, Boolean, String, String)): Result = {
+                                                  options: (String, String, Boolean, String, String)): Future[Result] = {
     val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
 
     val dbResult : Option[DocumentSetCreationJob] = OverviewDatabase.inTransaction {
@@ -153,10 +155,11 @@ trait MassUploadController extends Controller {
 
     dbResult match {
       case Some(job) => {
-        messageQueue.startClustering(job, name)
-        Redirect(routes.DocumentSetController.index())
+        messageQueue
+          .startClustering(job, name)
+          .map((Unit) => Redirect(routes.DocumentSetController.index()))
       }
-      case None => NotFound
+      case None => Future(NotFound)
     }
   }
 
@@ -226,7 +229,7 @@ object MassUploadController extends MassUploadController {
   }
 
   class ApolloQueue extends MessageQueue {
-    override def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Unit = {
+    override def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit] = {
       val command = ClusterFileGroup(
         documentSetId=job.documentSetId,
         fileGroupId=job.fileGroupId.get,
@@ -237,8 +240,7 @@ object MassUploadController extends MassUploadController {
         importantWords=job.importantWords
       )
 
-      if (JobQueueSender.send(command).isLeft)
-        throw new Exception(s"Could not send StartClustering(${command.toString()})")
+      JobQueueSender.send(command)
     }
   }
 }

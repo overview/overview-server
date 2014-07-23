@@ -1,12 +1,14 @@
 package plugins
 
 import scala.language.postfixOps
-import scala.concurrent.duration.DurationInt
 import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{Await,Future,Promise}
+import scala.concurrent.duration.Duration
+import org.fusesource.hawtbuf.{Buffer => HawtBuffer}
+import org.fusesource.stomp.codec.StompFrame
+import org.fusesource.stomp.client.{Callback,CallbackConnection,Stomp}
+import org.fusesource.stomp.client.Constants.{CONTENT_TYPE,DESTINATION,SEND,TRANSFORMATION}
 
-import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
-
-import javax.jms.{ DeliveryMode, ExceptionListener, JMSException, MessageProducer, Session }
 import play.api.{ Application, Logger, Play }
 import play.api.Play.current
 import play.api.Plugin
@@ -35,140 +37,121 @@ object MessageQueueConfiguration {
  * the connection.
  */
 class StompPlugin(application: Application) extends Plugin {
-  lazy val documentSetCommandQueue: MessageQueueConnection = 
-    createQueue(MessageQueueConfiguration.DocumentSetCommandQueueName)
-
-  lazy val fileGroupCommandQueue: MessageQueueConnection =
-    createQueue(MessageQueueConfiguration.FileGroupCommandQueueName)
-    
-  lazy val clusteringCommandQueue: MessageQueueConnection = 
-    createQueue(MessageQueueConfiguration.ClusteringCommandQueueName)
-
-  override def onStart(): Unit = {
-    documentSetCommandQueue
-    fileGroupCommandQueue
-    clusteringCommandQueue
+  private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
+  private lazy val client: MessageQueueClient = {
+    if (useMock) {
+      new MockMessageQueueClient
+    } else {
+      new StompMessageQueueClient
+    }
   }
 
-  override def onStop(): Unit = documentSetCommandQueue.close
+  lazy val documentSetCommandQueue = new MessageQueueDestination(client, MessageQueueConfiguration.DocumentSetCommandQueueName)
+  lazy val fileGroupCommandQueue = new MessageQueueDestination(client, MessageQueueConfiguration.FileGroupCommandQueueName)
+  lazy val clusteringCommandQueue = new MessageQueueDestination(client, MessageQueueConfiguration.ClusteringCommandQueueName)
 
-  private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
-  private def createQueue(queueName: String): MessageQueueConnection =
-    if (useMock) new MockMessageQueueConnection
-    else new StompJmsMessageQueueConnection(queueName)
-
+  override def onStart(): Unit = { client }
+  override def onStop(): Unit = { client.close }
 }
 
-/** Operations on the message queue */
-trait MessageQueueConnection {
-  /**
-   * Send a message. @return a `Left[Unit]` if the connection
-   * is down, `Right[Unit]` otherwise
-   */
-  def send(messageText: String): Either[Unit, Unit]
+class MessageQueueDestination(client: MessageQueueClient, queueName: String) {
+  /** Send a message.  */
+  def send(messageText: String): Future[Unit] = client.send(queueName, messageText, None)
 
-  /**
-   * Send a message to the `messageGroup`. @return a `Left[Unit]` if the connection
-   * is down, `Right[Unit]` otherwise
-   */
-  def send(messageText: String, messageGroup: String): Either[Unit, Unit]
+  /** Send a message to the `messageGroup`. */
+  def send(messageText: String, messageGroup: String): Future[Unit] = client.send(queueName, messageText, Some(messageGroup))
+}
 
-  /**
-   *  Close the connection. Should only be called when application
-   *  is shutting down, since there is no way to reconnect.
-   */
+trait MessageQueueClient {
+  /** Sends a message. */
+  def send(queueName: String, messageText: String, messageGroup: Option[String]) : Future[Unit]
+
+  /** Closes the message queue.
+    *
+    * After closing, you cannot restart it.
+    */
   def close: Unit
 }
 
-class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConnection {
-  private val messageSender: MessageSender = new MessageSender
+class StompMessageQueueClient extends MessageQueueClient {
+  private val ReconnectDelay = Duration(1, "second")
+  private val CloseTimeout = Duration(100, "ms")
 
-  override def send(messageText: String): Either[Unit, Unit] = messageSender.send(messageText)
-  override def send(messageText: String, messageGroup: String): Either[Unit, Unit] = messageSender.send(messageText, Some(messageGroup))
+  private var connection: Future[CallbackConnection] = connect
 
-  override def close: Unit = messageSender.close
+  private def connect: Future[CallbackConnection] = {
+    val promise = Promise[CallbackConnection]()
 
-  private class MessageSender extends ExceptionListener {
-    private val connectionStatus = new ConnectionStatus
+    def tryConnect: Unit = {
+      val uri = MessageQueueConfiguration.BrokerUri
+      val stomp = new Stomp(uri)
+      stomp.setLogin(MessageQueueConfiguration.Username)
+      stomp.setPasscode(MessageQueueConfiguration.Password)
 
-    private var session: Option[Session] = None
-    private var producer: Option[MessageProducer] = None
-
-    createSession
-
-    override def onException(exception: JMSException): Unit = {
-      Logger.error(s"Exception detected: ${exception.getMessage()}")
-
-      if (!connectionStatus.connectionFailed_isRestartInProgress)
-        createSession
-    }
-
-    def send(messageText: String, messageGroup: Option[String] = None): Either[Unit, Unit] =
-      Either.cond(connectionStatus.isConnected,
-        for {
-          s <- session
-          p <- producer
-        } {
-          val message = s.createTextMessage(messageText)
-          messageGroup.map { g => message.setStringProperty("message_group", g) }
-
-          p.send(message)
-        },  
-        Logger.error(s"[$queueName] Trying to send message to closed connection"))
-
-    def close: Unit = session.map(_.close)
-
-    private def createSession: Unit = {
-      val factory = new StompJmsConnectionFactory()
-      factory.setBrokerURI(MessageQueueConfiguration.BrokerUri)
-
-      val destination = new StompJmsDestination(queueName)
-
-      attemptSessionCreation(factory, destination)
-    }
-
-    private def attemptSessionCreation(factory: StompJmsConnectionFactory, destination: StompJmsDestination): Unit =
-      Try {
-        Logger.debug(s"[$queueName] Attempting to create Session.")
-        val connection = factory.createConnection(MessageQueueConfiguration.Username,
-          MessageQueueConfiguration.Password)
-        connection.setExceptionListener(this)
-        connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)
-      } match {
-        case Success(s) => {
-          Logger.debug(s"[$queueName] Session created")
-          session = Some(s)
-          producer = session.map(_.createProducer(destination))
-          producer.map(_.setDeliveryMode(DeliveryMode.NON_PERSISTENT))
-          connectionStatus.connectionSucceeded
+      stomp.connectCallback(new Callback[CallbackConnection] {
+        override def onFailure(e: Throwable) = {
+          Logger.warn(s"Failed to connect to message broker at ${uri} (will retry): ${e.getMessage()}") // Don't log to error to avoid generating error emails during startup
+          Akka.system.scheduler.scheduleOnce(ReconnectDelay) { tryConnect }
         }
-        case Failure(e) => Akka.system.scheduler.scheduleOnce(1 second) {
-          Logger.info(s"[$queueName] ${e.getMessage()}", e) // Don't log to error to avoid generating error emails during startup
-          attemptSessionCreation(factory, destination)
+        override def onSuccess(v: CallbackConnection) = {
+          Logger.info(s"Connected to message broker at ${uri}")
+          promise.trySuccess(v) // Our Stomp client sometimes calls its callbacks multiple times
         }
-      }
-
-    private class ConnectionStatus {
-      private var isConnectionUp: Boolean = false
-
-      def isConnected: Boolean = this.synchronized { isConnectionUp }
-
-      def connectionFailed_isRestartInProgress: Boolean = this.synchronized {
-        val restartInProgress = !isConnectionUp
-        isConnectionUp = false
-
-        restartInProgress
-      }
-
-      def connectionSucceeded: Unit = this.synchronized { isConnectionUp = true }
+      })
     }
 
+    tryConnect
+
+    promise.future
   }
+
+  private def reconnect: Future[CallbackConnection] = {
+    connection.map(_.close(null)) // kill threads -- don't wait for them
+    connection = connect
+    connection
+  }
+
+  def send(queueName: String, messageText: String, messageGroup: Option[String] = None): Future[Unit] = {
+    val frame = new StompFrame(SEND)
+    frame.addHeader(DESTINATION, StompFrame.encodeHeader(queueName))
+    frame.addHeader(CONTENT_TYPE, StompFrame.encodeHeader("application/json"))
+    //frame.addHeader(TRANSFORMATION, StompFrame.encodeHeader("jms/text-message"))
+    for (g <- messageGroup) {
+      frame.addHeader(StompFrame.encodeHeader("message_group"), StompFrame.encodeHeader(g))
+    }
+    frame.content(new HawtBuffer(messageText.getBytes("UTF-8")))
+
+    val promise = Promise[Unit]()
+
+    def trySend(nRetries: Int): Unit = {
+      connection.map(_.send(frame, new Callback[Void] {
+        override def onFailure(e: Throwable) = {
+          Logger.warn(s"[$queueName] failed to send message. ${nRetries} retries left: ${e.getMessage()}", e)
+          if (nRetries > 1) {
+            reconnect.onSuccess { case _ => trySend(nRetries - 1) }
+          } else {
+            promise.tryFailure(e) // Stomp client sometimes calls these multiple times
+          }
+        }
+        override def onSuccess(u: Void) = promise.trySuccess(Unit) // Stomp client sometimes calls these multiple times
+      }))
+    }
+
+    trySend(2)
+
+    promise.future
+  }
+
+  private def closeAsync = Future[Unit] {
+    val promise = Promise[Unit]()
+    connection.map(_.close(new Runnable { def run() = promise.success(Unit) }))
+    promise.future
+  }
+
+  def close: Unit = Await.result(closeAsync, CloseTimeout)
 }
 
-class MockMessageQueueConnection extends MessageQueueConnection {
-  override def send(messageText: String): Either[Unit, Unit] = Right()
-  override def send(messageText: String, messageGroup: String): Either[Unit, Unit] = Right()
-
-  override def close: Unit = {}
+class MockMessageQueueClient extends MessageQueueClient {
+  override def send(queueName: String, messageText: String, messageGroup: Option[String]) = Future.successful(Unit)
+  override def close = {}
 }
