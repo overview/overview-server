@@ -89,7 +89,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       pdfProcessor.loadFromDatabase(any) returns pdfDocument
       
       def start(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-        startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
+        startCreatePagesTask(documentSetId, uploadedFileId)
     }
 
     class FailingCreatePagesProcess(exceptionMessage: String) extends CreatePagesProcess {
@@ -103,7 +103,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       def mockStorage = storage
 
       def executeTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): Unit = {
-        startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId).execute
+        startCreatePagesTask(documentSetId, uploadedFileId).execute
       }
     }
 

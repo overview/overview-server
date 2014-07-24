@@ -64,7 +64,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
   private var jobQueue: ActorRef = _
 
-  protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep
+  protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
   protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
   
   lookForJobQueue
@@ -92,7 +92,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       stay
     }
     case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), JobQueue(jobQueue)) => {
-      executeTaskStep(startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
+      executeTaskStep(startCreatePagesTask(documentSetId, uploadedFileId))
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {

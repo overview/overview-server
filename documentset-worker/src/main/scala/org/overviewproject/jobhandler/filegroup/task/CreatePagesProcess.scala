@@ -24,7 +24,7 @@ trait CreatePagesProcess {
 
   protected case class TaskInformation(documentSetId: Long, uploadedFileId: Long)
 
-  protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
+  protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     CreateViewableFile(TaskInformation(documentSetId, uploadedFileId))
 
   // Create the file with a view
