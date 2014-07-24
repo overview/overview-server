@@ -52,7 +52,6 @@ object DocumentSetWorker extends App {
 
   actorCareTaker ! StartListening
 
-  FileGroupTaskWorkerStartup(fileGroupJobQueuePath)
 }
 
 /**
@@ -60,24 +59,34 @@ object DocumentSetWorker extends App {
  * Creates the connection hosting the message queues, and tells
  * clients to register for connection status messages.
  * If an error occurs at this level, we assume that something catastrophic has occurred.
- * All actors get killed, and we die.
+ * All actors get killed, and the process exits.
  */
 class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) extends Actor {
   import ActorCareTakerProtocol._
-  
-  val connectionMonitor = context.actorOf(ApolloMessageQueueConnection())
+
+  private val connectionMonitor = createMonitoredActor(ApolloMessageQueueConnection(), "MessageQueueConnection")
   // Start as many job handlers as you need
-  val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
+  private val jobHandlers = Seq.tabulate(numberOfJobHandlers)(n =>
+    createMonitoredActor(DocumentSetJobHandler(), s"DocumentSetJobHandler-$n"))
 
-  val progressReporter = context.actorOf(ProgressReporter())
-  val fileGroupJobQueue = context.actorOf(FileGroupJobQueue(progressReporter), fileGroupJobQueueName)
+  private val progressReporter = createMonitoredActor(ProgressReporter(), "ProgressReporter")
+  private val fileGroupJobQueue = createMonitoredActor(FileGroupJobQueue(progressReporter), fileGroupJobQueueName)
   Logger.info(s"Job Queue path ${fileGroupJobQueue.path}")
-  val clusteringJobQueue = context.actorOf(ClusteringJobQueue(progressReporter), "ClusteringJobQueue")
-  val fileGroupJobQueueManager = context.actorOf(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
-  val uploadClusteringCommandBridge = context.actorOf(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager), "ClusteringCommandsMessageQueueBridge")
+  private val clusteringJobQueue = createMonitoredActor(ClusteringJobQueue(progressReporter), "ClusteringJobQueue")
+  private val fileGroupJobQueueManager = createMonitoredActor(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
+  private val uploadClusteringCommandBridge = createMonitoredActor(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager), "ClusteringCommandsMessageQueueBridge")
 
+  private val taskWorkerSupervisor = createMonitoredActor(FileGroupTaskWorkerStartup(fileGroupJobQueue.path.toString), "TaskWorkerSupervisor")
+
+
+  /**
+   *   A more optimistic approach would be to simply restart the actor. At the moment, we don't know
+   *   enough about the error modes to know whether an actor restart would be successful.
+   *   Instead, we stop everything and exit the process. On production, the process will be automatically
+   *   restarted.
+   */  
   override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
-    case _ => Stop
+    case _ => stop
   }
 
   def receive = {
@@ -89,7 +98,13 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) ex
     case Terminated(a) => {
       Logger.error("Unexpected shutdown")
       context.system.shutdown
+      System.exit(-1)
     }
+  }
+  
+  private def createMonitoredActor(props: Props, name: String): ActorRef = {
+    val monitee = context.actorOf(props, name) // like manatee? get it?
+    context.watch(monitee)
   }
 }
 

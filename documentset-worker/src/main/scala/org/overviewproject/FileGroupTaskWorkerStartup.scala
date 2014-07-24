@@ -9,9 +9,9 @@ import org.overviewproject.jobhandler.filegroup.task.TempDirectory
 
 object FileGroupTaskWorkerStartup {
 
-  def apply(fileGroupJobQueuePath: String)(implicit system: ActorSystem): Unit = {
+  def apply(fileGroupJobQueuePath: String)(implicit context: ActorContext): Props = {
     TempDirectory.create
-    system.actorOf(TaskWorkerSupervisor(fileGroupJobQueuePath), "TaskWorkerSupervisor")
+    TaskWorkerSupervisor(fileGroupJobQueuePath)
   }
 
 }
