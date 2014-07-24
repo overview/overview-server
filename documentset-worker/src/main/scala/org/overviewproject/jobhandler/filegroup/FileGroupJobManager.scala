@@ -69,21 +69,21 @@ trait FileGroupJobManager extends Actor {
 
     case UpdateJobStateRetryAttempt(command, count) => attemptUpdateJobState(command, count)
 
-    case FileGroupDocumentsCreated(documentSetId) =>
-      textExtractionJobsPendingCancellation.get(documentSetId).fold {
-        clusteringJobQueue ! ClusterDocumentSet(documentSetId)
-      } { fileGroupId =>
-        fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
-        textExtractionJobsPendingCancellation -= documentSetId
-      }
-
+    case FileGroupDocumentsCreated(documentSetId) => {
+      val jobToBeCancelled = textExtractionJobsPendingCancellation.remove(documentSetId).map(DeleteFileGroupJob)
+      
+      jobToBeCancelled.map { submitToFileGroupJobQueue(documentSetId, _) }
+        .getOrElse { clusteringJobQueue ! ClusterDocumentSet(documentSetId) }
+    }
+    
     case CancelClusterFileGroupCommand(documentSetId, fileGroupId) =>
       cancelJob(documentSetId, fileGroupId)
 
   }
 
   private def attemptUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit =
-    storage.updateJobState(command.documentSetId).fold(limitedRetryUpdateJobState(command, count))(queueJob)
+    storage.updateJobState(command.documentSetId).map(queueCreateDocumentsJob)
+      .getOrElse(limitedRetryUpdateJobState(command, count))
 
   private def limitedRetryUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit =
     if (count < MaxRetryAttempts) retryUpdateJobState(command, count + 1)
@@ -96,14 +96,17 @@ trait FileGroupJobManager extends Actor {
 
   private def retryJob(job: DocumentSetCreationJob): Unit = {
     storage.increaseRetryAttempts(job)
-    queueJob(job)
+    queueCreateDocumentsJob(job)
   }
 
   private def failJob(job: DocumentSetCreationJob): Unit = storage.failJob(job)
 
-  private def queueJob(job: DocumentSetCreationJob): Unit =
-    fileGroupJobQueue ! SubmitJob(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get))
+  private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit =
+    submitToFileGroupJobQueue(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get))
 
+  private def submitToFileGroupJobQueue(documentSetId: Long, job: FileGroupJob): Unit = 
+    fileGroupJobQueue ! SubmitJob(documentSetId, job)
+    
   private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit = {
     textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
     fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
