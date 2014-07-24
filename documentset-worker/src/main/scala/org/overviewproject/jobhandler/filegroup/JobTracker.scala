@@ -2,10 +2,11 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.ActorRef
 import scala.collection.mutable
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol.CreatePagesTask
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
+
 
 trait JobTracker {
   def createTasks: Int = {
@@ -31,6 +32,16 @@ trait JobTracker {
 
   protected def generateTasks: Set[Long]
 
+}
+
+class DeleteFileGroupJobTracker(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef) extends JobTracker {
+  
+  override protected def generateTasks: Set[Long] = {
+    val deleteTasks = Set(DeleteFileUploadJob(documentSetId, fileGroupId))
+    taskQueue ! AddTasks(deleteTasks)
+    
+    deleteTasks.map(_.documentSetId)
+  }
 }
 
 trait CreateDocumentsJobTracker extends JobTracker {

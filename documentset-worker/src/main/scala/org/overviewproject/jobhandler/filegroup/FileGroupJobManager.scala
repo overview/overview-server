@@ -73,7 +73,7 @@ trait FileGroupJobManager extends Actor {
       textExtractionJobsPendingCancellation.get(documentSetId).fold {
         clusteringJobQueue ! ClusterDocumentSet(documentSetId)
       } { fileGroupId =>
-        fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)
+        fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
         textExtractionJobsPendingCancellation -= documentSetId
       }
 

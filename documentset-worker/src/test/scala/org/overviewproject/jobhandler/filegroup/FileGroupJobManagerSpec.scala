@@ -52,7 +52,7 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
 
       fileGroupJobManager ! FileGroupDocumentsCreated(cancelledDocumentSet1)
-      fileGroupJobQueue.expectMsg(DeleteFileUpload(cancelledDocumentSet1, fileGroup3))
+      fileGroupJobQueue.expectMsg(SubmitJob(cancelledDocumentSet1, DeleteFileGroupJob(fileGroup3)))
     }
 
     "fail job if restart limit is reached" in new RestartLimitContext {
@@ -103,7 +103,7 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
       fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
 
-      fileGroupJobQueue.expectMsg(DeleteFileUpload(documentSetId, fileGroupId))
+      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId)))
     }
 
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
