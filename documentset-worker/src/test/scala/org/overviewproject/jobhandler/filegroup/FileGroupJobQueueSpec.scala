@@ -123,13 +123,13 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     
     "delete file upload" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
-      fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)
+      fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
 
       worker.expectDeleteFileUploadJob
     }
 
     "notify requester when file upload is deleted" in new JobQueueContext {
-      fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)
+      fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
       fileGroupJobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
 
       expectMsg(FileUploadDeleted(documentSetId, fileGroupId))

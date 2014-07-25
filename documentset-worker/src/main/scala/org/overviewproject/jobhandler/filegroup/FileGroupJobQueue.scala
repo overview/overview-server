@@ -22,10 +22,8 @@ object FileGroupJobQueueProtocol {
   case class SubmitJob(documentSetId: Long, job: FileGroupJob)
   case class AddTasks(tasks: Iterable[TaskWorkerTask])
 
-  case class CreateDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long)
   case class FileGroupDocumentsCreated(documentSetId: Long)
   case class CancelFileUpload(documentSetId: Long, fileGroupId: Long)
-  case class DeleteFileUpload(documentSetId: Long, fileGroupId: Long)
   case class FileUploadDeleted(documentSetId: Long, fileGroupId: Long)
 }
 
@@ -74,7 +72,7 @@ trait FileGroupJobQueue extends Actor {
 
     }
 
-    case SubmitJob(documentSetId, job) =>
+    case SubmitJob(documentSetId, job) => 
       if (isNewRequest(documentSetId)) {
         val tracker = jobTrackerFactory.createTracker(documentSetId, job, self)
         val numberOfTasks = tracker.createTasks
@@ -124,13 +122,6 @@ trait FileGroupJobQueue extends Actor {
           notifyRequesterIfJobIsDone(r, documentSetId, tracker)
         }
       }
-    }
-    case DeleteFileUpload(documentSetId, fileGroupId) => {
-      Logger.info(s"($documentSetId:$fileGroupId) Deleting upload job")
-      taskQueue += DeleteFileUploadJob(documentSetId, fileGroupId)
-      jobRequests += (documentSetId -> JobRequest(sender))
-
-      notifyWorkers
     }
     case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
       Logger.info(s"($documentSetId:$fileGroupId) Deleted upload job")
