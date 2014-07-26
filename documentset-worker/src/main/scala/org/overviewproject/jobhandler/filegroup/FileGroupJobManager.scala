@@ -70,8 +70,7 @@ trait FileGroupJobManager extends Actor {
 
     case UpdateJobStateRetryAttempt(command, count) => attemptUpdateJobState(command, count)
 
-    case FileGroupDocumentsCreated(documentSetId) => handleCompletedJob(documentSetId)
-    case FileUploadDeleted(documentSetId, fileGroupId) => handleCompletedJob(documentSetId)
+    case JobCompleted(documentSetId) => handleCompletedJob(documentSetId)
 
     case CancelClusterFileGroupCommand(documentSetId, fileGroupId) =>
       cancelJob(documentSetId, fileGroupId)

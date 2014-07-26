@@ -24,7 +24,7 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobManager ! clusterCommand
 
       fileGroupJobQueue.expectMsgType[SubmitJob]
-      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
+      fileGroupJobQueue.reply(JobCompleted(documentSetId))
 
       clusteringJobQueue.expectMsg(ClusterDocumentSet(documentSetId))
     }
@@ -51,7 +51,7 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet1, fileGroup3))
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
 
-      fileGroupJobManager ! FileGroupDocumentsCreated(cancelledDocumentSet1)
+      fileGroupJobManager ! JobCompleted(cancelledDocumentSet1)
       fileGroupJobQueue.expectMsg(SubmitJob(cancelledDocumentSet1, DeleteFileGroupJob(fileGroup3)))
     }
 
@@ -78,7 +78,7 @@ class FileGroupJobManagerSpec extends Specification {
 
       fileGroupJobQueue.expectMsgType[SubmitJob]
       fileGroupJobQueue.expectMsgType[CancelFileUpload]
-      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
+      fileGroupJobQueue.reply(JobCompleted(documentSetId))
 
       clusteringJobQueue.expectNoMsg
     }
@@ -101,7 +101,7 @@ class FileGroupJobManagerSpec extends Specification {
 
       fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId)))
       fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
-      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
+      fileGroupJobQueue.reply(JobCompleted(documentSetId))
 
       fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId)))
     }

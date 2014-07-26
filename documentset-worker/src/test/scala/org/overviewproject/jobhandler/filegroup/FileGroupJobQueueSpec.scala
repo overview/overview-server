@@ -57,7 +57,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
-      expectMsg(FileGroupDocumentsCreated(documentSetId))
+      expectMsg(JobCompleted(documentSetId))
     }
 
     "ignore a second job for the same fileGroup" in new JobQueueContext {
@@ -110,7 +110,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
 
       worker.completeTask(fileGroupJobQueue, task.uploadedFileId, fileId)
-      expectMsg(FileGroupDocumentsCreated(documentSetId))
+      expectMsg(JobCompleted(documentSetId))
     }
 
     "cancel not started job" in new JobQueueContext {
@@ -118,7 +118,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
       
-      expectMsg(FileGroupDocumentsCreated(documentSetId))
+      expectMsg(JobCompleted(documentSetId))
     }
     
     "delete file upload" in new JobQueueContext {
@@ -132,14 +132,14 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
       fileGroupJobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
 
-      expectMsg(FileUploadDeleted(documentSetId, fileGroupId))
+      expectMsg(JobCompleted(documentSetId))
     }
 
     "respond immediately when asked to cancel unknown job" in new JobQueueContext {
 
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
 
-      expectMsg(FileGroupDocumentsCreated(documentSetId))
+      expectMsg(JobCompleted(documentSetId))
     }
     
     
