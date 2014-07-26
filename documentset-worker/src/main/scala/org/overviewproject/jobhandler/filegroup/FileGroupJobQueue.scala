@@ -110,6 +110,15 @@ trait FileGroupJobQueue extends Actor {
         notifyRequesterIfJobIsDone
       }
     }
+    case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
+      Logger.info(s"($documentSetId:$fileGroupId) Deleted upload job")
+      busyWorkers -= sender
+      jobRequests.get(documentSetId).map { r =>
+        r.requester ! FileUploadDeleted(documentSetId, fileGroupId)
+        jobRequests -= documentSetId
+      }
+    }
+
     case CancelFileUpload(documentSetId, fileGroupId) => {
       Logger.info(s"($documentSetId:$fileGroupId) Cancelling Extract text tasks")
       jobRequests.get(documentSetId).fold {
@@ -123,15 +132,7 @@ trait FileGroupJobQueue extends Actor {
         }
       }
     }
-    case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
-      Logger.info(s"($documentSetId:$fileGroupId) Deleted upload job")
-      busyWorkers -= sender
-      jobRequests.get(documentSetId).map { r =>
-        r.requester ! FileUploadDeleted(documentSetId, fileGroupId)
-        jobRequests -= documentSetId
-      }
-    }
-
+    
     case AddTasks(tasks) => {
       taskQueue ++= tasks
 

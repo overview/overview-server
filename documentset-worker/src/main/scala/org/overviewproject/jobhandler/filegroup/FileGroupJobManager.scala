@@ -41,7 +41,8 @@ trait FileGroupJobManager extends Actor {
 
   protected val storage: Storage
 
-  private val textExtractionJobsPendingCancellation: mutable.Map[Long, Long] = mutable.Map.empty
+  private val runningJobs: mutable.Map[Long, FileGroupJob] = mutable.Map.empty
+  private val cancellingJobs: mutable.Map[Long, Long] = mutable.Map.empty
 
   private case class UpdateJobStateRetryAttempt(command: ClusterFileGroupCommand, count: Int)
 
@@ -69,13 +70,9 @@ trait FileGroupJobManager extends Actor {
 
     case UpdateJobStateRetryAttempt(command, count) => attemptUpdateJobState(command, count)
 
-    case FileGroupDocumentsCreated(documentSetId) => {
-      val jobToBeCancelled = textExtractionJobsPendingCancellation.remove(documentSetId).map(DeleteFileGroupJob)
-      
-      jobToBeCancelled.map { submitToFileGroupJobQueue(documentSetId, _) }
-        .getOrElse { clusteringJobQueue ! ClusterDocumentSet(documentSetId) }
-    }
-    
+    case FileGroupDocumentsCreated(documentSetId) => handleCompletedJob(documentSetId)
+    case FileUploadDeleted(documentSetId, fileGroupId) => handleCompletedJob(documentSetId)
+
     case CancelClusterFileGroupCommand(documentSetId, fileGroupId) =>
       cancelJob(documentSetId, fileGroupId)
 
@@ -104,13 +101,29 @@ trait FileGroupJobManager extends Actor {
   private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit =
     submitToFileGroupJobQueue(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get))
 
-  private def submitToFileGroupJobQueue(documentSetId: Long, job: FileGroupJob): Unit = 
+  private def submitToFileGroupJobQueue(documentSetId: Long, job: FileGroupJob): Unit = {
+    runningJobs += (documentSetId -> job)
     fileGroupJobQueue ! SubmitJob(documentSetId, job)
-    
+  }
+
+  private def handleCompletedJob(documentSetId: Long) = runningJobs.get(documentSetId).map {
+    case CreateDocumentsJob(fileGroupId) => submitClusteringJob(documentSetId)
+    case DeleteFileGroupJob(fileGroupId) =>
+  } getOrElse deleteCancelledJobFileGroup(documentSetId)
+
+  private def submitClusteringJob(documentSetId: Long): Unit =
+    clusteringJobQueue ! ClusterDocumentSet(documentSetId)
+
   private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit = {
-    textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
+    runningJobs -= documentSetId
+    cancellingJobs += (documentSetId -> fileGroupId)
     fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
   }
+
+  private def deleteCancelledJobFileGroup(documentSetId: Long) =
+    cancellingJobs.remove(documentSetId).map { fileGroupId =>
+      submitToFileGroupJobQueue(documentSetId, DeleteFileGroupJob(fileGroupId))
+    }
 
 }
 
