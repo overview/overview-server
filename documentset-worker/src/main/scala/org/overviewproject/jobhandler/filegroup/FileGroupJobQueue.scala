@@ -84,24 +84,20 @@ trait FileGroupJobQueue extends Actor {
 
     case ReadyForTask => {
       if (workerIsFree(sender) && !taskQueue.isEmpty) {
-        taskQueue.dequeue match {
-          case task @ CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
-            Logger.info(s"($documentSetId:$fileGroupId) Sending task $uploadedFileId to ${sender.path.toString}")
-            jobTrackers.get(documentSetId).map(_.startTask(task))
-            progressReporter ! StartTask(documentSetId, uploadedFileId)
-            sender ! task
-            busyWorkers += (sender -> task)
-          }
-          case task @ DeleteFileUploadJob(documentSetId, fileGroupId) => {
-            Logger.info(s"($documentSetId:$fileGroupId) Sending delete job to ${sender.path.toString}")
-            jobTrackers.get(documentSetId).map(_.startTask(task))
-            sender ! task
-            busyWorkers += (sender -> task)
-          }
+        val task = taskQueue.dequeue
+        Logger.info(s"(${task.documentSetId}:${task.fileGroupId}) Sending task $task to ${sender.path.toString}")
+        jobTrackers.get(task.documentSetId).map(_.startTask(task))
+        task match {
+          case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => progressReporter ! StartTask(documentSetId, uploadedFileId)
+          case _ =>
         }
+
+        sender ! task
+        busyWorkers += (sender -> task)
       }
     }
-    case CreatePagesTaskDone(documentSetId, uploadedFileId, outputFileId) => { 
+    
+    case CreatePagesTaskDone(documentSetId, uploadedFileId, outputFileId) => {
       Logger.info(s"($documentSetId) Task ${uploadedFileId} Done")
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       val task = busyWorkers.remove(sender)
