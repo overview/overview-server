@@ -69,6 +69,13 @@ trait CreateDocumentsJobTracker extends JobTracker {
         progressReporter ! StartTask(documentSetId, uploadedFileId)
     }
   } 
+  override def completeTask(task: TaskWorkerTask): Unit = {
+    super.completeTask(task)
+    task match {
+      case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => 
+        progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+    }
+  }
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 

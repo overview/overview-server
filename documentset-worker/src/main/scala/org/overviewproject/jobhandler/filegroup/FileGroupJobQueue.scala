@@ -94,7 +94,7 @@ trait FileGroupJobQueue extends Actor {
     
     case CreatePagesTaskDone(documentSetId, uploadedFileId, outputFileId) => {
       Logger.info(s"($documentSetId) Task ${uploadedFileId} Done")
-      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      
       val task = busyWorkers.remove(sender)
 
       whenTaskIsComplete(documentSetId, task) {
