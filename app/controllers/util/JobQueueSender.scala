@@ -14,7 +14,7 @@ import org.overviewproject.jobs.models._
  * Converts a message to a search query and sends it to the message queue connection.
  * TODO: Work with other types of messages (when we have other types of messages)
  */
-object JobQueueSender {
+trait JobQueueSender {
   implicit val searchArgWrites: Writes[Search] = (
     (__ \ "documentSetId").write[Long] and
     (__ \ "query").write[String])(unlift(Search.unapply))
@@ -115,3 +115,4 @@ object JobQueueSender {
   }
 }
 
+object JobQueueSender extends JobQueueSender
