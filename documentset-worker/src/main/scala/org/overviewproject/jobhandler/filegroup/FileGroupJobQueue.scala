@@ -73,9 +73,8 @@ trait FileGroupJobQueue extends Actor {
 
     case SubmitJob(documentSetId, job) =>
       if (isNewRequest(documentSetId)) {
-        val tracker = jobTrackerFactory.createTracker(documentSetId, job, self)
+        val tracker = jobTrackerFactory.createTracker(documentSetId, job, self, progressReporter)
         val numberOfTasks = tracker.createTasks
-        progressReporter ! StartJob(documentSetId, numberOfTasks)
 
         jobTrackers += (documentSetId -> tracker)
 
@@ -87,10 +86,6 @@ trait FileGroupJobQueue extends Actor {
         val task = taskQueue.dequeue
         Logger.info(s"(${task.documentSetId}:${task.fileGroupId}) Sending task $task to ${sender.path.toString}")
         jobTrackers.get(task.documentSetId).map(_.startTask(task))
-        task match {
-          case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => progressReporter ! StartTask(documentSetId, uploadedFileId)
-          case _ =>
-        }
 
         sender ! task
         busyWorkers += (sender -> task)

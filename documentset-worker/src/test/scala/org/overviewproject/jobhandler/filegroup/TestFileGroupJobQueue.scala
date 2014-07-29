@@ -10,8 +10,8 @@ class TestFileGroupJobQueue(
   override protected val jobTrackerFactory = new TestJobTrackerFactory
   
   class TestJobTrackerFactory extends JobTrackerFactory {
-    override def createTracker(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef): JobTracker = job match {
-      case CreateDocumentsJob(fileGroupId) => new TestCreateDocumentsJobTracker(documentSetId, fileGroupId, taskQueue, tasks)
+    override def createTracker(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef, progressReporter: ActorRef): JobTracker = job match {
+      case CreateDocumentsJob(fileGroupId) => new TestCreateDocumentsJobTracker(documentSetId, fileGroupId, taskQueue, progressReporter, tasks)
       case DeleteFileGroupJob(fileGroupId) => new DeleteFileGroupJobTracker(documentSetId, fileGroupId, taskQueue)
     }
     
@@ -24,7 +24,12 @@ object TestFileGroupJobQueue {
 }
 
 
-class TestCreateDocumentsJobTracker(val documentSetId: Long, val fileGroupId: Long, val taskQueue: ActorRef, tasks: Seq[Long]) extends CreateDocumentsJobTracker {
+class TestCreateDocumentsJobTracker(
+    val documentSetId: Long, 
+    val fileGroupId: Long, 
+    val taskQueue: ActorRef, 
+    val progressReporter: ActorRef, tasks: Seq[Long]) extends CreateDocumentsJobTracker {
+  
   
   override protected val storage = new TestStorage
   

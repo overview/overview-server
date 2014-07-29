@@ -6,14 +6,14 @@ import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
-
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 
 trait JobTracker {
   def createTasks: Int = {
     val tasks = generateTasks
 
     remainingTasks ++= tasks
-    
+
     remainingTasks.size
   }
 
@@ -35,7 +35,7 @@ trait JobTracker {
 }
 
 class DeleteFileGroupJobTracker(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef) extends JobTracker {
-  
+
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
     val deleteTasks = Iterable(DeleteFileUploadJob(documentSetId, fileGroupId))
     taskQueue ! AddTasks(deleteTasks)
@@ -48,13 +48,27 @@ trait CreateDocumentsJobTracker extends JobTracker {
   val documentSetId: Long
   val fileGroupId: Long
   val taskQueue: ActorRef
+  val progressReporter: ActorRef
 
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
     val tasks = uploadedFilesInFileGroup(fileGroupId).map(CreatePagesTask(documentSetId, fileGroupId, _))
 
+    progressReporter ! StartJob(documentSetId, tasks.size)
+
     taskQueue ! AddTasks(tasks)
     tasks
   }
+  
+  // TODO: we need a unified progress reporting mechanism, but for now, do this ugly thing,
+  // since progress reporting only applies to these tasks.
+  // Risk the MatchError because this tracker should only get one type of tasks
+  override def startTask(task: TaskWorkerTask): Unit = {
+    super.startTask(task)
+    task match {
+      case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => 
+        progressReporter ! StartTask(documentSetId, uploadedFileId)
+    }
+  } 
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 
@@ -64,7 +78,11 @@ trait CreateDocumentsJobTracker extends JobTracker {
   }
 }
 
-class CreateDocumentsJobTrackerImpl(val documentSetId: Long, val fileGroupId: Long, val taskQueue: ActorRef) extends CreateDocumentsJobTracker {
+class CreateDocumentsJobTrackerImpl(
+    val documentSetId: Long, 
+    val fileGroupId: Long, 
+    val taskQueue: ActorRef,
+    val progressReporter: ActorRef) extends CreateDocumentsJobTracker {
 
   override protected val storage = new DatabaseStorage
 
