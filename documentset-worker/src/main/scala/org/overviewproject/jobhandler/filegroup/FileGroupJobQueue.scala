@@ -87,35 +87,37 @@ trait FileGroupJobQueue extends Actor {
         taskQueue.dequeue match {
           case task @ CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
             Logger.info(s"($documentSetId:$fileGroupId) Sending task $uploadedFileId to ${sender.path.toString}")
-            jobTrackers.get(documentSetId).map(_.startTask(uploadedFileId))
+            jobTrackers.get(documentSetId).map(_.startTask(task))
             progressReporter ! StartTask(documentSetId, uploadedFileId)
             sender ! task
             busyWorkers += (sender -> task)
           }
           case task @ DeleteFileUploadJob(documentSetId, fileGroupId) => {
             Logger.info(s"($documentSetId:$fileGroupId) Sending delete job to ${sender.path.toString}")
+            jobTrackers.get(documentSetId).map(_.startTask(task))
             sender ! task
             busyWorkers += (sender -> task)
           }
         }
       }
     }
-    case CreatePagesTaskDone(documentSetId, uploadedFileId, outputFileId) => {
+    case CreatePagesTaskDone(documentSetId, uploadedFileId, outputFileId) => { 
       Logger.info(s"($documentSetId) Task ${uploadedFileId} Done")
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
-      busyWorkers -= sender
+      val task = busyWorkers.remove(sender)
 
-      whenTaskIsComplete(documentSetId, uploadedFileId) {
+      whenTaskIsComplete(documentSetId, task) {
         notifyRequesterIfJobIsDone
       }
     }
     case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
       Logger.info(s"($documentSetId:$fileGroupId) Deleted upload job")
-      busyWorkers -= sender
-      jobRequests.get(documentSetId).map { r =>
-        r.requester ! JobCompleted(documentSetId)
-        jobRequests -= documentSetId
+      val task = busyWorkers.remove(sender)
+
+      whenTaskIsComplete(documentSetId, task) {
+        notifyRequesterIfJobIsDone
       }
+
     }
 
     case CancelFileUpload(documentSetId, fileGroupId) => {
@@ -157,12 +159,13 @@ trait FileGroupJobQueue extends Actor {
 
   private def isNewRequest(documentSetId: Long): Boolean = !jobRequests.contains(documentSetId)
 
-  private def whenTaskIsComplete(documentSetId: Long, uploadedFileId: Long)(f: (JobRequest, Long, JobTracker) => Unit) =
+  private def whenTaskIsComplete(documentSetId: Long, task: Option[TaskWorkerTask])(f: (JobRequest, Long, JobTracker) => Unit) =
     for {
+      completedTask <- task
       request <- jobRequests.get(documentSetId)
       tracker <- jobTrackers.get(documentSetId)
     } {
-      tracker.completeTask(uploadedFileId)
+      tracker.completeTask(completedTask)
       f(request, documentSetId, tracker)
     }
 

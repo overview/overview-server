@@ -108,8 +108,9 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       val task = worker.expectATask
 
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+      
+      worker.completeCancelledTask(task.uploadedFileId)
 
-      worker.completeTask(fileGroupJobQueue, task.uploadedFileId, fileId)
       expectMsg(JobCompleted(documentSetId))
     }
 
@@ -129,8 +130,10 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     }
 
     "notify requester when file upload is deleted" in new JobQueueContext {
+      ActAsImmediateJobCompleter(worker, fileId)
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+      
       fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
-      fileGroupJobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
 
       expectMsg(JobCompleted(documentSetId))
     }
@@ -232,9 +235,11 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectNoMsg(500 millis)
       }
 
-      def completeTask(jobQueue: ActorRef, uploadedFileId: Long, outputFileId: Long) = {
-        jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId, Some(outputFileId))
+      def completeCancelledTask(uploadedFileId: Long) = {
+        expectMsg(CancelTask)
+        reply(CreatePagesTaskDone(documentSetId, uploadedFileId, None))
       }
+
     }
 
     class ImmediateJobCompleter(worker: ActorRef, outputFileId: Long) extends TestActor.AutoPilot {
@@ -243,6 +248,10 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
           case CreatePagesTask(ds, fg, uf) => {
             sender.tell(CreatePagesTaskDone(ds, uf, Some(outputFileId)), worker)
+            sender.tell(ReadyForTask, worker)
+          }
+          case DeleteFileUploadJob(ds, fg) => {
+            sender.tell(DeleteFileUploadJobDone(ds, fg), worker)
             sender.tell(ReadyForTask, worker)
           }
         }

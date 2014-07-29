@@ -17,30 +17,30 @@ trait JobTracker {
     remainingTasks.size
   }
 
-  def startTask(uploadedFileId: Long): Unit = {
-    remainingTasks -= uploadedFileId
-    startedTasks += uploadedFileId
+  def startTask(task: TaskWorkerTask): Unit = {
+    remainingTasks -= task
+    startedTasks += task
   }
 
-  def completeTask(uploadedFileId: Long): Unit = startedTasks -= uploadedFileId
+  def completeTask(task: TaskWorkerTask): Unit = startedTasks -= task
   def removeNotStartedTasks: Unit = remainingTasks.clear()
 
   def allTasksComplete: Boolean = remainingTasks.isEmpty && startedTasks.isEmpty
 
-  private val remainingTasks: mutable.Set[Long] = mutable.Set.empty
-  private val startedTasks: mutable.Set[Long] = mutable.Set.empty
+  private val remainingTasks: mutable.Set[TaskWorkerTask] = mutable.Set.empty
+  private val startedTasks: mutable.Set[TaskWorkerTask] = mutable.Set.empty
 
-  protected def generateTasks: Set[Long]
+  protected def generateTasks: Iterable[TaskWorkerTask]
 
 }
 
 class DeleteFileGroupJobTracker(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef) extends JobTracker {
   
-  override protected def generateTasks: Set[Long] = {
-    val deleteTasks = Set(DeleteFileUploadJob(documentSetId, fileGroupId))
+  override protected def generateTasks: Iterable[TaskWorkerTask] = {
+    val deleteTasks = Iterable(DeleteFileUploadJob(documentSetId, fileGroupId))
     taskQueue ! AddTasks(deleteTasks)
-    
-    deleteTasks.map(_.documentSetId)
+
+    deleteTasks
   }
 }
 
@@ -49,20 +49,14 @@ trait CreateDocumentsJobTracker extends JobTracker {
   val fileGroupId: Long
   val taskQueue: ActorRef
 
-  override protected def generateTasks: Set[Long] = {
-    val fileIds = uploadedFilesInFileGroup(fileGroupId)
+  override protected def generateTasks: Iterable[TaskWorkerTask] = {
+    val tasks = uploadedFilesInFileGroup(fileGroupId).map(CreatePagesTask(documentSetId, fileGroupId, _))
 
-    addNewTasksToQueue(fileIds)
-    fileIds
+    taskQueue ! AddTasks(tasks)
+    tasks
   }
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
-
-  private def addNewTasksToQueue(uploadedFileIds: Set[Long]): Unit = {
-    val newTasks = uploadedFileIds.map(CreatePagesTask(documentSetId, fileGroupId, _))
-
-    taskQueue ! AddTasks(newTasks)
-  }
 
   protected val storage: Storage
   protected trait Storage {
