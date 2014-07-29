@@ -86,14 +86,14 @@ object ApiTokenFactory extends ApiTokenFactory {
 
   override protected val storage = new Storage {
     import models.OverviewDatabase
+    import org.overviewproject.database.Slick.simple._
+    import org.overviewproject.models.tables.apiTokens
+
+    lazy val lookupToken = Compiled((token: Column[String]) => apiTokens.where(_.token === token))
 
     override def loadApiToken(token: String) = Future {
-      import models.orm.Schema
-      import models.orm.Schema.ApiTokenKED
-      import org.overviewproject.postgres.SquerylEntrypoint._
-
-      OverviewDatabase.inTransaction {
-        Schema.apiTokens.lookup(token)
+      OverviewDatabase.withSlickSession { session =>
+        lookupToken(token).firstOption()(session)
       }
     }
   }
