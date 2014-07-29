@@ -101,24 +101,6 @@ trait FileGroupJobQueue extends Actor {
       }
     }
 
-    case CreatePagesTaskDone(documentSetId, uploadedFileId, outputFileId) => {
-      Logger.info(s"($documentSetId) Task ${uploadedFileId} Done")
-
-      val task = busyWorkers.remove(sender)
-
-      whenTaskIsComplete(documentSetId, task) {
-        notifyRequesterIfJobIsDone
-      }
-    }
-    case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
-      Logger.info(s"($documentSetId:$fileGroupId) Deleted upload job")
-      val task = busyWorkers.remove(sender)
-
-      whenTaskIsComplete(documentSetId, task) {
-        notifyRequesterIfJobIsDone
-      }
-
-    }
 
     case CancelFileUpload(documentSetId, fileGroupId) => {
       Logger.info(s"($documentSetId:$fileGroupId) Cancelling Extract text tasks")

@@ -57,7 +57,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       worker ! CancelYourself
       worker ! CompleteTaskStep
 
-      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId, None))
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
       
       taskWasCancelled
     }
@@ -75,7 +75,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       
       worker ! CompleteTaskStep
 
-      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId, None))
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
       
     }
     
@@ -86,7 +86,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       jobQueueProbe.expectInitialReadyForTask
 
-      jobQueueProbe.expectMsg(DeleteFileUploadJobDone(documentSetId, fileGroupId))
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
       deleteFileUploadJobWasCalled(documentSetId, fileGroupId)
       
       jobQueueProbe.expectMsg(ReadyForTask)
@@ -163,7 +163,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       def expectTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long, outputFileId: Long) = {
         expectMsgClass(classOf[RegisterWorker])
         expectMsg(ReadyForTask)
-        expectMsg(CreatePagesTaskDone(documentSetId, uploadedFileId, Some(outputFileId)))
+        expectMsg(TaskDone(documentSetId, Some(outputFileId)))
       }
 
       def withTaskAvailable: JobQueueTestProbe = {

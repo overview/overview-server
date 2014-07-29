@@ -19,12 +19,10 @@ object FileGroupTaskWorkerProtocol {
     val documentSetId: Long
     val fileGroupId: Long
   }
+  
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
-  
-  
-  case class CreatePagesTaskDone(documentSetId: Long, uploadedFileId: Long, outputFileId: Option[Long])
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long)  extends TaskWorkerTask
-  case class DeleteFileUploadJobDone(documentSetId: Long, fileGroupId: Long)
+
   case class TaskDone(documentSetId: Long, outputId: Option[Long])
 }
 
@@ -98,7 +96,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
       ignoringExceptions { deleteFileUploadJob(documentSetId, fileGroupId) }
-      jobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
+      jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
       
       stay
@@ -108,7 +106,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   when(Working) {
     case Event(CreatePagesProcessComplete(documentSetId, uploadedFileId, fileId), TaskInfo(jobQueue, _, _, _)) => {
-      jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId, fileId)
+      jobQueue ! TaskDone(documentSetId, fileId)
       jobQueue ! ReadyForTask
 
       goto(Ready) using JobQueue(jobQueue)
@@ -125,7 +123,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   when(Cancelled) {
     case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)) => {
       step.cancel
-      jobQueue ! CreatePagesTaskDone(documentSetId, uploadedFileId, None)
+      jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
       goto(Ready) using JobQueue(jobQueue)
