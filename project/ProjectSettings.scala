@@ -38,6 +38,7 @@ trait ProjectSettings {
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
   val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.3"
+  val slickDep = "com.typesafe.slick" %% "slick" % "2.0.2"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.4"
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC2"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
@@ -56,6 +57,7 @@ trait ProjectSettings {
     ws,
     filters,
     openCsvDep,
+    slickDep,
     "com.typesafe" %% "play-plugins-util" % "2.2.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.2.0",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.2",
@@ -80,6 +82,7 @@ trait ProjectSettings {
     postgresqlDep,
     squerylDep,
     stompDep,
+    slickDep,
     anorm % "test",
     specs2Dep % "test",
     junitInterfaceDep % "test",
