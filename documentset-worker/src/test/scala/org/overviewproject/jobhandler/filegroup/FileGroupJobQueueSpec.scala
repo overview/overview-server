@@ -237,7 +237,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       def completeCancelledTask(uploadedFileId: Long) = {
         expectMsg(CancelTask)
-        reply(CreatePagesTaskDone(documentSetId, uploadedFileId, None))
+        reply(TaskDone(documentSetId, None))
       }
 
     }
@@ -247,11 +247,11 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
           case CreatePagesTask(ds, fg, uf) => {
-            sender.tell(CreatePagesTaskDone(ds, uf, Some(outputFileId)), worker)
+            sender.tell(TaskDone(ds, Some(outputFileId)), worker)
             sender.tell(ReadyForTask, worker)
           }
           case DeleteFileUploadJob(ds, fg) => {
-            sender.tell(DeleteFileUploadJobDone(ds, fg), worker)
+            sender.tell(TaskDone(ds, None), worker)
             sender.tell(ReadyForTask, worker)
           }
         }
