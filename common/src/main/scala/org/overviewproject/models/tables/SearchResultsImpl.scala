@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.tree.orm.{SearchResult,SearchResultState} // should be models.SearchResult
 
-class SearchResults(tag: Tag) extends Table[SearchResult](tag, "search_result") {
+class SearchResultsImpl(tag: Tag) extends Table[SearchResult](tag, "search_result") {
   private implicit val searchResultColumnType = MappedColumnType.base[SearchResultState.Value, Int](
     { v => v.id },
     { i => SearchResultState(i) }
@@ -20,4 +20,4 @@ class SearchResults(tag: Tag) extends Table[SearchResult](tag, "search_result") 
   def * = (state, documentSetId, query, createdAt, id) <> (SearchResult.tupled, SearchResult.unapply)
 }
 
-object searchResults extends TableQuery(new SearchResults(_))
+object searchResults extends TableQuery(new SearchResultsImpl(_))

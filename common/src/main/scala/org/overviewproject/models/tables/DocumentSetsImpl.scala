@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.tree.orm.DocumentSet // should be models.DocumentSet
 
-class DocumentSets(tag: Tag) extends Table[DocumentSet](tag, "document_set") {
+class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set") {
   def id = column[Long]("id", O.PrimaryKey)
   def title = column[String]("title")
   def query = column[Option[String]]("query")
@@ -33,4 +33,4 @@ class DocumentSets(tag: Tag) extends Table[DocumentSet](tag, "document_set") {
   ) <> ((DocumentSet.apply _).tupled, DocumentSet.unapply)
 }
 
-object documentSets extends TableQuery(new DocumentSets(_))
+object documentSets extends TableQuery(new DocumentSetsImpl(_))
