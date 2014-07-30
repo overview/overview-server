@@ -10,7 +10,7 @@ class FileGroupJobTrackerFactory extends JobTrackerFactory {
 
   override def createTracker(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef, progressReporter: ActorRef): JobTracker = job match {
     case CreateDocumentsJob(fileGroupId) => 
-      new CreateDocumentsJobTrackerImpl(documentSetId, fileGroupId, taskQueue, progressReporter)
+      CreateDocumentsJobTracker(documentSetId, fileGroupId, taskQueue, progressReporter)
     case DeleteFileGroupJob(fileGroupId) => 
       new DeleteFileGroupJobTracker(documentSetId, fileGroupId, taskQueue)
   }
