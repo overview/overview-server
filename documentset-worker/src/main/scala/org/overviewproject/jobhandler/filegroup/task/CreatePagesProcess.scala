@@ -94,9 +94,9 @@ trait CreatePagesProcess {
     private val runSavingError = handling(classOf[Exception]) by saveError
     
     private def logError(error: Throwable): Unit = error match {
-      case e: ConverterFailedException => Logger.error(s"Conversion Error: $error")
-      case e: NoConverterOutputException => Logger.error(s"No Conversion Output: $error")
-      case e => Logger.info(s"Text extraction failed: $error")
+      case e: ConverterFailedException => Logger.error(s"Conversion Error: ", error)
+      case e: NoConverterOutputException => Logger.warn(s"No Conversion Output: ", error)
+      case e => Logger.info("Text extraction failed: ", error)
     }
     
   }
