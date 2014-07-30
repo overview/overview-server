@@ -8,7 +8,7 @@ import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 
-trait JobTracker {
+trait JobShepherd {
   def createTasks: Int = {
     val tasks = generateTasks
 

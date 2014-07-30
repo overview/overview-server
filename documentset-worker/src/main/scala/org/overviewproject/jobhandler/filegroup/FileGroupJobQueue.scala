@@ -52,13 +52,13 @@ trait FileGroupJobQueue extends Actor {
   type DocumentSetId = Long
 
   protected val progressReporter: ActorRef
-  protected val jobTrackerFactory: JobTrackerFactory
+  protected val jobShepherdFactory: JobShepherdFactory
 
   private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[TaskWorkerTask] = mutable.Queue.empty
-  private val jobTrackers: mutable.Map[DocumentSetId, JobTracker] = mutable.Map.empty
+  private val jobShepherds: mutable.Map[DocumentSetId, JobShepherd] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
   private val busyWorkers: mutable.Map[ActorRef, TaskWorkerTask] = mutable.Map.empty
 
@@ -73,10 +73,10 @@ trait FileGroupJobQueue extends Actor {
 
     case SubmitJob(documentSetId, job) =>
       if (isNewRequest(documentSetId)) {
-        val tracker = jobTrackerFactory.createTracker(documentSetId, job, self, progressReporter)
-        val numberOfTasks = tracker.createTasks
+        val shepherd = jobShepherdFactory.createShepherd(documentSetId, job, self, progressReporter)
+        val numberOfTasks = shepherd.createTasks
 
-        jobTrackers += (documentSetId -> tracker)
+        jobShepherds += (documentSetId -> shepherd)
 
         jobRequests += (documentSetId -> JobRequest(sender))
       }
@@ -85,7 +85,7 @@ trait FileGroupJobQueue extends Actor {
       if (workerIsFree(sender) && !taskQueue.isEmpty) {
         val task = taskQueue.dequeue
         Logger.info(s"(${task.documentSetId}:${task.fileGroupId}) Sending task $task to ${sender.path.toString}")
-        jobTrackers.get(task.documentSetId).map(_.startTask(task))
+        jobShepherds.get(task.documentSetId).map(_.startTask(task))
 
         sender ! task
         busyWorkers += (sender -> task)
@@ -108,10 +108,10 @@ trait FileGroupJobQueue extends Actor {
         sender ! JobCompleted(documentSetId)
       } { r =>
         busyWorkersWithTask(documentSetId).foreach { _ ! CancelTask }
-        for (tracker <- jobTrackers.get(documentSetId)) {
+        for (shepherd <- jobShepherds.get(documentSetId)) {
           removeTasksInQueue(documentSetId)
-          tracker.removeNotStartedTasks
-          notifyRequesterIfJobIsDone(r, documentSetId, tracker)
+          shepherd.removeNotStartedTasks
+          notifyRequesterIfJobIsDone(r, documentSetId, shepherd)
         }
       }
     }
@@ -141,18 +141,18 @@ trait FileGroupJobQueue extends Actor {
 
   private def isNewRequest(documentSetId: Long): Boolean = !jobRequests.contains(documentSetId)
 
-  private def whenTaskIsComplete(documentSetId: Long, task: Option[TaskWorkerTask])(f: (JobRequest, Long, JobTracker) => Unit) =
+  private def whenTaskIsComplete(documentSetId: Long, task: Option[TaskWorkerTask])(f: (JobRequest, Long, JobShepherd) => Unit) =
     for {
       completedTask <- task
       request <- jobRequests.get(documentSetId)
-      tracker <- jobTrackers.get(documentSetId)
+      shepherd <- jobShepherds.get(documentSetId)
     } {
-      tracker.completeTask(completedTask)
-      f(request, documentSetId, tracker)
+      shepherd.completeTask(completedTask)
+      f(request, documentSetId, shepherd)
     }
 
-  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, tracker: JobTracker): Unit =
-    if (tracker.allTasksComplete) {
+  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, shepherd: JobShepherd): Unit =
+    if (shepherd.allTasksComplete) {
       jobRequests -= documentSetId
 
       progressReporter ! CompleteJob(documentSetId)
@@ -172,7 +172,7 @@ trait FileGroupJobQueue extends Actor {
 class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJobQueue {
 
   override protected val progressReporter: ActorRef = progressReporterActor
-  override protected val jobTrackerFactory = new FileGroupJobTrackerFactory
+  override protected val jobShepherdFactory = new FileGroupJobShepherdFactory
 
 }
 

@@ -5,7 +5,7 @@ import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
 
 
-class DeleteFileGroupJobTracker(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef) extends JobTracker {
+class DeleteFileGroupJobShepherd(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef) extends JobShepherd {
 
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
     val deleteTasks = Iterable(DeleteFileUploadJob(documentSetId, fileGroupId))

@@ -7,7 +7,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 
-trait CreateDocumentsJobTracker extends JobTracker {
+trait CreateDocumentsJobShepherd extends JobShepherd {
   val documentSetId: Long
   val fileGroupId: Long
   val taskQueue: ActorRef
@@ -24,7 +24,7 @@ trait CreateDocumentsJobTracker extends JobTracker {
 
   // TODO: we need a unified progress reporting mechanism, but for now, do this ugly thing,
   // since progress reporting only applies to these tasks.
-  // Risk the MatchError because this tracker should only get one type of tasks
+  // Risk the MatchError because this shepherd should only get one type of tasks
   override def startTask(task: TaskWorkerTask): Unit = {
     super.startTask(task)
     task match {
@@ -48,15 +48,15 @@ trait CreateDocumentsJobTracker extends JobTracker {
   }
 }
 
-object CreateDocumentsJobTracker {
-  def apply(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef, progressReporter: ActorRef): CreateDocumentsJobTracker =
-    new CreateDocumentsJobTrackerImpl(documentSetId, fileGroupId, taskQueue, progressReporter)
+object CreateDocumentsJobShepherd {
+  def apply(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef, progressReporter: ActorRef): CreateDocumentsJobShepherd =
+    new CreateDocumentsJobShepherdImpl(documentSetId, fileGroupId, taskQueue, progressReporter)
 
-  private class CreateDocumentsJobTrackerImpl(
+  private class CreateDocumentsJobShepherdImpl(
       val documentSetId: Long,
       val fileGroupId: Long,
       val taskQueue: ActorRef,
-      val progressReporter: ActorRef) extends CreateDocumentsJobTracker {
+      val progressReporter: ActorRef) extends CreateDocumentsJobShepherd {
 
     override protected val storage = new DatabaseStorage
 

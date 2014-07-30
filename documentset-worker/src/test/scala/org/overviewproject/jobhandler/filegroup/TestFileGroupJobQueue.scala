@@ -7,12 +7,12 @@ class TestFileGroupJobQueue(
     tasks: Seq[Long],
     override protected val progressReporter: ActorRef) extends FileGroupJobQueue {
 
-  override protected val jobTrackerFactory = new TestJobTrackerFactory
+  override protected val jobShepherdFactory = new TestJobShepherdFactory
   
-  class TestJobTrackerFactory extends JobTrackerFactory {
-    override def createTracker(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef, progressReporter: ActorRef): JobTracker = job match {
-      case CreateDocumentsJob(fileGroupId) => new TestCreateDocumentsJobTracker(documentSetId, fileGroupId, taskQueue, progressReporter, tasks)
-      case DeleteFileGroupJob(fileGroupId) => new DeleteFileGroupJobTracker(documentSetId, fileGroupId, taskQueue)
+  class TestJobShepherdFactory extends JobShepherdFactory {
+    override def createShepherd(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef, progressReporter: ActorRef): JobShepherd = job match {
+      case CreateDocumentsJob(fileGroupId) => new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, taskQueue, progressReporter, tasks)
+      case DeleteFileGroupJob(fileGroupId) => new DeleteFileGroupJobShepherd(documentSetId, fileGroupId, taskQueue)
     }
     
   }
@@ -24,11 +24,11 @@ object TestFileGroupJobQueue {
 }
 
 
-class TestCreateDocumentsJobTracker(
+class TestCreateDocumentsJobShepherd(
     val documentSetId: Long, 
     val fileGroupId: Long, 
     val taskQueue: ActorRef, 
-    val progressReporter: ActorRef, tasks: Seq[Long]) extends CreateDocumentsJobTracker {
+    val progressReporter: ActorRef, tasks: Seq[Long]) extends CreateDocumentsJobShepherd {
   
   
   override protected val storage = new TestStorage
