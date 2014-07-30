@@ -28,18 +28,18 @@ object FileGroupJobQueueProtocol {
 
 /**
  * FileGroupJobQueue manages FileGroup related jobs.
- *  - CreateDocumentsFromFileGroup jobs are split into tasks for each uploaded file in the file group. Each task results
+ *  - `CreateDocumentsJobs` are split into tasks for each uploaded file in the file group. Each task results
  *  the uploaded file being converted into a file and pages, which are later used to create documents.
- *  - DeleteFileUpload jobs are one task that delete all entries in the database related to a cancelled file upload job
+ *  - `DeleteFileGroupJobs` are one task that delete all entries in the database related to a cancelled file upload job
  *  - CancelFileUpload results in a CancelTask message sent to workers processing uploads in the specified file group.
  *  The JobQueue doesn't distinguish between cancelled and completed task (because a successful task completion message
  *  can be received after the cancellation message has been received). The JobQueue expects only one response from any
  *  worker working on a task. Once all tasks have been completed or cancelled, the requester is notified that the job
  *  is complete.
- *  A CancelUpload message may be received for an unknown job during restart and recovery from an unexpected shutdown. In
+ *  A CanceFilelUpload message may be received for an unknown job during restart and recovery from an unexpected shutdown. In
  *  this case, the JobQueue responds as if the job has been successfully cancelled.
- *
- *  DeleteFileUpload jobs cannot be cancelled (they probably don't even belong here).
+ *  @todo Rename CancelFileUpload to be more generic and make it sure it works for any jobs.
+ * 
  *
  *  The FileGroupJobQueue waits for workers to register. As tasks become available, workers are notified. Idle workers
  *  respond, and are handed tasks. Workers are notified when they register, and when new tasks are added to the task queue.

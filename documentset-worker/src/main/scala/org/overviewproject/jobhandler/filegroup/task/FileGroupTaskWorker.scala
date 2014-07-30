@@ -43,7 +43,7 @@ object FileGroupTaskWorkerFSM {
 
 /**
  * A worker that registers with the [[FileGroupJobQueue]] and can handle [[CreatePagesTask]]s 
- * and [[DeleteFileUploadTask]]s.
+ * and [[DeleteFileUploadJob]]s.
  * The worker handles [[Exception]]s during file processing by creating [[DocumentProcessingError]]s for the
  * [[File]] being processed. If an [[Exception]] is thrown during a [[DeleteFileUploadJob]], it's logged and ignored.
  * 

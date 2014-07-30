@@ -7,6 +7,10 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 
+
+/**
+ * Creates the tasks for generating `Document`s from uploaded files.
+ */
 trait CreateDocumentsJobShepherd extends JobShepherd {
   val documentSetId: Long
   val fileGroupId: Long

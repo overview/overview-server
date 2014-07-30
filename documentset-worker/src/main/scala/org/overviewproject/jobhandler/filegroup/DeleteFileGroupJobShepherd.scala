@@ -5,6 +5,9 @@ import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
 
 
+/**
+ * Creates the task needed to delete an uploaded `FileGroup`
+ */
 class DeleteFileGroupJobShepherd(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef) extends JobShepherd {
 
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
