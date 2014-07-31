@@ -8,24 +8,24 @@ import scala.concurrent.Future
 import org.overviewproject.util.Logger
 import FileGroupTaskWorkerFSM._
 import scala.util.control.Exception._
+import akka.actor.Status.Failure
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
   case object TaskAvailable
   case object ReadyForTask
   case object CancelTask
-  
+
   trait TaskWorkerTask {
     val documentSetId: Long
     val fileGroupId: Long
   }
-  
+
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
-  case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long)  extends TaskWorkerTask
+  case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
 
   case class TaskDone(documentSetId: Long, outputId: Option[Long])
 }
-
 
 object FileGroupTaskWorkerFSM {
   sealed trait State
@@ -42,19 +42,19 @@ object FileGroupTaskWorkerFSM {
 }
 
 /**
- * A worker that registers with the [[FileGroupJobQueue]] and can handle [[CreatePagesTask]]s 
+ * A worker that registers with the [[FileGroupJobQueue]] and can handle [[CreatePagesTask]]s
  * and [[DeleteFileUploadJob]]s.
  * The worker handles [[Exception]]s during file processing by creating [[DocumentProcessingError]]s for the
  * [[File]] being processed. If an [[Exception]] is thrown during a [[DeleteFileUploadJob]], it's logged and ignored.
- * 
+ *
  * @todo Move to separate JVM and instance
- * @todo Add Death Watch on [[FileGroupJobQueue]]. If the queue dies, the task should be abandoned, and 
+ * @todo Add Death Watch on [[FileGroupJobQueue]]. If the queue dies, the task should be abandoned, and
  *   the worker should wait for its rebirth.
  */
 trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   import context._
   import FileGroupTaskWorkerProtocol._
-  
+
   protected def jobQueuePath: String
 
   private val JobQueueId: String = "Job Queue"
@@ -65,7 +65,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
   protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
-  
+
   lookForJobQueue
 
   startWith(LookingForJobQueue, NoKnownJobQueue)
@@ -98,7 +98,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       ignoringExceptions { deleteFileUploadJob(documentSetId, fileGroupId) }
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
-      
+
       stay
     }
     case Event(CancelTask, _) => stay
@@ -117,7 +117,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       stay
     }
     case Event(CancelTask, _) => goto(Cancelled)
-    case Event(TaskAvailable, _) => stay    
+    case Event(TaskAvailable, _) => stay
   }
 
   when(Cancelled) {
@@ -128,20 +128,27 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
       goto(Ready) using JobQueue(jobQueue)
     }
-    case Event(TaskAvailable, _) => stay        
+    case Event(TaskAvailable, _) => stay
   }
 
+  whenUnhandled {
+    case Event(Failure(e), _) => throw e // Escalate unhandled exceptions
+    case Event(e, s) =>
+      log.warning("received unhandled request {} in state {}/{}", e, stateName, s)
+      stay
+  }
+  
   private def lookForJobQueue = jobQueueSelection ! Identify(JobQueueId)
 
   private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
-  
-  private def ignoringExceptions = handling(classOf[Exception]) by {e => Logger.error(e.toString) }
+
+  private def ignoringExceptions = handling(classOf[Exception]) by { e => Logger.error(e.toString) }
 }
 
 object FileGroupTaskWorker {
   def apply(fileGroupJobQueuePath: String): Props = Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage {
     override protected def jobQueuePath: String = fileGroupJobQueuePath
-    override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = 
+    override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit =
       FileUploadDeleter().deleteFileUpload(documentSetId, fileGroupId)
   })
 }
