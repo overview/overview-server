@@ -117,6 +117,7 @@ DELETE /admin/imports/:jobId controllers.admin.ImportJobController.delete(jobId:
 GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(id: Long)
 
 GET    /api/v1/document-sets/:id/searches  controllers.api.SearchController.index(id: Long)
+POST   /api/v1/document-sets/:id/searches  controllers.api.SearchController.create(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET    /$file<robots\.txt>      controllers.Assets.at(path="/public", file)
