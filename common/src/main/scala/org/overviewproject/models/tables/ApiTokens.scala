@@ -15,4 +15,4 @@ class ApiTokensImpl(tag: Tag) extends Table[ApiToken](tag, "api_token") {
   def * = (token, createdAt, createdBy, description, documentSetId) <> ((ApiToken.apply _).tupled, ApiToken.unapply)
 }
 
-object apiTokens extends TableQuery(new ApiTokensImpl(_))
+object ApiTokens extends TableQuery(new ApiTokensImpl(_))

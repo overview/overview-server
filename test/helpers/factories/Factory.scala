@@ -21,6 +21,21 @@ import org.overviewproject.util.DocumentSetVersion
   * database while building objects, for more thorough (and slower) tests.
   */
 trait Factory {
+  /** Creates a new Document with the given parameters. */
+  def document(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    description: String = "",
+    title: Option[String] = None,
+    suppliedId: Option[String] = None,
+    text: Option[String] = None,
+    url: Option[String] = None,
+    documentcloudId: Option[String] = None,
+    fileId: Option[Long] = None,
+    pageId: Option[Long] = None,
+    pageNumber: Option[Int] = None
+  ): Document
+
   /** Creates a new DocumentSet with the given parameters. */
   def documentSet(
     id: Long = 0L,
@@ -43,4 +58,9 @@ trait Factory {
     query: String = "query",
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
   ): SearchResult
+
+  def documentSearchResult(
+    documentId: Long,
+    searchResultId: Long
+  ): DocumentSearchResult
 }

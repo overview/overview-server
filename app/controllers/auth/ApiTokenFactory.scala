@@ -87,9 +87,9 @@ object ApiTokenFactory extends ApiTokenFactory {
   override protected val storage = new Storage {
     import models.OverviewDatabase
     import org.overviewproject.database.Slick.simple._
-    import org.overviewproject.models.tables.apiTokens
+    import org.overviewproject.models.tables.ApiTokens
 
-    lazy val lookupToken = Compiled((token: Column[String]) => apiTokens.where(_.token === token))
+    lazy val lookupToken = Compiled((token: Column[String]) => ApiTokens.where(_.token === token))
 
     override def loadApiToken(token: String) = Future {
       OverviewDatabase.withSlickSession { session =>

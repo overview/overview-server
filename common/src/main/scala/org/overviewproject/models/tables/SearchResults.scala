@@ -20,4 +20,4 @@ class SearchResultsImpl(tag: Tag) extends Table[SearchResult](tag, "search_resul
   def * = (state, documentSetId, query, createdAt, id) <> (SearchResult.tupled, SearchResult.unapply)
 }
 
-object searchResults extends TableQuery(new SearchResultsImpl(_))
+object SearchResults extends TableQuery(new SearchResultsImpl(_))

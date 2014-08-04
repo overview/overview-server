@@ -33,4 +33,4 @@ class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set")
   ) <> ((DocumentSet.apply _).tupled, DocumentSet.unapply)
 }
 
-object documentSets extends TableQuery(new DocumentSetsImpl(_))
+object DocumentSets extends TableQuery(new DocumentSetsImpl(_))

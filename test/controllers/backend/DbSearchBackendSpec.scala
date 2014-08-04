@@ -4,7 +4,7 @@ import org.specs2.mock.Mockito
 import scala.concurrent.Future
 
 import org.overviewproject.jobs.models.Search
-import org.overviewproject.models.tables.searchResults
+import org.overviewproject.models.tables.SearchResults
 
 class DbSearchBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {
@@ -14,7 +14,7 @@ class DbSearchBackendSpec extends DbBackendSpecification with Mockito {
 
     def findSearchResult(id: Long) = {
       import org.overviewproject.database.Slick.simple._
-      searchResults.where(_.id === id).firstOption()(session)
+      SearchResults.where(_.id === id).firstOption()(session)
     }
   }
 

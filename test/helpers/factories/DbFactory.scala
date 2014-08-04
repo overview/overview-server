@@ -20,6 +20,36 @@ class DbFactory(connection: Connection) extends Factory {
   private implicit val session = new UnmanagedSession(connection)
   private val podoFactory = PodoFactory
 
+  override def document(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    description: String = "",
+    title: Option[String] = None,
+    suppliedId: Option[String] = None,
+    text: Option[String] = None,
+    url: Option[String] = None,
+    documentcloudId: Option[String] = None,
+    fileId: Option[Long] = None,
+    pageId: Option[Long] = None,
+    pageNumber: Option[Int] = None
+  ) = {
+    val document = podoFactory.document(
+      id,
+      documentSetId,
+      description,
+      title,
+      suppliedId,
+      text,
+      url,
+      documentcloudId,
+      fileId,
+      pageId,
+      pageNumber
+    )
+    DbFactory.queries.insertDocument += document
+    document
+  }
+
   override def documentSet(
     id: Long = 0L,
     title: String = "",
@@ -67,6 +97,18 @@ class DbFactory(connection: Connection) extends Factory {
     DbFactory.queries.insertSearchResult += searchResult
     searchResult
   }
+
+  override def documentSearchResult(
+    documentId: Long,
+    searchResultId: Long
+  ) = {
+    val documentSearchResult = podoFactory.documentSearchResult(
+      documentId = documentId,
+      searchResultId = searchResultId
+    )
+    DbFactory.queries.insertDocumentSearchResult += documentSearchResult
+    documentSearchResult
+  }
 }
 
 object DbFactory {
@@ -74,7 +116,9 @@ object DbFactory {
     import org.overviewproject.database.Slick.simple._
 
     // Compile queries once, instead of once per test
-    val insertDocumentSet = (documentSets returning documentSets).insertInvoker
-    val insertSearchResult = (searchResults returning searchResults).insertInvoker
+    val insertDocument = (Documents returning Documents).insertInvoker
+    val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
+    val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
+    val insertDocumentSearchResult = (DocumentSearchResults returning DocumentSearchResults).insertInvoker
   }
 }

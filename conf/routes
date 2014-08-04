@@ -118,7 +118,8 @@ GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(i
 
 GET    /api/v1/document-sets/:id/searches         controllers.api.SearchController.index(id: Long)
 POST   /api/v1/document-sets/:id/searches         controllers.api.SearchController.create(id: Long)
-DELETE /api/v1/document-sets/:id/searches/:search controllers.api.SearchController.destroy(id: Long, search: String)
+DELETE /api/v1/document-sets/:id/searches/:query  controllers.api.SearchController.destroy(id: Long, query: String)
+GET    /api/v1/document-sets/:id/searches/:query/documents controllers.api.SearchDocumentController.index(id: Long, query: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET    /$file<robots\.txt>      controllers.Assets.at(path="/public", file)

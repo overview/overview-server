@@ -4,9 +4,8 @@ import java.sql.Timestamp
 import scala.concurrent.Future
 
 import controllers.util.JobQueueSender
-import models.OverviewDatabase
 import org.overviewproject.jobs.models.Search
-import org.overviewproject.models.tables.searchResults
+import org.overviewproject.models.tables.SearchResults
 import org.overviewproject.tree.orm.SearchResult // should be models.SearchResult
 
 trait SearchBackend {
@@ -38,21 +37,12 @@ object DbSearchBackend {
   import org.overviewproject.database.Slick.simple._
 
   private lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Column[Long]) =>
-    searchResults.where(_.documentSetId === documentSetId)
+    SearchResults.where(_.documentSetId === documentSetId)
   }
 
   private lazy val byDocumentSetIdAndQueryCompiled = Compiled { (documentSetId: Column[Long], query: Column[String]) =>
-    searchResults.where(_.documentSetId === documentSetId).where(_.query === query)
+    SearchResults.where(_.documentSetId === documentSetId).where(_.query === query)
   }
-
-  /*
-  private lazy val deleteByDocumentSetIdAndQueryCompiled = { (documentSetId: Column[Long], query: Column[String]) =>
-    searchResults
-      .where(_.documentSetId === documentSetId)
-      .where(_.query === query)
-      .deleteInvoker
-  }
-  */
 
   def byDocumentSetId(documentSetId: Long)(session: Session) = {
     byDocumentSetIdCompiled(documentSetId).list()(session)
