@@ -30,7 +30,7 @@ $.ajax({
   type: 'GET',
   url: "https://www.overviewproject.org/api/v1/documentsets/" + documentSetId + "/tags",
   username: token,
-  password: "x-auth-basic",
+  password: "x-auth-token",
   success: console.log
 });</pre>
     <div id="api-tokens-app" data-document-set-id="@documentSetId"></div>
