@@ -5,7 +5,7 @@ import scala.concurrent.Future
 
 import controllers.util.JobQueueSender
 import org.overviewproject.jobs.models.Search
-import org.overviewproject.models.tables.SearchResults
+import org.overviewproject.models.tables.{DocumentSearchResults,SearchResults}
 import org.overviewproject.tree.orm.SearchResult // should be models.SearchResult
 
 trait SearchBackend {
@@ -25,7 +25,7 @@ trait DbSearchBackend extends SearchBackend { self: DbBackend =>
   }
 
   override def show(documentSetId: Long, query: String) = db { session =>
-    DbSearchBackend.byDocumentSetIdAndQuery(documentSetId, query)(session).headOption
+    DbSearchBackend.byDocumentSetIdAndQuery(documentSetId, query)(session)
   }
 
   override def destroy(documentSetId: Long, query: String) = db { session =>
@@ -44,15 +44,22 @@ object DbSearchBackend {
     SearchResults.where(_.documentSetId === documentSetId).where(_.query === query)
   }
 
+  private lazy val documentSearchResultsCompiled = Compiled { (documentSetId: Column[Long], query: Column[String]) =>
+    val searchResultId = SearchResults.where(_.documentSetId === documentSetId).where(_.query === query).map(_.id)
+    DocumentSearchResults.where(_.searchResultId in searchResultId)
+  }
+
   def byDocumentSetId(documentSetId: Long)(session: Session) = {
     byDocumentSetIdCompiled(documentSetId).list()(session)
   }
 
   def byDocumentSetIdAndQuery(documentSetId: Long, query: String)(session: Session) = {
-    byDocumentSetIdAndQueryCompiled(documentSetId, query).list()(session)
+    byDocumentSetIdAndQueryCompiled(documentSetId, query).firstOption()(session)
   }
 
   def deleteByDocumentSetIdAndQuery(documentSetId: Long, query: String)(session: Session) = {
+    // Slick is sync, really, as much as we pretend it's async
+    documentSearchResultsCompiled(documentSetId, query).delete(session)
     byDocumentSetIdAndQueryCompiled(documentSetId, query).delete(session)
   }
 }
