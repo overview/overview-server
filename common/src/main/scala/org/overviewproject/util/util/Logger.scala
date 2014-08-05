@@ -13,29 +13,11 @@ trait Logger {
     case x => x.asInstanceOf[AnyRef]
   }
 
-  def trace(msg: String, arg: Any) = jLogger.trace(msg, arg)
-  def debug(msg: String, arg: Any) = jLogger.debug(msg, arg)
-  def info( msg: String, arg: Any) = jLogger.info( msg, arg)
-  def warn( msg: String, arg: Any) = jLogger.warn( msg, arg)
-  def error(msg: String, arg: Any) = jLogger.error(msg, arg)
-
-  def trace(msg: String, arg1: Any, arg2: Any) = jLogger.trace(msg, arg1, arg2)
-  def debug(msg: String, arg1: Any, arg2: Any) = jLogger.debug(msg, arg1, arg2)
-  def info( msg: String, arg1: Any, arg2: Any) = jLogger.info( msg, arg1, arg2)
-  def warn( msg: String, arg1: Any, arg2: Any) = jLogger.warn( msg, arg1, arg2)
-  def error(msg: String, arg1: Any, arg2: Any) = jLogger.error(msg, arg1, arg2)
-
   def trace(msg: String, args: Any*) = jLogger.trace(msg, args.map(unwrapArg): _*)
   def debug(msg: String, args: Any*) = jLogger.debug(msg, args.map(unwrapArg): _*)
   def info( msg: String, args: Any*) = jLogger.info( msg, args.map(unwrapArg): _*)
   def warn( msg: String, args: Any*) = jLogger.warn( msg, args.map(unwrapArg): _*)
   def error(msg: String, args: Any*) = jLogger.error(msg, args.map(unwrapArg): _*)
-
-  def trace(msg: String, t: Throwable) = jLogger.trace(msg, t)
-  def debug(msg: String, t: Throwable) = jLogger.debug(msg, t)
-  def info( msg: String, t: Throwable) = jLogger.info( msg, t)
-  def warn( msg: String, t: Throwable) = jLogger.warn( msg, t)
-  def error(msg: String, t: Throwable) = jLogger.error(msg, t)
 
   def logElapsedTime(op: String, t0: Long, args: Any*): Unit = {
     val t1 = System.nanoTime()
