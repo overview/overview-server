@@ -22,7 +22,9 @@ import org.overviewproject.tree.orm.stores.BaseStore
  * If necessary, the uploaded document is converted to PDF in order to provide a `File.view`.
  */
 trait CreateFile {
-  val PdfMagicNumber: Array[Byte] = "%PDF".getBytes
+  private lazy val logger: Logger = Logger.forClass(getClass)
+
+  protected val PdfMagicNumber: Array[Byte] = "%PDF".getBytes
 
   /**
    * Creates a [[File]] from an [[GroupedFileUpload]]
@@ -39,7 +41,7 @@ trait CreateFile {
       if (magicNumber.sameElements(PdfMagicNumber)) {
         storage.createFile(documentSetId, upload.name, upload.contentsOid)
       } else {
-        Logger.logExecutionTime(s"Converting ${upload.name} (${upload.guid}, ${"%.1f".format(upload.size * 1.0 / 1024)}kb) to PDF") {
+        logger.logExecutionTime("Converting {} ({}, {}kb) to PDF", upload.name, upload.guid, upload.size / 1024) {
           converter.convertStreamToPdf(upload.guid, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
         }
       }
