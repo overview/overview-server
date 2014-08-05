@@ -35,6 +35,8 @@ trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
   import ClusteringJobQueueProtocol._
 
+  private lazy val logger = Logger.forClass(getClass)
+
   private val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
   protected val fileGroupJobQueue: ActorRef
   protected val clusteringJobQueue: ActorRef
@@ -83,7 +85,7 @@ trait FileGroupJobManager extends Actor {
 
   private def limitedRetryUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit =
     if (count < MaxRetryAttempts) retryUpdateJobState(command, count + 1)
-    else Logger.error(s"Trying to cluster non-existent job for document set ${command.documentSetId}")
+    else logger.error("Trying to cluster non-existent job for document set {}", command.documentSetId)
 
   private def retryUpdateJobState(command: ClusterFileGroupCommand, attempt: Int): Unit = {
     import context.dispatcher
