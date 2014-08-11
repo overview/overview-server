@@ -8,7 +8,8 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.File
-import org.overviewproject.jobhandler.filegroup.task.DocumentConverter._
+import org.overviewproject.jobhandler.filegroup.task.MimeTypeDetectingDocumentConverter._
+import org.overviewproject.jobhandler.filegroup.task.LibreOfficeDocumentConverter._
 import org.overviewproject.util.Logger
 
 /**
@@ -75,6 +76,7 @@ trait CreatePagesProcess {
 
   /** [[FileGroupTaskStep]] that catches exceptions, stores them as errors, and completes the [[CreatePagesProcess]] */
   protected trait ErrorSavingTaskStep extends FileGroupTaskStep {
+    private lazy val logger = Logger.forClass(getClass)
     private val UnknownError = "Unknown error"
 
     protected val taskInformation: TaskInformation
@@ -94,9 +96,11 @@ trait CreatePagesProcess {
     private val runSavingError = handling(classOf[Exception]) by saveError
     
     private def logError(error: Throwable): Unit = error match {
-      case e: ConverterFailedException => Logger.error(s"Conversion Error: ", error)
-      case e: NoConverterOutputException => Logger.warn(s"No Conversion Output: ", error)
-      case e => Logger.info("Text extraction failed: ", error)
+      case e: LibreOfficeConverterFailedException => logger.error(s"Conversion Error: ", error)
+      case e: LibreOfficeNoOutputException => logger.warn(s"No Conversion Output: ", error)
+      case e: CouldNotDetectMimeTypeException => logger.warn("Could not read file {} during MIME type detection", e.filename)
+      case e: DocumentConverterDoesNotExistException => logger.warn("No DocumentConverter exists for file {} with MIME type {}", e.filename, e.mimeType)
+      case e => logger.info("Text extraction failed: ", error)
     }
     
   }

@@ -10,9 +10,7 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import java.util.UUID
 
 class CreateFileSpec extends Specification with Mockito {
-
   "CreatePdfView" should {
-
     "return original oid if original is a pdf" in new PdfFileContext {
       val file = createFile(documentSetId, upload)
 
@@ -28,13 +26,13 @@ class CreateFileSpec extends Specification with Mockito {
 
     trait CreateFileContext extends Scope {
       val fileText: String
-      val createdFile: File 
-      
+      val createdFile: File
+
       val documentSetId = 1l
       val name = "filename"
       val oid = 1l
       val upload = smartMock[GroupedFileUpload]
-      val guid: UUID = UUID.randomUUID() 
+      val guid: UUID = UUID.randomUUID()
       upload.name returns name
       upload.contentsOid returns oid
 
@@ -46,30 +44,29 @@ class CreateFileSpec extends Specification with Mockito {
       override val fileText: String = "%PDF and stuff"
       override val createdFile: File = File(1, oid, oid, name)
     }
-    
+
     trait NoPdfFileContext extends CreateFileContext {
       val viewOid = 2l
       override val createdFile: File = File(1, oid, viewOid, name)
-      
+
       override val fileText: String = "Not a PDF"
     }
   }
 
   class TestCreateFile(inputStream: InputStream, createdFile: File) extends CreateFile {
 
-    override val storage = mock[Storage]
+    override val storage = mock[CreateFile.Storage]
     private val convertedStream = mock[InputStream]
-    
+
     storage.getLargeObjectInputStream(any) returns inputStream
     storage.createFile(any, any, any) returns createdFile
-    
-    override val converter = new TestConverter 
-     
-    class TestConverter extends DocumentConverter {
-      def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T = 
-        f(convertedStream)
-    }
-    
-  }
 
+    override val converter = new TestConverter
+
+    class TestConverter extends DocumentConverter {
+      override def withStreamAsPdf[T](guid: UUID, filename: String, documentStream: InputStream)(f: InputStream => T): T = {
+        f(convertedStream)
+      }
+    }
+  }
 }

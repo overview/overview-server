@@ -42,7 +42,7 @@ trait CreateFile {
         storage.createFile(documentSetId, upload.name, upload.contentsOid)
       } else {
         logger.logExecutionTime("Converting {} ({}, {}kb) to PDF", upload.name, upload.guid, upload.size / 1024) {
-          converter.convertStreamToPdf(upload.guid, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
+          converter.withStreamAsPdf(upload.guid, upload.name, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
         }
       }
     }
@@ -67,27 +67,22 @@ trait CreateFile {
     }
   }
 
-  protected val storage: Storage
+  protected val storage: CreateFile.Storage
   protected val converter: DocumentConverter
+}
 
-  protected trait Storage {
+/** Implements [[CreateFile]] with database and conversion components */
+object CreateFile extends CreateFile {
+  override protected val storage = DatabaseStorage
+  override protected val converter = MimeTypeDetectingDocumentConverter
+
+  trait Storage {
     def getLargeObjectInputStream(oid: Long): InputStream
     def createFile(documentSetId: Long, name: String, oid: Long): File
     def createFileWithPdfView(documentSetId: Long, upload: GroupedFileUpload, viewStream: InputStream): File
   }
 
-  protected trait DocumentConverter {
-    def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T
-
-  }
-}
-
-/** Implements [[CreateFile]] with database and conversion components */
-object CreateFile extends CreateFile {
-  override protected val storage: Storage = new DatabaseStorage
-  override protected val converter: DocumentConverter = new LibreOfficeDocumentConverter
-
-  class DatabaseStorage extends Storage {
+  object DatabaseStorage extends Storage {
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
 
     override def getLargeObjectInputStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
@@ -114,10 +109,5 @@ object CreateFile extends CreateFile {
         file
       }
     }
-  }
-
-  class LibreOfficeDocumentConverter extends DocumentConverter {
-    override def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T =
-      DocumentConverter.convertToPdfStream(guid, documentStream)(f)
   }
 }
