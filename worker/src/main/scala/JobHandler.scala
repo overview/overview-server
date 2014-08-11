@@ -6,36 +6,41 @@
  * @author Jonas Karlsson
  */
 
-
+import java.util.TimeZone
 import scala.annotation.tailrec
 import scala.util._
+
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence.{ DocumentSetCleaner, DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.orm.finders.DocumentSetFinder
 import org.overviewproject.persistence.orm.finders.{ GroupedProcessedFileFinder, FileGroupFinder, GroupedFileUploadFinder }
+import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
+import org.overviewproject.persistence.orm.finders.TreeFinder
 import org.overviewproject.persistence.orm.stores._
+import org.overviewproject.persistence.TreeIdGenerator
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.{ DocumentSet, Tree }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.{ DocumentSet, Tree }
+import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
-import org.overviewproject.persistence.TreeIdGenerator
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.persistence.orm.finders.TreeFinder
-import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
-import org.overviewproject.persistence.orm.finders.DocumentSetFinder
 
 object JobHandler {
+  val logger = Logger.forClass(getClass)
 
   def main(args: Array[String]) {
+    // Make sure java.sql.Timestamp values are correct
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+
     val config = new SystemPropertiesDatabaseConfiguration()
     val dataSource = new DataSource(config)
 
     DB.connect(dataSource)
 
     connectToSearchIndex
-    Logger.info("Starting to scan for jobs")
+    logger.info("Starting to scan for jobs")
     startHandlingJobs
   }
 
@@ -68,7 +73,7 @@ object JobHandler {
     }
 
     firstSubmittedJob.map { j =>
-      Logger.info(s"Processing job: ${j.documentSetId}")
+      logger.info(s"Processing job: ${j.documentSetId}")
       handleSingleJob(j)
       System.gc()
     }
@@ -90,7 +95,7 @@ object JobHandler {
       val logLabel = if (j.state == Cancelled) "CANCELLED"
       else "PROGRESS"
 
-      Logger.info(s"[${j.documentSetId}] $logLabel: ${progress.fraction * 100}% done. ${progress.status}, ${if (progress.hasError) "ERROR" else "OK"}")
+      logger.info(s"[${j.documentSetId}] $logLabel: ${progress.fraction * 100}% done. ${progress.status}, ${if (progress.hasError) "ERROR" else "OK"}")
     }
 
     val progressReporter = new ThrottledProgressReporter(stateChange = Seq(updateJobState, logProgress), interval = Seq(checkCancellation))
@@ -109,7 +114,7 @@ object JobHandler {
         case _ => handleCreationJob(j, progFn)
       }
 
-      Logger.info(s"Cleaning up job ${j.documentSetId}")
+      logger.info(s"Cleaning up job ${j.documentSetId}")
       Database.inTransaction {
         deleteJobCleanupData(j)
         j.delete
@@ -136,9 +141,12 @@ object JobHandler {
       s"Creating DocumentSet: ${job.documentSetId} Title: ${ds.title} $query $uploadId Splitting: ${job.splitDocuments}".trim
     }.getOrElse(s"Creating DocumentSet: Could not load document set id: ${job.documentSetId}")
 
-    Logger.info(documentSetInfo(documentSet))
+    logger.info(documentSetInfo(documentSet))
 
     documentSet.map { ds =>
+      val t1 = ds.createdAt.getTime()
+      val t2 = System.currentTimeMillis()
+
       val treeId = TreeIdGenerator.next(ds.id)
 
       val nodeWriter = new NodeWriter(job.id, treeId)
@@ -166,6 +174,9 @@ object JobHandler {
           ))
         }
       }
+
+      val t3 = System.currentTimeMillis()
+      logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
     }
   }
 
@@ -178,7 +189,7 @@ object JobHandler {
       JobProgressLogger.apply(job.documentSetId, _: Progress))
 
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
-      Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
+      logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
       CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
       verifySourceStillExists(sourceDocumentSetId)
     }
@@ -207,15 +218,15 @@ object JobHandler {
   private def connectToSearchIndex: Unit = {
     val SearchIndexRetryInterval = 5000
 
-    Logger.info("Looking for Search Index")
+    logger.info("Looking for Search Index")
     val attempt = Try {
       SearchIndex.createIndexIfNotExisting
     }
 
     attempt match {
-      case Success(v) => Logger.info("Found Search Index")
+      case Success(v) => logger.info("Found Search Index")
       case Failure(e) => {
-        Logger.error("Unable to create Search Index", e)
+        logger.error("Unable to create Search Index", e)
         Thread.sleep(SearchIndexRetryInterval)
         connectToSearchIndex
       }
@@ -229,7 +240,7 @@ object JobHandler {
     import org.overviewproject.persistence.orm.Schema._
     import org.overviewproject.postgres.SquerylEntrypoint._
 
-    Logger.info(s"[${job.documentSetId}] Deleting cancelled job")
+    logger.info(s"[${job.documentSetId}] Deleting cancelled job")
     Database.inTransaction {
       implicit val connection = Database.currentConnection
 
@@ -244,8 +255,8 @@ object JobHandler {
 
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
     t match {
-      case e: DisplayedError => Logger.info(s"Job for DocumentSetId ${job.documentSetId} failed: $e")
-      case _ => Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")
+      case e: DisplayedError => logger.info("Handled error for DocumentSet {} creation: {}", job.documentSetId, e)
+      case NonFatal(e) => logger.error("Evil error for DocumentSet {} creation: {}", job.documentSetId, e)
     }
 
     job.state = Error
