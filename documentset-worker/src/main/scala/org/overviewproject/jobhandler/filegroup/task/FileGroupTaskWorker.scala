@@ -22,6 +22,7 @@ object FileGroupTaskWorkerProtocol {
   }
 
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
+  case class CreateDocumentsTask(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
 
   case class TaskDone(documentSetId: Long, outputId: Option[Long])
@@ -64,6 +65,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private var jobQueue: ActorRef = _
 
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
+  protected def startCreateDocumentsTask(documentSetId: Long): FileGroupTaskStep = ???
+  
   protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
 
   lookForJobQueue
@@ -94,6 +97,10 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       executeTaskStep(startCreatePagesTask(documentSetId, uploadedFileId))
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
     }
+    case Event(CreateDocumentsTask(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
+      executeTaskStep(startCreateDocumentsTask(documentSetId))
+      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, 0)
+    }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
       ignoringExceptions { deleteFileUploadJob(documentSetId, fileGroupId) }
       jobQueue ! TaskDone(documentSetId, None)
@@ -109,6 +116,12 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       jobQueue ! TaskDone(documentSetId, fileId)
       jobQueue ! ReadyForTask
 
+      goto(Ready) using JobQueue(jobQueue)
+    }
+    case Event(CreateDocumentsProcessComplete(documentSetId), TaskInfo(jobQueue, _, _, _)) => {
+      jobQueue ! TaskDone(documentSetId, None)
+      jobQueue ! ReadyForTask
+      
       goto(Ready) using JobQueue(jobQueue)
     }
     case Event(step: FileGroupTaskStep, _) => {

@@ -46,6 +46,18 @@ class FileGroupTaskWorkerSpec extends Specification {
       createPagesTaskStepsWereExecuted
     }
 
+    "step through CreateDocumentsTask" in new RunningTaskWorkerContext {
+      createJobQueue.handingOutTask(CreateDocumentsTask(documentSetId, fileGroupId))
+
+      createWorker
+      jobQueueProbe.expectInitialReadyForTask
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
+
+      jobQueueProbe.expectReadyForTask
+      
+      createPagesTaskStepsWereExecuted
+    }
+
     "cancel a job in progress" in new GatedTaskWorkerContext {
       import GatedTaskWorkerProtocol._
 
@@ -58,7 +70,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       worker ! CompleteTaskStep
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-      
+
       taskWasCancelled
     }
 
@@ -72,13 +84,13 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       worker ! TaskAvailable
       worker ! CancelYourself
-      
+
       worker ! CompleteTaskStep
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-      
+
     }
-    
+
     "delete a file upload job" in new RunningTaskWorkerContext {
       createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
 
@@ -88,7 +100,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
       deleteFileUploadJobWasCalled(documentSetId, fileGroupId)
-      
+
       jobQueueProbe.expectMsg(ReadyForTask)
     }
 
@@ -97,7 +109,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       createWorker
 
       jobQueueProbe.expectMsg(RegisterWorker(worker))
-      
+
       worker ! CancelTask
 
       jobQueueProbe.expectNoMsg
@@ -131,23 +143,22 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath, fileId))
 
-      protected def createPagesTaskStepsWereExecuted = 
+      protected def createPagesTaskStepsWereExecuted =
         worker.underlyingActor.executeFn.wasCalledNTimes(2)
-      
 
-      protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) = 
+      protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) =
         worker.underlyingActor.deleteFileUploadJobFn.wasCalledWith((documentSetId, fileGroupId))
-      
+
     }
 
     abstract class GatedTaskWorkerContext extends TaskWorkerContext {
-      import scala.concurrent.ExecutionContext.Implicits.global  
-      
+      import scala.concurrent.ExecutionContext.Implicits.global
+
       var worker: ActorRef = _
       private val cancelFn = ParameterStore[Unit]
-      
+
       protected def createWorker: Unit = worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath, cancelFn)))
-      
+
       protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)
     }
 
