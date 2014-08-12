@@ -9,6 +9,7 @@
 import java.util.TimeZone
 import scala.annotation.tailrec
 import scala.util._
+import scala.util.control.NonFatal
 
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
@@ -26,6 +27,7 @@ import org.overviewproject.tree.orm.{ DocumentSet, Tree }
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
+
 
 object JobHandler {
   val logger = Logger.forClass(getClass)
