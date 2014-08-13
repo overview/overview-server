@@ -15,7 +15,7 @@ trait FileGroupJob {
   val fileGroupId: Long
 }
 
-case class CreateDocumentsJob(fileGroupId: Long) extends FileGroupJob
+case class CreateDocumentsJob(fileGroupId: Long, splitDocuments: Boolean) extends FileGroupJob
 case class DeleteFileGroupJob(fileGroupId: Long) extends FileGroupJob
 
 object FileGroupJobQueueProtocol {

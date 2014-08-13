@@ -17,7 +17,7 @@ class FileGroupJobManagerSpec extends Specification {
     "start text extraction job at text extraction job queue" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
 
-      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId)))
+      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, splitDocuments)))
     }
 
     "start clustering job when text extraction is complete" in new FileGroupJobManagerContext {
@@ -37,16 +37,16 @@ class FileGroupJobManagerSpec extends Specification {
 
     "restart in progress jobs and cancel cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
 
-      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet1, CreateDocumentsJob(fileGroup1)))
-      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet2, CreateDocumentsJob(fileGroup2)))
+      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet1, CreateDocumentsJob(fileGroup1, splitDocuments)))
+      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet2, CreateDocumentsJob(fileGroup2, splitDocuments)))
 
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet1, fileGroup3))
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
     }
 
     "delete cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
-      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet1, CreateDocumentsJob(fileGroup1)))
-      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet2, CreateDocumentsJob(fileGroup2)))
+      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet1, CreateDocumentsJob(fileGroup1, splitDocuments)))
+      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet2, CreateDocumentsJob(fileGroup2, splitDocuments)))
 
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet1, fileGroup3))
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
@@ -68,7 +68,7 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobManager ! clusterCommand
       fileGroupJobManager ! cancelCommand
 
-      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId)))
+      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, splitDocuments)))
       fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
     }
 
@@ -92,14 +92,14 @@ class FileGroupJobManagerSpec extends Specification {
     "try again if no job is found initially" in new DelayedJobContext {
       fileGroupJobManager ! clusterCommand
       
-      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId)))
+      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, splitDocuments)))
     }
 
     "delete cancelled job after cancellation is complete" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
       fileGroupJobManager ! cancelCommand
 
-      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId)))
+      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, splitDocuments)))
       fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
       fileGroupJobQueue.reply(JobCompleted(documentSetId))
 

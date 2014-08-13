@@ -93,9 +93,9 @@ trait FileGroupJobManager extends Actor {
 
   private def failJob(job: DocumentSetCreationJob): Unit = storage.failJob(job)
 
-  private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit = {
-    submitToFileGroupJobQueue(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get))
-  }
+
+  private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit =
+    submitToFileGroupJobQueue(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get, job.splitDocuments))
 
   private def submitToFileGroupJobQueue(documentSetId: Long, job: FileGroupJob): Unit = {
     runningJobs += (documentSetId -> job)
@@ -103,7 +103,7 @@ trait FileGroupJobManager extends Actor {
   }
 
   private def handleCompletedJob(documentSetId: Long) = runningJobs.get(documentSetId).map {
-    case CreateDocumentsJob(fileGroupId) => submitClusteringJob(documentSetId)
+    case CreateDocumentsJob(fileGroupId, splitDocuments) => submitClusteringJob(documentSetId)
     case DeleteFileGroupJob(fileGroupId) =>
   } getOrElse deleteCancelledJobFileGroup(documentSetId)
 

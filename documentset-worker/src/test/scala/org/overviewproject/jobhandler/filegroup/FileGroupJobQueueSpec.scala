@@ -201,7 +201,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         Seq.fill(numberOfWorkers)(new WorkerTestProbe(documentSetId, fileGroupId, system))
 
       protected def submitJob(documentSetId: Long = documentSetId) =
-        fileGroupJobQueue ! SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId))
+        fileGroupJobQueue ! SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, false))
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
       protected def expectCancellation(workers: Seq[WorkerTestProbe]) = workers.map { _.expectMsg(CancelTask) }
