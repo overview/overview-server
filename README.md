@@ -21,9 +21,9 @@ The Overview Project is an open source visual document mining system. It was ori
 
 ## Contact us!
 - Twitter [@overviewproject](https://twitter.com/overviewproject)
-- Chat room: #overviewproject on irc.freenode.net
+- Chat room: [#overviewproject](http://webchat.freenode.net/?channels=overviewproject) on irc.freenode.net
 - email info@overviewproject.org
-- Or post in theuser forum at https://groups.google.com/forum/?fromgroups=#!forum/overview-users
+- Or post in the user forum at https://groups.google.com/forum/?fromgroups=#!forum/overview-users
  
 
 This software is Copyright 2011-2014 The Associated Press, and distributed under the
