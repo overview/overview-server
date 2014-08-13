@@ -7,8 +7,8 @@ import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
 import controllers.util.TransactionAction
 import models.{IntercomConfiguration, MailChimp, OverviewUser}
-import models.orm.Session
-import models.orm.stores.SessionStore
+import models.Session
+import models.orm.stores.{SessionStore,UserStore}
 
 object ConfirmationController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
@@ -33,7 +33,7 @@ object ConfirmationController extends Controller {
       case Some(user) => Redirect(routes.WelcomeController.show)
       case None => OverviewUser.findByConfirmationToken(token) match {
         case Some(u) => {
-          val savedUser = u.confirm.save
+          val savedUser = OverviewUser(UserStore.insertOrUpdate(u.confirm.toUser))
           val session = Session(savedUser.id, request.remoteAddress)
           SessionStore.insertOrUpdate(session)
 

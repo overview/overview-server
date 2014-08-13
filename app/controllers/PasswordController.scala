@@ -8,9 +8,9 @@ import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser
 import controllers.util.TransactionAction
 import mailers.Mailer
-import models.{OverviewUser,ResetPasswordRequest}
-import models.orm.Session
-import models.orm.stores.SessionStore
+import models.{OverviewUser,ResetPasswordRequest,User}
+import models.Session
+import models.orm.stores.{SessionStore,UserStore}
 
 /**
  * Handles reset-password.
@@ -61,7 +61,7 @@ trait PasswordController extends Controller {
           case Some(user) => {
             // Success: generate a token and send an email
             val userWithRequest = user.withResetPasswordRequest
-            userWithRequest.save
+            storage.insertOrUpdateUser(userWithRequest.toUser)
             mail.sendCreated(userWithRequest)
           }
         }
@@ -82,9 +82,7 @@ trait PasswordController extends Controller {
         editForm.bindFromRequest.fold(
           formWithErrors => BadRequest(views.html.Password.edit(user, formWithErrors)),
           newPassword => {
-            val userWithNewPassword = user
-              .withNewPassword(newPassword)
-              .save
+            storage.insertOrUpdateUser(user.withNewPassword(newPassword).toUser)
             val session = storage.insertOrUpdateSession(Session(user.id, request.remoteAddress))
             AuthResults.loginSucceeded(request, session).flashing(
               "success" -> m("update.success"),
@@ -96,10 +94,16 @@ trait PasswordController extends Controller {
     }
   }
 
+  protected val storage : PasswordController.Storage
+  protected val mail : PasswordController.Mail
+}
+
+object PasswordController extends PasswordController {
   trait Storage {
     def findUserByEmail(email: String) : Option[OverviewUser]
     def findUserByResetToken(token: String) : Option[OverviewUser with ResetPasswordRequest]
     def insertOrUpdateSession(session: Session) : Session
+    def insertOrUpdateUser(user: User) : User
   }
 
   trait Mail {
@@ -107,11 +111,6 @@ trait PasswordController extends Controller {
     def sendCreateErrorUserDoesNotExist(email: String)(implicit request: RequestHeader) : Unit
   }
 
-  protected val storage : PasswordController.Storage
-  protected val mail : PasswordController.Mail
-}
-
-object PasswordController extends PasswordController {
   val SecondsResetTokenIsValid = 14400 // 4 hours
 
   override protected val storage = new Storage {
@@ -127,6 +126,7 @@ object PasswordController extends PasswordController {
     }
 
     override def insertOrUpdateSession(session: Session) = SessionStore.insertOrUpdate(session)
+    override def insertOrUpdateUser(user: User) = UserStore.insertOrUpdate(user)
   }
 
   override protected val mail = new Mail {

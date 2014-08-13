@@ -5,7 +5,7 @@ import play.api.data.{Form,Forms}
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
 import controllers.auth.Authorities.userOwningDocumentSet
-import models.orm.User
+import models.User
 import models.OverviewDatabase
 import org.overviewproject.models.ApiToken
 

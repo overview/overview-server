@@ -7,7 +7,7 @@ import play.api.Play
 import scala.concurrent.Future
 
 import models.OverviewDatabase
-import models.orm.{Session, User, UserRole}
+import models.{Session, User, UserRole}
 import models.orm.stores.{SessionStore, UserStore}
 import models.orm.finders.UserFinder
 

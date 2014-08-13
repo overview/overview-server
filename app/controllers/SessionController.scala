@@ -5,7 +5,7 @@ import play.api.mvc.{AnyContent,Controller,Request}
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
 import controllers.util.TransactionAction
-import models.orm.Session
+import models.Session
 import models.orm.finders.SessionFinder
 import models.orm.stores.SessionStore
 
@@ -58,11 +58,13 @@ object SessionController extends SessionController {
     override def createSession(session: Session) = SessionStore.insertOrUpdate(session)
     override def deleteSession(session: Session) = {
       import org.overviewproject.postgres.SquerylEntrypoint._
+      import models.orm.Schema._
       SessionStore.delete(session.id)
     }
     override def deleteExpiredSessionsForUserId(userId: Long) = {
       val expiredSessions = SessionFinder.byUserId(userId).expired
       import org.overviewproject.postgres.SquerylEntrypoint._
+      import models.orm.Schema._
       // Squeryl is SO STUPID. This should happen in Postgres: SessionStore.delete(expiredSessions)
       for (expiredSession <- expiredSessions) {
         SessionStore.delete(expiredSession.id)

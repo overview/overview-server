@@ -1,18 +1,15 @@
 package models.orm.finders
 
-
+import org.squeryl.Query
 import scala.language.postfixOps
 import scala.language.implicitConversions
 
+import models.User
+import models.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.{DocumentSetCreationJobType, Ownership}
 import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJobState}
 import org.overviewproject.tree.orm.finders.{Finder, FinderResult}
-
-import org.squeryl.Query
-
-import models.orm.{ Schema, User }
-
 
 object DocumentSetFinder extends Finder {
   class DocumentSetResult(query: Query[DocumentSet]) extends FinderResult(query) {

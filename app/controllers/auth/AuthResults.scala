@@ -5,7 +5,7 @@ import play.api.Play.current
 import play.api.mvc.{RequestHeader,Result,Results}
 import scala.util.control.Exception.catching
 
-import models.orm.Session
+import models.Session
 
 object AuthResults {
   private[auth] val RequestedUriKey = "access_uri"

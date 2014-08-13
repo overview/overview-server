@@ -3,10 +3,10 @@ package controllers
 import org.squeryl.SquerylSQLException
 import play.api.data.Form
 import play.api.mvc.{ Controller, RequestHeader }
+
 import controllers.util.TransactionAction
 import models.{ OverviewUser, ConfirmationRequest, PotentialNewUser }
-import models.MailChimp
-import scala.concurrent.Await
+import models.orm.stores.UserStore
 
 trait UserController extends Controller {
   val loginForm: Form[OverviewUser] = controllers.forms.LoginForm()
@@ -81,7 +81,8 @@ trait UserController extends Controller {
 
 object UserController extends UserController {
   override protected def saveUser(user: OverviewUser with ConfirmationRequest): OverviewUser with ConfirmationRequest = {
-    user.save.withConfirmationRequest.getOrElse(throw new Exception("impossible"))
+    val savedUser = OverviewUser(UserStore.insertOrUpdate(user.toUser))
+    savedUser.withConfirmationRequest.getOrElse(throw new Exception("impossible"))
   }
 
   override protected def mailNewUser(user: OverviewUser with ConfirmationRequest)(implicit request: RequestHeader) = {

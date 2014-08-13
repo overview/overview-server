@@ -11,7 +11,7 @@ import play.api.Play.{start,stop}
 
 import controllers.auth.{AuthorizedRequest, OptionallyAuthorizedRequest}
 import models.OverviewUser
-import models.orm.{Session, User}
+import models.{Session, User}
 
 /** A test environment for controllers.
   */

@@ -6,8 +6,6 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
-import models.orm.User
-
 /** Values we pass to Intercom.
   *
   * See http://docs.intercom.io/Installing-intercom

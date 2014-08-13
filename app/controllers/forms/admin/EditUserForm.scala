@@ -4,7 +4,7 @@ import com.github.t3hnar.bcrypt._
 import play.api.data.{Form, Forms}
 
 import models.OverviewUser
-import models.orm.{User, UserRole}
+import models.{User, UserRole}
 
 object EditUserForm {
   def apply(user: User) : Form[User] = Form(

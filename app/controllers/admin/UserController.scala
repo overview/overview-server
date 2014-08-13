@@ -5,7 +5,7 @@ import play.api.mvc.Controller
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.forms.admin.{NewUserForm, EditUserForm}
-import models.orm.User
+import models.User
 import models.orm.finders.{ UserFinder, SessionFinder, DocumentSetUserFinder }
 import models.orm.stores.{SessionStore, UserStore}
 import org.overviewproject.tree.Ownership
@@ -94,6 +94,7 @@ object UserController extends UserController {
     override def storeUser(user: User) = UserStore.insertOrUpdate(user)
     override def deleteUser(user: User) = {
       import org.overviewproject.postgres.SquerylEntrypoint._
+      import models.orm.Schema._
       SessionStore.delete(SessionFinder.byUserId(user.id).toQuery)
       UserStore.delete(user.id)
     }

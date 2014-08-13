@@ -7,7 +7,7 @@ import play.api.test.FakeRequest
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 
-import models.orm.{Session, User}
+import models.{Session, User}
 import models.OverviewUser
 
 class AuthorizedActionSpec extends test.InAppSpecification with Mockito {

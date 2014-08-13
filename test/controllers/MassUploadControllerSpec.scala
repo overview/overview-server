@@ -14,7 +14,7 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import models.OverviewUser
-import models.orm.{ Session, User }
+import models.{ Session, User }
 import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,FileGroup,GroupedFileUpload}
 
 class MassUploadControllerSpec extends Specification with Mockito {

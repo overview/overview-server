@@ -1,4 +1,4 @@
-package models.orm
+package models
 
 import java.sql.Timestamp
 import java.util.{Date,UUID}
@@ -28,13 +28,7 @@ case class Session(
   val ip: InetAddress,
   val createdAt: Timestamp,
   val updatedAt: Timestamp
-) extends KeyedEntity[UUID] {
-  /** Method used _only_ by Squeryl */
-  def this() = this(new UUID(0, 0), 0, InetAddress.getByName("127.0.0.1"), new Timestamp(0), new Timestamp(0))
-
-  // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
-  override def isPersisted: Boolean = (createdAt ne updatedAt)
-
+) {
   def update(ip: InetAddress) : Session = {
     copy(
       ip=ip,

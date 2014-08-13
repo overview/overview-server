@@ -5,7 +5,7 @@ import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 
 import helpers.DbTestContext
-import models.orm.User
+import models.User
 
 class UserStoreSpec extends Specification {
   step(start(FakeApplication()))

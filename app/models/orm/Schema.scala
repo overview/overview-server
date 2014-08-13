@@ -1,7 +1,9 @@
 package models.orm
 
+import java.util.UUID
 import org.squeryl.KeyedEntityDef
 
+import models.{Session,User}
 import org.overviewproject.models.ApiToken
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm._
@@ -17,6 +19,18 @@ object Schema extends org.squeryl.Schema {
     override def getId(t: ApiToken) = t.token
     override def idPropertyName = "token"
     override def isPersisted(t: ApiToken) = false // Only INSERT -- no UPDATE
+  }
+
+  implicit object UserKED extends KeyedEntityDef[User, Long] {
+    override def getId(u: User) = u.id
+    override def idPropertyName = "id"
+    override def isPersisted(u: User) = u.id != 0L
+  }
+
+  implicit object SessionKED extends KeyedEntityDef[Session, UUID] {
+    override def getId(s: Session) = s.id
+    override def idPropertyName = "id"
+    override def isPersisted(s: Session) = (s.createdAt != s.updatedAt) // ugly hack!
   }
 
   val apiTokens = table[ApiToken]

@@ -8,7 +8,8 @@ import org.squeryl.Query
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.finders.{Finder, FinderResult}
-import models.orm.{Schema, Session, User}
+import models.orm.Schema
+import models.{Session, User}
 
 trait SessionFinder extends Finder {
   class SessionFinderResult(query: Query[Session]) extends FinderResult(query) {

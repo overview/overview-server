@@ -2,7 +2,7 @@ package controllers
 
 import org.specs2.specification.Scope
 
-import models.orm.User
+import models.User
 
 class TourControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {

@@ -4,8 +4,7 @@ import org.specs2.specification.Scope
 import play.api.mvc.AnyContent
 
 import controllers.auth.OptionallyAuthorizedRequest
-import models.OverviewUser
-import models.orm.Session
+import models.{OverviewUser,Session}
 
 class SessionControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {

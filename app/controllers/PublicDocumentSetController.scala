@@ -6,7 +6,7 @@ import org.overviewproject.tree.orm.DocumentSet
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.anyUser
 import models.orm.finders.DocumentSetFinder
-import models.orm.User
+import models.User
 
 trait PublicDocumentSetController extends Controller {
   trait Storage {

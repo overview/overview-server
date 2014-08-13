@@ -3,8 +3,6 @@ package models
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import models.orm.User
-
 class IntercomConfigurationSpec extends Specification {
   trait BaseScope extends Scope {
     val secretKey : Option[String] = Some("secret")

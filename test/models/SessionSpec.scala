@@ -1,8 +1,7 @@
-package models.orm
+package models
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import java.sql.Timestamp
 import java.util.Date
 
 import org.overviewproject.postgres.InetAddress
@@ -41,10 +40,6 @@ class SessionSpec extends Specification {
       d must beLessThan(1000L) // the test should take 1ms, so 1000ms is fine
     }
 
-    "set default isPersisted=false" in new BaseScope {
-      session.isPersisted must beFalse
-    }
-
     "set updatedAt=createdAt" in new BaseScope {
       session.updatedAt must beEqualTo(session.createdAt)
     }
@@ -62,10 +57,6 @@ class SessionSpec extends Specification {
 
     "update ip from String" in new BaseScope {
       session.update("192.168.1.103").ip.getHostAddress must beEqualTo("192.168.1.103")
-    }
-
-    "set isPersisted=true on update" in new BaseScope {
-      session.update(ip).isPersisted must beTrue
     }
   }
 }

@@ -3,7 +3,7 @@ package controllers.auth
 import play.api.mvc.{Request,WrappedRequest}
 
 import models.OverviewUser
-import models.orm.{Session, User}
+import models.{Session, User}
 
 case class OptionallyAuthorizedRequest[A](request: Request[A], val sessionAndUser: Option[(Session,User)])
   extends WrappedRequest(request) {

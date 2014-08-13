@@ -13,7 +13,7 @@ import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser, Authority, SessionFactory }
 import controllers.forms.UploadControllerForm
 import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
-import models.orm.{Session, User}
+import models.{Session, User}
 import models.orm.finders.UserFinder
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.OverviewDatabase

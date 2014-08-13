@@ -4,8 +4,7 @@ import java.util.Date
 import org.specs2.specification.Scope
 import play.api.mvc.RequestHeader
 
-import models.{OverviewUser, ResetPasswordRequest}
-import models.orm.Session
+import models.{OverviewUser, ResetPasswordRequest, Session, User}
 
 class PasswordControllerSpec extends ControllerSpecification {
   trait OurScope extends Scope {
@@ -15,13 +14,11 @@ class PasswordControllerSpec extends ControllerSpecification {
     val user = mock[OverviewUser]
     user.email returns "user@example.org"
     user.passwordMatches("hash") returns true
-    user.save returns user
 
     val userWithRequest = mock[UserWithRequest]
     userWithRequest.email returns user.email
     userWithRequest.resetPasswordToken returns "0123456789abcd"
     userWithRequest.withNewPassword(anyString) returns user
-    userWithRequest.save returns userWithRequest
 
     user.withResetPasswordRequest returns userWithRequest
 
@@ -33,6 +30,7 @@ class PasswordControllerSpec extends ControllerSpecification {
     mockStorage.findUserByResetToken(any[String]) returns None
     mockStorage.findUserByResetToken("0123456789abcd") returns Some(userWithRequest)
     mockStorage.insertOrUpdateSession(any[Session]) answers { x => x.asInstanceOf[Session] }
+    mockStorage.insertOrUpdateUser(any[User]) answers { x => x.asInstanceOf[User] }
 
     val controller = new PasswordController {
       override val storage = mockStorage
@@ -112,8 +110,7 @@ class PasswordControllerSpec extends ControllerSpecification {
         }
 
         "not change the database" in new CreateScopeUserNotFound {
-          there was no(user).save
-          there was no(userWithRequest).save
+          there was no(mockStorage).insertOrUpdateUser(any[User])
         }
       }
 
@@ -137,7 +134,7 @@ class PasswordControllerSpec extends ControllerSpecification {
 
         "change the database" in new CreateScopeUserFound {
           there was one(user).withResetPasswordRequest
-          there was one(userWithRequest).save
+          there was one(mockStorage).insertOrUpdateUser(any[User])
         }
       }
     }
@@ -172,7 +169,7 @@ class PasswordControllerSpec extends ControllerSpecification {
       "save the user with a new password" in new UpdateScope {
         h.status(result)
         there was one(userWithRequest).withNewPassword("Ersh3Phowb9")
-        there was one(user).save
+        there was one(mockStorage).insertOrUpdateUser(any[User])
       }
 
       "log the user in" in new UpdateScope {

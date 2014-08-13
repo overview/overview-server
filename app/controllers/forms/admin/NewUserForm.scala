@@ -6,7 +6,7 @@ import java.sql.Timestamp
 import play.api.data.{Form, Forms}
 
 import models.OverviewUser
-import models.orm.User
+import models.User
 
 object NewUserForm {
   def apply() : Form[User] = Form(

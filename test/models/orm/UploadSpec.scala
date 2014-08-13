@@ -2,19 +2,17 @@ package models.orm
 
 import java.sql.Timestamp
 import java.util.UUID
-
-import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.UploadedFile
-
-import helpers.DbTestContext
 import play.api.Play.start
 import play.api.Play.stop
 import play.api.test.FakeApplication
 
-@RunWith(classOf[JUnitRunner])
+import helpers.DbTestContext
+import models.User
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.UploadedFile
+
 class UploadSpec extends Specification {
 
   step(start(FakeApplication()))

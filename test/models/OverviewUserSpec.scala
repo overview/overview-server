@@ -4,12 +4,14 @@ import java.sql.Timestamp
 import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
+import play.api.test.FakeApplication
+
 import helpers.DbTestContext
-import org.overviewproject.tree.Ownership._
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetUser, Node, Tree }
 import models.orm.Schema
+import models.orm.stores.UserStore
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetUser, Node, Tree }
+import org.overviewproject.tree.Ownership._
 
 class OverviewUserSpec  extends Specification {
   
@@ -69,15 +71,15 @@ class OverviewUserSpec  extends Specification {
       val email = "MixedCase@UPPERCASE.NET"
       val password = "password"
       val user = PotentialNewUser(email, password, false).requestConfirmation.confirm
-      user.save
-      
+      UserStore.insertOrUpdate(user.toUser)
+
       OverviewUser.findByEmail(email) must beSome.like { case u =>
         u.email must be equalTo(email)
       }
     }
    
     "find user by confirmation token" in new NewRegistration {
-      user.save
+      UserStore.insertOrUpdate(user.toUser)
       val tokenUser = OverviewUser.findByConfirmationToken(user.confirmationToken)
       tokenUser must beSome.like {case u => 
         u.email must be equalTo(user.email)
@@ -98,7 +100,7 @@ class OverviewUserSpec  extends Specification {
     "reset the user's password" in new LoadedUserWithResetRequestContext {
       val user2 = user.withNewPassword("great new password")
       user2.passwordMatches("great new password") must beTrue
-      val ormUser = models.orm.User.findById(user2.id).get
+      val ormUser = user2.toUser
       ormUser.resetPasswordToken must beNone
       ormUser.resetPasswordSentAt must beNone
     }
@@ -166,14 +168,14 @@ class OverviewUserSpec  extends Specification {
     }
     
     "get user with confirmation request" in new NewRegistration {
-      user.save
+      UserStore.insertOrUpdate(user.toUser)
       PotentialUser(email, password).withConfirmationRequest must beSome.like {case u =>
         u.email must be equalTo(email)
       }
     }
     
     "get user with confirmation request disregarding password" in new NewRegistration {
-      user.save
+      UserStore.insertOrUpdate(user.toUser)
       PotentialUser(email, "").withConfirmationRequest must beSome.like {case u =>
         u.email must be equalTo(email)
       }

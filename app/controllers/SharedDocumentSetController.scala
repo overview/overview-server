@@ -7,7 +7,7 @@ import org.overviewproject.tree.orm.finders.FinderResult.finderResultToIterable
 
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
-import models.orm.User
+import models.User
 import models.orm.finders.DocumentSetFinder
 
 trait SharedDocumentSetController extends Controller {

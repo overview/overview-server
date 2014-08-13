@@ -12,7 +12,7 @@ import controllers.auth.Authorities.adminUser
 import controllers.auth.AuthorizedAction
 import controllers.util.DocumentSetDeletionComponents
 import controllers.util.JobContextChecker
-import models.orm.User
+import models.User
 import models.orm.finders.DocumentSetCreationJobFinder
 import models.orm.finders.DocumentSetFinder
 

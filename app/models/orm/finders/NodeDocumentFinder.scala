@@ -1,15 +1,14 @@
 package models.orm.finders
 
+import org.squeryl.dsl.GroupWithMeasures
+import org.squeryl.Query
 import scala.language.implicitConversions
 import scala.language.postfixOps
+
+import models.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.finders.{ BaseNodeDocumentFinder, FinderResult }
 import org.overviewproject.tree.orm.NodeDocument
-import org.squeryl.Query
-import org.squeryl.dsl.GroupWithMeasures
-
-
-import models.orm.{ Schema }
 
 object NodeDocumentFinder extends BaseNodeDocumentFinder(Schema.nodeDocuments, Schema.documents) {
   class NodeDocumentFinderResult(query: Query[NodeDocument]) extends FinderResult(query) {

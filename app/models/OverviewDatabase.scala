@@ -3,7 +3,7 @@ package models
 import java.sql.Connection
 import play.api.Play.current
 import play.api.db.DB
-import scala.slick.jdbc.JdbcBackend.{Database,Session}
+import scala.slick.jdbc.JdbcBackend.{Database,Session=>JSession}
 
 import org.overviewproject.database.TransactionProvider
 
@@ -18,7 +18,7 @@ object OverviewDatabase extends TransactionProvider {
 
   private lazy val db = Database.forDataSource(DB.getDataSource())
 
-  def withSlickSession[A](block: Session => A): A = {
+  def withSlickSession[A](block: JSession => A): A = {
     db.withSession(block)
   }
 }

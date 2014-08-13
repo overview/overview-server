@@ -8,7 +8,7 @@ import play.api.mvc.{RequestHeader, Result}
 import scala.util.control.Exception.catching
 
 import models.OverviewUser
-import models.orm.{Session,User,UserRole}
+import models.{Session,User,UserRole}
 import models.orm.finders.{SessionFinder,UserFinder}
 import org.overviewproject.postgres.InetAddress
 

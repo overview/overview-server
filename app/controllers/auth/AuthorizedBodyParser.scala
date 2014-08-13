@@ -7,7 +7,7 @@ import play.api.Play
 import scala.concurrent.Future
 
 import models.OverviewDatabase
-import models.orm.{Session, User}
+import models.{Session, User}
 
 trait AuthorizedBodyParser {
   protected val sessionFactory: SessionFactory

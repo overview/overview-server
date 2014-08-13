@@ -7,16 +7,12 @@
 
 package models
 
+import com.github.t3hnar.bcrypt._
 import java.sql.Timestamp
 import java.util.Date
-import com.github.t3hnar.bcrypt._
-import models.orm.User
-import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder, DocumentSetCreationJobFinder, TreeFinder }
-import models.orm.UserRole
-import models.orm.UserRole._
-import org.overviewproject.postgres.SquerylEntrypoint._
+
+import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder, DocumentSetCreationJobFinder, TreeFinder, UserFinder }
 import org.overviewproject.tree.Ownership
-import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 
 /**
  * A user that exists in the database
@@ -65,12 +61,6 @@ trait OverviewUser {
   
   /** @return True if the user has permission to administer the website */
   def isAdministrator: Boolean
-
-  /** @return The same user, but saved in the database. (Users are immutable, conceptually.) */
-  def save: OverviewUser
-
-  /** Deletes the user from the database. */
-  def delete: Unit
 
   /** Returns a User for storage in the database. */
   def toUser: User
@@ -182,19 +172,17 @@ object OverviewUser {
   private def generateToken = scala.util.Random.alphanumeric.take(TokenLength).mkString
   private def generateTimestamp = new Timestamp(new Date().getTime())
 
-  def all = User.all.map(OverviewUser.apply)
+  def findById(id: Long) : Option[OverviewUser] = UserFinder.byId(id).headOption.map(OverviewUser.apply)
 
-  def findById(id: Long): Option[OverviewUser] = apply(User.findById(id))
-
-  def findByEmail(email: String): Option[OverviewUser] = apply(User.findByEmail(email))
+  def findByEmail(email: String) : Option[OverviewUser] = UserFinder.byEmail(email).headOption.map(OverviewUser.apply)
 
   def findByResetPasswordTokenAndMinDate(token: String, minDate: Date): Option[OverviewUser with ResetPasswordRequest] = {
-    val user = User.findByResetPasswordTokenAndMinDate(token, minDate)
+    val user = UserFinder.byResetPasswordTokenAndMinDate(token, minDate).headOption
     user.map(new UserWithResetPasswordRequest(_))
   }
 
   def findByConfirmationToken(token: String): Option[OverviewUser with ConfirmationRequest] = {
-    val user = User.findByConfirmationToken(token)
+    val user = UserFinder.byConfirmationToken(token).headOption
     user.map(new UnconfirmedUser(_))
   }
 
@@ -202,10 +190,13 @@ object OverviewUser {
     val confirmationToken = generateToken
     val confirmationSentAt = generateTimestamp
 
-    val user = User(email = email, passwordHash = password.bcrypt(BcryptRounds),
+    val user = User(
+      email = email,
+      passwordHash = password.bcrypt(BcryptRounds),
       emailSubscriber = emailSubscriber,
       confirmationToken = Some(confirmationToken),
-      confirmationSentAt = Some(confirmationSentAt))
+      confirmationSentAt = Some(confirmationSentAt)
+    )
     new UnconfirmedUser(user)
   }
 
@@ -282,20 +273,18 @@ object OverviewUser {
     }
 
     def isAllowedDocument(id: Long) = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       import models.orm.Schema
       val documentQuery = Schema.documents.where(d => d.id === id)
       val rolesQuery = Schema.documentSetUsers.where(dsu => dsu.userEmail === email)
       val joinQuery = from(rolesQuery, documentQuery)((dsu, d) =>
         where(dsu.documentSetId === d.documentSetId)
-          select (dsu))
+        select(dsu)
+      )
       joinQuery.nonEmpty
     }
 
     def isAdministrator = user.role == UserRole.Administrator
-
-    def save: OverviewUser = copy(user.save)
-
-    def delete = user.delete
   }
 
   /**

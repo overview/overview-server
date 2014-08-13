@@ -2,7 +2,7 @@ package controllers.forms.admin
 
 import play.api.data.{Forms, WrappedMapping}
 
-import models.orm.UserRole
+import models.UserRole
 
 object Mappings {
   val IsAdminUserRole = WrappedMapping(

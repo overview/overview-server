@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedRequest
 import models.upload.{OverviewUpload,OverviewUploadedFile}
 import models.OverviewUser
-import models.orm.{Session,User}
+import models.{Session,User}
 
 @RunWith(classOf[JUnitRunner])
 class UploadControllerSpec extends Specification with Mockito {

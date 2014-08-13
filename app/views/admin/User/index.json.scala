@@ -2,7 +2,7 @@ package views.json.admin.User
 
 import play.api.libs.json.{Json, JsValue}
 
-import models.orm.User
+import models.User
 import org.overviewproject.tree.orm.finders.ResultPage
 
 object index {

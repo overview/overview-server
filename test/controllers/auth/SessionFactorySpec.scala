@@ -9,7 +9,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import models.OverviewUser
-import models.orm.{Session, User, UserRole}
+import models.{Session, User, UserRole}
 
 class SessionFactorySpec extends Specification with Mockito {
   step(start(FakeApplication())) // to load application.secret

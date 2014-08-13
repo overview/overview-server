@@ -7,7 +7,7 @@ import controllers.auth.AuthorizedRequest
 import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState, Node, Tag, SearchResult, SearchResultState, Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
 import models.OverviewUser
-import models.orm.User
+import models.User
 
 class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait TestScope extends Scope {

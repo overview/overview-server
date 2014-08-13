@@ -1,11 +1,14 @@
 package models.orm.finders
 
+import java.sql.Timestamp
+import java.util.Date
 import scala.language.postfixOps
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.Ownership
-import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 
-import models.orm.{ Schema, User }
+import models.orm.Schema
+import models.User
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+import org.overviewproject.tree.Ownership
 
 object UserFinder extends Finder {
   /** @return All Users with some access to a DocumentSet. */
@@ -39,7 +42,7 @@ object UserFinder extends Finder {
     * The result will have length 0 or 1.
     */
   def byEmail(email: String) : FinderResult[User] = {
-    Schema.users.where(_.email === email)
+    Schema.users.where((u) => lower(u.email) === lower(email))
   }
 
   /** @return All Users with the given ID.
@@ -48,5 +51,15 @@ object UserFinder extends Finder {
     */
   def byId(id: Long) : FinderResult[User] = {
     Schema.users.where(_.id === id)
+  }
+
+  def byConfirmationToken(token: String) : FinderResult[User] = {
+    Schema.users.where(u => u.confirmationToken === Some(token))
+  }
+
+  def byResetPasswordTokenAndMinDate(token: String, minDate: Date) = {
+    Schema.users
+      .where(u => u.resetPasswordToken === Some(token))
+      .where(u => u.resetPasswordSentAt >= Some(new Timestamp(minDate.getTime)))
   }
 }
