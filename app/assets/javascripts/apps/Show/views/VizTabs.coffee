@@ -64,7 +64,7 @@ define [
           <% } %>
 
           <% viz.creationData.forEach(function(d) { %>
-            <% if (d[0] != 'rootNodeId') { %>
+            <% if (d[0] != 'rootNodeId' && d[0] != 'jobId' && d[0] != 'nDocuments') { %>
               <dt><%- t('viz.' + d[0] + '.dt') %></dt>
               <dd><%- t('viz.' + d[0] + '.dd', d[1]) %></dd>
             <% } %>

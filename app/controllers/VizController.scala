@@ -6,11 +6,11 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
 import models.orm.finders.{DocumentSetCreationJobFinder,TreeFinder}
 import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.models.Viz
+import org.overviewproject.models.VizLike
 
 trait VizController extends Controller {
   trait Storage {
-    def findVizs(documentSetId: Long) : Iterable[Viz]
+    def findVizs(documentSetId: Long) : Iterable[VizLike]
     def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
   }
 

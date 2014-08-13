@@ -7,27 +7,23 @@ class TreeSpec extends Specification {
   "Tree.properties" should {
     "have lang and rootNodeId by default" in {
       val data = baseTree.creationData.toSeq
-      data.length must beEqualTo(2)
-      data(0) must beEqualTo("rootNodeId" -> "3")
-      data(1) must beEqualTo("lang" -> "en")
+      data.toMap.get("rootNodeId") must beSome("3")
+      data.toMap.get("lang") must beSome("en")
     }
 
     "add a description" in {
       val s = baseTree.copy(description="foo").creationData.toSeq
-      s.length must beEqualTo(3)
-      s(2) must beEqualTo("description" -> "foo")
+      s.toMap.get("description") must beSome("foo")
     }
 
     "add suppliedStopWords" in {
       val s = baseTree.copy(suppliedStopWords="foo").creationData.toSeq
-      s.length must beEqualTo(3)
-      s(2) must beEqualTo("suppliedStopWords" -> "foo")
+      s.toMap.get("suppliedStopWords") must beSome("foo")
     }
 
     "add importantWords" in {
       val s = baseTree.copy(importantWords="foo").creationData.toSeq
-      s.length must beEqualTo(3)
-      s(2) must beEqualTo("importantWords" -> "foo")
+      s.toMap.get("importantWords") must beSome("foo")
     }
   }
 }

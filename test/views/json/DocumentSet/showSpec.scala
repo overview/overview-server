@@ -4,14 +4,15 @@ import java.util.Date
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-import org.overviewproject.models.Viz
+import org.overviewproject.models.VizLike
 import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag}
 import org.overviewproject.tree.DocumentSetCreationJobType
 
 class showSpec extends Specification with JsonMatchers {
-  private def buildViz(aId: Long, aTitle: String, aJobId: Long, aNDocuments: Int, aCreatedAt: Date, aCreationData: Seq[(String,String)]) : Viz = {
-    new Viz {
+  private def buildViz(aId: Long, aTitle: String, aJobId: Long, aNDocuments: Int, aCreatedAt: Date, aCreationData: Seq[(String,String)]) : VizLike = {
+    new VizLike {
       override val id = aId
+      override val documentSetId = 1L
       override val title = aTitle
       override val jobId = aJobId
       override val createdAt = aCreatedAt

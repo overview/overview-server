@@ -6,7 +6,7 @@ import org.joda.time.DateTimeZone
 import play.api.libs.json.{Json,JsValue,JsArray}
 import scala.collection.mutable.ArrayBuffer
 
-import org.overviewproject.models.Viz
+import org.overviewproject.models.VizLike
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
 import views.helper.DocumentSetHelper.jobDescriptionKeyToMessage
 
@@ -36,21 +36,21 @@ object index {
     )
   }
 
-  private[Viz] def vizToJson(viz: Viz) : JsValue = {
+  private[Viz] def vizToJson(viz: VizLike) : JsValue = {
     val creationData = viz.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
 
     Json.obj(
       "type" -> "viz",
       "id" -> viz.id,
-      "jobId" -> viz.jobId,
+      "jobId" -> viz.jobId, // XXX remove me in VizLike -> Viz change
+      "nDocuments" -> viz.documentCount, // XXX remove in VizLike -> Viz change
       "title" -> viz.title,
       "createdAt" -> dateToISO8601(viz.createdAt),
-      "creationData" -> creationData.toSeq,
-      "nDocuments" -> viz.documentCount
+      "creationData" -> creationData.toSeq
     )
   }
 
-  def apply(vizs: Iterable[Viz], jobs: Iterable[DocumentSetCreationJob]): JsValue = {
+  def apply(vizs: Iterable[VizLike], jobs: Iterable[DocumentSetCreationJob]): JsValue = {
     val values = jobs.map(jobToJson) ++ vizs.map(vizToJson)
     JsArray(values.toSeq)
   }

@@ -5,7 +5,7 @@ import org.specs2.matcher.JsonMatchers
 
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.models.Viz
+import org.overviewproject.models.VizLike
 
 class VizControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
@@ -32,7 +32,7 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
       state=DocumentSetCreationJobState.Error
     )
 
-    def fakeViz(id: Long, jobId: Long) : Viz = Tree( // TODO don't rely on Tree
+    def fakeViz(id: Long, jobId: Long) : VizLike = Tree( // TODO don't rely on Tree
       id=id,
       documentSetId=1L,
       rootNodeId=3L,
@@ -52,7 +52,7 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
         val documentSetId = 1L
         def request = fakeAuthorizedRequest
         def result = controller.indexJson(documentSetId)(request)
-        lazy val vizs : Iterable[Viz] = Seq()
+        lazy val vizs : Iterable[VizLike] = Seq()
         lazy val jobs : Iterable[DocumentSetCreationJob] = Seq()
         mockStorage.findVizs(documentSetId) returns vizs
         mockStorage.findVizJobs(documentSetId) returns jobs
@@ -76,8 +76,8 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
         json must /#(0) /("jobId" -> 3.0)
         json must /#(0) /("title" -> "title1")
         json must /#(0) /("createdAt" -> "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ".r)
-        json must /#(0) /("creationData") /#(1) /("lang")
-        json must /#(0) /("creationData") /#(1) /("en")
+        json must /#(0) /("creationData") /#(3) /("lang")
+        json must /#(0) /("creationData") /#(3) /("en")
         json must /#(0) /("nDocuments" -> 10)
       }
 

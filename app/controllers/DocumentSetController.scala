@@ -2,19 +2,19 @@ package controllers
 
 import play.api.mvc.Controller
 
-import org.overviewproject.jobs.models.CancelFileUpload
-import org.overviewproject.jobs.models.Delete
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree, SearchResult }
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.finders.ResultPage
-
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,SearchResultFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetStore
+import org.overviewproject.jobs.models.CancelFileUpload
+import org.overviewproject.jobs.models.Delete
+import org.overviewproject.models.VizLike
+import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree, SearchResult }
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.finders.ResultPage
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -22,13 +22,6 @@ trait DocumentSetController extends Controller {
   trait Storage {
     /** Returns a DocumentSet from an ID */
     def findDocumentSet(id: Long): Option[DocumentSet]
-
-    /** Returns the ID of the newest Tree in the DocumentSet.
-      *
-      * Throws a RuntimeError if there is no Tree in the DocumentSet. (How's
-      * that for undefined behavior?)
-      */
-    def findNewestTreeId(id: Long): Long
 
     /** Returns an Iterable: for each DocumentSet, the number of Trees.
       *
@@ -49,7 +42,7 @@ trait DocumentSetController extends Controller {
     def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
 
     /** All Vizs for the document set. */
-    def findVizs(documentSetId: Long) : Iterable[Tree]
+    def findVizs(documentSetId: Long) : Iterable[VizLike]
 
     /** All Viz-creation jobs for the document set. */
     def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
@@ -238,13 +231,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     private val FirstSearchableDocumentSetVersion = 2
 
     override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
-
-    override def findNewestTreeId(documentSetId: Long) = {
-      TreeFinder
-        .byDocumentSet(documentSetId)
-        .headOption.map(_.id)
-        .getOrElse(throw new Exception("There must be a tree"))
-    }
 
     override def findNTreesByDocumentSets(documentSetIds: Seq[Long]) = {
       import org.overviewproject.postgres.SquerylEntrypoint._

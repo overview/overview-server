@@ -4,26 +4,28 @@ import java.sql.Timestamp
 import org.squeryl.KeyedEntity
 import scala.collection.mutable.Buffer
 
-import org.overviewproject.models.Viz
+import org.overviewproject.models.VizLike
 
 case class Tree(
     id: Long,
-    documentSetId: Long,
+    override val documentSetId: Long,
     rootNodeId: Long,
     override val jobId: Long,
-    title: String,
+    override val title: String,
     override val documentCount: Int,
     lang: String,
     description: String = "",
     suppliedStopWords: String = "",
     importantWords: String = "",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime))
-  extends KeyedEntity[Long] with DocumentSetComponent with Viz {
+    override val createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime))
+  extends KeyedEntity[Long] with DocumentSetComponent with VizLike {
 
   override def isPersisted(): Boolean = (id > 0)
 
   override def creationData = {
     val buffer = Buffer(
+      "jobId" -> jobId.toString,
+      "nDocuments" -> documentCount.toString,
       "rootNodeId" -> rootNodeId.toString,
       "lang" -> lang
     )
