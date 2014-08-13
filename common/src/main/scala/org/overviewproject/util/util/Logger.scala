@@ -53,8 +53,19 @@ class SLogger(override protected val jLogger: JLogger) extends Logger
   * will prefix messages with the fully-qualified name of MyClass.
   */
 object Logger extends Logger {
-  override protected lazy val jLogger = LoggerFactory.getLogger("WORKER")
+  /*
+   * We create loggers in "synchronized" blocks so that we don't create two at
+   * once. If we did, SLF4J would output a cryptic error message and ignore
+   * everything we tried to log.
+   *
+   * This bug has been around for four years.
+   *
+   * http://bugzilla.slf4j.org/show_bug.cgi?id=176
+   */
 
-  /** Use this rather than using static Logger */
-  def forClass(clazz: Class[_]): Logger = new SLogger(LoggerFactory.getLogger(clazz))
+  /** Used internally for a static Logger interface. */
+  override protected lazy val jLogger = synchronized { LoggerFactory.getLogger("WORKER") }
+
+  /** Use this to create a more useful Logger. */
+  def forClass(clazz: Class[_]): Logger = synchronized { new SLogger(LoggerFactory.getLogger(clazz)) }
 }
