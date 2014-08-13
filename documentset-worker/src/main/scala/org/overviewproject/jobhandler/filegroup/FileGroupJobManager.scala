@@ -41,20 +41,12 @@ trait FileGroupJobManager extends Actor {
   protected val fileGroupJobQueue: ActorRef
   protected val clusteringJobQueue: ActorRef
 
-  protected val storage: Storage
+  protected val storage: FileGroupJobManager.Storage
 
   private val runningJobs: mutable.Map[Long, FileGroupJob] = mutable.Map.empty
   private val cancellingJobs: mutable.Map[Long, Long] = mutable.Map.empty
 
   private case class UpdateJobStateRetryAttempt(command: ClusterFileGroupCommand, count: Int)
-
-  trait Storage {
-    def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob]
-    def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob]
-    def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob]
-    def failJob(job: DocumentSetCreationJob): Unit
-    def increaseRetryAttempts(job: DocumentSetCreationJob): Unit
-  }
 
   override def preStart(): Unit = {
     storage.findValidInProgressUploadJobs.foreach { j =>
@@ -66,7 +58,7 @@ trait FileGroupJobManager extends Actor {
     }
   }
 
-  def receive = {
+  override def receive = {
 
     case command: ClusterFileGroupCommand => attemptUpdateJobState(command, 0)
 
@@ -79,13 +71,15 @@ trait FileGroupJobManager extends Actor {
 
   }
 
-  private def attemptUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit =
+  private def attemptUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit = {
     storage.updateJobState(command.documentSetId).map(queueCreateDocumentsJob)
       .getOrElse(limitedRetryUpdateJobState(command, count))
+  }
 
-  private def limitedRetryUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit =
+  private def limitedRetryUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit = {
     if (count < MaxRetryAttempts) retryUpdateJobState(command, count + 1)
     else logger.error("Trying to cluster non-existent job for document set {}", command.documentSetId)
+  }
 
   private def retryUpdateJobState(command: ClusterFileGroupCommand, attempt: Int): Unit = {
     import context.dispatcher
@@ -99,8 +93,9 @@ trait FileGroupJobManager extends Actor {
 
   private def failJob(job: DocumentSetCreationJob): Unit = storage.failJob(job)
 
-  private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit =
+  private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit = {
     submitToFileGroupJobQueue(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get))
+  }
 
   private def submitToFileGroupJobQueue(documentSetId: Long, job: FileGroupJob): Unit = {
     runningJobs += (documentSetId -> job)
@@ -121,18 +116,18 @@ trait FileGroupJobManager extends Actor {
     fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
   }
 
-  private def deleteCancelledJobFileGroup(documentSetId: Long) =
+  private def deleteCancelledJobFileGroup(documentSetId: Long) = {
     cancellingJobs.remove(documentSetId).map { fileGroupId =>
       submitToFileGroupJobQueue(documentSetId, DeleteFileGroupJob(fileGroupId))
     }
-
+  }
 }
 
 class FileGroupJobManagerImpl(
     override protected val fileGroupJobQueue: ActorRef,
     override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager {
 
-  class DatabaseStorage extends Storage {
+  class DatabaseStorage extends FileGroupJobManager.Storage {
 
     override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = Database.inTransaction {
       val jobs = DocumentSetCreationJobFinder.byState(TextExtractionInProgress)
@@ -165,6 +160,13 @@ class FileGroupJobManagerImpl(
 }
 
 object FileGroupJobManager {
+  trait Storage {
+    def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob]
+    def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob]
+    def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob]
+    def failJob(job: DocumentSetCreationJob): Unit
+    def increaseRetryAttempts(job: DocumentSetCreationJob): Unit
+  }
 
   def apply(fileGroupJobQueue: ActorRef, clusteringJobQueue: ActorRef): Props =
     Props(new FileGroupJobManagerImpl(fileGroupJobQueue, clusteringJobQueue))

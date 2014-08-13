@@ -30,7 +30,7 @@ trait StorageMonitor extends JobParameters {
   val increaseRetryAttemptFn = ParameterStore[DocumentSetCreationJob]
   val failJobFn = ParameterStore[DocumentSetCreationJob]
   
-  class MockStorage extends Storage {
+  class MockStorage extends FileGroupJobManager.Storage {
     override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = loadInterruptedJobs
     override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = loadCancelledJobs
 
