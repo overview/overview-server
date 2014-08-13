@@ -17,7 +17,7 @@ trait JobParameters {
   protected val suppliedStopWords = "stop words"
 
   protected val clusterCommand =
-    ClusterFileGroupCommand(documentSetId, fileGroupId, title, lang, suppliedStopWords, importantWords)
+    ClusterFileGroupCommand(documentSetId, fileGroupId, title, lang, splitDocuments, suppliedStopWords, importantWords)
   protected val cancelCommand = CancelClusterFileGroupCommand(documentSetId, fileGroupId)
 
 }

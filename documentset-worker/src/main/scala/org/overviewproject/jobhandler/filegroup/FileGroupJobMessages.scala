@@ -9,6 +9,7 @@ object FileGroupJobMessages {
     fileGroupId: Long,
     title: String,
     lang: String,
+    splitDocuments: Boolean,
     suppliedStopWords: String,
     importantWords: String) extends Command
 
