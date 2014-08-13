@@ -12,5 +12,6 @@
     <logger name="com.jolbox.bonecp.BoneCP" level="WARN"/>
 
     <!-- try to be silent during tests -->
+    <logger name="org.overviewproject" level="OFF"/>
     <logger name="WORKER" level="OFF"/>
 </configuration>
