@@ -16,6 +16,9 @@ import controllers.auth.AuthorizedRequest
 import models.OverviewUser
 import models.{ Session, User }
 import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,FileGroup,GroupedFileUpload}
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+
 
 class MassUploadControllerSpec extends Specification with Mockito {
 
@@ -202,7 +205,8 @@ class MassUploadControllerSpec extends Specification with Mockito {
         ("supplied_stop_words" -> stopWords),
         ("important_words") -> importantWords)
       val documentSetId = 11l
-
+      val job = mock[DocumentSetCreationJob]
+      
       override def executeRequest = {
         val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user.toUser)
         controller.startClustering(request)
@@ -214,6 +218,8 @@ class MassUploadControllerSpec extends Specification with Mockito {
         documentSet.id returns documentSetId
 
         controller.storage.createDocumentSet(user.email, fileGroupName, lang) returns documentSet
+        controller.storage.createMassUploadDocumentSetCreationJob(
+            documentSetId, fileGroupId, lang, splitDocuments, stopWords, importantWords) returns job
       }
     }
 
@@ -222,9 +228,8 @@ class MassUploadControllerSpec extends Specification with Mockito {
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(
         documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
-      there was one(controller.messageQueue).startClustering(any[DocumentSetCreationJob], fileGroupName)
-      failure
-    }.pendingUntilFixed("Until we figure out how to send messages outside transaction")
+      there was one(controller.messageQueue).startClustering(job, fileGroupName)
+    }
 
     "set splitDocuments=true when asked" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
       override val splitDocumentsString = "true"
