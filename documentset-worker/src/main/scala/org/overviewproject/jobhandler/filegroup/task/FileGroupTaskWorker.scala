@@ -22,7 +22,7 @@ object FileGroupTaskWorkerProtocol {
   }
 
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
-  case class CreateDocumentsTask(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
+  case class CreateDocumentsTask(documentSetId: Long, fileGroupId: Long, splitDocuments: Boolean) extends TaskWorkerTask
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
 
   case class TaskDone(documentSetId: Long, outputId: Option[Long])
@@ -65,7 +65,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private var jobQueue: ActorRef = _
 
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
-  protected def startCreateDocumentsTask(documentSetId: Long): FileGroupTaskStep = ???
+  protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep = ???
   
   protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
 
@@ -97,8 +97,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       executeTaskStep(startCreatePagesTask(documentSetId, uploadedFileId))
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
     }
-    case Event(CreateDocumentsTask(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
-      executeTaskStep(startCreateDocumentsTask(documentSetId))
+    case Event(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments), JobQueue(jobQueue)) => {
+      executeTaskStep(startCreateDocumentsTask(documentSetId, splitDocuments))
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, 0)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {

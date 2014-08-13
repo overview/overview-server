@@ -19,7 +19,7 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String, outpu
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     StepInSequence(1, CreatePagesProcessComplete(documentSetId, uploadedFileId, Some(outputFileId)))
 
-  override protected def startCreateDocumentsTask(documentSetId: Long): FileGroupTaskStep =
+  override protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep =
     StepInSequence(1, CreateDocumentsProcessComplete(documentSetId))
     
   override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit =

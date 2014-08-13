@@ -47,7 +47,7 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     "step through CreateDocumentsTask" in new RunningTaskWorkerContext {
-      createJobQueue.handingOutTask(CreateDocumentsTask(documentSetId, fileGroupId))
+      createJobQueue.handingOutTask(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments = true))
 
       createWorker
       jobQueueProbe.expectInitialReadyForTask
