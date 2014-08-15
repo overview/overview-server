@@ -6,6 +6,7 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 import org.squeryl.Query
+import org.squeryl.dsl.Measures
 
 object DocumentFinder extends Finder {
 
@@ -13,6 +14,7 @@ object DocumentFinder extends Finder {
 
     def toFileIds: FinderResult[Option[Long]] =
       from(query)(d => select(d.fileId))
+
   }
 
   implicit private def queryToDocumentFinderResult(query: Query[Document]): DocumentFinderResult = new DocumentFinderResult(query)
@@ -24,4 +26,8 @@ object DocumentFinder extends Finder {
   def byDocumentSet(documentSetId: Long): DocumentFinderResult =
     Schema.documents.where(d => d.documentSetId === documentSetId)
 
+  def maxId(documentSetId: Long): Option[Long] =
+    from(Schema.documents)(d =>
+      where(d.documentSetId === documentSetId)
+        compute (max(d.id)))
 }

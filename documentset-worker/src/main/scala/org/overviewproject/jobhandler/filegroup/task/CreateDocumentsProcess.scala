@@ -5,27 +5,27 @@ import org.overviewproject.tree.orm.File
 
 trait CreateDocumentsProcess {
 
-  protected val documentIdGenerator: DocumentIdGenerator
+  protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator
   
   def startCreateDocumentsTask(documentSetId: Long): FileGroupTaskStep =
-    CreateDocumentsFromFileQueryPage(documentSetId, 0)
+    CreateDocumentsFromFileQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId))
 
-  private case class CreateDocumentsFromFileQueryPage(documentSetId: Long, queryPage: Int) extends FileGroupTaskStep {
+  private case class CreateDocumentsFromFileQueryPage(documentSetId: Long, queryPage: Int, documentIdGenerator: DocumentIdGenerator) extends FileGroupTaskStep {
 
     override def execute: FileGroupTaskStep = {
-      val files = storage.findFilesQueryPage(documentSetId, queryPage)
+      val files = createDocumentsProcessStorage.findFilesQueryPage(documentSetId, queryPage)
 
       if (files.nonEmpty) {
         val documents = files.map(createDocument(documentSetId, _))
-        storage.writeDocuments(documents)
+        createDocumentsProcessStorage.writeDocuments(documents)
 
-        CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1)
+        CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator)
       }
       else CreateDocumentsProcessComplete(documentSetId)
     }
 
     private def createDocument(documentSetId: Long, file: File) = {
-      val pages = storage.findFilePageData(file.id)
+      val pages = createDocumentsProcessStorage.findFilePageData(file.id)
 
       val text = pages.foldLeft("")((text, page) => text + page._3.getOrElse(""))
 
@@ -37,11 +37,11 @@ trait CreateDocumentsProcess {
     }
   }
 
-  protected val storage: Storage
+  protected val createDocumentsProcessStorage: CreateDocumentsProcessStorage
 
-  protected trait Storage {
+  protected trait CreateDocumentsProcessStorage {
     def findFilesQueryPage(documentSetId: Long, queryPage: Int): Iterable[File]
     def findFilePageData(fileId: Long): Iterable[(Long, Int, Option[String])]
-    def writeDocuments(documents: Iterable[Document]): Int
+    def writeDocuments(documents: Iterable[Document]): Unit
   }
 }

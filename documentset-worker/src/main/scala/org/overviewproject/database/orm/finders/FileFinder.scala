@@ -13,5 +13,12 @@ object FileFinder extends Finder {
       where(dsf.documentSetId === documentSetId and dsf.fileId === f.id)
       select (f))
     
+  def byDocumentSetPaged(documentSetId: Long, page: Int, pageSize: Int): FileFinderResult = {
+    val offset = page * pageSize
+    from(tempDocumentSetFiles, files)((dsf, f) =>
+      where(dsf.documentSetId === documentSetId and dsf.fileId === f.id)
+      select(f)
+      orderBy(f.id)).page(offset, pageSize)
+  }
 
 }

@@ -22,7 +22,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
       firstStep.execute
 
-      there was one(createDocumentsProcess.storage).writeDocuments(documents)
+      there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documents)
     }
 
     "create documents for all page results" in {
@@ -40,8 +40,8 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       val thirdStep = secondStep.execute
       val finalStep = thirdStep.execute
 
-      there was atLeastOne(createDocumentsProcess.storage).writeDocuments(documentsPage1) //andThen
-      there was atLeastOne(createDocumentsProcess.storage).writeDocuments(documentsPage2)
+      there was atLeastOne(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documentsPage1) //andThen
+      there was atLeastOne(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documentsPage2)
 
       finalStep must haveClass[CreateDocumentsProcessComplete]
     }
@@ -74,13 +74,13 @@ class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (S
   private val filesPage1 = files.take(pageSize)
   private val filesPage2 = files.drop(pageSize)
 
-  override val storage = smartMock[Storage]
+  override val createDocumentsProcessStorage = smartMock[CreateDocumentsProcessStorage]
 
-  storage.findFilesQueryPage(documentSetId, 0) returns filesPage1
-  storage.findFilesQueryPage(documentSetId, 1) returns filesPage2
-  storage.findFilesQueryPage(documentSetId, 2) returns Seq.empty
+  createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 0) returns filesPage1
+  createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 1) returns filesPage2
+  createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 2) returns Seq.empty
 
-  storage.findFilePageData(anyLong) answers { p =>
+  createDocumentsProcessStorage.findFilePageData(anyLong) answers { p =>
     val n = p.asInstanceOf[Long]
 
     val pageData = documentData.get(n).map(d =>
@@ -89,7 +89,7 @@ class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (S
     pageData
   }
 
-  override protected val documentIdGenerator = new TestDocumentIdGenerator(documentSetId)
+  override protected def getDocumentIdGenerator(documentSetId: Long) = new TestDocumentIdGenerator(documentSetId)
 
   class TestDocumentIdGenerator(override val documentSetId: Long) extends DocumentIdGenerator {
 
