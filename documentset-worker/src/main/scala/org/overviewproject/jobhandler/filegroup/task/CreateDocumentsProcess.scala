@@ -7,7 +7,7 @@ trait CreateDocumentsProcess {
 
   protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator
   
-  def startCreateDocumentsTask(documentSetId: Long): FileGroupTaskStep =
+  def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep =
     CreateDocumentsFromFileQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId))
 
   private case class CreateDocumentsFromFileQueryPage(documentSetId: Long, queryPage: Int, documentIdGenerator: DocumentIdGenerator) extends FileGroupTaskStep {

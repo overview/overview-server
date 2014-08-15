@@ -18,7 +18,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
       val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
 
-      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId)
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
 
       firstStep.execute
 
@@ -35,7 +35,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
       val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
 
-      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId)
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
       val secondStep = firstStep.execute
       val thirdStep = secondStep.execute
       val finalStep = thirdStep.execute

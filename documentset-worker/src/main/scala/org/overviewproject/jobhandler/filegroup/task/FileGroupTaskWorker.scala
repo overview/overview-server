@@ -65,7 +65,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private var jobQueue: ActorRef = _
 
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
-  protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep = ???
+  protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep
   
   protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
 

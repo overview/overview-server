@@ -30,6 +30,9 @@ class GatedTaskWorker(override protected val jobQueuePath: String, cancelFn: Par
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     new GatedTask(taskGate.future)
 
+  override protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep = 
+    new GatedTask(taskGate.future)
+  
   override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = {}
 
   private def manageTaskGate: PartialFunction[Any, Unit] = {
