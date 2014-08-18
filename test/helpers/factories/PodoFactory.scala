@@ -1,6 +1,7 @@
 package test.helpers.factories
 
 import java.sql.Timestamp
+import play.api.libs.json.JsObject
 import scala.util.Random
 
 import org.overviewproject.models._
@@ -17,7 +18,26 @@ import org.overviewproject.util.DocumentSetVersion
 object PodoFactory extends Factory {
   private val random = new Random()
 
-  private def getId(idOr0: Long) = if (idOr0 == 0L) random.nextLong else idOr0
+  /** Generate a non-conflicting ID, if the passed parameter is 0L. */
+  private def getId(idOr0: Long): Long = {
+    if (idOr0 == 0L) {
+      random.nextLong
+    } else {
+      idOr0
+    }
+  }
+
+  /** Generate a non-conflicting ID, if the passed parameter is 0L.
+    *
+    * The ID will be a positive Int cast to a Long.
+    */
+  private def get32BitId(idOr0: Long): Long = {
+    if (idOr0 == 0L) {
+      math.abs(random.nextInt)
+    } else {
+      idOr0
+    }
+  }
 
   override def document(
     id: Long = 0L,
@@ -58,7 +78,7 @@ object PodoFactory extends Factory {
     version: Int = DocumentSetVersion.current,
     deleted: Boolean = false
   ) = DocumentSet(
-    getId(id),
+    get32BitId(id),
     title,
     query,
     isPublic,
@@ -69,6 +89,16 @@ object PodoFactory extends Factory {
     uploadedFileId,
     version,
     deleted
+  )
+
+  override def documentVizObject(
+    documentId: Long = 0L,
+    vizObjectId: Long = 0L,
+    json: Option[JsObject] = None
+  ) = DocumentVizObject(
+    documentId,
+    vizObjectId,
+    json
   )
 
   override def searchResult(
@@ -89,4 +119,36 @@ object PodoFactory extends Factory {
     documentId: Long,
     searchResultId: Long
   ) = DocumentSearchResult(documentId, searchResultId)
+
+  override def viz(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    url: String = "http://example.org",
+    apiToken: String = "api-token",
+    title: String = "title",
+    createdAt: Timestamp = new Timestamp(0L),
+    json: JsObject = JsObject(Seq())
+  ) = Viz(
+    getId(id),
+    getId(documentSetId),
+    url,
+    apiToken,
+    title,
+    createdAt,
+    json
+  )
+
+  override def vizObject(
+    id: Long = 0L,
+    vizId: Long = 0L,
+    indexedLong: Option[Long] = None,
+    indexedString: Option[String] = None,
+    json: JsObject = JsObject(Seq())
+  ) = VizObject(
+    getId(id),
+    getId(vizId),
+    indexedLong,
+    indexedString,
+    json
+  )
 }

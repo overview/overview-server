@@ -1,8 +1,8 @@
 package test.helpers.factories
 
 import java.sql.{Connection,Timestamp}
+import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
-import scala.util.Random
 
 import org.overviewproject.models._
 import org.overviewproject.models.tables._
@@ -80,6 +80,20 @@ class DbFactory(connection: Connection) extends Factory {
     documentSet
   }
 
+  override def documentVizObject(
+    documentId: Long = 0L,
+    vizObjectId: Long = 0L,
+    json: Option[JsObject] = None
+  ) = {
+    val dvo = podoFactory.documentVizObject(
+      documentId,
+      vizObjectId,
+      json
+    )
+    DbFactory.queries.insertDocumentVizObject += dvo
+    dvo
+  }
+
   override def searchResult(
     id: Long = 0L,
     state: SearchResultState.Value = SearchResultState.Complete,
@@ -109,6 +123,46 @@ class DbFactory(connection: Connection) extends Factory {
     DbFactory.queries.insertDocumentSearchResult += documentSearchResult
     documentSearchResult
   }
+
+  override def viz(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    url: String = "http://example.org",
+    apiToken: String = "api-token",
+    title: String = "title",
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+    json: JsObject = JsObject(Seq())
+  ) = {
+    val viz = podoFactory.viz(
+      id,
+      documentSetId,
+      url,
+      apiToken,
+      title,
+      createdAt,
+      json
+    )
+    DbFactory.queries.insertViz += viz
+    viz
+  }
+
+  override def vizObject(
+    id: Long = 0L,
+    vizId: Long = 0L,
+    indexedLong: Option[Long] = None,
+    indexedString: Option[String] = None,
+    json: JsObject = JsObject(Seq())
+  ) = {
+    val vizObject = podoFactory.vizObject(
+      id,
+      vizId,
+      indexedLong,
+      indexedString,
+      json
+    )
+    DbFactory.queries.insertVizObject += vizObject
+    vizObject
+  }
 }
 
 object DbFactory {
@@ -117,8 +171,11 @@ object DbFactory {
 
     // Compile queries once, instead of once per test
     val insertDocument = (Documents returning Documents).insertInvoker
-    val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
-    val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
     val insertDocumentSearchResult = (DocumentSearchResults returning DocumentSearchResults).insertInvoker
+    val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
+    val insertDocumentVizObject = (DocumentVizObjects returning DocumentVizObjects).insertInvoker
+    val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
+    val insertViz = (Vizs returning Vizs).insertInvoker
+    val insertVizObject = (VizObjects returning VizObjects).insertInvoker
   }
 }

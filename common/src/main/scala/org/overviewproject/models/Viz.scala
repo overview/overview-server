@@ -56,4 +56,35 @@ case class Viz(
   json: JsObject
 ) extends VizLike {
   override def creationData = json.value.mapValues(_.toString)
+
+  def update(attributes: Viz.UpdateAttributes): Viz = copy(
+    title=attributes.title,
+    json=attributes.json
+  )
+}
+
+object Viz {
+  /** The parts of a Viz the user may set when creating it */
+  case class CreateAttributes(
+    url: String,
+    apiToken: String,
+    title: String,
+    json: JsObject
+  )
+
+  /** The parts of a Viz the user may set when modifying it */
+  case class UpdateAttributes(
+    title: String,
+    json: JsObject
+  )
+
+  def build(id: Long, documentSetId: Long, attributes: Viz.CreateAttributes) = Viz(
+    id=id,
+    documentSetId=documentSetId,
+    url=attributes.url,
+    apiToken=attributes.apiToken,
+    title=attributes.title,
+    createdAt=new Timestamp(scala.compat.Platform.currentTime),
+    json=attributes.json
+  )
 }

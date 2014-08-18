@@ -20,5 +20,33 @@ case class VizObject(
   vizId: Long,
   indexedLong: Option[Long],
   indexedString: Option[String],
-  data: JsObject
-)
+  json: JsObject
+) {
+  def update(attributes: VizObject.UpdateAttributes): VizObject = copy(
+    indexedLong=attributes.indexedLong,
+    indexedString=attributes.indexedString,
+    json=attributes.json
+  )
+}
+
+object VizObject {
+  case class CreateAttributes(
+    indexedLong: Option[Long],
+    indexedString: Option[String],
+    json: JsObject
+  )
+
+  case class UpdateAttributes(
+    indexedLong: Option[Long],
+    indexedString: Option[String],
+    json: JsObject
+  )
+
+  def build(id: Long, vizId: Long, attributes: CreateAttributes): VizObject = VizObject(
+    id,
+    vizId,
+    attributes.indexedLong,
+    attributes.indexedString,
+    attributes.json
+  )
+}

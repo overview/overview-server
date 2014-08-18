@@ -17,7 +17,7 @@ class VizObjectsImpl(tag: Tag) extends Table[VizObject](tag, "viz_object") {
   def indexedString = column[Option[String]]("indexed_string")
   def json = column[JsObject]("json_text")
 
-  def * = (id, vizId, indexedLong, indexedString, json) <> (VizObject.tupled, VizObject.unapply)
+  def * = (id, vizId, indexedLong, indexedString, json) <> ((VizObject.apply _).tupled, VizObject.unapply)
 }
 
 object VizObjects extends TableQuery(new VizObjectsImpl(_))

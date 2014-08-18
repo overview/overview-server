@@ -1,6 +1,7 @@
 package test.helpers.factories
 
 import java.sql.Timestamp
+import play.api.libs.json.JsObject
 
 import org.overviewproject.models._
 import org.overviewproject.tree.orm._
@@ -51,6 +52,12 @@ trait Factory {
     deleted: Boolean = false
   ): DocumentSet
 
+  def documentVizObject(
+    documentId: Long = 0L,
+    vizObjectId: Long = 0L,
+    json: Option[JsObject] = None
+  ): DocumentVizObject
+
   def searchResult(
     id: Long = 0L,
     state: SearchResultState.Value = SearchResultState.Complete,
@@ -63,4 +70,22 @@ trait Factory {
     documentId: Long,
     searchResultId: Long
   ): DocumentSearchResult
+
+  def viz(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    url: String = "http://example.org",
+    apiToken: String = "api-token",
+    title: String = "title",
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+    json: JsObject = JsObject(Seq())
+  ): Viz
+
+  def vizObject(
+    id: Long = 0L,
+    vizId: Long = 0L,
+    indexedLong: Option[Long] = None,
+    indexedString: Option[String] = None,
+    json: JsObject = JsObject(Seq())
+  ): VizObject
 }

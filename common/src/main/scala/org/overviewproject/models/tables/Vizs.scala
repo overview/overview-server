@@ -20,7 +20,7 @@ class VizsImpl(tag: Tag) extends Table[Viz](tag, "viz") {
   def createdAt = column[Timestamp]("created_at")
   def json = column[JsObject]("json_text")
 
-  def * = (id, documentSetId, url, apiToken, title, createdAt, json) <> (Viz.tupled, Viz.unapply)
+  def * = (id, documentSetId, url, apiToken, title, createdAt, json) <> ((Viz.apply _).tupled, Viz.unapply)
 }
 
 object Vizs extends TableQuery(new VizsImpl(_))
