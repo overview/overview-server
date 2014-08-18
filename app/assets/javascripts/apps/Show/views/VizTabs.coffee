@@ -55,8 +55,10 @@ define [
           <dt class="title"><%- t('viz.title.dt') %></dt>
           <dd class="title"><%- t('viz.title.dd', viz.title) %></dd>
 
-          <dt class="n-documents"><%- t('viz.nDocuments.dt') %></dt>
-          <dd class="n-documents"><%- t('viz.nDocuments.dd', viz.nDocuments, documentSet.nDocuments) %></dd>
+          <% if (viz.nDocuments) { %>
+            <dt class="n-documents"><%- t('viz.nDocuments.dt') %></dt>
+            <dd class="n-documents"><%- t('viz.nDocuments.dd', viz.nDocuments, documentSet.nDocuments) %></dd>
+          <% } %>
 
           <% if (viz.createdAt) { %>
             <dt class="created-at"><%- t('viz.createdAt.dt') %></dt>
