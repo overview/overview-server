@@ -46,15 +46,16 @@
   } {
     <form class="csv-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
       <div>
-        <p><label>@m("label.file") <input type="file" name="file" /></label></p>
+        <p class="file">
+          <label for="csv-upload-file">@m("label.file")</label>
+          <input type="file" id="csv-upload-file" name="file" /></label>
+        </p>
         <p class="charset">
-          <label>
-            @m("label.charset")
-            <select name="charset">
-              <option value="UTF-8" selected="selected">@m("charset.utf8")</option>
-              <option value="windows-1252">@m("charset.windows1252")</option>
-            </select>
-          </label>
+          <label for="csv-upload-charset">@m("label.charset")</label>
+          <select id="csv-upload-charset" name="charset">
+            <option value="UTF-8" selected="selected">@m("charset.utf8")</option>
+            <option value="windows-1252">@m("charset.windows1252")</option>
+          </select>
         </p>
         <div class="requirements">
           <p class="help">@Html(m("help.requirements_html"))</p>
