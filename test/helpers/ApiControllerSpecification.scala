@@ -4,7 +4,8 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.mvc.{Action,AnyContent,AnyContentAsEmpty,Headers,Request,Result}
+import play.api.libs.json.JsValue
+import play.api.mvc.{Action,AnyContent,AnyContentAsEmpty,AnyContentAsJson,Headers,Request,Result}
 import play.api.http.{HeaderNames,Status}
 import play.api.test.{DefaultAwaitTimeout,FakeRequest,ResultExtractors,FutureAwaits}
 import scala.concurrent.Future
@@ -32,11 +33,14 @@ trait ApiControllerSpecification
     def fakeRequest[T](body: T): ApiAuthorizedRequest[T] = {
       new ApiAuthorizedRequest(FakeRequest().withBody(body), fakeApiToken)
     }
+    def fakeJsonRequest(body: JsValue): ApiAuthorizedRequest[AnyContentAsJson] = {
+      new ApiAuthorizedRequest(FakeRequest().withJsonBody(body), fakeApiToken)
+    }
     def fakeRequest: ApiAuthorizedRequest[AnyContent] = fakeRequest(AnyContentAsEmpty)
 
     lazy val apiToken = fakeApiToken
     lazy val request: ApiAuthorizedRequest[AnyContent] = fakeRequest
-    def action: Action[AnyContent]
+    def action: Action[AnyContent] = ???
     lazy val result: Future[Result] = action(request)
   }
 }

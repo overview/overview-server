@@ -25,7 +25,7 @@ object Authorities {
     override def apply(user: OverviewUser) = user.ownsDocumentSet(id)
     override def apply(apiToken: ApiToken) = Future(apiToken.documentSetId == id)
   }
-  
+
   /** Allows any user who is owner of the DocumentSet associated with the given Tree ID */
   def userOwningTree(id: Long) = new Authority {
     override def apply(user: OverviewUser) = user.isAllowedTree(id)
@@ -52,6 +52,22 @@ object Authorities {
           case true => userOwningTree(treeId)(apiToken)
           case false => Future(false)
         })
+    }
+  }
+
+  /** Allows any user who is owner of the given Viz */
+  def userOwningViz(id: Long) = new Authority {
+    override def apply(user: OverviewUser) = ???
+
+    override def apply(apiToken: ApiToken) = Future {
+      OverviewDatabase.withSlickSession { implicit session =>
+        import org.overviewproject.database.Slick.simple._
+        import org.overviewproject.models.tables.Vizs
+        Vizs
+          .where(_.id === id)
+          .where(_.apiToken === apiToken.token)
+          .length.run == 1
+      }
     }
   }
   
