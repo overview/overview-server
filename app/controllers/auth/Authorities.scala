@@ -70,6 +70,24 @@ object Authorities {
       }
     }
   }
+
+  /** Allows any user who is owner of the given VizObject */
+  def userOwningVizObject(vizId: Long, id: Long) = new Authority {
+    override def apply(user: OverviewUser) = ???
+
+    override def apply(apiToken: ApiToken) = Future {
+      OverviewDatabase.withSlickSession { implicit session =>
+        import org.overviewproject.database.Slick.simple._
+        import org.overviewproject.models.tables.{Vizs,VizObjects}
+
+        val allowedVizs = for {
+          vo <- VizObjects if vo.id === id && vo.vizId === vizId
+          v <- Vizs if vo.vizId === v.id && v.apiToken === apiToken.token
+        } yield (1)
+        allowedVizs.length.run == 1
+      }
+    }
+  }
   
   /** Allows any user who is a viewer of the given DocumentSet ID. */
   def userViewingDocumentSet(id: Long) = new Authority {
