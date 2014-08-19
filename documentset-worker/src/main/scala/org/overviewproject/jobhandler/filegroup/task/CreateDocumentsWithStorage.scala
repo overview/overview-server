@@ -5,7 +5,12 @@ import org.overviewproject.tree.orm.Document
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.FileFinder
 import org.overviewproject.database.orm.finders.PageFinder
+import org.overviewproject.database.orm.Schema.{ documentProcessingErrors, documentSets }
 import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.database.orm.finders.DocumentFinder
+import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+import org.overviewproject.database.orm.finders.FinderById
+
 
 trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
   private val PageSize = 50
@@ -29,5 +34,22 @@ trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
       documentStore.insertBatch(documents)
     }
     
+    def saveDocumentCount(documentSetId: Long): Unit = Database.inTransaction {
+      val documentProcessingErrorFinder = DocumentSetComponentFinder(documentProcessingErrors)
+      val documentSetFinder = new FinderById(documentSets)
+      val documentSetStore = BaseStore(documentSets)
+      
+      val numberOfDocuments = DocumentFinder.byDocumentSet(documentSetId).count.toInt
+      val numberOfDocumentProcessingErrors = documentProcessingErrorFinder.byDocumentSet(documentSetId).count.toInt
+      
+      val documentSet = documentSetFinder.byId(documentSetId).headOption
+      
+      documentSet.map { ds =>
+        val updatedDocumentSet = ds.copy(documentCount = numberOfDocuments,
+            documentProcessingErrorCount = numberOfDocumentProcessingErrors)  
+            
+        documentSetStore.insertOrUpdate(updatedDocumentSet)
+      }
+    }
   }
 }

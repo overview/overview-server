@@ -21,7 +21,10 @@ trait CreateDocumentsProcess {
 
         CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator)
       }
-      else CreateDocumentsProcessComplete(documentSetId)
+      else {
+        createDocumentsProcessStorage.saveDocumentCount(documentSetId)
+        CreateDocumentsProcessComplete(documentSetId)
+      }
     }
 
     private def createDocument(documentSetId: Long, file: File) = {
@@ -43,5 +46,6 @@ trait CreateDocumentsProcess {
     def findFilesQueryPage(documentSetId: Long, queryPage: Int): Iterable[File]
     def findFilePageData(fileId: Long): Iterable[(Long, Int, Option[String])]
     def writeDocuments(documents: Iterable[Document]): Unit
+    def saveDocumentCount(documentSetId: Long): Unit
   }
 }
