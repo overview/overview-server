@@ -1,0 +1,180 @@
+FORMAT: 1A
+HOST: https://www.overviewproject.org
+
+# The Overview Project
+The Overview Project API lets you manipulate document sets and related objects from
+https://www.overviewproject.org.
+
+## Authentication
+
+You'll need three special pieces of information to access all endpoints:
+
+* Your **Document Set ID**. Browse to your document set and look for the URL like: https://www.overviewproject.org/documentsets/{documentSetId}.
+* Your **API Token**.  Browse to https://www.overviewproject.org/documentsets/{documentSetId}/api-tokens to create one for your document set.
+* Your **Viz ID**. TODO: give users a way to create Viz IDs....
+
+Got all that? Great. Now, for every request, add an `Authorization` header of `Basic {base64Encode(apiToken + ":x-auth-token")}`.
+
+## HTTPS
+
+We do not support HTTP. Use nothing but HTTPS.
+
+# Group Document Sets
+A **Document Set** is a collection of documents.
+
+We currently do not support any methods that read or write Document Set data.
+
+# Group Tags
+A **Tag** is a label that can apply to documents.
+
+## Tags Collection [/document-sets/{documentSetId}/tags]
+
++ Parameters
+    + documentSetId (number,required,`1`) ... The DocumentSet ID.
+
+### List all Tags [GET]
++ Response 200 (application/json)
+
+        [{
+          "id": 1, "name": "foo", "color": "#abcdef"
+        }, {
+          "id": 2, "name": "bar", "color": "#123456"
+        }]
+
+# Group Vizs
+A **Viz** is a program that lets a user interact with a single Document Set.
+
+In other words: *your program* is a Viz. This API lets you store information about it.
+
+A Viz's `title` is visible on the Overview Project website. A Viz's `json` is private: only the Viz
+itself may choose to display it somewhere.
+
+## Viz [/vizs/{id}]
+A single Viz object with all its details.
+
+The Viz resource has the following attributes:
+
+- id: The ID of this Viz, unique among all Vizs
+- url: The URL of this Viz. Overview may link to and fetch from sub-URLs
+- apiToken: The API token this Viz is using. This is a secret; presumably the Viz already knows it
+- title: The title of the Viz. Overview will display this title to users
+- createdAt: The time the Viz was created
+- json: Arbitrary JSON: the Viz's scratchpad
+
++ Parameters
+    + id (required, number, `1`) ... The Viz ID.
+    
++ Model (application/json)
+    
+        {
+          "id": 1,
+          "url": "http://my-viz-site.com",
+          "apiToken": "my-viz-api-token",
+          "title": "My Viz Title",
+          "createdAt": "2014-08-19T15:50:43.334Z",
+          "json": { "foo": "bar" }
+        }  
+    
+### Retrieve a Viz [GET]
++ Response 200
+
+    [Viz][]
+
+### Edit a Viz [PUT]
++ Request (application/json)
+
+        {
+          "title": "My Viz Title",
+          "json": { "foo": "bar" }
+        }
+        
++ Response 200
+
+    [Viz][]
+
+# Group VizObjects
+A **VizObject** is something your Viz stores.
+
+Think of a VizObject like a tag. Each VizObject has some metadata (e.g., a title), and it can be linked zero, one or many Documents.
+
+This description is intentionally vague. VizObjects won't handle everybody's needs, but they
+should cover a broad set of applications, and they're reasonably efficient.
+
+## VizObject [/vizs/{vizId}/objects/{id}]
+
++ Parameters
+    + vizId (required, number, `1`) ... The *Viz* ID.
+    + id (required, number, `2`) ... The *VizObject* ID.
+
++ Model (application/json)
+
+        {
+            "id": 2,
+            "indexedLong": 4,
+            "indexedString": null,
+            "json": { "foo": 4 }
+        }
+        
+### Retrieve a VizObject [GET]
+
++ Response 200
+
+    [VizObject][]
+    
+### Edit a VizObject [PUT]
+You need only provide a JSON Object with a `json` property to update a VizObject.
+
+If you plan on creating hundreds or more VizObjects, you'll probably want a way to search
+them. You can pass an `indexedLong` and/or `indexedString` property to help.
+
++ Request (application/json)
+
+        {
+            "indexedLong": 4,
+            "indexedString": null,
+            "json": { "foo": 4 }
+        }
+        
++ Response 200
+
+    [VizObject][]
+    
+### Delete a VizObject [DELETE]
+
++ Response 204
+
+## VizObjects Collection [/vizs/{vizId}/objects]
+Collection of all VizObjects.
+
++ Parameters
+    + vizId (required, number, `1`) ... The *Viz* ID.
+
++ Model (application/json)
+
+        [
+          { "id": 1, "indexedLong": null, "indexedString": "foo", "json": { "foo": "bar" } },
+          { "id": 2, "indexedLong": 4, "indexedString": null, "json": {} }
+        ]
+        
+### List all VizObjects [GET]
+
++ Response 200
+
+    [VizObjects Collection][]
+    
+### Create a VizObject [POST]
+You need only provide a JSON Object with a `json` property to create a VizObject.
+
+If you plan on creating hundreds or more VizObjects, you'll probably want a way to search
+them. You can pass an `indexedLong` and/or `indexedString` property to help.
+
++ Request (application/json)
+
+        {
+            "indexedLong": 4,
+            "json": { "foo": 4 }
+        }
+        
++ Response 200
+
+    [VizObject][]
