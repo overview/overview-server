@@ -116,11 +116,11 @@ DELETE /admin/imports/:jobId controllers.admin.ImportJobController.delete(jobId:
 # Each is documented at https://github.com/overview/overview-server/wiki/API-v1
 GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(id: Long)
 
-GET    /api/v1/document-sets/:id/searches        controllers.api.SearchController.index(id: Long)
-POST   /api/v1/document-sets/:id/searches        controllers.api.SearchController.create(id: Long)
-GET    /api/v1/document-sets/:id/searches/:query controllers.api.SearchController.show(id: Long, query: String)
-DELETE /api/v1/document-sets/:id/searches/:query controllers.api.SearchController.destroy(id: Long, query: String)
-GET    /api/v1/document-sets/:id/searches/:query/documents controllers.api.SearchDocumentController.index(id: Long, query: String)
+GET    /api/v1/document-sets/:id/saved-searches        controllers.api.SavedSearchController.index(id: Long)
+POST   /api/v1/document-sets/:id/saved-searches        controllers.api.SavedSearchController.create(id: Long)
+GET    /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.show(id: Long, query: String)
+DELETE /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.destroy(id: Long, query: String)
+GET    /api/v1/document-sets/:id/saved-searches/:query/documents controllers.api.SavedSearchDocumentController.index(id: Long, query: String)
 
 GET /api/v1/vizs/:id controllers.api.VizController.show(id: Long)
 PUT /api/v1/vizs/:id controllers.api.VizController.update(id: Long)

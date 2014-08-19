@@ -6,9 +6,9 @@ import scala.concurrent.Future
 import org.overviewproject.jobs.models.Search
 import org.overviewproject.models.tables.{DocumentSearchResults,SearchResults}
 
-class DbSearchBackendSpec extends DbBackendSpecification with Mockito {
+class DbSavedSearchBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbSearchBackend {
+    val backend = new TestDbBackend(session) with DbSavedSearchBackend {
       override val jobQueueSender = mock[controllers.util.JobQueueSender]
     }
 
@@ -26,7 +26,7 @@ class DbSearchBackendSpec extends DbBackendSpecification with Mockito {
     }
   }
 
-  "DbSearchBackend" should {
+  "DbSavedSearchBackend" should {
     "#index" should {
       "index a document set's search results" in new BaseScope {
         val documentSet = factory.documentSet()

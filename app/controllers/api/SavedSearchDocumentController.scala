@@ -5,11 +5,11 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{SearchBackend, SearchDocumentBackend}
+import controllers.backend.{SavedSearchBackend, SavedSearchDocumentBackend}
 
-trait SearchDocumentController extends ApiController {
-  val searchBackend: SearchBackend
-  val backend: SearchDocumentBackend
+trait SavedSearchDocumentController extends ApiController {
+  val searchBackend: SavedSearchBackend
+  val backend: SavedSearchDocumentBackend
 
   def index(id: Long, query: String) = ApiAuthorizedAction(userOwningDocumentSet(id)).async {
     searchBackend.show(id, query).flatMap(_ match {
@@ -21,7 +21,7 @@ trait SearchDocumentController extends ApiController {
   }
 }
 
-object SearchDocumentController extends SearchDocumentController {
-  override val searchBackend = SearchBackend
-  override val backend = SearchDocumentBackend
+object SavedSearchDocumentController extends SavedSearchDocumentController {
+  override val searchBackend = SavedSearchBackend
+  override val backend = SavedSearchDocumentBackend
 }

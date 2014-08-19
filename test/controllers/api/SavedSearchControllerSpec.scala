@@ -4,19 +4,19 @@ import scala.concurrent.Future
 import play.api.libs.json.{JsValue,Json}
 import play.api.mvc.AnyContentAsJson
 
-import controllers.backend.SearchBackend
+import controllers.backend.SavedSearchBackend
 import org.overviewproject.jobs.models.Search
 import org.overviewproject.tree.orm.SearchResult // FIXME should be models.SearchResult
 
-class SearchControllerSpec extends ApiControllerSpecification {
+class SavedSearchControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    val mockBackend = mock[SearchBackend]
-    val controller = new SearchController {
+    val mockBackend = mock[SavedSearchBackend]
+    val controller = new SavedSearchController {
       override val backend = mockBackend
     }
   }
 
-  "SearchController" should {
+  "SavedSearchController" should {
     "#index" should {
       trait IndexScope extends BaseScope {
         val documentSetId = 1L

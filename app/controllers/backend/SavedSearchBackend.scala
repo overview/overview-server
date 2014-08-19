@@ -8,32 +8,32 @@ import org.overviewproject.jobs.models.Search
 import org.overviewproject.models.tables.{DocumentSearchResults,SearchResults}
 import org.overviewproject.tree.orm.SearchResult // should be models.SearchResult
 
-trait SearchBackend {
+trait SavedSearchBackend {
   def create(search: Search) : Future[Unit] // FIXME make it a Future[SearchResult]
   def index(documentSetId: Long) : Future[Seq[SearchResult]]
   def show(documentSetId: Long, query: String) : Future[Option[SearchResult]]
   def destroy(documentSetId: Long, query: String) : Future[Unit]
 }
 
-trait DbSearchBackend extends SearchBackend { self: DbBackend =>
+trait DbSavedSearchBackend extends SavedSearchBackend { self: DbBackend =>
   val jobQueueSender: JobQueueSender
 
   override def create(search: Search) = jobQueueSender.send(search)
 
   override def index(documentSetId: Long) = db { session =>
-    DbSearchBackend.byDocumentSetId(documentSetId)(session)
+    DbSavedSearchBackend.byDocumentSetId(documentSetId)(session)
   }
 
   override def show(documentSetId: Long, query: String) = db { session =>
-    DbSearchBackend.byDocumentSetIdAndQuery(documentSetId, query)(session)
+    DbSavedSearchBackend.byDocumentSetIdAndQuery(documentSetId, query)(session)
   }
 
   override def destroy(documentSetId: Long, query: String) = db { session =>
-    DbSearchBackend.deleteByDocumentSetIdAndQuery(documentSetId, query)(session)
+    DbSavedSearchBackend.deleteByDocumentSetIdAndQuery(documentSetId, query)(session)
   }
 }
 
-object DbSearchBackend {
+object DbSavedSearchBackend {
   import org.overviewproject.database.Slick.simple._
 
   private lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Column[Long]) =>
@@ -64,6 +64,6 @@ object DbSearchBackend {
   }
 }
 
-object SearchBackend extends DbSearchBackend with DbBackend {
+object SavedSearchBackend extends DbSavedSearchBackend with DbBackend {
   override val jobQueueSender = JobQueueSender
 }

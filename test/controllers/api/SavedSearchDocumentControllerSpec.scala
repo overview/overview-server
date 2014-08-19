@@ -2,20 +2,20 @@ package controllers.api
 
 import scala.concurrent.Future
 
-import controllers.backend.{SearchBackend, SearchDocumentBackend}
+import controllers.backend.{SavedSearchBackend, SavedSearchDocumentBackend}
 import org.overviewproject.tree.orm.{Document,SearchResult}
 
-class SearchDocumentControllerSpec extends ApiControllerSpecification {
+class SavedSearchDocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    val mockSearchBackend = mock[SearchBackend]
-    val mockBackend = mock[SearchDocumentBackend]
-    val controller = new SearchDocumentController {
+    val mockSearchBackend = mock[SavedSearchBackend]
+    val mockBackend = mock[SavedSearchDocumentBackend]
+    val controller = new SavedSearchDocumentController {
       override val backend = mockBackend
       override val searchBackend = mockSearchBackend
     }
   }
 
-  "SearchDocumentController" should {
+  "SavedSearchDocumentController" should {
     "#index" should {
       trait IndexScope extends BaseScope {
         val documentSetId = 1L

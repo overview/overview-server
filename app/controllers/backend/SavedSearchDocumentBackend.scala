@@ -4,17 +4,17 @@ import scala.concurrent.Future
 import org.overviewproject.tree.orm.{Document,DocumentSearchResult} // should be models.Document
 import org.overviewproject.models.tables.{Documents,DocumentSearchResults}
 
-trait SearchDocumentBackend {
+trait SavedSearchDocumentBackend {
   def index(searchResultId: Long) : Future[Seq[Document]]
 }
 
-trait DbSearchDocumentBackend extends SearchDocumentBackend { self: DbBackend =>
+trait DbSavedSearchDocumentBackend extends SavedSearchDocumentBackend { self: DbBackend =>
   override def index(searchResultId: Long) = db { session =>
-    DbSearchDocumentBackend.bySearchResultId(searchResultId)(session)
+    DbSavedSearchDocumentBackend.bySearchResultId(searchResultId)(session)
   }
 }
 
-object DbSearchDocumentBackend {
+object DbSavedSearchDocumentBackend {
   import org.overviewproject.database.Slick.simple._
 
   private lazy val bySearchResultIdCompiled = Compiled { (searchResultId: Column[Long]) =>
@@ -26,4 +26,4 @@ object DbSearchDocumentBackend {
   }
 }
 
-object SearchDocumentBackend extends DbSearchDocumentBackend with DbBackend
+object SavedSearchDocumentBackend extends DbSavedSearchDocumentBackend with DbBackend

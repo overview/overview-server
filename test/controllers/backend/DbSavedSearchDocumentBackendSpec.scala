@@ -2,9 +2,9 @@ package controllers.backend
 
 import org.overviewproject.models.tables.Documents
 
-class DbSearchDocumentBackendSpec extends DbBackendSpecification {
+class DbSavedSearchDocumentBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbSearchDocumentBackend
+    val backend = new TestDbBackend(session) with DbSavedSearchDocumentBackend
 
     def findDocument(id: Long) = {
       import org.overviewproject.database.Slick.simple._
@@ -12,7 +12,7 @@ class DbSearchDocumentBackendSpec extends DbBackendSpecification {
     }
   }
 
-  "DbSearchDocumentBackend" should {
+  "DbSavedSearchDocumentBackend" should {
     "index a search result" in new BaseScope {
       val documentSet = factory.documentSet()
       val searchResult = factory.searchResult(documentSetId=documentSet.id)

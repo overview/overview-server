@@ -5,12 +5,12 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.SearchBackend
+import controllers.backend.SavedSearchBackend
 import controllers.forms.SearchForm
 import org.overviewproject.tree.orm.SearchResult // FIXME should be models.SearchResult
 
-trait SearchController extends ApiController {
-  val backend: SearchBackend
+trait SavedSearchController extends ApiController {
+  val backend: SavedSearchBackend
 
   def index(id: Long) = ApiAuthorizedAction(userOwningDocumentSet(id)).async {
     for (searchResults <- backend.index(id))
@@ -38,6 +38,6 @@ trait SearchController extends ApiController {
   }
 }
 
-object SearchController extends SearchController {
-  override val backend = SearchBackend
+object SavedSearchController extends SavedSearchController {
+  override val backend = SavedSearchBackend
 }
