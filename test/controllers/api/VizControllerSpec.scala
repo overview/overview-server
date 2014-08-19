@@ -16,35 +16,6 @@ class VizControllerSpec extends ApiControllerSpecification {
   }
 
   "VizController" should {
-    "#index" should {
-      trait IndexScope extends BaseScope {
-        val documentSetId = 1L
-        def vizs: Seq[Viz] = Seq()
-        mockBackend.index(documentSetId) returns Future(vizs) // async, so we get overrides
-        override def action = controller.index(documentSetId)
-      }
-
-      "return JSON with status code 200" in new IndexScope {
-        status(result) must beEqualTo(OK)
-        contentType(result) must beSome("application/json")
-      }
-
-      "return an empty Array when there are no vizs" in new IndexScope {
-        override def vizs = Seq()
-        contentAsString(result) must beEqualTo("[]")
-      }
-
-      "return some Vizs when there are Vizs" in new IndexScope {
-        override def vizs = Seq(
-          factory.viz(url="http://example.org/1"),
-          factory.viz(url="http://example.org/2")
-        )
-        val json = contentAsString(result)
-        json must /#(0) /("url" -> "http://example.org/1")
-        json must /#(1) /("url" -> "http://example.org/2")
-      }
-    }
-
     "#show" should {
       trait ShowScope extends BaseScope {
         val vizId = 1L

@@ -7,7 +7,7 @@ import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
-import controllers.auth.Authorities.{userOwningDocumentSet,userOwningViz}
+import controllers.auth.Authorities.userOwningViz
 import controllers.backend.VizBackend
 import org.overviewproject.models.Viz
 
@@ -23,12 +23,6 @@ trait VizController extends ApiController {
       (JsPath \ "title").read[String](minLength[String](1)) and
       (JsPath \ "json").read[JsObject]
     )(Viz.UpdateAttributes.apply _)
-  }
-
-  def index(documentSetId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
-    backend.index(documentSetId).map { vizs =>
-      Ok(views.json.api.Viz.index(vizs))
-    }
   }
 
   def show(vizId: Long) = ApiAuthorizedAction(userOwningViz(vizId)).async { request =>
