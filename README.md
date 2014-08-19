@@ -13,11 +13,11 @@ The Overview Project is an open source visual document mining system. It was ori
 
 ## Developing Overview
 
-- The Visualization Plugin API https://github.com/overview/overview-server/wiki/Visualization-Plugin-API   
+- The public API http://docs.overviewproject.apiary.io/
+- Writing a plugin https://github.com/overview/overview-server/wiki/Visualization-Plugin-API
 - Setting up a development environment https://github.com/overview/overview-server/wiki/Setting-up-a-development-Environment
 - Project wiki https://github.com/overview/overview-server/wiki
 - Developer forum at https://groups.google.com/forum/?fromgroups#!forum/overview-dev
-
 
 ## Contact us!
 - Twitter [@overviewproject](https://twitter.com/overviewproject)
