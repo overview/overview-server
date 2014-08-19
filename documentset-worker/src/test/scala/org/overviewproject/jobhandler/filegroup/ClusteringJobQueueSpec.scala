@@ -7,31 +7,35 @@ import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartCl
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
+import org.specs2.mock.Mockito
 
-class ClusteringJobQueueSpec extends Specification {
+class ClusteringJobQueueSpec extends Specification with Mockito {
 
   "ClusteringJobQueue" should {
 
-    "set job state to NOT_STARTED when receiving a job" in new ClusteringJobQueueContext {
+    "transition to a clustering job" in new ClusteringJobQueueContext {
 
       clusteringJobQueue ! ClusterDocumentSet(documentSetId)
 
-      progressReporter.expectMsg(StartClustering(documentSetId))
+      there was one(clusteringJobQueue.underlyingActor.storage).transitionToClusteringJob(documentSetId)
     }
 
     trait ClusteringJobQueueContext extends ActorSystemContext with Before {
 
       protected val documentSetId: Long = 1l
       
-      protected var progressReporter: TestProbe = _
-      protected var clusteringJobQueue: TestActorRef[ClusteringJobQueue] = _
+      protected var clusteringJobQueue: TestActorRef[TestClusteringJobQueue] = _
 
       def before = {
-        progressReporter = TestProbe()
-        clusteringJobQueue = TestActorRef(ClusteringJobQueue(progressReporter.ref))
+        clusteringJobQueue = TestActorRef(new TestClusteringJobQueue)
       }
 
     }
 
   }
+}
+
+class TestClusteringJobQueue extends ClusteringJobQueue with Mockito {
+  
+  override val storage = mock[Storage]
 }
