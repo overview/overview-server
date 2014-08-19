@@ -11,7 +11,8 @@ class TestFileGroupJobQueue(
   
   class TestJobShepherdFactory extends JobShepherdFactory {
     override def createShepherd(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef, progressReporter: ActorRef): JobShepherd = job match {
-      case CreateDocumentsJob(fileGroupId, splitDocuments) => new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, taskQueue, progressReporter, tasks)
+      case CreateDocumentsJob(fileGroupId, splitDocuments) =>
+        new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, taskQueue, progressReporter, tasks.toSet)
       case DeleteFileGroupJob(fileGroupId) => new DeleteFileGroupJobShepherd(documentSetId, fileGroupId, taskQueue)
     }
     
@@ -24,17 +25,3 @@ object TestFileGroupJobQueue {
 }
 
 
-class TestCreateDocumentsJobShepherd(
-    val documentSetId: Long, 
-    val fileGroupId: Long, 
-    val taskQueue: ActorRef, 
-    val progressReporter: ActorRef, tasks: Seq[Long]) extends CreateDocumentsJobShepherd {
-  
-  
-  override protected val storage = new TestStorage
-  
-  class TestStorage extends Storage {
-    override def uploadedFileIds(fileGroupId: Long): Set[Long] = tasks.toSet
-  }
-  
-}

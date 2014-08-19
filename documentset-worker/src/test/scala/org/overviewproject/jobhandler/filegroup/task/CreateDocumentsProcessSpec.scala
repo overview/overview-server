@@ -76,8 +76,8 @@ class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (S
 
   override val createDocumentsProcessStorage = smartMock[CreateDocumentsProcessStorage]
 
-  createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 0) returns filesPage1
-  createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 1) returns filesPage2
+  createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 0) returns filesPage1.toSeq
+  createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 1) returns filesPage2.toSeq
   createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 2) returns Seq.empty
 
   createDocumentsProcessStorage.findFilePageData(anyLong) answers { p =>

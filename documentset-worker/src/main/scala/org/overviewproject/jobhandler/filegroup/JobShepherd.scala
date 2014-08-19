@@ -36,7 +36,10 @@ trait JobShepherd {
   def completeTask(task: TaskWorkerTask): Unit = startedTasks -= task
   
   /** Tell the shepherd to stop tracking not started tasks */
-  def removeNotStartedTasks: Unit = remainingTasks.clear()
+  def removeNotStartedTasks: Unit = {
+    jobCancelled = true
+    remainingTasks.clear()
+  }
 
   /** @returns true if all tasks for the job have been completed */
   def allTasksComplete: Boolean = remainingTasks.isEmpty && startedTasks.isEmpty
@@ -46,5 +49,10 @@ trait JobShepherd {
 
   /** Create job specific tasks */
   protected def generateTasks: Iterable[TaskWorkerTask]
+  
+  /** Add more tasks */
+  protected def addTask(task: TaskWorkerTask): Unit = remainingTasks += task
 
+  /** `true` if the job has been cancelled */
+  protected var jobCancelled: Boolean = false
 }

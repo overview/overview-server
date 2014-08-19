@@ -18,11 +18,11 @@ trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
     private val documentStore = BaseStore(documents)
     
     def findFilesQueryPage(documentSetId: Long, queryPage: Int): Iterable[File] = Database.inTransaction {
-       FileFinder.byDocumentSetPaged(documentSetId, queryPage, PageSize)
+       FileFinder.byDocumentSetPaged(documentSetId, queryPage, PageSize).map(f => f.copy())
     }
     
     def findFilePageData(fileId: Long): Iterable[(Long, Int, Option[String])] = Database.inTransaction {
-      PageFinder.byFileId(fileId).withoutData.toIterable
+      PageFinder.byFileId(fileId).withoutData.map(_.copy())
     }
     
     def writeDocuments(documents: Iterable[Document]): Unit = Database.inTransaction {

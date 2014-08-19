@@ -28,19 +28,27 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
 
   // TODO: we need a unified progress reporting mechanism, but for now, do this ugly thing,
   // since progress reporting only applies to these tasks.
-  // Risk the MatchError because this shepherd should only get one type of tasks
+  // Risk the MatchError because this shepherd should only get known tasks
   override def startTask(task: TaskWorkerTask): Unit = {
     super.startTask(task)
     task match {
       case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) =>
         progressReporter ! StartTask(documentSetId, uploadedFileId)
+      case _ =>
     }
   }
   override def completeTask(task: TaskWorkerTask): Unit = {
     super.completeTask(task)
     task match {
-      case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) =>
+      case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
         progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+        if (allTasksComplete && !jobCancelled) {
+          val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, false)     
+          taskQueue ! AddTasks(Set(createDocumentsTask))
+          addTask(createDocumentsTask)
+        }
+      }
+      case CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments) => 
     }
   }
 
