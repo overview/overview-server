@@ -12,7 +12,7 @@ import scala.concurrent.Future
 
 import controllers.auth.{ApiAuthorizedAction,ApiAuthorizedRequest}
 import org.overviewproject.models.ApiToken
-import test.helpers.factories.PodoFactory
+import org.overviewproject.test.factories.{Factory,PodoFactory}
 
 trait ApiControllerSpecification
   extends Specification
@@ -26,7 +26,8 @@ trait ApiControllerSpecification
 {
   trait ApiControllerScope extends Scope {
     implicit protected val executionContext = scala.concurrent.ExecutionContext.Implicits.global
-    lazy val factory = PodoFactory
+
+    val factory: Factory = PodoFactory
 
     private def fakeApiToken = ApiToken("12345", new java.sql.Timestamp(0L), "user@example.org", "foo", 1L)
 

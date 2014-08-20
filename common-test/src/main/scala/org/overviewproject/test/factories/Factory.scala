@@ -1,4 +1,4 @@
-package test.helpers.factories
+package org.overviewproject.test.factories
 
 import java.sql.Timestamp
 import play.api.libs.json.JsObject
@@ -11,7 +11,7 @@ import org.overviewproject.util.DocumentSetVersion
   *
   * Usage:
   *
-  *   val factory = new test.helpers.factories.Factory
+  *   val factory = new org.overviewproject.test.factories.Factory
   *   val documentSet = factory.documentSet()
   *   val document = factory.document(documentSetId=documentSet.id)
   *   val tag = factory.tag(documentSetId=documentSet.id)

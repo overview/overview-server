@@ -2,7 +2,7 @@ package controllers.backend
 
 import java.sql.Connection
 import org.specs2.execute.AsResult
-import org.specs2.mutable.{After, Specification}
+import org.specs2.mutable.{BeforeAfter, Specification}
 import org.specs2.specification.{Fragments, Step}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits._
@@ -12,7 +12,7 @@ import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.database.DB
 import org.overviewproject.test.DbSpecification
-import test.helpers.factories.{Factory,DbFactory}
+import org.overviewproject.test.factories.{Factory,DbFactory}
 
 /** Helps test Backends.
   *
@@ -44,7 +44,7 @@ trait DbBackendSpecification
     }
   }
 
-  trait DbScope extends After {
+  trait DbScope extends BeforeAfter {
     var connected = false
     lazy val connection: Connection = {
       val ret = DB.getConnection()
@@ -57,7 +57,9 @@ trait DbBackendSpecification
 
     def await[A](f: Future[A]) = Await.result(f, Duration(2, "seconds"))
 
-    def after = {
+    override def before = Unit
+
+    override def after = {
       if (connected) {
         connection.rollback()
         connection.close()

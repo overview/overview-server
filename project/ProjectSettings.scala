@@ -25,6 +25,7 @@ trait ProjectSettings {
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.2.0"
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
   val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
+  val commonsIoDep = "commons-io" % "commons-io" % "2.4"
   val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
@@ -76,6 +77,9 @@ trait ProjectSettings {
     akkaDep,
     asyncHttpClientDep,
     boneCpDep,
+    commonsIoDep,
+    elasticSearchDep,
+    elasticSearchCloudAwsDep,
     geronimoJmsDep,
     logbackDep,
     playJsonDep,
@@ -105,16 +109,12 @@ trait ProjectSettings {
   val workerProjectDependencies = Seq(guavaDep) ++ (Seq(
     javaxMailDep, 
     openCsvDep,
-    anorm,
-    elasticSearchDep,
-    elasticSearchCloudAwsDep
+    anorm
   )).map(_.exclude("com.google.guava", "guava"))
   
   val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(
     akkaAgentDep,
     logbackDep,
-    elasticSearchDep,
-    elasticSearchCloudAwsDep,
     javaxMailDep,
     "org.overviewproject" % "mime-types" % "0.0.1",
     "org.apache.pdfbox" % "pdfbox" % "1.8.6",

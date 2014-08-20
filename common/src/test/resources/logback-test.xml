@@ -10,8 +10,8 @@
     </root>
 
     <logger name="com.jolbox.bonecp.BoneCP" level="WARN"/>
-    <!-- turn off Ning HTTP output -->
     <logger name="com.ning.http.client" level="WARN"/>
+    <logger name="org.elasticsearch" level="WARN"/>
 
     <!-- for the moment, lots of debug info for the worker -->
     <logger name="WORKER" level="ERROR"/>

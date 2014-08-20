@@ -1,4 +1,4 @@
-package test.helpers.factories
+package org.overviewproject.test.factories
 
 import java.sql.Timestamp
 import play.api.libs.json.JsObject
