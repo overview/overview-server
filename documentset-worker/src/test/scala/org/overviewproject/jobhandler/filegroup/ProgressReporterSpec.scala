@@ -54,7 +54,7 @@ class ProgressReporterSpec extends Specification {
       protected val documentSetId = 1l
       protected val numberOfTasks = 5
       protected val uploadedFileId = 10l
-      protected val progressFraction = 0.25
+      protected val progressFraction = 1.00
       
       protected var progressReporter: TestActorRef[TestProgressReporter] = _
 

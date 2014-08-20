@@ -19,7 +19,7 @@ object ProgressReporterProtocol {
 }
 
 case class JobProgress(numberOfTasks: Int, tasksStarted: Int = 0, fraction: Double = 0.0) {
-  private val ProgressFraction = 0.25 
+  private val ProgressFraction = 1.00
   
   def startTask: JobProgress = this.copy(tasksStarted = tasksStarted + 1)
   def completeTask: JobProgress = this.copy(fraction = ProgressFraction * tasksStarted / numberOfTasks)
