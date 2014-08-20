@@ -39,7 +39,7 @@ object ClusteringJobQueue {
 
       override def transitionToClusteringJob(documentSetId: Long): Unit = Database.inTransaction {
         val documentSetFinder = new FinderById(documentSets)
-        DocumentSetCreationJobStore.delete(DocumentSetCreationJobFinder.byDocumentSet(documentSetId).toQuery)
+
         val documentSet = documentSetFinder.byId(documentSetId).headOption
 
         documentSet.map { ds =>
@@ -50,6 +50,8 @@ object ClusteringJobQueue {
             state = NotStarted)
           DocumentSetCreationJobStore.insertOrUpdate(clusteringJob)
         }
+
+        DocumentSetCreationJobStore.delete(DocumentSetCreationJobFinder.byDocumentSetAndType(documentSetId, FileUpload).toQuery)
       }
 
     }

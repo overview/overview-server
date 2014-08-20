@@ -11,22 +11,25 @@ object DocumentSetCreationJobFinder extends Finder {
 
   type DocumentSetCreationJobFinderResult = FinderResult[DocumentSetCreationJob]
 
-  def byDocumentSet(documentSetId: Long): DocumentSetCreationJobFinderResult = 
+  def byDocumentSet(documentSetId: Long): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId)
-    
+
   def byFileGroupId(fileGroupId: Long): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.fileGroupId === fileGroupId)
 
   def byDocumentSetAndState(documentSetId: Long, state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId and dscj.state === state)
 
-def byDocumentSetAndStateForUpdate(documentSetId: Long, state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
+  def byDocumentSetAndType(documentSetId: Long, jobType: DocumentSetCreationJobType): DocumentSetCreationJobFinderResult =
+    Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId and dscj.jobType === jobType)
+
+  def byDocumentSetAndStateForUpdate(documentSetId: Long, state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId and dscj.state === state).forUpdate
-    
-  def byState(state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult = 
+
+  def byState(state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.state === state)
-    
- def byStateAndType(state: DocumentSetCreationJobState, jobType: DocumentSetCreationJobType): DocumentSetCreationJobFinderResult = 
-   Schema.documentSetCreationJobs.where(dscj => dscj.state === state and dscj.jobType === jobType)
-    
+
+  def byStateAndType(state: DocumentSetCreationJobState, jobType: DocumentSetCreationJobType): DocumentSetCreationJobFinderResult =
+    Schema.documentSetCreationJobs.where(dscj => dscj.state === state and dscj.jobType === jobType)
+
 }
