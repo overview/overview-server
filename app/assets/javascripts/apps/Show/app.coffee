@@ -144,10 +144,12 @@ define [
 
     _initializeDocumentSet: (transactionQueue) ->
       documentSetId = +window.location.pathname.split('/')[2]
-      documentSet = new DocumentSet(documentSetId, transactionQueue)
+      new DocumentSet(documentSetId, transactionQueue)
       # We just kicked off the initial server request
 
     _initializeUi: (documentSet) ->
+      documentSet.vizs.pollUntilStable()
+
       els = @_buildHtml()
       keyboardController = new KeyboardController(document)
 
