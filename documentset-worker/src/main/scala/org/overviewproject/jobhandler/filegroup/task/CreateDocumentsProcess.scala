@@ -23,6 +23,7 @@ trait CreateDocumentsProcess {
       }
       else {
         createDocumentsProcessStorage.saveDocumentCount(documentSetId)
+        createDocumentsProcessStorage.deleteTempFiles(documentSetId)
         CreateDocumentsProcessComplete(documentSetId)
       }
     }
@@ -47,5 +48,6 @@ trait CreateDocumentsProcess {
     def findFilePageData(fileId: Long): Iterable[(Long, Int, Option[String])]
     def writeDocuments(documents: Iterable[Document]): Unit
     def saveDocumentCount(documentSetId: Long): Unit
+    def deleteTempFiles(documentSetId: Long): Unit
   }
 }
