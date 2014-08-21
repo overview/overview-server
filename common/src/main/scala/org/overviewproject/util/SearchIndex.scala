@@ -15,22 +15,53 @@ import org.elasticsearch.index.query.{ FilterBuilders, QueryBuilders }
 import org.elasticsearch.node.Node
 import org.elasticsearch.node.NodeBuilder.nodeBuilder
 
-
+/**
+ * A session for batch indexing documents. The session starts on creation, and ends after calling `complete`.
+ */
 trait DocumentSetIndexingSession {
+  /** Index the document */
   def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit
+
+  /** 
+   * Mark the session as complete.
+   * Further calls to `indexDocument` will not succeed.  
+   */
   def complete: Unit
 
+  /** @returns a [[Future]] that completes when all outstanding index requests have completed */
   def requestsComplete: Future[Unit]
 }
 
+/**
+ * Interface to the search index
+ */
 trait SearchIndex {
+  /** Create the index if it doesn't exist */
   def createIndexIfNotExisting: Unit
+  
+  /** 
+   *  Start an indexing session 
+   *  @returns a [[DocumentSetIndexingSession]]
+   */
   def startDocumentSetIndexingSession(documentSetId: Long): DocumentSetIndexingSession
+
+  /**
+   *   Create an alias for the document set in the search index.
+   */
   def createDocumentSetAlias(documentSetId: Long): Unit
+  
+  /** Delete all indexed data and the alias associated with the `documentSetId` */
   def deleteDocumentSetAliasAndDocuments(documentSetId: Long): Unit
+  
+  /** close the client. Any subsequent operations will fail */
   def shutdown: Unit
 }
 
+
+/**
+ * Singleton search index client, configured with names of the indeces and aliases we use.
+ * When documents are indexed, text, title, and supplied id are included, allowing searches on those fields.
+ */
 object SearchIndex extends SearchIndex {
 
   private val IndexName = Configuration.searchIndex.getString("index_name")
@@ -181,6 +212,9 @@ object SearchIndex extends SearchIndex {
 
     override def requestsComplete: Future[Unit] = allRequestsComplete.future
 
+    // Callbacks for a BulkProcessor.Listener, called before and after each bulk request
+    // If `complete` has been called, we assume that no more requests will be made
+    // so `allRequestsComplete` future is completed after  the bulk request is complete.
     override def beforeBulk(executionId: Long, request: BulkRequest): Unit = {
       Logger.debug("Starting bulk indexing request")
       synchronized { requestInProgress = true }
