@@ -48,6 +48,20 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       
       finalStep must haveClass[CreateDocumentsProcessComplete]
     }
+    
+    "create one document per page when splitDocuments is true" in {
+      val pageSize = 5
+      val documentData = Seq.tabulate(pageSize)(n => (n.toLong, (s"document $n", createDocumentPages(n.toLong)))).toMap
+      val documentSetId = 1l
+      val documents = expectedDocumentsPerPage(documentSetId, documentData)
+ 
+      val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
+
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, true)
+      val secondStep = firstStep.execute
+
+      there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documents)
+    }
   }
 
   private def createDocumentPages(fileId: Long): Iterable[(Int, String)] =
@@ -67,6 +81,26 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
         title = Some(data._1),
         text = Some(documentText),
         fileId = Some(fileId))
+    }
+  }
+  
+  private def expectedDocumentsPerPage(documentSetId: Long, documentData: Map[Long, (String, Iterable[(Int, String)])]): Iterable[Document] = {
+    var documentId = 0
+    
+    for { 
+      (fileId, data) <- documentData
+      (documentTitle, pages) = data
+      (pageNumber, documentText) <- pages
+    } yield {
+      documentId += 1
+      Document(documentSetId,
+          id = (documentSetId << 32) | documentId,
+          title = Some(documentTitle),
+          text = Some(documentText),
+          fileId = Some(fileId), 
+          pageNumber = Some(pageNumber),
+          pageId = Some(pageNumber)
+      )
     }
   }
 }

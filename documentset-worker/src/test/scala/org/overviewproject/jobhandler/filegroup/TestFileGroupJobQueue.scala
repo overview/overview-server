@@ -12,7 +12,7 @@ class TestFileGroupJobQueue(
   class TestJobShepherdFactory extends JobShepherdFactory {
     override def createShepherd(documentSetId: Long, job: FileGroupJob, taskQueue: ActorRef, progressReporter: ActorRef): JobShepherd = job match {
       case CreateDocumentsJob(fileGroupId, splitDocuments) =>
-        new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, taskQueue, progressReporter, tasks.toSet)
+        new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, splitDocuments, taskQueue, progressReporter, tasks.toSet)
       case DeleteFileGroupJob(fileGroupId) => new DeleteFileGroupJobShepherd(documentSetId, fileGroupId, taskQueue)
     }
     

@@ -14,6 +14,7 @@ import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 trait CreateDocumentsJobShepherd extends JobShepherd {
   val documentSetId: Long
   val fileGroupId: Long
+  val splitDocuments: Boolean
   val taskQueue: ActorRef
   val progressReporter: ActorRef
 
@@ -43,7 +44,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
       case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
         progressReporter ! CompleteTask(documentSetId, uploadedFileId)
         if (allTasksComplete && !jobCancelled) {
-          val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, false)     
+          val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)     
           taskQueue ! AddTasks(Set(createDocumentsTask))
           addTask(createDocumentsTask)
         }
@@ -61,12 +62,13 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
 }
 
 object CreateDocumentsJobShepherd {
-  def apply(documentSetId: Long, fileGroupId: Long, taskQueue: ActorRef, progressReporter: ActorRef): CreateDocumentsJobShepherd =
-    new CreateDocumentsJobShepherdImpl(documentSetId, fileGroupId, taskQueue, progressReporter)
+  def apply(documentSetId: Long, fileGroupId: Long, splitDocuments: Boolean, taskQueue: ActorRef, progressReporter: ActorRef): CreateDocumentsJobShepherd =
+    new CreateDocumentsJobShepherdImpl(documentSetId, fileGroupId, splitDocuments, taskQueue, progressReporter)
 
   private class CreateDocumentsJobShepherdImpl(
       val documentSetId: Long,
       val fileGroupId: Long,
+      val splitDocuments: Boolean,
       val taskQueue: ActorRef,
       val progressReporter: ActorRef) extends CreateDocumentsJobShepherd {
 

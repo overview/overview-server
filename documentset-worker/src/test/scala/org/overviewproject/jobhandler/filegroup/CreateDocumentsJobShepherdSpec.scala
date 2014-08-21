@@ -19,10 +19,11 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val documentSetId = 1l
       val fileGroupId = 1l
       val uploadedFileId = 10l
+      val splitDocuments = true
       val task = CreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
-      val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, false)
+      val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)
       
-      val jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, 
+      val jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, splitDocuments,
           jobQueue.ref, progressReporter.ref, Set(uploadedFileId))
       
       jobShepherd.createTasks
@@ -39,10 +40,11 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val documentSetId = 1l
       val fileGroupId = 1l
       val uploadedFileId = 10l
+      val splitDocuments = true
       val task = CreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
-      val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, false)
+      val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)
       
-      val jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, 
+      val jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, splitDocuments,
           jobQueue.ref, progressReporter.ref, Set(uploadedFileId))
       
       jobShepherd.createTasks

@@ -8,6 +8,7 @@ import org.specs2.mock.Mockito
 class TestCreateDocumentsJobShepherd(
     val documentSetId: Long,
     val fileGroupId: Long, 
+    val splitDocuments: Boolean,
     val taskQueue: ActorRef,
     val progressReporter: ActorRef,
     uploadedFileIds: Set[Long]) extends CreateDocumentsJobShepherd with Mockito {
