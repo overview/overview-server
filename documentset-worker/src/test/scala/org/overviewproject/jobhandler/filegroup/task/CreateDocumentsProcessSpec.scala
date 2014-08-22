@@ -5,19 +5,16 @@ import org.specs2.mock.Mockito
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.File
 import org.mockito.invocation.InvocationOnMock
+import org.specs2.specification.Scope
+import org.overviewproject.util.SearchIndex
+import org.overviewproject.util.DocumentSetIndexingSession
+import scala.concurrent.Future
 
 class CreateDocumentsProcessSpec extends Specification with Mockito {
 
   "CreateDocumentsProcess" should {
 
-    "create documents for first page of results" in {
-      val pageSize = 10
-      val documentData = Seq.tabulate(pageSize)(n => (n.toLong, (s"document $n", createDocumentPages(n.toLong)))).toMap
-      val documentSetId = 1l
-      val documents = expectedDocuments(documentSetId, documentData)
-
-      val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
-
+    "create documents for first page of results" in new OneResultPageContext {
       val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
 
       firstStep.execute
@@ -25,15 +22,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documents)
     }
 
-    "create documents for all page results" in {
-      val pageSize = 5
-      val documentData = Seq.tabulate(pageSize * 2)(n => (n.toLong, (s"document $n", createDocumentPages(n.toLong)))).toMap
-      val documentSetId = 1l
-      val documents = expectedDocuments(documentSetId, documentData)
-      val documentsPage1 = documents.take(pageSize)
-      val documentsPage2 = documents.drop(pageSize)
-
-      val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
+    "create documents for all page results" in new TwoResultPagesContext {
 
       val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
       val secondStep = firstStep.execute
@@ -45,22 +34,53 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
       there was one(createDocumentsProcess.createDocumentsProcessStorage).saveDocumentCount(documentSetId)
       there was one(createDocumentsProcess.createDocumentsProcessStorage).deleteTempFiles(documentSetId)
-      
+
       finalStep must haveClass[CreateDocumentsProcessComplete]
     }
-    
-    "create one document per page when splitDocuments is true" in {
-      val pageSize = 5
-      val documentData = Seq.tabulate(pageSize)(n => (n.toLong, (s"document $n", createDocumentPages(n.toLong)))).toMap
-      val documentSetId = 1l
-      val documents = expectedDocumentsPerPage(documentSetId, documentData)
- 
-      val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
+
+    "create one document per page when splitDocuments is true" in new OneResultPageContext {
+      val documentsFromPages = expectedDocumentsPerPage(documentSetId, documentData)
 
       val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, true)
-      val secondStep = firstStep.execute
+      firstStep.execute
 
-      there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documents)
+      there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documentsFromPages)
+    }
+
+    "add documents to search index" in new OneResultPageContext {
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
+
+      val nextStep = firstStep.execute
+
+      there was one(createDocumentsProcess.searchIndex).startDocumentSetIndexingSession(documentSetId)
+
+      there were pageSize.times(createDocumentsProcess.indexingSession).indexDocument(anyLong, anyLong, anyString, any, any)
+
+      nextStep.execute
+
+      there was one(createDocumentsProcess.indexingSession).complete
+      there was one(createDocumentsProcess.indexingSession).requestsComplete
+    }
+
+    trait OneResultPageContext extends Scope {
+      val pageSize = 10
+      val documentData = Seq.tabulate(pageSize)(n => (n.toLong, (s"document $n", createDocumentPages(n.toLong)))).toMap
+      val documentSetId = 1l
+      val documents = expectedDocuments(documentSetId, documentData)
+
+      val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
+
+    }
+
+    trait TwoResultPagesContext extends Scope {
+      val pageSize = 5
+      val documentData = Seq.tabulate(pageSize * 2)(n => (n.toLong, (s"document $n", createDocumentPages(n.toLong)))).toMap
+      val documentSetId = 1l
+      val documents = expectedDocuments(documentSetId, documentData)
+      val documentsPage1 = documents.take(pageSize)
+      val documentsPage2 = documents.drop(pageSize)
+
+      val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
     }
   }
 
@@ -83,24 +103,23 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
         fileId = Some(fileId))
     }
   }
-  
+
   private def expectedDocumentsPerPage(documentSetId: Long, documentData: Map[Long, (String, Iterable[(Int, String)])]): Iterable[Document] = {
     var documentId = 0
-    
-    for { 
+
+    for {
       (fileId, data) <- documentData
       (documentTitle, pages) = data
       (pageNumber, documentText) <- pages
     } yield {
       documentId += 1
       Document(documentSetId,
-          id = (documentSetId << 32) | documentId,
-          title = Some(documentTitle),
-          text = Some(documentText),
-          fileId = Some(fileId), 
-          pageNumber = Some(pageNumber),
-          pageId = Some(pageNumber)
-      )
+        id = (documentSetId << 32) | documentId,
+        title = Some(documentTitle),
+        text = Some(documentText),
+        fileId = Some(fileId),
+        pageNumber = Some(pageNumber),
+        pageId = Some(pageNumber))
     }
   }
 }
@@ -110,6 +129,13 @@ class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (S
   private val files = for ((id, data) <- documentData) yield File(1, 1l, 1l, data._1, id)
   private val filesPage1 = files.take(pageSize)
   private val filesPage2 = files.drop(pageSize)
+
+  val indexingSession = smartMock[DocumentSetIndexingSession]
+  indexingSession.requestsComplete returns Future.successful()
+  
+  override val searchIndex = smartMock[SearchIndex]
+
+  searchIndex.startDocumentSetIndexingSession(documentSetId) returns indexingSession
 
   override val createDocumentsProcessStorage = smartMock[CreateDocumentsProcessStorage]
 

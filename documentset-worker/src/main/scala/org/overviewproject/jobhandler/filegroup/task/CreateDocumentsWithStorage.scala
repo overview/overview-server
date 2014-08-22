@@ -10,10 +10,12 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.database.orm.finders.DocumentFinder
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.database.orm.finders.FinderById
+import org.overviewproject.util.SearchIndex
 
 trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
   private val PageSize = 50
 
+  override protected val searchIndex = SearchIndex
   override protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator = DocumentIdGenerator(documentSetId)
   override protected val createDocumentsProcessStorage: CreateDocumentsProcessStorage = new DatabaseStorage
 
