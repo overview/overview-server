@@ -21,26 +21,16 @@ trait CreateDocumentsProcess {
 
   }
 
-  private abstract class CreateAndIndexDocument(indexingSession: DocumentSetIndexingSession) extends FileGroupTaskStep {
+  private abstract class CreateAndIndexDocument(documentSetId: Long, queryPage: Int,
+                                                documentIdGenerator: DocumentIdGenerator,
+                                                indexingSession: DocumentSetIndexingSession) extends FileGroupTaskStep {
     protected val IndexingTimeout = 3 minutes
-
-    protected def indexDocuments(documentSetId: Long, documents: Iterable[Document]): Unit =
-      documents.map { d =>
-        indexingSession.indexDocument(documentSetId, d.id, d.text.getOrElse(""), d.title, d.suppliedId)
-      }
-
-  }
-
-  private case class CreateDocumentsFromFileQueryPage(documentSetId: Long, queryPage: Int,
-                                                      documentIdGenerator: DocumentIdGenerator,
-                                                      indexingSession: DocumentSetIndexingSession)
-      extends CreateAndIndexDocument(indexingSession) {
 
     override def execute: FileGroupTaskStep = {
       val files = createDocumentsProcessStorage.findFilesQueryPage(documentSetId, queryPage)
 
       if (files.nonEmpty) {
-        val documents = files.map(createDocument(documentSetId, _))
+        val documents = createDocumentsFromFiles(files)
         createDocumentsProcessStorage.writeDocuments(documents)
 
         indexDocuments(documentSetId, documents)
@@ -55,6 +45,22 @@ trait CreateDocumentsProcess {
         CreateDocumentsProcessComplete(documentSetId)
       }
     }
+
+    protected def indexDocuments(documentSetId: Long, documents: Iterable[Document]): Unit =
+      documents.map { d =>
+        indexingSession.indexDocument(documentSetId, d.id, d.text.getOrElse(""), d.title, d.suppliedId)
+      }
+
+    protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document]
+  }
+
+  private case class CreateDocumentsFromFileQueryPage(documentSetId: Long, queryPage: Int,
+                                                      documentIdGenerator: DocumentIdGenerator,
+                                                      indexingSession: DocumentSetIndexingSession)
+      extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, indexingSession) {
+
+    override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
+      files.map(createDocument(documentSetId, _))
 
     private def createDocument(documentSetId: Long, file: File) = {
       val pages = createDocumentsProcessStorage.findFilePageData(file.id)
@@ -72,27 +78,10 @@ trait CreateDocumentsProcess {
   private case class CreateDocumentsFromPagesQueryPage(documentSetId: Long, queryPage: Int,
                                                        documentIdGenerator: DocumentIdGenerator,
                                                        indexingSession: DocumentSetIndexingSession)
-      extends CreateAndIndexDocument(indexingSession) {
+      extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, indexingSession) {
 
-    override def execute: FileGroupTaskStep = {
-      val files = createDocumentsProcessStorage.findFilesQueryPage(documentSetId, queryPage)
-
-      if (files.nonEmpty) {
-        val documents = files.flatMap(createDocumentsFromPages(documentSetId, _))
-        createDocumentsProcessStorage.writeDocuments(documents)
-        
-        indexDocuments(documentSetId, documents)
-        
-        CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator, indexingSession)
-      } else {
-        createDocumentsProcessStorage.saveDocumentCount(documentSetId)
-        createDocumentsProcessStorage.deleteTempFiles(documentSetId)
-        
-        indexingSession.complete
-        Await.result(indexingSession.requestsComplete,IndexingTimeout)
-        CreateDocumentsProcessComplete(documentSetId)
-      }
-    }
+    override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
+      files.flatMap(createDocumentsFromPages(documentSetId, _))
 
     private def createDocumentsFromPages(documentSetId: Long, file: File): Iterable[Document] = {
       val pages = createDocumentsProcessStorage.findFilePageData(file.id)
