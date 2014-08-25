@@ -143,11 +143,11 @@ class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (S
   createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 1) returns filesPage2.toSeq
   createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 2) returns Seq.empty
 
-  createDocumentsProcessStorage.findFilePageData(anyLong) answers { p =>
+  createDocumentsProcessStorage.findFilePageText(anyLong) answers { p =>
     val n = p.asInstanceOf[Long]
 
     val pageData = documentData.get(n).map(d =>
-      d._2.map(p => (p._1.toLong, p._1, Some(p._2)))).getOrElse(Seq.empty)
+      d._2.map(p => PageText(p._1.toLong, p._1, Some(p._2)))).getOrElse(Seq.empty)
 
     pageData
   }

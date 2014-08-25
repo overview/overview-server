@@ -81,9 +81,9 @@ trait CreateDocumentsProcess {
       files.map(createDocument(documentSetId, _))
 
     private def createDocument(documentSetId: Long, file: File) = {
-      val pages = createDocumentsProcessStorage.findFilePageData(file.id)
+      val pages = createDocumentsProcessStorage.findFilePageText(file.id)
 
-      val text = pages.foldLeft("")((text, page) => text + page._3.getOrElse(""))
+      val text = pages.foldLeft("")((text, page) => text + page.text.getOrElse(""))
 
       Document(documentSetId,
         id = documentIdGenerator.nextId,
@@ -103,16 +103,16 @@ trait CreateDocumentsProcess {
       files.flatMap(createDocumentsFromPages(documentSetId, _))
 
     private def createDocumentsFromPages(documentSetId: Long, file: File): Iterable[Document] = {
-      val pages = createDocumentsProcessStorage.findFilePageData(file.id)
+      val pages = createDocumentsProcessStorage.findFilePageText(file.id)
 
       pages.map { p =>
         Document(documentSetId,
           id = documentIdGenerator.nextId,
           title = Some(file.name),
-          text = p._3,
+          text = p.text,
           fileId = Some(file.id),
-          pageId = Some(p._1),
-          pageNumber = Some(p._2))
+          pageId = Some(p.id),
+          pageNumber = Some(p.number))
       }
     }
   }
@@ -122,7 +122,7 @@ trait CreateDocumentsProcess {
 
   protected trait CreateDocumentsProcessStorage {
     def findFilesQueryPage(documentSetId: Long, queryPage: Int): Iterable[File]
-    def findFilePageData(fileId: Long): Iterable[(Long, Int, Option[String])]
+    def findFilePageText(fileId: Long): Iterable[PageText]
     def writeDocuments(documents: Iterable[Document]): Unit
     def saveDocumentCount(documentSetId: Long): Unit
     def deleteTempFiles(documentSetId: Long): Unit

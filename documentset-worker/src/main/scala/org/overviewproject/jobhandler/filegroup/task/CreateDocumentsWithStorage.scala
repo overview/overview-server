@@ -12,6 +12,9 @@ import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.database.orm.finders.FinderById
 import org.overviewproject.util.SearchIndex
 
+/**
+ * Implementation of [[CreateDocumentsProcess]] with actual database queries and [[SearchIndex]]
+ */
 trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
   private val PageSize = 50
 
@@ -27,8 +30,8 @@ trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
       FileFinder.byDocumentSetPaged(documentSetId, queryPage, PageSize).map(f => f.copy())
     }
 
-    def findFilePageData(fileId: Long): Iterable[(Long, Int, Option[String])] = Database.inTransaction {
-      PageFinder.byFileId(fileId).withoutData.map(_.copy())
+    def findFilePageText(fileId: Long): Iterable[PageText] = Database.inTransaction {
+      PageFinder.byFileId(fileId).withoutData.map(p => PageText.tupled(p))
     }
 
     def writeDocuments(documents: Iterable[Document]): Unit = Database.inTransaction {
