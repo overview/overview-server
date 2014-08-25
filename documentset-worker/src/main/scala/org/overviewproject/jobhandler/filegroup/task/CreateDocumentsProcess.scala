@@ -1,17 +1,28 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.File
-import org.overviewproject.util.SearchIndex
-import org.overviewproject.util.DocumentSetIndexingSession
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.File
+import org.overviewproject.util.DocumentSetIndexingSession
+import org.overviewproject.util.SearchIndex
 
+
+/**
+ * Creates [[Document]]s from [[File]]s. [[File]]s are read from the database in chunks, with each step 
+ * in the process converting one page of the query result.
+ * Depending on the value of the `splitDocuments` parameter, one [[Document]] is created per file, or
+ * one [[Document]] is created for each [[Page]] of a [[File]].
+ * 
+ * Only one [[CreateDocumentsProcess]] can be running in order to guarantee unique [[Document]] ids.
+ * 
+ */
 trait CreateDocumentsProcess {
 
   protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator
 
+  /** Create the first step in the process */
   def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep = {
 
     val indexingSession = searchIndex.startDocumentSetIndexingSession(documentSetId)
@@ -21,6 +32,11 @@ trait CreateDocumentsProcess {
 
   }
 
+  
+  // Parent class for steps in the process of creating documents.
+  // Get one page of the query result reading Files, create Documents and add them to the SearchIndex
+  // If there are no more results, update the document count, and delete the TempDocumentSetFiles entries
+  // used to find the files.
   private abstract class CreateAndIndexDocument(documentSetId: Long, queryPage: Int,
                                                 documentIdGenerator: DocumentIdGenerator,
                                                 indexingSession: DocumentSetIndexingSession) extends FileGroupTaskStep {
@@ -51,9 +67,11 @@ trait CreateDocumentsProcess {
         indexingSession.indexDocument(documentSetId, d.id, d.text.getOrElse(""), d.title, d.suppliedId)
       }
 
+    // Document creation is handled by subclasses, depending on value of splitDocuments
     protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document]
   }
 
+  // Create one Document per File by concatenating the text of all Pages
   private case class CreateDocumentsFromFileQueryPage(documentSetId: Long, queryPage: Int,
                                                       documentIdGenerator: DocumentIdGenerator,
                                                       indexingSession: DocumentSetIndexingSession)
@@ -75,6 +93,7 @@ trait CreateDocumentsProcess {
     }
   }
 
+  // Create one Document for each Page in a File.
   private case class CreateDocumentsFromPagesQueryPage(documentSetId: Long, queryPage: Int,
                                                        documentIdGenerator: DocumentIdGenerator,
                                                        indexingSession: DocumentSetIndexingSession)
