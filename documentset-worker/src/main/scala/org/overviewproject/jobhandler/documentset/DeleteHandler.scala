@@ -76,8 +76,10 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
 
   startWith(Idle, NoData)
 
+  // FIXME: The waitForJobRemoval parameter of DeleteDocumentSet is now redundant, since
+  // we need to check for and cancel jobs whenever we delete document sets
   when(Idle) {
-    case Event(DeleteDocumentSet(documentSetId, waitForJobRemoval), _) if waitForJobRemoval => {
+    case Event(DeleteDocumentSet(documentSetId, true), _) => {
       if (jobStatusChecker.isJobRunning(documentSetId)) {
         setTimer(RetryTimer, Message.RetryDelete, JobWaitDelay, true)
         goto(WaitingForRunningJobRemoval) using (RetryAttempts(documentSetId, 1))
@@ -85,7 +87,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
         goto(Running) using (DeleteTarget(documentSetId))
       }
     }
-    case Event(DeleteDocumentSet(documentSetId, waitForJobRemoval), _) => {
+    case Event(DeleteDocumentSet(documentSetId, false), _) => {
       if (jobStatusChecker.cancelJob(documentSetId)) {
         self ! DeleteDocumentSet(documentSetId, true)
         stay
