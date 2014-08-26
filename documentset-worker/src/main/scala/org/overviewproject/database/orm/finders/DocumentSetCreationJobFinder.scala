@@ -20,11 +20,13 @@ object DocumentSetCreationJobFinder extends Finder {
   def byDocumentSetAndState(documentSetId: Long, state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId and dscj.state === state)
 
-  def byDocumentSetAndType(documentSetId: Long, jobType: DocumentSetCreationJobType): DocumentSetCreationJobFinderResult =
-    Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId and dscj.jobType === jobType)
+  def byDocumentSetAndTypeForUpdate(documentSetId: Long, jobType: DocumentSetCreationJobType): DocumentSetCreationJobFinderResult =
+    Schema.documentSetCreationJobs.where(dscj => 
+      dscj.documentSetId === documentSetId and dscj.jobType === jobType).forUpdate
 
   def byDocumentSetAndStateForUpdate(documentSetId: Long, state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
-    Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId and dscj.state === state).forUpdate
+    Schema.documentSetCreationJobs.where(dscj => 
+      dscj.documentSetId === documentSetId and dscj.state === state).forUpdate
 
   def byState(state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.state === state)

@@ -22,6 +22,7 @@ class FileUploadDeleterSpec extends Specification with Mockito {
       there was one(fileUploadDeleter.mockStorage).deleteDocumentProcessingErrors(documentSetId)
       there was one(fileUploadDeleter.mockStorage).deleteDocumentSetCreationJob(documentSetId)
       there was one(fileUploadDeleter.mockStorage).deleteFileGroup(fileGroupId)
+      there was one(fileUploadDeleter.mockStorage).deleteDocuments(documentSetId)
       there was one(fileUploadDeleter.mockStorage).deleteDocumentSet(documentSetId)
     }
   }

@@ -62,6 +62,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       there was one(createDocumentsProcess.indexingSession).requestsComplete
     }
 
+    
     trait OneResultPageContext extends Scope {
       val pageSize = 10
       val documentData = Seq.tabulate(pageSize)(n => (n.toLong, (s"document $n", createDocumentPages(n.toLong)))).toMap

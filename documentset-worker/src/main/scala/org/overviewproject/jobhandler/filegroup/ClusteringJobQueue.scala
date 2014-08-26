@@ -37,23 +37,32 @@ object ClusteringJobQueue {
 
     protected class DatabaseStorage extends Storage {
 
+      /**
+       * Creates a new clustering job and deletes the old document creation job.
+       * If the document creation job has been cancelled, nothing happens, and we assume the cancellation 
+       * code deletes everything properly.
+       * When the user cancels the job, it's possible that the server may not see either of the jobs. In this case
+       * the server assumes it is just deleting a document set. The Document set deletion code will try to cancel 
+       * the clustering job, if it detects the job before starting to delete the document set.
+       */
       override def transitionToClusteringJob(documentSetId: Long): Unit = Database.inTransaction {
         val documentSetFinder = new FinderById(documentSets)
 
-        val documentSet = documentSetFinder.byId(documentSetId).headOption
-
-        documentSet.map { ds =>
+        for {
+          createDocumentsJob <- DocumentSetCreationJobFinder.byDocumentSetAndTypeForUpdate(documentSetId, FileUpload).headOption
+          if createDocumentsJob.state != Cancelled
+          documentSet <- documentSetFinder.byId(documentSetId).headOption
+        } {
           val clusteringJob = DocumentSetCreationJob(
-            documentSetId = ds.id,
-            treeTitle = Some(ds.title),
+            documentSetId = documentSet.id,
+            treeTitle = Some(documentSet.title),
             jobType = Recluster,
             state = NotStarted)
           DocumentSetCreationJobStore.insertOrUpdate(clusteringJob)
+
+          DocumentSetCreationJobStore.deleteById(createDocumentsJob.id)
         }
-
-        DocumentSetCreationJobStore.delete(DocumentSetCreationJobFinder.byDocumentSetAndType(documentSetId, FileUpload).toQuery)
       }
-
     }
   }
 }

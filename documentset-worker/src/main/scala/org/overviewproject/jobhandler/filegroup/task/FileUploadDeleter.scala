@@ -11,6 +11,7 @@ import org.overviewproject.database.orm.finders.FinderById
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+import org.overviewproject.database.orm.finders.DocumentFinder
 
 trait FileUploadDeleter {
 
@@ -21,6 +22,7 @@ trait FileUploadDeleter {
     def deleteFiles(documentSetId: Long): Unit
     def deleteTempDocumentSetFiles(documentSetId: Long): Unit
     def deleteDocumentProcessingErrors(documentSetId: Long): Unit
+    def deleteDocuments(documentSetId: Long): Unit
     def deleteDocumentSet(documentSetId: Long): Unit
     def deleteDocumentSetCreationJob(documentSetId: Long): Unit
   }
@@ -33,6 +35,7 @@ trait FileUploadDeleter {
     storage.deleteTempDocumentSetFiles(documentSetId)
     storage.deleteDocumentProcessingErrors(documentSetId)
     storage.deleteDocumentSetCreationJob(documentSetId)
+    storage.deleteDocuments(documentSetId)
     storage.deleteDocumentSet(documentSetId)
     storage.deleteGroupedFileUploads(fileGroupId)
     storage.deleteFileGroup(fileGroupId)
@@ -76,6 +79,12 @@ object FileUploadDeleter {
         val documentProcessingErrorStore = BaseStore(documentProcessingErrors)
         
         documentProcessingErrorStore.delete(documentProcessingErrorFinder.byDocumentSet(documentSetId).toQuery)
+      }
+      
+      override def deleteDocuments(documentSetId: Long): Unit = Database.inTransaction {
+        val documentStore = BaseStore(documents)
+        
+        documentStore.delete(DocumentFinder.byDocumentSet(documentSetId).toQuery)  
       }
       
       override def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
