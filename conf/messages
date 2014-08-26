@@ -533,7 +533,7 @@ views.User._form.help.subscribe=We will never share your email address
 views.User.new.title=Register
 views.User.new.h1=Register
 
-views.Welcome.show.title=The Overview Project
+views.Welcome.show.title=The Overview Project — Visualize your documents
 views.Welcome.show.h1=
 views.Welcome.show.p1=Read and analyze thousands of documents super quickly. Full text search, topic modeling, coding and tagging, visualizations and more. All in an easy-to use, visual workflow.
 views.Welcome.show.learn=Learn more
