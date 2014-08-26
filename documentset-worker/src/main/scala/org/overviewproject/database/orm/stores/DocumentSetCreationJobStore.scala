@@ -5,6 +5,7 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.database.orm.Schema.documentSetCreationJobs
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 object DocumentSetCreationJobStore extends BaseStore(documentSetCreationJobs) {
 
@@ -41,5 +42,14 @@ object DocumentSetCreationJobStore extends BaseStore(documentSetCreationJobs) {
         select (dscj))
         
     documentSetCreationJobs.delete(jobToDelete)
+  }
+  
+  def cancelByDocumentSet(documentSetId: Long): Iterable[DocumentSetCreationJob] = {
+    val jobs = from(documentSetCreationJobs)(dscj =>
+      where (dscj.documentSetId === documentSetId)
+      select (dscj)
+    ).forUpdate
+    
+    jobs.map { j => insertOrUpdate(j.copy(state = Cancelled))}
   }
 }

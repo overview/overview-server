@@ -126,7 +126,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
-    "don't wait until clustering job is no longer running if waitForJobRemoval is false" in new DeleteWhileJobIsRunning {
+    "don't wait until clustering job is no longer running if waitForJobRemoval is false and no job is running" in new DeleteWhileJobIsRunning {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
       
       deleteDocumentsResult.success(documentResult)
@@ -135,6 +135,17 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       parentProbe.expectMsg(JobDone(documentSetId))
       
       there was no(jobStatusChecker).isJobRunning(documentSetId)
+    }
+    
+    "cancel any clustering job before deleting a document set if waitForJobRemoval is false" in new DeleteWhileJobIsRunning {
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
+
+      deleteDocumentsResult.success(documentResult)
+      deleteAliasResult.success(aliasResult)
+      
+      parentProbe.expectMsg(JobDone(documentSetId))
+      
+      there was one(jobStatusChecker).cancelJob(documentSetId)
     }
     
     "timeout while waiting for job that never gets cancelled" in new TimeoutWhileWaitingForJob {

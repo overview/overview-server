@@ -3,9 +3,11 @@ package org.overviewproject.jobhandler.documentset
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.database.Database
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 
 trait JobStatusChecker {
   def isJobRunning(documentSetId: Long): Boolean
+  def cancelJob(documentSetId: Long): Boolean
 }
 
 object JobStatusChecker {
@@ -18,6 +20,10 @@ object JobStatusChecker {
         j.state ==  InProgress ||
         j.state == Cancelled
       }
+    }
+    
+    override def cancelJob(documentSetId: Long): Boolean = Database.inTransaction {
+      DocumentSetCreationJobStore.cancelByDocumentSet(documentSetId).nonEmpty
     }
   }
 }

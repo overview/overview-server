@@ -85,8 +85,14 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
         goto(Running) using (DeleteTarget(documentSetId))
       }
     }
-    case Event(DeleteDocumentSet(documentSetId, waitForJobRemoval), _) => 
-      goto(Running) using (DeleteTarget(documentSetId))
+    case Event(DeleteDocumentSet(documentSetId, waitForJobRemoval), _) => {
+      if (jobStatusChecker.cancelJob(documentSetId)) {
+        self ! DeleteDocumentSet(documentSetId, true)
+        stay
+      } 
+      else goto(Running) using (DeleteTarget(documentSetId))
+    }
+      
     case Event(DeleteReclusteringJob(jobId), _) =>
       goto(Running) using (DeleteTreeTarget(jobId))
   }
