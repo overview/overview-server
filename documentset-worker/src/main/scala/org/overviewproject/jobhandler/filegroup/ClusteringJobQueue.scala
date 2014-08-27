@@ -4,7 +4,6 @@ import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.Props
 import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartClustering
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.Schema.documentSets
