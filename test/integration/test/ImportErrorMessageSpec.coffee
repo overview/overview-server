@@ -18,7 +18,7 @@ describe 'ImportError', ->
       @
         .get(Url.index)
         .acceptingNextAlert()
-        .elementBy(tag: 'input', class: 'btn-danger', value: 'Cancel Import').click()
+        .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
 
   describe 'after importing too few documents', ->
     before ->
@@ -36,9 +36,9 @@ describe 'ImportError', ->
     it 'should show Too Few Documents error', ->
       @userBrowser
         .get(Url.index)
-        .waitForElementBy({tag: 'h2', contains: 'Pdf Upload'}, 10000).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state', contains: 'stalled'}, 10000).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state-description', contains: 'Need at least 2 documents'}, 10000).should.eventually.exist
+        .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
+        .waitForElementBy(tag: 'div', class: 'job-app error', visible: true).should.eventually.exist
+        .waitForElementBy(tag: 'p', class: 'status', contains: 'Need at least 2 documents').should.eventually.exist
         
 
   describe 'after entering a bad regex in Important Words', ->
@@ -58,9 +58,10 @@ describe 'ImportError', ->
     it 'should show Bad Pattern error', ->
       @userBrowser
         .get(Url.index)
-        .waitForElementBy({tag: 'h2', contains: 'Pdf Upload'}, 10000).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state', contains: 'stalled'}, 10000).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state-description', contains: 'Invalid pattern in Important Words'}, 10000).should.eventually.exist
+        .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
+        .waitForElementBy(tag: 'div', class: 'job-app error', visible: true).should.eventually.exist
+        .waitForElementBy(tag: 'p', class: 'status', contains: 'Invalid pattern in Important Words').should.eventually.exist
+
         
 
 
