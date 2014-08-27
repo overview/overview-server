@@ -43,11 +43,17 @@ class ProgressReporterSpec extends Specification {
       
       lastProgressStatusMustBe(documentSetId, progressFraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
+
+    "apply progress to started job step only" in new ProgressReporterContext {
+      val numberOfJobSteps = 2
+      val step1Fraction = 0.5
       
-    "set job state to start clustering" in new ProgressReporterContext {
-      progressReporter  ! StartClustering(documentSetId)
+      progressReporter ! StartJob(documentSetId, numberOfJobSteps)
+      progressReporter ! StartJobStep(documentSetId, numberOfTasks, step1Fraction)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       
-      updateJobStateWasCalled(documentSetId, NotStarted)
+      lastProgressStatusMustBe(documentSetId, step1Fraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
     
     trait ProgressReporterContext extends ActorSystemContext with Before {
