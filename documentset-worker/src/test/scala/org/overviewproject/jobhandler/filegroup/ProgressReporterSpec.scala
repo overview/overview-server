@@ -29,7 +29,7 @@ class ProgressReporterSpec extends Specification {
       progressReporter ! StartJob(documentSetId, numberOfTasks)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
-      
+
       lastProgressStatusMustBe(documentSetId, progressFraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
 
@@ -37,46 +37,67 @@ class ProgressReporterSpec extends Specification {
       progressReporter ! StartJob(documentSetId, numberOfTasks)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
-      
+
       progressReporter ! CompleteJob(documentSetId)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
-      
+
       lastProgressStatusMustBe(documentSetId, progressFraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
 
     "apply progress to started job step only" in new ProgressReporterContext {
       val numberOfJobSteps = 2
       val step1Fraction = 0.5
-      
+
       progressReporter ! StartJob(documentSetId, numberOfJobSteps)
       progressReporter ! StartJobStep(documentSetId, numberOfTasks, step1Fraction)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
-      
+
       lastProgressStatusMustBe(documentSetId, step1Fraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
-    
+
+    "include previously completed job step in progress fraction" in new ProgressReporterContext {
+      val numberOfJobSteps = 2
+      val step1Fraction = 0.3
+      val step2Fraction = 0.7
+
+      progressReporter ! StartJob(documentSetId, numberOfJobSteps)
+      progressReporter ! StartJobStep(documentSetId, 1, step1Fraction)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteJobStep(documentSetId)
+
+      lastProgressStatusMustBe(documentSetId, step1Fraction, s"processing_files:1:$numberOfJobSteps")
+      
+      progressReporter ! StartJobStep(documentSetId, numberOfTasks, step2Fraction)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+
+      lastProgressStatusMustBe(documentSetId, step1Fraction + step2Fraction * 1.0 / numberOfTasks,
+        s"processing_files:1:$numberOfTasks")
+    }
+
     trait ProgressReporterContext extends ActorSystemContext with Before {
       protected val documentSetId = 1l
       protected val numberOfTasks = 5
       protected val uploadedFileId = 10l
       protected val progressFraction = 1.00
-      
+
       protected var progressReporter: TestActorRef[TestProgressReporter] = _
 
       protected def lastProgressStatusMustBe(documentSetId: Long, fraction: Double, description: String) = {
         def matchParameters(p: (Long, Double, String)) = {
-              p._1 must be equalTo (documentSetId)
-              p._2 must beCloseTo(fraction, 0.01)
-              p._3 must be equalTo (description)
+          p._1 must be equalTo (documentSetId)
+          p._2 must beCloseTo(fraction, 0.01)
+          p._3 must be equalTo (description)
         }
-        
+
         progressReporter.underlyingActor.updateProgressFn.wasLastCalledWithMatch(matchParameters)
       }
 
-      protected def updateJobStateWasCalled(documentSetId: Long, state: DocumentSetCreationJobState) = 
+      protected def updateJobStateWasCalled(documentSetId: Long, state: DocumentSetCreationJobState) =
         progressReporter.underlyingActor.updateJobStateFn.wasCalledWith((documentSetId, state))
-      
+
       override def before = {
         progressReporter = TestActorRef(new TestProgressReporter)
       }
@@ -86,17 +107,17 @@ class ProgressReporterSpec extends Specification {
 }
 
 class TestProgressReporter extends ProgressReporter {
-  
+
   val updateProgressFn = ParameterStore[(Long, Double, String)]
   val updateJobStateFn = ParameterStore[(Long, DocumentSetCreationJobState)]
-  
+
   override protected val storage = new MockStorage
 
   class MockStorage extends Storage {
     def updateProgress(documentSetId: Long, fraction: Double, description: String): Unit =
       updateProgressFn.store((documentSetId, fraction, description))
-    
-    def updateJobState(documentSetId: Long, state: DocumentSetCreationJobState): Unit = 
+
+    def updateJobState(documentSetId: Long, state: DocumentSetCreationJobState): Unit =
       updateJobStateFn.store((documentSetId, state))
   }
 }
