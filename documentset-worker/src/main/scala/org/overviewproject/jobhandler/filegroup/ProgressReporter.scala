@@ -1,5 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
+import scala.annotation.tailrec
+
 import akka.actor.Actor
 import akka.actor.Props
 
@@ -20,36 +22,29 @@ object ProgressReporterProtocol {
 }
 
 case class JobProgress(numberOfTasks: Int, tasksStarted: Int = 0, completedStepsFraction: Double = 0.0,
-                       progressFraction: Double = 1.00, currentStep: Option[JobProgress] = None) {
+                       currentStepFraction: Double = 1.00, currentStep: Option[JobProgress] = None) {
 
-  def startJobStep(numberOfTasksInStep: Int, progressFractionInStep: Double): JobProgress = {
-    val newStep = currentStep.fold(JobProgress(numberOfTasksInStep, progressFraction = progressFractionInStep))(
-      _.startJobStep(numberOfTasksInStep, progressFractionInStep))
-    
-    copy(currentStep = Some(newStep), tasksStarted = tasksStarted + 1)
-  }
+  def startJobStep(numberOfTasksInStep: Int, progressFractionInStep: Double): JobProgress =
+    updateCurrentStep(copy(currentStep = Some(JobProgress(numberOfTasksInStep)),
+      tasksStarted = tasksStarted + 1,
+      currentStepFraction = progressFractionInStep))(_.startJobStep(numberOfTasksInStep, progressFractionInStep))
 
-  def completeJobStep: JobProgress = {
-    if (currentStep.flatMap(_.currentStep).isEmpty) { 
-      copy(currentStep = None,
-          completedStepsFraction = completedStepsFraction + currentStep.get.progressFraction)
-    }
-    else copy(currentStep = currentStep.map(_.completeJobStep))
-  }
-  
-  def startTask: JobProgress = currentStep match {
-    case None => copy(tasksStarted = tasksStarted + 1)
-    case Some(p) => this.copy(currentStep = Some(p.startTask))
-  }
+  def completeJobStep: JobProgress = currentStep.fold(this)(
+    _.updateCurrentStep(copy(currentStep = None,
+      completedStepsFraction = completedStepsFraction + currentStepFraction))(_.completeJobStep))
 
-  def completeTask: JobProgress = currentStep match {
-    case None => copy(completedStepsFraction = tasksStarted.toDouble / numberOfTasks.toDouble)
-    case Some(p) => copy(currentStep = Some(p.completeTask))
-  }
-  
+  def startTask: JobProgress = updateCurrentStep(copy(tasksStarted = tasksStarted + 1))(_.startTask)
+
+  def completeTask: JobProgress =
+    updateCurrentStep(copy(completedStepsFraction = tasksStarted.toDouble / numberOfTasks.toDouble))(_.completeTask)
+
   def stepInProgress: JobProgress = currentStep.fold(this)(_.stepInProgress)
-  
-  def fraction: Double = currentStep.fold(progressFraction * completedStepsFraction)(completedStepsFraction + _.fraction)
+
+  def fraction: Double = currentStep.fold(completedStepsFraction)(completedStepsFraction + currentStepFraction * _.fraction)
+
+  private def updateCurrentStep(updateJobStep: => JobProgress)(f: JobProgress => JobProgress): JobProgress =
+    currentStep.fold(updateJobStep)(p => copy(currentStep = Some(f(p))))
+
 }
 
 trait ProgressReporter extends Actor {
@@ -70,7 +65,7 @@ trait ProgressReporter extends Actor {
 
     case StartJobStep(jobId, numberOfTasksInStep, progressFraction) => startJobStep(jobId, numberOfTasksInStep, progressFraction)
     case CompleteJobStep(jobId) => updateTaskForJob(jobId, _.completeJobStep)
-    
+
     case StartTask(jobId, taskId) => updateTaskForJob(jobId, _.startTask)
     case CompleteTask(jobId, taskId) => updateTaskForJob(jobId, _.completeTask)
   }
@@ -91,8 +86,8 @@ trait ProgressReporter extends Actor {
   private def startJobStep(jobId: Long, numberOfTasksInStep: Int, progressFraction: Double): Unit =
     jobProgress.get(jobId).map { p => jobProgress += (jobId -> p.startJobStep(numberOfTasksInStep, progressFraction)) }
 
-  private def completeJobStep(jobId: Long): Unit = 
-    jobProgress.get(jobId).map { p => jobProgress += (jobId -> p.completeJobStep)}
+  private def completeJobStep(jobId: Long): Unit =
+    jobProgress.get(jobId).map { p => jobProgress += (jobId -> p.completeJobStep) }
 }
 
 class ProgressReporterImpl extends ProgressReporter {

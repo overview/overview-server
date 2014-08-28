@@ -71,21 +71,6 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
     }
 
-    "report progress" in new JobQueueContext {
-      ActAsImmediateJobCompleter(worker, fileId)
-      fileGroupJobQueue ! RegisterWorker(worker.ref)
-      submitJob(documentSetId)
-
-      progressReporter.expectMsg(StartJob(documentSetId, numberOfUploadedFiles))
-      val progressMessages = progressReporter.receiveN(2 * numberOfUploadedFiles)
-
-      val expectedStartTasks = uploadedFileIds.map { StartTask(documentSetId, _) }
-      val expectedCompleteTask = uploadedFileIds.map { CompleteTask(documentSetId, _) }
-
-      progressMessages must containTheSameElementsAs(expectedStartTasks ++ expectedCompleteTask)
-
-      progressReporter.expectMsg(CompleteJob(documentSetId))
-    }
 
     "cancel running tasks" in new JobQueueContext {
       val workers = createNWorkers(numberOfUploadedFiles / 2)
