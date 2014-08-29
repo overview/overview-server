@@ -36,7 +36,7 @@ object FileGroupTaskWorkerFSM {
   case object Cancelled extends State
 
   sealed trait Data
-  case class ExternalActorsFound(jobQueue: Option[ActorRef], progressReporter: Option[ActorRef])extends Data
+  case class ExternalActorsFound(jobQueue: Option[ActorRef], progressReporter: Option[ActorRef]) extends Data
   case class JobQueue(queue: ActorRef) extends Data
   case class TaskInfo(queue: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
 
@@ -58,11 +58,11 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   protected def jobQueuePath: String
   protected def progressReporterPath: String
-  
+
   private val NumberOfExternalActors = 2
   private val JobQueueId: String = "Job Queue"
   private val ProgressReporterId: String = "Progress Reporter"
-    
+
   private val RetryInterval: FiniteDuration = 1 second
 
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
@@ -70,10 +70,11 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   private val progressReporterSelection = system.actorSelection(progressReporterPath)
   private var progressReporter: ActorRef = _
-  
+
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
-  protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep
-  
+  protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
+                                         progressReporter: ActorRef): FileGroupTaskStep
+
   protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
 
   lookForExternalActors
@@ -95,8 +96,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(ActorIdentity(ProgressReporterId, Some(pr)), ExternalActorsFound(jq, _)) => {
       Logger.info(s"[${self.path}] Found Progress Reporter at ${pr.path}")
-      
-     jq.fold(stay using ExternalActorsFound(None, Some(pr)))(goto(Ready) using JobQueue(_))
+
+      jq.fold(stay using ExternalActorsFound(None, Some(pr)))(goto(Ready) using JobQueue(_))
     }
   }
 
@@ -110,7 +111,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
     }
     case Event(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments), JobQueue(jobQueue)) => {
-      executeTaskStep(startCreateDocumentsTask(documentSetId, splitDocuments))
+      executeTaskStep(startCreateDocumentsTask(documentSetId, splitDocuments, progressReporter))
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, 0)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
@@ -133,7 +134,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(CreateDocumentsProcessComplete(documentSetId), TaskInfo(jobQueue, _, _, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
-      
+
       goto(Ready) using JobQueue(jobQueue)
     }
     case Event(step: FileGroupTaskStep, _) => {
@@ -162,15 +163,14 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       log.warning("received unhandled request {} in state {}/{}", e, stateName, s)
       stay
   }
-  
+
   private def lookForJobQueue = jobQueueSelection ! Identify(JobQueueId)
   private def lookForProgressReporter = progressReporterSelection ! Identify(ProgressReporterId)
-  
+
   private def lookForExternalActors = {
     lookForJobQueue
     lookForProgressReporter
   }
-  
 
   private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
 
@@ -178,12 +178,10 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 }
 
 object FileGroupTaskWorker {
-  def apply(jobQueueActorPath: String, progressReporterActorPath: String): Props = Props(new FileGroupTaskWorker 
-      with CreatePagesFromPdfWithStorage
-      with CreateDocumentsWithStorage {
+  def apply(jobQueueActorPath: String, progressReporterActorPath: String): Props = Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage with CreateDocumentsWithStorage {
     override protected def jobQueuePath: String = jobQueueActorPath
     override protected def progressReporterPath: String = progressReporterActorPath
-    
+
     override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit =
       FileUploadDeleter().deleteFileUpload(documentSetId, fileGroupId)
   })

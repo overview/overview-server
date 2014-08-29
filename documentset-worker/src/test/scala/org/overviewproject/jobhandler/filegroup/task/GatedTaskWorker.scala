@@ -4,6 +4,7 @@ import scala.language.postfixOps
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration._
 import org.overviewproject.test.ParameterStore
+import akka.actor.ActorRef
 
 object GatedTaskWorkerProtocol {
   case object CancelYourself
@@ -31,7 +32,7 @@ class GatedTaskWorker(override protected val jobQueuePath: String,
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     new GatedTask(taskGate.future)
 
-  override protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep = 
+  override protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean, progressReporter: ActorRef): FileGroupTaskStep = 
     new GatedTask(taskGate.future)
   
   override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = {}

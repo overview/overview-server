@@ -9,13 +9,14 @@ import org.specs2.specification.Scope
 import org.overviewproject.util.SearchIndex
 import org.overviewproject.util.DocumentSetIndexingSession
 import scala.concurrent.Future
+import akka.actor.ActorRef
 
 class CreateDocumentsProcessSpec extends Specification with Mockito {
 
   "CreateDocumentsProcess" should {
 
     "create documents for first page of results" in new OneResultPageContext {
-      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false, progressReporter)
 
       firstStep.execute
 
@@ -24,7 +25,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
     "create documents for all page results" in new TwoResultPagesContext {
 
-      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false, progressReporter)
       val secondStep = firstStep.execute
       val thirdStep = secondStep.execute
       val finalStep = thirdStep.execute
@@ -41,14 +42,14 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
     "create one document per page when splitDocuments is true" in new OneResultPageContext {
       val documentsFromPages = expectedDocumentsPerPage(documentSetId, documentData)
 
-      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, true)
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, true, progressReporter)
       firstStep.execute
 
       there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documentsFromPages)
     }
 
     "add documents to search index" in new OneResultPageContext {
-      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false)
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false, progressReporter)
 
       val nextStep = firstStep.execute
 
@@ -71,6 +72,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
       val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
 
+      val progressReporter: ActorRef = null
     }
 
     trait TwoResultPagesContext extends Scope {
@@ -82,6 +84,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       val documentsPage2 = documents.drop(pageSize)
 
       val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
+      val progressReporter: ActorRef = null
     }
   }
 

@@ -7,23 +7,24 @@ import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.File
 import org.overviewproject.util.DocumentSetIndexingSession
 import org.overviewproject.util.SearchIndex
-
+import akka.actor.ActorRef
 
 /**
- * Creates [[Document]]s from [[File]]s. [[File]]s are read from the database in chunks, with each step 
+ * Creates [[Document]]s from [[File]]s. [[File]]s are read from the database in chunks, with each step
  * in the process converting one page of the query result.
  * Depending on the value of the `splitDocuments` parameter, one [[Document]] is created per file, or
  * one [[Document]] is created for each [[Page]] of a [[File]].
- * 
+ *
  * Only one [[CreateDocumentsProcess]] can be running in order to guarantee unique [[Document]] ids.
- * 
+ *
  */
 trait CreateDocumentsProcess {
 
   protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator
 
   /** Create the first step in the process */
-  def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean): FileGroupTaskStep = {
+  def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
+                               progressReporter: ActorRef): FileGroupTaskStep = {
 
     val indexingSession = searchIndex.startDocumentSetIndexingSession(documentSetId)
 
@@ -32,7 +33,6 @@ trait CreateDocumentsProcess {
 
   }
 
-  
   // Parent class for steps in the process of creating documents.
   // Get one page of the query result reading Files, create Documents and add them to the SearchIndex
   // If there are no more results, update the document count, and delete the TempDocumentSetFiles entries
