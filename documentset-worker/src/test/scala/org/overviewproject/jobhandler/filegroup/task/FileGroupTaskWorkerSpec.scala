@@ -54,7 +54,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
-      
+
       createPagesTaskStepsWereExecuted
     }
 
@@ -123,11 +123,23 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       var jobQueue: ActorRef = _
       var jobQueueProbe: JobQueueTestProbe = _
+      var progressReporter: ActorRef = _
+      var progressReporterProbe: TestProbe = _
 
       val JobQueueName = "jobQueue"
-      val JobQueuePath: String = s"/user/$JobQueueName"
+      val JobQueuePath = s"/user/$JobQueueName"
 
-      def before = {} //necessary or tests can't create actors for some reason
+      val ProgressReporterName = "progressReporter"
+      val ProgressReporterPath = s"/user/$ProgressReporterName"
+
+      def before = {}
+
+      protected def createProgressReporter: TestProbe = {
+        progressReporterProbe = TestProbe()
+        progressReporter = system.actorOf(ForwardingActor(progressReporterProbe.ref), ProgressReporterName)
+
+        progressReporterProbe
+      }
 
       protected def createJobQueue: JobQueueTestProbe = {
         jobQueueProbe = new JobQueueTestProbe(system)
@@ -141,7 +153,10 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       var worker: TestActorRef[TestFileGroupTaskWorker] = _
 
-      protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath, fileId))
+      protected def createWorker: Unit = {
+        createProgressReporter
+        worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath, ProgressReporterPath, fileId))
+      }
 
       protected def createPagesTaskStepsWereExecuted =
         worker.underlyingActor.executeFn.wasCalledNTimes(2)
@@ -157,7 +172,10 @@ class FileGroupTaskWorkerSpec extends Specification {
       var worker: ActorRef = _
       private val cancelFn = ParameterStore[Unit]
 
-      protected def createWorker: Unit = worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath, cancelFn)))
+      protected def createWorker: Unit = {
+        createProgressReporter
+        worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath, ProgressReporterPath, cancelFn)))
+      }
 
       protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)
     }

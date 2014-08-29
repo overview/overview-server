@@ -3,7 +3,8 @@ package org.overviewproject.jobhandler.filegroup.task
 import akka.actor.Props
 import org.overviewproject.test.ParameterStore
 
-class TestFileGroupTaskWorker(override protected val jobQueuePath: String, outputFileId: Long) extends FileGroupTaskWorker {
+class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
+    override protected val progressReporterPath: String, outputFileId: Long) extends FileGroupTaskWorker {
 
   val executeFn = ParameterStore[Unit]
   val deleteFileUploadJobFn = ParameterStore[(Long, Long)]
@@ -28,5 +29,6 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String, outpu
 }
 
 object TestFileGroupTaskWorker {
-  def apply(jobQueuePath: String, outputFileId: Long): Props = Props(new TestFileGroupTaskWorker(jobQueuePath, outputFileId))
+  def apply(jobQueuePath: String, progressReporterPath: String, outputFileId: Long): Props = 
+    Props(new TestFileGroupTaskWorker(jobQueuePath, progressReporterPath, outputFileId))
 }

@@ -76,7 +76,8 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) ex
   private val fileGroupJobQueueManager = createMonitoredActor(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
   private val uploadClusteringCommandBridge = createMonitoredActor(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager), "ClusteringCommandsMessageQueueBridge")
 
-  private val taskWorkerSupervisor = createMonitoredActor(FileGroupTaskWorkerStartup(fileGroupJobQueue.path.toString), "TaskWorkerSupervisor")
+  private val taskWorkerSupervisor = createMonitoredActor(
+      FileGroupTaskWorkerStartup(fileGroupJobQueue.path.toString, progressReporter.path.toString), "TaskWorkerSupervisor")
 
 
   /**

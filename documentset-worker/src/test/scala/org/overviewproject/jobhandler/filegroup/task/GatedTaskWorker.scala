@@ -10,7 +10,8 @@ object GatedTaskWorkerProtocol {
   case object CompleteTaskStep
 }
 
-class GatedTaskWorker(override protected val jobQueuePath: String, cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
+class GatedTaskWorker(override protected val jobQueuePath: String, 
+    override protected val progressReporterPath: String, cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
 
   import GatedTaskWorkerProtocol._
   import FileGroupTaskWorkerProtocol._
