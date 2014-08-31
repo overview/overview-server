@@ -13,6 +13,8 @@ import akka.actor.ActorRef
 import org.overviewproject.test.ActorSystemContext
 import akka.testkit.TestProbe
 import org.specs2.mutable.Before
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartTask
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.CompleteTask
 
 class CreateDocumentsProcessSpec extends Specification with Mockito {
 
@@ -66,6 +68,16 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       there was one(createDocumentsProcess.indexingSession).requestsComplete
     }
 
+    "send notification to progress reporter for each file processed" in new OneResultPageContext {
+      val fileIds = documentData.map(_._1)
+      val startTaskMessages = fileIds.map(id => StartTask(documentSetId, id)).toSeq
+      val completeTaskMessages = fileIds.map(id => CompleteTask(documentSetId, id)).toSeq
+
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, true, progressReporter.ref)
+      firstStep.execute
+
+      progressReporter.receiveN(2 * pageSize) must containTheSameElementsAs(startTaskMessages ++ completeTaskMessages)
+    }
   }
 
   trait CreateDocumentsProcessContext {
@@ -121,7 +133,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
     override def before = {
       progressReporter = TestProbe()
     }
-    
+
   }
 
   trait TwoResultPagesContext extends ActorSystemContext with CreateDocumentsProcessContext with Before {
@@ -134,11 +146,11 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
     val createDocumentsProcess = new TestCreateDocumentsProcess(documentSetId, documentData, pageSize)
     var progressReporter: TestProbe = _
-    
+
     override def before = {
       progressReporter = TestProbe()
     }
-    
+
   }
 
 }

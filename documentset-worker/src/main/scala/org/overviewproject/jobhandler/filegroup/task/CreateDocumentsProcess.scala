@@ -8,6 +8,7 @@ import org.overviewproject.tree.orm.File
 import org.overviewproject.util.DocumentSetIndexingSession
 import org.overviewproject.util.SearchIndex
 import akka.actor.ActorRef
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 
 /**
  * Creates [[Document]]s from [[File]]s. [[File]]s are read from the database in chunks, with each step
@@ -28,8 +29,10 @@ trait CreateDocumentsProcess {
 
     val indexingSession = searchIndex.startDocumentSetIndexingSession(documentSetId)
 
-    if (!splitDocuments) CreateDocumentsFromFileQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId), indexingSession)
-    else CreateDocumentsFromPagesQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId), indexingSession)
+    if (!splitDocuments) CreateDocumentsFromFileQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId), 
+        indexingSession, progressReporter)
+    else CreateDocumentsFromPagesQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId), 
+        indexingSession, progressReporter)
 
   }
 
@@ -39,19 +42,24 @@ trait CreateDocumentsProcess {
   // used to find the files.
   private abstract class CreateAndIndexDocument(documentSetId: Long, queryPage: Int,
                                                 documentIdGenerator: DocumentIdGenerator,
-                                                indexingSession: DocumentSetIndexingSession) extends FileGroupTaskStep {
+                                                indexingSession: DocumentSetIndexingSession,
+                                                progressReporter: ActorRef) extends FileGroupTaskStep {
     protected val IndexingTimeout = 3 minutes
 
     override def execute: FileGroupTaskStep = {
       val files = createDocumentsProcessStorage.findFilesQueryPage(documentSetId, queryPage)
 
       if (files.nonEmpty) {
+        files.foreach(reportStartTask)
+        
         val documents = createDocumentsFromFiles(files)
         createDocumentsProcessStorage.writeDocuments(documents)
 
         indexDocuments(documentSetId, documents)
 
-        CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator, indexingSession)
+        files.foreach(reportCompleteTask)
+        
+        CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator, indexingSession, progressReporter)
       } else {
         createDocumentsProcessStorage.saveDocumentCount(documentSetId)
         createDocumentsProcessStorage.deleteTempFiles(documentSetId)
@@ -69,13 +77,20 @@ trait CreateDocumentsProcess {
 
     // Document creation is handled by subclasses, depending on value of splitDocuments
     protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document]
+    
+    private def reportStartTask(file: File): Unit = 
+      progressReporter ! StartTask(documentSetId, file.id)
+    
+    private  def reportCompleteTask(file: File): Unit = 
+      progressReporter ! CompleteTask(documentSetId, file.id)
   }
 
   // Create one Document per File by concatenating the text of all Pages
   private case class CreateDocumentsFromFileQueryPage(documentSetId: Long, queryPage: Int,
                                                       documentIdGenerator: DocumentIdGenerator,
-                                                      indexingSession: DocumentSetIndexingSession)
-      extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, indexingSession) {
+                                                      indexingSession: DocumentSetIndexingSession,
+                                                      progressReporter: ActorRef)
+      extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, indexingSession, progressReporter) {
 
     override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
       files.map(createDocument(documentSetId, _))
@@ -96,8 +111,9 @@ trait CreateDocumentsProcess {
   // Create one Document for each Page in a File.
   private case class CreateDocumentsFromPagesQueryPage(documentSetId: Long, queryPage: Int,
                                                        documentIdGenerator: DocumentIdGenerator,
-                                                       indexingSession: DocumentSetIndexingSession)
-      extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, indexingSession) {
+                                                       indexingSession: DocumentSetIndexingSession,
+                                                       progressReporter: ActorRef)
+      extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, indexingSession, progressReporter) {
 
     override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
       files.flatMap(createDocumentsFromPages(documentSetId, _))
