@@ -4,9 +4,9 @@ import java.sql.{Connection,Timestamp}
 import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
-import org.overviewproject.models._
 import org.overviewproject.models.tables._
-import org.overviewproject.tree.orm._
+import org.overviewproject.models.{Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates objects in the database while returning them.
@@ -23,6 +23,34 @@ class DbFactory(connection: Connection) extends Factory {
   override def document(
     id: Long = 0L,
     documentSetId: Long = 0L,
+    url: Option[String] = None,
+    suppliedId: String = "",
+    title: String = "",
+    keywords: Seq[String] = Seq(),
+    pageNumber: Option[Int] = None,
+    fileId: Option[Long] = None,
+    pageId: Option[Long] = None,
+    text: String = ""
+  ) = {
+    val document = podoFactory.document(
+      id,
+      documentSetId,
+      url,
+      suppliedId,
+      title,
+      keywords,
+      pageNumber,
+      fileId,
+      pageId,
+      text
+    )
+    DbFactory.queries.insertDocument += document
+    document
+  }
+
+  override def deprecatedDocument(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
     description: String = "",
     title: Option[String] = None,
     suppliedId: Option[String] = None,
@@ -33,7 +61,7 @@ class DbFactory(connection: Connection) extends Factory {
     pageId: Option[Long] = None,
     pageNumber: Option[Int] = None
   ) = {
-    val document = podoFactory.document(
+    val document = podoFactory.deprecatedDocument(
       id,
       documentSetId,
       description,
@@ -46,7 +74,7 @@ class DbFactory(connection: Connection) extends Factory {
       pageId,
       pageNumber
     )
-    DbFactory.queries.insertDocument += document
+    DbFactory.queries.insertDocument += document.toDocument
     document
   }
 

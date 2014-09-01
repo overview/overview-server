@@ -3,8 +3,8 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models._
-import org.overviewproject.tree.orm._
+import org.overviewproject.models.{Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates models simply.
@@ -26,6 +26,20 @@ trait Factory {
   def document(
     id: Long = 0L,
     documentSetId: Long = 0L,
+    url: Option[String] = None,
+    suppliedId: String = "",
+    title: String = "",
+    keywords: Seq[String] = Seq(),
+    pageNumber: Option[Int] = None,
+    fileId: Option[Long] = None,
+    pageId: Option[Long] = None,
+    text: String = ""
+  ): Document
+
+  /** Creates a new DeprecatedDocument with the given parameters. */
+  def deprecatedDocument(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
     description: String = "",
     title: Option[String] = None,
     suppliedId: Option[String] = None,
@@ -35,7 +49,7 @@ trait Factory {
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     pageNumber: Option[Int] = None
-  ): Document
+  ): DeprecatedDocument
 
   /** Creates a new DocumentSet with the given parameters. */
   def documentSet(

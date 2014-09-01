@@ -27,6 +27,8 @@ import models.OverviewDatabase
  *   }
  */
 class FinderSpecification extends Specification with AroundExample {
+  sequential
+
   trait FinderScope extends Scope {
     val schema = models.orm.Schema
   }

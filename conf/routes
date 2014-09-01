@@ -125,6 +125,9 @@ GET    /api/v1/document-sets/:id/saved-searches/:query/documents controllers.api
 GET /api/v1/vizs/:id controllers.api.VizController.show(id: Long)
 PUT /api/v1/vizs/:id controllers.api.VizController.update(id: Long)
 
+GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, q: String ?= "")
+GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)
+
 GET    /api/v1/vizs/:vizId/objects     controllers.api.VizObjectController.index(vizId: Long)
 POST   /api/v1/vizs/:vizId/objects     controllers.api.VizObjectController.create(vizId: Long)
 GET    /api/v1/vizs/:vizId/objects/:id controllers.api.VizObjectController.show(vizId: Long, id: Long)

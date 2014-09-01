@@ -1,17 +1,16 @@
-package views.json.api.Document
+package views.json.api.DocumentInfo
 
 import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString,JsValue}
 import scala.collection.mutable.Buffer
 
-import org.overviewproject.models.Document
+import org.overviewproject.models.DocumentInfo
 
 object show {
-  def apply(document: Document): JsValue = {
+  def apply(document: DocumentInfo): JsValue = {
     val buf = Buffer[(String,JsValue)](
       "id" -> JsNumber(document.id),
       "title" -> JsString(document.title),
-      "keywords" -> JsArray(document.keywords.map(JsString(_))),
-      "text" -> JsString(document.text)
+      "keywords" -> JsArray(document.keywords.map(JsString(_)))
     )
     if (document.suppliedId.nonEmpty) {
       buf += ("suppliedId" -> JsString(document.suppliedId))

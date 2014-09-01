@@ -1,9 +1,13 @@
 package org.overviewproject.models.tables
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.Document
+import org.overviewproject.models.DocumentInfo
 
-class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
+/** READ-ONLY!
+  *
+  * TODO: figure out how to use a Slick TableQuery.map() instead.
+  */
+class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   private val keywordColumnType = MappedColumnType.base[Seq[String], String](
     _.mkString(" "),
     _.split(" ").toSeq
@@ -12,13 +16,10 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
   def keywords = column[Seq[String]]("description")(keywordColumnType)
-  def text = column[Option[String]]("text")
   def url = column[Option[String]]("url")
   def suppliedId = column[Option[String]]("supplied_id")
   def documentcloudId = column[Option[String]]("documentcloud_id")
   def title = column[Option[String]]("title")
-  def fileId = column[Option[Long]]("file_id")
-  def pageId = column[Option[Long]]("page_id")
   def pageNumber = column[Option[Int]]("page_number")
 
   /*
@@ -34,24 +35,18 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     documentcloudId,
     title,
     pageNumber,
-    keywords,
-    fileId,
-    pageId,
-    text
-  ).<>[Document,Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Option[Long],Option[Long],Option[String]]](
-    (t: Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Option[Long],Option[Long],Option[String]]) => Document.apply(
+    keywords
+  ).<>[DocumentInfo,Tuple8[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String]]](
+    (t: Tuple8[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String]]) => DocumentInfo.apply(
       t._1,
       t._2,
       t._3,
       t._4.orElse(t._5).getOrElse(""), // suppliedId || documentcloudId || ""
       t._6.getOrElse(""),              // title
       t._7,
-      t._8,
-      t._9,
-      t._10,
-      t._11.getOrElse("")              // text
+      t._8
     ),
-    { d: Document => Some(
+    { d: DocumentInfo => Some(
       d.id,
       d.documentSetId,
       d.url,
@@ -59,12 +54,13 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       None,
       Some(d.title),
       d.pageNumber,
-      d.keywords,
-      d.fileId,
-      d.pageId,
-      Some(d.text)
+      d.keywords
     )}
   )
 }
 
-object Documents extends TableQuery(new DocumentsImpl(_))
+/** READ-ONLY!
+  *
+  * TODO: figure out how to use a Slick TableQuery.map() instead.
+  */
+object DocumentInfos extends TableQuery(new DocumentInfosImpl(_))

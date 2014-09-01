@@ -35,7 +35,7 @@ trait DocumentVizObjectBackend {
 
 trait DbDocumentVizObjectBackend extends DocumentVizObjectBackend { self: DbBackend =>
   override def show(documentId: Long, vizObjectId: Long) = db { session =>
-    DbDocumentVizObjectBackend.byIds(documentId: Long, vizObjectId: Long)(session)
+    DbDocumentVizObjectBackend.byIds(documentId, vizObjectId)(session)
   }
 
   override def create(documentId: Long, vizObjectId: Long, json: Option[JsObject]) = db { session =>

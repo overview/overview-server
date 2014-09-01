@@ -10,6 +10,8 @@ import play.api.Play.{start,stop}
   * You need this for every test of every class that connects to the database.
   */
 trait InAppSpecification extends Specification {
+  sequential
+
   override def map(fs: => Fragments) = {
     Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
   }

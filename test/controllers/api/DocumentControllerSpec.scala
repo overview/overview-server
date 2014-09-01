@@ -37,15 +37,15 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       "return some Documents when there are Documents" in new IndexScope {
         val documents = Seq(
           factory.document(
-            title=Some("foo"),
-            description="foo bar",
-            suppliedId=Some("supplied 1"),
-            text=Some("text"),
+            title="foo",
+            keywords=Seq("foo", "bar"),
+            suppliedId="supplied 1",
+            text="text",
             url=Some("http://example.org")
           ),
-          factory.document(title=None, description="", suppliedId=None, text=None, url=None)
+          factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         )
-        mockBackend.index(documentSetId, q) returns Future(documents)
+        mockBackend.index(documentSetId, q) returns Future(documents.map(_.toDocumentInfo))
 
         val json = contentAsString(result)
 
@@ -63,6 +63,49 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must not /#(1) /("suppliedId")
         json must not /#(1) /("url")
         json must not /#(1) /("text")
+      }
+    }
+
+    "#show" should {
+      trait ShowScope extends BaseScope {
+        val documentSetId = 1L
+        val documentId = 2L
+
+        override def action = controller.show(documentSetId, documentId)
+      }
+
+      "return 404 when not found" in new ShowScope {
+        mockBackend.show(documentSetId, documentId) returns Future(None)
+        status(result) must beEqualTo(NOT_FOUND)
+        contentType(result) must beSome("application/json")
+        val json = contentAsString(result)
+        json must /("message" -> s"Document $documentId not found in document set $documentSetId")
+      }
+
+      "return JSON with status code 200" in new ShowScope {
+        mockBackend.show(documentSetId, documentId) returns Future(Some(factory.document(
+          id=documentId,
+          documentSetId=documentSetId,
+          keywords=Seq("foo", "bar"),
+          url=Some("http://example.org"),
+          text="text",
+          title="title",
+          suppliedId="suppliedId"
+        )))
+
+        status(result) must beEqualTo(OK)
+        contentType(result) must beSome("application/json")
+
+        val json = contentAsString(result)
+
+        json must /("id" -> documentId)
+        json must not /("documentSetId")
+        json must /("keywords") /#(0) /("foo")
+        json must /("keywords") /#(1) /("bar")
+        json must /("url" -> "http://example.org")
+        json must /("title" -> "title")
+        json must /("text" -> "text")
+        json must /("suppliedId" -> "suppliedId")
       }
     }
   }

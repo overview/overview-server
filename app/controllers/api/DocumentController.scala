@@ -11,8 +11,15 @@ trait DocumentController extends ApiController {
 
   def index(documentSetId: Long, q: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
     backend.index(documentSetId, q).map { documents =>
-      Ok(views.json.api.Document.index(documents))
+      Ok(views.json.api.DocumentInfo.index(documents))
     }
+  }
+
+  def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
+    backend.show(documentSetId, documentId).map(_ match {
+      case Some(document) => Ok(views.json.api.Document.show(document))
+      case None => NotFound(jsonError(s"Document $documentId not found in document set $documentSetId"))
+    })
   }
 }
 

@@ -3,7 +3,8 @@ package controllers.api
 import scala.concurrent.Future
 
 import controllers.backend.{SavedSearchBackend, SavedSearchDocumentBackend}
-import org.overviewproject.tree.orm.{Document,SearchResult}
+import org.overviewproject.tree.orm.SearchResult
+import org.overviewproject.models.DocumentInfo
 
 class SavedSearchDocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
@@ -21,7 +22,7 @@ class SavedSearchDocumentControllerSpec extends ApiControllerSpecification {
         val documentSetId = 1L
         val query = "foo"
         def searchResult: Option[SearchResult] = Some(factory.searchResult(documentSetId=documentSetId, query=query))
-        def documents: Seq[Document] = Seq()
+        def documents: Seq[DocumentInfo] = Seq()
         override def action = controller.index(documentSetId, query)
 
         mockSearchBackend.show(documentSetId, query) returns Future(searchResult)
@@ -46,8 +47,8 @@ class SavedSearchDocumentControllerSpec extends ApiControllerSpecification {
 
       "return some Documents when there are some" in new IndexScope {
         override def documents = Seq(
-          factory.document(title=Some("title"), url=Some("http://example.org")),
-          factory.document(title=Some("title2"))
+          factory.document(title="title", url=Some("http://example.org")).toDocumentInfo,
+          factory.document(title="title2").toDocumentInfo
         )
         val json = contentAsString(result)
         json must /#(0) /("title" -> "title")

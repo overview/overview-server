@@ -34,6 +34,8 @@ import org.overviewproject.test.factories.{Factory,DbFactory}
 trait DbBackendSpecification
   extends DbSpecification
 {
+  sequential
+
   override def map(fs: => Fragments) = {
     Step(setupDb) ^ super.map(fs) ^ Step(shutdownDb)
   }

@@ -16,7 +16,7 @@ trait SavedSearchDocumentController extends ApiController {
       case None => Future(NotFound(jsonError("""Search not found. You need to POST to /api/v1/document-sets/:id/search before you can GET the list of documents for that search.""")))
       case Some(searchResult) =>
         for (documents <- backend.index(searchResult.id))
-          yield Ok(views.json.api.Document.index(documents))
+          yield Ok(views.json.api.DocumentInfo.index(documents))
     })
   }
 }
