@@ -19,8 +19,8 @@ object SearchIndexSearcherProtocol {
 object SearchIndexSearcherFSM {
   sealed trait State
   case object Idle extends State
-  case object WaitingForSearchInfo extends State
-  case object WaitingForSearchSaverEnd extends State
+  case object WaitingForSearch extends State
+  case object WaitingForSave extends State
 
   sealed trait Data
   case object Uninitialized extends Data
@@ -28,10 +28,8 @@ object SearchIndexSearcherFSM {
 }
 
 trait SearchIndexComponent {
-  def startSearch(index: String, query: String): Future[SearchResponse]
-  def getNextSearchResultPage(scrollId: String): Future[SearchResponse]
-  def deleteDocuments(documentSetId: Long): Future[DeleteByQueryResponse]
-  def deleteDocumentSetAlias(documentSetId: Long): Future[IndicesAliasesResponse]
+  def searchForIds(documentSetId: Long, query: String): Future[Seq[Long]]
+  def removeDocumentSet(documentSetId: Long): Future[Unit]
 }
 
 trait SearcherComponents {
@@ -40,14 +38,11 @@ trait SearcherComponents {
 }
 
 trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherComponents {
-
   import SearchIndexSearcherProtocol._
   import SearchSaverProtocol._
   import context.dispatcher
-  
 
-  private case class SearchInfo(scrollId: String)
-  private case class SearchResult(result: SearchResponse)
+  private case class SearchResult(ids: Seq[Long])
 
   private val searchSaver = context.actorOf(Props(produceSearchSaver))
 
@@ -55,26 +50,18 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
 
   when(Idle) {
     case Event(StartSearch(searchId, documentSetId, query), _) =>
-      getSearchInfo(documentSetId, query)
-      goto(WaitingForSearchInfo) using Search(searchId)
+      startSearching(documentSetId, query)
+      goto(WaitingForSearch) using Search(searchId)
   }
 
-  when(WaitingForSearchInfo) {
-    case Event(SearchInfo(scrollId), _) => {
-      getNextSearchResultPage(scrollId)
-      stay
-    }
-    case Event(SearchResult(r), Search(searchId)) if searchHasHits(r) => {
-      saveAndContinueSearch(searchId, r)
-      stay
-    }
-    case Event(SearchResult(r), Search(searchId)) => {
-      waitForSavesToComplete
-      goto(WaitingForSearchSaverEnd) using Search(searchId)
+  when(WaitingForSearch) {
+    case Event(SearchResult(ids), Search(searchId)) => {
+      startSaving(searchId, ids)
+      goto(WaitingForSave) using Search(searchId)
     }
   }
 
-  when(WaitingForSearchSaverEnd) {
+  when(WaitingForSave) {
     case Event(Terminated(a), _) => {
       context.parent ! SearchComplete
       stop
@@ -83,37 +70,22 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
 
   initialize
 
-  private def getSearchInfo(documentSetId: Long, query: String): Unit = {
-    val index = documentSetIndex(documentSetId)
-    searchIndex.startSearch(index, query) onComplete handleSearchResult(r => SearchInfo(r.getScrollId))
+  private def startSearching(documentSetId: Long, query: String): Unit = {
+    searchIndex.searchForIds(documentSetId, query)
+      .onComplete(_ match {
+        case Success(ids) => self ! SearchResult(ids)
+        case Failure(t) => {
+          context.parent ! SearchFailure(t)
+          context.stop(self)
+        }
+      })
   }
 
-  private def getNextSearchResultPage(scrollId: String): Unit = 
-    searchIndex.getNextSearchResultPage(scrollId) onComplete handleSearchResult(r => SearchResult(r))
-  
-  private def searchHasHits(result: SearchResponse): Boolean = result.getHits.hits.length > 0
-
-  private def saveAndContinueSearch(searchId: Long, result: SearchResponse): Unit = {
-    val ids: Array[Long] = for (hit <- result.getHits.hits) yield {
-      hit.getSource.get("id").asInstanceOf[Long]
+  private def startSaving(searchId: Long, ids: Seq[Long]): Unit = {
+    if (ids.nonEmpty) {
+      searchSaver ! SaveIds(searchId, ids)
     }
-
-    searchSaver ! SaveIds(searchId, ids)
-    getNextSearchResultPage(result.getScrollId)
-  }
-
-  private def waitForSavesToComplete: Unit = {
     context.watch(searchSaver)
     searchSaver ! PoisonPill
   }
-
-  private def handleSearchResult(message: SearchResponse => Any)(result: Try[SearchResponse]): Unit = result match {
-    case Success(r) => self ! message(r)
-    case Failure(t) => {
-      context.parent ! SearchFailure(t)
-      context.stop(self)
-    }
-  }
-
-  private def documentSetIndex(documentSetId: Long): String = s"documents_$documentSetId"
 }

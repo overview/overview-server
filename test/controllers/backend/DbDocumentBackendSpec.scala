@@ -7,7 +7,7 @@ import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
 class DbDocumentBackendSpec extends DbBackendSpecification {
 
   trait BaseScope extends DbScope {
-    val testIndexClient: InMemoryIndexClient = InMemoryIndexClient()
+    val testIndexClient: InMemoryIndexClient = new InMemoryIndexClient()
     val backend = new TestDbBackend(session) with DbDocumentBackend {
       override val indexClient: IndexClient = testIndexClient
     }
@@ -27,11 +27,9 @@ class DbDocumentBackendSpec extends DbBackendSpecification {
         val doc3 = factory.document(documentSetId=documentSet.id, title=Some("b"), text=Some("noo nar naz"))
         val documents = Seq(doc1, doc2, doc3)
 
-        await(
-          testIndexClient.addDocumentSet(documentSet.id)
-            .flatMap(Unit => testIndexClient.addDocuments(documents))
-            .flatMap(Unit => testIndexClient.refresh())
-        )
+        await(testIndexClient.addDocumentSet(documentSet.id))
+        await(testIndexClient.addDocuments(documents))
+        await(testIndexClient.refresh())
 
         val q = ""
 

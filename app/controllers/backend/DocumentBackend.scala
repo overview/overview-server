@@ -42,5 +42,5 @@ object DbDocumentBackend {
 }
 
 object DocumentBackend extends DbDocumentBackend with DbBackend {
-  override val indexClient = org.overviewproject.searchindex.InMemoryIndexClient() // FIXME create SingletonIndexClient
+  override val indexClient = org.overviewproject.searchindex.NodeIndexClient.singleton
 }

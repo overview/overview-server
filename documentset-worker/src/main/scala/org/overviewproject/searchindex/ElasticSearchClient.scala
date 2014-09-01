@@ -12,20 +12,8 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress
  * Configuration is setup in elasticsearch.yml
  */
 object ElasticSearchClient {
-  private val ConfigFile = Configuration.searchIndex.getString("config_file")
-  private val SearchIndexHost = Configuration.searchIndex.getString("host")
-  private val SearchIndexPort = Configuration.searchIndex.getInt("port")
+  private val ClusterName = Configuration.searchIndex.getString("cluster_name")
+  private val Hosts = Configuration.searchIndex.getString("hosts")
 
-  val client: TransportClient = createTransportClient
-
-  private def createTransportClient: TransportClient = {
-    val settings = ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)
-    new TransportClient(settings)
-
-    Logger.info(s"Connecting to Search Index [${settings.get("cluster.name")}] at $SearchIndexHost:$SearchIndexPort")
-
-    val transportClient = new TransportClient(settings)
-    transportClient.addTransportAddress(new InetSocketTransportAddress(SearchIndexHost, SearchIndexPort))
-  }
-
+  val client: NodeIndexClient = new NodeIndexClient(ClusterName, Hosts)
 }

@@ -41,7 +41,6 @@ object JobHandler {
 
     DB.connect(dataSource)
 
-    connectToSearchIndex
     logger.info("Starting to scan for jobs")
     startHandlingJobs
   }
@@ -214,25 +213,6 @@ object JobHandler {
     val restarter = new JobRestarter(new DocumentSetCleaner, SearchIndex)
 
     restarter.restart(interruptedJobs)
-  }
-
-  @tailrec
-  private def connectToSearchIndex: Unit = {
-    val SearchIndexRetryInterval = 5000
-
-    logger.info("Looking for Search Index")
-    val attempt = Try {
-      SearchIndex.createIndexIfNotExisting
-    }
-
-    attempt match {
-      case Success(v) => logger.info("Found Search Index")
-      case Failure(e) => {
-        logger.error("Unable to create Search Index", e)
-        Thread.sleep(SearchIndexRetryInterval)
-        connectToSearchIndex
-      }
-    }
   }
 
   private def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {

@@ -23,11 +23,9 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val jobStatusChecker = smartMock[JobStatusChecker]
 
-      val deleteResultPromise = Promise[DeleteByQueryResponse]
-      val deleteAliasResultPromise = Promise[IndicesAliasesResponse]
+      val removeDocumentSetResultPromise = Promise[Unit]
 
-      searchIndex.deleteDocuments(anyLong) returns deleteResultPromise.future
-      searchIndex.deleteDocumentSetAlias(any) returns deleteAliasResultPromise.future
+      searchIndex.removeDocumentSet(anyLong) returns removeDocumentSetResultPromise.future
     }
 
     class TestDeleteHandler extends DeleteHandler with MockComponents {
@@ -36,10 +34,6 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     abstract class DeleteContext extends ActorSystemContext with Before {
-      // need lazy val or def to avoid compiler crash
-      protected lazy val aliasResult: IndicesAliasesResponse = smartMock[IndicesAliasesResponse]
-      protected lazy val documentResult = smartMock[DeleteByQueryResponse]
-
       protected val documentSetId = 2l
 
       protected var parentProbe: TestProbe = _
@@ -47,8 +41,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       protected var jobStatusChecker: JobStatusChecker = _
       
       protected def searchIndex = deleteHandler.underlyingActor.searchIndex
-      protected def deleteAliasResult = deleteHandler.underlyingActor.deleteAliasResultPromise
-      protected def deleteDocumentsResult = deleteHandler.underlyingActor.deleteResultPromise
+      protected def removeDocumentSetResult = deleteHandler.underlyingActor.removeDocumentSetResultPromise
       protected def documentSetDeleter = deleteHandler.underlyingActor.documentSetDeleter
 
       protected def setJobStatus: Unit =
@@ -80,19 +73,12 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     "delete documents and alias with the specified documentSetId from the index" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
-      deleteAliasResult.success(aliasResult)
-
-      there was one(searchIndex).deleteDocumentSetAlias(documentSetId)
-      there was one(searchIndex).deleteDocuments(documentSetId)
+      there was one(searchIndex).removeDocumentSet(documentSetId)
     }
 
     "notify parent when deletion of documents and alias completes successfully" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
-      deleteDocumentsResult.success(documentResult)
-
-      parentProbe.expectNoMsg(10 millis)
-
-      deleteAliasResult.success(aliasResult)
+      removeDocumentSetResult.success(Unit)
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
@@ -100,8 +86,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       val error = new Exception
 
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
-      deleteDocumentsResult.failure(error)
-      deleteAliasResult.success(aliasResult)
+      removeDocumentSetResult.failure(error)
 
       // FIXME: We can't distinguish between failure and success right now
       parentProbe.expectMsg(JobDone(documentSetId))
@@ -119,35 +104,24 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {
       deleteHandler ! DeleteDocumentSet(documentSetId, true)
-
-      deleteDocumentsResult.success(documentResult)
-      deleteAliasResult.success(aliasResult)
-
+      removeDocumentSetResult.success(Unit)
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
     "don't wait until clustering job is no longer running if waitForJobRemoval is false and no job is running" in new DeleteWhileJobIsRunning {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
-      
-      deleteDocumentsResult.success(documentResult)
-      deleteAliasResult.success(aliasResult)
-      
+      removeDocumentSetResult.success(Unit)
       parentProbe.expectMsg(JobDone(documentSetId))
-      
       there was no(jobStatusChecker).isJobRunning(documentSetId)
     }
     
     "cancel any clustering job before deleting a document set if waitForJobRemoval is false" in new DeleteWhileJobIsRunning {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
-
-      deleteDocumentsResult.success(documentResult)
-      deleteAliasResult.success(aliasResult)
-      
+      removeDocumentSetResult.success(Unit)
       parentProbe.expectMsg(JobDone(documentSetId))
-      
       there was one(jobStatusChecker).cancelJob(documentSetId)
     }
-    
+
     "timeout while waiting for job that never gets cancelled" in new TimeoutWhileWaitingForJob {
       deleteHandler ! DeleteDocumentSet(documentSetId, true)
 

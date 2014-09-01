@@ -147,18 +147,11 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
     documentSetDeleter.deleteDocumentSet(documentSetId)
 
-    // delete alias first, so no new documents can be inserted.
-    // creating futures inside for comprehension ensures the calls
-    // are run sequentially
-    val combinedResponse = for {
-      aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
-      documentsResponse <- searchIndex.deleteDocuments(documentSetId)
-    } yield documentsResponse
-
-    combinedResponse onComplete {
-      case Success(r) => self ! Message.DeleteComplete
-      case Failure(t) => self ! Message.SearchIndexDeleteFailed(t)
-    }
+    searchIndex.removeDocumentSet(documentSetId)
+      .onComplete {
+        case Success(r) => self ! Message.DeleteComplete
+        case Failure(t) => self ! Message.SearchIndexDeleteFailed(t)
+      }
   }
   
   private def deleteReclusteringJob(jobId: Long): Unit = {

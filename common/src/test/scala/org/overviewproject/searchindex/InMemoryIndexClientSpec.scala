@@ -1,5 +1,8 @@
 package org.overviewproject.searchindex
 
+import java.util.concurrent.ExecutionException
+import org.elasticsearch.index.query.QueryBuilders
+import org.elasticsearch.indices.IndexMissingException
 import org.specs2.mutable.{After,Specification}
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
@@ -11,7 +14,7 @@ class InMemoryIndexClientSpec extends Specification {
   sequential
 
   trait BaseScope extends After {
-    lazy val indexClient = InMemoryIndexClient()
+    lazy val indexClient = new InMemoryIndexClient()
 
     private val awaitDuration = Duration(2, "s")
     def await[T](future: Future[T]): T = Await.result(future, Duration.Inf)
@@ -28,42 +31,107 @@ class InMemoryIndexClientSpec extends Specification {
   }
 
   "InMemorySearchIndex" should {
-    "find a document" in new BaseScope {
-      val idsFuture: Future[Seq[Long]] = indexClient.addDocumentSet(234L)
-        .flatMap(Unit => indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
-        .flatMap(Unit => indexClient.refresh())
-        .flatMap(Unit => indexClient.searchForIds(234L, "foo123"))
+    "#addDocumentSet" should {
+      "create an alias that filters by document set" in new BaseScope {
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 235L))))
+        await(indexClient.refresh())
 
-      await(idsFuture) must beEqualTo(Seq(123L))
+        val resultsFuture = indexClient.publicClientFuture.map { client =>
+          client.prepareSearch("documents_234")
+            .setTypes("document")
+            .setQuery(QueryBuilders.queryString("*:*"))
+            .setSize(2)
+            .addField("id")
+            .execute().get()
+        }
+
+        val ids = await(resultsFuture)
+          .getHits
+          .getHits
+          .map(_.field("id").value[Object].toString.toLong)
+          .toSeq
+          
+        ids must beEqualTo(Seq(123L))
+      }
     }
 
-    "not find a document in a different document set" in new BaseScope {
-      val idsFuture: Future[Seq[Long]] = indexClient.addDocumentSet(234L)
-        .flatMap(Unit => indexClient.addDocumentSet(235L))
-        .flatMap(Unit => indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
-        .flatMap(Unit => indexClient.refresh())
-        .flatMap(Unit => indexClient.searchForIds(235L, "foo123"))
+    "#removeDocumentSet" should {
+      "remove the index alias" in new BaseScope {
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.removeDocumentSet(234L))
 
-      await(idsFuture) must beEqualTo(Seq())
+        val future = indexClient.publicClientFuture.map { client =>
+          client.prepareSearch("documents_234")
+            .setTypes("document")
+            .setQuery(QueryBuilders.queryString("*:*"))
+            .setSize(2)
+            .addField("id")
+            .execute().get()
+        }
+
+        await(future) must throwA[ExecutionException].like { case t: Throwable =>
+          t.getCause must beAnInstanceOf[IndexMissingException]
+        }
+      }
+
+      "delete associated documents" in new BaseScope {
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 235L))))
+        await(indexClient.refresh)
+        await(indexClient.removeDocumentSet(234L))
+
+        val resultsFuture = indexClient.publicClientFuture.map { client =>
+          client.prepareSearch("documents")
+            .setTypes("document")
+            .setQuery(QueryBuilders.queryString("*:*"))
+            .setSize(2)
+            .addField("id")
+            .execute().get()
+        }
+
+        val ids = await(resultsFuture)
+          .getHits
+          .getHits
+          .map(_.field("id").value[Object].toString.toLong)
+          .toSeq
+          
+        ids must beEqualTo(Seq(124L))
+      }
     }
 
-    "not find a document when the query does not match" in new BaseScope {
-      val idsFuture: Future[Seq[Long]] = indexClient.addDocumentSet(234L)
-        .flatMap(Unit => indexClient.addDocumentSet(234L))
-        .flatMap(Unit => indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
-        .flatMap(Unit => indexClient.refresh())
-        .flatMap(Unit => indexClient.searchForIds(234L, "foo124"))
+    "#searchForIds" should {
+      "find a document" in new BaseScope {
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(234L, "foo123"))
 
-      await(idsFuture) must beEqualTo(Seq())
-    }
+        ids must beEqualTo(Seq(123L))
+      }
 
-    "find multiple documents" in new BaseScope {
-      val idsFuture: Future[Seq[Long]] = indexClient.addDocumentSet(234L)
-        .flatMap(Unit => indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
-        .flatMap(Unit => indexClient.refresh())
-        .flatMap(Unit => indexClient.searchForIds(234L, "bar"))
+      "not find a document in a different document set" in new BaseScope {
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(235L, "foo123"))
 
-      await(idsFuture) must containTheSameElementsAs(Seq(123L, 124L))
+        ids must beEqualTo(Seq())
+      }
+
+      "not find a document when the query does not match" in new BaseScope {
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(234L, "foo124"))
+
+        ids must beEqualTo(Seq())
+      }
+
+      "find multiple documents" in new BaseScope {
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(234L, "bar"))
+
+        ids must containTheSameElementsAs(Seq(123L, 124L))
+      }
     }
   }
 }

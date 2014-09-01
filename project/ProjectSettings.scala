@@ -26,7 +26,6 @@ trait ProjectSettings {
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
   val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
   val commonsIoDep = "commons-io" % "commons-io" % "2.4"
-  val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
   val guavaDep = "com.google.guava" % "guava" % "16.0"
@@ -79,7 +78,6 @@ trait ProjectSettings {
     boneCpDep,
     commonsIoDep,
     elasticSearchDep,
-    elasticSearchCloudAwsDep,
     geronimoJmsDep,
     logbackDep,
     playJsonDep,
@@ -134,8 +132,7 @@ trait ProjectSettings {
 
   val searchIndexDependencies = Seq(
     "log4j" % "log4j" % "1.2.17",
-    elasticSearchDep,
-    elasticSearchCloudAwsDep
+    elasticSearchDep
   )
 
   val runnerDependencies = Seq(
