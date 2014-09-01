@@ -33,8 +33,8 @@ trait DatabaseLike {
         managed(postgresInstructions.connect(100, 100)).acquireAndGet { connection =>
           ensureUser(connection)
           ensureDatabases(connection)
-          block()
         }
+        block()
       }
     }
   }
