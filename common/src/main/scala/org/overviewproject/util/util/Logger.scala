@@ -49,7 +49,7 @@ class SLogger(override protected val jLogger: JLogger) extends Logger
   * `Logger.info("message {} {}", arg1, arg2)` will use a singleton object and
   * prefix messages with "WORKER".
   *
-  * `val logger = Logger.forClass[MyClass]; logger.info("message {} {}", arg1, arg2`
+  * `val logger = Logger.forClass[MyClass]; logger.info("message {} {}", arg1, arg2)`
   * will prefix messages with the fully-qualified name of MyClass.
   */
 object Logger extends Logger {
