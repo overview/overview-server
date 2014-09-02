@@ -82,7 +82,7 @@ define [
       $div.append($refresh_button)
 
       $zoom_buttons = $(_.template('''<div class="buttons">
-          <button type="button" title="<%- t('refresh') %>" class="refresh"><i class="overview-icon-refresh"/></button>
+          <button type="button" title="<%- t('refresh') %>" class="refresh"><i class="icon-level-up"/></button>
           <button type="button" title="<%- t('zoomIn') %>" class="zoom-in"><i class="icon-zoom-in"/></button>
           <button type="button" title="<%- t('zoomOut') %>" class="zoom-out" disabled><i class="icon-zoom-out"/></button>
         </div>''', t: t))
