@@ -10,6 +10,7 @@ import java.io.{BufferedReader,InputStream,InputStreamReader,Reader}
 import java.nio.charset.{Charset,CharsetDecoder,CodingErrorAction}
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
+import org.overviewproject.backports.sun.nio.cs.UTF_8
 import org.overviewproject.database.{ Database, DB }
 import org.overviewproject.persistence.EncodedUploadFile
 import org.overviewproject.postgres.{ LO, LargeObjectInputStream }
@@ -20,8 +21,7 @@ import org.overviewproject.postgres.{ LO, LargeObjectInputStream }
  * reader uses the CharsetDecoder specified by the uploaded file's encoding.
  */
 class UploadReader() {
-  private val Utf8: String = "UTF-8"
-  private val DefaultCharSet: String = Utf8
+  private val Utf8 = new UTF_8()
 
   private var countingInputStream: CountingInputStream = _
 
@@ -41,16 +41,22 @@ class UploadReader() {
     else 0l
 
 
-  /**
-   * @return a CharsetDecoder defined by encoding, if present and valid.
-   * If not, a UTF-8 CharsetDecoder is returned.
-   */
+  /** The CharsetDecoder defined by encoding, if present and valid.
+    *
+    * By default, a UTF-8 decoder is used. Note: this is an _actual_ UTF-8
+    * decoder, backported from a JDK9 snapshot; this is incompatible with
+    * JDK7's UTF-8 decoder, which is actually a CESU-8 decoder.
+    *
+    * See https://bugs.openjdk.java.net/browse/JDK-7096080
+    */
   private def decoder(encoding: Option[String]): CharsetDecoder = {
-    val charSet = encoding.flatMap { n => allCatch opt Charset.forName(n) }
+    val charset = (encoding match {
+      case Some("utf-8") | Some("UTF-8") | None => None // default
+      case Some(name) => allCatch.opt(Charset.forName(name))
+    }).getOrElse(Utf8)
 
-    val decoder = charSet.getOrElse(Charset.forName(DefaultCharSet)).newDecoder()
-    decoder.onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE)
-    
+    charset.newDecoder()
+      .onMalformedInput(CodingErrorAction.REPLACE)
+      .onUnmappableCharacter(CodingErrorAction.REPLACE)
   }
-
 }
