@@ -50,7 +50,7 @@ class ProgressReporterSpec extends Specification {
       val step1Fraction = 0.5
 
       progressReporter ! StartJob(documentSetId, numberOfJobSteps, jobDescription)
-      progressReporter ! StartJobStep(documentSetId, numberOfTasks, step1Fraction)
+      progressReporter ! StartJobStep(documentSetId, numberOfTasks, step1Fraction, jobDescription)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
 
@@ -63,14 +63,14 @@ class ProgressReporterSpec extends Specification {
       val step2Fraction = 0.7
 
       progressReporter ! StartJob(documentSetId, numberOfJobSteps, jobDescription)
-      progressReporter ! StartJobStep(documentSetId, 1, step1Fraction)
+      progressReporter ! StartJobStep(documentSetId, 1, step1Fraction, jobDescription)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteJobStep(documentSetId)
 
       lastProgressStatusMustBe(documentSetId, step1Fraction, s"processing_files:1:$numberOfJobSteps")
       
-      progressReporter ! StartJobStep(documentSetId, numberOfTasks, step2Fraction)
+      progressReporter ! StartJobStep(documentSetId, numberOfTasks, step2Fraction, jobDescription)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
 

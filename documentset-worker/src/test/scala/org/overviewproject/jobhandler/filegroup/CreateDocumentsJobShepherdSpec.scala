@@ -45,7 +45,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       
       jobShepherd.createTasks
       progressReporter.expectMsg(StartJob(documentSetId, 2, jobDescription))
-      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.75))
+      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.75, jobDescription))
       jobShepherd.startTask(task)
       jobShepherd.completeTask(task)
       
@@ -53,7 +53,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       progressReporter.expectMsg(CompleteTask(documentSetId, uploadedFileId))
       progressReporter.expectMsg(CompleteJobStep(documentSetId))
       
-      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.25))
+      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.25, jobDescription))
       
       jobShepherd.completeTask(createDocumentsTask)
       

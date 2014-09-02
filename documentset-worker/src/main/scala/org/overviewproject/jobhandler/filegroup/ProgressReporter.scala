@@ -23,7 +23,7 @@ object ProgressReporterProtocol {
   case class StartJob(jobId: Long, numberOfTasks: Int, description: JobDescription)
   case class CompleteJob(jobId: Long)
 
-  case class StartJobStep(jobId: Long, numberOfTasksInStep: Int, progressFraction: Double)
+  case class StartJobStep(jobId: Long, numberOfTasksInStep: Int, progressFraction: Double, description: JobDescription)
   case class CompleteJobStep(jobId: Long)
 
   case class StartTask(jobId: Long, taskId: Long)
@@ -72,7 +72,7 @@ trait ProgressReporter extends Actor {
     case StartJob(jobId, numberOfTasks, description) => updateProgress(jobId, JobProgress(numberOfTasks))
     case CompleteJob(jobId) => completeJob(jobId)
 
-    case StartJobStep(jobId, numberOfTasksInStep, progressFraction) => startJobStep(jobId, numberOfTasksInStep, progressFraction)
+    case StartJobStep(jobId, numberOfTasksInStep, progressFraction, description) => startJobStep(jobId, numberOfTasksInStep, progressFraction)
     case CompleteJobStep(jobId) => updateTaskForJob(jobId, _.completeJobStep)
 
     case StartTask(jobId, taskId) => updateTaskForJob(jobId, _.startTask)
