@@ -238,7 +238,10 @@ object JobHandler {
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
     t match {
       case e: DisplayedError => logger.info("Handled error for DocumentSet {} creation: {}", job.documentSetId, e)
-      case NonFatal(e) => logger.error("Evil error for DocumentSet {} creation: {}", job.documentSetId, e)
+      case NonFatal(e) => {
+        logger.warn("Evil error for DocumentSet {} creation: {}", job.documentSetId, e)
+        logger.error("Evil error details:", e)
+      }
     }
 
     job.state = Error
