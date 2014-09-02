@@ -44,9 +44,17 @@ class XlsxSpreadsheetContentSpec extends Specification {
 
     "truncate cells to 32767 characters" in new SpreadsheetScope {
       // http://office.microsoft.com/en-ca/excel-help/excel-specifications-and-limits-HP005199291.aspx
-      override val vRows = Seq(Seq("x" * 32768))
-      text must contain("x" * 32767)
-      text must not(contain("x" * 32768))
+      val xxx = "x" * 32768
+      override val vRows = Seq(Seq(xxx))
+      text must contain(">" + xxx.substring(0, 32767) + "<")
+      text must not(contain(xxx))
+    }
+
+    "respect XML entities while truncating" in new SpreadsheetScope {
+      // https://www.pivotaltracker.com/story/show/77496514
+      val xxx = "x" * 32763
+      override val vRows = Seq(Seq(xxx + "&amp;"))
+      text must contain(">" + xxx + "<")
     }
 
     "use spaces instead of invalid control characters" in new SpreadsheetScope {

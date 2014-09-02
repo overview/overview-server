@@ -18,7 +18,13 @@
     val valid = writer.toString
 
     // Truncate. Excel only allows 32767 characters per cell.
-    valid.take(32767)
+    // http://office.microsoft.com/en-ca/excel-help/excel-specifications-and-limits-HP005199291.aspx
+    val truncated = valid.take(32767)
+
+    // Avoid splitting XML entities. Try to keep the regex fast; there are only
+    // five XML entities, after all: &lt;, &gt;, &amp;, &quot;, &apos;
+    val truncatedXmlEntityAtEnd = """&[ltgampquos]{0,4}$""".r
+    truncatedXmlEntityAtEnd.replaceFirstIn(truncated, "")
   }
 
   <sheetData>
