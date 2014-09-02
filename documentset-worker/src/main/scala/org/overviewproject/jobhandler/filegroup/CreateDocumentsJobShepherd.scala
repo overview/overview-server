@@ -7,7 +7,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import org.overviewproject.database.orm.finders.FileFinder
-
+import org.overviewproject.jobhandler.filegroup.JobDescription._
 
 /**
  * Creates the tasks for generating `Document`s from uploaded files.
@@ -22,11 +22,12 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   val NumberOfJobSteps = 2
   val ExtractTextStepSize = 0.75
   val CreateDocumentsStepSize = 0.25
+  val jobDescription = ExtractText
   
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
     val tasks = uploadedFilesInFileGroup(fileGroupId).map(CreatePagesTask(documentSetId, fileGroupId, _))
 
-    progressReporter ! StartJob(documentSetId, NumberOfJobSteps)
+    progressReporter ! StartJob(documentSetId, NumberOfJobSteps, jobDescription)
     progressReporter ! StartJobStep(documentSetId, tasks.size, ExtractTextStepSize)
 
     taskQueue ! AddTasks(tasks)

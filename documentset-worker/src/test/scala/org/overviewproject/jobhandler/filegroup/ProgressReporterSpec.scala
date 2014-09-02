@@ -7,26 +7,27 @@ import org.overviewproject.test.ParameterStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
+import org.overviewproject.jobhandler.filegroup.JobDescription._
 
 class ProgressReporterSpec extends Specification {
 
   "ProgressReporter" should {
 
     "initialize progress when start received" in new ProgressReporterContext {
-      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartJob(documentSetId, numberOfTasks, jobDescription)
 
       lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:0:$numberOfTasks")
     }
 
     "update count on task start" in new ProgressReporterContext {
-      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartJob(documentSetId, numberOfTasks, jobDescription)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
 
       lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:1:$numberOfTasks")
     }
 
     "update fraction complete on task done" in new ProgressReporterContext {
-      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartJob(documentSetId, numberOfTasks, jobDescription)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
 
@@ -34,7 +35,7 @@ class ProgressReporterSpec extends Specification {
     }
 
     "ignore updates after job is complete" in new ProgressReporterContext {
-      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartJob(documentSetId, numberOfTasks, jobDescription)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
 
@@ -48,7 +49,7 @@ class ProgressReporterSpec extends Specification {
       val numberOfJobSteps = 2
       val step1Fraction = 0.5
 
-      progressReporter ! StartJob(documentSetId, numberOfJobSteps)
+      progressReporter ! StartJob(documentSetId, numberOfJobSteps, jobDescription)
       progressReporter ! StartJobStep(documentSetId, numberOfTasks, step1Fraction)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
@@ -61,7 +62,7 @@ class ProgressReporterSpec extends Specification {
       val step1Fraction = 0.3
       val step2Fraction = 0.7
 
-      progressReporter ! StartJob(documentSetId, numberOfJobSteps)
+      progressReporter ! StartJob(documentSetId, numberOfJobSteps, jobDescription)
       progressReporter ! StartJobStep(documentSetId, 1, step1Fraction)
       progressReporter ! StartTask(documentSetId, uploadedFileId)
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
@@ -82,7 +83,8 @@ class ProgressReporterSpec extends Specification {
       protected val numberOfTasks = 5
       protected val uploadedFileId = 10l
       protected val progressFraction = 1.00
-
+      protected val jobDescription = ExtractText
+      
       protected var progressReporter: TestActorRef[TestProgressReporter] = _
 
       protected def lastProgressStatusMustBe(documentSetId: Long, fraction: Double, description: String) = {

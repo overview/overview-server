@@ -10,8 +10,17 @@ import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
+object JobDescription extends Enumeration {
+  type JobDescription = Value
+  
+  val ExtractText = Value(0, "processing_files")
+  val CreateDocument = Value(1, "retrieving_documents")
+}
+
+import JobDescription._ 
+
 object ProgressReporterProtocol {
-  case class StartJob(jobId: Long, numberOfTasks: Int)
+  case class StartJob(jobId: Long, numberOfTasks: Int, description: JobDescription)
   case class CompleteJob(jobId: Long)
 
   case class StartJobStep(jobId: Long, numberOfTasksInStep: Int, progressFraction: Double)
@@ -60,7 +69,7 @@ trait ProgressReporter extends Actor {
   }
 
   def receive = {
-    case StartJob(jobId, numberOfTasks) => updateProgress(jobId, JobProgress(numberOfTasks))
+    case StartJob(jobId, numberOfTasks, description) => updateProgress(jobId, JobProgress(numberOfTasks))
     case CompleteJob(jobId) => completeJob(jobId)
 
     case StartJobStep(jobId, numberOfTasksInStep, progressFraction) => startJobStep(jobId, numberOfTasksInStep, progressFraction)

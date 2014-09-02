@@ -9,6 +9,7 @@ import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
 import org.specs2.mutable.Before
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import org.overviewproject.jobhandler.filegroup.JobDescription._
 
 class CreateDocumentsJobShepherdSpec extends Specification {
 
@@ -43,7 +44,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
     "notify progress reporter about job steps" in new JobShepherdContext {
       
       jobShepherd.createTasks
-      progressReporter.expectMsg(StartJob(documentSetId, 2))
+      progressReporter.expectMsg(StartJob(documentSetId, 2, jobDescription))
       progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.75))
       jobShepherd.startTask(task)
       jobShepherd.completeTask(task)
@@ -70,7 +71,8 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val splitDocuments = true
       val task = CreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
       val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)
-
+      val jobDescription = ExtractText
+      
       override def before = {
         jobQueue = TestProbe()
         progressReporter = TestProbe()
