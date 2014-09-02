@@ -23,12 +23,13 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   val ExtractTextStepSize = 0.75
   val CreateDocumentsStepSize = 0.25
   val jobDescription = ExtractText
+
   
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
     val tasks = uploadedFilesInFileGroup(fileGroupId).map(CreatePagesTask(documentSetId, fileGroupId, _))
 
     progressReporter ! StartJob(documentSetId, NumberOfJobSteps, jobDescription)
-    progressReporter ! StartJobStep(documentSetId, tasks.size, ExtractTextStepSize, jobDescription)
+    progressReporter ! StartJobStep(documentSetId, tasks.size, ExtractTextStepSize, ExtractText)
 
     taskQueue ! AddTasks(tasks)
     tasks
@@ -55,7 +56,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
           
           val numberOfFiles = storage.processedFileCount(documentSetId).toInt
           
-          progressReporter ! StartJobStep(documentSetId, numberOfFiles, CreateDocumentsStepSize, jobDescription)
+          progressReporter ! StartJobStep(documentSetId, numberOfFiles, CreateDocumentsStepSize, CreateDocument)
           
           val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)     
           taskQueue ! AddTasks(Set(createDocumentsTask))

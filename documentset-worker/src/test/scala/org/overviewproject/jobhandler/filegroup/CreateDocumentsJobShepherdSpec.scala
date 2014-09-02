@@ -45,7 +45,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       
       jobShepherd.createTasks
       progressReporter.expectMsg(StartJob(documentSetId, 2, jobDescription))
-      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.75, jobDescription))
+      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.75, stepDescription1))
       jobShepherd.startTask(task)
       jobShepherd.completeTask(task)
       
@@ -53,7 +53,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       progressReporter.expectMsg(CompleteTask(documentSetId, uploadedFileId))
       progressReporter.expectMsg(CompleteJobStep(documentSetId))
       
-      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.25, jobDescription))
+      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.25, stepDescription2))
       
       jobShepherd.completeTask(createDocumentsTask)
       
@@ -72,6 +72,8 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val task = CreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
       val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)
       val jobDescription = ExtractText
+      val stepDescription1 = ExtractText
+      val stepDescription2 = CreateDocument
       
       override def before = {
         jobQueue = TestProbe()
