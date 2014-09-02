@@ -30,13 +30,13 @@ object ProgressReporterProtocol {
   case class CompleteTask(jobId: Long, taskId: Long)
 }
 
-case class JobProgress(numberOfTasks: Int, tasksStarted: Int = 0, completedStepsFraction: Double = 0.0,
+case class JobProgress(numberOfTasks: Int, description: JobDescription, tasksStarted: Int = 0, completedStepsFraction: Double = 0.0,
                        currentStepFraction: Double = 1.00, currentStep: Option[JobProgress] = None) {
 
-  def startJobStep(numberOfTasksInStep: Int, progressFractionInStep: Double): JobProgress =
-    updateCurrentStep(copy(currentStep = Some(JobProgress(numberOfTasksInStep)),
+  def startJobStep(numberOfTasksInStep: Int, jobDescription: JobDescription, progressFractionInStep: Double): JobProgress =
+    updateCurrentStep(copy(currentStep = Some(JobProgress(numberOfTasksInStep, description = jobDescription)),
       tasksStarted = tasksStarted + 1,
-      currentStepFraction = progressFractionInStep))(_.startJobStep(numberOfTasksInStep, progressFractionInStep))
+      currentStepFraction = progressFractionInStep))(_.startJobStep(numberOfTasksInStep, jobDescription, progressFractionInStep))
 
   def completeJobStep: JobProgress = currentStep.fold(this)(
     _.updateCurrentStep(copy(currentStep = None,
@@ -50,7 +50,9 @@ case class JobProgress(numberOfTasks: Int, tasksStarted: Int = 0, completedSteps
   def stepInProgress: JobProgress = currentStep.fold(this)(_.stepInProgress)
 
   def fraction: Double = currentStep.fold(completedStepsFraction)(completedStepsFraction + currentStepFraction * _.fraction)
-
+  
+  def descriptionKey: String = s"$description:${tasksStarted}:${numberOfTasks}" 
+  
   private def updateCurrentStep(updateJobStep: => JobProgress)(f: JobProgress => JobProgress): JobProgress =
     currentStep.fold(updateJobStep)(p => copy(currentStep = Some(f(p))))
 
@@ -69,10 +71,12 @@ trait ProgressReporter extends Actor {
   }
 
   def receive = {
-    case StartJob(jobId, numberOfTasks, description) => updateProgress(jobId, JobProgress(numberOfTasks))
+    case StartJob(jobId, numberOfTasks, description) => updateProgress(jobId, JobProgress(numberOfTasks, description))
     case CompleteJob(jobId) => completeJob(jobId)
 
-    case StartJobStep(jobId, numberOfTasksInStep, progressFraction, description) => startJobStep(jobId, numberOfTasksInStep, progressFraction)
+    case StartJobStep(jobId, numberOfTasksInStep, progressFraction, description) => {
+      startJobStep(jobId, description, numberOfTasksInStep, progressFraction)
+    } 
     case CompleteJobStep(jobId) => updateTaskForJob(jobId, _.completeJobStep)
 
     case StartTask(jobId, taskId) => updateTaskForJob(jobId, _.startTask)
@@ -89,11 +93,12 @@ trait ProgressReporter extends Actor {
 
   private def updateProgress(jobId: Long, progress: JobProgress): Unit = {
     jobProgress += (jobId -> progress)
-    storage.updateProgress(jobId, progress.fraction, description(progress))
+    storage.updateProgress(jobId, progress.fraction, progress.stepInProgress.descriptionKey)
   }
 
-  private def startJobStep(jobId: Long, numberOfTasksInStep: Int, progressFraction: Double): Unit =
-    jobProgress.get(jobId).map { p => jobProgress += (jobId -> p.startJobStep(numberOfTasksInStep, progressFraction)) }
+  private def startJobStep(jobId: Long, description: JobDescription, numberOfTasksInStep: Int, progressFraction: Double): Unit =
+    jobProgress.get(jobId).map { p =>
+      jobProgress += (jobId -> p.startJobStep(numberOfTasksInStep, description, progressFraction)) }
 
   private def completeJobStep(jobId: Long): Unit =
     jobProgress.get(jobId).map { p => jobProgress += (jobId -> p.completeJobStep) }

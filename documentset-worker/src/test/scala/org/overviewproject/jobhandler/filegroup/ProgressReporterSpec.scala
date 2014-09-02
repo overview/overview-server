@@ -77,6 +77,18 @@ class ProgressReporterSpec extends Specification {
       lastProgressStatusMustBe(documentSetId, step1Fraction + step2Fraction * 1.0 / numberOfTasks,
         s"processing_files:1:$numberOfTasks")
     }
+    
+    "update description" in new ProgressReporterContext {
+      val numberOfJobSteps = 1
+      progressReporter ! StartJob(documentSetId, numberOfJobSteps, jobDescription)
+      
+      lastProgressStatusMustBe(documentSetId, 0.0, s"$jobDescription:0:$numberOfJobSteps")
+      progressReporter ! StartJobStep(documentSetId, numberOfTasks, 1.0, jobStepDescription)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      
+      lastProgressStatusMustBe(documentSetId, 0.2, s"$jobStepDescription:1:$numberOfTasks")
+    }
 
     trait ProgressReporterContext extends ActorSystemContext with Before {
       protected val documentSetId = 1l
@@ -84,6 +96,7 @@ class ProgressReporterSpec extends Specification {
       protected val uploadedFileId = 10l
       protected val progressFraction = 1.00
       protected val jobDescription = ExtractText
+      protected val jobStepDescription = CreateDocument 
       
       protected var progressReporter: TestActorRef[TestProgressReporter] = _
 
