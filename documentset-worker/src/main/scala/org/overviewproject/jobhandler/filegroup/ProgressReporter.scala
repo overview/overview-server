@@ -13,8 +13,9 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 object JobDescription extends Enumeration {
   type JobDescription = Value
   
-  val ExtractText = Value(0, "processing_files")
-  val CreateDocument = Value(1, "retrieving_documents")
+  val ProcessUpload = Value(0, "processing_upload")
+  val ExtractText = Value(1, "processing_files")
+  val CreateDocument = Value(2, "retrieving_documents")
 }
 
 import JobDescription._ 

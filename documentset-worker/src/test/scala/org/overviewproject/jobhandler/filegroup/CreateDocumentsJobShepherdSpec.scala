@@ -71,7 +71,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val splitDocuments = true
       val task = CreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
       val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)
-      val jobDescription = ExtractText
+      val jobDescription = ProcessUpload
       val stepDescription1 = ExtractText
       val stepDescription2 = CreateDocument
       
