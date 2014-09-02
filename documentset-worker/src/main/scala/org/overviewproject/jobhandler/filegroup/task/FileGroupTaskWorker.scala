@@ -37,8 +37,8 @@ object FileGroupTaskWorkerFSM {
 
   sealed trait Data
   case class ExternalActorsFound(jobQueue: Option[ActorRef], progressReporter: Option[ActorRef]) extends Data
-  case class JobQueue(queue: ActorRef) extends Data
-  case class TaskInfo(queue: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
+  case class ExternalActors(queue: ActorRef, reporter: ActorRef) extends Data
+  case class TaskInfo(queue: ActorRef, reporter: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
 
 }
 
@@ -66,10 +66,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private val RetryInterval: FiniteDuration = 1 second
 
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
-  private var jobQueue: ActorRef = _
 
   private val progressReporterSelection = system.actorSelection(progressReporterPath)
-  private var progressReporter: ActorRef = _
 
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
   protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
@@ -86,7 +84,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       Logger.info(s"[${self.path}] Found Job Queue at ${jq.path}")
       jq ! RegisterWorker(self)
 
-      pr.fold(stay using ExternalActorsFound(Some(jq), pr))(_ => goto(Ready) using JobQueue(jq))
+      pr.fold(stay using ExternalActorsFound(Some(jq), pr))(goto(Ready) using ExternalActors(jq, _))
     }
     case Event(ActorIdentity(JobQueueId, None), _) => {
       Logger.info(s"[${self.path}] Looking for Job Queue at $jobQueuePath")
@@ -97,24 +95,24 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(ActorIdentity(ProgressReporterId, Some(pr)), ExternalActorsFound(jq, _)) => {
       Logger.info(s"[${self.path}] Found Progress Reporter at ${pr.path}")
 
-      jq.fold(stay using ExternalActorsFound(None, Some(pr)))(goto(Ready) using JobQueue(_))
+      jq.fold(stay using ExternalActorsFound(None, Some(pr)))(goto(Ready) using ExternalActors(_, pr))
     }
   }
 
   when(Ready) {
-    case Event(TaskAvailable, JobQueue(jobQueue)) => {
+    case Event(TaskAvailable, ExternalActors(jobQueue, _)) => {
       jobQueue ! ReadyForTask
       stay
     }
-    case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), JobQueue(jobQueue)) => {
+    case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), ExternalActors(jobQueue, progressReporter)) => {
       executeTaskStep(startCreatePagesTask(documentSetId, uploadedFileId))
-      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
+      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)
     }
-    case Event(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments), JobQueue(jobQueue)) => {
+    case Event(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments), ExternalActors(jobQueue, progressReporter)) => {
       executeTaskStep(startCreateDocumentsTask(documentSetId, splitDocuments, progressReporter))
-      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, 0)
+      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
-    case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
+    case Event(DeleteFileUploadJob(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
       ignoringExceptions { deleteFileUploadJob(documentSetId, fileGroupId) }
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
@@ -125,17 +123,17 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Working) {
-    case Event(CreatePagesProcessComplete(documentSetId, uploadedFileId, fileId), TaskInfo(jobQueue, _, _, _)) => {
+    case Event(CreatePagesProcessComplete(documentSetId, uploadedFileId, fileId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
       jobQueue ! TaskDone(documentSetId, fileId)
       jobQueue ! ReadyForTask
 
-      goto(Ready) using JobQueue(jobQueue)
+      goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
-    case Event(CreateDocumentsProcessComplete(documentSetId), TaskInfo(jobQueue, _, _, _)) => {
+    case Event(CreateDocumentsProcessComplete(documentSetId), TaskInfo(jobQueue,progressReporter, _, _, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
-      goto(Ready) using JobQueue(jobQueue)
+      goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(step: FileGroupTaskStep, _) => {
       executeTaskStep(step)
@@ -147,12 +145,12 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Cancelled) {
-    case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)) => {
+    case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)) => {
       step.cancel
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
-      goto(Ready) using JobQueue(jobQueue)
+      goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(TaskAvailable, _) => stay
   }

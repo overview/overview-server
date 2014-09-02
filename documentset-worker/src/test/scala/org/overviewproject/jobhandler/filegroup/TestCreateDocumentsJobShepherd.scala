@@ -15,4 +15,5 @@ class TestCreateDocumentsJobShepherd(
   override protected val storage = smartMock[Storage]
   
   storage.uploadedFileIds(fileGroupId) returns uploadedFileIds.toSet
+  storage.processedFileCount(documentSetId) returns uploadedFileIds.size
 }

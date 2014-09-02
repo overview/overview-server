@@ -6,6 +6,7 @@ import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
+import org.overviewproject.database.orm.finders.FileFinder
 
 
 /**
@@ -51,7 +52,8 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
         if (allTasksComplete && !jobCancelled) {
           progressReporter ! CompleteJobStep(documentSetId)
           
-          val numberOfFiles= storage.uploadedFileIds(fileGroupId).size
+          val numberOfFiles = storage.processedFileCount(documentSetId).toInt
+          
           progressReporter ! StartJobStep(documentSetId, numberOfFiles, CreateDocumentsStepSize)
           
           val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)     
@@ -69,6 +71,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   protected val storage: Storage
   protected trait Storage {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
+    def processedFileCount(documentSetId: Long): Long
   }
 }
 
@@ -90,6 +93,10 @@ object CreateDocumentsJobShepherd {
         GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toSet
       }
 
+      override def processedFileCount(documentSetId: Long): Long = Database.inTransaction {
+        FileFinder.byDocumentSet(documentSetId).count
+        
+      }
     }
   }
 }
