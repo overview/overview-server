@@ -1,6 +1,7 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
-  nTrees: Int,
+  nVizs: Int,
+  nJobs: Int,
   viewer: OverviewUser
 )(implicit lang: play.api.i18n.Lang, request: RequestHeader)
 
@@ -41,6 +42,12 @@
         })
       </span>
       <span class="document-count">@m("nDocuments", documentSet.documentCount)</span>
+      <span class="viz-count" data-n-vizs="@nVizs" data-n-viz-jobs="@nJobs">
+        @m("nVizs", nVizs)
+        @if(nJobs > 0) {
+          @m("nJobs", nJobs, nVizs)
+        }
+      </span>
       @if(documentSet.documentProcessingErrorCount > 0) {
         <span class="error-count">
           <a class="error-count" href="@routes.DocumentProcessingErrorController.index(documentSet.id)" data-toggle="modal" data-target="#error-list-modal">
@@ -52,8 +59,8 @@
         <span class="overflow-count" title="@m("nOverflow.title")">@m("nOverflow", documentSet.importOverflowCount)</span>
       }
     </h4>
-    <div class="trees">
-      <a href="@routes.DocumentSetController.show(documentSet.id)">@m("nTrees", nTrees)</a>
+    <div class="open">
+      <a href="@routes.DocumentSetController.show(documentSet.id)">@m("open")</a>
     </div>
   </li>
 }

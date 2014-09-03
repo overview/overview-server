@@ -11,11 +11,12 @@ object showHtml {
   def apply(
       user: OverviewUser,
       documentSet: DocumentSet,
-      nTrees: Int
+      nTrees: Int,
+      nJobs: Int
       )(implicit lang: Lang, request: RequestHeader): JsValue = {
     Json.obj(
       "id" -> documentSet.id,
-      "html" -> views.html.DocumentSet._documentSet(documentSet, nTrees, user).toString
+      "html" -> views.html.DocumentSet._documentSet(documentSet, nTrees, nJobs, user).toString
     )
   }
 }

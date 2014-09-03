@@ -2,6 +2,7 @@
   user: OverviewUser,
   documentSets: org.overviewproject.tree.orm.finders.ResultPage[(
     org.overviewproject.tree.orm.DocumentSet,
+    Int,
     Int
   )],
   jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,Long)]
@@ -23,6 +24,8 @@
 
 @jsMessageKeys = @{Seq(
   "time_display.datetime.medium",
+  "views.DocumentSet._documentSet.nVizs",
+  "views.DocumentSet._documentSet.nJobs",
   "views.DocumentSet._share.loading",
   "views.DocumentSet._share.error",
   "views.DocumentSet._share.explanation",
@@ -36,11 +39,13 @@
 @**** Stupid function needed only because I can't figure out how to pass 2 params in the map call ****@
 @displayDocumentSet(documentSetWithNTrees: (
     org.overviewproject.tree.orm.DocumentSet,
+    Int,
     Int
   )) = {
   @views.html.DocumentSet._documentSet(
     documentSetWithNTrees._1,
     documentSetWithNTrees._2,
+    documentSetWithNTrees._3,
     user
   )
 }

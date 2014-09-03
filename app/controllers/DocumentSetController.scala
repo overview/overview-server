@@ -23,11 +23,17 @@ trait DocumentSetController extends Controller {
     /** Returns a DocumentSet from an ID */
     def findDocumentSet(id: Long): Option[DocumentSet]
 
-    /** Returns an Iterable: for each DocumentSet, the number of Trees.
+    /** Returns a Seq: for each DocumentSet, the number of Trees.
       *
       * The return value comes in the same order as the input parameter.
       */
-    def findNTreesByDocumentSets(documentSetIds: Seq[Long]) : Seq[Int]
+    def findNTreesByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
+
+    /** Returns a Seq: for each DocumentSet, the number of Recluster jobs.
+      *
+      * The return value comes in the same order as the input parameter.
+      */
+    def findNJobsByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
 
     /** Returns a page of DocumentSets */
     def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
@@ -86,11 +92,13 @@ trait DocumentSetController extends Controller {
     val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
     val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
 
-    val nTrees = storage.findNTreesByDocumentSets(documentSets.map(_.id))
+    val nVizs = storage.findNTreesByDocumentSets(documentSets.map(_.id))
+    val nJobs = storage.findNJobsByDocumentSets(documentSets.map(_.id))
 
-    val documentSetsWithNTrees = documentSets.zip(nTrees)
+    val documentSetsWithCounts = documentSets.zipWithIndex
+      .map((t: Tuple2[DocumentSet,Int]) => (t._1, nVizs(t._2), nJobs(t._2)))
 
-    val resultPage = ResultPage(documentSetsWithNTrees, documentSetsPage.pageDetails)
+    val resultPage = ResultPage(documentSetsWithCounts, documentSetsPage.pageDetails)
 
     if (resultPage.pageDetails.totalLength == 0 && jobs.length == 0) {
       Redirect(routes.PublicDocumentSetController.index).flashing(request.flash)
@@ -127,7 +135,8 @@ trait DocumentSetController extends Controller {
       case None => NotFound
       case Some(documentSet) => {
         val nTrees = storage.findNTreesByDocumentSets(Seq(id)).headOption.getOrElse(0)
-        Ok(views.json.DocumentSet.showHtml(request.user, documentSet, nTrees))
+        val nJobs = storage.findNJobsByDocumentSets(Seq(id)).headOption.getOrElse(0)
+        Ok(views.json.DocumentSet.showHtml(request.user, documentSet, nTrees, nJobs))
       }
     }
   }
@@ -236,8 +245,24 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
       import org.overviewproject.postgres.SquerylEntrypoint._
 
       val idToNTrees = from(models.orm.Schema.trees)(t =>
+        where(t.documentSetId in documentSetIds)
         groupBy(t.documentSetId)
         compute(count(t.id))
+      )
+        .toSeq
+        .map((g) => (g.key -> g.measures.toInt))
+        .toMap
+
+      documentSetIds.map((id) => idToNTrees.getOrElse(id, 0))
+    }
+
+    override def findNJobsByDocumentSets(documentSetIds: Seq[Long]) = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
+      val idToNTrees = from(models.orm.Schema.documentSetCreationJobs)(j =>
+        where(j.documentSetId in documentSetIds and j.state <> DocumentSetCreationJobState.Cancelled)
+        groupBy(j.documentSetId)
+        compute(count(j.id))
       )
         .toSeq
         .map((g) => (g.key -> g.measures.toInt))
