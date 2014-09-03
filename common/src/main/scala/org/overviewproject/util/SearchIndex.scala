@@ -8,7 +8,7 @@ import org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder
 import scala.concurrent.{Await,Future,Promise}
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.searchindex.NodeIndexClient
+import org.overviewproject.searchindex.TransportIndexClient
 
 /**
  * A session for batch indexing documents. The session starts on creation, and ends after calling `complete`.
@@ -47,7 +47,7 @@ object SearchIndex extends SearchIndex {
   private val ClusterName = Configuration.searchIndex.getString("cluster_name")
   private val Hosts = Configuration.searchIndex.getString("hosts")
 
-  private val indexClient: NodeIndexClient = new NodeIndexClient(ClusterName, Hosts)
+  private val indexClient: TransportIndexClient = new TransportIndexClient(ClusterName, Hosts)
 
   private def await[T](f: Future[T]): T = Await.result(f, Duration.Inf)
 
