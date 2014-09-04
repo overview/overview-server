@@ -1,22 +1,15 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import org.specs2.mutable.Specification
-import org.specs2.mock.Mockito
+import scala.concurrent.Promise
+import akka.testkit.TestProbe
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import org.overviewproject.searchindex.ElasticSearchIndexClient
+import org.overviewproject.test.ActorSystemContext
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.File
-import org.mockito.invocation.InvocationOnMock
-import org.specs2.specification.Scope
-import org.overviewproject.util.SearchIndex
-import org.overviewproject.util.DocumentSetIndexingSession
-import scala.concurrent.Future
-import akka.actor.ActorRef
-import org.overviewproject.test.ActorSystemContext
-import akka.testkit.TestProbe
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartTask
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.CompleteTask
-import org.overviewproject.searchindex.ElasticSearchIndexClient
-import scala.concurrent.Promise
+import org.specs2.mutable.Specification
 
 class CreateDocumentsProcessSpec extends Specification with Mockito {
 

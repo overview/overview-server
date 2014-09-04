@@ -5,8 +5,6 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.File
-import org.overviewproject.util.DocumentSetIndexingSession
-import org.overviewproject.util.SearchIndex
 import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import org.overviewproject.searchindex.ElasticSearchIndexClient
