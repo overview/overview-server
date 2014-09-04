@@ -11,6 +11,7 @@ import org.overviewproject.database.orm.finders.DocumentFinder
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.database.orm.finders.FinderById
 import org.overviewproject.util.SearchIndex
+import org.overviewproject.searchindex.TransportIndexClient
 
 /**
  * Implementation of [[CreateDocumentsProcess]] with actual database queries and [[SearchIndex]]
@@ -18,7 +19,8 @@ import org.overviewproject.util.SearchIndex
 trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
   private val PageSize = 50
 
-  override protected val searchIndex = SearchIndex
+  override protected val searchIndex = TransportIndexClient.singleton
+  
   override protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator = DocumentIdGenerator(documentSetId)
   override protected val createDocumentsProcessStorage: CreateDocumentsProcessStorage = new DatabaseStorage
 

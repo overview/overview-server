@@ -15,6 +15,8 @@ import akka.testkit.TestProbe
 import org.specs2.mutable.Before
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartTask
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.CompleteTask
+import org.overviewproject.searchindex.ElasticSearchIndexClient
+import scala.concurrent.Promise
 
 class CreateDocumentsProcessSpec extends Specification with Mockito {
 
@@ -56,16 +58,14 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
     "add documents to search index" in new OneResultPageContext {
       val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false, progressReporter.ref)
 
+      there was one(createDocumentsProcess.searchIndex).addDocumentSet(documentSetId)
+
       val nextStep = firstStep.execute
-
-      there was one(createDocumentsProcess.searchIndex).startDocumentSetIndexingSession(documentSetId)
-
-      there were pageSize.times(createDocumentsProcess.indexingSession).indexDocument(anyLong, anyLong, anyString, any, any)
-
       nextStep.execute
+      
+      there was one(createDocumentsProcess.searchIndex).addDocuments(documents.take(pageSize))
+      there was one(createDocumentsProcess.searchIndex).refresh
 
-      there was one(createDocumentsProcess.indexingSession).complete
-      there was one(createDocumentsProcess.indexingSession).requestsComplete
     }
 
     "send notification to progress reporter for each file processed" in new OneResultPageContext {
@@ -161,13 +161,12 @@ class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (S
   private val filesPage1 = files.take(pageSize)
   private val filesPage2 = files.drop(pageSize)
 
-  val indexingSession = smartMock[DocumentSetIndexingSession]
-  indexingSession.requestsComplete returns Future.successful()
+  override val searchIndex = smartMock[ElasticSearchIndexClient]
 
-  override val searchIndex = smartMock[SearchIndex]
-
-  searchIndex.startDocumentSetIndexingSession(documentSetId) returns indexingSession
-
+  searchIndex.addDocumentSet(documentSetId) returns Promise.successful().future
+  searchIndex.addDocuments(any) returns Promise.successful().future
+  searchIndex.refresh returns Promise.successful().future
+  
   override val createDocumentsProcessStorage = smartMock[CreateDocumentsProcessStorage]
 
   createDocumentsProcessStorage.findFilesQueryPage(documentSetId, 0) returns filesPage1.toSeq
