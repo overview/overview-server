@@ -22,7 +22,7 @@ import org.overviewproject.util.Logger
  */
 trait CreateDocumentsProcess {
 
-  protected val ElasticSearchRequestTimeout = 5 minutes
+  protected val ElasticSearchRequestTimeout = 1 minutes
 
   protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator
 
@@ -32,7 +32,7 @@ trait CreateDocumentsProcess {
 
     Logger.info(s"[$documentSetId] create index")
     await(searchIndex.addDocumentSet(documentSetId))
-
+    Logger.info("s[$documentSetId] index created")
     if (!splitDocuments) CreateDocumentsFromFileQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId),
       progressReporter)
     else CreateDocumentsFromPagesQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId),
