@@ -9,6 +9,7 @@ import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import scala.concurrent.Future
+import org.overviewproject.util.Logger
 
 /**
  * Creates [[Document]]s from [[File]]s. [[File]]s are read from the database in chunks, with each step
@@ -29,6 +30,7 @@ trait CreateDocumentsProcess {
   def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
                                progressReporter: ActorRef): FileGroupTaskStep = {
 
+    Logger.info(s"[$documentSetId] create index")
     await(searchIndex.addDocumentSet(documentSetId))
 
     if (!splitDocuments) CreateDocumentsFromFileQueryPage(documentSetId, 0, getDocumentIdGenerator(documentSetId),
@@ -50,18 +52,20 @@ trait CreateDocumentsProcess {
     protected val IndexingTimeout = 3 minutes
 
     override def execute: FileGroupTaskStep = {
+      Logger.info(s"[$documentSetId] Find files")
       val files = createDocumentsProcessStorage.findFilesQueryPage(documentSetId, queryPage)
 
       if (files.nonEmpty) {
         files.foreach(reportStartTask)
-
+        Logger.info(s"[$documentSetId] create documents")
         val documents = createDocumentsFromFiles(files)
+        Logger.info(s"[$documentSetId] save documents")
         createDocumentsProcessStorage.writeDocuments(documents)
-
+        Logger.info(s"[$documentSetId] index documents")
         indexDocuments(documents)
-
+        Logger.info(s"[$documentSetId] report status")
         files.foreach(reportCompleteTask)
-
+        Logger.info(s"[$documentSetId] Goto next step")
         CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator, progressReporter)
       } else {
         createDocumentsProcessStorage.saveDocumentCount(documentSetId)
