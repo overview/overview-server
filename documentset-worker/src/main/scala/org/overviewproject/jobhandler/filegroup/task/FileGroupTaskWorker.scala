@@ -136,6 +136,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(step: FileGroupTaskStep, _) => {
+      Logger.info(s"Received step $step")
       executeTaskStep(step)
 
       stay
@@ -170,7 +171,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     lookForProgressReporter
   }
 
-  private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
+  private def executeTaskStep(step: FileGroupTaskStep) = Future { Logger.info(s"executing $step");step.execute } pipeTo self
 
   private def ignoringExceptions = handling(classOf[Exception]) by { e => Logger.error(e.toString) }
 }
