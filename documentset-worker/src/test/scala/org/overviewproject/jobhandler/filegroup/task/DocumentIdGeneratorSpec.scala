@@ -33,5 +33,5 @@ class DocumentIdGeneratorSpec extends Specification {
 }
 
 class TestDocumentIdGenerator(override val documentSetId: Long, startId: Long) extends DocumentIdGenerator {
-   override protected def largestExistingId = startId
+   override protected def existingDocumentCount = startId
 }

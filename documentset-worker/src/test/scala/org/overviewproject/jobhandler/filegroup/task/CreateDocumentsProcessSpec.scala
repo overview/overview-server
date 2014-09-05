@@ -179,6 +179,6 @@ class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (S
 
   class TestDocumentIdGenerator(override val documentSetId: Long) extends DocumentIdGenerator {
 
-    override protected def largestExistingId = 0
+    override protected def existingDocumentCount = 0
   }
 }  
