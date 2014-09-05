@@ -2,6 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task
 
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.DocumentFinder
+import org.overviewproject.database.orm.finders.FinderById
 
 trait DocumentIdGenerator {
 
@@ -25,7 +26,12 @@ object DocumentIdGenerator {
 
   private class DocumentIdGeneratorImpl(override val documentSetId: Long) extends DocumentIdGenerator {
     override protected def largestExistingId: Long = Database.inTransaction {
-      DocumentFinder.maxId(documentSetId).getOrElse(0)
+      import org.overviewproject.database.orm.Schema.documentSets
+      
+      val documentSetFinder = new FinderById(documentSets)
+      
+      documentSetFinder.byId(documentSetId).headOption.map { _.documentCount.toLong }.getOrElse(0)
+      
     }
   }
 }
