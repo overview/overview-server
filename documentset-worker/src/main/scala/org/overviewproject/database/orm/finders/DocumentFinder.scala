@@ -26,8 +26,4 @@ object DocumentFinder extends Finder {
   def byDocumentSet(documentSetId: Long): DocumentFinderResult =
     Schema.documents.where(d => d.documentSetId === documentSetId)
 
-  def maxId(documentSetId: Long): Option[Long] =
-    from(Schema.documents)(d =>
-      where(d.documentSetId === documentSetId)
-        compute (max(d.id)))
 }
