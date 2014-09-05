@@ -11,7 +11,6 @@ import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
 import org.overviewproject.persistence.PersistentDocumentSetCreationJob
 import org.overviewproject.util.Progress.ProgressAbortFn
-import org.overviewproject.fileupload.FileUploadDocumentProducer
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.reclustering.ReclusteringDocumentProducer
 
@@ -60,9 +59,6 @@ object DocumentProducerFactory {
         new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
       case CsvUpload =>
         new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
-      case FileUpload =>
-        new FileUploadDocumentProducer(documentSetCreationJob.documentSetId, 
-            documentSetCreationJob.fileGroupId.get, documentSetCreationJob.splitDocuments, consumer, progAbort )
       case Recluster =>
         ReclusteringDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.tagId, consumer, progAbort)
     }
