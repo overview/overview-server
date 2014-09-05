@@ -10,6 +10,7 @@ import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
+/** Description keys for job status */
 object JobDescription extends Enumeration {
   type JobDescription = Value
   
@@ -20,45 +21,71 @@ object JobDescription extends Enumeration {
 
 import JobDescription._ 
 
+/** 
+ *  Messages that can be sent the [[ProgressReporter]] [[Actor]].
+ *  The `jobid` used to identify the job for which progress is reported is currently
+ *  the [[DocumentSet]] id that the job is processing.
+ *  Progress is reported for jobs, job steps, and tasks, by sending Start and Complete messages
+ *  to the [[ProgressReporter]]. A Complete message without a corresponding Start message will lead
+ *  to undefined results.
+ *  A Job can consist of JobSteps or Tasks. A JobStep can consist of other JobSteps or tasks.
+ *  For a given Job or JobStep, only one JobStep can be started at a time, but multiple tasks can be started.
+ *  
+ */
 object ProgressReporterProtocol {
+  
+  /** 
+   *  Notify the [[ProgressReporter]] that a Job is starting. This must be the first
+   *  message received for any given job.
+   *  @param jobId must correspond to the id of a document set being processed by the job.
+   *  @param numberOfTasks The number of tasks or steps in the job
+   *  @param description The description key used to report status to the user
+   */
   case class StartJob(jobId: Long, numberOfTasks: Int, description: JobDescription)
+  
+  /** 
+   *  Notify the [[ProgressReporter]] that the job is completed.
+   *  There should be no further progress reported.
+   */
   case class CompleteJob(jobId: Long)
+  
+  
 
+  /**
+   * Start a JobStep. JobSteps allow progress to be reported at a more granular level than tasks. Subsequent task 
+   * and job step progress reports are assumed to refer to this job step, until [[CompleteJobStep]] is received.
+   * A JobStep has a parent Job or JobStep. Completing a JobStep, completes a specific fraction of the overall
+   * parent progress. If a Job or JobStep consists of multiple JobSteps, the total fraction specified must be
+   * equal to 1.0.
+   * If [[StartJobStep]] is received after a [[CompleteJobStep]], for a given `jobId`, the new JobStep is assumed
+   * to be next in a sequence of steps for the parent Job or JobStep. 
+   * If a [[CompleteJobStep]] has not been received, [[StartJobStep]] will start a child JobStep in the current Job
+   * or JobStep.
+   * @param numberOfTasksInStep The number of tasks or steps in the job
+   * @param description The description key used to report status to the user
+   * @param progressFraction The portion of the total progress completed by this JobStep
+   */
   case class StartJobStep(jobId: Long, numberOfTasksInStep: Int, progressFraction: Double, description: JobDescription)
+
+  /**
+   * Report the current job step as completed.
+   */
   case class CompleteJobStep(jobId: Long)
 
-  case class StartTask(jobId: Long, taskId: Long)
+  /** 
+   * Report the start of a task.
+   * @taskId a unique id (eg. a file id, if each task corresponds to one file) 
+   */
+  case class StartTask(jobId: Long, taskId: Long) 
+
+  /** Report the completion of a task */  
   case class CompleteTask(jobId: Long, taskId: Long)
 }
 
-case class JobProgress(numberOfTasks: Int, description: JobDescription, tasksStarted: Int = 0, completedStepsFraction: Double = 0.0,
-                       currentStepFraction: Double = 1.00, currentStep: Option[JobProgress] = None) {
-
-  def startJobStep(numberOfTasksInStep: Int, jobDescription: JobDescription, progressFractionInStep: Double): JobProgress =
-    updateCurrentStep(copy(currentStep = Some(JobProgress(numberOfTasksInStep, description = jobDescription)),
-      tasksStarted = tasksStarted + 1,
-      currentStepFraction = progressFractionInStep))(_.startJobStep(numberOfTasksInStep, jobDescription, progressFractionInStep))
-
-  def completeJobStep: JobProgress = currentStep.fold(this)(
-    _.updateCurrentStep(copy(currentStep = None,
-      completedStepsFraction = completedStepsFraction + currentStepFraction))(_.completeJobStep))
-
-  def startTask: JobProgress = updateCurrentStep(copy(tasksStarted = tasksStarted + 1))(_.startTask)
-
-  def completeTask: JobProgress =
-    updateCurrentStep(copy(completedStepsFraction = tasksStarted.toDouble / numberOfTasks.toDouble))(_.completeTask)
-
-  def stepInProgress: JobProgress = currentStep.fold(this)(_.stepInProgress)
-
-  def fraction: Double = currentStep.fold(completedStepsFraction)(completedStepsFraction + currentStepFraction * _.fraction)
-  
-  def descriptionKey: String = s"$description:${tasksStarted}:${numberOfTasks}" 
-  
-  private def updateCurrentStep(updateJobStep: => JobProgress)(f: JobProgress => JobProgress): JobProgress =
-    currentStep.fold(updateJobStep)(p => copy(currentStep = Some(f(p))))
-
-}
-
+/** 
+ *  Actor responsible for updating [[DocumentSetCreationJob]] progress status. Only one [[ProgressReporter]]
+ *  should be necessary. Multiple instances trying to report progress on the same job will conflict.
+ */
 trait ProgressReporter extends Actor {
   import ProgressReporterProtocol._
 
@@ -128,3 +155,37 @@ class ProgressReporterImpl extends ProgressReporter {
 object ProgressReporter {
   def apply(): Props = Props[ProgressReporterImpl]
 }
+
+
+/** 
+ *  Keeps track of the current progress
+ */
+
+case class JobProgress(numberOfTasks: Int, description: JobDescription, tasksStarted: Int = 0, completedStepsFraction: Double = 0.0,
+                       currentStepFraction: Double = 1.00, currentStep: Option[JobProgress] = None) {
+
+  def startJobStep(numberOfTasksInStep: Int, jobDescription: JobDescription, progressFractionInStep: Double): JobProgress =
+    updateCurrentStep(copy(currentStep = Some(JobProgress(numberOfTasksInStep, description = jobDescription)),
+      tasksStarted = tasksStarted + 1,
+      currentStepFraction = progressFractionInStep))(_.startJobStep(numberOfTasksInStep, jobDescription, progressFractionInStep))
+
+  def completeJobStep: JobProgress = currentStep.fold(this)(
+    _.updateCurrentStep(copy(currentStep = None,
+      completedStepsFraction = completedStepsFraction + currentStepFraction))(_.completeJobStep))
+
+  def startTask: JobProgress = updateCurrentStep(copy(tasksStarted = tasksStarted + 1))(_.startTask)
+
+  def completeTask: JobProgress =
+    updateCurrentStep(copy(completedStepsFraction = tasksStarted.toDouble / numberOfTasks.toDouble))(_.completeTask)
+
+  def stepInProgress: JobProgress = currentStep.fold(this)(_.stepInProgress)
+
+  def fraction: Double = currentStep.fold(completedStepsFraction)(completedStepsFraction + currentStepFraction * _.fraction)
+  
+  def descriptionKey: String = s"$description:${tasksStarted}:${numberOfTasks}" 
+  
+  private def updateCurrentStep(updateJobStep: => JobProgress)(f: JobProgress => JobProgress): JobProgress =
+    currentStep.fold(updateJobStep)(p => copy(currentStep = Some(f(p))))
+
+}
+
