@@ -119,7 +119,6 @@ object PersistentDocumentSetCreationJob {
     /**
      * Updates state, fractionComplete, and statusDescription
      * Does not change the state if job is cancelled
-     * @return 1 on success, 0 otherwise
      */
     def update {
       checkForCancellation
@@ -137,7 +136,6 @@ object PersistentDocumentSetCreationJob {
       for (j <- job; if (j.state == Cancelled)) state = Cancelled
     }
 
-    /** @return 1 on successful deletion, 0 otherwise */
     def delete {
       val lockedJob = from(documentSetCreationJobs)(dscj =>
         where(dscj.id === documentSetCreationJob.id) select (dscj)).forUpdate.singleOption
