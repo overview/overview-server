@@ -1,7 +1,7 @@
 package controllers.api
 
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{JsError,JsObject,JsPath,JsSuccess,JsValue,Reads}
+import play.api.libs.json.{JsObject,JsPath,JsValue,Reads}
 import scala.concurrent.Future
 import scala.reflect.classTag
 
@@ -33,7 +33,7 @@ trait VizObjectController extends ApiController {
             backend.createMany(vizId, attributesArray.toSeq)
               .map((vizObjects: Seq[VizObject]) => Ok(views.json.api.VizObject.index(vizObjects)))
           }
-          case None => Future(BadRequest(jsonError(
+          case None => Future.successful(BadRequest(jsonError(
             """You must POST a JSON object with "indexedLong" (Number or null), "indexedString" (String or null) and "json" (possibly-empty Object). You may post an Array of such objects to create many objects with one request."""
           )))
         }

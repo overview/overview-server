@@ -13,7 +13,9 @@ trait SavedSearchDocumentController extends ApiController {
 
   def index(id: Long, query: String) = ApiAuthorizedAction(userOwningDocumentSet(id)).async {
     searchBackend.show(id, query).flatMap(_ match {
-      case None => Future(NotFound(jsonError("""Search not found. You need to POST to /api/v1/document-sets/:id/search before you can GET the list of documents for that search.""")))
+      case None => Future.successful(NotFound(jsonError(
+        """Search not found. You need to POST to /api/v1/document-sets/:id/search before you can GET the list of documents for that search."""
+      )))
       case Some(searchResult) =>
         for (documents <- backend.index(searchResult.id))
           yield Ok(views.json.api.DocumentInfo.index(documents))

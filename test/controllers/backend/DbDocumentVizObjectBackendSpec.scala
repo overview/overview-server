@@ -94,6 +94,88 @@ class DbDocumentVizObjectBackendSpec extends DbBackendSpecification {
       }
     }
 
+    "#createMany" should {
+      trait CreateManyScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val doc1 = factory.document(documentSetId=documentSet.id)
+        val doc2 = factory.document(documentSetId=documentSet.id)
+        val viz = factory.viz(documentSetId=documentSet.id)
+        val vizId = viz.id
+        val obj1 = factory.vizObject(vizId=viz.id)
+        val obj2 = factory.vizObject(vizId=viz.id)
+
+        val args: Seq[DocumentVizObject] = Seq(
+          DocumentVizObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
+          DocumentVizObject(doc2.id, obj1.id, Some(Json.obj("bar" -> "baz"))),
+          DocumentVizObject(doc1.id, obj2.id, None)
+        )
+
+        def createMany = await(backend.createMany(vizId, args))
+        lazy val result: Seq[DocumentVizObject] = createMany
+      }
+
+      "return DocumentVizObjects" in new CreateManyScope {
+        result must containTheSameElementsAs(Seq(
+          DocumentVizObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
+          DocumentVizObject(doc2.id, obj1.id, Some(Json.obj("bar" -> "baz"))),
+          DocumentVizObject(doc1.id, obj2.id, None)
+        ))
+      }
+
+      "write the DocumentVizObjects to the database" in new CreateManyScope {
+        result // resolve
+        val dbResults = Seq(
+          findDocumentVizObject(doc1.id, obj1.id),
+          findDocumentVizObject(doc2.id, obj1.id),
+          findDocumentVizObject(doc1.id, obj2.id),
+          findDocumentVizObject(doc2.id, obj2.id) // this one is None
+        ).flatten
+        dbResults must containTheSameElementsAs(result)
+      }
+
+      "update on conflict" in new CreateManyScope {
+        await(backend.create(doc1.id, obj1.id, None))
+        override val args = Seq(
+          DocumentVizObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
+          DocumentVizObject(doc2.id, obj2.id, None)
+        )
+        result must containTheSameElementsAs(Seq(
+          DocumentVizObject(doc1.id, obj1.id, Some(Json.obj("foo" -> "bar"))),
+          DocumentVizObject(doc2.id, obj2.id, None)
+        ))
+        Seq(
+          findDocumentVizObject(doc1.id, obj1.id),
+          findDocumentVizObject(doc2.id, obj1.id),
+          findDocumentVizObject(doc1.id, obj2.id),
+          findDocumentVizObject(doc2.id, obj2.id)
+        ).flatten must containTheSameElementsAs(result)
+      }
+
+      "filter by DocumentSet ID" in new CreateManyScope {
+        val documentSet2 = factory.documentSet()
+        val doc3 = factory.document(documentSetId=documentSet2.id)
+        override val args = Seq(
+          DocumentVizObject(doc1.id, obj1.id, None),
+          DocumentVizObject(doc3.id, obj1.id, None)
+        )
+        result must beEqualTo(Seq(DocumentVizObject(doc1.id, obj1.id, None)))
+        findDocumentVizObject(doc1.id, obj1.id) must beSome
+        findDocumentVizObject(doc3.id, obj1.id) must beNone
+      }
+
+      "filter by Viz ID" in new CreateManyScope {
+        val viz2 = factory.viz(documentSetId=documentSet.id)
+        val obj3 = factory.vizObject(vizId=viz2.id)
+        override val args = Seq(
+          DocumentVizObject(doc1.id, obj1.id, None),
+          DocumentVizObject(doc1.id, obj3.id, None)
+        )
+        result must beEqualTo(Seq(DocumentVizObject(doc1.id, obj1.id, None)))
+        findDocumentVizObject(doc1.id, obj1.id) must beSome
+        findDocumentVizObject(doc1.id, obj3.id) must beNone
+      }
+    }
+
     "#update" should {
       trait UpdateScope extends BaseScope {
         val documentSet = factory.documentSet()

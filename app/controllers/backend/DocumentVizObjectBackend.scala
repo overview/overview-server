@@ -1,12 +1,12 @@
 package controllers.backend
 
-import play.api.libs.json.JsObject
+import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
 
 import org.overviewproject.models.DocumentVizObject
 import org.overviewproject.models.tables.DocumentVizObjects
 
-trait DocumentVizObjectBackend {
+trait DocumentVizObjectBackend extends Backend {
   /** Fetches a single DocumentVizObject.
     *
     * Returns `None` if the DocumentVizObject does not exist.
@@ -19,6 +19,17 @@ trait DocumentVizObjectBackend {
     * reasons.
     */
   def create(documentId: Long, vizObjectId: Long, json: Option[JsObject]): Future[DocumentVizObject]
+
+  /** Creates several DocumentVizObjects and returns them.
+    *
+    * Throws `ParentMissing` on invalid reference. Never throws `Conflict`:
+    * any existing (documentId, vizObjectId) rows will be overwritten. If the
+    * insert fails, nothing will be inserted.
+    *
+    * @param vizId Viz id: skip VizObjects and Documents that don't belong
+    * @param entries DocumentVizObjects to create
+    */
+  def createMany(vizId: Long, entries: Seq[DocumentVizObject]): Future[Seq[DocumentVizObject]]
 
   /** Modifies a DocumentVizObject and returns the modified version.
     *
@@ -41,6 +52,10 @@ trait DbDocumentVizObjectBackend extends DocumentVizObjectBackend { self: DbBack
   override def create(documentId: Long, vizObjectId: Long, json: Option[JsObject]) = db { session =>
     val dvo = DocumentVizObject(documentId, vizObjectId, json)
     DbDocumentVizObjectBackend.insert(dvo)(session)
+  }
+
+  override def createMany(vizId: Long, entries: Seq[DocumentVizObject]) = db { session =>
+    DbDocumentVizObjectBackend.insertAll(vizId, entries)(session)
   }
 
   override def update(documentId: Long, vizObjectId: Long, json: Option[JsObject]) = db { session =>
@@ -69,14 +84,64 @@ object DbDocumentVizObjectBackend {
       .map(_.json)
   }
 
-  private lazy val insertDocumentVizObject = (DocumentVizObjects returning DocumentVizObjects).insertInvoker
+  private lazy val insertDocumentVizObject = DocumentVizObjects.insertInvoker
 
   def byIds(documentId: Long, vizObjectId: Long)(session: Session) = {
     byIdsCompiled(documentId, vizObjectId).firstOption()(session)
   }
 
-  def insert(documentVizObject: DocumentVizObject)(session: Session): DocumentVizObject = exceptions.wrap {
-    (insertDocumentVizObject += documentVizObject)(session)
+  def insert(documentVizObject: DocumentVizObject)(session: Session): DocumentVizObject = {
+    exceptions.wrap {
+      (insertDocumentVizObject += documentVizObject)(session)
+      documentVizObject
+    }
+  }
+
+  private lazy val getDvoResult = new scala.slick.jdbc.GetResult[DocumentVizObject] {
+    override def apply(v1: scala.slick.jdbc.PositionedResult): DocumentVizObject = {
+      DocumentVizObject(
+        v1.nextLong,
+        v1.nextLong,
+        v1.nextStringOption.map(Json.parse(_).as[JsObject])
+      )
+    }
+  }
+
+  def insertAll(vizId: Long, documentVizObjects: Seq[DocumentVizObject])(session: Session): Seq[DocumentVizObject] = {
+    exceptions.wrap {
+      /*
+       * We run both DELETE and INSERT in one query, to save bandwidth and let
+       * Postgres handle atomicity. (This doesn't avoid the race between DELETE
+       * and INSERT, but it does make Postgres roll back on error.)
+       *
+       * Do not omit `WHERE (SELECT COUNT(*) FROM deleted) IS NOT NULL`: that
+       * actually executes the DELETE.
+       */
+      def jsonToSql(json: JsObject) = s"'${json.toString.replaceAll("'", "''")}'"
+      val dvosAsSqlTuples: Seq[String] = documentVizObjects
+        .map((dvo: DocumentVizObject) => "(" + dvo.documentId + "," + dvo.vizObjectId + "," + dvo.json.map(jsonToSql _).getOrElse("NULL") + ")")
+
+      val q = s"""
+        WITH request AS (
+          SELECT *
+          FROM (VALUES ${dvosAsSqlTuples.mkString(",")})
+            AS t(document_id, viz_object_id, json_text)
+          WHERE document_id IN (SELECT id FROM document WHERE document_set_id = (SELECT document_set_id FROM viz WHERE id = $vizId))
+            AND viz_object_id IN (SELECT id FROM viz_object WHERE viz_id = $vizId)
+        ),
+        deleted AS (
+          DELETE FROM document_viz_object
+          WHERE (document_id, viz_object_id) IN (SELECT document_id, viz_object_id FROM request)
+          RETURNING 1
+        )
+        INSERT INTO document_viz_object (document_id, viz_object_id, json_text)
+        SELECT document_id, viz_object_id, json_text FROM request
+        WHERE (SELECT COUNT(*) FROM deleted) IS NOT NULL
+        RETURNING document_id, viz_object_id, json_text
+      """
+
+      scala.slick.jdbc.StaticQuery.queryNA[DocumentVizObject](q)(getDvoResult).list()(session)
+    }
   }
 
   def update(documentId: Long, vizObjectId: Long, json: Option[JsObject])(session: Session): Int = {

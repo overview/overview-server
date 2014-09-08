@@ -49,8 +49,8 @@ trait DbBackendSpecification
   trait DbScope extends BeforeAfter {
     var connected = false
     lazy val connection: Connection = {
-      val ret = DB.getConnection()
       connected = true
+      val ret = DB.getConnection()
       ret.setAutoCommit(false)
       ret
     }
