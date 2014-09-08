@@ -31,7 +31,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   extends DocumentProducer with PersistentDocumentSet {
 
   private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done  
-  private val FetchingFraction = 0.5
+  private val FetchingFraction = 1.0
   private val uploadReader = new UploadReader()
   private var bytesRead = 0l
   private var lastUpdateTime = 0l
