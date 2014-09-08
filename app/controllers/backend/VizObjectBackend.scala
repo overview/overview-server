@@ -24,6 +24,15 @@ trait VizObjectBackend {
     */
   def create(vizId: Long, attributes: VizObject.CreateAttributes): Future[VizObject]
 
+  /** Creates multiple VizObjects.
+    *
+    * Returns an error if the database writes fail.
+    *
+    * The creation is atomic: if creation number 4 fails, it will be as if
+    * creations 1, 2 and 3 never happened.
+    */
+  def createMany(vizId: Long, attributesSeq: Seq[VizObject.CreateAttributes]): Future[Seq[VizObject]]
+
   /** Modifies a VizObject, and returns the modified version.
     *
     * Returns `None` if the VizObject does not exist.
@@ -54,6 +63,17 @@ trait DbVizObjectBackend extends VizObjectBackend { self: DbBackend =>
     val id = DbVizObjectBackend.nextVizObjectId(vizId)(session)
     val vizObject = VizObject.build(id, vizId, attributes)
     DbVizObjectBackend.insert(vizObject)(session)
+  }
+
+  override def createMany(vizId: Long, attributesSeq: Seq[VizObject.CreateAttributes]) = db { implicit session =>
+    val id1 = DbVizObjectBackend.nextVizObjectId(vizId)(session)
+    def build(attributes: VizObject.CreateAttributes, idx: Int) = {
+      VizObject.build(id1 + idx, vizId, attributes)
+    }
+    val vizObjects = attributesSeq.view.zipWithIndex
+      .map((build _).tupled)
+      .force
+    DbVizObjectBackend.insertAll(vizObjects)(session)
   }
 
   override def update(id: Long, attributes: VizObject.UpdateAttributes) = db { implicit session =>
@@ -137,6 +157,10 @@ object DbVizObjectBackend {
 
   def insert(vizObject: VizObject)(session: Session): VizObject = {
     (insertVizObject += vizObject)(session)
+  }
+
+  def insertAll(vizObjects: Seq[VizObject])(session: Session): Seq[VizObject] = {
+    (insertVizObject ++= vizObjects)(session)
   }
 
   def update(id: Long, attributes: VizObject.UpdateAttributes)(session: Session): Int = {

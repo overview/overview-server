@@ -6,7 +6,7 @@ import scala.slick.jdbc.JdbcBackend.Session
 
 import models.OverviewDatabase
 
-trait DbBackend {
+trait DbBackend extends Backend {
   def db[A](block: Session => A): Future[A] = Future {
     OverviewDatabase.withSlickSession { session =>
       block(session)

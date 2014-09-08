@@ -1,6 +1,6 @@
 package controllers.api
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json,JsValue}
 import scala.concurrent.Future
 
 import controllers.backend.VizObjectBackend
@@ -87,12 +87,26 @@ class VizObjectControllerSpec extends ApiControllerSpecification {
     "#create" should {
       trait CreateScope extends BaseScope {
         val vizId = 1L
-        val body = Json.obj(
+        val body: JsValue = Json.obj(
           "indexedLong" -> 4L,
           "indexedString" -> "foo",
           "json" -> Json.obj("foo" -> "bar")
         )
         override lazy val result = controller.create(vizId)(fakeJsonRequest(body))
+      }
+
+      trait CreateManyScope extends CreateScope {
+        override val body = Json.arr(
+          Json.obj(
+            "indexedLong" -> 1L,
+            "indexedString" -> "foo",
+            "json" -> Json.obj("foo" -> "bar")
+          ),
+          Json.obj(
+            "indexedLong" -> 2L,
+            "json" -> Json.obj("bar" -> "baz")
+          )
+        )
       }
 
       "create the object" in new CreateScope {
@@ -102,6 +116,23 @@ class VizObjectControllerSpec extends ApiControllerSpecification {
           indexedLong=Some(4L),
           indexedString=Some("foo"),
           json=Json.obj("foo" -> "bar")
+        ))
+      }
+
+      "create an array of objects" in new CreateManyScope {
+        mockBackend.createMany(any[Long], any[Seq[VizObject.CreateAttributes]]) returns Future(Seq(factory.vizObject(), factory.vizObject()))
+        status(result) must beEqualTo(OK)
+        there was one(mockBackend).createMany(vizId, Seq(
+          VizObject.CreateAttributes(
+            indexedLong=Some(1L),
+            indexedString=Some("foo"),
+            json=Json.obj("foo" -> "bar")
+          ),
+          VizObject.CreateAttributes(
+            indexedLong=Some(2L),
+            indexedString=None,
+            json=Json.obj("bar" -> "baz")
+          )
         ))
       }
 
@@ -118,6 +149,18 @@ class VizObjectControllerSpec extends ApiControllerSpecification {
         json must /("indexedLong" -> 4)
         json must /("indexedString" -> "foo")
         json must /("json") /("foo" -> "bar")
+      }
+
+      "return the array of JSON objects" in new CreateManyScope {
+        mockBackend.createMany(any[Long], any[Seq[VizObject.CreateAttributes]]) returns Future(Seq(
+          factory.vizObject(id=1L, indexedLong=Some(1L)),
+          factory.vizObject(indexedString=Some("bar"), json=Json.obj("foo" -> "bar"))
+        ))
+        val json = contentAsString(result)
+        json must /#(0) /("id" -> 1L)
+        json must /#(0) /("indexedLong" -> 1L)
+        json must /#(1) /("indexedString" -> "bar")
+        json must /#(1) /("json") /("foo" -> "bar")
       }
 
       "allow you to not specify 'indexedLong' or 'indexedString'" in new CreateScope {
@@ -137,7 +180,7 @@ class VizObjectControllerSpec extends ApiControllerSpecification {
         override val body = Json.obj("indexedLong" -> 4)
         status(result) must beEqualTo(BAD_REQUEST)
         contentAsString(result) must /("message" ->
-          """You must POST a JSON object with "indexedLong" (Number or null), "indexedString" (String or null) and "json" (possibly-empty Object)"""
+          """You must POST a JSON object with "indexedLong" (Number or null), "indexedString" (String or null) and "json" (possibly-empty Object). You may post an Array of such objects to create many objects with one request."""
         )
       }
     }

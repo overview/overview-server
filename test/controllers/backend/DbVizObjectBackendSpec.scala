@@ -107,10 +107,60 @@ class DbVizObjectBackendSpec extends DbBackendSpecification {
         dbVizObject.map(_.json) must beSome(Json.obj("foo" -> "bar"))
       }
 
-      "pick a non-conflicting viz ID" in new CreateScope {
+      "pick non-conflicting VizObject IDs" in new CreateScope {
         val ret1 = createVizObject
         val ret2 = createVizObject
         ret1.id must not(beEqualTo(ret2.id))
+      }
+    }
+
+    "#createMany" should {
+      trait CreateManyScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val viz = factory.viz(documentSetId=documentSet.id)
+
+        val attrs1 = VizObject.CreateAttributes(
+          indexedLong=Some(1L),
+          indexedString=Some("foo"),
+          json=Json.obj("foo" -> "bar")
+        )
+
+        val attrs2 = VizObject.CreateAttributes(
+          indexedLong=Some(2L),
+          indexedString=Some("bar"),
+          json=Json.obj("bar" -> "baz")
+        )
+
+        val attributesSeq = Seq(attrs1, attrs2)
+
+        def createMany = await(backend.createMany(viz.id, attributesSeq))
+        lazy val vizObjects = createMany
+      }
+
+      "return VizObjects" in new CreateManyScope {
+        vizObjects.map(_.vizId) must beEqualTo(Seq(viz.id, viz.id))
+        vizObjects.map(_.indexedLong) must beEqualTo(Seq(Some(1L), Some(2L)))
+        vizObjects.map(_.indexedString) must beEqualTo(Seq(Some("foo"), Some("bar")))
+        vizObjects.map(_.json) must beEqualTo(Seq(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")))
+      }
+
+      "write the VizObjects to the database" in new CreateManyScope {
+        val dbVizObject1 = findVizObject(vizObjects(0).id)
+        val dbVizObject2 = findVizObject(vizObjects(1).id)
+        dbVizObject1.map(_.vizId) must beSome(viz.id)
+        dbVizObject1.flatMap(_.indexedLong) must beSome(1L)
+        dbVizObject2.flatMap(_.indexedString) must beSome("bar")
+      }
+
+      "pick non-conflicting IDs" in new CreateManyScope {
+        await(backend.create(viz.id, attrs2))
+        createMany must not(throwA[Exception])
+        await(backend.index(viz.id)).length must beEqualTo(3)
+      }
+
+      "work with an empty list" in new CreateManyScope {
+        override val attributesSeq = Seq()
+        vizObjects must beEqualTo(Seq())
       }
     }
 
