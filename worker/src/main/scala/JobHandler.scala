@@ -159,7 +159,7 @@ object JobHandler {
 
       val numberOfDocuments = producer.produce()
 
-      if (job.state != Cancelled) {
+      if ((job.state != Cancelled) && (job.jobType != DocumentSetCreationJobType.CsvUpload)) {
         Database.inTransaction {
           TreeStore.insert(Tree(
             id=treeId,

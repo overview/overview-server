@@ -15,12 +15,19 @@ import org.overviewproject.tree.orm.Document
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, DocumentSetIndexingSession, Logger, SearchIndex }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
-
+import org.overviewproject.persistence.orm.finders.DocumentSetFinder
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
+import org.overviewproject.tree.orm.finders.FinderById
+import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
  */
-class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, consumer: DocumentConsumer, maxDocuments: Int, progAbort: ProgressAbortFn)
+class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, maxDocuments: Int, progAbort: ProgressAbortFn)
   extends DocumentProducer with PersistentDocumentSet {
 
   private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done  
@@ -56,7 +63,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
       if (numberOfParsedDocuments < maxDocuments) {
         val documentId = writeAndCommitDocument(documentSetId, doc)
         indexingSession.indexDocument(documentSetId, documentId, doc.text, doc.title, doc.suppliedId)
-        consumer.processDocument(documentId, doc.text)
+
         numberOfParsedDocuments += 1
       } else numberOfSkippedDocuments += 1
 
@@ -66,12 +73,14 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     indexingSession.complete
     
     Database.inTransaction{ documentTagWriter.flush() }
-    consumer.productionComplete()
+
     Await.result(indexingSession.requestsComplete, IndexingTimeout)
     Logger.info("Indexing complete")
     
     updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
     
+    submitClusteringJob(documentSetId)
+
     numberOfParsedDocuments
   }
 
@@ -103,5 +112,29 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     val tags = tagNames.map(PersistentTag.findOrCreate(documentSetId, _))
     
     documentTagWriter.write(document, tags)
+  }
+  
+  private def submitClusteringJob(documentSetId: Long): Unit = Database.inTransaction {
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
+    val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)
+    
+    for {
+      documentSet <- DocumentSetFinder.byId(documentSetId).headOption
+      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).headOption
+    } {
+      val clusteringJob = DocumentSetCreationJob(
+       documentSetId = documentSet.id,
+       treeTitle = Some(documentSet.title),
+       jobType = Recluster,
+       suppliedStopWords = job.suppliedStopWords,
+       importantWords = job.importantWords,
+       splitDocuments = job.splitDocuments,
+       state = NotStarted
+      )
+
+      documentSetCreationJobStore.insertOrUpdate(clusteringJob)
+      documentSetCreationJobStore.delete(job.id)
+    }
   }
 }

@@ -58,7 +58,7 @@ object DocumentProducerFactory {
         
         new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
       case CsvUpload =>
-        new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
+        new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, MaxDocuments, progAbort)
       case Recluster =>
         ReclusteringDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.tagId, consumer, progAbort)
     }
