@@ -4,6 +4,7 @@ import org.overviewproject.tree.orm.UploadedFile
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
+import org.overviewproject.tree.orm.finders.FinderById
 
 /**
  * Methods for deleting all the data associated with document sets in the database

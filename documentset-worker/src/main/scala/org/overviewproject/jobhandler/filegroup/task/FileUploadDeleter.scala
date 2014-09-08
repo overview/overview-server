@@ -7,7 +7,7 @@ import org.overviewproject.database.orm.Schema._
 import org.overviewproject.database.orm.finders.FileGroupFinder
 import org.overviewproject.database.orm.stores.PageStore
 import org.overviewproject.database.orm.stores.FileStore
-import org.overviewproject.database.orm.finders.FinderById
+import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder

@@ -4,8 +4,10 @@ import scala.language.implicitConversions
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.GroupedFileUpload
+import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.tree.orm.finders.FinderResult
 import org.squeryl.Query
+
 
 object GroupedFileUploadFinder extends FinderById[GroupedFileUpload](Schema.groupedFileUploads) {
   class GroupedFileUploadFinderResult(query: Query[GroupedFileUpload]) extends FinderResult(query) {

@@ -9,7 +9,7 @@ import org.overviewproject.database.orm.Schema.{ documentProcessingErrors, docum
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.database.orm.finders.DocumentFinder
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import org.overviewproject.database.orm.finders.FinderById
+import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.util.SearchIndex
 import org.overviewproject.searchindex.TransportIndexClient
 

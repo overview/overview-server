@@ -15,7 +15,7 @@ import org.overviewproject.database.orm.finders.FindableByDocumentSet
 import org.overviewproject.database.orm.finders.NodeDocumentFinder
 import org.overviewproject.postgres.LO
 import org.overviewproject.database.DB
-import org.overviewproject.database.orm.finders.FinderById
+import org.overviewproject.tree.orm.finders.FinderById
 import scala.util.Try
 
 class DocumentSetDeleterSpec extends DbSpecification {

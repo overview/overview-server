@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task
 
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.DocumentFinder
-import org.overviewproject.database.orm.finders.FinderById
+import org.overviewproject.tree.orm.finders.FinderById
 
 /**
  * Generates ids for documents in document sets.

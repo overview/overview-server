@@ -11,7 +11,7 @@ import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.database.orm.finders.FinderById
+import org.overviewproject.tree.orm.finders.FinderById
 
 trait ClusteringJobQueue extends Actor {
 
