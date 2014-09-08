@@ -131,14 +131,6 @@ public class UTF_8 extends Charset
             return (b3 & 0xc0) != 0x80;
         }
 
-        private static CoderResult lookupN(ByteBuffer src, int n)
-        {
-            for (int i = 1; i < n; i++) {
-               if (isNotContinuation(src.get()))
-                   return CoderResult.malformedForLength(i);
-            }
-            return CoderResult.malformedForLength(n);
-        }
 
         private static CoderResult malformedN(ByteBuffer src, int nb) {
             switch (nb) {
