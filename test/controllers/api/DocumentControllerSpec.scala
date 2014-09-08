@@ -19,8 +19,9 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       trait IndexScope extends BaseScope {
         val documentSetId = 1L
         val q = ""
+        val fields = ""
 
-        override def action = controller.index(documentSetId, q)
+        override def action = controller.index(documentSetId, q, fields)
       }
 
       "return JSON with status code 200" in new IndexScope {
@@ -32,6 +33,13 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       "return an empty Array when there are no Documents" in new IndexScope {
         mockBackend.index(documentSetId, q) returns Future(Seq())
         contentAsString(result) must beEqualTo("[]")
+      }
+
+      "return a JSON error when the fields parameter is not empty or id" in new IndexScope {
+        override val fields = "foobar"
+        status(result) must beEqualTo(BAD_REQUEST)
+        contentType(result) must beSome("application/json")
+        contentAsString(result) must /("message" -> """The "fields" parameter must be either "id" or "" for now. Sorry!""")
       }
 
       "return some Documents when there are Documents" in new IndexScope {
@@ -63,6 +71,14 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must not /#(1) /("suppliedId")
         json must not /#(1) /("url")
         json must not /#(1) /("text")
+      }
+
+      "return an Array of IDs when fields=id" in new IndexScope {
+        override val fields = "id"
+        mockBackend.indexIds(documentSetId, q) returns Future(Seq(1L, 2L, 3L))
+        status(result) must beEqualTo(OK)
+        contentType(result) must beSome("application/json")
+        contentAsString(result) must beEqualTo("[1,2,3]")
       }
     }
 

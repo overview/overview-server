@@ -1,6 +1,8 @@
 package controllers.api
 
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.{JsArray,JsNumber}
+import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
@@ -9,9 +11,23 @@ import controllers.backend.{DbDocumentBackend,DocumentBackend}
 trait DocumentController extends ApiController {
   protected val backend: DocumentBackend
 
-  def index(documentSetId: Long, q: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
-    backend.index(documentSetId, q).map { documents =>
-      Ok(views.json.api.DocumentInfo.index(documents))
+  private def _indexInfos(documentSetId: Long, q: String) = {
+    backend.index(documentSetId, q).map { infos =>
+      Ok(views.json.api.DocumentInfo.index(infos))
+    }
+  }
+
+  private def _indexIds(documentSetId: Long, q: String) = {
+    backend.indexIds(documentSetId, q).map { ids =>
+      Ok(JsArray(ids.map(JsNumber(_))))
+    }
+  }
+
+  def index(documentSetId: Long, q: String, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
+    fields match {
+      case "id" => _indexIds(documentSetId, q)
+      case "" => _indexInfos(documentSetId, q)
+      case _ => Future.successful(BadRequest(jsonError("""The "fields" parameter must be either "id" or "" for now. Sorry!""")))
     }
   }
 

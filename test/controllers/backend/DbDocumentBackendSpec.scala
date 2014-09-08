@@ -25,21 +25,23 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     }
   }
 
+  trait CommonIndexScope extends BaseScopeWithIndex {
+    val documentSet = factory.documentSet()
+    val doc1 = factory.document(documentSetId=documentSet.id, title="c", text="foo bar baz")
+    val doc2 = factory.document(documentSetId=documentSet.id, title="a", text="moo mar maz")
+    val doc3 = factory.document(documentSetId=documentSet.id, title="b", text="noo nar naz")
+    val documents = Seq(doc1, doc2, doc3)
+
+    await(testIndexClient.addDocumentSet(documentSet.id))
+    await(testIndexClient.addDocuments(documents.map(_.toDeprecatedDocument)))
+    await(testIndexClient.refresh())
+
+    val q = ""
+  }
+
   "DbDocumentBackendSpec" should {
     "#index" should {
-      trait IndexScope extends BaseScopeWithIndex {
-        val documentSet = factory.documentSet()
-        val doc1 = factory.document(documentSetId=documentSet.id, title="c", text="foo bar baz")
-        val doc2 = factory.document(documentSetId=documentSet.id, title="a", text="moo mar maz")
-        val doc3 = factory.document(documentSetId=documentSet.id, title="b", text="noo nar naz")
-        val documents = Seq(doc1, doc2, doc3)
-
-        await(testIndexClient.addDocumentSet(documentSet.id))
-        await(testIndexClient.addDocuments(documents.map(_.toDeprecatedDocument)))
-        await(testIndexClient.refresh())
-
-        val q = ""
-
+      trait IndexScope extends CommonIndexScope {
         lazy val ret = await(backend.index(documentSet.id, q=q))
       }
 
@@ -54,6 +56,25 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       "search by q" in new IndexScope {
         override val q = "moo"
         ret.map(_.id) must beEqualTo(Seq(doc2.id))
+      }
+    }
+
+    "#indexIds" should {
+      trait IndexIdsScope extends CommonIndexScope {
+        lazy val ret = await(backend.indexIds(documentSet.id, q=q))
+      }
+
+      "show all documents by default" in new IndexIdsScope {
+        ret.length must beEqualTo(3)
+      }
+
+      "sort documents by title" in new IndexIdsScope {
+        ret must beEqualTo(Seq(doc2.id, doc3.id, doc1.id))
+      }
+
+      "search by q" in new IndexIdsScope {
+        override val q = "moo"
+        ret must beEqualTo(Seq(doc2.id))
       }
     }
 
