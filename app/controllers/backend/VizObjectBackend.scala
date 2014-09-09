@@ -48,6 +48,16 @@ trait VizObjectBackend {
     * Returns an error if the database write fails.
     */
   def destroy(id: Long): Future[Unit]
+
+  /** Destroys multiple VizObjects.
+    *
+    * Destroys associated DocumentVizObjects, too. Returns an error if the
+    * database writes fail.
+    *
+    * The deletion is atomic: if it fails partway, it will be as if the request
+    * never happened.
+    */
+  def destroyMany(vizId: Long, ids: Seq[Long]): Future[Unit]
 }
 
 trait DbVizObjectBackend extends VizObjectBackend { self: DbBackend =>
@@ -59,13 +69,13 @@ trait DbVizObjectBackend extends VizObjectBackend { self: DbBackend =>
     DbVizObjectBackend.byId(id)(session)
   }
 
-  override def create(vizId: Long, attributes: VizObject.CreateAttributes) = db { implicit session =>
+  override def create(vizId: Long, attributes: VizObject.CreateAttributes) = db { session =>
     val id = DbVizObjectBackend.nextVizObjectId(vizId)(session)
     val vizObject = VizObject.build(id, vizId, attributes)
     DbVizObjectBackend.insert(vizObject)(session)
   }
 
-  override def createMany(vizId: Long, attributesSeq: Seq[VizObject.CreateAttributes]) = db { implicit session =>
+  override def createMany(vizId: Long, attributesSeq: Seq[VizObject.CreateAttributes]) = db { session =>
     val id1 = DbVizObjectBackend.nextVizObjectId(vizId)(session)
     def build(attributes: VizObject.CreateAttributes, idx: Int) = {
       VizObject.build(id1 + idx, vizId, attributes)
@@ -76,13 +86,17 @@ trait DbVizObjectBackend extends VizObjectBackend { self: DbBackend =>
     DbVizObjectBackend.insertAll(vizObjects)(session)
   }
 
-  override def update(id: Long, attributes: VizObject.UpdateAttributes) = db { implicit session =>
+  override def update(id: Long, attributes: VizObject.UpdateAttributes) = db { session =>
     val count = DbVizObjectBackend.update(id, attributes)(session)
     if (count > 0) DbVizObjectBackend.byId(id)(session) else None
   }
 
-  override def destroy(id: Long) = db { implicit session =>
+  override def destroy(id: Long) = db { session =>
     DbVizObjectBackend.destroy(id)(session)
+  }
+
+  override def destroyMany(vizId: Long, ids: Seq[Long]) = db { session =>
+    DbVizObjectBackend.destroyMany(vizId, ids)(session)
   }
 }
 
@@ -169,6 +183,32 @@ object DbVizObjectBackend {
 
   def destroy(id: Long)(session: Session): Unit = {
     byIdCompiled(id).delete(session)
+  }
+
+  def destroyMany(vizId: Long, ids: Seq[Long])(session: Session): Unit = {
+    exceptions.wrap {
+      /*
+       * We run two DELETEs in a single query, to simulate a transaction and
+       * avoid a round trip.
+       */
+      val q = s"""
+        WITH ids AS (
+          SELECT *
+          FROM (VALUES ${ids.map("(" + _ + ")").mkString(",")}) AS t(id)
+          WHERE id IN (SELECT id FROM viz_object WHERE viz_id = $vizId)
+        ),
+        subdelete AS (
+          DELETE FROM document_viz_object
+          WHERE viz_object_id IN (SELECT id FROM ids)
+          RETURNING 1
+        )
+        DELETE FROM viz_object
+        WHERE id IN (SELECT id FROM ids)
+          AND (SELECT COUNT(*) FROM subdelete) IS NOT NULL
+      """
+
+      scala.slick.jdbc.StaticQuery.updateNA(q).execute()(session)
+    }
   }
 }
 

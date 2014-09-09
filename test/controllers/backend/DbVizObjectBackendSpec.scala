@@ -233,5 +233,55 @@ class DbVizObjectBackendSpec extends DbBackendSpecification {
         findVizObject(vizObject2.id) must beSome
       }
     }
+
+    "#destroyMany" should {
+      trait DestroyManyScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val viz = factory.viz(documentSetId=documentSet.id)
+        val obj1 = factory.vizObject(vizId=viz.id)
+        val obj2 = factory.vizObject(vizId=viz.id)
+
+        def findDocumentVizObject(documentId: Long, vizObjectId: Long) = {
+          import org.overviewproject.database.Slick.simple._
+          import org.overviewproject.models.tables.DocumentVizObjects
+          DocumentVizObjects
+            .where(_.documentId === documentId)
+            .where(_.vizObjectId === vizObjectId)
+            .firstOption()(session)
+        }
+
+        def destroyMany(ids: Long*) = await(backend.destroyMany(viz.id, ids.toSeq))
+      }
+
+      "delete VizObjects from the database" in new DestroyManyScope {
+        destroyMany(obj1.id, obj2.id) must beEqualTo(())
+        findVizObject(obj1.id) must beNone
+        findVizObject(obj2.id) must beNone
+      }
+
+      "ignore missing VizObjects" in new DestroyManyScope {
+        destroyMany(obj1.id, obj2.id + 1) must beEqualTo(())
+        findVizObject(obj1.id) must beNone
+        findVizObject(obj2.id) must beSome
+      }
+
+      "ignore VizObjects from other Vizs" in new DestroyManyScope {
+        val viz2 = factory.viz(documentSetId=documentSet.id)
+        val obj3 = factory.vizObject(vizId=viz2.id)
+
+        destroyMany(obj1.id, obj3.id) must beEqualTo(())
+        findVizObject(obj1.id) must beNone
+        findVizObject(obj3.id) must beSome
+      }
+
+      "destroy associated DocumentVizObjects" in new DestroyManyScope {
+        val document = factory.document(documentSetId=documentSet.id)
+        val dvo = factory.documentVizObject(documentId=document.id, vizObjectId=obj1.id)
+
+        destroyMany(obj1.id) must beEqualTo(())
+        findVizObject(obj1.id) must beNone
+        findDocumentVizObject(document.id, obj1.id) must beNone
+      }
+    }
   }
 }

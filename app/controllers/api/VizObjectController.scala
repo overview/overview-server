@@ -67,6 +67,15 @@ trait VizObjectController extends ApiController {
   def destroy(vizId: Long, id: Long) = ApiAuthorizedAction(userOwningVizObject(vizId, id)).async {
     backend.destroy(id).map(Unit => NoContent)
   }
+
+  def destroyMany(vizId: Long) = ApiAuthorizedAction(userOwningViz(vizId)).async { request =>
+    val body: JsValue = request.body.asJson.getOrElse(JsObject(Seq()))
+
+    body.asOpt(VizObjectController.deleteArrayJsonReader) match {
+      case Some(ids) => backend.destroyMany(vizId, ids.toSeq).map(Unit => NoContent)
+      case None => Future.successful(BadRequest(jsonError("You must POST a JSON Array of IDs.")))
+    }
+  }
 }
 
 object VizObjectController extends VizObjectController {
@@ -86,6 +95,9 @@ object VizObjectController extends VizObjectController {
 
   private val createJsonReader = createReader(VizObject.CreateAttributes.apply _)
   private val updateJsonReader = createReader(VizObject.UpdateAttributes.apply _)
+  private val deleteArrayJsonReader: Reads[Array[Long]] = {
+    Reads.ArrayReads[Long]
+  }
 
   private val createArrayJsonReader: Reads[Array[VizObject.CreateAttributes]] = {
     implicit val x = createJsonReader

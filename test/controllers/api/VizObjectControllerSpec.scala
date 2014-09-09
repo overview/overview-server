@@ -243,5 +243,25 @@ class VizObjectControllerSpec extends ApiControllerSpecification {
         there was one(mockBackend).destroy(vizObjectId)
       }
     }
+
+    "#destroyMany" should {
+      trait DestroyManyScope extends BaseScope {
+        val vizId = 1L
+        val body: JsValue = Json.arr(2L, 3L, 4L)
+        override lazy val result = controller.destroyMany(vizId)(fakeJsonRequest(body))
+        mockBackend.destroyMany(any[Long], any[Seq[Long]]) returns Future.successful(())
+      }
+
+      "destroy the objects" in new DestroyManyScope {
+        status(result) must beEqualTo(NO_CONTENT)
+        there was one(mockBackend).destroyMany(vizId, Seq(2L, 3L, 4L))
+      }
+
+      "error on invalid input" in new DestroyManyScope {
+        override val body: JsValue = Json.arr(2L, "foo", 3L)
+        status(result) must beEqualTo(BAD_REQUEST)
+        contentAsString(result) must /("message" -> "You must POST a JSON Array of IDs.")
+      }
+    }
   }
 }
