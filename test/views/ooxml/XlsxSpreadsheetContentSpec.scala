@@ -53,7 +53,15 @@ class XlsxSpreadsheetContentSpec extends Specification {
     "respect XML entities while truncating" in new SpreadsheetScope {
       // https://www.pivotaltracker.com/story/show/77496514
       val xxx = "x" * 32763
-      override val vRows = Seq(Seq(xxx + "&amp;"))
+      override val vRows = Seq(Seq(xxx + "&"))
+      text must contain(">" + xxx + "<")
+    }
+
+    "respect XML numeric entities while truncating" in new SpreadsheetScope {
+      // https://www.pivotaltracker.com/story/show/77496514
+      // &quot; actually becomes &#x34; with our XML implementation
+      val xxx = "x" * 32763
+      override val vRows = Seq(Seq(xxx + "\""))
       text must contain(">" + xxx + "<")
     }
 
