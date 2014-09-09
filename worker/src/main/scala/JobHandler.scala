@@ -158,21 +158,9 @@ object JobHandler {
 
       val numberOfDocuments = producer.produce()
 
-      if ((job.state != Cancelled) && (job.jobType == DocumentSetCreationJobType.Recluster)) {
-        Database.inTransaction {
-          TreeStore.insert(Tree(
-            id = treeId,
-            documentSetId = ds.id,
-            rootNodeId = nodeWriter.rootNodeId,
-            jobId = job.id,
-            title = job.treeTitle.getOrElse(ds.title),
-            documentCount = numberOfDocuments,
-            lang = job.lang,
-            description = job.treeDescription.getOrElse(""),
-            suppliedStopWords = job.suppliedStopWords.getOrElse(""),
-            importantWords = job.importantWords.getOrElse("")))
-        }
-      } else submitClusteringJob(ds.id)
+      if ((job.state != Cancelled) && (job.jobType == DocumentSetCreationJobType.Recluster))
+        createTree(treeId, nodeWriter.rootNodeId, ds, numberOfDocuments, job)
+      else submitClusteringJob(ds.id)
 
       val t3 = System.currentTimeMillis()
       logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
@@ -278,6 +266,22 @@ object JobHandler {
       where(ds.id === documentSetId)
         select (ds)).headOption
   }
+
+  private def createTree(treeId: Long, rootNodeId: Long, documentSet: DocumentSet,
+                         numberOfDocuments: Int, job: PersistentDocumentSetCreationJob) =
+    Database.inTransaction {
+      TreeStore.insert(Tree(
+        id = treeId,
+        documentSetId = documentSet.id,
+        rootNodeId = rootNodeId,
+        jobId = job.id,
+        title = job.treeTitle.getOrElse(documentSet.title),
+        documentCount = numberOfDocuments,
+        lang = job.lang,
+        description = job.treeDescription.getOrElse(""),
+        suppliedStopWords = job.suppliedStopWords.getOrElse(""),
+        importantWords = job.importantWords.getOrElse("")))
+    }
 
   // FIXME: Submitting jobs, along with creating documents should move into documentset-worker 
   private def submitClusteringJob(documentSetId: Long): Unit = Database.inTransaction {
