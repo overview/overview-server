@@ -28,7 +28,6 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
 
-
 object JobHandler {
   val logger = Logger.forClass(getClass)
 
@@ -159,22 +158,21 @@ object JobHandler {
 
       val numberOfDocuments = producer.produce()
 
-      if ((job.state != Cancelled) && (job.jobType != DocumentSetCreationJobType.CsvUpload)) {
+      if ((job.state != Cancelled) && (job.jobType == DocumentSetCreationJobType.Recluster)) {
         Database.inTransaction {
           TreeStore.insert(Tree(
-            id=treeId,
-            documentSetId=ds.id,
-            rootNodeId=nodeWriter.rootNodeId,
-            jobId=job.id,
-            title=job.treeTitle.getOrElse(ds.title),
-            documentCount=numberOfDocuments,
-            lang=job.lang,
-            description=job.treeDescription.getOrElse(""),
-            suppliedStopWords=job.suppliedStopWords.getOrElse(""),
-            importantWords=job.importantWords.getOrElse("")
-          ))
+            id = treeId,
+            documentSetId = ds.id,
+            rootNodeId = nodeWriter.rootNodeId,
+            jobId = job.id,
+            title = job.treeTitle.getOrElse(ds.title),
+            documentCount = numberOfDocuments,
+            lang = job.lang,
+            description = job.treeDescription.getOrElse(""),
+            suppliedStopWords = job.suppliedStopWords.getOrElse(""),
+            importantWords = job.importantWords.getOrElse("")))
         }
-      }
+      } else submitClusteringJob(ds.id)
 
       val t3 = System.currentTimeMillis()
       logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
@@ -280,4 +278,36 @@ object JobHandler {
       where(ds.id === documentSetId)
         select (ds)).headOption
   }
+
+  // FIXME: Submitting jobs, along with creating documents should move into documentset-worker 
+  private def submitClusteringJob(documentSetId: Long): Unit = Database.inTransaction {
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
+    import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+    import org.overviewproject.tree.orm.DocumentSetCreationJob
+    import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+    import org.overviewproject.tree.DocumentSetCreationJobType._
+
+    val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
+    val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)
+
+    for {
+      documentSet <- DocumentSetFinder.byId(documentSetId).headOption
+      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).headOption
+    } {
+      val clusteringJob = DocumentSetCreationJob(
+        documentSetId = documentSet.id,
+        treeTitle = Some(documentSet.title),
+        jobType = Recluster,
+        lang = job.lang,
+        suppliedStopWords = job.suppliedStopWords,
+        importantWords = job.importantWords,
+        splitDocuments = job.splitDocuments,
+        state = NotStarted)
+
+      documentSetCreationJobStore.insertOrUpdate(clusteringJob)
+      documentSetCreationJobStore.delete(job.id)
+    }
+  }
+
 }

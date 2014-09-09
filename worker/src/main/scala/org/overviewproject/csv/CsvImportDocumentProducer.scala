@@ -79,8 +79,6 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     
     updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
     
-    submitClusteringJob(documentSetId)
-
     numberOfParsedDocuments
   }
 
@@ -113,28 +111,5 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     
     documentTagWriter.write(document, tags)
   }
-  
-  private def submitClusteringJob(documentSetId: Long): Unit = Database.inTransaction {
-    import org.overviewproject.postgres.SquerylEntrypoint._
-    val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
-    val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)
-    
-    for {
-      documentSet <- DocumentSetFinder.byId(documentSetId).headOption
-      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).headOption
-    } {
-      val clusteringJob = DocumentSetCreationJob(
-       documentSetId = documentSet.id,
-       treeTitle = Some(documentSet.title),
-       jobType = Recluster,
-       suppliedStopWords = job.suppliedStopWords,
-       importantWords = job.importantWords,
-       splitDocuments = job.splitDocuments,
-       state = NotStarted
-      )
 
-      documentSetCreationJobStore.insertOrUpdate(clusteringJob)
-      documentSetCreationJobStore.delete(job.id)
-    }
-  }
 }

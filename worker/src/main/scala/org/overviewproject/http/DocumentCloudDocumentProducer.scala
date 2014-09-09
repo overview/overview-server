@@ -23,7 +23,7 @@ import java.util.concurrent.TimeoutException
 
 
 /** Feeds the documents from sourceDocList to the consumer */
-class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
+class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
   private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
@@ -33,7 +33,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private val QueryProcessorName = "queryprocessor"
   private val ImporterName = "importer"
 
-  private val FetchingFraction = 0.5
+  private val FetchingFraction = 1.0
   private val documentSetId = job.documentSetId
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var numDocs = 0
@@ -110,7 +110,6 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     }
 
     indexingSession.complete
-    consumer.productionComplete()
     
     Await.result(indexingSession.requestsComplete, IndexingTimeout)
     Logger.info("Indexing complete")
@@ -138,7 +137,6 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     
     indexingSession.indexDocument(documentSetId, id, text, Some(doc.title), Some(doc.id))
 
-    consumer.processDocument(id, text)
     numDocs += 1
 
     if (job.state == Cancelled) shutdownActors
