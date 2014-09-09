@@ -56,6 +56,7 @@ object ClusteringJobQueue {
             documentSetId = documentSet.id,
             treeTitle = Some(documentSet.title),
             jobType = Recluster,
+            lang = createDocumentsJob.lang,
             suppliedStopWords = createDocumentsJob.suppliedStopWords,
             importantWords = createDocumentsJob.importantWords,
             splitDocuments = createDocumentsJob.splitDocuments,
