@@ -25,6 +25,20 @@ trait DocumentVizObjectController extends ApiController {
       }
     }
   }
+
+  def destroy(vizId: Long) = ApiAuthorizedAction(userOwningViz(vizId)).async { request =>
+    val body: JsValue = request.body.asJson.getOrElse(JsNull)
+
+    body.asOpt(DocumentVizObjectController.destroyArgsReader) match {
+      case None => Future.successful(BadRequest(jsonError(
+        """You must POST a JSON Array of Array elements. Each element should look like [documentId,objectId]."""
+      )))
+      case Some(args) => {
+        backend.destroyMany(vizId, args.toSeq)
+          .map((x: Any) => NoContent)
+      }
+    }
+  }
 }
 
 object DocumentVizObjectController extends DocumentVizObjectController {
@@ -50,9 +64,22 @@ object DocumentVizObjectController extends DocumentVizObjectController {
     )(DocumentVizObject.apply _)
   }
 
+  private lazy val destroyArgReader: Reads[Tuple2[Long,Long]] = {
+    import play.api.libs.functional.syntax._
+    import play.api.libs.json.Reads._
+    import play.api.libs.json.Json
+
+    (JsPath(0).read[Long] and JsPath(1).read[Long]).tupled
+  }
+
   private lazy val createArgsReader: Reads[Array[DocumentVizObject]] = {
     implicit val x = createArgReader
     Reads.ArrayReads[DocumentVizObject]
+  }
+
+  private lazy val destroyArgsReader: Reads[Array[Tuple2[Long,Long]]] = {
+    implicit val x = destroyArgReader
+    Reads.ArrayReads[Tuple2[Long,Long]]
   }
 
   private def writeCreateResults(results: Seq[DocumentVizObject]) = {

@@ -48,7 +48,7 @@ class DocumentVizObjectControllerSpec extends ApiControllerSpecification {
         contentAsString(result) must beEqualTo("""[[1,2,{"foo":"bar"}],[3,4],[5,6,{"bar":"baz"}]]""")
       }
 
-      "warn on invalid JSON input" in new CreateManyScope {
+      "error on invalid JSON input" in new CreateManyScope {
         override val body: JsValue = Json.obj(
           "documentId" -> 1L,
           "vizObjectId" -> 2L,
@@ -57,6 +57,34 @@ class DocumentVizObjectControllerSpec extends ApiControllerSpecification {
         status(result) must beEqualTo(BAD_REQUEST)
         contentType(result) must beSome("application/json")
         contentAsString(result) must /("message" -> """You must POST a JSON Array of Array elements. Each element should look like [documentId,objectId] or [documentId,objectId,null...] or [documentId,objectId,{"arbitrary":"json object"}].""")
+      }
+    }
+
+    "#destroy" should {
+      trait DestroyManyScope extends BaseScope {
+        val vizId = 1L
+        val body: JsValue = Json.arr()
+        override lazy val result = controller.destroy(vizId)(fakeJsonRequest(body))
+        mockBackend.destroyMany(any[Long], any[Seq[(Long,Long)]]) returns Future.successful(())
+      }
+
+      "pass the correct body to backend.destroyMany" in new DestroyManyScope {
+        override val body = Json.arr(
+          Json.arr(1L, 2L),
+          Json.arr(3L, 4L)
+        )
+        status(result) must beEqualTo(NO_CONTENT)
+        there was one(mockBackend).destroyMany(vizId, Seq(1L -> 2L, 3L -> 4L))
+      }
+
+      "error on invalid JSON input" in new DestroyManyScope {
+        override val body: JsValue = Json.arr(
+          Json.arr(1L, "foo"),
+          Json.arr(3L, 4L)
+        )
+        status(result) must beEqualTo(BAD_REQUEST)
+        contentType(result) must beSome("application/json")
+        contentAsString(result) must /("message" -> """You must POST a JSON Array of Array elements. Each element should look like [documentId,objectId].""")
       }
     }
   }

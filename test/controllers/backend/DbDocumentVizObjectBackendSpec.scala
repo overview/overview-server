@@ -254,5 +254,66 @@ class DbDocumentVizObjectBackendSpec extends DbBackendSpecification {
         findDocumentVizObject(document.id, vizObject.id) must beSome
       }
     }
+
+    "#destroyMany" should {
+      trait DestroyManyScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val doc1 = factory.document(documentSetId=documentSet.id)
+        val doc2 = factory.document(documentSetId=documentSet.id)
+        val viz = factory.viz(documentSetId=documentSet.id)
+        val obj1 = factory.vizObject(vizId=viz.id)
+        val obj2 = factory.vizObject(vizId=viz.id)
+        val dvo1 = factory.documentVizObject(documentId=doc1.id, vizObjectId=obj1.id)
+        val dvo2 = factory.documentVizObject(documentId=doc2.id, vizObjectId=obj1.id)
+        val dvo3 = factory.documentVizObject(documentId=doc1.id, vizObjectId=obj2.id)
+
+        val arg: Seq[(Long,Long)] = Seq(doc1.id -> obj1.id, doc2.id -> obj1.id)
+
+        lazy val result = await(backend.destroyMany(viz.id, arg))
+      }
+
+      "destroy DocumentVizObjects" in new DestroyManyScope {
+        result must beEqualTo(())
+
+        findDocumentVizObject(doc1.id, obj1.id) must beNone
+        findDocumentVizObject(doc2.id, obj1.id) must beNone
+        findDocumentVizObject(doc1.id, obj2.id) must beSome
+      }
+
+      "skip documents in other document sets" in new DestroyManyScope {
+        val documentSet2 = factory.documentSet()
+        val doc3 = factory.document(documentSetId=documentSet.id)
+        val viz2 = factory.viz(documentSetId=documentSet2.id)
+        val obj3 = factory.vizObject(vizId=viz2.id)
+        val dvo4 = factory.documentVizObject(documentId=doc3.id, vizObjectId=obj3.id)
+
+        override val arg = Seq(doc1.id -> obj1.id, doc2.id -> obj1.id, doc3.id -> obj3.id)
+        result must beEqualTo(())
+
+        findDocumentVizObject(doc1.id, obj1.id) must beNone
+        findDocumentVizObject(doc2.id, obj1.id) must beNone
+        findDocumentVizObject(doc3.id, obj3.id) must beSome
+      }
+
+      "skip missing rows" in new DestroyManyScope {
+        override val arg = Seq(doc1.id -> obj1.id, doc2.id -> obj2.id)
+        result must beEqualTo(())
+
+        findDocumentVizObject(doc1.id, obj1.id) must beNone
+        findDocumentVizObject(doc2.id, obj2.id) must beNone
+      }
+
+      "skip objects in other vizs" in new DestroyManyScope {
+        val viz2 = factory.viz(documentSetId=documentSet.id)
+        val obj3 = factory.vizObject(vizId=viz2.id)
+        val dvo4 = factory.documentVizObject(documentId=doc1.id, vizObjectId=obj3.id)
+
+        override val arg = Seq(doc1.id -> obj1.id, doc1.id -> obj3.id)
+        result must beEqualTo(())
+
+        findDocumentVizObject(doc1.id, obj1.id) must beNone
+        findDocumentVizObject(doc1.id, obj3.id) must beSome
+      }
+    }
   }
 }

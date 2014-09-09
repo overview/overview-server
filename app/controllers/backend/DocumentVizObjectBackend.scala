@@ -2,6 +2,7 @@ package controllers.backend
 
 import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
+import scala.slick.jdbc.StaticQuery
 
 import org.overviewproject.models.DocumentVizObject
 import org.overviewproject.models.tables.DocumentVizObjects
@@ -42,6 +43,13 @@ trait DocumentVizObjectBackend extends Backend {
     * Does nothing when the DocumentVizObject does not exist.
     */
   def destroy(documentId: Long, vizObjectId: Long): Future[Unit]
+
+  /** Destroys several DocumentVizObjects.
+    *
+    * @param vizId Viz id: skip VizObjects and Documents that don't belong
+    * @param entries (document ID, object ID) pairs
+    */
+  def destroyMany(vizId: Long, entries: Seq[(Long,Long)]): Future[Unit]
 }
 
 trait DbDocumentVizObjectBackend extends DocumentVizObjectBackend { self: DbBackend =>
@@ -65,6 +73,10 @@ trait DbDocumentVizObjectBackend extends DocumentVizObjectBackend { self: DbBack
 
   override def destroy(documentId: Long, vizObjectId: Long) = db { session =>
     DbDocumentVizObjectBackend.destroy(documentId, vizObjectId)(session)
+  }
+
+  override def destroyMany(vizId: Long, entries: Seq[(Long,Long)]) = db { session =>
+    DbDocumentVizObjectBackend.deleteAll(vizId, entries)(session)
   }
 }
 
@@ -140,7 +152,22 @@ object DbDocumentVizObjectBackend {
         RETURNING document_id, viz_object_id, json_text
       """
 
-      scala.slick.jdbc.StaticQuery.queryNA[DocumentVizObject](q)(getDvoResult).list()(session)
+      StaticQuery.queryNA[DocumentVizObject](q)(getDvoResult).list()(session)
+    }
+  }
+
+  def deleteAll(vizId: Long, entries: Seq[(Long,Long)])(session: Session): Unit = {
+    exceptions.wrap {
+      val tuplesAsSql: Seq[String] = entries
+        .map((t: Tuple2[Long,Long]) => "(" + t._1 + "," + t._2 + ")")
+
+      val q = s"""
+        DELETE FROM document_viz_object
+        WHERE (document_id, viz_object_id) IN (VALUES ${tuplesAsSql.mkString(",")})
+          AND viz_object_id IN (SELECT id FROM viz_object WHERE viz_id = $vizId)
+      """
+
+      StaticQuery.updateNA(q).execute()(session)
     }
   }
 
