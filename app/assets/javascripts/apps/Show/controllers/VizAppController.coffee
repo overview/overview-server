@@ -49,6 +49,7 @@ define [
 
         vizApp = new @vizAppConstructors[type]
           app: @facade
+          documentSetId: @documentSet.id
           viz: viz
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController

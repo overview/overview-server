@@ -76,6 +76,6 @@ define [
             data: attrs
             url: "#{@documentSet.url}/vizs"
             success: (json) =>
-              viz = @vizs.add(json)
-              @state.setViz(viz)
+              viz = @vizs.add(json)[0]
+              @state.setViz(viz) if viz?
             error: console.log.bind(console, 'Server error creating viz')

@@ -4,23 +4,12 @@ import java.util.Date
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-import org.overviewproject.models.VizLike
-import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag}
+import org.overviewproject.models.Viz
+import org.overviewproject.test.factories.PodoFactory
+import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
 
 class showSpec extends Specification with JsonMatchers {
-  private def buildViz(aId: Long, aTitle: String, aJobId: Long, aNDocuments: Int, aCreatedAt: Date, aCreationData: Seq[(String,String)]) : VizLike = {
-    new VizLike {
-      override val id = aId
-      override val documentSetId = 1L
-      override val title = aTitle
-      override val jobId = aJobId
-      override val createdAt = aCreatedAt
-      override def creationData = aCreationData
-      override val documentCount = aNDocuments
-    }
-  }
-
   private def buildDocumentSet(nDocuments: Int) : DocumentSet = {
     DocumentSet(documentCount=nDocuments)
   }
@@ -33,7 +22,7 @@ class showSpec extends Specification with JsonMatchers {
         baseTag.copy(id=5L, name="tag1"),
         baseTag.copy(id=15L, name="tag2")
       )
-      val treeJson = show(buildDocumentSet(10), Seq(), Seq(), tags, Seq()).toString
+      val treeJson = show(buildDocumentSet(10), Seq(), Seq(), Seq(), tags, Seq()).toString
       
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")
@@ -41,23 +30,51 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "show nDocuments" in {
-      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(), Seq(), Seq()).toString
       json must /("nDocuments" -> 10L)
     }
 
-    "contain vizs" in {
-      val viz = buildViz(2L, "title", 4L, 100, new Date(1000), Seq("foo" -> "bar"))
+    "contain trees" in {
+      val tree = new Tree(
+        documentSetId=10L,
+        id=2L,
+        rootNodeId=3L,
+        title="title",
+        jobId=4L,
+        documentCount=100,
+        createdAt=new java.sql.Timestamp(1000),
+        lang="en"
+      )
 
-      val json = show(buildDocumentSet(10), Seq(viz), Seq(), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(tree), Seq(), Seq(), Seq(), Seq()).toString
 
-      json must /("vizs") */("type" -> "viz")
+      json must /("vizs") */("type" -> "tree")
       json must /("vizs") */("id" -> 2L)
       json must /("vizs") */("title" -> "title")
       json must /("vizs") */("jobId" -> 4L)
       json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
-      json must /("vizs") */("creationData") /#(0) /#(0) / "foo"
-      json must /("vizs") */("creationData") /#(0) /#(1) / "bar"
+      json must /("vizs") */("creationData") /#(3) /#(0) / "lang"
+      json must /("vizs") */("creationData") /#(3) /#(1) / "en"
       json must /("vizs") */("nDocuments" -> 100)
+    }
+
+    "contain vizs" in {
+      val viz = PodoFactory.viz(
+        id=1L,
+        title="foo",
+        createdAt=new java.sql.Timestamp(1000),
+        url="http://localhost:9001",
+        apiToken="api-token"
+      )
+
+      val json: String = show(buildDocumentSet(10), Seq(), Seq(viz), Seq(), Seq(), Seq()).toString
+
+      json must /("vizs") */("type" -> "viz")
+      json must /("vizs") */("id" -> 1L)
+      json must /("vizs") */("title" -> "foo")
+      json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
+      json must /("vizs") */("url" -> "http://localhost:9001")
+      json must /("vizs") */("apiToken" -> "api-token")
     }
 
     "contain viz jobs" in {
@@ -69,7 +86,7 @@ class showSpec extends Specification with JsonMatchers {
         state=DocumentSetCreationJobState.InProgress
       )
 
-      val json = show(buildDocumentSet(10), Seq(), Seq(vizJob), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(vizJob), Seq(), Seq()).toString
 
       json must /("vizs") /#(0) /("id" -> 2.0)
       json must /("vizs") /#(0) /("type" -> "job")

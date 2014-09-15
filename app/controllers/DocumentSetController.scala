@@ -12,7 +12,6 @@ import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,Search
 import models.orm.stores.DocumentSetStore
 import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.Delete
-import org.overviewproject.models.VizLike
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree, SearchResult }
@@ -95,16 +94,17 @@ trait DocumentSetController extends Controller {
     storage.findDocumentSet(id).map(_.copy()) match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
-        val trees = storage.findTrees(id).map(_.copy())toArray
-        val vizJobs = storage.findVizJobs(id).map(_.copy())toArray
-        val tags = storage.findTags(id).map(_.copy())toArray
-        val searchResults = storage.findSearchResults(id).map(_.copy())toArray
+        val trees = storage.findTrees(id).map(_.copy()).toArray
+        val vizJobs = storage.findVizJobs(id).map(_.copy()).toArray
+        val tags = storage.findTags(id).map(_.copy()).toArray
+        val searchResults = storage.findSearchResults(id).map(_.copy()).toArray
 
         for {
           vizs <- vizBackend.index(id)
         } yield Ok(views.json.DocumentSet.show(
           documentSet,
-          trees ++ vizs,
+          trees,
+          vizs,
           vizJobs,
           tags,
           searchResults

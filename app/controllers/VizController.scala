@@ -11,16 +11,16 @@ import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSe
 import controllers.backend.{ApiTokenBackend,VizBackend}
 import controllers.forms.VizForm
 import models.orm.finders.{DocumentSetCreationJobFinder,TreeFinder}
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.models.{ApiToken,Viz,VizLike}
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tree}
+import org.overviewproject.models.{ApiToken,Viz}
 
 trait VizController extends Controller {
   def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async {
-    val vizs = storage.findVizs(documentSetId)
-    val jobs = storage.findVizJobs(documentSetId)
+    val trees = storage.findTrees(documentSetId).map(_.copy()).toArray
+    val jobs = storage.findVizJobs(documentSetId).map(_.copy()).toArray
 
     vizBackend.index(documentSetId)
-      .map((realVizs) => Ok(views.json.Viz.index(vizs ++ realVizs, jobs)).withHeaders(CACHE_CONTROL -> "max-age=0"))
+      .map((vizs) => Ok(views.json.Viz.index(trees, vizs, jobs)).withHeaders(CACHE_CONTROL -> "max-age=0"))
       .recover { case t: Throwable => InternalServerError(t.getMessage) }
   }
 
@@ -59,12 +59,12 @@ object VizController extends VizController {
   }
 
   trait Storage {
-    def findVizs(documentSetId: Long) : Iterable[VizLike]
+    def findTrees(documentSetId: Long) : Iterable[Tree]
     def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
   }
 
   object DatabaseStorage extends Storage {
-    override def findVizs(documentSetId: Long) = {
+    override def findTrees(documentSetId: Long) = {
       TreeFinder.byDocumentSet(documentSetId).toSeq
     }
 

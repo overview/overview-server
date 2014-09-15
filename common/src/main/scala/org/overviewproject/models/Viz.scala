@@ -5,35 +5,6 @@ import java.util.Date
 import play.api.libs.json.JsObject
 import scala.util.Try
 
-/** TODO remove this; just use Viz.
-  *
-  * The history: first, there was the Tree class. Then we decided we wanted to
-  * think of Tree as a Viz; so we made this trait, and we called it Viz. Then
-  * we decided what a Viz actually _was_ ... and a Tree isn't one.
-  *
-  * But _users_ will think of Trees and Vizs as the similar. We'll list them
-  * alongside one another, for instance. So we had to keep the old Viz trait,
-  * minus a couple of attributes that made no sense. We renamed it VizLike.
-  *
-  * We should make Trees similar to Vizs, so we can remove VizLike.
-  */
-trait VizLike {
-  val id: Long
-  val documentSetId: Long
-  val title: String
-  val createdAt: Date
-
-  /** Describes how the Viz was created.
-    *
-    * For instance, one pair might be ("lang" -&gt; "en"). Both key and value
-    * should pass through i18n before being presented to the user.
-    */
-  def creationData : Iterable[(String,String)]
-
-  def documentCount: Int = Try(creationData.toMap.apply("nDocuments").toInt).getOrElse(-1)
-  def jobId: Long = Try(creationData.toMap.apply("jobId").toLong).getOrElse(-1L)
-}
-
 /** A vizualization, served by a plugin.
   *
   * Both Overview and the end user will request things of the plugin, which is
@@ -54,9 +25,7 @@ case class Viz(
   title: String,
   createdAt: Timestamp,
   json: JsObject
-) extends VizLike {
-  override def creationData = json.value.mapValues(_.toString)
-
+) {
   def update(attributes: Viz.UpdateAttributes): Viz = copy(
     title=attributes.title,
     json=attributes.json

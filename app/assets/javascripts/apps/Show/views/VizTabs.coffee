@@ -66,12 +66,14 @@ define [
             <dd class="created-at"><%- t('viz.createdAt.dd', viz.createdAt) %></dd>
           <% } %>
 
-          <% viz.creationData.forEach(function(d) { %>
-            <% if (d[0] != 'rootNodeId' && d[0] != 'jobId' && d[0] != 'nDocuments') { %>
-              <dt><%- t('viz.' + d[0] + '.dt') %></dt>
-              <dd><%- t('viz.' + d[0] + '.dd', d[1]) %></dd>
-            <% } %>
-          <% }); %>
+          <% if (Object.keys(viz.creationData).length) { %>
+            <% viz.creationData.forEach(function(d) { %>
+              <% if (d[0] != 'rootNodeId' && d[0] != 'jobId' && d[0] != 'nDocuments') { %>
+                <dt><%- t('viz.' + d[0] + '.dt') %></dt>
+                <dd><%- t('viz.' + d[0] + '.dd', d[1]) %></dd>
+              <% } %>
+            <% }); %>
+          <% } %>
         </dl>
         <% if (viz.type == 'job' || viz.type == 'error') { %>
           <button type="button" class="cancel btn btn-danger"><%- t('cancelJob') %></button>

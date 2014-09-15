@@ -6,8 +6,8 @@ import org.joda.time.DateTimeZone
 import play.api.libs.json.{Json,JsValue,JsArray}
 import scala.collection.mutable.ArrayBuffer
 
-import org.overviewproject.models.VizLike
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
+import org.overviewproject.models.Viz
 import views.helper.DocumentSetHelper.jobDescriptionKeyToMessage
 
 object index {
@@ -36,22 +36,34 @@ object index {
     )
   }
 
-  private[Viz] def vizToJson(viz: VizLike) : JsValue = {
-    val creationData = viz.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
+  private[Viz] def treeToJson(tree: Tree): JsValue = {
+    val creationData = tree.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
 
     Json.obj(
-      "type" -> "viz",
-      "id" -> viz.id,
-      "jobId" -> viz.jobId, // XXX remove me in VizLike -> Viz change
-      "nDocuments" -> viz.documentCount, // XXX remove in VizLike -> Viz change
-      "title" -> viz.title,
-      "createdAt" -> dateToISO8601(viz.createdAt),
+      "type" -> "tree",
+      "id" -> tree.id,
+      "jobId" -> tree.jobId,
+      "nDocuments" -> tree.documentCount,
+      "title" -> tree.title,
+      "createdAt" -> dateToISO8601(tree.createdAt),
       "creationData" -> creationData.toSeq
     )
   }
 
-  def apply(vizs: Iterable[VizLike], jobs: Iterable[DocumentSetCreationJob]): JsValue = {
-    val values = jobs.map(jobToJson) ++ vizs.map(vizToJson)
+  private[Viz] def vizToJson(viz: Viz): JsValue = {
+    Json.obj(
+      "type" -> "viz",
+      "id" -> viz.id,
+      "title" -> viz.title,
+      "url" -> viz.url,
+      "apiToken" -> viz.apiToken,
+      "createdAt" -> dateToISO8601(viz.createdAt),
+      "creationData" -> viz.json
+    )
+  }
+
+  def apply(trees: Iterable[Tree], vizs: Iterable[Viz], jobs: Iterable[DocumentSetCreationJob]): JsValue = {
+    val values = trees.map(treeToJson) ++ vizs.map(vizToJson) ++ jobs.map(jobToJson)
     JsArray(values.toSeq)
   }
 }

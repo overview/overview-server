@@ -13,14 +13,10 @@ define [
       creationData: [] # Viz-dependent [key,value] strings
 
     constructor: (attrs) ->
-      attrs ?= {}
+      attrs = _.extend({}, @defaults, attrs ? {})
 
       if 'createdAt' of attrs
-        attrs = _.defaults({
-          createdAt: new Date(attrs.createdAt)
-        }, attrs)
-      else
-        attrs = _.extend({}, attrs)
+        attrs.createdAt = new Date(attrs.createdAt)
 
       attrs.clientId = if attrs.jobId > 0
         "job-#{attrs.jobId}"

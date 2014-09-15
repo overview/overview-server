@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import controllers.backend.{ApiTokenBackend,VizBackend}
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.models.{ApiToken,Viz,VizLike}
+import org.overviewproject.models.{ApiToken,Viz}
 import org.overviewproject.test.factories.PodoFactory
 
 class VizControllerSpec extends ControllerSpecification with JsonMatchers {
@@ -43,7 +43,7 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
       state=DocumentSetCreationJobState.Error
     )
 
-    def fakeViz(id: Long, jobId: Long) : VizLike = Tree( // TODO don't rely on Tree
+    def fakeTree(id: Long, jobId: Long) = Tree(
       id=id,
       documentSetId=1L,
       rootNodeId=3L,
@@ -141,10 +141,10 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
         val documentSetId = 1L
         def request = fakeAuthorizedRequest
         def result = controller.indexJson(documentSetId)(request)
-        lazy val vizs : Iterable[VizLike] = Seq()
+        lazy val trees : Iterable[Tree] = Seq()
         lazy val jobs : Iterable[DocumentSetCreationJob] = Seq()
         mockVizBackend.index(documentSetId) returns Future.successful(Seq[Viz]())
-        mockStorage.findVizs(documentSetId) returns vizs
+        mockStorage.findTrees(documentSetId) returns trees
         mockStorage.findVizJobs(documentSetId) returns jobs
       }
 
@@ -157,11 +157,10 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
       }
 
       "show a tree" in new IndexJsonScope {
-        lazy val viz = fakeViz(1L, 3L)
-        override lazy val vizs = Seq(viz)
+        override lazy val trees = Seq(fakeTree(1L, 3L))
         val json = h.contentAsString(result)
 
-        json must /#(0) /("type" -> "viz")
+        json must /#(0) /("type" -> "tree")
         json must /#(0) /("id" -> 1.0)
         json must /#(0) /("jobId" -> 3.0)
         json must /#(0) /("title" -> "title1")
@@ -176,13 +175,14 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
         mockVizBackend.index(documentSetId) returns Future.successful(Seq(viz))
 
         val json = h.contentAsString(result)
+        json must /#(0) /("type" -> "viz")
         json must /#(0) /("id" -> viz.id)
         json must /#(0) /("title" -> viz.title)
+        json must /#(0) /("url" -> viz.url)
       }
 
       "show a job" in new IndexJsonScope {
-        lazy val job = fakeVizJob(1L)
-        override lazy val jobs = Seq(job)
+        override lazy val jobs = Seq(fakeVizJob(1L))
         val json = h.contentAsString(result)
 
         json must /#(0) /("type" -> "job")
@@ -196,8 +196,7 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
       }
 
       "show an error job" in new IndexJsonScope {
-        lazy val job = fakeVizErrorJob(1L)
-        override lazy val jobs = Seq(job)
+        override lazy val jobs = Seq(fakeVizErrorJob(1L))
         val json = h.contentAsString(result)
 
         json must /#(0) /("type" -> "error")
