@@ -1,10 +1,11 @@
 define [
+  'jquery'
   'backbone'
-], (Backbone) ->
+], ($, Backbone) ->
   class VizApp extends Backbone.View
     template: _.template("""
       <div class="viz-app">
-        <iframe width="1" height="1" src="<%- viz.url %>/show?documentSetId=<%- documentSetId %>&amp;vizId=<%- viz.id %>&amp;apiToken=<%- viz.apiToken %>"></iframe>
+        <iframe width="1" height="1" src="<%- url %>/show?<%- params %>"></iframe>
       </div>
     """)
 
@@ -18,8 +19,16 @@ define [
       @render()
 
     render: ->
+      loc = window.location
+      params = $.param([
+        { name: 'server', value: "#{loc.protocol}//#{loc.host}" }
+        { name: 'documentSetId', value: @documentSetId }
+        { name: 'vizId', value: @viz.get('id') }
+        { name: 'apiToken', value: @viz.get('apiToken') }
+      ])
+
       html = @template
-        documentSetId: @documentSetId
-        viz: @viz.attributes
+        url: @viz.get('url')
+        params: params
       @$el.html(html)
       @

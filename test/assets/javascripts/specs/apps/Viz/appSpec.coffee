@@ -26,4 +26,4 @@ define [
     it 'should show an iframe', ->
       $iframe = @vizApp.$('iframe')
       expect($iframe.length).to.exist
-      expect($iframe).to.have.attr('src', 'https://example.org/show?documentSetId=234&vizId=123&apiToken=api-token')
+      expect($iframe).to.have.attr('src', 'https://example.org/show?server=http%3A%2F%2Flocalhost%3A9876&documentSetId=234&vizId=123&apiToken=api-token')
