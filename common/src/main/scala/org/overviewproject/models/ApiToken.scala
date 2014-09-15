@@ -14,6 +14,11 @@ case class ApiToken(
 ) extends DocumentSetComponent
 
 object ApiToken {
+  case class CreateAttributes(
+    email: String,
+    description: String
+  )
+
   private object TokenGenerator {
     private val secureRandom = new SecureRandom()
 
@@ -54,6 +59,10 @@ object ApiToken {
       nGenerated += 1
       new BigInteger(TokenLengthInBits, secureRandom).toString(36)
     }
+  }
+
+  def build(documentSetId: Long, attributes: CreateAttributes) : ApiToken = {
+    generate(attributes.email, documentSetId, attributes.description)
   }
 
   def generate(email: String, documentSetId: Long, description: String) : ApiToken = {

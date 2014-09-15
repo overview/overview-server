@@ -21,6 +21,7 @@ define [
     beforeEach ->
       i18n.reset_messages
         'views.DocumentSet.show.VizTabs.cancelJob': 'cancelJob'
+        'views.DocumentSet.show.VizTabs.new_tree': 'new_tree'
         'views.DocumentSet.show.VizTabs.new_viz': 'new_viz'
         'views.DocumentSet.show.VizTabs.nDocuments': 'nDocuments,{0}'
         'views.DocumentSet.show.VizTabs.viz.title.dt': 'viz.title.dt'
@@ -89,9 +90,15 @@ define [
         expect($popover.find('dt')).to.contain('viz.thing1.dt')
         expect($popover.find('dd')).to.contain('viz.thing1.dd,value1')
 
-      it 'should emit click-new', ->
+      it 'should emit click-new-tree', ->
         spy = sinon.spy()
-        @view.on('click-new', spy)
+        @view.on('click-new-tree', spy)
+        @view.$('a.new-tree').click()
+        expect(spy).to.have.been.called
+
+      it 'should emit click-new-viz', ->
+        spy = sinon.spy()
+        @view.on('click-new-viz', spy)
         @view.$('a.new-viz').click()
         expect(spy).to.have.been.called
 

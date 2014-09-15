@@ -2,18 +2,29 @@ package controllers
 
 import org.specs2.specification.Scope
 import org.specs2.matcher.JsonMatchers
+import play.api.libs.json.Json
+import scala.concurrent.Future
 
+import controllers.backend.{ApiTokenBackend,VizBackend}
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.models.VizLike
+import org.overviewproject.models.{ApiToken,Viz,VizLike}
+import org.overviewproject.test.factories.PodoFactory
 
 class VizControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
+    val factory = PodoFactory
 
     val mockStorage = mock[VizController.Storage]
+    val mockAppUrlChecker = mock[VizController.AppUrlChecker]
+    val mockApiTokenBackend = mock[ApiTokenBackend]
+    val mockVizBackend = mock[VizBackend]
 
     val controller = new VizController {
       override protected val storage = mockStorage
+      override protected val apiTokenBackend = mockApiTokenBackend
+      override protected val appUrlChecker = mockAppUrlChecker
+      override protected val vizBackend = mockVizBackend
     }
 
     def fakeVizJob(id: Long) = DocumentSetCreationJob(
@@ -47,13 +58,92 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
   }
 
   "VizController" should {
-    "indexJson" should {
+    "#create" should {
+      trait CreateScope extends BaseScope {
+        val documentSetId = 1L
+        val formBody: Seq[(String,String)] = Seq()
+        def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
+        lazy val result = controller.create(documentSetId)(request)
+
+        val validFormBody = Seq("title" -> "title", "url" -> "http://localhost:9001")
+      }
+
+      "return 400 Bad Request on invalid form body" in new CreateScope {
+        override val formBody = Seq("title" -> "", "url" -> "http://localhost:9001")
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        there was no(mockAppUrlChecker).check(any[String])
+      }
+
+      "check the URL" in new CreateScope {
+        override val formBody = validFormBody
+        mockAppUrlChecker.check(any[String]) returns Future.failed(new Throwable("some error"))
+        h.status(result)
+        there was one(mockAppUrlChecker).check("http://localhost:9001/metadata")
+      }
+
+      "return 400 Bad Request on invalid URL" in new CreateScope {
+        override val formBody = validFormBody
+        mockAppUrlChecker.check(any[String]) returns Future.failed(new Throwable("some error"))
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        there was no(mockApiTokenBackend).create(any[Long], any[ApiToken.CreateAttributes])
+      }
+
+      "create an ApiToken" in new CreateScope {
+        override val formBody = validFormBody
+        mockAppUrlChecker.check(any[String]) returns Future.successful(Unit)
+        mockApiTokenBackend.create(any[Long], any[ApiToken.CreateAttributes]) returns Future.failed(new Throwable("goto end"))
+        h.status(result)
+        there was one(mockApiTokenBackend).create(documentSetId, ApiToken.CreateAttributes(
+          email="user@example.org",
+          description="title"
+        ))
+      }
+
+      "create a Viz" in new CreateScope {
+        override val formBody = validFormBody
+        mockAppUrlChecker.check(any[String]) returns Future.successful(Unit)
+        mockApiTokenBackend.create(any[Long], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken(token="api-token"))
+        mockVizBackend.create(any[Long], any[Viz.CreateAttributes]) returns Future.failed(new Throwable("goto end"))
+        h.status(result)
+        there was one(mockVizBackend).create(documentSetId, Viz.CreateAttributes(
+          url="http://localhost:9001",
+          apiToken="api-token",
+          title="title",
+          json=Json.obj()
+        ))
+      }
+
+      "return the Viz" in new CreateScope {
+        override val formBody = validFormBody
+        mockAppUrlChecker.check(any[String]) returns Future.successful(())
+        mockApiTokenBackend.create(any[Long], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken())
+        mockVizBackend.create(any[Long], any[Viz.CreateAttributes]) returns Future.successful(factory.viz(
+          id=123L,
+          url="http://localhost:9001",
+          apiToken="api-token",
+          title="title",
+          createdAt=new java.sql.Timestamp(1234L),
+          json=Json.obj("foo" -> "bar")
+        ))
+        h.status(result) must beEqualTo(h.CREATED)
+        val json = h.contentAsString(result)
+        json must /("id" -> 123L)
+        json must /("url" -> "http://localhost:9001")
+        json must /("apiToken" -> "api-token")
+        json must /("title" -> "title")
+        json must /("createdAt" -> "1970-01-01T00:00:01.234Z")
+        json must /("json") /("foo" -> "bar")
+      }
+    }
+
+    "#indexJson" should {
       trait IndexJsonScope extends BaseScope {
         val documentSetId = 1L
         def request = fakeAuthorizedRequest
         def result = controller.indexJson(documentSetId)(request)
         lazy val vizs : Iterable[VizLike] = Seq()
         lazy val jobs : Iterable[DocumentSetCreationJob] = Seq()
+        mockVizBackend.index(documentSetId) returns Future.successful(Seq[Viz]())
         mockStorage.findVizs(documentSetId) returns vizs
         mockStorage.findVizJobs(documentSetId) returns jobs
       }
@@ -66,7 +156,7 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
         h.contentAsString(result) must beEqualTo("[]")
       }
 
-      "show a viz" in new IndexJsonScope {
+      "show a tree" in new IndexJsonScope {
         lazy val viz = fakeViz(1L, 3L)
         override lazy val vizs = Seq(viz)
         val json = h.contentAsString(result)
@@ -79,6 +169,15 @@ class VizControllerSpec extends ControllerSpecification with JsonMatchers {
         json must /#(0) /("creationData") /#(3) /("lang")
         json must /#(0) /("creationData") /#(3) /("en")
         json must /#(0) /("nDocuments" -> 10)
+      }
+
+      "show a viz" in new IndexJsonScope {
+        val viz = factory.viz()
+        mockVizBackend.index(documentSetId) returns Future.successful(Seq(viz))
+
+        val json = h.contentAsString(result)
+        json must /#(0) /("id" -> viz.id)
+        json must /#(0) /("title" -> viz.title)
       }
 
       "show a job" in new IndexJsonScope {

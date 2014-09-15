@@ -3,7 +3,7 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.{Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -22,6 +22,15 @@ import org.overviewproject.util.DocumentSetVersion
   * database while building objects, for more thorough (and slower) tests.
   */
 trait Factory {
+  /** Creates an ApiToken with the given parameters. */
+  def apiToken(
+    token: String = "token",
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+    createdBy: String = "user@example.org",
+    description: String = "description",
+    documentSetId: Long = 0L
+  ): ApiToken
+
   /** Creates a new Document with the given parameters. */
   def document(
     id: Long = 0L,

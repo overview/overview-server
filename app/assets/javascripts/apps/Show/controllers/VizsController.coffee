@@ -4,8 +4,9 @@ define [
   'backbone'
   '../collections/Vizs'
   '../views/VizTabs'
+  '../views/NewVizDialog'
   'apps/ImportOptions/app'
-], (_, $, Backbone, Vizs, VizTabs, OptionsApp) ->
+], (_, $, Backbone, Vizs, VizTabs, NewVizDialog, OptionsApp) ->
   class VizsController
     _.extend(@::, Backbone.Events)
 
@@ -18,7 +19,8 @@ define [
 
       @listenTo(@view, 'click', @_onClickViz)
       @listenTo(@view, 'cancel', @_onCancel)
-      @listenTo(@view, 'click-new', @_onClickNew)
+      @listenTo(@view, 'click-new-tree', @_onClickNewTree)
+      @listenTo(@view, 'click-new-viz', @_onClickNewViz)
       @listenTo(@vizs, 'add', @_onAdd)
 
       @el = @view.el
@@ -36,7 +38,7 @@ define [
         type: 'delete'
         url: "/trees/jobs/#{jobId}"
 
-    _onClickNew: ->
+    _onClickNewTree: ->
       onSubmit = (data) =>
         # Add a placeholder job so pollUntilStable will actually send an
         # initial poll. When the server responds to the poll, this will
@@ -65,3 +67,15 @@ define [
           url: submitUrl
           data: data
           complete: -> onSubmit(data)
+
+    _onClickNewViz: ->
+      new NewVizDialog
+        success: (attrs) =>
+          $.ajax
+            type: 'post'
+            data: attrs
+            url: "#{@documentSet.url}/vizs"
+            success: (json) =>
+              viz = @vizs.add(json)
+              @state.setViz(viz)
+            error: console.log.bind(console, 'Server error creating viz')

@@ -314,6 +314,21 @@ views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 document
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 
+views.DocumentSet.show.NewVizDialog.title=New visualization
+views.DocumentSet.show.NewVizDialog.cancel=Cancel
+views.DocumentSet.show.NewVizDialog.submit=Create visualization
+views.DocumentSet.show.NewVizDialog.title.label=Name
+views.DocumentSet.show.NewVizDialog.title.placeholder=My visualization
+views.DocumentSet.show.NewVizDialog.url.label=App URL
+views.DocumentSet.show.NewVizDialog.url.placeholder=https://example.org/my-app
+views.DocumentSet.show.NewVizDialog.url.checking=Checking URL…
+views.DocumentSet.show.NewVizDialog.url.ok=This URL is valid
+views.DocumentSet.show.NewVizDialog.url.unavailable_html=<a href="{0}" target="_blank">{0}</a> responded with status code <strong>{1}</strong>. {1,choice,0#Check that its SSL certificate is valid and it supports cross-origin requests.}
+views.DocumentSet.show.NewVizDialog.url.unavailable.retry=retry
+views.DocumentSet.show.NewVizDialog.url.insecure_html=This URL does not start with <strong>https://</strong>. If you use this URL, an attacker may read and write all documents in this document set. Your web browser may also show warnings to this effect.
+views.DocumentSet.show.NewVizDialog.url.insecure.dismiss=use it anyway
+views.DocumentSet.show.NewVizDialog.url.invalid=This is not a valid URL
+
 views.DocumentSet.show.TransactionQueueErrorMonitor.error.title=Please refresh the page
 views.DocumentSet.show.TransactionQueueErrorMonitor.error.description=Overview has encountered an unusual error. Some of your work from the last few seconds may have been lost.
 views.DocumentSet.show.TransactionQueueErrorMonitor.networkError.title=Network problems
@@ -322,7 +337,8 @@ views.DocumentSet.show.TransactionQueueErrorMonitor.reload=Reload this page
 views.DocumentSet.show.TransactionQueueErrorMonitor.retry=Reconnect
 
 views.DocumentSet.show.VizTabs.cancelJob=Cancel this reclustering…
-views.DocumentSet.show.VizTabs.new_viz=New tree…
+views.DocumentSet.show.VizTabs.new_tree=New tree…
+views.DocumentSet.show.VizTabs.new_viz=New viz…
 views.DocumentSet.show.VizTabs.nDocuments=({0,number,integer})
 views.DocumentSet.show.VizTabs.viz.title.dt=Title
 views.DocumentSet.show.VizTabs.viz.title.dd={0}

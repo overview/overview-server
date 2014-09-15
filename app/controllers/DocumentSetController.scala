@@ -1,8 +1,11 @@
 package controllers
 
 import play.api.mvc.Controller
+import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.Future
 
 import controllers.auth.{ AuthorizedAction, Authorities }
+import controllers.backend.VizBackend
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,SearchResultFinder,TagFinder,TreeFinder}
@@ -18,59 +21,6 @@ import org.overviewproject.tree.orm.finders.ResultPage
 
 trait DocumentSetController extends Controller {
   import Authorities._
-
-  trait Storage {
-    /** Returns a DocumentSet from an ID */
-    def findDocumentSet(id: Long): Option[DocumentSet]
-
-    /** Returns a Seq: for each DocumentSet, the number of Trees.
-      *
-      * The return value comes in the same order as the input parameter.
-      */
-    def findNTreesByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
-
-    /** Returns a Seq: for each DocumentSet, the number of Recluster jobs.
-      *
-      * The return value comes in the same order as the input parameter.
-      */
-    def findNJobsByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
-
-    /** Returns a page of DocumentSets */
-    def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
-
-    /** Returns all active DocumentSetCreationJobs (job, documentSet, queuePosition) */
-    def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)]
-
-    def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
-
-    def deleteDocumentSet(documentSet: DocumentSet): Unit
-
-    def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
-
-    /** All Vizs for the document set. */
-    def findVizs(documentSetId: Long) : Iterable[VizLike]
-
-    /** All Viz-creation jobs for the document set. */
-    def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
-
-    /** All Tags for the document set. */
-    def findTags(documentSetId: Long) : Iterable[Tag]
-
-    /** All SearchResults for the document set. */
-    def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
-
-    /** Returns true iff we can search the document set.
-      *
-      * This is a '''hack'''. All document sets ''should'' be searchable, but
-      * document sets imported before indexing was implemented are not.
-      */
-    def isDocumentSetSearchable(documentSet: DocumentSet): Boolean
-  }
-
-  trait JobMessageQueue {
-    def send(deleteCommand: Delete): Unit
-    def send(cancelFileUploadCommand: CancelFileUpload): Unit
-  }
 
   protected val indexPageSize = 10
 
@@ -141,16 +91,24 @@ trait DocumentSetController extends Controller {
     }
   }
 
-  def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)) { implicit request =>
-    storage.findDocumentSet(id) match {
-      case None => NotFound
+  def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)).async {
+    storage.findDocumentSet(id).map(_.copy()) match {
+      case None => Future.successful(NotFound)
       case Some(documentSet) => {
-        val vizs = storage.findVizs(id)
-        val vizJobs = storage.findVizJobs(id)
-        val tags = storage.findTags(id)
-        val searchResults = storage.findSearchResults(id)
+        val trees = storage.findTrees(id).map(_.copy())toArray
+        val vizJobs = storage.findVizJobs(id).map(_.copy())toArray
+        val tags = storage.findTags(id).map(_.copy())toArray
+        val searchResults = storage.findSearchResults(id).map(_.copy())toArray
 
-        Ok(views.json.DocumentSet.show(documentSet, vizs, vizJobs, tags, searchResults))
+        for {
+          vizs <- vizBackend.index(id)
+        } yield Ok(views.json.DocumentSet.show(
+          documentSet,
+          trees ++ vizs,
+          vizJobs,
+          tags,
+          searchResults
+        ))
       }
     }
   }
@@ -231,11 +189,65 @@ trait DocumentSetController extends Controller {
   private def runningInTextExtractionWorker(implicit job: Option[DocumentSetCreationJob]): Boolean =
     jobTest { j => j.state == FilesUploaded || j.state == TextExtractionInProgress }
 
-  val storage: DocumentSetController.Storage
-  val jobQueue: DocumentSetController.JobMessageQueue
+  protected val storage: DocumentSetController.Storage
+  protected val jobQueue: DocumentSetController.JobMessageQueue
+  protected val vizBackend: VizBackend
 }
 
 object DocumentSetController extends DocumentSetController with DocumentSetDeletionComponents {
+  trait Storage {
+    /** Returns a DocumentSet from an ID */
+    def findDocumentSet(id: Long): Option[DocumentSet]
+
+    /** Returns a Seq: for each DocumentSet, the number of Trees.
+      *
+      * The return value comes in the same order as the input parameter.
+      */
+    def findNTreesByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
+
+    /** Returns a Seq: for each DocumentSet, the number of Recluster jobs.
+      *
+      * The return value comes in the same order as the input parameter.
+      */
+    def findNJobsByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
+
+    /** Returns a page of DocumentSets */
+    def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
+
+    /** Returns all active DocumentSetCreationJobs (job, documentSet, queuePosition) */
+    def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)]
+
+    def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
+
+    def deleteDocumentSet(documentSet: DocumentSet): Unit
+
+    def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
+
+    /** All Vizs for the document set. */
+    def findTrees(documentSetId: Long) : Iterable[Tree]
+
+    /** All Viz-creation jobs for the document set. */
+    def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
+
+    /** All Tags for the document set. */
+    def findTags(documentSetId: Long) : Iterable[Tag]
+
+    /** All SearchResults for the document set. */
+    def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
+
+    /** Returns true iff we can search the document set.
+      *
+      * This is a '''hack'''. All document sets ''should'' be searchable, but
+      * document sets imported before indexing was implemented are not.
+      */
+    def isDocumentSetSearchable(documentSet: DocumentSet): Boolean
+  }
+
+  trait JobMessageQueue {
+    def send(deleteCommand: Delete): Unit
+    def send(cancelFileUploadCommand: CancelFileUpload): Unit
+  }
+
   object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
     private val FirstSearchableDocumentSetVersion = 2
 
@@ -289,7 +301,7 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
       DocumentSetStore.insertOrUpdate(documentSet)
     }
 
-    override def findVizs(documentSetId: Long) = {
+    override def findTrees(documentSetId: Long) = {
       TreeFinder.byDocumentSet(documentSetId).toSeq
     }
 
@@ -308,7 +320,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
       SearchResultFinder
         .byDocumentSet(documentSetId)
         .onlyNewest
-        .toSeq
     }
 
     override def isDocumentSetSearchable(documentSet: DocumentSet) = documentSet.version >= FirstSearchableDocumentSetVersion
@@ -318,4 +329,5 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
 
   override val storage = DatabaseStorage
   override val jobQueue = ApolloJobMessageQueue
+  override val vizBackend = VizBackend
 }

@@ -5,7 +5,7 @@ import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
-import org.overviewproject.models.{Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -19,6 +19,24 @@ import org.overviewproject.util.DocumentSetVersion
 class DbFactory(connection: Connection) extends Factory {
   private implicit val session = new UnmanagedSession(connection)
   private val podoFactory = PodoFactory
+
+  override def apiToken(
+    token: String = "token",
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+    createdBy: String = "user@example.org",
+    description: String = "description",
+    documentSetId: Long = 0L
+  ) = {
+    val apiToken = podoFactory.apiToken(
+      token,
+      createdAt,
+      createdBy,
+      description,
+      documentSetId
+    )
+    DbFactory.queries.insertApiToken += apiToken
+    apiToken
+  }
 
   override def document(
     id: Long = 0L,
@@ -198,6 +216,7 @@ object DbFactory {
     import org.overviewproject.database.Slick.simple._
 
     // Compile queries once, instead of once per test
+    val insertApiToken = (ApiTokens returning ApiTokens).insertInvoker
     val insertDocument = (Documents returning Documents).insertInvoker
     val insertDocumentSearchResult = (DocumentSearchResults returning DocumentSearchResults).insertInvoker
     val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker

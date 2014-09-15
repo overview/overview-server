@@ -8,7 +8,7 @@ define [
   # in the UI.
   class Viz extends Backbone.Model
     defaults:
-      type: 'viz' # 'viz', 'job' or 'error'
+      type: 'viz' # 'tree', 'viz', 'job' or 'error'
       title: '' # What the user calls this Viz
       creationData: [] # Viz-dependent [key,value] strings
 

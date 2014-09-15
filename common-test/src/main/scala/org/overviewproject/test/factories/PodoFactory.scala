@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import play.api.libs.json.JsObject
 import scala.util.Random
 
-import org.overviewproject.models.{Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -38,6 +38,20 @@ object PodoFactory extends Factory {
       idOr0
     }
   }
+
+  override def apiToken(
+    token: String = "token",
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+    createdBy: String = "user@example.org",
+    description: String = "description",
+    documentSetId: Long = 0L
+  ) = ApiToken(
+    token,
+    createdAt,
+    createdBy,
+    description,
+    getId(documentSetId)
+  )
 
   override def document(
     id: Long = 0L,

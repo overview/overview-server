@@ -24,7 +24,8 @@ define [
     events:
       'click .toggle-popover': '_onClickPopover'
       'click li[data-id]>a': '_onClick'
-      'click a.new-viz': '_onClickNew'
+      'click a.new-tree': '_onClickNewTree'
+      'click a.new-viz': '_onClickNewViz'
       'click button.cancel': '_onClickCancel'
 
     templates:
@@ -89,11 +90,19 @@ define [
           }) %>
         <% }); %>
         <li class="new-viz">
-          <a href="#" class="new-viz">
+          <a href="#" class="new-tree">
             <i class="icon-overview-plus"></i>
-            <%- t('new_viz') %>
+            <%- t('new_tree') %>
           </a>
         </li>
+        <% if (window.location.hostname == 'localhost') { %>
+          <li class="new-viz">
+            <a href="#" class="new-viz">
+              <i class="icon-overview-plus"></i>
+              <%- t('new_viz') %>
+            </a>
+          </li>
+        <% } %>
         ''')
 
     initialize: ->
@@ -207,9 +216,13 @@ define [
 
       e.stopPropagation()
 
-    _onClickNew: (e) ->
+    _onClickNewTree: (e) ->
       e.preventDefault()
-      @trigger('click-new')
+      @trigger('click-new-tree')
+
+    _onClickNewViz: (e) ->
+      e.preventDefault()
+      @trigger('click-new-viz')
 
     _onClickCancel: (e) ->
       e.preventDefault()

@@ -16,6 +16,8 @@ import models.{Session, User}
 /** A test environment for controllers.
   */
 trait ControllerSpecification extends Specification with Mockito {
+  sequential
+
   override def map(fs: => Fragments) = {
     Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
   }
