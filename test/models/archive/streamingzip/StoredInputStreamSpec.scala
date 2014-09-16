@@ -47,6 +47,11 @@ class StoredInputStreamSpec extends Specification {
       inputStream.crc32 must be equalTo(inputCrc32)
     }
     
+    "not support mark and reset" in new StreamContext {
+      
+      inputStream.markSupported must beFalse
+    }
+    
     trait StreamContext extends Scope {
       val dataLength = 128
       val inputData = Array.ofDim[Byte](dataLength)

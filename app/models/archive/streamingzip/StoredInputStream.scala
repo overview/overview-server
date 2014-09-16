@@ -32,4 +32,6 @@ class StoredInputStream(in: InputStream) extends CRCInputStream(in) {
     
     numberOfBytesRead
   }
+  
+  override def markSupported: Boolean = false
 }
