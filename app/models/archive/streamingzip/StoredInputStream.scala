@@ -4,6 +4,11 @@ import models.archive.CRCInputStream
 import java.io.InputStream
 import java.util.zip.CRC32
 
+
+/**
+ * [[InputStream]] containing data to be stored uncompressed in zip file. 
+ * Provides a CRC32 value for bytes read so far.
+ */
 class StoredInputStream(in: InputStream) extends CRCInputStream(in) {
   private val checker = new CRC32
   
