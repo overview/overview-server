@@ -2,6 +2,7 @@ FORMAT: 1A
 HOST: https://www.overviewproject.org
 
 # The Overview Project
+
 The Overview Project API lets you manipulate document sets and related objects from
 https://www.overviewproject.org.
 
@@ -9,9 +10,9 @@ https://www.overviewproject.org.
 
 You'll need three special pieces of information to access all endpoints:
 
-* Your **Document Set ID**. Browse to your document set and look for the URL like: https://www.overviewproject.org/documentsets/{documentSetId}.
-* Your **API Token**.  Browse to https://www.overviewproject.org/documentsets/{documentSetId}/api-tokens to create one for your document set.
-* Your **Viz ID**. TODO: give users a way to create Viz IDs....
+* Your **Document Set ID**. This points to a set of documents.
+* Your **Viz ID**. This points to your app's private scratchpad.
+* Your **API Token**. This is a password.
 
 Got all that? Great. Now, for every request, add an `Authorization` header of `Basic {base64Encode(apiToken + ":x-auth-token")}`.
 
@@ -40,6 +41,79 @@ A **Tag** is a label that can apply to documents.
         }, {
           "id": 2, "name": "bar", "color": "#123456"
         }]
+
+# Group Documents
+A **Document** is a unit of text. It may represent anything: a tweet, a Word file, an Excel spreadsheet, a PDF, an email, a page of text, or whatever your imagination can bring.
+
+A Document's `text` is its essence, but other data which comes in handy.
+
+## Document [/document-sets/{documentSetId}/documents/{id}]
+A single Document object, with all metadata and text.
+
+The Document resource has the following attributes:
+
+
+- id: Overview's way of identifying the document
+- url: where to find the document on the Web (or your intranet)
+- suppliedId: a String you use to identify the document when you aren't using Overview
+- title: what to call the document in Overview's document list
+- page: if this document represents one page, the page number; `null` otherwise
+- keywords: An Array of Strings that Overview finds interesting about this document (as compared to the other documents in the document set)
+
++ Parameters
+    + documentSetId (required, number, `1`) ... The Document Set ID.
+    + id (required, number, `2`) ... The Document ID.
+    
++ Model (application/json)
+
+        {
+            "id": 2,
+            "url": "http://example.org/foo/bar.txt",
+            "suppliedId": "foo/bar",
+            "title": "Foo Bar",
+            "keywords": [ "foo", "bar" ],
+            "text": "foo. bar. foo foo bar bar...."
+        }
+        
+### Retrieve a Document [GET]
++ Response 200
+
+    [Document][]
+
+## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&fields={fields}]
+Collection of Documents.
+
+Document collections can be rather large, so the `text` column doesn't appear in lists.
+
++ Parameters
+    + documentSetId (required, number, `1`) ... The document set ID.
+    + q (optional, string, `bar`) ... An [ElasticSearch query string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) to filter documents.
+    + fields (optional, string, `id`) ... If `id`, return just an Array of Document IDs instead of an Array of Document JSON objects.
+
++ Model (application/json)
+
+        [
+            {
+                "id": 2,
+                "url": "http://example.org/foo/bar.txt",
+                "suppliedId": "foo/bar",
+                "title": "Foo Bar",
+                "keywords": [ "foo", "bar" ]
+            },
+            {
+                "id": 3,
+                "url": "http://example.org/bar/baz.txt",
+                "suppliedId": "bar/baz",
+                "title": "Bar Baz",
+                "keywords": [ "bar", "baz" ]
+            }
+        ]
+
+### List all Documents [GET]
+
++ Response 200
+
+    [Documents Collection][]
 
 # Group Vizs
 A **Viz** is a program that lets a user interact with a single Document Set.
