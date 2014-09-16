@@ -34,6 +34,18 @@ class StoredInputStreamSpec extends Specification {
       inputStream.crc32 must be equalTo(inputCrc32)
     }
     
+    "calculate crc32 value when read(byte[], offset, len) is called " in new StreamContext {
+      val readBytes = Array.ofDim[Byte](dataLength)
+      
+      inputStream.read(readBytes, 0, dataLength / 2)
+      inputStream.crc32 must be equalTo(calcCrc32(inputData.take(dataLength / 2)))
+      
+      inputStream.read(readBytes, dataLength / 2, dataLength / 2)
+      
+      readBytes must be equalTo(inputData)
+      
+      inputStream.crc32 must be equalTo(inputCrc32)
+    }
     
     trait StreamContext extends Scope {
       val dataLength = 128
@@ -46,6 +58,14 @@ class StoredInputStreamSpec extends Specification {
       val inputCrc32 = {
         val crc32 = new CRC32
         
+        crc32.update(inputData)
+        
+        crc32.getValue
+      }
+      
+      def calcCrc32(inputData: Array[Byte]): Long = {
+        val crc32 = new CRC32
+         
         crc32.update(inputData)
         
         crc32.getValue
