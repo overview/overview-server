@@ -16,4 +16,12 @@ class StoredInputStream(in: InputStream) extends CRCInputStream(in) {
     
     b
   }
+  
+  override def read(b: Array[Byte]): Int = {
+    val numberOfBytesRead = in.read(b)
+    
+    if (numberOfBytesRead != -1) checker.update(b)
+    
+    numberOfBytesRead
+  }
 }
