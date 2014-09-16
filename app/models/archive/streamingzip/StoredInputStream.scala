@@ -2,7 +2,18 @@ package models.archive.streamingzip
 
 import models.archive.CRCInputStream
 import java.io.InputStream
+import java.util.zip.CRC32
 
 class StoredInputStream(in: InputStream) extends CRCInputStream(in) {
-  def crc32: Long = 0
+  private val checker = new CRC32
+  
+  def crc32: Long = checker.getValue
+  
+  override def read(): Int = {
+    val b = in.read
+    
+    if (b != -1) checker.update(b)
+    
+    b
+  }
 }
