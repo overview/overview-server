@@ -9,29 +9,22 @@ class StoredInputStream(in: InputStream) extends CRCInputStream(in) {
   
   def crc32: Long = checker.getValue
   
-  override def read(): Int = {
-    val b = in.read
-    
-    if (b != -1) checker.update(b)
-    
-    b
-  }
+  override def read(): Int =
+    readAndCheck(in.read, checker.update)
   
-  override def read(b: Array[Byte]): Int = {
-    val numberOfBytesRead = in.read(b)
+  override def read(b: Array[Byte]): Int = 
+    readAndCheck(in.read(b), _ => checker.update(b))
     
-    if (numberOfBytesRead != -1) checker.update(b)
+  override def read(b: Array[Byte], offset: Int, len: Int): Int = 
+    readAndCheck(in.read(b, offset, len), _ => checker.update(b, offset, len))
     
-    numberOfBytesRead
-  }
-  
-  override def read(b: Array[Byte], offset: Int, len: Int): Int = {
-    val numberOfBytesRead = in.read(b, offset, len) 
-    
-    if (numberOfBytesRead != -1) checker.update(b, offset, len)
-    
-    numberOfBytesRead
-  }
-  
   override def markSupported: Boolean = false
+  
+  private def readAndCheck(readFn: => Int, checkFn: Int => Unit): Int = {
+    val n = readFn
+    
+    if (n != -1) checkFn(n)
+    
+    n
+  }
 }
