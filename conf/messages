@@ -357,7 +357,7 @@ views.DocumentSet.show.VizTabs.viz.importantWords.dd={0}
 
 views.DocumentSet.show.apps.Job.heading=Clustering…
 views.DocumentSet.show.apps.Job.heading.error=Clustering failed
-views.DocumentSet.show.apps.Job.description=Overview is organizing your documents. You may wait, or you may browse elsewhere and let Overview work in the background.
+views.DocumentSet.show.apps.Job.description=Overview is creating a visualization. You may read, search and tag your documents in the meantime.
 
 views.FileImport.new.title=Upload files
 views.FileImport.new.h1=Upload files
