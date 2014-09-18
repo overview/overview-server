@@ -1,7 +1,3 @@
 package models.archive
 
-trait ArchiveEntry {
-  val size: Long
-  val name: String
-  val data: CRCInputStream
-}
+case class ArchiveEntry(size: Long, name: String, data: CRCInputStream)
