@@ -60,13 +60,13 @@ module.exports = (opts) ->
     for word in opts.ignoredWords
       it "should show ignored word #{word}", ->
         @userBrowser
-          .elementByCss("li.viz.active a .toggle-popover").click()
+          .elementByCss("li.active a .toggle-popover").click()
           .elementBy(tag: 'dd', contains: word).should.eventually.exist
 
   if 'importantWords' of opts
     for word in opts.importantWords
       it "should show important word #{word}", ->
         @userBrowser
-          .elementByCss("li.viz.active a .toggle-popover").click()
+          .elementByCss("li.active a .toggle-popover").click()
           .elementBy(tag: 'dd', contains: word).should.eventually.exist
           
