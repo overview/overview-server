@@ -6,6 +6,10 @@ import models.archive.CRCInputStream
 import java.nio.charset.StandardCharsets
 import org.specs2.specification.Scope
 import models.archive.streamingzip.HexByteString._
+import java.util.Date
+import java.util.Calendar
+import java.nio.ByteBuffer
+import java.nio.ByteOrder._
 
 class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
@@ -62,6 +66,26 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
       output.drop(14) must be equalTo(expectedHeader.hex.drop(14))
     }
     
+    "write date and time in stream" in new FileEntryContext {
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, data)
+      
+      val output = new Array[Byte](localFileHeaderSize)
+      
+      val now = Calendar.getInstance()
+      
+      val n = entry.stream.read(output)
+      val timeBytes = output.slice(10, 12)
+      val dateBytes = output.slice(12, 14)
+
+      val dosTime = bytesToInt(timeBytes) 
+      val dosDate = bytesToInt(dateBytes)
+      
+      val fileTime = DosDate.toCalendar(dosDate, dosTime)
+
+      now.getTimeInMillis must be closeTo(fileTime.getTimeInMillis, 5000)
+
+    }
+    
     
     trait FileEntryContext extends Scope {
       val fileName = "1234567890"
@@ -74,6 +98,15 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
       val data = mock[CRCInputStream]
       
       def entrySize(fileNameSize: Int) = localFileHeaderSize + extraFieldSize + dataDescriptorSize + fileSize + fileNameSize
+      
+      // assumes 2 bytes in array
+      def bytesToInt(bytes: Array[Byte]): Int = {
+        val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
+
+        byteBuffer.put(bytes)
+        
+        byteBuffer.getShort(0)
+      }
     }
   }
 
