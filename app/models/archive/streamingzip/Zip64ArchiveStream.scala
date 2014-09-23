@@ -17,7 +17,7 @@ class Zip64ArchiveStream(entries: Iterable[ArchiveEntry]) extends ArchiveStream(
   
   
   private def createLocalFileHeaders(entries: Iterable[ArchiveEntry]): Seq[Zip64LocalFileEntry] =
-    entries.map(Zip64LocalFileEntry(_)).toSeq
+    entries.map(Zip64LocalFileEntry(_, 0)).toSeq
     
     private def createCentralDirectory(fileHeaders: Iterable[Zip64LocalFileEntry]) = 
       new Zip64CentralDirectory(fileHeaders)

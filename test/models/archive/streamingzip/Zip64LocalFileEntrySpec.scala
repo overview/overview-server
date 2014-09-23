@@ -10,13 +10,15 @@ import java.util.Date
 import java.util.Calendar
 import java.nio.ByteBuffer
 import java.nio.ByteOrder._
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 
 class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
   "Zip64LocalFileEntry" should {
 
     "return size" in new FileEntryContext {
-      val entry = new Zip64LocalFileEntry(fileName, fileSize, data)
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, data)
 
       entry.size must be equalTo (entrySize(fileName.size))
     }
@@ -26,14 +28,14 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
       val utf8FileName = new String(utf8Bytes, StandardCharsets.UTF_8)
       
-      val entry = new Zip64LocalFileEntry(utf8FileName, fileSize, data)
+      val entry = new Zip64LocalFileEntry(utf8FileName, fileSize, 0, data)
 
       entry.size must be equalTo (entrySize(utf8FileName.size * 2))
 
     }
    
     "set values" in new FileEntryContext {
-      val entry = new Zip64LocalFileEntry(fileName, fileSize, data)
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, data)
 
       entry.signature must be equalTo(0x04034b50)
       entry.extractorVersion must be equalTo(10)
@@ -43,7 +45,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
     }
     
     "write header in stream" in new FileEntryContext {
-      val entry = new Zip64LocalFileEntry(fileName, fileSize, data)
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, data)
 
       val output = new Array[Byte](localFileHeaderSize)
       
@@ -67,7 +69,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
     }
     
     "write date and time in stream" in new FileEntryContext {
-      val entry = new Zip64LocalFileEntry(fileName, fileSize, data)
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, data)
       
       val output = new Array[Byte](localFileHeaderSize)
       
@@ -86,6 +88,27 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
     }
     
+    "write file name" in new FileEntryContext {
+      val fileData = Array.tabulate(fileSize)(_.toByte)
+      val fileStream = new StoredInputStream(new ByteArrayInputStream(fileData))
+      
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, fileStream)
+      
+      val output = readStream(entry.stream)
+      
+      output.slice(localFileHeaderSize, localFileHeaderSize + fileName.size) must be equalTo fileName.getBytes
+    }
+    
+    "write file" in new FileEntryContext {
+      val fileData = Array.tabulate(fileSize)(_.toByte)
+      val fileStream = new StoredInputStream(new ByteArrayInputStream(fileData))
+      
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, fileStream)
+
+      val output = readStream(entry.stream)
+      
+      output.drop(localFileHeaderSize + fileName.size) must be equalTo fileData
+    }
     
     trait FileEntryContext extends Scope {
       val fileName = "1234567890"
@@ -107,6 +130,9 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
         
         byteBuffer.getShort(0)
       }
+      
+      def readStream(stream: InputStream): Array[Byte] =
+        Stream.continually(stream.read).takeWhile(_ != -1).map(_.toByte).toArray
     }
   }
 

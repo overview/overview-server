@@ -9,8 +9,10 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder._
 import java.util.Calendar
+import java.io.SequenceInputStream
+import scala.collection.JavaConverters._
 
-case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputStream) {
+case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, data: CRCInputStream) {
   private val HeaderSize = 30
   private val ExtraFieldSize = 32
   private val DataDescriptorSize = 24
@@ -23,9 +25,14 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
   val fileNameLength: Short = fileNameSize
   def crc32 = data.crc32
 
+  
   def size: Long = HeaderSize + fileNameSize + ExtraFieldSize + fileSize + DataDescriptorSize
 
-  def stream: InputStream = headerStream
+  val stream: InputStream = 
+    new SequenceInputStream(Iterator(headerStream, fileNameStream, data).asJavaEnumeration)
+  
+  
+  
 
   private def fileNameSize = fileName.getBytes(StandardCharsets.UTF_8).size.toShort
 
@@ -46,6 +53,8 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
         writeShort(ExtraFieldSize.toShort))
   }
   
+  private def fileNameStream: InputStream = new ByteArrayInputStream(fileName.getBytes(StandardCharsets.UTF_8))
+    
   private def writeInt(value: Int): Array[Byte] = {
     val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
     byteBuffer.putInt(value).array()
@@ -59,6 +68,6 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
 }
 
 object Zip64LocalFileEntry {
-  def apply(entry: ArchiveEntry): Zip64LocalFileEntry =
-    Zip64LocalFileEntry(entry.name, entry.size, entry.data)
+  def apply(entry: ArchiveEntry, offset: Long): Zip64LocalFileEntry =
+    Zip64LocalFileEntry(entry.name, entry.size, offset, entry.data)
 }
