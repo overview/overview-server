@@ -113,7 +113,7 @@ Document collections can be rather large, so the `text` column doesn't appear in
 + Parameters
     + documentSetId (required, number, `1`) ... The document set ID.
     + q (optional, string, `bar`) ... An [ElasticSearch query string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) to filter documents.
-    + fields (optional, string, `id`) ... If `id`, return just an Array of Document IDs instead of an Array of Document JSON objects.
+    + fields (optional, string, `id`) ... If `id`, return just a simple Array of Document IDs (all of them, without pagination) instead of an Array of Document JSON objects.
     + offset (optional, number, `0`) ... We're paginating; skip this many documents in the result list.
     + limit (optional, number, `1000`) ... We're paginating; return at most this many documents.
 
