@@ -20,6 +20,31 @@ Got all that? Great. Now, for every request, add an `Authorization` header of `B
 
 We do not support HTTP. Use nothing but HTTPS.
 
+## Pagination
+
+Some API requests will yield "paginated" results, meaning you're not allowed to fetch everything at once.
+
+You can add `offset` and `limit` parameters to the query string to specify which records you'd like. (Overview will impose a maximum limit.)
+
+Overview will return a JavaScript object that looks like this:
+
+    {
+        "pagination": {
+            "offset": 150,
+            "limit": 50,
+            "total": 234
+        },
+        "items": [
+            ...
+        ]
+    }
+
+Here's what it means.
+
+Let's say Overview is holding 234 (`total`) documents. You've requested a maximum (`limit`) of 50 documents per request.
+Overview is picturing all 234 documents, sorted according to some criteria, but it is only giving you documents 150 (`offset`) to 200 (`offset + limit`).
+If you want to read more documents, you'll have to make another request -- for instance, one with `?offset=200&limit=50` in the query string.
+
 # Group Document Sets
 A **Document Set** is a collection of documents.
 
@@ -80,7 +105,7 @@ The Document resource has the following attributes:
 
     [Document][]
 
-## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&fields={fields}]
+## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&fields={fields}&offset={offset}&limit={limit}]
 Collection of Documents.
 
 Document collections can be rather large, so the `text` column doesn't appear in lists.
@@ -89,25 +114,34 @@ Document collections can be rather large, so the `text` column doesn't appear in
     + documentSetId (required, number, `1`) ... The document set ID.
     + q (optional, string, `bar`) ... An [ElasticSearch query string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) to filter documents.
     + fields (optional, string, `id`) ... If `id`, return just an Array of Document IDs instead of an Array of Document JSON objects.
+    + offset (optional, number, `0`) ... We're paginating; skip this many documents in the result list.
+    + limit (optional, number, `1000`) ... We're paginating; return at most this many documents.
 
 + Model (application/json)
 
-        [
-            {
-                "id": 2,
-                "url": "http://example.org/foo/bar.txt",
-                "suppliedId": "foo/bar",
-                "title": "Foo Bar",
-                "keywords": [ "foo", "bar" ]
+        {
+            "pagination": {
+                "offset": 0,
+                "limit": 1000,
+                "total": 2
             },
-            {
-                "id": 3,
-                "url": "http://example.org/bar/baz.txt",
-                "suppliedId": "bar/baz",
-                "title": "Bar Baz",
-                "keywords": [ "bar", "baz" ]
-            }
-        ]
+            "items": [
+                {
+                    "id": 2,
+                    "url": "http://example.org/foo/bar.txt",
+                    "suppliedId": "foo/bar",
+                    "title": "Foo Bar",
+                    "keywords": [ "foo", "bar" ]
+                },
+                {
+                    "id": 3,
+                    "url": "http://example.org/bar/baz.txt",
+                    "suppliedId": "bar/baz",
+                    "title": "Bar Baz",
+                    "keywords": [ "bar", "baz" ]
+                }
+            ]
+        }
 
 ### List all Documents [GET]
 
