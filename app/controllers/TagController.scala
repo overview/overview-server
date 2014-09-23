@@ -19,35 +19,35 @@ import org.overviewproject.tree.orm.Tag
 import org.overviewproject.tree.orm.finders.FinderResult
 import models.orm.finders.{ DocumentFinder, DocumentTagFinder, NodeDocumentFinder, TagFinder }
 import models.orm.stores.{DocumentTagStore,TagStore}
-import models.Selection
+import models.SelectionRequest
 
 trait TagController extends Controller {
   trait Storage {
     def insertOrUpdate(tag: Tag) : Tag
 
-    /** Adds a tag to a Selection.
+    /** Adds a tag to a SelectionRequest.
       *
       * Security considerations: the caller must ensure the user has access to
-      * the given tagId and Selection. (In the case of the Selection, this is
+      * the given tagId and SelectionRequest. (In the case of the SelectionRequest, this is
       * accomplished by checking the documentSetId.)
       *
-      * Documents in the Selection that are already tagged will be skipped.
+      * Documents in the SelectionRequest that are already tagged will be skipped.
       *
       * @return number of documents tagged.
       */
-    def addTagToSelection(tagId: Long, selection: Selection) : Int
+    def addTagToSelection(tagId: Long, selection: SelectionRequest) : Int
 
-    /** Removes a tag from a Selection.
+    /** Removes a tag from a SelectionRequest.
       *
       * Security considerations: the caller must ensure the user has access to
-      * the given tagId and Selection. (In the case of the Selection, this is
+      * the given tagId and SelectionRequest. (In the case of the SelectionRequest, this is
       * accomplished by checking the documentSetId.)
       *
-      * Documents in the Selection that are not tagged will be skipped.
+      * Documents in the SelectionRequest that are not tagged will be skipped.
       *
       * @return number of documents untagged.
       */
-    def removeTagFromSelection(tagId: Long, selection: Selection) : Int
+    def removeTagFromSelection(tagId: Long, selection: SelectionRequest) : Int
 
     /** @return a Tag if it exists */
     def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
@@ -153,7 +153,7 @@ trait TagController extends Controller {
     storage.findTag(documentSetId, tagId) match {
       case None => NotFound
       case Some(tag) => {
-        storage.removeTagFromSelection(tagId, Selection(documentSetId))
+        storage.removeTagFromSelection(tagId, SelectionRequest(documentSetId))
         storage.delete(tag)
         NoContent
       }
@@ -198,12 +198,12 @@ object TagController extends TagController {
       TagStore.insertOrUpdate(tag)
     }
 
-    override def addTagToSelection(tagId: Long, selection: Selection) : Int = {
-      val foundDocuments = DocumentFinder.bySelection(selection)
+    override def addTagToSelection(tagId: Long, selection: SelectionRequest) : Int = {
+      val foundDocuments = DocumentFinder.bySelectionRequest(selection)
       DocumentTagStore.insertForTagAndDocuments(tagId, foundDocuments)
     }
 
-    override def removeTagFromSelection(tagId: Long, selection: Selection) : Int = {
+    override def removeTagFromSelection(tagId: Long, selection: SelectionRequest) : Int = {
       val documentTags = DocumentTagFinder.byTagAndSelection(tagId, selection)
       DocumentTagStore.delete(documentTags.query)
     }

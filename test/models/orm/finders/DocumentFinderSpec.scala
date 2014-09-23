@@ -6,7 +6,7 @@ import play.api.test.FakeApplication
 
 import helpers.DbTestContext
 import models.orm.{ TestSchema }
-import models.Selection
+import models.SelectionRequest
 import org.overviewproject.tree.orm._
 
 class DocumentFinderSpec extends Specification {
@@ -53,9 +53,9 @@ class DocumentFinderSpec extends Specification {
         TestSchema.documentTags.insertOrUpdate(DocumentTag(documentId=d.id, tagId=tag.id))
       }
 
-      val selection = Selection(documentSet.id, Nil, Nil, Nil, Nil, true)
+      val selection = SelectionRequest(documentSet.id, Nil, Nil, Nil, Nil, Some(false))
 
-      val result = DocumentFinder.bySelection(selection).toSeq
+      val result = DocumentFinder.bySelectionRequest(selection).toSeq
 
       result.map(_.id).toSet must beEqualTo(untaggedDocuments.map(_.id).toSet)
     }

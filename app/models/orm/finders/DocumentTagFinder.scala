@@ -8,7 +8,7 @@ import org.overviewproject.tree.orm.finders.{ BaseDocumentTagFinder, FinderResul
 
 import org.squeryl.Query
 
-import models.Selection
+import models.SelectionRequest
 import models.orm.Schema
 
 object DocumentTagFinder extends BaseDocumentTagFinder(Schema.documentTags, Schema.tags) {
@@ -30,8 +30,8 @@ object DocumentTagFinder extends BaseDocumentTagFinder(Schema.documentTags, Sche
     Schema.documentTags.where(_.tagId === tag)
   }
 
-  def byTagAndSelection(tag: Long, selection: Selection) : DocumentTagFinderResult = {
-    val documentIds = DocumentFinder.bySelection(selection).toIds
+  def byTagAndSelection(tag: Long, selection: SelectionRequest) : DocumentTagFinderResult = {
+    val documentIds = DocumentFinder.bySelectionRequest(selection).toIds
     /*
     This breaks Squeryl's Schema.delete(Query[A]).
     Schema.documentTags

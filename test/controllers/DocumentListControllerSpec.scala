@@ -4,7 +4,7 @@ import org.specs2.specification.Scope
 import play.api.mvc.AnyContent
 
 import controllers.auth.AuthorizedRequest
-import models.Selection
+import models.SelectionRequest
 import org.overviewproject.tree.orm.finders.ResultPage
 
 class DocumentListControllerSpec extends ControllerSpecification {
@@ -22,15 +22,15 @@ class DocumentListControllerSpec extends ControllerSpecification {
     val searchResults = ""
     val pageSize = 10
     val page = 1
-    val untagged = false
+    val tagged: Option[Boolean] = None
     
-    def expectedSelection = Selection(
+    def expectedSelection = SelectionRequest(
       documentSetId=documentSetId,
       nodeIds=Seq[Long](),
       tagIds=Seq[Long](),
       documentIds=Seq[Long](),
       searchResultIds=Seq[Long](),
-      untagged=false
+      tagged=None
     )
 
     val request : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest

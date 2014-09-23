@@ -1,20 +1,14 @@
 package models.orm.stores
 
-import java.sql.Timestamp
 import java.util.Date
-import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
 
-import org.overviewproject.tree.orm.SearchResultState._
-import org.overviewproject.postgres.LO
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.stores.{ BaseStore, NoInsertOrUpdate }
-import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import helpers.{DbTestContext, PgConnectionContext}
-import models.Selection
+import helpers.PgConnectionContext
 import models.orm._
 import models.orm.finders._
 

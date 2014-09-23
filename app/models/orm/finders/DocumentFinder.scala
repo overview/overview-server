@@ -9,7 +9,7 @@ import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 
 import models.orm.Schema
-import models.Selection
+import models.SelectionRequest
 
 object DocumentFinder extends Finder {
   class DocumentFinderResult(query: Query[Document]) extends FinderResult(query) {
@@ -94,8 +94,8 @@ object DocumentFinder extends Finder {
     Schema.documents.where(_.documentSetId === documentSet)
   }
 
-  /** @return All `Document`s in the given Selection. */
-  def bySelection(selection: Selection): DocumentFinderResult = {
+  /** @return All `Document`s in the given SelectionRequest. */
+  def bySelectionRequest(selection: SelectionRequest): DocumentFinderResult = {
     var query = Schema.documents.where(_.documentSetId === selection.documentSetId)
 
     if (selection.nodeIds.nonEmpty) {
@@ -123,7 +123,7 @@ object DocumentFinder extends Finder {
       query = query.where(_.id in selection.documentIds)
     }
 
-    if (selection.untagged) {
+    selection.tagged.foreach { tagged =>
       val allDocumentIds = from(Schema.documents)(d =>
         where(d.documentSetId === selection.documentSetId)
         select(d.id)
@@ -139,7 +139,11 @@ object DocumentFinder extends Finder {
         select(dt.documentId)
       )
 
-      query = query.where(d => (d.id notIn taggedDocumentIds) and (d.id in allDocumentIds))
+      if (tagged) {
+        query = query.where(d => (d.id in    taggedDocumentIds) and (d.id in allDocumentIds))
+      } else {
+        query = query.where(d => (d.id notIn taggedDocumentIds) and (d.id in allDocumentIds))
+      }
     }
 
     query

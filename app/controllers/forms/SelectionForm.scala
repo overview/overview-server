@@ -1,10 +1,10 @@
 package controllers.forms
 
 import play.api.data.{Form,Forms}
-import models.{IdList,Selection}
+import models.{IdList,SelectionRequest}
 
 object SelectionForm {
-  def apply(documentSetId: Long) : Form[Selection] = {
+  def apply(documentSetId: Long) : Form[SelectionRequest] = {
     Form(
       Forms.mapping(
         "nodes" -> Forms.default(Forms.text, ""),
@@ -13,9 +13,9 @@ object SelectionForm {
         "searchResults" -> Forms.default(Forms.text, "")
       )
       ((nodes, tags, documents, searchResults) =>
-        Selection(documentSetId, nodes, tags, documents, searchResults)
+        SelectionRequest(documentSetId, nodes, tags, documents, searchResults)
       )
-      ((selection: Selection) =>
+      ((selection: SelectionRequest) =>
         Some((
           selection.nodeIds         .map(_.toString).mkString(","),
           selection.tagIds          .map(_.toString).mkString(","),
