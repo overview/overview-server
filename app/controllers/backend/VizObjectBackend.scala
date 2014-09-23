@@ -104,36 +104,36 @@ object DbVizObjectBackend {
   import org.overviewproject.database.Slick.simple._
 
   private lazy val byIdCompiled = Compiled { (id: Column[Long]) =>
-    VizObjects.where(_.id === id)
+    VizObjects.filter(_.id === id)
   }
 
   private lazy val byVizIdCompiled = Compiled { (vizId: Column[Long]) =>
-    VizObjects.where(_.vizId === vizId)
+    VizObjects.filter(_.vizId === vizId)
   }
 
   private lazy val byVizIdAndIndexedLongCompiled = Compiled { (vizId: Column[Long], indexedLong: Column[Long]) =>
     VizObjects
-      .where(_.vizId === vizId)
-      .where(_.indexedLong === indexedLong)
+      .filter(_.vizId === vizId)
+      .filter(_.indexedLong === indexedLong)
   }
 
   private lazy val byVizIdAndIndexedStringCompiled = Compiled { (vizId: Column[Long], indexedString: Column[String]) =>
     VizObjects
-      .where(_.vizId === vizId)
-      .where(_.indexedString === indexedString)
+      .filter(_.vizId === vizId)
+      .filter(_.indexedString === indexedString)
   }
 
   private lazy val byVizIdAndIndexedLongAndIndexedStringCompiled = Compiled { (vizId: Column[Long], indexedLong: Column[Long], indexedString: Column[String]) =>
     VizObjects
-      .where(_.vizId === vizId)
-      .where(_.indexedLong === indexedLong)
-      .where(_.indexedString === indexedString)
+      .filter(_.vizId === vizId)
+      .filter(_.indexedLong === indexedLong)
+      .filter(_.indexedString === indexedString)
   }
 
   private lazy val previousIdCompiled = Compiled { (min: Column[Long], max: Column[Long]) =>
     VizObjects
-      .where(_.id >= min)
-      .where(_.id < max)
+      .filter(_.id >= min)
+      .filter(_.id < max)
       .map(_.id)
       .max
   }
@@ -162,11 +162,11 @@ object DbVizObjectBackend {
         case Some(s) => byVizIdAndIndexedLongAndIndexedStringCompiled(vizId, i, s)
       }
     }
-    query.list()(session)
+    query.list(session)
   }
 
   def byId(id: Long)(session: Session) = {
-    byIdCompiled(id).firstOption()(session)
+    byIdCompiled(id).firstOption(session)
   }
 
   def insert(vizObject: VizObject)(session: Session): VizObject = {
@@ -207,7 +207,7 @@ object DbVizObjectBackend {
           AND (SELECT COUNT(*) FROM subdelete) IS NOT NULL
       """
 
-      scala.slick.jdbc.StaticQuery.updateNA(q).execute()(session)
+      scala.slick.jdbc.StaticQuery.updateNA(q).execute(session)
     }
   }
 }

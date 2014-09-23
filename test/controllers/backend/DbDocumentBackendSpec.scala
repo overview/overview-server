@@ -3,6 +3,7 @@ package controllers.backend
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import models.pagination.{PageInfo,PageRequest}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
 import org.overviewproject.models.Document
 
@@ -42,20 +43,34 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   "DbDocumentBackendSpec" should {
     "#index" should {
       trait IndexScope extends CommonIndexScope {
-        lazy val ret = await(backend.index(documentSet.id, q=q))
+        val pageRequest = PageRequest(0, 1000)
+        lazy val ret = await(backend.index(documentSet.id, q=q, pageRequest))
       }
 
       "show all documents by default" in new IndexScope {
-        ret.length must beEqualTo(3)
+        ret.items.length must beEqualTo(3)
+        ret.pageInfo.total must beEqualTo(3)
       }
 
       "sort documents by title" in new IndexScope {
-        ret.map(_.id) must beEqualTo(Seq(doc2.id, doc3.id, doc1.id))
+        ret.items.map(_.id) must beEqualTo(Seq(doc2.id, doc3.id, doc1.id))
       }
 
       "search by q" in new IndexScope {
         override val q = "moo"
-        ret.map(_.id) must beEqualTo(Seq(doc2.id))
+        ret.items.map(_.id) must beEqualTo(Seq(doc2.id))
+      }
+
+      "honor offset" in new IndexScope {
+        override val pageRequest = PageRequest(1, 1000)
+        ret.items.map(_.id) must beEqualTo(Seq(doc3.id, doc1.id))
+        ret.pageInfo must beEqualTo(PageInfo(pageRequest, 3))
+      }
+
+      "honor limit" in new IndexScope {
+        override val pageRequest = PageRequest(0, 2)
+        ret.items.map(_.id) must beEqualTo(Seq(doc2.id, doc3.id))
+        ret.pageInfo must beEqualTo(PageInfo(pageRequest, 3))
       }
     }
 

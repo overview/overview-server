@@ -3,6 +3,7 @@ package controllers.api
 import scala.concurrent.Future
 
 import controllers.backend.{SavedSearchBackend, SavedSearchDocumentBackend}
+import models.pagination.Page
 import org.overviewproject.tree.orm.SearchResult
 import org.overviewproject.models.DocumentInfo
 
@@ -22,7 +23,7 @@ class SavedSearchDocumentControllerSpec extends ApiControllerSpecification {
         val documentSetId = 1L
         val query = "foo"
         def searchResult: Option[SearchResult] = Some(factory.searchResult(documentSetId=documentSetId, query=query))
-        def documents: Seq[DocumentInfo] = Seq()
+        def documents: Page[DocumentInfo] = Page(Seq())
         override def action = controller.index(documentSetId, query)
 
         mockSearchBackend.show(documentSetId, query) returns Future(searchResult)
@@ -41,19 +42,19 @@ class SavedSearchDocumentControllerSpec extends ApiControllerSpecification {
       }
 
       "return [] when there are no documents" in new IndexScope {
-        override def documents = Seq()
-        contentAsString(result) must beEqualTo("[]")
+        override def documents = Page(Seq())
+        contentAsString(result) must /("pagination") /("total" -> 0)
       }
 
       "return some Documents when there are some" in new IndexScope {
-        override def documents = Seq(
+        override def documents = Page(Seq(
           factory.document(title="title", url=Some("http://example.org")).toDocumentInfo,
           factory.document(title="title2").toDocumentInfo
-        )
+        ))
         val json = contentAsString(result)
-        json must /#(0) /("title" -> "title")
-        json must /#(0) /("url" -> "http://example.org")
-        json must /#(1) /("title" -> "title2")
+        json must /("records") /#(0) /("title" -> "title")
+        json must /("records") /#(0) /("url" -> "http://example.org")
+        json must /("records") /#(1) /("title" -> "title2")
       }
     }
   }

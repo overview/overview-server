@@ -85,21 +85,21 @@ object DbDocumentVizObjectBackend {
 
   private lazy val byIdsCompiled = Compiled { (documentId: Column[Long], vizObjectId: Column[Long]) =>
     DocumentVizObjects
-      .where(_.documentId === documentId)
-      .where(_.vizObjectId === vizObjectId)
+      .filter(_.documentId === documentId)
+      .filter(_.vizObjectId === vizObjectId)
   }
 
   private lazy val attributesByIdsCompiled = Compiled { (documentId: Column[Long], vizObjectId: Column[Long]) =>
     DocumentVizObjects
-      .where(_.documentId === documentId)
-      .where(_.vizObjectId === vizObjectId)
+      .filter(_.documentId === documentId)
+      .filter(_.vizObjectId === vizObjectId)
       .map(_.json)
   }
 
   private lazy val insertDocumentVizObject = DocumentVizObjects.insertInvoker
 
   def byIds(documentId: Long, vizObjectId: Long)(session: Session) = {
-    byIdsCompiled(documentId, vizObjectId).firstOption()(session)
+    byIdsCompiled(documentId, vizObjectId).firstOption(session)
   }
 
   def insert(documentVizObject: DocumentVizObject)(session: Session): DocumentVizObject = {
@@ -152,7 +152,7 @@ object DbDocumentVizObjectBackend {
         RETURNING document_id, viz_object_id, json_text
       """
 
-      StaticQuery.queryNA[DocumentVizObject](q)(getDvoResult).list()(session)
+      StaticQuery.queryNA[DocumentVizObject](q)(getDvoResult).list(session)
     }
   }
 
@@ -167,7 +167,7 @@ object DbDocumentVizObjectBackend {
           AND viz_object_id IN (SELECT id FROM viz_object WHERE viz_id = $vizId)
       """
 
-      StaticQuery.updateNA(q).execute()(session)
+      StaticQuery.updateNA(q).execute(session)
     }
   }
 

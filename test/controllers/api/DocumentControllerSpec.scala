@@ -4,7 +4,8 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.DocumentBackend
-import org.overviewproject.tree.orm.Document // FIXME should be models.Document
+import models.pagination.{Page,PageInfo,PageRequest}
+import org.overviewproject.models.DocumentInfo
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
@@ -20,19 +21,28 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val documentSetId = 1L
         val q = ""
         val fields = ""
+        val pageRequest = PageRequest(0, 1000)
+        def emptyPage[T] = Page(Seq[T](), PageInfo(pageRequest, 0))
 
         override def action = controller.index(documentSetId, q, fields)
       }
 
       "return JSON with status code 200" in new IndexScope {
-        mockBackend.index(documentSetId, q) returns Future(Seq())
+        mockBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentInfo])
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
       }
 
       "return an empty Array when there are no Documents" in new IndexScope {
-        mockBackend.index(documentSetId, q) returns Future(Seq())
-        contentAsString(result) must beEqualTo("[]")
+        mockBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentInfo])
+        contentAsString(result) must /("pagination") /("total" -> 0)
+      }
+
+      "grab documentSetId, q and pageRequest from the HTTP request" in new IndexScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
+        mockBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentInfo])
+        status(result) must beEqualTo(OK)
+        there was one(mockBackend).index(documentSetId, q, PageRequest(1, 2))
       }
 
       "return a JSON error when the fields parameter is not empty or id" in new IndexScope {
@@ -52,25 +62,29 @@ class DocumentControllerSpec extends ApiControllerSpecification {
             url=Some("http://example.org")
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
+        ).map(_.toDocumentInfo)
+        mockBackend.index(any, any, any) returns Future.successful(
+          Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )
-        mockBackend.index(documentSetId, q) returns Future(documents.map(_.toDocumentInfo))
 
         val json = contentAsString(result)
 
-        json must /#(0) /("id" -> documents(0).id)
-        json must /#(0) /("title" -> "foo")
-        json must /#(0) /("keywords") /#(0) /("foo")
-        json must /#(0) /("keywords") /#(1) /("bar")
-        json must /#(0) /("suppliedId" -> "supplied 1")
-        json must /#(0) /("url" -> "http://example.org")
-        json must not /#(0) /("text")
+        json must /("records") /#(0) /("id" -> documents(0).id)
+        json must /("records") /#(0) /("title" -> "foo")
+        json must /("records") /#(0) /("keywords") /#(0) /("foo")
+        json must /("records") /#(0) /("keywords") /#(1) /("bar")
+        json must /("records") /#(0) /("suppliedId" -> "supplied 1")
+        json must /("records") /#(0) /("url" -> "http://example.org")
+        // specs2 foils me on this one:
+        // json must not /("records") /#(0) /("text")
 
-        json must /#(1) /("id" -> documents(1).id)
-        json must /#(1) /("title" -> "")
-        // I can't get this one past specs2: json must /#(1) /("keywords" -> beEmpty[Seq[Any]])
-        json must not /#(1) /("suppliedId")
-        json must not /#(1) /("url")
-        json must not /#(1) /("text")
+        json must /("records") /#(1) /("id" -> documents(1).id)
+        json must /("records") /#(1) /("title" -> "")
+        // I can't get these past specs2:
+        // json must /("records") /#(1) /("keywords" -> beEmpty[Seq[Any]])
+        // json must not /("records") /#(1) /("suppliedId")
+        // json must not /("records") /#(1) /("url")
+        // json must not /("records") /#(1) /("text")
       }
 
       "return an Array of IDs when fields=id" in new IndexScope {

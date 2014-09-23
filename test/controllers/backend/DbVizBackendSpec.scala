@@ -11,7 +11,7 @@ class DbVizBackendSpec extends DbBackendSpecification {
 
     def findViz(id: Long) = {
       import org.overviewproject.database.Slick.simple._
-      Vizs.where(_.id === id).firstOption()(session)
+      Vizs.filter(_.id === id).firstOption(session)
     }
   }
 

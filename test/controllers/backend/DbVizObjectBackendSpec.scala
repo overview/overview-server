@@ -11,7 +11,7 @@ class DbVizObjectBackendSpec extends DbBackendSpecification {
 
     def findVizObject(id: Long) = {
       import org.overviewproject.database.Slick.simple._
-      VizObjects.where(_.id === id).firstOption()(session)
+      VizObjects.filter(_.id === id).firstOption(session)
     }
   }
 
@@ -245,9 +245,9 @@ class DbVizObjectBackendSpec extends DbBackendSpecification {
           import org.overviewproject.database.Slick.simple._
           import org.overviewproject.models.tables.DocumentVizObjects
           DocumentVizObjects
-            .where(_.documentId === documentId)
-            .where(_.vizObjectId === vizObjectId)
-            .firstOption()(session)
+            .filter(_.documentId === documentId)
+            .filter(_.vizObjectId === vizObjectId)
+            .firstOption(session)
         }
 
         def destroyMany(ids: Long*) = await(backend.destroyMany(viz.id, ids.toSeq))

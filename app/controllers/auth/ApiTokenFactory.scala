@@ -89,11 +89,11 @@ object ApiTokenFactory extends ApiTokenFactory {
     import org.overviewproject.database.Slick.simple._
     import org.overviewproject.models.tables.ApiTokens
 
-    lazy val lookupToken = Compiled((token: Column[String]) => ApiTokens.where(_.token === token))
+    lazy val lookupToken = Compiled((token: Column[String]) => ApiTokens.filter(_.token === token))
 
     override def loadApiToken(token: String) = Future {
       OverviewDatabase.withSlickSession { session =>
-        lookupToken(token).firstOption()(session)
+        lookupToken(token).firstOption(session)
       }
     }
   }

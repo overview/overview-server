@@ -2,11 +2,16 @@ package views.json.api.DocumentInfo
 
 import play.api.libs.json.{JsValue,Json}
 
+import models.pagination.Page
 import org.overviewproject.models.DocumentInfo
 
 object index {
-  def apply(documents: Seq[DocumentInfo]): JsValue = {
-    val jsons: Seq[JsValue] = documents.map(show(_))
-    Json.toJson(jsons)
+  def apply(page: Page[DocumentInfo]): JsValue = {
+    val pagination = views.json.api.pagination.PageInfo.show(page.pageInfo)
+    val records: Seq[JsValue] = page.items.map(show(_))
+    Json.obj(
+      "pagination" -> pagination,
+      "records" -> Json.toJson(records)
+    )
   }
 }

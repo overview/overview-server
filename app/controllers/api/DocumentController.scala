@@ -7,12 +7,13 @@ import scala.concurrent.Future
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DbDocumentBackend,DocumentBackend}
+import models.pagination.PageRequest
 
 trait DocumentController extends ApiController {
   protected val backend: DocumentBackend
 
-  private def _indexInfos(documentSetId: Long, q: String) = {
-    backend.index(documentSetId, q).map { infos =>
+  private def _indexInfos(documentSetId: Long, q: String, pageRequest: PageRequest) = {
+    backend.index(documentSetId, q, pageRequest).map { infos =>
       Ok(views.json.api.DocumentInfo.index(infos))
     }
   }
@@ -23,10 +24,10 @@ trait DocumentController extends ApiController {
     }
   }
 
-  def index(documentSetId: Long, q: String, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
+  def index(documentSetId: Long, q: String, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
     fields match {
       case "id" => _indexIds(documentSetId, q)
-      case "" => _indexInfos(documentSetId, q)
+      case "" => _indexInfos(documentSetId, q, pageRequest(request, 1000))
       case _ => Future.successful(BadRequest(jsonError("""The "fields" parameter must be either "id" or "" for now. Sorry!""")))
     }
   }

@@ -62,17 +62,17 @@ object DbVizBackend {
   import org.overviewproject.database.Slick.simple._
 
   private lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Column[Long]) =>
-    Vizs.where(_.documentSetId === documentSetId)
+    Vizs.filter(_.documentSetId === documentSetId)
   }
 
   private lazy val byIdCompiled = Compiled { (id: Column[Long]) =>
-    Vizs.where(_.id === id)
+    Vizs.filter(_.id === id)
   }
 
   private lazy val previousIdCompiled = Compiled { (min: Column[Long], max: Column[Long]) =>
     Vizs
-      .where(_.id >= min)
-      .where(_.id < max)
+      .filter(_.id >= min)
+      .filter(_.id < max)
       .map(_.id)
       .max
   }
@@ -89,11 +89,11 @@ object DbVizBackend {
   }
 
   def byDocumentSetId(documentSetId: Long)(session: Session) = {
-    byDocumentSetIdCompiled(documentSetId).list()(session)
+    byDocumentSetIdCompiled(documentSetId).list(session)
   }
 
   def byId(id: Long)(session: Session) = {
-    byIdCompiled(id).firstOption()(session)
+    byIdCompiled(id).firstOption(session)
   }
 
   lazy val insertViz = (Vizs returning Vizs).insertInvoker

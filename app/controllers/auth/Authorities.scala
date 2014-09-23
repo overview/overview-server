@@ -64,8 +64,8 @@ object Authorities {
         import org.overviewproject.database.Slick.simple._
         import org.overviewproject.models.tables.Vizs
         Vizs
-          .where(_.id === id)
-          .where(_.apiToken === apiToken.token)
+          .filter(_.id === id)
+          .filter(_.apiToken === apiToken.token)
           .length.run == 1
       }
     }

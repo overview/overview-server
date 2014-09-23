@@ -8,7 +8,7 @@ class DbSavedSearchDocumentBackendSpec extends DbBackendSpecification {
 
     def findDocument(id: Long) = {
       import org.overviewproject.database.Slick.simple._
-      Documents.where(_.id === id).firstOption()(session)
+      Documents.filter(_.id === id).firstOption(session)
     }
   }
 
@@ -22,8 +22,9 @@ class DbSavedSearchDocumentBackendSpec extends DbBackendSpecification {
       factory.documentSearchResult(documentId=document2.id, searchResultId=searchResult.id)
 
       val ret = await(backend.index(searchResult.id))
-      ret.length must beEqualTo(2)
-      ret.map(_.id) must containTheSameElementsAs(Seq(document1.id, document2.id))
+      ret.items.length must beEqualTo(2)
+      ret.pageInfo.total must beEqualTo(2)
+      ret.items.map(_.id) must containTheSameElementsAs(Seq(document1.id, document2.id))
     }
 
     "not index a different search result" in new BaseScope {
@@ -36,7 +37,8 @@ class DbSavedSearchDocumentBackendSpec extends DbBackendSpecification {
       factory.documentSearchResult(documentId=document2.id, searchResultId=searchResult2.id)
 
       val ret = await(backend.index(searchResult1.id))
-      ret.length must beEqualTo(0)
+      ret.items.length must beEqualTo(0)
+      ret.pageInfo.total must beEqualTo(0)
     }
   }
 }

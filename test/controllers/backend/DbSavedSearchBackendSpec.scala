@@ -14,15 +14,15 @@ class DbSavedSearchBackendSpec extends DbBackendSpecification with Mockito {
 
     def findSearchResult(id: Long) = {
       import org.overviewproject.database.Slick.simple._
-      SearchResults.where(_.id === id).firstOption()(session)
+      SearchResults.filter(_.id === id).firstOption(session)
     }
 
     def findDocumentSearchResult(did: Long, sid: Long) = {
       import org.overviewproject.database.Slick.simple._
       DocumentSearchResults
-        .where(_.documentId === did)
-        .where(_.searchResultId === sid)
-        .firstOption()(session)
+        .filter(_.documentId === did)
+        .filter(_.searchResultId === sid)
+        .firstOption(session)
     }
   }
 

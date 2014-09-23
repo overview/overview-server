@@ -12,9 +12,9 @@ class DbDocumentVizObjectBackendSpec extends DbBackendSpecification {
     def findDocumentVizObject(documentId: Long, vizObjectId: Long) = {
       import org.overviewproject.database.Slick.simple._
       DocumentVizObjects
-        .where(_.documentId === documentId)
-        .where(_.vizObjectId === vizObjectId)
-        .firstOption()(session)
+        .filter(_.documentId === documentId)
+        .filter(_.vizObjectId === vizObjectId)
+        .firstOption(session)
     }
   }
 

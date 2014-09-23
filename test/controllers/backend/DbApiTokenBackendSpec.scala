@@ -11,7 +11,7 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
 
     def findApiToken(token: String) = {
       import org.overviewproject.database.Slick.simple._
-      ApiTokens.where(_.token === token).firstOption()(session)
+      ApiTokens.filter(_.token === token).firstOption(session)
     }
   }
 

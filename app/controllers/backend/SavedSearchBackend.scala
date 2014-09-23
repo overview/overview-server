@@ -37,24 +37,24 @@ object DbSavedSearchBackend {
   import org.overviewproject.database.Slick.simple._
 
   private lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Column[Long]) =>
-    SearchResults.where(_.documentSetId === documentSetId)
+    SearchResults.filter(_.documentSetId === documentSetId)
   }
 
   private lazy val byDocumentSetIdAndQueryCompiled = Compiled { (documentSetId: Column[Long], query: Column[String]) =>
-    SearchResults.where(_.documentSetId === documentSetId).where(_.query === query)
+    SearchResults.filter(_.documentSetId === documentSetId).filter(_.query === query)
   }
 
   private lazy val documentSearchResultsCompiled = Compiled { (documentSetId: Column[Long], query: Column[String]) =>
-    val searchResultId = SearchResults.where(_.documentSetId === documentSetId).where(_.query === query).map(_.id)
-    DocumentSearchResults.where(_.searchResultId in searchResultId)
+    val searchResultId = SearchResults.filter(_.documentSetId === documentSetId).filter(_.query === query).map(_.id)
+    DocumentSearchResults.filter(_.searchResultId in searchResultId)
   }
 
   def byDocumentSetId(documentSetId: Long)(session: Session) = {
-    byDocumentSetIdCompiled(documentSetId).list()(session)
+    byDocumentSetIdCompiled(documentSetId).list(session)
   }
 
   def byDocumentSetIdAndQuery(documentSetId: Long, query: String)(session: Session) = {
-    byDocumentSetIdAndQueryCompiled(documentSetId, query).firstOption()(session)
+    byDocumentSetIdAndQueryCompiled(documentSetId, query).firstOption(session)
   }
 
   def deleteByDocumentSetIdAndQuery(documentSetId: Long, query: String)(session: Session) = {

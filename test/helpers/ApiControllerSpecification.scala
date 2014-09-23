@@ -34,6 +34,9 @@ trait ApiControllerSpecification
     def fakeRequest[T](body: T): ApiAuthorizedRequest[T] = {
       new ApiAuthorizedRequest(FakeRequest().withBody(body), fakeApiToken)
     }
+    def fakeRequest(method: String, uri: String): ApiAuthorizedRequest[AnyContent] = {
+      new ApiAuthorizedRequest(FakeRequest(method, uri).withBody(AnyContentAsEmpty), fakeApiToken)
+    }
     def fakeJsonRequest(body: JsValue): ApiAuthorizedRequest[AnyContentAsJson] = {
       new ApiAuthorizedRequest(FakeRequest().withJsonBody(body), fakeApiToken)
     }
