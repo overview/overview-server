@@ -3,6 +3,7 @@ package models.archive.streamingzip
 import java.util.Calendar
 import java.util.Calendar._
 
+/** Convert a date and time to DOS format */
 class DosDate(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int) {
 
   val date: Int =
@@ -26,6 +27,7 @@ object DosDate {
     date.get(MINUTE),
     date.get(SECOND))
   
+  /** @returns a [[Calendar]] corresponding to the date and time in DOS format */
   def toCalendar(date: Int, time: Int): Calendar = {
     val year = ((date >> 9) & 0x007F) + 1980 
     val month = (date >> 5) & 0x000F
