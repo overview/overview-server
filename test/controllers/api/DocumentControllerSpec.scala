@@ -69,22 +69,22 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
         val json = contentAsString(result)
 
-        json must /("records") /#(0) /("id" -> documents(0).id)
-        json must /("records") /#(0) /("title" -> "foo")
-        json must /("records") /#(0) /("keywords") /#(0) /("foo")
-        json must /("records") /#(0) /("keywords") /#(1) /("bar")
-        json must /("records") /#(0) /("suppliedId" -> "supplied 1")
-        json must /("records") /#(0) /("url" -> "http://example.org")
+        json must /("items") /#(0) /("id" -> documents(0).id)
+        json must /("items") /#(0) /("title" -> "foo")
+        json must /("items") /#(0) /("keywords") /#(0) /("foo")
+        json must /("items") /#(0) /("keywords") /#(1) /("bar")
+        json must /("items") /#(0) /("suppliedId" -> "supplied 1")
+        json must /("items") /#(0) /("url" -> "http://example.org")
         // specs2 foils me on this one:
-        // json must not /("records") /#(0) /("text")
+        // json must not /("items") /#(0) /("text")
 
-        json must /("records") /#(1) /("id" -> documents(1).id)
-        json must /("records") /#(1) /("title" -> "")
+        json must /("items") /#(1) /("id" -> documents(1).id)
+        json must /("items") /#(1) /("title" -> "")
         // I can't get these past specs2:
-        // json must /("records") /#(1) /("keywords" -> beEmpty[Seq[Any]])
-        // json must not /("records") /#(1) /("suppliedId")
-        // json must not /("records") /#(1) /("url")
-        // json must not /("records") /#(1) /("text")
+        // json must /("items") /#(1) /("keywords" -> beEmpty[Seq[Any]])
+        // json must not /("items") /#(1) /("suppliedId")
+        // json must not /("items") /#(1) /("url")
+        // json must not /("items") /#(1) /("text")
       }
 
       "return an Array of IDs when fields=id" in new IndexScope {

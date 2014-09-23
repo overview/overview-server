@@ -52,9 +52,9 @@ class SavedSearchDocumentControllerSpec extends ApiControllerSpecification {
           factory.document(title="title2").toDocumentInfo
         ))
         val json = contentAsString(result)
-        json must /("records") /#(0) /("title" -> "title")
-        json must /("records") /#(0) /("url" -> "http://example.org")
-        json must /("records") /#(1) /("title" -> "title2")
+        json must /("items") /#(0) /("title" -> "title")
+        json must /("items") /#(0) /("url" -> "http://example.org")
+        json must /("items") /#(1) /("title" -> "title2")
       }
     }
   }
