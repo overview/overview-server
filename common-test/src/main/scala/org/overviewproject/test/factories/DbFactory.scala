@@ -6,7 +6,7 @@ import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
 import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,SearchResult,SearchResultState,Tag}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates objects in the database while returning them.
@@ -96,6 +96,15 @@ class DbFactory(connection: Connection) extends Factory {
     document
   }
 
+  override def documentSearchResult(documentId: Long, searchResultId: Long) = {
+    val documentSearchResult = podoFactory.documentSearchResult(
+      documentId = documentId,
+      searchResultId = searchResultId
+    )
+    DbFactory.queries.insertDocumentSearchResult += documentSearchResult
+    documentSearchResult
+  }
+
   override def documentSet(
     id: Long = 0L,
     title: String = "",
@@ -126,6 +135,12 @@ class DbFactory(connection: Connection) extends Factory {
     documentSet
   }
 
+  override def documentTag(documentId: Long, tagId: Long) = {
+    val documentTag = podoFactory.documentTag(documentId, tagId)
+    DbFactory.queries.insertDocumentTag += documentTag
+    documentTag
+  }
+
   override def documentVizObject(
     documentId: Long = 0L,
     vizObjectId: Long = 0L,
@@ -138,6 +153,25 @@ class DbFactory(connection: Connection) extends Factory {
     )
     DbFactory.queries.insertDocumentVizObject += dvo
     dvo
+  }
+
+  override def node(
+    id: Long = 0L,
+    rootId: Long = 0L,
+    parentId: Option[Long] = None,
+    description: String = "",
+    cachedSize: Int = 0,
+    isLeaf: Boolean = true
+  ) = {
+    val node = PodoFactory.node(id, rootId, parentId, description, cachedSize, isLeaf)
+    DbFactory.queries.insertNode += node
+    node
+  }
+
+  override def nodeDocument(nodeId: Long, documentId: Long) = {
+    val nodeDocument = PodoFactory.nodeDocument(nodeId, documentId)
+    DbFactory.queries.insertNodeDocument += nodeDocument
+    nodeDocument
   }
 
   override def searchResult(
@@ -158,18 +192,6 @@ class DbFactory(connection: Connection) extends Factory {
     searchResult
   }
 
-  override def documentSearchResult(
-    documentId: Long,
-    searchResultId: Long
-  ) = {
-    val documentSearchResult = podoFactory.documentSearchResult(
-      documentId = documentId,
-      searchResultId = searchResultId
-    )
-    DbFactory.queries.insertDocumentSearchResult += documentSearchResult
-    documentSearchResult
-  }
-
   override def tag(
     id: Long = 0L,
     documentSetId: Long = 0L,
@@ -179,15 +201,6 @@ class DbFactory(connection: Connection) extends Factory {
     val tag = PodoFactory.tag(id, documentSetId, name, color)
     DbFactory.queries.insertTag += tag
     tag
-  }
-
-  override def documentTag(
-    documentId: Long,
-    tagId: Long
-  ) = {
-    val documentTag = podoFactory.documentTag(documentId, tagId)
-    DbFactory.queries.insertDocumentTag += documentTag
-    documentTag
   }
 
   override def viz(
@@ -242,6 +255,8 @@ object DbFactory {
     val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
     val insertDocumentTag = (DocumentTags returning DocumentTags).insertInvoker
     val insertDocumentVizObject = (DocumentVizObjects returning DocumentVizObjects).insertInvoker
+    val insertNode = (Nodes returning Nodes).insertInvoker
+    val insertNodeDocument = (NodeDocuments returning NodeDocuments).insertInvoker
     val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
     val insertTag = (Tags returning Tags).insertInvoker
     val insertViz = (Vizs returning Vizs).insertInvoker

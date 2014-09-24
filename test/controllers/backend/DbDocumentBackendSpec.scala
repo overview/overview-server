@@ -125,6 +125,29 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         override val q = "oneandthree"
         ret must beEqualTo(Seq(doc1.id))
       }
+
+      "search by nodeIds" in new IndexIdsScope {
+        val node = factory.node()
+        val nd1 = factory.nodeDocument(node.id, doc1.id)
+        val nd2 = factory.nodeDocument(node.id, doc2.id)
+
+        override val nodeIds = Seq(node.id)
+        ret must beEqualTo(Seq(doc2.id, doc1.id))
+      }
+
+      "intersect two Postgres filters" in new IndexIdsScope {
+        val node = factory.node()
+        val nd1 = factory.nodeDocument(node.id, doc1.id)
+        val nd2 = factory.nodeDocument(node.id, doc2.id)
+
+        val tag = factory.tag(documentSetId=documentSet.id)
+        val dt1 = factory.documentTag(doc1.id, tag.id)
+        val dt2 = factory.documentTag(doc3.id, tag.id)
+
+        override val nodeIds = Seq(node.id)
+        override val tagIds = Seq(tag.id)
+        ret must beEqualTo(Seq(doc1.id))
+      }
     }
 
     "#show" should {

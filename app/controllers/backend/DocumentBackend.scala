@@ -3,7 +3,7 @@ package controllers.backend
 import scala.concurrent.Future
 
 import org.overviewproject.models.{Document,DocumentInfo}
-import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentTags}
+import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentTags,NodeDocuments}
 import org.overviewproject.searchindex.IndexClient
 
 import models.pagination.{Page,PageInfo,PageRequest}
@@ -71,8 +71,14 @@ object DbDocumentBackend {
       val tagDocumentIds = DocumentTags
         .filter(_.tagId inSet request.tagIds)
         .map(_.documentId)
-      play.api.Logger.warn("FILTERING " + tagDocumentIds.toString())
       sql = sql.filter(_.id in tagDocumentIds)
+    }
+
+    if (request.nodeIds.nonEmpty) {
+      val nodeDocumentIds = NodeDocuments
+        .filter(_.nodeId inSet request.nodeIds)
+        .map(_.documentId)
+      sql = sql.filter(_.id in nodeDocumentIds)
     }
 
     val futureSql = request.q match {

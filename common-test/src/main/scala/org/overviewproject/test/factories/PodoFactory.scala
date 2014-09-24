@@ -5,7 +5,7 @@ import play.api.libs.json.JsObject
 import scala.util.Random
 
 import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,SearchResult,SearchResultState,Tag}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Plain Old Data Object factory.
@@ -103,6 +103,11 @@ object PodoFactory extends Factory {
     getId(id)
   )
 
+  override def documentSearchResult(
+    documentId: Long,
+    searchResultId: Long
+  ) = DocumentSearchResult(documentId, searchResultId)
+
   override def documentSet(
     id: Long = 0L,
     title: String = "",
@@ -129,6 +134,11 @@ object PodoFactory extends Factory {
     deleted
   )
 
+  override def documentTag(
+    documentId: Long,
+    tagId: Long
+  ) = DocumentTag(documentId, tagId)
+
   override def documentVizObject(
     documentId: Long = 0L,
     vizObjectId: Long = 0L,
@@ -138,6 +148,31 @@ object PodoFactory extends Factory {
     vizObjectId,
     json
   )
+
+  override def node(
+    id: Long = 0L,
+    rootId: Long = 0L,
+    parentId: Option[Long] = None,
+    description: String = "",
+    cachedSize: Int = 0,
+    isLeaf: Boolean = true
+  ) = {
+    val realId = getId(id)
+    val realRootId = if (rootId == 0) realId else rootId
+    Node(
+      realId,
+      realRootId,
+      parentId,
+      description,
+      cachedSize,
+      isLeaf
+    )
+  }
+
+  override def nodeDocument(
+    nodeId: Long,
+    documentId: Long
+  ) = NodeDocument(nodeId, documentId)
 
   override def searchResult(
     id: Long = 0L,
@@ -153,11 +188,6 @@ object PodoFactory extends Factory {
     getId(id)
   )
 
-  override def documentSearchResult(
-    documentId: Long,
-    searchResultId: Long
-  ) = DocumentSearchResult(documentId, searchResultId)
-
   override def tag(
     id: Long = 0L,
     documentSetId: Long = 0L,
@@ -169,11 +199,6 @@ object PodoFactory extends Factory {
     name=name,
     color=color
   )
-
-  override def documentTag(
-    documentId: Long,
-    tagId: Long
-  ) = DocumentTag(documentId, tagId)
 
   override def viz(
     id: Long = 0L,
