@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import controllers.auth.{ Authorities, AuthorizedAction }
 import models.CloneImportJob
 import models.orm.stores.CloneImportJobStore

@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import controllers.auth.OptionallyAuthorizedAction
 import controllers.auth.Authorities.anyUser
 

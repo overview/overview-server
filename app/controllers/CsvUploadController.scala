@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.anyUser
 import models.orm.finders.DocumentSetFinder

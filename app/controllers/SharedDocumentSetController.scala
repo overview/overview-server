@@ -1,10 +1,7 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.tree.orm.finders.FinderResult.finderResultToIterable
-
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
 import models.User

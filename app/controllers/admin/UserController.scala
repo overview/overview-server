@@ -1,10 +1,9 @@
 package controllers.admin
 
-import play.api.mvc.Controller
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.forms.admin.{NewUserForm, EditUserForm}
+import controllers.Controller
 import models.User
 import models.orm.finders.{ UserFinder, SessionFinder, DocumentSetUserFinder }
 import models.orm.stores.{SessionStore, UserStore}

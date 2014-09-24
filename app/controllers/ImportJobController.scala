@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
 import controllers.auth.{AuthorizedAction,Authorities}
 import models.orm.finders.DocumentSetCreationJobFinder

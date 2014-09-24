@@ -1,7 +1,6 @@
 package controllers
 
 import play.api.Logger
-import play.api.mvc.Controller
 
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser

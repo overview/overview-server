@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.{AnyContent, Controller, Request}
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import models.{ SelectionRequest,IdList }
@@ -18,14 +16,13 @@ trait DocumentListController extends Controller {
 
   val storage : DocumentListController.Storage
 
-  def index(documentSetId: Long, nodes: String, tags: String,
-            documents: String, searchResults: String, pageSize: Int, page: Int)
+  def index(documentSetId: Long, pageSize: Int, page: Int)
             = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
 
     val realPageSize = math.max(0, math.min(pageSize, MaxPageSize))
     val realPage = math.max(1, page)
 
-    val selection = SelectionRequest(documentSetId, nodes, tags, documents, searchResults)
+    val selection = selectionRequest(documentSetId, request)
     val documentPage = storage.findDocuments(selection, realPageSize, realPage)
 
     Ok(views.json.DocumentList.show(documentPage))

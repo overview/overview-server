@@ -1,7 +1,6 @@
 package controllers
 
 import java.io.InputStream
-import play.api.mvc.Controller
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocument
 import models.orm.finders.DocumentFinder

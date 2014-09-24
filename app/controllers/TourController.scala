@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import controllers.auth.{ AuthorizedAction, Authorities }
 import models.orm.stores.UserStore
 

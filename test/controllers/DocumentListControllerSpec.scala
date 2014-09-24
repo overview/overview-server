@@ -33,8 +33,8 @@ class DocumentListControllerSpec extends ControllerSpecification {
       tagged=None
     )
 
-    val request : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest
-    lazy val result = controller.index(documentSetId, nodes, tags, documents, searchResults, pageSize, page)(request)
+    lazy val request : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest("GET", s"?nodes=$nodes&tags=$tags&documents=$documents&searchResults=$searchResults")
+    lazy val result = controller.index(documentSetId, pageSize, page)(request)
   }
 
   trait StubbedScope extends BaseScope {

@@ -4,7 +4,7 @@ import java.util.UUID
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
+import play.api.mvc.{ BodyParser, Request, RequestHeader, Result }
 import scala.concurrent.Future
 
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }

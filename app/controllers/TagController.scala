@@ -1,4 +1,3 @@
-///
 /*
  * TagController.scala
  *
@@ -10,11 +9,10 @@ package controllers
 
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.StringWriter
-import play.api.mvc.Controller
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.forms.{SelectionForm,TagForm,NodeIdsForm}
+import controllers.forms.{TagForm,NodeIdsForm}
 import org.overviewproject.tree.orm.Tag
 import org.overviewproject.tree.orm.finders.FinderResult
 import models.orm.finders.{ DocumentFinder, DocumentTagFinder, NodeDocumentFinder, TagFinder }
@@ -120,33 +118,27 @@ trait TagController extends Controller {
   }
 
   def add(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    SelectionForm(documentSetId).bindFromRequest.fold(
-      formWithErrors => BadRequest,
-      selection => {
-        storage.findTag(documentSetId, tagId) match {
-          case None => NotFound
-          case Some(tag) => {
-            val count = storage.addTagToSelection(tagId, selection)
-            Ok(views.json.Tag.add(count))
-          }
-        }
+    val selection = selectionRequest(documentSetId, request)
+
+    storage.findTag(documentSetId, tagId) match {
+      case None => NotFound
+      case Some(tag) => {
+        val count = storage.addTagToSelection(tagId, selection)
+        Ok(views.json.Tag.add(count))
       }
-    )
+    }
   }
 
   def remove(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    SelectionForm(documentSetId).bindFromRequest.fold(
-      formWithErrors => BadRequest,
-      selection => {
-        storage.findTag(documentSetId, tagId) match {
-          case None => NotFound
-          case Some(tag) => {
-            val count = storage.removeTagFromSelection(tagId, selection)
-            Ok(views.json.Tag.remove(count))
-          }
-        }
+    val selection = selectionRequest(documentSetId, request)
+
+    storage.findTag(documentSetId, tagId) match {
+      case None => NotFound
+      case Some(tag) => {
+        val count = storage.removeTagFromSelection(tagId, selection)
+        Ok(views.json.Tag.remove(count))
       }
-    )
+    }
   }
 
   def delete(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>

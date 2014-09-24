@@ -66,7 +66,7 @@ GET    /documentsets/:id/users.json   controllers.DocumentSetUserController.inde
 POST   /documentsets/:id/users        controllers.DocumentSetUserController.create(id: Long)
 DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.delete(id: Long, email: String)
 
-GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", searchResults: String ?= "", pageSize: Int ?= 20, page: Int ?= 1)
+GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, pageSize: Int ?= 20, page: Int ?= 1)
 
 GET    /documentsets/:id/export                                              controllers.DocumentSetExportController.index(id: Long)
 GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
@@ -126,7 +126,7 @@ GET    /api/v1/document-sets/:id/saved-searches/:query/documents controllers.api
 GET /api/v1/vizs/:id controllers.api.VizController.show(id: Long)
 PUT /api/v1/vizs/:id controllers.api.VizController.update(id: Long)
 
-GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, q: String ?= "", fields: String ?= "")
+GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
 GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)
 
 GET    /api/v1/vizs/:vizId/objects     controllers.api.VizObjectController.index(vizId: Long)

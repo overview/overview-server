@@ -6,34 +6,39 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{DbDocumentBackend,DocumentBackend}
+import controllers.backend.{DocumentBackend,NullSelectionBackend,SelectionBackend}
 import models.pagination.PageRequest
+import models.SelectionRequest
 
 trait DocumentController extends ApiController {
-  protected val backend: DocumentBackend
+  protected val documentBackend: DocumentBackend
+  protected val selectionBackend: SelectionBackend
 
-  private def _indexInfos(documentSetId: Long, q: String, pageRequest: PageRequest) = {
-    backend.index(documentSetId, q, pageRequest).map { infos =>
-      Ok(views.json.api.DocumentInfo.index(infos))
-    }
+  private def _indexInfos(selectionRequest: SelectionRequest, pageRequest: PageRequest) = {
+    selectionBackend.create(selectionRequest)
+      .flatMap(documentBackend.index(_, pageRequest))
+      .map { infos =>
+        Ok(views.json.api.DocumentInfo.index(infos))
+      }
   }
 
-  private def _indexIds(documentSetId: Long, q: String) = {
-    backend.indexIds(documentSetId, q).map { ids =>
+  private def _indexIds(selectionRequest: SelectionRequest) = {
+    documentBackend.indexIds(selectionRequest).map { ids =>
       Ok(JsArray(ids.map(JsNumber(_))))
     }
   }
 
-  def index(documentSetId: Long, q: String, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
+  def index(documentSetId: Long, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
+    val sr = selectionRequest(documentSetId, request)
     fields match {
-      case "id" => _indexIds(documentSetId, q)
-      case "" => _indexInfos(documentSetId, q, pageRequest(request, 1000))
+      case "id" => _indexIds(sr)
+      case "" => _indexInfos(sr, pageRequest(request, 1000))
       case _ => Future.successful(BadRequest(jsonError("""The "fields" parameter must be either "id" or "" for now. Sorry!""")))
     }
   }
 
   def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
-    backend.show(documentSetId, documentId).map(_ match {
+    documentBackend.show(documentSetId, documentId).map(_ match {
       case Some(document) => Ok(views.json.api.Document.show(document))
       case None => NotFound(jsonError(s"Document $documentId not found in document set $documentSetId"))
     })
@@ -41,5 +46,8 @@ trait DocumentController extends ApiController {
 }
 
 object DocumentController extends DocumentController {
-  override protected val backend = DocumentBackend
+  override protected val documentBackend = DocumentBackend
+  override protected val selectionBackend = new NullSelectionBackend {
+    override def findDocumentIds(request: SelectionRequest) = documentBackend.indexIds(request)
+  }
 }

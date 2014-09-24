@@ -1,6 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import models.OverviewDocumentProcessingError

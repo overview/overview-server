@@ -2,7 +2,7 @@ package controllers
 
 import org.squeryl.SquerylSQLException
 import play.api.data.Form
-import play.api.mvc.{ Controller, RequestHeader }
+import play.api.mvc.RequestHeader
 
 import controllers.util.TransactionAction
 import models.{ OverviewUser, ConfirmationRequest, PotentialNewUser }

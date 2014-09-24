@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import org.overviewproject.tree.Ownership
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetUserForm

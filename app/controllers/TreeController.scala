@@ -1,7 +1,6 @@
 package controllers
 
 import play.api.i18n.Messages
-import play.api.mvc.Controller
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities._

@@ -29,11 +29,11 @@ trait ControllerSpecification extends Specification with Mockito {
     ctorWithFormBody: (FakeRequest[AnyContentAsFormUrlEncoded]) => AWithFormBody
   ) {
 
-    implicit def headersToFakeHeaders(headers: Headers) : FakeHeaders = {
+    implicit def headersToFakeHeaders(headers: Headers): FakeHeaders = {
       FakeHeaders(headers.toMap.toSeq)
     }
 
-    def toFakeRequest : FakeRequest[T] = FakeRequest(
+    def toFakeRequest: FakeRequest[T] = FakeRequest(
       method=request.method,
       uri=request.uri,
       headers=request.headers,
@@ -88,14 +88,15 @@ trait ControllerSpecification extends Specification with Mockito {
     OverviewUser(user)
   }
   def fakeRequest = FakeRequest()
-  def fakeAuthorizedRequest(user: OverviewUser) : AuthorizedRequest[AnyContent] = {
+  def fakeAuthorizedRequest(user: OverviewUser, method: String = "GET", url: String = ""): AuthorizedRequest[AnyContent] = {
     new AuthorizedRequest(
-      fakeRequest,
+      FakeRequest(method, url),
       Session(user.id, "127.0.0.1"),
       user.toUser
     )
   }
-  def fakeAuthorizedRequest() : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest(fakeUser)
+  def fakeAuthorizedRequest(): AuthorizedRequest[AnyContent] = fakeAuthorizedRequest(fakeUser)
+  def fakeAuthorizedRequest(method: String, url: String): AuthorizedRequest[AnyContent] = fakeAuthorizedRequest(fakeUser, method, url)
   def fakeOptionallyAuthorizedRequest(user: Option[OverviewUser]) = {
     new OptionallyAuthorizedRequest(
       fakeRequest,
@@ -103,7 +104,7 @@ trait ControllerSpecification extends Specification with Mockito {
     )
   }
 
-  implicit val timeout : Timeout = Timeout(999999, scala.concurrent.duration.MILLISECONDS)
+  implicit val timeout: Timeout = Timeout(999999, scala.concurrent.duration.MILLISECONDS)
 
   val h = play.api.test.Helpers // rrgh, this should be a trait
 }

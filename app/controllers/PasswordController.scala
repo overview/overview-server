@@ -1,8 +1,7 @@
 package controllers
 
 import java.util.Date
-import java.sql.Connection
-import play.api.mvc.{AnyContent,Controller,Request,RequestHeader}
+import play.api.mvc.{AnyContent,Request,RequestHeader}
 
 import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser

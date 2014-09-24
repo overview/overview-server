@@ -1,6 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 

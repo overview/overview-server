@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import controllers.auth.{ Authorities, AuthorizedAction }
 import controllers.forms.DocumentCloudImportJobForm
 import models.{ DocumentCloudCredentials, DocumentCloudImportJob }

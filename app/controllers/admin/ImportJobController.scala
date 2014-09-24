@@ -1,7 +1,5 @@
 package controllers.admin
 
-import play.api.mvc.Controller
-
 import org.overviewproject.jobs.models.{ CancelFileUpload, Delete }
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSet
@@ -12,6 +10,7 @@ import controllers.auth.Authorities.adminUser
 import controllers.auth.AuthorizedAction
 import controllers.util.DocumentSetDeletionComponents
 import controllers.util.JobContextChecker
+import controllers.Controller
 import models.User
 import models.orm.finders.DocumentSetCreationJobFinder
 import models.orm.finders.DocumentSetFinder

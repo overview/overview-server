@@ -1,6 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
 import scala.annotation.tailrec
 
 import controllers.auth.AuthorizedAction

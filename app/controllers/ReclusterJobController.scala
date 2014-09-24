@@ -1,7 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningJob
 import controllers.util.JobQueueSender

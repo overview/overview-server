@@ -3,15 +3,18 @@ package controllers.api
 import play.api.libs.json.Json
 import scala.concurrent.Future
 
-import controllers.backend.DocumentBackend
+import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
+import models.{Selection,SelectionRequest}
 import org.overviewproject.models.DocumentInfo
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    val mockBackend = mock[DocumentBackend]
+    val mockSelectionBackend = mock[SelectionBackend]
+    val mockDocumentBackend = mock[DocumentBackend]
     val controller = new DocumentController {
-      override val backend = mockBackend
+      override val documentBackend = mockDocumentBackend
+      override val selectionBackend = mockSelectionBackend
     }
   }
 
@@ -24,25 +27,35 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val pageRequest = PageRequest(0, 1000)
         def emptyPage[T] = Page(Seq[T](), PageInfo(pageRequest, 0))
 
-        override def action = controller.index(documentSetId, q, fields)
+        override lazy val request = fakeRequest("GET", "?q=" + q)
+        override def action = controller.index(documentSetId, fields)
+
+        val selectedIds: Seq[Long] = Seq()
+        val selection = Selection(SelectionRequest(documentSetId, q=q), selectedIds)
+
+        mockSelectionBackend.create(any) returns Future.successful(selection)
+        mockDocumentBackend.index(any, any) returns Future.successful(emptyPage[DocumentInfo])
       }
 
       "return JSON with status code 200" in new IndexScope {
-        mockBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentInfo])
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
       }
 
       "return an empty Array when there are no Documents" in new IndexScope {
-        mockBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentInfo])
         contentAsString(result) must /("pagination") /("total" -> 0)
       }
 
-      "grab documentSetId, q and pageRequest from the HTTP request" in new IndexScope {
+      "grab selectionRequest from the HTTP request" in new IndexScope {
+        override val q = "foo"
+        status(result)
+        there was one(mockSelectionBackend).create(SelectionRequest(documentSetId, q="foo"))
+      }
+
+      "grab pageRequest from the HTTP request" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
-        mockBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentInfo])
-        status(result) must beEqualTo(OK)
-        there was one(mockBackend).index(documentSetId, q, PageRequest(1, 2))
+        status(result)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2))
       }
 
       "return a JSON error when the fields parameter is not empty or id" in new IndexScope {
@@ -63,7 +76,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         ).map(_.toDocumentInfo)
-        mockBackend.index(any, any, any) returns Future.successful(
+        mockDocumentBackend.index(any, any) returns Future.successful(
           Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )
 
@@ -89,7 +102,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
       "return an Array of IDs when fields=id" in new IndexScope {
         override val fields = "id"
-        mockBackend.indexIds(documentSetId, q) returns Future(Seq(1L, 2L, 3L))
+        mockDocumentBackend.indexIds(any) returns Future(Seq(1L, 2L, 3L))
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
         contentAsString(result) must beEqualTo("[1,2,3]")
@@ -105,7 +118,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       }
 
       "return 404 when not found" in new ShowScope {
-        mockBackend.show(documentSetId, documentId) returns Future(None)
+        mockDocumentBackend.show(documentSetId, documentId) returns Future(None)
         status(result) must beEqualTo(NOT_FOUND)
         contentType(result) must beSome("application/json")
         val json = contentAsString(result)
@@ -113,7 +126,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       }
 
       "return JSON with status code 200" in new ShowScope {
-        mockBackend.show(documentSetId, documentId) returns Future(Some(factory.document(
+        mockDocumentBackend.show(documentSetId, documentId) returns Future(Some(factory.document(
           id=documentId,
           documentSetId=documentSetId,
           keywords=Seq("foo", "bar"),

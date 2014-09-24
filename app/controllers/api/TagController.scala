@@ -1,14 +1,13 @@
 package controllers.api
 
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Controller
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet}
 import org.overviewproject.tree.orm.Tag
 
-trait TagController extends Controller {
+trait TagController extends ApiController {
   protected val storage: TagController.Storage
 
   def index(documentSetId: Long) = ApiAuthorizedAction(userViewingDocumentSet(documentSetId)).async { request =>

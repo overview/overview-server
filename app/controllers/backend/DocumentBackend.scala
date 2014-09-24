@@ -6,54 +6,47 @@ import org.overviewproject.models.{Document,DocumentInfo}
 import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents}
 import org.overviewproject.searchindex.IndexClient
 
-import models.pagination.{Page,PageRequest}
+import models.pagination.{Page,PageInfo,PageRequest}
+import models.{Selection,SelectionRequest}
 
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
-  def index(documentSetId: Long, q: String, pageRequest: PageRequest): Future[Page[DocumentInfo]]
+  def index(selection: Selection, pageRequest: PageRequest): Future[Page[DocumentInfo]]
 
   /** Lists all Document IDs for the given parameters. */
-  def indexIds(documentSetId: Long, q: String): Future[Seq[Long]]
+  def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
 
   /** Returns a single Document. */
-  def show(documentSetId: Long, document: Long): Future[Option[Document]]
+  def show(documentSetId: Long, documentId: Long): Future[Option[Document]]
 }
 
 trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   val indexClient: IndexClient
 
-  override def index(documentSetId: Long, q: String, pageRequest: PageRequest) = {
+  override def index(selection: Selection, pageRequest: PageRequest) = {
     import scala.concurrent.ExecutionContext.Implicits._
 
-    if (q.isEmpty) {
-      val o = DbDocumentBackend.byDocumentSetId
-      val itemsQ = o.page(documentSetId, pageRequest.offset, pageRequest.limit)
-      val countQ = o.count(documentSetId)
-      page(itemsQ, countQ, pageRequest)
+    val total = selection.documentIds.length
+
+    if (total == 0) {
+      emptyPage[DocumentInfo](pageRequest)
     } else {
-      indexClient.searchForIds(documentSetId, q)
-        .flatMap { (ids: Seq[Long]) =>
-          if (ids.isEmpty) {
-            emptyPage[DocumentInfo](pageRequest)
-          } else {
-            val o = DbDocumentBackend.byIds
-            val itemsQ = o.page(ids, pageRequest.offset, pageRequest.limit)
-            val countQ = o.count(ids)
-            page(itemsQ, countQ, pageRequest)
-          }
-        }
+      val offset = pageRequest.offset
+      val limit = pageRequest.limit
+      val ids = selection.documentIds.slice(offset, offset + limit)
+
+      list(DbDocumentBackend.byIds.page(ids))
+        .map(Page(_, PageInfo(pageRequest, total)))
     }
   }
 
-  override def indexIds(documentSetId: Long, q: String) = {
+  override def indexIds(request: SelectionRequest) = {
     import scala.concurrent.ExecutionContext.Implicits._
 
-    val pageRequest = PageRequest(0, 10000000)
-
-    if (q.isEmpty) {
-      list(DbDocumentBackend.byDocumentSetId.ids(documentSetId))
+    if (request.q.isEmpty) {
+      list(DbDocumentBackend.byDocumentSetId.ids(request.documentSetId))
     } else {
-      indexClient.searchForIds(documentSetId, q)
+      indexClient.searchForIds(request.documentSetId, request.q)
         .flatMap { (ids: Seq[Long]) =>
           if (ids.isEmpty) {
             Future.successful(Seq[Long]())
@@ -90,8 +83,6 @@ object DbDocumentBackend {
         .drop(offset)
         .take(limit)
     }
-
-    lazy val count = Compiled { (documentSetId: Column[Long]) => q(documentSetId).length }
   }
 
   object byIds {
@@ -99,14 +90,14 @@ object DbDocumentBackend {
 
     def ids(ids: Seq[Long]) = q(ids).sortedByInfo.map(_.id)
 
-    def page(ids: Seq[Long], offset: Int, limit: Int) = {
-      q(ids)
-        .sortedByInfo
-        .drop(offset)
-        .take(limit)
+    def page(ids: Seq[Long]) = {
+      // We call this one when we're paginating.
+      // We use inSetBind instead of inSet, because we know there's a maximum
+      // number of document IDs. (This request is called within a page.)
+      DocumentInfos
+        .filter(_.id inSetBind ids) // bind: we know we don't have 10M IDs here
+        .sortedByInfo // this is O(1) because we have a maximum number of IDs
     }
-
-    def count(ids: Seq[Long]) = q(ids).length
   }
 
   lazy val byId = Compiled { (documentSetId: Column[Long], documentId: Column[Long]) =>

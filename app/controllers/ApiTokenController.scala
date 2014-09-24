@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.{Action,Controller}
+import play.api.mvc.Action
 import play.api.data.{Form,Forms}
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
