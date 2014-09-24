@@ -3,7 +3,7 @@ package controllers.backend
 import scala.concurrent.Future
 
 import org.overviewproject.models.{Document,DocumentInfo}
-import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentSearchResults,DocumentTags,NodeDocuments}
+import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentSearchResults,DocumentTags,NodeDocuments,Tags}
 import org.overviewproject.searchindex.IndexClient
 
 import models.pagination.{Page,PageInfo,PageRequest}
@@ -86,6 +86,22 @@ object DbDocumentBackend {
         .filter(_.searchResultId inSet request.searchResultIds)
         .map(_.documentId)
       sql = sql.filter(_.id in searchResultDocumentIds)
+    }
+
+    request.tagged.foreach { tagged =>
+      val tagIds = Tags
+        .filter(_.documentSetId === request.documentSetId)
+        .map(_.id)
+
+      val taggedDocumentIds = DocumentTags
+        .filter(_.tagId in tagIds)
+        .map(_.documentId)
+
+      if (tagged) {
+        sql = sql.filter(_.id in taggedDocumentIds)
+      } else {
+        sql = sql.filter((d) => !(d.id in taggedDocumentIds))
+      }
     }
 
     val futureSql = request.q match {
