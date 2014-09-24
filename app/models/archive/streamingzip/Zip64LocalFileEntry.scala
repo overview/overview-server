@@ -16,8 +16,9 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, d
   private val HeaderSize = 30
   private val ExtraFieldSize = 32
   private val DataDescriptorSize = 24
-  private val emptyField: Int = 0x00000000
-
+  private val unused: Int = -1
+  private val unknown = 0
+  
   val signature: Int = 0x04034b50
   val extractorVersion: Short = 10
   val flags: Short = 0x0808 // bit 3: Use Data Descriptor, bit 11: Use UTF-8
@@ -25,11 +26,16 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, d
   val fileNameLength: Short = fileNameSize
   def crc32 = data.crc32
 
+  val dataDescriptorSignature = 0x07084b50
   
   def size: Long = HeaderSize + fileNameSize + ExtraFieldSize + fileSize + DataDescriptorSize
 
   val stream: InputStream = 
-    new SequenceInputStream(Iterator(headerStream, fileNameStream, data).asJavaEnumeration)
+    new SequenceInputStream(Iterator(
+        headerStream, 
+        fileNameStream, 
+        data,
+        dataDescriptorStream).asJavaEnumeration)
   
   
   
@@ -46,15 +52,27 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, d
         writeShort(compression) ++
         writeShort(now.time.toShort) ++
         writeShort(now.date.toShort) ++
-        writeInt(emptyField) ++
-        writeInt(emptyField) ++
-        writeInt(emptyField) ++
+        writeInt(unknown) ++
+        writeInt(unused) ++
+        writeInt(unused) ++
         writeShort(fileNameLength) ++
         writeShort(ExtraFieldSize.toShort))
   }
   
   private def fileNameStream: InputStream = new ByteArrayInputStream(fileName.getBytes(StandardCharsets.UTF_8))
     
+  private def dataDescriptorStream: InputStream = new LazyByteArrayInputStream(
+    writeInt(dataDescriptorSignature) ++
+    writeInt(crc32.toInt) ++
+    writeLong(fileSize) ++
+    writeLong(fileSize)
+  )
+  
+  private def writeLong(value: Long): Array[Byte] = {
+    val byteBuffer = ByteBuffer.allocate(8).order(LITTLE_ENDIAN)
+    byteBuffer.putLong(value).array()
+  }
+  
   private def writeInt(value: Int): Array[Byte] = {
     val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
     byteBuffer.putInt(value).array()
