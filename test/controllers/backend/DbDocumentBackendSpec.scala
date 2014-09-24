@@ -148,6 +148,15 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         override val tagIds = Seq(tag.id)
         ret must beEqualTo(Seq(doc1.id))
       }
+
+      "search by searchResultIds" in new IndexIdsScope {
+        val sr = factory.searchResult(documentSetId=documentSet.id)
+        val dsr1 = factory.documentSearchResult(doc1.id, sr.id)
+        val dsr2 = factory.documentSearchResult(doc2.id, sr.id)
+
+        override val searchResultIds = Seq(sr.id)
+        ret must beEqualTo(Seq(doc2.id, doc1.id))
+      }
     }
 
     "#show" should {
