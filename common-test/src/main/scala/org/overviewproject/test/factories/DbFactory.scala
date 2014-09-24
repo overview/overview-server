@@ -19,6 +19,7 @@ import org.overviewproject.util.DocumentSetVersion
 class DbFactory(connection: Connection) extends Factory {
   private implicit val session = new UnmanagedSession(connection)
   private val podoFactory = PodoFactory
+  val q = DbFactory.queries
 
   override def apiToken(
     token: String = "token",
@@ -26,17 +27,13 @@ class DbFactory(connection: Connection) extends Factory {
     createdBy: String = "user@example.org",
     description: String = "description",
     documentSetId: Long = 0L
-  ) = {
-    val apiToken = podoFactory.apiToken(
-      token,
-      createdAt,
-      createdBy,
-      description,
-      documentSetId
-    )
-    DbFactory.queries.insertApiToken += apiToken
-    apiToken
-  }
+  ) = q.insertApiToken += podoFactory.apiToken(
+    token,
+    createdAt,
+    createdBy,
+    description,
+    documentSetId
+  )
 
   override def document(
     id: Long = 0L,
@@ -49,22 +46,18 @@ class DbFactory(connection: Connection) extends Factory {
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     text: String = ""
-  ) = {
-    val document = podoFactory.document(
-      id,
-      documentSetId,
-      url,
-      suppliedId,
-      title,
-      keywords,
-      pageNumber,
-      fileId,
-      pageId,
-      text
-    )
-    DbFactory.queries.insertDocument += document
-    document
-  }
+  ) = q.insertDocument += podoFactory.document(
+    id,
+    documentSetId,
+    url,
+    suppliedId,
+    title,
+    keywords,
+    pageNumber,
+    fileId,
+    pageId,
+    text
+  )
 
   override def deprecatedDocument(
     id: Long = 0L,
@@ -78,31 +71,25 @@ class DbFactory(connection: Connection) extends Factory {
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     pageNumber: Option[Int] = None
-  ) = {
-    val document = podoFactory.deprecatedDocument(
-      id,
-      documentSetId,
-      description,
-      title,
-      suppliedId,
-      text,
-      url,
-      documentcloudId,
-      fileId,
-      pageId,
-      pageNumber
-    )
-    DbFactory.queries.insertDocument += document.toDocument
-    document
-  }
+  ) = (q.insertDocument += podoFactory.deprecatedDocument(
+    id,
+    documentSetId,
+    description,
+    title,
+    suppliedId,
+    text,
+    url,
+    documentcloudId,
+    fileId,
+    pageId,
+    pageNumber
+  ).toDocument).toDeprecatedDocument
 
   override def documentSearchResult(documentId: Long, searchResultId: Long) = {
-    val documentSearchResult = podoFactory.documentSearchResult(
+    q.insertDocumentSearchResult += podoFactory.documentSearchResult(
       documentId = documentId,
       searchResultId = searchResultId
     )
-    DbFactory.queries.insertDocumentSearchResult += documentSearchResult
-    documentSearchResult
   }
 
   override def documentSet(
@@ -117,43 +104,33 @@ class DbFactory(connection: Connection) extends Factory {
     uploadedFileId: Option[Long] = None,
     version: Int = DocumentSetVersion.current,
     deleted: Boolean = false
-  ) = {
-    val documentSet = podoFactory.documentSet(
-      id,
-      title,
-      query,
-      isPublic,
-      createdAt,
-      documentCount,
-      documentProcessingErrorCount,
-      importOverflowCount,
-      uploadedFileId,
-      version,
-      deleted
-    )
-    DbFactory.queries.insertDocumentSet += documentSet
-    documentSet
-  }
+  ) = q.insertDocumentSet += podoFactory.documentSet(
+    id,
+    title,
+    query,
+    isPublic,
+    createdAt,
+    documentCount,
+    documentProcessingErrorCount,
+    importOverflowCount,
+    uploadedFileId,
+    version,
+    deleted
+  )
 
   override def documentTag(documentId: Long, tagId: Long) = {
-    val documentTag = podoFactory.documentTag(documentId, tagId)
-    DbFactory.queries.insertDocumentTag += documentTag
-    documentTag
+    q.insertDocumentTag += podoFactory.documentTag(documentId, tagId)
   }
 
   override def documentVizObject(
     documentId: Long = 0L,
     vizObjectId: Long = 0L,
     json: Option[JsObject] = None
-  ) = {
-    val dvo = podoFactory.documentVizObject(
-      documentId,
-      vizObjectId,
-      json
-    )
-    DbFactory.queries.insertDocumentVizObject += dvo
-    dvo
-  }
+  ) = q.insertDocumentVizObject += podoFactory.documentVizObject(
+    documentId,
+    vizObjectId,
+    json
+  )
 
   override def node(
     id: Long = 0L,
@@ -162,16 +139,17 @@ class DbFactory(connection: Connection) extends Factory {
     description: String = "",
     cachedSize: Int = 0,
     isLeaf: Boolean = true
-  ) = {
-    val node = PodoFactory.node(id, rootId, parentId, description, cachedSize, isLeaf)
-    DbFactory.queries.insertNode += node
-    node
-  }
+  ) = q.insertNode += podoFactory.node(
+    id,
+    rootId,
+    parentId,
+    description,
+    cachedSize,
+    isLeaf
+  )
 
   override def nodeDocument(nodeId: Long, documentId: Long) = {
-    val nodeDocument = PodoFactory.nodeDocument(nodeId, documentId)
-    DbFactory.queries.insertNodeDocument += nodeDocument
-    nodeDocument
+    q.insertNodeDocument += podoFactory.nodeDocument(nodeId, documentId)
   }
 
   override def searchResult(
@@ -180,28 +158,20 @@ class DbFactory(connection: Connection) extends Factory {
     documentSetId: Long = 0L,
     query: String = "query",
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ) = {
-    val searchResult = podoFactory.searchResult(
-      id,
-      state,
-      documentSetId,
-      query,
-      createdAt
-    )
-    DbFactory.queries.insertSearchResult += searchResult
-    searchResult
-  }
+  ) = q.insertSearchResult += podoFactory.searchResult(
+    id,
+    state,
+    documentSetId,
+    query,
+    createdAt
+  )
 
   override def tag(
     id: Long = 0L,
     documentSetId: Long = 0L,
     name: String = "a tag",
     color: String = "abcdef"
-  ) = {
-    val tag = PodoFactory.tag(id, documentSetId, name, color)
-    DbFactory.queries.insertTag += tag
-    tag
-  }
+  ) = q.insertTag += podoFactory.tag(id, documentSetId, name, color)
 
   override def viz(
     id: Long = 0L,
@@ -211,19 +181,15 @@ class DbFactory(connection: Connection) extends Factory {
     title: String = "title",
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
     json: JsObject = JsObject(Seq())
-  ) = {
-    val viz = podoFactory.viz(
-      id,
-      documentSetId,
-      url,
-      apiToken,
-      title,
-      createdAt,
-      json
-    )
-    DbFactory.queries.insertViz += viz
-    viz
-  }
+  ) = q.insertViz += podoFactory.viz(
+    id,
+    documentSetId,
+    url,
+    apiToken,
+    title,
+    createdAt,
+    json
+  )
 
   override def vizObject(
     id: Long = 0L,
@@ -231,17 +197,13 @@ class DbFactory(connection: Connection) extends Factory {
     indexedLong: Option[Long] = None,
     indexedString: Option[String] = None,
     json: JsObject = JsObject(Seq())
-  ) = {
-    val vizObject = podoFactory.vizObject(
-      id,
-      vizId,
-      indexedLong,
-      indexedString,
-      json
-    )
-    DbFactory.queries.insertVizObject += vizObject
-    vizObject
-  }
+  ) = q.insertVizObject += podoFactory.vizObject(
+    id,
+    vizId,
+    indexedLong,
+    indexedString,
+    json
+  )
 }
 
 object DbFactory {
