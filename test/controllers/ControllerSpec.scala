@@ -115,6 +115,10 @@ class ControllerSpec extends Specification {
         test("/?searchResults=4,5,6", SelectionRequest(1L, searchResultIds=Seq(4L, 5L, 6L)))
       }
 
+      "make a SelectionRequest with vizObjects" in new SelectionScope {
+        test("/?objects=5,6,7", SelectionRequest(1L, vizObjectIds=Seq(5L, 6L, 7L)))
+      }
+
       "make a SelectionRequest with untagged, the deprecated way" in new SelectionScope {
         test("/?tags=0", SelectionRequest(1L, tagIds=Seq(), tagged=Some(false)))
       }
@@ -147,6 +151,10 @@ class ControllerSpec extends Specification {
 
       "make a SelectionRequest with searchResults" in new SelectionScope {
         test(Seq("searchResults" -> "4,5,6"), SelectionRequest(1L, searchResultIds=Seq(4L, 5L, 6L)))
+      }
+
+      "make a SelectionRequest with vizObjects" in new SelectionScope {
+        test(Seq("objects" -> "5,6,7"), SelectionRequest(1L, vizObjectIds=Seq(5L, 6L, 7L)))
       }
 
       "make a SelectionRequest with untagged, the deprecated way" in new SelectionScope {

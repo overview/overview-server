@@ -53,7 +53,7 @@ class DocumentFinderSpec extends Specification {
         TestSchema.documentTags.insertOrUpdate(DocumentTag(documentId=d.id, tagId=tag.id))
       }
 
-      val selection = SelectionRequest(documentSet.id, Nil, Nil, Nil, Nil, Some(false))
+      val selection = SelectionRequest(documentSet.id, Nil, Nil, Nil, Nil, Nil, Some(false))
 
       val result = DocumentFinder.bySelectionRequest(selection).toSeq
 
