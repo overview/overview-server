@@ -6,7 +6,7 @@ import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
 import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates objects in the database while returning them.
@@ -170,6 +170,26 @@ class DbFactory(connection: Connection) extends Factory {
     documentSearchResult
   }
 
+  override def tag(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    name: String = "a tag",
+    color: String = "abcdef"
+  ) = {
+    val tag = PodoFactory.tag(id, documentSetId, name, color)
+    DbFactory.queries.insertTag += tag
+    tag
+  }
+
+  override def documentTag(
+    documentId: Long,
+    tagId: Long
+  ) = {
+    val documentTag = podoFactory.documentTag(documentId, tagId)
+    DbFactory.queries.insertDocumentTag += documentTag
+    documentTag
+  }
+
   override def viz(
     id: Long = 0L,
     documentSetId: Long = 0L,
@@ -220,8 +240,10 @@ object DbFactory {
     val insertDocument = (Documents returning Documents).insertInvoker
     val insertDocumentSearchResult = (DocumentSearchResults returning DocumentSearchResults).insertInvoker
     val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
+    val insertDocumentTag = (DocumentTags returning DocumentTags).insertInvoker
     val insertDocumentVizObject = (DocumentVizObjects returning DocumentVizObjects).insertInvoker
     val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
+    val insertTag = (Tags returning Tags).insertInvoker
     val insertViz = (Vizs returning Vizs).insertInvoker
     val insertVizObject = (VizObjects returning VizObjects).insertInvoker
   }

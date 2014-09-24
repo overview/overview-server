@@ -3,7 +3,7 @@ package controllers.backend
 import scala.concurrent.Future
 
 import org.overviewproject.models.{Document,DocumentInfo}
-import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents}
+import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentTags}
 import org.overviewproject.searchindex.IndexClient
 
 import models.pagination.{Page,PageInfo,PageRequest}
@@ -42,19 +42,8 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
 
   override def indexIds(request: SelectionRequest) = {
     import scala.concurrent.ExecutionContext.Implicits._
-
-    if (request.q.isEmpty) {
-      list(DbDocumentBackend.byDocumentSetId.ids(request.documentSetId))
-    } else {
-      indexClient.searchForIds(request.documentSetId, request.q)
-        .flatMap { (ids: Seq[Long]) =>
-          if (ids.isEmpty) {
-            Future.successful(Seq[Long]())
-          } else {
-            list(DbDocumentBackend.byIds.ids(ids))
-          }
-        }
-    }
+    DbDocumentBackend.bySelectionRequest(request, indexClient)
+      .flatMap(list(_))
   }
 
   override def show(documentSetId: Long, documentId: Long) = {
@@ -72,17 +61,29 @@ object DbDocumentBackend {
     implicit def sortedByInfo = query.sortBy(sortKey)
   }
 
-  object byDocumentSetId {
-    private def q(documentSetId: Column[Long]) = DocumentInfos.filter(_.documentSetId === documentSetId)
+  def bySelectionRequest(request: SelectionRequest, indexClient: IndexClient) = {
+    import scala.concurrent.ExecutionContext.Implicits._
 
-    lazy val ids = Compiled { (documentSetId: Column[Long]) => q(documentSetId).sortedByInfo.map(_.id) }
+    var sql = DocumentInfos
+      .filter(_.documentSetId === request.documentSetId)
 
-    lazy val page = Compiled { (documentSetId: Column[Long], offset: ConstColumn[Long], limit: ConstColumn[Long]) =>
-      q(documentSetId)
-        .sortedByInfo
-        .drop(offset)
-        .take(limit)
+    if (request.tagIds.nonEmpty) {
+      val tagDocumentIds = DocumentTags
+        .filter(_.tagId inSet request.tagIds)
+        .map(_.documentId)
+      play.api.Logger.warn("FILTERING " + tagDocumentIds.toString())
+      sql = sql.filter(_.id in tagDocumentIds)
     }
+
+    val futureSql = request.q match {
+      case "" => Future.successful(sql)
+      case s => {
+        indexClient.searchForIds(request.documentSetId, s)
+          .map { (ids: Seq[Long]) => sql.filter(_.id inSet ids) }
+      }
+    }
+
+    futureSql.map(_.sortBy(sortKey).map(_.id))
   }
 
   object byIds {

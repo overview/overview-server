@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import play.api.libs.json.JsObject
 
 import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates models simply.
@@ -93,6 +93,18 @@ trait Factory {
     documentId: Long,
     searchResultId: Long
   ): DocumentSearchResult
+
+  def tag(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    name: String = "a tag",
+    color: String = "abcdef"
+  ): Tag
+
+  def documentTag(
+    documentId: Long,
+    tagId: Long
+  ): DocumentTag
 
   def viz(
     id: Long = 0L,

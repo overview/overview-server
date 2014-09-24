@@ -29,16 +29,14 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
 
   trait CommonIndexScope extends BaseScopeWithIndex {
     val documentSet = factory.documentSet()
-    val doc1 = factory.document(documentSetId=documentSet.id, title="c", text="foo bar baz")
-    val doc2 = factory.document(documentSetId=documentSet.id, title="a", text="moo mar maz")
-    val doc3 = factory.document(documentSetId=documentSet.id, title="b", text="noo nar naz")
+    val doc1 = factory.document(documentSetId=documentSet.id, title="c", text="foo bar baz oneandtwo oneandthree")
+    val doc2 = factory.document(documentSetId=documentSet.id, title="a", text="moo mar maz oneandtwo twoandthree")
+    val doc3 = factory.document(documentSetId=documentSet.id, title="b", text="noo nar naz oneandthree twoandthree")
     val documents = Seq(doc1, doc2, doc3)
 
     await(testIndexClient.addDocumentSet(documentSet.id))
     await(testIndexClient.addDocuments(documents.map(_.toDeprecatedDocument)))
     await(testIndexClient.refresh())
-
-    val q = ""
   }
 
   "DbDocumentBackendSpec" should {
@@ -55,6 +53,10 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "sort documents by title" in new IndexScope {
+        // XXX documents _should_ always be ordered such that they're in the
+        // same order as selection.documentIds. That's not trivial in straight
+        // SQL, and we don't have a feature that requires it yet; hence this
+        // ordering.
         ret.items.map(_.id) must beEqualTo(Seq(doc2.id, doc3.id, doc1.id))
       }
 
@@ -73,7 +75,22 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
 
     "#indexIds" should {
       trait IndexIdsScope extends CommonIndexScope {
-        def request = SelectionRequest(documentSet.id, q=q)
+        val documentIds: Seq[Long] = Seq()
+        val tagIds: Seq[Long] = Seq()
+        val nodeIds: Seq[Long] = Seq()
+        val searchResultIds: Seq[Long] = Seq()
+        val tagged: Option[Boolean] = None
+        val q: String = ""
+
+        def request = SelectionRequest(
+          documentSetId=documentSet.id,
+          documentIds=documentIds,
+          tagIds=tagIds,
+          nodeIds=nodeIds,
+          searchResultIds=searchResultIds,
+          tagged=tagged,
+          q=q
+        )
         lazy val ret = await(backend.indexIds(request))
       }
 
@@ -88,6 +105,25 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       "search by q" in new IndexIdsScope {
         override val q = "moo"
         ret must beEqualTo(Seq(doc2.id))
+      }
+
+      "search by tagIds" in new IndexIdsScope {
+        val tag = factory.tag(documentSetId=documentSet.id)
+        val dt1 = factory.documentTag(doc1.id, tag.id)
+        val dt2 = factory.documentTag(doc2.id, tag.id)
+
+        override val tagIds = Seq(tag.id)
+        ret must beEqualTo(Seq(doc2.id, doc1.id))
+      }
+
+      "intersect results from ElasticSearch and Postgres" in new IndexIdsScope {
+        val tag = factory.tag(documentSetId=documentSet.id)
+        val dt1 = factory.documentTag(doc1.id, tag.id)
+        val dt2 = factory.documentTag(doc2.id, tag.id)
+
+        override val tagIds = Seq(tag.id)
+        override val q = "oneandthree"
+        ret must beEqualTo(Seq(doc1.id))
       }
     }
 

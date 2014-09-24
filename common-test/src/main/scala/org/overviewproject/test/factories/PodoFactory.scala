@@ -5,7 +5,7 @@ import play.api.libs.json.JsObject
 import scala.util.Random
 
 import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Plain Old Data Object factory.
@@ -157,6 +157,23 @@ object PodoFactory extends Factory {
     documentId: Long,
     searchResultId: Long
   ) = DocumentSearchResult(documentId, searchResultId)
+
+  override def tag(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    name: String = "a tag",
+    color: String = "abcdef"
+  ) = Tag(
+    id=getId(id),
+    documentSetId=getId(documentSetId),
+    name=name,
+    color=color
+  )
+
+  override def documentTag(
+    documentId: Long,
+    tagId: Long
+  ) = DocumentTag(documentId, tagId)
 
   override def viz(
     id: Long = 0L,
