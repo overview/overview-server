@@ -31,7 +31,7 @@ class Zip64ArchiveStreamSpec extends Specification with Mockito {
       val archiveStream = new Zip64ArchiveStream(archiveEntries)
       
       archiveStream.streamLength must be equalTo(numberOfEntries * (
-          LocalFileHeaderSize + ExtraFieldSize + DataDescriptorSize 
+          LocalFileHeaderSize + DataDescriptorSize 
            + fileNameSize + entrySize +
            FileHeaderSize + ExtraFieldSize + fileNameSize) + EndOfArchiveSize)
     }

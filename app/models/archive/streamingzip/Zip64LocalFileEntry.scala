@@ -12,12 +12,17 @@ import java.util.Calendar
 import java.io.SequenceInputStream
 import scala.collection.JavaConverters._
 
+/**
+ * A Local File Entry in ZIP 64 format. A Data Descriptor is used so that the CRC32 can be computed
+ * as the file data is read.
+ * @param offset Is the offset in the ZIP stream of the Local File Entry
+ * @param data The file content. No compression is performed.
+ */
 case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, data: CRCInputStream) {
   private val HeaderSize = 30
-  private val ExtraFieldSize = 32
   private val DataDescriptorSize = 24
   private val unused: Int = -1
-  private val unknown = 0
+  private val empty = 0
   
   val signature: Int = 0x04034b50
   val extractorVersion: Short = 10
@@ -28,7 +33,7 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, d
 
   val dataDescriptorSignature = 0x07084b50
   
-  def size: Long = HeaderSize + fileNameSize + ExtraFieldSize + fileSize + DataDescriptorSize
+  def size: Long = HeaderSize + fileNameSize + fileSize + DataDescriptorSize
 
   val stream: InputStream = 
     new SequenceInputStream(Iterator(
@@ -52,11 +57,11 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, d
         writeShort(compression) ++
         writeShort(now.time.toShort) ++
         writeShort(now.date.toShort) ++
-        writeInt(unknown) ++
+        writeInt(empty) ++
         writeInt(unused) ++
         writeInt(unused) ++
         writeShort(fileNameLength) ++
-        writeShort(ExtraFieldSize.toShort))
+        writeShort(empty.toShort))
   }
   
   private def fileNameStream: InputStream = new ByteArrayInputStream(fileName.getBytes(StandardCharsets.UTF_8))
@@ -68,20 +73,21 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, d
     writeLong(fileSize)
   )
   
-  private def writeLong(value: Long): Array[Byte] = {
-    val byteBuffer = ByteBuffer.allocate(8).order(LITTLE_ENDIAN)
-    byteBuffer.putLong(value).array()
-  }
   
-  private def writeInt(value: Int): Array[Byte] = {
-    val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
-    byteBuffer.putInt(value).array()
-  }
+  // Utilities to write values in little-endian order
+  private def writeLong(value: Long): Array[Byte] = 
+    byteBuffer(8).putLong(value).array()
+  
+  
+  private def writeInt(value: Int): Array[Byte] = 
+    byteBuffer(4).putInt(value).array()
 
-  private def writeShort(value: Short): Array[Byte] = {
-    val byteBuffer = ByteBuffer.allocate(2).order(LITTLE_ENDIAN)
-    byteBuffer.putShort(value).array()
-  }
+
+  private def writeShort(value: Short): Array[Byte] = 
+    byteBuffer(2).putShort(value).array()
+
+  
+  private def byteBuffer(size: Int): ByteBuffer = ByteBuffer.allocate(size).order(LITTLE_ENDIAN)
 
 }
 

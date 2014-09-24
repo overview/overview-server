@@ -55,7 +55,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
           "ffffffff" + // compressed size
           "ffffffff" + // uncompressed size
           "0a00" + // filename length
-          "2000" // extra field length
+          "0000" // extra field length
 
       // don't check date and time fields
       output.take(10) must be equalTo (expectedHeader.hex.take(10))
@@ -94,7 +94,6 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
     }
 
     "write data descriptor" in new FileEntryContext {
-      println("preread")
       val output = readStream(entry.stream)
 
       val expectedDataDescriptor =
@@ -111,7 +110,6 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
       val fileName = "1234567890"
 
       val localFileHeaderSize = 30
-      val extraFieldSize = 32
       val dataDescriptorSize = 24
 
       val fileSize = 100
@@ -120,7 +118,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
       val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, fileStream)
 
-      def entrySize(fileNameSize: Int) = localFileHeaderSize + extraFieldSize + dataDescriptorSize + fileSize + fileNameSize
+      def entrySize(fileNameSize: Int) = localFileHeaderSize + dataDescriptorSize + fileSize + fileNameSize
 
       // assumes 2 bytes in array
       def bytesToInt(bytes: Array[Byte]): Int = {
