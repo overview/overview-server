@@ -26,7 +26,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
       val utf8FileName = new String(utf8Bytes, StandardCharsets.UTF_8)
 
-      val utf8Entry = new Zip64LocalFileEntry(utf8FileName, fileSize, 0, fileStream)
+      val utf8Entry = new Zip64LocalFileEntry(utf8FileName, fileSize, fileStream)
 
       utf8Entry.size must be equalTo (entrySize(utf8FileName.size * 2))
 
@@ -116,7 +116,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
       val fileData = Array.tabulate(fileSize)(_.toByte)
       val fileStream = new StoredInputStream(new ByteArrayInputStream(fileData))
 
-      val entry = new Zip64LocalFileEntry(fileName, fileSize, 0, fileStream)
+      val entry = new Zip64LocalFileEntry(fileName, fileSize, fileStream)
 
       def entrySize(fileNameSize: Int) = localFileHeaderSize + dataDescriptorSize + fileSize + fileNameSize
 

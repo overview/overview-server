@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
  * @param offset Is the offset in the ZIP stream of the Local File Entry
  * @param data The file content. No compression is performed.
  */
-case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, data: CRCInputStream) {
+case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputStream) {
   private val HeaderSize = 30
   private val DataDescriptorSize = 24
   private val unused: Int = -1
@@ -92,6 +92,6 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, offset: Long, d
 }
 
 object Zip64LocalFileEntry {
-  def apply(entry: ArchiveEntry, offset: Long): Zip64LocalFileEntry =
-    Zip64LocalFileEntry(entry.name, entry.size, offset, entry.data)
+  def apply(entry: ArchiveEntry): Zip64LocalFileEntry =
+    Zip64LocalFileEntry(entry.name, entry.size, entry.data)
 }
