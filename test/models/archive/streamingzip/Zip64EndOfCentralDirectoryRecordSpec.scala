@@ -14,7 +14,7 @@ class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
 
       val expectedFixedValues =
         writeInt(0x06064b50) ++
-          writeInt(endOfCentralDirectoryRecord.size - 12) ++ writeInt(0) ++
+          writeLong(endOfCentralDirectoryRecord.size - 12) ++
           writeShort(0x033F) ++
           writeShort(0x000a) ++
           writeInt(0) ++

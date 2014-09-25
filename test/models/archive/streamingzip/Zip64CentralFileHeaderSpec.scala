@@ -57,9 +57,9 @@ class Zip64CentralFileHeaderSpec extends Specification {
       val expectedExtraField = 
         writeShort(0x01) ++
         writeShort(extraFieldLength.toShort) ++
-        writeInt(fileSize) ++ writeInt(0) ++
-        writeInt(fileSize) ++ writeInt(0) ++
-        writeInt(offset) ++ writeInt(0) ++
+        writeLong(fileSize) ++ 
+        writeLong(fileSize) ++
+        writeLong(offset) ++
         writeInt(0)
         
       output.drop(fixedHeaderSize + fileName.length) must be equalTo expectedExtraField
