@@ -45,21 +45,21 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
       val n = entry.stream.read(output)
       val expectedHeader =
-        "504b0304" + // signature
-          "0a00" + // version
-          "0808" + // flag
-          "0000" + // compression
-          "0000" + // time
-          "0000" + // date
-          "00000000" + // crc32
-          "ffffffff" + // compressed size
-          "ffffffff" + // uncompressed size
-          "0a00" + // filename length
-          "0000" // extra field length
+        writeInt(0x04034b50) ++ // signature
+        writeShort(0x000a) ++   // version
+        writeShort(0x0808) ++   // flag
+        writeShort(0) ++        // compression
+        writeShort(0) ++        // time
+        writeShort(0) ++        // date
+        writeInt(0)  ++         // crc32
+        writeInt(0xffffffff) ++ // compressed size
+        writeInt(0xffffffff) ++ // uncompressed size
+        writeShort(0x000a) ++   // filename length
+        writeShort(0)           // extra field length
 
       // don't check date and time fields
-      output.take(10) must be equalTo (expectedHeader.hex.take(10))
-      output.drop(14) must be equalTo (expectedHeader.hex.drop(14))
+      output.take(10) must be equalTo (expectedHeader.take(10))
+      output.drop(14) must be equalTo (expectedHeader.drop(14))
     }
 
     "write date and time in stream" in new FileEntryContext {
@@ -97,16 +97,16 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
       val output = readStream(entry.stream)
 
       val expectedDataDescriptor =
-        intToBytes(0x07084b50)  ++ // signature
-        intToBytes(entry.crc32.toInt) ++ // crc32
-        intToBytes(fileSize) ++ intToBytes(0) ++ // original size
-        intToBytes(fileSize) ++ intToBytes(0)    // compressed size 	
+        writeInt(0x07084b50)  ++       // signature
+        writeInt(entry.crc32.toInt) ++ // crc32
+        writeLong(fileSize)  ++        // original size
+        writeLong(fileSize)            // compressed size 	
           
 
       output.drop(localFileHeaderSize + fileName.size + fileSize) must be equalTo expectedDataDescriptor
     }
 
-    trait FileEntryContext extends Scope {
+    trait FileEntryContext extends Scope with LittleEndianWriter {
       val fileName = "1234567890"
 
       val localFileHeaderSize = 30
@@ -129,14 +129,6 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
         byteBuffer.getShort(0)
       }
       
-      def intToBytes(n: Int): Array[Byte] = {
-        val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
-
-        byteBuffer.putInt(n)
-
-        byteBuffer.array
-      }
-
       def readStream(stream: InputStream): Array[Byte] =
         Stream.continually(stream.read).takeWhile(_ != -1).map(_.toByte).toArray
     }
