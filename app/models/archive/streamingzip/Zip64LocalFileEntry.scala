@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
  * @param offset Is the offset in the ZIP stream of the Local File Entry
  * @param data The file content. No compression is performed.
  */
-case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputStream) {
+case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputStream) extends LittleEndianWriter {
   private val HeaderSize = 30
   private val DataDescriptorSize = 24
   private val unused: Int = -1
@@ -30,6 +30,7 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
   val compression: Short = 0
   val fileNameLength: Short = fileNameSize
   def crc32 = data.crc32
+  val timeStamp = DosDate(Calendar.getInstance())
 
   val dataDescriptorSignature = 0x07084b50
   
@@ -47,22 +48,20 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
 
   private def fileNameSize = fileName.getBytes(StandardCharsets.UTF_8).size.toShort
 
-  private def headerStream: InputStream = {
-    val now = DosDate(Calendar.getInstance())
-    
+  private def headerStream: InputStream = 
     new ByteArrayInputStream(
       writeInt(signature) ++
         writeShort(extractorVersion) ++
         writeShort(flags) ++
         writeShort(compression) ++
-        writeShort(now.time.toShort) ++
-        writeShort(now.date.toShort) ++
+        writeShort(timeStamp.time.toShort) ++
+        writeShort(timeStamp.date.toShort) ++
         writeInt(empty) ++
         writeInt(unused) ++
         writeInt(unused) ++
         writeShort(fileNameLength) ++
         writeShort(empty.toShort))
-  }
+
   
   private def fileNameStream: InputStream = new ByteArrayInputStream(fileName.getBytes(StandardCharsets.UTF_8))
     
@@ -72,23 +71,6 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
     writeLong(fileSize) ++
     writeLong(fileSize)
   )
-  
-  
-  // Utilities to write values in little-endian order
-  private def writeLong(value: Long): Array[Byte] = 
-    byteBuffer(8).putLong(value).array()
-  
-  
-  private def writeInt(value: Int): Array[Byte] = 
-    byteBuffer(4).putInt(value).array()
-
-
-  private def writeShort(value: Short): Array[Byte] = 
-    byteBuffer(2).putShort(value).array()
-
-  
-  private def byteBuffer(size: Int): ByteBuffer = ByteBuffer.allocate(size).order(LITTLE_ENDIAN)
-
 }
 
 object Zip64LocalFileEntry {

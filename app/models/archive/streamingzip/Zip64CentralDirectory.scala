@@ -6,7 +6,7 @@ class Zip64CentralDirectory(entries: Iterable[Zip64LocalFileEntry]) {
   private val EndOfCentralDirectoryRecordSize = 22
 
   private val localCentralFileHeaders: Seq[Zip64CentralFileHeader] = 
-    entries.map(f => new Zip64CentralFileHeader(f.fileName)).toSeq
+    entries.map(f => new Zip64CentralFileHeader(f.fileName, f.timeStamp, f.data)).toSeq
   
   def size: Long = localCentralFileHeaders.map(_.size).sum + 
   	Zip64EndOfCentralDirectoryRecordSize + Zip64EndOfCentralDirectoryLocatorSize + EndOfCentralDirectoryRecordSize 
