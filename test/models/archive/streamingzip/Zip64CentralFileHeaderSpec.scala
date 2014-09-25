@@ -48,19 +48,35 @@ class Zip64CentralFileHeaderSpec extends Specification {
     "write filename in stream" in new CentralFileHeaderContext {
       val output = readStream(centralFileHeader.stream)
 
-      output.drop(fixedHeaderSize) must be equalTo fileName.getBytes
+      output.drop(fixedHeaderSize).take(fileName.length) must be equalTo fileName.getBytes
     }
 
+    "write extra field in stream" in new CentralFileHeaderContext {
+      val output = readStream(centralFileHeader.stream)
+
+      val expectedExtraField = 
+        writeShort(0x01) ++
+        writeShort(extraFieldLength.toShort) ++
+        writeInt(fileSize) ++ writeInt(0) ++
+        writeInt(fileSize) ++ writeInt(0) ++
+        writeInt(offset) ++ writeInt(0) ++
+        writeInt(0)
+        
+      output.drop(fixedHeaderSize + fileName.length) must be equalTo expectedExtraField
+    }
+    
     trait CentralFileHeaderContext extends Scope with LittleEndianWriter {
       val fixedHeaderSize = 46
       val extraFieldLength = 32
-
+      
+      val offset = 0x12345678
+      val fileSize = 10
       val timeStamp = DosDate(Calendar.getInstance())
       val fileName = "file name"
-      val data = Array.fill[Byte](10)(0xba.toByte)
+      val data = Array.fill[Byte](fileSize)(0xba.toByte)
       val fileStream = new StoredInputStream(new ByteArrayInputStream(data))
 
-      val centralFileHeader = new Zip64CentralFileHeader(fileName, timeStamp, fileStream)
+      val centralFileHeader = new Zip64CentralFileHeader(fileName, fileSize, offset, timeStamp, fileStream)
 
       def readStream(s: InputStream): Array[Byte] = Stream.continually(s.read).takeWhile(_ != -1).toArray.map(_.toByte)
     }
