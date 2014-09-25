@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream
 import java.util.Calendar
 import org.specs2.specification.Scope
 import java.util.zip.CRC32
+import java.io.InputStream
 
 class Zip64CentralFileHeaderSpec extends Specification {
 
@@ -18,11 +19,9 @@ class Zip64CentralFileHeaderSpec extends Specification {
     "write header in stream" in new CentralFileHeaderContext {
       val crc = new CRC32
       crc.update(data)
-      readStream
+      readStream(fileStream)
 
-      val output = new Array[Byte](fixedHeaderSize)
-
-      centralFileHeader.stream.read(output)
+      val output = readStream(centralFileHeader.stream)
 
       val expectedHeader =
         writeInt(0x02014b50) ++
@@ -46,6 +45,12 @@ class Zip64CentralFileHeaderSpec extends Specification {
       output.take(fixedHeaderSize) must be equalTo expectedHeader
     }
 
+    "write filename in stream" in new CentralFileHeaderContext {
+      val output = readStream(centralFileHeader.stream)
+
+      output.drop(fixedHeaderSize) must be equalTo fileName.getBytes
+    }
+
     trait CentralFileHeaderContext extends Scope with LittleEndianWriter {
       val fixedHeaderSize = 46
       val extraFieldLength = 32
@@ -57,7 +62,7 @@ class Zip64CentralFileHeaderSpec extends Specification {
 
       val centralFileHeader = new Zip64CentralFileHeader(fileName, timeStamp, fileStream)
 
-      def readStream: Array[Byte] = Stream.continually(fileStream.read).takeWhile(_ != -1).toArray.map(_.toByte)
+      def readStream(s: InputStream): Array[Byte] = Stream.continually(s.read).takeWhile(_ != -1).toArray.map(_.toByte)
     }
   }
 }

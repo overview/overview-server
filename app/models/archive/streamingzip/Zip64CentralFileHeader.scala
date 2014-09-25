@@ -4,11 +4,13 @@ import java.nio.charset.StandardCharsets
 import java.io.InputStream
 import java.io.ByteArrayInputStream
 import models.archive.CRCInputStream
+import java.io.SequenceInputStream
+import scala.collection.JavaConverters._
 
 class Zip64CentralFileHeader(fileName: String, timeStamp: DosDate, data: CRCInputStream) extends LittleEndianWriter {
   private val DataSize = 46
   private val ExtraFieldSize = 32
-  private val fileNameSize = fileName.getBytes(StandardCharsets.UTF_8).length
+  private val fileNameSize = fileNameBytes.length
   
   val signature: Int = 0x02014b50
   val versionMadeBy: Short = 0x033F
@@ -21,7 +23,9 @@ class Zip64CentralFileHeader(fileName: String, timeStamp: DosDate, data: CRCInpu
   
   def size: Int = DataSize + ExtraFieldSize + fileNameSize
   
-  def stream: InputStream = headerStream
+  def stream: InputStream = new SequenceInputStream(Iterator(
+      headerStream,
+      fileNameStream).asJavaEnumeration)
   
   private def headerStream = new LazyByteArrayInputStream(
     writeInt(signature) ++
@@ -43,5 +47,7 @@ class Zip64CentralFileHeader(fileName: String, timeStamp: DosDate, data: CRCInpu
     writeInt(unused)
   )
     
+  private def fileNameBytes = fileName.getBytes(StandardCharsets.UTF_8)
+  private def fileNameStream: InputStream = new ByteArrayInputStream(fileNameBytes)
 
 }
