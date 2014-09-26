@@ -9,9 +9,10 @@ class Zip64EndOfCentralDirectoryRecord(entries: Seq[Zip64LocalFileEntry]) extend
   val remainingSize: Int = size - 12 // Don't count the first 2 fields 
   val versionMadeBy: Short = 0x033F
   val extractorVersion: Short = 10
-
+  val centralDirectoryOffset = entries.map(_.size).sum
+  
   private val numberOfEntries = entries.size
-  private val totalSizeOfEntries = entries.map(_.size).sum
+
 
   def stream: InputStream = new ByteArrayInputStream(
     writeInt(signature) ++
@@ -22,6 +23,6 @@ class Zip64EndOfCentralDirectoryRecord(entries: Seq[Zip64LocalFileEntry]) extend
       writeInt(0) ++
       writeLong(numberOfEntries) ++
       writeLong(numberOfEntries) ++
-      writeLong(totalSizeOfEntries) ++
+      writeLong(centralDirectoryOffset) ++
       writeLong(0))
 }
