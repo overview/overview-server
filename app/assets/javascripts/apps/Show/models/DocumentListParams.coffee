@@ -84,7 +84,7 @@ define [ 'underscore' ], (_) ->
     # to selections that don't already have one.
     toApiParams: ->
       apiParams = {}
-      for k, v of @toJSON()
+      for k, v of @toJSON() when k != 'name'
         apiParams[k] = v.map(String).join(',')
 
       if @viz?
@@ -157,13 +157,23 @@ define [ 'underscore' ], (_) ->
 
     toI18n: -> [ 'searchResult', @searchResult.attributes.query || '' ]
 
+  class JsonDocumentListParams extends AbstractDocumentListParams
+    constructor: (documentSet, viz, @json) -> super(documentSet, viz, 'json', @json)
+
+    toString: -> "DocumentListParams(json, #{JSON.stringify(@json)})"
+
+    toJSON: -> @json
+
+    toI18n: -> [ 'json', @json.name ]
+
   class DocumentListParamsBuilder
     constructor: (@documentSet, @viz) ->
     withViz: (viz) -> new DocumentListParamsBuilder(@documentSet, viz)
 
     all: -> new AllDocumentListParams(@documentSet, @viz)
     byDocument: (document) -> new DocumentDocumentListParams(@documentSet, @viz, document)
+    byJson: (json) -> new JsonDocumentListParams(@documentSet, @viz, json)
     byNode: (node) -> new NodeDocumentListParams(@documentSet, @viz, node)
     byTag: (tag) -> new TagDocumentListParams(@documentSet, @viz, tag)
-    untagged: -> new UntaggedDocumentListParams(@documentSet, @viz)
     bySearchResult: (searchResult) -> new SearchResultDocumentListParams(@documentSet, @viz, searchResult)
+    untagged: -> new UntaggedDocumentListParams(@documentSet, @viz)

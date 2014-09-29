@@ -21,12 +21,26 @@ define [
       @listenTo(@state, 'change:taglikeCid', @onTaglikeCidChanged)
       @listenTo(@documentSet, 'tag', @onTag)
       @listenTo(@documentSet, 'untag', @onUntag)
+      @listener = window.addEventListener('message', @_onMessage.bind(@), false)
 
     onDocumentListParamsChanged: (__, value) -> @vizApp.onDocumentListParamsChanged?(value)
     onDocumentChanged: (__, value) -> @vizApp.onDocumentChanged?(value)
     onTaglikeCidChanged: (__, value) -> @vizApp.onTaglikeCidChanged?(value)
     onTag: (tag, params) -> @vizApp.onTag?(tag, params)
     onUntag: (tag, params) -> @vizApp.onUntag?(tag, params)
+
+    setDocumentListParams: (params) ->
+      @state.resetDocumentListParams().byJson(params)
+
+    _onMessage: (e) ->
+      vizUrl = @vizApp.viz.attributes.url
+      if e.origin != vizUrl.substring(0, e.origin.length)
+        console.log("Dropped message from #{e.origin}: expected #{vizUrl}", e)
+        return
+
+      switch e.data.call
+        when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
+        else console.log("Invalid message from viz: #{e.data.call}", e.data)
 
     remove: ->
       @vizApp.remove()
