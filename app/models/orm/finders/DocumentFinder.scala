@@ -101,22 +101,33 @@ object DocumentFinder extends Finder {
     if (selection.nodeIds.nonEmpty) {
       val idsFromNodes = from(Schema.nodeDocuments)(nd =>
         where(nd.nodeId in selection.nodeIds)
-          select (nd.documentId))
+        select(nd.documentId)
+      )
       query = query.where(_.id in idsFromNodes)
     }
 
     if (selection.tagIds.nonEmpty) {
       val idsFromTags = from(Schema.documentTags)(dt =>
         where(dt.tagId in selection.tagIds)
-          select (dt.documentId))
+        select(dt.documentId)
+      )
       query = query.where(_.id in idsFromTags)
     }
 
     if (selection.searchResultIds.nonEmpty) {
       val idsFromSearchResults = from(Schema.documentSearchResults)(dsr =>
         where(dsr.searchResultId in selection.searchResultIds)
-          select (dsr.documentId))
+        select(dsr.documentId)
+      )
       query = query.where(_.id in idsFromSearchResults)
+    }
+
+    if (selection.vizObjectIds.nonEmpty) {
+      val idsFromObjects = from(Schema.documentVizObjects)(dvo =>
+        where(dvo.vizObjectId in selection.vizObjectIds)
+        select(dvo.documentId)
+      )
+      query = query.where(_.id in idsFromObjects)
     }
 
     if (selection.documentIds.nonEmpty) {

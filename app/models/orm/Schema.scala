@@ -1,7 +1,8 @@
 package models.orm
 
 import java.util.UUID
-import org.squeryl.KeyedEntityDef
+import org.squeryl.{KeyedEntity,KeyedEntityDef}
+import org.squeryl.dsl.CompositeKey2
 
 import models.{Session,User}
 import org.overviewproject.models.ApiToken
@@ -33,12 +34,24 @@ object Schema extends org.squeryl.Schema {
     override def isPersisted(s: Session) = (s.createdAt != s.updatedAt) // ugly hack!
   }
 
+  /*
+   * XXX remove me
+   *
+   * Way back in September 2014, Adam Hooper thought this little nugget would
+   * be gone by the end of the week.
+   */
+  case class DocumentVizObjectJustToAppeaseSqueryl(documentId: Long, vizObjectId: Long)
+    extends KeyedEntity[CompositeKey2[Long,Long]] {
+    override def id = compositeKey(documentId, vizObjectId)
+  }
+
   val apiTokens = table[ApiToken]
   val documentProcessingErrors = table[DocumentProcessingError]
   val documentSearchResults = table[DocumentSearchResult]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSets = table[DocumentSet]
   val documentSetUsers = table[DocumentSetUser]
+  val documentVizObjects = table[DocumentVizObjectJustToAppeaseSqueryl]("document_viz_object")
   val documents = table[Document]
   val documentTags = table[DocumentTag]
   val fileGroups = table[FileGroup]
