@@ -50,6 +50,7 @@ object DaemonInfoRepository extends DaemonInfoRepository {
     DaemonInfo("message-broker", Console.YELLOW, cmds.messageBroker),
     DaemonInfo("overview-server", Console.GREEN, cmds.webServer),
     DaemonInfo("documentset-worker", Console.CYAN, cmds.documentSetWorker),
+    DaemonInfo("redis", Console.CYAN_B, cmds.redis),
     DaemonInfo("worker", Console.MAGENTA, cmds.worker)
   )
 }

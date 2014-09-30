@@ -8,6 +8,7 @@ package object commands {
     def documentSetWorker: Command
     def messageBroker: Command
     def searchIndex: Command
+    def redis: Command
     def webServer: Command
     def worker: Command
     def runEvolutions: Command
@@ -71,6 +72,8 @@ package object commands {
       Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
       Seq("org.overviewproject.DocumentSetWorker")
     )
+
+    override def redis = new ShCommand(Seq(), Seq("./deps/redis/dev.sh"))
 
     override def worker = new JvmCommandWithAppendableClasspath(
       Seq(),
@@ -171,6 +174,8 @@ package object commands {
       ),
       Seq("org.elasticsearch.bootstrap.ElasticSearch")
     )
+
+    override def redis = new ShCommand(Seq(), Seq("./deps/redis/dev.sh"))
 
     override def webServer = {
       cmd(
