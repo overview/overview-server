@@ -80,6 +80,10 @@ cp -f ../$STAGE/bin/* frontend/
 cp -a ../message-broker/etc message-broker
 cp -a ../search-index/config search-index
 
+# Add Redis source
+(cd ../deps/redis/redis-* && make clean)
+cp -a ../deps .
+
 # Add the other files
 for file in README.md LICENSE; do
   cp ../$file .
