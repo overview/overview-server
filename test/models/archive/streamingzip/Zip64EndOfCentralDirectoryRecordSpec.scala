@@ -1,10 +1,10 @@
 package models.archive.streamingzip
 
+import java.io.InputStream
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.specs2.mock.Mockito
 import models.archive.CRCInputStream
-import java.io.InputStream
 
 class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
 
@@ -16,7 +16,7 @@ class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
         writeInt(0x06064b50) ++
           writeLong(endOfCentralDirectoryRecord.size - 12) ++
           writeShort(0x033F) ++
-          writeShort(0x000a) ++
+          writeShort(0x002d) ++
           writeInt(0) ++
           writeInt(0)
 
@@ -31,8 +31,9 @@ class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
      val expectedDynamicValues = 
        writeLong(numberOfEntries) ++
        writeLong(numberOfEntries) ++
-       writeLong(localFileEntries.map(_.size).sum) ++
-       writeLong(0)
+       writeLong(centralDirectorySize) ++
+       writeLong(localFileEntries.map(_.size).sum)
+       
        
       output.drop(staticFieldsLength) must be equalTo expectedDynamicValues
       
@@ -43,11 +44,17 @@ class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
       val fileSize = 5E9.toLong
       val data = mock[CRCInputStream]
       val staticFieldsLength = 24
-
+      val centralFileHeaderSize = 100
+      val centralDirectorySize = numberOfEntries * centralFileHeaderSize
+      
       val localFileEntries = Seq.tabulate(numberOfEntries)(n =>
         Zip64LocalFileEntry(f"file$n%2d", fileSize, data))
+      val centralFileHeader = smartMock[Zip64CentralFileHeader]
+      centralFileHeader.size returns centralFileHeaderSize
+      
+      val centralFileHeaders = Seq.fill(numberOfEntries)(centralFileHeader)
 
-      val endOfCentralDirectoryRecord = new Zip64EndOfCentralDirectoryRecord(localFileEntries)
+      val endOfCentralDirectoryRecord = new Zip64EndOfCentralDirectoryRecord(localFileEntries, centralFileHeaders)
 
       def readStream(s: InputStream): Array[Byte] = Stream.continually(s.read).takeWhile(_ != -1).toArray.map(_.toByte)
     }

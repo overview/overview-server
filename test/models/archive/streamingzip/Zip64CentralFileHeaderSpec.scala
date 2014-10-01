@@ -1,19 +1,29 @@
 package models.archive.streamingzip
 
-import org.specs2.mutable.Specification
-import models.archive.streamingzip.HexByteString._
 import java.io.ByteArrayInputStream
-import java.util.Calendar
-import org.specs2.specification.Scope
-import java.util.zip.CRC32
 import java.io.InputStream
+import java.util.Calendar
+import java.util.zip.CRC32
+
+
+
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+
+import models.archive.streamingzip.HexByteString._
 
 class Zip64CentralFileHeaderSpec extends Specification {
 
   "Zip64CentralFileHeader" should {
 
     "report size including filename" in new CentralFileHeaderContext {
-      centralFileHeader.size must be equalTo (fileName.size + 46 + 32)
+      centralFileHeader.size must be equalTo (fileName.size + 46 + extraFieldLength)
+    }
+    
+    "report actual size" in new CentralFileHeaderContext {
+      val output = readStream(centralFileHeader.stream)
+      
+      output.length must be equalTo centralFileHeader.size
     }
 
     "write header in stream" in new CentralFileHeaderContext {
@@ -26,8 +36,8 @@ class Zip64CentralFileHeaderSpec extends Specification {
       val expectedHeader =
         writeInt(0x02014b50) ++
           writeShort(0x033F) ++
-          writeShort(0x000a) ++
-          writeShort(0x0808) ++
+          writeShort(0x002d) ++
+          writeShort(0x0800) ++
           writeShort(0) ++
           writeShort(timeStamp.time.toShort) ++
           writeShort(timeStamp.date.toShort) ++
@@ -56,18 +66,19 @@ class Zip64CentralFileHeaderSpec extends Specification {
 
       val expectedExtraField = 
         writeShort(0x01) ++
-        writeShort(extraFieldLength.toShort) ++
+        writeShort(extraFieldDataLength.toShort) ++
         writeLong(fileSize) ++ 
         writeLong(fileSize) ++
-        writeLong(offset) ++
-        writeInt(0)
+        writeLong(offset) 
+        
         
       output.drop(fixedHeaderSize + fileName.length) must be equalTo expectedExtraField
     }
     
     trait CentralFileHeaderContext extends Scope with LittleEndianWriter {
       val fixedHeaderSize = 46
-      val extraFieldLength = 32
+      val extraFieldLength = 28
+      val extraFieldDataLength = extraFieldLength - 4 
       
       val offset = 0x12345678
       val fileSize = 10

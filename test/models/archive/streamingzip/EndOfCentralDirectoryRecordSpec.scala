@@ -1,8 +1,8 @@
 package models.archive.streamingzip
 
+import java.io.InputStream
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import java.io.InputStream
 
 class EndOfCentralDirectoryRecordSpec extends Specification {
 

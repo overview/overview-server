@@ -26,7 +26,7 @@ class Zip64CentralDirectorySpec extends Specification with Mockito {
       val numberOfEntries = 10
       val fileSize = 100
       val localFileEntries = Seq.tabulate(10)(n => new Zip64LocalFileEntry(s"name$n", fileSize, mock[CRCInputStream]))
-      val directoryHeaderSize = 46 + 5 + 32 
+      val directoryHeaderSize = 46 + 5 + 28
         
       val zip64EndOfCentralDirectoryRecordSize = 56
       val zip64EndOfCentralDirectoryLocatorSize = 20

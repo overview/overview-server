@@ -1,14 +1,16 @@
 package models.archive.streamingzip
 
-import java.io.InputStream
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 
-class Zip64EndOfCentralDirectoryLocator(centralFileHeaders: Iterable[Zip64CentralFileHeader]) extends LittleEndianWriter {
+/** Zip64 End of Central Directory Locator */
+class Zip64EndOfCentralDirectoryLocator(localFileEntries: Iterable[Zip64LocalFileEntry], 
+    centralFileHeaders: Iterable[Zip64CentralFileHeader]) extends LittleEndianWriter {
   val size: Int = 20
   val signature = 0x07064b50
   val diskNumber = 0
   val totalNumberOfDisks = 1
-  private val endOfCentralDirectoryOffset = centralFileHeaders.map(_.size).sum
+  private val endOfCentralDirectoryOffset = localFileEntries.map(_.size).sum + centralFileHeaders.map(_.size).sum
   
   val stream: InputStream = new ByteArrayInputStream(
     writeInt(signature) ++

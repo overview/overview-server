@@ -3,15 +3,19 @@ package models.archive.streamingzip
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 
-class Zip64EndOfCentralDirectoryRecord(entries: Seq[Zip64LocalFileEntry]) extends LittleEndianWriter {
+
+/** A Zip64 End Of Central Directory Record */
+class Zip64EndOfCentralDirectoryRecord(localFileEntries: Seq[Zip64LocalFileEntry],
+    centralDirectory: Seq[Zip64CentralFileHeader]) extends LittleEndianWriter {
   val signature = 0x06064b50
   val size: Int = 56
   val remainingSize: Int = size - 12 // Don't count the first 2 fields 
   val versionMadeBy: Short = 0x033F
-  val extractorVersion: Short = 10
-  val centralDirectoryOffset = entries.map(_.size).sum
+  val extractorVersion: Short = 45
+  val centralDirectorySize = centralDirectory.map(_.size).sum
+  val centralDirectoryOffset = localFileEntries.map(_.size).sum
   
-  private val numberOfEntries = entries.size
+  private val numberOfEntries = localFileEntries.size
 
 
   def stream: InputStream = new ByteArrayInputStream(
@@ -23,6 +27,6 @@ class Zip64EndOfCentralDirectoryRecord(entries: Seq[Zip64LocalFileEntry]) extend
       writeInt(0) ++
       writeLong(numberOfEntries) ++
       writeLong(numberOfEntries) ++
-      writeLong(centralDirectoryOffset) ++
-      writeLong(0))
+      writeLong(centralDirectorySize) ++
+      writeLong(centralDirectoryOffset))
 }
