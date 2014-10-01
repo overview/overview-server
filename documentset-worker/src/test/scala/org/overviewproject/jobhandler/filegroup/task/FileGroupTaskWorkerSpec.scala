@@ -2,14 +2,13 @@ package org.overviewproject.jobhandler.filegroup.task
 
 import akka.actor._
 import akka.testkit._
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.test.ActorSystemContext
-import org.overviewproject.test.ParameterStore
-import org.overviewproject.test.ForwardingActor
-import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import org.overviewproject.test.{ActorSystemContext,ParameterStore,ForwardingActor}
+
 class FileGroupTaskWorkerSpec extends Specification {
+  sequential
 
   "FileGroupJobQueue" should {
 
@@ -115,7 +114,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       jobQueueProbe.expectNoMsg
     }
 
-    abstract class TaskWorkerContext extends ActorSystemContext with Before {
+    trait TaskWorkerContext extends ActorSystemContext {
       protected val documentSetId: Long = 1l
       protected val fileGroupId: Long = 2l
       protected val uploadedFileId: Long = 10l
@@ -132,10 +131,8 @@ class FileGroupTaskWorkerSpec extends Specification {
       val ProgressReporterName = "progressReporter"
       val ProgressReporterPath = s"/user/$ProgressReporterName"
 
-      def before = {}
-
       protected def createProgressReporter: TestProbe = {
-        progressReporterProbe = TestProbe()
+        progressReporterProbe = new TestProbe(system)
         progressReporter = system.actorOf(ForwardingActor(progressReporterProbe.ref), ProgressReporterName)
 
         progressReporterProbe
@@ -149,7 +146,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       }
     }
 
-    abstract class RunningTaskWorkerContext extends TaskWorkerContext {
+    trait RunningTaskWorkerContext extends TaskWorkerContext {
 
       var worker: TestActorRef[TestFileGroupTaskWorker] = _
 
@@ -166,9 +163,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
     }
 
-    abstract class GatedTaskWorkerContext extends TaskWorkerContext {
-      import scala.concurrent.ExecutionContext.Implicits.global
-
+    trait GatedTaskWorkerContext extends TaskWorkerContext {
       var worker: ActorRef = _
       private val cancelFn = ParameterStore[Unit]
 

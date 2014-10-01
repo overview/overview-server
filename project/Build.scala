@@ -29,7 +29,7 @@ object ApplicationBuild extends Build with ProjectSettings {
   }
 
   val ourTestWithNoDbOptions = Seq(
-    Tests.Argument("xonly")/*,
+    Tests.Argument(TestFrameworks.Specs2, "xonly")/*,
     Tests.Setup { loader =>
       // Load Logger so configurations happen in the right order
       loader.loadClass("org.slf4j.LoggerFactory")

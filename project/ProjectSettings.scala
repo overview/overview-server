@@ -16,15 +16,17 @@ trait ProjectSettings {
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
     "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
-    "More FuseSource" at "http://repo.fusesource.com/maven2/"
+    "More FuseSource" at "http://repo.fusesource.com/maven2/",
+    "Chris Dinn" at "http://chrisdinn.github.io/releases/"
   )
     
   // shared dependencies
-  val akkaAgentDep = "com.typesafe.akka" %% "akka-agent" % "2.2.0"
-  val akkaDep = "com.typesafe.akka" %% "akka-actor" % "2.2.0"
-  val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.2.0"
+  val akkaAgentDep = "com.typesafe.akka" %% "akka-agent" % "2.3.4"
+  val akkaDep = "com.typesafe.akka" %% "akka-actor" % "2.3.4"
+  val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.3.4"
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
   val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
+  val brandoDep = "com.digital-achiever" %% "brando" % "2.0.2"
   val commonsIoDep = "commons-io" % "commons-io" % "2.4"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
@@ -76,6 +78,7 @@ trait ProjectSettings {
     akkaDep,
     asyncHttpClientDep,
     boneCpDep,
+    brandoDep,
     commonsIoDep,
     elasticSearchDep,
     geronimoJmsDep,

@@ -1,10 +1,15 @@
 package org.overviewproject.test
 
+import akka.actor.ActorSystem
+import akka.testkit.{ImplicitSender,TestKit,TestKitBase}
 import org.specs2.mutable.After
 
-import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestKit}
+trait ActorSystemContext
+  extends TestKitBase
+  with ImplicitSender
+  with After
+{
+  implicit lazy val system = ActorSystem()
 
-abstract class ActorSystemContext extends TestKit(ActorSystem()) with ImplicitSender with After {
-  def after = system.shutdown()
+  override def after = TestKit.shutdownActorSystem(system)
 }
