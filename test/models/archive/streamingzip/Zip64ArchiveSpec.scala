@@ -8,7 +8,6 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import models.archive.ArchiveEntry
-import models.archive.CRCInputStream
 
 class Zip64ArchiveSpec extends Specification with Mockito {
 
@@ -32,7 +31,7 @@ class Zip64ArchiveSpec extends Specification with Mockito {
       val numberOfEntries = 10
       val fileNameSize = 5
       val archiveEntries = Seq.tabulate(numberOfEntries)(n =>
-        ArchiveEntry(entrySize, s"name$n", mock[CRCInputStream]))
+        ArchiveEntry(entrySize, s"name$n", mock[InputStream]))
 
       val archive = new Zip64Archive(archiveEntries)
 
@@ -49,7 +48,6 @@ class Zip64ArchiveSpec extends Specification with Mockito {
     }
 
 
-
     trait ArchiveContext extends Scope {
       val numberOfFiles = 10
 
@@ -63,7 +61,7 @@ class Zip64ArchiveSpec extends Specification with Mockito {
 
       val entries = for {
         (name, size, data) <- fileInfo
-        fileStream = new StoredInputStream(new ByteArrayInputStream(data))
+        fileStream = new ByteArrayInputStream(data)
       } yield ArchiveEntry(size, name, fileStream)
 
       val archive = new Zip64Archive(entries)

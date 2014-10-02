@@ -8,8 +8,9 @@ import java.nio.charset.StandardCharsets
 import java.util.Calendar
 import scala.collection.JavaConverters._
 import models.archive.ArchiveEntry
-import models.archive.CRCInputStream
 import models.archive.streamingzip.HexByteString._
+import java.util.zip.CheckedInputStream
+import java.util.zip.CRC32
 
 /**
  * A Local File Entry in ZIP 64 format. A Data Descriptor is used so that the CRC32 can be computed
@@ -20,7 +21,7 @@ import models.archive.streamingzip.HexByteString._
  * @param offset Is the offset in the ZIP stream of the Local File Entry
  * @param data The file content. No compression is performed.
  */
-case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputStream) extends LittleEndianWriter {
+case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extends LittleEndianWriter {
   private val HeaderSize = 30
   private val DataDescriptorSize = 24
   private val Zip64Tag: Short = 1
@@ -32,12 +33,15 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
   val flags: Short = 0x0808 // bit 3: Use Data Descriptor, bit 11: Use UTF-8
   val compression: Short = 0
   val fileNameLength: Short = fileNameSize
-  def crc32 = data.crc32
+
   val timeStamp = DosDate(Calendar.getInstance())
   val extraFieldSize: Short = 20
   val extraFieldDataSize: Short = (extraFieldSize - 4).toShort
   
   val dataDescriptorSignature = 0x08074b50
+
+  private val checkedData = new CheckedInputStream(data, new CRC32)
+  def crc32: Int = checkedData.getChecksum.getValue.toInt
   
   def size: Long = HeaderSize + fileNameSize + extraFieldSize + fileSize + DataDescriptorSize
 
@@ -46,7 +50,7 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
         headerStream, 
         fileNameStream, 
         extraFieldStream,
-        data,
+        checkedData,
         dataDescriptorStream).asJavaEnumeration)
   
   
@@ -80,7 +84,7 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: CRCInputS
   
   private def dataDescriptorStream: InputStream = new LazyByteArrayInputStream(
     writeInt(dataDescriptorSignature) ++
-    writeInt(crc32.toInt) ++
+    writeInt(crc32) ++
     writeLong(fileSize) ++
     writeLong(fileSize)
   )

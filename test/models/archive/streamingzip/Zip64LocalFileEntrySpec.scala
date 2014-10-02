@@ -10,6 +10,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import models.archive.streamingzip.HexByteString._
+import java.util.zip.CRC32
 
 class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
@@ -42,6 +43,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
       entry.flags must be equalTo (0x0808)
       entry.compression must be equalTo (0)
       entry.fileNameLength must be equalTo (fileName.length.toShort)
+      
     }
 
     "write header in stream" in new FileEntryContext {
@@ -115,7 +117,7 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
       val expectedDataDescriptor =
         writeInt(0x08074b50)  ++       // signature
-        writeInt(entry.crc32.toInt) ++ // crc32
+        writeInt(crc32.toInt) ++       // crc32
         writeLong(fileSize)  ++        // original size
         writeLong(fileSize)            // compressed size 	
           
@@ -132,12 +134,18 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
       
       val fileSize = 100
       val fileData = Array.tabulate(fileSize)(_.toByte)
-      val fileStream = new StoredInputStream(new ByteArrayInputStream(fileData))
+      val fileStream = new ByteArrayInputStream(fileData)
+      val crc32 = {
+        val checker = new CRC32()
+        
+        checker.update(fileData)
+        checker.getValue
+      }
 
       val entry = new Zip64LocalFileEntry(fileName, fileSize, fileStream)
 
       def entrySize(fileNameSize: Int) =
-        localFileHeaderSize + dataDescriptorSize + +extraFieldSize + fileSize + fileNameSize
+        localFileHeaderSize + dataDescriptorSize + extraFieldSize + fileSize + fileNameSize
 
       // assumes 2 bytes in array
       def bytesToInt(bytes: Array[Byte]): Int = {

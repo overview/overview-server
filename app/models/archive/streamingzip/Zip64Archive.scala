@@ -44,7 +44,7 @@ class Zip64Archive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
       val offset = result._1
       val now = DosDate(Calendar.getInstance())
       
-      val centralFileHeader = new Zip64CentralFileHeader(l.fileName, l.fileSize, offset, now, l.data)
+      val centralFileHeader = new Zip64CentralFileHeader(l.fileName, l.fileSize, offset, now, l.crc32)
       (offset + l.size, result._2 :+ centralFileHeader)
     }
     

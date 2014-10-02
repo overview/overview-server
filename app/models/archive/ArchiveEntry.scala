@@ -1,3 +1,5 @@
 package models.archive
 
-case class ArchiveEntry(size: Long, name: String, data: CRCInputStream)
+import java.io.InputStream
+
+case class ArchiveEntry(size: Long, name: String, data: InputStream)

@@ -4,13 +4,10 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.Calendar
 import java.util.zip.CRC32
-
-
-
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-
 import models.archive.streamingzip.HexByteString._
+import java.util.zip.CheckedInputStream
 
 class Zip64CentralFileHeaderSpec extends Specification {
 
@@ -85,9 +82,9 @@ class Zip64CentralFileHeaderSpec extends Specification {
       val timeStamp = DosDate(Calendar.getInstance())
       val fileName = "file name"
       val data = Array.fill[Byte](fileSize)(0xba.toByte)
-      val fileStream = new StoredInputStream(new ByteArrayInputStream(data))
+      val fileStream = new CheckedInputStream(new ByteArrayInputStream(data), new CRC32)
 
-      val centralFileHeader = new Zip64CentralFileHeader(fileName, fileSize, offset, timeStamp, fileStream)
+      val centralFileHeader = new Zip64CentralFileHeader(fileName, fileSize, offset, timeStamp, fileStream.getChecksum.getValue.toInt)
 
       def readStream(s: InputStream): Array[Byte] = Stream.continually(s.read).takeWhile(_ != -1).toArray.map(_.toByte)
     }

@@ -4,7 +4,6 @@ import java.io.InputStream
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import models.archive.CRCInputStream
 
 class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
 
@@ -42,7 +41,7 @@ class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
     trait EndOfCentralDirectoryRecordContext extends Scope with LittleEndianWriter {
       val numberOfEntries = 10
       val fileSize = 5E9.toLong
-      val data = mock[CRCInputStream]
+      val data = mock[InputStream]
       val staticFieldsLength = 24
       val centralFileHeaderSize = 100
       val centralDirectorySize = numberOfEntries * centralFileHeaderSize

@@ -5,12 +5,12 @@ import java.io.InputStream
 import java.io.SequenceInputStream
 import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
-import models.archive.CRCInputStream
+import java.util.zip.CheckedInputStream
 
 /**
  * Central Directory File Headers in Zip64 format
  */
-class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, data: CRCInputStream) extends LittleEndianWriter {
+class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int) extends LittleEndianWriter {
   private val DataSize = 46
   private val ExtraFieldSize = 28
 
@@ -42,7 +42,7 @@ class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, tim
       writeShort(compression) ++
       writeShort(timeStamp.time.toShort) ++
       writeShort(timeStamp.date.toShort) ++
-      writeInt(data.crc32.toInt) ++
+      writeInt(crcFunction) ++
       writeInt(unused) ++
       writeInt(unused) ++
       writeShort(fileNameSize.toShort) ++

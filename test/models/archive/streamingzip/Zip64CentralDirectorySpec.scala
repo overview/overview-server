@@ -2,7 +2,7 @@ package models.archive.streamingzip
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import models.archive.CRCInputStream
+import java.io.InputStream
 
 
 class Zip64CentralDirectorySpec extends Specification with Mockito {
@@ -25,7 +25,7 @@ class Zip64CentralDirectorySpec extends Specification with Mockito {
     "return size for an archive with files" in {
       val numberOfEntries = 10
       val fileSize = 100
-      val localFileEntries = Seq.tabulate(10)(n => new Zip64LocalFileEntry(s"name$n", fileSize, mock[CRCInputStream]))
+      val localFileEntries = Seq.tabulate(10)(n => new Zip64LocalFileEntry(s"name$n", fileSize, mock[InputStream]))
       val directoryHeaderSize = 46 + 5 + 28
         
       val zip64EndOfCentralDirectoryRecordSize = 56
