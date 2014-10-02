@@ -10,22 +10,18 @@ import java.util.zip.CheckedInputStream
 /**
  * Central Directory File Headers in Zip64 format
  */
-class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int) extends LittleEndianWriter {
+class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int) extends LittleEndianWriter with ZipFormat {
   private val DataSize = 46
   private val ExtraFieldSize = 28
 
   private val fileNameSize = fileNameBytes.length
 
-  val signature: Int = 0x02014b50
-  val versionMadeBy: Short = 0x033F
-  val flags: Short = 0x0800
-  val extractorVersion: Short = 45  // Version 4.5 Uses Zip64 extension
-  val compression: Short = 0
-  val unused: Int = -1
-  val empty: Short = 0
+  val versionMadeBy = unix | zipSpecification
+  
+  val flags: Short = useUTF8
+  val extractorVersion: Short = useZip64Format
   val extraFieldDataSize = ExtraFieldSize - 4
   
-  val zip64Tag: Short = 1
 
   def size: Int = DataSize + ExtraFieldSize + fileNameSize
 
@@ -35,11 +31,11 @@ class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, tim
     extraFieldStream).asJavaEnumeration)
 
   private def headerStream = new LazyByteArrayInputStream(
-    writeInt(signature) ++
+    writeInt(centralFileHeaderSignature) ++ 
       writeShort(versionMadeBy) ++
       writeShort(extractorVersion) ++
       writeShort(flags) ++
-      writeShort(compression) ++
+      writeShort(noCompression) ++
       writeShort(timeStamp.time.toShort) ++
       writeShort(timeStamp.date.toShort) ++
       writeInt(crcFunction) ++
@@ -57,7 +53,7 @@ class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, tim
   private def fileNameStream: InputStream = new ByteArrayInputStream(fileNameBytes)
 
   private def extraFieldStream = new ByteArrayInputStream(
-    writeShort(zip64Tag) ++
+    writeShort(zip64ExtraFieldTag) ++
       writeShort(extraFieldDataSize.toShort) ++
       writeLong(fileSize) ++
       writeLong(fileSize) ++
