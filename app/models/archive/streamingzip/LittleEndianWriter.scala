@@ -15,8 +15,8 @@ trait LittleEndianWriter {
     byteBuffer(4).putInt(value).array()
 
 
-  def writeShort(value: Short): Array[Byte] = 
-    byteBuffer(2).putShort(value).array()
+  def writeShort(value: Int): Array[Byte] = 
+    byteBuffer(2).putShort(value.toShort).array()
 
   
   private def byteBuffer(size: Int): ByteBuffer = ByteBuffer.allocate(size).order(LITTLE_ENDIAN)

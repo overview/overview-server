@@ -37,14 +37,6 @@ class Zip64LocalFileEntrySpec extends Specification with Mockito {
 
     }
 
-    "set values" in new FileEntryContext {
-      entry.signature must be equalTo (0x04034b50)
-      entry.extractorVersion must be equalTo (45)
-      entry.flags must be equalTo (0x0808)
-      entry.compression must be equalTo (0)
-      entry.fileNameLength must be equalTo (fileName.length.toShort)
-      
-    }
 
     "write header in stream" in new FileEntryContext {
       val output = new Array[Byte](localFileHeaderSize)

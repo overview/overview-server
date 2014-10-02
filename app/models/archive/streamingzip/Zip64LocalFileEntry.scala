@@ -21,49 +21,39 @@ import java.util.zip.CRC32
  * @param offset Is the offset in the ZIP stream of the Local File Entry
  * @param data The file content. No compression is performed.
  */
-case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extends LittleEndianWriter {
+case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extends LittleEndianWriter with ZipFormat {
   private val HeaderSize = 30
   private val DataDescriptorSize = 24
-  private val Zip64Tag: Short = 1
-  private val unused: Int = -1
-  private val empty = 0
-  
-  val signature: Int = 0x04034b50
-  val extractorVersion: Short = 45
-  val flags: Short = 0x0808 // bit 3: Use Data Descriptor, bit 11: Use UTF-8
-  val compression: Short = 0
+
+  val extractorVersion = useZip64Format
+  val flags = useDataDescriptor | useUTF8
   val fileNameLength: Short = fileNameSize
 
   val timeStamp = DosDate(Calendar.getInstance())
   val extraFieldSize: Short = 20
   val extraFieldDataSize: Short = (extraFieldSize - 4).toShort
-  
-  val dataDescriptorSignature = 0x08074b50
 
   private val checkedData = new CheckedInputStream(data, new CRC32)
   def crc32: Int = checkedData.getChecksum.getValue.toInt
-  
+
   def size: Long = HeaderSize + fileNameSize + extraFieldSize + fileSize + DataDescriptorSize
 
-  val stream: InputStream = 
+  val stream: InputStream =
     new SequenceInputStream(Iterator(
-        headerStream, 
-        fileNameStream, 
-        extraFieldStream,
-        checkedData,
-        dataDescriptorStream).asJavaEnumeration)
-  
-  
-  
+      headerStream,
+      fileNameStream,
+      extraFieldStream,
+      checkedData,
+      dataDescriptorStream).asJavaEnumeration)
 
   private def fileNameSize = fileName.getBytes(StandardCharsets.UTF_8).size.toShort
 
-  private def headerStream: InputStream = 
+  private def headerStream: InputStream =
     new ByteArrayInputStream(
-      writeInt(signature) ++
+      writeInt(localFileEntrySignature) ++
         writeShort(extractorVersion) ++
         writeShort(flags) ++
-        writeShort(compression) ++
+        writeShort(noCompression) ++
         writeShort(timeStamp.time.toShort) ++
         writeShort(timeStamp.date.toShort) ++
         writeInt(empty) ++
@@ -72,22 +62,19 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStre
         writeShort(fileNameLength) ++
         writeShort(extraFieldSize))
 
-  
   private def fileNameStream: InputStream = new ByteArrayInputStream(fileName.getBytes(StandardCharsets.UTF_8))
-    
+
   private def extraFieldStream = new ByteArrayInputStream(
-    writeShort(Zip64Tag) ++
-    writeShort(extraFieldDataSize) ++
-    writeLong(empty) ++ 
-    writeLong(empty)
-  )
-  
+    writeShort(zip64ExtraFieldTag) ++
+      writeShort(extraFieldDataSize) ++
+      writeLong(empty) ++
+      writeLong(empty))
+
   private def dataDescriptorStream: InputStream = new LazyByteArrayInputStream(
     writeInt(dataDescriptorSignature) ++
-    writeInt(crc32) ++
-    writeLong(fileSize) ++
-    writeLong(fileSize)
-  )
+      writeInt(crc32) ++
+      writeLong(fileSize) ++
+      writeLong(fileSize))
 }
 
 object Zip64LocalFileEntry {
