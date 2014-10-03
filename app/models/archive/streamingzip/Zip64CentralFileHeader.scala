@@ -10,9 +10,8 @@ import java.util.zip.CheckedInputStream
 /**
  * Central Directory File Headers in Zip64 format
  */
-class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int) extends LittleEndianWriter with ZipFormat {
-  private val DataSize = 46
-  private val ExtraFieldSize = 28
+class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int) 
+extends LittleEndianWriter with ZipFormat with ZipFormatSize {
 
   private val fileNameSize = fileNameBytes.length
 
@@ -20,10 +19,10 @@ class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, tim
   
   val flags: Short = useUTF8
   val extractorVersion: Short = useZip64Format
-  val extraFieldDataSize = ExtraFieldSize - 4
+  val extraFieldDataSize = centralDirectoryExtraField - 4
   
 
-  def size: Int = DataSize + ExtraFieldSize + fileNameSize
+  def size: Int = centralDirectoryHeader + centralDirectoryExtraField + fileNameSize
 
   def stream: InputStream = new SequenceInputStream(Iterator(
     headerStream,
@@ -36,13 +35,13 @@ class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, tim
       writeShort(extractorVersion) ++
       writeShort(flags) ++
       writeShort(noCompression) ++
-      writeShort(timeStamp.time.toShort) ++
-      writeShort(timeStamp.date.toShort) ++
+      writeShort(timeStamp.time) ++
+      writeShort(timeStamp.date) ++
       writeInt(crcFunction) ++
       writeInt(unused) ++
       writeInt(unused) ++
-      writeShort(fileNameSize.toShort) ++
-      writeShort(ExtraFieldSize.toShort) ++
+      writeShort(fileNameSize) ++
+      writeShort(centralDirectoryExtraField) ++
       writeShort(empty) ++
       writeShort(empty) ++
       writeShort(empty) ++

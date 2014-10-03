@@ -6,10 +6,9 @@ import java.io.InputStream
 
 /** A Zip64 End Of Central Directory Record */
 class Zip64EndOfCentralDirectoryRecord(localFileEntries: Seq[Zip64LocalFileEntry],
-    centralDirectory: Seq[Zip64CentralFileHeader]) extends LittleEndianWriter with ZipFormat {
+    centralDirectory: Seq[Zip64CentralFileHeader]) extends LittleEndianWriter with ZipFormat with ZipFormatSize {
 
-  val size = 56
-  val remainingSize = size - 12 // Don't count the first 2 fields 
+  val remainingSize = zip64EndOfCentralDirectory - 12 // Don't count the first 2 fields 
   val versionMadeBy = unix | zipSpecification
   
   val centralDirectorySize = centralDirectory.map(_.size).sum

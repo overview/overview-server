@@ -21,22 +21,19 @@ import java.util.zip.CRC32
  * @param offset Is the offset in the ZIP stream of the Local File Entry
  * @param data The file content. No compression is performed.
  */
-case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extends LittleEndianWriter with ZipFormat {
-  private val HeaderSize = 30
-  private val DataDescriptorSize = 24
+case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extends LittleEndianWriter with ZipFormat with ZipFormatSize {
 
   val extractorVersion = useZip64Format
   val flags = useDataDescriptor | useUTF8
   val fileNameLength: Short = fileNameSize
 
   val timeStamp = DosDate(Calendar.getInstance())
-  val extraFieldSize: Short = 20
-  val extraFieldDataSize: Short = (extraFieldSize - 4).toShort
+  val extraFieldDataSize = localFileHeaderExtraField - 4
 
   private val checkedData = new CheckedInputStream(data, new CRC32)
   def crc32: Int = checkedData.getChecksum.getValue.toInt
 
-  def size: Long = HeaderSize + fileNameSize + extraFieldSize + fileSize + DataDescriptorSize
+  def size: Long = localFileHeader + fileNameSize + localFileHeaderExtraField + fileSize + dataDescriptor
 
   val stream: InputStream =
     new SequenceInputStream(Iterator(
@@ -60,7 +57,7 @@ case class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStre
         writeInt(unused) ++
         writeInt(unused) ++
         writeShort(fileNameLength) ++
-        writeShort(extraFieldSize))
+        writeShort(localFileHeaderExtraField))
 
   private def fileNameStream: InputStream = new ByteArrayInputStream(fileName.getBytes(StandardCharsets.UTF_8))
 

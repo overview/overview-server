@@ -20,35 +20,27 @@ class Zip64ArchiveSpec extends Specification with Mockito {
 
   "Zip64Archive" should {
 
-    "return size of an empty archive" in {
-      val archive = new Zip64Archive(Iterable.empty)
-
-      archive.archiveSize must be equalTo (EndOfArchiveSize)
-    }
-
-    "return size of an archive with files" in {
-      val entrySize = 100
-      val numberOfEntries = 10
-      val fileNameSize = 5
-      val archiveEntries = Seq.tabulate(numberOfEntries)(n =>
-        ArchiveEntry(entrySize, s"name$n", mock[InputStream]))
-
-      val archive = new Zip64Archive(archiveEntries)
-
-      archive.archiveSize must be equalTo (numberOfEntries * (
-        LocalFileHeaderSize + LocalExtraFieldSize + DataDescriptorSize
-        + fileNameSize + entrySize +
-        FileHeaderSize + CentralHeaderExtraFieldSize + fileNameSize) + EndOfArchiveSize)
-    }
-
     "return actual size of archive" in new ArchiveContext {
       val output = readStream(archive.stream)
 
-      archive.archiveSize must be equalTo output.length
+      output.length.toLong must be equalTo ArchiveSize(entries)
     }
 
+    "return empty archive" in new EmptyArchiveContext {
+      val output = readStream(archive.stream)
 
-    trait ArchiveContext extends Scope {
+      output.length.toLong must be equalTo ArchiveSize(Seq.empty)
+    }
+
+    trait EmptyArchiveContext extends Scope {
+      val archive = new Zip64Archive(Iterable.empty)
+
+      def readStream(stream: InputStream): Array[Byte] =
+        Stream.continually(stream.read).takeWhile(_ != -1).map(_.toByte).toArray
+
+    }
+
+    trait ArchiveContext extends EmptyArchiveContext {
       val numberOfFiles = 10
 
       val fileInfo = for {
@@ -64,10 +56,7 @@ class Zip64ArchiveSpec extends Specification with Mockito {
         fileStream = new ByteArrayInputStream(data)
       } yield ArchiveEntry(size, name, fileStream)
 
-      val archive = new Zip64Archive(entries)
-
-      def readStream(stream: InputStream): Array[Byte] =
-        Stream.continually(stream.read).takeWhile(_ != -1).map(_.toByte).toArray
+      override val archive = new Zip64Archive(entries)
 
     }
   }

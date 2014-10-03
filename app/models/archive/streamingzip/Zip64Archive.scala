@@ -21,9 +21,6 @@ class Zip64Archive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
   
   private val centralDirectory = createCentralDirectory(localFileHeaders)
 
-  override def archiveSize: Long =
-    localFileHeaders.map(_.size).sum +
-      centralDirectory.size
 
   override def stream: InputStream = combineStreams(
     combineStreams(localFileHeaders.map(_.stream): _*),
