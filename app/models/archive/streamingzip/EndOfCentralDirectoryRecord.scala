@@ -19,6 +19,6 @@ class EndOfCentralDirectoryRecord extends LittleEndianWriter with ZipFormat {
     writeShort(unused) ++
     writeInt(unused) ++
     writeInt(unused) ++
-    writeShort(0)
+    writeShort(empty)
   )
 }
