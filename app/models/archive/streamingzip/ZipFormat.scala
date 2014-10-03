@@ -4,6 +4,9 @@ trait ZipFormat {
    val localFileEntrySignature: Int =  0x04034b50
    val dataDescriptorSignature: Int = 0x08074b50
    val centralFileHeaderSignature: Int = 0x02014b50
+   val zip64EndOfCentralDirectorySignature: Int = 0x06064b50
+   val zip64EndOfCentralDirectoryLocatorSignature: Int = 0x07064b50
+   val endOfCentralDirectoryRecordSignature: Int = 0x06054b50
    
    /** Version needed to Extract */
    val useZip64Format: Short = 45
@@ -22,4 +25,7 @@ trait ZipFormat {
    
    val unused = -1
    val empty = 0
+   
+   val diskNumber = 0
+   val totalNumberOfDisks = 1
 }

@@ -6,12 +6,12 @@ import java.io.InputStream
 
 /** A Zip64 End Of Central Directory Record */
 class Zip64EndOfCentralDirectoryRecord(localFileEntries: Seq[Zip64LocalFileEntry],
-    centralDirectory: Seq[Zip64CentralFileHeader]) extends LittleEndianWriter {
-  val signature = 0x06064b50
-  val size: Int = 56
-  val remainingSize: Int = size - 12 // Don't count the first 2 fields 
-  val versionMadeBy: Short = 0x033F
-  val extractorVersion: Short = 45
+    centralDirectory: Seq[Zip64CentralFileHeader]) extends LittleEndianWriter with ZipFormat {
+
+  val size = 56
+  val remainingSize = size - 12 // Don't count the first 2 fields 
+  val versionMadeBy = unix | zipSpecification
+  
   val centralDirectorySize = centralDirectory.map(_.size).sum
   val centralDirectoryOffset = localFileEntries.map(_.size).sum
   
@@ -19,12 +19,12 @@ class Zip64EndOfCentralDirectoryRecord(localFileEntries: Seq[Zip64LocalFileEntry
 
 
   def stream: InputStream = new ByteArrayInputStream(
-    writeInt(signature) ++
+    writeInt(zip64EndOfCentralDirectorySignature) ++
       writeLong(remainingSize) ++
       writeShort(versionMadeBy) ++
-      writeShort(extractorVersion) ++
-      writeInt(0) ++
-      writeInt(0) ++
+      writeShort(useZip64Format) ++
+      writeInt(empty) ++
+      writeInt(empty) ++
       writeLong(numberOfEntries) ++
       writeLong(numberOfEntries) ++
       writeLong(centralDirectorySize) ++
