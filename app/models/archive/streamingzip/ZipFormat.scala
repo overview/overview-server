@@ -9,6 +9,7 @@ trait ZipFormat {
    val endOfCentralDirectoryRecordSignature: Int = 0x06054b50
    
    /** Version needed to Extract */
+   val defaultVersion: Short = 10
    val useZip64Format: Short = 45
    
    /** Version made by */
