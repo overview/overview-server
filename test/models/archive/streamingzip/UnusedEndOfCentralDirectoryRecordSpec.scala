@@ -6,7 +6,7 @@ import org.specs2.specification.Scope
 
 class UnusedEndOfCentralDirectoryRecordSpec extends Specification {
 
-  "EndOfCentralDirectoryRecord" should {
+  "UnusedEndOfCentralDirectoryRecord" should {
     
     "write values to stream in" in new CentralDirectoryContext {
       
