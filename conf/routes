@@ -140,5 +140,5 @@ POST   /api/v1/vizs/:vizId/document-objects controllers.api.DocumentVizObjectCon
 DELETE /api/v1/vizs/:vizId/document-objects controllers.api.DocumentVizObjectController.destroy(vizId: Long)
 
 # Map static resources from the /public folder to the /assets URL path
-GET    /$file<robots\.txt>      controllers.Assets.at(path="/public", file)
 GET    /assets/*file            controllers.Assets.at(path="/public", file)
+GET    /$file<robots\.txt>      controllers.Assets.at(path="/public", file)
