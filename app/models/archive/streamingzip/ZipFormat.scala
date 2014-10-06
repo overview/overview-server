@@ -29,4 +29,7 @@ trait ZipFormat {
    
    val diskNumber = 0
    val totalNumberOfDisks = 1
+   
+   /** external file attributes */
+   val readWriteFile = 0x81800000   // Unix file with read and write permissions set for owner
 }

@@ -36,7 +36,7 @@ class CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStam
       writeShort(empty) ++
       writeShort(diskNumber) ++
       writeShort(empty) ++
-      writeInt(empty) ++
+      writeInt(readWriteFile) ++
       writeInt(offset.toInt))
   
   private def fileNameBytes = fileName.getBytes(StandardCharsets.UTF_8)

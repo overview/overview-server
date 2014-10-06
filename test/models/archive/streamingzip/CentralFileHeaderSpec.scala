@@ -36,7 +36,7 @@ class CentralFileHeaderSpec extends Specification {
           writeShort(0) ++
           writeShort(0) ++
           writeShort(0) ++
-          writeInt(0) ++
+          writeInt(0x81800000) ++
           writeInt(offset)
 
       output.take(fixedHeaderSize) must be equalTo expectedHeader
