@@ -9,7 +9,8 @@ import scala.collection.JavaConverters._
 import java.util.zip.CheckedInputStream
 import java.util.zip.CRC32
 
-class LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extends LittleEndianWriter with ZipFormat {
+case class LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extends LittleEndianWriter with ZipFormat
+    with ZipFormatSize {
 
   protected val extractorVersion = defaultVersion
   protected val flags = useDataDescriptor | useUTF8
@@ -17,7 +18,8 @@ class LocalFileEntry(fileName: String, fileSize: Long, data: InputStream) extend
   protected val fileNameLength = fileName.getBytes(StandardCharsets.UTF_8).size.toShort
 
   protected val checkedData = new CheckedInputStream(data, new CRC32)
-  protected def crc32: Int = checkedData.getChecksum.getValue.toInt
+  def crc32: Int = checkedData.getChecksum.getValue.toInt
+  def size: Long = localFileHeader + fileNameLength + fileSize + dataDescriptor
 
   val stream: InputStream = new SequenceInputStream(Iterator(
     headerStream,

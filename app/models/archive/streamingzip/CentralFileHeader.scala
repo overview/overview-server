@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 
 class CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int)
-    extends LittleEndianWriter with ZipFormat {
+    extends LittleEndianWriter with ZipFormat with ZipFormatSize {
 
   val versionMadeBy = unix | zipSpecification
   val extractorVersion = defaultVersion
@@ -18,6 +18,8 @@ class CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStam
       headerStream,
       fileNameStream).asJavaEnumeration)
 
+  def size: Int = centralDirectoryHeader + fileNameSize
+  
   private def headerStream = new LazyByteArrayInputStream(
     writeInt(centralFileHeaderSignature) ++
       writeShort(versionMadeBy) ++
