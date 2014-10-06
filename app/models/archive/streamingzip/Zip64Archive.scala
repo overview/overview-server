@@ -50,8 +50,8 @@ class Zip64Archive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
   private def createZip64EndOfCentralDirectoryLocator: Zip64EndOfCentralDirectoryLocator =
     new Zip64EndOfCentralDirectoryLocator(localFileHeaders, centralFileHeaders)
 
-  private def createEndOfCentralDirectoryRecord: EndOfCentralDirectoryRecord =
-    new EndOfCentralDirectoryRecord
+  private def createEndOfCentralDirectoryRecord: UnusedEndOfCentralDirectoryRecord =
+    new UnusedEndOfCentralDirectoryRecord
 
 }
 

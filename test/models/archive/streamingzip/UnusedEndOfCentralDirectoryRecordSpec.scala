@@ -4,7 +4,7 @@ import java.io.InputStream
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-class EndOfCentralDirectoryRecordSpec extends Specification {
+class UnusedEndOfCentralDirectoryRecordSpec extends Specification {
 
   "EndOfCentralDirectoryRecord" should {
     
@@ -27,7 +27,7 @@ class EndOfCentralDirectoryRecordSpec extends Specification {
     }
     
     trait CentralDirectoryContext extends Scope with LittleEndianWriter {
-      val endOfCentralDirectoryRecord = new EndOfCentralDirectoryRecord
+      val endOfCentralDirectoryRecord = new UnusedEndOfCentralDirectoryRecord
       
       def readStream(stream: InputStream): Array[Byte] =
         Stream.continually(stream.read).takeWhile(_ != -1).map(_.toByte).toArray
