@@ -14,4 +14,6 @@ case class SelectionRequest(
   val vizObjectIds: Seq[Long] = Seq(),
   val tagged: Option[Boolean] = None,
   val q: String = ""
-)
+) {
+  lazy val hash = hashCode
+}

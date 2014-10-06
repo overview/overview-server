@@ -33,7 +33,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val selectedIds: Seq[Long] = Seq()
         val selection = Selection(SelectionRequest(documentSetId, q=q), selectedIds)
 
-        mockSelectionBackend.create(any) returns Future.successful(selection)
+        mockSelectionBackend.create(any, any) returns Future.successful(selection)
         mockDocumentBackend.index(any, any) returns Future.successful(emptyPage[DocumentInfo])
       }
 
@@ -49,7 +49,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       "grab selectionRequest from the HTTP request" in new IndexScope {
         override val q = "foo"
         status(result)
-        there was one(mockSelectionBackend).create(SelectionRequest(documentSetId, q="foo"))
+        there was one(mockSelectionBackend).create(request.apiToken.createdBy, SelectionRequest(documentSetId, q="foo"))
       }
 
       "grab pageRequest from the HTTP request" in new IndexScope {

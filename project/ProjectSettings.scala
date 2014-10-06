@@ -16,8 +16,7 @@ trait ProjectSettings {
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
     "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
-    "More FuseSource" at "http://repo.fusesource.com/maven2/",
-    "Chris Dinn" at "http://chrisdinn.github.io/releases/"
+    "More FuseSource" at "http://repo.fusesource.com/maven2/"
   )
     
   // shared dependencies
@@ -26,7 +25,6 @@ trait ProjectSettings {
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.3.4"
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
   val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
-  val brandoDep = "com.digital-achiever" %% "brando" % "2.0.2"
   val commonsIoDep = "commons-io" % "commons-io" % "2.4"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
@@ -39,6 +37,7 @@ trait ProjectSettings {
   val openCsvDep = "net.sf.opencsv" % "opencsv" % "2.3"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
+  val redisDep = "net.debasishg" %% "redisreact" % "0.6"
   val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.3"
   val slickDep = "com.typesafe.slick" %% "slick" % "2.1.0"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.4"
@@ -78,7 +77,7 @@ trait ProjectSettings {
     akkaDep,
     asyncHttpClientDep,
     boneCpDep,
-    brandoDep,
+    redisDep,
     commonsIoDep,
     elasticSearchDep,
     geronimoJmsDep,

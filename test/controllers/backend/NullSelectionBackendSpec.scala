@@ -20,6 +20,7 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
   "NullSelectionBackend" should {
     "#create" should {
       trait CreateScope extends BaseScope {
+        val userEmail: String = "user@example.org"
         val documentSetId: Long = 1L
         val nodeIds: Seq[Long] = Seq()
         val tagIds: Seq[Long] = Seq()
@@ -30,7 +31,7 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
         val q: String = ""
 
         lazy val request = SelectionRequest(documentSetId, nodeIds, tagIds, documentIds, searchResultIds, vizObjectIds, tagged, q)
-        def create = await(backend.create(request))
+        def create = await(backend.create(userEmail, request))
         lazy val result = create
       }
 

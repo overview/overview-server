@@ -2,9 +2,10 @@ package controllers.backend
 
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-import models.pagination.{PageInfo,PageRequest}
-import models.{Selection,SelectionRequest}
+import models.pagination.{Page,PageInfo,PageRequest}
+import models.{SelectionLike,SelectionRequest}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
 import org.overviewproject.models.Document
 
@@ -42,9 +43,10 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   "DbDocumentBackendSpec" should {
     "#index" should {
       trait IndexScope extends CommonIndexScope {
-        val selection = mock[Selection]
-        selection.documentIds returns Seq(doc1.id, doc2.id, doc3.id)
+        val selection = mock[SelectionLike]
         val pageRequest = PageRequest(0, 1000)
+        selection.getDocumentCount returns Future.successful(3)
+        selection.getDocumentIds(pageRequest) returns Future.successful(Page(Seq(doc1.id, doc2.id, doc3.id), PageInfo(pageRequest, 3)))
         lazy val ret = await(backend.index(selection, pageRequest))
       }
 
@@ -67,7 +69,8 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "work with 0 documents" in new IndexScope {
-        selection.documentIds returns Seq[Long]()
+        selection.getDocumentCount returns Future.successful(0)
+        selection.getDocumentIds(any) returns Future.successful(Page(Seq[Long]()))
         ret.items.length must beEqualTo(0)
         ret.pageInfo.total must beEqualTo(0)
       }

@@ -7,11 +7,11 @@ import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Docume
 import org.overviewproject.searchindex.IndexClient
 
 import models.pagination.{Page,PageInfo,PageRequest}
-import models.{Selection,SelectionRequest}
+import models.{SelectionLike,SelectionRequest}
 
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
-  def index(selection: Selection, pageRequest: PageRequest): Future[Page[DocumentInfo]]
+  def index(selection: SelectionLike, pageRequest: PageRequest): Future[Page[DocumentInfo]]
 
   /** Lists all Document IDs for the given parameters. */
   def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
@@ -23,21 +23,21 @@ trait DocumentBackend {
 trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   val indexClient: IndexClient
 
-  override def index(selection: Selection, pageRequest: PageRequest) = {
+  override def index(selection: SelectionLike, pageRequest: PageRequest) = {
     import scala.concurrent.ExecutionContext.Implicits._
 
-    val total = selection.documentIds.length
-
-    if (total == 0) {
-      emptyPage[DocumentInfo](pageRequest)
-    } else {
-      val offset = pageRequest.offset
-      val limit = pageRequest.limit
-      val ids = selection.documentIds.slice(offset, offset + limit)
-
-      list(DbDocumentBackend.byIds.page(ids))
-        .map(Page(_, PageInfo(pageRequest, total)))
-    }
+    selection.getDocumentCount
+      .flatMap { (total: Int) =>
+        if (total == 0) {
+          emptyPage[DocumentInfo](pageRequest)
+        } else {
+          selection.getDocumentIds(pageRequest)
+            .flatMap { (page: Page[Long]) =>
+              list(DbDocumentBackend.byIds.page(page.items))
+                .map(Page(_, page.pageInfo))
+            }
+        }
+      }
   }
 
   override def indexIds(request: SelectionRequest) = {

@@ -8,14 +8,19 @@ import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend,NullSelectionBackend,SelectionBackend}
 import models.pagination.PageRequest
-import models.SelectionRequest
+import models.{SelectionLike,SelectionRequest}
 
 trait DocumentController extends ApiController {
   protected val documentBackend: DocumentBackend
   protected val selectionBackend: SelectionBackend
 
-  private def _indexInfos(selectionRequest: SelectionRequest, pageRequest: PageRequest) = {
-    selectionBackend.create(selectionRequest)
+  private def _indexInfos(userEmail: String, selectionRequest: SelectionRequest, pageRequest: PageRequest) = {
+    val selection: Future[SelectionLike] = pageRequest.offset match {
+      case 0 => selectionBackend.create(userEmail, selectionRequest)
+      case _ => selectionBackend.findOrCreate(userEmail, selectionRequest)
+    }
+
+    selection
       .flatMap(documentBackend.index(_, pageRequest))
       .map { infos =>
         Ok(views.json.api.DocumentInfo.index(infos))
@@ -32,7 +37,7 @@ trait DocumentController extends ApiController {
     val sr = selectionRequest(documentSetId, request)
     fields match {
       case "id" => _indexIds(sr)
-      case "" => _indexInfos(sr, pageRequest(request, 1000))
+      case "" => _indexInfos(request.apiToken.createdBy, sr, pageRequest(request, 1000))
       case _ => Future.successful(BadRequest(jsonError("""The "fields" parameter must be either "id" or "" for now. Sorry!""")))
     }
   }
@@ -47,7 +52,5 @@ trait DocumentController extends ApiController {
 
 object DocumentController extends DocumentController {
   override protected val documentBackend = DocumentBackend
-  override protected val selectionBackend = new NullSelectionBackend {
-    override def findDocumentIds(request: SelectionRequest) = documentBackend.indexIds(request)
-  }
+  override protected val selectionBackend = SelectionBackend
 }
