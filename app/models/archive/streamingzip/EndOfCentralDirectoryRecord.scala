@@ -3,15 +3,19 @@ package models.archive.streamingzip
 import java.io.InputStream
 import java.io.ByteArrayInputStream
 
+
+/**
+ * Zip End of Central Directory Record
+ */
 class EndOfCentralDirectoryRecord(localFileEntries: Seq[LocalFileEntry],
                                   centralDirectory: Seq[CentralFileHeader]) extends LittleEndianWriter with ZipFormat {
 
-  val centralDirectorySize = centralDirectory.map(_.size).sum.toInt
-  val centralDirectoryOffset = localFileEntries.map(_.size).sum.toInt
+  protected val centralDirectorySize = centralDirectory.map(_.size).sum.toInt
+  protected val centralDirectoryOffset = localFileEntries.map(_.size).sum.toInt
 
-  private val numberOfEntries = localFileEntries.size
+  protected val numberOfEntries = localFileEntries.size
 
-  val stream: InputStream = new ByteArrayInputStream(
+  lazy val stream: InputStream = new ByteArrayInputStream(
     writeInt(endOfCentralDirectoryRecordSignature) ++
       writeShort(diskNumber) ++
       writeShort(diskNumber) ++ 
