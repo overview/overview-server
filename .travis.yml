@@ -19,6 +19,7 @@ before_script:
   # Build Redis early
   # For some reason, Travis machines balk at running "./configure" in the jemalloc directory.
   # But we can bypass that....
+  - dpkg -L libjemalloc-dev
   - cp /usr/lib/*/libjemalloc.a ./deps/redis/redis-2.8.17/deps/jemalloc/lib
   - time ./deps/redis/build.sh
   # Suppress excessive output from Sbt (resolving / downloading). Either it
