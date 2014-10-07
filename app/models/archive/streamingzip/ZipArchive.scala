@@ -19,7 +19,7 @@ class ZipArchive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
     endOfCentralDirectoryRecord.stream)
 
   private def createLocalFileHeaders: Seq[LocalFileEntry] =
-    entries.map(e => LocalFileEntry(e.name, e.size, e.data)).toSeq
+    entries.map(e => new LocalFileEntry(e.name, e.size, e.data)).toSeq
 
   private def createCentralFileHeaders: Seq[CentralFileHeader] = {
     val (_, headers) = localFileHeaders.foldLeft((0l, Seq.empty[CentralFileHeader])) { (result, l) =>

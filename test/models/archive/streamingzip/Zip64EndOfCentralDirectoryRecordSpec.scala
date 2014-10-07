@@ -47,7 +47,7 @@ class Zip64EndOfCentralDirectoryRecordSpec extends Specification with Mockito {
       val centralDirectorySize = numberOfEntries * centralFileHeaderSize
       
       val localFileEntries = Seq.tabulate(numberOfEntries)(n =>
-        Zip64LocalFileEntry(f"file$n%2d", fileSize, data))
+        new Zip64LocalFileEntry(f"file$n%2d", fileSize, data))
       val centralFileHeader = smartMock[Zip64CentralFileHeader]
       centralFileHeader.size returns centralFileHeaderSize
       
