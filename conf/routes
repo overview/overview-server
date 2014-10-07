@@ -121,7 +121,6 @@ GET    /api/v1/document-sets/:id/saved-searches        controllers.api.SavedSear
 POST   /api/v1/document-sets/:id/saved-searches        controllers.api.SavedSearchController.create(id: Long)
 GET    /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.show(id: Long, query: String)
 DELETE /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.destroy(id: Long, query: String)
-GET    /api/v1/document-sets/:id/saved-searches/:query/documents controllers.api.SavedSearchDocumentController.index(id: Long, query: String)
 
 GET /api/v1/vizs/:id controllers.api.VizController.show(id: Long)
 PUT /api/v1/vizs/:id controllers.api.VizController.update(id: Long)
