@@ -17,6 +17,9 @@ before_script:
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
   # Build Redis early
+  # For some reason, Travis machines balk at running "./configure" in the jemalloc directory.
+  # But we can bypass that....
+  - cp /usr/lib/x86_64-linux-gnu/libjemalloc.a ./deps/redis/redis-2.8.17/deps/jemalloc/lib
   - time ./deps/redis/build.sh
   # Suppress excessive output from Sbt (resolving / downloading). Either it
   # works or it doesn't; all errors are the same to us.
