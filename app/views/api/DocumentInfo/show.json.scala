@@ -6,21 +6,33 @@ import scala.collection.mutable.Buffer
 import org.overviewproject.models.DocumentInfo
 
 object show {
-  def apply(document: DocumentInfo): JsValue = {
-    val buf = Buffer[(String,JsValue)](
-      "id" -> JsNumber(document.id),
-      "title" -> JsString(document.title),
-      "keywords" -> JsArray(document.keywords.map(JsString(_)))
-    )
-    if (document.suppliedId.nonEmpty) {
+  def apply(document: DocumentInfo, fields: Set[String]): JsValue = {
+    val buf = Buffer[(String,JsValue)]("id" -> JsNumber(document.id))
+
+    if (fields.contains("documentSetId")) {
+      buf += ("documentSetId" -> JsNumber(document.documentSetId))
+    }
+
+    if (fields.contains("title")) {
+      buf += ("title" -> JsString(document.title))
+    }
+
+    if (fields.contains("keywords")) {
+      buf += ("keywords" -> JsArray(document.keywords.map(JsString(_))))
+    }
+
+    if (fields.contains("suppliedId") && document.suppliedId.nonEmpty) {
       buf += ("suppliedId" -> JsString(document.suppliedId))
     }
-    if (document.url.getOrElse("") != "") {
+
+    if (fields.contains("url") && document.url.getOrElse("") != "") {
       buf += ("url" -> JsString(document.url.getOrElse("")))
     }
-    if (document.pageNumber.isDefined) {
-      buf == ("page" -> document.pageNumber.getOrElse(-1))
+
+    if (fields.contains("pageNumber") && document.pageNumber.isDefined) {
+      buf += ("pageNumber" -> JsNumber(document.pageNumber.getOrElse(-1).toInt))
     }
+
     JsObject(buf)
   }
 }

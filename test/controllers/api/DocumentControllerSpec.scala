@@ -59,28 +59,32 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 2))
       }
 
-      "return a JSON error when the fields parameter is not empty or id" in new IndexScope {
-        override val fields = "foobar"
-        status(result) must beEqualTo(BAD_REQUEST)
+      "return an Array of IDs when fields=id" in new IndexScope {
+        override val fields = "id"
+        mockDocumentBackend.indexIds(any) returns Future(Seq(1L, 2L, 3L))
+        status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
-        contentAsString(result) must /("message" -> """The "fields" parameter must be either "id" or "" for now. Sorry!""")
+        contentAsString(result) must beEqualTo("[1,2,3]")
       }
 
-      "return some Documents when there are Documents" in new IndexScope {
+      trait IndexFieldsScope extends IndexScope {
         val documents = Seq(
           factory.document(
             title="foo",
             keywords=Seq("foo", "bar"),
             suppliedId="supplied 1",
             text="text",
-            url=Some("http://example.org")
+            url=Some("http://example.org"),
+            pageNumber=Some(1)
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
-        ).map(_.toDocumentInfo)
-        mockDocumentBackend.index(any, any) returns Future.successful(
-          Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )
+        mockDocumentBackend.index(any, any) returns Future.successful(
+          Page(documents.map(_.toDocumentInfo), PageInfo(PageRequest(0, 100), documents.length))
+        )
+      }
 
+      "return some Documents when there are Documents" in new IndexFieldsScope {
         val json = contentAsString(result)
 
         json must /("items") /#(0) /("id" -> documents(0).id)
@@ -89,6 +93,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("items") /#(0) /("keywords") /#(1) /("bar")
         json must /("items") /#(0) /("suppliedId" -> "supplied 1")
         json must /("items") /#(0) /("url" -> "http://example.org")
+        json must /("items") /#(0) /("pageNumber" -> 1)
         // specs2 foils me on this one:
         // json must not /("items") /#(0) /("text")
 
@@ -101,12 +106,57 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         // json must not /("items") /#(1) /("text")
       }
 
-      "return an Array of IDs when fields=id" in new IndexScope {
-        override val fields = "id"
-        mockDocumentBackend.indexIds(any) returns Future(Seq(1L, 2L, 3L))
+      "return specified fields (1/2)" in new IndexFieldsScope {
+        override val fields = "id,documentSetId,url,suppliedId,title"
+
         status(result) must beEqualTo(OK)
-        contentType(result) must beSome("application/json")
-        contentAsString(result) must beEqualTo("[1,2,3]")
+        val json = contentAsString(result)
+
+        json must /("items") /#(0) /("id" -> documents(0).id)
+        json must /("items") /#(0) /("documentSetId" -> documents(0).documentSetId)
+        json must /("items") /#(0) /("url" -> "http://example.org")
+        json must /("items") /#(0) /("suppliedId" -> "supplied 1")
+        json must /("items") /#(0) /("title" -> "foo")
+        json must not(beMatching("keywords".r))
+        json must not(beMatching("pageNumber".r))
+      }
+
+      "return specified fields (2/2)" in new IndexFieldsScope {
+        override val fields = "id,keywords,pageNumber"
+
+        status(result) must beEqualTo(OK)
+        val json = contentAsString(result)
+
+        json must /("items") /#(0) /("id" -> documents(0).id)
+        json must /("items") /#(0) /("keywords") /#(0) /("foo")
+        json must /("items") /#(0) /("keywords") /#(1) /("bar")
+        json must /("items") /#(0) /("pageNumber" -> 1)
+        json must not(beMatching("documentSetId".r))
+        json must not(beMatching("url".r))
+        json must not(beMatching("suppliedId".r))
+        json must not(beMatching("title".r))
+      }
+
+      "always return id, even if it is not in the fields" in new IndexFieldsScope {
+        override val fields = "suppliedId"
+
+        status(result) must beEqualTo(OK)
+        val json = contentAsString(result)
+
+        json must /("items") /#(0) /("id" -> documents(0).id)
+        json must /("items") /#(0) /("suppliedId" -> "supplied 1")
+        json must not(beMatching("url".r))
+      }
+
+      "ignore invalid fields" in new IndexFieldsScope {
+        override val fields = "id,title,bleep"
+
+        status(result) must beEqualTo(OK)
+        val json = contentAsString(result)
+
+        json must /("items") /#(0) /("id" -> documents(0).id)
+        json must /("items") /#(0) /("title" -> "foo")
+        json must not(beMatching("bleep".r))
       }
     }
 
