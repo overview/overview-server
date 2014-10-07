@@ -34,6 +34,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val selection = Selection(SelectionRequest(documentSetId, q=q), selectedIds)
 
         mockSelectionBackend.create(any, any) returns Future.successful(selection)
+        mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
         mockDocumentBackend.index(any, any) returns Future.successful(emptyPage[DocumentInfo])
       }
 
