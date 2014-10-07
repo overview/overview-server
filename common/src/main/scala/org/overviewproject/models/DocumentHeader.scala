@@ -1,10 +1,6 @@
 package org.overviewproject.models
 
 /** Metadata about a Document.
-  *
-  * The main difference between this and a full-fledged Document: this is
-  * rather small, while a Document is rather large. (There is no "text" field
-  * here.)
   */
 trait DocumentHeader {
   val id: Long
@@ -14,4 +10,5 @@ trait DocumentHeader {
   val title: String
   val pageNumber: Option[Int]
   val keywords: Seq[String]
+  val text: String
 }

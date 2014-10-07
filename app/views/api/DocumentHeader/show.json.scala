@@ -1,12 +1,12 @@
-package views.json.api.DocumentInfo
+package views.json.api.DocumentHeader
 
 import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString,JsValue}
 import scala.collection.mutable.Buffer
 
-import org.overviewproject.models.DocumentInfo
+import org.overviewproject.models.DocumentHeader
 
 object show {
-  def apply(document: DocumentInfo, fields: Set[String]): JsValue = {
+  def apply(document: DocumentHeader, fields: Set[String]): JsValue = {
     val buf = Buffer[(String,JsValue)]("id" -> JsNumber(document.id))
 
     if (fields.contains("documentSetId")) {
@@ -31,6 +31,10 @@ object show {
 
     if (fields.contains("pageNumber") && document.pageNumber.isDefined) {
       buf += ("pageNumber" -> JsNumber(document.pageNumber.getOrElse(-1).toInt))
+    }
+
+    if (fields.contains("text")) {
+      buf += ("text" -> JsString(document.text))
     }
 
     JsObject(buf)

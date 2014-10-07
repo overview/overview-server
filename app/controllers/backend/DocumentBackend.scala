@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.{Document,DocumentInfo}
-import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentSearchResults,DocumentTags,DocumentVizObjects,NodeDocuments,Tags}
+import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
+import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentSearchResults,DocumentTags,DocumentVizObjects,NodeDocuments,Tags}
 import org.overviewproject.searchindex.IndexClient
 
 import models.pagination.{Page,PageInfo,PageRequest}
@@ -13,8 +13,9 @@ trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
   def index(
     selection: SelectionLike,
-    pageRequest: PageRequest
-  ): Future[Page[DocumentInfo]]
+    pageRequest: PageRequest,
+    includeText: Boolean
+  ): Future[Page[DocumentHeader]]
 
   /** Lists all Document IDs for the given parameters. */
   def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
@@ -26,16 +27,19 @@ trait DocumentBackend {
 trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   val indexClient: IndexClient
 
-  override def index(selection: SelectionLike, pageRequest: PageRequest) = {
+  override def index(selection: SelectionLike, pageRequest: PageRequest, includeText: Boolean) = {
     import scala.concurrent.ExecutionContext.Implicits._
 
     selection.getDocumentIds(pageRequest)
       .flatMap { (page: Page[Long]) =>
         if (page.pageInfo.total == 0) {
-          emptyPage[DocumentInfo](pageRequest)
+          emptyPage[DocumentHeader](pageRequest)
         } else {
-          list(DbDocumentBackend.byIds.page(page.items))
-            .map(Page(_, page.pageInfo))
+          val items: Future[Seq[DocumentHeader]] = includeText match {
+            case false => list(DbDocumentBackend.InfosByIds.page(page.items))
+            case true => list(DbDocumentBackend.DocumentsByIds.page(page.items))
+          }
+          items.map(Page(_, page.pageInfo))
         }
       }
   }
@@ -56,8 +60,12 @@ object DbDocumentBackend {
   import scala.language.implicitConversions
 
   private def sortKey(info: DocumentInfosImpl) = (info.title, info.suppliedId, info.pageNumber, info.id)
+  private def sortKey(document: DocumentsImpl) = (document.title, document.suppliedId, document.pageNumber, document.id)
 
   private implicit class AugmentedDocumentInfosQuery(query: Query[DocumentInfosImpl,DocumentInfosImpl#TableElementType,Seq]) {
+    implicit def sortedByInfo = query.sortBy(sortKey)
+  }
+  private implicit class AugmentedDocumentsQuery(query: Query[DocumentsImpl,DocumentsImpl#TableElementType,Seq]) {
     implicit def sortedByInfo = query.sortBy(sortKey)
   }
 
@@ -122,7 +130,7 @@ object DbDocumentBackend {
     futureSql.map(_.sortBy(sortKey).map(_.id))
   }
 
-  object byIds {
+  object InfosByIds {
     private def q(ids: Seq[Long]) = DocumentInfos.filter(_.id inSet ids)
 
     def ids(ids: Seq[Long]) = q(ids).sortedByInfo.map(_.id)
@@ -132,6 +140,19 @@ object DbDocumentBackend {
       // We use inSetBind instead of inSet, because we know there's a maximum
       // number of document IDs. (This request is called within a page.)
       DocumentInfos
+        .filter(_.id inSetBind ids) // bind: we know we don't have 10M IDs here
+        .sortedByInfo // this is O(1) because we have a maximum number of IDs
+    }
+  }
+
+  object DocumentsByIds {
+    private def q(ids: Seq[Long]) = Documents.filter(_.id inSet ids)
+
+    def page(ids: Seq[Long]) = {
+      // We call this one when we're paginating.
+      // We use inSetBind instead of inSet, because we know there's a maximum
+      // number of document IDs. (This request is called within a page.)
+      Documents
         .filter(_.id inSetBind ids) // bind: we know we don't have 10M IDs here
         .sortedByInfo // this is O(1) because we have a maximum number of IDs
     }

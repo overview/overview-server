@@ -17,7 +17,7 @@ case class Document(
   override val keywords: Seq[String],
   val fileId: Option[Long],
   val pageId: Option[Long],
-  val text: String
+  override val text: String
 ) extends DocumentHeader {
   def toDeprecatedDocument: DeprecatedDocument = DeprecatedDocument(
     documentSetId=documentSetId,

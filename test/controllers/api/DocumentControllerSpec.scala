@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
-import org.overviewproject.models.DocumentInfo
+import org.overviewproject.models.DocumentHeader
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
@@ -35,7 +35,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
         mockSelectionBackend.create(any, any) returns Future.successful(selection)
         mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
-        mockDocumentBackend.index(any, any) returns Future.successful(emptyPage[DocumentInfo])
+        mockDocumentBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentHeader])
       }
 
       "return JSON with status code 200" in new IndexScope {
@@ -56,7 +56,20 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       "grab pageRequest from the HTTP request" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
         status(result)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2))
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), false)
+      }
+
+      "set page limit to 1000" in new IndexScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
+        status(result)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 1000), false)
+      }
+
+      "set page limit to 10 when requesting text" in new IndexScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
+        override val fields = "id,text"
+        status(result)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 10), true)
       }
 
       "return an Array of IDs when fields=id" in new IndexScope {
@@ -79,8 +92,8 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         )
-        mockDocumentBackend.index(any, any) returns Future.successful(
-          Page(documents.map(_.toDocumentInfo), PageInfo(PageRequest(0, 100), documents.length))
+        mockDocumentBackend.index(any, any, any) returns Future.successful(
+          Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )
       }
 
@@ -135,6 +148,23 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must not(beMatching("url".r))
         json must not(beMatching("suppliedId".r))
         json must not(beMatching("title".r))
+      }
+
+      "query for text when fields includes text" in new IndexFieldsScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
+        override val fields = "id,text"
+
+        status(result) must beEqualTo(OK)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
+      }
+
+      "include text in JSON response" in new IndexFieldsScope {
+        override val fields = "id,text"
+
+        status(result) must beEqualTo(OK)
+        val json = contentAsString(result)
+
+        json must /("items") /#(0) /("text" -> "text")
       }
 
       "always return id, even if it is not in the fields" in new IndexFieldsScope {

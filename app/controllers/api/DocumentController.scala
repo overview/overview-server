@@ -15,16 +15,16 @@ trait DocumentController extends ApiController {
   protected val documentBackend: DocumentBackend
   protected val selectionBackend: SelectionBackend
 
-  private def _indexInfos(userEmail: String, selectionRequest: SelectionRequest, pageRequest: PageRequest, fields: Set[String]) = {
+  private def _indexDocuments(userEmail: String, selectionRequest: SelectionRequest, pageRequest: PageRequest, fields: Set[String]) = {
     val selection: Future[SelectionLike] = pageRequest.offset match {
       case 0 => selectionBackend.create(userEmail, selectionRequest)
       case _ => selectionBackend.findOrCreate(userEmail, selectionRequest)
     }
 
     selection
-      .flatMap(documentBackend.index(_, pageRequest))
+      .flatMap(documentBackend.index(_, pageRequest, fields.contains("text")))
       .map { infos =>
-        Ok(views.json.api.DocumentInfo.index(infos, fields))
+        Ok(views.json.api.DocumentHeader.index(infos, fields))
       }
   }
 
@@ -47,10 +47,14 @@ trait DocumentController extends ApiController {
 
     if (fieldSet.size == 1) {
       _indexIds(sr)
-    } else if (fieldSet.contains("text")) {
-      _indexInfos(request.apiToken.createdBy, sr, pageRequest(request, 1000), fieldSet)
     } else {
-      _indexInfos(request.apiToken.createdBy, sr, pageRequest(request, 1000), fieldSet)
+      val pageLimit = if (fieldSet.contains("text")) {
+        DocumentController.MaxTextPageLimit
+      } else {
+        DocumentController.MaxPageLimit
+      }
+      val pr = pageRequest(request, pageLimit)
+      _indexDocuments(request.apiToken.createdBy, sr, pr, fieldSet)
     }
   }
 
@@ -65,6 +69,9 @@ trait DocumentController extends ApiController {
 object DocumentController extends DocumentController {
   override protected val documentBackend = DocumentBackend
   override protected val selectionBackend = SelectionBackend
+
+  private val MaxPageLimit = 1000
+  private val MaxTextPageLimit = 10
 
   private val ValidFields = Set(
     "id",
