@@ -10,53 +10,22 @@ import java.util.zip.CheckedInputStream
 /**
  * Central Directory File Headers in Zip64 format
  */
-class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int) 
-extends LittleEndianWriter with ZipFormat with ZipFormatSize {
+class Zip64CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int)
+    extends CentralFileHeader(fileName, fileSize, offset, timeStamp, crcFunction) {
 
-  private val fileNameSize = fileNameBytes.length
+  override protected val extractorVersion: Short = useZip64Format
+  override protected val compressedSize = unused
+  override protected val uncompressedSize = unused
+  override protected val extraFieldLength = centralDirectoryExtraField
+  private val extraFieldDataSize = centralDirectoryExtraField - 4
 
-  val versionMadeBy = unix | zipSpecification
-  
-  val flags: Short = useUTF8
-  val extractorVersion: Short = useZip64Format
-  val extraFieldDataSize = centralDirectoryExtraField - 4
-  
-
-  def size: Int = centralDirectoryHeader + centralDirectoryExtraField + fileNameSize
-
-  def stream: InputStream = new SequenceInputStream(Iterator(
-    headerStream,
-    fileNameStream,
-    extraFieldStream).asJavaEnumeration)
-
-  private def headerStream = new LazyByteArrayInputStream(
-    writeInt(centralFileHeaderSignature) ++ 
-      writeShort(versionMadeBy) ++
-      writeShort(extractorVersion) ++
-      writeShort(flags) ++
-      writeShort(noCompression) ++
-      writeShort(timeStamp.time) ++
-      writeShort(timeStamp.date) ++
-      writeInt(crcFunction) ++
-      writeInt(unused) ++
-      writeInt(unused) ++
-      writeShort(fileNameSize) ++
-      writeShort(centralDirectoryExtraField) ++
-      writeShort(empty) ++
-      writeShort(empty) ++
-      writeShort(empty) ++
-      writeInt(empty) ++
-      writeInt(unused))
-
-  private def fileNameBytes = fileName.getBytes(StandardCharsets.UTF_8)
-  private def fileNameStream: InputStream = new ByteArrayInputStream(fileNameBytes)
-
-  private def extraFieldStream = new ByteArrayInputStream(
+  override protected val extraField =
     writeShort(zip64ExtraFieldTag) ++
       writeShort(extraFieldDataSize.toShort) ++
       writeLong(fileSize) ++
       writeLong(fileSize) ++
-      writeLong(offset) 
-      )
+      writeLong(offset)
+
+  override protected val localHeaderOffset: Long = unused
 
 }

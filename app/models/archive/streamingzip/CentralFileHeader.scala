@@ -6,19 +6,31 @@ import java.io.SequenceInputStream
 import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 
+/**
+ * Zip CentralFileHeader. On Unix, read and write permissions are set for owner. For files larger than 4Gb, use
+ * [[Zip64CentralFileHeader]]
+ */
 class CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStamp: DosDate, crcFunction: => Int)
     extends LittleEndianWriter with ZipFormat with ZipFormatSize {
 
-  val versionMadeBy = unix | zipSpecification
-  val extractorVersion = defaultVersion
-  val flags = useUTF8
-  val fileNameSize = fileNameBytes.size
+  protected val versionMadeBy = unix | zipSpecification
+  protected val extractorVersion = defaultVersion
+  protected val flags = useUTF8
+  protected val compressedSize = fileSize.toInt
+  protected val uncompressedSize = fileSize.toInt
+  protected val extraFieldLength = empty
+  protected val extraField: Array[Byte] = Array.empty
+  
+  protected val localHeaderOffset = offset
+  
+  protected val fileNameSize = fileNameBytes.size
 
-  val stream: InputStream = new SequenceInputStream(Iterator(
+  lazy val stream: InputStream = new SequenceInputStream(Iterator(
       headerStream,
-      fileNameStream).asJavaEnumeration)
+      fileNameStream,
+      extraFieldStream).asJavaEnumeration)
 
-  def size: Int = centralDirectoryHeader + fileNameSize
+  def size: Int = centralDirectoryHeader + extraFieldLength + fileNameSize
   
   private def headerStream = new LazyByteArrayInputStream(
     writeInt(centralFileHeaderSignature) ++
@@ -29,16 +41,18 @@ class CentralFileHeader(fileName: String, fileSize: Long, offset: Long, timeStam
       writeShort(timeStamp.time) ++
       writeShort(timeStamp.date) ++
       writeInt(crcFunction) ++
-      writeInt(fileSize.toInt) ++
-      writeInt(fileSize.toInt) ++
+      writeInt(compressedSize) ++
+      writeInt(uncompressedSize) ++
       writeShort(fileNameSize) ++
-      writeShort(empty) ++
+      writeShort(extraFieldLength) ++
       writeShort(empty) ++
       writeShort(diskNumber) ++
       writeShort(empty) ++
       writeInt(readWriteFile) ++
-      writeInt(offset.toInt))
+      writeInt(localHeaderOffset.toInt))
   
   private def fileNameBytes = fileName.getBytes(StandardCharsets.UTF_8)
   private def fileNameStream: InputStream = new ByteArrayInputStream(fileNameBytes)
+  
+  private def extraFieldStream: InputStream = new ByteArrayInputStream(extraField)
 }

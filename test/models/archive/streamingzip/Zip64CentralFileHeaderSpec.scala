@@ -46,7 +46,7 @@ class Zip64CentralFileHeaderSpec extends Specification {
           writeShort(0) ++
           writeShort(0) ++
           writeShort(0) ++
-          writeInt(0) ++
+          writeInt(0x81800000) ++
           writeInt(0xFFFFFFFF)
 
       output.take(fixedHeaderSize) must be equalTo expectedHeader
