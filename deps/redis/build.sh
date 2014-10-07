@@ -7,4 +7,4 @@ VERSION="2.8.17"
 DIR="$(dirname "$0")"
 SRCDIR="$DIR/redis-$VERSION"
 
-(cd "$SRCDIR" && sh -c "make redis-server") # trying to work around Travis failure
+(cd "$SRCDIR" && bash -c "make redis-server") # trying to work around Travis failure
