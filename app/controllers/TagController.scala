@@ -1,81 +1,23 @@
-/*
- * TagController.scala
- *
- * OverviewProject
- * Created by Jonas Karlsson, Aug 2012
- */
-
 package controllers
 
 import au.com.bytecode.opencsv.CSVWriter
+import play.api.libs.concurrent.Execution.Implicits._
 import java.io.StringWriter
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
+import controllers.backend.{SelectionBackend,TagDocumentBackend}
 import controllers.forms.{TagForm,NodeIdsForm}
+import models.orm.finders.{NodeDocumentFinder,TagFinder}
+import models.orm.stores.TagStore
+import models.OverviewDatabase
 import org.overviewproject.tree.orm.Tag
-import org.overviewproject.tree.orm.finders.FinderResult
-import models.orm.finders.{ DocumentFinder, DocumentTagFinder, NodeDocumentFinder, TagFinder }
-import models.orm.stores.{DocumentTagStore,TagStore}
-import models.SelectionRequest
 
 trait TagController extends Controller {
-  trait Storage {
-    def insertOrUpdate(tag: Tag) : Tag
-
-    /** Adds a tag to a SelectionRequest.
-      *
-      * Security considerations: the caller must ensure the user has access to
-      * the given tagId and SelectionRequest. (In the case of the SelectionRequest, this is
-      * accomplished by checking the documentSetId.)
-      *
-      * Documents in the SelectionRequest that are already tagged will be skipped.
-      *
-      * @return number of documents tagged.
-      */
-    def addTagToSelection(tagId: Long, selection: SelectionRequest) : Int
-
-    /** Removes a tag from a SelectionRequest.
-      *
-      * Security considerations: the caller must ensure the user has access to
-      * the given tagId and SelectionRequest. (In the case of the SelectionRequest, this is
-      * accomplished by checking the documentSetId.)
-      *
-      * Documents in the SelectionRequest that are not tagged will be skipped.
-      *
-      * @return number of documents untagged.
-      */
-    def removeTagFromSelection(tagId: Long, selection: SelectionRequest) : Int
-
-    /** @return a Tag if it exists */
-    def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
-
-    /** @return (Tag, docset-count) pairs.  */
-    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)]
-
-    /** @return (Tag, docset-count, tree-count) tuples. */
-    def findTagsWithCounts(documentSetId: Long, treeId: Long) : Iterable[(Tag,Long,Long)]
-
-    /** Returns an Iterable of (nodeId, count) pairs.
-      *
-      * Security considerations: for speed, we do not verify that the user has
-      * access to the given nodeIds. Therefore this method should return every
-      * nodeId provided--as 0 if there are no node+tag connections. Furthermore,
-      * the node IDs should be returned in the order they are provided, so users
-      * can't glean any information about their existence from their ordering.
-      *
-      * The caller must verify that the user has access to the given tagId. That
-      * is enough to ensure the user can't gain information about other users'
-      * nodes.
-      *
-      * @return Iterable of (nodeId, count) pairs
-      */
-    def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)]
-
-    /** Deletes the tag. */
-    def delete(tag: Tag) : Unit
-  }
-  val storage : TagController.Storage
+  protected val selectionBackend: SelectionBackend
+  protected val tagDocumentBackend: TagDocumentBackend
+  protected val storage: TagController.Storage
 
   def create(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     TagForm(documentSetId).bindFromRequest.fold(
@@ -117,37 +59,39 @@ trait TagController extends Controller {
       )
   }
 
-  def add(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val selection = selectionRequest(documentSetId, request)
-
-    storage.findTag(documentSetId, tagId) match {
-      case None => NotFound
+  def add(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    OverviewDatabase.inTransaction { storage.findTag(documentSetId, tagId) } match {
+      case None => Future.successful(NotFound)
       case Some(tag) => {
-        val count = storage.addTagToSelection(tagId, selection)
-        Ok(views.json.Tag.add(count))
+        val sr = selectionRequest(documentSetId, request)
+        selectionBackend.findOrCreate(request.user.email, sr)
+          .flatMap(_.getAllDocumentIds)
+          .flatMap { (ids) => tagDocumentBackend.createMany(tagId, ids) }
+          .map(Unit => Created)
       }
     }
   }
 
-  def remove(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val selection = selectionRequest(documentSetId, request)
-
-    storage.findTag(documentSetId, tagId) match {
-      case None => NotFound
+  def remove(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    OverviewDatabase.inTransaction { storage.findTag(documentSetId, tagId) } match {
+      case None => Future.successful(NotFound)
       case Some(tag) => {
-        val count = storage.removeTagFromSelection(tagId, selection)
-        Ok(views.json.Tag.remove(count))
+        val sr = selectionRequest(documentSetId, request)
+        selectionBackend.findOrCreate(request.user.email, sr)
+          .flatMap(_.getAllDocumentIds)
+          .flatMap { (ids) => tagDocumentBackend.destroyMany(tagId, ids) }
+          .map(Unit => NoContent)
       }
     }
   }
 
-  def delete(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    storage.findTag(documentSetId, tagId) match {
-      case None => NotFound
+  def delete(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    OverviewDatabase.inTransaction { storage.findTag(documentSetId, tagId) } match {
+      case None => Future.successful(NotFound)
       case Some(tag) => {
-        storage.removeTagFromSelection(tagId, SelectionRequest(documentSetId))
-        storage.delete(tag)
-        NoContent
+        tagDocumentBackend.destroyAll(tagId)
+          .map(Unit => OverviewDatabase.inTransaction { storage.delete(tag) })
+          .map(Unit => NoContent)
       }
     }
   }
@@ -185,19 +129,44 @@ trait TagController extends Controller {
 }
 
 object TagController extends TagController {
-  val storage = new Storage {
+  override protected val tagDocumentBackend = TagDocumentBackend
+  override protected val selectionBackend = SelectionBackend
+
+  trait Storage {
+    def insertOrUpdate(tag: Tag) : Tag
+
+    /** @return a Tag if it exists */
+    def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
+
+    /** @return (Tag, docset-count) pairs.  */
+    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)]
+
+    /** @return (Tag, docset-count, tree-count) tuples. */
+    def findTagsWithCounts(documentSetId: Long, treeId: Long) : Iterable[(Tag,Long,Long)]
+
+    /** Returns an Iterable of (nodeId, count) pairs.
+      *
+      * Security considerations: for speed, we do not verify that the user has
+      * access to the given nodeIds. Therefore this method should return every
+      * nodeId provided--as 0 if there are no node+tag connections. Furthermore,
+      * the node IDs should be returned in the order they are provided, so users
+      * can't glean any information about their existence from their ordering.
+      *
+      * The caller must verify that the user has access to the given tagId. That
+      * is enough to ensure the user can't gain information about other users'
+      * nodes.
+      *
+      * @return Iterable of (nodeId, count) pairs
+      */
+    def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)]
+
+    /** Deletes the tag. */
+    def delete(tag: Tag) : Unit
+  }
+
+  override protected val storage = new Storage {
     override def insertOrUpdate(tag: Tag) : Tag = {
       TagStore.insertOrUpdate(tag)
-    }
-
-    override def addTagToSelection(tagId: Long, selection: SelectionRequest) : Int = {
-      val foundDocuments = DocumentFinder.bySelectionRequest(selection)
-      DocumentTagStore.insertForTagAndDocuments(tagId, foundDocuments)
-    }
-
-    override def removeTagFromSelection(tagId: Long, selection: SelectionRequest) : Int = {
-      val documentTags = DocumentTagFinder.byTagAndSelection(tagId, selection)
-      DocumentTagStore.delete(documentTags.query)
     }
 
     override def findTag(documentSetId: Long, tagId: Long) : Option[Tag] = {

@@ -40,17 +40,6 @@ object DocumentFinder extends Finder {
     }
 
     /**
-     * Returns just the IDs.
-     *
-     * The IDs will be for documents ordered by title, description and ID.
-     */
-    def toIdsOrdered: FinderResult[Long] = {
-      from(query)(d =>
-        select(d.id)
-          orderBy (d.title, d.pageNumber, d.description, d.id))
-    }
-
-    /**
      * Returns (Document,nodeIdsString,tagIdsString) tuples.
      *
      * Squeryl does not work with Option[Array] at this time, so we use
@@ -92,71 +81,5 @@ object DocumentFinder extends Finder {
   /** @return All `Document`s with the given DocumentSet. */
   def byDocumentSet(documentSet: Long): DocumentFinderResult = {
     Schema.documents.where(_.documentSetId === documentSet)
-  }
-
-  /** @return All `Document`s in the given SelectionRequest. */
-  def bySelectionRequest(selection: SelectionRequest): DocumentFinderResult = {
-    var query = Schema.documents.where(_.documentSetId === selection.documentSetId)
-
-    if (selection.nodeIds.nonEmpty) {
-      val idsFromNodes = from(Schema.nodeDocuments)(nd =>
-        where(nd.nodeId in selection.nodeIds)
-        select(nd.documentId)
-      )
-      query = query.where(_.id in idsFromNodes)
-    }
-
-    if (selection.tagIds.nonEmpty) {
-      val idsFromTags = from(Schema.documentTags)(dt =>
-        where(dt.tagId in selection.tagIds)
-        select(dt.documentId)
-      )
-      query = query.where(_.id in idsFromTags)
-    }
-
-    if (selection.searchResultIds.nonEmpty) {
-      val idsFromSearchResults = from(Schema.documentSearchResults)(dsr =>
-        where(dsr.searchResultId in selection.searchResultIds)
-        select(dsr.documentId)
-      )
-      query = query.where(_.id in idsFromSearchResults)
-    }
-
-    if (selection.vizObjectIds.nonEmpty) {
-      val idsFromObjects = from(Schema.documentVizObjects)(dvo =>
-        where(dvo.vizObjectId in selection.vizObjectIds)
-        select(dvo.documentId)
-      )
-      query = query.where(_.id in idsFromObjects)
-    }
-
-    if (selection.documentIds.nonEmpty) {
-      query = query.where(_.id in selection.documentIds)
-    }
-
-    selection.tagged.foreach { tagged =>
-      val allDocumentIds = from(Schema.documents)(d =>
-        where(d.documentSetId === selection.documentSetId)
-        select(d.id)
-      )
-
-      val tagIds = from(Schema.tags)(t =>
-        where(t.documentSetId === selection.documentSetId)
-        select(t.id)
-      )
-
-      val taggedDocumentIds = from(Schema.documentTags)(dt =>
-        where(dt.tagId in tagIds)
-        select(dt.documentId)
-      )
-
-      if (tagged) {
-        query = query.where(d => (d.id in    taggedDocumentIds) and (d.id in allDocumentIds))
-      } else {
-        query = query.where(d => (d.id notIn taggedDocumentIds) and (d.id in allDocumentIds))
-      }
-    }
-
-    query
   }
 }

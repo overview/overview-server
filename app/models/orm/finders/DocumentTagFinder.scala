@@ -29,19 +29,4 @@ object DocumentTagFinder extends BaseDocumentTagFinder(Schema.documentTags, Sche
   def byTag(tag: Long) : DocumentTagFinderResult = {
     Schema.documentTags.where(_.tagId === tag)
   }
-
-  def byTagAndSelection(tag: Long, selection: SelectionRequest) : DocumentTagFinderResult = {
-    val documentIds = DocumentFinder.bySelectionRequest(selection).toIds
-    /*
-    This breaks Squeryl's Schema.delete(Query[A]).
-    Schema.documentTags
-      .where(_.tagId === tag)
-      .where(_.documentId in documents)
-    ...from() doesn't.
-    */
-    from(Schema.documentTags)(dt =>
-      where(dt.tagId === tag and (dt.documentId in documentIds))
-      select(dt)
-    )
-  }
 }

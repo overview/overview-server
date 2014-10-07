@@ -5,8 +5,8 @@ import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,Node,NodeDocument,SearchResult,SearchResultState,Tag}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates objects in the database while returning them.

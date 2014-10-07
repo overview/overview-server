@@ -3,8 +3,8 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentVizObject,Viz,VizObject}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,DocumentTag,Node,NodeDocument,SearchResult,SearchResultState,Tag}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates models simply.

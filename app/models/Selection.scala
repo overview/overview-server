@@ -10,6 +10,7 @@ trait SelectionLike {
   val timestamp: Date
   val request: SelectionRequest
   def getDocumentIds(page: PageRequest): Future[Page[Long]]
+  def getAllDocumentIds: Future[Seq[Long]]
 }
 
 case class Selection(
@@ -24,6 +25,7 @@ case class Selection(
       PageInfo(page, documentIds.length)
     ))
   }
+  override def getAllDocumentIds = Future.successful(documentIds)
 }
 
 object Selection {

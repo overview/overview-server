@@ -3,13 +3,18 @@ package controllers
 import play.api.libs.json.Json
 import org.specs2.specification.Scope
 
+import controllers.backend.{SelectionBackend,TagDocumentBackend}
 import org.overviewproject.tree.orm.Tag
 
 class TagControllerSpec extends ControllerSpecification {
   class BaseScope extends Scope {
     val mockStorage = mock[TagController.Storage]
+    val mockSelectionBackend = mock[SelectionBackend]
+    val mockTagDocumentBackend = mock[TagDocumentBackend]
     val controller = new TagController {
       override val storage = mockStorage
+      override val selectionBackend = mockSelectionBackend
+      override val tagDocumentBackend = mockTagDocumentBackend
     }
   }
 

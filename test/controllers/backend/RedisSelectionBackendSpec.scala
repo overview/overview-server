@@ -72,8 +72,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         override def resultIds = Seq(1L, 2L, 3L)
         val selection = go
         selection.request must beEqualTo(request)
-        val documentIds = await(selection.getDocumentIds(PageRequest(0, 3)))
-        documentIds must beEqualTo(Page(Seq(1L, 2L, 3L), PageInfo(PageRequest(0, 3), 3)))
+        await(selection.getAllDocumentIds) must beEqualTo(resultIds)
       }
     }
 
@@ -93,9 +92,8 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Seq(1L, 2L, 3L)
           val selection = go
           selection.request must beEqualTo(request)
-          val documentIds = await(selection.getDocumentIds(PageRequest(0, 3)))
+          await(selection.getAllDocumentIds) must beEqualTo(resultIds)
           there was one(finder).apply(request)
-          documentIds must beEqualTo(Page(Seq(1L, 2L, 3L), PageInfo(PageRequest(0, 3), 3)))
         }
 
         "return a slice of the Selection" in new FindOrCreateScope {
@@ -133,9 +131,8 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "return the Selection" in new SelectionExistsScope {
           val selection = go
           selection.request must beEqualTo(request)
-          val documentIds = await(selection.getDocumentIds(PageRequest(0, 5)))
+          await(selection.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L, 4L, 5L))
           there was no(finder).apply(any)
-          documentIds must beEqualTo(Page(Seq(1L, 2L, 3L, 4L, 5L), PageInfo(PageRequest(0, 5), 5)))
         }
 
         "return a slice of the Selection" in new SelectionExistsScope {
@@ -164,8 +161,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Seq(1L, 2L, 3L)
           val selection = go
           selection.request must beEqualTo(request)
-          val documentIds = await(selection.getDocumentIds(PageRequest(0, 3)))
-          documentIds must beEqualTo(Page(Seq(1L, 2L, 3L), PageInfo(PageRequest(0, 3), 3)))
+          await(selection.getAllDocumentIds) must beEqualTo(resultIds)
           there was one(finder).apply(request)
         }
       }

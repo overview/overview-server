@@ -92,6 +92,11 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
         longs <- getDocumentIdsArray(page.offset, page.limit)
       } yield Page(longs, PageInfo(page, total.toInt))
     }
+
+    override def getAllDocumentIds: Future[Seq[Long]] = {
+      getDocumentIdsArray(0, Int.MaxValue / SizeOfLong)
+        .map(_.toSeq)
+    }
   }
 
   private implicit val timeout: Timeout = Timeout.longToTimeout(1000)

@@ -1,7 +1,7 @@
 package org.overviewproject.models.tables
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.tree.orm.DocumentTag // should be models.DocumentTag
+import org.overviewproject.models.DocumentTag
 
 class DocumentTagsImpl(tag: Tag) extends Table[DocumentTag](tag, "document_tag") {
   def documentId = column[Long]("document_id")
