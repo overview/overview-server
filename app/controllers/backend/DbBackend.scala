@@ -1,6 +1,6 @@
 package controllers.backend
 
-import scala.concurrent.Future
+import scala.concurrent.{Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.slick.jdbc.JdbcBackend.Session
 import scala.slick.lifted.{Column,Ordered,Query,RunnableCompiled}
@@ -10,8 +10,10 @@ import models.pagination.{Page,PageInfo,PageRequest}
 
 trait DbBackend extends Backend {
   def db[A](block: Session => A): Future[A] = Future {
-    OverviewDatabase.withSlickSession { session =>
-      block(session)
+    blocking {
+      OverviewDatabase.withSlickSession { session =>
+        block(session)
+      }
     }
   }
 
