@@ -54,7 +54,7 @@ define [
           expect(@sandbox.server.requests.length).to.eq(1)
           req = @sandbox.server.requests[0]
           expect(req.method).to.eq('GET')
-          expect(req.url).to.eq('/documentsets/1/documents?tags=2&pageSize=20&page=1')
+          expect(req.url).to.eq('/documentsets/1/documents?tags=2&limit=20&offset=0')
         it 'should return the same promise and not change anything when calling again', ->
           p1 = @list.fetchNextPage()
           p2 = @list.fetchNextPage()
@@ -156,7 +156,7 @@ define [
               expect(@sandbox.server.requests.length).to.eq(2)
               req = @sandbox.server.requests[1]
               expect(req.method).to.eq('GET')
-              expect(req.url).to.eq('/documentsets/1/documents?tags=2&pageSize=20&page=2')
+              expect(req.url).to.eq('/documentsets/1/documents?tags=2&limit=20&offset=20')
 
             it 'should add a loading document', -> expect(@docs.last().get('type')).to.eq('loading')
 

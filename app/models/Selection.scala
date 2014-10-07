@@ -10,7 +10,6 @@ trait SelectionLike {
   val timestamp: Date
   val request: SelectionRequest
   def getDocumentIds(page: PageRequest): Future[Page[Long]]
-  def getDocumentCount: Future[Int]
 }
 
 case class Selection(
@@ -25,7 +24,6 @@ case class Selection(
       PageInfo(page, documentIds.length)
     ))
   }
-  override def getDocumentCount = Future.successful(documentIds.length)
 }
 
 object Selection {

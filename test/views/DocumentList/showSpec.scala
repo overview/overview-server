@@ -1,12 +1,12 @@
 package views.json.DocumentList
 
 import org.specs2.matcher.JsonMatchers
-import org.specs2.specification.Scope
 import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 import play.api.libs.json.Json
 
+import models.pagination.Page
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.finders.{ResultPage,ResultPageDetails}
 
 class showSpec extends Specification with JsonMatchers {
   trait BaseScope extends Scope {
@@ -18,7 +18,7 @@ class showSpec extends Specification with JsonMatchers {
 
     def docsAndIds = Seq(doc1AndIds, doc2AndIds)
 
-    def resultPage = ResultPage(docsAndIds)
+    def resultPage = Page(docsAndIds)
 
     def result = show(resultPage).toString
   }

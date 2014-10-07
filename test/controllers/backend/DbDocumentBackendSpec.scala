@@ -45,7 +45,6 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       trait IndexScope extends CommonIndexScope {
         val selection = mock[SelectionLike]
         val pageRequest = PageRequest(0, 1000)
-        selection.getDocumentCount returns Future.successful(3)
         selection.getDocumentIds(pageRequest) returns Future.successful(Page(Seq(doc1.id, doc2.id, doc3.id), PageInfo(pageRequest, 3)))
         lazy val ret = await(backend.index(selection, pageRequest))
       }
@@ -69,7 +68,6 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "work with 0 documents" in new IndexScope {
-        selection.getDocumentCount returns Future.successful(0)
         selection.getDocumentIds(any) returns Future.successful(Page(Seq[Long]()))
         ret.items.length must beEqualTo(0)
         ret.pageInfo.total must beEqualTo(0)

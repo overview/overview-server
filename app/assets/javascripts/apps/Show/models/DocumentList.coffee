@@ -100,8 +100,8 @@ define [
     _doFetch: ->
       new RSVP.Promise (resolve, reject) =>
         query = @params.toApiParams()
-        query.pageSize = @nDocumentsPerPage
-        query.page = @get('nPagesFetched') + 1
+        query.limit = @nDocumentsPerPage
+        query.offset = @get('nPagesFetched') * @nDocumentsPerPage
 
         @documents.add([type: 'loading'], parse: true) # dunno why, but no parse:true makes this stop cold in Chrome
 

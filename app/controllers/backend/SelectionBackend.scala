@@ -68,7 +68,12 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
 
     private val key = s"selection:${id.toString}:document-ids"
 
-    override def getDocumentCount: Future[Int] = redis.strlen(key).map((n: Long) => (n / SizeOfLong).toInt)
+    private def getDocumentCount: Future[Int] = {
+      redis
+        .strlen(key)
+        .map((n: Long) => (n / SizeOfLong).toInt)
+    }
+
     private def getDocumentIdsArray(offset: Int, limit: Int): Future[Array[Long]] = {
       redis
         .getrange[Array[Byte]](key, offset * SizeOfLong, (offset + limit) * SizeOfLong - 1)

@@ -1,8 +1,8 @@
 package views.json.DocumentList
 
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue,Json}
 
+import models.pagination.Page
 import models.OverviewDocument
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.finders.ResultPage
@@ -20,10 +20,10 @@ object show {
     )
   }
 
-  def apply(documents: ResultPage[(Document,Seq[Long],Seq[Long])]) = {
+  def apply(documents: Page[(Document,Seq[Long],Seq[Long])]) = {
     Json.obj(
       "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq,
-      "total_items" -> documents.pageDetails.totalLength
+      "total_items" -> documents.pageInfo.total
     )
   }
 }

@@ -11,7 +11,10 @@ import models.{SelectionLike,SelectionRequest}
 
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
-  def index(selection: SelectionLike, pageRequest: PageRequest): Future[Page[DocumentInfo]]
+  def index(
+    selection: SelectionLike,
+    pageRequest: PageRequest
+  ): Future[Page[DocumentInfo]]
 
   /** Lists all Document IDs for the given parameters. */
   def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
@@ -26,16 +29,13 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   override def index(selection: SelectionLike, pageRequest: PageRequest) = {
     import scala.concurrent.ExecutionContext.Implicits._
 
-    selection.getDocumentCount
-      .flatMap { (total: Int) =>
-        if (total == 0) {
+    selection.getDocumentIds(pageRequest)
+      .flatMap { (page: Page[Long]) =>
+        if (page.pageInfo.total == 0) {
           emptyPage[DocumentInfo](pageRequest)
         } else {
-          selection.getDocumentIds(pageRequest)
-            .flatMap { (page: Page[Long]) =>
-              list(DbDocumentBackend.byIds.page(page.items))
-                .map(Page(_, page.pageInfo))
-            }
+          list(DbDocumentBackend.byIds.page(page.items))
+            .map(Page(_, page.pageInfo))
         }
       }
   }
