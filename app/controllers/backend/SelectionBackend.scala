@@ -68,7 +68,7 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
 
     private val key = s"selection:${id.toString}:document-ids"
 
-    private def getDocumentCount: Future[Int] = {
+    override def getDocumentCount: Future[Int] = {
       redis
         .strlen(key)
         .map((n: Long) => (n / SizeOfLong).toInt)

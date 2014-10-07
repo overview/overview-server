@@ -1,6 +1,7 @@
 package models
 
 import java.util.{Date,UUID}
+import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
 import models.pagination.{Page,PageInfo,PageRequest}
@@ -11,6 +12,7 @@ trait SelectionLike {
   val request: SelectionRequest
   def getDocumentIds(page: PageRequest): Future[Page[Long]]
   def getAllDocumentIds: Future[Seq[Long]]
+  def getDocumentCount: Future[Int]
 }
 
 case class Selection(
@@ -26,6 +28,7 @@ case class Selection(
     ))
   }
   override def getAllDocumentIds = Future.successful(documentIds)
+  override def getDocumentCount = Future.successful(documentIds.size)
 }
 
 object Selection {
