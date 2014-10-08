@@ -1,6 +1,6 @@
 testMethods = require('../support/testMethods')
 Q = require('q')
-Faker = require('Faker')
+faker = require('faker')
 browser = require('../lib/browser')
 
 Url =
@@ -59,7 +59,7 @@ describe 'Registration', ->
         .waitForElementByCss('.session-form')
 
   before ->
-    @userEmail = Faker.Internet.email()
+    @userEmail = faker.internet.email()
     @userBrowser = browser.create('Registration - user')
     @adminBrowser = browser.create('Registration - admin')
       .get(Url.adminUserIndex)

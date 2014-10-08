@@ -23,13 +23,13 @@
   "homepage": "https://github.com/overview/overview-server",
   "devDependencies": {
     "chai": "~1.9.0",
-    "mocha": "~1.18.0",
-    "coffee-script": "~1.7.1",
+    "mocha": "~1.21.4",
+    "coffee-script": "~1.8.0",
     "chai-as-promised": "~4.1.1",
-    "wd": "~0.2.13",
+    "wd": "~0.3.8",
     "q": "~1.0.0",
-    "Faker": "~0.7.0",
-    "selenium-server-standalone-jar": "~2.40.0",
+    "faker": "~2.0.0",
+    "selenium-server-standalone-jar": "~2.43.1",
     "escape-regexp": "0.0.1"
   }
 }

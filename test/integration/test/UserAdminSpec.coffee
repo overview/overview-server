@@ -1,5 +1,5 @@
 browser = require('../lib/browser')
-Faker = require('Faker')
+faker = require('faker')
 testMethods = require('../support/testMethods')
 
 Url =
@@ -42,7 +42,7 @@ describe 'UserAdmin', ->
       trXPath = null # XPath string like //tr[...], selecting the added user
 
       beforeEach ->
-        userEmail = Faker.Internet.email()
+        userEmail = faker.internet.email()
         trXPath = "//tr[contains(td[@class='email'], '#{userEmail}')]"
 
         @adminBrowser

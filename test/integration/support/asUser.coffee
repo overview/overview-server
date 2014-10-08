@@ -1,5 +1,5 @@
 browser = require('../lib/browser')
-Faker = require('Faker')
+faker = require('faker')
 
 Url =
   adminUserIndex: '/admin/users'
@@ -40,7 +40,7 @@ module.exports =
     title = options.title || 'usingTemporaryUser'
 
     before ->
-      @userEmail = Faker.Internet.email()
+      @userEmail = faker.internet.email()
       @userBrowser = userBrowser = browser.create("#{title} - #{@userEmail}")
         .get(Url.login)
         .waitForElementByCss('.session-form')
