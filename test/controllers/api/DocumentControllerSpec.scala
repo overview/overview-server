@@ -1,6 +1,7 @@
 package controllers.api
 
 import play.api.libs.json.Json
+import play.api.test.WithApplication
 import scala.concurrent.Future
 
 import controllers.backend.{DocumentBackend,SelectionBackend}
@@ -30,8 +31,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         override lazy val request = fakeRequest("GET", "?q=" + q)
         override def action = controller.index(documentSetId, fields)
 
-        val selectedIds: Seq[Long] = Seq()
-        val selection = Selection(SelectionRequest(documentSetId, q=q), selectedIds)
+        val selection = Selection(SelectionRequest(documentSetId, q=q), Seq[Long]())
 
         mockSelectionBackend.create(any, any) returns Future.successful(selection)
         mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
@@ -65,11 +65,11 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 1000), false)
       }
 
-      "set page limit to 10 when requesting text" in new IndexScope {
+      "set page limit to 20 when requesting text" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
         override val fields = "id,text"
         status(result)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 10), true)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
       }
 
       "return an Array of IDs when fields=id" in new IndexScope {
@@ -81,7 +81,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       }
 
       trait IndexFieldsScope extends IndexScope {
-        val documents = Seq(
+        val documents = List(
           factory.document(
             title="foo",
             keywords=Seq("foo", "bar"),
@@ -92,6 +92,9 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         )
+        override val selection = Selection(SelectionRequest(documentSetId, q=q), documents.map(_.id))
+        mockSelectionBackend.create(any, any) returns Future.successful(selection)
+        mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
         mockDocumentBackend.index(any, any, any) returns Future.successful(
           Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )
@@ -187,6 +190,21 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("items") /#(0) /("id" -> documents(0).id)
         json must /("items") /#(0) /("title" -> "foo")
         json must not(beMatching("bleep".r))
+      }
+
+      "stream content" in new WithApplication with IndexFieldsScope {
+        override lazy val request = fakeRequest("GET", "/?stream=true")
+
+        status(result) must beEqualTo(OK)
+        header("Content-Length", result) must beNone
+        header("Transfer-Encoding", result) must beSome("chunked")
+        header("Content-Type", result) must beSome("application/json")
+
+        import play.api.libs.iteratee.{Enumerator,Iteratee}
+        import play.api.mvc.Results
+        val json = new String(await(Enumerator(contentAsBytes(result)).through(Results.dechunk).run(Iteratee.consume())), "utf-8")
+        json must /("pagination") /("total" -> 2)
+        json must /("items") /#(0) /("id" -> documents(0).id)
       }
     }
 
