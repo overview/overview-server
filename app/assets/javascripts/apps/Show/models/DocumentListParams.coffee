@@ -117,7 +117,10 @@ define [ 'underscore' ], (_) ->
       documentId = @document.id
       list.filter((x) -> documentId == x.id)
 
-    toJSON: -> { documents: [ @document.id ] }
+    toJSON: ->
+      # Prevent "undefined" at all costs: it'll tag/untag all docs
+      safeDocumentId = @document.id || 0
+      { documents: [ safeDocumentId ] }
 
   class NodeDocumentListParams extends AbstractDocumentListParams
     constructor: (documentSet, viz, @node) -> super(documentSet, viz, 'node', @node)

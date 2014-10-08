@@ -122,6 +122,10 @@ define [
       it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq({ documents: [1] })
       it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(documents: '1')
 
+      it 'should never, EVER return undefined in its API params', ->
+        @document.id = undefined
+        expect(@params.toApiParams()).to.deep.eq(documents: '0')
+
       it 'should find the relevant document from a list', ->
         list = [
           new MockDocument(id: 2)
