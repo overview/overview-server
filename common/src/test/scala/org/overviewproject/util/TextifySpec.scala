@@ -51,9 +51,15 @@ class TextifySpec extends Specification {
       "parse valid UTF-8")
     b(Charsets.UTF_8, Array[Int](0xe0, 0x80, 0xaf).map(_.toByte), "���",
       "replace invalid UTF-8 characters")
-    b(Charsets.UTF_8, Array[Int](0xed, 0xbe, 0x80).map(_.toByte), "�",
-      "replace UTF-8-encoded UTF-16 surrogates")
     b(Charsets.UTF_8, Array[Int](0xc0, 0x80).map(_.toByte), "��",
       "refuse to understand modified UTF-8's 0xc0 0x80 null byte encoding")
+
+    "replace UTF-8 encoded UTF-16 surrogates" in {
+      // Our Java 8 and Java 7 implementations differ a bit in this. We don't
+      // really care what the result is, but it should be "���" according to
+      // http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+      val s = Textify(Array(0xed, 0xbe, 0x80).map(_.toByte), Charsets.UTF_8)
+      s must beMatching("^(�|���)$".r)
+    }
   }
 }
