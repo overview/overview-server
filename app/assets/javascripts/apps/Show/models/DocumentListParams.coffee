@@ -85,7 +85,7 @@ define [ 'underscore' ], (_) ->
     toApiParams: ->
       apiParams = {}
       for k, v of @toJSON() when k != 'name'
-        apiParams[k] = v.map(String).join(',')
+        apiParams[k] = _.flatten([v]).map(String).join(',')
 
       if @viz?
         @viz.scopeApiParams(apiParams)
