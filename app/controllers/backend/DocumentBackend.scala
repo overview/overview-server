@@ -75,6 +75,10 @@ object DbDocumentBackend {
     var sql = DocumentInfos
       .filter(_.documentSetId === request.documentSetId)
 
+    if (request.documentIds.nonEmpty) {
+      sql = sql.filter(_.id inSet request.documentIds)
+    }
+
     if (request.tagIds.nonEmpty) {
       val tagDocumentIds = DocumentTags
         .filter(_.tagId inSet request.tagIds)
