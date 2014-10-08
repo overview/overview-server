@@ -105,17 +105,26 @@ The Document resource has the following attributes:
 
     [Document][]
 
-## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&fields={fields}&offset={offset}&limit={limit}]
+## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&tags={tags}&tagged={tagged}&objects={objects}&fields={fields}&offset={offset}&limit={limit}&stream={stream}]
 Collection of Documents.
 
-Document collections can be rather large, so the `text` column doesn't appear in lists.
+Document collections can be rather large, so the `text` column doesn't appear in lists by default.
+
+To stream the text of all documents, request `/document-sets/{documentSetId}/documents?stream=true&fields=id,text`.
+By default, streaming is false, because non-streamed responses are easier to handle.
+Streaming responses have no `Content-Length`, and they can be as enormous as the document set.
+Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl](http://lloyd.github.io/yajl/), [py-yajl](https://github.com/rtyler/py-yajl/), [yajl-ruby](https://github.com/brianmario/yajl-ruby). [Jackson](https://github.com/FasterXML/jackson) (for Java) is a streaming parser already.
 
 + Parameters
     + documentSetId (required, number, `1`) ... The document set ID.
     + q (optional, string, `bar`) ... An [ElasticSearch query string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) to filter documents.
-    + fields (optional, string, `id`) ... If `id`, return just a simple Array of Document IDs (all of them, without pagination) instead of an Array of Document JSON objects.
+    + tags (optional, string, `123,234,345`) ... A comma-separated list of Tag IDs. Return documents matching any tag in the list.
+    + tagged (optional, boolean, `true`) ... If set, return all documents that have at least one tag (`true`) or that have zero tags (`false`).
+    + objects (optional, string, `456,567,678`) ... A comma-separated list of VizObject IDs. Return documents matching any VizObject in the list.
+    + fields (optional, string, `id`) ... Defaults to `id,keywords,pageNumber,suppliedId,title,url`. You may include `text` to include the document body, but that will limit page size. If you specify `id` on its own, return just a simple Array of Document IDs (without paginating) instead of an Array of Document JSON objects.
     + offset (optional, number, `0`) ... We're paginating; skip this many documents in the result list.
     + limit (optional, number, `1000`) ... We're paginating; return at most this many documents.
+    + stream (optional, boolean, `true`) ... When `true`, respond with `Transfer-Encoding: chunked` and allow returning an unlimited number of documents.
 
 + Model (application/json)
 
