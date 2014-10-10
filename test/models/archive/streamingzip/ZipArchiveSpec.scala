@@ -33,8 +33,7 @@ class ZipArchiveSpec extends Specification {
 
     val entries = for {
       (name, size, data) <- fileInfo
-      fileStream = new ByteArrayInputStream(data)
-    } yield ArchiveEntry(size, name, fileStream)
+    } yield ArchiveEntry(size, name, () => new ByteArrayInputStream(data))
 
     val archive = new ZipArchive(entries)
 

@@ -34,5 +34,5 @@ class Zip64LocalFileEntry(fileName: String, fileSize: Long, data: InputStream)
 
 object Zip64LocalFileEntry {
   def apply(entry: ArchiveEntry): Zip64LocalFileEntry =
-    new Zip64LocalFileEntry(entry.name, entry.size, entry.data)
+    new Zip64LocalFileEntry(entry.name, entry.size, entry.data())
 }
