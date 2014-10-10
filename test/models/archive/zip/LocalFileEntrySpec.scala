@@ -78,6 +78,11 @@ class LocalFileEntrySpec extends Specification {
       output.slice(headerSize, headerSize + fileName.size) must be equalTo fileName.getBytes
     }
 
+    "write file in stream" in new LocalFileContext {
+      val output = readStream(localFileEntry.stream)
+      
+      output.drop(headerSize + fileName.size) must be equalTo data
+    }
   }
 
 }

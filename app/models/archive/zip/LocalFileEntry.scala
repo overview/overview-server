@@ -15,7 +15,8 @@ class LocalFileEntry(entry: ArchiveEntry) extends ZipFormat with ZipFormatSize w
 
   def stream: InputStream = new ComposedInputStream(
       headerStream _,
-      fileNameStream _)
+      fileNameStream _,
+      entry.data)
 
   val size: Long = localFileHeader + fileNameBytes.size + entry.size
 
