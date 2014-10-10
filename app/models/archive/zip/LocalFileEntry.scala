@@ -5,21 +5,35 @@ import java.io.InputStream
 import java.io.ByteArrayInputStream
 import java.util.zip.CRC32
 import java.nio.charset.StandardCharsets
+import models.archive.ComposedInputStream
+import models.archive.DosDate
+import java.util.Calendar
 
-class LocalFileEntry(entry: ArchiveEntry) extends ZipFormatSize {
+class LocalFileEntry(entry: ArchiveEntry) extends ZipFormat with ZipFormatSize with LittleEndianWriter {
 
   def crc: Int = getOrComputeCrc
 
-  def stream: InputStream = {
-
-    new ByteArrayInputStream(Array.empty)
-  }
+  def stream: InputStream = new ComposedInputStream(headerStream _)
 
   val size: Long = localFileHeader + fileNameBytes.size + entry.size
+
+  protected val timeStamp = DosDate(Calendar.getInstance())
   
   private def fileNameBytes = entry.name.getBytes(StandardCharsets.UTF_8)
-  
-  private val BufferSize = 8192
+  private def fileNameLength = fileNameBytes.size
+
+  private def headerStream: InputStream = new ByteArrayInputStream(
+    writeInt(localFileEntrySignature) ++
+      writeShort(defaultVersion) ++
+      writeShort(useUTF8) ++
+      writeShort(noCompression) ++
+      writeShort(timeStamp.time) ++
+      writeShort(timeStamp.date) ++
+      writeInt(crc) ++
+      writeInt(entry.size.toInt) ++
+      writeInt(entry.size.toInt) ++
+      writeShort(fileNameLength) ++
+      writeShort(empty))
 
   private var crcValue: Option[Int] = None
 
@@ -28,10 +42,12 @@ class LocalFileEntry(entry: ArchiveEntry) extends ZipFormatSize {
     crcValue.get
   }
 
+  private val BufferSize = 8192
+
   private def computeCrc(input: InputStream): Int = {
     val buffer = new Array[Byte](BufferSize)
     val checker = new CRC32()
-    
+
     def checkStream: Int = {
       val n = input.read(buffer)
       if (n == -1) checker.getValue.toInt
@@ -40,11 +56,8 @@ class LocalFileEntry(entry: ArchiveEntry) extends ZipFormatSize {
         checkStream
       }
     }
-    
+
     checkStream
   }
-  
-
-
 
 }
