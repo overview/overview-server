@@ -5,6 +5,7 @@ import java.io.InputStream
 import java.io.SequenceInputStream
 import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
+import models.archive.DosDate
 
 /**
  * Zip CentralFileHeader. On Unix, read and write permissions are set for owner. For files larger than 4Gb, use

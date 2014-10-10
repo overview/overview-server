@@ -8,6 +8,7 @@ import java.io.SequenceInputStream
 import scala.collection.JavaConverters._
 import java.util.zip.CheckedInputStream
 import java.util.zip.CRC32
+import models.archive.DosDate
 
 /**
  * A Local File Entry in a ZIP archive. A Data Descriptor is used so that the CRC32 can be computed

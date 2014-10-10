@@ -8,6 +8,7 @@ import java.util.zip.CRC32
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import java.util.Calendar
+import models.archive.DosDate
 
 class LocalFileEntrySpec extends Specification {
 

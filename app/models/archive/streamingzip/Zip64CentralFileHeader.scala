@@ -6,6 +6,7 @@ import java.io.SequenceInputStream
 import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 import java.util.zip.CheckedInputStream
+import models.archive.DosDate
 
 /**
  * Central Directory File Headers in Zip64 format

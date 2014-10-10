@@ -11,6 +11,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import models.archive.streamingzip.HexByteString._
 import java.util.zip.CRC32
+import models.archive.DosDate
 
 class Zip64LocalFileEntrySpec extends Specification with Mockito {
 

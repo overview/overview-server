@@ -6,6 +6,7 @@ import java.io.InputStream
 import java.io.SequenceInputStream
 import scala.collection.JavaConverters._
 import java.util.Calendar
+import models.archive.DosDate
 
 class ZipArchive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
 

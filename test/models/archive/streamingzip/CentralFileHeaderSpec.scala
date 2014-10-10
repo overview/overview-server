@@ -7,6 +7,7 @@ import java.io.InputStream
 import java.util.Calendar
 import java.util.zip.CheckedInputStream
 import java.io.ByteArrayInputStream
+import models.archive.DosDate
 
 
 class CentralFileHeaderSpec extends Specification {

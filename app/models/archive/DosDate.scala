@@ -1,4 +1,4 @@
-package models.archive.streamingzip
+package models.archive
 
 import java.util.Calendar
 import java.util.Calendar._

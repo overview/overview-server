@@ -6,6 +6,7 @@ import java.util.Calendar
 import scala.collection.JavaConverters._
 import models.archive.Archive
 import models.archive.ArchiveEntry
+import models.archive.DosDate
 
 /**
  * An archive in Zip64 format. All entries are written in Zip64 format.

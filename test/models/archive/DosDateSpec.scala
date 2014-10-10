@@ -1,9 +1,8 @@
-package models.archive.streamingzip
+package models.archive
 
 import org.specs2.mutable.Specification
 import java.util.Calendar
 import java.util.Calendar._
-import HexByteString._
 import org.specs2.specification.Scope
 
 class DosDateSpec extends Specification {
