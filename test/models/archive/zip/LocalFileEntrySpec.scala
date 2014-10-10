@@ -12,15 +12,24 @@ class LocalFileEntrySpec extends Specification {
   "LocalFileEntry" should {
 
     "read stream to set crc when accessed" in new LocalFileContext {
-      val localFileEntry = new LocalFileEntry(archiveEntry)
-
       streamRequestedCount must be equalTo 0
 
       localFileEntry.crc must be equalTo crc
-      
+
       streamRequestedCount must be equalTo 1
     }
 
+    "only read stream once to set crc" in new LocalFileContext {
+      localFileEntry.crc must be equalTo crc
+      localFileEntry.crc must be equalTo crc
+
+      streamRequestedCount must be equalTo 1
+    }
+
+    "return size" in new LocalFileContext {
+       localFileEntry.size must be equalTo (headerSize + fileName.size + numberOfBytes)
+    }
+    
     "write values to stream" in {
       todo
     }
@@ -30,12 +39,12 @@ class LocalFileEntrySpec extends Specification {
 }
 
 trait LocalFileContext extends Scope {
-
+  val headerSize = 30
   val numberOfBytes = 52
   val data = Array.range(1, numberOfBytes).map(_.toByte)
   val crc = {
     val checker = new CRC32()
-    
+
     checker.update(data)
     checker.getValue.toInt
   }
@@ -46,6 +55,8 @@ trait LocalFileContext extends Scope {
     new ByteArrayInputStream(data)
   }
 
-  val archiveEntry = ArchiveEntry(numberOfBytes, "filename", stream)
-
+  val fileName = "fileName"
+    
+  val archiveEntry = ArchiveEntry(numberOfBytes, fileName, stream)
+  val localFileEntry = new LocalFileEntry(archiveEntry)
 }

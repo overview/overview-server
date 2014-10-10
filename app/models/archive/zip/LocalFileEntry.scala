@@ -4,8 +4,9 @@ import models.archive.ArchiveEntry
 import java.io.InputStream
 import java.io.ByteArrayInputStream
 import java.util.zip.CRC32
+import java.nio.charset.StandardCharsets
 
-class LocalFileEntry(entry: ArchiveEntry) {
+class LocalFileEntry(entry: ArchiveEntry) extends ZipFormatSize {
 
   def crc: Int = getOrComputeCrc
 
@@ -14,6 +15,10 @@ class LocalFileEntry(entry: ArchiveEntry) {
     new ByteArrayInputStream(Array.empty)
   }
 
+  val size: Long = localFileHeader + fileNameBytes.size + entry.size
+  
+  private def fileNameBytes = entry.name.getBytes(StandardCharsets.UTF_8)
+  
   private val BufferSize = 8192
 
   private var crcValue: Option[Int] = None
