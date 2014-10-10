@@ -50,29 +50,34 @@ class LocalFileEntrySpec extends Specification {
           writeShort(0)
 
       val output = readStream(localFileEntry.stream)
-      
+
       // Don't check time and date values
       output.take(10) must be equalTo expectedHeader.take(10)
-      output.drop(14) must be equalTo expectedHeader.drop(14)
+      output.slice(14, headerSize) must be equalTo expectedHeader.drop(14)
     }
 
-  "write date and time in stream" in new LocalFileContext {
-    val output = readStream(localFileEntry.stream)
+    "write date and time in stream" in new LocalFileContext {
+      val output = readStream(localFileEntry.stream)
 
-    val now = Calendar.getInstance()
+      val now = Calendar.getInstance()
 
-    val timeBytes = output.slice(10, 12)
-    val dateBytes = output.slice(12, 14)
+      val timeBytes = output.slice(10, 12)
+      val dateBytes = output.slice(12, 14)
 
-    val dosTime = bytesToInt(timeBytes)
-    val dosDate = bytesToInt(dateBytes)
+      val dosTime = bytesToInt(timeBytes)
+      val dosDate = bytesToInt(dateBytes)
 
-    val fileTime = DosDate.toCalendar(dosDate, dosTime)
+      val fileTime = DosDate.toCalendar(dosDate, dosTime)
 
-    now.getTimeInMillis must be closeTo (fileTime.getTimeInMillis, 5000)
-
-  }
+      now.getTimeInMillis must be closeTo (fileTime.getTimeInMillis, 5000)
+    }
     
+    "write filename in stream" in new LocalFileContext {
+      val output = readStream(localFileEntry.stream)
+      
+      output.slice(headerSize, headerSize + fileName.size) must be equalTo fileName.getBytes
+    }
+
   }
 
 }
@@ -98,14 +103,14 @@ trait LocalFileContext extends Scope with LittleEndianWriter with StreamReader {
 
   val archiveEntry = ArchiveEntry(numberOfBytes, fileName, stream)
   val localFileEntry = new LocalFileEntry(archiveEntry)
-  
-    // assumes 2 bytes in array
-    def bytesToInt(bytes: Array[Byte]): Int = {
-      val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
 
-      byteBuffer.put(bytes)
+  // assumes 2 bytes in array
+  def bytesToInt(bytes: Array[Byte]): Int = {
+    val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
 
-      byteBuffer.getShort(0)
-    }
-  
+    byteBuffer.put(bytes)
+
+    byteBuffer.getShort(0)
+  }
+
 }

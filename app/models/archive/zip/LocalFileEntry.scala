@@ -13,7 +13,9 @@ class LocalFileEntry(entry: ArchiveEntry) extends ZipFormat with ZipFormatSize w
 
   def crc: Int = getOrComputeCrc
 
-  def stream: InputStream = new ComposedInputStream(headerStream _)
+  def stream: InputStream = new ComposedInputStream(
+      headerStream _,
+      fileNameStream _)
 
   val size: Long = localFileHeader + fileNameBytes.size + entry.size
 
@@ -22,6 +24,8 @@ class LocalFileEntry(entry: ArchiveEntry) extends ZipFormat with ZipFormatSize w
   private def fileNameBytes = entry.name.getBytes(StandardCharsets.UTF_8)
   private def fileNameLength = fileNameBytes.size
 
+  private def fileNameStream: InputStream = new ByteArrayInputStream(fileNameBytes) 
+  
   private def headerStream: InputStream = new ByteArrayInputStream(
     writeInt(localFileEntrySignature) ++
       writeShort(defaultVersion) ++
