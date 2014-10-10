@@ -4,10 +4,11 @@ import java.io.InputStream
 import scala.collection.mutable.Queue
 
 /**
- * Compose dynamically generated [[InputStream]]s. Subclasses provide a [[List]] of generator functions that
- * return [[InputStream]]. A generator will not be called until the previously created [[InputStream]] is empty.
+ * Compose dynamically generated [[InputStream]]s. Provide generator functions that
+ * return [[InputStream]] in constructor. 
+ * A generator will not be called until the previously created [[InputStream]] is empty.
  */
-abstract class ComposedInputStream extends InputStream {
+class ComposedInputStream(subStreamGenerators: () => InputStream *) extends InputStream {
 
   override def read: Int = readCurrentStream(_.read)
 
@@ -20,7 +21,7 @@ abstract class ComposedInputStream extends InputStream {
   override def close: Unit = currentStreamValue.map(_.close)
 
   /** [[List]] of functions that return [[InputStream]]s that should be combined into one stream */
-  protected var subStreamGenerators: List[() => InputStream]
+  protected var remainingStreams: Seq[() => InputStream] = subStreamGenerators
 
   private def currentStream: Option[InputStream] =
     currentStreamValue.orElse(initializeStream)
@@ -28,7 +29,7 @@ abstract class ComposedInputStream extends InputStream {
   private var currentStreamValue: Option[InputStream] = None
 
   private def initializeStream: Option[InputStream] = {
-    currentStreamValue = subStreamGenerators.headOption.map(_())
+    currentStreamValue = remainingStreams.headOption.map(_())
     currentStreamValue
   }
 
@@ -40,7 +41,7 @@ abstract class ComposedInputStream extends InputStream {
 
   private def continueToNextStream(readFn: InputStream => Int): Int = {
     currentStreamValue.map(_.close)
-    subStreamGenerators = subStreamGenerators.tail
+    remainingStreams = remainingStreams.tail
     initializeStream
     readCurrentStream(readFn)
   }

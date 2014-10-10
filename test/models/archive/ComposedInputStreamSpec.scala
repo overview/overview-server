@@ -89,7 +89,7 @@ class ComposedInputStreamSpec extends Specification {
       new ByteArrayInputStream(Array[Byte](4, 5, 6))  
       }
       
-      val composedStream = new TestComposedInputStream(firstStream, secondStream)
+      val composedStream = new ComposedInputStream(firstStream, secondStream)
       
       composedStream.skip(3)
       
@@ -103,16 +103,10 @@ class ComposedInputStreamSpec extends Specification {
   }
 }
 
-trait StreamReader {
-  def readStream(stream: InputStream): Array[Byte] = {
-    val readValues = Stream.continually(stream.read).takeWhile(_ != -1)
-    readValues.map(_.toByte).toArray
-  }
-}
 trait EmptyStreamContext extends Scope {
   def emptyStream() = new ByteArrayInputStream(Array.empty)
 
-  val composedStream = new TestComposedInputStream(emptyStream)
+  val composedStream = new ComposedInputStream(emptyStream)
 }
 
 trait SingleStreamContext extends Scope with StreamReader {
@@ -123,7 +117,7 @@ trait SingleStreamContext extends Scope with StreamReader {
 
   def singleStream() = new ByteArrayInputStream(streamData)
 
-  val composedStream = new TestComposedInputStream(singleStream)
+  val composedStream = new ComposedInputStream(singleStream)
 }
 
 trait MultipleStreamContext extends Scope with StreamReader {
@@ -135,11 +129,7 @@ trait MultipleStreamContext extends Scope with StreamReader {
   val streams = streamData.grouped(50).map(new ByteArrayInputStream(_)).toSeq
   val streamGenerators = streams.map(() => _)
 
-  val composedStream = new TestComposedInputStream(streamGenerators: _*)
+  val composedStream = new ComposedInputStream(streamGenerators: _*)
 
 }
 
-class TestComposedInputStream(streamGenerators: () => InputStream*) extends ComposedInputStream {
-  override protected var subStreamGenerators: List[() => InputStream] = streamGenerators.toList
-
-}
