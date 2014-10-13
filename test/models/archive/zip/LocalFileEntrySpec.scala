@@ -107,7 +107,7 @@ trait LocalFileContext extends Scope with LittleEndianWriter with StreamReader {
   val fileName = "fileName"
 
   val archiveEntry = ArchiveEntry(numberOfBytes, fileName, stream)
-  val localFileEntry = new LocalFileEntry(archiveEntry)
+  val localFileEntry = new LocalFileEntry(archiveEntry, 0)
 
   // assumes 2 bytes in array
   def bytesToInt(bytes: Array[Byte]): Int = {

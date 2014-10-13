@@ -9,7 +9,7 @@ import models.archive.ComposedInputStream
 import models.archive.DosDate
 import java.util.Calendar
 
-class LocalFileEntry(entry: ArchiveEntry) extends ZipFormat with ZipFormatSize with LittleEndianWriter {
+class LocalFileEntry(entry: ArchiveEntry, val offset: Long) extends ZipFormat with ZipFormatSize with LittleEndianWriter {
 
   def crc: Int = getOrComputeCrc
 
