@@ -25,6 +25,9 @@ class LocalFileCollectionSpec extends Specification with Mockito {
       output.length must be equalTo streamSize.toInt
     }
 
+    "compute size of all entries" in new LocalFileCollectionContext {
+      localFiles.size must be equalTo numberOfEntries * (30 + 6 + fileSize)
+    }
   }
 
   trait LocalFileCollectionContext extends Scope with StreamReader {

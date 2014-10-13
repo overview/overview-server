@@ -8,6 +8,8 @@ import models.archive.ComposedInputStream
 class LocalFileCollection(archiveEntries: Seq[ArchiveEntry]) {
   val entries: Seq[LocalFileEntry] = createEntries
 
+  val size: Long = entries.map(_.size).sum
+  
   def stream: InputStream = new ComposedInputStream(entries.map(_.stream _): _*)
   
   private def createEntries: Seq[LocalFileEntry] = {
