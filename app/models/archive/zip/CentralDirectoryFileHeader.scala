@@ -26,7 +26,7 @@ class CentralDirectoryFileHeader(fileName: String, fileSize: Long, crc: Int,  of
   
   protected val fileNameSize = fileNameBytes.size
 
-  lazy val stream: InputStream = new SequenceInputStream(Iterator(
+  def stream: InputStream = new SequenceInputStream(Iterator(
       headerStream,
       fileNameStream,
       extraFieldStream).asJavaEnumeration)

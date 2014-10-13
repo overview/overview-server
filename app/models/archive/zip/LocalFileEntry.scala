@@ -19,8 +19,10 @@ class LocalFileEntry(entry: ArchiveEntry, val offset: Long) extends ZipFormat wi
       entry.data)
 
   val size: Long = localFileHeader + fileNameBytes.size + entry.size
-
-  protected val timeStamp = DosDate(Calendar.getInstance())
+  val fileName: String = entry.name
+  val fileSize: Long = entry.size
+  
+  val timeStamp = DosDate(Calendar.getInstance())
   
   private def fileNameBytes = entry.name.getBytes(StandardCharsets.UTF_8)
   private def fileNameLength = fileNameBytes.size
