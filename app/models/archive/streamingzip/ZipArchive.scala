@@ -13,11 +13,13 @@ class ZipArchive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
   private val localFileHeaders = createLocalFileHeaders
   private val centralFileHeaders = createCentralFileHeaders
   private val endOfCentralDirectoryRecord = createEndOfCentralDirectoryRecord
-  
+
   override val stream: InputStream = combineStreams(
     combineStreams(localFileHeaders.map(_.stream): _*),
     combineStreams(centralFileHeaders.map(_.stream): _*),
     endOfCentralDirectoryRecord.stream)
+
+  override def size: Long = ArchiveSize(entries.toSeq)
 
   private def createLocalFileHeaders: Seq[LocalFileEntry] =
     entries.map(e => new LocalFileEntry(e.name, e.size, e.data())).toSeq
@@ -33,8 +35,8 @@ class ZipArchive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
 
     headers
   }
-  
-  private def createEndOfCentralDirectoryRecord: EndOfCentralDirectoryRecord = 
+
+  private def createEndOfCentralDirectoryRecord: EndOfCentralDirectoryRecord =
     new EndOfCentralDirectoryRecord(localFileHeaders, centralFileHeaders)
 
   private def combineStreams(streams: InputStream*): InputStream =

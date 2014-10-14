@@ -7,7 +7,7 @@ import java.io.ByteArrayInputStream
  * Zip End of Central Directory Record
  */
 class EndOfCentralDirectoryRecord(numberOfEntries: Long, centralDirectorySize: Long, centralDirectoryOffset: Long)
-    extends LittleEndianWriter with ZipFormat {
+    extends LittleEndianWriter with ZipFormat with ZipFormatSize {
 
   def stream: InputStream = new ByteArrayInputStream(
     writeInt(endOfCentralDirectoryRecordSignature) ++
@@ -19,4 +19,5 @@ class EndOfCentralDirectoryRecord(numberOfEntries: Long, centralDirectorySize: L
       writeInt(centralDirectoryOffset.toInt) ++
       writeShort(empty))
 
+  def size: Long = endOfCentralDirectory
 }

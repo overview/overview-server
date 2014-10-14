@@ -27,6 +27,8 @@ class Zip64Archive(entries: Iterable[ArchiveEntry]) extends Archive(entries) {
     zip64EndOfCentralDirectoryLocator.stream,
     endOfCentralDirectoryRecord.stream)
 
+  override def size: Long = ArchiveSize(entries.toSeq)
+  
   private def combineStreams(streams: InputStream*): InputStream =
     new SequenceInputStream(streams.iterator.asJavaEnumeration)
 
