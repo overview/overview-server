@@ -14,18 +14,18 @@ options =
     browserName: 'firefox'
     version: ''
     platform: 'ANY'
-    build: process.env.TRAVIS_BUILD_NUMBER
-    'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER
+    build: process.env.BUILD_TAG
     'idle-timeout': 600 # @adminBrowser often waits for the duration of a test file
   seleniumLocation:
     host: 'localhost'
     port: 4444
 
-if 'SAUCE_USERNAME' of process.env
+if 'SAUCE_USER_NAME' of process.env
   x = options.seleniumLocation
-  x.port = 4445
-  x.username = process.env['SAUCE_USERNAME']
-  x.pwd = process.env['SAUCE_ACCESS_KEY']
+  x.host = process.env.SELENIUM_HOST
+  x.port = process.env.SELENIUM_PORT
+  x.username = process.env.SAUCE_USER_NAME
+  x.pwd = process.env.SAUCE_API_KEY
 
 wd.addPromiseChainMethod 'acceptingNextAlert', ->
   @executeFunction ->
