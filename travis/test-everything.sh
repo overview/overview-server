@@ -4,6 +4,7 @@ DIR=$(dirname "$0")/..
 
 cd "$DIR"
 
+set -e # any error means the whole thing failed
 set -x
 
 time auto/setup-coffee-tests.sh
