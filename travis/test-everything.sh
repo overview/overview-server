@@ -8,6 +8,7 @@ set -x
 
 time auto/setup-coffee-tests.sh
 time auto/setup-integration-tests.sh
+time deps/redis/build.sh
 
 # Suppress excessive output from Sbt (resolving / downloading). Either it
 # works or it doesn't; all errors are the same to us.
@@ -26,15 +27,14 @@ time ./sbt -Dsbt.log.noformat=true -Dsbt.override.build.repos=true -Dsbt.reposit
 time ./auto/test-coffee-once.sh
 
 # Unit tests next.
-# We need the database to run for the duration of the test commands.
-# We run --only-servers redis to build redis while Postgres and the tests are running.
+# We need the database to run for the duration of the test commands; --only-servers redis is close enough because it starts fast.
 # We test overview-server/test first to run migrations in the test database.
 time ./dev --only-servers redis --sbt '; overview-server/test; common/test; worker/test; documentset-worker/test; runner/test'
 
 # The build must succeed
-time SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" ./build overview-server.zip
+SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" time ./build overview-server.zip
 
 # Now that we've built, we can run integration tests with the resulting jars
 # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
-time curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
-time (cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M= -Ddocumentset-worker.jvm.Xmx200M= -Dsearchindex.jvm.Xmx200M= -Dmessage-broker.jvm.Xmx200M= -Doverview-server.jvm.Xmx200M= --sh ../travis/wait-and-test-integration.sh)
+curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
+(cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M= -Ddocumentset-worker.jvm.Xmx200M= -Dsearchindex.jvm.Xmx200M= -Dmessage-broker.jvm.Xmx200M= -Doverview-server.jvm.Xmx200M= --sh ../travis/wait-and-test-integration.sh)
