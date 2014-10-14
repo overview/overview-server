@@ -23,6 +23,15 @@ class ArchiveEntryCollectionSpec extends Specification {
     	val names = collection.sanitizedEntries.map(_.name) 
     	names must containTheSameElementsAs(uniqueNames ++ transformedNames)
     }
+    
+    "increment until unique file name is found" in new ArchiveEntryCollectionContext {
+      
+      val collection = createCollection(collidingNames :+ base)
+      
+      val names = collection.sanitizedEntries.map(_.name)
+      
+      names must containTheSameElementsAs(collidingNames :+ s"$base ($numberOfEntries)")
+    }
   }
 }
 
@@ -32,7 +41,9 @@ trait ArchiveEntryCollectionContext extends Scope {
   val fileSize = 100
   def stream = new ByteArrayInputStream(Array.empty[Byte])
   
-  val uniqueNames = Seq.tabulate(numberOfEntries)(n => s"file-$n")
+  val base = "file"
+  val uniqueNames = Seq.tabulate(numberOfEntries)(n => s"$base-$n")
+  val collidingNames = base +: Seq.tabulate(numberOfEntries)(n => s"$base ($n)")
   
   def createCollection(names: Seq[String]): ArchiveEntryCollection = 
     new ArchiveEntryCollection(names.map(ArchiveEntry(_, fileSize, stream _)))
