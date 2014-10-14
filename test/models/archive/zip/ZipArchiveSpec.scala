@@ -32,7 +32,7 @@ trait ZipArchiveContext extends Scope with StreamReader {
 
   val data = Array.fill(fileSize)(0xda.toByte)
 
-  val entries = Seq.tabulate(numberOfEntries)(n => ArchiveEntry(fileSize, f"file-$n%05d", fileStream _))
+  val entries = Seq.tabulate(numberOfEntries)(n => ArchiveEntry(f"file-$n%05d", fileSize, fileStream _))
 
   val archive = new ZipArchive(entries)
 

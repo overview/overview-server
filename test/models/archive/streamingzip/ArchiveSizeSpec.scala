@@ -20,7 +20,7 @@ class ArchiveSizeSpec extends Specification with Mockito {
       val numberOfEntries = 7
       val fileSize = 100
       val fileNameSize = 13
-      val entries = Seq.tabulate(numberOfEntries)(n => ArchiveEntry(fileSize, "n" * fileNameSize, () => smartMock[InputStream]))
+      val entries = Seq.tabulate(numberOfEntries)(n => ArchiveEntry("n" * fileNameSize, fileSize,  () => smartMock[InputStream]))
 
       ArchiveSize(entries) must be equalTo
         numberOfEntries * (localFileHeaderSize + fileNameSize + fileSize + dataDescriptorSize) +

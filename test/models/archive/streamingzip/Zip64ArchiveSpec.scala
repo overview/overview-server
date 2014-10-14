@@ -53,7 +53,7 @@ class Zip64ArchiveSpec extends Specification with Mockito {
 
       val entries = for {
         (name, size, data) <- fileInfo
-      } yield ArchiveEntry(size, name, () => new ByteArrayInputStream(data))
+      } yield ArchiveEntry(name, size, () => new ByteArrayInputStream(data))
 
       override val archive = new Zip64Archive(entries)
 

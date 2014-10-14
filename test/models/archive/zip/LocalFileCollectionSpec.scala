@@ -35,8 +35,8 @@ class LocalFileCollectionSpec extends Specification with Mockito {
     val fileSize = 100
     val data = Array.tabulate(fileSize)(_.toByte)
     
-    val archiveEntries = Seq.tabulate(numberOfEntries)(n => ArchiveEntry(fileSize, s"file-$n",
-        () => new ByteArrayInputStream(data)))
+    val archiveEntries = Seq.tabulate(numberOfEntries)(n => ArchiveEntry(s"file-$n",
+        fileSize, () => new ByteArrayInputStream(data)))
     val offsets = archiveEntries.dropRight(1).foldLeft(Seq(0l))((o, e) => 
       o :+  o.last + (30 + e.name.size + fileSize) 
     )
