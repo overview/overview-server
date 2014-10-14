@@ -20,12 +20,12 @@ options =
     host: 'localhost'
     port: 4444
 
-if 'SAUCE_USER_NAME' of process.env
+if 'SAUCE_USERNAME' of process.env
   x = options.seleniumLocation
   x.host = process.env.SELENIUM_HOST
   x.port = process.env.SELENIUM_PORT
-  x.username = process.env.SAUCE_USER_NAME
-  x.pwd = process.env.SAUCE_API_KEY
+  x.username = process.env.SAUCE_USERNAME
+  x.pwd = process.env.SAUCE_ACCESS_KEY
 
 wd.addPromiseChainMethod 'acceptingNextAlert', ->
   @executeFunction ->
