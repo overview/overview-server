@@ -3,7 +3,7 @@ package org.overviewproject.runner
 import java.io.{ByteArrayOutputStream,File,FileOutputStream}
 import java.sql.{Connection,DriverManager,ResultSet}
 import java.util.concurrent.TimeoutException
-import scala.concurrent.{Await,Future,blocking}
+import scala.concurrent.{Await,Future,Promise,blocking}
 import scala.concurrent.duration.Duration
 import scala.language.reflectiveCalls
 
@@ -126,13 +126,22 @@ class Main(conf: Conf) {
 
     val superServer = new SuperServer(daemons.toSet)
 
-    val userPressedCtrlD = Future[Unit] { blocking {
-      def isEOF(b: Int) : Boolean = (b == -1 || b == 4)
-      while (!isEOF(System.in.read())) {
-        // keep reading...
-      }
-      logger.out.println("Ctrl+D pressed.")
-    }}
+    val userPressedCtrlD: Future[Unit] = if (System.console() != null) {
+      Future { blocking {
+        def isEOF(b: Int) : Boolean = (b == -1 || b == 4)
+        while (!isEOF(System.in.read())) {
+          // keep reading...
+        }
+        logger.out.println("Ctrl+D pressed.")
+      }}
+    } else {
+      // We're in non-interactive mode. The user will _never_ press Ctrl+D,
+      // because there is no user.
+      //
+      // (If there's no console and we just try System.in.read(), we'll read
+      // Ctrl+D right away and everything will close.)
+      Promise[Unit]().future
+    }
 
     val logExit = (daemon: Daemon, statusCode: Int) => {
       daemon.logger.out.println(s"Exited with status code ${statusCode}.")
