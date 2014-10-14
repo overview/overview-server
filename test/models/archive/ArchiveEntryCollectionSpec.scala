@@ -32,6 +32,15 @@ class ArchiveEntryCollectionSpec extends Specification {
       
       names must containTheSameElementsAs(collidingNames :+ s"$base ($numberOfEntries)")
     }
+    
+    "handle files with unique file name format" in new ArchiveEntryCollectionContext {
+      val nameWithFormat = s"$base (1)"
+      val collection = createCollection(nameWithFormat +: collidingNames)
+      
+      val names = collection.sanitizedEntries.map(_.name)
+      
+      names must containTheSameElementsAs(collidingNames :+ s"$nameWithFormat (1)")
+    }
   }
 }
 
