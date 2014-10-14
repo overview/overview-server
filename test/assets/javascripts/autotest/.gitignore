@@ -1,5 +1,2 @@
 /node_modules/
-/karma_html/
-/src-js/
-/test-js/
-/framework-js/
+/test-results.xml

@@ -11,9 +11,12 @@ module.exports = (config) ->
     browsers: [ 'PhantomJS' ]
     frameworks: [ 'mocha', 'requirejs' ]
     preprocessors: { '**/*.coffee': ['coffee'] }
-    reporters: [ 'dots' ]
+    reporters: [ 'dots', 'junit' ]
     reportSlowerThan: 15
     verbose: true
+
+    junitReporter:
+      outputFile: 'test/assets/javascripts/autotest/test-results.xml'
 
     client:
       captureConsole: true # https://github.com/karma-runner/karma/issues/961
