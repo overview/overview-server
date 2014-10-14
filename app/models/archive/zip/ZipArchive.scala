@@ -4,8 +4,9 @@ import models.archive.Archive
 import java.io.InputStream
 import models.archive.ArchiveEntry
 import models.archive.ComposedInputStream
+import models.archive.ArchiveEntryCollection
 
-class ZipArchive(entries: Seq[ArchiveEntry]) extends Archive(entries)  {
+class ZipArchive(entryCollection: ArchiveEntryCollection) extends Archive  {
 
   override def stream: InputStream = new ComposedInputStream(
       localFileCollection.stream _,
@@ -14,6 +15,8 @@ class ZipArchive(entries: Seq[ArchiveEntry]) extends Archive(entries)  {
   
   
   override def size: Long = localFileCollection.size + centralDirectory.size + endOfCentralDirectoryRecord.size
+  
+  private val entries = entryCollection.sanitizedEntries
   
   private val localFileCollection = new LocalFileCollection(entries)
   private val centralDirectory = new CentralDirectory(localFileCollection.entries)

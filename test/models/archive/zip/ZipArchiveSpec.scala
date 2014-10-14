@@ -5,6 +5,7 @@ import org.specs2.specification.Scope
 import models.archive.ArchiveEntry
 import java.io.ByteArrayInputStream
 import models.archive.StreamReader
+import models.archive.ArchiveEntryCollection
 
 class ZipArchiveSpec extends Specification {
 
@@ -34,7 +35,7 @@ trait ZipArchiveContext extends Scope with StreamReader {
 
   val entries = Seq.tabulate(numberOfEntries)(n => ArchiveEntry(f"file-$n%05d", fileSize, fileStream _))
 
-  val archive = new ZipArchive(entries)
+  val archive = new ZipArchive(new ArchiveEntryCollection(entries))
 
   def fileStream = new ByteArrayInputStream(data)
 
