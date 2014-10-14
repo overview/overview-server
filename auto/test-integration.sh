@@ -8,4 +8,4 @@
 # re-run setup-integration-tests.sh before filing a bug, in case the bug has
 # to do with dependencies' versions.)
 
-(cd "$(dirname "$0")/../test/integration" && npm test "$@")
+(cd "$(dirname "$0")/../test/integration" && JUNIT_REPORT_PATH=test-results.xml JUNIT_REPORT_STACK=1 npm test)

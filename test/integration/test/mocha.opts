@@ -1,5 +1,5 @@
 --compilers coffee:coffee-script/register
 --timeout 90s
 --slow 2000
---reporter spec
+--reporter mocha-jenkins-reporter
 --require support/testSuite
