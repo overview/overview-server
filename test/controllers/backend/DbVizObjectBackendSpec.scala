@@ -13,6 +13,15 @@ class DbVizObjectBackendSpec extends DbBackendSpecification {
       import org.overviewproject.database.Slick.simple._
       VizObjects.filter(_.id === id).firstOption(session)
     }
+
+    def findDocumentVizObject(documentId: Long, vizObjectId: Long) = {
+      import org.overviewproject.database.Slick.simple._
+      import org.overviewproject.models.tables.DocumentVizObjects
+      DocumentVizObjects
+        .filter(_.documentId === documentId)
+        .filter(_.vizObjectId === vizObjectId)
+        .firstOption(session)
+    }
   }
 
   "DbVizObjectBackend" should {
@@ -232,6 +241,15 @@ class DbVizObjectBackendSpec extends DbBackendSpecification {
         destroy(vizObject.id)
         findVizObject(vizObject2.id) must beSome
       }
+
+      "destroy associated DocumentVizObjects" in new DestroyScope {
+        val document = factory.document(documentSetId=documentSet.id)
+        val dvo = factory.documentVizObject(documentId=document.id, vizObjectId=vizObject.id)
+
+        destroy(vizObject.id)
+        findVizObject(vizObject.id) must beNone
+        findDocumentVizObject(document.id, vizObject.id) must beNone
+      }
     }
 
     "#destroyMany" should {
@@ -240,15 +258,6 @@ class DbVizObjectBackendSpec extends DbBackendSpecification {
         val viz = factory.viz(documentSetId=documentSet.id)
         val obj1 = factory.vizObject(vizId=viz.id)
         val obj2 = factory.vizObject(vizId=viz.id)
-
-        def findDocumentVizObject(documentId: Long, vizObjectId: Long) = {
-          import org.overviewproject.database.Slick.simple._
-          import org.overviewproject.models.tables.DocumentVizObjects
-          DocumentVizObjects
-            .filter(_.documentId === documentId)
-            .filter(_.vizObjectId === vizObjectId)
-            .firstOption(session)
-        }
 
         def destroyMany(ids: Long*) = await(backend.destroyMany(viz.id, ids.toSeq))
       }

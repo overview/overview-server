@@ -182,7 +182,25 @@ object DbVizObjectBackend {
   }
 
   def destroy(id: Long)(session: Session): Unit = {
-    byIdCompiled(id).delete(session)
+    exceptions.wrap {
+      import scala.slick.jdbc.StaticQuery.interpolation
+
+      /*
+       * We run two DELETEs in a single query, to simulate a transaction and
+       * avoid a round trip.
+       */
+      val q = sqlu"""
+        WITH subdelete AS (
+          DELETE FROM document_viz_object
+          WHERE viz_object_id = $id
+          RETURNING 1
+        )
+        DELETE FROM viz_object
+        WHERE id = $id
+      """
+
+      q.execute(session)
+    }
   }
 
   def destroyMany(vizId: Long, ids: Seq[Long])(session: Session): Unit = {
