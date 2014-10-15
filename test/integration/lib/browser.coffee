@@ -22,9 +22,9 @@ options =
 
 if 'SAUCE_USER_NAME' of process.env
   x = options.seleniumLocation
-  x.host = process.env.SELENIUM_HOST
+  x.hostname = process.env.SELENIUM_HOST
   x.port = process.env.SELENIUM_PORT
-  x.username = process.env.SAUCE_USER_NAME
+  x.user = process.env.SAUCE_USER_NAME
   x.pwd = process.env.SAUCE_API_KEY
 
 wd.addPromiseChainMethod 'acceptingNextAlert', ->
@@ -191,8 +191,6 @@ module.exports =
     desiredCapabilities = { name: title }
     desiredCapabilities[k] = v for k, v of options.desiredCapabilities
 
-    console.log('seleniumLocation', options.seleniumLocation)
-    console.log('desiredCapabilities', desiredCapabilities)
     wd.promiseChainRemote(options.seleniumLocation)
       .init(desiredCapabilities)
       .configureHttp
