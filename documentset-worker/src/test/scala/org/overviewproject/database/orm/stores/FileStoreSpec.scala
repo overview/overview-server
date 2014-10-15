@@ -24,8 +24,8 @@ class FileStoreSpec extends DbSpecification {
         singleRefOids = Seq.fill(5)(createContents)
         multipleRefOids = Seq.fill(5)(createContents)
 
-        val singleRefFiles = singleRefOids.map(oid => File(1, oid, oid,  "name1"))
-        val multipleRefFiles = multipleRefOids.map(oid => File(2, oid, oid, "name2"))
+        val singleRefFiles = singleRefOids.map(oid => File(1, oid, oid, "name1", Some(100), Some(100)))
+        val multipleRefFiles = multipleRefOids.map(oid => File(2, oid, oid, "name2", Some(100), Some(100)))
         files.insert(singleRefFiles ++ multipleRefFiles)
       }
 

@@ -150,7 +150,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
 class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (String, Iterable[(Int, String)])], pageSize: Int) extends CreateDocumentsProcess with Mockito {
 
-  private val files = for ((id, data) <- documentData) yield File(1, 1l, 1l, data._1, id)
+  private val files = for ((id, data) <- documentData) yield File(1, 1l, 1l, data._1, Some(100), Some(100), id)
   private val filesPage1 = files.take(pageSize)
   private val filesPage2 = files.drop(pageSize)
 

@@ -116,7 +116,6 @@ trait CreatePagesProcess {
     def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
     def deleteUploadedFile(upload: GroupedFileUpload): Unit
 
-    def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit
     def savePages(pages: Iterable[Page]): Unit
 
     def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit

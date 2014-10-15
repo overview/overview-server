@@ -39,7 +39,7 @@ trait CreateFile {
       val magicNumber = peekAtMagicNumber(stream)
 
       if (magicNumber.sameElements(PdfMagicNumber)) {
-        storage.createFile(documentSetId, upload.name, upload.contentsOid)
+        storage.createFile(documentSetId, upload.name, upload.contentsOid, upload.size)
       } else {
         logger.logExecutionTime("Converting {} ({}, {}kb) to PDF", upload.name, upload.guid, upload.size / 1024) {
           converter.withStreamAsPdf(upload.guid, upload.name, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
@@ -78,7 +78,7 @@ object CreateFile extends CreateFile {
 
   trait Storage {
     def getLargeObjectInputStream(oid: Long): InputStream
-    def createFile(documentSetId: Long, name: String, oid: Long): File
+    def createFile(documentSetId: Long, name: String, oid: Long, size: Long): File
     def createFileWithPdfView(documentSetId: Long, upload: GroupedFileUpload, viewStream: InputStream): File
   }
 
@@ -87,8 +87,8 @@ object CreateFile extends CreateFile {
 
     override def getLargeObjectInputStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
 
-    override def createFile(documentSetId: Long, name: String, oid: Long): File = Database.inTransaction {
-      val file = FileStore.insertOrUpdate(File(1, oid, oid, name))
+    override def createFile(documentSetId: Long, name: String, oid: Long, size: Long): File = Database.inTransaction {
+      val file = FileStore.insertOrUpdate(File(1, oid, oid, name, Some(size), Some(size)))
       tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
 
       file
@@ -96,18 +96,28 @@ object CreateFile extends CreateFile {
 
     override def createFileWithPdfView(documentSetId: Long, upload: GroupedFileUpload, viewStream: InputStream): File = Database.inTransaction {
       implicit val pgc = DB.pgConnection(Database.currentConnection)
-
-      val buffer = new Array[Byte](8192)
+      
+       
+      val bufferSize = 8192
+      val buffer = new Array[Byte](bufferSize)
       var offset = 0
       LO.withLargeObject { lo =>
-        while (viewStream.read(buffer, 0, 8192) != -1) {
-          lo.add(buffer)
+        def copyStreamToLargeObject: Long = {
+          val n = viewStream.read(buffer)
+          if (n == -1) 0
+          else {
+            lo.add(buffer)
+            n + copyStreamToLargeObject
+          }
         }
+        
+        val size = copyStreamToLargeObject
 
-        val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, lo.oid, upload.name))
+        val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, lo.oid, upload.name, Some(upload.size), Some(size)))
         tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
         file
       }
     }
+    
   }
 }

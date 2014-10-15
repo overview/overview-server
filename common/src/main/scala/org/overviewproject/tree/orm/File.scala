@@ -13,6 +13,8 @@ case class File(
     contentsOid: Long, 
     viewOid: Long,
     name: String,
+    contentsSize: Option[Long],
+    viewSize: Option[Long],
     id: Long = 0l) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)
 }

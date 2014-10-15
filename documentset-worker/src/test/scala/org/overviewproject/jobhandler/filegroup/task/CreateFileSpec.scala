@@ -14,7 +14,7 @@ class CreateFileSpec extends Specification with Mockito {
     "return original oid if original is a pdf" in new PdfFileContext {
       val file = createFile(documentSetId, upload)
 
-      there was one(createFile.storage).createFile(documentSetId, name, oid)
+      there was one(createFile.storage).createFile(documentSetId, name, oid, size)
     }
 
     "convert rewound stream to pdf if original is not pdf" in new NoPdfFileContext {
@@ -31,23 +31,24 @@ class CreateFileSpec extends Specification with Mockito {
       val documentSetId = 1l
       val name = "filename"
       val oid = 1l
+      val size = 100
       val upload = smartMock[GroupedFileUpload]
       val guid: UUID = UUID.randomUUID()
       upload.name returns name
       upload.contentsOid returns oid
-
+      upload.size returns size
       lazy val inputStream = new ByteArrayInputStream(fileText.getBytes)
       lazy val createFile: TestCreateFile = new TestCreateFile(inputStream, createdFile)
     }
 
     trait PdfFileContext extends CreateFileContext {
       override val fileText: String = "%PDF and stuff"
-      override val createdFile: File = File(1, oid, oid, name)
+      override val createdFile: File = File(1, oid, oid, name, Some(100), Some(100))
     }
 
     trait NoPdfFileContext extends CreateFileContext {
       val viewOid = 2l
-      override val createdFile: File = File(1, oid, viewOid, name)
+      override val createdFile: File = File(1, oid, viewOid, name, Some(100), Some(100))
 
       override val fileText: String = "Not a PDF"
     }
@@ -59,7 +60,7 @@ class CreateFileSpec extends Specification with Mockito {
     private val convertedStream = mock[InputStream]
 
     storage.getLargeObjectInputStream(any) returns inputStream
-    storage.createFile(any, any, any) returns createdFile
+    storage.createFile(any, any, any, any) returns createdFile
 
     override val converter = new TestConverter
 

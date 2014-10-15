@@ -64,7 +64,7 @@ class DocumentClonerSpec extends DbSpecification {
 
         val ids = new DocumentSetIdGenerator(documentSet.id)
         val oid = createContents
-        val file = Schema.files.insertOrUpdate(File(1, oid, oid, "name"))
+        val file = Schema.files.insertOrUpdate(File(1, oid, oid, "name", Some(100), Some(100)))
         Schema.documents.insert(
           Document(
             documentSet.id,

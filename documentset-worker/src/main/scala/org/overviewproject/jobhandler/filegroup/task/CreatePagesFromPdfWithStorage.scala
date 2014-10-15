@@ -40,16 +40,6 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
         pages.foreach(pageStore.insertOrUpdate) // Batch insert would read all pages into memory, possibly leading to OutOfMemoryException
       }
       
-      def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit = Database.inTransaction {
-        val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, upload.contentsOid, upload.name))
-        tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
-
-        val pages = createPages(file.id)
-
-        pages.foreach(pageStore.insertOrUpdate) // Batch insert would read all pages into memory, possibly leading to OutOfMemoryException
-        
-        GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(upload.id).toQuery)
-      }
 
       def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit = Database.inTransaction {
         val upload = GroupedFileUploadFinder.byId(uploadedFileId).headOption
