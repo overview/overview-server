@@ -22,10 +22,11 @@ class PageStoreSpec extends DbSpecification {
       
       fileIds = findFileIds
       
-      val pageData: Array[Byte] = Array.fill(128)(0xCC.toByte)
+      val pageSize = 128
+      val pageData: Array[Byte] = Array.fill(pageSize)(0xCC.toByte)
 
       fileIds.foreach { fileId =>
-        val pagesToInsert = Seq.fill(numberOfPagesInFile)(Page(fileId, 1, refCount, Some(pageData), None))
+        val pagesToInsert = Seq.fill(numberOfPagesInFile)(Page(fileId, 1, refCount, Some(pageData), Some(pageSize), None))
         pages.insert(pagesToInsert)        
       }
       

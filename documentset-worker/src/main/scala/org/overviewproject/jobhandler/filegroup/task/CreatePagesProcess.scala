@@ -69,7 +69,7 @@ trait CreatePagesProcess {
     }
     
     private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
-      Page(fileId, pageNumber, 1, Some(content.data), Some(content.text))
+      Page(fileId, pageNumber, 1, Some(content.data), Some(content.data.size), Some(content.text))
 
 
   }
