@@ -4,6 +4,8 @@ password.secure=Please use a password at least seven characters long.
 
 controllers.admin.UserController.delete.failure=Document sets owned by {0} must be removed before the user can be deleted.
 
+controllers.DocumentSetArchiveController.unsupported=Zip archives are currently not supported for your document set. Please try again later.
+
 controllers.ConfirmationController.show.success=Welcome! To get started, try cloning one of the example document sets.
 
 controllers.DocumentSetController.clone.failure=We were not able to clone the document set.
@@ -480,6 +482,7 @@ views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to 
 views.ImportJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.ImportJob._documentSetCreationJob.subtitle.other=From uploaded file
 
+
 views.DocumentSetExport.index.h3=Export your document set
 views.DocumentSetExport.index.close=Close
 views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet. Please choose the format:
@@ -487,6 +490,9 @@ views.DocumentSetExport.index.formats.DocumentsWithStringTags.csv=CSV file, all 
 views.DocumentSetExport.index.formats.DocumentsWithStringTags.xlsx=Excel file, all tags in one column
 views.DocumentSetExport.index.formats.DocumentsWithColumnTags.csv=CSV file, each tag in its own column
 views.DocumentSetExport.index.formats.DocumentsWithColumnTags.xlsx=Excel file each tag in its own column
+views.DocumentSetExport.index.archive=Alternatively:
+views.DocumentSetExport.index.formats.ZipArchive=Zip archive of all documents as PDF
+
 views.DocumentSetExport.index.download=Download
 views.DocumentSetExport.index.postamble_html=Note: Microsoft Excel for Mac cannot open CSV files with UTF-8 characters. All versions of Excel are limited 32,767 characters per cell, and Overview will truncate long documents during XLSX export.
 
