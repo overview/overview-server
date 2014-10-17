@@ -1,6 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
 import play.api.libs.concurrent.Execution.Implicits._
 import controllers.auth.{ AuthorizedAction, Authorities }
 import scala.concurrent.Future

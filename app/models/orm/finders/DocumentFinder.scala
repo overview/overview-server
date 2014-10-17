@@ -61,6 +61,15 @@ object DocumentFinder extends Finder {
           orderBy (d.title, d.pageNumber, d.description, d.id)
           on (d.id === n.map(_.key), d.id === t.map(_.key)))
     }
+    
+    /** 
+     *  Returns file related info: (title, fileId, pageId, pageNumber)
+     *  All fields are optional.
+     */
+    def toFileInfo: FinderResult[(Option[String], Option[Long], Option[Long], Option[Int] )] = 
+      from(query)(d =>
+        select (d.title, d.fileId, d.pageId, d.pageNumber))
+        
   }
   implicit private def queryToDocumentFinderResult(query: Query[Document]): DocumentFinderResult = new DocumentFinderResult(query)
 
