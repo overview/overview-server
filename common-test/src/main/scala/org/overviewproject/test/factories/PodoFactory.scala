@@ -1,10 +1,11 @@
 package org.overviewproject.test.factories
 
 import java.sql.Timestamp
+import java.util.UUID
 import play.api.libs.json.JsObject
 import scala.util.Random
 
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Plugin,Viz,VizObject}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -22,6 +23,14 @@ object PodoFactory extends Factory {
   private def getId(idOr0: Long): Long = {
     if (idOr0 == 0L) {
       random.nextLong
+    } else {
+      idOr0
+    }
+  }
+
+  private def getId(idOr0: UUID): UUID = {
+    if (idOr0.equals(new UUID(0L, 0L))) {
+      UUID.randomUUID()
     } else {
       idOr0
     }
@@ -173,6 +182,13 @@ object PodoFactory extends Factory {
     nodeId: Long,
     documentId: Long
   ) = NodeDocument(nodeId, documentId)
+
+  override def plugin(
+    id: UUID = new UUID(0L, 0L),
+    name: String = "name", 
+    description: String = "description",
+    url: String = "http://example.org"
+  ) = Plugin(getId(id), name, description, url)
 
   override def searchResult(
     id: Long = 0L,

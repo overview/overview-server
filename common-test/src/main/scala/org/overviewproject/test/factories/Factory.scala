@@ -1,9 +1,10 @@
 package org.overviewproject.test.factories
 
 import java.sql.Timestamp
+import java.util.UUID
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Plugin,Viz,VizObject}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -98,6 +99,13 @@ trait Factory {
   ): Node
 
   def nodeDocument(nodeId: Long, documentId: Long): NodeDocument
+
+  def plugin(
+    id: UUID = new UUID(0L, 0L),
+    name: String = "name", 
+    description: String = "description",
+    url: String = "http://example.org"
+  ): Plugin
 
   def searchResult(
     id: Long = 0L,

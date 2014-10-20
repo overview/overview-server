@@ -1,11 +1,12 @@
 package org.overviewproject.test.factories
 
 import java.sql.{Connection,Timestamp}
+import java.util.UUID
 import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Plugin,Viz,VizObject}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -152,6 +153,13 @@ class DbFactory(connection: Connection) extends Factory {
     q.insertNodeDocument += podoFactory.nodeDocument(nodeId, documentId)
   }
 
+  override def plugin(
+    id: UUID = new UUID(0L, 0L),
+    name: String = "name", 
+    description: String = "description",
+    url: String = "http://example.org"
+  ) = q.insertPlugin += podoFactory.plugin(id, name, description, url)
+
   override def searchResult(
     id: Long = 0L,
     state: SearchResultState.Value = SearchResultState.Complete,
@@ -219,6 +227,7 @@ object DbFactory {
     val insertDocumentVizObject = (DocumentVizObjects returning DocumentVizObjects).insertInvoker
     val insertNode = (Nodes returning Nodes).insertInvoker
     val insertNodeDocument = (NodeDocuments returning NodeDocuments).insertInvoker
+    val insertPlugin = (Plugins returning Plugins).insertInvoker
     val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
     val insertTag = (Tags returning Tags).insertInvoker
     val insertViz = (Vizs returning Vizs).insertInvoker
