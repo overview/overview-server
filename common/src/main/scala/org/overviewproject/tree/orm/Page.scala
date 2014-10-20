@@ -7,7 +7,6 @@ case class Page(
     pageNumber: Int,
     referenceCount: Int,
     data: Option[Array[Byte]],
-    size: Option[Long],
     text: Option[String],
     dataErrorMessage: Option[String] = None,
     textErrorMessage: Option[String] = None,

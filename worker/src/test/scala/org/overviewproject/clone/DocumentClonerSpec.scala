@@ -111,9 +111,8 @@ class DocumentClonerSpec extends DbSpecification {
             select (p))
 
       protected def createPage(fileId: Long): Long = {
-        val pageSize = 128
-        val pageData = Array.fill[Byte](pageSize)(0xFF.toByte)
-        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, 1, Some(pageData), Some(pageSize), Some("Text")))
+        val pageData = Array.fill[Byte](128)(0xFF.toByte)
+        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, 1, Some(pageData), Some("Text")))
         page.id
       }
 
