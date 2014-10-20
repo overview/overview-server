@@ -8,6 +8,7 @@ import models.archive.Archive
 import models.DocumentFileInfo
 import models.archive.ArchiveEntryFactory
 import org.overviewproject.tree.orm.File
+import play.api.libs.iteratee.Enumerator
 
 trait DocumentSetArchiveController extends Controller {
 
@@ -19,24 +20,25 @@ trait DocumentSetArchiveController extends Controller {
     //    Redirect(routes.DocumentSetController.index()).flashing("error" -> m("unsupported"))
     val fileInfo = storage.findDocumentFileInfo(documentSetId)
     val archiveEntries = fileInfo.flatMap(archiveEntryFactory.create)
-    
+
     val archive = archiver.createArchive(archiveEntries)
-    
-    Ok.withHeaders(
-      CONTENT_TYPE -> "application/octet-stream",
-      CONTENT_LENGTH -> s"${archive.size}")
+
+    Ok.feed(Enumerator.fromStream(archive.stream)).
+      withHeaders(
+        CONTENT_TYPE -> "application/octet-stream",
+        CONTENT_LENGTH -> s"${archive.size}")
 
   }
-  
+
   protected val archiver: Archiver
   protected val storage: Storage
-  
+
   protected val archiveEntryFactory: ArchiveEntryFactory
-  
+
   protected trait Archiver {
     def createArchive(entries: Seq[ArchiveEntry]): Archive
   }
-  
+
   protected trait Storage {
     def findDocumentFileInfo(documentSetId: Long): Seq[DocumentFileInfo]
   }
@@ -44,15 +46,15 @@ trait DocumentSetArchiveController extends Controller {
 }
 
 object DocumentSetArchiveController extends DocumentSetArchiveController {
-  
+
   override protected val archiver: Archiver = new Archiver {
     override def createArchive(entries: Seq[ArchiveEntry]): Archive = ???
   }
-  
+
   override protected val storage: Storage = new Storage {
     override def findDocumentFileInfo(documentSetId: Long): Seq[DocumentFileInfo] = ???
   }
-  
+
   override protected val archiveEntryFactory: ArchiveEntryFactory = new ArchiveEntryFactory {
     override val storage = new Storage {
       override def findFile(fileId: Long): Option[File] = ???

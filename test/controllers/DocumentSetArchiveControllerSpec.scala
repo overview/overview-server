@@ -6,6 +6,7 @@ import models.archive.Archive
 import models.DocumentFileInfo
 import models.archive.ArchiveEntryFactory
 import models.archive.ArchiveEntry
+import java.io.ByteArrayInputStream
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
 
@@ -22,13 +23,18 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     "set content-disposition to some cool name" in new DocumentSetArchiveContext {
       todo
     }
+    
+    "send archive as content" in new DocumentSetArchiveContext {
+      h.contentAsBytes(result) must be equalTo archiveData
+    }
   }
 
   trait DocumentSetArchiveContext extends Scope {
     val documentSetId = 23
     val request = fakeAuthorizedRequest
     val archiveSize = 1989
-
+    val archiveData = Array.fill(archiveSize)(0xda.toByte)
+    
     val documentFileInfos = Seq.fill(5)(smartMock[DocumentFileInfo])
 
     val contentType = "application/octet-stream"
@@ -37,7 +43,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       val archive = smartMock[Archive]
 
       archive.size returns archiveSize
-
+      archive.stream returns new ByteArrayInputStream(archiveData)
+      
       val storage = smartMock[Storage]
       storage.findDocumentFileInfo(documentSetId) returns documentFileInfos
 
