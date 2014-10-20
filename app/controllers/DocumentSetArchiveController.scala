@@ -5,6 +5,7 @@ import controllers.auth.{ AuthorizedAction, Authorities }
 import scala.concurrent.Future
 import models.archive.ArchiveEntry
 import models.archive.Archive
+import models.DocumentFileInfo
 
 trait DocumentSetArchiveController extends Controller {
 
@@ -24,9 +25,14 @@ trait DocumentSetArchiveController extends Controller {
   }
   
   protected val archiver: Archiver
+  protected val storage: Storage
   
   protected trait Archiver {
     def createArchive(entries: Seq[ArchiveEntry]): Archive
+  }
+  
+  protected trait Storage {
+    def findDocumentFileInfo(documentSetId: Long): Seq[DocumentFileInfo]
   }
 
 }
@@ -35,5 +41,9 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
   
   override protected val archiver: Archiver = new Archiver {
     override def createArchive(entries: Seq[ArchiveEntry]): Archive = ???
+  }
+  
+  override protected val storage: Storage = new Storage {
+    override def findDocumentFileInfo(documentSetId: Long): Seq[DocumentFileInfo] = ???
   }
 }
