@@ -36,15 +36,17 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       val archiver = smartMock[Archiver]
       val archive = smartMock[Archive]
 
-      archiver.createArchive(any) returns archive
       archive.size returns archiveSize
 
       val storage = smartMock[Storage]
       storage.findDocumentFileInfo(documentSetId) returns documentFileInfos
 
+      val archiveEntries = Seq.fill(5)(smartMock[ArchiveEntry])
+      
       val archiveEntryFactory = smartMock[ArchiveEntryFactory]
-      archiveEntryFactory.create(any) returns (Some(smartMock[ArchiveEntry]), 
-          Seq.fill(4)(Some(smartMock[ArchiveEntry])): _* )
+      archiveEntryFactory.create(any) returns (archiveEntries.headOption, archiveEntries.tail.map(Some(_)): _*)
+
+      archiver.createArchive(archiveEntries) returns archive      
     }
 
     lazy val result = controller.archive(documentSetId)(request)
