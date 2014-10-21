@@ -7,6 +7,7 @@ import models.DocumentFileInfo
 import models.archive.ArchiveEntryFactory
 import models.archive.ArchiveEntry
 import java.io.ByteArrayInputStream
+import scala.concurrent.Future
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
 
@@ -30,6 +31,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
   }
 
   trait DocumentSetArchiveContext extends Scope {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    
     val documentSetId = 23
     val request = fakeAuthorizedRequest
     val archiveSize = 1989
@@ -46,7 +49,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       archive.stream returns new ByteArrayInputStream(archiveData)
       
       val storage = smartMock[Storage]
-      storage.findDocumentFileInfo(documentSetId) returns documentFileInfos
+      storage.findDocumentFileInfo(documentSetId) returns Future(documentFileInfos)
 
       val archiveEntries = Seq.fill(5)(smartMock[ArchiveEntry])
       
