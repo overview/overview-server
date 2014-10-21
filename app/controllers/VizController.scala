@@ -54,7 +54,10 @@ object VizController extends VizController {
     override def check(url: String): Future[Unit] = {
       import play.api.Play.current
       import play.api.libs.concurrent.Execution.Implicits._
-      WS.url(url).get.map(x => ())
+
+      val isAbsolute = url.startsWith("http")
+      val absoluteUrl = if (isAbsolute) url else ("https:" + url)
+      WS.url(absoluteUrl).get.map(x => ())
     }
   }
 

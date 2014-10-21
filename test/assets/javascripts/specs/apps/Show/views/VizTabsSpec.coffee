@@ -17,12 +17,25 @@ define [
   class VizList extends Backbone.Collection
     model: Viz
 
+  class Plugin extends Backbone.Model
+    defaults:
+      name: 'name'
+      description: 'description'
+      url: 'http://example.org'
+
+  class Plugins extends Backbone.Collection
+    model: Plugin
+
   describe 'apps/Show/views/VizTabs', ->
     beforeEach ->
+      @plugin1 = new Plugin(name: 'tree', description: 'treedesc', url: 'about:tree')
+      @plugin2 = new Plugin(name: 'url', description: 'urldesc', url: 'http://example.org')
+      @plugins = new Plugins([ @plugin1, @plugin2 ])
+
       i18n.reset_messages
         'views.DocumentSet.show.VizTabs.cancelJob': 'cancelJob'
-        'views.DocumentSet.show.VizTabs.new_tree': 'new_tree'
-        'views.DocumentSet.show.VizTabs.new_viz': 'new_viz'
+        'views.DocumentSet.show.VizTabs.newView': 'newView'
+        'views.DocumentSet.show.VizTabs.newView.custom': 'newView.custom'
         'views.DocumentSet.show.VizTabs.nDocuments': 'nDocuments,{0}'
         'views.DocumentSet.show.VizTabs.viz.title.dt': 'viz.title.dt'
         'views.DocumentSet.show.VizTabs.viz.title.dd': 'viz.title.dd,{0}'
@@ -42,7 +55,7 @@ define [
         @viz2 = new Viz(type: 'viz', id: 2, longId: 'viz-2', title: 'bar', nDocuments: 10, createdAt: new Date(), creationData: [])
         @vizList = new VizList([@viz1, @viz2])
         @state = new State(viz: @viz1)
-        @view = new VizTabs(collection: @vizList, state: @state, documentSet: @documentSet)
+        @view = new VizTabs(collection: @vizList, plugins: @plugins, state: @state, documentSet: @documentSet)
         $('body').append(@view.el)
 
       afterEach ->
@@ -93,14 +106,23 @@ define [
       it 'should emit click-new-tree', ->
         spy = sinon.spy()
         @view.on('click-new-tree', spy)
-        @view.$('a.new-tree').click()
+        @view.$('a[data-toggle=dropdown]').click()
+        @view.$('a[data-plugin-url="about:tree"]').click()
         expect(spy).to.have.been.called
 
       it 'should emit click-new-viz', ->
         spy = sinon.spy()
         @view.on('click-new-viz', spy)
-        @view.$('a.new-viz').click()
-        expect(spy).to.have.been.called
+        @view.$('a[data-toggle=dropdown]').click()
+        @view.$('a[data-plugin-url="http://example.org"]').click()
+        expect(spy).to.have.been.calledWith(url: 'http://example.org')
+
+      it 'should emit click-new-viz with url: null for about:custom', ->
+        spy = sinon.spy()
+        @view.on('click-new-viz', spy)
+        @view.$('a[data-toggle=dropdown]').click()
+        @view.$('a[data-plugin-url="about:custom"]').click()
+        expect(spy).to.have.been.calledWith(url: null)
 
       it 'should destroy a viz when it is removed', ->
         @vizList.remove(@viz1)
@@ -139,7 +161,7 @@ define [
         @state = new State(viz: @viz)
 
         @vizList = new VizList([@job, @viz])
-        @view = new VizTabs(collection: @vizList, state: @state, documentSet: @documentSet)
+        @view = new VizTabs(collection: @vizList, plugins: @plugins, state: @state, documentSet: @documentSet)
         $('body').append(@view.el)
 
       afterEach ->

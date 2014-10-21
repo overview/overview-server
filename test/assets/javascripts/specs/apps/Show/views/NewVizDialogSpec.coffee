@@ -111,6 +111,19 @@ define [
           it 'should hide the warning', -> expect(@text()).not.to.contain('url.insecure')
           it 'should check the url', -> expect(@sandbox.server.requests.length).to.eq(1)
 
+      describe 'when entering a URL that starts with //', ->
+        beforeEach ->
+          @$url.val('//example.org')
+          @$url.change()
+
+        it 'should show checking when checking', ->
+          expect(@text()).to.eq('url.checking')
+
+        it 'should send an XHR request to /metadata when checking', ->
+          req = @sandbox.server.requests[0]
+          expect(req).to.exist
+          expect(req.url).to.eq('http://example.org/metadata')
+
       describe 'when entering a secure url', ->
         beforeEach ->
           @$url.val('https://example.org')

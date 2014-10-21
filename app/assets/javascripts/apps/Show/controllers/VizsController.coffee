@@ -2,18 +2,22 @@ define [
   'underscore'
   'jquery'
   'backbone'
-  '../collections/Vizs'
+  '../collections/Plugins'
   '../views/VizTabs'
   '../views/NewVizDialog'
   'apps/ImportOptions/app'
-], (_, $, Backbone, Vizs, VizTabs, NewVizDialog, OptionsApp) ->
+], (_, $, Backbone, Plugins, VizTabs, NewVizDialog, OptionsApp) ->
   class VizsController
     _.extend(@::, Backbone.Events)
 
     constructor: (@documentSet, @vizs, @state) ->
+      @plugins = new Plugins([])
+      @plugins.fetch(reset: true)
+
       @view = new VizTabs
         documentSet: @documentSet
         collection: @vizs
+        plugins: @plugins
         state: @state
       @view.render()
 
@@ -68,8 +72,9 @@ define [
           data: data
           complete: -> onSubmit(data)
 
-    _onClickNewViz: ->
+    _onClickNewViz: (options) ->
       new NewVizDialog
+        url: options?.url
         success: (attrs) =>
           $.ajax
             type: 'post'

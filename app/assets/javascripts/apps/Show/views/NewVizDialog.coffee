@@ -9,6 +9,9 @@ define [
     constructor: (options) ->
       throw 'Must pass options.success, a function that accepts a { title: ..., url: ... }' if !options?.success
 
+      @url = options.url # if set, we know exactly which URL we want.
+      # XXX @url is a bit of a hack. We'll probably want an entirely separate dialog soon
+
       @_success = options.success
       @$container = $(options.container ? 'body')
 
@@ -35,13 +38,17 @@ define [
                     required="required"
                     />
                 </div>
-                <div class="form-group">
+                <div class="form-group <%- url ? 'hide' : '' %>">
                   <label for="new-viz-dialog-url"><%- t('url.label') %></label>
+                  <!-- We can't use type="url" because "//example.org" isn't an absolute URL.
+                       No biggie: we're actually trying to reach the URLs, so they'll be valid. -->
                   <input
                     id="new-viz-dialog-url"
                     name="url"
-                    type="url"
+                    type="text"
+                    pattern="(https?:)?//.*"
                     placeholder="<%- t('url.placeholder') %>"
+                    value="<%- url %>"
                     class="form-control"
                     required="required"
                     />
@@ -67,7 +74,7 @@ define [
             </div>
           </div>
         </form>
-      """, t: t)
+      """, t: t, url: @url)
       @$el = $(html)
       @$container.append(@$el)
 
@@ -75,7 +82,7 @@ define [
       @$el.on('click', 'input[type=submit]', @onSubmit.bind(@))
       @$el.on('click', 'a.retry', @onRetry.bind(@))
       @$el.on('click', 'a.dismiss', @onDismiss.bind(@))
-      @$el.on('change', 'input[name=title]', @onChangeName.bind(@))
+      @$el.on('change input', 'input[name=title]', @onChangeName.bind(@))
       @$el.on('change', 'input[name=url]', @onChangeUrl.bind(@))
 
       $state = @$el.find('.state')
@@ -93,6 +100,8 @@ define [
           invalid: $state.children('.invalid')
 
       @refreshState()
+      if @url?
+        @setUrlState(@url, 'ok')
 
       @$el.modal('show')
       @$el.find('input:eq(0)').focus().select()
@@ -169,7 +178,9 @@ define [
     # Effectively: calls setUrlState() once synchronously and more times
     # asynchronously.
     checkUrl: (url) ->
-      if !@checkSecure(url)
+      if url == @url
+        @setUrlState(url, 'ok')
+      else if !@checkSecure(url)
         @setUrlState(url, 'insecure')
       else
         status = @checkStatus(url)
@@ -181,10 +192,10 @@ define [
           @setUrlState(url, 'unavailable', status)
 
     checkSecure: (url) ->
-      if /^https:\/\//.test(url)
-        true
-      else
+      if /^http:\/\//.test(url)
         @secure[url] || false
+      else
+        true
 
     checkStatus: (url) ->
       if url of @statuses

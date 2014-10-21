@@ -12,7 +12,7 @@ object VizForm {
   def create(email: String): Form[Attributes] = Form(
     Forms.mapping(
       "title" -> Forms.nonEmptyText,
-      "url" -> Forms.nonEmptyText.verifying(Constraints.pattern("""^https?://.*""".r))
+      "url" -> Forms.nonEmptyText.verifying(Constraints.pattern("""^(https?:)?//.*""".r))
     )(Attributes.apply)(Attributes.unapply)
   )
 }

@@ -24,8 +24,8 @@ define [
     events:
       'click .toggle-popover': '_onClickPopover'
       'click li[data-id]>a': '_onClick'
-      'click a.new-tree': '_onClickNewTree'
-      'click a.new-viz': '_onClickNewViz'
+      'click a.new-tree': '_onClickNewTree' # legacy, on production
+      'click a[data-plugin-url]': '_onClickNewView' # on dev
       'click button.cancel': '_onClickCancel'
 
     templates:
@@ -91,17 +91,34 @@ define [
             documentSet: documentSet
           }) %>
         <% }); %>
-        <li class="new-viz">
-          <a href="#" class="new-tree">
-            <i class="icon-overview-plus"></i>
-            <%- t('new_tree') %>
-          </a>
-        </li>
         <% if (window.location.hostname == 'localhost') { %>
+          <li class="dropdown">
+            <a href="#" data-toggle="dropdown">
+              <%- t('newView') %>
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+              <% plugins.forEach(function(plugin) { %>
+                <li role="presentation">
+                  <a role="menuitem" href="#" data-plugin-url="<%- plugin.get('url') %>">
+                    <span class="name"><%- plugin.get('name') %></span>
+                    <span class="description"><%- plugin.get('description') %></span>
+                  </a>
+                </li>
+              <% }) %>
+              <% if (plugins.length > 0) { %>
+                <li role="presentation" class="divider"></li>
+              <% } %>
+              <li role="presentation">
+                <a href="#" data-plugin-url="about:custom"><%- t('newView.custom') %></a>
+              </li>
+            </ul>
+          </li>
+        <% } else { %>
           <li class="new-viz">
-            <a href="#" class="new-viz">
+            <a href="#" class="new-tree">
               <i class="icon-overview-plus"></i>
-              <%- t('new_viz') %>
+              <%- t('new_tree') %>
             </a>
           </li>
         <% } %>
@@ -109,11 +126,13 @@ define [
 
     initialize: ->
       throw 'must set options.documentSet' if !@options.documentSet
+      throw 'must set options.plugins' if !@options.plugins
       throw 'must set options.collection' if !@options.collection
       throw 'must set options.state, a State' if !@options.state
 
       @state = @options.state
       @documentSet = @options.documentSet
+      @plugins = @options.plugins
 
       @listenTo(@collection, 'remove', @_onRemove)
       @listenTo(@collection, 'add', @_onAdd)
@@ -121,10 +140,12 @@ define [
       @listenTo(@state, 'change:viz', @_onSelectedChanged)
 
       @render()
+      @listenTo(@plugins, 'reset', @render)
 
     render: ->
       html = @templates.main
         vizs: @collection
+        plugins: @plugins
         documentSet: @documentSet
         selectedViz: @state.get('viz')
         templates: @templates
@@ -222,9 +243,13 @@ define [
       e.preventDefault()
       @trigger('click-new-tree')
 
-    _onClickNewViz: (e) ->
+    _onClickNewView: (e) ->
       e.preventDefault()
-      @trigger('click-new-viz')
+      url = e.currentTarget.getAttribute('data-plugin-url')
+      switch url
+        when 'about:tree' then @trigger('click-new-tree')
+        when 'about:custom' then @trigger('click-new-viz', url: null)
+        else @trigger('click-new-viz', url: url)
 
     _onClickCancel: (e) ->
       e.preventDefault()
