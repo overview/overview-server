@@ -112,6 +112,13 @@ DELETE /admin/users/:email controllers.admin.UserController.delete(email: String
 GET    /admin/imports        controllers.admin.ImportJobController.index()
 DELETE /admin/imports/:jobId controllers.admin.ImportJobController.delete(jobId: Long)
 
+GET    /admin/plugins controllers.admin.PluginController.index()
+
+GET    /plugins     controllers.PluginController.index()
+POST   /plugins     controllers.PluginController.create()
+PUT    /plugins/:id controllers.PluginController.update(id: java.util.UUID)
+DELETE /plugins/:id controllers.PluginController.destroy(id: java.util.UUID)
+
 # API V1
 #
 # Each is documented at https://github.com/overview/overview-server/wiki/API-v1

@@ -78,6 +78,19 @@ views.admin.ImportJob.index.th.title=Title
 views.admin.ImportJob.index.th.query=Query
 views.admin.ImportJob.index.td.created_at={0,date,medium} at {0,time,short}
 
+views.admin.Plugin.index.title=Plugins
+views.admin.Plugin.index.h1=Plugins
+views.admin.Plugin.index.description=This is our registry of plugins: they appear when the user asks to list them.
+views.admin.Plugin.index.th.name=Name
+views.admin.Plugin.index.th.description=Description
+views.admin.Plugin.index.th.url=Url
+views.admin.Plugin.index.action.delete=Delete
+views.admin.Plugin.index.new.heading=Register a Plugin
+views.admin.Plugin.index.new.name=Name
+views.admin.Plugin.index.new.description=Description
+views.admin.Plugin.index.new.url=Url
+views.admin.Plugin.index.new.submit=Register
+
 views.admin.User.index.title=Users
 views.admin.User.index.h1=Users
 views.admin.User.index.th.email=Email
@@ -112,8 +125,9 @@ views.components.importNav.copy=Copy a document set:
 views.components.importNav.copy.public=Copy an example document set
 views.components.importNav.copy.shared=Copy document sets shared with you
 
-views.components.navbar.link_admin_users=Users
 views.components.navbar.link_admin_jobs=Jobs
+views.components.navbar.link_admin_plugins=Plugins
+views.components.navbar.link_admin_users=Users
 views.components.navbar.link_blog=Blog
 views.components.navbar.link_contact=Contact us
 views.components.navbar.link_intercom=Talk to us

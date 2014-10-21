@@ -1,0 +1,25 @@
+@(
+  user: OverviewUser
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+
+@javascripts = {
+  @requireJsBundle("admin/Plugin/index")
+}
+@jsMessageKeys = @{Seq(
+  "views.admin.Plugin.index.th.name",
+  "views.admin.Plugin.index.th.description",
+  "views.admin.Plugin.index.th.url",
+  "views.admin.Plugin.index.action.delete",
+  "views.admin.Plugin.index.new.heading",
+  "views.admin.Plugin.index.new.name",
+  "views.admin.Plugin.index.new.description",
+  "views.admin.Plugin.index.new.url",
+  "views.admin.Plugin.index.new.submit"
+)}
+
+@defining(scopedMessages("views.admin.Plugin.index")) { m =>
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="admin-plugin-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    <p class="description">@m("description")</p>
+    <div class="app"></div>
+  }
+}

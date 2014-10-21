@@ -14,6 +14,14 @@ requirejs.config({
       deps: [ 'jquery', 'underscore' ]
       exports: 'Backbone'
     }
+    'backform': {
+      deps: [ 'backbone' ]
+      exports: 'Backform'
+    }
+    'backgrid': {
+      deps: [ 'backbone' ]
+      exports: 'Backgrid'
+    }
     'base64': { exports: 'Base64' }
     'bootstrap-alert': {
       deps: [ 'jquery' ]
@@ -59,6 +67,8 @@ requirejs.config({
 
   paths: {
     'backbone': 'vendor/backbone'
+    'backform': 'vendor/backform'
+    'backgrid': 'vendor/backgrid'
     'base64': 'vendor/base64'
     'bootstrap-alert': 'vendor/bootstrap-alert'
     'bootstrap-collapse': 'vendor/bootstrap-collapse'
