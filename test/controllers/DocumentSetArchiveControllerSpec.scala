@@ -22,7 +22,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     }
 
     "set content-disposition to some cool name" in new DocumentSetArchiveContext {
-      todo
+      header(h.CONTENT_DISPOSITION) must beSome(s"""attachment; filename="$fileName"""")
     }
     
     "send archive as content" in new DocumentSetArchiveContext {
@@ -34,6 +34,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     import scala.concurrent.ExecutionContext.Implicits.global
     
     val documentSetId = 23
+    val fileName = "documents.zip"
     val request = fakeAuthorizedRequest
     val archiveSize = 1989
     val archiveData = Array.fill(archiveSize)(0xda.toByte)
@@ -59,7 +60,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       archiver.createArchive(archiveEntries) returns archive      
     }
 
-    lazy val result = controller.archive(documentSetId)(request)
+    lazy val result = controller.archive(documentSetId, fileName)(request)
 
     def header(key: String): Option[String] = h.header(key, result)
   }

@@ -106,7 +106,7 @@ GET    /public-document-sets controllers.PublicDocumentSetController.index()
 GET    /shared-document-sets controllers.SharedDocumentSetController.index()
 
 
-GET    /documentsets/:id/archive          controllers.DocumentSetArchiveController.archive(id: Long)
+GET    /documentsets/:id/archive/view/:filename          controllers.DocumentSetArchiveController.archive(id: Long, filename: String)
 
 # Admin section
 GET    /admin/users        controllers.admin.UserController.index()

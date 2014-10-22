@@ -15,12 +15,13 @@ import models.archive.ArchiveEntryCollection
 import org.overviewproject.models.tables.Files
 import models.OverviewDatabase
 import org.overviewproject.models.File
+import org.overviewproject.util.ContentDisposition
 
 trait DocumentSetArchiveController extends Controller {
 
   import Authorities._
 
-  def archive(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def archive(documentSetId: Long, filename: String) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     //    val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
     //    
     //    Redirect(routes.DocumentSetController.index()).flashing("error" -> m("unsupported"))
@@ -32,7 +33,8 @@ trait DocumentSetArchiveController extends Controller {
       Ok.feed(Enumerator.fromStream(archive.stream)).
         withHeaders(
           CONTENT_TYPE -> "application/octet-stream",
-          CONTENT_LENGTH -> s"${archive.size}")
+          CONTENT_LENGTH -> s"${archive.size}",
+          CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition)
     }
   }
 
