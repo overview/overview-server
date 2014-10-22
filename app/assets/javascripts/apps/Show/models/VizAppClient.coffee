@@ -34,6 +34,7 @@ define [
 
     _onMessage: (e) ->
       vizUrl = @vizApp.viz.attributes.url
+      vizUrl = "#{window.location.protocol}#{vizUrl}" if vizUrl.substring(0, 2) == '//'
       if e.origin != vizUrl.substring(0, e.origin.length)
         console.log("Dropped message from #{e.origin}: expected #{vizUrl}", e)
         return
