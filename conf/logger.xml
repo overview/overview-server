@@ -19,6 +19,7 @@
   <logger name="application" level="DEBUG" />
   <logger name="com.jolbox.bonecp" level="DEBUG" />
   <logger name="javax.management" level="INFO" />
+  <logger name="scala.slick" level="INFO" />
 
   <root level="DEBUG">
     <appender-ref ref="STDOUT" />
