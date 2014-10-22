@@ -7,12 +7,14 @@ import models.archive.ArchiveEntry
 import models.archive.Archive
 import models.DocumentFileInfo
 import models.archive.ArchiveEntryFactory
-import org.overviewproject.tree.orm.File
 import play.api.libs.iteratee.Enumerator
 import controllers.backend.DbBackend
 import org.overviewproject.models.tables.Documents
 import models.archive.zip.ZipArchive
 import models.archive.ArchiveEntryCollection
+import org.overviewproject.models.tables.Files
+import models.OverviewDatabase
+import org.overviewproject.models.File
 
 trait DocumentSetArchiveController extends Controller {
 
@@ -54,7 +56,7 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
   override protected val archiver: Archiver = new Archiver {
     override def createArchive(entries: Seq[ArchiveEntry]): Archive = {
       val validEntries = new ArchiveEntryCollection(entries)
-      new ZipArchive(validEntries) 
+      new ZipArchive(validEntries)
     }
   }
 
@@ -71,8 +73,13 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
   }
 
   override protected val archiveEntryFactory: ArchiveEntryFactory = new ArchiveEntryFactory {
+    import org.overviewproject.database.Slick.simple._
+    
     override val storage = new Storage {
-      override def findFile(fileId: Long): Option[File] = ???
+      override def findFile(fileId: Long): Option[File] = OverviewDatabase.withSlickSession { session =>
+        Files.filter(f => f.id === fileId).firstOption(session)
+      }
+
     }
   }
 }

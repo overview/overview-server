@@ -2,8 +2,8 @@ package models.archive
 
 import models.DocumentFileInfo
 import java.io.InputStream
-import org.overviewproject.tree.orm.File
 import controllers.util.PlayLargeObjectInputStream
+import org.overviewproject.models.File
 
 trait ArchiveEntryFactory {
 

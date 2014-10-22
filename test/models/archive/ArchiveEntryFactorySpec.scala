@@ -2,9 +2,9 @@ package models.archive
 
 import org.specs2.mutable.Specification
 import models.DocumentFileInfo
-import org.overviewproject.tree.orm.File
 import org.specs2.mock.Mockito
 import controllers.util.PlayLargeObjectInputStream
+import org.overviewproject.models.File
 
 class ArchiveEntryFactorySpec extends Specification with Mockito {
 
