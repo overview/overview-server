@@ -6,71 +6,58 @@ import org.specs2.mock.Mockito
 import controllers.util.PlayLargeObjectInputStream
 import org.overviewproject.models.File
 import java.io.InputStream
+import org.specs2.specification.Scope
+import org.specs2.mutable.Before
 
 class ArchiveEntryFactorySpec extends Specification with Mockito {
 
   "ArchiveEntryFactory" should {
 
-    "create entry for document with file" in {
-      val contentsOid = 11l
-      val viewOid = 11l
-
-      val documentInfo = DocumentFileInfo(Some("title"), Some(1l), None, None)
-      val size = 100l
-      val name = "filename"
-      val file = smartMock[File]
-      file.name returns name
-      file.contentsSize returns Some(size)
-      file.viewSize returns Some(size)
-      file.contentsOid returns contentsOid
-      file.viewOid returns viewOid
-      
-      val factory = new TestArchiveEntryFactory(contentsOid, file)
-
-      val entry = factory.create(documentInfo)
-
-      entry must beSome { e: ArchiveEntry =>
-        e.name must be equalTo name
-        e.size must be equalTo size
-        
-        val s = e.data()
-        there was one(factory.mockStorage).largeObjectInputStream(viewOid)
-      }
-
-      
+    "create entry for document with file" in new ArchiveEntryFactoryContext {
+      entry must beSome (matchesEntryParams(name, size, viewOid) _)
     }
 
-    "create entry for document with PDF view" in {
-      val contentsOid = 11l
-      val viewOid = 22l
-
-      val documentInfo = DocumentFileInfo(Some("title"), Some(1l), None, None)
-      val size = 100l
-      val viewSize = 324l
-      val name = "filename"
-      val file = smartMock[File]
-
-      file.name returns name
-      file.contentsSize returns Some(size)
-      file.viewSize returns Some(viewSize)
-      file.viewOid returns viewOid
-      
-      val factory = new TestArchiveEntryFactory(viewOid, file)
-
-      val entry = factory.create(documentInfo)
-
-      entry must beSome { e: ArchiveEntry =>
-        e.name must be equalTo name
-        e.size must be equalTo viewSize
-        val s = e.data()
-        there was one(factory.mockStorage).largeObjectInputStream(viewOid)
-      }
-
+    "create entry for document with PDF view" in new FileWithView {
+      entry must beSome (matchesEntryParams(name, viewSize, viewOid) _)
     }
 
     "create entry for document with page" in {
       todo
     }
+  }
+
+  trait ArchiveEntryFactoryContext extends Before {
+    val contentsOid = 11l
+    val viewOid = 11l
+
+    val documentInfo = DocumentFileInfo(Some("title"), Some(1l), None, None)
+    val size = 100l
+    val viewSize = 100l
+
+    val name = "filename"
+    val file = smartMock[File]
+    val factory = new TestArchiveEntryFactory(contentsOid, file)
+    def entry = factory.create(documentInfo)
+
+    def before = {
+      file.name returns name
+      file.contentsSize returns Some(size)
+      file.viewSize returns Some(viewSize)
+      file.contentsOid returns contentsOid
+      file.viewOid returns viewOid
+    }
+
+    def matchesEntryParams(name: String, size: Long, oid: Long)(e: ArchiveEntry) = {
+      e.name must be equalTo name
+      e.size must be equalTo viewSize
+      val s = e.data()
+      there was one(factory.mockStorage).largeObjectInputStream(viewOid)
+    }
+  }
+
+  trait FileWithView extends ArchiveEntryFactoryContext {
+    override val contentsOid = 10l
+    override val viewSize = 324l
   }
 
   class TestArchiveEntryFactory(oid: Long, file: File) extends ArchiveEntryFactory {
