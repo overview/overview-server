@@ -12,9 +12,9 @@ trait ArchiveEntryFactory {
     for {
       fileId <- document.fileId
       file <- storage.findFile(fileId)
-      size <- file.contentsSize
+      size <- file.viewSize
     } yield {
-      ArchiveEntry(file.name, size, largeObjectInputStream(file.contentsOid) _)
+      ArchiveEntry(file.name, size, largeObjectInputStream(file.viewOid) _)
     }
   }
   
@@ -22,7 +22,8 @@ trait ArchiveEntryFactory {
   
   protected trait Storage {
     def findFile(fileId: Long): Option[File]
+    def largeObjectInputStream(oid: Long): InputStream
   }
   
-  private def largeObjectInputStream(oid: Long)(): InputStream = new PlayLargeObjectInputStream(oid)
+  private def largeObjectInputStream(oid: Long)(): InputStream = storage.largeObjectInputStream(oid)
 }

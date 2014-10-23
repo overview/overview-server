@@ -16,6 +16,8 @@ import org.overviewproject.models.tables.Files
 import models.OverviewDatabase
 import org.overviewproject.models.File
 import org.overviewproject.util.ContentDisposition
+import java.io.InputStream
+import controllers.util.PlayLargeObjectInputStream
 
 trait DocumentSetArchiveController extends Controller {
 
@@ -81,6 +83,8 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
       override def findFile(fileId: Long): Option[File] = OverviewDatabase.withSlickSession { session =>
         Files.filter(f => f.id === fileId).firstOption(session)
       }
+      
+      override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid)
 
     }
   }
