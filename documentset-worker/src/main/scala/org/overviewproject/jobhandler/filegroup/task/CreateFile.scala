@@ -106,7 +106,7 @@ object CreateFile extends CreateFile {
           val n = viewStream.read(buffer)
           if (n == -1) 0
           else {
-            lo.add(buffer)
+            lo.add(buffer.take(n))
             n + copyStreamToLargeObject
           }
         }
