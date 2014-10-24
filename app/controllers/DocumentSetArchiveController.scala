@@ -17,8 +17,11 @@ import models.OverviewDatabase
 import org.overviewproject.models.File
 import org.overviewproject.util.ContentDisposition
 import java.io.InputStream
+import java.io.ByteArrayInputStream
 import controllers.util.PlayLargeObjectInputStream
 import org.overviewproject.models.Page
+import org.overviewproject.models.tables.Pages
+import scala.slick.jdbc.StaticQuery
 
 trait DocumentSetArchiveController extends Controller {
 
@@ -79,15 +82,24 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
 
   override protected val archiveEntryFactory: ArchiveEntryFactory = new ArchiveEntryFactory {
     import org.overviewproject.database.Slick.simple._
-
+    import scala.slick.jdbc.GetResult.GetLong
+    
     override val storage = new Storage {
       override def findFile(fileId: Long): Option[File] = OverviewDatabase.withSlickSession { session =>
         Files.filter(f => f.id === fileId).firstOption(session)
       }
-      override def findPageSize(pageId: Long): Option[Long] = ???
+      override def findPageSize(pageId: Long): Option[Long] = OverviewDatabase.withSlickSession { implicit session =>
+        val q = s"""
+        SELECT octet_length(data) FROM page WHERE id = $pageId"""
+          
+        StaticQuery.queryNA(q).firstOption
+      }
 
       override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid)
-      override def pageDataStream(pageId: Long): Option[InputStream] = ???
+      override def pageDataStream(pageId: Long): Option[InputStream] = OverviewDatabase.withSlickSession { implicit session =>
+        val q = Pages.filter(_.id === pageId).map(_.data)
+        q.firstOption.map(new ByteArrayInputStream(_))
+      }
     }
   }
 }
