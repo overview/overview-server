@@ -24,12 +24,13 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
     }
 
     "create entry for document with page" in new DocumentWithPage {
-      val pageTitle = s"$name - page $pageNumber"
       entry must beSome(matchesEntryParams(pageTitle, pageSize, pageId) _)
     }
 
-    "create entry for document with missing page" in {
-      todo
+    "throw exception if pageId is invalid and stream is accessed" in new InvalidPageId {
+      entry must beSome { e: ArchiveEntry =>
+        e.data() must throwA[NoSuchElementException]
+      }
     }
   }
 
@@ -58,7 +59,7 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
     def matchesEntryParams(name: String, size: Long, oid: Long)(e: ArchiveEntry) = {
       e.name must be equalTo name
       e.size must be equalTo size
-      
+
       val s = e.data()
       streamWasCreatedFromId(oid)
     }
@@ -75,6 +76,7 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
   trait DocumentWithPage extends ArchiveEntryFactoryContext {
     val pageId = 2l
     val pageNumber = 33
+    val pageTitle = s"$name - page $pageNumber"
 
     val pageSize = 123
 
@@ -86,15 +88,22 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
       there was one(factory.mockStorage).pageDataStream(pageId)
   }
 
-  class TestArchiveEntryFactory(oid: Long, file: File, pageSize: Option[Long]) extends ArchiveEntryFactory {
+  trait InvalidPageId extends DocumentWithPage {
+    override val factory = new TestArchiveEntryFactory(1l, file, Some(pageSize), validPageId = false)
+  }
+
+  class TestArchiveEntryFactory(oid: Long, file: File, pageSize: Option[Long], validPageId: Boolean = true) extends ArchiveEntryFactory {
 
     override protected val storage = smartMock[Storage]
     storage.findFile(any) returns Some(file)
     storage.largeObjectInputStream(oid) returns smartMock[InputStream]
 
     storage.findPageSize(any) returns pageSize
-    storage.pageDataStream(any) returns Some(smartMock[InputStream])
+
+    if (validPageId) storage.pageDataStream(any) returns Some(smartMock[InputStream])
+    else storage.pageDataStream(any) returns None
 
     def mockStorage = storage
+
   }
 }

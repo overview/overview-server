@@ -35,11 +35,12 @@ trait ArchiveEntryFactory {
 
   private def largeObjectInputStream(oid: Long)(): InputStream = storage.largeObjectInputStream(oid)
   
-  private def pageDataStream(pageId: Long)(): InputStream = {
-    def emptyStream = new ByteArrayInputStream(Array.empty)
-
-    storage.pageDataStream(pageId).getOrElse(emptyStream)
-  }
+  // If the pageId is invalid, NoSuchElementException will be thrown
+  // We could return an empty stream, but then the size would be wrong
+  // so the archive would be corrupt anyway.
+  private def pageDataStream(pageId: Long)(): InputStream = 
+    storage.pageDataStream(pageId).get
+  
 
   private def fileNameWithPage(fileName: String, pageNumber: Int): String =
     s"$fileName - page $pageNumber"
