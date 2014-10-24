@@ -1,15 +1,16 @@
 package models.archive
 
-import org.overviewproject.models.File
+import java.io.ByteArrayInputStream
 import java.io.InputStream
+
+import scala.slick.jdbc.StaticQuery.interpolation
+
 import controllers.util.PlayLargeObjectInputStream
 import models.OverviewDatabase
+import org.overviewproject.database.Slick.simple._
+import org.overviewproject.models.File
 import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.Pages
-import org.overviewproject.database.Slick.simple._
-import scala.slick.jdbc.GetResult.GetLong
-import scala.slick.jdbc.StaticQuery
-import java.io.ByteArrayInputStream
 
 class ArchiveEntryFactoryWithStorage extends ArchiveEntryFactory {
 
@@ -21,9 +22,9 @@ class ArchiveEntryFactoryWithStorage extends ArchiveEntryFactory {
 
     override def findPageSize(pageId: Long): Option[Long] =
       OverviewDatabase.withSlickSession { implicit session =>
-        val q = s"SELECT octet_length(data) FROM page WHERE id = $pageId"
+       val query =  sql"SELECT octet_length(data) FROM page WHERE id = $pageId".as[Long]
 
-        StaticQuery.queryNA(q).firstOption
+        query.firstOption
       }
 
     override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid)
