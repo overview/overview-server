@@ -18,6 +18,7 @@ import org.overviewproject.models.File
 import org.overviewproject.util.ContentDisposition
 import java.io.InputStream
 import controllers.util.PlayLargeObjectInputStream
+import org.overviewproject.models.Page
 
 trait DocumentSetArchiveController extends Controller {
 
@@ -78,14 +79,15 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
 
   override protected val archiveEntryFactory: ArchiveEntryFactory = new ArchiveEntryFactory {
     import org.overviewproject.database.Slick.simple._
-    
+
     override val storage = new Storage {
       override def findFile(fileId: Long): Option[File] = OverviewDatabase.withSlickSession { session =>
         Files.filter(f => f.id === fileId).firstOption(session)
       }
-      
-      override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid)
+      override def findPageSize(pageId: Long): Option[Long] = ???
 
+      override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid)
+      override def pageDataStream(pageId: Long): Option[InputStream] = ???
     }
   }
 }
