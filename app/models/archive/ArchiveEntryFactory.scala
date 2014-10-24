@@ -34,6 +34,7 @@ trait ArchiveEntryFactory {
     }
 
   private def largeObjectInputStream(oid: Long)(): InputStream = storage.largeObjectInputStream(oid)
+  
   private def pageDataStream(pageId: Long)(): InputStream = {
     def emptyStream = new ByteArrayInputStream(Array.empty)
 
