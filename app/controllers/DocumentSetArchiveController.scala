@@ -1,28 +1,21 @@
 package controllers
 
-import play.api.libs.concurrent.Execution.Implicits._
-import controllers.auth.{ AuthorizedAction, Authorities }
 import scala.concurrent.Future
-import models.archive.ArchiveEntry
-import models.archive.Archive
-import models.DocumentFileInfo
-import models.archive.ArchiveEntryFactory
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import controllers.backend.DbBackend
+
 import org.overviewproject.models.tables.Documents
-import models.archive.zip.ZipArchive
-import models.archive.ArchiveEntryCollection
-import org.overviewproject.models.tables.Files
-import models.OverviewDatabase
-import org.overviewproject.models.File
 import org.overviewproject.util.ContentDisposition
-import java.io.InputStream
-import java.io.ByteArrayInputStream
-import controllers.util.PlayLargeObjectInputStream
-import org.overviewproject.models.Page
-import org.overviewproject.models.tables.Pages
-import scala.slick.jdbc.StaticQuery
+
+import controllers.auth.{ AuthorizedAction, Authorities }
+import controllers.backend.DbBackend
+import models.DocumentFileInfo
+import models.archive.Archive
+import models.archive.ArchiveEntry
+import models.archive.ArchiveEntryCollection
+import models.archive.ArchiveEntryFactory
 import models.archive.ArchiveEntryFactoryWithStorage
+import models.archive.zip.ZipArchive
 
 trait DocumentSetArchiveController extends Controller {
 
