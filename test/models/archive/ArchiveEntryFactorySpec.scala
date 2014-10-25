@@ -16,15 +16,15 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
   "ArchiveEntryFactory" should {
 
     "create entry for document with file" in new ArchiveEntryFactoryContext {
-      entry must beSome(matchesEntryParams(name, size, viewOid) _)
+      entry must beSome(matchesEntryParams(name + Pdf, size, viewOid) _)
     }
 
     "create entry for document with PDF view" in new FileWithView {
-      entry must beSome(matchesEntryParams(name, viewSize, viewOid) _)
+      entry must beSome(matchesEntryParams(name + Pdf, viewSize, viewOid) _)
     }
 
     "create entry for document with page" in new DocumentWithPage {
-      entry must beSome(matchesEntryParams(pageTitle, pageSize, pageId) _)
+      entry must beSome(matchesEntryParams(pageTitle + Pdf, pageSize, pageId) _)
     }
 
     "throw exception if pageId is invalid and stream is accessed" in new InvalidPageId {
@@ -32,13 +32,26 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
         e.data() must throwA[NoSuchElementException]
       }
     }
+
+    "only have a single .pdf extension for pdf files" in new PdfFile {
+      entry must beSome(matchesEntryParams(name, size, viewOid) _)
+    }
+
+    "detect PDF extension regardless of case" in new UpperCasePdfFile {
+      entry must beSome(matchesEntryParams(name, size, viewOid) _)
+    }
+
+    "remove pdf extension from filename with page" in new PdfPage {
+      entry must beSome(matchesEntryParams(s"$baseName $pageDescriptor" + Pdf, pageSize, pageId) _)
+    }
   }
 
   trait ArchiveEntryFactoryContext extends Before {
+    val Pdf = ".pdf"
     val contentsOid = 11l
     val viewOid = 11l
 
-    val documentInfo = DocumentFileInfo(Some(name), Some(1l), None, None)
+    def documentInfo = DocumentFileInfo(Some(name), Some(1l), None, None)
     val size = 100l
     val viewSize = 100l
 
@@ -76,11 +89,12 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
   trait DocumentWithPage extends ArchiveEntryFactoryContext {
     val pageId = 2l
     val pageNumber = 33
-    val pageTitle = s"$name - page $pageNumber"
+    val pageDescriptor = s"- page $pageNumber"
+    val pageTitle = s"$name $pageDescriptor"
 
     val pageSize = 123
 
-    override val documentInfo = DocumentFileInfo(Some(name), Some(1l), Some(pageId), Some(pageNumber))
+    override def documentInfo = DocumentFileInfo(Some(name), Some(1l), Some(pageId), Some(pageNumber))
 
     override val factory = new TestArchiveEntryFactory(1l, file, Some(pageSize))
 
@@ -90,6 +104,19 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
 
   trait InvalidPageId extends DocumentWithPage {
     override val factory = new TestArchiveEntryFactory(1l, file, Some(pageSize), validPageId = false)
+  }
+
+  trait PdfFile extends ArchiveEntryFactoryContext {
+    override val name = "filename.pdf"
+  }
+
+  trait UpperCasePdfFile extends ArchiveEntryFactoryContext {
+    override val name = "filename.PDF"
+  }
+
+  trait PdfPage extends DocumentWithPage {
+    val baseName = "fileName"
+    override val name = baseName + Pdf
   }
 
   class TestArchiveEntryFactory(oid: Long, file: File, pageSize: Option[Long], validPageId: Boolean = true) extends ArchiveEntryFactory {

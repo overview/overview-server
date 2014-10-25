@@ -8,7 +8,7 @@ import org.overviewproject.models.Page
 import java.io.ByteArrayInputStream
 
 trait ArchiveEntryFactory {
-
+    
   def create(document: DocumentFileInfo): Option[ArchiveEntry] = {
     createFromPage(document)
       .orElse(createFromFile(document))
@@ -16,11 +16,12 @@ trait ArchiveEntryFactory {
 
   private def createFromFile(document: DocumentFileInfo): Option[ArchiveEntry] =
     for {
+      name <- document.title
       fileId <- document.fileId
       file <- storage.findFile(fileId)
       size <- file.viewSize
     } yield {
-      ArchiveEntry(file.name, size, largeObjectInputStream(file.viewOid) _)
+      ArchiveEntry(asPdf(name), size, largeObjectInputStream(file.viewOid) _)
     }
 
   private def createFromPage(document: DocumentFileInfo): Option[ArchiveEntry] =
@@ -30,20 +31,30 @@ trait ArchiveEntryFactory {
       pageNumber <- document.pageNumber
       size <- storage.findPageSize(pageId)
     } yield {
-      ArchiveEntry(fileNameWithPage(name, pageNumber), size, pageDataStream(pageId) _)
+      ArchiveEntry(fileNameWithPage(removePdf(name), pageNumber), size, pageDataStream(pageId) _)
     }
 
   private def largeObjectInputStream(oid: Long)(): InputStream = storage.largeObjectInputStream(oid)
-  
+
   // If the pageId is invalid, NoSuchElementException will be thrown
   // We could return an empty stream, but then the size would be wrong
   // so the archive would be corrupt anyway.
-  private def pageDataStream(pageId: Long)(): InputStream = 
+  private def pageDataStream(pageId: Long)(): InputStream =
     storage.pageDataStream(pageId).get
-  
 
   private def fileNameWithPage(fileName: String, pageNumber: Int): String =
-    s"$fileName - page $pageNumber"
+    asPdf(s"$fileName - page $pageNumber")
+
+  private def removePdf(fileName: String): String = {
+    val caseInsensitivePdfExtension = "(?i)\\.pdf$"
+    fileName.replaceAll(caseInsensitivePdfExtension, "")
+  }
+  
+  private def asPdf(fileName: String): String = {
+    val Pdf = ".pdf"
+    if (fileName.toLowerCase endsWith Pdf) fileName
+    else fileName + Pdf
+  }
 
   protected val storage: Storage
 
