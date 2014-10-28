@@ -31,8 +31,12 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     }
 
     "redirect if archiving is not supported" in new UnsupportedDocumentSet {
-      val unsupported = Messages("controllers.DocumentSetArchiveController.unsupported")
       h.status(result) must beEqualTo(h.SEE_OTHER)
+    }
+
+    "flash warning if archiving is not supported" in new UnsupportedDocumentSet {
+      val unsupported = Messages("controllers.DocumentSetArchiveController.unsupported")
+
       h.flash(result).data must be equalTo (Map("warning" -> unsupported))
     }
   }
@@ -50,7 +54,6 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
     def documentFileInfos = Seq.fill(5)(smartMock[DocumentFileInfo])
 
-    
     def result = {
       val controller = new TestDocumentSetArchiveController(documentSetId, archiveData, documentFileInfos)
       controller.archive(documentSetId, fileName)(request)
@@ -68,7 +71,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       archiveData: Array[Byte],
       documentFileInfos: Seq[DocumentFileInfo]) extends DocumentSetArchiveController {
     import scala.concurrent.ExecutionContext.Implicits.global
-    
+
     val archiver = smartMock[Archiver]
     val archive = smartMock[Archive]
 
