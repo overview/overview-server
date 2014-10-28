@@ -3,10 +3,8 @@ package controllers
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.util.ContentDisposition
-
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.backend.DbBackend
 import models.DocumentFileInfo
@@ -16,6 +14,7 @@ import models.archive.ArchiveEntryCollection
 import models.archive.ArchiveEntryFactory
 import models.archive.ArchiveEntryFactoryWithStorage
 import models.archive.zip.ZipArchive
+import play.api.mvc.Result
 
 trait DocumentSetArchiveController extends Controller {
 
@@ -24,21 +23,26 @@ trait DocumentSetArchiveController extends Controller {
   def archive(documentSetId: Long, filename: String) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     for (fileInfo <- storage.findDocumentFileInfo(documentSetId)) yield {
       val archiveEntries = fileInfo.flatMap(archiveEntryFactory.create)
-      if (archiveEntries.nonEmpty) {
 
-        val archive = archiver.createArchive(archiveEntries)
-
-        Ok.feed(Enumerator.fromStream(archive.stream)).
-          withHeaders(
-            CONTENT_TYPE -> "application/octet-stream",
-            CONTENT_LENGTH -> s"${archive.size}",
-            CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition)
-      } else {
-        val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
-
-        Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("unsupported"))
-      }
+      if (archiveEntries.nonEmpty) streamArchive(archiveEntries, filename)
+      else flashUnsupportedWarning
     }
+  }
+
+  private def streamArchive(archiveEntries: Seq[ArchiveEntry], filename: String): Result = {
+    val archive = archiver.createArchive(archiveEntries)
+
+    Ok.feed(Enumerator.fromStream(archive.stream)).
+      withHeaders(
+        CONTENT_TYPE -> "application/octet-stream",
+        CONTENT_LENGTH -> s"${archive.size}",
+        CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition)
+  }
+
+  private def flashUnsupportedWarning: Result = {
+    val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
+
+    Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("unsupported"))
   }
 
   protected val archiver: Archiver
