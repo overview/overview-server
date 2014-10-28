@@ -11,9 +11,6 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 #    `./dev`
 # 6. When that finishes, you should have a running Overview server in your container / image. Browse to localhost:9000 to test it.
 
-# define a terminal type
-ENV TERM xterm
-
 # install Overview dependencies
 # Redis build needs make and gcc
 RUN apt-get update && apt-get install -y \
@@ -21,14 +18,11 @@ RUN apt-get update && apt-get install -y \
   git \
   make \
   openjdk-7-jdk \
-  postgresql
+  postgresql \
+  wget
 
 # add a non-root user
 RUN useradd overview -m
-
-# get Redis source
-ADD http://download.redis.io/releases/redis-2.8.17.tar.gz /home/overview/redis-2.8.17.tar.gz
-RUN chown -R overview:overview /home/overview
 
 # get the repository
 USER overview
@@ -36,11 +30,12 @@ WORKDIR /home/overview
 RUN git clone https://github.com/znmeb/overview-server
 
 # overwrite Redis with upstream source
-
 WORKDIR /home/overview/overview-server/deps/redis/
+RUN wget http://download.redis.io/releases/redis-2.8.17.tar.gz
 RUN ls -lAtr
 RUN rm -fr redis-2.8.17
-RUN tar xf /home/overview/redis-2.8.17.tar.gz
+RUN tar xf redis-2.8.17.tar.gz
+RUN rm redis-2.8.17.tar.gz
 
 # export port 9000 to host "localhost"
 EXPOSE 9000
