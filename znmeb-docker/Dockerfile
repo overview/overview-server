@@ -42,6 +42,3 @@ WORKDIR /home/overview/overview-server
 
 # export port 9000 to host "localhost"
 EXPOSE 9000
-
-# make repo shareable
-VOLUME ["/home/overview/overview-server"]
