@@ -7,8 +7,8 @@ import play.api.libs.ws.WS
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet}
-import controllers.backend.{ApiTokenBackend,ViewBackend}
+import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet,userOwningView}
+import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import controllers.forms.ViewForm
 import models.orm.finders.{DocumentSetCreationJobFinder,TreeFinder}
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tree}
@@ -39,9 +39,24 @@ trait ViewController extends Controller {
     }
   }
 
+  def destroy(documentSetId: Long, viewId: Long) = AuthorizedAction(userOwningView(documentSetId)).async { request =>
+    viewBackend.show(viewId).flatMap(_ match {
+      case Some(view) => {
+        for {
+          unit1 <- storeBackend.destroy(view.apiToken)
+          unit2 <- viewBackend.destroy(view.id)
+          unit3 <- apiTokenBackend.destroy(view.apiToken)
+        } yield NoContent
+      }
+      case None => Future.successful(NotFound) // this is unlikely -- userOwningView() would normally fail
+    })
+  }
+
   protected val storage: ViewController.Storage
-  protected val apiTokenBackend: ApiTokenBackend
   protected val appUrlChecker: ViewController.AppUrlChecker
+
+  protected val apiTokenBackend: ApiTokenBackend
+  protected val storeBackend: StoreBackend
   protected val viewBackend: ViewBackend
 }
 
@@ -79,7 +94,9 @@ object ViewController extends ViewController {
   }
 
   override protected val storage = DatabaseStorage
-  override protected val apiTokenBackend = ApiTokenBackend
   override protected val appUrlChecker = WsAppUrlChecker
+
+  override protected val apiTokenBackend = ApiTokenBackend
+  override protected val storeBackend = StoreBackend
   override protected val viewBackend = ViewBackend
 }

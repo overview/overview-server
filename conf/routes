@@ -72,8 +72,9 @@ GET    /documentsets/:id/export                                              con
 GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
 GET    /documentsets/:id/export/documents-with-column-tags/:format/*filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
-GET    /documentsets/:id/views controllers.ViewController.indexJson(id: Long)
-POST   /documentsets/:id/views controllers.ViewController.create(id: Long)
+GET    /documentsets/:id/views         controllers.ViewController.indexJson(id: Long)
+POST   /documentsets/:id/views         controllers.ViewController.create(id: Long)
+DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Long, viewId: Long)
 
 POST   /documentsets/:id/trees           controllers.TreeController.create(id: Long)
 GET    /trees/:treeId/nodes.json         controllers.NodeController.index(treeId: Long)
