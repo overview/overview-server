@@ -22,19 +22,22 @@ trait DocumentSetArchiveController extends Controller {
   import Authorities._
 
   def archive(documentSetId: Long, filename: String) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
-    //    val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
-    //    
-    //    Redirect(routes.DocumentSetController.index()).flashing("error" -> m("unsupported"))
     for (fileInfo <- storage.findDocumentFileInfo(documentSetId)) yield {
       val archiveEntries = fileInfo.flatMap(archiveEntryFactory.create)
+      if (archiveEntries.nonEmpty) {
 
-      val archive = archiver.createArchive(archiveEntries)
+        val archive = archiver.createArchive(archiveEntries)
 
-      Ok.feed(Enumerator.fromStream(archive.stream)).
-        withHeaders(
-          CONTENT_TYPE -> "application/octet-stream",
-          CONTENT_LENGTH -> s"${archive.size}",
-          CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition)
+        Ok.feed(Enumerator.fromStream(archive.stream)).
+          withHeaders(
+            CONTENT_TYPE -> "application/octet-stream",
+            CONTENT_LENGTH -> s"${archive.size}",
+            CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition)
+      } else {
+        val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
+
+        Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("unsupported"))
+      }
     }
   }
 

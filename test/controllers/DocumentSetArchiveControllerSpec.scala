@@ -8,6 +8,7 @@ import models.archive.ArchiveEntryFactory
 import models.archive.ArchiveEntry
 import java.io.ByteArrayInputStream
 import scala.concurrent.Future
+import play.api.i18n.Messages
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
 
@@ -24,44 +25,66 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     "set content-disposition to some cool name" in new DocumentSetArchiveContext {
       header(h.CONTENT_DISPOSITION) must beSome(s"""attachment; filename="$fileName"""")
     }
-    
+
     "send archive as content" in new DocumentSetArchiveContext {
       h.contentAsBytes(result) must be equalTo archiveData
+    }
+
+    "redirect if archiving is not supported" in new UnsupportedDocumentSet {
+      val unsupported = Messages("controllers.DocumentSetArchiveController.unsupported")
+      h.status(result) must beEqualTo(h.SEE_OTHER)
+      h.flash(result).data must be equalTo (Map("warning" -> unsupported))
     }
   }
 
   trait DocumentSetArchiveContext extends Scope {
     import scala.concurrent.ExecutionContext.Implicits.global
-    
+
     val documentSetId = 23
     val fileName = "documents.zip"
     val request = fakeAuthorizedRequest
     val archiveSize = 1989
     val archiveData = Array.fill(archiveSize)(0xda.toByte)
-    
-    val documentFileInfos = Seq.fill(5)(smartMock[DocumentFileInfo])
 
     val contentType = "application/octet-stream"
-    val controller = new DocumentSetArchiveController {
-      val archiver = smartMock[Archiver]
-      val archive = smartMock[Archive]
 
-      archive.size returns archiveSize
-      archive.stream returns new ByteArrayInputStream(archiveData)
-      
-      val storage = smartMock[Storage]
-      storage.findDocumentFileInfo(documentSetId) returns Future(documentFileInfos)
+    def documentFileInfos = Seq.fill(5)(smartMock[DocumentFileInfo])
 
-      val archiveEntries = Seq.fill(5)(smartMock[ArchiveEntry])
-      
-      val archiveEntryFactory = smartMock[ArchiveEntryFactory]
-      archiveEntryFactory.create(any) returns (archiveEntries.headOption, archiveEntries.tail.map(Some(_)): _*)
-
-      archiver.createArchive(archiveEntries) returns archive      
+    
+    def result = {
+      val controller = new TestDocumentSetArchiveController(documentSetId, archiveData, documentFileInfos)
+      controller.archive(documentSetId, fileName)(request)
     }
 
-    lazy val result = controller.archive(documentSetId, fileName)(request)
-
     def header(key: String): Option[String] = h.header(key, result)
+  }
+
+  trait UnsupportedDocumentSet extends DocumentSetArchiveContext {
+    override val documentFileInfos = Seq.empty
+  }
+
+  class TestDocumentSetArchiveController(
+      documentSetId: Long,
+      archiveData: Array[Byte],
+      documentFileInfos: Seq[DocumentFileInfo]) extends DocumentSetArchiveController {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    
+    val archiver = smartMock[Archiver]
+    val archive = smartMock[Archive]
+
+    archive.size returns archiveData.length
+    archive.stream returns new ByteArrayInputStream(archiveData)
+
+    val storage = smartMock[Storage]
+    storage.findDocumentFileInfo(documentSetId) returns Future(documentFileInfos)
+
+    val archiveEntries = Seq.fill(5)(smartMock[ArchiveEntry])
+
+    val archiveEntryFactory = smartMock[ArchiveEntryFactory]
+
+    archiveEntryFactory.create(any) returns (archiveEntries.headOption, archiveEntries.tail.map(Some(_)): _*)
+
+    archiver.createArchive(archiveEntries) returns archive
+
   }
 }
