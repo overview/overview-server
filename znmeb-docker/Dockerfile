@@ -14,16 +14,21 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 # define a terminal type
 ENV TERM xterm
 
-# update the OS if necessary
-RUN apt-get -qq update && apt-get -qq upgrade
-
 # install Overview dependencies
 # Redis build needs make and gcc
-# I need a real vim
-RUN apt-get install -yqq postgresql git openjdk-7-jdk make gcc vim
+RUN apt-get update && apt-get install -y \
+  gcc \
+  git \
+  make \
+  openjdk-7-jdk \
+  postgresql
 
 # add a non-root user
-RUN useradd overview -m -G sudo
+RUN useradd overview -m
+
+# get Redis source
+ADD http://download.redis.io/releases/redis-2.8.17.tar.gz /home/overview/redis-2.8.17.tar.gz
+RUN chown -R overview:overview /home/overview
 
 # get the repository
 USER overview
@@ -31,7 +36,6 @@ WORKDIR /home/overview
 RUN git clone https://github.com/znmeb/overview-server
 
 # overwrite Redis with upstream source
-ADD http://download.redis.io/releases/redis-2.8.17.tar.gz /home/overview/redis-2.8.17.tar.gz
 
 WORKDIR /home/overview/overview-server/deps/redis/
 RUN ls -lAtr
