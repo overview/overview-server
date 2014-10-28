@@ -19,7 +19,9 @@ RUN apt-get update && apt-get install -y \
   make \
   openjdk-7-jdk \
   postgresql \
-  wget
+  unzip \
+  wget \
+  zip
 
 # add a non-root user
 RUN useradd overview -m
@@ -36,8 +38,10 @@ RUN ls -lAtr
 RUN rm -fr redis-2.8.17
 RUN tar xf redis-2.8.17.tar.gz
 RUN rm redis-2.8.17.tar.gz
+WORKDIR /home/overview/overview-server
 
 # export port 9000 to host "localhost"
 EXPOSE 9000
 
-WORKDIR /home/overview
+# make repo shareable
+VOLUME ["/home/overview/overview-server"]
