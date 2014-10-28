@@ -5,7 +5,7 @@ import java.util.UUID
 import play.api.libs.json.JsObject
 import scala.util.Random
 
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Plugin,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Plugin,Store,StoreObject,View}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -148,13 +148,13 @@ object PodoFactory extends Factory {
     tagId: Long
   ) = DocumentTag(documentId, tagId)
 
-  override def documentVizObject(
+  override def documentStoreObject(
     documentId: Long = 0L,
-    vizObjectId: Long = 0L,
+    storeObjectId: Long = 0L,
     json: Option[JsObject] = None
-  ) = DocumentVizObject(
+  ) = DocumentStoreObject(
     documentId,
-    vizObjectId,
+    storeObjectId,
     json
   )
 
@@ -216,33 +216,41 @@ object PodoFactory extends Factory {
     color=color
   )
 
-  override def viz(
+  override def view(
     id: Long = 0L,
     documentSetId: Long = 0L,
     url: String = "http://example.org",
     apiToken: String = "api-token",
     title: String = "title",
-    createdAt: Timestamp = new Timestamp(0L),
-    json: JsObject = JsObject(Seq())
-  ) = Viz(
+    createdAt: Timestamp = new Timestamp(0L)
+  ) = View(
     getId(id),
     getId(documentSetId),
     url,
     apiToken,
     title,
-    createdAt,
+    createdAt
+  )
+
+  override def store(
+    id: Long = 0L,
+    apiToken: String = "token",
+    json: JsObject = JsObject(Seq())
+  ) = Store(
+    getId(id),
+    apiToken,
     json
   )
 
-  override def vizObject(
+  override def storeObject(
     id: Long = 0L,
-    vizId: Long = 0L,
+    storeId: Long = 0L,
     indexedLong: Option[Long] = None,
     indexedString: Option[String] = None,
     json: JsObject = JsObject(Seq())
-  ) = VizObject(
+  ) = StoreObject(
     getId(id),
-    getId(vizId),
+    getId(storeId),
     indexedLong,
     indexedString,
     json

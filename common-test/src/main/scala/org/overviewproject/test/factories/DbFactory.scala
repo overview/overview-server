@@ -6,7 +6,7 @@ import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Plugin,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Plugin,Store,StoreObject,View}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -123,13 +123,13 @@ class DbFactory(connection: Connection) extends Factory {
     q.insertDocumentTag += podoFactory.documentTag(documentId, tagId)
   }
 
-  override def documentVizObject(
+  override def documentStoreObject(
     documentId: Long = 0L,
-    vizObjectId: Long = 0L,
+    storeObjectId: Long = 0L,
     json: Option[JsObject] = None
-  ) = q.insertDocumentVizObject += podoFactory.documentVizObject(
+  ) = q.insertDocumentStoreObject += podoFactory.documentStoreObject(
     documentId,
-    vizObjectId,
+    storeObjectId,
     json
   )
 
@@ -181,33 +181,37 @@ class DbFactory(connection: Connection) extends Factory {
     color: String = "abcdef"
   ) = q.insertTag += podoFactory.tag(id, documentSetId, name, color)
 
-  override def viz(
+  override def view(
     id: Long = 0L,
     documentSetId: Long = 0L,
     url: String = "http://example.org",
     apiToken: String = "api-token",
     title: String = "title",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
-    json: JsObject = JsObject(Seq())
-  ) = q.insertViz += podoFactory.viz(
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
+  ) = q.insertView += podoFactory.view(
     id,
     documentSetId,
     url,
     apiToken,
     title,
-    createdAt,
-    json
+    createdAt
   )
 
-  override def vizObject(
+  override def store(
     id: Long = 0L,
-    vizId: Long = 0L,
+    apiToken: String = "token",
+    json: JsObject = JsObject(Seq())
+  ) = q.insertStore += podoFactory.store(id, apiToken, json)
+
+  override def storeObject(
+    id: Long = 0L,
+    storeId: Long = 0L,
     indexedLong: Option[Long] = None,
     indexedString: Option[String] = None,
     json: JsObject = JsObject(Seq())
-  ) = q.insertVizObject += podoFactory.vizObject(
+  ) = q.insertStoreObject += podoFactory.storeObject(
     id,
-    vizId,
+    storeId,
     indexedLong,
     indexedString,
     json
@@ -224,13 +228,14 @@ object DbFactory {
     val insertDocumentSearchResult = (DocumentSearchResults returning DocumentSearchResults).insertInvoker
     val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
     val insertDocumentTag = (DocumentTags returning DocumentTags).insertInvoker
-    val insertDocumentVizObject = (DocumentVizObjects returning DocumentVizObjects).insertInvoker
+    val insertDocumentStoreObject = (DocumentStoreObjects returning DocumentStoreObjects).insertInvoker
     val insertNode = (Nodes returning Nodes).insertInvoker
     val insertNodeDocument = (NodeDocuments returning NodeDocuments).insertInvoker
     val insertPlugin = (Plugins returning Plugins).insertInvoker
     val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
     val insertTag = (Tags returning Tags).insertInvoker
-    val insertViz = (Vizs returning Vizs).insertInvoker
-    val insertVizObject = (VizObjects returning VizObjects).insertInvoker
+    val insertView = (Views returning Views).insertInvoker
+    val insertStore = (Stores returning Stores).insertInvoker
+    val insertStoreObject = (StoreObjects returning StoreObjects).insertInvoker
   }
 }

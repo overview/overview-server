@@ -46,28 +46,26 @@ define [
       @tags = @options.tags
       @state = @options.state
 
-      @_createView()
-      @_attachView()
+      @_createListView()
+      @_attachListView()
 
-    _createView: ->
+    _createListView: ->
       # Create a view, unless one was supplied in the constructor (for testing)
-      @view = if @options.view?
+      @listView = if @options.view?
         @options.view
       else
         new TagListView
           collection: @tags
           exportUrl: "#{@tags.url}.csv" # TODO routing in JS
 
-    _attachView: ->
-      view = @view
-
-      @listenTo view, 'add', (attrs) =>
+    _attachListView: ->
+      @listenTo @listView, 'add', (attrs) =>
         tag = @tags.create(attrs)
 
-      @listenTo view, 'update', (tag, attrs) ->
+      @listenTo @listView, 'update', (tag, attrs) ->
         tag.save(attrs)
 
-      @listenTo view, 'remove', (tag) ->
+      @listenTo @listView, 'remove', (tag) ->
         if @state.get('taglikeCid') == tag.cid
           @state.set(taglikeCid: null)
         if (params = @state.get('documentListParams'))? && params.type == 'tag' && params.tag == tag
@@ -75,21 +73,21 @@ define [
         tag.destroy()
 
       @$dialog = $dialog = $(template({ t: t }))
-      $dialog.find('.modal-body').append(view.el)
+      $dialog.find('.modal-body').append(@listView.el)
 
       $dialog
         .appendTo('body')
         .modal()
         .on 'hidden.bs.modal', =>
-          view.remove()
-          view = undefined
+          @listView.remove()
+          @listView = undefined
           $dialog.remove()
           @$dialog = undefined
           @stopListening()
 
       # Refresh tag counts
-      url = if (viz = @state.get('viz'))?
-        @tags.url.replace(/\/tags$/, "/trees/#{@state.get('viz').get('id')}/tags")
+      url = if (view = @state.get('view'))?
+        @tags.url.replace(/\/tags$/, "/trees/#{view.get('id')}/tags")
       else
         @tags.url
 

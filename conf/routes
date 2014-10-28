@@ -40,7 +40,7 @@ DELETE /files         controllers.MassUploadController.cancelUpload()
 GET    /imports.json controllers.ImportJobController.index()
 
 GET    /imports/csv                        controllers.CsvUploadController.new_()
-GET    /imports/file                        controllers.FileImportController.new_()
+GET    /imports/file                       controllers.FileImportController.new_()
 GET    /imports/documentcloud-project      controllers.DocumentCloudProjectController.index()
 POST   /imports/documentcloud              controllers.DocumentCloudImportJobController.create()
 GET    /imports/documentcloud/new/:query   controllers.DocumentCloudImportJobController.new_(query: String)
@@ -72,8 +72,8 @@ GET    /documentsets/:id/export                                              con
 GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
 GET    /documentsets/:id/export/documents-with-column-tags/:format/*filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
-GET    /documentsets/:id/vizs controllers.VizController.indexJson(id: Long)
-POST   /documentsets/:id/vizs controllers.VizController.create(id: Long)
+GET    /documentsets/:id/views controllers.ViewController.indexJson(id: Long)
+POST   /documentsets/:id/views controllers.ViewController.create(id: Long)
 
 POST   /documentsets/:id/trees           controllers.TreeController.create(id: Long)
 GET    /trees/:treeId/nodes.json         controllers.NodeController.index(treeId: Long)
@@ -129,21 +129,21 @@ POST   /api/v1/document-sets/:id/saved-searches        controllers.api.SavedSear
 GET    /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.show(id: Long, query: String)
 DELETE /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.destroy(id: Long, query: String)
 
-GET /api/v1/vizs/:id controllers.api.VizController.show(id: Long)
-PUT /api/v1/vizs/:id controllers.api.VizController.update(id: Long)
-
 GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
 GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)
 
-GET    /api/v1/vizs/:vizId/objects     controllers.api.VizObjectController.index(vizId: Long)
-POST   /api/v1/vizs/:vizId/objects     controllers.api.VizObjectController.create(vizId: Long)
-GET    /api/v1/vizs/:vizId/objects/:id controllers.api.VizObjectController.show(vizId: Long, id: Long)
-PUT    /api/v1/vizs/:vizId/objects/:id controllers.api.VizObjectController.update(vizId: Long, id: Long)
-DELETE /api/v1/vizs/:vizId/objects/:id controllers.api.VizObjectController.destroy(vizId: Long, id: Long)
-DELETE /api/v1/vizs/:vizId/objects     controllers.api.VizObjectController.destroyMany(vizId: Long)
+GET /api/v1/store/state controllers.api.StoreStateController.show()
+PUT /api/v1/store/state controllers.api.StoreStateController.update()
 
-POST   /api/v1/vizs/:vizId/document-objects controllers.api.DocumentVizObjectController.create(vizId: Long)
-DELETE /api/v1/vizs/:vizId/document-objects controllers.api.DocumentVizObjectController.destroy(vizId: Long)
+GET    /api/v1/store/objects     controllers.api.StoreObjectController.index()
+POST   /api/v1/store/objects     controllers.api.StoreObjectController.create()
+GET    /api/v1/store/objects/:id controllers.api.StoreObjectController.show(id: Long)
+PUT    /api/v1/store/objects/:id controllers.api.StoreObjectController.update(id: Long)
+DELETE /api/v1/store/objects/:id controllers.api.StoreObjectController.destroy(id: Long)
+DELETE /api/v1/store/objects     controllers.api.StoreObjectController.destroyMany()
+
+POST   /api/v1/store/document-objects controllers.api.DocumentStoreObjectController.createMany()
+DELETE /api/v1/store/document-objects controllers.api.DocumentStoreObjectController.destroyMany()
 
 # Map static resources from the /public folder to the /assets URL path
 GET    /assets/*file            controllers.Assets.at(path="/public", file)

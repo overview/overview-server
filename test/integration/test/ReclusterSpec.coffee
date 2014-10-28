@@ -13,10 +13,10 @@ describe 'Recluster', ->
       @userBrowser
         .goToFirstDocumentSet()
         .waitForElementBy(tag: 'a', contains: 'New tree…').click()
-        .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('viz1')
+        .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('view1')
         .elementBy(tag: 'button', contains: 'Import documents').click()
         .sleep(100) # Overview will select the new Job; wait for that to happen
-        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a Viz
+        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a View
 
     shouldBehaveLikeATree
       documents: [
@@ -32,10 +32,10 @@ describe 'Recluster', ->
         .goToFirstDocumentSet()
         .waitForElementBy(tag: 'a', contains: 'New tree…').click()
         .waitForElementBy(tag: 'option', contains: 'foo').click()
-        .elementBy(tag: 'input', name: 'tree_title', visible: true).type('viz2')
+        .elementBy(tag: 'input', name: 'tree_title', visible: true).type('view2')
         .elementBy(tag: 'button', contains: 'Import documents').click()
         .sleep(100) # Overview will select the new Job; wait for that to happen
-        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a Viz
+        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a View
 
     shouldBehaveLikeATree
       documents: [

@@ -11,7 +11,7 @@ case class SelectionRequest(
   val tagIds: Seq[Long] = Seq(),
   val documentIds: Seq[Long] = Seq(),
   val searchResultIds: Seq[Long] = Seq(),
-  val vizObjectIds: Seq[Long] = Seq(),
+  val storeObjectIds: Seq[Long] = Seq(),
   val tagged: Option[Boolean] = None,
   val q: String = ""
 ) {

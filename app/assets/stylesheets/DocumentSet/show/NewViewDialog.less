@@ -1,0 +1,15 @@
+@import "./_variables.less";
+
+form#new-view-dialog {
+  .state>div {
+    color: @error-color;
+
+    span.message a {
+      color: inherit;
+    }
+
+    &.ok {
+      color: @complete-color;
+    }
+  }
+}

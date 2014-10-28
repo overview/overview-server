@@ -21,10 +21,10 @@ define [
       @documentSet =
         id: 12
         url: "/documentsets/12"
-      @viz =
+      @view =
         id: 13
         scopeApiParams: (params) -> params
-      @builder = new DocumentListParams(@documentSet, @viz)
+      @builder = new DocumentListParams(@documentSet, @view)
 
     describe 'all', ->
       beforeEach -> @params = @builder.all()
@@ -37,7 +37,7 @@ define [
       it 'should not equals() something else', -> expect(@params.equals(@builder.untagged())).to.be.false
       it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'all' ])
       it 'should have a documentSet', -> expect(@params.documentSet).to.eq(@documentSet)
-      it 'should have a viz', -> expect(@params.viz).to.eq(@viz)
+      it 'should have a view', -> expect(@params.view).to.eq(@view)
 
       it 'should find all documents from cache, sorted', ->
         list = [
@@ -83,24 +83,24 @@ define [
       it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq({ tags: '1' })
       it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'tag', 'tag 1' ])
 
-      it 'should use viz.scopeApiParams() in toApiParams()', ->
-        @viz.scopeApiParams = (apiParams) -> _.extend({ foo: 'bar' }, apiParams)
+      it 'should use view.scopeApiParams() in toApiParams()', ->
+        @view.scopeApiParams = (apiParams) -> _.extend({ foo: 'bar' }, apiParams)
         expect(@params.toApiParams()).to.deep.eq(tags: '1', foo: 'bar')
 
-      it 'should not use viz.scopeApiParams() in toApiParams() if viz is null', ->
-        params = @builder.withViz(null).byTag(@tag)
+      it 'should not use view.scopeApiParams() in toApiParams() if view is null', ->
+        params = @builder.withView(null).byTag(@tag)
         expect(params.toApiParams()).to.deep.eq(tags: '1')
 
       it 'should reset', ->
         params2 = @params.reset.byNode(id: 3)
         expect(params2.params).to.deep.eq([ id: 3 ])
         expect(params2.documentSet).to.eq(@documentSet)
-        expect(params2.viz).to.eq(@viz)
+        expect(params2.view).to.eq(@view)
 
-      it 'should reset to a different viz', ->
-        viz2 = 'viz2'
-        params2 = @params.reset.withViz(viz2).all()
-        expect(params2.viz).to.eq(viz2)
+      it 'should reset to a different view', ->
+        view2 = 'view2'
+        params2 = @params.reset.withView(view2).all()
+        expect(params2.view).to.eq(view2)
 
       it 'should find relevant documents from a list', ->
         list = [

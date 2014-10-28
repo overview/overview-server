@@ -53,7 +53,7 @@ define [
   # * cache_size (default 5000): number of nodes to *not* remove
   class OnDemandTree
     _.extend(@::, Backbone.Events)
-    constructor: (@documentSet, @viz, options={}) ->
+    constructor: (@documentSet, @view, options={}) ->
       @transactionQueue = @documentSet.transactionQueue
       @options = options
 
@@ -61,7 +61,7 @@ define [
       @nodes = {}
       @_paging_strategy = new LruPagingStrategy(@options.cache_size || DEFAULT_OPTIONS.cache_size)
       @demandRoot()
-        .then(=> @viz.set(rootNodeId: @id_tree.root))
+        .then(=> @view.set(rootNodeId: @id_tree.root))
 
     remove: ->
       n.off() for __, n of @nodes
@@ -230,7 +230,7 @@ define [
     _demand: (arg) ->
       @transactionQueue.ajax
         type: 'get'
-        url: "/trees/#{@viz.get('id')}/#{arg}.json"
+        url: "/trees/#{@view.get('id')}/#{arg}.json"
         success: (json) =>
           @_add_json(json)
           if @taglikeUrlPart
@@ -282,7 +282,7 @@ define [
 
       @transactionQueue.ajax
         type: 'POST'
-        url: "/trees/#{@viz.get('id')}/nodes/#{node.id}"
+        url: "/trees/#{@view.get('id')}/nodes/#{node.id}"
         data: nodeJson
         success: => @id_tree.batchAdd(->) # refresh
         debugInfo: 'OnDemandTree.saveNode'

@@ -6,26 +6,26 @@ define [
   './models/DocumentSet'
   './models/State'
   './controllers/KeyboardController'
-  './controllers/VizsController'
+  './controllers/ViewsController'
   './controllers/tag_list_controller'
   './controllers/search_result_list_controller'
   './controllers/document_list_controller'
-  './controllers/VizAppController'
+  './controllers/ViewAppController'
   './controllers/TourController'
   './views/TransactionQueueErrorMonitor'
   './views/Mode'
   '../Tree/app'
-  '../Viz/app'
+  '../View/app'
   '../Job/app'
 ], (_, $, Backbone, \
     TransactionQueue, DocumentSet, State, \
     KeyboardController, \
-    VizsController, tag_list_controller, search_result_list_controller, document_list_controller, \
-    VizAppController, \
+    ViewsController, tag_list_controller, search_result_list_controller, document_list_controller, \
+    ViewAppController, \
     TourController, \
     TransactionQueueErrorMonitor, \
     ModeView, \
-    TreeApp, VizApp, JobApp) ->
+    TreeApp, ViewApp, JobApp) ->
 
   class App
     constructor: (options) ->
@@ -39,7 +39,7 @@ define [
 
       transactionQueue = @_initializeTransactionQueue()
       documentSet = @_initializeDocumentSet(transactionQueue)
-      documentSet.vizs.on('reset', => _.defer(=> @_initializeUi(documentSet)))
+      documentSet.views.on('reset', => _.defer(=> @_initializeUi(documentSet)))
 
     _listenForRefocus: ->
       refocus = ->
@@ -101,8 +101,8 @@ define [
       html = """
         <div id="tree-app-left">
           <div id="tree-app-search"></div>
-          <div id="tree-app-vizs"></div>
-          <div id="tree-app-viz"></div>
+          <div id="tree-app-views"></div>
+          <div id="tree-app-view"></div>
           <div id="tree-app-tags"></div>
         </div>
         <div id="tree-app-right">
@@ -122,8 +122,8 @@ define [
       el = (id) -> document.getElementById(id)
 
       main: @el
-      vizs: el('tree-app-vizs')
-      viz: el('tree-app-viz')
+      views: el('tree-app-views')
+      view: el('tree-app-view')
       tags: el('tree-app-tags')
       search: el('tree-app-search')
       documentList: el('tree-app-document-list')
@@ -149,26 +149,26 @@ define [
       # We just kicked off the initial server request
 
     _initializeUi: (documentSet) ->
-      documentSet.vizs.pollUntilStable()
+      documentSet.views.pollUntilStable()
 
       els = @_buildHtml()
       keyboardController = new KeyboardController(document)
 
-      viz = null
+      view = null
       if (m = ///^\/documentsets\/#{documentSet.id}\/([a-zA-Z]+-[0-9]+)$///.exec(document.location.pathname))?
-        viz = documentSet.vizs.get(m[1])
-      viz ||= documentSet.vizs.at(0)
+        view = documentSet.views.get(m[1])
+      view ||= documentSet.views.at(0)
 
-      state = new State(documentListParams: documentSet.documentListParams(viz).all(), viz: viz)
+      state = new State(documentListParams: documentSet.documentListParams(view).all(), view: view)
 
-      state.on 'change:viz', (__, viz) ->
-        return if !viz?
-        # Change URL so a page refresh brings us to this viz
-        url = "/documentsets/#{documentSet.id}/#{viz.id}"
+      state.on 'change:view', (__, view) ->
+        return if !view?
+        # Change URL so a page refresh brings us to this view
+        url = "/documentsets/#{documentSet.id}/#{view.id}"
         window.history?.replaceState(url, '', url)
 
-      controller = new VizsController(documentSet, documentSet.vizs, state)
-      els.vizs.appendChild(controller.el)
+      controller = new ViewsController(documentSet, documentSet.views, state)
+      els.views.appendChild(controller.el)
 
       new ModeView(el: @el, state: state)
 
@@ -188,15 +188,15 @@ define [
 
       document_list_controller(els.documentList, els.documentCursor, documentSet, state, keyboardController)
 
-      new VizAppController
-        el: els.viz
+      new ViewAppController
+        el: els.view
         state: state
         documentSet: documentSet
         transactionQueue: documentSet.transactionQueue
         keyboardController: keyboardController
-        vizAppConstructors:
+        viewAppConstructors:
           tree: TreeApp
-          viz: VizApp
+          view: ViewApp
           job: JobApp
           error: JobApp
 

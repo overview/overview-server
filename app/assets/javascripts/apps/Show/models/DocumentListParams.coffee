@@ -29,8 +29,8 @@ define [ 'underscore' ], (_) ->
   #
   # Each object is immutable.
   class AbstractDocumentListParams
-    constructor: (@documentSet, @viz, @type, @params...) ->
-      @reset = new DocumentListParamsBuilder(@documentSet, @viz)
+    constructor: (@documentSet, @view, @type, @params...) ->
+      @reset = new DocumentListParamsBuilder(@documentSet, @view)
 
     toString: ->
       if @params.length
@@ -79,16 +79,16 @@ define [ 'underscore' ], (_) ->
     # Overview's servers expect each ID array to be a single String, with
     # commas delimiting each ID.
     #
-    # If there is a Viz, this selection's return value will be passed through
-    # Viz.scopeApiParams(). For instance, a Tree viz can add a `node` property
+    # If there is a View, this selection's return value will be passed through
+    # View.scopeApiParams(). For instance, a Tree view can add a `node` property
     # to selections that don't already have one.
     toApiParams: ->
       apiParams = {}
       for k, v of @toJSON() when k != 'name'
         apiParams[k] = _.flatten([v]).map(String).join(',')
 
-      if @viz?
-        @viz.scopeApiParams(apiParams)
+      if @view?
+        @view.scopeApiParams(apiParams)
       else
         apiParams
 
@@ -102,7 +102,7 @@ define [ 'underscore' ], (_) ->
     documentsArray
 
   class AllDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, viz) -> super(documentSet, viz, 'all')
+    constructor: (documentSet, view) -> super(documentSet, view, 'all')
 
     findDocumentsInList: (list) -> list
 
@@ -111,7 +111,7 @@ define [ 'underscore' ], (_) ->
     toI18n: -> [ 'all' ]
 
   class DocumentDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, viz, @document) -> super(documentSet, viz, 'document', @document)
+    constructor: (documentSet, view, @document) -> super(documentSet, view, 'document', @document)
 
     findDocumentsInList: (list) ->
       documentId = @document.id
@@ -123,7 +123,7 @@ define [ 'underscore' ], (_) ->
       { documents: [ safeDocumentId ] }
 
   class NodeDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, viz, @node) -> super(documentSet, viz, 'node', @node)
+    constructor: (documentSet, view, @node) -> super(documentSet, view, 'node', @node)
 
     findDocumentsInList: (list) ->
       nodeId = @node.id
@@ -134,7 +134,7 @@ define [ 'underscore' ], (_) ->
     toI18n: -> [ 'node', @node.description || '' ]
 
   class TagDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, viz, @tag) -> super(documentSet, viz, 'tag', @tag)
+    constructor: (documentSet, view, @tag) -> super(documentSet, view, 'tag', @tag)
 
     findDocumentsInList: (list) ->
       tagId = @tag.id
@@ -145,7 +145,7 @@ define [ 'underscore' ], (_) ->
     toI18n: -> [ 'tag', @tag.attributes?.name || '' ]
 
   class UntaggedDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, viz) -> super(documentSet, viz, 'untagged')
+    constructor: (documentSet, view) -> super(documentSet, view, 'untagged')
 
     findDocumentsInList: (list) -> list.filter((x) -> x.attributes.tagids.length == 0)
 
@@ -154,14 +154,14 @@ define [ 'underscore' ], (_) ->
     toI18n: -> [ 'untagged' ]
 
   class SearchResultDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, viz, @searchResult) -> super(documentSet, viz, 'searchResult', @searchResult)
+    constructor: (documentSet, view, @searchResult) -> super(documentSet, view, 'searchResult', @searchResult)
 
     toJSON: -> { searchResults: [ @searchResult.get('id') || 0 ] }
 
     toI18n: -> [ 'searchResult', @searchResult.attributes.query || '' ]
 
   class JsonDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, viz, @json) -> super(documentSet, viz, 'json', @json)
+    constructor: (documentSet, view, @json) -> super(documentSet, view, 'json', @json)
 
     toString: -> "DocumentListParams(json, #{JSON.stringify(@json)})"
 
@@ -170,13 +170,13 @@ define [ 'underscore' ], (_) ->
     toI18n: -> [ 'json', @json.name ]
 
   class DocumentListParamsBuilder
-    constructor: (@documentSet, @viz) ->
-    withViz: (viz) -> new DocumentListParamsBuilder(@documentSet, viz)
+    constructor: (@documentSet, @view) ->
+    withView: (view) -> new DocumentListParamsBuilder(@documentSet, view)
 
-    all: -> new AllDocumentListParams(@documentSet, @viz)
-    byDocument: (document) -> new DocumentDocumentListParams(@documentSet, @viz, document)
-    byJson: (json) -> new JsonDocumentListParams(@documentSet, @viz, json)
-    byNode: (node) -> new NodeDocumentListParams(@documentSet, @viz, node)
-    byTag: (tag) -> new TagDocumentListParams(@documentSet, @viz, tag)
-    bySearchResult: (searchResult) -> new SearchResultDocumentListParams(@documentSet, @viz, searchResult)
-    untagged: -> new UntaggedDocumentListParams(@documentSet, @viz)
+    all: -> new AllDocumentListParams(@documentSet, @view)
+    byDocument: (document) -> new DocumentDocumentListParams(@documentSet, @view, document)
+    byJson: (json) -> new JsonDocumentListParams(@documentSet, @view, json)
+    byNode: (node) -> new NodeDocumentListParams(@documentSet, @view, node)
+    byTag: (tag) -> new TagDocumentListParams(@documentSet, @view, tag)
+    bySearchResult: (searchResult) -> new SearchResultDocumentListParams(@documentSet, @view, searchResult)
+    untagged: -> new UntaggedDocumentListParams(@documentSet, @view)

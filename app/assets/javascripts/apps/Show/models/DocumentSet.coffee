@@ -4,10 +4,10 @@ define [
   'backbone'
   '../collections/Tags'
   '../collections/SearchResults'
-  '../collections/Vizs'
+  '../collections/Views'
   './DocumentListParams'
-], (_, $, Backbone, Tags, SearchResults, Vizs, DocumentListParams) ->
-  # Holds Tags, SearchResults and Vizs. Oh, and nDocuments.
+], (_, $, Backbone, Tags, SearchResults, Views, DocumentListParams) ->
+  # Holds Tags, SearchResults and Views. Oh, and nDocuments.
   #
   # On the client, a DocumentSet doesn't hold a list of Documents because
   # there are way too many of them. To fetch a sample, use a DocumentList.
@@ -46,12 +46,12 @@ define [
       @nDocuments = null
       @tags = new Tags([], url: "#{@url}/tags")
       @searchResults = new SearchResults([], url: "#{@url}/searches")
-      @vizs = new Vizs([], url: "#{@url}/vizs")
+      @views = new Views([], url: "#{@url}/views")
 
       @_load()
 
-    documentListParams: (viz) ->
-      new DocumentListParams(@, viz)
+    documentListParams: (view) ->
+      new DocumentListParams(@, view)
 
     _load: ->
       Backbone.ajax
@@ -64,7 +64,7 @@ define [
       @nDocuments = data.nDocuments
       @tags.reset(data.tags)
       @searchResults.reset(data.searchResults)
-      @vizs.reset(data.vizs)
+      @views.reset(data.views)
 
     _onError: (xhr) ->
       console.log('ERROR loading document set', xhr)

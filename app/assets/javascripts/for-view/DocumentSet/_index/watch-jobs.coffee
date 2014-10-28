@@ -5,7 +5,7 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
   RETRY_DELAY = 2000 # ms before a failed request is retried.
   JOB_POLL_DELAY=1000 # ms. Each reclustering document set has its own poll loop with this delay.
 
-  # Polls /documentsets/:id/vizs.jzon until there are no recluster jobs.
+  # Polls /documentsets/:id/views.jzon until there are no recluster jobs.
   # Updates the text of @$el to match.
   class ReclusterWatcher
     constructor: (@$el, @documentSetId) ->
@@ -15,26 +15,26 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
       window.setTimeout(@poll.bind(@), JOB_POLL_DELAY)
 
     poll: ->
-      $.getJSON("/documentsets/#{@documentSetId}/vizs")
+      $.getJSON("/documentsets/#{@documentSetId}/views")
         .success(@onSuccess.bind(@))
         .error(@onError.bind(@))
 
     jsonToCounts: (json) ->
-      nVizs = 0
+      nViews = 0
       nJobs = 0
-      for viz in json
-        if viz.type == 'job'
+      for view in json
+        if view.type == 'job'
           nJobs += 1
         else
-          nVizs += 1
+          nViews += 1
 
-      nVizs: nVizs
+      nViews: nViews
       nJobs: nJobs
 
     countsToText: (counts) ->
-      text1 = t('_documentSet.nVizs', counts.nVizs)
+      text1 = t('_documentSet.nViews', counts.nViews)
       if counts.nJobs
-        text2 = t('_documentSet.nJobs', counts.nJobs, counts.nVizs)
+        text2 = t('_documentSet.nJobs', counts.nJobs, counts.nViews)
         "#{text1} #{text2}"
       else
         text1
@@ -273,7 +273,7 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
         # 7. Restart if this was the last job removed
         .queue(done)
 
-      $new_li.find('.viz-count').each(maybeWatchReclustering)
+      $new_li.find('.view-count').each(maybeWatchReclustering)
       $(@document_sets_ul).next('p.no-document-sets').fadeOut(-> $(this).remove())
 
     receive_jobs: (json) ->
@@ -283,7 +283,7 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
 
   maybeWatchReclustering = ->
     $el = $(@)
-    nJobs = $el.attr('data-n-viz-jobs')
+    nJobs = $el.attr('data-n-view-jobs')
     console.log($el, nJobs)
     if nJobs != '0'
       documentSetId = $el.closest('[data-document-set-id]').attr('data-document-set-id')
@@ -295,4 +295,4 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
       jobs_div = this
       new JobWatcher(jobs_div, document_sets)
 
-    $('li[data-document-set-id] .viz-count[data-n-viz-jobs]').each(maybeWatchReclustering)
+    $('li[data-document-set-id] .view-count[data-n-view-jobs]').each(maybeWatchReclustering)

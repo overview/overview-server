@@ -3,19 +3,19 @@ package org.overviewproject.models.tables
 import play.api.libs.json.{Json,JsObject}
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.DocumentVizObject
+import org.overviewproject.models.DocumentStoreObject
 
-class DocumentVizObjectsImpl(tag: Tag) extends Table[DocumentVizObject](tag, "document_viz_object") {
+class DocumentStoreObjectsImpl(tag: Tag) extends Table[DocumentStoreObject](tag, "document_store_object") {
   private implicit val postgres91JsonTextColumnType = MappedColumnType.base[JsObject, String](
     Json.stringify,
     Json.parse(_).as[JsObject]
   )
 
   def documentId = column[Long]("document_id")
-  def vizObjectId = column[Long]("viz_object_id")
+  def storeObjectId = column[Long]("store_object_id")
   def json = column[Option[JsObject]]("json_text")
 
-  def * = (documentId, vizObjectId, json) <> (DocumentVizObject.tupled, DocumentVizObject.unapply)
+  def * = (documentId, storeObjectId, json) <> (DocumentStoreObject.tupled, DocumentStoreObject.unapply)
 }
 
-object DocumentVizObjects extends TableQuery(new DocumentVizObjectsImpl(_))
+object DocumentStoreObjects extends TableQuery(new DocumentStoreObjectsImpl(_))
