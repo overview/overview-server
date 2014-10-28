@@ -31,7 +31,7 @@ WORKDIR /home/overview
 RUN git clone https://github.com/znmeb/overview-server
 
 # overwrite Redis with upstream source
-ADD http://download.redis.io/releases/redis-2.8.17.tar.gz /home/overview/redis-2.8.7.tar.gz
+ADD http://download.redis.io/releases/redis-2.8.17.tar.gz /home/overview/redis-2.8.17.tar.gz
 
 WORKDIR /home/overview/overview-server/deps/redis/
 RUN ls -lAtr
