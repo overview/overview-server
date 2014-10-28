@@ -24,8 +24,7 @@ define [
     events:
       'click .toggle-popover': '_onClickPopover'
       'click li[data-id]>a': '_onClick'
-      'click a.new-tree': '_onClickNewTree' # legacy, on production
-      'click a[data-plugin-url]': '_onClickNewView' # on dev
+      'click a[data-plugin-url]': '_onClickNewView'
       'click button.cancel': '_onClickCancel'
 
     templates:
@@ -91,37 +90,28 @@ define [
             documentSet: documentSet
           }) %>
         <% }); %>
-        <% if (window.location.hostname == 'localhost') { %>
-          <li class="dropdown">
-            <a href="#" data-toggle="dropdown">
-              <%- t('newView') %>
-              <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu" role="menu">
-              <% plugins.forEach(function(plugin) { %>
-                <li role="presentation">
-                  <a role="menuitem" href="#" data-plugin-url="<%- plugin.get('url') %>">
-                    <span class="name"><%- plugin.get('name') %></span>
-                    <span class="description"><%- plugin.get('description') %></span>
-                  </a>
-                </li>
-              <% }) %>
-              <% if (plugins.length > 0) { %>
-                <li role="presentation" class="divider"></li>
-              <% } %>
+        <li class="dropdown">
+          <a href="#" data-toggle="dropdown">
+            <%- t('newView') %>
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <% plugins.forEach(function(plugin) { %>
               <li role="presentation">
-                <a href="#" data-plugin-url="about:custom"><%- t('newView.custom') %></a>
+                <a role="menuitem" href="#" data-plugin-url="<%- plugin.get('url') %>">
+                  <span class="name"><%- plugin.get('name') %></span>
+                  <span class="description"><%- plugin.get('description') %></span>
+                </a>
               </li>
-            </ul>
-          </li>
-        <% } else { %>
-          <li class="new-view">
-            <a href="#" class="new-tree">
-              <i class="icon-overview-plus"></i>
-              <%- t('new_tree') %>
-            </a>
-          </li>
-        <% } %>
+            <% }) %>
+            <% if (plugins.length > 0) { %>
+              <li role="presentation" class="divider"></li>
+            <% } %>
+            <li role="presentation">
+              <a href="#" data-plugin-url="about:custom"><%- t('newView.custom') %></a>
+            </li>
+          </ul>
+        </li>
         ''')
 
     initialize: ->
@@ -238,10 +228,6 @@ define [
         $arrow.css(left: arrowLeft)
 
       e.stopPropagation()
-
-    _onClickNewTree: (e) ->
-      e.preventDefault()
-      @trigger('click-new-tree')
 
     _onClickNewView: (e) ->
       e.preventDefault()
