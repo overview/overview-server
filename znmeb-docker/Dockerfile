@@ -16,6 +16,7 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 RUN apt-get update && apt-get install -y \
   gcc \
   git \
+  lynx \
   make \
   openjdk-7-jdk \
   postgresql \
