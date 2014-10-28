@@ -34,7 +34,12 @@ trait ViewBackend {
     */
   def update(id: Long, attributes: View.UpdateAttributes): Future[Option[View]]
 
-  //def destroy(viewId: Long): Future[Unit]
+  /** Destroys a View.
+    *
+    * Callers should also destroy the accompanying ApiToken to secure the
+    * document set.
+    */
+  def destroy(viewId: Long): Future[Unit]
 }
 
 trait DbViewBackend extends ViewBackend { self: DbBackend =>
@@ -55,6 +60,10 @@ trait DbViewBackend extends ViewBackend { self: DbBackend =>
   override def update(id: Long, attributes: View.UpdateAttributes) = db { implicit session =>
     val count = DbViewBackend.update(id, attributes)(session)
     if (count > 0) DbViewBackend.byId(id)(session) else None
+  }
+
+  override def destroy(id: Long) = db { implicit session =>
+    DbViewBackend.destroy(id)(session)
   }
 }
 
@@ -104,6 +113,10 @@ object DbViewBackend {
 
   def update(id: Long, attributes: View.UpdateAttributes)(session: Session): Int = {
     attributesByIdCompiled(id).update(attributes.title)(session)
+  }
+
+  def destroy(id: Long)(session: Session): Unit = {
+    byIdCompiled(id).delete(session)
   }
 }
 

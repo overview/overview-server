@@ -17,8 +17,10 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#index" should {
       "index a document set's views" in new BaseScope {
         val documentSet = factory.documentSet()
-        val view1 = factory.view(documentSetId=documentSet.id)
-        val view2 = factory.view(documentSetId=documentSet.id)
+        val apiToken1 = factory.apiToken(documentSetId=documentSet.id, token="token1")
+        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val view1 = factory.view(documentSetId=documentSet.id, apiToken=apiToken1.token)
+        val view2 = factory.view(documentSetId=documentSet.id, apiToken=apiToken2.token)
 
         val ret = await(backend.index(documentSet.id))
         ret.length must beEqualTo(2)
@@ -29,7 +31,8 @@ class DbViewBackendSpec extends DbBackendSpecification {
       "not index a different document set's views" in new BaseScope {
         val documentSet1 = factory.documentSet()
         val documentSet2 = factory.documentSet()
-        val view = factory.view(documentSetId=documentSet2.id)
+        val apiToken = factory.apiToken(documentSetId=documentSet2.id)
+        val view = factory.view(documentSetId=documentSet2.id, apiToken=apiToken.token)
 
         val ret = await(backend.index(documentSet1.id))
         ret.length must beEqualTo(0)
@@ -39,7 +42,8 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#show" should {
       "show a view" in new BaseScope {
         val documentSet = factory.documentSet()
-        val view = factory.view(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         val ret = await(backend.show(view.id))
         ret.map(_.id) must beSome(view.id)
       }
@@ -53,6 +57,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#create" should {
       trait CreateScope extends BaseScope {
         val documentSet = factory.documentSet()
+        val apiToken = factory.apiToken(documentSetId=documentSet.id, token="api-token")
 
         val attributes = View.CreateAttributes(
           url="http://example.org",
@@ -87,7 +92,8 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#update" should {
       trait UpdateScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val view = factory.view(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         val attributes = View.UpdateAttributes(title="new title")
         val viewId = view.id
         lazy val newView = updateView
@@ -114,12 +120,34 @@ class DbViewBackendSpec extends DbBackendSpecification {
       }
 
       "not update other Views" in new UpdateScope {
-        val view2 = factory.view(documentSetId=documentSet.id)
+        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val view2 = factory.view(documentSetId=documentSet.id, apiToken=apiToken2.token)
         updateView
         val dbView2 = findView(view2.id)
         dbView2.map(_.id) must beSome(view2.id)
         dbView2.map(_.url) must beSome(view2.url)
         dbView2.map(_.title) must beSome(view2.title)
+      }
+    }
+
+    "#destroy" should {
+      trait DestroyScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
+        def destroy = await(backend.destroy(view.id))
+      }
+
+      "delete the View" in new DestroyScope {
+        destroy
+        findView(view.id) must beNone
+      }
+
+      "not delete a different View" in new DestroyScope {
+        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val view2 = factory.view(documentSetId=documentSet.id, apiToken=apiToken2.token)
+        destroy
+        findView(view2.id) must beSome
       }
     }
   }

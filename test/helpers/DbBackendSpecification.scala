@@ -59,7 +59,7 @@ trait DbBackendSpecification
 
     def await[A](f: Future[A]) = Await.result(f, Duration(2, "seconds"))
 
-    override def before = Unit
+    override def before = ()
 
     override def after = {
       if (connected) {
@@ -67,5 +67,7 @@ trait DbBackendSpecification
         connection.close()
       }
     }
+
+    def sql(q: String): Unit = session.withPreparedStatement(q) { (st) => st.execute }
   }
 }

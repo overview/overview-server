@@ -51,5 +51,34 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
         createApiToken must throwA[exceptions.ParentMissing]
       }
     }
+
+    "#destroy" should {
+      trait DestroyScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        def destroy = await(backend.destroy(apiToken.token))
+      }
+
+      "delete the ApiToken" in new DestroyScope {
+        destroy
+        findApiToken(apiToken.token) must beNone
+      }
+
+      "not delete a different ApiToken" in new DestroyScope {
+        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        destroy
+        findApiToken(apiToken2.token) must beSome
+      }
+
+      "throw ParentMissing if there is a Store with this ApiToken" in new DestroyScope {
+        val store = factory.store(apiToken=apiToken.token)
+        destroy must throwA[exceptions.ParentMissing]
+      }
+
+      "throw ParentMissing if there is a View with this ApiToken" in new DestroyScope {
+        val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
+        destroy must throwA[exceptions.ParentMissing]
+      }
+    }
   }
 }

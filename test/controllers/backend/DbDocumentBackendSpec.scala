@@ -188,8 +188,8 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "search by storeObjectIds" in new IndexIdsScope {
-        val view = factory.view(documentSetId=documentSet.id)
         val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         val store = factory.store(apiToken=apiToken.token)
         val obj = factory.storeObject(storeId=store.id)
         val dvo1 = factory.documentStoreObject(doc1.id, obj.id)

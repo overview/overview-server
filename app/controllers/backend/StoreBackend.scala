@@ -74,7 +74,34 @@ trait DbStoreBackend extends StoreBackend { self: DbBackend =>
   }
 
   override def destroy(token: String) = db { session =>
-    tokenToStore(token).delete(session)
+    import scala.slick.jdbc.StaticQuery.interpolation
+
+    /*
+     * We run three DELETEs in a single query, to simulate a transaction and
+     * avoid round trips.
+     */
+    val q = sqlu"""
+      WITH store_ids AS (
+        SELECT id
+        FROM store
+        WHERE api_token = $token
+      ), store_object_ids AS (
+        SELECT id
+        FROM store_object
+        WHERE store_id IN (SELECT id FROM store_ids)
+      ), subdelete1 AS (
+        DELETE FROM document_store_object
+        WHERE store_object_id IN (SELECT id FROM store_object_ids)
+        RETURNING 1
+      ), subdelete2 AS (
+        DELETE FROM store_object
+        WHERE store_id IN (SELECT id FROM store_ids)
+        RETURNING 1
+      )
+      DELETE FROM store
+      WHERE id IN (SELECT id FROM store_ids)
+    """
+    q.execute(session)
   }
 }
 
