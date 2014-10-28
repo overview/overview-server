@@ -21,7 +21,8 @@ define [
       @listenTo(@state, 'change:taglikeCid', @onTaglikeCidChanged)
       @listenTo(@documentSet, 'tag', @onTag)
       @listenTo(@documentSet, 'untag', @onUntag)
-      @listener = window.addEventListener('message', @_onMessage.bind(@), false)
+      @onMessageCallback = @_onMessage.bind(@)
+      window.addEventListener('message', @onMessageCallback, false)
 
     onDocumentListParamsChanged: (__, value) -> @viewApp.onDocumentListParamsChanged?(value)
     onDocumentChanged: (__, value) -> @viewApp.onDocumentChanged?(value)
@@ -33,6 +34,8 @@ define [
       @state.resetDocumentListParams().byJson(params)
 
     _onMessage: (e) ->
+      console.log(@viewApp)
+      console.log(@viewApp.view.attributes)
       viewUrl = @viewApp.view.attributes.url
       viewUrl = "#{window.location.protocol}#{viewUrl}" if viewUrl.substring(0, 2) == '//'
       if e.origin != viewUrl.substring(0, e.origin.length)
@@ -44,5 +47,6 @@ define [
         else console.log("Invalid message from view: #{e.data.call}", e.data)
 
     remove: ->
+      window.removeEventListener('message', @onMessageCallback, false)
       @viewApp.remove()
       @stopListening()
