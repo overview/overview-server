@@ -12,7 +12,8 @@ describe 'Recluster', ->
     before ->
       @userBrowser
         .goToFirstDocumentSet()
-        .waitForElementBy(tag: 'a', contains: 'New tree…').click()
+        .waitForElementBy(tag: 'a', contains: 'Add view').click()
+        .waitForElementBy(tag: 'a', contains: 'Tree').click()
         .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('view1')
         .elementBy(tag: 'button', contains: 'Import documents').click()
         .sleep(100) # Overview will select the new Job; wait for that to happen
@@ -30,7 +31,8 @@ describe 'Recluster', ->
     before ->
       @userBrowser
         .goToFirstDocumentSet()
-        .waitForElementBy(tag: 'a', contains: 'New tree…').click()
+        .waitForElementBy(tag: 'a', contains: 'Add view').click()
+        .waitForElementBy(tag: 'a', contains: 'Tree').click()
         .waitForElementBy(tag: 'option', contains: 'foo').click()
         .elementBy(tag: 'input', name: 'tree_title', visible: true).type('view2')
         .elementBy(tag: 'button', contains: 'Import documents').click()
