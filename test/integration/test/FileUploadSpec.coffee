@@ -125,6 +125,7 @@ describe 'FileUpload', ->
 
     it 'should create one document per page', ->
       @userBrowser
+        .waitForJobsToComplete(5000)      
         .waitForElementBy(class: 'document-count' , contains: '120 documents').should.eventually.exist
 
     after ->
