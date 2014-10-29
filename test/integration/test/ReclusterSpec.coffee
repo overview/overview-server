@@ -7,6 +7,15 @@ Url =
 
 describe 'Recluster', ->
   asUserWithDocumentSet('Recluster', 'Recluster/documents.csv')
+  doDelete = (browser, title) ->
+    browser
+      .goToFirstDocumentSet()
+      .waitForElementBy(tag: 'a', contains: title, visible: true)
+      .elementByCss('>', '.toggle-popover').click()
+      .listenForJqueryAjaxComplete()
+      .acceptingNextAlert()
+      .waitForElementByCss('.popover.in button.delete').click()
+      .waitForJqueryAjaxComplete()
 
   describe 'after a recluster', ->
     before ->
@@ -27,6 +36,13 @@ describe 'Recluster', ->
         { query: 'document', nResults: 4 }
       ]
 
+    it 'should delete properly', ->
+      doDelete(@userBrowser, 'view1')
+        .waitForElementByCss('#tree-app-tree canvas').should.eventually.exist # it selects the next tree
+        .elementByCss('.view-tabs li.tree').text().should.not.eventually.contain('view1') # it deletes the tab
+        .goToFirstDocumentSet()
+        .waitForElementByCss('.view-tabs li.tree').text().should.not.eventually.contain('view1') # it stays deleted
+
   describe 'when reclustering just a tag', ->
     before ->
       @userBrowser
@@ -39,6 +55,8 @@ describe 'Recluster', ->
         .sleep(100) # Overview will select the new Job; wait for that to happen
         .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a View
 
+    after -> doDelete(@userBrowser, 'view2')
+
     shouldBehaveLikeATree
       documents: [
         { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
@@ -46,5 +64,3 @@ describe 'Recluster', ->
       searches: [
         { query: 'document', nResults: 3 }
       ]
-
-  it 'should let us delete a new tree, especially in these tests'
