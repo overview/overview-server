@@ -14,4 +14,12 @@ case class Tree(
   val suppliedStopWords: String,
   val importantWords: String,
   val createdAt: Timestamp
-)
+) {
+  def update(attributes: Tree.UpdateAttributes) = copy(title=attributes.title)
+}
+
+object Tree {
+  case class UpdateAttributes(
+    title: String
+  )
+}

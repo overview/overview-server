@@ -98,5 +98,50 @@ class DbTreeBackendSpec extends DbBackendSpecification {
         findNodeDocument(nd2.nodeId, nd2.documentId) must beSome
       }
     }
+
+    "#update" should {
+      trait UpdateScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val rootNodeId = 123L
+        val rootNode = factory.node(id=rootNodeId, rootId=rootNodeId, parentId=None)
+        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=rootNodeId, title="original-title")
+
+        val treeId = tree.id
+        val attributes = Tree.UpdateAttributes(title="foobar")
+        def update: Option[Tree] = await(backend.update(treeId, attributes))
+      }
+
+      "update title" in new UpdateScope {
+        update
+
+        findTree(tree.id).map(_.title) must beSome("foobar")
+      }
+
+      "not update anything else" in new UpdateScope {
+        update
+
+        val dbTree = findTree(tree.id)
+        dbTree.map(_.documentSetId) must beSome(tree.documentSetId)
+        dbTree.map(_.rootNodeId) must beSome(tree.rootNodeId)
+        dbTree.map(_.jobId) must beSome(tree.jobId)
+        dbTree.map(_.documentCount) must beSome(tree.documentCount)
+        dbTree.map(_.lang) must beSome(tree.lang)
+        dbTree.map(_.description) must beSome(tree.description)
+        dbTree.map(_.suppliedStopWords) must beSome(tree.suppliedStopWords)
+        dbTree.map(_.importantWords) must beSome(tree.importantWords)
+        dbTree.map(_.createdAt) must beSome(tree.createdAt)
+      }
+
+      "return the updated Tree" in new UpdateScope {
+        update must beEqualTo(findTree(tree.id))
+      }
+
+      "not update a missing Tree" in new UpdateScope {
+        override val treeId = tree.id + 1
+
+        update must beNone
+        findTree(tree.id).map(_.title) must beSome("original-title")
+      }
+    }
   }
 }
