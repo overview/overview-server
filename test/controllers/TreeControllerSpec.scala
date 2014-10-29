@@ -1,13 +1,15 @@
 package controllers
 
 import org.specs2.specification.Scope
-import org.specs2.matcher.Matcher
+import org.specs2.matcher.{JsonMatchers,Matcher}
 import scala.concurrent.Future
 
 import controllers.backend.TreeBackend
-import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, Tag, Tree}
+import org.overviewproject.models.Tree
+import org.overviewproject.test.factories.PodoFactory
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tag}
 
-class TreeControllerSpec extends ControllerSpecification {
+class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val mockBackend = mock[TreeBackend]
     val mockStorage = mock[TreeController.Storage]
@@ -69,6 +71,38 @@ class TreeControllerSpec extends ControllerSpecification {
       override def tagId = Some(1023L)
       mockStorage.findTag(documentSetId, 1023L) returns None
       h.status(result) must beEqualTo(h.NOT_FOUND)
+    }
+  }
+
+  "TreeController#update" should {
+    trait UpdateScope extends BaseScope {
+      val documentSetId = 1L
+      val treeId = 2L
+      mockBackend.update(any, any) returns Future.successful(Some(PodoFactory.tree(title="updated")))
+      val request = fakeAuthorizedRequest.withFormUrlEncodedBody("title" -> "submitted")
+      lazy val result = controller.update(documentSetId, treeId)(request)
+    }
+
+    "call TreeBackend#update" in new UpdateScope {
+      h.status(result)
+      there was one(mockBackend).update(treeId, Tree.UpdateAttributes(title="submitted"))
+    }
+
+    "return the updated Tree" in new UpdateScope {
+      h.status(result) must beEqualTo(h.OK)
+      val json = h.contentAsString(result)
+
+      json must /("title" -> "updated")
+    }
+
+    "return NotFound when the Tree is not found" in new UpdateScope {
+      mockBackend.update(any, any) returns Future.successful(None)
+      h.status(result) must beEqualTo(h.NOT_FOUND)
+    }
+
+    "return BadRequest when the input is bad" in new UpdateScope {
+      override val request = fakeAuthorizedRequest.withFormUrlEncodedBody("titleblah" -> "submittedblah")
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
     }
   }
 

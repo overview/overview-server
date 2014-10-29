@@ -20,6 +20,7 @@ case class Tree(
 
   override def isPersisted(): Boolean = (id > 0)
 
+  /** @deprecated("Use views.json.Tree.show() instead", "0.0.1") */
   def creationData = {
     val buffer = Buffer(
       "jobId" -> jobId.toString,

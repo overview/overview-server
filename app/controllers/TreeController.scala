@@ -2,11 +2,13 @@ package controllers
 
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.i18n.Messages
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities._
 import controllers.backend.TreeBackend
 import controllers.forms.TreeCreationJobForm
+import controllers.forms.TreeUpdateAttributesForm
 import models.orm.finders.{TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tag,Tree}
@@ -49,7 +51,17 @@ trait TreeController extends Controller {
     )
   }
 
-  def destroy(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningTree(treeId)).async { implicit request =>
+  def update(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningTree(treeId)).async { implicit request =>
+    TreeUpdateAttributesForm().bindFromRequest.fold(
+      f => Future.successful(BadRequest),
+      attributes => backend.update(treeId, attributes).map(_ match {
+        case Some(tree) => Ok(views.json.Tree.show(tree))
+        case None => NotFound
+      })
+    )
+  }
+
+  def destroy(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningTree(treeId)).async { request =>
     for { unit <- backend.destroy(treeId) } yield NoContent
   }
 }
