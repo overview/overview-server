@@ -90,6 +90,7 @@ POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remov
 
 GET    /documentsets/:id/views         controllers.ViewController.indexJson(id: Long)
 POST   /documentsets/:id/views         controllers.ViewController.create(id: Long)
+PUT    /documentsets/:id/views/:viewId controllers.ViewController.update(id: Long, viewId: Long)
 DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Long, viewId: Long)
 
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.

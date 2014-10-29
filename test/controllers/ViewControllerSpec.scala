@@ -207,6 +207,38 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       }
     }
 
+    "#update" should {
+      trait UpdateScope extends BaseScope {
+        val documentSetId = 1L
+        val viewId = 2L
+        mockViewBackend.update(any, any) returns Future.successful(Some(PodoFactory.view(title="updated title")))
+        val request = fakeAuthorizedRequest.withFormUrlEncodedBody("title" -> "submitted title")
+        lazy val result = controller.update(documentSetId, viewId)(request)
+      }
+
+      "call ViewBackend#update" in new UpdateScope {
+        h.status(result)
+        there was one(mockViewBackend).update(viewId, View.UpdateAttributes(title="submitted title"))
+      }
+
+      "return the updated View" in new UpdateScope {
+        h.status(result) must beEqualTo(h.OK)
+        val json = h.contentAsString(result)
+
+        json must /("title" -> "updated title")
+      }
+
+      "return NotFound when the View is not found" in new UpdateScope {
+        mockViewBackend.update(any, any) returns Future.successful(None)
+        h.status(result) must beEqualTo(h.NOT_FOUND)
+      }
+
+      "return BadRequest when the input is bad" in new UpdateScope {
+        override val request = fakeAuthorizedRequest.withFormUrlEncodedBody("titleblah" -> "submittedblah")
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+    }
+
     "#destroy" should {
       trait DestroyScope extends BaseScope {
         val documentSetId = 1L

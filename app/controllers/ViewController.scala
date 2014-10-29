@@ -9,7 +9,7 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet,userOwningView}
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
-import controllers.forms.ViewForm
+import controllers.forms.{ViewForm,ViewUpdateAttributesForm}
 import models.orm.finders.{DocumentSetCreationJobFinder,TreeFinder}
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tree}
 import org.overviewproject.models.{ApiToken,View}
@@ -37,6 +37,16 @@ trait ViewController extends Controller {
         result.recover { case t: Throwable => BadRequest(t.getMessage) }
       }
     }
+  }
+
+  def update(documentSetId: Long, viewId: Long) = AuthorizedAction(userOwningView(viewId)).async { implicit request =>
+    ViewUpdateAttributesForm().bindFromRequest.fold(
+      f => Future.successful(BadRequest),
+      attributes => viewBackend.update(viewId, attributes).map(_ match {
+        case Some(view) => Ok(views.json.View.show(view))
+        case None => NotFound
+      })
+    )
   }
 
   def destroy(documentSetId: Long, viewId: Long) = AuthorizedAction(userOwningView(viewId)).async { request =>
