@@ -43,7 +43,7 @@ trait ArchiveEntryFactory {
     storage.pageDataStream(pageId).get
 
   private def fileNameWithPage(fileName: String, pageNumber: Int): String =
-    asPdf(s"$fileName - page $pageNumber")
+    asPdf(s"$fileName - p. $pageNumber")
 
   private def removePdf(fileName: String): String = {
     val caseInsensitivePdfExtension = "(?i)\\.pdf$"

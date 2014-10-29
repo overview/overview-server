@@ -89,7 +89,7 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
   trait DocumentWithPage extends ArchiveEntryFactoryContext {
     val pageId = 2l
     val pageNumber = 33
-    val pageDescriptor = s"- page $pageNumber"
+    val pageDescriptor = s"- p. $pageNumber"
     val pageTitle = s"$name $pageDescriptor"
 
     val pageSize = 123
