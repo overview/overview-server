@@ -6,9 +6,9 @@ RUN apt-get update && apt-get install -y \
   wget
 
 # global git configuration
-git config --global push.default matching
-git config --global user.email "znmeb@znmeb.net"
-git config --global user.name "M. Edward (Ed) Borasky"
+RUN git config --global push.default matching
+RUN git config --global user.email "znmeb@znmeb.net"
+RUN git config --global user.name "M. Edward (Ed) Borasky"
 
 # get the repository
 WORKDIR /
