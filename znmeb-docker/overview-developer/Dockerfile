@@ -44,3 +44,6 @@ EXPOSE 9000
 
 # set TERM
 ENV TERM xterm
+
+# over-writable command
+CMD [ "./dev" ]
