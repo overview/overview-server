@@ -8,7 +8,7 @@ class ArchiveEntryCollectionSpec extends Specification {
 
   "ArchiveEntryCollection" should {
     
-    inExample("return entries with valid filenames unchanged") in new ArchiveEntryCollectionContext {
+    "return entries with valid filenames unchanged" in new ArchiveEntryCollectionContext {
        val collection = createCollection(uniqueNames)
        
        val names = collection.sanitizedEntries.map(_.name) 
@@ -40,6 +40,27 @@ class ArchiveEntryCollectionSpec extends Specification {
       val names = collection.sanitizedEntries.map(_.name)
       
       names must containTheSameElementsAs(collidingNames :+ s"$nameWithFormat (1)")
+    }
+    
+    "be case-insensitive when checking for duplicate names" in new ArchiveEntryCollectionContext {
+      val duplicates = uniqueNames.map(_.toUpperCase)
+      val expectedTransformedNames = duplicates.map(_ + " (1)")
+      
+      val collection = createCollection(uniqueNames ++ duplicates)
+      
+      val names = collection.sanitizedEntries.map(_.name)
+      
+      names must containTheSameElementsAs(uniqueNames ++ expectedTransformedNames)
+    }
+    
+    "be case-insensitive when checking unique file name format" in new ArchiveEntryCollectionContext {
+      val sensitiveNames = Seq("file (1)", "file", "File")
+      
+      val collection = createCollection(sensitiveNames)
+      
+      val names = collection.sanitizedEntries.map(_.name)
+      
+      names must containTheSameElementsAs(Seq("file (1)", "file", "File (2)"))
     }
   }
 }

@@ -2,17 +2,22 @@ package models.archive
 
 import scala.collection.immutable.HashSet
 
+/**
+ * Ensures that the filenames in the collection of `entries` are unique (case-insensitively), and 
+ * do not contain illegal characters.
+ * @todo remove illegal characters
+ */
 class ArchiveEntryCollection(entries: Seq[ArchiveEntry]) {
 
   def sanitizedEntries: Seq[ArchiveEntry] = {
 
     val (_, validEntries) = entries.foldLeft((HashSet[String](), Seq[ArchiveEntry]())) { (u, e) =>
       val (existingNames, existingEntries) = u
-      val entry = if (existingNames.contains(e.name))
+      val entry = if (isDuplicate(existingNames, e.name))
         e.copy(name = uniqueName(existingNames, e.name, 1))
       else e
 
-      (existingNames + entry.name, existingEntries :+ entry)
+      (addName(existingNames, entry.name), existingEntries :+ entry)
     }
 
     validEntries
@@ -24,8 +29,14 @@ class ArchiveEntryCollection(entries: Seq[ArchiveEntry]) {
   private def uniqueName(existingNames: HashSet[String], duplicate: String, attempt: Int): String = {
     val nameAttempt = s"$duplicate ($attempt)"
 
-    if (!existingNames.contains(s"$duplicate ($attempt)") || attempt == 0) nameAttempt
+    if (!isDuplicate(existingNames, nameAttempt) || attempt == 0) nameAttempt
     else uniqueName(existingNames, duplicate, attempt + 1)
   }
 
+  // store and compare names as lower case so we can match case insensitively
+  private def addName(existingNames: HashSet[String], name: String): HashSet[String]  =
+    existingNames + name.toLowerCase
+    
+  private def isDuplicate(existingNames: HashSet[String], name: String): Boolean =
+    existingNames.contains(name.toLowerCase)
 }
