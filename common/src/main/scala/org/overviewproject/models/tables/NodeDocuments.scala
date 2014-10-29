@@ -1,7 +1,7 @@
 package org.overviewproject.models.tables
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.tree.orm.NodeDocument // should be models.NodeDocument
+import org.overviewproject.models.NodeDocument
 
 class NodeDocumentsImpl(tag: Tag) extends Table[NodeDocument](tag, "node_document") {
   def nodeId = column[Long]("node_id")
