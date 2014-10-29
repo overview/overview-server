@@ -7,6 +7,7 @@ Url =
 
 describe 'Recluster', ->
   asUserWithDocumentSet('Recluster', 'Recluster/documents.csv')
+
   doDelete = (browser, title) ->
     browser
       .goToFirstDocumentSet()
@@ -35,6 +36,32 @@ describe 'Recluster', ->
       searches: [
         { query: 'document', nResults: 4 }
       ]
+
+    it 'should rename properly', ->
+      doRename = (browser, oldTitle, newTitle) ->
+        browser
+          .goToFirstDocumentSet()
+          .waitForElementBy(tag: 'a', contains: oldTitle, visible: true)
+          .elementByCss('>', '.toggle-popover').click()
+          .elementByCss('.popover.in dd.title a.rename').click()
+          .elementByCss('.popover.in dd.title input[name=title]').type(newTitle)
+          .listenForJqueryAjaxComplete()
+          .elementByCss('.popover.in dd.title button[type=submit]').click()
+          .waitForJqueryAjaxComplete()
+          .elementByCss('.popover.in a.close').click()
+
+      verify = (browser, title) ->
+        browser
+          .waitForElementBy(tag: 'a', contains: 'view-renamed').should.eventually.exist
+          .elementByCss('>', '.toggle-popover').click()
+          .elementByCss('.popover.in dd.title').text().should.eventually.contain('view-renamed')
+          .elementByCss('.popover.in a.close').click()
+
+      doRename(@userBrowser, 'view1', 'view-renamed')
+        .then(=> verify(@userBrowser, 'view-renamed'))
+        .then(=> @userBrowser.goToFirstDocumentSet())
+        .then(=> verify(@userBrowser, 'view-renamed'))
+        .then(=> doRename(@userBrowser, 'view-renamed', 'view1'))
 
     it 'should delete properly', ->
       doDelete(@userBrowser, 'view1')
