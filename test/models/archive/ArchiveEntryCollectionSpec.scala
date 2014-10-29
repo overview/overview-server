@@ -54,14 +54,27 @@ class ArchiveEntryCollectionSpec extends Specification {
     }
     
     "be case-insensitive when checking unique file name format" in new ArchiveEntryCollectionContext {
-      val sensitiveNames = Seq("file (1)", "file", "File")
+      val sensitiveNames = Seq("file (1)", "file")
+      val conflictingName =  "File"
       
-      val collection = createCollection(sensitiveNames)
+      val collection = createCollection(sensitiveNames :+ conflictingName)
       
       val names = collection.sanitizedEntries.map(_.name)
       
-      names must containTheSameElementsAs(Seq("file (1)", "file", "File (2)"))
+      names must containTheSameElementsAs(sensitiveNames :+ s"$conflictingName (2)")
     }
+    
+    
+    "add disambiguator before file extension" in new ArchiveEntryCollectionContext {
+      val namesWithExtensions = Seq("file.pdf", "file (1).pdf", "file.doc", "File.pdf")
+      
+      val collection = createCollection(namesWithExtensions)
+      
+      val names = collection.sanitizedEntries.map(_.name)
+      
+      names must containTheSameElementsAs(Seq("file.pdf", "file (1).pdf", "file.doc", "File (2).pdf"))
+    }
+    
   }
 }
 

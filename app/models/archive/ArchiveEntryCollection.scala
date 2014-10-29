@@ -27,7 +27,7 @@ class ArchiveEntryCollection(entries: Seq[ArchiveEntry]) {
   // If there are >= 2 * Int.MaxValue names of the same form, "name (0)" is returned, which
   // may lead to duplicate filenames. That many files will probably cause other problems.
   private def uniqueName(existingNames: HashSet[String], duplicate: String, attempt: Int): String = {
-    val nameAttempt = s"$duplicate ($attempt)"
+    val nameAttempt = addAttemptToName(duplicate, attempt)
 
     if (!isDuplicate(existingNames, nameAttempt) || attempt == 0) nameAttempt
     else uniqueName(existingNames, duplicate, attempt + 1)
@@ -39,4 +39,13 @@ class ArchiveEntryCollection(entries: Seq[ArchiveEntry]) {
     
   private def isDuplicate(existingNames: HashSet[String], name: String): Boolean =
     existingNames.contains(name.toLowerCase)
+    
+  private def addAttemptToName(name: String, attempt: Int): String = {
+    val nameWithOptionalExtension = "^(.*?)(\\.[^.]*)?$".r
+    
+    name match {
+      case nameWithOptionalExtension(base, null) => s"$base ($attempt)"
+      case nameWithOptionalExtension(base, ext) => s"$base ($attempt)$ext"
+    }
+  }
 }
