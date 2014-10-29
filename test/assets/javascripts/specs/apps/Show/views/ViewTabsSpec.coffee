@@ -42,6 +42,11 @@ define [
         'views.DocumentSet.show.ViewTabs.view.delete.confirm': 'view.delete.confirm'
         'views.DocumentSet.show.ViewTabs.view.title.dt': 'view.title.dt'
         'views.DocumentSet.show.ViewTabs.view.title.dd': 'view.title.dd,{0}'
+        'views.DocumentSet.show.ViewTabs.view.title.rename': 'view.title.rename'
+        'views.DocumentSet.show.ViewTabs.view.title.label': 'view.title.label'
+        'views.DocumentSet.show.ViewTabs.view.title.placeholder': 'view.title.placeholder'
+        'views.DocumentSet.show.ViewTabs.view.title.save': 'view.title.save'
+        'views.DocumentSet.show.ViewTabs.view.title.reset': 'view.title.reset'
         'views.DocumentSet.show.ViewTabs.view.nDocuments.dt': 'view.nDocuments.dt'
         'views.DocumentSet.show.ViewTabs.view.nDocuments.dd': 'view.nDocuments.dd,{0},{1}'
         'views.DocumentSet.show.ViewTabs.view.createdAt.dt': 'view.createdAt.dt'
@@ -83,6 +88,13 @@ define [
           @$popover.find('button.delete').click()
           expect(@deleteSpy).to.have.been.calledWith(@view1)
 
+        it 'should rename', ->
+          @view.on('update-view', updateSpy = sinon.spy())
+          @$popover.find('a.rename').click()
+          @$popover.find('input[name=title]').val('new-title')
+          @$popover.find('form.rename').submit()
+          expect(updateSpy).to.have.been.calledWith(@view1, title: 'new-title')
+
     describe 'starting with two views', ->
       beforeEach ->
         @documentSet = { nDocuments: 1234 }
@@ -102,8 +114,18 @@ define [
       it 'should contain the viewualization', -> expect(@view.$('a:eq(0)')).to.contain('foo')
       it 'should have an info bubble per visualization', -> expect(@view.$('li.view span.view-info-icon').length).to.eq(2)
 
+      it 'should update the tab when the View title chanages', ->
+        @view2.set(title: 'bar2')
+        expect(@view.$('li.view:eq(0) a:eq(0)')).to.contain('foo')
+        expect(@view.$('li.view:eq(1) a:eq(0)')).to.contain('bar2')
+
+      it 'should update the popover then the View title changes', ->
+        @view2.set(title: 'bar2')
+        expect(@view.$('.popover:eq(0) span.title')).to.contain('foo')
+        expect(@view.$('.popover:eq(1) span.title')).to.contain('bar2')
+
       it 'should show nDocuments in tab', ->
-        $span = $('a:eq(0) span.count')
+        $span = $('li:eq(0) a:eq(0) span.count')
         expect($span).to.contain('nDocuments,10')
 
       it 'should set "active" on selected view', ->
@@ -116,9 +138,8 @@ define [
         expect(@view.$('li:eq(1)')).to.have.class('active')
 
       it 'should emit click', ->
-        spy = sinon.spy()
-        @view.on('click', spy)
-        @view.$('a:eq(1)').click()
+        @view.on('click', spy = sinon.spy())
+        @view.$('li:eq(1) a:eq(0)').click()
         expect(spy).to.have.been.calledWith(@view2)
 
       it 'should not emit click when clicking view-info icon', ->

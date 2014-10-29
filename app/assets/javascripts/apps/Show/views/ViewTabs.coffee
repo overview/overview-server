@@ -27,6 +27,9 @@ define [
       'click a[data-plugin-url]': '_onClickNewView'
       'click button.cancel': '_onClickCancel'
       'click button.delete': '_onClickDelete'
+      'click a.rename': '_onClickRename'
+      'submit form.rename': '_onSubmitRename'
+      'reset form.rename': '_onResetRename'
 
     templates:
       view: _.template('''
@@ -54,7 +57,26 @@ define [
       viewDetails: _.template('''
         <dl class="view-details">
           <dt class="title"><%- t('view.title.dt') %></dt>
-          <dd class="title"><%- t('view.title.dd', view.title) %></dd>
+          <dd class="title">
+            <div class="not-editing">
+              <span class="title"><%- t('view.title.dd', view.title) %></span>
+              <a class="rename" href="#"><%- t('view.title.rename') %></a>
+            </div>
+            <div class="editing" style="display:none;">
+              <form method="post" action="#" class="rename">
+                <div class="form-group">
+                  <label class="sr-only" for="<%- view.id %>-title"><%- t('view.title.label') %></label>
+                  <div class="input-group input-group-sm">
+                    <input class="form-control" id="<%- view.id %>-title" name="title" value="<%- view.title %>" placeholder="<%- t('view.title.placeholder') %>" required>
+                    <span class="input-group-btn">
+                      <button class="btn btn-primary" type="submit"><%- t('view.title.save') %></label>
+                      <button class="btn btn-default" type="reset"><%- t('view.title.reset') %></label>
+                    </span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </dd>
 
           <% if (view.nDocuments) { %>
             <dt class="n-documents"><%- t('view.nDocuments.dt') %></dt>
@@ -188,6 +210,9 @@ define [
         html = @_modelToHtml(model)
         $li.replaceWith(html)
 
+      if model.hasChanged('title')
+        $li.find('span.title').text(model.get('title'))
+
     _onClick: (e) ->
       e.preventDefault()
       viewId = e.currentTarget.parentNode.getAttribute('data-id')
@@ -252,3 +277,30 @@ define [
       view = @collection.get(dataId)
       if window.confirm(t('view.delete.confirm'))
         @trigger('delete-view', view)
+
+    _onClickRename: (e) ->
+      e.preventDefault()
+      $dd = $(e.currentTarget).closest('dd')
+      $dd.find('.editing').show()
+      $dd.find('.not-editing').hide()
+
+    _stopRenaming: (e) ->
+      $dd = $(e.currentTarget).closest('dd')
+      $dd.find('.editing').hide()
+      $dd.find('.not-editing').show()
+
+    _onSubmitRename: (e) ->
+      e.preventDefault()
+
+      dataId = $(e.currentTarget).closest('[data-id]').attr('data-id')
+      view = @collection.get(dataId)
+      $input = $(e.currentTarget).closest('form').find('input[name=title]')
+      title = $input.val().trim()
+      if title
+        @trigger('update-view', view, title: title)
+
+      @_stopRenaming(e)
+
+    _onResetRename: (e) ->
+      # Don't preventDefault(): we want the reset to happen
+      @_stopRenaming(e)

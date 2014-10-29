@@ -24,6 +24,7 @@ define [
       @listenTo(@view, 'click', @_onClickView)
       @listenTo(@view, 'cancel', @_onCancel)
       @listenTo(@view, 'delete-view', @_onDelete)
+      @listenTo(@view, 'update-view', @_onUpdate)
       @listenTo(@view, 'click-new-tree', @_onClickNewTree)
       @listenTo(@view, 'click-new-view', @_onClickNewView)
       @listenTo(@views, 'add', @_onAdd)
@@ -47,6 +48,10 @@ define [
       view.destroy
         wait: true
         success: => @state.setView(@views.at(0) || null)
+
+    _onUpdate: (view, attrs) ->
+      console.log(view, attrs)
+      view.save(attrs)
 
     _onClickNewTree: ->
       onSubmit = (data) =>
