@@ -284,7 +284,6 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
   maybeWatchReclustering = ->
     $el = $(@)
     nJobs = $el.attr('data-n-view-jobs')
-    console.log($el, nJobs)
     if nJobs != '0'
       documentSetId = $el.closest('[data-document-set-id]').attr('data-document-set-id')
       new ReclusterWatcher($el, documentSetId)
