@@ -28,6 +28,7 @@ define [
       'click button.cancel': '_onClickCancel'
       'click button.delete': '_onClickDelete'
       'click a.rename': '_onClickRename'
+      'click a.close': '_onClickClose'
       'submit form.rename': '_onSubmitRename'
       'reset form.rename': '_onResetRename'
 
@@ -55,6 +56,7 @@ define [
         ''')
 
       viewDetails: _.template('''
+        <a class="close close-top" href="#"><%- t('view.close.top') %></a>
         <dl class="view-details">
           <dt class="title"><%- t('view.title.dt') %></dt>
           <dd class="title">
@@ -106,6 +108,7 @@ define [
         <% } else if (view.type == 'view' || view.type == 'tree') { %>
           <button type="button" class="delete btn btn-danger"><%- t('view.delete') %></button>
         <% } %>
+        <a class="close close-bottom" href="#"><%- t('view.close.bottom') %></a>
         ''')
 
       main: _.template('''
@@ -308,3 +311,7 @@ define [
     _onResetRename: (e) ->
       # Don't preventDefault(): we want the reset to happen
       @_stopRenaming(e)
+
+    _onClickClose: (e) ->
+      e.preventDefault()
+      @$('.popover').removeClass('in').hide()

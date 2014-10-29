@@ -38,6 +38,8 @@ define [
         'views.DocumentSet.show.ViewTabs.newView': 'newView'
         'views.DocumentSet.show.ViewTabs.newView.custom': 'newView.custom'
         'views.DocumentSet.show.ViewTabs.nDocuments': 'nDocuments,{0}'
+        'views.DocumentSet.show.ViewTabs.view.close.top': 'view.close.top'
+        'views.DocumentSet.show.ViewTabs.view.close.bottom': 'view.close.bottom'
         'views.DocumentSet.show.ViewTabs.view.delete': 'view.delete'
         'views.DocumentSet.show.ViewTabs.view.delete.confirm': 'view.delete.confirm'
         'views.DocumentSet.show.ViewTabs.view.title.dt': 'view.title.dt'
@@ -94,6 +96,14 @@ define [
           @$popover.find('input[name=title]').val('new-title')
           @$popover.find('form.rename').submit()
           expect(updateSpy).to.have.been.calledWith(@view1, title: 'new-title')
+
+        it 'should close the popover from the top button', ->
+          @$popover.find('a.close-top').click()
+          expect(@$popover).not.to.have.class('in')
+
+        it 'should close the popover from the bottom button', ->
+          @$popover.find('a.close-bottom').click()
+          expect(@$popover).not.to.have.class('in')
 
     describe 'starting with two views', ->
       beforeEach ->
