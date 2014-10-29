@@ -42,8 +42,5 @@ RUN git config --global user.name "M. Edward (Ed) Borasky"
 # export port 9000 to host "localhost"
 EXPOSE 9000
 
-# declare volumes
-VOLUME [ "/home/overview/overview-server/", "/home/overview/releases/" ]
-
 # set TERM
 ENV TERM xterm
