@@ -290,6 +290,7 @@ define [
       $dd = $(e.currentTarget).closest('dd')
       $dd.find('.editing').show()
       $dd.find('.not-editing').hide()
+      $dd.find('input[name=title]').focus().select()
 
     _stopRenaming: (e) ->
       $dd = $(e.currentTarget).closest('dd')
