@@ -1,14 +1,17 @@
 FROM ubuntu:trusty
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
+# put all the packages we need here
 RUN apt-get update && apt-get install -y \
+  gcc \
   git \
-  wget
-
-# global git configuration
-RUN git config --global push.default matching
-RUN git config --global user.email "znmeb@znmeb.net"
-RUN git config --global user.name "M. Edward (Ed) Borasky"
+  lynx \
+  make \
+  openjdk-7-jdk \
+  postgresql \
+  unzip \
+  wget \
+  zip
 
 # get the repository
 WORKDIR /
@@ -22,5 +25,14 @@ RUN rm -fr redis-2.8.17
 RUN tar xf redis-2.8.17.tar.gz
 RUN rm redis-2.8.17.tar.gz
 
-# make the repository a volume
-VOLUME [ "/overview-server" ]
+# add a non-root user
+RUN useradd overview -m
+
+# give the repo to the non-root user
+RUN chown -R overview:overview /overview-server
+
+# volume for releases
+VOLUME /releases
+
+# volume for Github repo
+VOLUME /overview-server
