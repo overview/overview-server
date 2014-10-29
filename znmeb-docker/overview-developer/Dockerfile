@@ -20,8 +20,10 @@ RUN useradd overview -m
 # get the repository
 USER overview
 WORKDIR /home/overview
-RUN mkdir -p releases/
 RUN git clone https://github.com/znmeb/overview-server
+
+# make a place to save release zipfiles
+RUN mkdir -p /home/overview/releases/
 
 # overwrite Redis with upstream source
 WORKDIR /home/overview/overview-server/deps/redis/
@@ -42,3 +44,6 @@ EXPOSE 9000
 
 # declare volumes
 VOLUME [ "/home/overview/overview-server/", "/home/overview/releases/" ]
+
+# set TERM
+ENV TERM xterm
