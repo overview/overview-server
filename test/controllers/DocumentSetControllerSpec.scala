@@ -10,7 +10,7 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
 import scala.concurrent.Future
 
-import controllers.backend.VizBackend
+import controllers.backend.ViewBackend
 import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
 import org.overviewproject.test.factories.PodoFactory
 import org.overviewproject.tree.DocumentSetCreationJobType
@@ -27,13 +27,13 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     val IndexPageSize = 10
     val mockStorage = mock[DocumentSetController.Storage]
     val mockJobQueue = mock[DocumentSetController.JobMessageQueue]
-    val mockVizBackend = mock[VizBackend]
+    val mockViewBackend = mock[ViewBackend]
 
     val controller = new DocumentSetController {
       override val indexPageSize = IndexPageSize
       override val storage = mockStorage
       override val jobQueue = mockJobQueue
-      override val vizBackend = mockVizBackend
+      override val viewBackend = mockViewBackend
     }
 
     def fakeJob(documentSetId: Long, id: Long, fileGroupId: Long,
@@ -123,8 +123,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
           importantWords = ""
         )
 
-        val sampleViz = factory.viz(
-          title="a viz"
+        val sampleView = factory.view(
+          title="a view"
         )
 
         val sampleTag = Tag(
@@ -143,28 +143,28 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(documentCount=10))
         mockStorage.findTrees(documentSetId) returns Seq(sampleTree)
-        mockVizBackend.index(documentSetId) returns Future.successful(Seq(sampleViz))
-        mockStorage.findVizJobs(documentSetId) returns Seq()
+        mockViewBackend.index(documentSetId) returns Future.successful(Seq(sampleView))
+        mockStorage.findViewJobs(documentSetId) returns Seq()
         mockStorage.findSearchResults(documentSetId) returns Seq(sampleSearchResult)
         mockStorage.findTags(documentSetId) returns Seq(sampleTag)
       }
 
-      "encode the count, vizs, tags, and search results into the json result" in new ShowJsonScope {
+      "encode the count, views, tags, and search results into the json result" in new ShowJsonScope {
         h.status(result) must beEqualTo(h.OK)
 
         val resultJson = h.contentAsString(result)
         resultJson must /("nDocuments" -> 10)
-        resultJson must /("vizs") */("type" -> "viz")
-        resultJson must /("vizs") */("title" -> sampleTree.title)
-        resultJson must /("vizs") */("title" -> "a viz")
+        resultJson must /("views") */("type" -> "view")
+        resultJson must /("views") */("title" -> sampleTree.title)
+        resultJson must /("views") */("title" -> "a view")
         resultJson must /("tags") */("name" -> "a tag")
         resultJson must /("searchResults") */("query" -> "a search query")
       }
 
-      "include viz creation jobs" in new ShowJsonScope {
+      "include view creation jobs" in new ShowJsonScope {
         mockStorage.findTrees(sampleTree.documentSetId) returns Seq()
-        mockVizBackend.index(sampleTree.documentSetId) returns Future.successful(Seq())
-        mockStorage.findVizJobs(sampleTree.documentSetId) returns Seq(DocumentSetCreationJob(
+        mockViewBackend.index(sampleTree.documentSetId) returns Future.successful(Seq())
+        mockStorage.findViewJobs(sampleTree.documentSetId) returns Seq(DocumentSetCreationJob(
           id=2L,
           documentSetId=sampleTree.documentSetId,
           treeTitle=Some("tree job"),
@@ -180,11 +180,11 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         val json = h.contentAsString(result)
 
-        json must /("vizs") /#(0) /("type" -> "job")
-        json must /("vizs") /#(0) /("id" -> 2.0)
-        json must /("vizs") /#(0) /("creationData") /#(0) /("lang")
-        json must /("vizs") /#(0) /("creationData") /#(0) /("en")
-        json must /("vizs") /#(1) /("type" -> "error")
+        json must /("views") /#(0) /("type" -> "job")
+        json must /("views") /#(0) /("id" -> 2.0)
+        json must /("views") /#(0) /("creationData") /#(0) /("lang")
+        json must /("views") /#(0) /("creationData") /#(0) /("en")
+        json must /("views") /#(1) /("type" -> "error")
       }
     }
 
@@ -226,8 +226,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         def fakeDocumentSets: Seq[DocumentSet] = Seq(fakeDocumentSet(1L))
         mockStorage.findDocumentSets(anyString, anyInt, anyInt) answers { (_) => ResultPage(fakeDocumentSets, IndexPageSize, pageNumber) }
-        def fakeNVizs: Seq[Int] = Seq(2)
-        mockStorage.findNTreesByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNVizs }
+        def fakeNViews: Seq[Int] = Seq(2)
+        mockStorage.findNTreesByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNViews }
         def fakeNJobs: Seq[Int] = Seq(2)
         mockStorage.findNJobsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNJobs }
         def fakeJobs: Seq[(DocumentSetCreationJob, DocumentSet, Long)] = Seq()
@@ -279,29 +279,29 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "show multiple pages" in new IndexScope {
         override def fakeDocumentSets = (1 until IndexPageSize * 2).map(fakeDocumentSet(_))
-        override def fakeNVizs = (1 until IndexPageSize * 2).map((x: Int) => x)
+        override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x)
         override def fakeNJobs = (1 until IndexPageSize * 2).map((x: Int) => x)
         h.contentAsString(result) must contain("/documentsets?page=2")
       }
 
       "show multiple document sets per page" in new IndexScope {
         override def fakeDocumentSets = (1 until IndexPageSize).map(fakeDocumentSet(_))
-        override def fakeNVizs = (1 until IndexPageSize * 2).map((x: Int) => x)
+        override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x)
         override def fakeNJobs = (1 until IndexPageSize * 2).map((x: Int) => x)
 
         h.contentAsString(result) must not contain ("/documentsets?page=2")
       }
 
-      "bind nVizs and nJobs to their document sets" in new IndexScope {
+      "bind nViews and nJobs to their document sets" in new IndexScope {
         override def fakeDocumentSets = Seq(fakeDocumentSet(1L), fakeDocumentSet(2L))
-        override def fakeNVizs = Seq(4, 5)
+        override def fakeNViews = Seq(4, 5)
         override def fakeNJobs = Seq(0, 1)
 
         val ds1 = j.$("[data-document-set-id='1']")
         val ds2 = j.$("[data-document-set-id='2']")
 
-        ds1.find(".viz-count").text() must contain("4 trees")
-        ds2.find(".viz-count").text() must contain("5 trees")
+        ds1.find(".view-count").text() must contain("4 trees")
+        ds2.find(".view-count").text() must contain("5 trees")
       }
 
       "show jobs" in new IndexScope {

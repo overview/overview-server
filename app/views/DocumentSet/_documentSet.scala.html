@@ -1,6 +1,6 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
-  nVizs: Int,
+  nViews: Int,
   nJobs: Int,
   viewer: OverviewUser
 )(implicit lang: play.api.i18n.Lang, request: RequestHeader)
@@ -42,10 +42,10 @@
         })
       </span>
       <span class="document-count">@m("nDocuments", documentSet.documentCount)</span>
-      <span class="viz-count" data-n-vizs="@nVizs" data-n-viz-jobs="@nJobs">
-        @m("nVizs", nVizs)
+      <span class="view-count" data-n-views="@nViews" data-n-view-jobs="@nJobs">
+        @m("nViews", nViews)
         @if(nJobs > 0) {
-          @m("nJobs", nJobs, nVizs)
+          @m("nJobs", nJobs, nViews)
         }
       </span>
       @if(documentSet.documentProcessingErrorCount > 0) {

@@ -4,7 +4,8 @@
   "description": "Integration-tests an Overview server",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "test-xunit": "mocha --reporter xunit > test-results.xml"
   },
   "repository": {
     "type": "git",
@@ -28,7 +29,6 @@
     "escape-regexp": "0.0.1",
     "faker": "~2.0.0",
     "mocha": "~1.21.4",
-    "mocha-jenkins-reporter": "^0.1.2",
     "q": "~1.0.0",
     "selenium-server-standalone-jar": "~2.43.1",
     "wd": "~0.3.8"

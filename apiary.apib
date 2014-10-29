@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: https://www.overviewproject.org
+HOST: https://www.overviewproject.org/api/v1
 
 # The Overview Project
 
@@ -8,13 +8,38 @@ https://www.overviewproject.org.
 
 ## Authentication
 
-You'll need three special pieces of information to access all endpoints:
+You'll need two special pieces of information to access all endpoints:
 
 * Your **Document Set ID**. This points to a set of documents.
-* Your **Viz ID**. This points to your app's private scratchpad.
-* Your **API Token**. This is a password.
+* Your **API Token**. This is your identity and a password.
 
 Got all that? Great. Now, for every request, add an `Authorization` header of `Basic {base64Encode(apiToken + ":x-auth-token")}`.
+
+## API Tokens
+
+To access the API, your program needs an **API Token**. That token allows a script to behave like the user who created it, granting permissions on one document set. Keep it secret: anybody who can figure out the token has full read/write access to that document set.
+
+If you're serving a custom View, Overview will automatically create an API token and pass it to your Plugin.
+
+If you're creating a standalone program, though, you'll need to create your own token.
+
+While we work out the kinks, Overview's API is **experimental**; we've hidden the page that lets you generate an API token for a document set. To find it:
+
+1. Browse to a document set.
+2. Add "/api-tokens" to the URL. The URL should look like `http://www.overviewproject.org/documentsets/123/api-tokens`.
+3. Type in your app name and generate a token.
+
+Now you can test your token. On a command-line:
+
+`curl -u 'MYTOKEN:x-auth-token' http://www.overviewproject.org/api/v1/document-sets/123/tags`
+
+This API endpoint will list all the tags on the document set.
+
+### Rules of API requests
+
+* Requests and responses are always in [JSON](http://json.org).
+* All requests must be authorized. That means they must have an `Authorization` header of `Basic #{base64encode("MYTOKEN:x-auth-token")}`.
+* `GET` and `HEAD` requests won't modify the document set. `POST`, `PUT`, `PATCH` and `DELETE` requests will.
 
 ## HTTPS
 
@@ -120,7 +145,7 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
     + q (optional, string, `bar`) ... An [ElasticSearch query string](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) to filter documents.
     + tags (optional, string, `123,234,345`) ... A comma-separated list of Tag IDs. Return documents matching any tag in the list.
     + tagged (optional, boolean, `true`) ... If set, return all documents that have at least one tag (`true`) or that have zero tags (`false`).
-    + objects (optional, string, `456,567,678`) ... A comma-separated list of VizObject IDs. Return documents matching any VizObject in the list.
+    + objects (optional, string, `456,567,678`) ... A comma-separated list of StoreObject IDs. Return documents matching any StoreObject in the list.
     + fields (optional, string, `id`) ... Defaults to `id,keywords,pageNumber,suppliedId,title,url`. You may include `text` to include the document body, but that will limit page size. If you specify `id` on its own, return just a simple Array of Document IDs (without paginating) instead of an Array of Document JSON objects.
     + offset (optional, number, `0`) ... We're paginating; skip this many documents in the result list.
     + limit (optional, number, `1000`) ... We're paginating; return at most this many documents.
@@ -158,70 +183,67 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
 
     [Documents Collection][]
 
-# Group Vizs
-A **Viz** is a program that lets a user interact with a single Document Set.
+# Group Store
 
-In other words: *your program* is a Viz. This API lets you store information about it.
+A **Store** is a set of data, private to your API token. You have one and only
+one Store object.
 
-A Viz's `title` is visible on the Overview Project website. A Viz's `json` is private: only the Viz
-itself may choose to display it somewhere.
+Think of a Store as a JSON object that looks like this:
 
-## Viz [/vizs/{id}]
-A single Viz object with all its details.
+        {
+          "state": { "o1": "v1", "o2": "v2" },
+          "objects": [
+            { "id": 1234, "json": {} }
+          ]
+        }
 
-The Viz resource has the following attributes:
+All values are JSON Objects (not Arrays, Strings or Numbers). Overview assigns
+IDs.
 
-- id: The ID of this Viz, unique among all Vizs
-- url: The URL of this Viz. Overview may link to and fetch from sub-URLs
-- apiToken: The API token this Viz is using. This is a secret; presumably the Viz already knows it
-- title: The title of the Viz. Overview will display this title to users
-- createdAt: The time the Viz was created
-- json: Arbitrary JSON: the Viz's scratchpad
+## State [/store/state]
 
-+ Parameters
-    + id (required, number, `1`) ... The Viz ID.
+A singleton JSON object associated with your API key.
+
+Overview ignores this object completely. It is only here for your convenience.
 
 + Model (application/json)
 
         {
-          "id": 1,
-          "url": "http://my-viz-site.com",
-          "apiToken": "my-viz-api-token",
-          "title": "My Viz Title",
-          "createdAt": "2014-08-19T15:50:43.334Z",
-          "json": { "foo": "bar" }
+          "foo": "bar"
         }
 
-### Retrieve a Viz [GET]
+### Retrieve your State [GET]
 + Response 200
 
-    [Viz][]
+    [State][]
 
-### Edit a Viz [PUT]
+### Edit your State [PUT]
+
+Editing your State will replace it in its entirety. There are no partial edits.
+
 + Request (application/json)
 
         {
-          "title": "My Viz Title",
-          "json": { "foo": "bar" }
+          "foo": "bar"
         }
 
 + Response 200
 
-    [Viz][]
+    [State][]
 
-# Group VizObjects
-A **VizObject** is something your Viz stores.
+# Group StoreObjects
 
-Think of a VizObject like a tag. Each VizObject has some metadata (e.g., a title), and it can be linked zero, one or many Documents.
+A **StoreObject** is one of a collection you control.
 
-This description is intentionally vague. VizObjects won't handle everybody's needs, but they
+Think of a StoreObject like a tag. Each StoreObject has some metadata (e.g., a title), and it can be linked zero, one or many Documents.
+
+This description is intentionally vague. StoreObjects won't handle everybody's needs, but they
 should cover a broad set of applications, and they're reasonably efficient.
 
-## VizObject [/vizs/{vizId}/objects/{id}]
+## StoreObject [/store/objects/{id}]
 
 + Parameters
-    + vizId (required, number, `1`) ... The *Viz* ID.
-    + id (required, number, `2`) ... The *VizObject* ID.
+    + id (required, number, `2`) ... The *StoreObject* ID.
 
 + Model (application/json)
 
@@ -232,16 +254,16 @@ should cover a broad set of applications, and they're reasonably efficient.
             "json": { "foo": 4 }
         }
 
-### Retrieve a VizObject [GET]
+### Retrieve a StoreObject [GET]
 
 + Response 200
 
-    [VizObject][]
+    [StoreObject][]
 
-### Edit a VizObject [PUT]
-You need only provide a JSON Object with a `json` property to update a VizObject.
+### Edit a StoreObject [PUT]
+You need only provide a JSON Object with a `json` property to update a StoreObject.
 
-If you plan on creating hundreds or more VizObjects, you'll probably want a way to search
+If you plan on creating hundreds or more StoreObjects, you'll probably want a way to search
 them. You can pass an `indexedLong` and/or `indexedString` property to help.
 
 + Request (application/json)
@@ -254,17 +276,14 @@ them. You can pass an `indexedLong` and/or `indexedString` property to help.
 
 + Response 200
 
-    [VizObject][]
+    [StoreObject][]
 
-### Delete a VizObject [DELETE]
+### Delete a StoreObject [DELETE]
 
 + Response 204
 
-## VizObjects Collection [/vizs/{vizId}/objects]
-Collection of all VizObjects.
-
-+ Parameters
-    + vizId (required, number, `1`) ... The *Viz* ID.
+## StoreObjects Collection [/store/objects]
+Collection of all StoreObjects.
 
 + Model (application/json)
 
@@ -273,16 +292,16 @@ Collection of all VizObjects.
           { "id": 2, "indexedLong": 4, "indexedString": null, "json": {} }
         ]
 
-### List all VizObjects [GET]
+### List all StoreObjects [GET]
 
 + Response 200
 
-    [VizObjects Collection][]
+    [StoreObjects Collection][]
 
-### Create a VizObject [POST]
-You need only provide a JSON Object with a `json` property to create a VizObject.
+### Create a StoreObject [POST]
+You need only provide a JSON Object with a `json` property to create a StoreObject.
 
-If you plan on creating hundreds or more VizObjects, you'll probably want a way to search
+If you plan on creating hundreds or more StoreObjects, you'll probably want a way to search
 them. You can pass an `indexedLong` and/or `indexedString` property to help.
 
 + Request (application/json)
@@ -294,4 +313,4 @@ them. You can pass an `indexedLong` and/or `indexedString` property to help.
 
 + Response 200
 
-    [VizObject][]
+    [StoreObject][]

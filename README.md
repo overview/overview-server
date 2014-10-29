@@ -7,24 +7,23 @@ The Overview Project is an open source visual document mining system. It was ori
 
 ## Using Overview
 
-- Try Overview at https://overviewproject.org.
-- Learn more on the project blog http://overview.ap.org
-- Install Overview on your own computer https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview
+- Try Overview on [the public Overview website](https://overviewproject.org)
+- Follow the [project blog](http://overview.ap.org)
+- Install Overview [on your own computer](https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview)
 
 ## Developing Overview
 
-- Writing new visualizations and apps https://github.com/overview/overview-server/wiki/Overview-App-API
-- The public API http://docs.overviewproject.apiary.io/
-- Setting up a development environment https://github.com/overview/overview-server/wiki/Setting-up-a-development-Environment
-- Project wiki https://github.com/overview/overview-server/wiki
-- Developer forum at https://groups.google.com/forum/?fromgroups#!forum/overview-dev
+- [Setting up a development environment](https://github.com/overview/overview-server/wiki/Setting-up-a-development-Environment)
+- [Writing new visualizations and programs](https://github.com/overview/overview-server/wiki/Overview-API-Overview)
+- [The API](http://docs.overviewproject.apiary.io/)
+- [Project wiki](https://github.com/overview/overview-server/wiki)
+- [Developer forum / Mailing list](https://groups.google.com/forum/?fromgroups#!forum/overview-dev)
 
 ## Contact us!
 - Twitter [@overviewproject](https://twitter.com/overviewproject)
-- Chat room: [#overviewproject](http://webchat.freenode.net/?channels=overviewproject) on irc.freenode.net
+- Chat room: [#overviewproject](http://webchat.freenode.net/?channels=overviewproject) on `irc.freenode.net`
 - email info@overviewproject.org
-- Or post in the user forum at https://groups.google.com/forum/?fromgroups=#!forum/overview-users
- 
+- Or post in the [user forum](https://groups.google.com/forum/?fromgroups=#!forum/overview-users)
 
 This software is Copyright 2011-2014 The Associated Press, and distributed under the
 terms of the GNU Affero General Public License. See the LICENSE file for details. 

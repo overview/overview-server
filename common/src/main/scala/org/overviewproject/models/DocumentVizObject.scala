@@ -2,13 +2,13 @@ package org.overviewproject.models
 
 import play.api.libs.json.JsObject
 
-/** Joins a Document to a VizObject.
+/** Joins a Document to a StoreObject.
   *
   * You may store data in the `json` column. We expect that to be infrequent,
   * though -- which is good, because there are lots and lots of these objects.
   */
-case class DocumentVizObject(
+case class DocumentStoreObject(
   documentId: Long,
-  vizObjectId: Long,
+  storeObjectId: Long,
   json: Option[JsObject]
 )

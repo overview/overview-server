@@ -48,7 +48,7 @@ trait Controller extends PlayController {
     val tagIds = requestIds("tags")
     val documentIds = requestIds("documents")
     val searchResultIds = requestIds("searchResults")
-    val vizObjectIds = requestIds("objects")
+    val storeObjectIds = requestIds("objects")
     val q = requestString("q")
 
     val deprecatedTagged = tagIds.indexOf(Controller.MagicTagIdThatMeansUntagged) match {
@@ -68,7 +68,7 @@ trait Controller extends PlayController {
       tagIds.filter(_ != Controller.MagicTagIdThatMeansUntagged),
       documentIds,
       searchResultIds,
-      vizObjectIds,
+      storeObjectIds,
       tagged,
       q
     )

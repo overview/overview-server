@@ -1,34 +1,34 @@
 define [
-  'apps/Show/collections/Vizs'
-], (Vizs) ->
-  describe 'apps/Show/collections/Vizs', ->
-    it 'should contain Viz objects', ->
-      expect(Vizs.prototype.model.name).to.eq('Viz')
+  'apps/Show/collections/Views'
+], (Views) ->
+  describe 'apps/Show/collections/Views', ->
+    it 'should contain View objects', ->
+      expect(Views.prototype.model.name).to.eq('View')
 
     it 'should order by createdAt ascending', ->
-      vizs = new Vizs([
-        { id: 1, type: 'viz', createdAt: '2014-06-04T12:31:01Z' }
-        { id: 2, type: 'viz', createdAt: '2014-06-04T12:30:01Z' }
+      views = new Views([
+        { id: 1, type: 'view', createdAt: '2014-06-04T12:31:01Z' }
+        { id: 2, type: 'view', createdAt: '2014-06-04T12:30:01Z' }
       ], url: 'url')
-      expect(vizs.pluck('id')).to.deep.eq([ 2, 1 ])
+      expect(views.pluck('id')).to.deep.eq([ 2, 1 ])
 
-    it 'should order jobs after errors after vizs', ->
-      vizs = new Vizs([
+    it 'should order jobs after errors after views', ->
+      views = new Views([
         { id: 1, type: 'job' }
         { id: 2, type: 'error' }
-        { id: 3, type: 'viz', createdAt: '2014-06-04T12:30:01Z' }
+        { id: 3, type: 'view', createdAt: '2014-06-04T12:30:01Z' }
       ], url: 'url')
-      expect(vizs.pluck('id')).to.deep.eq([ 3, 2, 1 ])
+      expect(views.pluck('id')).to.deep.eq([ 3, 2, 1 ])
 
     describe 'when polling', ->
       beforeEach ->
         @sandbox = sinon.sandbox.create(useFakeServer: true, useFakeTimers: true)
-        @vizs = new Vizs([
+        @views = new Views([
           { id: 2, type: 'job', createdAt: '2014-06-04T14:30:01Z' }
-          { id: 1, type: 'viz', createdAt: '2014-06-04T13:30:01Z' }
-        ], url: '/path/to/vizs')
-        @job = @vizs.get('job-2')
-        @vizs.pollUntilStable()
+          { id: 1, type: 'view', createdAt: '2014-06-04T13:30:01Z' }
+        ], url: '/path/to/views')
+        @job = @views.get('job-2')
+        @views.pollUntilStable()
 
         @respond = (code, data) =>
           reqs = @sandbox.server.requests
@@ -47,16 +47,16 @@ define [
         expect(@sandbox.server.requests.length).to.eq(1)
         req = @sandbox.server.requests[0]
         expect(req.method).to.eq('GET')
-        expect(req.url).to.eq('/path/to/vizs')
+        expect(req.url).to.eq('/path/to/views')
 
       it 'should not double up GET requests', ->
-        @vizs.pollUntilStable()
+        @views.pollUntilStable()
         @sandbox.clock.tick(2000)
         expect(@sandbox.server.requests.length).to.eq(1)
 
       it 'should not queue a GET request when one is already in transit', ->
         @sandbox.clock.tick(2000)
-        @vizs.pollUntilStable()
+        @views.pollUntilStable()
         @sandbox.clock.tick(2000)
         expect(@sandbox.server.requests.length).to.eq(1)
 
@@ -72,7 +72,7 @@ define [
           @sandbox.clock.tick(2000)
           @respond(200, [
             { id: 2, type: 'job', createdAt: '2014-06-04T14:30:01Z', foo: 'bar' }
-            { id: 1, type: 'viz', createdAt: '2014-06-04T13:30:01Z' }
+            { id: 1, type: 'view', createdAt: '2014-06-04T13:30:01Z' }
           ])
           @sandbox.clock.tick(1)
 
@@ -87,12 +87,12 @@ define [
         beforeEach ->
           @sandbox.clock.tick(2000)
           @respond(200, [
-            { id: 2, type: 'viz', createdAt: '2014-06-04T14:30:01Z', foo: 'bar' }
-            { id: 1, type: 'viz', createdAt: '2014-06-04T13:30:01Z' }
+            { id: 2, type: 'view', createdAt: '2014-06-04T14:30:01Z', foo: 'bar' }
+            { id: 1, type: 'view', createdAt: '2014-06-04T13:30:01Z' }
           ])
           @sandbox.clock.tick(1)
 
-        it 'should replace the model', -> expect(@vizs.get('viz-2')).to.exist
+        it 'should replace the model', -> expect(@views.get('view-2')).to.exist
         it 'should not poll again', ->
           @sandbox.clock.tick(2000)
           expect(@sandbox.server.requests.length).to.eq(1)

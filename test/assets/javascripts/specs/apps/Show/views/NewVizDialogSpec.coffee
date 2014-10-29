@@ -1,33 +1,33 @@
 define [
-  'apps/Show/views/NewVizDialog'
+  'apps/Show/views/NewViewDialog'
   'jquery'
   'i18n'
-], (NewVizDialog, $, i18n) ->
-  describe 'apps/Show/views/NewVizDialog', ->
+], (NewViewDialog, $, i18n) ->
+  describe 'apps/Show/views/NewViewDialog', ->
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
       @oldFx = $.fx
       $.fx = false
 
       i18n.reset_messages
-        'views.DocumentSet.show.NewVizDialog.title': 'title'
-        'views.DocumentSet.show.NewVizDialog.cancel': 'cancel'
-        'views.DocumentSet.show.NewVizDialog.submit': 'submit'
-        'views.DocumentSet.show.NewVizDialog.title.label': 'name.label'
-        'views.DocumentSet.show.NewVizDialog.title.placeholder': 'name.placeholder'
-        'views.DocumentSet.show.NewVizDialog.url.label': 'url.label'
-        'views.DocumentSet.show.NewVizDialog.url.placeholder': 'url.placeholder'
-        'views.DocumentSet.show.NewVizDialog.url.checking': 'url.checking'
-        'views.DocumentSet.show.NewVizDialog.url.ok': 'url.ok'
-        'views.DocumentSet.show.NewVizDialog.url.unavailable_html': 'url.unavailable_html,{0},{1}'
-        'views.DocumentSet.show.NewVizDialog.url.unavailable.retry': 'url.unavailable.retry'
-        'views.DocumentSet.show.NewVizDialog.url.insecure_html': 'url.insecure'
-        'views.DocumentSet.show.NewVizDialog.url.insecure.dismiss': 'url.insecure.dismiss'
-        'views.DocumentSet.show.NewVizDialog.url.invalid': 'url.invalid'
+        'views.DocumentSet.show.NewViewDialog.title': 'title'
+        'views.DocumentSet.show.NewViewDialog.cancel': 'cancel'
+        'views.DocumentSet.show.NewViewDialog.submit': 'submit'
+        'views.DocumentSet.show.NewViewDialog.title.label': 'name.label'
+        'views.DocumentSet.show.NewViewDialog.title.placeholder': 'name.placeholder'
+        'views.DocumentSet.show.NewViewDialog.url.label': 'url.label'
+        'views.DocumentSet.show.NewViewDialog.url.placeholder': 'url.placeholder'
+        'views.DocumentSet.show.NewViewDialog.url.checking': 'url.checking'
+        'views.DocumentSet.show.NewViewDialog.url.ok': 'url.ok'
+        'views.DocumentSet.show.NewViewDialog.url.unavailable_html': 'url.unavailable_html,{0},{1}'
+        'views.DocumentSet.show.NewViewDialog.url.unavailable.retry': 'url.unavailable.retry'
+        'views.DocumentSet.show.NewViewDialog.url.insecure_html': 'url.insecure'
+        'views.DocumentSet.show.NewViewDialog.url.insecure.dismiss': 'url.insecure.dismiss'
+        'views.DocumentSet.show.NewViewDialog.url.invalid': 'url.invalid'
 
       @submitSpy = sinon.spy()
       @$div = $('<div></div>')
-      @dialog = new NewVizDialog
+      @dialog = new NewViewDialog
         container: @$div
         success: (args...) =>
           @dialog.remove()
@@ -40,7 +40,7 @@ define [
       @sandbox.restore()
 
     it 'should show a form', ->
-      expect(@$div.find('form#new-viz-dialog')).to.exist
+      expect(@$div.find('form#new-view-dialog')).to.exist
 
     it 'should remove the form', ->
       @dialog.remove()

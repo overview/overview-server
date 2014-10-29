@@ -28,7 +28,7 @@ define [
     it 'should give tags the proper URL', -> expect(@subject.tags.url).to.eq('/documentsets/12/tags')
     it 'should have searchResults', -> expect(@subject.searchResults.models).to.deep.eq([])
     it 'should give searchResults the proper URL', -> expect(@subject.searchResults.url).to.eq('/documentsets/12/searches')
-    it 'should have vizs', -> expect(@subject.vizs.models).to.deep.eq([])
+    it 'should have views', -> expect(@subject.views.models).to.deep.eq([])
 
     it 'should request stuff', ->
       req = @sandbox.server.requests[0]
@@ -49,10 +49,10 @@ define [
       @respondJson(200, searchResults: json)
       expect(@subject.searchResults.toJSON()).to.deep.eq(json)
 
-    it 'should fill in vizs', ->
-      json = [ { id: 257, title: 'Viz', creationData: [] } ]
-      @respondJson(200, vizs: json)
-      expect(@subject.vizs.pluck('title')).to.deep.eq([ 'Viz' ])
+    it 'should fill in views', ->
+      json = [ { id: 257, title: 'View', creationData: [] } ]
+      @respondJson(200, views: json)
+      expect(@subject.views.pluck('title')).to.deep.eq([ 'View' ])
 
     it 'should have documentListParams', ->
       expect(@subject.documentListParams(null).all().documentSet).to.eq(@subject)

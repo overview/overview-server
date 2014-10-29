@@ -1,143 +1,143 @@
 define [
   'jquery'
   'backbone'
-  'apps/Show/controllers/VizAppController'
-], ($, Backbone, VizAppController) ->
+  'apps/Show/controllers/ViewAppController'
+], ($, Backbone, ViewAppController) ->
   class MockState extends Backbone.Model
 
-  class MockViz extends Backbone.Model
+  class MockView extends Backbone.Model
 
-  describe 'apps/Show/controllers/VizAppController', ->
+  describe 'apps/Show/controllers/ViewAppController', ->
     beforeEach ->
       @tags = 'tags'
       @searchResults = 'searchResults'
 
-      @documentSet = new Backbone.Model # hack! testing VizAppClient can listen to it
+      @documentSet = new Backbone.Model # hack! testing ViewAppClient can listen to it
       @documentSet.tags = @tags
       @documentSet.searchResults = @searchResults
 
-      @jobViz = new MockViz(type: 'job')
-      @treeViz = new MockViz(type: 'tree')
+      @jobView = new MockView(type: 'job')
+      @treeView = new MockView(type: 'tree')
 
       @state = new MockState
         documentListParams: 'documentListParams'
         document: 'document'
         taglikeCid: 'taglikeCid'
-        viz: @jobViz
+        view: @jobView
 
       @transactionQueue = 'transactionQueue'
 
-      @jobVizApp =
-        onDocumentChanged: sinon.spy() # hack! testing the implementation uses VizAppClient
+      @jobViewApp =
+        onDocumentChanged: sinon.spy() # hack! testing the implementation uses ViewAppClient
         remove: sinon.spy()
 
-      @treeVizApp =
+      @treeViewApp =
         onDocumentChanged: sinon.spy()
         remove: sinon.spy()
 
-      @vizAppConstructors =
-        job: sinon.stub().returns(@jobVizApp)
-        tree: sinon.stub().returns(@treeVizApp)
+      @viewAppConstructors =
+        job: sinon.stub().returns(@jobViewApp)
+        tree: sinon.stub().returns(@treeViewApp)
 
       @el = document.createElement('div')
 
       @keyboardController = {}
 
       @init = =>
-        @subject = new VizAppController
+        @subject = new ViewAppController
           state: @state
           documentSet: @documentSet
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
-          vizAppConstructors: @vizAppConstructors
+          viewAppConstructors: @viewAppConstructors
           el: @el
 
     afterEach ->
       @subject?.stopListening()
 
-    it 'should give each VizApp a new el', ->
-      @state.set(viz: @jobViz)
+    it 'should give each ViewApp a new el', ->
+      @state.set(view: @jobView)
       @init()
-      args1 = @vizAppConstructors.job.lastCall.args[0]
+      args1 = @viewAppConstructors.job.lastCall.args[0]
       expect(args1.el.parentNode).to.eq(@el)
-      @state.set(viz: @treeViz)
-      args2 = @vizAppConstructors.tree.lastCall.args[0]
+      @state.set(view: @treeView)
+      args2 = @viewAppConstructors.tree.lastCall.args[0]
       expect(args2.el).not.to.eq(args1.el)
       expect(args2.el.parentNode).to.eq(@el)
 
-    describe 'starting with a null viz', ->
+    describe 'starting with a null view', ->
       it 'should not crash', ->
-        @state.set(viz: null)
+        @state.set(view: null)
         expect(=> @init()).not.to.throw()
 
-    describe 'starting with a job viz', ->
+    describe 'starting with a job view', ->
       beforeEach ->
-        @state.set(viz: @jobViz)
+        @state.set(view: @jobView)
         @init()
 
-      it 'should construct a vizApp', -> expect(@vizAppConstructors.job).to.have.been.called
-      it 'should set state.vizApp', -> expect(@state.get('vizApp')).to.eq(@jobVizApp)
+      it 'should construct a viewApp', -> expect(@viewAppConstructors.job).to.have.been.called
+      it 'should set state.viewApp', -> expect(@state.get('viewApp')).to.eq(@jobViewApp)
 
-      it 'should pass viz to the vizApp', ->
-        expect(@vizAppConstructors.job).to.have.been.calledWithMatch
-          viz: @jobViz
+      it 'should pass view to the viewApp', ->
+        expect(@viewAppConstructors.job).to.have.been.calledWithMatch
+          view: @jobView
 
-      it 'should pass state variables to the vizApp', ->
-        expect(@vizAppConstructors.job).to.have.been.calledWithMatch
+      it 'should pass state variables to the viewApp', ->
+        expect(@viewAppConstructors.job).to.have.been.calledWithMatch
           documentListParams: 'documentListParams'
           document: 'document'
           taglikeCid: 'taglikeCid'
 
-      it 'should pass transactionQueue to the vizApp', ->
-        expect(@vizAppConstructors.job).to.have.been.calledWithMatch
+      it 'should pass transactionQueue to the viewApp', ->
+        expect(@viewAppConstructors.job).to.have.been.calledWithMatch
           transactionQueue: @transactionQueue
 
-      it 'should pass keyboardController to the vizApp', ->
-        expect(@vizAppConstructors.job).to.have.been.calledWithMatch
+      it 'should pass keyboardController to the viewApp', ->
+        expect(@viewAppConstructors.job).to.have.been.calledWithMatch
           keyboardController: @keyboardController
 
-      it 'should pass a DocumentSet and State to the vizApp', ->
+      it 'should pass a DocumentSet and State to the viewApp', ->
         # These parameters won't work across iframes. We should deprecate them.
-        options = @vizAppConstructors.job.lastCall.args[0]
+        options = @viewAppConstructors.job.lastCall.args[0]
         expect(options.documentSet).to.eq(@documentSet)
         expect(options.state).to.eq(@state)
 
-      it 'should pass an app facade to the vizApp', ->
-        app = @vizAppConstructors.job.lastCall.args[0].app
+      it 'should pass an app facade to the viewApp', ->
+        app = @viewAppConstructors.job.lastCall.args[0].app
         expect(app).not.to.be.undefined
         expect(app).to.respondTo('resetDocumentListParams')
         expect(app).to.respondTo('getTag')
         expect(app).to.respondTo('getSearchResult')
 
-      it 'should use VizAppClient to notify the vizApp of changes', ->
+      it 'should use ViewAppClient to notify the viewApp of changes', ->
         @state.set(document: 'document2')
-        expect(@jobVizApp.onDocumentChanged).to.have.been.calledWith('document2')
+        expect(@jobViewApp.onDocumentChanged).to.have.been.calledWith('document2')
 
-      describe 'when a new Viz is set', ->
-        beforeEach -> @state.set(viz: @treeViz)
+      describe 'when a new View is set', ->
+        beforeEach -> @state.set(view: @treeView)
 
-        it 'should call .remove() on the old vizApp', -> expect(@jobVizApp.remove).to.have.been.called
-        it 'should construct the new vizApp', -> expect(@vizAppConstructors.tree).to.have.been.called
-        it 'should set state.vizApp', -> expect(@state.get('vizApp')).to.eq(@treeVizApp)
+        it 'should call .remove() on the old viewApp', -> expect(@jobViewApp.remove).to.have.been.called
+        it 'should construct the new viewApp', -> expect(@viewAppConstructors.tree).to.have.been.called
+        it 'should set state.viewApp', -> expect(@state.get('viewApp')).to.eq(@treeViewApp)
 
-        it 'should use VizAppClient to notify the new vizApp of changes', ->
+        it 'should use ViewAppClient to notify the new viewApp of changes', ->
           @state.set(document: 'document2')
-          expect(@treeVizApp.onDocumentChanged).to.have.been.calledWith('document2')
+          expect(@treeViewApp.onDocumentChanged).to.have.been.calledWith('document2')
 
-        it 'should stop notifying the original VizAppClient of changes', ->
+        it 'should stop notifying the original ViewAppClient of changes', ->
           @state.set(document: 'document2')
-          expect(@jobVizApp.onDocumentChanged).not.to.have.been.called
+          expect(@jobViewApp.onDocumentChanged).not.to.have.been.called
 
-      describe 'when the Viz changes type', ->
-        # This should do the same stuff as "when a new Viz is set"
-        beforeEach -> @jobViz.set(type: 'tree')
+      describe 'when the View changes type', ->
+        # This should do the same stuff as "when a new View is set"
+        beforeEach -> @jobView.set(type: 'tree')
 
-        it 'should call .remove() on the old vizApp', -> expect(@jobVizApp.remove).to.have.been.called
-        it 'should construct the new vizApp', -> expect(@vizAppConstructors.tree).to.have.been.called
-        it 'should set state.vizApp', -> expect(@state.get('vizApp')).to.eq(@treeVizApp)
+        it 'should call .remove() on the old viewApp', -> expect(@jobViewApp.remove).to.have.been.called
+        it 'should construct the new viewApp', -> expect(@viewAppConstructors.tree).to.have.been.called
+        it 'should set state.viewApp', -> expect(@state.get('viewApp')).to.eq(@treeViewApp)
 
-      describe 'when the viz changes to null', ->
-        beforeEach -> @state.set(viz: null)
+      describe 'when the view changes to null', ->
+        beforeEach -> @state.set(view: null)
 
-        it 'should call .remove() on the old vizApp', -> expect(@jobVizApp.remove).to.have.been.called
-        it 'should set state.vizApp to null', -> expect(@state.get('vizApp')).to.be.null
+        it 'should call .remove() on the old viewApp', -> expect(@jobViewApp.remove).to.have.been.called
+        it 'should set state.viewApp to null', -> expect(@state.get('viewApp')).to.be.null

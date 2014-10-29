@@ -7,10 +7,10 @@ import models.OverviewUser
 class _documentSetSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     def documentSet: DocumentSet = DocumentSet(id=1L)
-    def nVizs: Int = 3
+    def nViews: Int = 3
     def nJobs: Int = 0
 
-    def result = _documentSet(documentSet, nVizs, nJobs, fakeUser)
+    def result = _documentSet(documentSet, nViews, nJobs, fakeUser)
   }
 
   trait DocumentSetWithErrorsContext extends BaseScope {
@@ -37,18 +37,18 @@ class _documentSetSpec extends views.html.ViewSpecification {
       a.get().headOption.map(_.getAttribute("href")) must beSome(s"/documentsets/${documentSet.id}")
     }
 
-    "should show the number of vizs" in new BaseScope {
-      val span = $(".viz-count")
-      span.attr("data-n-vizs") must beEqualTo(nVizs.toString)
-      span.attr("data-n-viz-jobs") must beEqualTo(nJobs.toString)
+    "should show the number of views" in new BaseScope {
+      val span = $(".view-count")
+      span.attr("data-n-views") must beEqualTo(nViews.toString)
+      span.attr("data-n-view-jobs") must beEqualTo(nJobs.toString)
       span.text().trim must beEqualTo("3 trees")
     }
 
-    "should show viz jobs" in new BaseScope {
+    "should show view jobs" in new BaseScope {
       override def nJobs = 1
-      val span = $(".viz-count")
-      span.attr("data-n-vizs") must beEqualTo(nVizs.toString)
-      span.attr("data-n-viz-jobs") must beEqualTo(nJobs.toString)
+      val span = $(".view-count")
+      span.attr("data-n-views") must beEqualTo(nViews.toString)
+      span.attr("data-n-view-jobs") must beEqualTo(nJobs.toString)
       span.text().trim.replace("\n", "").replaceAll("\\s+", " ") must beEqualTo("3 trees (clustering another…)")
     }
 

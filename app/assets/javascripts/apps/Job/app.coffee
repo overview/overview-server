@@ -16,9 +16,9 @@ define [
     """)
 
     initialize: (options) ->
-      throw 'Must pass options.viz, a Job Viz' if !options.viz?
+      throw 'Must pass options.view, a Job View' if !options.view?
 
-      @viz = options.viz
+      @view = options.view
 
       @render()
 
@@ -26,7 +26,7 @@ define [
       @$progress = @$('progress')
       @$description = @$('p.status')
 
-      @listenTo(@viz, 'change:progress', @_update)
+      @listenTo(@view, 'change:progress', @_update)
 
     _update: (__, progress) ->
       progress ?= {}
@@ -36,7 +36,7 @@ define [
       @$description.text(progress.description || '')
 
     render: ->
-      progress = @viz.attributes.progress || {}
+      progress = @view.attributes.progress || {}
 
       html = @template
         t: t

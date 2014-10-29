@@ -4,7 +4,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
 import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.backend.VizBackend
+import controllers.backend.ViewBackend
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,SearchResultFinder,TagFinder,TreeFinder}
@@ -40,11 +40,11 @@ trait DocumentSetController extends Controller {
     val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
     val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
 
-    val nVizs = storage.findNTreesByDocumentSets(documentSets.map(_.id))
+    val nViews = storage.findNTreesByDocumentSets(documentSets.map(_.id))
     val nJobs = storage.findNJobsByDocumentSets(documentSets.map(_.id))
 
     val documentSetsWithCounts = documentSets.zipWithIndex
-      .map((t: Tuple2[DocumentSet,Int]) => (t._1, nVizs(t._2), nJobs(t._2)))
+      .map((t: Tuple2[DocumentSet,Int]) => (t._1, nViews(t._2), nJobs(t._2)))
 
     val resultPage = ResultPage(documentSetsWithCounts, documentSetsPage.pageDetails)
 
@@ -61,8 +61,8 @@ trait DocumentSetController extends Controller {
     *
     * Ignore the silly "jsParams" argument. It's so users can bookmark URLs.
     *
-    * * GET /documentsets/123 -&gt; load the first Viz
-    * * GET /documentsets/123/trees/456 -&gt; load a specific Viz
+    * * GET /documentsets/123 -&gt; load the first View
+    * * GET /documentsets/123/trees/456 -&gt; load a specific View
     *
     * JavaScript will parse the rest of the URL.
     */
@@ -94,17 +94,17 @@ trait DocumentSetController extends Controller {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
         val trees = storage.findTrees(id).map(_.copy()).toArray
-        val vizJobs = storage.findVizJobs(id).map(_.copy()).toArray
+        val viewJobs = storage.findViewJobs(id).map(_.copy()).toArray
         val tags = storage.findTags(id).map(_.copy()).toArray
         val searchResults = storage.findSearchResults(id).map(_.copy()).toArray
 
         for {
-          vizs <- vizBackend.index(id)
+          _views <- viewBackend.index(id)
         } yield Ok(views.json.DocumentSet.show(
           documentSet,
           trees,
-          vizs,
-          vizJobs,
+          _views,
+          viewJobs,
           tags,
           searchResults
         ))
@@ -190,7 +190,7 @@ trait DocumentSetController extends Controller {
 
   protected val storage: DocumentSetController.Storage
   protected val jobQueue: DocumentSetController.JobMessageQueue
-  protected val vizBackend: VizBackend
+  protected val viewBackend: ViewBackend
 }
 
 object DocumentSetController extends DocumentSetController with DocumentSetDeletionComponents {
@@ -222,11 +222,11 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
 
     def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
 
-    /** All Vizs for the document set. */
+    /** All Views for the document set. */
     def findTrees(documentSetId: Long) : Iterable[Tree]
 
-    /** All Viz-creation jobs for the document set. */
-    def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
+    /** All View-creation jobs for the document set. */
+    def findViewJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
 
     /** All Tags for the document set. */
     def findTags(documentSetId: Long) : Iterable[Tag]
@@ -304,7 +304,7 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
       TreeFinder.byDocumentSet(documentSetId).toSeq
     }
 
-    override def findVizJobs(documentSetId: Long) = {
+    override def findViewJobs(documentSetId: Long) = {
       DocumentSetCreationJobFinder
         .byDocumentSet(documentSetId)
         .excludeCancelledJobs
@@ -328,5 +328,5 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
 
   override val storage = DatabaseStorage
   override val jobQueue = ApolloJobMessageQueue
-  override val vizBackend = VizBackend
+  override val viewBackend = ViewBackend
 }

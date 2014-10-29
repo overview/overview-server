@@ -115,8 +115,8 @@ class ControllerSpec extends Specification {
         test("/?searchResults=4,5,6", SelectionRequest(1L, searchResultIds=Seq(4L, 5L, 6L)))
       }
 
-      "make a SelectionRequest with vizObjects" in new SelectionScope {
-        test("/?objects=5,6,7", SelectionRequest(1L, vizObjectIds=Seq(5L, 6L, 7L)))
+      "make a SelectionRequest with storeObjects" in new SelectionScope {
+        test("/?objects=5,6,7", SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L)))
       }
 
       "make a SelectionRequest with untagged, the deprecated way" in new SelectionScope {
@@ -153,8 +153,8 @@ class ControllerSpec extends Specification {
         test(Seq("searchResults" -> "4,5,6"), SelectionRequest(1L, searchResultIds=Seq(4L, 5L, 6L)))
       }
 
-      "make a SelectionRequest with vizObjects" in new SelectionScope {
-        test(Seq("objects" -> "5,6,7"), SelectionRequest(1L, vizObjectIds=Seq(5L, 6L, 7L)))
+      "make a SelectionRequest with storeObjects" in new SelectionScope {
+        test(Seq("objects" -> "5,6,7"), SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L)))
       }
 
       "make a SelectionRequest with untagged, the deprecated way" in new SelectionScope {

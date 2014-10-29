@@ -4,7 +4,7 @@ import java.util.Date
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-import org.overviewproject.models.Viz
+import org.overviewproject.models.View
 import org.overviewproject.test.factories.PodoFactory
 import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
@@ -48,18 +48,18 @@ class showSpec extends Specification with JsonMatchers {
 
       val json = show(buildDocumentSet(10), Seq(tree), Seq(), Seq(), Seq(), Seq()).toString
 
-      json must /("vizs") */("type" -> "tree")
-      json must /("vizs") */("id" -> 2L)
-      json must /("vizs") */("title" -> "title")
-      json must /("vizs") */("jobId" -> 4L)
-      json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
-      json must /("vizs") */("creationData") /#(3) /#(0) / "lang"
-      json must /("vizs") */("creationData") /#(3) /#(1) / "en"
-      json must /("vizs") */("nDocuments" -> 100)
+      json must /("views") */("type" -> "tree")
+      json must /("views") */("id" -> 2L)
+      json must /("views") */("title" -> "title")
+      json must /("views") */("jobId" -> 4L)
+      json must /("views") */("createdAt" -> "1970-01-01T00:00:01Z")
+      json must /("views") */("creationData") /#(3) /#(0) / "lang"
+      json must /("views") */("creationData") /#(3) /#(1) / "en"
+      json must /("views") */("nDocuments" -> 100)
     }
 
-    "contain vizs" in {
-      val viz = PodoFactory.viz(
+    "contain views" in {
+      val view = PodoFactory.view(
         id=1L,
         title="foo",
         createdAt=new java.sql.Timestamp(1000),
@@ -67,18 +67,18 @@ class showSpec extends Specification with JsonMatchers {
         apiToken="api-token"
       )
 
-      val json: String = show(buildDocumentSet(10), Seq(), Seq(viz), Seq(), Seq(), Seq()).toString
+      val json: String = show(buildDocumentSet(10), Seq(), Seq(view), Seq(), Seq(), Seq()).toString
 
-      json must /("vizs") */("type" -> "viz")
-      json must /("vizs") */("id" -> 1L)
-      json must /("vizs") */("title" -> "foo")
-      json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
-      json must /("vizs") */("url" -> "http://localhost:9001")
-      json must /("vizs") */("apiToken" -> "api-token")
+      json must /("views") */("type" -> "view")
+      json must /("views") */("id" -> 1L)
+      json must /("views") */("title" -> "foo")
+      json must /("views") */("createdAt" -> "1970-01-01T00:00:01Z")
+      json must /("views") */("url" -> "http://localhost:9001")
+      json must /("views") */("apiToken" -> "api-token")
     }
 
-    "contain viz jobs" in {
-      val vizJob = DocumentSetCreationJob(
+    "contain view jobs" in {
+      val viewJob = DocumentSetCreationJob(
         id=2L,
         documentSetId=1L,
         treeTitle=Some("tree job"),
@@ -86,11 +86,11 @@ class showSpec extends Specification with JsonMatchers {
         state=DocumentSetCreationJobState.InProgress
       )
 
-      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(vizJob), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(viewJob), Seq(), Seq()).toString
 
-      json must /("vizs") /#(0) /("id" -> 2.0)
-      json must /("vizs") /#(0) /("type" -> "job")
-      // For the rest, we assume the call to views.json.Vizs.index() is successful.
+      json must /("views") /#(0) /("id" -> 2.0)
+      json must /("views") /#(0) /("type" -> "job")
+      // For the rest, we assume the call to views.json.Views.index() is successful.
     }
   }
 }

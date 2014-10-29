@@ -84,20 +84,20 @@ define [ 'backbone' ], (Backbone) ->
         ret[k] = scopedBuilder(k)
       ret
 
-    setViz: (viz) ->
+    setView: (view) ->
       reset = =>
         params = @get('documentListParams')
-        params = params?.reset.withViz(viz).all()
+        params = params?.reset.withView(view).all()
 
         @set
           documentListParams: params
           document: null
           oneDocumentSelected: false
-          viz: viz
+          view: view
 
-      @stopListening(@get('viz'))
+      @stopListening(@get('view'))
 
-      if viz?.get('type') == 'job'
-        @listenToOnce(viz, 'change:type', reset)
+      if view?.get('type') == 'job'
+        @listenToOnce(view, 'change:type', reset)
 
       reset()

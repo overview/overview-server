@@ -14,7 +14,7 @@ define [
       form = undefined
 
     form.observe 'change', (attrs) ->
-      onDemandTree = state.get('vizApp')?.onDemandTree
+      onDemandTree = state.get('viewApp')?.onDemandTree
       onDemandTree?.saveNode(node, attrs)
 
     undefined

@@ -26,7 +26,7 @@ define [
           saveNode: sinon.spy()
         # XXX hack: 
         @state =
-          get: sinon.stub().withArgs('vizApp').returns
+          get: sinon.stub().withArgs('viewApp').returns
             onDemandTree: @onDemandTree
         @controller = node_form_controller(@node, @state, options)
 

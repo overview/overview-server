@@ -55,15 +55,15 @@ object Authorities {
     }
   }
 
-  /** Allows any user who is owner of the given Viz */
-  def userOwningViz(id: Long) = new Authority {
+  /** Allows any user who is owner of the given View */
+  def userOwningView(id: Long) = new Authority {
     override def apply(user: OverviewUser) = ???
 
     override def apply(apiToken: ApiToken) = Future {
       OverviewDatabase.withSlickSession { implicit session =>
         import org.overviewproject.database.Slick.simple._
-        import org.overviewproject.models.tables.Vizs
-        Vizs
+        import org.overviewproject.models.tables.Views
+        Views
           .filter(_.id === id)
           .filter(_.apiToken === apiToken.token)
           .length.run == 1
@@ -71,20 +71,20 @@ object Authorities {
     }
   }
 
-  /** Allows any user who is owner of the given VizObject */
-  def userOwningVizObject(vizId: Long, id: Long) = new Authority {
+  /** Allows any user who is owner of the given StoreObject */
+  def userOwningStoreObject(id: Long) = new Authority {
     override def apply(user: OverviewUser) = ???
 
     override def apply(apiToken: ApiToken) = Future {
       OverviewDatabase.withSlickSession { implicit session =>
         import org.overviewproject.database.Slick.simple._
-        import org.overviewproject.models.tables.{Vizs,VizObjects}
+        import org.overviewproject.models.tables.{Stores,StoreObjects}
 
-        val allowedVizs = for {
-          vo <- VizObjects if vo.id === id && vo.vizId === vizId
-          v <- Vizs if vo.vizId === v.id && v.apiToken === apiToken.token
+        val allowed = for {
+          so <- StoreObjects if so.id === id
+          s <- Stores if s.id === so.storeId && s.apiToken === apiToken.token
         } yield (1)
-        allowedVizs.length.run == 1
+        allowed.length.run == 1
       }
     }
   }

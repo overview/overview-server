@@ -14,7 +14,7 @@ define [
     class State extends Backbone.Model
       defaults:
         taglikeCid: null
-        viz: null
+        view: null
 
       initialize: ->
         @_reset =
@@ -50,8 +50,8 @@ define [
     it 'should sync from the server', ->
       expect(@tags.fetch).to.have.been.calledWithMatch(url: '/path/to/tags')
 
-    it 'should sync a viz-specific URL if there is a viz', ->
-      @state.set(viz: new Backbone.Model(id: 1234))
+    it 'should sync a view-specific URL if there is a view', ->
+      @state.set(view: new Backbone.Model(id: 1234))
       new TagDialogController(view: @view, tags: @tags, state: @state)
       expect(@tags.fetch).to.have.been.calledWithMatch(url: '/path/to/trees/1234/tags')
 

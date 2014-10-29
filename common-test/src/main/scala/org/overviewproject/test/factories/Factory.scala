@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.UUID
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentVizObject,Plugin,Viz,VizObject}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Plugin,Store,StoreObject,View}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -83,11 +83,11 @@ trait Factory {
 
   def documentTag(documentId: Long, tagId: Long): DocumentTag
 
-  def documentVizObject(
+  def documentStoreObject(
     documentId: Long = 0L,
-    vizObjectId: Long = 0L,
+    storeObjectId: Long = 0L,
     json: Option[JsObject] = None
-  ): DocumentVizObject
+  ): DocumentStoreObject
 
   def node(
     id: Long = 0L,
@@ -122,21 +122,26 @@ trait Factory {
     color: String = "abcdef"
   ): Tag
 
-  def viz(
+  def view(
     id: Long = 0L,
     documentSetId: Long = 0L,
     url: String = "http://example.org",
     apiToken: String = "api-token",
     title: String = "title",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
-    json: JsObject = JsObject(Seq())
-  ): Viz
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
+  ): View
 
-  def vizObject(
+  def store(
     id: Long = 0L,
-    vizId: Long = 0L,
+    apiToken: String = "token",
+    json: JsObject = JsObject(Seq())
+  ): Store
+
+  def storeObject(
+    id: Long = 0L,
+    storeId: Long = 0L,
     indexedLong: Option[Long] = None,
     indexedString: Option[String] = None,
     json: JsObject = JsObject(Seq())
-  ): VizObject
+  ): StoreObject
 }

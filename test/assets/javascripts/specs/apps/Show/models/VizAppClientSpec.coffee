@@ -1,7 +1,7 @@
 define [
   'backbone'
-  'apps/Show/models/VizAppClient'
-], (Backbone, VizAppClient) ->
+  'apps/Show/models/ViewAppClient'
+], (Backbone, ViewAppClient) ->
   class MockState extends Backbone.Model
     defaults:
       documentListParams: 'foo'
@@ -10,14 +10,14 @@ define [
 
   class DocumentSet extends Backbone.Model
 
-  describe 'apps/Show/models/VizAppClient', ->
+  describe 'apps/Show/models/ViewAppClient', ->
     beforeEach ->
       @state = new MockState()
       @documentSet = new DocumentSet()
 
-    describe 'with a complete vizApp', ->
+    describe 'with a complete viewApp', ->
       beforeEach ->
-        @vizApp =
+        @viewApp =
           onDocumentListParamsChanged: sinon.spy()
           onDocumentChanged: sinon.spy()
           onTaglikeCidChanged: sinon.spy()
@@ -25,39 +25,39 @@ define [
           onUntag: sinon.spy()
           remove: sinon.spy()
 
-        @subject = new VizAppClient
+        @subject = new ViewAppClient
           state: @state
           documentSet: @documentSet
-          vizApp: @vizApp
+          viewApp: @viewApp
 
       afterEach -> @subject.stopListening()
 
       it 'should invoke onDocumentListParamsChanged', ->
         @state.set(documentListParams: 'baz')
-        expect(@vizApp.onDocumentListParamsChanged).to.have.been.calledWith('baz')
+        expect(@viewApp.onDocumentListParamsChanged).to.have.been.calledWith('baz')
 
       it 'should invoke onDocumentChanged', ->
         @state.set(document: 'baz')
-        expect(@vizApp.onDocumentChanged).to.have.been.calledWith('baz')
+        expect(@viewApp.onDocumentChanged).to.have.been.calledWith('baz')
 
       it 'should invoke onTaglikeCidChanged', ->
         @state.set(taglikeCid: 'c2')
-        expect(@vizApp.onTaglikeCidChanged).to.have.been.calledWith('c2')
+        expect(@viewApp.onTaglikeCidChanged).to.have.been.calledWith('c2')
 
       it 'should invoke onTag', ->
         @documentSet.trigger('tag', 'foo', 'bar')
-        expect(@vizApp.onTag).to.have.been.calledWith('foo', 'bar')
+        expect(@viewApp.onTag).to.have.been.calledWith('foo', 'bar')
 
       it 'should invoke onUntag', ->
         @documentSet.trigger('untag', 'foo', 'bar')
-        expect(@vizApp.onUntag).to.have.been.calledWith('foo', 'bar')
+        expect(@viewApp.onUntag).to.have.been.calledWith('foo', 'bar')
 
       describe 'on remove', ->
         beforeEach -> @subject.remove()
 
-        it 'should invoke remove', -> expect(@vizApp.remove).to.have.been.called
+        it 'should invoke remove', -> expect(@viewApp.remove).to.have.been.called
 
-        it 'should stop listening to the vizApp', ->
+        it 'should stop listening to the viewApp', ->
           @subject.remove()
 
           @state.set
@@ -67,21 +67,21 @@ define [
           @documentSet.trigger('tag', 'foo', 'bar')
           @documentSet.trigger('untag', 'foo', 'bar')
 
-          expect(@vizApp.onDocumentListParamsChanged).not.to.have.been.called
-          expect(@vizApp.onDocumentChanged).not.to.have.been.called
-          expect(@vizApp.onTaglikeCidChanged).not.to.have.been.called
-          expect(@vizApp.onTag).not.to.have.been.called
-          expect(@vizApp.onUntag).not.to.have.been.called
+          expect(@viewApp.onDocumentListParamsChanged).not.to.have.been.called
+          expect(@viewApp.onDocumentChanged).not.to.have.been.called
+          expect(@viewApp.onTaglikeCidChanged).not.to.have.been.called
+          expect(@viewApp.onTag).not.to.have.been.called
+          expect(@viewApp.onUntag).not.to.have.been.called
 
-    describe 'with an vizApp missing methods', ->
+    describe 'with an viewApp missing methods', ->
       beforeEach ->
-        @vizApp =
+        @viewApp =
           remove: sinon.spy()
 
-        @subject = new VizAppClient
+        @subject = new ViewAppClient
           state: @state
           documentSet: @documentSet
-          vizApp: @vizApp
+          viewApp: @viewApp
 
       afterEach -> @subject.stopListening()
 
@@ -94,10 +94,10 @@ define [
         @documentSet.trigger('untag', 'foo', 'bar')
         expect(true).to.be.true # really, we're just testing nothing crashes
 
-    it 'should throw an error if the vizApp has no remove function', ->
+    it 'should throw an error if the viewApp has no remove function', ->
       expect(=>
-        new VizAppClient
+        new ViewAppClient
           state: @state
           documentSet: @documentSet
-          vizApp: {}
-      ).to.throw('options.vizApp needs a remove() method which removes all traces of the viz')
+          viewApp: {}
+      ).to.throw('options.viewApp needs a remove() method which removes all traces of the view')
