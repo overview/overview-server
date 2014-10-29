@@ -42,6 +42,3 @@ EXPOSE 9000
 
 # declare volumes
 VOLUME [ "/home/overview/overview-server/", "/home/overview/releases/" ]
-
-# run "dev" on startup
-CMD [ "./dev" ]
