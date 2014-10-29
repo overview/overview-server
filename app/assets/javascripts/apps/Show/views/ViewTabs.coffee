@@ -60,22 +60,26 @@ define [
           <dd class="title">
             <div class="not-editing">
               <span class="title"><%- t('view.title.dd', view.title) %></span>
-              <a class="rename" href="#"><%- t('view.title.rename') %></a>
+              <% if (view.type == 'tree' || view.type == 'view') { %>
+                <a class="rename" href="#"><%- t('view.title.rename') %></a>
+              <% } %>
             </div>
-            <div class="editing" style="display:none;">
-              <form method="post" action="#" class="rename">
-                <div class="form-group">
-                  <label class="sr-only" for="<%- view.id %>-title"><%- t('view.title.label') %></label>
-                  <div class="input-group input-group-sm">
-                    <input class="form-control" id="<%- view.id %>-title" name="title" value="<%- view.title %>" placeholder="<%- t('view.title.placeholder') %>" required>
-                    <span class="input-group-btn">
-                      <button class="btn btn-primary" type="submit"><%- t('view.title.save') %></label>
-                      <button class="btn btn-default" type="reset"><%- t('view.title.reset') %></label>
-                    </span>
+            <% if (view.type == 'tree' || view.type == 'view') { %>
+              <div class="editing" style="display:none;">
+                <form method="post" action="#" class="rename">
+                  <div class="form-group">
+                    <label class="sr-only" for="<%- view.id %>-title"><%- t('view.title.label') %></label>
+                    <div class="input-group input-group-sm">
+                      <input class="form-control" id="<%- view.id %>-title" name="title" value="<%- view.title %>" placeholder="<%- t('view.title.placeholder') %>" required>
+                      <span class="input-group-btn">
+                        <button class="btn btn-primary" type="submit"><%- t('view.title.save') %></label>
+                        <button class="btn btn-default" type="reset"><%- t('view.title.reset') %></label>
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </form>
-            </div>
+                </form>
+              </div>
+            <% } %>
           </dd>
 
           <% if (view.nDocuments) { %>
