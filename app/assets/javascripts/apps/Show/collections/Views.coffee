@@ -16,7 +16,7 @@ define [
         || a.attributes.createdAt - b.attributes.createdAt
 
     initialize: (models, options) ->
-      throw 'Must pass options.url, a String like "/documentsets/3/searches"' if !options?.url
+      throw 'Must pass options.url, a String like "/documentsets/3/views"' if !options?.url
       @url = options.url
 
     # Poll every once in a while until all jobs are complete.

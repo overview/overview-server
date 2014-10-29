@@ -72,10 +72,6 @@ GET    /documentsets/:id/export                                              con
 GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
 GET    /documentsets/:id/export/documents-with-column-tags/:format/*filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
-GET    /documentsets/:id/views         controllers.ViewController.indexJson(id: Long)
-POST   /documentsets/:id/views         controllers.ViewController.create(id: Long)
-DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Long, viewId: Long)
-
 POST   /documentsets/:id/trees           controllers.TreeController.create(id: Long)
 GET    /trees/:treeId/nodes.json         controllers.NodeController.index(treeId: Long)
 GET    /trees/:treeId/nodes/:nodeId.json controllers.NodeController.show(treeId: Long, nodeId: Long)
@@ -89,6 +85,10 @@ GET    /documentsets/:id/trees/:treeId/tags      controllers.TagController.index
 POST   /documentsets/:id/tags                    controllers.TagController.create(id: Long)
 POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
+
+GET    /documentsets/:id/views         controllers.ViewController.indexJson(id: Long)
+POST   /documentsets/:id/views         controllers.ViewController.create(id: Long)
+DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Long, viewId: Long)
 
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
 POST   /documentsets/:id/node-counts/tags/:tagId              controllers.TagController.nodeCounts(id: Long, tagId: Long)

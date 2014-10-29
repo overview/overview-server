@@ -26,6 +26,7 @@ define [
       'click li[data-id]>a': '_onClick'
       'click a[data-plugin-url]': '_onClickNewView'
       'click button.cancel': '_onClickCancel'
+      'click button.delete': '_onClickDelete'
 
     templates:
       view: _.template('''
@@ -76,6 +77,8 @@ define [
         </dl>
         <% if (view.type == 'job' || view.type == 'error') { %>
           <button type="button" class="cancel btn btn-danger"><%- t('cancelJob') %></button>
+        <% } else if (view.type == 'view') { %>
+          <button type="button" class="delete btn btn-danger"><%- t('view.delete') %></button>
         <% } %>
         ''')
 
@@ -242,3 +245,10 @@ define [
       dataId = $(e.currentTarget).closest('[data-id]').attr('data-id')
       job = @collection.get(dataId)
       @trigger('cancel', job)
+
+    _onClickDelete: (e) ->
+      e.preventDefault()
+      dataId = $(e.currentTarget).closest('[data-id]').attr('data-id')
+      view = @collection.get(dataId)
+      if window.confirm(t('view.delete.confirm'))
+        @trigger('delete-view', view)

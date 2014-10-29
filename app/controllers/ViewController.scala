@@ -39,7 +39,7 @@ trait ViewController extends Controller {
     }
   }
 
-  def destroy(documentSetId: Long, viewId: Long) = AuthorizedAction(userOwningView(documentSetId)).async { request =>
+  def destroy(documentSetId: Long, viewId: Long) = AuthorizedAction(userOwningView(viewId)).async { request =>
     viewBackend.show(viewId).flatMap(_ match {
       case Some(view) => {
         for {

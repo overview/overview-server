@@ -57,7 +57,19 @@ object Authorities {
 
   /** Allows any user who is owner of the given View */
   def userOwningView(id: Long) = new Authority {
-    override def apply(user: OverviewUser) = ???
+    override def apply(user: OverviewUser) = {
+      OverviewDatabase.withSlickSession { implicit session =>
+        import org.overviewproject.database.Slick.simple._
+        import org.overviewproject.models.tables.{DocumentSetUsers,Views}
+        val q = Views
+          .filter(_.id === id)
+          .filter(_.documentSetId in DocumentSetUsers.filter(_.userEmail === user.email).map(_.documentSetId))
+          .length
+        System.out.println(q)
+        System.out.println(q.toString)
+        q.run == 1
+      }
+    }
 
     override def apply(apiToken: ApiToken) = Future {
       OverviewDatabase.withSlickSession { implicit session =>

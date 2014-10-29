@@ -28,6 +28,7 @@ define [
 
   describe 'apps/Show/views/ViewTabs', ->
     beforeEach ->
+      @sandbox = sinon.sandbox.create()
       @plugin1 = new Plugin(name: 'tree', description: 'treedesc', url: 'about:tree')
       @plugin2 = new Plugin(name: 'url', description: 'urldesc', url: 'http://example.org')
       @plugins = new Plugins([ @plugin1, @plugin2 ])
@@ -37,6 +38,8 @@ define [
         'views.DocumentSet.show.ViewTabs.newView': 'newView'
         'views.DocumentSet.show.ViewTabs.newView.custom': 'newView.custom'
         'views.DocumentSet.show.ViewTabs.nDocuments': 'nDocuments,{0}'
+        'views.DocumentSet.show.ViewTabs.view.delete': 'view.delete'
+        'views.DocumentSet.show.ViewTabs.view.delete.confirm': 'view.delete.confirm'
         'views.DocumentSet.show.ViewTabs.view.title.dt': 'view.title.dt'
         'views.DocumentSet.show.ViewTabs.view.title.dd': 'view.title.dd,{0}'
         'views.DocumentSet.show.ViewTabs.view.nDocuments.dt': 'view.nDocuments.dt'
@@ -47,6 +50,38 @@ define [
         'views.DocumentSet.show.ViewTabs.view.thing1.dd': 'view.thing1.dd,{0}'
         'views.DocumentSet.show.ViewTabs.view.thing2.dt': 'view.thing2.dt'
         'views.DocumentSet.show.ViewTabs.view.thing2.dd': 'view.thing2.dd,{0}'
+
+    afterEach ->
+      @sandbox.restore()
+
+    describe 'starting with a View', ->
+      beforeEach ->
+        @documentSet = { nDocuments: 1234 }
+        @view1 = new View(type: 'view', id: 1, longId: 'view-1', title: 'foo', nDocuments: 10, createdAt: new Date(), creationData: [])
+        @viewList = new ViewList([@view1])
+        @state = new State(view: @view1)
+        @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state, documentSet: @documentSet)
+
+      describe 'after opening the popover', ->
+        beforeEach ->
+          @view.$('span.view-info-icon:eq(0)').click()
+          @$popover = @view.$('.popover.in')
+          @sandbox.stub(window, 'confirm').returns(true)
+          @view.on('delete-view', @deleteSpy = sinon.spy())
+
+        it 'should show a "Delete" button', ->
+          expect(@$popover.find('button.delete')).to.contain('view.delete')
+
+        it 'should confirm before deleting', ->
+          window.confirm.returns(false)
+          @$popover.find('button.delete').click()
+          expect(window.confirm).to.have.been.calledWith('view.delete.confirm')
+          expect(@deleteSpy).not.to.have.been.called
+
+        it 'should delete on confirm', ->
+          window.confirm.returns(true)
+          @$popover.find('button.delete').click()
+          expect(@deleteSpy).to.have.been.calledWith(@view1)
 
     describe 'starting with two views', ->
       beforeEach ->

@@ -23,6 +23,7 @@ define [
 
       @listenTo(@view, 'click', @_onClickView)
       @listenTo(@view, 'cancel', @_onCancel)
+      @listenTo(@view, 'delete-view', @_onDelete)
       @listenTo(@view, 'click-new-tree', @_onClickNewTree)
       @listenTo(@view, 'click-new-view', @_onClickNewView)
       @listenTo(@views, 'add', @_onAdd)
@@ -30,8 +31,7 @@ define [
       @el = @view.el
 
     _onClickView: (view) -> @state.setView(view)
-    _onAdd: (view) ->
-      @state.setView(view)
+    _onAdd: (view) -> @state.setView(view)
 
     _onCancel: (job) ->
       @views.remove(job)
@@ -41,6 +41,12 @@ define [
       $.ajax
         type: 'delete'
         url: "/trees/jobs/#{jobId}"
+
+    _onDelete: (view) ->
+      view.set(deleting: true)
+      view.destroy
+        wait: true
+        success: => @state.setView(@views.at(0) || null)
 
     _onClickNewTree: ->
       onSubmit = (data) =>
