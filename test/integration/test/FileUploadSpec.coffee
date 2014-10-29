@@ -113,7 +113,7 @@ describe 'FileUpload', ->
 
 
   
-  describe 'after splitting many files into pages', ->
+  describe 'after splitting many files into pages @SauceLabsKiller', ->
     before ->
       @userBrowser
         .openFileUploadPage()

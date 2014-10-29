@@ -1,4 +1,4 @@
 --compilers coffee:coffee-script/register
---timeout 150s
+--timeout 90s
 --slow 2000
 --require support/testSuite
