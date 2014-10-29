@@ -1,21 +1,24 @@
 package controllers
 
-import play.api.mvc.Flash
 import org.specs2.specification.Scope
 import org.specs2.matcher.Matcher
+import scala.concurrent.Future
 
+import controllers.backend.TreeBackend
 import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, Tag, Tree}
 
 class TreeControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
+    val mockBackend = mock[TreeBackend]
     val mockStorage = mock[TreeController.Storage]
 
     val controller = new TreeController {
+      override val backend = mockBackend
       override val storage = mockStorage
     }
   }
 
-  "TreeController.create" should {
+  "TreeController#create" should {
     trait CreateScope extends BaseScope {
       val documentSetId = 1L
       def formBody : Seq[(String,String)] = Seq("tree_title" -> "tree title", "lang" -> "en", "supplied_stop_words" -> "", "important_words" -> "")
@@ -66,6 +69,24 @@ class TreeControllerSpec extends ControllerSpecification {
       override def tagId = Some(1023L)
       mockStorage.findTag(documentSetId, 1023L) returns None
       h.status(result) must beEqualTo(h.NOT_FOUND)
+    }
+  }
+
+  "TreeController#destroy" should {
+    trait DestroyScope extends BaseScope {
+      val documentSetId = 1L
+      val treeId = 2L
+      mockBackend.destroy(any) returns Future.successful(Unit)
+      def result = controller.destroy(documentSetId, treeId)(fakeAuthorizedRequest)
+    }
+
+    "return NoContent" in new DestroyScope {
+      h.status(result) must beEqualTo(h.NO_CONTENT)
+    }
+
+    "destroy a Tree" in new DestroyScope {
+      h.status(result)
+      there was one(mockBackend).destroy(treeId)
     }
   }
 }

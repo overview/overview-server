@@ -31,7 +31,8 @@ define [
 
     idAttribute: 'clientId'
 
-    url: -> "#{@collection.url}/#{@attributes.id}"
+    url: ->
+      "#{@collection.url.replace(/views$/, @attributes.type + 's')}/#{@attributes.id}"
 
     scopeApiParams: (params) ->
       if (rootNodeId = @get('rootNodeId'))?

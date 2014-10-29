@@ -77,7 +77,7 @@ define [
         </dl>
         <% if (view.type == 'job' || view.type == 'error') { %>
           <button type="button" class="cancel btn btn-danger"><%- t('cancelJob') %></button>
-        <% } else if (view.type == 'view') { %>
+        <% } else if (view.type == 'view' || view.type == 'tree') { %>
           <button type="button" class="delete btn btn-danger"><%- t('view.delete') %></button>
         <% } %>
         ''')

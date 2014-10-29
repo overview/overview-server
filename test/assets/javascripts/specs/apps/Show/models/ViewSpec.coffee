@@ -1,4 +1,7 @@
-define [ 'apps/Show/models/View' ], (View) ->
+define [
+  'apps/Show/models/View'
+  'apps/Show/collections/Views'
+], (View, Views) ->
   describe 'apps/Show/models/View', ->
     it 'should have a type', -> expect(new View().get('type')).not.to.be.undefined
     it 'should have a title', -> expect(new View().get('title')).not.to.be.undefined
@@ -23,3 +26,16 @@ define [ 'apps/Show/models/View' ], (View) ->
       params = { nodes: '3' }
       scoped = view.scopeApiParams(params)
       expect(scoped).to.deep.eq(nodes: '3')
+
+    describe 'in a collection', ->
+      beforeEach ->
+        @views = new Views([], url: '/documentsets/123/views')
+
+      describe '#url', ->
+        it 'should find a view URL', ->
+          view = new View({ id: 10, type: 'view' }, collection: @views)
+          expect(view.url()).to.eq('/documentsets/123/views/10')
+
+        it 'should find a tree URL', ->
+          tree = new View({ id: 23, type: 'tree' }, collection: @views)
+          expect(tree.url()).to.eq('/documentsets/123/trees/23')
