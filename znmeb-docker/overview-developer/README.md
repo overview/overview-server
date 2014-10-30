@@ -2,6 +2,18 @@
 
 1. Install Ubuntu 14.04.1 LTS "Trusty Tahr" 64-bit in a virtual machine. The machine needs at least 2 GB of RAM and a 40 GB virtual hard drive.
 1. Start the virtual machine.
+1. ***VERY IMPORTANT:*** You will need to edit /etc/hosts. Open a terminal and type
+
+    ```
+    hostname
+    ```
+    For example, on my developer VM, it's 'overview'.
+
+    Edit `/etc/hosts` and ***add*** the hostname after 'localhost' on the line for `127.0.0.1`. On my developer VM, it's now
+
+    ```
+    127.0.0.1	localhost overview
+    ```
 1. Download and unpack the latest "master" zip archive from https://github.com/znmeb/overview-server/archive/master.zip
 1. Open a terminal and type
 ```
