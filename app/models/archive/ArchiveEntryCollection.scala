@@ -26,14 +26,11 @@ class ArchiveEntryCollection(entries: Seq[ArchiveEntry]) {
     validEntries
   }
 
-  
+  // Replace chars Windows can't handle with underscores
   private def sanitizeFilename(filename: String): String = {
     val BadCharRegex = """[<>:"/\\|?*\x00-\x1F]""".r
     
     BadCharRegex.replaceAllIn(filename, "_")
-//    m => 
-//      m.matched.getBytes(UTF_8).map(b => f"%%${b & 0xff}%02X").mkString
-//    )
   }
   
   // Try to find a unique name in the form "name (n)", where n is the first available integer
