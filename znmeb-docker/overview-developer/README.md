@@ -2,7 +2,7 @@
 
 1. Install Ubuntu 14.04.1 LTS "Trusty Tahr" 64-bit in a virtual machine. The machine needs at least 2 GB of RAM and a 40 GB virtual hard drive.
 1. Start the virtual machine.
-1. ***VERY IMPORTANT:*** You will need to edit /etc/hosts. Open a terminal and type
+1. ***VERY IMPORTANT:*** You will need to edit `/etc/hosts`. Open a terminal and type
 
     ```
     hostname
