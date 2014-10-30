@@ -2,6 +2,7 @@ sudo apt-get update
 sudo apt-get install -y \
   build-essential \
   docker.io \
+  git \
   openjdk-7-jdk \
   postgresql \
   unzip \
