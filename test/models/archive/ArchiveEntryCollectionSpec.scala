@@ -78,25 +78,25 @@ class ArchiveEntryCollectionSpec extends Specification {
     "replace illegal characters" in new ArchiveEntryCollectionContext {
       val badChars = """<>:"/\|?*"""
 
-      val escapedChars = badChars.getBytes(StandardCharsets.UTF_8).foldLeft("")((s, b) => s + f"%%$b%02X")
+      val replacedChars = "_" * badChars.size
 
       val collection = createCollection(Seq(badChars))
 
       val names = collection.sanitizedEntries.map(_.name)
 
-      names.head must be equalTo escapedChars
+      names.head must be equalTo replacedChars
     }
 
     "replace control characters" in new ArchiveEntryCollectionContext {
       val controlCharacters = Array.tabulate(32)(_.toByte)
       val badName = new String(controlCharacters)
-      val escapedChars = controlCharacters.map(b => f"%%$b%02X").mkString
+      val replacedChars = "_" * 32
 
       val collection = createCollection(Seq(badName))
 
       val names = collection.sanitizedEntries.map(_.name)
       
-      names.head must be equalTo escapedChars
+      names.head must be equalTo replacedChars
 
     }
   }
