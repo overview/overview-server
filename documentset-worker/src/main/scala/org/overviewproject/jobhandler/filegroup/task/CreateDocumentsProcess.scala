@@ -62,7 +62,8 @@ trait CreateDocumentsProcess {
 
         files.foreach(reportCompleteTask)
 
-        CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator, progressReporter)
+        nextStep
+        //
       } else {
         createDocumentsProcessStorage.saveDocumentCount(documentSetId)
         createDocumentsProcessStorage.deleteTempFiles(documentSetId)
@@ -75,9 +76,10 @@ trait CreateDocumentsProcess {
 
     private def indexDocuments(documents: Iterable[Document]): Unit = await(searchIndex.addDocuments(documents))
     private def waitForIndexCompletion: Unit = await(searchIndex.refresh)
-    
+
     // Document creation is handled by subclasses, depending on value of splitDocuments
     protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document]
+    protected def nextStep: FileGroupTaskStep
 
     private def reportStartTask(file: File): Unit =
       progressReporter ! StartTask(documentSetId, file.id)
@@ -94,6 +96,9 @@ trait CreateDocumentsProcess {
 
     override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
       files.map(createDocument(documentSetId, _))
+
+    override protected def nextStep: FileGroupTaskStep =
+      CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator, progressReporter)
 
     private def createDocument(documentSetId: Long, file: File) = {
       val pages = createDocumentsProcessStorage.findFilePageText(file.id)
@@ -116,6 +121,9 @@ trait CreateDocumentsProcess {
 
     override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
       files.flatMap(createDocumentsFromPages(documentSetId, _))
+
+    override protected def nextStep: FileGroupTaskStep =
+      CreateDocumentsFromPagesQueryPage(documentSetId, queryPage + 1, documentIdGenerator, progressReporter)
 
     private def createDocumentsFromPages(documentSetId: Long, file: File): Iterable[Document] = {
       val pages = createDocumentsProcessStorage.findFilePageText(file.id)

@@ -1,24 +1,21 @@
 package controllers
 
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.i18n.Messages
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities._
+import controllers.backend.TreeBackend
 import controllers.forms.TreeCreationJobForm
-import models.orm.finders.{DocumentSetFinder, TagFinder, TreeFinder}
+import controllers.forms.TreeUpdateAttributesForm
+import models.orm.finders.{TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, Tag, Tree}
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tag,Tree}
 
 trait TreeController extends Controller {
-  trait Storage {
-    def findTree(id: Long) : Option[Tree]
-    def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
-
-    /** Inserts the job into the database and returns that copy */
-    def insertJob(job: DocumentSetCreationJob): DocumentSetCreationJob
-  }
-
-  val storage : TreeController.Storage
+  protected val backend: TreeBackend
+  protected val storage: TreeController.Storage
 
   private def tagToTreeDescription(tag: Tag) : String = {
     Messages("controllers.TreeController.treeDescription.fromTag", tag.name)
@@ -53,14 +50,37 @@ trait TreeController extends Controller {
       }
     )
   }
+
+  def update(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningTree(treeId)).async { implicit request =>
+    TreeUpdateAttributesForm().bindFromRequest.fold(
+      f => Future.successful(BadRequest),
+      attributes => backend.update(treeId, attributes).map(_ match {
+        case Some(tree) => Ok(views.json.Tree.show(tree))
+        case None => NotFound
+      })
+    )
+  }
+
+  def destroy(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningTree(treeId)).async { request =>
+    for { unit <- backend.destroy(treeId) } yield NoContent
+  }
 }
 
 object TreeController extends TreeController {
+  trait Storage {
+    def findTree(id: Long) : Option[Tree]
+    def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
+
+    /** Inserts the job into the database and returns that copy */
+    def insertJob(job: DocumentSetCreationJob): DocumentSetCreationJob
+  }
+
   object DatabaseStorage extends Storage {
     override def findTree(id: Long) = TreeFinder.byId(id).headOption
     override def findTag(documentSetId: Long, tagId: Long) = TagFinder.byDocumentSetAndId(documentSetId, tagId).headOption
     override def insertJob(job: DocumentSetCreationJob) = DocumentSetCreationJobStore.insertOrUpdate(job)
   }
 
+  override val backend = TreeBackend
   override val storage = DatabaseStorage
 }

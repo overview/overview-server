@@ -8,6 +8,16 @@ Url =
 describe 'Recluster', ->
   asUserWithDocumentSet('Recluster', 'Recluster/documents.csv')
 
+  doDelete = (browser, title) ->
+    browser
+      .goToFirstDocumentSet()
+      .waitForElementBy(tag: 'a', contains: title, visible: true)
+      .elementByCss('>', '.toggle-popover').click()
+      .listenForJqueryAjaxComplete()
+      .acceptingNextAlert()
+      .waitForElementByCss('.popover.in button.delete').click()
+      .waitForJqueryAjaxComplete()
+
   describe 'after a recluster', ->
     before ->
       @userBrowser
@@ -27,6 +37,39 @@ describe 'Recluster', ->
         { query: 'document', nResults: 4 }
       ]
 
+    it 'should rename properly', ->
+      doRename = (browser, oldTitle, newTitle) ->
+        browser
+          .goToFirstDocumentSet()
+          .waitForElementBy(tag: 'a', contains: oldTitle, visible: true)
+          .elementByCss('>', '.toggle-popover').click()
+          .elementByCss('.popover.in dd.title a.rename').click()
+          .elementByCss('.popover.in dd.title input[name=title]').type(newTitle)
+          .listenForJqueryAjaxComplete()
+          .elementByCss('.popover.in dd.title button[type=submit]').click()
+          .waitForJqueryAjaxComplete()
+          .elementByCss('.popover.in a.close').click()
+
+      verify = (browser, title) ->
+        browser
+          .waitForElementBy(tag: 'a', contains: 'view-renamed').should.eventually.exist
+          .elementByCss('>', '.toggle-popover').click()
+          .elementByCss('.popover.in dd.title').text().should.eventually.contain('view-renamed')
+          .elementByCss('.popover.in a.close').click()
+
+      doRename(@userBrowser, 'view1', 'view-renamed')
+        .then(=> verify(@userBrowser, 'view-renamed'))
+        .then(=> @userBrowser.goToFirstDocumentSet())
+        .then(=> verify(@userBrowser, 'view-renamed'))
+        .then(=> doRename(@userBrowser, 'view-renamed', 'view1'))
+
+    it 'should delete properly', ->
+      doDelete(@userBrowser, 'view1')
+        .waitForElementByCss('#tree-app-tree canvas').should.eventually.exist # it selects the next tree
+        .elementByCss('.view-tabs li.tree').text().should.not.eventually.contain('view1') # it deletes the tab
+        .goToFirstDocumentSet()
+        .waitForElementByCss('.view-tabs li.tree').text().should.not.eventually.contain('view1') # it stays deleted
+
   describe 'when reclustering just a tag', ->
     before ->
       @userBrowser
@@ -39,6 +82,8 @@ describe 'Recluster', ->
         .sleep(100) # Overview will select the new Job; wait for that to happen
         .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a View
 
+    after -> doDelete(@userBrowser, 'view2')
+
     shouldBehaveLikeATree
       documents: [
         { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
@@ -46,5 +91,3 @@ describe 'Recluster', ->
       searches: [
         { query: 'document', nResults: 3 }
       ]
-
-  it 'should let us delete a new tree, especially in these tests'

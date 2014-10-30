@@ -12,7 +12,7 @@ define [
       title: '' # What the user calls this View
       creationData: [] # View-dependent [key,value] strings
 
-    constructor: (attrs) ->
+    constructor: (attrs, options) ->
       attrs = _.extend({}, @defaults, attrs ? {})
 
       if 'createdAt' of attrs
@@ -27,9 +27,12 @@ define [
         if k == 'rootNodeId'
           attrs.rootNodeId = +v
 
-      super(attrs)
+      super(attrs, options)
 
     idAttribute: 'clientId'
+
+    url: ->
+      "#{@collection.url.replace(/views$/, @attributes.type + 's')}/#{@attributes.id}"
 
     scopeApiParams: (params) ->
       if (rootNodeId = @get('rootNodeId'))?

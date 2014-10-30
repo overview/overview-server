@@ -4,6 +4,8 @@ password.secure=Please use a password at least seven characters long.
 
 controllers.admin.UserController.delete.failure=Document sets owned by {0} must be removed before the user can be deleted.
 
+controllers.DocumentSetArchiveController.unsupported=Zip archives are currently not supported for your document set. Please try again later.
+
 controllers.ConfirmationController.show.success=Welcome! To get started, try cloning one of the example document sets.
 
 controllers.DocumentSetController.clone.failure=We were not able to clone the document set.
@@ -351,10 +353,18 @@ views.DocumentSet.show.TransactionQueueErrorMonitor.reload=Reload this page
 views.DocumentSet.show.TransactionQueueErrorMonitor.retry=Reconnect
 
 views.DocumentSet.show.ViewTabs.cancelJob=Cancel this reclustering…
-views.DocumentSet.show.ViewTabs.new_tree=New tree…
 views.DocumentSet.show.ViewTabs.newView=Add view
 views.DocumentSet.show.ViewTabs.newView.custom=Custom…
 views.DocumentSet.show.ViewTabs.nDocuments=({0,number,integer})
+views.DocumentSet.show.ViewTabs.view.close.top=×
+views.DocumentSet.show.ViewTabs.view.close.bottom=Close
+views.DocumentSet.show.ViewTabs.view.delete=Delete
+views.DocumentSet.show.ViewTabs.view.delete.confirm=Are you sure you want to delete this View? You cannot undo this.
+views.DocumentSet.show.ViewTabs.view.title.rename=rename
+views.DocumentSet.show.ViewTabs.view.title.label=Title
+views.DocumentSet.show.ViewTabs.view.title.placeholder=New Title
+views.DocumentSet.show.ViewTabs.view.title.save=Save
+views.DocumentSet.show.ViewTabs.view.title.reset=Cancel
 views.DocumentSet.show.ViewTabs.view.title.dt=Title
 views.DocumentSet.show.ViewTabs.view.title.dd={0}
 views.DocumentSet.show.ViewTabs.view.nDocuments.dt=Number of documents
@@ -478,6 +488,7 @@ views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to 
 views.ImportJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.ImportJob._documentSetCreationJob.subtitle.other=From uploaded file
 
+
 views.DocumentSetExport.index.h3=Export your document set
 views.DocumentSetExport.index.close=Close
 views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet. Please choose the format:
@@ -485,6 +496,9 @@ views.DocumentSetExport.index.formats.DocumentsWithStringTags.csv=CSV file, all 
 views.DocumentSetExport.index.formats.DocumentsWithStringTags.xlsx=Excel file, all tags in one column
 views.DocumentSetExport.index.formats.DocumentsWithColumnTags.csv=CSV file, each tag in its own column
 views.DocumentSetExport.index.formats.DocumentsWithColumnTags.xlsx=Excel file each tag in its own column
+views.DocumentSetExport.index.archive=Alternatively:
+views.DocumentSetExport.index.formats.ZipArchive=Zip archive of all documents as PDF
+
 views.DocumentSetExport.index.download=Download
 views.DocumentSetExport.index.postamble_html=Note: Microsoft Excel for Mac cannot open CSV files with UTF-8 characters. All versions of Excel are limited 32,767 characters per cell, and Overview will truncate long documents during XLSX export.
 

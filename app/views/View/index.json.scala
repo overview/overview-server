@@ -36,34 +36,8 @@ object index {
     )
   }
 
-  private[View] def treeToJson(tree: Tree): JsValue = {
-    val creationData = tree.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
-
-    Json.obj(
-      "type" -> "tree",
-      "id" -> tree.id,
-      "jobId" -> tree.jobId,
-      "nDocuments" -> tree.documentCount,
-      "title" -> tree.title,
-      "createdAt" -> dateToISO8601(tree.createdAt),
-      "creationData" -> creationData.toSeq
-    )
-  }
-
-  private[View] def viewToJson(view: View): JsValue = {
-    Json.obj(
-      "type" -> "view",
-      "id" -> view.id,
-      "title" -> view.title,
-      "url" -> view.url,
-      "apiToken" -> view.apiToken,
-      "createdAt" -> dateToISO8601(view.createdAt),
-      "creationData" -> Json.obj()
-    )
-  }
-
-  def apply(trees: Iterable[Tree], views: Iterable[View], jobs: Iterable[DocumentSetCreationJob]): JsValue = {
-    val values = trees.map(treeToJson) ++ views.map(viewToJson) ++ jobs.map(jobToJson)
+  def apply(trees: Iterable[Tree], _views: Iterable[View], jobs: Iterable[DocumentSetCreationJob]): JsValue = {
+    val values = trees.map(views.json.Tree.show.apply) ++ _views.map(show.apply) ++ jobs.map(jobToJson)
     JsArray(values.toSeq)
   }
 }

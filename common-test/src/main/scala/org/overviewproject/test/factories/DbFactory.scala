@@ -6,8 +6,8 @@ import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Plugin,Store,StoreObject,View}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates objects in the database while returning them.
@@ -174,26 +174,29 @@ class DbFactory(connection: Connection) extends Factory {
     createdAt
   )
 
-  override def tag(
+  override def tree(
     id: Long = 0L,
     documentSetId: Long = 0L,
-    name: String = "a tag",
-    color: String = "abcdef"
-  ) = q.insertTag += podoFactory.tag(id, documentSetId, name, color)
-
-  override def view(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    url: String = "http://example.org",
-    apiToken: String = "api-token",
+    rootNodeId: Long = 0L,
+    jobId: Long = 0L,
     title: String = "title",
+    documentCount: Int = 10,
+    lang: String = "en",
+    description: String = "description",
+    suppliedStopWords: String = "supplied stop words",
+    importantWords: String = "important words",
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ) = q.insertView += podoFactory.view(
+  ) = q.insertTree += podoFactory.tree(
     id,
     documentSetId,
-    url,
-    apiToken,
+    rootNodeId,
+    jobId,
     title,
+    documentCount,
+    lang,
+    description,
+    suppliedStopWords,
+    importantWords,
     createdAt
   )
 
@@ -216,6 +219,29 @@ class DbFactory(connection: Connection) extends Factory {
     indexedString,
     json
   )
+
+  override def tag(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    name: String = "a tag",
+    color: String = "abcdef"
+  ) = q.insertTag += podoFactory.tag(id, documentSetId, name, color)
+
+  override def view(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    url: String = "http://example.org",
+    apiToken: String = "api-token",
+    title: String = "title",
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
+  ) = q.insertView += podoFactory.view(
+    id,
+    documentSetId,
+    url,
+    apiToken,
+    title,
+    createdAt
+  )
 }
 
 object DbFactory {
@@ -233,9 +259,10 @@ object DbFactory {
     val insertNodeDocument = (NodeDocuments returning NodeDocuments).insertInvoker
     val insertPlugin = (Plugins returning Plugins).insertInvoker
     val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
-    val insertTag = (Tags returning Tags).insertInvoker
-    val insertView = (Views returning Views).insertInvoker
     val insertStore = (Stores returning Stores).insertInvoker
     val insertStoreObject = (StoreObjects returning StoreObjects).insertInvoker
+    val insertTree = (Trees returning Trees).insertInvoker
+    val insertTag = (Tags returning Tags).insertInvoker
+    val insertView = (Views returning Views).insertInvoker
   }
 }

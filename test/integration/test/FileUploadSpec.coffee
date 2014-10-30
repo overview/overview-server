@@ -29,6 +29,11 @@ describe 'FileUpload', ->
         .waitForJobsToComplete(5000)
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: name, visible: true).click()
+
+    chooseManyFiles: ->
+      r = [@].concat [1..60]
+      r.reduce (b, file) -> b.chooseFile("manyFiles/file-#{file}.pdf")
+
       
 
   describe 'after uploading files', ->
@@ -108,3 +113,21 @@ describe 'FileUpload', ->
 
 
   
+  describe 'after splitting many files into pages @SauceLabsKiller', ->
+    before ->
+      @userBrowser
+        .openFileUploadPage()
+        .chooseManyFiles()
+        .elementBy(tag: 'button', contains: 'Done adding files').click()
+        .waitForElementBy(tag: 'label', contains: 'Each page is one document', visible: 'true').click()
+        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('File Upload')
+        .doImport()
+
+    it 'should create one document per page', ->
+      @userBrowser
+        .waitForJobsToComplete(5000)      
+        .waitForElementBy(class: 'document-count' , contains: '120 documents').should.eventually.exist
+
+    after ->
+      @userBrowser
+        .deleteTopUpload()

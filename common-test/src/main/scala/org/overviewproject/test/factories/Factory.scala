@@ -4,8 +4,8 @@ import java.sql.Timestamp
 import java.util.UUID
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Plugin,Store,StoreObject,View}
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,Node,NodeDocument,SearchResult,SearchResultState,Tag}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
 /** Creates models simply.
@@ -121,6 +121,20 @@ trait Factory {
     name: String = "a tag",
     color: String = "abcdef"
   ): Tag
+
+  def tree(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    rootNodeId: Long = 0L,
+    jobId: Long = 0L,
+    title: String = "title",
+    documentCount: Int = 10,
+    lang: String = "en",
+    description: String = "description",
+    suppliedStopWords: String = "supplied stop words",
+    importantWords: String = "important words",
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
+  ): Tree
 
   def view(
     id: Long = 0L,

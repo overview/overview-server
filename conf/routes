@@ -72,10 +72,10 @@ GET    /documentsets/:id/export                                              con
 GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
 GET    /documentsets/:id/export/documents-with-column-tags/:format/*filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
-GET    /documentsets/:id/views controllers.ViewController.indexJson(id: Long)
-POST   /documentsets/:id/views controllers.ViewController.create(id: Long)
+POST   /documentsets/:id/trees         controllers.TreeController.create(id: Long)
+PUT    /documentsets/:id/trees/:treeId controllers.TreeController.update(id: Long, treeId: Long)
+DELETE /documentsets/:id/trees/:treeId controllers.TreeController.destroy(id: Long, treeId: Long)
 
-POST   /documentsets/:id/trees           controllers.TreeController.create(id: Long)
 GET    /trees/:treeId/nodes.json         controllers.NodeController.index(treeId: Long)
 GET    /trees/:treeId/nodes/:nodeId.json controllers.NodeController.show(treeId: Long, nodeId: Long)
 POST   /trees/:treeId/nodes/:nodeId      controllers.NodeController.update(treeId: Long, nodeId: Long)
@@ -89,6 +89,11 @@ POST   /documentsets/:id/tags                    controllers.TagController.creat
 POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
 
+GET    /documentsets/:id/views         controllers.ViewController.indexJson(id: Long)
+POST   /documentsets/:id/views         controllers.ViewController.create(id: Long)
+PUT    /documentsets/:id/views/:viewId controllers.ViewController.update(id: Long, viewId: Long)
+DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Long, viewId: Long)
+
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
 POST   /documentsets/:id/node-counts/tags/:tagId              controllers.TagController.nodeCounts(id: Long, tagId: Long)
 POST   /documentsets/:id/node-counts/untagged                 controllers.UntaggedDocumentsController.nodeCounts(id: Long)
@@ -101,6 +106,9 @@ GET    /documentsets/:id/error-list controllers.DocumentProcessingErrorControlle
 
 GET    /public-document-sets controllers.PublicDocumentSetController.index()
 GET    /shared-document-sets controllers.SharedDocumentSetController.index()
+
+
+GET    /documentsets/:id/archive/view/:filename          controllers.DocumentSetArchiveController.archive(id: Long, filename: String)
 
 # Admin section
 GET    /admin/users        controllers.admin.UserController.index()

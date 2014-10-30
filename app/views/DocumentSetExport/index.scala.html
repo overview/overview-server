@@ -17,6 +17,10 @@
         <li>@m("formats.DocumentsWithColumnTags.xlsx") <a href="@(routes.DocumentSetExportController.documentsWithColumnTags(XlsxFormat, escapedFilenamePart + "xlsx", documentSet.id))">@m("download")</a></li>
       </ul>
       <p class="postamble">@Html(m("postamble_html"))</p>
+      <p class="archive">@m("archive")</p>
+      <ul>
+        <li>@m("formats.ZipArchive") <a href="@routes.DocumentSetArchiveController.archive(documentSet.id, escapedFilenamePart + "zip")">@m("download")</a>
+     </ul>
     </div>
     <div class="modal-footer">
       <a href="#" data-dismiss="modal" class="btn">@m("close")</a>

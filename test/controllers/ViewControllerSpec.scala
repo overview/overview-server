@@ -5,7 +5,7 @@ import org.specs2.matcher.JsonMatchers
 import play.api.libs.json.Json
 import scala.concurrent.Future
 
-import controllers.backend.{ApiTokenBackend,ViewBackend}
+import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.models.{ApiToken,View}
@@ -18,12 +18,14 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
     val mockStorage = mock[ViewController.Storage]
     val mockAppUrlChecker = mock[ViewController.AppUrlChecker]
     val mockApiTokenBackend = mock[ApiTokenBackend]
+    val mockStoreBackend = mock[StoreBackend]
     val mockViewBackend = mock[ViewBackend]
 
     val controller = new ViewController {
       override protected val storage = mockStorage
-      override protected val apiTokenBackend = mockApiTokenBackend
       override protected val appUrlChecker = mockAppUrlChecker
+      override protected val apiTokenBackend = mockApiTokenBackend
+      override protected val storeBackend = mockStoreBackend
       override protected val viewBackend = mockViewBackend
     }
 
@@ -202,6 +204,71 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         json must /#(0) /("progress") /("fraction" -> 0.0)
         json must /#(0) /("creationData") /#(0) /("lang")
         json must /#(0) /("creationData") /#(0) /("en")
+      }
+    }
+
+    "#update" should {
+      trait UpdateScope extends BaseScope {
+        val documentSetId = 1L
+        val viewId = 2L
+        mockViewBackend.update(any, any) returns Future.successful(Some(PodoFactory.view(title="updated title")))
+        val request = fakeAuthorizedRequest.withFormUrlEncodedBody("title" -> "submitted title")
+        lazy val result = controller.update(documentSetId, viewId)(request)
+      }
+
+      "call ViewBackend#update" in new UpdateScope {
+        h.status(result)
+        there was one(mockViewBackend).update(viewId, View.UpdateAttributes(title="submitted title"))
+      }
+
+      "return the updated View" in new UpdateScope {
+        h.status(result) must beEqualTo(h.OK)
+        val json = h.contentAsString(result)
+
+        json must /("title" -> "updated title")
+      }
+
+      "return NotFound when the View is not found" in new UpdateScope {
+        mockViewBackend.update(any, any) returns Future.successful(None)
+        h.status(result) must beEqualTo(h.NOT_FOUND)
+      }
+
+      "return BadRequest when the input is bad" in new UpdateScope {
+        override val request = fakeAuthorizedRequest.withFormUrlEncodedBody("titleblah" -> "submittedblah")
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+    }
+
+    "#destroy" should {
+      trait DestroyScope extends BaseScope {
+        val documentSetId = 1L
+        val viewId = 2L
+        val apiToken = "some-token"
+        lazy val request = fakeAuthorizedRequest
+        def result = controller.destroy(documentSetId, viewId)(request)
+        mockViewBackend.show(any) returns Future.successful(Some(factory.view(id=viewId, apiToken=apiToken)))
+        mockViewBackend.destroy(any) returns Future.successful(())
+        mockStoreBackend.destroy(any) returns Future.successful(())
+        mockApiTokenBackend.destroy(any) returns Future.successful(())
+      }
+
+      "return NoContent" in new DestroyScope {
+        h.status(result) must beEqualTo(h.NO_CONTENT)
+      }
+
+      "destroy the View" in new DestroyScope {
+        h.status(result)
+        there was one(mockViewBackend).destroy(viewId)
+      }
+
+      "destroy the Store" in new DestroyScope {
+        h.status(result)
+        there was one(mockStoreBackend).destroy(apiToken)
+      }
+
+      "destroy the ApiToken" in new DestroyScope {
+        h.status(result)
+        there was one(mockApiTokenBackend).destroy(apiToken)
       }
     }
   }

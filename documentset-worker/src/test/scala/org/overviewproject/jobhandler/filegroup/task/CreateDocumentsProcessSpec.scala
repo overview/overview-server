@@ -48,6 +48,20 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documentsFromPages)
     }
 
+    "create one document per page for all query page results" in new TwoResultPagesContext {
+      val documentsFromPages = expectedDocumentsPerPage(documentSetId, documentData)
+
+      val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, true, progressReporter.ref)
+      val secondStep = firstStep.execute
+      val thirdStep = secondStep.execute
+      val finalStep = thirdStep.execute
+      
+      there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documentsFromPages.take(4 * pageSize))
+      there was one(createDocumentsProcess.createDocumentsProcessStorage).writeDocuments(documentsFromPages.drop(4 * pageSize))
+
+      finalStep must haveClass[CreateDocumentsProcessComplete]
+    }
+    
     "add documents to search index" in new OneResultPageContext {
       val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, false, progressReporter.ref)
 
@@ -148,7 +162,9 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
 }
 
-class TestCreateDocumentsProcess(documentSetId: Long, documentData: Map[Long, (String, Iterable[(Int, String)])], pageSize: Int) extends CreateDocumentsProcess with Mockito {
+class TestCreateDocumentsProcess(
+    documentSetId: Long, documentData: Map[Long, (String, Iterable[(Int, String)])], pageSize: Int)
+    extends CreateDocumentsProcess with Mockito {
 
   private val files = for ((id, data) <- documentData) yield File(1, 1l, 1l, data._1, Some(100), Some(100), id)
   private val filesPage1 = files.take(pageSize)
