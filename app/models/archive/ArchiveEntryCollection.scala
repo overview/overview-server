@@ -1,6 +1,7 @@
 package models.archive
 
 import scala.collection.immutable.HashSet
+import java.nio.charset.StandardCharsets.UTF_8
 
 /**
  * Ensures that the filenames in the collection of `entries` are unique (case-insensitively), and 
@@ -13,16 +14,27 @@ class ArchiveEntryCollection(entries: Seq[ArchiveEntry]) {
 
     val (_, validEntries) = entries.foldLeft((HashSet[String](), Seq[ArchiveEntry]())) { (u, e) =>
       val (existingNames, existingEntries) = u
-      val entry = if (isDuplicate(existingNames, e.name))
-        e.copy(name = uniqueName(existingNames, e.name, 1))
-      else e
+      
+      val filename = sanitizeFilename(e.name)
+      val entry = if (isDuplicate(existingNames, filename))
+        e.copy(name = uniqueName(existingNames, filename, 1))
+      else e.copy(name = filename)
 
-      (addName(existingNames, entry.name), existingEntries :+ entry)
+      (addName(existingNames, filename), existingEntries :+ entry)
     }
 
     validEntries
   }
 
+  
+  private def sanitizeFilename(filename: String): String = {
+    val BadCharRegex = """[<>:"/\\|?*\x00-\x1F]""".r
+    
+    BadCharRegex.replaceAllIn(filename, m => 
+      m.matched.getBytes(UTF_8).map(b => f"%%${b & 0xff}%02X").mkString
+    )
+  }
+  
   // Try to find a unique name in the form "name (n)", where n is the first available integer
   // If there are >= 2 * Int.MaxValue names of the same form, "name (0)" is returned, which
   // may lead to duplicate filenames. That many files will probably cause other problems.
