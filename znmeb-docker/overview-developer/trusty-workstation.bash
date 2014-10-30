@@ -9,6 +9,3 @@ sudo apt-get install -y \
   unzip \
   vim \
   zip
-git config --global push.default simple
-git config --global user.email "znmeb@znmeb.net"
-git config --global user.name "M. Edward (Ed) Borasky"
