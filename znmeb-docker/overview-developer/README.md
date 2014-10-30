@@ -33,7 +33,7 @@
 1. Type
 
     ```
-    auto/fully-clean.sh
+    auto/clean-fully.sh
     ./build overview-release.zip
     ```
     This will make a release zipfile. When it's finished, move the zipfile to `znmeb-docker/overview-release`.
