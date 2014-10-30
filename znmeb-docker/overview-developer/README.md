@@ -2,6 +2,7 @@
 
 1. Install Ubuntu 14.04.1 LTS "Trusty Tahr" 64-bit in a virtual machine. The machine needs at least 2 GB of RAM and a 40 GB virtual hard drive.
 1. Start the virtual machine.
+1. Install the VirtualBox Guest Additions and reboot the VM.
 1. ***VERY IMPORTANT:*** You will need to edit `/etc/hosts`. Open a terminal and type
 
     ```
@@ -21,8 +22,8 @@
     cd overview-server/znmeb-docker/overview-developer
     ./trusty-workstation.bash
     ```
-    This will install the dependencies needed to build and test Overview releases and Docker images.
-1. Now type
+    This will install the dependencies needed to build and test Overview releases and Docker images. When it's finished, reboot the VM again.
+1. When the VM comes back up, open a terminal and type
 
     ```
     cd ../..
