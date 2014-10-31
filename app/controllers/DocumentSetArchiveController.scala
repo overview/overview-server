@@ -20,29 +20,37 @@ trait DocumentSetArchiveController extends Controller {
 
   import Authorities._
 
-  def archive(documentSetId: Long, filename: String) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def archive(documentSetId: Long, encodedFilename: String) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     for (fileInfo <- storage.findDocumentFileInfo(documentSetId)) yield {
       val archiveEntries = fileInfo.flatMap(archiveEntryFactory.create)
 
-      if (archiveEntries.nonEmpty) streamArchive(archiveEntries, filename)
+      if (archiveEntries.nonEmpty) streamArchive(archiveEntries, encodedFilename)
       else flashUnsupportedWarning
     }
   }
 
-  private def streamArchive(archiveEntries: Seq[ArchiveEntry], filename: String): Result = {
+  private def streamArchive(archiveEntries: Seq[ArchiveEntry], encodedFilename: String): Result = {
     val archive = archiver.createArchive(archiveEntries)
+
+    val filename = decodeStarPathParameter(encodedFilename)
+    val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
     Ok.feed(Enumerator.fromStream(archive.stream)).
       withHeaders(
-        CONTENT_TYPE -> "application/octet-stream",
+        CONTENT_TYPE -> "application/x-zip-compressed",
         CONTENT_LENGTH -> s"${archive.size}",
-        CONTENT_DISPOSITION -> ContentDisposition.fromFilename(filename).contentDisposition)
+        CONTENT_DISPOSITION -> contentDisposition)
   }
 
   private def flashUnsupportedWarning: Result = {
     val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
 
     Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("unsupported"))
+  }
+
+  private def decodeStarPathParameter(encodedString: String): String = {
+    val uri = new java.net.URI(s"https://localhost:9999/${encodedString}")
+    uri.getPath().drop(1) // drop the leading "/"
   }
 
   protected val archiver: Archiver
