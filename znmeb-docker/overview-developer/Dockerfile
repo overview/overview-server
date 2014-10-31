@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 # add a non-root user with 'sudo' privileges
 RUN useradd overview -m -G sudo
+RUN passwd -d -e overview
 
 # get the repository
 WORKDIR /home/overview
