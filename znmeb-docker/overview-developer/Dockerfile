@@ -11,18 +11,17 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip
 
-# add a non-root user
-RUN useradd overview -m
+# add a non-root user with 'sudo' privileges
+RUN useradd overview -m -G sudo
 
 # get the repository
-USER overview
 WORKDIR /home/overview
 RUN wget -q https://github.com/overview/overview-server/archive/master.zip
 RUN unzip master.zip
 RUN rm master.zip
 
 # make a place to save release zipfiles
-RUN mkdir -p /home/overview/releases/
+RUN mkdir -p /home/overview/overview-release/
 
 # overwrite Redis with upstream source
 WORKDIR /home/overview/overview-server-master/deps/redis/
@@ -32,8 +31,12 @@ RUN rm -fr redis-2.8.17
 RUN tar xf redis-2.8.17.tar.gz
 RUN rm redis-2.8.17.tar.gz
 
-# set final work directory and git global options
-WORKDIR /home/overview/overview-server
+# give the non-root user their home
+RUN chown -R overview:overview /home/overview
+
+# set final work directory and user
+WORKDIR /home/overview/overview-server-master
+USER overview
 
 # export port 9000 to host "localhost"
 EXPOSE 9000
