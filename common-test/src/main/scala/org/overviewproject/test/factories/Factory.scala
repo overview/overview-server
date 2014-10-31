@@ -3,10 +3,11 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import java.util.UUID
 import play.api.libs.json.JsObject
-
 import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
+import org.overviewproject.models.{ File, Page }
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
+
 
 /** Creates models simply.
   *
@@ -158,4 +159,26 @@ trait Factory {
     indexedString: Option[String] = None,
     json: JsObject = JsObject(Seq())
   ): StoreObject
+  
+  def page(
+    id: Long = 0L,
+    fileId: Long = 0L,
+    pageNumber: Int = 1,
+    referenceCount: Int = 1,
+    data: Option[Array[Byte]] = Some(Array.fill[Byte](100)(0x34)),
+    text: Option[String] = Some("page text"),
+    dataErrorMessage: Option[String] = None,
+    textErrorMessage: Option[String] = None
+  ): Page
+  
+  def file(
+    id: Long = 0L,
+    referenceCount: Int = 1,
+    contentsOid: Long = 1,
+    viewOid: Long = 1,
+    name: String = "filename",
+    contentsSize: Option[Long] = Some(0L),
+    viewSize: Option[Long] = None
+  ): File
+  
 }

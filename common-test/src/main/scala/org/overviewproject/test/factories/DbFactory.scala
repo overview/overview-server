@@ -242,6 +242,44 @@ class DbFactory(connection: Connection) extends Factory {
     title,
     createdAt
   )
+  
+  override def page(
+    id: Long,
+    fileId: Long,
+    pageNumber: Int,
+    referenceCount: Int,
+    data: Option[Array[Byte]],
+    text: Option[String],
+    dataErrorMessage: Option[String],
+    textErrorMessage: Option[String]
+  ) = q.insertPage += podoFactory.page(
+    id, 
+    fileId,
+    pageNumber,
+    referenceCount,
+    data,
+    text,
+    dataErrorMessage,
+    textErrorMessage
+  )  
+  
+  override def file(
+    id: Long,
+    referenceCount: Int,
+    contentsOid: Long,
+    viewOid: Long,
+    name: String,
+    contentsSize: Option[Long],
+    viewSize: Option[Long]
+  ) = q.insertFile += podoFactory.file(
+    id,
+    referenceCount,
+    contentsOid,
+    viewOid,
+    name,
+    contentsSize,
+    viewSize
+  )
 }
 
 object DbFactory {
@@ -264,5 +302,7 @@ object DbFactory {
     val insertTree = (Trees returning Trees).insertInvoker
     val insertTag = (Tags returning Tags).insertInvoker
     val insertView = (Views returning Views).insertInvoker
+    val insertPage = (Pages returning Pages).insertInvoker
+    val insertFile = (Files returning Files).insertInvoker
   }
 }

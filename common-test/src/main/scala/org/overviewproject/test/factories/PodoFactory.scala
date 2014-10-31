@@ -4,10 +4,10 @@ import java.sql.Timestamp
 import java.util.UUID
 import play.api.libs.json.JsObject
 import scala.util.Random
-
 import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,DocumentSet,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
+import org.overviewproject.models.{ File, Page }
 
 /** Plain Old Data Object factory.
   *
@@ -280,5 +280,45 @@ object PodoFactory extends Factory {
     apiToken,
     title,
     createdAt
+  )
+  
+  
+  override def page(
+    id: Long,
+    fileId: Long,
+    pageNumber: Int,
+    referenceCount: Int,
+    data: Option[Array[Byte]],
+    text: Option[String],
+    dataErrorMessage: Option[String],
+    textErrorMessage: Option[String]
+  ) = Page(
+    getId(id),
+    getId(fileId), 
+    pageNumber,
+    referenceCount, 
+    data,
+    text,
+    dataErrorMessage,
+    textErrorMessage
+  )
+  
+  
+  override def file(
+    id: Long,
+    referenceCount: Int,
+    contentsOid: Long,
+    viewOid: Long,
+    name: String,
+    contentsSize: Option[Long],
+    viewSize: Option[Long]
+  ) = File(
+    getId(id),
+    referenceCount,
+    getId(contentsOid),
+    getId(viewOid),
+    name,
+    contentsSize,
+    viewSize
   )
 }
