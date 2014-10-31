@@ -17,7 +17,7 @@ RUN useradd overview -m
 # get the repository
 USER overview
 WORKDIR /home/overview
-RUN wget https://github.com/overview/overview-server/archive/master.zip
+RUN wget -q https://github.com/overview/overview-server/archive/master.zip
 RUN unzip master.zip
 RUN rm master.zip
 
@@ -26,7 +26,7 @@ RUN mkdir -p /home/overview/releases/
 
 # overwrite Redis with upstream source
 WORKDIR /home/overview/overview-server-master/deps/redis/
-RUN wget http://download.redis.io/releases/redis-2.8.17.tar.gz
+RUN wget -q http://download.redis.io/releases/redis-2.8.17.tar.gz
 RUN ls -lAtr
 RUN rm -fr redis-2.8.17
 RUN tar xf redis-2.8.17.tar.gz
