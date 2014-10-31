@@ -7,5 +7,6 @@ docker run -it \
   --name="overview-developer" \
   overview-developer \
   /bin/bash
+docker rmi overview-developer-built:latest
 docker commit overview-developer overview-developer-built:latest
 docker images
