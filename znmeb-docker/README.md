@@ -35,7 +35,7 @@
     ./dev
     ```
 
-    `./sync.bash` will sync the source to the Overview project master. `./dev` will start a developer build. The build takes a long time. When it's done it will start a local server and open a browser to localhost:9000. After a few more compiles you will see the Overview login page. Press <kbd>ctrl</kbd>+<kbd>C</kbd> to stop the server. Then close the browser tab.
+    `./sync.bash` will sync the source to the Overview project master. `./dev` will start a developer build. The build takes a long time. When it's done it will start a local server and open a browser window / tab to localhost:9000. After a few more compiles you will see the Overview login page. Press <kbd>ctrl</kbd>+<kbd>C</kbd> to stop the server. Then close the browser tab.
 1. Type
 
     ```
@@ -51,4 +51,4 @@
     ./run
     ```
 
-    As with the developer build, it will start a server on localhost:9000 and open a browser window / tab to the server. However, in this case it comes up in 'Example document sets' rather than in the Overview login page.
+    As with the developer build, it will start a server on localhost:9000 and open a browser window / tab to the server. However, in this case it comes up in 'Example document sets' rather than in the Overview login page. Once the browser window / tab displays, you can close it and stop the server with <kbd>ctrl</kbd>+<kbd>C</kbd>.
