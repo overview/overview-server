@@ -12,6 +12,7 @@
         * postgresql-9.3 or later
         * git
         * libreoffice
+    * On Windows or MacOS X I've built Docker images to perform these operations. See https://github.com/znmeb/overview-docker for the details.
 
 1. ***VERY IMPORTANT:*** You will need to edit `/etc/hosts`. Open a terminal and type
 
