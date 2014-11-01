@@ -22,4 +22,12 @@
     ./dev
     ```
 
-    `sync.bash` will sync the source to the Overview project master. `./dev` will start a developer build. The build takes a long time. When it's done it will start a local server and open a browser to localhost:9000. After a few more compiles you will see the Overview login page. Press <kbd>ctrl</kbd>+<kbd>C</kbd> to stop the server.
+    `./sync.bash` will sync the source to the Overview project master. `./dev` will start a developer build. The build takes a long time. When it's done it will start a local server and open a browser to localhost:9000. After a few more compiles you will see the Overview login page. Press <kbd>ctrl</kbd>+<kbd>C</kbd> to stop the server. Then close the browser tab.
+1. Type
+
+    ```
+    auto/clean-fully.sh
+    ./build overview-server.zip
+    ```
+    
+    This will also take some time. As with the developer build, when it's done it will start a server on localhost:9000 and open a browser window / tab to the server. In this case it comes up in 'Example document sets' rather than in the login page.
