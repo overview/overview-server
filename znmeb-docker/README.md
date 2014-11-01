@@ -1,4 +1,17 @@
-# Building a release on Fedora 21 / CompJournoStick
+# Building a release
+
+1. Dependencies:
+    * On CompJournoStick 21, all the dependencies will be there.
+    * On Fedora 20 and later, you will need
+        * java-1.7.0-openjdk-devel or later
+        * postgresql-9.3.5 or later
+        * git
+        * libreoffice
+    * On Ubuntu 14.04 LTS "Trusty Tahr" you will need
+        * openjdk-7-jdk or later
+        * postgresql-9.3.5 or later
+        * git
+        * libreoffice
 
 1. ***VERY IMPORTANT:*** You will need to edit `/etc/hosts`. Open a terminal and type
 
