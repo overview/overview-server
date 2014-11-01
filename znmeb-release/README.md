@@ -2,6 +2,7 @@
 
 1. Dependencies:
     * On CompJournoStick 21, all the dependencies will be there.
+
     * On Fedora 20 and later, you will need
         * java-1.7.0-openjdk-devel or later
         * postgresql-9.3 or later
@@ -9,6 +10,9 @@
         * make
         * git
         * libreoffice
+        * zip
+        * unzip
+
     * On Ubuntu 14.04 LTS "Trusty Tahr" you will need
         * openjdk-7-jdk or later
         * postgresql-9.3 or later
@@ -17,6 +21,7 @@
         * libreoffice
         * zip
         * unzip
+
     * On Windows or MacOS X I've built Docker images to perform these operations. See https://github.com/znmeb/overview-docker for the details.
 
 1. ***VERY IMPORTANT:*** You will need to edit `/etc/hosts`. Open a terminal and type
