@@ -1,4 +1,4 @@
-# Building a release
+# Building a Release Zipfile
 
 1. Dependencies:
     * On CompJournoStick 21, all the dependencies will be there.
