@@ -1,5 +1,17 @@
 # Building a release on Fedora 21 / CompJournoStick
 
+1. ***VERY IMPORTANT:*** You will need to edit `/etc/hosts`. Open a terminal and type
+
+    ```
+    hostname
+    ```
+    For example, on my workstation, the hostname is 'AlgoCompSynth'.
+
+    Edit `/etc/hosts` and ***add*** the hostname after 'localhost' on the line for `127.0.0.1`. On my workstation, it's now
+
+    ```
+    127.0.0.1  localhost.localdomain localhost AlgoCompSynth
+    ```
 1. Clone this repository.
 1. Open a terminal and type
 
