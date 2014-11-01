@@ -30,4 +30,12 @@
     ./build overview-server.zip
     ```
     
-    This will also take some time. As with the developer build, when it's done it will start a server on localhost:9000 and open a browser window / tab to the server. In this case it comes up in 'Example document sets' rather than in the login page.
+    This will also take some time. When it's finished you will have a file `overview-server.zip` ready for deployment.
+1. To test the release, move `overview-server.zip` to a directory where you can write and unpack it. Then type
+
+    ```
+    cd overview-server
+    ./run
+    ```
+
+    As with the developer build, it will start a server on localhost:9000 and open a browser window / tab to the server. However, in this case it comes up in 'Example document sets' rather than in the Overview login page.
