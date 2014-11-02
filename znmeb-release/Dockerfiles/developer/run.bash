@@ -13,6 +13,7 @@
 docker rm developerc
 docker run -it -p 9000:9000 \
   --name="developerc" \
+  -v /home/overview/overview-server \
   znmeb/overview-developer
 
 # 'developerc' is still running - copy release tree into 'releasetc' container
@@ -27,7 +28,8 @@ docker run -d \
 docker rmi znmeb/overview-release
 docker commit releasetc znmeb/overview-release
 
-# test the release
+# test the release in 'releasec'
+docker rm releasec
 docker run -it -p 9000:9000 \
   --name="releasec" \
   znmeb/overview-release
