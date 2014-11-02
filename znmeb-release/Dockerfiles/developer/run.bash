@@ -22,7 +22,7 @@ docker run -it -p 9000:9000 \
 docker commit developerc znmeb/overview-developer-built
 docker push znmeb/overview-developer-built
 
-# start developer-built container with release tree volume export
+# start developer-built container with release tree volume exported
 docker rm developerbc
 docker run -d \
   --name="developerbc" \
