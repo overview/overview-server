@@ -4,9 +4,6 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 # expose the server port
 EXPOSE 9000
 
-# define a volume for the release tree
-VOLUME /home/overview/overview-server
-
 # install Overview build dependencies
 RUN apt-get update && apt-get install -y \
   build-essential \
@@ -24,8 +21,7 @@ USER overview
 
 # get the source repository
 WORKDIR /home/overview
-RUN git clone https://github.com/znmeb/overview-server
-RUN mv overview-server overview-server-source
+RUN git clone https://github.com/znmeb/overview-server overview-server-source
 
 # sync with upstream master
 WORKDIR /home/overview/overview-server-source/znmeb-release
