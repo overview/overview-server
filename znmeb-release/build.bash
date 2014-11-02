@@ -3,11 +3,15 @@
 cd ~/overview-server-source
 
 # start 'dev' - will need to be manually killed
-./dev
+time ./dev
+
+# sleep for a minute so user can tell how long it took to build
+sleep 60
 
 # make the server
 auto/clean-fully.sh
-./build overview-server.zip
+time ./build overview-server.zip
+sleep 60
 
 # unpack it
 cd ~
