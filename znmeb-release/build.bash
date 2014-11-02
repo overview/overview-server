@@ -18,5 +18,5 @@ cd ~
 unzip overview-server-source/overview-server.zip
 
 # run the server - will need to be manually killed
-cd overview-server.zip
+cd overview-server
 ./run
