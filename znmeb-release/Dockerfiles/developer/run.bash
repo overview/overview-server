@@ -20,7 +20,6 @@ docker run -it -p 9000:9000 \
 
 # save to developer-built image
 docker commit developerc znmeb/overview-developer-built
-docker push znmeb/overview-developer-built
 
 # start developer-built container with release tree volume exported
 docker rm developerbc
@@ -38,7 +37,7 @@ docker run -d \
   znmeb/overview-release-template \
   cp -rp /home/overview/overview-server /home/overview/overview-release
 
-# create image from 'releasetc'
+# create 'overview-release' image from 'releasetc'
 docker rmi znmeb/overview-release
 docker commit releasetc znmeb/overview-release
 
@@ -48,5 +47,6 @@ docker run -it -p 9000:9000 \
   --name="releasec" \
   znmeb/overview-release
 
-# create and push 'overview-release' image
+# push images
 docker push znmeb/overview-release
+docker push znmeb/overview-developer-built
