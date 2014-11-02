@@ -9,18 +9,21 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-# build into 'developerc' container
-docker rm developerc
-docker run -it -p 9000:9000 \
-  --name="developerc" \
-  -v /home/overview/overview-server \
-  znmeb/overview-developer
+# log in first
+docker login
 
-# 'developerc' is still running - copy release tree into 'releasetc' container
+# build into 'serverc' container
+docker rm serverc
+docker run -it -p 9000:9000 \
+  --name="serverc" \
+  -v /home/overview/overview-server \
+  znmeb/overview-server
+
+# 'serverc' is still running - copy release tree into 'releasetc' container
 docker rm releasetc
 docker run -d \
   --name="releasetc" \
-  --volumes-from="developerc" \
+  --volumes-from="serverc" \
   znmeb/overview-release-template \
   cp -rp /home/overview/overview-server /home/overview/overview-release
 
@@ -35,5 +38,4 @@ docker run -it -p 9000:9000 \
   znmeb/overview-release
 
 # create and push 'overview-release' image
-docker login
 docker push znmeb/overview-release
