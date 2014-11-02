@@ -12,18 +12,29 @@
 # log in first
 docker login
 
-# build into 'serverc' container
-docker rm serverc
+# build in 'developerc' container
+docker rm developerc
 docker run -it -p 9000:9000 \
-  --name="serverc" \
-  -v /home/overview/overview-server \
-  znmeb/overview-server
+  --name="developerc" \
+  znmeb/overview-developer
 
-# 'serverc' is still running - copy release tree into 'releasetc' container
+# save to developer-built image
+docker commit developerc znmeb/overview-developer-built
+docker push znmeb/overview-developer-built
+
+# start developer-built container with release tree volume export
+docker rm developerbc
+docker run -d \
+  --name="developerbc" \
+  -v /home/overview/overview-server \
+  znmeb/overview-developer-built \
+  sh -c "while true; do; sleep 15; done"
+
+# copy release tree to release template container
 docker rm releasetc
 docker run -d \
   --name="releasetc" \
-  --volumes-from="serverc" \
+  --volumes-from="developerc" \
   znmeb/overview-release-template \
   cp -rp /home/overview/overview-server /home/overview/overview-release
 
