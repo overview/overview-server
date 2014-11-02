@@ -24,9 +24,8 @@ USER overview
 
 # get the source repository
 WORKDIR /home/overview
-RUN git clone \
-  https://github.com/znmeb/overview-server.git \
-  overview-server-source
+RUN git clone https://github.com/znmeb/overview-server
+RUN mv overview-server overview-server-source
 
 # sync with upstream master
 WORKDIR /home/overview/overview-server-source/znmeb-release

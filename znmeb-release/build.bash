@@ -5,14 +5,14 @@ cd ~/overview-server-source
 # start 'dev' - will need to be manually killed
 ./dev
 
-# make the release
+# make the server
 auto/clean-fully.sh
-./build overview-release.zip
+./build overview-server.zip
 
 # unpack it
 cd ~
-unzip overview-server-source/overview-release.zip
+unzip overview-server-source/overview-server.zip
 
-# run the release - will need to be manually killed
-cd overview-release
+# run the server - will need to be manually killed
+cd overview-server.zip
 ./run
