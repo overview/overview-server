@@ -11,9 +11,13 @@
 
 # build in 'make-developer' container
 docker rm make-developer
-docker run -it -p 9000:9000 \
+/usr/bin/time docker run -it -p 9000:9000 \
   --name="make-developer" \
   znmeb/overview-source
 
 # save to image
 docker commit make-developer znmeb/overview-developer
+
+# push in the background
+docker login
+/usr/bin/time docker push znmeb/overview-developer > push.log 2>&1 &
