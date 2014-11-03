@@ -6,7 +6,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification {
   "DbDocumentFileInfoBackend" should {
     
     "find info for pages" in new SplitDocumentsScope {
-      val infos = await(backend.indexDocumentFileInfos(documentSet.id))
+      val infos = await(backend.indexDocumentFileInfosForPages(documentSet.id))
       
       infos must containTheSameElementsAs(pageInfos)
     }

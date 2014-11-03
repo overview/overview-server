@@ -7,7 +7,7 @@ case class PageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long, si
 
 trait DocumentFileInfoBackend {
 
-  def indexDocumentFileInfos(documentSetId: Long): Future[Seq[PageViewInfo]]
+  def indexDocumentFileInfosForPages(documentSetId: Long): Future[Seq[PageViewInfo]]
 }
 
 trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBackend =>
@@ -15,7 +15,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   import scala.slick.jdbc.GetResult
   import org.overviewproject.database.Slick.simple._
 
-  override def indexDocumentFileInfos(documentSetId: Long): Future[Seq[PageViewInfo]] = db { implicit session =>
+  override def indexDocumentFileInfosForPages(documentSetId: Long): Future[Seq[PageViewInfo]] = db { implicit session =>
   	implicit val getPageViewResult = GetResult(r => PageViewInfo(r.nextString, r.nextInt, r.nextLong, r.nextLong)) 
 
   	val q = sql"""
