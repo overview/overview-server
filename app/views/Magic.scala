@@ -46,12 +46,22 @@ object Magic {
   val t = play.api.i18n.Messages
   val scopedMessages = ScopedMessages
 
-  /** Lossy filename escape: takes a String and returns a similar String.
+  private val InvalidCharRegex = """[\x00-\x1f\x7f"*/:<>\?\\|#]""".r
+
+  /** Returns a String that can be downloaded to the filesystem.
    *
-   * "?" will be replaced with "_", so we can include the character in URLs.
+   * The returned filename has two useful properties:
+   *
+   * * It can be included in URLs ("/", "?" and "#" are replaced).
+   * * It can be saved to any filesystem (and VFAT in particular). See
+   *   http://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+   *
+   * From a certain perspective, the returned filename can be a basename
+   * anywhere: even on VFAT and HTTP.
+   *
+   * This escape is lossy.
    */
   def escapeFilename(filename: String) = {
-    val InvalidCharRegex = """[\x00-\x1f\\\?/%*:|"<>]""".r
     InvalidCharRegex.replaceAllIn(filename, "_")
   }
 

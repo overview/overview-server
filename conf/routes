@@ -69,8 +69,8 @@ DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.dele
 GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, pageSize: Int ?= 20, page: Int ?= 1)
 
 GET    /documentsets/:id/export                                              controllers.DocumentSetExportController.index(id: Long)
-GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
-GET    /documentsets/:id/export/documents-with-column-tags/:format/*filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
+GET    /documentsets/:id/export/documents-with-string-tags/:format/:filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
+GET    /documentsets/:id/export/documents-with-column-tags/:format/:filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
 POST   /documentsets/:id/trees         controllers.TreeController.create(id: Long)
 PUT    /documentsets/:id/trees/:treeId controllers.TreeController.update(id: Long, treeId: Long)
@@ -108,7 +108,7 @@ GET    /public-document-sets controllers.PublicDocumentSetController.index()
 GET    /shared-document-sets controllers.SharedDocumentSetController.index()
 
 
-GET    /documentsets/:id/archive/view/*filename          controllers.DocumentSetArchiveController.archive(id: Long, filename: String)
+GET    /documentsets/:id/archive/view/:filename          controllers.DocumentSetArchiveController.archive(id: Long, filename: String)
 
 # Admin section
 GET    /admin/users        controllers.admin.UserController.index()

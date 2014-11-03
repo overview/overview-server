@@ -86,13 +86,10 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
     "replace icky filename characters with underscores" in new IndexScope {
       // Icky: tests the view, really
-      // The problem: the server serves up a file with Content-Disposition
-      // "foo/bar.csv", and the client is not allowed to save it because "/"
-      // is a reserved character.
-
-      // List from http://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
-      // When in doubt, escape it!
-      mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo/\n\\?%*:|\"<>bar"))
+      // The problem: we don't want the server to link to a filename like
+      // "foo/bar.csv?x#y" because when the client requests it the server won't
+      // understand the request.
+      mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo/\n\\?*:|#\"<>bar"))
       h.contentAsString(result) must contain("foo___________bar.csv")
     }
 
@@ -132,10 +129,9 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       h.header(h.CONTENT_DISPOSITION, result) must beSome("""attachment; filename="foobar.csv"""")
     }
 
-    "set a Content-Disposition with unencoded HTTP paths" in new DocumentsWithColumnTagsScope {
-      // Play will not decode path parameters. See https://github.com/playframework/playframework/issues/1228
-      override val filename = "foo%20bar.csv"
-      h.header(h.CONTENT_DISPOSITION, result) must beSome("attachment; filename*=UTF-8''foo%20bar.csv")
+    "set a Content-Disposition with special characters escaped" in new DocumentsWithColumnTagsScope {
+      override val filename = "foo [bar.csv"
+      h.header(h.CONTENT_DISPOSITION, result) must beSome("attachment; filename*=UTF-8''foo%20%5Bbar.csv")
     }
 
     "set contents of documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
