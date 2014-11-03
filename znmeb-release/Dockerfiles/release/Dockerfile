@@ -9,4 +9,4 @@ RUN chown -R overview:overview /home/overview/
 USER overview
 WORKDIR /home/overview/overview-release
 EXPOSE 9000
-CMD [ "./run" ]
+CMD [ "/usr/bin/time ./run" ]
