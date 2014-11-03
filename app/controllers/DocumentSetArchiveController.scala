@@ -20,7 +20,7 @@ trait DocumentSetArchiveController extends Controller {
 
   import Authorities._
 
-  def archive(documentSetId: Long, encodedFilename: String) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def archive(documentSetId: Long, encodedFilename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     for (fileInfo <- storage.findDocumentFileInfo(documentSetId)) yield {
       val archiveEntries = fileInfo.flatMap(archiveEntryFactory.create)
 
