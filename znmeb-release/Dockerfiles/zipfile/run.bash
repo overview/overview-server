@@ -12,6 +12,10 @@
 # log in first
 docker login
 
+# build the image
+# doing it locally because pushing developer to Docker Hub takes too long
+docker build -t znmeb/overview-zipfile .
+
 # create a container from the image with the zipfile
 docker rm copy-zipfile
 docker run -d \
