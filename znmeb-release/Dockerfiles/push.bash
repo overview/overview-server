@@ -15,4 +15,3 @@ docker login
 # push the images
 docker push znmeb/overview-release
 docker push znmeb/overview-developer
-docker push znmeb/overview-zipfile
