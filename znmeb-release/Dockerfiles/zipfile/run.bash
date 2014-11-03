@@ -14,7 +14,6 @@
 docker build -t znmeb/overview-zipfile .
 
 # create a container from the image with the zipfile
-docker rm copy-zipfile
 docker run -d \
   --name="copy-zipfile" \
   znmeb/overview-zipfile
@@ -23,3 +22,7 @@ docker run -d \
 docker cp \
   copy-zipfile:/home/overview/overview-server-source/overview-release.zip \
   ../release/
+
+# cleanup
+docker stop copy-zipfile
+docker rm copy-zipfile
