@@ -9,9 +9,6 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-# log in first
-docker login
-
 # build the image
 # doing it locally because pushing developer to Docker Hub takes too long
 docker build -t znmeb/overview-zipfile .

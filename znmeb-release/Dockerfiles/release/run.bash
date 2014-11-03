@@ -9,15 +9,12 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-# log in first
-docker login
-
 # build a temporary image with the unpacked zipfile
 docker build -t temp .
 
 # now make the release
 docker rm overview-release
-docker run -it \
+docker run -it -p 9000:9000 \
   --name="overview-release" \
   temp
 

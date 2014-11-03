@@ -9,11 +9,4 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-# build in 'make-developer' container
-docker rm make-developer
-docker run -it -p 9000:9000 \
-  --name="make-developer" \
-  znmeb/overview-source
-
-# save to image
-docker commit make-developer znmeb/overview-developer
+docker build -t znmeb/overview-source .
