@@ -39,13 +39,6 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
       h.flash(result).data must be equalTo (Map("warning" -> unsupported))
     }
-
-    "decode filename before setting content-disposition" in new DocumentSetArchiveContext {
-      override val fileName = "Name%20With%20Spaces.zip"
-      
-      header(h.CONTENT_DISPOSITION) must beSome(s"""attachment; filename*=UTF-8''$fileName""")
-    }
-
   }
 
   trait DocumentSetArchiveContext extends Scope {

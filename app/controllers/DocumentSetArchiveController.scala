@@ -29,10 +29,9 @@ trait DocumentSetArchiveController extends Controller {
     }
   }
 
-  private def streamArchive(archiveEntries: Seq[ArchiveEntry], encodedFilename: String): Result = {
+  private def streamArchive(archiveEntries: Seq[ArchiveEntry], filename: String): Result = {
     val archive = archiver.createArchive(archiveEntries)
 
-    val filename = decodeStarPathParameter(encodedFilename)
     val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
     Ok.feed(Enumerator.fromStream(archive.stream)).
@@ -46,11 +45,6 @@ trait DocumentSetArchiveController extends Controller {
     val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
 
     Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("unsupported"))
-  }
-
-  private def decodeStarPathParameter(encodedString: String): String = {
-    val uri = new java.net.URI(s"https://localhost:9999/${encodedString}")
-    uri.getPath().drop(1) // drop the leading "/"
   }
 
   protected val archiver: Archiver

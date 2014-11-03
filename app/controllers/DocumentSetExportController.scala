@@ -20,16 +20,6 @@ import models.orm.finders.{ DocumentFinder, DocumentSetFinder, TagFinder }
 trait DocumentSetExportController extends Controller {
   import Authorities._
 
-  /** Decode escaped path patameter.
-    *
-    * Play will not do this for us. See
-    * https://github.com/playframework/playframework/issues/1228.
-    */
-  private def decodeStarPathParameter(encodedString: String) : String = {
-    val uri = new java.net.URI(s"https://localhost:9999/${encodedString}")
-    uri.getPath().drop(1) // drop the leading "/"
-  }
-
   trait Storage {
     def findDocumentSet(id: Long): Option[DocumentSet]
     def loadDocumentsWithStringTags(documentSetId: Long): FinderResult[(Document,Option[String])]
@@ -53,12 +43,11 @@ trait DocumentSetExportController extends Controller {
     }
   }
 
-  private def serveExport(export: Export, encodedFilename: String) : Result = {
+  private def serveExport(export: Export, filename: String) : Result = {
     val inputStream = OverviewDatabase.inTransaction {
       export.asFileInputStream
     }
 
-    val filename = decodeStarPathParameter(encodedFilename)
     val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
   
     Ok.feed(Enumerator.fromStream(inputStream))
