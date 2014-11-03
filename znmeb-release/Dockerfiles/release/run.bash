@@ -14,9 +14,11 @@ unzip overview-release.zip
 docker build -t temp .
 
 # now make the release
-docker rm overview-release
-docker run -it -p 9000:9000 \
-  --name="overview-release" \
+docker rm make-release
+/usr/bin/time docker run -it -p 9000:9000 \
+  --name="make-release" \
   temp
 
-docker commit overview-release znmeb/overview-release
+docker commit make-release znmeb/overview-release
+docker rmi temp
+/usr/bin/time docker push znmeb/overview-release > push.log 2>&1 &
