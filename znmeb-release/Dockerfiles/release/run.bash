@@ -16,9 +16,9 @@ docker login
 docker build -t temp .
 
 # now make the release
-docker rm make-release
+docker rm overview-release
 docker run -it \
-  --name="make-release" \
+  --name="overview-release" \
   temp
 
-docker commit make-release znmeb/overview-release
+docker commit overview-release znmeb/overview-release
