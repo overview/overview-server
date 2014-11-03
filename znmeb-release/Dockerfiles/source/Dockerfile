@@ -1,9 +1,6 @@
 FROM ubuntu:trusty
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
-# expose the server port
-EXPOSE 9000
-
 # install Overview build dependencies
 RUN apt-get update && apt-get install -y \
   build-essential \
@@ -35,5 +32,6 @@ RUN tar xf redis-2.8.17.tar.gz
 RUN rm redis-2.8.17.tar.gz
 
 # cue up build script
+EXPOSE 9000
 WORKDIR /home/overview/overview-server-source/
 CMD [ "./dev" ]
