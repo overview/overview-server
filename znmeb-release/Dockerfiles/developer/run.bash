@@ -9,15 +9,14 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-# build in 'make-developer' container
-docker rm make-developer
+# build a temp image
+docker build -t temp .
+
+# build in 'test-developer' container
 /usr/bin/time docker run -it -p 9000:9000 \
-  --name="make-developer" \
-  znmeb/overview-source
+  --name="test-developer" \
+  temp
 
 # save to image
-docker commit make-developer znmeb/overview-developer
-
-# push in the background
-docker login
-/usr/bin/time docker push znmeb/overview-developer > push.log 2>&1 &
+docker commit test-developer znmeb/overview-developer
+docker rm test-developer

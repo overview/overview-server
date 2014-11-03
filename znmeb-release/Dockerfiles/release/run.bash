@@ -21,4 +21,3 @@ docker rm make-release
 
 docker commit make-release znmeb/overview-release
 docker rmi temp
-/usr/bin/time docker push znmeb/overview-release > push.log 2>&1 &

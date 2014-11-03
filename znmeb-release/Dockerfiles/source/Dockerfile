@@ -1,4 +1,4 @@
-FROM znmeb/overview-developer-template
+FROM znmeb/overview-os-packages
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
 USER overview
@@ -17,8 +17,3 @@ RUN wget -q http://download.redis.io/releases/redis-2.8.17.tar.gz
 RUN rm -fr redis-2.8.17
 RUN tar xf redis-2.8.17.tar.gz
 RUN rm redis-2.8.17.tar.gz
-
-# cue up build script
-EXPOSE 9000
-WORKDIR /home/overview/overview-server-source/
-CMD [ "./dev" ]

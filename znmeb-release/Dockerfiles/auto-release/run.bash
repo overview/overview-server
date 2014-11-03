@@ -16,4 +16,3 @@ docker run -it -p 9000:9000 \
   znmeb/overview-auto-release
 
 docker commit test-release znmeb/overview-release
-/usr/bin/time docker push znmeb/overview-release > push.log 2>&1 &

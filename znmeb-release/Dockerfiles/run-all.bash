@@ -10,12 +10,10 @@
 #
 
 for i in \
-  developer-template \
-  release-template \
+  os-packages \
   source \
-  developer \
-  zipfile \
-  release
+  auto-release \
+  developer
 do
   pushd ${i}
   ./run.bash
