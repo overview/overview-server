@@ -35,4 +35,4 @@ RUN rm redis-2.8.17.tar.gz
 # cue up build script
 EXPOSE 9000
 WORKDIR /home/overview/overview-server-source/
-CMD [ "time ./dev" ]
+CMD [ "./dev" ]
