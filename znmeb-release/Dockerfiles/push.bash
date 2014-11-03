@@ -13,5 +13,5 @@
 docker login
 
 # push the images
-docker push znmeb/overview-release
-docker push znmeb/overview-developer
+/usr/bin/time docker push znmeb/overview-release
+/usr/bin/time docker push znmeb/overview-developer
