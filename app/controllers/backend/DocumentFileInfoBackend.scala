@@ -2,12 +2,16 @@ package controllers.backend
 
 import scala.concurrent.Future
 import models.DocumentFileInfo
+import org.overviewproject.models.tables.Documents
+import org.overviewproject.models.tables.Files
 
 case class PageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long, size: Long)
+case class FileViewInfo(documentTitle: String, viewOid: Long, size: Long)
 
 trait DocumentFileInfoBackend {
 
   def indexDocumentFileInfosForPages(documentSetId: Long): Future[Seq[PageViewInfo]]
+  def indexDocumentFileInfosForFiles(documentSetId: Long): Future[Seq[FileViewInfo]]
 }
 
 trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBackend =>
@@ -26,6 +30,16 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
 
     q.list
   }
+  
+  override def indexDocumentFileInfosForFiles(documentSetId: Long): Future[Seq[FileViewInfo]] = db { implicit session =>
+    val q = for {
+        d <- Documents if (d.documentSetId === documentSetId) && d.pageId.isEmpty
+        f <- Files if d.fileId === f.id
+      } yield (d.title, f.viewOid, f.viewSize)
+
+    q.list.map{f => FileViewInfo(f._1.getOrElse(""), f._2, f._3.getOrElse(0))}
+  }
+    
 }
 
 
