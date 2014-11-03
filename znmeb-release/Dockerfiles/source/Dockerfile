@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
   libreoffice \
   openjdk-7-jdk \
   postgresql \
-  time \
   unzip \
   wget \
   zip
