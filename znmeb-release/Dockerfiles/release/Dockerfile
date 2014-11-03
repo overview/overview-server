@@ -3,9 +3,7 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
 USER root
 WORKDIR /home/overview/
-COPY overview-release.zip /home/overview/
-RUN unzip overview-release.zip
-RUN rm overview-release.zip
+COPY overview-release/ /home/overview/
 RUN chown -R overview:overview /home/overview/
 
 # run time

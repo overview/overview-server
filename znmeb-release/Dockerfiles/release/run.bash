@@ -10,6 +10,7 @@
 #
 
 # build a temporary image with the unpacked zipfile
+unzip overview-release.zip
 docker build -t temp .
 
 # now make the release
