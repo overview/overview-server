@@ -59,24 +59,24 @@ trait DocumentSetExportController extends Controller {
       )
   }
 
-  def documentsWithStringTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def documentsWithStringTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     Future(OverviewDatabase.inTransaction {
       val documents = storage.loadDocumentsWithStringTags(documentSetId)
       val rows = rowsCreator.documentsWithStringTags(documents)
       val export = createExport(rows, format)
 
-      serveExport(export, encodedFilename)
+      serveExport(export, filename)
     })
   }
 
-  def documentsWithColumnTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def documentsWithColumnTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     Future(OverviewDatabase.inTransaction {
       val tags = storage.loadTags(documentSetId)
       val documents = storage.loadDocumentsWithTagIds(documentSetId)
       val rows = rowsCreator.documentsWithColumnTags(documents, tags)
       val export = createExport(rows, format)
 
-      serveExport(export, encodedFilename)
+      serveExport(export, filename)
     })
   }
 
