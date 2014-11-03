@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
   libreoffice \
   openjdk-7-jdk \
   postgresql \
+  time \
   unzip \
   wget \
   zip
@@ -34,4 +35,4 @@ RUN rm redis-2.8.17.tar.gz
 # cue up build script
 EXPOSE 9000
 WORKDIR /home/overview/overview-server-source/
-CMD [ "./dev" ]
+CMD [ "/usr/bin/time ./dev" ]
