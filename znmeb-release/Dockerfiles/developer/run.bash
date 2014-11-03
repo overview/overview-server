@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -v
 #
 # Copyright (C) 2013 by M. Edward (Ed) Borasky
 #
@@ -12,41 +12,11 @@
 # log in first
 docker login
 
-# build in 'developerc' container
-docker rm developerc
+# build in 'make-developer' container
+docker rm make-developer
 docker run -it -p 9000:9000 \
-  --name="developerc" \
-  znmeb/overview-developer
+  --name="make-developer" \
+  znmeb/overview-source
 
-# save to developer-built image
-docker commit developerc znmeb/overview-developer-built
-
-# start developer-built container with release tree volume exported
-docker rm developerbc
-docker run -d \
-  --name="developerbc" \
-  -v /home/overview/overview-server \
-  znmeb/overview-developer-built \
-  sh -c "while true; do; sleep 15; done"
-
-# copy release tree to release template container
-docker rm releasetc
-docker run -d \
-  --name="releasetc" \
-  --volumes-from="developerc" \
-  znmeb/overview-release-template \
-  cp -rp /home/overview/overview-server /home/overview/overview-release
-
-# create 'overview-release' image from 'releasetc'
-docker rmi znmeb/overview-release
-docker commit releasetc znmeb/overview-release
-
-# test the release in 'releasec'
-docker rm releasec
-docker run -it -p 9000:9000 \
-  --name="releasec" \
-  znmeb/overview-release
-
-# push images
-docker push znmeb/overview-release
-docker push znmeb/overview-developer-built
+# save to image
+docker commit make-developer znmeb/overview-developer
