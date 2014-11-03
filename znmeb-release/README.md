@@ -1,9 +1,11 @@
-# Building a Release Zipfile
+# Building an Overview Server Development Environment and  Release Zipfile
 
 1. Dependencies:
-    * On CompJournoStick 21, all the dependencies will be there.
+    * On CompJournoStick / Fedora 21, all the dependencies will be there. That's how I build them. Note that on CompJournoStick / Fedora 21, Java is 1.8.0, which throws some harmless errors about memory allocation.
 
-    * On Fedora 20 and later, you will need
+    Note also that CompJournoStick 21 will have an option to install an Overview Server developer environment. This is working now but I haven't had a chance to come up with some test document sets yet.
+
+    * On Fedora 20 you will need
         * java-1.7.0-openjdk-devel or later
         * postgresql-9.3 or later
         * gcc
@@ -22,9 +24,8 @@
         * zip
         * unzip
 
-    * On Windows or MacOS X I've built Docker images to perform these operations. See https://github.com/znmeb/overview-docker for the details.
 
-1. ***VERY IMPORTANT:*** You will need to edit `/etc/hosts`. Open a terminal and type
+1. ***VERY IMPORTANT:*** On Linux, you will need to edit `/etc/hosts`. Open a terminal and type
 
     ```
     hostname
@@ -42,7 +43,7 @@
 1. Open a terminal and type
 
     ```
-    cd overview-server/znmeb-docker
+    cd overview-server/znmeb-release
     ./sync.bash
     cd ..
     ./dev
