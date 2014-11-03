@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
   libreoffice \
   openjdk-7-jre \
   postgresql \
-  time
+  time \
+  unzip
 
 # add a non-root user
 RUN useradd overview -m
