@@ -33,6 +33,10 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       h.contentAsBytes(result) must be equalTo archiveData
     }
 
+    "create archive from pages if document set is split" in new SplitDocumentSet {
+      h.contentAsBytes(result) must be equalTo archiveData
+    }
+    
     "redirect if archiving is not supported" in new UnsupportedDocumentSet {
       h.status(result) must beEqualTo(h.SEE_OTHER)
     }
@@ -55,16 +59,22 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
     val contentType = "application/x-zip-compressed"
 
-    def pageViewInfos: Seq[PageViewInfo] = Seq.fill(10)(smartMock[PageViewInfo])
-    def fileViewInfos: Seq[FileViewInfo] = Seq.empty
+    def pageViewInfos: Seq[PageViewInfo] = Seq.empty
+    def fileViewInfos: Seq[FileViewInfo] = Seq.fill(5)(smartMock[FileViewInfo])
     def result = {
-      val controller = new TestDocumentSetArchiveController(documentSetId, archiveData, pageViewInfos, Seq.empty)
+      val controller = new TestDocumentSetArchiveController(documentSetId, archiveData, pageViewInfos, fileViewInfos)
       controller.archive(documentSetId, fileName)(request)
     }
 
     def header(key: String): Option[String] = h.header(key, result)
   }
 
+
+  trait SplitDocumentSet extends DocumentSetArchiveContext {
+    override def pageViewInfos = Seq.fill(10)(smartMock[PageViewInfo])
+    override def fileViewInfos = Seq.empty
+  }
+  
   trait UnsupportedDocumentSet extends DocumentSetArchiveContext {
     override def pageViewInfos = Seq.empty
     override def fileViewInfos = Seq.empty
@@ -87,12 +97,14 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     backend.indexDocumentFileInfosForFiles(documentSetId) returns Future(fileViewInfos)
     backend.indexDocumentFileInfosForPages(documentSetId) returns Future(pageViewInfos)
     
-    val archiveEntries = Seq.fill(pageViewInfos.length)(smartMock[ArchiveEntry])
-
-    val archiveEntryFactory = smartMock[ArchiveEntryFactory]
-    archiveEntryFactory.createFromPageViewInfos(any) returns archiveEntries
+    val archiveEntriesFromPages = Seq.fill(pageViewInfos.length)(smartMock[ArchiveEntry])
+    val archiveEntriesFromFiles = Seq.fill(fileViewInfos.length)(smartMock[ArchiveEntry])
     
-    archiver.createArchive(archiveEntries) returns archive
+    val archiveEntryFactory = smartMock[ArchiveEntryFactory]
+    archiveEntryFactory.createFromPageViewInfos(any) returns archiveEntriesFromPages
+    archiveEntryFactory.createFromFileViewInfos(fileViewInfos) returns archiveEntriesFromFiles
+    
+    archiver.createArchive(archiveEntriesFromPages ++ archiveEntriesFromFiles) returns archive
 
   }
 }

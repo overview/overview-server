@@ -24,8 +24,12 @@ trait DocumentSetArchiveController extends Controller {
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     for {
       pageViewInfos <- backend.indexDocumentFileInfosForPages(documentSetId)
+      fileViewInfos <- backend.indexDocumentFileInfosForFiles(documentSetId)
     } yield {
-      val archiveEntries = archiveEntryFactory.createFromPageViewInfos(pageViewInfos)
+      val archiveEntries = 
+        archiveEntryFactory.createFromPageViewInfos(pageViewInfos) ++
+        archiveEntryFactory.createFromFileViewInfos(fileViewInfos)
+      
       
       if (archiveEntries.nonEmpty) streamArchive(archiveEntries, filename)
       else flashUnsupportedWarning
