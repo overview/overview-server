@@ -17,4 +17,4 @@ docker run -it -p 9000:9000 \
 
 # commit a timestamped image
 docker cp test-releasec:/home/overview/release-timestamp.txt .
-docker commit test-releasec znmeb/overview-release-`cat release-timestamp.txt`
+docker commit test-releasec znmeb/overview-`cat release-timestamp.txt`
