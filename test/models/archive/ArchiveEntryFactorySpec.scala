@@ -10,64 +10,40 @@ import java.io.InputStream
 import org.specs2.specification.Scope
 import org.specs2.mutable.Before
 import org.specs2.matcher.MatchResult
+import models.FileViewInfo
+import models.PageViewInfo
 
 class ArchiveEntryFactorySpec extends Specification with Mockito {
 
   "ArchiveEntryFactory" should {
 
-    "create entry for document with file" in new ArchiveEntryFactoryContext {
-      entry must beSome(matchesEntryParams(name + Pdf, size, viewOid) _)
+    "create entries for FileViews" in new FileViewInfoContext {
+      entries.headOption must beSome(matchesEntryParams(name + Pdf, size, viewOid) _)
     }
 
-    "create entry for document with PDF view" in new FileWithView {
-      entry must beSome(matchesEntryParams(name + Pdf, viewSize, viewOid) _)
+    "create entries for PageViews" in new PageViewInfoContext {
+      entries.headOption must beSome(matchesEntryParams(pageTitle + Pdf, size, pageId) _)
     }
 
-    "create entry for document with page" in new DocumentWithPage {
-      entry must beSome(matchesEntryParams(pageTitle + Pdf, pageSize, pageId) _)
+    "only have a single .pdf extension for pdf files" in new PdfFileContext {
+      entries.headOption must beSome(matchesEntryParams(name, size, viewOid) _)
     }
 
-    "throw exception if pageId is invalid and stream is accessed" in new InvalidPageId {
-      entry must beSome { e: ArchiveEntry =>
-        e.data() must throwA[NoSuchElementException]
-      }
+    "detect PDF extension regardless of case" in new UpperCasePdfFileContext {
+      entries.headOption must beSome(matchesEntryParams(name, size, viewOid) _)
     }
 
-    "only have a single .pdf extension for pdf files" in new PdfFile {
-      entry must beSome(matchesEntryParams(name, size, viewOid) _)
-    }
-
-    "detect PDF extension regardless of case" in new UpperCasePdfFile {
-      entry must beSome(matchesEntryParams(name, size, viewOid) _)
-    }
-
-    "remove pdf extension from filename with page" in new PdfPage {
-      entry must beSome(matchesEntryParams(s"$baseName $pageDescriptor" + Pdf, pageSize, pageId) _)
+    "remove pdf extension from filename with page" in new PdfPageContext {
+      entries.headOption must beSome(matchesEntryParams(s"$baseName $pageDescriptor" + Pdf, size, pageId) _)
     }
   }
 
-  trait ArchiveEntryFactoryContext extends Before {
+  
+  trait ArchiveEntryFactoryContext extends Scope {
     val Pdf = ".pdf"
-    val contentsOid = 11l
-    val viewOid = 11l
-
-    def documentInfo = DocumentFileInfo(Some(name), Some(1l), None, None)
-    val size = 100l
-    val viewSize = 100l
-
-    val name = "filename"
-    val file = smartMock[File]
-
-    val factory = new TestArchiveEntryFactory(contentsOid, file, None)
-    def entry = factory.create(documentInfo)
-
-    def before = {
-      file.name returns name
-      file.contentsSize returns Some(size)
-      file.viewSize returns Some(viewSize)
-      file.contentsOid returns contentsOid
-      file.viewOid returns viewOid
-    }
+    def name = "file.doc"
+    
+    val size = 3418913
 
     def matchesEntryParams(name: String, size: Long, oid: Long)(e: ArchiveEntry) = {
       e.name must be equalTo name
@@ -77,60 +53,60 @@ class ArchiveEntryFactorySpec extends Specification with Mockito {
       streamWasCreatedFromId(oid)
     }
 
-    def streamWasCreatedFromId(id: Long): MatchResult[Any] =
+    def streamWasCreatedFromId(id: Long): MatchResult[Any] 
+    
+  }
+  
+  trait FileViewInfoContext extends ArchiveEntryFactoryContext {
+    val viewOid = 123l
+
+    val fileViewInfo = FileViewInfo(name, viewOid, size)
+
+    val factory = new TestArchiveEntryFactory(viewOid)
+    val entries = factory.createFromFileViewInfos(Seq(fileViewInfo))
+
+    override def streamWasCreatedFromId(id: Long): MatchResult[Any] =
       there was one(factory.mockStorage).largeObjectInputStream(id)
   }
 
-  trait FileWithView extends ArchiveEntryFactoryContext {
-    override val contentsOid = 10l
-    override val viewSize = 324l
-  }
-
-  trait DocumentWithPage extends ArchiveEntryFactoryContext {
-    val pageId = 2l
-    val pageNumber = 33
+  
+  trait PageViewInfoContext extends ArchiveEntryFactoryContext {
+    val pageNumber = 5
     val pageDescriptor = s"- p. $pageNumber"
     val pageTitle = s"$name $pageDescriptor"
 
-    val pageSize = 123
+    val pageId = 1l
 
-    override def documentInfo = DocumentFileInfo(Some(name), Some(1l), Some(pageId), Some(pageNumber))
+    val pageViewInfo = PageViewInfo(name, pageNumber, pageId, size)
 
-    override val factory = new TestArchiveEntryFactory(1l, file, Some(pageSize))
+    val factory = new TestArchiveEntryFactory(pageId)
+    val entries = factory.createFromPageViewInfos(Seq(pageViewInfo))
 
     override def streamWasCreatedFromId(id: Long) =
       there was one(factory.mockStorage).pageDataStream(pageId)
+
   }
 
-  trait InvalidPageId extends DocumentWithPage {
-    override val factory = new TestArchiveEntryFactory(1l, file, Some(pageSize), validPageId = false)
+  trait PdfFileContext extends FileViewInfoContext {
+    override def name = "file.pdf"
   }
 
-  trait PdfFile extends ArchiveEntryFactoryContext {
-    override val name = "filename.pdf"
+  trait UpperCasePdfFileContext extends FileViewInfoContext {
+    override def name = "file.PDF"
   }
 
-  trait UpperCasePdfFile extends ArchiveEntryFactoryContext {
-    override val name = "filename.PDF"
+  trait PdfPageContext extends PageViewInfoContext {
+    def baseName = "file"
+    override def name = baseName + Pdf
   }
 
-  trait PdfPage extends DocumentWithPage {
-    val baseName = "fileName"
-    override val name = baseName + Pdf
-  }
-
-  class TestArchiveEntryFactory(oid: Long, file: File, pageSize: Option[Long], validPageId: Boolean = true) extends ArchiveEntryFactory {
+  class TestArchiveEntryFactory(id: Long) extends ArchiveEntryFactory {
 
     override protected val storage = smartMock[Storage]
-    storage.findFile(any) returns Some(file)
-    storage.largeObjectInputStream(oid) returns smartMock[InputStream]
+    storage.largeObjectInputStream(id) returns smartMock[InputStream]
 
-    storage.findPageSize(any) returns pageSize
-
-    if (validPageId) storage.pageDataStream(any) returns Some(smartMock[InputStream])
-    else storage.pageDataStream(any) returns None
-
+    storage.pageDataStream(id) returns Some(smartMock[InputStream])
     def mockStorage = storage
-
   }
+
 }

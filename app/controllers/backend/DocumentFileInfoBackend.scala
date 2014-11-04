@@ -4,9 +4,8 @@ import scala.concurrent.Future
 import models.DocumentFileInfo
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.models.tables.Files
-
-case class PageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long, size: Long)
-case class FileViewInfo(documentTitle: String, viewOid: Long, size: Long)
+import models.PageViewInfo
+import models.FileViewInfo
 
 trait DocumentFileInfoBackend {
 

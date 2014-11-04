@@ -6,8 +6,19 @@ import controllers.util.PlayLargeObjectInputStream
 import org.overviewproject.models.File
 import org.overviewproject.models.Page
 import java.io.ByteArrayInputStream
+import models.FileViewInfo
+import models.PageViewInfo
 
 trait ArchiveEntryFactory {
+    
+  def createFromFileViewInfos(fileViewInfos: Seq[FileViewInfo]): Seq[ArchiveEntry] = 
+    fileViewInfos.map(f => ArchiveEntry(asPdf(f.documentTitle), f.size, largeObjectInputStream(f.viewOid) _))
+  
+  def createFromPageViewInfos(pageViewInfos: Seq[PageViewInfo]): Seq[ArchiveEntry] = 
+    pageViewInfos.map(p =>
+      ArchiveEntry(fileNameWithPage(removePdf(p.documentTitle), p.pageNumber), p.size, pageDataStream(p.pageId) _))
+      
+  
     
   def create(document: DocumentFileInfo): Option[ArchiveEntry] = {
     createFromPage(document)
@@ -64,5 +75,6 @@ trait ArchiveEntryFactory {
     def largeObjectInputStream(oid: Long): InputStream
     def pageDataStream(pageId: Long): Option[InputStream]
   }
-
 }
+
+
