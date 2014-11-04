@@ -10,9 +10,7 @@
 #
 
 docker build -t znmeb/overview-auto-release .
-docker rm test-release
+docker rm test-releasec
 docker run -it -p 9000:9000 \
-  --name="test-release" \
+  --name="test-releasec" \
   znmeb/overview-auto-release
-
-docker commit test-release znmeb/overview-release

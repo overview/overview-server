@@ -16,6 +16,16 @@ RUN unzip /home/overview/overview-server-source/overview-server.zip
 # cleanup
 RUN rm -fr /home/overview/overview-server-source/
 
+USER root
+RUN apt-get purge -y \
+  git \
+  openjdk-7-jdk \
+  unzip \
+  wget \
+  zip
+RUN apt-get autoremove -y
+RUN apt-get install -y openjdk-7-jre
+
 # cue up for use
 USER overview
 EXPOSE 9000
