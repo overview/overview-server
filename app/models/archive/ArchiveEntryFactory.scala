@@ -18,32 +18,6 @@ trait ArchiveEntryFactory {
     pageViewInfos.map(p =>
       ArchiveEntry(fileNameWithPage(removePdf(p.documentTitle), p.pageNumber), p.size, pageDataStream(p.pageId) _))
       
-  
-    
-  def create(document: DocumentFileInfo): Option[ArchiveEntry] = {
-    createFromPage(document)
-      .orElse(createFromFile(document))
-  }
-
-  private def createFromFile(document: DocumentFileInfo): Option[ArchiveEntry] =
-    for {
-      name <- document.title
-      fileId <- document.fileId
-      file <- storage.findFile(fileId)
-      size <- file.viewSize
-    } yield {
-      ArchiveEntry(asPdf(name), size, largeObjectInputStream(file.viewOid) _)
-    }
-
-  private def createFromPage(document: DocumentFileInfo): Option[ArchiveEntry] =
-    for {
-      name <- document.title
-      pageId <- document.pageId
-      pageNumber <- document.pageNumber
-      size <- storage.findPageSize(pageId)
-    } yield {
-      ArchiveEntry(fileNameWithPage(removePdf(name), pageNumber), size, pageDataStream(pageId) _)
-    }
 
   private def largeObjectInputStream(oid: Long)(): InputStream = storage.largeObjectInputStream(oid)
 
@@ -70,8 +44,6 @@ trait ArchiveEntryFactory {
   protected val storage: Storage
 
   protected trait Storage {
-    def findFile(fileId: Long): Option[File]
-    def findPageSize(pageId: Long): Option[Long]
     def largeObjectInputStream(oid: Long): InputStream
     def pageDataStream(pageId: Long): Option[InputStream]
   }
