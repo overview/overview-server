@@ -13,10 +13,11 @@ import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.Pages
 
 class ArchiveEntryFactoryWithStorage extends ArchiveEntryFactory {
-
+  private val LOBufferSize = 1024 * 1024
+  
   val storage = new Storage {
 
-    override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid)
+    override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid, LOBufferSize)
     
     override def pageDataStream(pageId: Long): Option[InputStream] =
       OverviewDatabase.withSlickSession { implicit session =>
