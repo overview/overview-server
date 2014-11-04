@@ -4,10 +4,11 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 USER overview
 
 # get the source repository
-WORKDIR /home/overview
+WORKDIR /home/overview/
 RUN git clone https://github.com/znmeb/overview-server overview-server-source
 
 # sync with upstream master
+WORKDIR /home/overview/overview-server-source/
 RUN git remote add upstream https://github.com/overview/overview-server
 RUN git remote -v
 RUN git fetch upstream
