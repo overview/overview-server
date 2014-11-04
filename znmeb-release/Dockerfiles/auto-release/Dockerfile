@@ -31,7 +31,7 @@ RUN apt-get install -y openjdk-7-jre
 
 # generate a timestamp
 USER overview
-RUN echo `date -u +%Y%m%dT%H%M%SZ` > /home/overview/release-timestamp.txt
+RUN echo `date -u +%Y%m%dt%H%M%Sz` > /home/overview/release-timestamp.txt
 
 # cue up for use
 EXPOSE 9000
