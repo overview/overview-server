@@ -9,15 +9,12 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-# build a temporary image with the unpacked zipfile
-unzip overview-release.zip
-docker build -t temp .
+docker build -t znmeb/overview-auto-release .
+docker rm test-releasec
+docker run -it -p 9000:9000 \
+  --name="test-releasec" \
+  znmeb/overview-auto-release
 
-# now make the release
-docker rm make-release
-/usr/bin/time docker run -it -p 9000:9000 \
-  --name="make-release" \
-  temp
-
-docker commit make-release znmeb/overview-release
-docker rmi temp
+# commit a timestamped image
+docker cp test-releasec:/home/overview/release-timestamp.txt .
+docker commit test-releasec znmeb/overview-release-`cat release-timestamp.txt`
