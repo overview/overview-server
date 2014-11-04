@@ -10,8 +10,8 @@ This should run on any recent 64-bit Linux, but I've only tested with Fedora 21 
 
 The first time this runs it will take a fair amount of time, but once Docker has accumulated a cache of intermediate image pieces it will go much faster. There are two places where the activity will pause:
 
-    1. During the `release` build, you will see the console stop moving. When this happens, open a browser window / tab to localhost:9000 and wait until the Overview document set window displays. Then press <kbd>ctrl</kbd>+<kbd>D</kbd> and execution will continue. Ignore any error messages.
-    1. During the `developer` build the console will stop moving. When th
+1. During the `release` build, you will see the console stop moving. When this happens, open a browser window / tab to localhost:9000 and wait until the Overview document set window displays. Then press <kbd>ctrl</kbd>+<kbd>D</kbd> and execution will continue. Ignore any error messages.
+1. During the `developer` build the console will stop moving. When th
 is happens, open a browser window / tab to localhost:9000 and wait until the Ove
 rview document set window displays. Then press <kbd>ctrl</kbd>+<kbd>D</kbd> and
 execution will continue. Ignore any error messages.
