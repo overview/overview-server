@@ -9,5 +9,4 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-# always fetch the source
-docker build --no-cache=true -t znmeb/overview-source .
+docker build -t znmeb/overview-source .
