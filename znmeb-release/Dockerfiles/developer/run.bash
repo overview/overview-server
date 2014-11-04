@@ -16,7 +16,7 @@ docker run -it -p 9000:9000 \
   znmeb/overview-developer
 
 # save to image
-echo `date -u +%Y%m%dt%H%M%Sz` > /home/overview/developer-timestamp.txt
+echo `date -u +%Y%m%dt%H%M%Sz` > developer-timestamp.txt
 docker commit \
   test-developerc \
   znmeb/overviewdev-`cat developer-timestamp.txt`
