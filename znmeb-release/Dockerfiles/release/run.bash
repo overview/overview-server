@@ -9,11 +9,11 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-docker build -t znmeb/overview-auto-release .
+docker build -t znmeb/overview-release .
 docker rm test-releasec
 docker run -it -p 9000:9000 \
   --name="test-releasec" \
-  znmeb/overview-auto-release
+  znmeb/overview-release
 
 # commit a timestamped image
 docker cp test-releasec:/home/overview/release-timestamp.txt .
