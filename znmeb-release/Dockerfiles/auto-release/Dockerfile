@@ -26,6 +26,9 @@ RUN apt-get purge -y \
 RUN apt-get autoremove -y
 RUN apt-get install -y openjdk-7-jre
 
+# generate a timestamp
+RUN echo `date -u +%Y%m%dT%H%M%SZ` > /home/overview/release-timestamp.txt
+
 # cue up for use
 USER overview
 EXPOSE 9000
