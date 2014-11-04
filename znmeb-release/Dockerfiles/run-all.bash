@@ -12,7 +12,7 @@
 for i in \
   os-packages \
   source \
-  auto-release \
+  release \
   developer
 do
   pushd ${i}
