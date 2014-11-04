@@ -10,14 +10,13 @@ import models.FileViewInfo
 import models.PageViewInfo
 
 trait ArchiveEntryFactory {
-    
-  def createFromFileViewInfos(fileViewInfos: Seq[FileViewInfo]): Seq[ArchiveEntry] = 
-    fileViewInfos.map(f => ArchiveEntry(asPdf(f.documentTitle), f.size, largeObjectInputStream(f.viewOid) _))
-  
-  def createFromPageViewInfos(pageViewInfos: Seq[PageViewInfo]): Seq[ArchiveEntry] = 
+
+  def createFromFileViewInfos(fileViewInfos: Seq[FileViewInfo]): Seq[ArchiveEntry] =
+    fileViewInfos.map(f => ArchiveEntry(asPdf(removePdf(f.documentTitle)), f.size, largeObjectInputStream(f.viewOid) _))
+
+  def createFromPageViewInfos(pageViewInfos: Seq[PageViewInfo]): Seq[ArchiveEntry] =
     pageViewInfos.map(p =>
       ArchiveEntry(fileNameWithPage(removePdf(p.documentTitle), p.pageNumber), p.size, pageDataStream(p.pageId) _))
-      
 
   private def largeObjectInputStream(oid: Long)(): InputStream = storage.largeObjectInputStream(oid)
 
@@ -30,15 +29,21 @@ trait ArchiveEntryFactory {
   private def fileNameWithPage(fileName: String, pageNumber: Int): String =
     asPdf(s"$fileName p$pageNumber")
 
+  private def replaceDots(fileName: String): String = fileName.replaceAll("\\.", "_")
+
   private def removePdf(fileName: String): String = {
     val caseInsensitivePdfExtension = "(?i)\\.pdf$"
-    fileName.replaceAll(caseInsensitivePdfExtension, "")
+    val dot = "\\."
+    val dotReplacement = "_"
+
+    fileName.
+      replaceAll(caseInsensitivePdfExtension, "").
+      replaceAll(dot, dotReplacement)
   }
-  
+
   private def asPdf(fileName: String): String = {
     val Pdf = ".pdf"
-    if (fileName.toLowerCase endsWith Pdf) fileName
-    else fileName + Pdf
+    fileName + Pdf
   }
 
   protected val storage: Storage
