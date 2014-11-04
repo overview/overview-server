@@ -1,4 +1,4 @@
-FROM znmeb/overview-source
+FROM znmeb/overview-release
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
 USER overview
