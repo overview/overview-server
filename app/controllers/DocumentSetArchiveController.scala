@@ -15,15 +15,18 @@ import models.archive.ArchiveEntryFactory
 import models.archive.ArchiveEntryFactoryWithStorage
 import models.archive.zip.ZipArchive
 import play.api.mvc.Result
+import controllers.backend.DocumentFileInfoBackend
 
 trait DocumentSetArchiveController extends Controller {
 
   import Authorities._
 
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
-    for (fileInfo <- storage.findDocumentFileInfo(documentSetId)) yield {
-      val archiveEntries = fileInfo.flatMap(archiveEntryFactory.create)
-
+    for {
+      pageViewInfos <- backend.indexDocumentFileInfosForPages(documentSetId)
+    } yield {
+      val archiveEntries = archiveEntryFactory.createFromPageViewInfos(pageViewInfos)
+      
       if (archiveEntries.nonEmpty) streamArchive(archiveEntries, filename)
       else flashUnsupportedWarning
     }
@@ -48,18 +51,13 @@ trait DocumentSetArchiveController extends Controller {
   }
 
   protected val archiver: Archiver
-  protected val storage: Storage
+  protected val backend: DocumentFileInfoBackend
 
   protected val archiveEntryFactory: ArchiveEntryFactory
 
   protected trait Archiver {
     def createArchive(entries: Seq[ArchiveEntry]): Archive
   }
-
-  protected trait Storage {
-    def findDocumentFileInfo(documentSetId: Long): Future[Seq[DocumentFileInfo]]
-  }
-
 }
 
 object DocumentSetArchiveController extends DocumentSetArchiveController {
@@ -71,17 +69,7 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
     }
   }
 
-  override protected val storage: Storage = new Storage with DbBackend {
-    import org.overviewproject.database.Slick.simple._
-
-    override def findDocumentFileInfo(documentSetId: Long): Future[Seq[DocumentFileInfo]] = db { session =>
-      val fileInfoQuery = Documents
-        .filter(_.documentSetId === documentSetId)
-        .map(d => (d.title, d.fileId, d.pageId, d.pageNumber))
-
-      fileInfoQuery.list(session).map(DocumentFileInfo.tupled)
-    }
-  }
-
+  override protected val backend: DocumentFileInfoBackend = DocumentFileInfoBackend
+  
   override protected val archiveEntryFactory: ArchiveEntryFactory = new ArchiveEntryFactoryWithStorage
 }

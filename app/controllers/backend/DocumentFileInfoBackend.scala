@@ -19,7 +19,8 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   import org.overviewproject.database.Slick.simple._
 
   override def indexDocumentFileInfosForPages(documentSetId: Long): Future[Seq[PageViewInfo]] = db { implicit session =>
-  	implicit val getPageViewResult = GetResult(r => PageViewInfo(r.nextString, r.nextInt, r.nextLong, r.nextLong)) 
+  	implicit val getPageViewResult = GetResult(r => PageViewInfo
+  	    (r.nextString, r.nextInt, r.nextLong, r.nextLong)) 
 
   	val q = sql"""
         SELECT d.title, p.page_number, d.page_id, octet_length(p.data) FROM document d, page p 
@@ -41,4 +42,6 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
     
 }
 
+
+object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend
 
