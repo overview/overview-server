@@ -15,6 +15,6 @@ docker run -it -p 9000:9000 \
   --name="test-releasec" \
   znmeb/overview-auto-release
 
-# generate a timestamped image
+# commit a timestamped image
 docker cp /home/overview/release-timestamp.txt .
 docker commit test-releasec znmeb/overview-release-`cat release-timestamp.txt`
