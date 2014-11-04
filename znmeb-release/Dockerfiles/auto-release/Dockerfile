@@ -13,9 +13,10 @@ RUN ./build overview-server.zip
 WORKDIR /home/overview/
 RUN unzip /home/overview/overview-server-source/overview-server.zip
 
-# cleanup
+# remove the source tree
 RUN rm -fr /home/overview/overview-server-source/
 
+# remove packages not needed to run
 USER root
 RUN apt-get purge -y \
   git \
@@ -24,13 +25,15 @@ RUN apt-get purge -y \
   wget \
   zip
 RUN apt-get autoremove -y
+
+# make sure we have the Java runtime
 RUN apt-get install -y openjdk-7-jre
 
 # generate a timestamp
+USER overview
 RUN echo `date -u +%Y%m%dT%H%M%SZ` > /home/overview/release-timestamp.txt
 
 # cue up for use
-USER overview
 EXPOSE 9000
 WORKDIR /home/overview/overview-server/
 CMD [ "./run" ]
