@@ -20,8 +20,12 @@ Although it says it's accepting connections on port 9020, you'll need to open a 
 
 Go back to the console and press <kbd>ctrl</kbd>+<kbd>D</kbd> and execution will continue. Ignore any error messages.
 
-1. During the `developer` build the console will stop moving. When th
-is happens, open a browser window / tab to localhost:9000 and wait until the Ove
-rview document set window displays. Then press <kbd>ctrl</kbd>+<kbd>D</kbd> and
-execution will continue. Ignore any error messages.
+2. During the `developer` build, you will see the console stop moving again. Here's a screenshot:
 
+![Redis Ready Again](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/Dockerfiles/RedisReadyAgain.png)
+
+Although it says it's accepting connections on port 9020, you'll need to open a browser window / tab to `localhost:9000` and wait until the Overview main login window displays. The console will look like this:
+
+![Application Ready Again](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/Dockerfiles/ApplicationReadyAgain.png)
+
+Go back to the console and press <kbd>ctrl</kbd>+<kbd>D</kbd> and execution will continue. Ignore any error messages.
