@@ -1,16 +1,12 @@
 FROM ubuntu:trusty
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
-# install Overview build dependencies
+# install Overview server run-time dependencies
 RUN apt-get update && apt-get install -y \
   build-essential \
-  git \
   libreoffice \
-  openjdk-7-jdk \
-  postgresql \
-  unzip \
-  wget \
-  zip
+  openjdk-7-jre \
+  postgresql
 
 # add a non-root user
 RUN useradd overview -m

@@ -1,6 +1,14 @@
 FROM znmeb/overview-os-packages
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
+# add the packages needed for builds
+RUN apt-get update && apt-get install -y \
+  git \
+  openjdk-7-jdk \
+  unzip \
+  wget \
+  zip
+
 USER overview
 
 # get the source repository

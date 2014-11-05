@@ -1,15 +1,5 @@
-FROM ubuntu:trusty
+FROM znmeb/os-packages
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
-
-# install Overview server run-time dependencies
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  libreoffice \
-  openjdk-7-jre \
-  postgresql
-
-# add a non-root user
-RUN useradd overview -m
 
 # copy in the unzipped release tree
 RUN mkdir -p /home/overview/overview-server
