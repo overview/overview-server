@@ -13,21 +13,11 @@ import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.Pages
 
 class ArchiveEntryFactoryWithStorage extends ArchiveEntryFactory {
-
+  private val LOBufferSize = 1024 * 1024
+  
   val storage = new Storage {
-    override def findFile(fileId: Long): Option[File] =
-      OverviewDatabase.withSlickSession { implicit session =>
-        Files.filter(f => f.id === fileId).firstOption
-      }
 
-    override def findPageSize(pageId: Long): Option[Long] =
-      OverviewDatabase.withSlickSession { implicit session =>
-       val query =  sql"SELECT octet_length(data) FROM page WHERE id = $pageId".as[Long]
-
-        query.firstOption
-      }
-
-    override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid)
+    override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid, LOBufferSize)
     
     override def pageDataStream(pageId: Long): Option[InputStream] =
       OverviewDatabase.withSlickSession { implicit session =>

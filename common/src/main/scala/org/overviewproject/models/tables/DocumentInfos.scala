@@ -10,7 +10,7 @@ import org.overviewproject.models.DocumentInfo
 class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   private val keywordColumnType = MappedColumnType.base[Seq[String], String](
     _.mkString(" "),
-    _.split(" ").toSeq
+    _.split(",?\\s+").toSeq
   )
 
   def id = column[Long]("id", O.PrimaryKey)
