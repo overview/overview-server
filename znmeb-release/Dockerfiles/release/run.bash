@@ -10,11 +10,3 @@
 #
 
 docker build -t znmeb/overview-release .
-docker rm test-releasec
-docker run -it -p 9000:9000 \
-  --name="test-releasec" \
-  znmeb/overview-release
-
-# commit a timestamped image
-docker cp test-releasec:/home/overview/release-timestamp.txt .
-docker commit test-releasec znmeb/overview-`cat release-timestamp.txt`
