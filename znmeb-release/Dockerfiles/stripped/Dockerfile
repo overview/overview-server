@@ -1,4 +1,4 @@
-FROM znmeb/os-packages
+FROM znmeb/overview-os-packages
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
 # copy in the unzipped release tree
