@@ -12,7 +12,8 @@
 for i in \
   os-packages \
   source \
-  release
+  release \
+  stripped
 do
   pushd ${i}
   ./run.bash
