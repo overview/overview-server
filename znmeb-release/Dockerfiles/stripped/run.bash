@@ -1,0 +1,26 @@
+#! /bin/bash -v
+#
+# Copyright (C) 2013 by M. Edward (Ed) Borasky
+#
+# This program is licensed to you under the terms of version 3 of the
+# GNU Affero General Public License. This program is distributed WITHOUT
+# ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+# AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+#
+
+# run the release image
+docker run -d --name="overviewc" znmeb/overview-release
+
+# copy the release zipfile
+docker cp overviewc:/home/overview/overview-server-source/overview-server.zip .
+
+# we're done with the release
+docker kill overviewc
+docker rm overviewc
+
+# unzip here so we don't need 'unzip' in the final image
+unzip overview-server.zip
+
+# now build the image - it has a COPY to get the tree!
+docker build -t znmeb/overview-stripped .
