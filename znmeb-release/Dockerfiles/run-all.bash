@@ -12,8 +12,7 @@
 for i in \
   os-packages \
   source \
-  release \
-  developer
+  release
 do
   pushd ${i}
   ./run.bash
