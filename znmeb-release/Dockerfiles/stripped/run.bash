@@ -29,4 +29,5 @@ docker build -t znmeb/overview-stripped .
 # test the result
 echo "Browse to localhost:9000 after console stabilizes"
 sleep 30
+docker rm test-strippedc
 docker run -it -p 9000:9000 --name="test-strippedc" znmeb/overview-stripped
