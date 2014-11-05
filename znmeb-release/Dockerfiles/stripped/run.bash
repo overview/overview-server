@@ -20,7 +20,13 @@ docker kill overviewc
 docker rm overviewc
 
 # unzip here so we don't need 'unzip' in the final image
+rm -fr overview-server
 unzip overview-server.zip
 
 # now build the image - it has a COPY to get the tree!
 docker build -t znmeb/overview-stripped .
+
+# test the result
+echo "Browse to localhost:9000 after console stabilizes"
+sleep 30
+docker run -it -p 9000:9000 --name="test-strippedc" znmeb/overview-stripped

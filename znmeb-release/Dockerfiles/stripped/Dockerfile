@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
 RUN useradd overview -m
 
 # copy in the unzipped release tree
-COPY overview-server/ /home/overview/
+RUN mkdir -p /home/overview/overview-server
+COPY overview-server /home/overview/overview-server/
 
 # make it belong to the 'overview' user
 RUN chown -R overview:overview /home/overview/
@@ -21,6 +22,7 @@ RUN chown -R overview:overview /home/overview/
 EXPOSE 9000
 USER overview
 WORKDIR /home/overview/overview-server/
+CMD [ "./run" ]
 
 # timestamp
 RUN echo `date -u +%Y%m%dt%H%M%Sz` > /home/overview/stripped-timestamp.txt
