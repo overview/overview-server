@@ -58,14 +58,26 @@ Go back to the Boot2Docker console and type `docker pull znmeb/overview-stripped
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_08_13-Boot2Docker%20Start.png)
 
-- - -
+When it completes, type `docker images` and you will see that it has been downloaded. You can type `docker images` at any time to list the images you have.
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_16_35-Boot2Docker%20Start.png)
 
-- - -
+# Running the server
+
+There are two types of objects in Docker, *images* and *containers*. You've seen an image, which has the name `znmeb/overview-stripped`. An image is like a file or a document - it contains information but it can't do anything. This particular image has all the information needed to run the Overview server.
+
+A container is like a virtual machine. It uses some of your host machine's processor, RAM and disk capacity to execute the image. So to run the Overview server, you need to create a container and run the image in it. The command to do that is `docker run`, and it has a number of options. The ones we'll use are
+
+* `-it` run interactively. You'll have a console window into the server
+* `-p 9000:9000` Overview Server listens for connections on port 9000. This option maps the server's port 9000 to port 9000 on the IP address you wrote down before.
+* `--name=overview-container` Containers have names, just like images. If you don't give the container a name, Docker will create one. Then you'll have to figure out what name it picked. So specify one.
+
+After the parameters, you'll type the name of the image you want to run, in this case `znmeb/overview-stripped`. I typed the image name on a new line by using a backslash to make it easier to read, but you don't have to do that.
+
+So the final command is `docker run -it -p 9000:9000 --name=overview-container znmeb/overview-stripped`. Type that into the console and Docker will create a container and run the image in it.
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_25_30-Boot2Docker%20Start.png)
 
-- - -
+## Wait for the server to stabilize
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_27_01-Boot2Docker%20Start.png)
