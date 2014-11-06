@@ -16,7 +16,7 @@ Press 'Next'.
 - - -
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_57_10-Setup%20-%20Boot2Docker%20for%20Windows.png)<br><br>
-Press 'Next'.
+Make sure all three options are checked and press 'Next'.
 
 - - -
 
@@ -26,17 +26,17 @@ Press 'Next'.
 - - -
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_57_57-Setup%20-%20Boot2Docker%20for%20Windows.png)<br><br>
-Press 'Next'.
+Make sure all three options are checked and press 'Next'.
 
 - - -
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_58_17-Setup%20-%20Boot2Docker%20for%20Windows.png)<br><br>
-Press 'Next'.
+Press 'Install'. Installation will proceed.
 
 - - -
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_59_51-Setup%20-%20Boot2Docker%20for%20Windows.png)<br><br>
-Press 'Next'.
+Press 'Finish'. Your system will reboot.
 
 - - -
 
