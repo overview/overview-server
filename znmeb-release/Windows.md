@@ -85,9 +85,19 @@ The first time the server runs, it needs to set up some databases. Once that's c
 
 When the activity stops, the server is ready. Browse to port 9000 at the IP address you wrote down, and you'll be connected to the Overview Server. You can upload documents and analyze them.
 
-## To be continued ...
-
 ## Stopping the server
+
+As you work with Overview in the browser, you can minimize the console window if you find it distracting. It will log all your interactions. When you're finished with a session, close the browser window or tab and go back to the console. It will probably look something like this:
+
+Type a <kbd>ctrl</kbd>+<kbd>D</kbd>. This will send a signal to the server to shut down. Once the server shuts down, the Docker container will stop running. You'll be back in the *Boot2Docker* console, not the Overview Server console. It will look like this:
+
+Your container is still there. All of the data you uploaded and all of the underlying databases are there. To see this, type `docker ps -a` in the Boot2Docker console.
+
+As we'll see shortly, the port mapping is still there too.
+
+
+
+
 
 ## Restarting the server
 
