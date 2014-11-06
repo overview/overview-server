@@ -1,4 +1,3 @@
-#! /bin/bash -v
 #
 # Copyright (C) 2013 by M. Edward (Ed) Borasky
 #

@@ -1,3 +1,4 @@
+#! /bin/bash -v
 #
 # Copyright (C) 2013 by M. Edward (Ed) Borasky
 #
@@ -8,4 +9,5 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-docker build -t znmeb/overview-release .
+docker login
+docker push znmeb/overview-stripped
