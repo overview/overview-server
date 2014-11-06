@@ -103,7 +103,11 @@ As we'll see shortly, the port mapping is still there too.
 
 ## Restarting the server
 
-Go back to the Boot2Docker console and type `docker start -ai overview-container. When the console stabilizes, browse to port 9000 on the host-only network IP address and you'll see the Overview Server.
+Go back to the Boot2Docker console and type `docker start -ai overview-container`. 
+
+![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2015_00_04-Boot2Docker%20Start.png)
+
+When the console stabilizes, browse to port 9000 on the host-only network IP address and you'll see the Overview Server.
 
 ## Saving a session as a new image
 
