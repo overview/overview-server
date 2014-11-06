@@ -40,6 +40,8 @@ Press 'Finish'. Your system will reboot.
 
 - - -
 
+3. Depending on what version of Windows you have, you may need to hunt for this next step. You need to find a "Git Bash" icon and start up the Git Bash terminal window. When you have the Git bash terminal window, type `boot2docker ip` at the `$` prompt. ***This is the IP address where your local Overview server will listen for browsers, so write this down!*** 
+
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_18_42-MINGW32__c_Users_Ed.png)
 
 - - -
