@@ -4,6 +4,8 @@
 2. Run the installer. You will see the following screens:
 
     * ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_56_25-Setup%20-%20Boot2Docker%20for%20Windows.png)
+    Press 'Next'.
+    
     * ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_56_45-Setup%20-%20Boot2Docker%20for%20Windows.png)
     * ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_57_10-Setup%20-%20Boot2Docker%20for%20Windows.png)
     * ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_57_31-Setup%20-%20Boot2Docker%20for%20Windows.png)
