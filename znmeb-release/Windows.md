@@ -89,9 +89,15 @@ When the activity stops, the server is ready. Browse to port 9000 at the IP addr
 
 As you work with Overview in the browser, you can minimize the console window if you find it distracting. It will log all your interactions. When you're finished with a session, close the browser window or tab and go back to the console. It will probably look something like this:
 
+![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2014_27_30-Boot2Docker%20Start.png)
+
 Type a <kbd>ctrl</kbd>+<kbd>D</kbd>. This will send a signal to the server to shut down. Once the server shuts down, the Docker container will stop running. You'll be back in the *Boot2Docker* console, not the Overview Server console. It will look like this:
 
+![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2014_31_49-Boot2Docker%20Start.png)
+
 Your container is still there. All of the data you uploaded and all of the underlying databases are there. To see this, type `docker ps -a` in the Boot2Docker console.
+
+![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2014_34_56-Boot2Docker%20Start.png)
 
 As we'll see shortly, the port mapping is still there too.
 
