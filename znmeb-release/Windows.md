@@ -62,7 +62,7 @@ When it completes, type `docker images` and you will see that it has been downlo
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_16_35-Boot2Docker%20Start.png)
 
-# Running the server
+## Running the server
 
 There are two types of objects in Docker, *images* and *containers*. You've seen an image, which has the name `znmeb/overview-stripped`. An image is like a file or a document - it contains information but it can't do anything. This particular image has all the information needed to run the Overview server.
 
@@ -79,5 +79,10 @@ So the final command is `docker run -it -p 9000:9000 --name=overview-container z
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_25_30-Boot2Docker%20Start.png)
 
 ## Wait for the server to stabilize
+The first time the server runs, it needs to set up some databases. Once that's completed, the screen will look like this:
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_27_01-Boot2Docker%20Start.png)
+
+When the activity stops, the server is ready. Browse to port 9000 at the IP address you wrote down, and you'll be connected to the Overview Server. You can upload documents and analyze them.
+
+## Stopping the server and saving the state
