@@ -101,11 +101,9 @@ Your container is still there. All of the data you uploaded and all of the under
 
 As we'll see shortly, the port mapping is still there too.
 
-
-
-
-
 ## Restarting the server
+
+Go back to the Boot2Docker console and type `docker start -ai overview-container. When the console stabilizes, browse to port 9000 on the host-only network IP address and you'll see the Overview Server.
 
 ## Saving a session as a new image
 
