@@ -114,7 +114,3 @@ When the console stabilizes, browse to port 9000 on the host-only network IP add
 You can checkpoint a container's state to a new image for later use. Go to the Boot2Docker console and verify that your container is still there with `docker ps -a`. Then type `docker commit overview-container overview-checkpoint-image` to checkpoint the container to the image. Then type `docker images` to verify that the checkpoint has been completed.
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2015_32_46-Boot2Docker%20Start.png)
-
-## Exporting a container to a portable tarball
-
-## Importing a tarball
