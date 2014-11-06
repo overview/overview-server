@@ -85,4 +85,14 @@ The first time the server runs, it needs to set up some databases. Once that's c
 
 When the activity stops, the server is ready. Browse to port 9000 at the IP address you wrote down, and you'll be connected to the Overview Server. You can upload documents and analyze them.
 
-## Stopping the server and saving the state
+## To be continued ...
+
+## Stopping the server
+
+## Restarting the server
+
+## Saving a session as a new image
+
+## Exporting a container to a portable tarball
+
+## Importing a tarball
