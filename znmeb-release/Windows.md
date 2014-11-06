@@ -40,13 +40,15 @@ Press 'Install'. Installation will proceed.
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2015_59_51-Setup%20-%20Boot2Docker%20for%20Windows.png)<br><br>
 Press 'Finish'. Your system will reboot.
 
-- - -
+## Starting Boot2Docker
+
+Find the Boot2Docker icon and start it. It will take some time the first time you do this, but eventually you wll get this screen. This is the console of the Docker host.
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_07_16-Boot2Docker%20Start.png)
 
-- - -
+## Finding the IP address of the server
 
-3. Depending on what version of Windows you have, you may need to hunt for this next step. You need to find a "Git Bash" icon and start up the Git Bash terminal window. When you have the Git bash terminal window, type `boot2docker ip` at the `$` prompt. ***This is the IP address where your local Overview server will listen for browsers, so write this down!*** 
+Depending on what version of Windows you have, you may need to hunt for this next step. You need to find a "Git Bash" icon and start up the Git Bash terminal window. When you have the Git bash terminal window, type `boot2docker ip` at the `$` prompt. ***This is the IP address where your local Overview server will listen for browsers, so write this down!*** 
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_18_42-MINGW32__c_Users_Ed.png)
 
