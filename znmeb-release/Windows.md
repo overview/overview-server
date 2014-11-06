@@ -50,15 +50,11 @@ Find the Boot2Docker icon and start it. It will take some time the first time yo
 
 Depending on what version of Windows you have, you may need to hunt for this next step. You need to find a "Git Bash" icon and start up the Git Bash terminal window. When you have the Git bash terminal window, type `boot2docker ip` at the `$` prompt. ***This is the IP address where your local Overview server will listen for browsers, so write this down!*** After you've written down the IP address, close the window.
 
+![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_18_42-MINGW32__c_Users_Ed.png)
+
 ## Downloading the Overview Server image
 
 Go back to the Boot2Docker console and type `docker pull znmeb/overview-stripped`. This will take some time depending on your bandwidth, but you only have to do it once.
-
-
-![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_18_42-MINGW32__c_Users_Ed.png)
-
-
-- - -
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-05%2016_08_13-Boot2Docker%20Start.png)
 
