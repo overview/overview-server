@@ -28,7 +28,7 @@ class ArchiveEntryCollection(entries: Seq[ArchiveEntry]) {
 
   // Replace chars Windows can't handle with underscores
   private def sanitizeFilename(filename: String): String = {
-    val BadCharRegex = """[<>:"/\\|?*\x00-\x1F]""".r
+    val BadCharRegex = """[<>:"\\|?*\x00-\x1F]""".r
     
     BadCharRegex.replaceAllIn(filename, "_")
   }

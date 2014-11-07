@@ -76,7 +76,7 @@ class ArchiveEntryCollectionSpec extends Specification {
     }
 
     "replace illegal characters" in new ArchiveEntryCollectionContext {
-      val badChars = """<>:"/\|?*"""
+      val badChars = """<>:"\|?*"""
 
       val replacedChars = "_" * badChars.size
 
@@ -97,7 +97,15 @@ class ArchiveEntryCollectionSpec extends Specification {
       val names = collection.sanitizedEntries.map(_.name)
       
       names.head must be equalTo replacedChars
-
+    }
+    
+    "leave / in file name" in new ArchiveEntryCollectionContext {
+      val nameWithPath = "dir/subdir/file"
+      val collection = createCollection(Seq(nameWithPath))
+      
+      val names = collection.sanitizedEntries.map(_.name)
+      
+      names.head must be equalTo(nameWithPath)
     }
   }
 }
