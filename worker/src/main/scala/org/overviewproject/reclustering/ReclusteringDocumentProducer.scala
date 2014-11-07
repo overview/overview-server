@@ -16,35 +16,35 @@ trait ReclusteringDocumentProducer extends DocumentProducer {
   protected val pagedDocumentFinder: PagedDocumentFinder
   protected lazy val totalNumberOfDocuments = pagedDocumentFinder.numberOfDocuments
 
+  private case class ProductionState(numberOfDocuments: Int, cancelled: Boolean)
+
   override def produce(): Int = {
     val numberOfDocumentsProduced = produceDocuments(1, 0)
     consumer.productionComplete()
-    
+
     numberOfDocumentsProduced
   }
 
   @tailrec
   private def produceDocuments(currentPage: Int, numberOfDocumentsProcessed: Int): Int = {
     val documents = pagedDocumentFinder.findDocuments(currentPage)
-    
+
     if (documents.isEmpty) numberOfDocumentsProcessed
     else {
-      val updatedNumberOfDocumentsProcessed = processDocuments(documents, numberOfDocumentsProcessed)
-      produceDocuments(currentPage + 1, updatedNumberOfDocumentsProcessed)
+      val state = processDocuments(documents, numberOfDocumentsProcessed)
+      if (state.cancelled) state.numberOfDocuments
+      else produceDocuments(currentPage + 1, state.numberOfDocuments)
     }
   }
 
-  private def processDocuments(documents: Iterable[Document], numberOfDocumentsProcessed: Int): Int = {
-    case class State(numberOfDocuments: Int, cancelled: Boolean)
-    val result = documents.foldLeft(State(numberOfDocumentsProcessed, false)) { (s, document) =>
+  private def processDocuments(documents: Iterable[Document], numberOfDocumentsProcessed: Int): ProductionState = {
+    documents.foldLeft(ProductionState(numberOfDocumentsProcessed, false)) { (s, document) =>
       if (!s.cancelled) document.text.map { text =>
         consumer.processDocument(document.id, text)
-        State(s.numberOfDocuments + 1, reportProgress(s.numberOfDocuments + 1))
-      }.getOrElse(State(s.numberOfDocuments, reportProgress(s.numberOfDocuments)))
+        ProductionState(s.numberOfDocuments + 1, reportProgress(s.numberOfDocuments + 1))
+      }.getOrElse(ProductionState(s.numberOfDocuments, reportProgress(s.numberOfDocuments)))
       else s
     }
-
-    result.numberOfDocuments
   }
 
   private def reportProgress(documentIndex: Int): Boolean = {
@@ -60,7 +60,7 @@ object ReclusteringDocumentProducer {
     new ReclusteringDocumentProducer {
       override protected val consumer: DocumentConsumer = aConsumer
       override protected val progAbort: ProgressAbortFn = aProgAbort
-      override protected val pagedDocumentFinder: PagedDocumentFinder = 
+      override protected val pagedDocumentFinder: PagedDocumentFinder =
         PagedDocumentFinder(documentSetId, tagId, PageSize)
 
     }

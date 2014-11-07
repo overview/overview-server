@@ -30,12 +30,14 @@ trait FileUploadDeleter {
   protected val storage: Storage
 
   def deleteFileUpload(documentSetId: Long, fileGroupId: Long): Unit = {
-    storage.deletePages(documentSetId)
-    storage.deleteFiles(documentSetId)
-    storage.deleteTempDocumentSetFiles(documentSetId)
     storage.deleteDocumentProcessingErrors(documentSetId)
     storage.deleteDocumentSetCreationJob(documentSetId)
     storage.deleteDocuments(documentSetId)
+
+    storage.deletePages(documentSetId)
+    storage.deleteFiles(documentSetId)
+    storage.deleteTempDocumentSetFiles(documentSetId)
+    
     storage.deleteDocumentSet(documentSetId)
     storage.deleteGroupedFileUploads(fileGroupId)
     storage.deleteFileGroup(fileGroupId)

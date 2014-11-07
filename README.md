@@ -10,6 +10,7 @@ The Overview Project is an open source visual document mining system. It was ori
 - Try Overview on [the public Overview website](https://overviewproject.org)
 - Follow the [project blog](http://overview.ap.org)
 - Install Overview [on your own computer](https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview)
+- [News stories](https://github.com/overview/overview-server/wiki/News-stories) completed with Overview
 
 ## Developing Overview
 
