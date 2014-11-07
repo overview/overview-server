@@ -119,3 +119,5 @@ You can checkpoint a container's state to a new image for later use. Go to the B
 
 Go back to the Boot2Docker console and type `exit` and <kbd>enter</kbd>.
 
+![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2016_02_22-Boot2Docker%20Start.png)
+
