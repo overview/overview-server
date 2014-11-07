@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
   gcc \
   libreoffice \
   make \
-  openjdk-7-jre \
+  openjdk-7-jre-headless \
   postgresql
 
 # add a non-root user
