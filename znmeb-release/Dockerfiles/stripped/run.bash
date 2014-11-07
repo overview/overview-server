@@ -12,6 +12,7 @@
 docker run -d --name="overviewc" znmeb/overview-release
 
 # copy the release zipfile
+sudo rm -f overview-server.zip
 docker cp overviewc:/home/overview/overview-server-source/overview-server.zip .
 
 # we're done with the release
@@ -19,7 +20,7 @@ docker kill overviewc
 docker rm overviewc
 
 # unzip here so we don't need 'unzip' in the final image
-rm -fr overview-server
+sudo rm -fr overview-server
 unzip overview-server.zip
 
 # now build the image - it has a COPY to get the tree!
