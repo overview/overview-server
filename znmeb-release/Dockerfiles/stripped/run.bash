@@ -24,7 +24,7 @@ sudo rm -fr overview-server
 unzip overview-server.zip
 
 # now build the image - it has a COPY to get the tree!
-docker build --no-cache -t znmeb/overview-stripped .
+docker build -t znmeb/overview-stripped .
 
 # test the result
 echo "Browse to localhost:9000 after console stabilizes"

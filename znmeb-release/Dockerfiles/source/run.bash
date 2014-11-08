@@ -8,4 +8,4 @@
 # AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
 #
 
-docker build --no-cache -t znmeb/overview-source .
+docker build -t znmeb/overview-source .
