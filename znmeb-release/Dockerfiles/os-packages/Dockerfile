@@ -4,7 +4,7 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 # install Overview server run-time dependencies
 RUN apt-get update && apt-get install -y \
   gcc \
-  libreoffice \
+  libreoffice-common \
   make \
   openjdk-7-jre-headless \
   postgresql
