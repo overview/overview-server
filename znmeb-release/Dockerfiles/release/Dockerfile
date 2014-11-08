@@ -19,7 +19,7 @@ USER overview
 # cue up for use
 EXPOSE 9000
 WORKDIR /home/overview/overview-server/
-CMD [ "./run" ]
+ENTRYPOINT [ "./run" ]
 
 # timestamp
 RUN echo `date -u +%Y%m%dt%H%M%Sz` > /home/overview/release-timestamp.txt
