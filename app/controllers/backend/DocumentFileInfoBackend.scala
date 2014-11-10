@@ -19,16 +19,13 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   import org.overviewproject.database.Slick.simple._
 
   override def indexDocumentFileInfosForPages(documentSetId: Long): Future[Seq[PageViewInfo]] = db { implicit session =>
-  	implicit val getPageViewResult = GetResult(r => PageViewInfo
-  	    (r.nextString, r.nextInt, r.nextLong, r.nextLong)) 
-
   	val q = sql"""
         SELECT d.title, p.page_number, d.page_id, octet_length(p.data) FROM document d, page p 
         WHERE ((d.document_set_id = $documentSetId) AND 
                (d.page_id IS NOT NULL) AND 
-               (p.id = d.page_id))""".as[PageViewInfo]
+               (p.id = d.page_id))""".as[(String, Int, Long, Long)]
 
-    q.list
+    q.list.map(documentViewInfoFactory.fromPage)
   }
   
   override def indexDocumentFileInfosForFiles(documentSetId: Long): Future[Seq[FileViewInfo]] = db { implicit session =>
@@ -40,8 +37,20 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
     q.list.map{f => FileViewInfo(f._1.getOrElse(""), f._2, f._3.getOrElse(0))}
   }
     
+  protected val documentViewInfoFactory: DocumentViewInfoFactory
+  
+  protected trait DocumentViewInfoFactory {
+    def fromPage(info: (String, Int, Long, Long)): PageViewInfo
+    def fromFile(title: String, viewOid: Long, size: Long): FileViewInfo
+  }
 }
 
 
-object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend
+object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend {
+  override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
+    def fromPage(info: (String, Int, Long, Long)): PageViewInfo = (PageViewInfo.apply _).tupled(info)
+    
+    def fromFile(title: String, viewOid: Long, size: Long): FileViewInfo = ???
+  } 
+}
 
