@@ -121,6 +121,11 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         ret must beEqualTo(Seq(doc2.id))
       }
 
+      "throw SearchParseFailed on invalid query" in new IndexIdsScope {
+        override val q = "foo["
+        ret must throwA[exceptions.SearchParseFailed]("""Cannot parse 'foo\[': Encountered "<EOF>" at line 1, column 4.""")
+      }
+
       "search by tagIds" in new IndexIdsScope {
         val tag = factory.tag(documentSetId=documentSet.id)
         val dt1 = factory.documentTag(doc1.id, tag.id)

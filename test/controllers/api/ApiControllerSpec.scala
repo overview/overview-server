@@ -10,18 +10,5 @@ import play.api.test.FakeRequest
 import models.pagination.PageRequest
 import models.SelectionRequest
 
-class ApiControllerSpec extends Specification with JsonMatchers {
-  "jsonError" should {
-    "generate a JSON Error object" in {
-      trait MyTest {
-        self: ApiController =>
-
-        val err = jsonError("foo")
-      }
-
-      val controller = new ApiController with MyTest
-
-      Json.stringify(controller.err) must /("message" -> "foo")
-    }
-  }
+class ApiControllerSpec extends Specification {
 }

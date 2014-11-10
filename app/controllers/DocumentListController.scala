@@ -5,6 +5,7 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
+import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.SelectionBackend
 import models.orm.finders.DocumentFinder
 import models.pagination.Page
@@ -26,7 +27,7 @@ trait DocumentListController extends Controller {
       case _ => selectionBackend.findOrCreate(request.user.email, sr)
     }
 
-    for {
+    val happyFuture = for {
       selection <- selectionFuture
       ids <- selection.getDocumentIds(pr)
       documents <- storage.getDocuments(ids.items)
@@ -34,6 +35,8 @@ trait DocumentListController extends Controller {
       val page = Page(documents, ids.pageInfo)
       Ok(views.json.DocumentList.show(page))
     }
+
+    happyFuture.recover { case spf: SearchParseFailed => BadRequest(jsonError(spf.getMessage)) }
   }
 }
 

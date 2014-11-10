@@ -17,7 +17,11 @@ trait DocumentBackend {
     includeText: Boolean
   ): Future[Page[DocumentHeader]]
 
-  /** Lists all Document IDs for the given parameters. */
+  /** Lists all Document IDs for the given parameters.
+    *
+    * May fail with exceptions.SearchParseFailed if selectionRequest contains
+    * `q` and ElasticSearch can't parse the query.
+    */
   def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
 
   /** Returns a single Document. */
@@ -127,6 +131,7 @@ object DbDocumentBackend {
       case "" => Future.successful(sql)
       case s => {
         indexClient.searchForIds(request.documentSetId, s)
+          .transform(identity(_), exceptions.wrapElasticSearchException(_))
           .map { (ids: Seq[Long]) => sql.filter(_.id inSet ids) }
       }
     }
