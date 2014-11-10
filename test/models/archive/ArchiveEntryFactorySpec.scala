@@ -11,7 +11,7 @@ import org.specs2.specification.Scope
 import org.specs2.mutable.Before
 import org.specs2.matcher.MatchResult
 import models.FileViewInfo
-import models.PageViewInfo
+
 
 class ArchiveEntryFactorySpec extends Specification with Mockito {
 

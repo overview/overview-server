@@ -4,7 +4,7 @@ import scala.concurrent.Future
 import models.DocumentFileInfo
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.models.tables.Files
-import models.PageViewInfo
+import models.archive.PageViewInfo
 import models.FileViewInfo
 
 trait DocumentFileInfoBackend {

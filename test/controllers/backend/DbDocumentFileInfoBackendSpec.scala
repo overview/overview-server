@@ -1,7 +1,7 @@
 package controllers.backend
 
 import models.FileViewInfo
-import models.PageViewInfo
+import models.archive.PageViewInfo
 
 
 class DbDocumentFileInfoBackendSpec extends DbBackendSpecification {

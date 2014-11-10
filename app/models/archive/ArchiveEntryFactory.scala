@@ -7,7 +7,7 @@ import org.overviewproject.models.File
 import org.overviewproject.models.Page
 import java.io.ByteArrayInputStream
 import models.FileViewInfo
-import models.PageViewInfo
+
 
 trait ArchiveEntryFactory {
 
