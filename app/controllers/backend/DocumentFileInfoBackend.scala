@@ -5,7 +5,7 @@ import models.DocumentFileInfo
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.models.tables.Files
 import models.archive.PageViewInfo
-import models.FileViewInfo
+import models.archive.FileViewInfo
 
 trait DocumentFileInfoBackend {
 

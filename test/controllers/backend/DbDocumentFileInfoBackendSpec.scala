@@ -1,6 +1,6 @@
 package controllers.backend
 
-import models.FileViewInfo
+import models.archive.FileViewInfo
 import models.archive.PageViewInfo
 
 

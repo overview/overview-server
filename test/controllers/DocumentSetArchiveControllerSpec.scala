@@ -10,7 +10,7 @@ import java.io.ByteArrayInputStream
 import scala.concurrent.Future
 import play.api.i18n.Messages
 import controllers.backend.DocumentFileInfoBackend
-import models.FileViewInfo
+import models.archive.FileViewInfo
 import models.archive.PageViewInfo
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
