@@ -49,7 +49,8 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
 
 object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend {
   override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
-    def fromPage(info: (String, Int, Long, Long)): PageViewInfo = (PageViewInfo.apply _).tupled(info)
+    def fromPage(info: (String, Int, Long, Long)) = new PageViewInfo(info._1, info._2, info._3, info._4)
+
     
     def fromFile(info: (String, Long, Long)): FileViewInfo =  (FileViewInfo.apply _).tupled(info)
   } 
