@@ -7,6 +7,7 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
+import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.PageRequest
 import models.{SelectionLike,SelectionRequest}
@@ -84,7 +85,7 @@ trait DocumentController extends ApiController {
     val sr = selectionRequest(documentSetId, request)
     val fieldSet = parseFields(fields)
 
-    if (fieldSet.size == 1) {
+    val responseFuture = if (fieldSet.size == 1) {
       _indexIds(sr)
     } else {
       val streaming = request.queryString.get("stream").flatMap(_.headOption) == Some("true")
@@ -104,6 +105,8 @@ trait DocumentController extends ApiController {
         _indexDocuments(request.apiToken.createdBy, sr, pr, fieldSet)
       }
     }
+
+    responseFuture.recover { case spf: SearchParseFailed => BadRequest(jsonError(spf.getMessage)) }
   }
 
   def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {

@@ -4,6 +4,7 @@ import play.api.libs.json.Json
 import play.api.test.WithApplication
 import scala.concurrent.Future
 
+import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
@@ -41,6 +42,27 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       "return JSON with status code 200" in new IndexScope {
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
+      }
+
+      "return 400 Bad Request on SearchParseFailed when streaming" in new IndexScope {
+        val failure = new SearchParseFailed("some error message", new RuntimeException("test"))
+        mockSelectionBackend.findOrCreate(any, any) returns Future.failed(failure)
+        mockSelectionBackend.create(any, any) returns Future.failed(failure)
+        override lazy val request = fakeRequest("GET", "/?stream=true")
+
+        status(result) must beEqualTo(BAD_REQUEST)
+        contentType(result) must beSome("application/json")
+        contentAsString(result) must beEqualTo("""{"message":"some error message"}""")
+      }
+
+      "return 400 Bad Request on SearchParseFailed" in new IndexScope {
+        val failure = new SearchParseFailed("some error message", new RuntimeException("test"))
+        mockSelectionBackend.findOrCreate(any, any) returns Future.failed(failure)
+        mockSelectionBackend.create(any, any) returns Future.failed(failure)
+
+        status(result) must beEqualTo(BAD_REQUEST)
+        contentType(result) must beSome("application/json")
+        contentAsString(result) must beEqualTo("""{"message":"some error message"}""")
       }
 
       "return an empty Array when there are no Documents" in new IndexScope {

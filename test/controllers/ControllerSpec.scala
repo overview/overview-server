@@ -1,14 +1,30 @@
 package controllers
 
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.libs.json.Json
 import play.api.mvc.{Request,RequestHeader}
 import play.api.test.FakeRequest
 
 import models.pagination.PageRequest
 import models.SelectionRequest
 
-class ControllerSpec extends Specification {
+class ControllerSpec extends Specification with JsonMatchers {
+  "jsonError" should {
+    "generate a JSON Error object" in {
+      trait MyTest {
+        self: Controller =>
+
+        val err = jsonError("foo")
+      }
+
+      val controller = new Controller with MyTest
+
+      Json.stringify(controller.err) must /("message" -> "foo")
+    }
+  }
+
   "pageRequest" should {
     trait PageScope extends Scope {
       trait F {

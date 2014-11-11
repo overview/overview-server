@@ -42,6 +42,8 @@ define [
     defaults:
       length: null
       nPagesFetched: 0
+      statusCode: null
+      error: null
 
     initialize: (attributes, options) ->
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
@@ -113,18 +115,19 @@ define [
             nPagesFetched: @get('nPagesFetched') + 1
           resolve(null)
 
-        onError = (err) =>
-          console.log('DocumentList fetch error', err)
-          setTimeout(fetch, 2000)
-          # The promise stays unresolved
+        onError = (xhr) =>
+          message = xhr.responseJSON?.message || xhr.responseText
+          @documents.pop()
+          @set
+            statusCode: xhr.status
+            error: message
+          reject(message)
 
-        fetch = =>
-          Backbone.$.ajax
-            type: 'get'
-            url: @url
-            data: query
-            success: onSuccess
-            error: onError
+        Backbone.$.ajax
+          type: 'get'
+          url: @url
+          data: query
+          success: onSuccess
+          error: onError
 
-        fetch()
         undefined

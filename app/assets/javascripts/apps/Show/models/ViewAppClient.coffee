@@ -34,8 +34,6 @@ define [
       @state.resetDocumentListParams().byJson(params)
 
     _onMessage: (e) ->
-      console.log(@viewApp)
-      console.log(@viewApp.view.attributes)
       viewUrl = @viewApp.view.attributes.url
       viewUrl = "#{window.location.protocol}#{viewUrl}" if viewUrl.substring(0, 2) == '//'
       if e.origin != viewUrl.substring(0, e.origin.length)

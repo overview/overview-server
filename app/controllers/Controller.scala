@@ -73,6 +73,8 @@ trait Controller extends PlayController {
       q
     )
   }
+
+  protected def jsonError(message: String) = views.json.api.error(message)
 }
 
 object Controller {

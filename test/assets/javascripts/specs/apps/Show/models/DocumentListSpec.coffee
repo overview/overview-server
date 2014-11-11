@@ -63,22 +63,11 @@ define [
 
         describe 'on error', ->
           beforeEach ->
-            @sandbox.useFakeTimers()
-            @sandbox.stub(console, 'log')
-            @sandbox.server.requests[0].respond(404, {}, '')
-            # @promise1 will be unfulfilled
+            @sandbox.server.requests[0].respond(400, {'Content-Type': 'application/json'}, '{"message":"error message"}')
 
-          it 'should log the error', -> expect(console.log).to.have.been.called
-          it 'should leave the loading document there', -> expect(@docs.pluck('type')).to.deep.eq([ 'loading' ])
-          it 'should not retry too quickly', ->
-            @sandbox.clock.tick(200)
-            expect(@sandbox.server.requests.length).to.eq(1)
-          it 'should retry eventually', ->
-            @sandbox.clock.tick(5000)
-            expect(@sandbox.server.requests.length).to.eq(2)
-          it 'should not add a second loading document on retry', ->
-            @sandbox.clock.tick(5000)
-            expect(@docs.pluck('type')).to.deep.eq([ 'loading' ])
+          it 'should remove the loading document', -> expect(@docs.length).to.eq(0)
+          it 'should set statusCode', -> expect(@list.get('statusCode')).to.eq(400)
+          it 'should set error', -> expect(@list.get('error')).to.eq('error message')
 
         describe 'on zero-doc success', ->
           beforeEach ->
