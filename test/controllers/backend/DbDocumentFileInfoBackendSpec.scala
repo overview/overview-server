@@ -11,15 +11,15 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
   "DbDocumentFileInfoBackend" should {
 
     "find info for pages" in new SplitDocumentsScope {
-      val infos = await(backend.indexDocumentFileInfosForPages(documentSet.id))
+      val infos = await(backend.indexDocumentViewInfos(documentSet.id))
       
       pagesWereUsedInViewInfoCreation
     }
 
     "find info for files" in new FileScope {
-      val infos = await(backend.indexDocumentFileInfosForFiles(documentSet.id))
+      val infos = await(backend.indexDocumentViewInfos(documentSet.id))
 
-      there was one(backend.mockFactory).fromFile((filename, oid, size))
+      there was one(backend.mockFactory).fromFile1((filename, oid, size))
     }
   }
 
@@ -36,7 +36,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
         pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
 
     def pagesWereUsedInViewInfoCreation = pages.map { p =>
-      there was one(backend.mockFactory).fromPage((filename, p.pageNumber, p.id, p.data.get.length))
+      there was one(backend.mockFactory).fromPage1((filename, p.pageNumber, p.id, p.data.get.length))
     }
 
   }
