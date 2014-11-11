@@ -99,7 +99,7 @@ As you work with Overview in the browser, you can minimize the console window if
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2014_27_30-Boot2Docker%20Start.png)
 
-Type a <kbd>ctrl</kbd>+<kbd>D</kbd>. This will send a signal to the server to shut down. Once the server shuts down, the Docker container will stop running. You'll be back in the *Boot2Docker* console, not the Overview Server console. It will look like this:
+Type a <kbd>ctrl</kbd>+<kbd>C</kbd>. This will send a signal to the server to shut down. Once the server shuts down, the Docker container will stop running. You'll be back in the *Boot2Docker* console, not the Overview Server console. It will look like this:
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2014_31_49-Boot2Docker%20Start.png)
 
@@ -115,7 +115,7 @@ Go back to the Boot2Docker console and type `docker start -ai overview-container
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2015_00_04-Boot2Docker%20Start.png)
 
-When the console stabilizes, browse to port 9000 on the host-only network IP address and you'll see the Overview Server. Use <kbd>ctrl</kbd>+<kbd>D</kbd> to stop this session as before.
+When the console stabilizes, browse to port 9000 on the host-only network IP address and you'll see the Overview Server. Use <kbd>ctrl</kbd>+<kbd>C</kbd> to stop this session as before.
 
 ## Checkpointing a session as a new image
 
