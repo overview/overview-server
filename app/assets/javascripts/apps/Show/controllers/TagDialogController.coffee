@@ -93,7 +93,7 @@ define [
 
       @tags.fetch
         url: url
-        success: ->
-          view?.render() # tag counts have changed; render that
+        success: =>
+          @listView.render() # tag counts have changed; render that
 
     _.extend(@::, Backbone.Events)
