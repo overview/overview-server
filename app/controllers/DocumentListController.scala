@@ -36,7 +36,10 @@ trait DocumentListController extends Controller {
       Ok(views.json.DocumentList.show(page))
     }
 
-    happyFuture.recover { case spf: SearchParseFailed => BadRequest(jsonError(spf.getMessage)) }
+    // TODO move away from Squeryl and put this .transform() in the backend
+    happyFuture
+      .transform(identity(_), backend.exceptions.wrapElasticSearchException(_))
+      .recover { case spf: SearchParseFailed => BadRequest(jsonError(spf.getMessage)) }
   }
 }
 

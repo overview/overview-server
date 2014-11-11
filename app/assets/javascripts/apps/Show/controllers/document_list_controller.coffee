@@ -169,7 +169,7 @@ define [
 
     _addListView: ->
       view = new DocumentListView
-        collection: @get('documentList').documents
+        model: @get('documentList')
         selection: @listSelection
         tags: @tags
 
@@ -210,7 +210,7 @@ define [
         fetchAnotherPageIfNeeded()
 
       @on 'change:documentList', (__, documentList) ->
-        view.setCollection(documentList.documents)
+        view.setModel(documentList)
         startFetching()
 
       startFetching()

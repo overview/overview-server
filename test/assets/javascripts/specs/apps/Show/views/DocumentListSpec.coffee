@@ -5,7 +5,7 @@ define [
   'apps/Show/views/DocumentList'
   'i18n'
   'tinycolor'
-], ($, _, Backbone, DocumentList, i18n, tinycolor) ->
+], ($, _, Backbone, DocumentListView, i18n, tinycolor) ->
   HEIGHT = 100
   LI_HEIGHT = 10
 
@@ -19,6 +19,12 @@ define [
 
   class DocumentCollection extends Backbone.Collection
     model: Document
+
+  class DocumentList extends Backbone.Model
+    statusCode: null
+    error: null
+
+    initialize: (attrs, options) -> @documents = options.documents
 
   makeDummyDocument = -> new Document
   makeDocument = (id) ->
@@ -38,7 +44,9 @@ define [
 
   describe 'apps/Show/views/DocumentList', ->
     selection = undefined
+    list = undefined
     documents = undefined
+    documentList = undefined
     tags = undefined
     view = undefined
     el = undefined
@@ -72,14 +80,15 @@ define [
       })
       documents = new DocumentCollection(d)
       tags = new TagCollection(t)
-      view = new DocumentList
+      documentList = new DocumentList({}, documents: documents)
+      view = new DocumentListView
         el: document.getElementById('views-DocumentListSpec')
         attributes:
           style: 'position:absolute;overflow:auto;' # position for $.fn.position(); overflow for $.fn.scrollTop()
         liAttributes: """style="height:#{LI_HEIGHT}px;display:block;margin:0;padding:0;overflow:hidden;" """
         ulAttributes: """style="height:100%;display:block;margin:0;padding:0;list-style:none;" """
         selection: selection
-        collection: documents
+        model: documentList
         tags: tags
 
     beforeEach ->
@@ -110,6 +119,10 @@ define [
       it 'should add a new document', ->
         documents.add(makeDummyDocument())
         expect(view.$el.html()).not.to.eq('')
+
+      it 'should add an error message', ->
+        documentList.set(statusCode: 400, error: 'error message')
+        expect(view.$el.html()).to.contain('error message')
 
     describe 'with a complete DocumentCollection', ->
       beforeEach ->
@@ -220,18 +233,18 @@ define [
         expect(callback.lastCall.args[1]).to.eq(1)
         expect(callback.lastCall.args[2]).to.deep.eq({ meta: false, shift: false })
 
-      it 'should render a new collection on setCollection()', ->
-        view.setCollection(new DocumentCollection([]))
+      it 'should render a new list on setModel()', ->
+        view.setModel(new DocumentList({}, documents: new DocumentCollection([])))
         expect(view.$el.html()).to.eq('')
 
-      it 'should listen for added items after setCollection()', ->
+      it 'should listen for added items after setModel()', ->
         documents = new DocumentCollection([])
-        view.setCollection(documents)
+        view.setModel(new DocumentList({}, documents: documents))
         documents.add(makeDummyDocument())
         expect(view.$el.html()).not.to.eq('')
 
-      it 'should not listen on the old collection after setCollection()', ->
-        view.setCollection(new DocumentCollection([]))
+      it 'should not listen on the old collection after setModel()', ->
+        view.setModel(new DocumentList({}, documents: new DocumentCollection([])))
         documents.add(makeDummyDocument())
         expect(view.$el.html()).to.eq('')
 

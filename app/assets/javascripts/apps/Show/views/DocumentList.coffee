@@ -38,6 +38,10 @@ define [
       <ul class="documents" <%= ulAttributes %>><%= _.map(collection.models, renderModel).join('') %></ul>
     """)
 
+    error: _.template("""
+      <div class="error"><%- error %></div>
+    """)
+
   # Shows a list of Document models.
   #
   # Each document has a list of tags.
@@ -69,32 +73,35 @@ define [
       'click .document': '_onClickDocument'
 
     initialize: ->
-      throw 'Must pass options.collection, a Collection of Backbone.Models' if 'collection' not of @options
+      throw 'Do not pass options.collection' if @collection?
+      throw 'Must pass options.model, a DocumentList' if !@model? || !@model.documents?
       throw 'Must pass options.tags, a Collection of Backbone.Tags' if !@options.tags
       throw 'Must pass options.selection, a Backbone.Model with cursorIndex and selectedIndices' if !@options.selection
-
-      @_listenToCollection(@collection) if @collection?
 
       @listenTo(@options.tags, 'change', @_renderTag)
       @listenTo(@options.selection, 'change:selectedIndices', (model, value) => @_renderSelectedIndices(value))
       @listenTo(@options.selection, 'change:cursorIndex', (model, value) => @_renderCursorIndex(value))
       @$el.on('scroll', => @_updateMaxViewedIndex())
-      @render()
+
+      @setModel(@model) # calls @render()
       @_renderSelectedIndices(@options.selection.get('selectedIndices'))
       @_renderCursorIndex(@options.selection.get('cursorIndex'))
 
-    _listenToCollection: (collection) ->
-      @listenTo(collection, 'reset', @render)
-      @listenTo(collection, 'change', @_changeModel)
-      @listenTo(collection, 'remove', @_removeModel)
-      @listenTo(collection, 'add', @_addModel)
-      @listenTo(collection, 'tag', @_renderAllTags)
-      @listenTo(collection, 'untag', @_renderAllTags)
+    _listenToModel: ->
+      @listenTo(@model, 'change:error', @render)
+      @listenTo(@collection, 'reset', @render)
+      @listenTo(@collection, 'change', @_changeModel)
+      @listenTo(@collection, 'remove', @_removeModel)
+      @listenTo(@collection, 'add', @_addModel)
+      @listenTo(@collection, 'tag', @_renderAllTags)
+      @listenTo(@collection, 'untag', @_renderAllTags)
 
-    setCollection: (collection) ->
+    setModel: (model) ->
+      @stopListening(@model) if @model?
       @stopListening(@collection) if @collection?
-      @collection = collection
-      @_listenToCollection(@collection) if @collection?
+      @model = model
+      @collection = model.documents
+      @_listenToModel()
       @render()
 
     _renderModelHtml: (model) ->
@@ -114,8 +121,10 @@ define [
         liAttributes: @options.liAttributes || ''
 
     render: ->
-      html = if @collection?.length
-        html = templates.collection({
+      html = if @model.get('error')
+        templates.error(error: @model.get('error'), t: t)
+      else if @collection.length
+        templates.collection({
           collection: @collection
           t: t
           renderModel: (model) => @_renderModelHtml(model)
