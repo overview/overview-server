@@ -35,11 +35,15 @@ Now you can test your token. On a command-line:
 
 This API endpoint will list all the tags on the document set.
 
-### Rules of API requests
+## Rules of API requests
 
 * Requests and responses are always in [JSON](http://json.org).
 * All requests must be authorized. That means they must have an `Authorization` header of `Basic #{base64encode("MYTOKEN:x-auth-token")}`.
 * `GET` and `HEAD` requests won't modify the document set. `POST`, `PUT`, `PATCH` and `DELETE` requests will.
+
+## Limits
+
+By default, you may not POST a request larger than 100 kilobytes. Should you receive a `413 Entity Too Large` HTTP error, please contact us and specify the endpoints you need: we'll up the limit.
 
 ## HTTPS
 
