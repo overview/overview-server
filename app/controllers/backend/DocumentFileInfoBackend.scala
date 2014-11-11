@@ -34,14 +34,15 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
         f <- Files if d.fileId === f.id
       } yield (d.title, f.viewOid, f.viewSize)
 
-    q.list.map{f => FileViewInfo(f._1.getOrElse(""), f._2, f._3.getOrElse(0))}
+    val fileInfo = q.list.map(f => (f._1.getOrElse(""), f._2, f._3.getOrElse(0l)))
+    fileInfo.map(documentViewInfoFactory.fromFile)
   }
     
   protected val documentViewInfoFactory: DocumentViewInfoFactory
   
   protected trait DocumentViewInfoFactory {
     def fromPage(info: (String, Int, Long, Long)): PageViewInfo
-    def fromFile(title: String, viewOid: Long, size: Long): FileViewInfo
+    def fromFile(info: (String, Long, Long)): FileViewInfo
   }
 }
 
@@ -50,7 +51,7 @@ object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend 
   override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
     def fromPage(info: (String, Int, Long, Long)): PageViewInfo = (PageViewInfo.apply _).tupled(info)
     
-    def fromFile(title: String, viewOid: Long, size: Long): FileViewInfo = ???
+    def fromFile(info: (String, Long, Long)): FileViewInfo =  (FileViewInfo.apply _).tupled(info)
   } 
 }
 

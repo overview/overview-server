@@ -12,15 +12,14 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
 
     "find info for pages" in new SplitDocumentsScope {
       val infos = await(backend.indexDocumentFileInfosForPages(documentSet.id))
-      pages.map { p =>
-        there was one(backend.mockFactory).fromPage(filename, p.pageNumber, p.id, p.data.get.length)
-      }
+      
+      pagesWereUsedInViewInfoCreation
     }
 
     "find info for files" in new FileScope {
       val infos = await(backend.indexDocumentFileInfosForFiles(documentSet.id))
 
-      infos must containTheSameElementsAs(fileInfos)
+      there was one(backend.mockFactory).fromFile((filename, oid, size))
     }
   }
 
@@ -36,13 +35,14 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
       factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id),
         pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
 
-    val pageInfos = pages.map(p => PageViewInfo(filename, p.pageNumber, p.id, p.data.get.length))
+    def pagesWereUsedInViewInfoCreation = pages.map { p =>
+      there was one(backend.mockFactory).fromPage((filename, p.pageNumber, p.id, p.data.get.length))
+    }
+
   }
 
   trait FileScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbDocumentFileInfoBackend {
-      override val documentViewInfoFactory = smartMock[DocumentViewInfoFactory]
-    }
+    val backend = new TestDbDocumentFileInfoBackend(session)
 
     val filename = "filename"
     val oid = 1234l
@@ -52,12 +52,12 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     val file = factory.file(name = filename, viewOid = oid, viewSize = Some(size))
     val document = factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id))
 
-    val fileInfos = Seq(FileViewInfo(filename, oid, size))
   }
 
   class TestDbDocumentFileInfoBackend(session: Session) extends TestDbBackend(session) with DbDocumentFileInfoBackend {
     override val documentViewInfoFactory = smartMock[DocumentViewInfoFactory]
     val mockFactory = documentViewInfoFactory
     mockFactory.fromPage(any) returns smartMock[PageViewInfo]
+    mockFactory.fromFile(any) returns smartMock[FileViewInfo]
   }
 }
