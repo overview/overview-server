@@ -7,6 +7,8 @@
 4. [In the Docker console, type `docker pull znmeb/overview-stripped`](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#downloading-the-overview-server-image) to download the Overview image.
 5. [Type `docker run -it -p 9000:9000 --name=overview-container znmeb/overview-stripped`](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#running-the-server) to start the server.
 6. [When the server is ready, browse to port 9000 on the server IP address](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#wait-for-the-server-to-stabilize). This is probably `192.168.59.103:9000`.
+7. At the end of an Overview session, [stop the server by typing <kbd>ctrl</kbd>+<kbd>C</kbd> in the console](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#stopping-the-server). Your data will be saved.
+8. To restart the server, [go back to the Boot2Docker console and type `docker start -ai overview-container`](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#restarting-the-server).
 
 ## Installing Boot2Docker
 
@@ -99,7 +101,7 @@ As you work with Overview in the browser, you can minimize the console window if
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2014_27_30-Boot2Docker%20Start.png)
 
-Type a <kbd>ctrl</kbd>+<kbd>D</kbd>. This will send a signal to the server to shut down. Once the server shuts down, the Docker container will stop running. You'll be back in the *Boot2Docker* console, not the Overview Server console. It will look like this:
+Type a <kbd>ctrl</kbd>+<kbd>C</kbd>. This will send a signal to the server to shut down. Once the server shuts down, the Docker container will stop running. You'll be back in the *Boot2Docker* console, not the Overview Server console. It will look like this:
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2014_31_49-Boot2Docker%20Start.png)
 
@@ -115,7 +117,7 @@ Go back to the Boot2Docker console and type `docker start -ai overview-container
 
 ![](https://raw.githubusercontent.com/znmeb/overview-server/master/znmeb-release/WindowsScreenshots/2014-11-06%2015_00_04-Boot2Docker%20Start.png)
 
-When the console stabilizes, browse to port 9000 on the host-only network IP address and you'll see the Overview Server. Use <kbd>ctrl</kbd>+<kbd>D</kbd> to stop this session as before.
+When the console stabilizes, browse to port 9000 on the host-only network IP address and you'll see the Overview Server. Use <kbd>ctrl</kbd>+<kbd>C</kbd> to stop this session as before.
 
 ## Checkpointing a session as a new image
 
