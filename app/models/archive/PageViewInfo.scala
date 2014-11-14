@@ -2,9 +2,8 @@ package models.archive
 
 import java.io.InputStream
 
-case class PageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long, size: Long)
 
-abstract class PageViewInfo1(documentTitle: String, pageNumber: Int, pageId: Long, size: Long) extends DocumentViewInfo {
+abstract class PageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long, size: Long) extends DocumentViewInfo {
 
   def archiveEntry: ArchiveEntry =
     ArchiveEntry(fileNameWithPage(removePdf(documentTitle), pageNumber), size, pageDataStream(pageId) _)
@@ -21,17 +20,17 @@ abstract class PageViewInfo1(documentTitle: String, pageNumber: Int, pageId: Lon
   }
 }
 
-object PageViewInfo1 {
+object PageViewInfo {
   import java.io.ByteArrayInputStream
   import models.OverviewDatabase
   import org.overviewproject.database.Slick.simple._
   import org.overviewproject.models.tables.Pages
 
-  def apply(documentTitle: String, pageNumber: Int, pageId: Long, size: Long): PageViewInfo1 =
+  def apply(documentTitle: String, pageNumber: Int, pageId: Long, size: Long): PageViewInfo =
     new DbPageViewInfo(documentTitle, pageNumber, pageId, size)
 
   private class DbPageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long, size: Long)
-      extends PageViewInfo1(documentTitle, pageNumber, pageId, size) {
+      extends PageViewInfo(documentTitle, pageNumber, pageId, size) {
 
     override protected val storage = new DbStorage
 

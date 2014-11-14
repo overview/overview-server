@@ -23,9 +23,6 @@ class FileViewInfoSpec extends ViewInfoSpecification {
 
     val fileViewInfo = FileViewInfo(originalName, viewOid, size)
 
-    val factory = new TestArchiveEntryFactory(viewOid)
-    val entries = factory.createFromFileViewInfos(Seq(fileViewInfo))
-    
     val viewInfo = new TestFileViewInfo(originalName, viewOid, size)
     val entry = viewInfo.archiveEntry
     
@@ -43,7 +40,7 @@ class FileViewInfoSpec extends ViewInfoSpecification {
     override def originalName = baseName + Pdf.toUpperCase
   }
 
-  class TestFileViewInfo(title: String, oid: Long, size: Long) extends FileViewInfo1(title, oid, size) {
+  class TestFileViewInfo(title: String, oid: Long, size: Long) extends FileViewInfo(title, oid, size) {
     override val storage = smartMock[Storage]
     val mockStorage = storage
   }

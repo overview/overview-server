@@ -2,9 +2,8 @@ package models.archive
 
 import java.io.InputStream
 
-case class FileViewInfo(documentTitle: String, viewOid: Long, size: Long)
 
-abstract class FileViewInfo1(documentTitle: String, viewOid: Long, size: Long) extends DocumentViewInfo {
+abstract class FileViewInfo(documentTitle: String, viewOid: Long, size: Long) extends DocumentViewInfo {
 
   def archiveEntry: ArchiveEntry =
     ArchiveEntry(asPdf(removePdf(documentTitle)), size, largeObjectInputStream(viewOid) _)
@@ -17,16 +16,16 @@ abstract class FileViewInfo1(documentTitle: String, viewOid: Long, size: Long) e
   }
 }
 
-object FileViewInfo1 {
+object FileViewInfo {
   import controllers.util.PlayLargeObjectInputStream
 
   private val LOBufferSize = 1024 * 1024
   
-  def apply(documentTitle: String, viewOid: Long, size: Long): FileViewInfo1 =
+  def apply(documentTitle: String, viewOid: Long, size: Long): FileViewInfo =
     new DbFileViewInfo(documentTitle, viewOid, size)
 
   private class DbFileViewInfo(documentTitle: String, viewOid: Long, size: Long)
-      extends FileViewInfo1(documentTitle, viewOid, size) {
+      extends FileViewInfo(documentTitle, viewOid, size) {
 
     override protected val storage = new DbStorage
 

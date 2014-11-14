@@ -1,7 +1,10 @@
 package models.archive
 
 trait DocumentViewInfo {
-  def removePdf(fileName: String): String = {
+  
+  def archiveEntry: ArchiveEntry
+
+  protected def removePdf(fileName: String): String = {
     val caseInsensitivePdfExtension = "(?i)\\.pdf$"
     val dot = "\\."
     val dotReplacement = "_"
@@ -11,7 +14,7 @@ trait DocumentViewInfo {
       replaceAll(dot, dotReplacement)
   }
 
-  def asPdf(fileName: String): String = {
+  protected def asPdf(fileName: String): String = {
     val Pdf = ".pdf"
     fileName + Pdf
   }

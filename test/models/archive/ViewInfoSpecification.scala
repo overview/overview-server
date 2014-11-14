@@ -30,13 +30,4 @@ trait ViewInfoSpecification extends Specification with Mockito {
   }
 
 
-  class TestArchiveEntryFactory(id: Long) extends ArchiveEntryFactory {
-
-    override protected val storage = smartMock[Storage]
-    storage.largeObjectInputStream(id) returns smartMock[InputStream]
-
-    storage.pageDataStream(id) returns Some(smartMock[InputStream])
-    def mockStorage = storage
-  }
-
 }

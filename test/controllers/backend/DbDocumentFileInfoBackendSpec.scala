@@ -1,7 +1,6 @@
 package controllers.backend
 
-import models.archive.FileViewInfo
-import models.archive.PageViewInfo
+import models.archive.DocumentViewInfo
 
 import org.specs2.mock.Mockito
 import slick.jdbc.JdbcBackend.Session
@@ -57,7 +56,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
   class TestDbDocumentFileInfoBackend(session: Session) extends TestDbBackend(session) with DbDocumentFileInfoBackend {
     override val documentViewInfoFactory = smartMock[DocumentViewInfoFactory]
     val mockFactory = documentViewInfoFactory
-    mockFactory.fromPage(any) returns smartMock[PageViewInfo]
-    mockFactory.fromFile(any) returns smartMock[FileViewInfo]
+    mockFactory.fromPage1(any) returns smartMock[DocumentViewInfo]
+    mockFactory.fromFile1(any) returns smartMock[DocumentViewInfo]
   }
 }

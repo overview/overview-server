@@ -25,9 +25,6 @@ class PageViewInfoSpec extends ViewInfoSpecification {
 
     val pageViewInfo = PageViewInfo(originalName, pageNumber, pageId, size)
 
-    val factory = new TestArchiveEntryFactory(pageId)
-    val entries = factory.createFromPageViewInfos(Seq(pageViewInfo))
-
     val viewInfo = new TestPageViewInfo(originalName, pageNumber, pageId, size)
     val entry = viewInfo.archiveEntry
     
@@ -42,7 +39,7 @@ class PageViewInfoSpec extends ViewInfoSpecification {
   }
 
   class TestPageViewInfo(title: String, pageNumber: Int, pageId: Long, size: Long)
-      extends PageViewInfo1(title, pageNumber, pageId, size) {
+      extends PageViewInfo(title, pageNumber, pageId, size) {
     override protected val storage = smartMock[Storage]
     
     val mockStorage = storage

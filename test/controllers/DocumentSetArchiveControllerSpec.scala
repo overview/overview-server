@@ -4,7 +4,6 @@ import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
 import models.archive.Archive
 import models.DocumentFileInfo
-import models.archive.ArchiveEntryFactory
 import models.archive.ArchiveEntry
 import java.io.ByteArrayInputStream
 import scala.concurrent.Future
@@ -12,6 +11,7 @@ import play.api.i18n.Messages
 import controllers.backend.DocumentFileInfoBackend
 import models.archive.FileViewInfo
 import models.archive.PageViewInfo
+import models.archive.DocumentViewInfo
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
 
@@ -33,10 +33,6 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       h.contentAsBytes(result) must be equalTo archiveData
     }
 
-    "create archive from pages if document set is split" in new SplitDocumentSet {
-      h.contentAsBytes(result) must be equalTo archiveData
-    }
-    
     "redirect if archiving is not supported" in new UnsupportedDocumentSet {
       h.status(result) must beEqualTo(h.SEE_OTHER)
     }
@@ -61,50 +57,43 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
     def pageViewInfos: Seq[PageViewInfo] = Seq.empty
     def fileViewInfos: Seq[FileViewInfo] = Seq.fill(5)(smartMock[FileViewInfo])
+
+    def numberOfDocuments = 5
+    def viewInfos: Seq[DocumentViewInfo] = Seq.fill(numberOfDocuments) {
+      val entry = smartMock[ArchiveEntry]
+      val viewInfo = smartMock[DocumentViewInfo]
+      viewInfo.archiveEntry returns entry
+      viewInfo
+    }
+
     def result = {
-      val controller = new TestDocumentSetArchiveController(documentSetId, archiveData, pageViewInfos, fileViewInfos)
+      val controller = new TestDocumentSetArchiveController(documentSetId, archiveData, viewInfos)
       controller.archive(documentSetId, fileName)(request)
     }
 
     def header(key: String): Option[String] = h.header(key, result)
   }
 
-
-  trait SplitDocumentSet extends DocumentSetArchiveContext {
-    override def pageViewInfos = Seq.fill(10)(smartMock[PageViewInfo])
-    override def fileViewInfos = Seq.empty
-  }
-  
   trait UnsupportedDocumentSet extends DocumentSetArchiveContext {
-    override def pageViewInfos = Seq.empty
-    override def fileViewInfos = Seq.empty
+    override def numberOfDocuments = 0
   }
 
   class TestDocumentSetArchiveController(
       documentSetId: Long,
       archiveData: Array[Byte],
-      pageViewInfos: Seq[PageViewInfo],
-      fileViewInfos: Seq[FileViewInfo]) extends DocumentSetArchiveController {
+      documentViewInfos: Seq[DocumentViewInfo]) extends DocumentSetArchiveController {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val archiver = smartMock[Archiver]
     val archive = smartMock[Archive]
-    
+
     archive.size returns archiveData.length
     archive.stream returns new ByteArrayInputStream(archiveData)
 
     val backend = smartMock[DocumentFileInfoBackend]
-    backend.indexDocumentFileInfosForFiles(documentSetId) returns Future(fileViewInfos)
-    backend.indexDocumentFileInfosForPages(documentSetId) returns Future(pageViewInfos)
-    
-    val archiveEntriesFromPages = Seq.fill(pageViewInfos.length)(smartMock[ArchiveEntry])
-    val archiveEntriesFromFiles = Seq.fill(fileViewInfos.length)(smartMock[ArchiveEntry])
-    
-    val archiveEntryFactory = smartMock[ArchiveEntryFactory]
-    archiveEntryFactory.createFromPageViewInfos(any) returns archiveEntriesFromPages
-    archiveEntryFactory.createFromFileViewInfos(fileViewInfos) returns archiveEntriesFromFiles
-    
-    archiver.createArchive(archiveEntriesFromPages ++ archiveEntriesFromFiles) returns archive
+    backend.indexDocumentViewInfos(documentSetId) returns Future(documentViewInfos)
+
+    archiver.createArchive(any) returns archive
 
   }
 }

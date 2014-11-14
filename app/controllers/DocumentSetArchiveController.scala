@@ -11,8 +11,6 @@ import models.DocumentFileInfo
 import models.archive.Archive
 import models.archive.ArchiveEntry
 import models.archive.ArchiveEntryCollection
-import models.archive.ArchiveEntryFactory
-import models.archive.ArchiveEntryFactoryWithStorage
 import models.archive.zip.ZipArchive
 import play.api.mvc.Result
 import controllers.backend.DocumentFileInfoBackend
@@ -23,13 +21,9 @@ trait DocumentSetArchiveController extends Controller {
 
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     for {
-      pageViewInfos <- backend.indexDocumentFileInfosForPages(documentSetId)
-      fileViewInfos <- backend.indexDocumentFileInfosForFiles(documentSetId)
+      documentViewInfos <- backend.indexDocumentViewInfos(documentSetId)
     } yield {
-      val archiveEntries = 
-        archiveEntryFactory.createFromPageViewInfos(pageViewInfos) ++
-        archiveEntryFactory.createFromFileViewInfos(fileViewInfos)
-      
+      val archiveEntries =  documentViewInfos.map(_.archiveEntry)
       
       if (archiveEntries.nonEmpty) streamArchive(archiveEntries, filename)
       else flashUnsupportedWarning
@@ -57,8 +51,6 @@ trait DocumentSetArchiveController extends Controller {
   protected val archiver: Archiver
   protected val backend: DocumentFileInfoBackend
 
-  protected val archiveEntryFactory: ArchiveEntryFactory
-
   protected trait Archiver {
     def createArchive(entries: Seq[ArchiveEntry]): Archive
   }
@@ -74,6 +66,4 @@ object DocumentSetArchiveController extends DocumentSetArchiveController {
   }
 
   override protected val backend: DocumentFileInfoBackend = DocumentFileInfoBackend
-  
-  override protected val archiveEntryFactory: ArchiveEntryFactory = new ArchiveEntryFactoryWithStorage
 }
