@@ -15,7 +15,7 @@ trait ViewInfoSpecification extends Specification with Mockito {
     def originalName = "file.doc"
     def cleanName = originalName.replaceAll("\\.", "_")
 
-    val size = 3418913
+    val size: Long = 3418913
 
     def matchParameters(name: String, size: Long, oid: Long) = { (e: ArchiveEntry) =>
       val s = e.data()
