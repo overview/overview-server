@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
   gcc \
   libreoffice-common \
   make \
+  nodejs \
   openjdk-7-jre-headless \
   postgresql
 
