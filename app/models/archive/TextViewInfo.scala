@@ -11,7 +11,7 @@ abstract class TextViewInfo(
   override def archiveEntry: ArchiveEntry = {
     val filename = suppliedId
       .orElse(title)
-      .get
+      .getOrElse(documentId.toString)
 
     ArchiveEntry(asTxt(filename), size, textInputStream(documentId) _)
   }

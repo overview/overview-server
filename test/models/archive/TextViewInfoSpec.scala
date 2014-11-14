@@ -15,6 +15,10 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
     "use title as filename if there is no suppliedId" in new TitleContext {
       entry must matchParameters(titleValue + Txt, size, documentId)
     }
+    
+    "use id as filename if there is no title or suppliedId" in new DocumentIdContext {
+      entry must matchParameters(documentId + Txt, size, documentId)
+    }
   }
 
   trait TextViewInfoContext extends ArchiveEntryFactoryContext {
@@ -36,6 +40,10 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
 
   trait TitleContext extends TextViewInfoContext {
     override def suppliedId: Option[String] = None
+  }
+  
+  trait DocumentIdContext extends TitleContext {
+    override def title: Option[String] = None
   }
 
   class TestTextViewInfo(suppliedId: Option[String], title: Option[String], documentId: Long, size: Long)
