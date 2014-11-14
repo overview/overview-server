@@ -13,16 +13,7 @@ USER overview
 
 # get the source repository
 WORKDIR /home/overview/
-RUN git clone https://github.com/znmeb/overview-server overview-server-source
-
-# sync with upstream master
-WORKDIR /home/overview/overview-server-source/
-RUN git remote add upstream https://github.com/overview/overview-server
-RUN git remote -v
-RUN git fetch upstream
-RUN git checkout master
-RUN git merge upstream/master
-RUN git status
+RUN git clone https://github.com/overview/overview-server overview-server-source
 
 # overwrite Redis with upstream source
 WORKDIR /home/overview/overview-server-source/deps/redis/
