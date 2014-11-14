@@ -9,7 +9,7 @@
 #
 
 # run the release image
-docker run -d --name="overviewc" znmeb/overview-release
+docker run -d --name="overviewc" znmeb/overview-build
 
 # copy the release zipfile
 sudo rm -f overview-server.zip
