@@ -6,18 +6,18 @@ class FileViewInfoSpec extends ViewInfoSpecification {
   "FileViewInfo" should {
 
     "create ArchiveEntry" in new FileViewInfoContext {
-      matchesEntryParams(cleanName + Pdf, size, viewOid)(entry)
+      entry must matchParameters(cleanName + Pdf, size, viewOid)
+    }
+
+    "only have a single .pdf extension for pdf files" in new PdfFileContext {
+      entry must matchParameters(originalName, size, viewOid)
+    }
+
+    "detect PDF extension regardless of case" in new UpperCasePdfFileContext {
+      entry must matchParameters(baseName + Pdf, size, viewOid)
     }
   }
-
-  "only have a single .pdf extension for pdf files" in new PdfFileContext {
-    matchesEntryParams(originalName, size, viewOid)(entry)
-  }
-
-  "detect PDF extension regardless of case" in new UpperCasePdfFileContext {
-    matchesEntryParams(baseName + Pdf, size, viewOid)(entry)
-  }
-
+  
   trait FileViewInfoContext extends ArchiveEntryFactoryContext {
     val viewOid = 123l
 
@@ -25,11 +25,10 @@ class FileViewInfoSpec extends ViewInfoSpecification {
 
     val viewInfo = new TestFileViewInfo(originalName, viewOid, size)
     val entry = viewInfo.archiveEntry
-    
+
     override def streamWasCreatedFromId(id: Long): MatchResult[Any] =
       there was one(viewInfo.mockStorage).largeObjectInputStream(id)
   }
-  
 
   trait PdfFileContext extends FileViewInfoContext {
     override def originalName = "file.pdf"

@@ -7,11 +7,11 @@ class PageViewInfoSpec extends ViewInfoSpecification {
   "PageViewInfo" should {
 
     "create entries for PageViews" in new PageViewInfoContext {
-      matchesEntryParams(pageTitle + Pdf, size, pageId)(entry)
+      entry must matchParameters(pageTitle + Pdf, size, pageId)
     }
 
     "remove pdf extension from filename with page" in new PdfPageContext {
-      matchesEntryParams(s"$baseName $pageDescriptor" + Pdf, size, pageId)(entry)
+      entry must matchParameters(s"$baseName $pageDescriptor" + Pdf, size, pageId)
     }
 
   }

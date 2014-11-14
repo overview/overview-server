@@ -17,14 +17,13 @@ trait ViewInfoSpecification extends Specification with Mockito {
 
     val size = 3418913
 
-    def matchesEntryParams(name: String, size: Long, oid: Long)(e: ArchiveEntry) = {
-      e.name must be equalTo name
-      e.size must be equalTo size
-
+    def matchParameters(name: String, size: Long, oid: Long) = { (e: ArchiveEntry) =>
       val s = e.data()
+      (e.name must be equalTo name) and
+      (e.size must be equalTo size) and
       streamWasCreatedFromId(oid)
     }
-
+    
     def streamWasCreatedFromId(id: Long): MatchResult[Any]
 
   }
