@@ -10,8 +10,7 @@
 
 for i in \
   os-packages \
-  source \
-  release \
+  build \
   stripped
 do
   pushd ${i}
