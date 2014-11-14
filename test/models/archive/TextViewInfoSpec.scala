@@ -35,7 +35,7 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
     val entry = textViewInfo.archiveEntry
 
     override def streamWasCreatedFromId(id: Long): MatchResult[Any] =
-      id must be equalTo (documentId)
+      there was one(textViewInfo.mockStorage).textInputStream(id)
   }
 
   trait TitleContext extends TextViewInfoContext {
@@ -49,7 +49,8 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
   class TestTextViewInfo(suppliedId: Option[String], title: Option[String], documentId: Long, size: Long)
       extends TextViewInfo(suppliedId, title, documentId, size) {
 
-    override protected def textInputStream(documentId: Long)(): InputStream = smartMock[InputStream]
+    override protected val storage = smartMock[Storage]
+    val mockStorage = storage
   }
 
 }

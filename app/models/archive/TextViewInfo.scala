@@ -21,5 +21,10 @@ abstract class TextViewInfo(
     filename + Txt
   }
 
-  protected def textInputStream(documentId: Long)(): InputStream
+  private def textInputStream(documentId: Long)(): InputStream = storage.textInputStream(documentId)
+  
+  protected val storage: Storage
+  protected trait Storage {
+    def textInputStream(documentId: Long): InputStream
+  }
 }
