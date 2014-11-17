@@ -10,4 +10,4 @@
 #
 
 docker login
-docker push znmeb/overview-stripped
+docker push overview/overview-stripped
