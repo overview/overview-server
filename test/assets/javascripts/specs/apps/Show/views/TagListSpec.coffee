@@ -29,6 +29,7 @@ define [
         'views.Tree.show.tag_list.th.count': 'th.count'
         'views.Tree.show.tag_list.th.name': 'th.name'
         'views.Tree.show.tag_list.n_documents': 'n_documents,{0}'
+        'views.Tree.show.tag_list.loading_n_documents': 'loading_n_documents'
 
     afterEach ->
       view?.remove()
@@ -147,11 +148,16 @@ define [
         expect($tr.find('input[name=name]').val()).to.eq('tag11')
         expect($tr.find('input[name=color]').val()).to.eq('#111111')
 
-      it 'should render a tag without size as size 0', ->
+      it 'should render a tag without size as loading_n_documents', ->
         # https://github.com/overview/overview-server/issues/568
         collection.first().set(size: null, sizeInTree: null)
         view.render()
-        expect(view.$('tbody tr:eq(0) td.count').text()).to.eq('n_documents,0')
+        expect(view.$('tbody tr:eq(0) td.count')).to.contain('loading_n_documents')
+
+      it 'should render a tag without tree-size as loading_n_documents', ->
+        collection.first().set(size: 20, sizeInTree: null)
+        view.render()
+        expect(view.$('tbody tr:eq(0) td.tree-count')).to.contain('loading_n_documents')
 
       it 'should not render a separate count for just the tree', ->
         expect(view.$('th.tree-count').length).to.eq(0)

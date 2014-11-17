@@ -58,9 +58,21 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
           </form>
         </td>
         <% if (hasSeparateTreeCount) { %>
-          <td class="tree-count"><%- t('n_documents', tag.get('sizeInTree') || 0) %></td>
+          <td class="tree-count">
+            <% if (_.isNumber(tag.get('sizeInTree'))) { %>
+              <%- t('n_documents', tag.get('sizeInTree')) %>
+            <% } else { %>
+              <%- t('loading_n_documents') %>
+            <% } %>
+          </td>
         <% } %>
-        <td class="count"><%- t('n_documents', tag.get('size') || 0) %></td>
+        <td class="count">
+          <% if (_.isNumber(tag.get('size'))) { %>
+            <%- t('n_documents', tag.get('size')) %>
+          <% } else { %>
+            <%- t('loading_n_documents') %>
+          <% } %>
+        </td>
         <td class="actions"><a class="remove" href="#"><%- t('remove') %></a></td>
       </tr>
     """)
