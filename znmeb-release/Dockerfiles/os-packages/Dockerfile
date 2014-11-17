@@ -5,6 +5,9 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 RUN apt-get update && apt-get install -y \
   gcc \
   libreoffice-common \
+  libreoffice-writer \
+  libreoffice-calc \
+  libreoffice-impress \
   make \
   nodejs \
   openjdk-7-jre-headless \
