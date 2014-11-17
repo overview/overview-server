@@ -36,8 +36,9 @@ define [
         @sandbox.restore()
 
       it 'should set params', -> expect(@list.params).to.eq(@params)
-      it 'should be empty', -> expect(@docs.pluck('type')).to.deep.eq([])
+      it 'should be empty', -> expect(@docs.length).to.eq(0)
       it 'should start with length=null', -> expect(@list.get('length')).to.be.null
+      it 'should start with loading=false', -> expect(@list.get('loading')).to.be.false
       it 'should have nDocumentsPerPage=20', -> expect(@list.nDocumentsPerPage).to.eq(20)
       it 'should have nPagesFetched=0', -> expect(@list.get('nPagesFetched')).to.eq(0)
 
@@ -46,8 +47,9 @@ define [
           @promise1 = @list.fetchNextPage()
           undefined
 
-        it 'should have a loading placeholder', -> expect(@docs.pluck('type')).to.deep.eq(['loading'])
         it 'should have length=null', -> expect(@list.get('length')).to.be.null
+        it 'should have no documents', -> expect(@docs.length).to.eq(0)
+        it 'should have loading=true', -> expect(@list.get('loading')).to.be.true
         it 'should have nPagesFetched=0', -> expect(@list.get('nPagesFetched')).to.eq(0)
         it 'should have isComplete=false', -> expect(@list.isComplete()).to.be.false
         it 'should request /documents', ->
@@ -59,13 +61,13 @@ define [
           p1 = @list.fetchNextPage()
           p2 = @list.fetchNextPage()
           expect(p1).to.eq(p2)
-          expect(@docs.pluck('type')).to.deep.eq([ 'loading' ])
+          expect(@docs.length).to.eq(0)
 
         describe 'on error', ->
           beforeEach ->
             @sandbox.server.requests[0].respond(400, {'Content-Type': 'application/json'}, '{"message":"error message"}')
 
-          it 'should remove the loading document', -> expect(@docs.length).to.eq(0)
+          it 'should set loading=false', -> expect(@list.get('loading')).to.be.false
           it 'should set statusCode', -> expect(@list.get('statusCode')).to.eq(400)
           it 'should set error', -> expect(@list.get('error')).to.eq('error message')
 
@@ -77,8 +79,8 @@ define [
             ))
             @promise1 # mocha-as-promised
 
-          it 'should remove the loading document', -> expect(@docs.length).to.eq(0)
           it 'should set length', -> expect(@list.get('length')).to.eq(0)
+          it 'should set loading=false', -> expect(@list.get('loading')).to.be.false
           it 'should have nPagesFetched=1', -> expect(@list.get('nPagesFetched')).to.eq(1)
           it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
           it 'should return a resolved promise on fetchNextPage()', -> expect(@list.fetchNextPage()).to.be.fulfilled
@@ -93,6 +95,7 @@ define [
 
           it 'should populate with the documents', -> expect(@docs.pluck('id')).to.deep.eq([ 1, 2, 3 ])
           it 'should set length', -> expect(@list.get('length')).to.eq(3)
+          it 'should set loading=false', -> expect(@list.get('loading')).to.be.false
           it 'should have nPagesFetched=1', -> expect(@list.get('nPagesFetched')).to.eq(1)
           it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
 
@@ -105,6 +108,7 @@ define [
             @promise1 # mocha-as-promised
 
           it 'should populate with the documents', -> expect(@docs.length).to.eq(@list.nDocumentsPerPage)
+          it 'should have loading=false', -> expect(@list.get('loading')).to.be.false
           it 'should set length', -> expect(@list.get('length')).to.eq(@list.nDocumentsPerPage + 1)
           it 'should have isComplete=false', -> expect(@list.isComplete()).to.be.false
 
@@ -140,14 +144,13 @@ define [
               undefined # mocha-as-promised
 
             it 'should have nPagesFetched=1', -> expect(@list.get('nPagesFetched')).to.eq(1)
+            it 'should have loading=true', -> expect(@list.get('loading')).to.be.true
 
             it 'should send a new request', ->
               expect(@sandbox.server.requests.length).to.eq(2)
               req = @sandbox.server.requests[1]
               expect(req.method).to.eq('GET')
               expect(req.url).to.eq('/documentsets/1/documents?tags=2&limit=20&offset=20')
-
-            it 'should add a loading document', -> expect(@docs.last().get('type')).to.eq('loading')
 
             describe 'on success', ->
               beforeEach ->
@@ -158,6 +161,7 @@ define [
                 @promise2
 
               it 'should have nPagesFetched=2', -> expect(@list.get('nPagesFetched')).to.eq(2)
+              it 'should have loading=false', -> expect(@list.get('loading')).to.be.false
               it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
               it 'should have all documents', -> expect(@docs.pluck('id')).to.deep.eq([ 1 .. (@list.nDocumentsPerPage + 1) ])
               it 'should return a resolved promise on fetchNextPage()', -> expect(@list.fetchNextPage()).to.be.fulfilled

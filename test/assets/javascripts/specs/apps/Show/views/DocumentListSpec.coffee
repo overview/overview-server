@@ -23,6 +23,7 @@ define [
   class DocumentList extends Backbone.Model
     statusCode: null
     error: null
+    loading: false
 
     initialize: (attrs, options) -> @documents = options.documents
 
@@ -51,28 +52,18 @@ define [
     view = undefined
     el = undefined
 
-    makeDocumentsAndTags = (ids, addDummy) ->
+    makeDocumentsAndTags = (ids) ->
       d = []
       t = []
 
-      lastId = -1
-
-      if ids.length
-        lastId = ids[ids.length - 1]
-        for id in [ 0 .. lastId ]
-          if _.indexOf(ids, id) != -1
-            d.push(makeDocument(id))
-          else
-            d.push(makeDummyDocument())
-          t.push(makeTag(id))
-
-      if addDummy
-        d.push(makeDummyDocument())
+      for id in ids
+        d.push(makeDocument(id))
+        t.push(makeTag(id))
 
       [ d, t ]
 
-    makeCollections = (ids, addDummy) ->
-      [ d, t ] = makeDocumentsAndTags(ids, addDummy)
+    makeCollections = (ids) ->
+      [ d, t ] = makeDocumentsAndTags(ids)
 
       selection = new Backbone.Model({
         cursorIndex: undefined
@@ -114,11 +105,11 @@ define [
         makeCollections([])
 
       it 'should render nothing', ->
-        expect(view.$el.html()).to.eq('')
+        expect(view.$('li')).not.to.exist
 
       it 'should add a new document', ->
         documents.add(makeDummyDocument())
-        expect(view.$el.html()).not.to.eq('')
+        expect(view.$('li')).to.exist
 
       it 'should add an error message', ->
         documentList.set(statusCode: 400, error: 'error message')
@@ -235,7 +226,7 @@ define [
 
       it 'should render a new list on setModel()', ->
         view.setModel(new DocumentList({}, documents: new DocumentCollection([])))
-        expect(view.$el.html()).to.eq('')
+        expect(view.$('li')).not.to.exist
 
       it 'should listen for added items after setModel()', ->
         documents = new DocumentCollection([])
@@ -246,16 +237,26 @@ define [
       it 'should not listen on the old collection after setModel()', ->
         view.setModel(new DocumentList({}, documents: new DocumentCollection([])))
         documents.add(makeDummyDocument())
-        expect(view.$el.html()).to.eq('')
+        expect(view.$('li')).not.to.exist
 
-    describe 'with a DocumentCollection that has a loading dummy', ->
-      beforeEach ->
-        makeCollections([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], true)
+      it 'should have a loading indicator', ->
+        expect(view.$('.loading')).to.contain('loading')
 
-      it 'should show a loading indicator', ->
-        $loadingLi = view.$('ul.documents>li:eq(10)')
-        expect($loadingLi.find('h3').text()).to.eq('loading')
-        expect($loadingLi).to.have.class('loading')
+      it 'should have class=loading while loading', ->
+        documentList.set(loading: true)
+        expect(view.$el).to.have.class('loading')
+
+      it 'should not have class=loading while not loading', ->
+        documentList.set(loading: false)
+        expect(view.$el).not.to.have.class('loading')
+
+      it 'should have class=loading after setModel(loading: true)', ->
+        view.setModel(new DocumentList({ loading: true }, documents: new DocumentCollection([])))
+        expect(view.$el).to.have.class('loading')
+
+      it 'should not have class=loading after setModel(loading: false)', ->
+        view.setModel(new DocumentList({ loading: false }, documents: new DocumentCollection([])))
+        expect(view.$el).not.to.have.class('loading')
 
     describe 'with a long DocumentCollection', ->
       beforeEach ->

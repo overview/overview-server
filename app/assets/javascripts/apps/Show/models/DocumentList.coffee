@@ -36,12 +36,12 @@ define [
   #
   #   documentList.stopListening() # when you're done with it
   #
-  # A DocumentList starts empty. It only ever grows, except the final 'loading'
-  # document, which is only ever added to and deleted from the end of the list.
+  # A DocumentList starts empty. It only ever grows.
   class DocumentList extends Backbone.Model
     defaults:
       length: null
       nPagesFetched: 0
+      loading: false
       statusCode: null
       error: null
 
@@ -105,20 +105,20 @@ define [
         query.limit = @nDocumentsPerPage
         query.offset = @get('nPagesFetched') * @nDocumentsPerPage
 
-        @documents.add([type: 'loading'], parse: true) # dunno why, but no parse:true makes this stop cold in Chrome
+        @set(loading: true)
 
         onSuccess = (data) =>
-          @documents.pop()
           @documents.add(data.documents, parse: true)
           @set
+            loading: false
             length: data.total_items
             nPagesFetched: @get('nPagesFetched') + 1
           resolve(null)
 
         onError = (xhr) =>
           message = xhr.responseJSON?.message || xhr.responseText
-          @documents.pop()
           @set
+            loading: false
             statusCode: xhr.status
             error: message
           reject(message)

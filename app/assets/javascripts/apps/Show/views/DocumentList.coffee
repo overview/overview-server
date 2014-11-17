@@ -26,16 +26,9 @@ define [
       </li
     >""")
 
-    loadingModel: _.template("""<li <%= liAttributes %>
-      class="document loading" data-cid="<%- model.cid %>">
-        <h3><%- t('loading') %></h3>
-        <p class="description"><%- t('loading') %></p>
-        <ul class="tags"></ul>
-      </li
-    >""")
-
     collection: _.template("""
       <ul class="documents" <%= ulAttributes %>><%= _.map(collection.models, renderModel).join('') %></ul>
+      <div class="loading"><%- t('loading') %></div>
     """)
 
     error: _.template("""
@@ -89,6 +82,7 @@ define [
 
     _listenToModel: ->
       @listenTo(@model, 'change:error', @render)
+      @listenTo(@model, 'change:loading', @_renderLoading)
       @listenTo(@collection, 'reset', @render)
       @listenTo(@collection, 'change', @_changeModel)
       @listenTo(@collection, 'remove', @_removeModel)
@@ -105,14 +99,9 @@ define [
       @render()
 
     _renderModelHtml: (model) ->
-      template = if !model.id?
-        templates.loadingModel
-      else
-        templates.model
-
       tags = @options.tags.filter((x) -> model.hasTag(x))
 
-      template
+      templates.model
         title: DocumentHelper.title(model.attributes)
         model: model
         attrs: model.attributes
@@ -123,15 +112,13 @@ define [
     render: ->
       html = if @model.get('error')
         templates.error(error: @model.get('error'), t: t)
-      else if @collection.length
+      else
         templates.collection({
           collection: @collection
           t: t
           renderModel: (model) => @_renderModelHtml(model)
           ulAttributes: @options.ulAttributes || ''
         })
-      else
-        ''
 
       @$el.html(html)
 
@@ -140,6 +127,11 @@ define [
 
       delete @maxViewedIndex
       @_updateMaxViewedIndex()
+      @_renderLoading()
+
+    _renderLoading: ->
+      loading = @model.get('loading')
+      @$el.toggleClass('loading', loading)
 
     _renderAllTags: (tag) ->
       # The tag has been added to or removed from lots of documents -- probably

@@ -34,10 +34,6 @@
     transition-delay: .5s;
     border: 1px solid @body-bg;
 
-    &.placeholder, &.loading {
-      color: @gray;
-    }
-
     &:hover {
       background: @body-bg-dark;
     }
@@ -56,6 +52,14 @@
       border-color: @brand-primary;
     }
   }
+
+  .loading {
+    display: block;
+    font-size: 2em;
+    line-height: 2;
+    padding-left: .55em;
+  }
+  &.loading .loading { display: block; }
 
   ul:hover li.document {
     // When hovering over the list, we may be:
