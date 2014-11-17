@@ -9,7 +9,7 @@
 #
 
 # run the release image
-docker run -d --name="overviewc" znmeb/overview-build
+docker run -d --name="overviewc" overview/overview-build
 
 # copy the release zipfile
 sudo rm -f overview-server.zip
@@ -24,10 +24,10 @@ sudo rm -fr overview-server
 unzip overview-server.zip
 
 # now build the image - it has a COPY to get the tree!
-docker build -t znmeb/overview-stripped .
+docker build -t overview/overview-stripped .
 
 # test the result
 echo "Browse to localhost:9000 after console stabilizes"
 sleep 30
 docker rm test-strippedc
-docker run -it -p 9000:9000 --name="test-strippedc" znmeb/overview-stripped
+docker run -it -p 9000:9000 --name="test-strippedc" overview/overview-stripped

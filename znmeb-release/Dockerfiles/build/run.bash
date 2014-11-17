@@ -9,7 +9,7 @@
 #
 
 # build a release
-docker build --no-cache -t znmeb/overview-build .
+docker build --no-cache -t overview/overview-build .
 
 # start it up as a test
-docker run -it -p 9000:9000 znmeb/overview-build
+docker run -it -p 9000:9000 overview/overview-build
