@@ -1,4 +1,4 @@
-FROM znmeb/overview-os-packages
+FROM overview/overview-os-packages
 MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 
 # add the packages needed for builds
