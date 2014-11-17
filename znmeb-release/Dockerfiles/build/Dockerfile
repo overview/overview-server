@@ -5,6 +5,7 @@ MAINTAINER M. Edward (Ed) Borasky "znmeb@znmeb.net"
 RUN apt-get update && apt-get install -y \
   git \
   openjdk-7-jdk \
+  nodejs-legacy \
   unzip \
   wget \
   zip
