@@ -1,14 +1,14 @@
 # Running Overview Server with Windows Boot2Docker
 
 ## Quick Start
-1. [Install Boot2Docker](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#installing-boot2docker) from <http://boot2docker.io/>
-2. [Double-click the Boot2Docker icon on the Windows desktop](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#starting-boot2docker).
-3. [Find the IP address of the server](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#finding-the-ip-address-of-the-server). It's probably 192.168.59.103, but check it to be sure.
-4. [In the Docker console, type `docker pull znmeb/overview-stripped`](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#downloading-the-overview-server-image) to download the Overview image.
-5. [Type `docker run -it -p 9000:9000 --name=overview-container znmeb/overview-stripped`](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#running-the-server) to start the server.
-6. [When the server is ready, browse to port 9000 on the server IP address](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#wait-for-the-server-to-stabilize). This is probably `192.168.59.103:9000`.
-7. At the end of an Overview session, [stop the server by typing <kbd>ctrl</kbd>+<kbd>C</kbd> in the console](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#stopping-the-server). Your data will be saved.
-8. To restart the server, [go back to the Boot2Docker console and type `docker start -ai overview-container`](https://github.com/znmeb/overview-server/blob/master/znmeb-release/Windows.md#restarting-the-server).
+1. [Install Boot2Docker](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#installing-boot2docker) from <http://boot2docker.io/>
+2. [Double-click the Boot2Docker icon on the Windows desktop](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#starting-boot2docker).
+3. [Find the IP address of the server](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#finding-the-ip-address-of-the-server). It's probably 192.168.59.103, but check it to be sure.
+4. [In the Docker console, type `docker pull znmeb/overview-stripped`](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#downloading-the-overview-server-image) to download the Overview image.
+5. [Type `docker run -it -p 9000:9000 --name=overview-container znmeb/overview-stripped`](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#running-the-server) to start the server.
+6. [When the server is ready, browse to port 9000 on the server IP address](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#wait-for-the-server-to-stabilize). This is probably `192.168.59.103:9000`.
+7. At the end of an Overview session, [stop the server by typing <kbd>ctrl</kbd>+<kbd>C</kbd> in the console](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#stopping-the-server). Your data will be saved.
+8. To restart the server, [go back to the Boot2Docker console and type `docker start -ai overview-container`](https://github.com/overview/overview-server/blob/master/znmeb-release/Windows.md#restarting-the-server).
 
 ## Installing Boot2Docker
 
