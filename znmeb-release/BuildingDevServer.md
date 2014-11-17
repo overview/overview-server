@@ -25,7 +25,7 @@
         * unzip
 
 
-1. ***VERY IMPORTANT:*** On Linux, you will need to edit `/etc/hosts`. Open a terminal and type
+1. ***VERY IMPORTANT:*** On Fedora, you will need to edit `/etc/hosts`. Open a terminal and type
 
     ```
     hostname
@@ -43,13 +43,10 @@
 1. Open a terminal and type
 
     ```
-    cd overview-server/znmeb-release
-    ./sync.bash
-    cd ..
     ./dev
     ```
 
-    `./sync.bash` will sync the source to the Overview project master. `./dev` will start a developer build. The build takes a long time. When it's done it will start a local server and open a browser window / tab to localhost:9000. After a few more compiles you will see the Overview login page. Press <kbd>ctrl</kbd>+<kbd>C</kbd> to stop the server. Then close the browser window / tab.
+    `./dev` will start a developer build. The build takes a long time. When it's done it will start a local server and open a browser window / tab to localhost:9000. After a few more compiles you will see the Overview login page. Press <kbd>ctrl</kbd>+<kbd>C</kbd> to stop the server. Then close the browser window / tab.
 
 1. Type
 
