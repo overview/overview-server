@@ -18,5 +18,8 @@ trait DocumentViewInfo {
     val Pdf = ".pdf"
     fileName + Pdf
   }
+  
+  protected def addPageNumber(fileName: String, pageNumber: Int): String = 
+    s"$fileName p$pageNumber"
 
 }

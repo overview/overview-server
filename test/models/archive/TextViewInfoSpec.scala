@@ -9,15 +9,19 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
   "TextViewInfo" should {
 
     "use suppliedId as filename" in new TextViewInfoContext {
-      entry must matchParameters(suppliedIdValue + Txt, size, documentId)
+      entry must matchParameters(suppliedId + Txt, size, documentId)
     }
 
     "use title as filename if there is no suppliedId" in new TitleContext {
-      entry must matchParameters(titleValue + Txt, size, documentId)
+      entry must matchParameters(title + Txt, size, documentId)
     }
     
     "use id as filename if there is no title or suppliedId" in new DocumentIdContext {
       entry must matchParameters(documentId + Txt, size, documentId)
+    }
+    
+    "use page number in filename if present" in new PageContext {
+      entry must matchParameters(s"$title p${pageNumberValue}$Txt", size, documentId)
     }
   }
 
@@ -25,13 +29,12 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
     val Txt = ".txt"
 
     val documentId = 123l
-    val suppliedIdValue = "suppliedId"
-    val titleValue = "titleValue"
       
-    def suppliedId: String = suppliedIdValue
-    def title: String = titleValue
-
-    val textViewInfo = new TestTextViewInfo(suppliedId, title, documentId, size)
+    def suppliedId: String = "suppliedId"
+    def title: String = "titleValue"
+    def pageNumber: Option[Int] = None
+    
+    val textViewInfo = new TestTextViewInfo(suppliedId, title, documentId, pageNumber, size)
     val entry = textViewInfo.archiveEntry
 
     override def streamWasCreatedFromId(id: Long): MatchResult[Any] =
@@ -46,8 +49,13 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
     override def title: String = ""
   }
 
-  class TestTextViewInfo(suppliedId: String, title: String, documentId: Long, size: Long)
-      extends TextViewInfo(suppliedId, title, documentId, None, size) {
+  trait PageContext extends TitleContext {
+    def pageNumberValue = 1105
+    override def pageNumber = Some(pageNumberValue)
+  }
+  
+  class TestTextViewInfo(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long)
+      extends TextViewInfo(suppliedId, title, documentId, pageNumber, size) {
 
     override protected val storage = smartMock[Storage]
     val mockStorage = storage

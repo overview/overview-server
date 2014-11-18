@@ -9,7 +9,7 @@ abstract class PageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long
     ArchiveEntry(fileNameWithPage(removePdf(documentTitle), pageNumber), size, pageDataStream(pageId) _)
 
   private def fileNameWithPage(fileName: String, pageNumber: Int): String =
-    asPdf(s"$fileName p$pageNumber")
+    asPdf(addPageNumber(fileName, pageNumber))
 
   private def pageDataStream(pageId: Long)(): InputStream =
     storage.pageDataStream(pageId).get

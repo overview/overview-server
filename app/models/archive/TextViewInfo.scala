@@ -12,16 +12,20 @@ abstract class TextViewInfo(
 
   override def archiveEntry: ArchiveEntry = {
     val nameOptions = Seq(suppliedId, title)
-    
+
     val filename = nameOptions.find(!_.isEmpty).getOrElse(documentId.toString)
 
-    ArchiveEntry(asTxt(filename), size, textInputStream(documentId) _)
+    ArchiveEntry(asTxt(maybeAddPageNumber(filename)), size, textInputStream(documentId) _)
   }
 
   private def asTxt(filename: String): String = {
     val Txt = ".txt"
     filename + Txt
   }
+
+  private def maybeAddPageNumber(filename: String): String =
+    pageNumber.map(addPageNumber(filename, _))
+      .getOrElse(filename)
 
   private def textInputStream(documentId: Long)(): InputStream = storage.textInputStream(documentId)
 
@@ -36,7 +40,7 @@ object TextViewInfo {
   import models.OverviewDatabase
   import org.overviewproject.models.tables.Documents
   import org.overviewproject.database.Slick.simple._
-  
+
   def apply(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long): TextViewInfo =
     new DbTextViewInfo(suppliedId, title, documentId, pageNumber, size)
 
