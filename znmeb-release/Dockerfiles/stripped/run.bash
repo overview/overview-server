@@ -30,4 +30,4 @@ docker build -t overview/overview-stripped .
 echo "Browse to localhost:9000 after console stabilizes"
 sleep 30
 docker rm test-strippedc
-docker run -it -p 9000:9000 --name="test-strippedc" overview/overview-stripped
+docker run -it --rm -p 9000:9000 --name="overview" overview/overview-stripped
