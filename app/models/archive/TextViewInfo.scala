@@ -7,6 +7,7 @@ abstract class TextViewInfo(
     suppliedId: String,
     title: String,
     documentId: Long,
+    pageNumber: Option[Int],
     size: Long) extends DocumentViewInfo {
 
   override def archiveEntry: ArchiveEntry = {
@@ -36,11 +37,11 @@ object TextViewInfo {
   import org.overviewproject.models.tables.Documents
   import org.overviewproject.database.Slick.simple._
   
-  def apply(suppliedId: String, title: String, documentId: Long, size: Long): TextViewInfo =
-    new DbTextViewInfo(suppliedId, title, documentId, size)
+  def apply(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long): TextViewInfo =
+    new DbTextViewInfo(suppliedId, title, documentId, pageNumber, size)
 
-  private class DbTextViewInfo(suppliedId: String, title: String, documentId: Long, size: Long)
-      extends TextViewInfo(suppliedId, title, documentId, size) {
+  private class DbTextViewInfo(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long)
+      extends TextViewInfo(suppliedId, title, documentId, pageNumber, size) {
 
     override protected val storage = new DbStorage
 

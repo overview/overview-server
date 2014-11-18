@@ -47,7 +47,7 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
   }
 
   class TestTextViewInfo(suppliedId: String, title: String, documentId: Long, size: Long)
-      extends TextViewInfo(suppliedId, title, documentId, size) {
+      extends TextViewInfo(suppliedId, title, documentId, None, size) {
 
     override protected val storage = smartMock[Storage]
     val mockStorage = storage
