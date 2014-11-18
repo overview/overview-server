@@ -11,7 +11,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
 
     "find info for pages" in new SplitDocumentsScope {
       val infos = await(backend.indexDocumentViewInfos(documentSet.id))
-      
+
       pagesWereUsedInViewInfoCreation
     }
 
@@ -20,14 +20,24 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
 
       there was one(backend.mockFactory).fromFile((filename, oid, size))
     }
+
+    "find info for text documents" in new TextScope {
+      val infos = await(backend.indexDocumentViewInfos(documentSet.id))
+
+      there was one(backend.mockFactory).fromText((Some(filename), Some(""), document.id, text.size))
+    }
   }
 
-  trait SplitDocumentsScope extends DbScope {
+  trait DocumentScope extends DbScope {
     val backend = new TestDbDocumentFileInfoBackend(session)
 
     val filename = "filename"
-    val numberOfPages = 2
     val documentSet = factory.documentSet()
+  }
+
+  trait SplitDocumentsScope extends DocumentScope {
+    val numberOfPages = 2
+
     val file = factory.file(name = filename)
     val pages = Seq.tabulate(numberOfPages)(n => factory.page(pageNumber = (n + 1), fileId = file.id))
     val documents = pages.map(p =>
@@ -40,20 +50,21 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
 
   }
 
-  trait FileScope extends DbScope {
-    val backend = new TestDbDocumentFileInfoBackend(session)
-
-    val filename = "filename"
+  trait FileScope extends DocumentScope {
     val oid = 1234l
     val size = 456l
 
-    val documentSet = factory.documentSet()
     val file = factory.file(name = filename, viewOid = oid, viewSize = Some(size))
     val document = factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id))
   }
-  
-  trait TextScope extends DbScope {
-    
+
+  trait TextScope extends DocumentScope {
+    val text = "document text"
+
+    val document = factory.document(
+      documentSetId = documentSet.id,
+      title = filename,
+      text = text)
   }
 
   class TestDbDocumentFileInfoBackend(session: Session) extends TestDbBackend(session) with DbDocumentFileInfoBackend {
@@ -61,5 +72,6 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     val mockFactory = documentViewInfoFactory
     mockFactory.fromPage(any) returns smartMock[DocumentViewInfo]
     mockFactory.fromFile(any) returns smartMock[DocumentViewInfo]
+    mockFactory.fromText(any) returns smartMock[DocumentViewInfo]
   }
 }

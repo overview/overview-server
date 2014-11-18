@@ -9,6 +9,7 @@ import models.archive.FileViewInfo
 import models.archive.DocumentViewInfo
 import models.archive.PageViewInfo
 import models.archive.FileViewInfo
+import models.archive.TextViewInfo
 
 trait DocumentFileInfoBackend {
 
@@ -22,7 +23,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   import org.overviewproject.database.Slick.simple._
 
   override def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = db { implicit session =>
-    pageViewInfos(documentSetId) ++ fileViewInfos(documentSetId)
+    pageViewInfos(documentSetId) ++ fileViewInfos(documentSetId) ++ textViewInfos(documentSetId)
   }
   
     
@@ -46,11 +47,23 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
     fileInfo.map(documentViewInfoFactory.fromFile)
   }
   
+  
+  private def textViewInfos(documentSetId: Long)(implicit session: Session) = {
+    val q = sql"""
+      SELECT title, supplied_id, id, octet_length(text) FROM document
+      WHERE ((document_set_id = $documentSetId) AND
+             (file_id IS NULL) AND
+             (text IS NOT NULL))""".as[(Option[String], Option[String], Long, Long)]
+    
+    q.list.map(documentViewInfoFactory.fromText)
+  }
+  
   protected val documentViewInfoFactory: DocumentViewInfoFactory
   
   protected trait DocumentViewInfoFactory {
     def fromPage(info: (String, Int, Long, Long)): DocumentViewInfo
     def fromFile(info: (String, Long, Long)): DocumentViewInfo
+    def fromText(info: (Option[String], Option[String], Long, Long)): DocumentViewInfo
     
   }
 }
@@ -60,7 +73,7 @@ object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend 
   override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
     def fromPage(info: (String, Int, Long, Long)): DocumentViewInfo = (PageViewInfo.apply _).tupled(info)
     def fromFile(info: (String, Long, Long)): DocumentViewInfo = (FileViewInfo.apply _).tupled(info)
-    
+    def fromText(info: (Option[String], Option[String], Long, Long)): DocumentViewInfo = (TextViewInfo.apply _).tupled(info)
   } 
 }
 
