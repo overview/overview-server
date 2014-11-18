@@ -24,7 +24,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     "find info for text documents" in new TextScope {
       val infos = await(backend.indexDocumentViewInfos(documentSet.id))
 
-      there was one(backend.mockFactory).fromText((Some(filename), Some(""), document.id, text.size))
+      there was one(backend.mockFactory).fromText((filename, "", document.id, text.size))
     }
   }
 

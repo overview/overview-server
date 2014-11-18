@@ -4,16 +4,13 @@ import java.io.InputStream
 import java.nio.charset.StandardCharsets
 
 abstract class TextViewInfo(
-    suppliedId: Option[String],
-    title: Option[String],
+    suppliedId: String,
+    title: String,
     documentId: Long,
     size: Long) extends DocumentViewInfo {
 
-  val suppliedIdValue = suppliedId.getOrElse("")
-  val titleValue = title.getOrElse("")
-  
   override def archiveEntry: ArchiveEntry = {
-    val nameOptions = Seq(suppliedIdValue, titleValue)
+    val nameOptions = Seq(suppliedId, title)
     
     val filename = nameOptions.find(!_.isEmpty).getOrElse(documentId.toString)
 
@@ -39,10 +36,10 @@ object TextViewInfo {
   import org.overviewproject.models.tables.Documents
   import org.overviewproject.database.Slick.simple._
   
-  def apply(suppliedId: Option[String], title: Option[String], documentId: Long, size: Long): TextViewInfo =
+  def apply(suppliedId: String, title: String, documentId: Long, size: Long): TextViewInfo =
     new DbTextViewInfo(suppliedId, title, documentId, size)
 
-  private class DbTextViewInfo(suppliedId: Option[String], title: Option[String], documentId: Long, size: Long)
+  private class DbTextViewInfo(suppliedId: String, title: String, documentId: Long, size: Long)
       extends TextViewInfo(suppliedId, title, documentId, size) {
 
     override protected val storage = new DbStorage

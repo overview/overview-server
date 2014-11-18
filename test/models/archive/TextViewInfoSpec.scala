@@ -28,8 +28,8 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
     val suppliedIdValue = "suppliedId"
     val titleValue = "titleValue"
       
-    def suppliedId: Option[String] = Some(suppliedIdValue)
-    def title: Option[String] = Some(titleValue)
+    def suppliedId: String = suppliedIdValue
+    def title: String = titleValue
 
     val textViewInfo = new TestTextViewInfo(suppliedId, title, documentId, size)
     val entry = textViewInfo.archiveEntry
@@ -39,14 +39,14 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
   }
 
   trait TitleContext extends TextViewInfoContext {
-    override def suppliedId: Option[String] = Some("")
+    override def suppliedId: String = ""
   }
   
   trait DocumentIdContext extends TitleContext {
-    override def title: Option[String] = Some("")
+    override def title: String = ""
   }
 
-  class TestTextViewInfo(suppliedId: Option[String], title: Option[String], documentId: Long, size: Long)
+  class TestTextViewInfo(suppliedId: String, title: String, documentId: Long, size: Long)
       extends TextViewInfo(suppliedId, title, documentId, size) {
 
     override protected val storage = smartMock[Storage]

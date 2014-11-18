@@ -49,13 +49,17 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   
   
   private def textViewInfos(documentSetId: Long)(implicit session: Session) = {
+
     val q = sql"""
       SELECT title, supplied_id, id, octet_length(text) FROM document
       WHERE ((document_set_id = $documentSetId) AND
              (file_id IS NULL) AND
              (text IS NOT NULL))""".as[(Option[String], Option[String], Long, Long)]
     
-    q.list.map(documentViewInfoFactory.fromText)
+    q.list.map { info =>
+      val infoWithValues = (info._1.getOrElse(""), info._2.getOrElse(""), info._3, info._4)
+      documentViewInfoFactory.fromText(infoWithValues)
+    }
   }
   
   protected val documentViewInfoFactory: DocumentViewInfoFactory
@@ -63,7 +67,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   protected trait DocumentViewInfoFactory {
     def fromPage(info: (String, Int, Long, Long)): DocumentViewInfo
     def fromFile(info: (String, Long, Long)): DocumentViewInfo
-    def fromText(info: (Option[String], Option[String], Long, Long)): DocumentViewInfo
+    def fromText(info: (String, String, Long, Long)): DocumentViewInfo
     
   }
 }
@@ -73,7 +77,7 @@ object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend 
   override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
     def fromPage(info: (String, Int, Long, Long)): DocumentViewInfo = (PageViewInfo.apply _).tupled(info)
     def fromFile(info: (String, Long, Long)): DocumentViewInfo = (FileViewInfo.apply _).tupled(info)
-    def fromText(info: (Option[String], Option[String], Long, Long)): DocumentViewInfo = (TextViewInfo.apply _).tupled(info)
+    def fromText(info: (String, String, Long, Long)): DocumentViewInfo = (TextViewInfo.apply _).tupled(info)
   } 
 }
 
