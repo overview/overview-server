@@ -18,7 +18,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     "find info for files" in new FileScope {
       val infos = await(backend.indexDocumentViewInfos(documentSet.id))
 
-      there was one(backend.mockFactory).fromFile1((filename, oid, size))
+      there was one(backend.mockFactory).fromFile((filename, oid, size))
     }
   }
 
@@ -35,7 +35,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
         pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
 
     def pagesWereUsedInViewInfoCreation = pages.map { p =>
-      there was one(backend.mockFactory).fromPage1((filename, p.pageNumber, p.id, p.data.get.length))
+      there was one(backend.mockFactory).fromPage((filename, p.pageNumber, p.id, p.data.get.length))
     }
 
   }
@@ -50,13 +50,16 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     val documentSet = factory.documentSet()
     val file = factory.file(name = filename, viewOid = oid, viewSize = Some(size))
     val document = factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id))
-
+  }
+  
+  trait TextScope extends DbScope {
+    
   }
 
   class TestDbDocumentFileInfoBackend(session: Session) extends TestDbBackend(session) with DbDocumentFileInfoBackend {
     override val documentViewInfoFactory = smartMock[DocumentViewInfoFactory]
     val mockFactory = documentViewInfoFactory
-    mockFactory.fromPage1(any) returns smartMock[DocumentViewInfo]
-    mockFactory.fromFile1(any) returns smartMock[DocumentViewInfo]
+    mockFactory.fromPage(any) returns smartMock[DocumentViewInfo]
+    mockFactory.fromFile(any) returns smartMock[DocumentViewInfo]
   }
 }
