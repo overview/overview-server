@@ -12,7 +12,7 @@ RUN chown -R overview:overview /home/overview/
 EXPOSE 9000
 USER overview
 WORKDIR /home/overview/overview-server/
-ENTRYPOINT [ "./run" ]
+CMD [ "./run" ]
 
 # timestamp
 RUN echo `date -u +%Y%m%dt%H%M%Sz` > /home/overview/stripped-timestamp.txt
