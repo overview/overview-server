@@ -39,11 +39,11 @@ class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
   }
 
   trait TitleContext extends TextViewInfoContext {
-    override def suppliedId: Option[String] = None
+    override def suppliedId: Option[String] = Some("")
   }
   
   trait DocumentIdContext extends TitleContext {
-    override def title: Option[String] = None
+    override def title: Option[String] = Some("")
   }
 
   class TestTextViewInfo(suppliedId: Option[String], title: Option[String], documentId: Long, size: Long)

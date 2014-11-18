@@ -9,10 +9,13 @@ abstract class TextViewInfo(
     documentId: Long,
     size: Long) extends DocumentViewInfo {
 
+  val suppliedIdValue = suppliedId.getOrElse("")
+  val titleValue = title.getOrElse("")
+  
   override def archiveEntry: ArchiveEntry = {
-    val filename = suppliedId
-      .orElse(title)
-      .getOrElse(documentId.toString)
+    val nameOptions = Seq(suppliedIdValue, titleValue)
+    
+    val filename = nameOptions.find(!_.isEmpty).getOrElse(documentId.toString)
 
     ArchiveEntry(asTxt(filename), size, textInputStream(documentId) _)
   }
