@@ -42,6 +42,12 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
       h.flash(result).data must be equalTo (Map("warning" -> unsupported))
     }
+
+    "flash warning if there are too many documents" in new TooManyDocumentsContext {
+      val tooManyFiles = Messages("controllers.DocumentSetArchiveController.tooManyEntries")
+
+      h.flash(result).data must be equalTo (Map("warning" -> tooManyFiles))
+    }
   }
 
   trait DocumentSetArchiveContext extends Scope {
@@ -54,9 +60,6 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     val archiveData = Array.fill(archiveSize)(0xda.toByte)
 
     val contentType = "application/x-zip-compressed"
-
-    def pageViewInfos: Seq[PageViewInfo] = Seq.empty
-    def fileViewInfos: Seq[FileViewInfo] = Seq.fill(5)(smartMock[FileViewInfo])
 
     def numberOfDocuments = 5
     def viewInfos: Seq[DocumentViewInfo] = Seq.fill(numberOfDocuments) {
@@ -78,12 +81,18 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     override def numberOfDocuments = 0
   }
 
+  trait TooManyDocumentsContext extends DocumentSetArchiveContext {
+    override def numberOfDocuments = 11
+  }
+
   class TestDocumentSetArchiveController(
       documentSetId: Long,
       archiveData: Array[Byte],
       documentViewInfos: Seq[DocumentViewInfo]) extends DocumentSetArchiveController {
     import scala.concurrent.ExecutionContext.Implicits.global
 
+    override val MaxNumberOfEntries = 10
+    
     val archiver = smartMock[Archiver]
     val archive = smartMock[Archive]
 
