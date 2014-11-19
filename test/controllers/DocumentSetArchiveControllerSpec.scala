@@ -33,26 +33,20 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       h.contentAsBytes(result) must be equalTo archiveData
     }
 
-    "redirect if archiving is not supported" in new UnsupportedDocumentSet {
+    "redirect if archiving is not supported" in new UnsupportedDocumentSetContext {
       h.status(result) must beEqualTo(h.SEE_OTHER)
     }
 
-    "flash warning if archiving is not supported" in new UnsupportedDocumentSet {
-      val unsupported = Messages("controllers.DocumentSetArchiveController.unsupported")
-
-      h.flash(result).data must be equalTo (Map("warning" -> unsupported))
+    "flash warning if archiving is not supported" in new UnsupportedDocumentSetContext {
+      h.flash(result).data must be equalTo warning
     }
 
     "flash warning if there are too many documents" in new TooManyDocumentsContext {
-      val tooManyFiles = Messages("controllers.DocumentSetArchiveController.tooManyEntries")
-
-      h.flash(result).data must be equalTo (Map("warning" -> tooManyFiles))
+      h.flash(result).data must be equalTo warning
     }
 
     "flash warning if archive is too large" in new ArchiveTooLargeContext {
-      val archiveTooLarge = Messages("controllers.DocumentSetArchiveController.archiveTooLarge")
-
-      h.flash(result).data must be equalTo (Map("warning" -> archiveTooLarge))
+      h.flash(result).data must be equalTo warning
     }
   }
 
@@ -82,17 +76,26 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
     def header(key: String): Option[String] = h.header(key, result)
   }
-
-  trait UnsupportedDocumentSet extends DocumentSetArchiveContext {
+  
+  trait WarningMessenger {
+    def warning: Map[String, String] = Map("warning" -> Messages("controllers.DocumentSetArchiveController." + message))
+    
+    protected def message: String
+  }
+  
+  trait UnsupportedDocumentSetContext extends DocumentSetArchiveContext with WarningMessenger {
     override def numberOfDocuments = 0
+    override def message = "unsupported"
   }
 
-  trait TooManyDocumentsContext extends DocumentSetArchiveContext {
+  trait TooManyDocumentsContext extends DocumentSetArchiveContext with WarningMessenger {
     override def numberOfDocuments = 11
+    override def message = "tooManyEntries"
   }
 
-  trait ArchiveTooLargeContext extends DocumentSetArchiveContext {
+  trait ArchiveTooLargeContext extends DocumentSetArchiveContext with WarningMessenger {
     override def controller = new TooLargeArchiveController(viewInfos)
+    override def message = "archiveTooLarge"
   }
 
   class TestDocumentSetArchiveController(
