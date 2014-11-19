@@ -48,6 +48,12 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
       h.flash(result).data must be equalTo (Map("warning" -> tooManyFiles))
     }
+
+    "flash warning if archive is too large" in new ArchiveTooLargeContext {
+      val archiveTooLarge = Messages("controllers.DocumentSetArchiveController.archiveTooLarge")
+
+      h.flash(result).data must be equalTo (Map("warning" -> archiveTooLarge))
+    }
   }
 
   trait DocumentSetArchiveContext extends Scope {
@@ -69,10 +75,10 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       viewInfo
     }
 
-    def result = {
-      val controller = new TestDocumentSetArchiveController(documentSetId, archiveData, viewInfos)
-      controller.archive(documentSetId, fileName)(request)
-    }
+    def controller: DocumentSetArchiveController =
+      new TestDocumentSetArchiveController(documentSetId, archiveData, viewInfos)
+
+    def result = controller.archive(documentSetId, fileName)(request)
 
     def header(key: String): Option[String] = h.header(key, result)
   }
@@ -85,6 +91,10 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     override def numberOfDocuments = 11
   }
 
+  trait ArchiveTooLargeContext extends DocumentSetArchiveContext {
+    override def controller = new TooLargeArchiveController(viewInfos)
+  }
+
   class TestDocumentSetArchiveController(
       documentSetId: Long,
       archiveData: Array[Byte],
@@ -92,7 +102,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     import scala.concurrent.ExecutionContext.Implicits.global
 
     override val MaxNumberOfEntries = 10
-    
+
     val archiver = smartMock[Archiver]
     val archive = smartMock[Archive]
 
@@ -103,6 +113,18 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     backend.indexDocumentViewInfos(documentSetId) returns Future(documentViewInfos)
 
     archiver.createArchive(any) returns archive
+  }
 
+  class TooLargeArchiveController(documentViewInfos: Seq[DocumentViewInfo]) extends DocumentSetArchiveController {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    
+    val archiver = smartMock[Archiver]
+    val archive = smartMock[Archive]
+
+    archive.size returns MaxArchiveSize + 1
+    archiver.createArchive(any) returns archive
+
+    val backend = smartMock[DocumentFileInfoBackend]
+    backend.indexDocumentViewInfos(any) returns Future(documentViewInfos)
   }
 }

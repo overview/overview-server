@@ -4,6 +4,7 @@ password.secure=Please use a password at least seven characters long.
 
 controllers.admin.UserController.delete.failure=Document sets owned by {0} must be removed before the user can be deleted.
 
+controllers.DocumentSetArchiveController.archiveTooLarge=Your document set is too large to be exported as a zip archive.
 controllers.DocumentSetArchiveController.tooManyEntries=There are too many documents in your document set to allow zip archive creation.
 controllers.DocumentSetArchiveController.unsupported=Zip archives are currently not supported for your document set. Please try again later.
 

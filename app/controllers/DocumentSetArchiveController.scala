@@ -19,14 +19,15 @@ trait DocumentSetArchiveController extends Controller {
 
   import Authorities._
 
-  val MaxNumberOfEntries = 0xFFFF   // If more than 2 bytes are needed, ZIP64 is needed
-  
+  val MaxNumberOfEntries: Int = 0xFFFF // If more than 2 bytes are needed for entries, ZIP64 should be used
+  val MaxArchiveSize: Long = 0xFFFFFFFFl // If more than 4 bytes are needed for size, ZIP64 should be used
+
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     for {
       documentViewInfos <- backend.indexDocumentViewInfos(documentSetId)
     } yield {
-      val archiveEntries =  documentViewInfos.map(_.archiveEntry)
-      
+      val archiveEntries = documentViewInfos.map(_.archiveEntry)
+
       if (archiveEntries.length > MaxNumberOfEntries) flashTooManyEntriesWarning
       else if (archiveEntries.nonEmpty) streamArchive(archiveEntries, filename)
       else flashUnsupportedWarning
@@ -36,13 +37,18 @@ trait DocumentSetArchiveController extends Controller {
   private def streamArchive(archiveEntries: Seq[ArchiveEntry], filename: String): Result = {
     val archive = archiver.createArchive(archiveEntries)
 
-    val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
+    if (archive.size > MaxArchiveSize) {
+      flashArchiveTooLargeWarning
+    }
+    else {
+      val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
-    Ok.feed(Enumerator.fromStream(archive.stream)).
-      withHeaders(
-        CONTENT_TYPE -> "application/x-zip-compressed",
-        CONTENT_LENGTH -> s"${archive.size}",
-        CONTENT_DISPOSITION -> contentDisposition)
+      Ok.feed(Enumerator.fromStream(archive.stream)).
+        withHeaders(
+          CONTENT_TYPE -> "application/x-zip-compressed",
+          CONTENT_LENGTH -> s"${archive.size}",
+          CONTENT_DISPOSITION -> contentDisposition)
+    }
   }
 
   private def flashUnsupportedWarning: Result = {
@@ -50,11 +56,17 @@ trait DocumentSetArchiveController extends Controller {
 
     Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("unsupported"))
   }
-  
+
   private def flashTooManyEntriesWarning: Result = {
     val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
 
     Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("tooManyEntries"))
+  }
+
+  private def flashArchiveTooLargeWarning: Result = {
+    val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
+
+    Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("archiveTooLarge"))
   }
 
   protected val archiver: Archiver
