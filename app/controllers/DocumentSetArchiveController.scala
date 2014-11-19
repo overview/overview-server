@@ -22,52 +22,49 @@ trait DocumentSetArchiveController extends Controller {
   val MaxNumberOfEntries: Int = 0xFFFF // If more than 2 bytes are needed for entries, ZIP64 should be used
   val MaxArchiveSize: Long = 0xFFFFFFFFl // If more than 4 bytes are needed for size, ZIP64 should be used
 
+  protected val ArchiveTooLarge = "archiveTooLarge"
+  protected val TooManyEntries = "tooManyEntries"
+  protected val Unsupported = "unsupported"
+
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     for {
       documentViewInfos <- backend.indexDocumentViewInfos(documentSetId)
     } yield {
       val archiveEntries = documentViewInfos.map(_.archiveEntry)
 
-      if (archiveEntries.length > MaxNumberOfEntries) flashTooManyEntriesWarning
-      else if (archiveEntries.nonEmpty) streamArchive(archiveEntries, filename)
-      else flashUnsupportedWarning
+      createArchive(archiveEntries) match {
+        case Left(warning) => flashWarning(warning)
+        case Right(archive) => streamArchive(archive, filename)
+      }
     }
   }
 
-  private def streamArchive(archiveEntries: Seq[ArchiveEntry], filename: String): Result = {
-    val archive = archiver.createArchive(archiveEntries)
+  private def createArchive(archiveEntries: Seq[ArchiveEntry]): Either[String, Archive] = {
+    lazy val archive = archiver.createArchive(archiveEntries)
 
-    if (archive.size > MaxArchiveSize) {
-      flashArchiveTooLargeWarning
-    }
-    else {
-      val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
-
-      Ok.feed(Enumerator.fromStream(archive.stream)).
-        withHeaders(
-          CONTENT_TYPE -> "application/x-zip-compressed",
-          CONTENT_LENGTH -> s"${archive.size}",
-          CONTENT_DISPOSITION -> contentDisposition)
-    }
+    if (archiveEntries.isEmpty) Left(Unsupported)
+    else if (archiveEntries.length > MaxNumberOfEntries) Left(TooManyEntries)
+    else if (archive.size > MaxArchiveSize) Left(ArchiveTooLarge)
+    else Right(archive)
   }
 
-  private def flashUnsupportedWarning: Result = {
+
+  private def streamArchive(archive: Archive, filename: String): Result = {
+    val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
+
+    Ok.feed(Enumerator.fromStream(archive.stream)).
+      withHeaders(
+        CONTENT_TYPE -> "application/x-zip-compressed",
+        CONTENT_LENGTH -> s"${archive.size}",
+        CONTENT_DISPOSITION -> contentDisposition)
+  }
+
+  private def flashWarning(warning: String): Result = {
     val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
 
-    Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("unsupported"))
+    Redirect(routes.DocumentSetController.index()).flashing("warning" -> m(warning))
   }
 
-  private def flashTooManyEntriesWarning: Result = {
-    val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
-
-    Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("tooManyEntries"))
-  }
-
-  private def flashArchiveTooLargeWarning: Result = {
-    val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
-
-    Redirect(routes.DocumentSetController.index()).flashing("warning" -> m("archiveTooLarge"))
-  }
 
   protected val archiver: Archiver
   protected val backend: DocumentFileInfoBackend
