@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
   libreoffice-calc \
   libreoffice-impress \
   make \
-  nodejs \
   openjdk-7-jre-headless \
   postgresql
 
