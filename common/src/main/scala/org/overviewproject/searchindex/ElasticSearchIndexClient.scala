@@ -185,12 +185,13 @@ trait ElasticSearchIndexClient extends IndexClient {
   }
 
   private def searchForIdsImpl(client: Client, documentSetId: Long, q: String) = {
-    val query = QueryBuilders.boolQuery
-      .must(QueryBuilders.termQuery("document_set_id", documentSetId))
-      .must(QueryBuilders.queryString(q))
+    val query = QueryBuilders.queryString(q)
 
     // ElasticSearch shouldn't sort results. [refs #83002148]
-    val filter = FilterBuilders.queryFilter(query)
+    val filter = FilterBuilders.andFilter(
+      FilterBuilders.termFilter("document_set_id", documentSetId),
+      FilterBuilders.queryFilter(query)
+    )
 
     val req = client.prepareSearch(IndexName)
       .setTypes(DocumentTypeName)
