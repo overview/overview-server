@@ -189,9 +189,12 @@ trait ElasticSearchIndexClient extends IndexClient {
       .must(QueryBuilders.termQuery("document_set_id", documentSetId))
       .must(QueryBuilders.queryString(q))
 
+    // ElasticSearch shouldn't sort results. [refs #83002148]
+    val filter = FilterBuilders.queryFilter(query)
+
     val req = client.prepareSearch(IndexName)
       .setTypes(DocumentTypeName)
-      .setQuery(query)
+      .setFilter(filter)
       .setSize(MaxNResults)
       .addField("id")
 
