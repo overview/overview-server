@@ -8,7 +8,7 @@ import scala.concurrent.Future
 trait FileStrategy extends BlobStorageStrategy {
   protected val config: BlobStorageConfig
 
-  lazy val baseDirectory: File = new File(config.getFileBaseDirectory)
+  lazy val baseDirectory: File = new File(config.fileBaseDirectory)
 
   private val LocationRegex = """^file:([-\w]+):([-\w]+)$""".r
   private case class Location(bucket: String, key: String)

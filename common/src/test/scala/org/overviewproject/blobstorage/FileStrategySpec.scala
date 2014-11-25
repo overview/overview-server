@@ -49,7 +49,7 @@ class FileStrategySpec extends StrategySpecification {
       io.close()
 
       val mockConfig = mock[BlobStorageConfig]
-      mockConfig.getFileBaseDirectory returns tmpDir.toString
+      mockConfig.fileBaseDirectory returns tmpDir.toString
       object TestFileStrategy extends FileStrategy {
         override val config = mockConfig
       }

@@ -34,7 +34,7 @@ trait BlobStorageConfig {
     * @throws ConfigException.Missing if the config value is missing
     * @throws ConfigException.WrongType if the config value is not a String
     */
-  def getFileBaseDirectory: String = {
+  def fileBaseDirectory: String = {
     config.getString("blobStorage.file.baseDirectory")
   }
 
