@@ -1,9 +1,9 @@
 package controllers.backend
 
 import java.util.UUID
-
 import org.overviewproject.models.Plugin
 import org.overviewproject.models.tables.Plugins
+import org.overviewproject.test.DbScope
 
 class DbPluginBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

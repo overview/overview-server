@@ -1,6 +1,7 @@
 package controllers.backend
 
 import org.overviewproject.models.tables.Documents
+import org.overviewproject.test.DbScope
 
 class DbSavedSearchDocumentBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

@@ -3,11 +3,11 @@ package controllers.backend
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{SelectionLike,SelectionRequest}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
 import org.overviewproject.models.Document
+import org.overviewproject.test.DbScope
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScopeNoIndex extends DbScope {

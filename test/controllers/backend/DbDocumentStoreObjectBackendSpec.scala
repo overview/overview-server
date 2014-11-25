@@ -1,9 +1,9 @@
 package controllers.backend
 
 import play.api.libs.json.{JsObject,Json}
-
 import org.overviewproject.models.DocumentStoreObject
 import org.overviewproject.models.tables.DocumentStoreObjects
+import org.overviewproject.test.DbScope
 
 class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
