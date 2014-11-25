@@ -27,6 +27,7 @@ trait FileStrategy extends BlobStorageStrategy {
 
   override def delete(location: String): Future[Unit] = ???
   override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = ???
+  
 }
 
 object FileStrategy extends FileStrategy {
