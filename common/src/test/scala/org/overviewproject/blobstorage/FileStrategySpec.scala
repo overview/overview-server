@@ -5,6 +5,8 @@ import java.nio.file.{ Files, Path }
 import org.specs2.mutable.After
 import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import scala.concurrent.Future
+import java.nio.charset.StandardCharsets
+import scala.io.Source
 
 class FileStrategySpec extends StrategySpecification {
   trait FileBaseScope extends BaseScope with After {
@@ -32,29 +34,42 @@ class FileStrategySpec extends StrategySpecification {
         rimraf(tmpDir)
       }
     }
-  }
-
-  trait ExistingFileScope extends FileBaseScope {
-    // Create bucket1/key1
-    val bucket = "bucket1"
-    val bucketFile = new File(tmpDir.toString, bucket)
-    bucketFile.mkdir()
-
-    val key = "key1"
-    val keyFile = new File(bucketFile.toString, key)
-    val content = "this is the content"
-    private val io = utf8InputStream(content)
-    Files.copy(io, keyFile.toPath)
-    io.close()
-
+    
     val mockConfig = mock[BlobStorageConfig]
     mockConfig.fileBaseDirectory returns tmpDir.toString
     object TestFileStrategy extends FileStrategy {
       override val config = mockConfig
     }
-
+    
   }
 
+  
+  trait BucketScope extends FileBaseScope {
+    // Create bucket1
+    val bucket = "bucket1"
+    val bucketFile = new File(tmpDir.toString, bucket)
+    bucketFile.mkdir()
+  }
+  
+  
+  trait FileContent {
+    val content = "this is the content"
+    val contentStream = utf8InputStream(content)
+  }
+  
+  trait ExistingFileScope extends BucketScope with FileContent {
+    // Create key1
+    val key = "key1"
+    val keyFile = new File(bucketFile.toString, key)
+
+    Files.copy(contentStream, keyFile.toPath)
+    contentStream.close()
+  }
+
+  trait CreateScope extends BucketScope with FileContent {
+    val locationRegex = s"^file:$bucket:([-\\w]+)$$".r
+  } 
+  
   "#get" should {
 
     "throw an exception when the location does not look like file:BUCKET:KEY" in new ExistingFileScope {
@@ -115,4 +130,14 @@ class FileStrategySpec extends StrategySpecification {
       keyFile.exists must beFalse
     }
   }
+  
+  "#create" should {
+    "return location" in new CreateScope {
+       val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
+       val location = await(future)
+       
+       location must beMatching(locationRegex)
+    }
+  }
+
 }
