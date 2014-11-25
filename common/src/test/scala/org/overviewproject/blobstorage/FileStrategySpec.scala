@@ -41,6 +41,12 @@ class FileStrategySpec extends StrategySpecification {
       override val config = mockConfig
     }
 
+    def invalidLocationThrowsException[T](f: String => T) = {
+      (f("fil:BUCKET:KEY") must throwA[IllegalArgumentException]) and
+        (f("file::key") must throwA[IllegalArgumentException]) and
+        (f("file:bucket:") must throwA[IllegalArgumentException])
+
+    }
   }
 
   trait BucketScope extends FileBaseScope {
@@ -82,10 +88,8 @@ class FileStrategySpec extends StrategySpecification {
 
   "#get" should {
 
-    "throw an exception when the location does not look like file:BUCKET:KEY" in new ExistingFileScope {
-      TestFileStrategy.get("fil:BUCKET:KEY") must throwA[IllegalArgumentException]
-      TestFileStrategy.get("file::key") must throwA[IllegalArgumentException]
-      TestFileStrategy.get("file:bucket:") must throwA[IllegalArgumentException]
+    "throw an exception when get location does not look like file:BUCKET:KEY" in new ExistingFileScope {
+      invalidLocationThrowsException(TestFileStrategy.get)
     }
 
     "throw a delayed exception when the key does not exist in the bucket which does" in new ExistingFileScope {
@@ -113,10 +117,8 @@ class FileStrategySpec extends StrategySpecification {
   }
 
   "#delete" should {
-    "throw an exception when the location does not look like file:BUCKET:KEY" in new ExistingFileScope {
-      TestFileStrategy.delete("fil:BUCKET:KEY") must throwA[IllegalArgumentException]
-      TestFileStrategy.delete("file::key") must throwA[IllegalArgumentException]
-      TestFileStrategy.delete("file:bucket:") must throwA[IllegalArgumentException]
+    "throw an exception when delete location does not look like file:BUCKET:KEY" in new ExistingFileScope {
+      invalidLocationThrowsException(TestFileStrategy.delete)
     }
 
     "throw a delayed exception when the key does not exist in the bucket which does" in new ExistingFileScope {
@@ -142,10 +144,8 @@ class FileStrategySpec extends StrategySpecification {
   }
 
   "#create" should {
-    "throw an exception when the location does not look like file:BUCKET:KEY" in new CreateScope {
-      TestFileStrategy.create("fil:BUCKET:KEY", contentStream, content.length) must throwA[IllegalArgumentException]
-      TestFileStrategy.create("file::key", contentStream, content.length) must throwA[IllegalArgumentException]
-      TestFileStrategy.create("file:bucket:", contentStream, content.length) must throwA[IllegalArgumentException]
+    "throw an exception when create location does not look like file:BUCKET:KEY" in new CreateScope {
+      invalidLocationThrowsException(TestFileStrategy.create(_, contentStream, content.length))
     }
 
     "return location" in new CreateScope {
