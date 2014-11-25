@@ -68,6 +68,18 @@ class FileStrategySpec extends StrategySpecification {
 
   trait CreateScope extends BucketScope with FileContent {
     val locationRegex = s"^file:$bucket:([-\\w]+)$$".r
+    
+    def fileAtLocation(location: String): File = location match {
+      case locationRegex(key) => new File(bucketFile, key)
+    }
+    
+    def fileContent(file: File): String = {
+      val source = Source.fromFile(file)
+      val content = source.getLines.mkString
+      source.close()
+      content
+    }
+
   } 
   
   "#get" should {
@@ -138,6 +150,18 @@ class FileStrategySpec extends StrategySpecification {
        
        location must beMatching(locationRegex)
     }
+    
+    "write the stream to the file" in new CreateScope {
+       val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
+       val location = await(future)
+
+       val file = fileAtLocation(location)
+       
+       file.exists must beTrue
+       
+       fileContent(file) must be equalTo(content)
+    }
+    
   }
 
 }

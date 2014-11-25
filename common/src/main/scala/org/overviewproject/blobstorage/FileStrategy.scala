@@ -5,6 +5,7 @@ import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import java.util.UUID
+import java.nio.file.Files
 
 
 trait FileStrategy extends BlobStorageStrategy {
@@ -41,7 +42,13 @@ trait FileStrategy extends BlobStorageStrategy {
   override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = {
     Future {
       val key = UUID.randomUUID
-      s"$locationPrefix:$key"
+      val locationString = s"$locationPrefix:$key"
+      val location = stringToLocation(locationString)
+      val file = keyFile(location)
+      
+      Files.copy(inputStream, file.toPath)
+      
+      locationString
     }
   }
   
