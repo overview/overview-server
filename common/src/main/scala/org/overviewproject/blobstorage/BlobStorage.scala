@@ -33,7 +33,9 @@ trait BlobStorage {
     * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
-  def get(location: String): Future[Enumerator[Byte]]
+  def get(location: String): Future[Enumerator[Byte]] = {
+    strategyFactory.forLocation(location).get(location)
+  }
 
   /** Deletes a blob.
     *
@@ -52,7 +54,9 @@ trait BlobStorage {
     * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
-  def delete(location: String): Future[Unit]
+  def delete(location: String): Future[Unit] = {
+    strategyFactory.forLocation(location).delete(location)
+  }
 
   /** Writes a file and returns its identifier.
     *
@@ -64,23 +68,13 @@ trait BlobStorage {
     * @param nBytes Number of bytes in the input stream
     * @return A <tt>location</tt>
     */
-  def create(bucket: BlobBucketId, inputStream: InputStream, nBytes: Long): Future[String]
+  def create(bucket: BlobBucketId, inputStream: InputStream, nBytes: Long): Future[String] = {
+    val prefix = config.getPreferredPrefix(bucket)
+    strategyFactory.forLocation(prefix).create(prefix, inputStream, nBytes)
+  }
 }
 
 object BlobStorage extends BlobStorage {
   override protected val config = BlobStorageConfig
   override protected val strategyFactory = StrategyFactory
-
-  override def get(location: String) = {
-    strategyFactory.forLocation(location).get(location)
-  }
-
-  override def delete(location: String) = {
-    strategyFactory.forLocation(location).delete(location)
-  }
-
-  override def create(bucket: BlobBucketId, inputStream: InputStream, nBytes: Long) = {
-    val prefix = config.getPreferredPrefix(bucket)
-    strategyFactory.forLocation(prefix).create(prefix, inputStream, nBytes)
-  }
 }
