@@ -46,9 +46,9 @@ trait FileStrategy extends BlobStorageStrategy {
     val location = stringToLocation(locationString)
 
     Future {
-      val file = keyFile(location)
-
-      Files.copy(inputStream, file.toPath)
+      val filePath = keyFile(location).toPath()
+      Files.createDirectories(filePath.getParent)
+      Files.copy(inputStream, filePath)
 
       locationString
     }

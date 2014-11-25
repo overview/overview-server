@@ -34,29 +34,27 @@ class FileStrategySpec extends StrategySpecification {
         rimraf(tmpDir)
       }
     }
-    
+
     val mockConfig = mock[BlobStorageConfig]
     mockConfig.fileBaseDirectory returns tmpDir.toString
     object TestFileStrategy extends FileStrategy {
       override val config = mockConfig
     }
-    
+
   }
 
-  
   trait BucketScope extends FileBaseScope {
     // Create bucket1
     val bucket = "bucket1"
     val bucketFile = new File(tmpDir.toString, bucket)
     bucketFile.mkdir()
   }
-  
-  
+
   trait FileContent {
     val content = "this is the content"
     val contentStream = utf8InputStream(content)
   }
-  
+
   trait ExistingFileScope extends BucketScope with FileContent {
     // Create key1
     val key = "key1"
@@ -68,11 +66,11 @@ class FileStrategySpec extends StrategySpecification {
 
   trait CreateScope extends BucketScope with FileContent {
     val locationRegex = s"^file:$bucket:([-\\w]+)$$".r
-    
+
     def fileAtLocation(location: String): File = location match {
       case locationRegex(key) => new File(bucketFile, key)
     }
-    
+
     def fileContent(file: File): String = {
       val source = Source.fromFile(file)
       val content = source.getLines.mkString
@@ -80,8 +78,8 @@ class FileStrategySpec extends StrategySpecification {
       content
     }
 
-  } 
-  
+  }
+
   "#get" should {
 
     "throw an exception when the location does not look like file:BUCKET:KEY" in new ExistingFileScope {
@@ -113,7 +111,7 @@ class FileStrategySpec extends StrategySpecification {
       new String(byteArray, "utf-8") must beEqualTo(content)
     }
   }
-  
+
   "#delete" should {
     "throw an exception when the location does not look like file:BUCKET:KEY" in new ExistingFileScope {
       TestFileStrategy.delete("fil:BUCKET:KEY") must throwA[IllegalArgumentException]
@@ -136,40 +134,47 @@ class FileStrategySpec extends StrategySpecification {
       val future = TestFileStrategy.delete(s"file:$bucket:$key")
       await(future) must throwA[IOException]
     }
-    
+
     "delete the file" in new ExistingFileScope {
       val future = TestFileStrategy.delete(s"file:$bucket:$key")
       keyFile.exists must beFalse
     }
   }
-  
+
   "#create" should {
     "throw an exception when the location does not look like file:BUCKET:KEY" in new CreateScope {
       TestFileStrategy.create("fil:BUCKET:KEY", contentStream, content.length) must throwA[IllegalArgumentException]
       TestFileStrategy.create("file::key", contentStream, content.length) must throwA[IllegalArgumentException]
       TestFileStrategy.create("file:bucket:", contentStream, content.length) must throwA[IllegalArgumentException]
     }
-    
-    "return location" in new CreateScope {
-       val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
-       val location = await(future)
-       
-       location must beMatching(locationRegex)
-    }
-    
-    "write the stream to the file" in new CreateScope {
-       val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
-       val location = await(future)
 
-       val file = fileAtLocation(location)
-       
-       file.exists must beTrue
-       
-       fileContent(file) must be equalTo(content)
+    "return location" in new CreateScope {
+      val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
+      val location = await(future)
+
+      location must beMatching(locationRegex)
     }
-    
-    
-    
+
+    "write the stream to the file" in new CreateScope {
+      val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
+      val location = await(future)
+
+      val file = fileAtLocation(location)
+
+      file.exists must beTrue
+
+      fileContent(file) must be equalTo (content)
+    }
+
+    "create any missing directories in path" in new CreateScope {
+      rimraf(tmpDir)
+
+      val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
+      val location = await(future)
+
+      fileAtLocation(location).exists must beTrue
+    }
+
   }
 
 }
