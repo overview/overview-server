@@ -18,7 +18,7 @@ trait BlobStorageStrategy {
     * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
-  def get(location: String): Future[Enumerator[Byte]]
+  def get(location: String): Future[Enumerator[Array[Byte]]]
 
   /** Deletes a blob.
     *
