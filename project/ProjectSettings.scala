@@ -23,6 +23,7 @@ trait ProjectSettings {
   val akkaAgentDep = "com.typesafe.akka" %% "akka-agent" % "2.3.4"
   val akkaDep = "com.typesafe.akka" %% "akka-actor" % "2.3.4"
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.3.4"
+  val awsS3Dep = "com.amazonaws" % "aws-java-sdk-s3" % "1.9.7"
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
   val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
   val commonsIoDep = "commons-io" % "commons-io" % "2.4"
@@ -76,6 +77,7 @@ trait ProjectSettings {
   val commonProjectDependencies = Seq(guavaDep) ++ (Seq(
     akkaDep,
     asyncHttpClientDep,
+    awsS3Dep,
     boneCpDep,
     redisDep,
     commonsIoDep,
