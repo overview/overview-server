@@ -144,6 +144,12 @@ class FileStrategySpec extends StrategySpecification {
   }
   
   "#create" should {
+    "throw an exception when the location does not look like file:BUCKET:KEY" in new CreateScope {
+      TestFileStrategy.create("fil:BUCKET:KEY", contentStream, content.length) must throwA[IllegalArgumentException]
+      TestFileStrategy.create("file::key", contentStream, content.length) must throwA[IllegalArgumentException]
+      TestFileStrategy.create("file:bucket:", contentStream, content.length) must throwA[IllegalArgumentException]
+    }
+    
     "return location" in new CreateScope {
        val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
        val location = await(future)
@@ -161,6 +167,8 @@ class FileStrategySpec extends StrategySpecification {
        
        fileContent(file) must be equalTo(content)
     }
+    
+    
     
   }
 

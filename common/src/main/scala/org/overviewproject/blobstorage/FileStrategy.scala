@@ -1,12 +1,11 @@
 package org.overviewproject.blobstorage
 
-import java.io.{File,InputStream, IOException}
+import java.io.{ File, InputStream, IOException }
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import java.util.UUID
 import java.nio.file.Files
-
 
 trait FileStrategy extends BlobStorageStrategy {
   protected val config: BlobStorageConfig
@@ -20,13 +19,16 @@ trait FileStrategy extends BlobStorageStrategy {
     case _ => throw new IllegalArgumentException(s"Invalid location string: '${string}'")
   }
 
-  private def keyFile(location: Location): File = 
+  private def keyFile(location: Location): File =
     new File(new File(baseDirectory, location.bucket), location.key)
+
+  private def createNewLocationString(locationPrefix: String) = 
+    s"$locationPrefix:${UUID.randomUUID}"
   
   override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
     val location = stringToLocation(locationString)
     Future {
-      val file = keyFile(location) 
+      val file = keyFile(location)
       Enumerator.fromFile(file)
     }
   }
@@ -38,20 +40,20 @@ trait FileStrategy extends BlobStorageStrategy {
       if (!file.delete) throw new IOException(s"Unable to delete file at location $locationString")
     }
   }
-  
+
   override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = {
+    val locationString = createNewLocationString(locationPrefix)
+    val location = stringToLocation(locationString)
+
     Future {
-      val key = UUID.randomUUID
-      val locationString = s"$locationPrefix:$key"
-      val location = stringToLocation(locationString)
       val file = keyFile(location)
-      
+
       Files.copy(inputStream, file.toPath)
-      
+
       locationString
     }
   }
-  
+
 }
 
 object FileStrategy extends FileStrategy {
