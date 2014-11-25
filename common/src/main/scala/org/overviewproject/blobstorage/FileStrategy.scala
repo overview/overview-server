@@ -1,9 +1,10 @@
 package org.overviewproject.blobstorage
 
-import java.io.{File,InputStream}
+import java.io.{File,InputStream, IOException}
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 
 trait FileStrategy extends BlobStorageStrategy {
   protected val config: BlobStorageConfig
@@ -17,15 +18,24 @@ trait FileStrategy extends BlobStorageStrategy {
     case _ => throw new IllegalArgumentException(s"Invalid location string: '${string}'")
   }
 
+  private def keyFile(location: Location): File = 
+    new File(new File(baseDirectory, location.bucket), location.key)
+  
   override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
     val location = stringToLocation(locationString)
     Future {
-      val file = new File(new File(baseDirectory, location.bucket), location.key)
+      val file = keyFile(location) 
       Enumerator.fromFile(file)
     }
   }
 
-  override def delete(location: String): Future[Unit] = ???
+  override def delete(locationString: String): Future[Unit] = {
+    val location = stringToLocation(locationString)
+    Future {
+      val file = keyFile(location)
+      if (!file.delete) throw new IOException(s"Unable to delete file at location $locationString")
+    }
+  }
   override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = ???
   
 }
