@@ -9,6 +9,7 @@ import org.overviewproject.models.tables.Pages
 import org.overviewproject.database.Slick.simple._
 import java.io.ByteArrayInputStream
 
+
 trait PageByteAStrategy extends BlobStorageStrategy {
 
   protected def db[A](block: Session => A): Future[A]
@@ -39,7 +40,12 @@ trait PageByteAStrategy extends BlobStorageStrategy {
   /** A noop since we never write data */
   override def delete(location: String): Future[Unit] = Future.successful()
   
-  override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = ???
+  /** 
+   *  @throws NotImplementedError always, because we don't want to store blobs in the page table
+   */
+  override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = 
+    throw new NotImplementedError("Blobs cannot be stored in byte arrays in the database")
+  
 }
 
 object PageByteAStrategy extends PageByteAStrategy {
