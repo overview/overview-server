@@ -8,6 +8,7 @@
 package org.overviewproject.database
 
 import java.sql.Connection
+import javax.sql.{ DataSource => JDataSource }
 import org.postgresql.PGConnection
 import com.jolbox.bonecp.ConnectionHandle
 
@@ -77,5 +78,9 @@ object DB {
     connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
   }
 
+  /**
+   * @return the current underlying data source
+   */
+  def getDataSource(): JDataSource = dataSource.getDataSource
 }
 

@@ -9,8 +9,10 @@ package org.overviewproject.database
 
 
 import java.sql.Connection
+import javax.sql.{ DataSource => JDataSource }
 import org.slf4j.LoggerFactory
 import com.jolbox.bonecp._
+
 
 /**
  * Wrapper for BoneCPDataSource, that applies the given configuration.
@@ -39,4 +41,6 @@ class DataSource(configuration: DatabaseConfiguration) {
   def shutdown() {
     dataSource.close()
   }
+  
+  def getDataSource(): JDataSource = dataSource
 }
