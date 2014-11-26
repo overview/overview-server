@@ -22,6 +22,14 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
         bytesRead must be equalTo data
       }
 
+      "return an empty enumerator if data is not set" in new NoDataPageScope {
+        val future = strategy.get(s"pagebytea:${page.id}")
+        val enumerator = await(future)
+        val bytesRead = consume(enumerator)
+
+        bytesRead must beEmpty
+      }
+      
       "throw an exception when get location does not look like pagebytea:PAGEID" in new ExistingFileScope {
         invalidLocationThrowsException(strategy.get)
       }
@@ -53,13 +61,20 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
       (q returning Pages).insertInvoker
     }
 
-    def insertFile(implicit session: Session): File = {
-      insertFileInvoker.insert(1, 10l, 10l, "name", Some(100l), Some(100l))
+    private val insertPageNoDataInvoker = {
+      val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.referenceCount)
+      (q returning Pages).insertInvoker
     }
 
-    def insertPage(fileId: Long, data: Array[Byte])(implicit session: Session): Page = {
+    def insertFile(implicit session: Session): File =
+      insertFileInvoker.insert(1, 10l, 10l, "name", Some(100l), Some(100l))
+
+    def insertPage(fileId: Long, data: Array[Byte])(implicit session: Session): Page =
       insertPageInvoker.insert(fileId, 1, 1, data)
-    }
+
+    def insertPageNoData(fileId: Long)(implicit session: Session): Page =
+      insertPageNoDataInvoker.insert(fileId, 1, 1)
+
   }
 
   trait PageBaseScope extends DbScope {
@@ -88,6 +103,10 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
   trait ExistingPageScope extends ExistingFileScope {
     val data = Array[Byte](1, 2, 3)
     val page = DbFactory.insertPage(file.id, data)
+  }
+
+  trait NoDataPageScope extends ExistingFileScope {
+    val page = DbFactory.insertPageNoData(file.id)
   }
 }
 
