@@ -41,8 +41,11 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
     }
 
     "#delete" should {
-      "not do anything" in {
-        todo
+      "not do anything" in new ExistingPageScope {
+        val future = strategy.delete(s"pagebytea:$page.id")
+        await(future)
+        
+        pageData must beSome(data)
       }
     }
 
@@ -107,6 +110,11 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
   trait ExistingPageScope extends ExistingFileScope {
     val data = Array[Byte](1, 2, 3)
     val page = DbFactory.insertPage(file.id, data)
+    
+    def pageData = {
+      val q = for (p <- Pages if p.id === page.id) yield p.data
+      q.firstOption
+    } 
   }
 
   trait NoDataPageScope extends ExistingFileScope {

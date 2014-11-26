@@ -36,7 +36,9 @@ trait PageByteAStrategy extends BlobStorageStrategy {
     }
   }
 
-  override def delete(location: String): Future[Unit] = ???
+  /** A noop since we never write data */
+  override def delete(location: String): Future[Unit] = Future.successful()
+  
   override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = ???
 }
 
