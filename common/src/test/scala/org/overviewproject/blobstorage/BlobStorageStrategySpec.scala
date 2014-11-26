@@ -1,0 +1,51 @@
+package org.overviewproject.blobstorage
+
+import java.io.InputStream
+import play.api.libs.iteratee.Enumerator
+import scala.concurrent.Future
+
+class BlobStorageStrategySpec extends StrategySpecification {
+  trait BlankStrategy extends BlobStorageStrategy {
+    override def get(location: String): Future[Enumerator[Array[Byte]]] = ???
+    override def delete(location: String): Future[Unit] = ???
+    override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = ???
+  }
+
+  "#deleteMany" should {
+    "fail immediately if any #delete fails immediately" in new BaseScope {
+      val testException = new Throwable("boo")
+      object TestStrategy extends BlankStrategy {
+        override def delete(location: String): Future[Unit] = {
+          if (location == "foo:bar") {
+            Future.successful(())
+          } else {
+            throw testException // synchronous
+          }
+        }
+      }
+      TestStrategy.deleteMany(Seq("foo:bar", "bar:baz")) should throwA(testException)
+    }
+
+    "fail eventually if any #delete fails eventually" in new BaseScope {
+      val testException = new Throwable("boo")
+      object TestStrategy extends BlankStrategy {
+        override def delete(location: String): Future[Unit] = {
+          if (location == "foo:bar") {
+            Future.successful(())
+          } else {
+            Future.failed(testException) // asynchronous
+          }
+        }
+      }
+      val future = TestStrategy.deleteMany(Seq("foo:bar", "bar:baz")) // no exception
+      await(future) must throwA(testException)
+    }
+
+    "succeed if every #delete succeeds" in new BaseScope {
+      object TestStrategy extends BlankStrategy {
+        override def delete(location: String) = Future.successful(())
+      }
+      await(TestStrategy.deleteMany(Seq("foo:bar", "bar:baz"))) must beEqualTo(())
+    }
+  }
+}

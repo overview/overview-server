@@ -39,6 +39,30 @@ trait BlobStorageStrategy {
     */
   def delete(location: String): Future[Unit]
 
+  /** Deletes lots of blobs, batched.
+    *
+    * Each <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
+    * <tt>"pglo:123456"</tt>.
+    *
+    * This method checks <tt>location</tt> for syntax synchronously. The Future
+    * it returns may fail if there is a network error or permissions problem.
+    *
+    * This method will <em>succeed</em> if you attempt to delete a blob that
+    * does not exist.
+    *
+    * When this method ends successfully, you are guaranteed that each file was
+    * absent from the server at some point after you called the method. If the
+    * method fails, some files may be deleted but not others. This is true even
+    * if the exception is a synchronous <tt>IllegalArgumentException</tt>.
+    *
+    * @param locations Seq of Strings like <tt>"s3:bucket:key"</tt> and <tt>"pglo:123"</tt>
+    * @throws InvalidArgumentException if a <tt>location</tt> is invalid
+    */
+  def deleteMany(locations: Seq[String]): Future[Unit] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    Future.traverse(locations)(delete).map((_) => (()))
+  }
+
   /** Writes a file and returns its identifier.
     *
     * @param locationPrefix Something like <tt>"s3:bucket"</tt> or <tt>"pglo"</tt>

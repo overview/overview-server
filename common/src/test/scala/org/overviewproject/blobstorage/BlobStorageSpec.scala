@@ -4,8 +4,12 @@ import java.io.InputStream
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import scala.concurrent.{Await,Future}
+import scala.concurrent.duration.Duration
 
 class BlobStorageSpec extends Specification with Mockito {
+  def await[T](future: Future[T]): T = Await.result(future, Duration.Inf)
+
   "BlobStorage" should {
     trait BaseScope extends Scope {
       val mockConfig = mock[BlobStorageConfig]
@@ -43,6 +47,36 @@ class BlobStorageSpec extends Specification with Mockito {
         mockStrategyFactory.forLocation(anyString) returns mockStrategy
         TestBlobStorage.delete("s3:foo:bar")
         there was one(mockStrategy).delete("s3:foo:bar")
+      }
+    }
+
+    "#deleteMany" should {
+      "call BlobStorageStrategy#deleteMany for each strategy" in new BaseScope {
+        val mockStrategy1 = mock[BlobStorageStrategy]
+        val mockStrategy2 = mock[BlobStorageStrategy]
+        mockStrategy1.deleteMany(any[Seq[String]]) returns(Future.successful(()))
+        mockStrategy2.deleteMany(any[Seq[String]]) returns(Future.successful(()))
+        mockStrategyFactory.forLocation("strat1:foo") returns mockStrategy1
+        mockStrategyFactory.forLocation("strat2:foo") returns mockStrategy2
+        mockStrategyFactory.forLocation("strat2:bar") returns mockStrategy2
+        val result = await(TestBlobStorage.deleteMany(Seq("strat1:foo", "strat2:foo", "strat2:bar")))
+        there was one(mockStrategy1).deleteMany(Seq("strat1:foo"))
+        there was one(mockStrategy2).deleteMany(Seq("strat2:foo", "strat2:bar"))
+        result must beEqualTo(())
+      }
+
+      "fail when any BlobStorageStrategy#deleteMany fails" in new BaseScope {
+        val sillyException = new Throwable("not good")
+        val mockStrategy1 = mock[BlobStorageStrategy]
+        val mockStrategy2 = mock[BlobStorageStrategy]
+        mockStrategy1.deleteMany(any[Seq[String]]) returns(Future.failed(sillyException))
+        mockStrategy2.deleteMany(any[Seq[String]]) returns(Future.successful(()))
+        mockStrategyFactory.forLocation("strat1:foo") returns mockStrategy1
+        mockStrategyFactory.forLocation("strat2:foo") returns mockStrategy2
+        mockStrategyFactory.forLocation("strat2:bar") returns mockStrategy2
+        await(TestBlobStorage.deleteMany(Seq("strat1:foo", "strat2:foo", "strat2:bar"))) must throwA(sillyException)
+        there was one(mockStrategy1).deleteMany(Seq("strat1:foo"))
+        there was one(mockStrategy2).deleteMany(Seq("strat2:foo", "strat2:bar"))
       }
     }
 
