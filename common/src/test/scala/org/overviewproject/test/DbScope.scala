@@ -1,14 +1,13 @@
 package org.overviewproject.test
 
 
-import java.sql.Connection
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
+import scala.slick.jdbc.UnmanagedSession 
 import scala.slick.jdbc.JdbcBackend.Session
-import scala.slick.jdbc.UnmanagedSession
 import org.overviewproject.database.DB
-import org.overviewproject.test.factories.{Factory,DbFactory}
 import org.specs2.mutable.BeforeAfter
+import java.sql.Connection
 
 trait DbScope extends BeforeAfter {
   var connected = false
@@ -19,7 +18,6 @@ trait DbScope extends BeforeAfter {
     ret
   }
   lazy val session: Session = new UnmanagedSession(connection)
-  lazy val factory: Factory = new DbFactory(connection)
 
   def await[A](f: Future[A]) = Await.result(f, Duration(2, "seconds"))
 
