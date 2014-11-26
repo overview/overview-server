@@ -2,9 +2,9 @@ package controllers.backend
 
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
+
 import org.overviewproject.jobs.models.Search
 import org.overviewproject.models.tables.{DocumentSearchResults,SearchResults}
-import org.overviewproject.test.DbScope
 
 class DbSavedSearchBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {

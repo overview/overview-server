@@ -1,9 +1,9 @@
 package controllers.backend
 
 import models.archive.DocumentViewInfo
+
 import org.specs2.mock.Mockito
 import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.test.DbScope
 
 class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito {
 

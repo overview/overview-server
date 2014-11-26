@@ -1,9 +1,9 @@
 package controllers.backend
 
 import play.api.libs.json.Json
+
 import org.overviewproject.models.ApiToken
 import org.overviewproject.models.tables.ApiTokens
-import org.overviewproject.test.DbScope
 
 class DbApiTokenBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
