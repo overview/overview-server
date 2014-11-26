@@ -34,15 +34,11 @@ trait PageByteAStrategy extends BlobStorageStrategy {
 
       val q = Pages.filter(_.id === location.pageId)
 
-      val data = for {
-        p <- q.firstOption
-      } yield {
-        val data = p.data.getOrElse(Array.empty)
-        val dataStream = new ByteArrayInputStream(data)
-        Enumerator.fromStream(dataStream)
-      }
+      val page = q.first
+      val data = page.data.getOrElse(Array.empty)
+      val dataStream = new ByteArrayInputStream(data)
 
-      data.get
+      Enumerator.fromStream(dataStream)
     }
   }
 

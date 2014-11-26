@@ -34,6 +34,10 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
         invalidLocationThrowsException(strategy.get)
       }
 
+      "throw a delayed exception if pageId is not a valid id" in new ExistingFileScope {
+    	val future = strategy.get(s"pagebytea:0")
+    	await(future) must throwA[Exception]
+      }
     }
 
     "#delete" should {
