@@ -13,11 +13,11 @@ class PageByteAStrategySpec extends SlickSpecification {
     "#get" should {
 
       "return an enumerator from data" in new ExistingPageScope {
-        val future = TestPageByteAStrategy.get(s"pagebytea:${page.id}")
+        //val future = TestPageByteAStrategy.get(s"pagebytea:${page.id}")
         //val enumerator = await(future)
-        val bytesRead = Array[Byte](4,5,6) //consume(enumerator)
+        //val bytesRead = Array[Byte](4,5,6) //consume(enumerator)
         
-        bytesRead must be equalTo data
+       todo
       }
     }
 
