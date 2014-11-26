@@ -10,6 +10,7 @@ class StrategySpecification
   with StrategySpecHelper
   with Mockito
 {
+  sequential
 
   trait BaseScope extends Scope {
   }
