@@ -30,7 +30,7 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
         bytesRead must beEmpty
       }
       
-      "throw an exception when get location does not look like pagebytea:PAGEID" in new ExistingFileScope {
+      "throw an exception when get location does not look like pagebytea:PAGEID" in new ExistingPageScope {
         invalidLocationThrowsException(strategy.get)
       }
 
