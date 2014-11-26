@@ -21,6 +21,11 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
 
         bytesRead must be equalTo data
       }
+
+      "throw an exception when get location does not look like pagebytea:PAGEID" in new ExistingFileScope {
+        invalidLocationThrowsException(strategy.get)
+      }
+
     }
 
     "#delete" should {
@@ -68,6 +73,12 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
     }
 
     val strategy = new TestPageByteAStrategy(session)
+
+    def invalidLocationThrowsException[T](f: String => T) =
+      (f("pagebyteX:1234") must throwA[IllegalArgumentException]) and
+        (f("pagebytea::1234") must throwA[IllegalArgumentException]) and
+        (f("pagebytea:") must throwA[IllegalArgumentException])
+
   }
 
   trait ExistingFileScope extends PageBaseScope {

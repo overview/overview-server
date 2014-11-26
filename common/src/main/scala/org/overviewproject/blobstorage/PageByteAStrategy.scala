@@ -13,8 +13,8 @@ trait PageByteAStrategy extends BlobStorageStrategy {
 
   protected def db[A](block: Session => A): Future[A] = Future {
     blocking {
-        Database.withSlickSession { session =>
-          block(session)
+      Database.withSlickSession { session =>
+        block(session)
       }
     }
   }
@@ -24,22 +24,26 @@ trait PageByteAStrategy extends BlobStorageStrategy {
 
   private def stringToLocation(locationString: String): Location = locationString match {
     case LocationRegex(pageId) => Location(pageId.toLong)
+    case _ => throw new IllegalArgumentException(s"Invalid location string: '${locationString}'")
   }
 
-  override def get(locationString: String): Future[Enumerator[Array[Byte]]] = db { implicit session =>
+  override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
     val location = stringToLocation(locationString)
 
-    val q = Pages.filter(_.id === location.pageId)
-    
-    val data = for {
-      p <- q.firstOption
-      d <- p.data
-    } yield {
-      val dataStream = new ByteArrayInputStream(d)
-      Enumerator.fromStream(dataStream)
-    }
+    db { implicit session =>
 
-    data.get
+      val q = Pages.filter(_.id === location.pageId)
+
+      val data = for {
+        p <- q.firstOption
+        d <- p.data
+      } yield {
+        val dataStream = new ByteArrayInputStream(d)
+        Enumerator.fromStream(dataStream)
+      }
+
+      data.get
+    }
   }
 
   override def delete(location: String): Future[Unit] = ???
