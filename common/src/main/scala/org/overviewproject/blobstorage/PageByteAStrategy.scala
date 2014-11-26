@@ -11,13 +11,7 @@ import java.io.ByteArrayInputStream
 
 trait PageByteAStrategy extends BlobStorageStrategy {
 
-  protected def db[A](block: Session => A): Future[A] = Future {
-    blocking {
-      Database.withSlickSession { session =>
-        block(session)
-      }
-    }
-  }
+  protected def db[A](block: Session => A): Future[A]
 
   private val LocationRegex = """^pagebytea:(\d+)$""".r
   private case class Location(pageId: Long)
@@ -47,4 +41,12 @@ trait PageByteAStrategy extends BlobStorageStrategy {
 }
 
 object PageByteAStrategy extends PageByteAStrategy {
+  override protected def db[A](block: Session => A): Future[A] = Future {
+    blocking {
+      Database.withSlickSession { session =>
+        block(session)
+      }
+    }
+  }
+  
 }
