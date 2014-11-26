@@ -5,56 +5,75 @@ import org.overviewproject.models.File
 import org.overviewproject.models.tables.Pages
 import org.overviewproject.models.Page
 import org.overviewproject.test.SlickSpecification
+import org.overviewproject.database.Slick.simple._
+import scala.concurrent.Future
 
-class PageByteAStrategySpec extends SlickSpecification {
+class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
 
   "PageByteAStrategy" should {
 
     "#get" should {
 
       "return an enumerator from data" in new ExistingPageScope {
-        //val future = TestPageByteAStrategy.get(s"pagebytea:${page.id}")
-        //val enumerator = await(future)
-        //val bytesRead = Array[Byte](4,5,6) //consume(enumerator)
-        
-       todo
+        val future = strategy.get(s"pagebytea:${page.id}")
+        val enumerator = await(future)
+        val bytesRead = consume(enumerator)
+
+        bytesRead must be equalTo data
       }
     }
 
     "#delete" should {
-
+      "not do anything" in {
+        todo
+      }
     }
 
     "#create" should {
-
+      "throw UnimplementedException" in {
+        todo
+      }
     }
   }
 
   object DbFactory {
-    import org.overviewproject.database.Slick.simple._
 
-    private val insertFileInvoker = (Files returning Files).insertInvoker
-    private val insertPageInvoker = (Pages returning Pages).insertInvoker
+    private val insertFileInvoker = {
+      val q = for (f <- Files) yield (f.referenceCount, f.contentsOid, f.viewOid, f.name, f.contentsSize, f.viewSize)
+      (q returning Files).insertInvoker
+    }
+
+    private val insertPageInvoker = {
+      val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.referenceCount, p.data)
+      (q returning Pages).insertInvoker
+    }
 
     def insertFile(implicit session: Session): File = {
-      val file = File(0l, 1, 10l, 10l, "name", Some(100l), Some(100l))
-      insertFileInvoker.insert(file)
+      insertFileInvoker.insert(1, 10l, 10l, "name", Some(100l), Some(100l))
     }
-    
+
     def insertPage(fileId: Long, data: Array[Byte])(implicit session: Session): Page = {
-      val page = Page(0l, fileId, 1, 1, Some(data), None)
-      insertPageInvoker.insert(page)
+      insertPageInvoker.insert(fileId, 1, 1, data)
     }
   }
-  
+
   trait PageBaseScope extends DbScope {
-    object TestPageByteAStrategy extends PageByteAStrategy
+
+    class TestPageByteAStrategy(session: Session) extends PageByteAStrategy {
+      import scala.concurrent.ExecutionContext.Implicits.global
+
+      override def db[A](block: Session => A): Future[A] = Future {
+        block(session)
+      }
+    }
+
+    val strategy = new TestPageByteAStrategy(session)
   }
-  
+
   trait ExistingFileScope extends PageBaseScope {
     val file = DbFactory.insertFile
   }
-  
+
   trait ExistingPageScope extends ExistingFileScope {
     val data = Array[Byte](1, 2, 3)
     val page = DbFactory.insertPage(file.id, data)
