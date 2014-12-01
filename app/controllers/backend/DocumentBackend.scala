@@ -26,6 +26,8 @@ trait DocumentBackend {
 
   /** Returns a single Document. */
   def show(documentSetId: Long, documentId: Long): Future[Option[Document]]
+
+  def show(documentId: Long): Future[Option[Document]]
 }
 
 trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
@@ -55,7 +57,11 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   }
 
   override def show(documentSetId: Long, documentId: Long) = {
-    firstOption(DbDocumentBackend.byId(documentSetId, documentId))
+    firstOption(DbDocumentBackend.byDocumentSetIdAndId(documentSetId, documentId))
+  }
+
+  override def show(documentId: Long) = {
+    firstOption(DbDocumentBackend.byId(documentId))
   }
 }
 
@@ -167,10 +173,14 @@ object DbDocumentBackend {
     }
   }
 
-  lazy val byId = Compiled { (documentSetId: Column[Long], documentId: Column[Long]) =>
+  lazy val byDocumentSetIdAndId = Compiled { (documentSetId: Column[Long], documentId: Column[Long]) =>
     Documents
       .filter(_.documentSetId === documentSetId)
       .filter(_.id === documentId)
+  }
+
+  lazy val byId = Compiled { (documentId: Column[Long]) =>
+    Documents.filter(_.id === documentId)
   }
 }
 

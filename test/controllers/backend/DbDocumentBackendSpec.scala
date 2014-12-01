@@ -242,6 +242,15 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         }
       }
 
+      "show a document when the document set ID is not specified" in new ShowScope {
+        val doc = await(backend.show(documentId))
+        doc must beSome { d: Document =>
+          d.id must beEqualTo(document.id)
+          d.title must beEqualTo(document.title)
+          d.text must beEqualTo(document.text)
+        }
+      }
+
       "not show a document with the wrong document set ID" in new ShowScope {
         override val documentSetId = documentSet.id + 1L
         ret must beNone
