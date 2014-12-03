@@ -14,6 +14,7 @@ object PostgresCommand {
     "/usr/sbin",
     "/usr/local/sbin",
     // Ubuntu
+    "/usr/lib/postgresql/9.4/bin",
     "/usr/lib/postgresql/9.3/bin",
     "/usr/lib/postgresql/9.2/bin",
     "/usr/lib/postgresql/9.1/bin",
@@ -28,6 +29,7 @@ object PostgresCommand {
     // Postgres suggestion on http://www.postgresql.org/docs/9.2/static/install-procedure.html
     "/opt/local/lib",
     // MacPorts, according to https://trac.macports.org/browser/trunk/dports/databases/postgresql91/Portfile
+    "/opt/local/lib/postgresql94/bin",
     "/opt/local/lib/postgresql93/bin",
     "/opt/local/lib/postgresql92/bin",
     "/opt/local/lib/postgresql91/bin",
@@ -36,17 +38,21 @@ object PostgresCommand {
     "/Applications/Postgres.app/Contents/MacOS/bin",
     "/Applications/Postgres93.app/Contents/MacOS/bin",
     // Postgres.app, as of 2014-04-25, has a different bin path
+    "/Applications/Postgres.app/Contents/Versions/9.4/bin",
     "/Applications/Postgres.app/Contents/Versions/9.3/bin",
     // Fink, according to http://pdb.finkproject.org/pdb/package.php/postgresql92
+    "/sw/opt/postgresql-9.4/bin",
     "/sw/opt/postgresql-9.3/bin",
     "/sw/opt/postgresql-9.2/bin",
     "/sw/opt/postgresql-9.1/bin",
     "/sw/opt/postgresql-9.0/bin",
     // EnterpriseDB, according to http://www.enterprisedb.com/resources-community/pginst-guide
+    "/opt/PostgreSQL/9.4/bin",
     "/opt/PostgreSQL/9.3/bin",
     "/opt/PostgreSQL/9.2/bin",
     "/opt/PostgreSQL/9.1/bin",
     "/opt/PostgreSQL/9.0/bin",
+    "/Library/PostgreSQL/9.4/bin",
     "/Library/PostgreSQL/9.3/bin",
     "/Library/PostgreSQL/9.2/bin",
     "/Library/PostgreSQL/9.1/bin",
@@ -89,7 +95,7 @@ object PostgresCommand {
     val allPaths = filesystem.envPaths ++ windowsSearchPaths(filesystem) ++ UnixStandardSearchPaths
     allPaths
       .find(isPostgresHere(_))
-      .toRight(s"Could not find Postgres 9.0-9.3. Please install ${commands.mkString(", ")} (which must be executable) in one of: ${allPaths.mkString(", ")}")
+      .toRight(s"Could not find Postgres 9.0-9.4. Please install ${commands.mkString(", ")} (which must be executable) in one of: ${allPaths.mkString(", ")}")
   }
 
   def apply(basename: String, args: String*) : PostgresCommand = {
