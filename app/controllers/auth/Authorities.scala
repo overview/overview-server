@@ -65,8 +65,6 @@ object Authorities {
           .filter(_.id === id)
           .filter(_.documentSetId in DocumentSetUsers.filter(_.userEmail === user.email).map(_.documentSetId))
           .length
-        System.out.println(q)
-        System.out.println(q.toString)
         q.run == 1
       }
     }
