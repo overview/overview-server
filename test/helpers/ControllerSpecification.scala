@@ -18,6 +18,8 @@ import models.{Session, User}
 trait ControllerSpecification extends Specification with Mockito {
   sequential
 
+  protected implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
+
   override def map(fs: => Fragments) = {
     Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
   }
