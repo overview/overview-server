@@ -288,6 +288,8 @@ object PodoFactory extends Factory {
     fileId: Long,
     pageNumber: Int,
     referenceCount: Int,
+    dataLocation: String,
+    dataSize: Long,
     data: Option[Array[Byte]],
     text: Option[String],
     dataErrorMessage: Option[String],
@@ -297,6 +299,8 @@ object PodoFactory extends Factory {
     getId(fileId), 
     pageNumber,
     referenceCount, 
+    dataLocation,
+    dataSize,
     data,
     text,
     dataErrorMessage,
@@ -310,8 +314,8 @@ object PodoFactory extends Factory {
     contentsOid: Long,
     viewOid: Long,
     name: String,
-    contentsSize: Option[Long],
-    viewSize: Option[Long]
+    contentsSize: Long,
+    viewSize: Long
   ) = File(
     getId(id),
     referenceCount,

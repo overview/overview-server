@@ -23,7 +23,7 @@ trait BlobStorageConfig {
 
   /** The base directory for the file storage strategy.
     *
-    * For instance, this might be <tt>"./blob-storage"</tt>.
+    * For instance, this might be <tt>"./blob-storage/production"</tt>.
     *
     * The user must have write permission to the directory. If it does not
     * exist, it will be created on first use.

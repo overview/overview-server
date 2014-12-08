@@ -43,7 +43,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
         f <- Files if d.fileId === f.id
       } yield (d.title, f.viewOid, f.viewSize)
 
-    val fileInfo = q.list.map(f => (f._1.getOrElse(""), f._2, f._3.getOrElse(0l)))
+    val fileInfo = q.list.map(f => (f._1.getOrElse(""), f._2, f._3))
     fileInfo.map(documentViewInfoFactory.fromFile)
   }
   

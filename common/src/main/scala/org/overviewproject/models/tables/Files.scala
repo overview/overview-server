@@ -10,8 +10,8 @@ class FilesImpl(tag: Tag) extends Table[File](tag, "file") {
   def contentsOid = column[Long]("contents_oid")
   def viewOid = column[Long]("view_oid")
   def name = column[String]("name")
-  def contentsSize = column[Option[Long]]("contents_size")
-  def viewSize = column[Option[Long]]("view_size")
+  def contentsSize = column[Long]("contents_size")
+  def viewSize = column[Long]("view_size")
   
   def * = (
     id,

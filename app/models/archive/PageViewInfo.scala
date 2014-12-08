@@ -38,7 +38,8 @@ object PageViewInfo {
       override def pageDataStream(pageId: Long): Option[InputStream] =
         OverviewDatabase.withSlickSession { implicit session =>
           val q = Pages.filter(_.id === pageId).map(_.data)
-          q.firstOption.map(new ByteArrayInputStream(_))
+          // FIXME this only works with pagebytea storage
+          q.firstOption.flatten.map(new ByteArrayInputStream(_))
         }
     }
   }

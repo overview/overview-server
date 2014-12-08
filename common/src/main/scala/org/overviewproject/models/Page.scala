@@ -5,6 +5,8 @@ case class Page(
     fileId: Long,
     pageNumber: Int,
     referenceCount: Int,
+    dataLocation: String,
+    dataSize: Long,
     data: Option[Array[Byte]],
     text: Option[String],
     dataErrorMessage: Option[String] = None,

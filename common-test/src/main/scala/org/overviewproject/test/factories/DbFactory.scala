@@ -248,6 +248,8 @@ class DbFactory(connection: Connection) extends Factory {
     fileId: Long,
     pageNumber: Int,
     referenceCount: Int,
+    dataLocation: String,
+    dataSize: Long,
     data: Option[Array[Byte]],
     text: Option[String],
     dataErrorMessage: Option[String],
@@ -257,6 +259,8 @@ class DbFactory(connection: Connection) extends Factory {
     fileId,
     pageNumber,
     referenceCount,
+    dataLocation,
+    dataSize,
     data,
     text,
     dataErrorMessage,
@@ -269,8 +273,8 @@ class DbFactory(connection: Connection) extends Factory {
     contentsOid: Long,
     viewOid: Long,
     name: String,
-    contentsSize: Option[Long],
-    viewSize: Option[Long]
+    contentsSize: Long,
+    viewSize: Long
   ) = q.insertFile += podoFactory.file(
     id,
     referenceCount,

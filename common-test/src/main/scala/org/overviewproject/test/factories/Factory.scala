@@ -165,7 +165,9 @@ trait Factory {
     fileId: Long = 0L,
     pageNumber: Int = 1,
     referenceCount: Int = 1,
-    data: Option[Array[Byte]] = Some(Array.fill[Byte](100)(0x34)),
+    dataLocation: String = "pagebytea:123",
+    dataSize: Long = 9L,
+    data: Option[Array[Byte]] = Some("page text".getBytes("utf-8")),
     text: Option[String] = Some("page text"),
     dataErrorMessage: Option[String] = None,
     textErrorMessage: Option[String] = None
@@ -177,8 +179,8 @@ trait Factory {
     contentsOid: Long = 1,
     viewOid: Long = 1,
     name: String = "filename",
-    contentsSize: Option[Long] = Some(0L),
-    viewSize: Option[Long] = None
+    contentsSize: Long = 1L,
+    viewSize: Long = 1L
   ): File
   
 }

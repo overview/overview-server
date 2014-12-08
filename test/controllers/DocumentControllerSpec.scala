@@ -1,83 +1,116 @@
 package controllers
 
 import org.specs2.specification.Scope
+import play.api.libs.iteratee.Enumerator
 import play.api.mvc.AnyContent
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
+import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import models.OverviewDocument
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.blobstorage.BlobStorage
+import org.overviewproject.models.{Document,File,Page}
 
 class DocumentControllerSpec extends ControllerSpecification {
   trait DocumentScope extends Scope {
-    val mockStorage = mock[DocumentController.Storage]
+    val mockDocumentBackend = mock[DocumentBackend]
+    val mockFileBackend = mock[FileBackend]
+    val mockPageBackend = mock[PageBackend]
+    val mockBlobStorage = mock[BlobStorage]
 
     val controller = new DocumentController {
-      override val storage = mockStorage
+      override val blobStorage = mockBlobStorage
+      override val documentBackend = mockDocumentBackend
+      override val fileBackend = mockFileBackend
+      override val pageBackend = mockPageBackend
     }
+
+    val factory = org.overviewproject.test.factories.PodoFactory
 
     val request : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest
 
     val requestedDocumentId = 1L
-  }
+    val fileId = 2L
+    val pageId = 3L
+    val validLocation = "foo:bar"
 
-  trait ShowScope {
-    self: DocumentScope =>
+    def foundDocument: Option[Document] = None
+    def foundFile: Option[File] = None
+    def foundPage: Option[Page] = None
+    def foundBlob: Enumerator[Array[Byte]] = Enumerator.empty
 
-    lazy val result = controller.show(requestedDocumentId)(request)
-  }
-
-  trait ShowTextScope extends DocumentScope {
-    self: DocumentScope =>
-
-    lazy val result = controller.showText(requestedDocumentId)(request)
-  }
-
-  trait ValidDocumentScope extends DocumentScope {
-    val document = mock[OverviewDocument]
-    document.id returns requestedDocumentId
-    document.description returns "description"
-    document.title returns None
-    document.text returns None
-    document.suppliedId returns None
-    document.url returns None
-
-    mockStorage.find(anyInt) returns Some(document)
-  }
-
-  trait InvalidDocumentScope extends DocumentScope {
-    mockStorage.find(anyInt) returns None
+    mockDocumentBackend.show(requestedDocumentId) returns Future { foundDocument }
+    mockFileBackend.show(fileId) returns Future { foundFile }
+    mockPageBackend.show(pageId) returns Future { foundPage }
+    mockBlobStorage.get(validLocation) returns Future { foundBlob }
   }
 
   "DocumentController" should {
     "show()" should {
-      "return NotFound when ID is invalid" in new ShowScope with InvalidDocumentScope {
+      trait ShowScope extends DocumentScope {
+        lazy val result = controller.show(requestedDocumentId)(request)
+      }
+
+      "return NotFound when ID is invalid" in new ShowScope {
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return Ok when ID is valid" in new ShowScope with ValidDocumentScope {
+      "return Ok when ID is valid" in new ShowScope {
+        override def foundDocument = Some(factory.document())
         h.status(result) must beEqualTo(h.OK)
       }
     }
 
     "showText()" should {
-      "return NotFound when ID is invalid" in new ShowTextScope with InvalidDocumentScope {
+      trait ShowTextScope extends DocumentScope {
+        lazy val result = controller.showText(requestedDocumentId)(request)
+      }
+
+      "return NotFound when ID is invalid" in new ShowTextScope {
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return the empty string when the ID is valid and there is no text" in new ShowTextScope with ValidDocumentScope {
-        document.text returns None
+      "return the text when the ID is valid" in new ShowTextScope {
+        override def foundDocument = Some(factory.document(text="foo bar"))
         h.status(result) must beEqualTo(h.OK)
         h.contentType(result) must beSome("text/plain")
         h.charset(result) must beSome("utf-8")
+        h.contentAsString(result) must beEqualTo("foo bar")
+      }
+    }
+
+    "showContents()" should {
+      trait ShowContentsScope extends DocumentScope {
+        lazy val result = controller.showContents(requestedDocumentId)(request)
+      }
+
+      "return NotFound when ID is invalid" in new ShowContentsScope {
+        h.status(result) must beEqualTo(h.NOT_FOUND)
+      }
+
+      "return no content when document has no file or page" in new ShowContentsScope {
+        override def foundDocument = Some(factory.document(fileId=None, pageId=None))
+        h.status(result) must beEqualTo(h.OK)
+        h.header("Content-Length", result) must beSome("0")
         h.contentAsString(result) must beEqualTo("")
       }
 
-      "return the text when the ID is valid" in new ShowTextScope with ValidDocumentScope {
-        document.text returns Some("foo")
+      "return empty content when the page does not exist" in new ShowContentsScope {
+        override def foundDocument = Some(factory.document(fileId=Some(fileId), pageId=Some(pageId)))
+        override def foundPage = None
         h.status(result) must beEqualTo(h.OK)
-        h.contentType(result) must beSome("text/plain")
-        h.charset(result) must beSome("utf-8")
-        h.contentAsString(result) must beEqualTo("foo")
+        h.header("Content-Length", result) must beSome("0")
+        h.contentAsString(result) must beEqualTo("")
+      }
+
+      "return page content from blob storage" in new ShowContentsScope {
+        override def foundDocument = Some(factory.document(fileId=Some(fileId), pageId=Some(pageId)))
+        override def foundPage = Some(factory.page(dataLocation=validLocation, dataSize=9))
+        override def foundBlob = Enumerator("page data".getBytes("utf-8"))
+
+        h.status(result) must beEqualTo(h.OK)
+        h.header("Content-Length", result) must beSome("9")
+        h.contentAsString(result) must beEqualTo("page data")
       }
     }
   }

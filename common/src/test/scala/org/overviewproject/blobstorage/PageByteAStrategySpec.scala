@@ -64,23 +64,18 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
     }
 
     private val insertPageInvoker = {
-      val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.referenceCount, p.data)
-      (q returning Pages).insertInvoker
-    }
-
-    private val insertPageNoDataInvoker = {
-      val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.referenceCount)
+      val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.referenceCount, p.data, p.dataSize)
       (q returning Pages).insertInvoker
     }
 
     def insertFile(implicit session: Session): File =
-      insertFileInvoker.insert(1, 10l, 10l, "name", Some(100l), Some(100l))
+      insertFileInvoker.insert(1, 10l, 10l, "name", 100l, 100l)
 
     def insertPage(fileId: Long, data: Array[Byte])(implicit session: Session): Page =
-      insertPageInvoker.insert(fileId, 1, 1, data)
+      insertPageInvoker.insert(fileId, 1, 1, Some(data), data.length)
 
     def insertPageNoData(fileId: Long)(implicit session: Session): Page =
-      insertPageNoDataInvoker.insert(fileId, 1, 1)
+      insertPageInvoker.insert(fileId, 1, 1, None, 0)
 
   }
 
@@ -115,7 +110,7 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
     
     def pageData = {
       val q = for (p <- Pages if p.id === page.id) yield p.data
-      q.firstOption
+      q.firstOption.flatten
     } 
   }
 

@@ -54,7 +54,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     val oid = 1234l
     val size = 456l
 
-    val file = factory.file(name = filename, viewOid = oid, viewSize = Some(size))
+    val file = factory.file(name = filename, viewOid = oid, viewSize = size)
     val document = factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id))
   }
 

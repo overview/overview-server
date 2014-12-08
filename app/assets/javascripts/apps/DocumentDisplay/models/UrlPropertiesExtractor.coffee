@@ -35,7 +35,7 @@ define [], ->
         {
           id: 'localObject'
           name: 'Local document (object)'
-          regex: /// ^(/documents/\d+/contents/\d+)$ ///
+          regex: /// ^(/documents/\d+/contents)$ ///
           capture: [ 'uri' ]
           url: (o) -> o.uri
         }
