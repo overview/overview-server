@@ -19,17 +19,17 @@ class DataSourceSpec extends Specification {
     "provide connections until it is shutdown" in {
       
       val config = new SystemPropertiesDatabaseConfiguration()
-      val dataSource = new DataSource(config)
+      val dataSource = DataSource(config)
       
-      implicit val connection = dataSource.getConnection()
+      implicit val connection = dataSource.getConnection
       
       val id = SQL("SELECT * from document_set").execute
       	
       connection.close()
       id must beTrue
       
-      dataSource.shutdown()
-      dataSource.getConnection() must throwA[SQLException]
+      dataSource.shutdown
+      dataSource.getConnection must throwA[SQLException]
     }
   }
 }

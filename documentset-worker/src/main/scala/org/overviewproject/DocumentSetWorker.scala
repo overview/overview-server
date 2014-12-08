@@ -41,7 +41,7 @@ object DocumentSetWorker extends App {
     s"$WorkerActorSystemName/user/$FileGroupJobQueueSupervisorName/$FileGroupJobQueueName"
 
   val config = new SystemPropertiesDatabaseConfiguration()
-  val dataSource = new DataSource(config)
+  val dataSource = DataSource(config)
 
   DB.connect(dataSource)
 

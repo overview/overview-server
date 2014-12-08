@@ -36,7 +36,7 @@ object JobHandler {
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
     val config = new SystemPropertiesDatabaseConfiguration()
-    val dataSource = new DataSource(config)
+    val dataSource = DataSource(config)
 
     DB.connect(dataSource)
 

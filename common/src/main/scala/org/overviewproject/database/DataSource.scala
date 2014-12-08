@@ -13,34 +13,45 @@ import javax.sql.{ DataSource => JDataSource }
 import org.slf4j.LoggerFactory
 import com.jolbox.bonecp._
 
+trait DataSource {
+  def getConnection: Connection
+  def shutdown: Unit
+  def getDataSource: JDataSource
+}
 
-/**
- * Wrapper for BoneCPDataSource, that applies the given configuration.
- * Should be shutdown() when program ends to shutdown BoneCP connection pool.
- */
-class DataSource(configuration: DatabaseConfiguration) {
-
-  Class.forName(configuration.databaseDriver)
-
-  private val dataSource = new BoneCPDataSource()
-
-  dataSource.setJdbcUrl(configuration.databaseUrl)
-  dataSource.setUsername(configuration.username)
-  dataSource.setPassword(configuration.password)
-  dataSource.setMinConnectionsPerPartition(1)
-  dataSource.setMaxConnectionsPerPartition(5)
-  dataSource.setAcquireIncrement(1)
-  dataSource.setPartitionCount(1)
-  dataSource.setDisableJMX(true)
-  dataSource.setLogStatementsEnabled(LoggerFactory.getLogger(classOf[BoneCPConfig]).isDebugEnabled())
-
-  def getConnection(): Connection = {
-    dataSource.getConnection()
+object DataSource {
+  /** Adapter for an existing DataSource.
+    *
+    * This adapter does not implement shutdown(): we assume the caller takes
+    * care of that.
+    */
+  def apply(dataSource: JDataSource) = new DataSource {
+    override def getConnection: Connection = dataSource.getConnection()
+    override def shutdown: Unit = {}
+    override def getDataSource: JDataSource = dataSource
   }
 
-  def shutdown() {
-    dataSource.close()
+  /**
+   * Wrapper for BoneCPDataSource, that applies the given configuration.
+   * Should be shutdown() when program ends to shutdown BoneCP connection pool.
+   */
+  def apply(configuration: DatabaseConfiguration) = new DataSource {
+    Class.forName(configuration.databaseDriver)
+
+    private val dataSource = new BoneCPDataSource()
+
+    dataSource.setJdbcUrl(configuration.databaseUrl)
+    dataSource.setUsername(configuration.username)
+    dataSource.setPassword(configuration.password)
+    dataSource.setMinConnectionsPerPartition(1)
+    dataSource.setMaxConnectionsPerPartition(5)
+    dataSource.setAcquireIncrement(1)
+    dataSource.setPartitionCount(1)
+    dataSource.setDisableJMX(true)
+    dataSource.setLogStatementsEnabled(LoggerFactory.getLogger(classOf[BoneCPConfig]).isDebugEnabled())
+
+    override def getConnection: Connection = dataSource.getConnection()
+    override def shutdown: Unit = dataSource.close()
+    override def getDataSource: JDataSource = dataSource
   }
-  
-  def getDataSource(): JDataSource = dataSource
 }

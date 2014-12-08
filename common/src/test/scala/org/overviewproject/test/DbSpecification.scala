@@ -52,7 +52,7 @@ class DbSpecification extends Specification {
 
   def setupDb() {
     System.setProperty(DatabaseProperty, TestDatabase)
-    val dataSource = new DataSource(new SystemPropertiesDatabaseConfiguration())
+    val dataSource = DataSource(new SystemPropertiesDatabaseConfiguration())
     DB.connect(dataSource)
   }
 

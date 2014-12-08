@@ -63,6 +63,12 @@ object Global extends WithFilters(LoggingFilter, CorsFilter, CSRFFilter()) with 
     }
   }
 
+  override def onStart(app: play.api.Application) = {
+    import org.overviewproject.database.{DB => ODB, DataSource => ODataSource}
+    import play.api.db.{DB => PDB}
+    ODB.connect(ODataSource(PDB.getDataSource()(app)))
+  }
+
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {
     // Handle OPTIONS requests.
     // This should be in Play. In the meantime, we just say every HTTP method

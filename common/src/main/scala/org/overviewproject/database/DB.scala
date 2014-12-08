@@ -25,21 +25,21 @@ object DB {
   }
 
   def close() {
-    dataSource.shutdown()
+    dataSource.shutdown
   }
 
   /**
    * @return a connection. Caller is responsible for closing connection.
    */
   def getConnection(): Connection = {
-    dataSource.getConnection()
+    dataSource.getConnection
   }
 
   /**
    * Provides a scope with an implicit connection that is automatically closed.
    */
   def withConnection[T](block: Connection => T): T = {
-    val connection = dataSource.getConnection()
+    val connection = dataSource.getConnection
     try {
       block(connection)
     } finally {
