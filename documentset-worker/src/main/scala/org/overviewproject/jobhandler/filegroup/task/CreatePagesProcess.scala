@@ -52,26 +52,11 @@ trait CreatePagesProcess {
   private case class WritePdfPages(taskInformation: TaskInformation, file: File, pdfDocument: PdfDocument) extends ErrorSavingTaskStep {
 
     override def executeTaskStep: FileGroupTaskStep = {
-      val pages = createPages(pdfDocument.pages, file.id)
-      storage.savePages(pages)
+      storage.savePages(file.id, pdfDocument.pages.map { p => p.data -> p.text })
       pdfDocument.close
       
       CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.uploadedFileId, Some(file.id))      
     }
-
-    private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] = {
-      var pageNumber = 0
-
-      for (page <- pageContents) yield {
-        pageNumber += 1
-        createPageFromContent(fileId, page, pageNumber)
-      }
-    }
-    
-    private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
-      Page(fileId, pageNumber, 1, None, content.data.length, Some(content.data), Some(content.text))
-
-
   }
 
   /** [[FileGroupTaskStep]] that catches exceptions, stores them as errors, and completes the [[CreatePagesProcess]] */
@@ -116,7 +101,12 @@ trait CreatePagesProcess {
     def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
     def deleteUploadedFile(upload: GroupedFileUpload): Unit
 
-    def savePages(pages: Iterable[Page]): Unit
+    /** Saves pages permanently.
+      *
+      * The pages are sequential. (The first is page 1.) Each consists of an
+      * Array[Byte] blob of data and a String text representation.
+      */
+    def savePages(fileId: Long, pages: Iterable[Tuple2[Array[Byte],String]]): Unit
 
     def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit
   }

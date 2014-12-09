@@ -39,7 +39,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       val thirdStep = secondStep.execute
       val finalStep = thirdStep.execute
       
-      there was one(createPagesProcess.storage).savePages(any)
+      there was one(createPagesProcess.storage).savePages(any[Long], any[Iterable[Tuple2[Array[Byte],String]]])
       finalStep must beLike { case CreatePagesProcessComplete(d, u, f) => f must beSome(fileId) }
     }
 
