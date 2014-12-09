@@ -1,48 +1,45 @@
 package models.archive
 
-import java.io.InputStream
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 
-class PageViewInfoSpec extends ViewInfoSpecification {
+class PageViewInfoSpec extends Specification {
 
   "PageViewInfo" should {
 
     "create entries for PageViews" in new PageViewInfoContext {
-      entry must matchParameters(pageTitle + Pdf, size, pageId)
+      override val pageNumber = 5
+      override val originalName = "title"
+      entry.name must beEqualTo("title p5.pdf")
     }
 
-    "remove pdf extension from filename with page" in new PdfPageContext {
-      entry must matchParameters(s"$baseName $pageDescriptor" + Pdf, size, pageId)
+    "remove pdf extension from filename with page" in new PageViewInfoContext {
+      override val pageNumber = 5
+      override val originalName = "title.pdf"
+      entry.name must beEqualTo("title p5.pdf")
     }
 
+    "set size" in new PageViewInfoContext {
+      override val size = 123L
+      entry.size must beEqualTo(123L)
+    }
   }
 
-  trait PageViewInfoContext extends ArchiveEntryFactoryContext {
+  trait PageViewInfoContext extends Scope {
     val pageNumber = 5
-    val pageDescriptor = s"p$pageNumber"
-    val pageTitle = s"$cleanName $pageDescriptor"
-
-    val pageId = 1l
+    val size = 123L
+    val originalName = "title"
+    val pageId = 1L
 
     val pageViewInfo = PageViewInfo(originalName, pageNumber, pageId, size)
 
-    val viewInfo = new TestPageViewInfo(originalName, pageNumber, pageId, size)
-    val entry = viewInfo.archiveEntry
-    
-    override def streamWasCreatedFromId(id: Long) =
-      there was one(viewInfo.mockStorage).pageDataStream(pageId)
-
-  }
-
-  trait PdfPageContext extends PageViewInfoContext {
-    def baseName = "file"
-    override def originalName = baseName + Pdf
+    def viewInfo = new TestPageViewInfo(originalName, pageNumber, pageId, size)
+    def entry = viewInfo.archiveEntry
   }
 
   class TestPageViewInfo(title: String, pageNumber: Int, pageId: Long, size: Long)
-      extends PageViewInfo(title, pageNumber, pageId, size) {
-    override protected val storage = smartMock[Storage]
-    
-    val mockStorage = storage
-    storage.pageDataStream(pageId) returns Some(smartMock[InputStream])
+    extends PageViewInfo(title, pageNumber, pageId, size) {
+
+    override def stream = ???
   }
 }

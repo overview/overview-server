@@ -1,47 +1,44 @@
 package models.archive
-import org.specs2.matcher.MatchResult
 
-class FileViewInfoSpec extends ViewInfoSpecification {
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+
+class FileViewInfoSpec extends Specification {
 
   "FileViewInfo" should {
-
     "create ArchiveEntry" in new FileViewInfoContext {
-      entry must matchParameters(cleanName + Pdf, size, viewOid)
+      override val originalName = "title.doc"
+      entry.name must beEqualTo("title_doc.pdf")
     }
 
-    "only have a single .pdf extension for pdf files" in new PdfFileContext {
-      entry must matchParameters(originalName, size, viewOid)
+    "only have a single .pdf extension for pdf files" in new FileViewInfoContext {
+      override val originalName = "title.pdf"
+      entry.name must beEqualTo("title.pdf")
     }
 
-    "detect PDF extension regardless of case" in new UpperCasePdfFileContext {
-      entry must matchParameters(baseName + Pdf, size, viewOid)
+    "detect PDF extension regardless of case" in new FileViewInfoContext {
+      override val originalName = "title.PDF"
+      entry.name must beEqualTo("title.pdf")
+    }
+
+    "pass size along" in new FileViewInfoContext {
+      override val size = 1234L
+      entry.size must beEqualTo(1234L)
     }
   }
   
-  trait FileViewInfoContext extends ArchiveEntryFactoryContext {
-    val viewOid = 123l
+  trait FileViewInfoContext extends Scope {
+    val viewOid = 123L
+    val originalName = "title"
+    val size = 234L
 
-    val fileViewInfo = FileViewInfo(originalName, viewOid, size)
-
-    val viewInfo = new TestFileViewInfo(originalName, viewOid, size)
-    val entry = viewInfo.archiveEntry
-
-    override def streamWasCreatedFromId(id: Long): MatchResult[Any] =
-      there was one(viewInfo.mockStorage).largeObjectInputStream(id)
+    def viewInfo = new TestFileViewInfo(originalName, viewOid, size)
+    def entry = viewInfo.archiveEntry
   }
 
-  trait PdfFileContext extends FileViewInfoContext {
-    override def originalName = "file.pdf"
-  }
+  class TestFileViewInfo(title: String, oid: Long, size: Long)
+    extends FileViewInfo(title, oid, size) {
 
-  trait UpperCasePdfFileContext extends FileViewInfoContext {
-    def baseName = "file"
-    override def originalName = baseName + Pdf.toUpperCase
+    override def stream = ???
   }
-
-  class TestFileViewInfo(title: String, oid: Long, size: Long) extends FileViewInfo(title, oid, size) {
-    override val storage = smartMock[Storage]
-    val mockStorage = storage
-  }
-
 }

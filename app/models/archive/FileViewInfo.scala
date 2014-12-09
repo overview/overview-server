@@ -1,36 +1,28 @@
 package models.archive
 
-import java.io.InputStream
+import play.api.libs.iteratee.Enumerator
+import scala.concurrent.Future
 
+import org.overviewproject.blobstorage.BlobStorage
 
-abstract class FileViewInfo(documentTitle: String, viewOid: Long, size: Long) extends DocumentViewInfo {
-
-  def archiveEntry: ArchiveEntry =
-    ArchiveEntry(asPdf(removePdf(documentTitle)), size, largeObjectInputStream(viewOid) _)
-
-  private def largeObjectInputStream(oid: Long)(): InputStream = storage.largeObjectInputStream(oid)
-
-  protected val storage: Storage
-  protected trait Storage {
-    def largeObjectInputStream(oid: Long): InputStream
-  }
+abstract class FileViewInfo(
+  documentTitle: String,
+  viewOid: Long,
+  override val size: Long
+) extends DocumentViewInfo {
+  override def name = asPdf(removePdf(documentTitle))
 }
 
 object FileViewInfo {
-  import controllers.util.PlayLargeObjectInputStream
-
-  private val LOBufferSize = 1024 * 1024
-  
-  def apply(documentTitle: String, viewOid: Long, size: Long): FileViewInfo =
-    new DbFileViewInfo(documentTitle, viewOid, size)
-
-  private class DbFileViewInfo(documentTitle: String, viewOid: Long, size: Long)
-      extends FileViewInfo(documentTitle, viewOid, size) {
-
-    override protected val storage = new DbStorage
-
-    protected class DbStorage extends Storage {
-      override def largeObjectInputStream(oid: Long): InputStream = new PlayLargeObjectInputStream(oid, LOBufferSize)
-    }
+  private class BlobStorageFileViewInfo(
+    documentTitle: String,
+    viewOid: Long,
+    size: Long,
+    private val blobStorage: BlobStorage
+  ) extends FileViewInfo(documentTitle, viewOid, size) {
+    override def stream() = blobStorage.get("pglo:" + viewOid)
   }
+
+  def apply(documentTitle: String, viewOid: Long, size: Long): FileViewInfo =
+    new BlobStorageFileViewInfo(documentTitle, viewOid, size, BlobStorage)
 }

@@ -1,9 +1,11 @@
 package models.archive
 
-import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+import play.api.libs.iteratee.Enumerator
+import scala.concurrent.Future
 
 class ArchiveEntryCollectionSpec extends Specification {
 
@@ -113,7 +115,7 @@ class ArchiveEntryCollectionSpec extends Specification {
 trait ArchiveEntryCollectionContext extends Scope {
   val numberOfEntries = 5
   val fileSize = 100
-  def stream = new ByteArrayInputStream(Array.empty[Byte])
+  def stream() = Future.successful(Enumerator(Array.empty[Byte]))
 
   val base = "file"
   val uniqueNames = Seq.tabulate(numberOfEntries)(n => s"$base-$n")

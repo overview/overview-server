@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.SequenceInputStream
 import java.nio.charset.StandardCharsets
-import scala.collection.JavaConverters._
+
 import models.archive.DosDate
 
 /**
@@ -20,20 +20,17 @@ class CentralDirectoryFileHeader(fileName: String, fileSize: Long, crc: Int,  of
   protected val compressedSize = fileSize.toInt
   protected val uncompressedSize = fileSize.toInt
   protected val extraFieldLength = empty
-  protected val extraField: Array[Byte] = Array.empty
+  protected val extraFieldBytes: Array[Byte] = Array.empty
   
   protected val localHeaderOffset = offset
   
   protected val fileNameSize = fileNameBytes.size
 
-  def stream: InputStream = new SequenceInputStream(Iterator(
-      headerStream,
-      fileNameStream,
-      extraFieldStream).asJavaEnumeration)
+  def bytes: Array[Byte] = headerBytes ++ fileNameBytes ++ extraFieldBytes
 
   def size: Int = centralDirectoryHeader + extraFieldLength + fileNameSize
   
-  private def headerStream = new ByteArrayInputStream(
+  private def headerBytes = {
     writeInt(centralFileHeaderSignature) ++
       writeShort(versionMadeBy) ++
       writeShort(extractorVersion) ++
@@ -50,10 +47,8 @@ class CentralDirectoryFileHeader(fileName: String, fileSize: Long, crc: Int,  of
       writeShort(diskNumber) ++
       writeShort(empty) ++
       writeInt(readWriteFile) ++
-      writeInt(localHeaderOffset.toInt))
+      writeInt(localHeaderOffset.toInt)
+  }
   
   private def fileNameBytes = fileName.getBytes(StandardCharsets.UTF_8)
-  private def fileNameStream: InputStream = new ByteArrayInputStream(fileNameBytes)
-  
-  private def extraFieldStream: InputStream = new ByteArrayInputStream(extraField)
 }

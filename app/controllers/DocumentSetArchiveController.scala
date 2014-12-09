@@ -52,11 +52,13 @@ trait DocumentSetArchiveController extends Controller {
   private def streamArchive(archive: Archive, filename: String): Result = {
     val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
-    Ok.feed(Enumerator.fromStream(archive.stream)).
-      withHeaders(
+    Ok
+      .feed(archive.stream)
+      .withHeaders(
         CONTENT_TYPE -> "application/x-zip-compressed",
         CONTENT_LENGTH -> s"${archive.size}",
-        CONTENT_DISPOSITION -> contentDisposition)
+        CONTENT_DISPOSITION -> contentDisposition
+      )
   }
 
   private def flashWarning(warning: String): Result = {

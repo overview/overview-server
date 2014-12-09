@@ -1,17 +1,18 @@
 package controllers
 
-import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
-import models.archive.Archive
-import models.DocumentFileInfo
-import models.archive.ArchiveEntry
-import java.io.ByteArrayInputStream
-import scala.concurrent.Future
+import org.specs2.specification.Scope
 import play.api.i18n.Messages
+import play.api.libs.iteratee.Enumerator
+import scala.concurrent.Future
+
 import controllers.backend.DocumentFileInfoBackend
+import models.archive.Archive
+import models.archive.ArchiveEntry
+import models.archive.DocumentViewInfo
 import models.archive.FileViewInfo
 import models.archive.PageViewInfo
-import models.archive.DocumentViewInfo
+import models.DocumentFileInfo
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
 
@@ -110,10 +111,10 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     val archive = smartMock[Archive]
 
     archive.size returns archiveData.length
-    archive.stream returns new ByteArrayInputStream(archiveData)
+    archive.stream returns Enumerator(archiveData)
 
     val backend = smartMock[DocumentFileInfoBackend]
-    backend.indexDocumentViewInfos(documentSetId) returns Future(documentViewInfos)
+    backend.indexDocumentViewInfos(documentSetId) returns Future.successful(documentViewInfos)
 
     archiver.createArchive(any) returns archive
   }
@@ -128,6 +129,6 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     archiver.createArchive(any) returns archive
 
     val backend = smartMock[DocumentFileInfoBackend]
-    backend.indexDocumentViewInfos(any) returns Future(documentViewInfos)
+    backend.indexDocumentViewInfos(any) returns Future.successful(documentViewInfos)
   }
 }

@@ -1,21 +1,22 @@
 package models.archive
 
-import java.io.InputStream
 import java.nio.charset.StandardCharsets
+import play.api.libs.iteratee.Enumerator
+import scala.concurrent.{Future,blocking}
 
 abstract class TextViewInfo(
-    suppliedId: String,
-    title: String,
-    documentId: Long,
-    pageNumber: Option[Int],
-    size: Long) extends DocumentViewInfo {
+  suppliedId: String,
+  title: String,
+  documentId: Long,
+  pageNumber: Option[Int],
+  override val size: Long
+) extends DocumentViewInfo {
+  override def name = {
+    val basename = Seq(suppliedId, title)
+      .find(!_.isEmpty)
+      .getOrElse(documentId.toString)
 
-  override def archiveEntry: ArchiveEntry = {
-    val nameOptions = Seq(suppliedId, title)
-
-    val filename = nameOptions.find(!_.isEmpty).getOrElse(documentId.toString)
-
-    ArchiveEntry(asTxt(maybeAddPageNumber(filename)), size, textInputStream(documentId) _)
+    asTxt(maybeAddPageNumber(basename))
   }
 
   private def asTxt(filename: String): String = {
@@ -26,36 +27,28 @@ abstract class TextViewInfo(
   private def maybeAddPageNumber(filename: String): String =
     pageNumber.map(addPageNumber(filename, _))
       .getOrElse(filename)
-
-  private def textInputStream(documentId: Long)(): InputStream = storage.textInputStream(documentId)
-
-  protected val storage: Storage
-  protected trait Storage {
-    def textInputStream(documentId: Long): InputStream
-  }
 }
 
 object TextViewInfo {
-  import java.io.ByteArrayInputStream
-  import models.OverviewDatabase
-  import org.overviewproject.models.tables.Documents
-  import org.overviewproject.database.Slick.simple._
-
   def apply(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long): TextViewInfo =
     new DbTextViewInfo(suppliedId, title, documentId, pageNumber, size)
 
   private class DbTextViewInfo(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long)
       extends TextViewInfo(suppliedId, title, documentId, pageNumber, size) {
 
-    override protected val storage = new DbStorage
+    override def stream = {
+      import models.OverviewDatabase
+      import org.overviewproject.models.tables.Documents
+      import org.overviewproject.database.Slick.simple._
+      import play.api.libs.iteratee.Execution.Implicits.defaultExecutionContext
 
-    protected class DbStorage extends Storage {
-      override def textInputStream(documentId: Long): InputStream =
+      Future { blocking {
         OverviewDatabase.withSlickSession { implicit session =>
           val q = Documents.filter(_.id === documentId).map(_.text)
           val text = q.firstOption.flatten.getOrElse("")
-          new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8))
+          Enumerator(text.getBytes(StandardCharsets.UTF_8))
         }
+      } }
     }
   }
 }

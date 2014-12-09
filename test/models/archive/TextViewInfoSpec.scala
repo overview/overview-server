@@ -1,64 +1,52 @@
 package models.archive
 
-import org.specs2.matcher.MatchResult
-import java.io.InputStream
-import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 
-class TextViewInfoSpec extends ViewInfoSpecification with Mockito {
+class TextViewInfoSpec extends Specification {
 
   "TextViewInfo" should {
 
     "use suppliedId as filename" in new TextViewInfoContext {
-      entry must matchParameters(suppliedId + Txt, size, documentId)
+      entry.name must beEqualTo(suppliedId + ".txt")
     }
 
-    "use title as filename if there is no suppliedId" in new TitleContext {
-      entry must matchParameters(title + Txt, size, documentId)
+    "set size" in new TextViewInfoContext {
+      entry.size must beEqualTo(size)
+    }
+
+    "use title as filename if there is no suppliedId" in new TextViewInfoContext {
+      override val suppliedId: String = ""
+      entry.name must beEqualTo(title + ".txt")
     }
     
-    "use id as filename if there is no title or suppliedId" in new DocumentIdContext {
-      entry must matchParameters(documentId + Txt, size, documentId)
+    "use id as filename if there is no title or suppliedId" in new TextViewInfoContext {
+      override val suppliedId: String = ""
+      override val title: String = ""
+      entry.name must beEqualTo(documentId + ".txt")
     }
     
-    "use page number in filename if present" in new PageContext {
-      entry must matchParameters(s"$title p${pageNumberValue}$Txt", size, documentId)
+    "use page number in filename if present" in new TextViewInfoContext {
+      override val suppliedId: String = ""
+      override val pageNumber = Some(1105)
+      entry.name must beEqualTo(title + " p1105.txt")
     }
   }
 
-  trait TextViewInfoContext extends ArchiveEntryFactoryContext {
-    val Txt = ".txt"
+  trait TextViewInfoContext extends Scope {
+    val documentId: Long = 123L
+    val suppliedId: String = "suppliedId"
+    val title: String = "titleValue"
+    val pageNumber: Option[Int] = None
+    val size: Long = 123L
 
-    val documentId = 123l
-      
-    def suppliedId: String = "suppliedId"
-    def title: String = "titleValue"
-    def pageNumber: Option[Int] = None
-    
-    val textViewInfo = new TestTextViewInfo(suppliedId, title, documentId, pageNumber, size)
-    val entry = textViewInfo.archiveEntry
-
-    override def streamWasCreatedFromId(id: Long): MatchResult[Any] =
-      there was one(textViewInfo.mockStorage).textInputStream(id)
-  }
-
-  trait TitleContext extends TextViewInfoContext {
-    override def suppliedId: String = ""
-  }
-  
-  trait DocumentIdContext extends TitleContext {
-    override def title: String = ""
-  }
-
-  trait PageContext extends TitleContext {
-    def pageNumberValue = 1105
-    override def pageNumber = Some(pageNumberValue)
+    def textViewInfo = new TestTextViewInfo(suppliedId, title, documentId, pageNumber, size)
+    def entry = textViewInfo.archiveEntry
   }
   
   class TestTextViewInfo(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long)
-      extends TextViewInfo(suppliedId, title, documentId, pageNumber, size) {
+    extends TextViewInfo(suppliedId, title, documentId, pageNumber, size) {
 
-    override protected val storage = smartMock[Storage]
-    val mockStorage = storage
+    override def stream = ???
   }
-
 }

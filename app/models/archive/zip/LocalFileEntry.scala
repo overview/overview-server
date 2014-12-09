@@ -1,22 +1,28 @@
 package models.archive.zip
 
-import models.archive.ArchiveEntry
-import java.io.InputStream
-import java.io.ByteArrayInputStream
-import java.util.zip.CRC32
 import java.nio.charset.StandardCharsets
-import models.archive.ComposedInputStream
-import models.archive.DosDate
 import java.util.Calendar
+import java.util.zip.CRC32
+import play.api.libs.iteratee.{Enumerator,Iteratee}
+import scala.concurrent.Future
+
+import models.archive.ArchiveEntry
+import models.archive.DosDate
 
 class LocalFileEntry(entry: ArchiveEntry, val offset: Long) extends ZipFormat with ZipFormatSize with LittleEndianWriter {
+  private implicit val executionContext = play.api.libs.iteratee.Execution.Implicits.defaultExecutionContext
 
-  def crc: Int = getOrComputeCrc
+  lazy val crcFuture = entry.data().flatMap { e => computeCrc(e) }
 
-  def stream: InputStream = new ComposedInputStream(
-      headerStream _,
-      fileNameStream _,
-      entry.data)
+  def stream: Enumerator[Array[Byte]] = {
+    // XXX we stream the documents twice! BOO.
+    val head = crcFuture.map(crc => Enumerator(headerBytes(crc)))
+    val body = entry.data()
+
+    Enumerator.flatten(head)
+      .andThen(Enumerator(fileNameBytes))
+      .andThen(Enumerator.flatten(body))
+  }
 
   val size: Long = localFileHeader + fileNameBytes.size + entry.size
   val fileName: String = entry.name
@@ -26,10 +32,8 @@ class LocalFileEntry(entry: ArchiveEntry, val offset: Long) extends ZipFormat wi
   
   private def fileNameBytes = entry.name.getBytes(StandardCharsets.UTF_8)
   private def fileNameLength = fileNameBytes.size
-
-  private def fileNameStream: InputStream = new ByteArrayInputStream(fileNameBytes) 
   
-  private def headerStream: InputStream = new ByteArrayInputStream(
+  private def headerBytes(crc: Int): Array[Byte] = {
     writeInt(localFileEntrySignature) ++
       writeShort(defaultVersion) ++
       writeShort(useUTF8) ++
@@ -40,31 +44,12 @@ class LocalFileEntry(entry: ArchiveEntry, val offset: Long) extends ZipFormat wi
       writeInt(entry.size.toInt) ++
       writeInt(entry.size.toInt) ++
       writeShort(fileNameLength) ++
-      writeShort(empty))
-
-  private var crcValue: Option[Int] = None
-
-  private def getOrComputeCrc: Int = crcValue.getOrElse {
-    crcValue = Some(computeCrc(entry.data()))
-    crcValue.get
+      writeShort(empty)
   }
 
-  private val BufferSize = 8192
-
-  private def computeCrc(input: InputStream): Int = {
-    val buffer = new Array[Byte](BufferSize)
-    val checker = new CRC32()
-
-    def checkStream: Int = {
-      val n = input.read(buffer)
-      if (n == -1) checker.getValue.toInt
-      else {
-        checker.update(buffer.take(n))
-        checkStream
-      }
-    }
-
-    checkStream
+  private def computeCrc(e: Enumerator[Array[Byte]]): Future[Int] = {
+    val crc32 = new CRC32()
+    val iteratee = Iteratee.foreach { (bytes: Array[Byte]) => crc32.update(bytes) }
+    e.run(iteratee).map(_ => crc32.getValue.toInt)
   }
-
 }

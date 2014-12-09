@@ -1,32 +1,38 @@
 package models.archive.zip
 
-import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
-import java.io.InputStream
 import java.io.ByteArrayInputStream
-import models.archive.ArchiveEntry
-import java.util.zip.CRC32
-import models.archive.StreamReader
-import java.util.Calendar
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder._
+import java.util.Calendar
+import java.util.zip.CRC32
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+import play.api.libs.iteratee.{Enumerator,Iteratee}
+import play.api.test.{DefaultAwaitTimeout,FutureAwaits}
+import scala.concurrent.Future
+
+import models.archive.ArchiveEntry
 import models.archive.DosDate
 
 class LocalFileEntrySpec extends Specification {
 
   "LocalFileEntry" should {
 
-    "read stream to set crc when accessed" in new LocalFileContext {
-      streamRequestedCount must be equalTo 0
-
-      localFileEntry.crc must be equalTo crc
-
-      streamRequestedCount must be equalTo 1
+    "set CRC after streaming the data" in new LocalFileContext {
+      await(localFileEntry.stream.run(Iteratee.consume()))
+      await(localFileEntry.crcFuture) must be equalTo crc
     }
 
     "only read stream once to set crc" in new LocalFileContext {
-      localFileEntry.crc must be equalTo crc
-      localFileEntry.crc must be equalTo crc
+      // This is a hack. Actually we stream twice, total: once (and only once)
+      // to set the CRC -- that's this test -- and once to stream the data to
+      // the caller. This test _really_ ought to check that we calculate the
+      // CRC _while_ streaming to the caller... but we can't do that in the
+      // current implementation because we put the CRC in the header, before we
+      // begin streaming the file.
+      await(localFileEntry.crcFuture)
+      await(localFileEntry.crcFuture)
 
       streamRequestedCount must be equalTo 1
     }
@@ -49,7 +55,7 @@ class LocalFileEntrySpec extends Specification {
           writeShort(fileName.size) ++
           writeShort(0)
 
-      val output = readStream(localFileEntry.stream)
+      val output = await(localFileEntry.stream.run(Iteratee.consume()))
 
       // Don't check time and date values
       output.take(10) must be equalTo expectedHeader.take(10)
@@ -57,7 +63,7 @@ class LocalFileEntrySpec extends Specification {
     }
 
     "write date and time in stream" in new LocalFileContext {
-      val output = readStream(localFileEntry.stream)
+      val output = await(localFileEntry.stream.run(Iteratee.consume()))
 
       val now = Calendar.getInstance()
 
@@ -73,49 +79,48 @@ class LocalFileEntrySpec extends Specification {
     }
     
     "write filename in stream" in new LocalFileContext {
-      val output = readStream(localFileEntry.stream)
+      val output = await(localFileEntry.stream.run(Iteratee.consume()))
       
       output.slice(headerSize, headerSize + fileName.size) must be equalTo fileName.getBytes
     }
 
     "write file in stream" in new LocalFileContext {
-      val output = readStream(localFileEntry.stream)
+      val output = await(localFileEntry.stream.run(Iteratee.consume()))
       
       output.drop(headerSize + fileName.size) must be equalTo data
     }
   }
 
-}
+  trait LocalFileContext extends Scope with LittleEndianWriter with FutureAwaits with DefaultAwaitTimeout {
+    val headerSize = 30
+    val numberOfBytes = 52
+    val data = Array.range(1, numberOfBytes).map(_.toByte)
+    val crc = {
+      val checker = new CRC32()
 
-trait LocalFileContext extends Scope with LittleEndianWriter with StreamReader {
-  val headerSize = 30
-  val numberOfBytes = 52
-  val data = Array.range(1, numberOfBytes).map(_.toByte)
-  val crc = {
-    val checker = new CRC32()
+      checker.update(data)
+      checker.getValue.toInt
+    }
+    var streamRequestedCount = 0
 
-    checker.update(data)
-    checker.getValue.toInt
+    def stream(): Future[Enumerator[Array[Byte]]] = {
+      streamRequestedCount += 1
+      Future.successful(Enumerator(data))
+    }
+
+    val fileName = "fileName"
+
+    val archiveEntry = ArchiveEntry(fileName, numberOfBytes, stream _)
+    val localFileEntry = new LocalFileEntry(archiveEntry, 0)
+
+    // assumes 2 bytes in array
+    def bytesToInt(bytes: Array[Byte]): Int = {
+      val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
+
+      byteBuffer.put(bytes)
+
+      byteBuffer.getShort(0)
+    }
+
   }
-  var streamRequestedCount = 0
-
-  def stream(): InputStream = {
-    streamRequestedCount += 1
-    new ByteArrayInputStream(data)
-  }
-
-  val fileName = "fileName"
-
-  val archiveEntry = ArchiveEntry(fileName, numberOfBytes, stream)
-  val localFileEntry = new LocalFileEntry(archiveEntry, 0)
-
-  // assumes 2 bytes in array
-  def bytesToInt(bytes: Array[Byte]): Int = {
-    val byteBuffer = ByteBuffer.allocate(4).order(LITTLE_ENDIAN)
-
-    byteBuffer.put(bytes)
-
-    byteBuffer.getShort(0)
-  }
-
 }

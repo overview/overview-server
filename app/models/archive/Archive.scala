@@ -1,9 +1,8 @@
 package models.archive
 
-import java.io.InputStream
+import play.api.libs.iteratee.Enumerator
 
 trait Archive {
-
-  def stream: InputStream
+  def stream: Enumerator[Array[Byte]]
   def size: Long
 }
