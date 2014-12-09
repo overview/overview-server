@@ -3,8 +3,6 @@ package models.archive.zip
 import java.nio.charset.StandardCharsets
 import play.api.libs.iteratee.Enumerator
 
-import models.archive.ComposedInputStream
-
 class CentralDirectory(localFileEntries: Seq[LocalFileEntry]) extends ZipFormatSize {
   val size = localFileEntries.map(e => centralDirectoryHeader + fileNameSize(e.fileName)).sum
   val offset = localFileEntries.map(_.size).sum

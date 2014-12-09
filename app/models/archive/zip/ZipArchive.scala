@@ -4,8 +4,6 @@ import play.api.libs.iteratee._
 import scala.concurrent.Future
 
 import models.archive.Archive
-import models.archive.ArchiveEntry
-import models.archive.ComposedInputStream
 import models.archive.ArchiveEntryCollection
 
 class ZipArchive(entryCollection: ArchiveEntryCollection) extends Archive  {
