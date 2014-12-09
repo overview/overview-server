@@ -1,13 +1,24 @@
 package org.overviewproject.models
 
 case class Page(
-    id: Long,
+  id: Long,
+  fileId: Long,
+  pageNumber: Int,
+  referenceCount: Int,
+  dataLocation: String,
+  dataSize: Long,
+  data: Option[Array[Byte]],
+  text: Option[String],
+  dataErrorMessage: Option[String] = None,
+  textErrorMessage: Option[String] = None
+)
+
+object Page {
+  case class CreateAttributes(
     fileId: Long,
     pageNumber: Int,
-    referenceCount: Int,
     dataLocation: String,
     dataSize: Long,
-    data: Option[Array[Byte]],
-    text: Option[String],
-    dataErrorMessage: Option[String] = None,
-    textErrorMessage: Option[String] = None)
+    text: String
+  )
+}
