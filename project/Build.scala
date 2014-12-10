@@ -133,6 +133,16 @@ object ApplicationBuild extends Build with ProjectSettings {
   // Project definitions
   val common = OverviewProject("common", commonProjectDependencies, useSharedConfig = false)
 
+  val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
+    .settings(Defaults.coreDefaultSettings: _*)
+    .settings(packageArchetype.java_application: _*)
+    .settings(
+      scalacOptions ++= ourScalacOptions,
+      resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
+      includeFilter in (Compile, resourceDirectory) := "application.conf"
+    )
+    .dependsOn(common)
+
   /*
    * Ideally, common would depend on commonTest, which would mock out the
    * database.
