@@ -3,13 +3,11 @@ shouldBehaveLikeATree = require('../support/behave/likeATree')
 testMethods = require('../support/testMethods')
 wd = require('wd')
 
-
 Url =
   index: '/documentsets'
   pdfUpload: '/imports/file'
 
 describe 'PdfUpload', ->
-
   asUserUploadingFiles('PdfUpload')
 
   testMethods.usingPromiseChainMethods
@@ -29,11 +27,11 @@ describe 'PdfUpload', ->
         .waitForJobsToComplete()
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: name, visible: true).click()
-      
 
   describe 'after uploading pdfs', ->
     before ->
       @userBrowser
+        .get('/tour?X-HTTP-Method-Override=DELETE')
         .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
         .chooseFile('PdfUpload/Cat2.pdf')
@@ -52,20 +50,17 @@ describe 'PdfUpload', ->
     after ->
       @userBrowser
         .deleteTopUpload()
-    
+
     it 'should show document set', ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy({tag: 'h3', contains: 'Pdf Upload'}, 10000).should.eventually.exist
-        
+
     describe 'in the default tree', ->
       before ->
         @userBrowser
-          .openFileUploadPage()
-          .get(Url.index)
-          .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
+          .loadImportedTree('Pdf Upload')
 
-          
       shouldBehaveLikeATree
         documents: [
           { type: 'pdf', title: 'Cat4.pdf' }
@@ -79,13 +74,14 @@ describe 'PdfUpload', ->
   describe 'after uploading one pdf', ->
     before ->
       @userBrowser
+        .get('/tour?X-HTTP-Method-Override=DELETE')
         .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
         .doImport()
         .loadImportedTree('Pdf Upload')
-        
+
     shouldBehaveLikeATree
       documents: [
           { type: 'pdf', title: 'Cat1.pdf – page 1' },
@@ -103,17 +99,17 @@ describe 'PdfUpload', ->
   describe 'after uploading three pdfs', ->
     before ->
       @userBrowser
+        .get('/tour?X-HTTP-Method-Override=DELETE')
         .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
-        .chooseFile('PdfUpload/Cat2.pdf')        
-        .chooseFile('PdfUpload/Cat3.pdf')        
+        .chooseFile('PdfUpload/Cat2.pdf')
+        .chooseFile('PdfUpload/Cat3.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
         .elementBy(tag: 'input', name: 'split_documents', value: true).click()
         .doImport()
         .loadImportedTree('Pdf Upload')
-        
-  
+
     shouldBehaveLikeATree
       documents: [
           { type: 'pdf', title: 'Cat1.pdf – page 3' }
@@ -123,11 +119,7 @@ describe 'PdfUpload', ->
       searches: [
         { query: 'burrow', nResults: 9 }
       ]
-      
 
     after ->
       @userBrowser
         .deleteTopUpload()
-                                                      
-
-  
