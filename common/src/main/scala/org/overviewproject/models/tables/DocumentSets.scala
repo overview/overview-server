@@ -3,7 +3,7 @@ package org.overviewproject.models.tables
 import java.sql.Timestamp
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.tree.orm.DocumentSet // should be models.DocumentSet
+import org.overviewproject.models.DocumentSet // should be models.DocumentSet
 
 class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set") {
   def id = column[Long]("id", O.PrimaryKey)
