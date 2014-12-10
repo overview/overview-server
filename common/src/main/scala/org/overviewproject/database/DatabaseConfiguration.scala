@@ -7,6 +7,8 @@
 
 package org.overviewproject.database
 
+import com.typesafe.config.ConfigFactory
+
 trait DatabaseConfiguration {
   val databaseDriver : String
   val databaseUrl: String
@@ -14,30 +16,39 @@ trait DatabaseConfiguration {
   val password: String
 }
 
-/**
- * Sets up properties needed to configure the database.
- * Reads datasource.default.url in Play's format http://user:password@host/database
- * and converts to jdbc:postgresql://host/database, with user and password in
- * separate configuration variables.
- */
-class SystemPropertiesDatabaseConfiguration(
-  databaseDriverProperty: String = "datasource.default.databaseDriver",
-  databaseUrlProperty: String = "datasource.default.databaseUrl",
-  usernameProperty: String = "datasource.default.username",
-  passwordProperty: String = "datasource.default.password",
-  defaultDatabaseUrlProperty: String = "datasource.default.url") extends DatabaseConfiguration {
+object DatabaseConfiguration {
+  private class UrlBasedDatabaseConfiguration(private val givenUrl: String) extends DatabaseConfiguration {
+    override val databaseDriver = "org.postgresql.Driver"
+    override val (databaseUrl, username, password) = {
+      val urlPattern = """[^:]+://([^:]+):([^@]+)@([^/]+)/(.+)""".r
 
-  override val databaseDriver = "org.postgresql.Driver"
-  override val (databaseUrl, username, password) = readSettings()
+      val urlPattern(user, password, host, database) = givenUrl
 
-  def readSettings(): (String, String, String) = {
-    val databaseSetting = sys.props.get(defaultDatabaseUrlProperty)
-      .getOrElse(throw new Error("Could not read setting " + defaultDatabaseUrlProperty))
+      ("jdbc:postgresql://" + host + "/" + database, user, password)
+    }
+  }
 
-    val urlPattern = """[^:]+://([^:]+):([^@]+)@([^/]+)/(.+)""".r
+  /**
+   * Sets up properties needed to configure the database.
+   * Reads url in Play's format http://user:password@host/database
+   * and converts to jdbc:postgresql://host/database, with user and password in
+   * separate configuration variables.
+   */
+  def fromUrl(url: String): DatabaseConfiguration = new UrlBasedDatabaseConfiguration(url)
 
-    val urlPattern(user, password, host, database) = databaseSetting
+  def fromSystemProperty(property: String): DatabaseConfiguration = {
+    val url = sys.props.get(property)
+      .getOrElse(throw new Error(s"You must run Java with -D${property}=something"))
+    fromUrl(url)
+  }
 
-    ("jdbc:postgresql://" + host + "/" + database, user, password)
+  /** Reads from datasource.default.url or db.default.url system property. */
+  lazy val fromSystemProperties: DatabaseConfiguration = fromSystemProperty("datasource.default.url")
+
+  /** Reads db.default.url from application.conf. */
+  lazy val fromConfig: DatabaseConfiguration = {
+    val config = ConfigFactory.load
+    val url = config.getString("db.default.url")
+    fromUrl(url)
   }
 }

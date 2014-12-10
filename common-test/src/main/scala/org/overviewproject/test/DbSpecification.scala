@@ -14,7 +14,7 @@ import org.squeryl.Session
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint._
 
-import org.overviewproject.database.{DB, DataSource, SystemPropertiesDatabaseConfiguration}
+import org.overviewproject.database.{DB, DataSource, DatabaseConfiguration}
 
 /**
  * Tests that access the database should extend DbSpecification.
@@ -52,7 +52,7 @@ class DbSpecification extends Specification {
 
   def setupDb() {
     System.setProperty(DatabaseProperty, TestDatabase)
-    val dataSource = DataSource(new SystemPropertiesDatabaseConfiguration())
+    val dataSource = DataSource(DatabaseConfiguration.fromSystemProperties)
     DB.connect(dataSource)
   }
 

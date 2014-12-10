@@ -4,7 +4,7 @@ import scala.language.postfixOps
 import scala.concurrent.duration._
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-import org.overviewproject.database.{ DataSource, DB, SystemPropertiesDatabaseConfiguration }
+import org.overviewproject.database.{ DataSource, DB, DatabaseConfiguration }
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.filegroup._
 import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
@@ -40,7 +40,7 @@ object DocumentSetWorker extends App {
   private def fileGroupJobQueuePath =
     s"$WorkerActorSystemName/user/$FileGroupJobQueueSupervisorName/$FileGroupJobQueueName"
 
-  val config = new SystemPropertiesDatabaseConfiguration()
+  val config = DatabaseConfiguration.fromSystemProperties
   val dataSource = DataSource(config)
 
   DB.connect(dataSource)

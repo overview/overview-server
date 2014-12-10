@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
-import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
+import org.overviewproject.database.{ DatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence.{ DocumentSetCleaner, DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob }
 import org.overviewproject.persistence.orm.finders.DocumentSetFinder
 import org.overviewproject.persistence.orm.finders.{ GroupedProcessedFileFinder, FileGroupFinder, GroupedFileUploadFinder }
@@ -35,7 +35,7 @@ object JobHandler {
     // Make sure java.sql.Timestamp values are correct
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
-    val config = new SystemPropertiesDatabaseConfiguration()
+    val config = DatabaseConfiguration.fromSystemProperties
     val dataSource = DataSource(config)
 
     DB.connect(dataSource)

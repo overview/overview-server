@@ -7,11 +7,10 @@
 
 package org.overviewproject.database
 
-
+import com.jolbox.bonecp._
 import java.sql.Connection
 import javax.sql.{ DataSource => JDataSource }
 import org.slf4j.LoggerFactory
-import com.jolbox.bonecp._
 
 trait DataSource {
   def getConnection: Connection
@@ -36,7 +35,7 @@ object DataSource {
    * Should be shutdown() when program ends to shutdown BoneCP connection pool.
    */
   def apply(configuration: DatabaseConfiguration) = new DataSource {
-    Class.forName(configuration.databaseDriver)
+    Class.forName(configuration.databaseDriver) // initialize
 
     private val dataSource = new BoneCPDataSource()
 
