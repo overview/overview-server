@@ -66,7 +66,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
         val pageAttributesFutures = pages
           .zipWithIndex
-          .map({ (tuple: Tuple2[Array[Byte],String], index: Int) => uploadAndBuildPageAttributes(index, tuple._1, tuple._2) }.tupled)
+          .map({ (tuple: Tuple2[Array[Byte],String], index: Int) => uploadAndBuildPageAttributes(index + 1, tuple._1, tuple._2) }.tupled)
 
         val futurePageAttributes = Future.sequence(pageAttributesFutures)
 
