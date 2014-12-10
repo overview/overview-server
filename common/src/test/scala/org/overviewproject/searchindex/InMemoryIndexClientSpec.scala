@@ -132,6 +132,14 @@ class InMemoryIndexClientSpec extends Specification {
 
         ids must containTheSameElementsAs(Seq(123L, 124L))
       }
+
+      "find multiple pages of documents" in new BaseScope {
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(234L, "bar", scrollSize=1))
+
+        ids must containTheSameElementsAs(Seq(123L, 124L))
+      }
     }
   }
 }

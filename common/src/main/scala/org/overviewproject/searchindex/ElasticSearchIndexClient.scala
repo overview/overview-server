@@ -1,8 +1,10 @@
 package org.overviewproject.searchindex
 
 import org.elasticsearch.action.{ActionListener,ActionRequest,ActionRequestBuilder,ActionResponse}
+import org.elasticsearch.action.search.{SearchResponse,SearchType}
 import org.elasticsearch.client.Client
 import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.index.query.{FilterBuilders,QueryBuilders}
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,16 +41,31 @@ trait ElasticSearchIndexClient extends IndexClient {
   protected def disconnect: Future[Unit]
 
   private val DocumentSetIdField = "document_set_id"
+
+  /** Number of documents to receive per shard per page.
+    *
+    * &gt; 10K seems to carry a speed penalty on a similar operation:
+    * https://groups.google.com/d/topic/overview-dev/orgV1iDS9U4/discussion
+    */
+  private val DefaultScrollSize: Int = 5000
+
+  /** Timeout that will kill communications from shards, in milliseconds.
+    *
+    * The higher this number, the more reliable Overview is. The lower the
+    * number, the less time shards will maintain data structures for each
+    * query.
+    */
+  private val ScrollTimeout: Int = 60000
+
   protected val DocumentTypeName = "document"
   protected val IndexName = "documents"
   protected val RealIndexName = "documents_v1"
   protected def aliasName(documentSetId: Long) = s"documents_$documentSetId"
-  protected val MaxNResults = 10000000 // causes OOM if too high
   protected val Mapping = s"""{
     "document": {
       "properties": {
         "$DocumentSetIdField": { "type": "long" },
-        "id":                  { "type": "long" },
+        "id":                  { "type": "long", "store": "yes" },
         "text":                { "type": "string" },
         "supplied_id":         { "type": "string" },
         "title":               { "type": "string" }
@@ -184,7 +201,7 @@ trait ElasticSearchIndexClient extends IndexClient {
     }
   }
 
-  private def searchForIdsImpl(client: Client, documentSetId: Long, q: String) = {
+  private def searchForIdsImpl(client: Client, documentSetId: Long, q: String, scrollSize: Int): Future[Seq[Long]] = {
     val query = QueryBuilders.queryString(q)
 
     // ElasticSearch shouldn't sort results. [refs #83002148]
@@ -194,23 +211,56 @@ trait ElasticSearchIndexClient extends IndexClient {
     )
 
     val req = client.prepareSearch(IndexName)
+      .setSearchType(SearchType.SCAN)
+      .setScroll(new TimeValue(ScrollTimeout))
       .setTypes(DocumentTypeName)
       .setFilter(filter)
-      .setSize(MaxNResults)
+      .setSize(scrollSize)
       .addField("id")
 
-    execute(req).map { response =>
+    def throwIfError(response: SearchResponse): Unit = {
       response.getShardFailures.headOption match {
-        // Casting to String then Long because ElasticSearch sends JSON and
-        // forgets the type. It's sometimes Integer, sometimes Long.
-        // https://groups.google.com/forum/#!searchin/elasticsearch/getsource$20integer$20long/elasticsearch/jxIY22TmA8U/PyqZPPyYQ0gJ
-        case None => {
-          response.getHits
-            .getHits
-            .map(_.field("id").value[Object].toString.toLong)
-            .toSeq
-        }
+        case None => ()
         case Some(failure) => throw new Exception(failure.reason)
+      }
+    }
+
+    def responseToLongs(response: SearchResponse): Seq[Long] = {
+      throwIfError(response)
+
+      // Casting to String then Long because ElasticSearch sends JSON and
+      // forgets the type. It's sometimes Integer, sometimes Long.
+      // https://groups.google.com/forum/#!searchin/elasticsearch/getsource$20integer$20long/elasticsearch/jxIY22TmA8U/PyqZPPyYQ0gJ
+      response.getHits
+        .getHits
+        .map(_.field("id").value[Object].toString.toLong)
+        .toSeq
+    }
+
+    def step(accumulator: Seq[Seq[Long]], response: SearchResponse): Future[Seq[Long]] = {
+      val newLongs = responseToLongs(response)
+      val newAccumulator = accumulator :+ newLongs
+      if (newLongs.isEmpty) {
+        Future.successful(newAccumulator.flatten)
+      } else {
+        requestScroll(response.getScrollId()).flatMap(step(newAccumulator, _))
+      }
+    }
+
+    def requestScroll(scrollId: String): Future[SearchResponse] = {
+      val scrollReq = client
+        .prepareSearchScroll(scrollId)
+        .setScroll(new TimeValue(ScrollTimeout))
+
+      execute(scrollReq)
+    }
+
+    execute(req).flatMap { response =>
+      throwIfError(response)
+      if (response.getHits.totalHits == 0) {
+        Future.successful(Seq())
+      } else {
+        requestScroll(response.getScrollId()).flatMap(step(Seq(), _))
       }
     }
   }
@@ -229,6 +279,13 @@ trait ElasticSearchIndexClient extends IndexClient {
   override def addDocumentSet(id: Long) = clientFuture.flatMap(addDocumentSetImpl(_, id))
   override def removeDocumentSet(id: Long) = clientFuture.flatMap(removeDocumentSetImpl(_, id))
   override def addDocuments(documents: Iterable[Document]) = clientFuture.flatMap(addDocumentsImpl(_, documents))
-  override def searchForIds(documentSetId: Long, q: String) = clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q))
   override def refresh = clientFuture.flatMap(refreshImpl(_))
+
+  override def searchForIds(documentSetId: Long, q: String) = {
+    clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q, DefaultScrollSize))
+  }
+
+  def searchForIds(documentSetId: Long, q: String, scrollSize: Int) = {
+    clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q, scrollSize))
+  }
 }
