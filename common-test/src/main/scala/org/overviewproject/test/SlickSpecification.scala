@@ -50,5 +50,7 @@ class SlickSpecification extends DbSpecification {
 
     def sql(q: String): Unit = session.withPreparedStatement(q) { (st) => st.execute }
   }
+  
+  def await[T](future: Future[T]): T = Await.result(future, Duration.Inf)
 
 }
