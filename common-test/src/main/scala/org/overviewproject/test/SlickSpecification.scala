@@ -9,8 +9,9 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.{Await,Future}
 import scala.slick.jdbc.JdbcBackend.Session
 import scala.slick.jdbc.UnmanagedSession
-
 import org.overviewproject.database.DB
+import org.overviewproject.test.factories.Factory
+import org.overviewproject.test.factories.DbFactory
 
 
 
@@ -36,7 +37,8 @@ class SlickSpecification extends DbSpecification {
     }
     
     implicit lazy val session: Session = new UnmanagedSession(connection)
-
+    lazy val factory: Factory = new DbFactory(connection)
+    
     override def before = ()
 
     override def after = {
