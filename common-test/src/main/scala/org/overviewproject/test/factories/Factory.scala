@@ -3,26 +3,26 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import java.util.UUID
 import play.api.libs.json.JsObject
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentSet,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
+import org.overviewproject.models.{ ApiToken, Document, DocumentInfo, DocumentSet, DocumentSetUser, DocumentTag, DocumentStoreObject, Node, NodeDocument, Plugin, Store, StoreObject, Tree, View }
 import org.overviewproject.models.{ File, Page }
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,SearchResult,SearchResultState,Tag}
+import org.overviewproject.tree.orm.{ Document => DeprecatedDocument, DocumentSearchResult, SearchResult, SearchResultState, Tag }
 import org.overviewproject.util.DocumentSetVersion
 
-
-/** Creates models simply.
-  *
-  * Usage:
-  *
-  *   val factory = new org.overviewproject.test.factories.Factory
-  *   val documentSet = factory.documentSet()
-  *   val document = factory.document(documentSetId=documentSet.id)
-  *   val tag = factory.tag(documentSetId=documentSet.id)
-  *   val documentTag = factory.documentTag(documentId=document.id, tagId=tag.id)
-  *   ...
-  *
-  * Use PodoFactory for simple tests. Use DbFactory to insert rows in the
-  * database while building objects, for more thorough (and slower) tests.
-  */
+/**
+ * Creates models simply.
+ *
+ * Usage:
+ *
+ *   val factory = new org.overviewproject.test.factories.Factory
+ *   val documentSet = factory.documentSet()
+ *   val document = factory.document(documentSetId=documentSet.id)
+ *   val tag = factory.tag(documentSetId=documentSet.id)
+ *   val documentTag = factory.documentTag(documentId=document.id, tagId=tag.id)
+ *   ...
+ *
+ * Use PodoFactory for simple tests. Use DbFactory to insert rows in the
+ * database while building objects, for more thorough (and slower) tests.
+ */
 trait Factory {
   /** Creates an ApiToken with the given parameters. */
   def apiToken(
@@ -30,8 +30,7 @@ trait Factory {
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
     createdBy: String = "user@example.org",
     description: String = "description",
-    documentSetId: Long = 0L
-  ): ApiToken
+    documentSetId: Long = 0L): ApiToken
 
   /** Creates a new Document with the given parameters. */
   def document(
@@ -44,8 +43,7 @@ trait Factory {
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
-    text: String = ""
-  ): Document
+    text: String = ""): Document
 
   /** Creates a new DeprecatedDocument with the given parameters. */
   def deprecatedDocument(
@@ -59,8 +57,7 @@ trait Factory {
     documentcloudId: Option[String] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
-    pageNumber: Option[Int] = None
-  ): DeprecatedDocument
+    pageNumber: Option[Int] = None): DeprecatedDocument
 
   /** Creates a new DocumentSet with the given parameters. */
   def documentSet(
@@ -74,21 +71,24 @@ trait Factory {
     importOverflowCount: Int = 2,
     uploadedFileId: Option[Long] = None,
     version: Int = DocumentSetVersion.current,
-    deleted: Boolean = false
-  ): DocumentSet
+    deleted: Boolean = false): DocumentSet
 
+  def documentSetUser(
+    documentSetId: Long = 0L,
+    userEmail: String = "user@example.com",
+    role: DocumentSetUser.Role = DocumentSetUser.Role(1)  
+  ): DocumentSetUser
+  
   def documentSearchResult(
     documentId: Long,
-    searchResultId: Long
-  ): DocumentSearchResult
+    searchResultId: Long): DocumentSearchResult
 
   def documentTag(documentId: Long, tagId: Long): DocumentTag
 
   def documentStoreObject(
     documentId: Long = 0L,
     storeObjectId: Long = 0L,
-    json: Option[JsObject] = None
-  ): DocumentStoreObject
+    json: Option[JsObject] = None): DocumentStoreObject
 
   def node(
     id: Long = 0L,
@@ -96,32 +96,28 @@ trait Factory {
     parentId: Option[Long] = None,
     description: String = "",
     cachedSize: Int = 0,
-    isLeaf: Boolean = true
-  ): Node
+    isLeaf: Boolean = true): Node
 
   def nodeDocument(nodeId: Long, documentId: Long): NodeDocument
 
   def plugin(
     id: UUID = new UUID(0L, 0L),
-    name: String = "name", 
+    name: String = "name",
     description: String = "description",
-    url: String = "http://example.org"
-  ): Plugin
+    url: String = "http://example.org"): Plugin
 
   def searchResult(
     id: Long = 0L,
     state: SearchResultState.Value = SearchResultState.Complete,
     documentSetId: Long = 0L,
     query: String = "query",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ): SearchResult
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)): SearchResult
 
   def tag(
     id: Long = 0L,
     documentSetId: Long = 0L,
     name: String = "a tag",
-    color: String = "abcdef"
-  ): Tag
+    color: String = "abcdef"): Tag
 
   def tree(
     id: Long = 0L,
@@ -134,8 +130,7 @@ trait Factory {
     description: String = "description",
     suppliedStopWords: String = "supplied stop words",
     importantWords: String = "important words",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ): Tree
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)): Tree
 
   def view(
     id: Long = 0L,
@@ -143,23 +138,20 @@ trait Factory {
     url: String = "http://example.org",
     apiToken: String = "api-token",
     title: String = "title",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ): View
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)): View
 
   def store(
     id: Long = 0L,
     apiToken: String = "token",
-    json: JsObject = JsObject(Seq())
-  ): Store
+    json: JsObject = JsObject(Seq())): Store
 
   def storeObject(
     id: Long = 0L,
     storeId: Long = 0L,
     indexedLong: Option[Long] = None,
     indexedString: Option[String] = None,
-    json: JsObject = JsObject(Seq())
-  ): StoreObject
-  
+    json: JsObject = JsObject(Seq())): StoreObject
+
   def page(
     id: Long = 0L,
     fileId: Long = 0L,
@@ -170,9 +162,8 @@ trait Factory {
     data: Option[Array[Byte]] = Some("page text".getBytes("utf-8")),
     text: Option[String] = Some("page text"),
     dataErrorMessage: Option[String] = None,
-    textErrorMessage: Option[String] = None
-  ): Page
-  
+    textErrorMessage: Option[String] = None): Page
+
   def file(
     id: Long = 0L,
     referenceCount: Int = 1,
@@ -180,7 +171,6 @@ trait Factory {
     viewOid: Long = 1,
     name: String = "filename",
     contentsSize: Long = 1L,
-    viewSize: Long = 1L
-  ): File
-  
+    viewSize: Long = 1L): File
+
 }

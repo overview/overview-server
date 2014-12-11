@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.UUID
 import play.api.libs.json.JsObject
 import scala.util.Random
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentSet,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentSet,DocumentSetUser,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 import org.overviewproject.models.{ File, Page }
@@ -143,6 +143,12 @@ object PodoFactory extends Factory {
     deleted
   )
 
+  override def documentSetUser(
+    documentSetId: Long,
+    userEmail: String,
+    role: DocumentSetUser.Role  
+  ) = DocumentSetUser(documentSetId, userEmail, role)
+    
   override def documentTag(
     documentId: Long,
     tagId: Long

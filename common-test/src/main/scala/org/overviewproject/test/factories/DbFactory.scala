@@ -6,7 +6,7 @@ import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentSet,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
+import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentSet,DocumentSetUser,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -119,6 +119,12 @@ class DbFactory(connection: Connection) extends Factory {
     deleted
   )
 
+  override def documentSetUser(
+    documentSetId: Long,
+    userEmail: String,
+    role: DocumentSetUser.Role
+  ) = q.insertDocumentSetUser += podoFactory.documentSetUser(documentSetId, userEmail, role)
+  
   override def documentTag(documentId: Long, tagId: Long) = {
     q.insertDocumentTag += podoFactory.documentTag(documentId, tagId)
   }
@@ -296,6 +302,7 @@ object DbFactory {
     val insertDocumentSearchResult = (DocumentSearchResults returning DocumentSearchResults).insertInvoker
     val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
     val insertDocumentTag = (DocumentTags returning DocumentTags).insertInvoker
+    val insertDocumentSetUser = (DocumentSetUsers returning DocumentSetUsers).insertInvoker
     val insertDocumentStoreObject = (DocumentStoreObjects returning DocumentStoreObjects).insertInvoker
     val insertNode = (Nodes returning Nodes).insertInvoker
     val insertNodeDocument = (NodeDocuments returning NodeDocuments).insertInvoker
