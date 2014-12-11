@@ -42,7 +42,7 @@ trait Factory {
   /** Creates an ApiToken with the given parameters. */
   def apiToken(
     token: String = "token",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+    createdAt: Timestamp = now,
     createdBy: String = "user@example.org",
     description: String = "description",
     documentSetId: Long = 0L): ApiToken
@@ -80,7 +80,7 @@ trait Factory {
     title: String = "",
     query: Option[String] = None,
     isPublic: Boolean = false,
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+    createdAt: Timestamp = now,
     documentCount: Int = 4,
     documentProcessingErrorCount: Int = 3,
     importOverflowCount: Int = 2,
@@ -126,7 +126,8 @@ trait Factory {
     state: SearchResultState.Value = SearchResultState.Complete,
     documentSetId: Long = 0L,
     query: String = "query",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)): SearchResult
+    createdAt: Timestamp = now
+  ): SearchResult
 
   def tag(
     id: Long = 0L,
@@ -145,7 +146,8 @@ trait Factory {
     description: String = "description",
     suppliedStopWords: String = "supplied stop words",
     importantWords: String = "important words",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)): Tree
+    createdAt: Timestamp = now
+  ): Tree
 
   def view(
     id: Long = 0L,
@@ -153,7 +155,8 @@ trait Factory {
     url: String = "http://example.org",
     apiToken: String = "api-token",
     title: String = "title",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)): View
+    createdAt: Timestamp = now
+  ): View
 
   def store(
     id: Long = 0L,
