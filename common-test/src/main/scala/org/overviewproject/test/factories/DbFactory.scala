@@ -6,7 +6,21 @@ import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
 
 import org.overviewproject.models.tables._
-import org.overviewproject.models.{ApiToken,Document,DocumentInfo,DocumentSet,DocumentSetUser,DocumentTag,DocumentStoreObject,Node,NodeDocument,Plugin,Store,StoreObject,Tree,View}
+import org.overviewproject.models.ApiToken
+import org.overviewproject.models.Document
+import org.overviewproject.models.DocumentInfo
+import org.overviewproject.models.DocumentSet
+import org.overviewproject.models.DocumentSetUser
+import org.overviewproject.models.DocumentTag
+import org.overviewproject.models.DocumentStoreObject
+import org.overviewproject.models.Node
+import org.overviewproject.models.NodeDocument
+import org.overviewproject.models.Plugin
+import org.overviewproject.models.Store
+import org.overviewproject.models.StoreObject
+import org.overviewproject.models.Tree
+import org.overviewproject.models.UploadedFile
+import org.overviewproject.models.View
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
 
@@ -290,6 +304,14 @@ class DbFactory(connection: Connection) extends Factory {
     contentsSize,
     viewSize
   )
+  
+  override def uploadedFile(
+    id: Long,
+    contentDisposition: String,
+    contentType: String,
+    size: Long,
+    uploadedAt: Timestamp 
+  ) = q.insertUploadedFile += podoFactory.uploadedFile(id, contentDisposition, contentType, size, uploadedAt)
 }
 
 object DbFactory {
@@ -315,5 +337,6 @@ object DbFactory {
     val insertView = (Views returning Views).insertInvoker
     val insertPage = (Pages returning Pages).insertInvoker
     val insertFile = (Files returning Files).insertInvoker
+    val insertUploadedFile = (UploadedFiles returning UploadedFiles).insertInvoker
   }
 }

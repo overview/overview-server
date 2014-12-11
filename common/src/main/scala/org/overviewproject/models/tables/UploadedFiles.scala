@@ -15,3 +15,5 @@ class UploadedFilesImpl(tag: Tag) extends Table[UploadedFile](tag, "uploaded_fil
   def * = (id, contentDisposition, contentType, size, uploadedAt) <>
     ((UploadedFile.apply _).tupled, UploadedFile.unapply)
 }
+
+object UploadedFiles extends TableQuery(new UploadedFilesImpl(_))

@@ -3,8 +3,23 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import java.util.UUID
 import play.api.libs.json.JsObject
-import org.overviewproject.models.{ ApiToken, Document, DocumentInfo, DocumentSet, DocumentSetUser, DocumentTag, DocumentStoreObject, Node, NodeDocument, Plugin, Store, StoreObject, Tree, View }
-import org.overviewproject.models.{ File, Page }
+import org.overviewproject.models.ApiToken
+import org.overviewproject.models.Document
+import org.overviewproject.models.DocumentInfo
+import org.overviewproject.models.DocumentSet
+import org.overviewproject.models.DocumentSetUser
+import org.overviewproject.models.DocumentTag
+import org.overviewproject.models.DocumentStoreObject
+import org.overviewproject.models.File
+import org.overviewproject.models.Node
+import org.overviewproject.models.NodeDocument
+import org.overviewproject.models.Page
+import org.overviewproject.models.Plugin
+import org.overviewproject.models.Store
+import org.overviewproject.models.StoreObject
+import org.overviewproject.models.Tree
+import org.overviewproject.models.UploadedFile
+import org.overviewproject.models.View
 import org.overviewproject.tree.orm.{ Document => DeprecatedDocument, DocumentSearchResult, SearchResult, SearchResultState, Tag }
 import org.overviewproject.util.DocumentSetVersion
 
@@ -173,4 +188,13 @@ trait Factory {
     contentsSize: Long = 1L,
     viewSize: Long = 1L): File
 
+  def uploadedFile(
+    id: Long = 0L,
+    contentDisposition: String = "attachment; filename=file.csv",
+    contentType: String = "text/csv",
+    size: Long = 0L,
+    uploadedAt: Timestamp = now
+  ): UploadedFile 
+  
+  private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
 }
