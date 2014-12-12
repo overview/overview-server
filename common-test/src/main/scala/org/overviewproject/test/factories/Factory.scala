@@ -201,12 +201,12 @@ trait Factory {
   ): UploadedFile 
   
   def documentProcessingError(
-    id: Long,
-    documentSetId: Long,
-    textUrl: String,
-    message: String,
-    statusCode: Option[Int],
-    headers: Option[String]
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    textUrl: String = "http://example.com",
+    message: String = "error message",
+    statusCode: Option[Int] = None,
+    headers: Option[String] = None
   ): DocumentProcessingError
   
   

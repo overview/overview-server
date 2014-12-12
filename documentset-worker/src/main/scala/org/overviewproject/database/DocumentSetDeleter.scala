@@ -27,10 +27,12 @@ trait DocumentSetDeleter {
 
   // The minimal set of components, common to all document sets
   private def deleteCore(documentSetId: Long)(implicit session: Session): Unit = {
+    val documentProcessingErrors = DocumentProcessingErrors.filter(_.documentSetId === documentSetId)
     val documents = Documents.filter(_.documentSetId === documentSetId)
     val documentSetUser = DocumentSetUsers.filter(_.documentSetId === documentSetId)
     val documentSet = DocumentSets.filter(_.id === documentSetId)
 
+    documentProcessingErrors.delete
     documents.delete
     documentSetUser.delete
     documentSet.delete

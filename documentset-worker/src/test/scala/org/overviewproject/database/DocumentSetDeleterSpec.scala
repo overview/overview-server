@@ -14,13 +14,13 @@ class DocumentSetDeleterSpec extends SlickSpecification {
   "DocumentSetDeleter" should {
 
     "delete documents, document_set_user, and document_set" in new BasicDocumentSetScope {
-      await { deleter.delete(documentSet.id) }
+      deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
     }
 
     "delete csv uploads" in new CsvUploadScope {
-      await { deleter.delete(documentSet.id) }
+      deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
       findUploadedFile must beEmpty
@@ -39,20 +39,20 @@ class DocumentSetDeleterSpec extends SlickSpecification {
 
       pageReferenceCounts must contain(0).exactly(numberOfDocuments.times)
     }
-    
+
     "decrement reference count when uploaded files are split into pages" in new SplitFileUploadScope {
       deleteDocumentSet
-      
+
       fileReferenceCount must beSome(0)
       pageReferenceCounts must contain(0).exactly(numberOfDocuments.times)
     }
-    
+
     "delete tree data" in new TreeScope {
       deleteDocumentSet
-      
+
       findDocumentSet(documentSet.id) must beEmpty
     }
- 
+
   }
 
   trait BasicDocumentSetScope extends DbScope {
@@ -64,8 +64,9 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     val documents = createDocuments
 
     factory.documentSetUser(documentSetId = documentSet.id)
+    factory.documentProcessingError(documentSetId = documentSet.id)
 
-    def deleteDocumentSet = await { deleter.delete(documentSet.id) }  must not (throwA[PSQLException]) 
+    def deleteDocumentSet = await { deleter.delete(documentSet.id) } must not(throwA[PSQLException])
 
     def findDocumentSet(documentSetId: Long)(implicit session: Session): Option[DocumentSet] = {
       val q = DocumentSets.filter(_.id === documentSetId)
@@ -95,12 +96,12 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     override def createDocuments = {
       val file = factory.file()
       val pages = Seq.tabulate(numberOfDocuments)(n => factory.page(fileId = file.id, pageNumber = n + 1))
-      
+
       pages.map(p => factory.document(documentSetId = documentSet.id, fileId = Some(file.id),
-          pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
+        pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
     }
   }
-  
+
   trait CsvUploadScope extends BasicDocumentSetScope {
 
     override def createDocumentSet = {
@@ -120,11 +121,11 @@ class DocumentSetDeleterSpec extends SlickSpecification {
 
   trait TreeScope extends BasicDocumentSetScope {
     val node = factory.node(id = 1l, rootId = 1l)
-    
+
     factory.nodeDocument(node.id, documents.head.id)
     factory.tree(documentSetId = documentSet.id, rootNodeId = node.id)
   }
-  
+
   class TestDocumentSetDeleter(implicit session: Session) extends DocumentSetDeleter {
     import scala.concurrent.ExecutionContext.Implicits.global
 
