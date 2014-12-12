@@ -36,17 +36,24 @@ class DocumentSetDeleterSpec extends SlickSpecification {
 
       fileReferenceCount must beSome(0)
 
-      pageReferenceCounts must contain(0).exactly(10.times)
+      pageReferenceCounts must contain(0).exactly(numberOfDocuments.times)
+    }
+    
+    "decrement reference count when uploaded files are split into pages" in new SplitFileUploadScope {
+      deleteDocumentSet
+      
+      fileReferenceCount must beSome(0)
+      pageReferenceCounts must contain(0).exactly(numberOfDocuments.times)
     }
   }
 
   trait BasicDocumentSetScope extends DbScope {
-    val numberOfDocuments = 10
+    def numberOfDocuments = 10
 
     val deleter = new TestDocumentSetDeleter
     val documentSet = createDocumentSet
 
-    val documents = Seq.fill(numberOfDocuments)(createDocument)
+    val documents = createDocuments
 
     factory.documentSetUser(documentSetId = documentSet.id)
 
@@ -57,25 +64,38 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       q.firstOption
     }
 
+    def fileReferenceCount: Option[Int] = Files.map(_.referenceCount).firstOption
+    def pageReferenceCounts: Seq[Int] = Pages.map(_.referenceCount).list
+
     def createDocumentSet: DocumentSet = factory.documentSet()
+    def createDocuments: Seq[Document] = Seq.fill(numberOfDocuments)(createDocument)
     def createDocument: Document = factory.document(documentSetId = documentSet.id)
   }
 
   trait FileUploadScope extends BasicDocumentSetScope {
-    override def createDocument: Document = {
+    override def createDocument = {
       val file = factory.file()
       factory.page(fileId = file.id, pageNumber = 1)
 
       factory.document(documentSetId = documentSet.id, fileId = Some(file.id))
     }
 
-    def fileReferenceCount: Option[Int] = Files.map(_.referenceCount).firstOption
-    def pageReferenceCounts: Seq[Int] = Pages.map(_.referenceCount).list
   }
 
+  trait SplitFileUploadScope extends BasicDocumentSetScope {
+
+    override def createDocuments = {
+      val file = factory.file()
+      val pages = Seq.tabulate(numberOfDocuments)(n => factory.page(fileId = file.id, pageNumber = n + 1))
+      
+      pages.map(p => factory.document(documentSetId = documentSet.id, fileId = Some(file.id),
+          pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
+    }
+  }
+  
   trait CsvUploadScope extends BasicDocumentSetScope {
 
-    override def createDocumentSet: DocumentSet = {
+    override def createDocumentSet = {
       val uploadedFile = factory.uploadedFile(size = 100l)
       factory.documentSet(uploadedFileId = Some(uploadedFile.id))
     }
