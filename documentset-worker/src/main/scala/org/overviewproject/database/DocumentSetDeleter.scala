@@ -16,6 +16,7 @@ trait DocumentSetDeleter {
     releaseFiles(documentSetId)
 
     deleteUserAddedData(documentSetId)
+    deleteTrees(documentSetId)
     deleteCore(documentSetId)
     
     deleteUploadedFile(uploadedFileId)
@@ -45,6 +46,18 @@ trait DocumentSetDeleter {
     searchResults.delete
   }
 
+  
+  // Artifacts added by clustering
+  private def deleteTrees(documentSetId: Long)(implicit session: Session): Unit = {
+	val trees = Trees.filter(_.documentSetId === documentSetId)
+	val nodes = Nodes.filter(_.rootId in trees.map(_.rootNodeId))
+	val nodeDocuments = NodeDocuments.filter(_.nodeId in nodes.map(_.id))
+	
+	nodeDocuments.delete
+	trees.delete
+	nodes.delete
+  }
+  
   private def deleteUploadedFile(uploadedFileId: Option[Long])(implicit session: Session): Unit =
     uploadedFileId.map { uid => UploadedFiles.filter(_.id === uid).delete }
 

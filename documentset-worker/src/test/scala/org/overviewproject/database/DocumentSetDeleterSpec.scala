@@ -1,5 +1,6 @@
 package org.overviewproject.database
 
+import org.postgresql.util.PSQLException
 import org.overviewproject.test._
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.{ Document, DocumentSet, UploadedFile }
@@ -45,6 +46,13 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       fileReferenceCount must beSome(0)
       pageReferenceCounts must contain(0).exactly(numberOfDocuments.times)
     }
+    
+    "delete tree data" in new TreeScope {
+      deleteDocumentSet
+      
+      findDocumentSet(documentSet.id) must beEmpty
+    }
+ 
   }
 
   trait BasicDocumentSetScope extends DbScope {
@@ -57,7 +65,7 @@ class DocumentSetDeleterSpec extends SlickSpecification {
 
     factory.documentSetUser(documentSetId = documentSet.id)
 
-    def deleteDocumentSet = await { deleter.delete(documentSet.id) }
+    def deleteDocumentSet = await { deleter.delete(documentSet.id) }  must not (throwA[PSQLException]) 
 
     def findDocumentSet(documentSetId: Long)(implicit session: Session): Option[DocumentSet] = {
       val q = DocumentSets.filter(_.id === documentSetId)
@@ -110,6 +118,13 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     factory.searchResult(documentSetId = documentSet.id)
   }
 
+  trait TreeScope extends BasicDocumentSetScope {
+    val node = factory.node(id = 1l, rootId = 1l)
+    
+    factory.nodeDocument(node.id, documents.head.id)
+    factory.tree(documentSetId = documentSet.id, rootNodeId = node.id)
+  }
+  
   class TestDocumentSetDeleter(implicit session: Session) extends DocumentSetDeleter {
     import scala.concurrent.ExecutionContext.Implicits.global
 
