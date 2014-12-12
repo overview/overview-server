@@ -1,9 +1,9 @@
 package org.overviewproject.database
 
 import org.overviewproject.test._
-import org.overviewproject.models.tables.{ Documents, DocumentSets, UploadedFiles }
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.{ Document, DocumentSet, UploadedFile }
+import org.overviewproject.models.tables.{ Documents, DocumentSets, Files, Pages, UploadedFiles }
 import java.sql.Timestamp
 import scala.concurrent.Future
 import org.overviewproject.test.factories.DbFactory
@@ -24,18 +24,33 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       findDocumentSet(documentSet.id) must beEmpty
       findUploadedFile must beEmpty
     }
-    
+
     "delete user added data" in new UserAddedDataScope {
-      await { deleter.delete(documentSet.id) }
+      deleteDocumentSet
+
+      findDocumentSet(documentSet.id) must beEmpty
+    }
+
+    "decrement reference count in files and pages for uploaded files" in new FileUploadScope {
+      deleteDocumentSet
+
+      fileReferenceCount must beSome(0)
+
+      pageReferenceCounts must contain(0).exactly(10.times)
     }
   }
 
   trait BasicDocumentSetScope extends DbScope {
+    val numberOfDocuments = 10
+
     val deleter = new TestDocumentSetDeleter
     val documentSet = createDocumentSet
 
-    val documents = Seq.fill(10)(factory.document(documentSetId = documentSet.id))
+    val documents = Seq.fill(numberOfDocuments)(createDocument)
+
     factory.documentSetUser(documentSetId = documentSet.id)
+
+    def deleteDocumentSet = await { deleter.delete(documentSet.id) }
 
     def findDocumentSet(documentSetId: Long)(implicit session: Session): Option[DocumentSet] = {
       val q = DocumentSets.filter(_.id === documentSetId)
@@ -43,6 +58,19 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     }
 
     def createDocumentSet: DocumentSet = factory.documentSet()
+    def createDocument: Document = factory.document(documentSetId = documentSet.id)
+  }
+
+  trait FileUploadScope extends BasicDocumentSetScope {
+    override def createDocument: Document = {
+      val file = factory.file()
+      factory.page(fileId = file.id, pageNumber = 1)
+
+      factory.document(documentSetId = documentSet.id, fileId = Some(file.id))
+    }
+
+    def fileReferenceCount: Option[Int] = Files.map(_.referenceCount).firstOption
+    def pageReferenceCounts: Seq[Int] = Pages.map(_.referenceCount).list
   }
 
   trait CsvUploadScope extends BasicDocumentSetScope {
@@ -52,11 +80,11 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       factory.documentSet(uploadedFileId = Some(uploadedFile.id))
     }
 
-    def findUploadedFile(implicit session: Session): Option[UploadedFile] = 
+    def findUploadedFile(implicit session: Session): Option[UploadedFile] =
       UploadedFiles.firstOption
 
   }
-  
+
   trait UserAddedDataScope extends BasicDocumentSetScope {
     factory.tag(documentSetId = documentSet.id)
     factory.searchResult(documentSetId = documentSet.id)

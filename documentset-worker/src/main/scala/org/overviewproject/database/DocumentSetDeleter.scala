@@ -2,8 +2,9 @@ package org.overviewproject.database
 
 import scala.concurrent.Future
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.tables.{ Documents, DocumentSets, DocumentSetUsers, SearchResults, Tags, UploadedFiles }
+import org.overviewproject.models.tables._
 import scala.slick.lifted.AbstractTable
+import scala.slick.jdbc.StaticQuery.interpolation
 
 trait DocumentSetDeleter {
 
@@ -19,6 +20,21 @@ trait DocumentSetDeleter {
     
     val tags = Tags.filter(_.documentSetId === documentSetId)
     val searchResults = SearchResults.filter(_.documentSetId === documentSetId)
+    
+    
+    val fileReferences = sqlu"""
+      UPDATE file SET reference_count = reference_count - 1
+      WHERE reference_count > 0 AND id IN 
+        (SELECT file_id FROM document where document_set_id  = $documentSetId)
+     """
+     fileReferences.execute 
+     
+     val pageReferences = sqlu"""
+       UPDATE page SET reference_count = reference_count - 1
+       WHERE reference_count > 0 AND file_id IN
+        (SELECT file_id FROM document where document_set_id  = $documentSetId)
+     """
+    pageReferences.execute
     
     tags.delete
     searchResults.delete
