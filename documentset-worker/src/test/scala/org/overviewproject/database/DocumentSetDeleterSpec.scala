@@ -140,13 +140,6 @@ class DocumentSetDeleterSpec extends SlickSpecification {
 
   }
 
-  class TestDocumentSetDeleter(implicit session: Session) extends DocumentSetDeleter {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    override def db[A](block: Session => A): Future[A] = Future {
-      block(session)
-    }
-
-  }
-
+  class TestDocumentSetDeleter(implicit val session: Session) extends DocumentSetDeleter with SlickClientInSession 
+    
 }

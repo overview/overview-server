@@ -1,14 +1,12 @@
 package org.overviewproject.database
 
 import scala.concurrent.Future
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.tables._
 import scala.slick.lifted.AbstractTable
 import scala.slick.jdbc.StaticQuery.interpolation
+import org.overviewproject.database.Slick.simple._
+import org.overviewproject.models.tables._
 
-trait DocumentSetDeleter {
-
-  protected def db[A](block: Session => A): Future[A]
+trait DocumentSetDeleter extends SlickClient {
 
   def delete(documentSetId: Long): Future[Unit] = db { implicit session =>
     val uploadedFileId = findUploadedFileId(documentSetId)
