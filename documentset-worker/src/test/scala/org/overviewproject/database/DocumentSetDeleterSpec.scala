@@ -24,6 +24,10 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       findDocumentSet(documentSet.id) must beEmpty
       findUploadedFile must beEmpty
     }
+    
+    "delete user added data" in new UserAddedDataScope {
+      await { deleter.delete(documentSet.id) }
+    }
   }
 
   trait BasicDocumentSetScope extends DbScope {
@@ -51,6 +55,11 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     def findUploadedFile(implicit session: Session): Option[UploadedFile] = 
       UploadedFiles.firstOption
 
+  }
+  
+  trait UserAddedDataScope extends BasicDocumentSetScope {
+    factory.tag(documentSetId = documentSet.id)
+    factory.searchResult(documentSetId = documentSet.id)
   }
 
   class TestDocumentSetDeleter(implicit session: Session) extends DocumentSetDeleter {

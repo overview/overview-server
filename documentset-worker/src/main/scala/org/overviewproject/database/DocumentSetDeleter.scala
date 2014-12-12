@@ -2,7 +2,8 @@ package org.overviewproject.database
 
 import scala.concurrent.Future
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.tables.{ Documents, DocumentSets, DocumentSetUsers, UploadedFiles }
+import org.overviewproject.models.tables.{ Documents, DocumentSets, DocumentSetUsers, SearchResults, Tags, UploadedFiles }
+import scala.slick.lifted.AbstractTable
 
 trait DocumentSetDeleter {
 
@@ -16,6 +17,12 @@ trait DocumentSetDeleter {
     val uploadedFileId = UploadedFiles.filter(_.id in documentSet.map(_.uploadedFileId)).map(_.id).firstOption
     val uploadedFiles = UploadedFiles.filter(_.id === uploadedFileId)
     
+    val tags = Tags.filter(_.documentSetId === documentSetId)
+    val searchResults = SearchResults.filter(_.documentSetId === documentSetId)
+    
+    tags.delete
+    searchResults.delete
+    
     documents.delete
     documentSetUser.delete
     documentSet.delete
@@ -23,5 +30,6 @@ trait DocumentSetDeleter {
     uploadedFiles.delete
     
   }
+  
 }
 
