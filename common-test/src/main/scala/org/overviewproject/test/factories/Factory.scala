@@ -6,6 +6,7 @@ import play.api.libs.json.JsObject
 import org.overviewproject.models.ApiToken
 import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentInfo
+import org.overviewproject.models.DocumentProcessingError
 import org.overviewproject.models.DocumentSet
 import org.overviewproject.models.DocumentSetUser
 import org.overviewproject.models.DocumentTag
@@ -198,6 +199,16 @@ trait Factory {
     size: Long = 0L,
     uploadedAt: Timestamp = now
   ): UploadedFile 
+  
+  def documentProcessingError(
+    id: Long,
+    documentSetId: Long,
+    textUrl: String,
+    message: String,
+    statusCode: Option[Int],
+    headers: Option[String]
+  ): DocumentProcessingError
+  
   
   private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
 }

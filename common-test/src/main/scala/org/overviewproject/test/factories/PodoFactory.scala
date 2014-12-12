@@ -7,6 +7,7 @@ import scala.util.Random
 import org.overviewproject.models.ApiToken
 import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentInfo
+import org.overviewproject.models.DocumentProcessingError
 import org.overviewproject.models.DocumentSet
 import org.overviewproject.models.DocumentSetUser
 import org.overviewproject.models.DocumentTag
@@ -353,4 +354,15 @@ object PodoFactory extends Factory {
     size: Long,
     uploadedAt: Timestamp
   ) = UploadedFile(id, contentDisposition, contentType, size, uploadedAt)
+  
+  override def documentProcessingError(
+    id: Long,
+    documentSetId: Long,
+    textUrl: String,
+    message: String,
+    statusCode: Option[Int],
+    headers: Option[String]
+  ) = DocumentProcessingError(id, documentSetId, textUrl, message, statusCode, headers)
+  
+    
 }

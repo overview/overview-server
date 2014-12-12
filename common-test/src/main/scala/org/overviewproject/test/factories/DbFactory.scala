@@ -4,7 +4,6 @@ import java.sql.{Connection,Timestamp}
 import java.util.UUID
 import play.api.libs.json.JsObject
 import scala.slick.jdbc.UnmanagedSession
-
 import org.overviewproject.models.tables._
 import org.overviewproject.models.ApiToken
 import org.overviewproject.models.Document
@@ -23,6 +22,8 @@ import org.overviewproject.models.UploadedFile
 import org.overviewproject.models.View
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,SearchResult,SearchResultState,Tag}
 import org.overviewproject.util.DocumentSetVersion
+import scala.slick.lifted.AbstractTable
+
 
 /** Creates objects in the database while returning them.
   *
@@ -312,6 +313,19 @@ class DbFactory(connection: Connection) extends Factory {
     size: Long,
     uploadedAt: Timestamp 
   ) = q.insertUploadedFile += podoFactory.uploadedFile(id, contentDisposition, contentType, size, uploadedAt)
+  
+  override def documentProcessingError(
+    id: Long,
+    documentSetId: Long,
+    textUrl: String,
+    message: String,
+    statusCode: Option[Int],
+    headers: Option[String]
+  ) = q.insertDocumentProcessingError += podoFactory.documentProcessingError(id, documentSetId, textUrl, message, statusCode, headers)
+  
+  
+  
+    
 }
 
 object DbFactory {
@@ -338,5 +352,7 @@ object DbFactory {
     val insertPage = (Pages returning Pages).insertInvoker
     val insertFile = (Files returning Files).insertInvoker
     val insertUploadedFile = (UploadedFiles returning UploadedFiles).insertInvoker
+    val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors).insertInvoker//insertInvoker(DocumentProcessingErrors)
+
   }
 }
