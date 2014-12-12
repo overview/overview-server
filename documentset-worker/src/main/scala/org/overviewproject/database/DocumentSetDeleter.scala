@@ -15,6 +15,7 @@ trait DocumentSetDeleter {
 
     releaseFiles(documentSetId)
 
+    deleteViews(documentSetId)
     deleteUserAddedData(documentSetId)
     deleteTrees(documentSetId)
     deleteCore(documentSetId)
@@ -84,5 +85,19 @@ trait DocumentSetDeleter {
 
   }
 
+  // Components added with the API
+  private def deleteViews(documentSetId: Long)(implicit session: Session): Unit = {
+    val apiTokens = ApiTokens.filter(_.documentSetId === documentSetId)
+    val views = Views.filter(_.documentSetId === documentSetId)
+    val stores = Stores.filter(_.apiToken in apiTokens.map(_.token))
+    val storeObjects = StoreObjects.filter(_.storeId in stores.map(_.id))
+    val documentStoreObjects = DocumentStoreObjects.filter(_.storeObjectId in storeObjects.map(_.id))
+    
+    documentStoreObjects.delete
+    storeObjects.delete
+    stores.delete
+    views.delete
+    apiTokens.delete
+  }
 }
 

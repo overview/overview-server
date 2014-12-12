@@ -53,6 +53,11 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       findDocumentSet(documentSet.id) must beEmpty
     }
 
+    "delete view data" in new PluginScope {
+      deleteDocumentSet
+      
+      findDocumentSet(documentSet.id) must beEmpty
+    }
   }
 
   trait BasicDocumentSetScope extends DbScope {
@@ -124,6 +129,15 @@ class DocumentSetDeleterSpec extends SlickSpecification {
 
     factory.nodeDocument(node.id, documents.head.id)
     factory.tree(documentSetId = documentSet.id, rootNodeId = node.id)
+  }
+  
+  trait PluginScope extends BasicDocumentSetScope {
+    val apiToken = factory.apiToken(documentSetId = documentSet.id)
+    val store = factory.store(apiToken = apiToken.token)
+    val storeObject = factory.storeObject(storeId = store.id)
+    documents.map(d => factory.documentStoreObject(documentId = d.id, storeObjectId = storeObject.id))
+    factory.view(documentSetId = documentSet.id, apiToken = apiToken.token)
+
   }
 
   class TestDocumentSetDeleter(implicit session: Session) extends DocumentSetDeleter {
