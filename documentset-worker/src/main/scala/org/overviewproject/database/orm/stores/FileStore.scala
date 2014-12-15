@@ -18,15 +18,15 @@ object FileStore extends BaseStore(files) {
       where (f.id in fileIdsToUpdate)
       set (f.referenceCount := f.referenceCount.~ - 1))
 
-    val deleteContents = from(files)(f =>
-      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
-        select (&(lo_unlink(Some(f.contentsOid))))).toIterable
-
-    val filesToDelete = from(files)(f =>
-      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
-        select (f))
-
-    files.delete(filesToDelete)
+//    val deleteContents = from(files)(f =>
+//      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
+//        select (&(lo_unlink(Some(f.contentsOid))))).toIterable
+//
+//    val filesToDelete = from(files)(f =>
+//      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
+//        select (f))
+//
+//    files.delete(filesToDelete)
   }
 
   def removeReferenceByTempDocumentSet(documentSetId: Long): Unit = {
@@ -43,15 +43,15 @@ object FileStore extends BaseStore(files) {
       where (f.id in fileIdsToUpdate)
       set (f.referenceCount := f.referenceCount.~ - 1))
     
-    val deleteContents = from(files)(f =>
-      where(f.id in fileIdQuery and f.referenceCount === 0)
-        select (&(lo_unlink(Some(f.contentsOid))))).toIterable
-
-    val filesToDelete = from(files)(f =>
-      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
-        select (f))
-
-    files.delete(filesToDelete)
+//    val deleteContents = from(files)(f =>
+//      where(f.id in fileIdQuery and f.referenceCount === 0)
+//        select (&(lo_unlink(Some(f.contentsOid))))).toIterable
+//
+//    val filesToDelete = from(files)(f =>
+//      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
+//        select (f))
+//
+//    files.delete(filesToDelete)
     
         
   }

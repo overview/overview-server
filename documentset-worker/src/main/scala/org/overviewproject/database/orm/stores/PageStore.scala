@@ -18,11 +18,11 @@ object PageStore extends BaseStore(pages) {
       where(p.id in pageIdsToUpdate)
         set (p.referenceCount := p.referenceCount.~ - 1))
 
-    val pagesToDelete = from(pages)(p =>
-      where(p.id in pageIdsToUpdate and p.referenceCount === 0)
-        select (p))
-
-    pages.delete(pagesToDelete)
+//    val pagesToDelete = from(pages)(p =>
+//      where(p.id in pageIdsToUpdate and p.referenceCount === 0)
+//        select (p))
+//
+//    pages.delete(pagesToDelete)
   }
 
   // FIXME: Pick one of these methods. Reading all fileIds to call the first one is probably
@@ -41,11 +41,11 @@ object PageStore extends BaseStore(pages) {
       where(p.id in pageIdsToUpdate)
         set (p.referenceCount := p.referenceCount.~ - 1))
 
-    val pagesToDelete = from(pages)(p =>
-      where(p.id in pageIdsToUpdate and p.referenceCount === 0)
-        select (p))
-
-    pages.delete(pagesToDelete)
+//    val pagesToDelete = from(pages)(p =>
+//      where(p.id in pageIdsToUpdate and p.referenceCount === 0)
+//        select (p))
+//
+//    pages.delete(pagesToDelete)
 
   }
 }
