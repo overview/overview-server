@@ -356,7 +356,7 @@ object PodoFactory extends Factory {
     contentType: String,
     size: Long,
     uploadedAt: Timestamp
-  ) = UploadedFile(id, contentDisposition, contentType, size, uploadedAt)
+  ) = UploadedFile(getId(id), contentDisposition, contentType, size, uploadedAt)
   
   override def documentProcessingError(
     id: Long,
@@ -365,7 +365,7 @@ object PodoFactory extends Factory {
     message: String,
     statusCode: Option[Int],
     headers: Option[String]
-  ) = DocumentProcessingError(id, documentSetId, textUrl, message, statusCode, headers)
+  ) = DocumentProcessingError(getId(id), documentSetId, textUrl, message, statusCode, headers)
   
 
   override def documentSetCreationJob(
