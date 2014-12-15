@@ -7,10 +7,12 @@
 
 package org.overviewproject.database
 
+import com.jolbox.bonecp.ConnectionHandle
 import java.sql.Connection
 import javax.sql.{ DataSource => JDataSource }
 import org.postgresql.PGConnection
-import com.jolbox.bonecp.ConnectionHandle
+import scala.slick.jdbc.JdbcBackend.Session
+import scala.slick.jdbc.UnmanagedSession
 
 /**
  * Convenience object for database access. Call DB.connect(datasSource) once at the start
@@ -70,13 +72,14 @@ object DB {
     }
   }
 
-  /**
-   * Extracts the internal PGConnection
-   */
+  /** Extracts the internal PGConnection. */
   def pgConnection(implicit connection: Connection): PGConnection = {
     val connectionHandle = connection.asInstanceOf[ConnectionHandle]
     connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
   }
+
+  /** Transforms a JDBC Connection into a Slick Session. */
+  def slickSession(connection: Connection): Session = new UnmanagedSession(connection)
 
   /**
    * @return the current underlying data source
