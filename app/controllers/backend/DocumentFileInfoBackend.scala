@@ -29,10 +29,15 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
     
   private def pageViewInfos(documentSetId: Long)(implicit session: Session) = {
   	val q = sql"""
-        SELECT d.title, p.page_number, d.page_id, octet_length(p.data) FROM document d, page p 
-        WHERE ((d.document_set_id = $documentSetId) AND 
-               (d.page_id IS NOT NULL) AND 
-               (p.id = d.page_id))""".as[(String, Int, Long, Long)]
+      SELECT
+        d.title,
+        p.page_number,
+        COALESCE(p.data_location, 'pagebytea:' || p.id),
+        p.data_size
+      FROM document d
+      INNER JOIN page p ON d.page_id = p.id
+      WHERE d.document_set_id = $documentSetId
+    """.as[(String, Int, String, Long)]
 
     q.list.map(documentViewInfoFactory.fromPage)
   }
@@ -65,7 +70,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   protected val documentViewInfoFactory: DocumentViewInfoFactory
   
   protected trait DocumentViewInfoFactory {
-    def fromPage(info: (String, Int, Long, Long)): DocumentViewInfo
+    def fromPage(info: (String, Int, String, Long)): DocumentViewInfo
     def fromFile(info: (String, Long, Long)): DocumentViewInfo
     def fromText(info: (String, String, Long, Option[Int], Long)): DocumentViewInfo
     
@@ -75,7 +80,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
 
 object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend {
   override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
-    def fromPage(info: (String, Int, Long, Long)): DocumentViewInfo = (PageViewInfo.apply _).tupled(info)
+    def fromPage(info: (String, Int, String, Long)): DocumentViewInfo = (PageViewInfo.apply _).tupled(info)
     def fromFile(info: (String, Long, Long)): DocumentViewInfo = (FileViewInfo.apply _).tupled(info)
     def fromText(info: (String, String, Long, Option[Int], Long)): DocumentViewInfo = (TextViewInfo.apply _).tupled(info)
   } 

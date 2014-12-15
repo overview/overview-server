@@ -12,7 +12,8 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     "find info for pages" in new SplitDocumentsScope {
       val infos = await(backend.indexDocumentViewInfos(documentSet.id))
 
-      pagesWereUsedInViewInfoCreation
+      there was one(backend.mockFactory).fromPage((filename, 1, "loca:tion:0", 123))
+      there was one(backend.mockFactory).fromPage((filename, 2, "loca:tion:1", 246))
     }
 
     "find info for files" in new FileScope {
@@ -39,15 +40,21 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     val numberOfPages = 2
 
     val file = factory.file(name = filename)
-    val pages = Seq.tabulate(numberOfPages)(n => factory.page(pageNumber = (n + 1), fileId = file.id))
+    val pages = Seq.tabulate(numberOfPages)(n => factory.page(
+      pageNumber = (n + 1),
+      fileId = file.id,
+      dataLocation = "loca:tion:" + n,
+      dataSize = 123 * (n + 1)
+    ))
     val documents = pages.map(p =>
-      factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id),
-        pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
-
-    def pagesWereUsedInViewInfoCreation = pages.map { p =>
-      there was one(backend.mockFactory).fromPage((filename, p.pageNumber, p.id, p.data.get.length))
-    }
-
+      factory.document(
+        documentSetId = documentSet.id,
+        title = filename,
+        fileId = Some(file.id),
+        pageId = Some(p.id),
+        pageNumber = Some(p.pageNumber)
+      )
+    )
   }
 
   trait FileScope extends DocumentScope {

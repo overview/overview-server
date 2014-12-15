@@ -8,7 +8,7 @@ import org.overviewproject.blobstorage.BlobStorage
 abstract class PageViewInfo(
   documentTitle: String,
   pageNumber: Int,
-  pageId: Long,
+  dataLocation: String,
   override val size: Long
 ) extends DocumentViewInfo {
   override def name = fileNameWithPage(removePdf(documentTitle), pageNumber)
@@ -18,11 +18,11 @@ abstract class PageViewInfo(
 }
 
 object PageViewInfo {
-  def apply(documentTitle: String, pageNumber: Int, pageId: Long, size: Long): PageViewInfo =
-    new BlobStoragePageViewInfo(documentTitle, pageNumber, pageId, size)
+  def apply(documentTitle: String, pageNumber: Int, dataLocation: String, size: Long): PageViewInfo =
+    new BlobStoragePageViewInfo(documentTitle, pageNumber, dataLocation, size)
 
-  private class BlobStoragePageViewInfo(documentTitle: String, pageNumber: Int, pageId: Long, size: Long)
-      extends PageViewInfo(documentTitle, pageNumber, pageId, size) {
-    override def stream = BlobStorage.get("pagebytea:" + pageId)
+  private class BlobStoragePageViewInfo(documentTitle: String, pageNumber: Int, dataLocation: String, size: Long)
+      extends PageViewInfo(documentTitle, pageNumber, dataLocation, size) {
+    override def stream = BlobStorage.get(dataLocation)
   }
 }
