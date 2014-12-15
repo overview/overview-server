@@ -15,7 +15,7 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
       
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
-  def jobType = column[DocumentSetCreationJobType.Value]("jobType")
+  def jobType = column[DocumentSetCreationJobType.Value]("type")
   def retryAttempts = column[Int]("retry_attempts")
   def lang = column[String]("lang")
   def suppliedStopWords = column[String]("supplied_stop_words")
