@@ -388,7 +388,7 @@ object PodoFactory extends Factory {
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
     statusDescription: String
-  ) = DocumentSetCreationJob(id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
+  ) = DocumentSetCreationJob(getId(id), documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
       splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId, 
       treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription)
   
