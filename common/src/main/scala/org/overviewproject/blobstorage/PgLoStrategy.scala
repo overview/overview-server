@@ -1,6 +1,7 @@
 package org.overviewproject.blobstorage
 
 import java.io.InputStream
+import java.sql.Connection
 import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Enumerator
@@ -137,17 +138,35 @@ trait PgLoStrategy extends BlobStorageStrategy {
 }
 
 object PgLoStrategy extends PgLoStrategy {
+  // LargeObjects only work inside of transactions. We can't _test_ this code,
+  // since our test suite always generates a transaction, but we need it.
+  private def ensuringTransaction[A](connection: Connection)(f: => A): A = {
+    if (connection.getAutoCommit) {
+      connection.setAutoCommit(false)
+      val ret = f
+      connection.commit
+      connection.setAutoCommit(true)
+      ret
+    } else {
+      f
+    }
+  }
+
   override protected def withPgConnection[A](f: PGConnection => A): A = {
     DB.withConnection { connection =>
-      val pgConnection = DB.pgConnection(connection)
-      f(pgConnection)
+      ensuringTransaction(connection) {
+        val pgConnection = DB.pgConnection(connection)
+        f(pgConnection)
+      }
     }
   }
 
   override protected def withSlickSession[A](f: Session => A): A = {
     DB.withConnection { connection =>
-      val session = DB.slickSession(connection)
-      f(session)
+      ensuringTransaction(connection) {
+        val session = DB.slickSession(connection)
+        f(session)
+      }
     }
   }
 }
