@@ -9,6 +9,9 @@ import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentInfo
 import org.overviewproject.models.DocumentProcessingError
 import org.overviewproject.models.DocumentSet
+import org.overviewproject.models.DocumentSetCreationJob
+import org.overviewproject.models.DocumentSetCreationJobState
+import org.overviewproject.models.DocumentSetCreationJobType
 import org.overviewproject.models.DocumentSetUser
 import org.overviewproject.models.DocumentTag
 import org.overviewproject.models.DocumentStoreObject
@@ -363,6 +366,31 @@ object PodoFactory extends Factory {
     statusCode: Option[Int],
     headers: Option[String]
   ) = DocumentProcessingError(id, documentSetId, textUrl, message, statusCode, headers)
+  
+
+  override def documentSetCreationJob(
+    id: Long,
+    documentSetId: Long,
+    jobType: DocumentSetCreationJobType.Value,
+    retryAttempts: Int,
+    lang: String,
+    suppliedStopWords: String,
+    importantWords: String,
+    splitDocuments: Boolean,
+    documentcloudUsername: Option[String],
+    documentcloudPassword: Option[String],
+    contentsOid: Option[Long],
+    fileGroupId: Option[Long],
+    sourceDocumentSetId: Option[Long],
+    treeTitle: Option[String],
+    treeDescription: Option[String],
+    tagId: Option[Long],
+    state: DocumentSetCreationJobState.Value,
+    fractionComplete: Double,
+    statusDescription: String
+  ) = DocumentSetCreationJob(id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
+      splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId, 
+      treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription)
   
     
 }

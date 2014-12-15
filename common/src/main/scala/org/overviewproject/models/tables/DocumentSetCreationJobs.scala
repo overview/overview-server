@@ -40,3 +40,6 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
   ((DocumentSetCreationJob.apply _).tupled, DocumentSetCreationJob.unapply)
 
 }
+
+
+object DocumentSetCreationJobs extends TableQuery(new DocumentSetCreationJobsImpl(_))

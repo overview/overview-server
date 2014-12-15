@@ -8,6 +8,9 @@ import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentInfo
 import org.overviewproject.models.DocumentProcessingError
 import org.overviewproject.models.DocumentSet
+import org.overviewproject.models.DocumentSetCreationJob
+import org.overviewproject.models.DocumentSetCreationJobState
+import org.overviewproject.models.DocumentSetCreationJobType
 import org.overviewproject.models.DocumentSetUser
 import org.overviewproject.models.DocumentTag
 import org.overviewproject.models.DocumentStoreObject
@@ -208,6 +211,28 @@ trait Factory {
     statusCode: Option[Int] = None,
     headers: Option[String] = None
   ): DocumentProcessingError
+  
+  def documentSetCreationJob(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    jobType: DocumentSetCreationJobType.Value,
+    retryAttempts: Int = 0,
+    lang: String = "en",
+    suppliedStopWords: String = "",
+    importantWords: String = "",
+    splitDocuments: Boolean = false,
+    documentcloudUsername: Option[String] = None,
+    documentcloudPassword: Option[String] = None,
+    contentsOid: Option[Long] = None,
+    fileGroupId: Option[Long] = None,
+    sourceDocumentSetId: Option[Long] = None,
+    treeTitle: Option[String] = None,
+    treeDescription: Option[String] = None,
+    tagId: Option[Long] = None,
+    state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.NotStarted,
+    fractionComplete: Double = 0.0,
+    statusDescription: String = ""
+  ): DocumentSetCreationJob
   
   
   private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
