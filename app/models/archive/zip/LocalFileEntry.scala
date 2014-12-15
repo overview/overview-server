@@ -12,7 +12,7 @@ import models.archive.DosDate
 class LocalFileEntry(entry: ArchiveEntry, val offset: Long) extends ZipFormat with ZipFormatSize with LittleEndianWriter {
   private implicit val executionContext = play.api.libs.iteratee.Execution.Implicits.defaultExecutionContext
 
-  lazy val crcFuture = entry.data().flatMap { e => computeCrc(e) }
+  lazy val crcFuture: Future[Int] = entry.data().flatMap { e => computeCrc(e) }
 
   def stream: Enumerator[Array[Byte]] = {
     // XXX we stream the documents twice! BOO.
