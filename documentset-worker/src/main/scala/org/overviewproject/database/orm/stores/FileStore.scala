@@ -8,11 +8,6 @@ import org.overviewproject.tree.orm.File
 
 object FileStore extends BaseStore(files) {
 
-  def deleteLargeObjectsByDocumentSet(documentSetId: Long): Unit =
-    from(files, documents)((f, d) =>
-      where(d.documentSetId === documentSetId and d.fileId === f.id)
-        select (&(lo_unlink(Some(f.contentsOid))))).toIterable
-
   def removeReference(fileIds: Seq[Long]): Unit = {
     val fileIdsToUpdate = from(files)(f =>
       where(f.id in fileIds)
