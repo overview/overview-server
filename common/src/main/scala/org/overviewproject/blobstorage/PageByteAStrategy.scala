@@ -25,12 +25,12 @@ trait PageByteAStrategy extends BlobStorageStrategy {
   override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
     val location = stringToLocation(locationString)
 
-    db { implicit session =>
+    db { session =>
 
       val q = Pages.filter(_.id === location.pageId)
 
-      val page = q.first
-      val data = page.data.getOrElse(Array.empty)
+      val page = q.first(session) // or exception
+      val data = page.data.get // or exception
       val dataStream = new ByteArrayInputStream(data)
 
       Enumerator.fromStream(dataStream)

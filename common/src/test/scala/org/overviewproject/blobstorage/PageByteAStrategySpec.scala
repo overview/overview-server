@@ -22,21 +22,18 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
         bytesRead must be equalTo data
       }
 
-      "return an empty enumerator if data is not set" in new NoDataPageScope {
+      "throw a delayed exception if data is NULL" in new NoDataPageScope {
         val future = strategy.get(s"pagebytea:${page.id}")
-        val enumerator = await(future)
-        val bytesRead = consume(enumerator)
-
-        bytesRead must beEmpty
+        await(future) must throwA[Exception]
       }
-      
+
       "throw an exception when get location does not look like pagebytea:PAGEID" in new ExistingPageScope {
         invalidLocationThrowsException(strategy.get)
       }
 
       "throw a delayed exception if pageId is not a valid id" in new ExistingFileScope {
-    	val future = strategy.get(s"pagebytea:0")
-    	await(future) must throwA[Exception]
+        val future = strategy.get(s"pagebytea:0")
+        await(future) must throwA[Exception]
       }
     }
 
@@ -44,7 +41,7 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
       "not do anything" in new ExistingPageScope {
         val future = strategy.delete(s"pagebytea:${page.id}")
         await(future)
-        
+
         pageData must beSome(data)
       }
     }
