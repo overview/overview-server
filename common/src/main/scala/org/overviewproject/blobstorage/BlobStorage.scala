@@ -94,6 +94,8 @@ trait BlobStorage {
     * The <tt>bucketName</tt> must be a key in Config's
     * <tt>config.storage.preferredPrefixes</tt>.
     *
+    * If you supply the wrong <tt>nBytes</tt>, you'll get undefined behavior.
+    *
     * @param bucket What bundle of blobs to write to
     * @param inputStream Content to write
     * @param nBytes Number of bytes in the input stream
