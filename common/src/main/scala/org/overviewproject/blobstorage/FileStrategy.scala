@@ -3,7 +3,7 @@ package org.overviewproject.blobstorage
 import java.io.{ File, InputStream, IOException }
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future,blocking}
 import java.util.UUID
 import java.nio.file.Files
 
@@ -35,10 +35,10 @@ trait FileStrategy extends BlobStorageStrategy {
 
   override def delete(locationString: String): Future[Unit] = {
     val location = stringToLocation(locationString)
-    Future {
-      val file = keyFile(location)
-      if (!file.delete) throw new IOException(s"Unable to delete file at location $locationString")
-    }
+    val file = keyFile(location)
+    Future { blocking {
+      Files.deleteIfExists(file.toPath)
+    } }
   }
 
   override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = {

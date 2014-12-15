@@ -121,24 +121,25 @@ class FileStrategySpec extends StrategySpecification {
       invalidLocationThrowsException(TestFileStrategy.delete)
     }
 
-    "throw a delayed exception when the key does not exist in the bucket which does" in new ExistingFileScope {
+    "succeed when the key does not exist in the bucket which does" in new ExistingFileScope {
       val future = TestFileStrategy.delete(s"file:$bucket:x$key")
-      await(future) must throwA[IOException]
+      await(future) must beEqualTo(())
     }
 
-    "throw a delayed exception when the bucket does not exist" in new ExistingFileScope {
+    "succeed when the bucket does not exist" in new ExistingFileScope {
       val future = TestFileStrategy.delete(s"file:x$bucket:$key")
-      await(future) must throwA[IOException]
+      await(future) must beEqualTo(())
     }
 
-    "throw a delayed exception when the base directory does not exist" in new ExistingFileScope {
+    "succeed when the base directory does not exist" in new ExistingFileScope {
       rimraf(tmpDir)
       val future = TestFileStrategy.delete(s"file:$bucket:$key")
-      await(future) must throwA[IOException]
+      await(future) must beEqualTo(())
     }
 
     "delete the file" in new ExistingFileScope {
       val future = TestFileStrategy.delete(s"file:$bucket:$key")
+      await(future) must beEqualTo(())
       keyFile.exists must beFalse
     }
   }
