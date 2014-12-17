@@ -9,8 +9,8 @@ import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
 import DeleteHandlerFSM._
 import akka.actor.FSM
-
 import org.overviewproject.database.{ DocumentSetDeleter => NewDocumentSetDeleter }
+import org.overviewproject.database.DocumentSetCreationJobDeleter
 
 /**
  * [[DeleteHandler]] deletes a document set and all associated data if deletion is requested after
@@ -63,6 +63,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
 
   val documentSetDeleter: DocumentSetDeleter
   val newDocumentSetDeleter: NewDocumentSetDeleter
+  val jobDeleter: DocumentSetCreationJobDeleter
   val jobStatusChecker: JobStatusChecker
 
   val RetryTimer = "retry"

@@ -15,6 +15,7 @@ import org.overviewproject.util.Configuration
 import org.overviewproject.util.Logger
 import javax.jms._
 import DocumentSetJobHandlerFSM._
+import org.overviewproject.database.DocumentSetCreationJobDeleter
 
 
 
@@ -128,9 +129,10 @@ trait SearchComponentImpl extends SearchComponent {
     override def produceSearchHandler: Actor = new SearchHandler with SearchIndexAndSearchStorage
 
     override def produceDeleteHandler: Actor = new DeleteHandler with ElasticSearchComponents {
-
+	  
       override val documentSetDeleter = DocumentSetDeleter()
-      override val newDocumentSetDeleter = NewDocumentSetDeleter(context.dispatcher) 
+      override val newDocumentSetDeleter = NewDocumentSetDeleter(context.dispatcher)
+      override val jobDeleter = DocumentSetCreationJobDeleter(context.dispatcher)
       override val jobStatusChecker = JobStatusChecker()
     }
   }

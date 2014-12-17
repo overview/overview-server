@@ -13,6 +13,7 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 import org.specs2.time.NoTimeConversions
+import org.overviewproject.database.DocumentSetCreationJobDeleter
 
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
@@ -23,6 +24,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       val searchIndex = mock[SearchIndexComponent]
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val newDocumentSetDeleter = smartMock[NewDocumentSetDeleter]
+      val jobDeleter = smartMock[DocumentSetCreationJobDeleter]
       val jobStatusChecker = smartMock[JobStatusChecker]
 
       val searchIndexRemoveDocumentSetPromise = Promise[Unit]
@@ -83,6 +85,12 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       there was one(searchIndex).removeDocumentSet(documentSetId)
     }
 
+    "delete document set related data" in new DeleteContext {
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
+      
+      there was one(newDocumentSetDeleter).delete(documentSetId)
+    }
+    
     "notify parent when deletion of documents and alias completes successfully" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
       
@@ -107,11 +115,6 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
-    "delete document set related data" in new DeleteContext {
-      deleteHandler ! DeleteDocumentSet(documentSetId, false)
-      
-      there was one(newDocumentSetDeleter).delete(documentSetId)
-    }
 
     "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {
       deleteHandler ! DeleteDocumentSet(documentSetId, true)
