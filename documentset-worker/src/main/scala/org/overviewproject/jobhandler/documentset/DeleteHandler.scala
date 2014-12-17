@@ -4,6 +4,7 @@ import scala.language.postfixOps
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import akka.actor.Actor
+import akka.pattern.pipe
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
 import DeleteHandlerFSM._
@@ -145,13 +146,17 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   }
 
   private def deleteDocumentSet(documentSetId: Long): Unit = {
-    newDocumentSetDeleter.delete(documentSetId)
+    val ds = newDocumentSetDeleter.delete(documentSetId)
+    val si = searchIndex.removeDocumentSet(documentSetId)
     
-    searchIndex.removeDocumentSet(documentSetId)
-      .onComplete {
-        case Success(r) => self ! Message.DeleteComplete
-        case Failure(t) => self ! Message.SearchIndexDeleteFailed(t)
-      }
+    val result = for {
+      dsResult <- ds
+      siResult <- si  
+    } yield Message.DeleteComplete
+    
+   result.recover {
+      case t: Throwable => Message.DeleteFailed(documentSetId)
+    }  pipeTo self
   }
   
   private def deleteReclusteringJob(jobId: Long): Unit = {
