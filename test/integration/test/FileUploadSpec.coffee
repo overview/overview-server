@@ -31,8 +31,11 @@ describe 'FileUpload', ->
         .waitForElementBy(tag: 'a', contains: name, visible: true).click()
 
     chooseManyFiles: ->
-      r = [@].concat [1..60]
-      r.reduce (b, file) -> b.chooseFile("manyFiles/file-#{file}.pdf")
+      [1..60].reduce(
+        ((browserPromise, file) -> browserPromise.chooseFile("ManyFiles/file-#{file}.pdf")),
+        @
+      )
+
 
       
 
