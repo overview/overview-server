@@ -318,6 +318,18 @@ them. You can pass an `indexedLong` and/or `indexedString` property to help.
 + Response 200
 
     [StoreObject][]
+    
+### Delete StoreObjects [DELETE]
+
+This method lets you delete several StoreObjects with a single request.
+
+You must pass the StoreObjects as an Array of IDs. Invalid IDs will be ignored.
+
++ Request (application/json)
+
+        [ 123, 234, 345 ]
+        
++ Response 204
 
 # Group DocumentStoreObjects
 
