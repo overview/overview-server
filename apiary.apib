@@ -135,7 +135,7 @@ The Document resource has the following attributes:
     [Document][]
 
 ## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&tags={tags}&tagged={tagged}&objects={objects}&fields={fields}&offset={offset}&limit={limit}&stream={stream}]
-Collection of Documents.
+<a name="documents-collection"></a>Collection of Documents.
 
 Document collections can be rather large, so the `text` column doesn't appear in lists by default.
 
@@ -318,3 +318,69 @@ them. You can pass an `indexedLong` and/or `indexedString` property to help.
 + Response 200
 
     [StoreObject][]
+
+# Group DocumentStoreObjects
+
+A **DocumentStoreObject** is a link between a *Document* and a *StoreObject*.
+
+For instance, if your StoreObjects are tags, then your DocumentStoreObjects will specify which documents have which tags.
+
+This description is intentionally vague. StoreObjects won't handle everybody's needs, but they
+should cover a broad set of applications, and they're reasonably efficient.
+
+Overview uses DocumentStoreObjects to search for documents. See the `objects` parameter in [List all Documents](#documents-collection).
+
+## DocumentStoreObject
+
+You can only create and destroy DocumentStoreObjects in bulk. These parameters are purely informative.
+
++ Parameters
+    + documentId (required, number, `1`) ... The Document being associated
+    + objectId (required, number, `2`) ... The StoreObject being associated
+    
++ Model (application/json)
+
+        {
+            "documentId": 1,
+            "objectId": 2
+        }
+
+## DocumentStoreObjects Collection [/store/document-objects]
+Collection of all DocumentStoreObjects.
+
+To save bandwidth, this API uses an abridged syntax. Instead of JSON like `{ "documentId": 2, "objectId": 4 }`, each object looks like `[ 2, 4 ]`.
+
++ Model (application/json)
+
+        [
+            [ 1, 2 ],
+            [ 3, 4 ]
+        ]
+
+### Create DocumentStoreObjects [POST]
+
+If you send a DocumentStoreObject that already exists, it will be overwritten.
+
++ Request (application/json)
+
+        [
+            [ 1, 2 ],
+            [ 3, 4 ]
+        ]
+
++ Response 200
+
+    [DocumentStoreObjects Collection][]
+
+### Delete DocumentStoreObjects [DELETE]
+
+If you try and delete a DocumentStoreObject that does not exist, it will continue to not exist.
+
++ Request (application/json)
+
+        [
+            [ 1, 2 ],
+            [ 3, 4 ]
+        ]
+
++ Response 204
