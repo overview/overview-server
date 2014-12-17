@@ -36,15 +36,12 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       deleteDocumentSet
 
       fileReferenceCount must beSome(0)
-
-      pageReferenceCounts must contain(0).exactly(numberOfDocuments.times)
     }
 
     "decrement reference count when uploaded files are split into pages" in new SplitFileUploadScope {
       deleteDocumentSet
 
       fileReferenceCount must beSome(0)
-      pageReferenceCounts must contain(0).exactly(numberOfDocuments.times)
     }
 
     "delete tree data" in new TreeScope {
@@ -79,7 +76,6 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     }
 
     def fileReferenceCount: Option[Int] = Files.map(_.referenceCount).firstOption
-    def pageReferenceCounts: Seq[Int] = Pages.map(_.referenceCount).list
 
     def createDocumentSet: DocumentSet = factory.documentSet()
     def createDocuments: Seq[Document] = Seq.fill(numberOfDocuments)(createDocument)
