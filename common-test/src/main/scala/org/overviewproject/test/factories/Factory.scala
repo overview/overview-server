@@ -7,6 +7,7 @@ import org.overviewproject.models.ApiToken
 import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentInfo
 import org.overviewproject.models.DocumentProcessingError
+import org.overviewproject.models.DocumentSearchResult
 import org.overviewproject.models.DocumentSet
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState
@@ -27,7 +28,7 @@ import org.overviewproject.models.Tag
 import org.overviewproject.models.Tree
 import org.overviewproject.models.UploadedFile
 import org.overviewproject.models.View
-import org.overviewproject.tree.orm.{ Document => DeprecatedDocument, DocumentSearchResult }
+import org.overviewproject.tree.orm.{ Document => DeprecatedDocument }
 import org.overviewproject.util.DocumentSetVersion
 
 /**
