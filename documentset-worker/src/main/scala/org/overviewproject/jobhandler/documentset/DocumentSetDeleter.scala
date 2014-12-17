@@ -111,7 +111,7 @@ object DocumentSetDeleter {
 
   private def deleteFiles(fileIds: Seq[Long]): Unit = FileStore.removeReference(fileIds)
 
-  private def deletePages(fileIds: Seq[Long]): Unit = PageStore.removeReferenceByFile(fileIds)
+  private def deletePages(fileIds: Seq[Long]): Unit = () // TODO delete pages when files are deleted
 
   private def findUploadedFile(implicit documentSetId: Long): Option[UploadedFile] =
     UploadedFileFinder.byDocumentSet(documentSetId).headOption

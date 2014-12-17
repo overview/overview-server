@@ -178,7 +178,6 @@ trait Factory {
     id: Long = 0L,
     fileId: Long = 0L,
     pageNumber: Int = 1,
-    referenceCount: Int = 1,
     dataLocation: String = "pagebytea:123",
     dataSize: Long = 9L,
     data: Option[Array[Byte]] = Some("page text".getBytes("utf-8")),

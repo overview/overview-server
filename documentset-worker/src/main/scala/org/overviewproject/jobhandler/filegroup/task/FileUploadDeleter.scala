@@ -5,7 +5,6 @@ import org.overviewproject.database.orm.stores.GroupedFileUploadStore
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.database.orm.Schema._
 import org.overviewproject.database.orm.finders.FileGroupFinder
-import org.overviewproject.database.orm.stores.PageStore
 import org.overviewproject.database.orm.stores.FileStore
 import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
@@ -62,7 +61,8 @@ object FileUploadDeleter {
       }
 
       override def deletePages(documentSetId: Long): Unit = Database.inTransaction {
-        PageStore.removeReferenceByTempDocumentSet(documentSetId)
+        // TODO delete pages along with files
+        //PageStore.removeReferenceByTempDocumentSet(documentSetId)
       }
 
       override def deleteFiles(documentSetId: Long): Unit = Database.inTransaction {

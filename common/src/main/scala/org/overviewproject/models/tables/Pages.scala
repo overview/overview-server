@@ -7,7 +7,6 @@ class PagesImpl(tag: Tag) extends Table[Page](tag, "page") {
   def id = column[Long]("id", O.PrimaryKey)
   def fileId = column[Long]("file_id")
   def pageNumber = column[Int]("page_number")
-  def referenceCount = column[Int]("reference_count")
   def dataLocation = column[Option[String]]("data_location")
   def dataSize = column[Long]("data_size")
   def data = column[Option[Array[Byte]]]("data")
@@ -22,22 +21,20 @@ class PagesImpl(tag: Tag) extends Table[Page](tag, "page") {
     id,
     fileId,
     pageNumber,
-    referenceCount,
     dataLocation,
     dataSize,
     data,
     text,
     dataErrorMessage,
     textErrorMessage
-  ).<>[Page,Tuple10[Long,Long,Int,Int,Option[String],Long,Option[Array[Byte]],Option[String],Option[String],Option[String]]](
-    { (x: Tuple10[Long,Long,Int,Int,Option[String],Long,Option[Array[Byte]],Option[String],Option[String],Option[String]]) =>
-      Page(x._1, x._2, x._3, x._4, x._5.getOrElse("pagebytea:" + x._1), x._6, x._7, x._8, x._9, x._10)
+  ).<>[Page,Tuple9[Long,Long,Int,Option[String],Long,Option[Array[Byte]],Option[String],Option[String],Option[String]]](
+    { (x: Tuple9[Long,Long,Int,Option[String],Long,Option[Array[Byte]],Option[String],Option[String],Option[String]]) =>
+      Page(x._1, x._2, x._3, x._4.getOrElse("pagebytea:" + x._1), x._5, x._6, x._7, x._8, x._9)
     },
     { (p: Page) => Some(
       p.id,
       p.fileId,
       p.pageNumber,
-      p.referenceCount,
       Some(p.dataLocation),
       p.dataSize,
       p.data,

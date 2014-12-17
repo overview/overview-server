@@ -4,7 +4,6 @@ case class Page(
   id: Long,
   fileId: Long,
   pageNumber: Int,
-  referenceCount: Int,
   dataLocation: String,
   dataSize: Long,
   data: Option[Array[Byte]],

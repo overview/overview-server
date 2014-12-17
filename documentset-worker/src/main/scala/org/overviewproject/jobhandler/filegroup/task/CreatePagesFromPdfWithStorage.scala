@@ -28,7 +28,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
       private lazy val pageInserter = {
         import org.overviewproject.database.Slick.simple._
         Pages
-          .map { p => (p.fileId, p.pageNumber, p.referenceCount, p.dataLocation, p.dataSize, p.text) }
+          .map { p => (p.fileId, p.pageNumber, p.dataLocation, p.dataSize, p.text) }
           .insertInvoker
       }
 
@@ -77,7 +77,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
         val tuples = pageAttributes
           .map { attrs =>
-            (attrs.fileId, attrs.pageNumber, 1, Some(attrs.dataLocation), attrs.dataSize, Some(attrs.text))
+            (attrs.fileId, attrs.pageNumber, Some(attrs.dataLocation), attrs.dataSize, Some(attrs.text))
           }
           .toSeq
 

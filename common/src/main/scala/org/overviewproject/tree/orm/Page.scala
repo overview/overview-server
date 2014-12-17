@@ -5,7 +5,6 @@ import org.squeryl.KeyedEntity
 case class Page(
     fileId: Long,
     pageNumber: Int,
-    referenceCount: Int,
     dataLocation: Option[String],
     dataSize: Long,
     data: Option[Array[Byte]],

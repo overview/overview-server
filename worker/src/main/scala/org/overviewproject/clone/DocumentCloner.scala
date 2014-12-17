@@ -48,11 +48,5 @@ object DocumentCloner extends InDatabaseCloner {
           WHERE id IN 
             (SELECT file_id FROM document WHERE document_set_id = {documentSetId})
     	    """).on("documentSetId" -> sourceDocumentSetId).executeUpdate
-    	    
-    SQL("""
-        UPDATE page SET reference_count = reference_count + 1
-          WHERE file_id IN
-            (SELECT file_id FROM document WHERE document_set_id = {documentSetId})
-        """).on("documentSetId" -> sourceDocumentSetId).executeUpdate
   }
 }

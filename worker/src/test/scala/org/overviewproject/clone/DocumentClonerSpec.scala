@@ -112,7 +112,7 @@ class DocumentClonerSpec extends DbSpecification {
 
       protected def createPage(fileId: Long): Long = {
         val pageData = Array.fill[Byte](128)(0xFF.toByte)
-        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, 1, None, pageData.length, Some(pageData), Some("Text")))
+        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, None, pageData.length, Some(pageData), Some("Text")))
         page.id
       }
 
@@ -156,25 +156,6 @@ class DocumentClonerSpec extends DbSpecification {
 
       document must beSome
     }
-
-    "increase refcount on pages" in new SplitPdfUploadContext {
-      DocumentCloner.clone(documentSetId, documentSetCloneId)
-
-      val page = findPages.headOption
-      page must beSome.like {
-        case p => p.referenceCount must be equalTo (2)
-      }
-    }
-
-    "increase refcount on pages on non-split document sets" in new PdfUploadContext {
-      DocumentCloner.clone(documentSetId, documentSetCloneId)
-
-      val page = findPages.headOption
-      page must beSome.like {
-        case p => p.referenceCount must be equalTo (2)
-      }
-    }
-
   }
   step(shutdownDb)
 }
