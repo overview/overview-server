@@ -2,6 +2,7 @@ package controllers.backend
 
 import play.api.libs.json.{JsObject,Json}
 
+import models.{Selection,SelectionLike,SelectionRequest}
 import org.overviewproject.models.DocumentStoreObject
 import org.overviewproject.models.tables.DocumentStoreObjects
 
@@ -47,6 +48,45 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
 
       "return None with the wrong storeObjectId" in new ShowScope {
         await(backend.show(document.id, storeObject.id + 1L)) must beNone
+      }
+    }
+
+    "#countByObject" should {
+      trait CountByObjectScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val doc1 = factory.document(documentSetId=documentSet.id)
+        val doc2 = factory.document(documentSetId=documentSet.id)
+        val doc3 = factory.document(documentSetId=documentSet.id) // no joins
+        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val store = factory.store(apiToken=apiToken.token)
+        val so1 = factory.storeObject(storeId=store.id)
+        val so2 = factory.storeObject(storeId=store.id)
+        val so3 = factory.storeObject(storeId=store.id) // no joins
+
+        val dso11 = factory.documentStoreObject(documentId=doc1.id, storeObjectId=so1.id)
+        val dso12 = factory.documentStoreObject(documentId=doc1.id, storeObjectId=so2.id)
+        val dso21 = factory.documentStoreObject(documentId=doc2.id, storeObjectId=so1.id)
+
+        val selectionRequest: SelectionRequest = SelectionRequest(documentSet.id) // utility val
+        val selectionOption: Option[SelectionLike] = None
+
+        lazy val result: Map[Long,Int] = await(backend.countByObject(store.id, selectionOption))
+      }
+
+      "return counts for StoreObjects that have counts" in new CountByObjectScope {
+        result(so1.id) must beEqualTo(2)
+        result(so2.id) must beEqualTo(1)
+      }
+
+      "skip counts for StoreObjects with no documents" in new CountByObjectScope {
+        result.isDefinedAt(so3.id) must beFalse
+      }
+
+      "return a subset when passing a SelectionLike" in new CountByObjectScope {
+        override val selectionOption = Some(Selection(selectionRequest, Seq(doc2.id)))
+        result(so1.id) must beEqualTo(1)
+        result.isDefinedAt(so2.id) must beFalse
+        result.isDefinedAt(so3.id) must beFalse
       }
     }
 

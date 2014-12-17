@@ -4,8 +4,9 @@ import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
 import scala.slick.jdbc.StaticQuery
 
+import models.SelectionLike
 import org.overviewproject.models.DocumentStoreObject
-import org.overviewproject.models.tables.DocumentStoreObjects
+import org.overviewproject.models.tables.{DocumentStoreObjects,StoreObjects}
 
 trait DocumentStoreObjectBackend extends Backend {
   /** Fetches a single DocumentStoreObject.
@@ -13,6 +14,15 @@ trait DocumentStoreObjectBackend extends Backend {
     * Returns `None` if the DocumentStoreObject does not exist.
     */
   def show(documentId: Long, storeObjectId: Long): Future[Option[DocumentStoreObject]]
+
+  /** Shows how many DocumentStoreObjects exist, counted by StoreObject.
+    *
+    * There are no zero counts.
+    *
+    * @param storeId Store ID.
+    * @param selection Subset of documents, or None to match all documents.
+    */
+  def countByObject(storeId: Long, selection: Option[SelectionLike]): Future[Map[Long,Int]]
 
   /** Creates a DocumentStoreObject and returns it.
     *
@@ -68,10 +78,50 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend { self: Db
       .map(_.json)
   }
 
+  private lazy val countByObjectCompiled = Compiled { (storeId: Column[Long]) =>
+    val storeObjectIds = StoreObjects
+      .filter(_.storeId === storeId)
+      .map(_.id)
+
+    DocumentStoreObjects
+      .filter(_.storeObjectId in storeObjectIds)
+      .groupBy(_.storeObjectId)
+      .map { case (storeObjectId, group) => (storeObjectId, group.length) }
+  }
+
+  private def countByObjectAndDocumentIds(storeId: Long, documentIds: Seq[Long]) = {
+    val storeObjectIds = StoreObjects
+      .filter(_.storeId === storeId)
+      .map(_.id)
+
+    DocumentStoreObjects
+      .filter(_.storeObjectId in storeObjectIds)
+      .filter(_.documentId inSet documentIds)
+      .groupBy(_.storeObjectId)
+      .map { case (storeObjectId, group) => (storeObjectId, group.length) }
+  }
+
   lazy val insertInvoker = (DocumentStoreObjects returning DocumentStoreObjects).insertInvoker
 
   override def show(documentId: Long, storeObjectId: Long) = db { session =>
     byIdsCompiled(documentId, storeObjectId).firstOption(session)
+  }
+
+  override def countByObject(storeId: Long, selectionOption: Option[SelectionLike]) = {
+    selectionOption match {
+      case None => {
+        val query = countByObjectCompiled(storeId)
+        db { session => query.list(session).toMap }
+      }
+      case Some(selection) => {
+        import scala.concurrent.ExecutionContext.Implicits._
+        selection.getAllDocumentIds.flatMap { documentIds: Seq[Long] =>
+          // this val query is of different type than the other
+          val query = countByObjectAndDocumentIds(storeId, documentIds)
+          db { session => query.list(session).toMap }
+        }
+      }
+    }
   }
 
   override def create(documentId: Long, storeObjectId: Long, json: Option[JsObject]) = db { session =>
