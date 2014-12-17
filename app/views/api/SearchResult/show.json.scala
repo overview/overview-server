@@ -2,7 +2,7 @@ package views.json.api.SearchResult
 
 import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.tree.orm.SearchResult
+import org.overviewproject.models.SearchResult
 
 object show extends views.json.api.helpers.JsonDateFormatter {
   def apply(searchResult: SearchResult): JsValue = Json.obj(

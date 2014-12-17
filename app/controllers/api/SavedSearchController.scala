@@ -7,7 +7,7 @@ import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.SavedSearchBackend
 import controllers.forms.SearchForm
-import org.overviewproject.tree.orm.SearchResult // FIXME should be models.SearchResult
+import org.overviewproject.models.SearchResult
 
 trait SavedSearchController extends ApiController {
   val backend: SavedSearchBackend

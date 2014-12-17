@@ -5,8 +5,8 @@ import scala.concurrent.Future
 
 import controllers.util.JobQueueSender
 import org.overviewproject.jobs.models.Search
+import org.overviewproject.models.SearchResult 
 import org.overviewproject.models.tables.{DocumentSearchResults,SearchResults}
-import org.overviewproject.tree.orm.SearchResult // should be models.SearchResult
 
 trait SavedSearchBackend {
   def create(search: Search) : Future[Unit] // FIXME make it a Future[SearchResult]

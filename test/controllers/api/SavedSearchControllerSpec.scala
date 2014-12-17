@@ -6,7 +6,7 @@ import play.api.mvc.AnyContentAsJson
 
 import controllers.backend.SavedSearchBackend
 import org.overviewproject.jobs.models.Search
-import org.overviewproject.tree.orm.SearchResult // FIXME should be models.SearchResult
+import org.overviewproject.models.SearchResult
 
 class SavedSearchControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {

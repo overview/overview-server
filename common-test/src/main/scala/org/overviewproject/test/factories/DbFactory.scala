@@ -17,12 +17,14 @@ import org.overviewproject.models.DocumentStoreObject
 import org.overviewproject.models.Node
 import org.overviewproject.models.NodeDocument
 import org.overviewproject.models.Plugin
+import org.overviewproject.models.SearchResult
+import org.overviewproject.models.SearchResultState
 import org.overviewproject.models.Store
 import org.overviewproject.models.StoreObject
 import org.overviewproject.models.Tree
 import org.overviewproject.models.UploadedFile
 import org.overviewproject.models.View
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,SearchResult,SearchResultState,Tag}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,Tag}
 import org.overviewproject.util.DocumentSetVersion
 import scala.slick.lifted.AbstractTable
 
