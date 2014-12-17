@@ -22,10 +22,11 @@ import org.overviewproject.models.SearchResult
 import org.overviewproject.models.SearchResultState
 import org.overviewproject.models.Store
 import org.overviewproject.models.StoreObject
+import org.overviewproject.models.Tag
 import org.overviewproject.models.Tree
 import org.overviewproject.models.UploadedFile
 import org.overviewproject.models.View
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult,Tag}
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument,DocumentSearchResult}
 import org.overviewproject.util.DocumentSetVersion
 import org.overviewproject.models.{ File, Page }
 

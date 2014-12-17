@@ -1,7 +1,7 @@
 package org.overviewproject.models.tables
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.tree.orm.{Tag=>OrmTag} // should be models.Tag
+import org.overviewproject.models.{Tag=>OrmTag} // should be models.Tag
 
 class TagsImpl(tag: Tag) extends Table[OrmTag](tag, "tag") {
   def id = column[Long]("id", O.PrimaryKey)
@@ -9,7 +9,7 @@ class TagsImpl(tag: Tag) extends Table[OrmTag](tag, "tag") {
   def name = column[String]("name")
   def color = column[String]("color")
 
-  def * = (documentSetId, name, color, id) <> ((OrmTag.apply _).tupled, OrmTag.unapply)
+  def * = (id, documentSetId, name, color) <> ((OrmTag.apply _).tupled, OrmTag.unapply)
 }
 
 object Tags extends TableQuery(new TagsImpl(_))
