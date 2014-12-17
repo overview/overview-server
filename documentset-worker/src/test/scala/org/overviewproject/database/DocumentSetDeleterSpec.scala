@@ -116,7 +116,8 @@ class DocumentSetDeleterSpec extends SlickSpecification {
   }
 
   trait UserAddedDataScope extends BasicDocumentSetScope {
-    factory.tag(documentSetId = documentSet.id)
+    val tag = factory.tag(documentSetId = documentSet.id)
+    documents.foreach(d => factory.documentTag(d.id, tag.id))
     factory.searchResult(documentSetId = documentSet.id)
   }
 

@@ -146,11 +146,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
 
   private def deleteDocumentSet(documentSetId: Long): Unit = {
     newDocumentSetDeleter.delete(documentSetId)
-    documentSetDeleter.deleteJobInformation(documentSetId)
-    documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
-    documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
-    documentSetDeleter.deleteDocumentSet(documentSetId)
-
+    
     searchIndex.removeDocumentSet(documentSetId)
       .onComplete {
         case Success(r) => self ! Message.DeleteComplete

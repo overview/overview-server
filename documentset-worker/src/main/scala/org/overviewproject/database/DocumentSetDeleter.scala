@@ -41,8 +41,10 @@ trait DocumentSetDeleter extends SlickClient {
   // Artifacts added by the user interacting with the system
   private def deleteUserAddedData(documentSetId: Long)(implicit session: Session): Unit = {
     val tags = Tags.filter(_.documentSetId === documentSetId)
+    val documentTags = DocumentTags.filter(_.tagId in tags.map(_.id))
     val searchResults = SearchResults.filter(_.documentSetId === documentSetId)
 
+    documentTags.delete
     tags.delete
     searchResults.delete
   }
