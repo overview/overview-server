@@ -6,6 +6,7 @@ import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
+import org.overviewproject.database.{ DocumentSetDeleter => NewDocumentSetDeleter }
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.test.ActorSystemContext
@@ -21,6 +22,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     trait MockComponents {
       val searchIndex = mock[SearchIndexComponent]
       val documentSetDeleter = smartMock[DocumentSetDeleter]
+      val newDocumentSetDeleter = smartMock[NewDocumentSetDeleter]
       val jobStatusChecker = smartMock[JobStatusChecker]
 
       val removeDocumentSetResultPromise = Promise[Unit]
@@ -43,6 +45,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       protected def searchIndex = deleteHandler.underlyingActor.searchIndex
       protected def removeDocumentSetResult = deleteHandler.underlyingActor.removeDocumentSetResultPromise
       protected def documentSetDeleter = deleteHandler.underlyingActor.documentSetDeleter
+      protected def newDocumentSetDeleter = deleteHandler.underlyingActor.newDocumentSetDeleter
 
       protected def setJobStatus: Unit =
         deleteHandler.underlyingActor.jobStatusChecker isJobRunning (documentSetId) returns false
@@ -94,12 +97,8 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     "delete document set related data" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
-
-      there was one(documentSetDeleter).deleteJobInformation(documentSetId)
-      there was one(documentSetDeleter).deleteClientGeneratedInformation(documentSetId)
-      there was one(documentSetDeleter).deleteClusteringGeneratedInformation(documentSetId)
-      there was one(documentSetDeleter).deleteDocumentSet(documentSetId)
-
+      
+      there was one(newDocumentSetDeleter).delete(documentSetId)
     }
 
     "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {

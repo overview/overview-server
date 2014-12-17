@@ -3,6 +3,7 @@ package org.overviewproject.jobhandler.documentset
 import scala.concurrent.duration._
 import akka.actor._
 import akka.actor.SupervisorStrategy._
+import org.overviewproject.database.{DocumentSetDeleter => NewDocumentSetDeleter }
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
@@ -127,7 +128,9 @@ trait SearchComponentImpl extends SearchComponent {
     override def produceSearchHandler: Actor = new SearchHandler with SearchIndexAndSearchStorage
 
     override def produceDeleteHandler: Actor = new DeleteHandler with ElasticSearchComponents {
+
       override val documentSetDeleter = DocumentSetDeleter()
+      override val newDocumentSetDeleter = NewDocumentSetDeleter(context.dispatcher) 
       override val jobStatusChecker = JobStatusChecker()
     }
   }

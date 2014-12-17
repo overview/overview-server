@@ -1,6 +1,6 @@
 package org.overviewproject.database
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.slick.lifted.AbstractTable
 import scala.slick.jdbc.StaticQuery.interpolation
 import org.overviewproject.database.Slick.simple._
@@ -96,3 +96,10 @@ trait DocumentSetDeleter extends SlickClient {
   }
 }
 
+object DocumentSetDeleter {
+  
+  def apply(implicit executionContext: ExecutionContext): DocumentSetDeleter = new DocumentSetDeleter with SlickSessionProvider {
+     override implicit protected val executor = executionContext 
+  }
+    
+}

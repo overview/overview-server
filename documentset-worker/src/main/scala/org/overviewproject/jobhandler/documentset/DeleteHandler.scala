@@ -9,6 +9,8 @@ import org.overviewproject.util.Logger
 import DeleteHandlerFSM._
 import akka.actor.FSM
 
+import org.overviewproject.database.{ DocumentSetDeleter => NewDocumentSetDeleter }
+
 /**
  * [[DeleteHandler]] deletes a document set and all associated data if deletion is requested after
  * clustering begins.
@@ -59,6 +61,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   import context.dispatcher
 
   val documentSetDeleter: DocumentSetDeleter
+  val newDocumentSetDeleter: NewDocumentSetDeleter
   val jobStatusChecker: JobStatusChecker
 
   val RetryTimer = "retry"
@@ -142,6 +145,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   }
 
   private def deleteDocumentSet(documentSetId: Long): Unit = {
+    newDocumentSetDeleter.delete(documentSetId)
     documentSetDeleter.deleteJobInformation(documentSetId)
     documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
     documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
