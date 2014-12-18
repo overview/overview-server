@@ -84,7 +84,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   // FIXME: The waitForJobRemoval parameter of DeleteDocumentSet is now redundant, since
   // we need to check for and cancel jobs whenever we delete document sets
   when(Idle) {
-    case Event(DeleteDocumentSet(documentSetId, true), _) => {
+    case Event(DeleteDocumentSet(documentSetId, true), _) => { println(s">>>>> del doc set true $documentSetId")
       if (jobStatusChecker.isJobRunning(documentSetId)) {
         setTimer(RetryTimer, Message.RetryDelete, JobWaitDelay, true)
         goto(WaitingForRunningJobRemoval) using (RetryAttempts(documentSetId, 1))
@@ -92,22 +92,17 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
         goto(Running) using (DeleteTarget(documentSetId))
       }
     }
-    case Event(DeleteDocumentSet(documentSetId, false), _) => {
-      if (jobStatusChecker.cancelJob(documentSetId)) {
-        self ! DeleteDocumentSet(documentSetId, true)
-        stay
-      } 
-      else goto(Running) using (DeleteTarget(documentSetId))
-    }
-      
-    case Event(DeleteReclusteringJob(jobId), _) =>
+    case Event(DeleteDocumentSet(documentSetId, false), _) => println(s">>>>> del doc set false $documentSetId")
+      goto(Running) using (DeleteTarget(documentSetId))
+
+    case Event(DeleteReclusteringJob(jobId), _) => println(s">>>>> del job $jobId")
       goto(Running) using (DeleteTreeTarget(jobId))
   }
 
   when(WaitingForRunningJobRemoval) {
     case Event(Message.RetryDelete, RetryAttempts(documentSetId, n)) => {
       val jobIsRunning = jobStatusChecker.isJobRunning(documentSetId)
-      
+
       if (jobIsRunning && n >= MaxRetryAttempts) goto(Running)
       else if (jobIsRunning) stay using (RetryAttempts(documentSetId, n + 1))
       else goto(Running) using (DeleteTarget(documentSetId))
@@ -147,23 +142,24 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   }
 
   private def deleteDocumentSet(documentSetId: Long): Unit = {
-    val ds = jobDeleter.deleteByDocumentSet(documentSetId)
-      .map(_ => newDocumentSetDeleter.delete(documentSetId))
-    val si = searchIndex.removeDocumentSet(documentSetId)
-    
+    val deleteJobThenDocumentSet = jobDeleter.deleteByDocumentSet(documentSetId)
+      .flatMap(_ => newDocumentSetDeleter.delete(documentSetId))
+
+    val deleteIndex = searchIndex.removeDocumentSet(documentSetId)
+
     val result = for {
-      dsResult <- ds
-      siResult <- si  
+      dsResult <- deleteJobThenDocumentSet
+      siResult <- deleteIndex
     } yield Message.DeleteComplete
-    
-   result.recover {
+
+    result.recover {
       case t: Throwable => Message.DeleteFailed(documentSetId)
-    }  pipeTo self
+    } pipeTo self
   }
-  
+
   private def deleteReclusteringJob(jobId: Long): Unit = {
     documentSetDeleter.deleteOneCancelledJobInformation(jobId)
-    
+
     self ! Message.DeleteReclusteringJobComplete
   }
 }
