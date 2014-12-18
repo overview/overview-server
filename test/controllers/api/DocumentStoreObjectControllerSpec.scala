@@ -3,36 +3,45 @@ package controllers.api
 import play.api.libs.json.{JsNull,JsObject,JsValue,Json}
 import scala.concurrent.Future
 
-import controllers.backend.{StoreBackend,DocumentStoreObjectBackend}
+import models.SelectionLike
+import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
 import org.overviewproject.models.{DocumentStoreObject,Store}
 
 class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    val mockStoreBackend = mock[StoreBackend]
-    val mockObjectBackend = mock[DocumentStoreObjectBackend]
+    val mockStoreBackend = smartMock[StoreBackend]
+    val mockObjectBackend = smartMock[DocumentStoreObjectBackend]
+    val mockSelectionBackend = smartMock[SelectionBackend]
     val controller = new DocumentStoreObjectController {
       override val storeBackend = mockStoreBackend
       override val documentStoreObjectBackend = mockObjectBackend
+      override val selectionBackend = mockSelectionBackend
     }
   }
 
   "DocumentStoreObjectController" should {
     "#countByObject" should {
       trait CountByObjectScope extends BaseScope {
+        val mockSelection = smartMock[SelectionLike]
         mockStoreBackend.showOrCreate(any[String]) returns Future.successful(Store(123L, "foobar", Json.obj()))
+        mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
 
         override lazy val request = fakeRequest("GET", "")
         override def action = controller.countByObject()
       }
 
       "return all counts as a JsObject when there are no URL parameters" in new CountByObjectScope {
-        mockObjectBackend.countByObject(123L, None) returns Future.successful(Map(1L -> 2, 3L -> 4))
+        mockObjectBackend.countByObject(123L, Some(mockSelection)) returns Future.successful(Map(1L -> 2, 3L -> 4))
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
 
         val json = contentAsString(result)
         json must /("1" -> 2)
         json must /("3" -> 4)
+      }
+
+      "grab selectionRequest from the HTTP request" in new CountByObjectScope {
+        // TODO
       }
     }
 
