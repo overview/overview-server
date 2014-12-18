@@ -6,12 +6,14 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.anyUser
-import controllers.backend.{StoreBackend,DocumentStoreObjectBackend}
+import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
+import models.SelectionLike
 import org.overviewproject.models.DocumentStoreObject
 
 trait DocumentStoreObjectController extends ApiController {
   protected val storeBackend: StoreBackend
   protected val documentStoreObjectBackend: DocumentStoreObjectBackend
+  protected val selectionBackend: SelectionBackend
 
   def createMany = ApiAuthorizedAction(anyUser).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsNull)
@@ -46,22 +48,29 @@ trait DocumentStoreObjectController extends ApiController {
   }
 
   def countByObject = ApiAuthorizedAction(anyUser).async { request =>
+
     def formatCounts(counts: Map[Long,Int]): JsValue = {
       def tupleToValue(tuple: Tuple2[Long,Int]): Tuple2[String,JsValue] = (tuple._1.toString -> JsNumber(tuple._2))
       val values: Seq[(String,JsValue)] = counts.toSeq.map(tupleToValue _)
       JsObject(values)
     }
 
+    val sr = selectionRequest(5, request) // TODO: How to get a doc set id?
+
     for {
       store <- storeBackend.showOrCreate(request.apiToken.token)
-      counts <- documentStoreObjectBackend.countByObject(store.id, None)
+      selection <- selectionBackend.findOrCreate(request.apiToken.createdBy, sr)
+      counts <- documentStoreObjectBackend.countByObject(store.id, Some(selection))
     } yield Ok(formatCounts(counts))
+
   }
+
 }
 
 object DocumentStoreObjectController extends DocumentStoreObjectController {
   override protected val storeBackend = StoreBackend
   override protected val documentStoreObjectBackend = DocumentStoreObjectBackend
+  override protected val selectionBackend = SelectionBackend
 
   private val nullReads: Reads[Option[JsObject]] = new Reads[Option[JsObject]] {
     override def reads(json: JsValue) = JsSuccess(None)
