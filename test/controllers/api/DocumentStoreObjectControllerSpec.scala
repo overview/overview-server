@@ -17,6 +17,25 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
   }
 
   "DocumentStoreObjectController" should {
+    "#countByObject" should {
+      trait CountByObjectScope extends BaseScope {
+        mockStoreBackend.showOrCreate(any[String]) returns Future.successful(Store(123L, "foobar", Json.obj()))
+
+        override lazy val request = fakeRequest("GET", "")
+        override def action = controller.countByObject()
+      }
+
+      "return all counts as a JsObject when there are no URL parameters" in new CountByObjectScope {
+        mockObjectBackend.countByObject(123L, None) returns Future.successful(Map(1L -> 2, 3L -> 4))
+        status(result) must beEqualTo(OK)
+        contentType(result) must beSome("application/json")
+
+        val json = contentAsString(result)
+        json must /("1" -> 2)
+        json must /("3" -> 4)
+      }
+    }
+
     "#createMany" should {
       trait CreateManyScope extends BaseScope {
         val body: JsValue = Json.arr()

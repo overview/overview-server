@@ -1,7 +1,7 @@
 package controllers.api
 
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{JsArray,JsNull,JsObject,JsPath,JsSuccess,JsValue,Json,Reads}
+import play.api.libs.json.{JsArray,JsNull,JsObject,JsNumber,JsPath,JsSuccess,JsValue,Json,Reads}
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
@@ -43,6 +43,19 @@ trait DocumentStoreObjectController extends ApiController {
         } yield NoContent
       }
     }
+  }
+
+  def countByObject = ApiAuthorizedAction(anyUser).async { request =>
+    def formatCounts(counts: Map[Long,Int]): JsValue = {
+      def tupleToValue(tuple: Tuple2[Long,Int]): Tuple2[String,JsValue] = (tuple._1.toString -> JsNumber(tuple._2))
+      val values: Seq[(String,JsValue)] = counts.toSeq.map(tupleToValue _)
+      JsObject(values)
+    }
+
+    for {
+      store <- storeBackend.showOrCreate(request.apiToken.token)
+      counts <- documentStoreObjectBackend.countByObject(store.id, None)
+    } yield Ok(formatCounts(counts))
   }
 }
 

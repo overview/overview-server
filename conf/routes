@@ -143,15 +143,16 @@ GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentContro
 GET /api/v1/store/state controllers.api.StoreStateController.show()
 PUT /api/v1/store/state controllers.api.StoreStateController.update()
 
-GET    /api/v1/store/objects     controllers.api.StoreObjectController.index()
-POST   /api/v1/store/objects     controllers.api.StoreObjectController.create()
-GET    /api/v1/store/objects/:id controllers.api.StoreObjectController.show(id: Long)
-PUT    /api/v1/store/objects/:id controllers.api.StoreObjectController.update(id: Long)
-DELETE /api/v1/store/objects/:id controllers.api.StoreObjectController.destroy(id: Long)
-DELETE /api/v1/store/objects     controllers.api.StoreObjectController.destroyMany()
+GET    /api/v1/store/objects                 controllers.api.StoreObjectController.index()
+POST   /api/v1/store/objects                 controllers.api.StoreObjectController.create()
+GET    /api/v1/store/objects/:id             controllers.api.StoreObjectController.show(id: Long)
+PUT    /api/v1/store/objects/:id             controllers.api.StoreObjectController.update(id: Long)
+DELETE /api/v1/store/objects/:id             controllers.api.StoreObjectController.destroy(id: Long)
+DELETE /api/v1/store/objects                 controllers.api.StoreObjectController.destroyMany()
 
-POST   /api/v1/store/document-objects controllers.api.DocumentStoreObjectController.createMany()
-DELETE /api/v1/store/document-objects controllers.api.DocumentStoreObjectController.destroyMany()
+GET    /api/v1/store/document-objects/count-by-object controllers.api.DocumentStoreObjectController.countByObject()
+POST   /api/v1/store/document-objects                 controllers.api.DocumentStoreObjectController.createMany()
+DELETE /api/v1/store/document-objects                 controllers.api.DocumentStoreObjectController.destroyMany()
 
 # Map static resources from the /public folder to the /assets URL path
 GET    /assets/*file            controllers.Assets.at(path="/public", file)
