@@ -55,7 +55,7 @@ trait DocumentStoreObjectController extends ApiController {
       JsObject(values)
     }
 
-    val sr = selectionRequest(5, request) // TODO: How to get a doc set id?
+    val sr = selectionRequest(request.apiToken.documentSetId, request)
 
     for {
       store <- storeBackend.showOrCreate(request.apiToken.token)
