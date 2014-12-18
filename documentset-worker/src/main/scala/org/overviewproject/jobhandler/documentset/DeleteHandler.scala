@@ -147,7 +147,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   }
 
   private def deleteDocumentSet(documentSetId: Long): Unit = {
-    val ds = newDocumentSetDeleter.delete(documentSetId)
+    val ds = jobDeleter.deleteByDocumentSet(documentSetId)
+      .map(_ => newDocumentSetDeleter.delete(documentSetId))
     val si = searchIndex.removeDocumentSet(documentSetId)
     
     val result = for {
