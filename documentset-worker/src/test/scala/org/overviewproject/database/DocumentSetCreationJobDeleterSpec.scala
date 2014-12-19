@@ -5,6 +5,8 @@ import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.models.DocumentSetCreationJob
+import org.overviewproject.models.DocumentSetCreationJobState
+import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.DocumentSetCreationJobType._
 import org.overviewproject.models.tables.DocumentSetCreationJobs
 import org.specs2.mock.Mockito
@@ -21,12 +23,20 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
 
     "delete uploaded csv" in new CsvImportJobScope {
       await { deleter.deleteByDocumentSet(documentSet.id) }
-      
+
       DocumentSetCreationJobs.list must beEmpty
-      
+
       there was one(deleter.mockBlobStorage).delete(s"pglo:$oid")
     }
 
+    "delete job with state" in new CancelledJobScope {
+      await { deleter.deleteByDocumentSetAndState(documentSet.id, Cancelled) }
+      implicit val stateColumnType =
+        MappedColumnType.base[DocumentSetCreationJobState, Int](_.id, DocumentSetCreationJobState.apply)
+
+      DocumentSetCreationJobs.filter(_.state === Cancelled.value).list must beEmpty
+      DocumentSetCreationJobs.list must haveSize(1)
+    }
   }
 
   trait JobScope extends DbScope {
@@ -46,12 +56,17 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
       factory.documentSetCreationJob(documentSetId = documentSet.id, jobType = CsvUpload, contentsOid = Some(oid))
   }
 
-  class TestDocumentSetDeleter(implicit val session: Session) extends DocumentSetCreationJobDeleter 
-  with SlickClientInSession {
-    
-	override protected val blobStorage = mock[BlobStorage]
-	
-	def mockBlobStorage = blobStorage
+  trait CancelledJobScope extends JobScope {
+    factory.documentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster, treeTitle = Some("cancelled"),
+      state = Cancelled)
+
+  }
+  class TestDocumentSetDeleter(implicit val session: Session) extends DocumentSetCreationJobDeleter
+      with SlickClientInSession {
+
+    override protected val blobStorage = mock[BlobStorage]
+
+    def mockBlobStorage = blobStorage
   }
 
 }
