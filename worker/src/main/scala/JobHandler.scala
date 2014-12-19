@@ -158,10 +158,12 @@ object JobHandler {
 
       val numberOfDocuments = producer.produce()
 
-      if ((job.state != Cancelled) && (job.jobType == DocumentSetCreationJobType.Recluster))
-        createTree(treeId, nodeWriter.rootNodeId, ds, numberOfDocuments, job)
-      else submitClusteringJob(ds.id)
-
+      if (job.state != Cancelled) {
+        if (job.jobType == DocumentSetCreationJobType.Recluster)
+          createTree(treeId, nodeWriter.rootNodeId, ds, numberOfDocuments, job)
+        else submitClusteringJob(ds.id)
+      }
+      
       val t3 = System.currentTimeMillis()
       logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
     }
@@ -295,9 +297,10 @@ object JobHandler {
     val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
     val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)
 
+
     for {
       documentSet <- DocumentSetFinder.byId(documentSetId).headOption
-      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).headOption
+      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).forUpdate.headOption if (job.state != Cancelled)
     } {
       val clusteringJob = DocumentSetCreationJob(
         documentSetId = documentSet.id,
