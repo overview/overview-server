@@ -75,8 +75,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     case object RetryDelete
     case object DeleteComplete
     case object DeleteReclusteringJobComplete
-    case class SearchIndexDeleteFailed(error: Throwable)
-    case class DeleteFailed(documentSetId: Long)
+    case class DeleteFailed(error: Throwable)
+    case class JobDeletionTimedOut(documentSetId: Long)
   }
 
   startWith(Idle, NoData)
@@ -118,12 +118,12 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
       context.parent ! JobDone(jobId)
       stop
     }
-    case Event(Message.SearchIndexDeleteFailed(t), DeleteTarget(documentSetId)) => {
+    case Event(Message.DeleteFailed(t), DeleteTarget(documentSetId)) => {
       Logger.error(s"Deleting indexed documents failed for $documentSetId", t)
       context.parent ! JobDone(documentSetId)
       stop
     }
-    case Event(Message.DeleteFailed(documentSetId), _) => {
+    case Event(Message.JobDeletionTimedOut(documentSetId), _) => {
       Logger.error(s"Delete timed out waiting for job to cancel $documentSetId")
       context.parent ! JobDone(documentSetId)
       stop
@@ -136,7 +136,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
       nextStateData match {
         case DeleteTarget(documentSetId) => deleteDocumentSet(documentSetId)
         case DeleteTreeTarget(jobId) => deleteReclusteringJob(jobId)
-        case RetryAttempts(documentSetId, n) => self ! Message.DeleteFailed(documentSetId)
+        case RetryAttempts(documentSetId, n) => self ! Message.JobDeletionTimedOut(documentSetId)
         case _ =>
       }
   }
@@ -153,7 +153,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     } yield Message.DeleteComplete
 
     result.recover {
-      case t: Throwable => Message.DeleteFailed(documentSetId)
+      case t: Throwable => Message.DeleteFailed(t)
     } pipeTo self
   }
 
