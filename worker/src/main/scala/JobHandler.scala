@@ -306,6 +306,7 @@ object JobHandler {
         lang = job.lang,
         suppliedStopWords = job.suppliedStopWords,
         importantWords = job.importantWords,
+        contentsOid = job.contentsOid,  // FIXME: should be deleted when we delete original job 
         splitDocuments = job.splitDocuments,
         state = NotStarted)
 
