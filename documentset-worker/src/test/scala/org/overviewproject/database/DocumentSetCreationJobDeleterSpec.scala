@@ -30,7 +30,7 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
     }
 
     "delete job with state" in new CancelledJobScope {
-      await { deleter.deleteByDocumentSetAndState(documentSet.id, Cancelled) }
+      await { deleter.delete(cancelledJob.id) }
 
       DocumentSetCreationJobs.filter(_.state === Cancelled.value).list must beEmpty
       DocumentSetCreationJobs.list must haveSize(1)
@@ -55,7 +55,7 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
   }
 
   trait CancelledJobScope extends JobScope with DocumentSetCreationJobMappings {
-    factory.documentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster, treeTitle = Some("cancelled"),
+    val cancelledJob = factory.documentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster, treeTitle = Some("cancelled"),
       state = Cancelled)
 
   }

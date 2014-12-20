@@ -4,10 +4,10 @@ import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentSetCreationJobState
-import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobMappings }
+import org.overviewproject.models.tables.DocumentSetCreationJobs
 import scala.concurrent.ExecutionContext
 
-trait DocumentSetCreationJobDeleter extends SlickClient with DocumentSetCreationJobMappings {
+trait DocumentSetCreationJobDeleter extends SlickClient {
 
   def deleteByDocumentSet(documentSetId: Long): Future[Unit] = db { implicit session =>
     val documentSetCreationJob = DocumentSetCreationJobs.filter(_.documentSetId === documentSetId)
@@ -19,10 +19,9 @@ trait DocumentSetCreationJobDeleter extends SlickClient with DocumentSetCreation
     documentSetCreationJob.delete
   }
 
-  def deleteByDocumentSetAndState(documentSetId: Long, state: DocumentSetCreationJobState.Value): Future[Unit] =
+  def delete(id: Long): Future[Unit] =
     db { implicit session =>
-      val documentSetCreationJob = DocumentSetCreationJobs.filter(j =>
-        (j.documentSetId === documentSetId) && (j.state === state.value))
+      val documentSetCreationJob = DocumentSetCreationJobs.filter(_.id === id)
 
       val uploadedCsvOids = documentSetCreationJob.map(_.contentsOid).list.flatten
 
