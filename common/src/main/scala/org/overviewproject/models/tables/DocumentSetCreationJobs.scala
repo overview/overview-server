@@ -5,14 +5,17 @@ import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobType
 import org.overviewproject.models.DocumentSetCreationJobState
 
-class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob](tag, "document_set_creation_job") {
-
-  private implicit val jobTypeColumnType =
+trait DocumentSetCreationJobMappings {
+  implicit val jobTypeColumnType =
     MappedColumnType.base[DocumentSetCreationJobType.Value, Int](_.id, DocumentSetCreationJobType.apply)
 
-    private implicit val stateColumnType =
-      MappedColumnType.base[DocumentSetCreationJobState.Value, Int](_.id, DocumentSetCreationJobState.apply)
-      
+  implicit val stateColumnType =
+    MappedColumnType.base[DocumentSetCreationJobState.Value, Int](_.id, DocumentSetCreationJobState.apply)
+}
+
+class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob](tag, "document_set_creation_job")
+    with DocumentSetCreationJobMappings {
+
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
   def jobType = column[DocumentSetCreationJobType.Value]("type")
@@ -32,14 +35,13 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
   def state = column[DocumentSetCreationJobState.Value]("state")
   def fractionComplete = column[Double]("fraction_complete")
   def statusDescription = column[String]("status_description")
-  
-  def * = 
+
+  def * =
     (id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
-        documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId, 
-        treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription) <>
-  ((DocumentSetCreationJob.apply _).tupled, DocumentSetCreationJob.unapply)
+      documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId,
+      treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription) <>
+      ((DocumentSetCreationJob.apply _).tupled, DocumentSetCreationJob.unapply)
 
 }
-
 
 object DocumentSetCreationJobs extends TableQuery(new DocumentSetCreationJobsImpl(_))

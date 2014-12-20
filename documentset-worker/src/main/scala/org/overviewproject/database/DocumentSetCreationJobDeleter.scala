@@ -4,12 +4,10 @@ import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentSetCreationJobState
-import org.overviewproject.models.tables.DocumentSetCreationJobs
+import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobMappings }
 import scala.concurrent.ExecutionContext
 
-trait DocumentSetCreationJobDeleter extends SlickClient {
-	private implicit val stateColumnType =
-    MappedColumnType.base[DocumentSetCreationJobState.Value, Int](_.id, DocumentSetCreationJobState.apply)
+trait DocumentSetCreationJobDeleter extends SlickClient with DocumentSetCreationJobMappings {
 
   def deleteByDocumentSet(documentSetId: Long): Future[Unit] = db { implicit session =>
     val documentSetCreationJob = DocumentSetCreationJobs.filter(_.documentSetId === documentSetId)
