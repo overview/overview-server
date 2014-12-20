@@ -33,6 +33,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       searchIndex.removeDocumentSet(anyLong) returns searchIndexRemoveDocumentSetPromise.future
       newDocumentSetDeleter.delete(anyLong) returns deleteDocumentSetPromise.future
       jobDeleter.deleteByDocumentSet(anyLong) returns deleteJobPromise.future
+      jobDeleter.delete(anyLong) returns deleteJobPromise.future
     }
 
     class TestDeleteHandler extends DeleteHandler with MockComponents {
@@ -170,14 +171,10 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       val jobId = 12L
 
       deleteHandler ! DeleteReclusteringJob(jobId)
+      there was one(jobDeleter).delete(jobId)
       
+      deleteJobResult.success(Unit)
       parentProbe.expectMsg(JobDone(jobId))
-      
-      // FIXME: We can't actually test this because the underlying actor is terminated
-      // when we enable cancellation of individual reclustering jobs this path can be moved
-      // out into a testable class
-	  //       there was one(jobDeleter).delete(jobId)
-
     }
   }
 }

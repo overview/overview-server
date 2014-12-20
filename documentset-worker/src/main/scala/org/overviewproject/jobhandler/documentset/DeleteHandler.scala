@@ -95,7 +95,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     case Event(DeleteDocumentSet(documentSetId, false), _) => 
       goto(Running) using (DeleteTarget(documentSetId))
 
-    case Event(DeleteReclusteringJob(jobId), _) => 
+    case Event(DeleteReclusteringJob(jobId), _) =>
       goto(Running) using (DeleteTreeTarget(jobId))
     
   }
@@ -159,8 +159,9 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   }
 
   private def deleteReclusteringJob(jobId: Long): Unit = {
-    newDocumentSetDeleter.delete(jobId)
+    val deletion = jobDeleter.delete(jobId)
 
-    self ! Message.DeleteReclusteringJobComplete
+    deletion.map(_ => Message.DeleteReclusteringJobComplete) pipeTo self
+
   }
 }
