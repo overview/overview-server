@@ -21,7 +21,6 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     trait MockComponents {
       val searchIndex = mock[SearchIndexComponent]
-      val documentSetDeleter = smartMock[DocumentSetDeleter]
       val newDocumentSetDeleter = smartMock[NewDocumentSetDeleter]
       val jobDeleter = smartMock[DocumentSetCreationJobDeleter]
       val jobStatusChecker = smartMock[JobStatusChecker]
@@ -55,7 +54,6 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       protected def deleteDocumentSetResult = da.deleteDocumentSetPromise
       protected def deleteJobResult = da.deleteJobPromise
 
-      protected def documentSetDeleter = da.documentSetDeleter
       protected def newDocumentSetDeleter = da.newDocumentSetDeleter
       protected def jobDeleter = da.jobDeleter
 

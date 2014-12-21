@@ -130,7 +130,6 @@ trait SearchComponentImpl extends SearchComponent {
 
     override def produceDeleteHandler: Actor = new DeleteHandler with ElasticSearchComponents {
 	  
-      override val documentSetDeleter = DocumentSetDeleter()
       override val newDocumentSetDeleter = NewDocumentSetDeleter(context.dispatcher)
       override val jobDeleter = DocumentSetCreationJobDeleter(context.dispatcher)
       override val jobStatusChecker = JobStatusChecker()

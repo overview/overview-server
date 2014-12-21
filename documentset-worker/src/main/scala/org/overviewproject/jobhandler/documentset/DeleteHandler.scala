@@ -61,7 +61,6 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   import DeleteHandlerProtocol._
   import context.dispatcher
 
-  val documentSetDeleter: DocumentSetDeleter
   val newDocumentSetDeleter: NewDocumentSetDeleter
   val jobDeleter: DocumentSetCreationJobDeleter
   val jobStatusChecker: JobStatusChecker
