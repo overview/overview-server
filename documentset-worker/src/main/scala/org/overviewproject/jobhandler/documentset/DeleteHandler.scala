@@ -9,7 +9,7 @@ import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
 import DeleteHandlerFSM._
 import akka.actor.FSM
-import org.overviewproject.database.{ DocumentSetDeleter => NewDocumentSetDeleter }
+import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 
 /**
@@ -61,7 +61,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   import DeleteHandlerProtocol._
   import context.dispatcher
 
-  val newDocumentSetDeleter: NewDocumentSetDeleter
+  val documentSetDeleter: DocumentSetDeleter
   val jobDeleter: DocumentSetCreationJobDeleter
   val jobStatusChecker: JobStatusChecker
 
@@ -143,7 +143,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
 
   private def deleteDocumentSet(documentSetId: Long): Unit = {
     val deleteJobThenDocumentSet = jobDeleter.deleteByDocumentSet(documentSetId)
-      .flatMap(_ => newDocumentSetDeleter.delete(documentSetId))
+      .flatMap(_ => documentSetDeleter.delete(documentSetId))
 
     val deleteIndex = searchIndex.removeDocumentSet(documentSetId)
 

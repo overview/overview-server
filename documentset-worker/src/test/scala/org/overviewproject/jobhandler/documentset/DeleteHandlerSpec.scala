@@ -6,7 +6,7 @@ import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
-import org.overviewproject.database.{ DocumentSetDeleter => NewDocumentSetDeleter }
+import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.test.ActorSystemContext
@@ -21,7 +21,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     trait MockComponents {
       val searchIndex = mock[SearchIndexComponent]
-      val newDocumentSetDeleter = smartMock[NewDocumentSetDeleter]
+      val documentSetDeleter = smartMock[DocumentSetDeleter]
       val jobDeleter = smartMock[DocumentSetCreationJobDeleter]
       val jobStatusChecker = smartMock[JobStatusChecker]
 
@@ -30,7 +30,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       val deleteJobPromise = Promise[Unit]
 
       searchIndex.removeDocumentSet(anyLong) returns searchIndexRemoveDocumentSetPromise.future
-      newDocumentSetDeleter.delete(anyLong) returns deleteDocumentSetPromise.future
+      documentSetDeleter.delete(anyLong) returns deleteDocumentSetPromise.future
       jobDeleter.deleteByDocumentSet(anyLong) returns deleteJobPromise.future
       jobDeleter.delete(anyLong) returns deleteJobPromise.future
     }
@@ -54,7 +54,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       protected def deleteDocumentSetResult = da.deleteDocumentSetPromise
       protected def deleteJobResult = da.deleteJobPromise
 
-      protected def newDocumentSetDeleter = da.newDocumentSetDeleter
+      protected def documentSetDeleter = da.documentSetDeleter
       protected def jobDeleter = da.jobDeleter
 
       protected def setJobStatus: Unit =
@@ -94,7 +94,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
       deleteJobResult.success(Unit)
       
-      there was one(newDocumentSetDeleter).delete(documentSetId)
+      there was one(documentSetDeleter).delete(documentSetId)
     }
 
     "notify parent when deletion of documents and alias completes successfully" in new DeleteContext {
