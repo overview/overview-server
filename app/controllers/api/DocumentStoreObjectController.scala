@@ -60,7 +60,7 @@ trait DocumentStoreObjectController extends ApiController {
     for {
       store <- storeBackend.showOrCreate(request.apiToken.token)
       selection <- selectionBackend.findOrCreate(request.apiToken.createdBy, sr)
-      counts <- documentStoreObjectBackend.countByObject(store.id, Some(selection))
+      counts <- documentStoreObjectBackend.countByObject(store.id, selection)
     } yield Ok(formatCounts(counts))
 
   }

@@ -68,9 +68,9 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val dso21 = factory.documentStoreObject(documentId=doc2.id, storeObjectId=so1.id)
 
         val selectionRequest: SelectionRequest = SelectionRequest(documentSet.id) // utility val
-        val selectionOption: Option[SelectionLike] = None
+        val selection: SelectionLike = Selection(selectionRequest, Seq(doc1.id, doc2.id, doc3.id))
 
-        lazy val result: Map[Long,Int] = await(backend.countByObject(store.id, selectionOption))
+        lazy val result: Map[Long,Int] = await(backend.countByObject(store.id, selection))
       }
 
       "return counts for StoreObjects that have counts" in new CountByObjectScope {
@@ -82,8 +82,8 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         result.isDefinedAt(so3.id) must beFalse
       }
 
-      "return a subset when passing a SelectionLike" in new CountByObjectScope {
-        override val selectionOption = Some(Selection(selectionRequest, Seq(doc2.id)))
+      "filter by the SelectionLike only includes a subset" in new CountByObjectScope {
+        override val selection = Selection(selectionRequest, Seq(doc2.id))
         result(so1.id) must beEqualTo(1)
         result.isDefinedAt(so2.id) must beFalse
         result.isDefinedAt(so3.id) must beFalse

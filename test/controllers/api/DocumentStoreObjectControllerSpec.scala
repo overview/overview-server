@@ -3,7 +3,7 @@ package controllers.api
 import play.api.libs.json.{JsNull,JsObject,JsValue,Json}
 import scala.concurrent.Future
 
-import models.SelectionLike
+import models.{SelectionLike,SelectionRequest}
 import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
 import org.overviewproject.models.{DocumentStoreObject,Store}
 
@@ -22,7 +22,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
   "DocumentStoreObjectController" should {
     "#countByObject" should {
       trait CountByObjectScope extends BaseScope {
-        val mockSelection = smartMock[SelectionLike]
+        val mockSelection = mock[SelectionLike]
         mockStoreBackend.showOrCreate(any[String]) returns Future.successful(Store(123L, "foobar", Json.obj()))
         mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
 
@@ -30,8 +30,8 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
         override def action = controller.countByObject()
       }
 
-      "return all counts as a JsObject when there are no URL parameters" in new CountByObjectScope {
-        mockObjectBackend.countByObject(123L, Some(mockSelection)) returns Future.successful(Map(1L -> 2, 3L -> 4))
+      "return all counts as a JsObject" in new CountByObjectScope {
+        mockObjectBackend.countByObject(123L, mockSelection) returns Future.successful(Map(1L -> 2, 3L -> 4))
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
 
@@ -41,7 +41,10 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
       }
 
       "grab selectionRequest from the HTTP request" in new CountByObjectScope {
-        // TODO
+        override lazy val request = fakeRequest("GET", "/?q=foo")
+        mockObjectBackend.countByObject(123L, mockSelection) returns Future.successful(Map(1L -> 2, 3L -> 4))
+        status(result)
+        there was one(mockSelectionBackend).findOrCreate(request.apiToken.createdBy, SelectionRequest(apiToken.documentSetId, q="foo"))
       }
     }
 

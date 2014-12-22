@@ -20,9 +20,9 @@ trait DocumentStoreObjectBackend extends Backend {
     * There are no zero counts.
     *
     * @param storeId Store ID.
-    * @param selection Subset of documents, or None to match all documents.
+    * @param selection Documents to count.
     */
-  def countByObject(storeId: Long, selection: Option[SelectionLike]): Future[Map[Long,Int]]
+  def countByObject(storeId: Long, selection: SelectionLike): Future[Map[Long,Int]]
 
   /** Creates a DocumentStoreObject and returns it.
     *
@@ -107,20 +107,12 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend { self: Db
     byIdsCompiled(documentId, storeObjectId).firstOption(session)
   }
 
-  override def countByObject(storeId: Long, selectionOption: Option[SelectionLike]) = {
-    selectionOption match {
-      case None => {
-        val query = countByObjectCompiled(storeId)
-        db { session => query.list(session).toMap }
-      }
-      case Some(selection) => {
-        import scala.concurrent.ExecutionContext.Implicits._
-        selection.getAllDocumentIds.flatMap { documentIds: Seq[Long] =>
-          // this val query is of different type than the other
-          val query = countByObjectAndDocumentIds(storeId, documentIds)
-          db { session => query.list(session).toMap }
-        }
-      }
+  override def countByObject(storeId: Long, selection: SelectionLike) = {
+    import scala.concurrent.ExecutionContext.Implicits._
+    selection.getAllDocumentIds.flatMap { documentIds: Seq[Long] =>
+      // this val query is of different type than the other
+      val query = countByObjectAndDocumentIds(storeId, documentIds)
+      db { session => query.list(session).toMap }
     }
   }
 
