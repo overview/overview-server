@@ -7,13 +7,13 @@ import akka.testkit.{ TestActorRef, TestProbe }
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.overviewproject.database.DocumentSetDeleter
+import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.database.DocumentSetCreationJobDeleter
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
 

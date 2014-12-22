@@ -4,11 +4,10 @@ import scala.language.postfixOps
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import akka.actor.Actor
+import akka.actor.FSM
 import akka.pattern.pipe
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
-import DeleteHandlerFSM._
-import akka.actor.FSM
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 
@@ -56,6 +55,8 @@ object DeleteHandlerFSM {
   case class DeleteTreeTarget(jobId: Long) extends Data
   case class RetryAttempts(documentSetId: Long, n: Int) extends Data
 }
+
+import DeleteHandlerFSM._
 
 trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents {
   import DeleteHandlerProtocol._

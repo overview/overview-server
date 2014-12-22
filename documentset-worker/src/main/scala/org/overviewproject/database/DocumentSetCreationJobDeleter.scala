@@ -1,11 +1,12 @@
 package org.overviewproject.database
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentSetCreationJobState
 import org.overviewproject.models.tables.DocumentSetCreationJobs
-import scala.concurrent.ExecutionContext
+
 
 trait DocumentSetCreationJobDeleter extends SlickClient {
 

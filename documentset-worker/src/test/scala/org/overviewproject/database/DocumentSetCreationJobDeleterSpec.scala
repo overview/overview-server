@@ -1,14 +1,14 @@
 package org.overviewproject.database
 
-import org.overviewproject.test.SlickSpecification
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.DocumentSetCreationJobType._
 import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobMappings }
+import org.overviewproject.test.SlickSpecification
+import org.overviewproject.test.SlickClientInSession
 import org.specs2.mock.Mockito
 
 class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito {
