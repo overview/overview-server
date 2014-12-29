@@ -31,20 +31,20 @@ trait MassUploadFileIteratee {
     if (position > upload.uploadedSize) {
       badRequest(s"Tried to resume past last uploaded byte. Resumed at byte ${position}, but only ${upload.uploadedSize} bytes have been uploaded.")
     } else {
-      val it: Iteratee[Array[Byte], Result] = uploadIteratee(upload.contentsOid, position)
+      val it: Iteratee[Array[Byte], Result] = uploadIteratee(upload.id, position)
       val consumeOneChunk = Traversable.takeUpTo[Array[Byte]](bufferSize).transform(Iteratee.consume())
       val consumeChunks: Enumeratee[Array[Byte], Array[Byte]] = Enumeratee.grouped(consumeOneChunk)
       consumeChunks.transform(it)
     }
   }
 
-  private def uploadIteratee(loid: Long, initialPosition: Long): Iteratee[Array[Byte], Result] = {
+  private def uploadIteratee(id: Long, initialPosition: Long): Iteratee[Array[Byte], Result] = {
     Iteratee.foldM(initialPosition) { (position: Long, bytes: Array[Byte]) =>
       bytes.length match {
         case 0 => Future.successful(position)
         case _ => {
           for {
-            _ <- groupedFileUploadBackend.writeBytes(loid, position, bytes)
+            _ <- groupedFileUploadBackend.writeBytes(id, position, bytes)
           } yield position + bytes.length
         }
       }

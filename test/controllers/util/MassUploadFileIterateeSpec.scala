@@ -86,31 +86,31 @@ class MassUploadFileIterateeSpec extends Specification with Mockito with FutureA
     "write bytes to the GroupedFileUpload" in new BaseScope {
       override def requestHeaders = baseHeaders :+ ("Content-Length" -> "10")
       await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 0L, "1234567890".getBytes("utf-8"))
     }
 
     "write multiple chunks" in new BaseScope {
       override def requestHeaders = baseHeaders :+ ("Content-Length" -> "20")
       override def byteArrays = Seq("1234567890".getBytes("utf-8"), "0987654321".getBytes("utf-8"))
       await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "0987654321".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 0L, "1234567890".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 10L, "0987654321".getBytes("utf-8"))
     }
 
     "buffer chunks" in new BaseScope {
       override def requestHeaders = baseHeaders :+ ("Content-Length" -> "20")
       override def byteArrays = Seq("123".getBytes("utf-8"), "45".getBytes("utf-8"), "67890".getBytes("utf-8"), "0987654321".getBytes("utf-8"))
       await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "0987654321".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 0L, "1234567890".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 10L, "0987654321".getBytes("utf-8"))
     }
 
     "buffer chunks even when sizes don't fit into each other perfectly" in new BaseScope {
       override def requestHeaders = baseHeaders :+ ("Content-Length" -> "19")
       override def byteArrays = Seq("1234567".getBytes("utf-8"), "890098".getBytes("utf-8"), "765432".getBytes("utf-8"))
       await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "098765432".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 0L, "1234567890".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 10L, "098765432".getBytes("utf-8"))
     }
 
     "use empty strings for missing headers" in new BaseScope {
@@ -133,7 +133,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito with FutureA
       )
 
       await(run).toString must beEqualTo(MassUploadFileIteratee.Ok.toString)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "1234567890".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 10L, "1234567890".getBytes("utf-8"))
     }
 
     "overwrite data at start byte" in new BaseScope {
@@ -144,7 +144,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito with FutureA
       )
 
       await(run).toString must beEqualTo(MassUploadFileIteratee.Ok.toString)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "1234567890".getBytes("utf-8"))
+      there was one(mockUploadBackend).writeBytes(groupedFileUpload.id, 10L, "1234567890".getBytes("utf-8"))
     }
 
     "return an error when start of content range is too high" in new BaseScope {

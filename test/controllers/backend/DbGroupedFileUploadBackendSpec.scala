@@ -97,7 +97,7 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
       )))
 
       def writeBytes(position: Long, bytes: Array[Byte]): Unit = {
-        await(backend.writeBytes(groupedFileUpload.contentsOid, position, bytes))
+        await(backend.writeBytes(groupedFileUpload.id, position, bytes))
       }
 
       def readBytes: Array[Byte] = {
@@ -123,6 +123,12 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
       writeBytes(0L, "1234567890".getBytes("utf-8"))
       writeBytes(5L, "1234567890".getBytes("utf-8"))
       readBytes must beEqualTo("123451234567890".getBytes("utf-8"))
+    }
+
+    "update uploadedSize" in new WriteBytesScope {
+      writeBytes(0L, "1234567890".getBytes("utf-8"))
+      writeBytes(2L, "1234567890".getBytes("utf-8"))
+      findGroupedFileUpload(groupedFileUpload.id) must beSome(groupedFileUpload.copy(uploadedSize=12))
     }
   }
 }

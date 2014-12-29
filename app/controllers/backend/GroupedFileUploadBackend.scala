@@ -31,13 +31,11 @@ trait GroupedFileUploadBackend extends Backend {
     *
     * You get undefined behavior if you write past the end of the large object.
     *
-    * FIXME make this a separate backend.
-    *
-    * @param id The LargeObject id. <em>NOT</em> the GroupedFileUpload ID!
+    * @param id The GruopedFileUpload id.
     * @param position Position to start writing.
     * @param bytes Bytes to write.
     */
-  def writeBytes(loid: Long, position: Long, bytes: Array[Byte]): Future[Unit]
+  def writeBytes(id: Long, position: Long, bytes: Array[Byte]): Future[Unit]
 }
 
 trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend { self: DbBackend =>
@@ -58,6 +56,14 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend { self: DbBack
     gfu.uploadedSize,
     gfu.contentsOid
   )) returning GroupedFileUploads).insertInvoker
+
+  lazy val updateUploadedSizeByIdCompiled = Compiled { (id: Column[Long]) =>
+    GroupedFileUploads.filter(_.id === id).map(_.uploadedSize)
+  }
+
+  lazy val loidByIdCompiled = Compiled { (id: Column[Long]) =>
+    GroupedFileUploads.filter(_.id === id).map(_.contentsOid)
+  }
 
   def find(fileGroupId: Long, guid: UUID) = db { session =>
     byFileGroupAndGuidCompiled(fileGroupId, guid).firstOption(session)
@@ -102,11 +108,17 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend { self: DbBack
       .getOrElse(create(attributes, session))
   }
 
-  def writeBytes(loid: Long, position: Long, bytes: Array[Byte]) = db { session =>
-    withPgConnection(session) { pgConnection =>
-      LO.withLargeObject(loid)({ largeObject =>
-        largeObject.insert(bytes, position.toInt)
-      })(pgConnection)
+  def writeBytes(id: Long, position: Long, bytes: Array[Byte]) = db { session =>
+    loidByIdCompiled(id).firstOption(session) match {
+      case Some(loid) => {
+        withPgConnection(session) { pgConnection =>
+          LO.withLargeObject(loid)({ largeObject =>
+            largeObject.insert(bytes, position.toInt)
+          })(pgConnection)
+          updateUploadedSizeByIdCompiled(id).update(position + bytes.length)(session)
+        }
+      }
+      case None =>
     }
   }
 }
