@@ -1,0 +1,16 @@
+# --- !Ups
+
+BEGIN;
+
+ALTER TABLE file_group ADD COLUMN deleted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE file_group ALTER COLUMN deleted DROP DEFAULT;
+
+COMMIT;
+
+# --- !Downs
+
+BEGIN;
+
+ALTER TABLE file_group DROP COLUMN deleted;
+
+COMMIT;

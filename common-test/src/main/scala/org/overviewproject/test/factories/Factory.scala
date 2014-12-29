@@ -80,14 +80,35 @@ trait Factory {
   
   def documentSearchResult(
     documentId: Long,
-    searchResultId: Long): DocumentSearchResult
+    searchResultId: Long
+  ): DocumentSearchResult
 
   def documentTag(documentId: Long, tagId: Long): DocumentTag
 
   def documentStoreObject(
     documentId: Long = 0L,
     storeObjectId: Long = 0L,
-    json: Option[JsObject] = None): DocumentStoreObject
+    json: Option[JsObject] = None
+  ): DocumentStoreObject
+
+  def fileGroup(
+    id: Long = 0L,
+    userEmail: String = "user@example.org",
+    apiToken: Option[String] = None,
+    completed: Boolean = false,
+    deleted: Boolean = false
+  ): FileGroup
+
+  def groupedFileUpload(
+    id: Long = 0L,
+    fileGroupId: Long = 0L,
+    guid: UUID = new UUID(0L, 0L),
+    contentType: String = "application/octet-stream",
+    name: String = "filename.abc",
+    size: Long = 1024L,
+    uploadedSize: Long = 1024L,
+    contentsOid: Long = 0L
+  ): GroupedFileUpload
 
   def node(
     id: Long = 0L,
@@ -194,7 +215,7 @@ trait Factory {
   def documentSetCreationJob(
     id: Long = 0L,
     documentSetId: Long = 0L,
-    jobType: DocumentSetCreationJobType.Value,
+    jobType: DocumentSetCreationJobType.Value = DocumentSetCreationJobType.Recluster,
     retryAttempts: Int = 0,
     lang: String = "en",
     suppliedStopWords: String = "",

@@ -1,84 +1,73 @@
 package controllers.util
 
-import scala.util.control.Exception._
-import scala.util.{ Failure, Success, Try }
-import org.overviewproject.tree.orm.FileGroup
-import org.overviewproject.tree.orm.GroupedFileUpload
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Iteratee
-import play.api.mvc.RequestHeader
-import play.api.mvc.Results._
-import play.api.http.HeaderNames._
-import org.overviewproject.util.ContentDisposition
-import play.api.mvc.Result
 import java.util.UUID
-import models.orm.finders.FileGroupFinder
-import org.overviewproject.postgres.LO
-import models.orm.stores.GroupedFileUploadStore
-import models.OverviewDatabase
-import models.orm.finders.GroupedFileUploadFinder
+import play.api.http.HeaderNames._
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.iteratee.{Enumeratee,Iteratee,Traversable}
 import play.api.Logger
+import play.api.mvc.RequestHeader
+import scala.concurrent.Future
+
+import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
+import org.overviewproject.postgres.LO
+import org.overviewproject.models.{FileGroup,GroupedFileUpload}
+import org.overviewproject.util.ContentDisposition
 
 trait MassUploadFileIteratee {
   val DefaultBufferSize = 1024 * 1024
 
-  val storage: Storage
+  protected val fileGroupBackend: FileGroupBackend
+  protected val groupedFileUploadBackend: GroupedFileUploadBackend
 
-  def apply(userEmail: String, request: RequestHeader, guid: UUID, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
-    val fileGroup = storage.findCurrentFileGroup(userEmail)
-      .getOrElse(storage.createFileGroup(userEmail))
+  sealed trait Result
+  case class BadRequest(message: String) extends Result
+  case object Ok extends Result
 
-    val validUploadStart = RequestInformation.fromRequest(request) match {
-      case Some(info) => {
-        val initialUpload = storage.findUpload(fileGroup.id, guid)
-          .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
-        if (info.start > initialUpload.uploadedSize) {
-          Left(BadRequest("Trying to resume upload past the last known byte"))
-        } else {
-          Right(initialUpload.copy(uploadedSize = info.start))
+  private def badRequest(message: String): Iteratee[Array[Byte], Result] = {
+    Iteratee.ignore.map(_ => BadRequest(message))
+  }
+
+  private def bufferedUploadIteratee(upload: GroupedFileUpload, position: Long, bufferSize: Int): Iteratee[Array[Byte], Result] = {
+    if (position > upload.uploadedSize) {
+      badRequest(s"Tried to resume past last uploaded byte. Resumed at byte ${position}, but only ${upload.uploadedSize} bytes have been uploaded.")
+    } else {
+      val it: Iteratee[Array[Byte], Result] = uploadIteratee(upload.contentsOid, position)
+      val consumeOneChunk = Traversable.takeUpTo[Array[Byte]](bufferSize).transform(Iteratee.consume())
+      val consumeChunks: Enumeratee[Array[Byte], Array[Byte]] = Enumeratee.grouped(consumeOneChunk)
+      consumeChunks.transform(it)
+    }
+  }
+
+  private def uploadIteratee(loid: Long, initialPosition: Long): Iteratee[Array[Byte], Result] = {
+    Iteratee.foldM(initialPosition) { (position: Long, bytes: Array[Byte]) =>
+      bytes.length match {
+        case 0 => Future.successful(position)
+        case _ => {
+          for {
+            _ <- groupedFileUploadBackend.writeBytes(loid, position, bytes)
+          } yield position + bytes.length
         }
       }
-      case None => {
-        Logger.error(s"Failed to parse upload request headers ${request.headers}")
-        Left(BadRequest("Request did not specify Content-Range or Content-Length"))
+    }
+      .map { _ => Ok }
+  }
+
+  def apply(userEmail: String, request: RequestHeader, guid: UUID, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Result] = {
+    RequestInformation.fromRequest(request) match {
+      case None => badRequest("Request did not specify Content-Range or Content-Length")
+      case Some(requestInformation) => {
+        val futureIteratee = for { 
+          fileGroup <- fileGroupBackend.findOrCreate(FileGroup.CreateAttributes(userEmail, None))
+          upload <- groupedFileUploadBackend.findOrCreate(GroupedFileUpload.CreateAttributes(
+            fileGroup.id,
+            guid,
+            requestInformation.contentType,
+            requestInformation.filename,
+            requestInformation.total
+          ))
+        } yield bufferedUploadIteratee(upload, requestInformation.start, bufferSize)
+        Iteratee.flatten(futureIteratee)
       }
-    }
-
-    var buffer = Array[Byte]()
-
-    Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](validUploadStart) { (upload, data) =>
-      buffer ++= data
-      if (buffer.size >= bufferSize) {
-        val update = flushBuffer(upload, buffer)
-        buffer = Array[Byte]()
-        update
-      } else upload
-    } map { output =>
-      if (buffer.size > 0) flushBuffer(output, buffer)
-      else output
-    }
-  }
-
-  trait Storage {
-    def createFileGroup(userEmail: String): FileGroup
-    def findCurrentFileGroup(userEmail: String): Option[FileGroup]
-    def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long): GroupedFileUpload
-    def findUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload]
-    def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
-  }
-
-  private def flushBuffer(upload: Either[Result, GroupedFileUpload], buffer: Array[Byte]): Either[Result, GroupedFileUpload] =
-    for {
-      u <- upload.right
-      update <- attemptAppend(u, buffer).right
-    } yield update
-
-  private def attemptAppend(upload: GroupedFileUpload, buffer: Array[Byte]): Either[Result, GroupedFileUpload] = {
-    val appendResult = allCatch either storage.appendData(upload, buffer)
-
-    for (error <- appendResult.left) yield {
-      Logger.error(s"Failed to append buffer during upload", error)
-      InternalServerError
     }
   }
 
@@ -114,45 +103,6 @@ trait MassUploadFileIteratee {
 }
 
 object MassUploadFileIteratee extends MassUploadFileIteratee {
-  import models.orm.stores.FileGroupStore
-  import org.overviewproject.tree.orm.FileJobState.InProgress
-
-  class DatabaseStorage extends Storage with PgConnection {
-
-    override def createFileGroup(userEmail: String): FileGroup = OverviewDatabase.inTransaction {
-      FileGroupStore.insertOrUpdate(FileGroup(userEmail, InProgress))
-    }
-
-    override def findCurrentFileGroup(userEmail: String): Option[FileGroup] = OverviewDatabase.inTransaction {
-      FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
-    }
-
-    override def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long): GroupedFileUpload =
-      withPgConnection { implicit c =>
-        val upload = LO.withLargeObject { lo =>
-          GroupedFileUpload(fileGroupId, guid, contentType, filename, size, 0, lo.oid)
-        }
-
-        OverviewDatabase.inTransaction {
-          GroupedFileUploadStore.insertOrUpdate(upload)
-        }
-      }
-
-    override def findUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] = OverviewDatabase.inTransaction {
-      GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
-    }
-
-    override def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload =
-      withPgConnection { implicit c =>
-        val uploadedSize = LO.withLargeObject(upload.contentsOid) { lo => lo.insert(data.toArray, upload.uploadedSize.toInt) }
-        val updatedUpload = upload.copy(uploadedSize = uploadedSize)
-
-        OverviewDatabase.inTransaction {
-          GroupedFileUploadStore.insertOrUpdate(updatedUpload)
-        }
-      }
-
-  }
-
-  override val storage = new DatabaseStorage
+  override protected val fileGroupBackend = FileGroupBackend
+  override protected val groupedFileUploadBackend = GroupedFileUploadBackend
 }

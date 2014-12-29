@@ -164,6 +164,34 @@ object PodoFactory extends Factory {
     json
   )
 
+  override def fileGroup(
+    id: Long,
+    userEmail: String,
+    apiToken: Option[String],
+    completed: Boolean,
+    deleted: Boolean
+  ) = FileGroup(getId(id), userEmail, apiToken, completed, deleted)
+
+  override def groupedFileUpload(
+    id: Long,
+    fileGroupId: Long,
+    guid: UUID,
+    contentType: String,
+    name: String,
+    size: Long,
+    uploadedSize: Long,
+    contentsOid: Long
+  ) = GroupedFileUpload(
+    getId(id),
+    getId(fileGroupId),
+    getId(guid),
+    contentType,
+    name,
+    size,
+    uploadedSize,
+    contentsOid
+  )
+
   override def node(
     id: Long = 0L,
     rootId: Long = 0L,
