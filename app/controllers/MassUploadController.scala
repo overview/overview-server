@@ -1,105 +1,151 @@
 package controllers
 
 import java.util.UUID
-import scala.concurrent.duration.{Duration, MILLISECONDS}
-import scala.concurrent.Future
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ BodyParser, Request, RequestHeader, Result }
-import org.overviewproject.jobs.models.ClusterFileGroup
-import org.overviewproject.tree.Ownership
-import org.overviewproject.tree.orm._
-import org.overviewproject.tree.orm.FileJobState._
-import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser }
+import play.api.Logger
+import play.api.mvc.{ Action, BodyParser, Request, RequestHeader, Result }
+import scala.concurrent.duration.{Duration, MILLISECONDS}
+import scala.concurrent.Future
+
 import controllers.auth.Authorities.anyUser
+import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser }
+import controllers.backend.{ FileGroupBackend, GroupedFileUploadBackend }
 import controllers.forms.MassUploadControllerForm
-import controllers.util.{ JobQueueSender, MassUploadFileIteratee, TransactionAction }
-import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
-import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore, FileGroupStore }
-import models.orm.stores.GroupedFileUploadStore
+import controllers.util.{AuthorizedMassUploadBodyParser,JobQueueSender,MassUploadBodyParser,MassUploadFileIteratee}
+import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.OverviewDatabase
+import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.jobs.models.ClusterFileGroup
+import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,DocumentSetUser}
+import org.overviewproject.tree.Ownership
+import org.overviewproject.util.ContentDisposition
 
 trait MassUploadController extends Controller {
+  protected val fileGroupBackend: FileGroupBackend
+  protected val groupedFileUploadBackend: GroupedFileUploadBackend
+  protected val storage: MassUploadController.Storage
+  protected val messageQueue: MassUploadController.MessageQueue
+  protected val uploadBodyParserFactory: Function1[UUID,BodyParser[Unit]]
 
-  /**
-   *  Upload a file in the current FileGroup. A `MassUploadFileIteratee` handles all
-   *  the details of the upload. `create` notifies the worker that an upload needs to
-   *  be processed.
-   */
-  def create(guid: UUID) = TransactionAction(authorizedUploadBodyParser(guid)) { implicit request: Request[GroupedFileUpload] =>
-    val upload: GroupedFileUpload = request.body
+  /** Starts or resumes a file upload.
+    *
+    * The BodyParser does the real work. This method merely says Ok.
+    */
+   def create(guid: UUID) = Action(uploadBodyParserFactory(guid)) { _ => Created }
 
-    if (isUploadComplete(upload)) Ok
-    else uploadRequestFailed(request)
-  }
-
-  /**
-   * @returns information about the upload specified by `guid` in the headers of the response.
-   * content_range and content_length are provided.
-   */
-  def show(guid: UUID) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
-    def resultWithHeaders(status: Status, upload: GroupedFileUpload): Result =
-      status.withHeaders(showRequestHeaders(upload): _*)
-
-    def resultWithContentDisposition(status: Result, upload: GroupedFileUpload): Result =
-      status.withHeaders((CONTENT_DISPOSITION, upload.contentDisposition))
-
-    findUploadInCurrentFileGroup(request.user.email, guid) match {
-      case Some(u) if (isUploadComplete(u) && !isUploadEmpty(u)) => resultWithHeaders(Ok, u)
-      case Some(u) if (isUploadEmpty(u)) => resultWithContentDisposition(NoContent, u)
-      case Some(u) => resultWithHeaders(PartialContent, u)
-      case None => NotFound
+  /** Responds to a HEAD request.
+    *
+    * There are four possible responses:
+    *
+    * <ul>
+    *   <li><tt>404 Not Found</tt>: the file with the given <tt>guid</tt> is
+    *       not in the active file group.</li>
+    *   <li><tt>204 No Content</tt>: there is an empty file with the given
+    *       <tt>guid</tt>. It may or may not be completely uploaded. This
+    *       will include a <tt>Content-Disposition</tt> header.</li>
+    *   <li><tt>206 Partial Content</tt>: the file is partially uploaded. This
+    *       will include <tt>Content-Disposition</tt> and
+    *       <tt>Content-Range</tt> headers.</li>
+    *   <li><tt>200 OK</tt>: the file is fully uploaded and non-empty. This
+    *       will include <tt>Content-Disposition</tt> and
+    *       <tt>Content-Length</tt> headers.</li>
+    * </ul>
+    *
+    * Regardless of the status code, the body will be empty.
+    */
+  def show(guid: UUID) = AuthorizedAction(anyUser).async { request =>
+    def contentDisposition(upload: GroupedFileUpload) = {
+      ContentDisposition.fromFilename(upload.name).contentDisposition
     }
+
+    def uploadHeaders(upload: GroupedFileUpload): Seq[(String, String)] = {
+      def computeEnd(uploadedSize: Long): Long =
+        if (upload.uploadedSize == 0) 0
+        else upload.uploadedSize - 1
+
+      Seq(
+        (CONTENT_LENGTH, s"${upload.uploadedSize}"),
+        (CONTENT_RANGE, s"bytes 0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
+        (CONTENT_DISPOSITION, contentDisposition(upload)))
+    }
+
+    findUploadInCurrentFileGroup(request.user.email, guid).map(_ match {
+      case None => NotFound
+      case Some(u) if (u.uploadedSize == 0L) => {
+        // You can't send an Ok or PartialContent when Content-Length=0
+        NoContent.withHeaders((CONTENT_DISPOSITION, contentDisposition(u)))
+      }
+      case Some(u) if (u.uploadedSize == u.size) => Ok.withHeaders(uploadHeaders(u): _*)
+      case Some(u) => PartialContent.withHeaders(uploadHeaders(u): _*)
+    })
   }
 
-  /**
-   * Notify the worker that clustering can start as soon as all currently uploaded files
-   * have been processed
-   */
-  def startClustering = AuthorizedAction(anyUser).async { implicit request =>
-    MassUploadControllerForm().bindFromRequest.fold(
+  /** Marks the FileGroup as <tt>completed</tt> and kicks off a
+    * DocumentSetCreationJob.
+    */
+  def startClustering = AuthorizedAction(anyUser).async { request =>
+    MassUploadControllerForm().bindFromRequest()(request).fold(
       e => Future(BadRequest),
       startClusteringFileGroupWithOptions(request.user.email, _)
     )
   }
 
-  /**
-   * Cancel the upload and notify the worker to delete all uploaded files
-   */
-  def cancelUpload = AuthorizedAction.inTransaction(anyUser) { implicit request =>
-    storage.deleteFileGroupByUser(request.user.email)
-    Ok
+  /** Cancels the upload and notify the worker to delete all uploaded files
+    */
+  def cancel = AuthorizedAction(anyUser).async { request =>
+    fileGroupBackend.find(request.user.email, None)
+      .flatMap(_ match {
+        case Some(fileGroup) => fileGroupBackend.destroy(fileGroup.id)
+        case None => Future.successful(())
+      })
+      .map(_ => Accepted)
   }
 
-  // method to create the MassUploadFileIteratee
-  protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
+  private def findUploadInCurrentFileGroup(userEmail: String, guid: UUID): Future[Option[GroupedFileUpload]] = {
+    fileGroupBackend.find(userEmail, None)
+      .flatMap(_ match {
+        case None => Future.successful(None)
+        case Some(fileGroup) => groupedFileUploadBackend.find(fileGroup.id, guid)
+      })
+  }
 
-  /** interface to database related methods */
-  val storage: Storage
+  private def startClusteringFileGroupWithOptions(userEmail: String,
+                                                  options: (String, String, Boolean, String, String)): Future[Result] = {
+    val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
 
-  /** interface to message queue related methods */
-  val messageQueue: MessageQueue
+    fileGroupBackend.find(userEmail, None).flatMap(_ match {
+      case Some(fileGroup) => {
+        val job: DocumentSetCreationJob = OverviewDatabase.inTransaction {
+          val documentSet = storage.createDocumentSet(userEmail, name, lang)
+          storage.createMassUploadDocumentSetCreationJob(
+            documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
+        }
+
+        fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
+          .map(_ => messageQueue.startClustering(job, name))
+          .map(_ => Redirect(routes.DocumentSetController.index()))
+      }
+      case None => Future.successful(NotFound)
+    })
+  }
+}
+
+/** Controller implementation */
+object MassUploadController extends MassUploadController {
+  override val storage = DatabaseStorage
+  override val messageQueue = ApolloQueue
+  override val fileGroupBackend = FileGroupBackend
+  override val groupedFileUploadBackend = GroupedFileUploadBackend
+  override val uploadBodyParserFactory = ((guid: UUID) => new AuthorizedMassUploadBodyParser(guid))
 
   trait Storage {
-    /** @returns a `FileGroup` `InProgress`, owned by the user, if one exists. */
-    def findCurrentFileGroup(userEmail: String): Option[FileGroup]
-
-    /** @returns a `GroupedFileUpload` with the specified `guid` if one exists in the specified `FileGroup` */
-    def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload]
-
     /** @returns a newly created DocumentSet */
     def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet
 
     /** @returns a newly created DocumentSetCreationJob */
     def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, splitDocuments: Boolean,
                                                suppliedStopWords: String, importantWords: String): DocumentSetCreationJob
-
-    /** @returns a FileGroup with state set to Complete */
-    def completeFileGroup(fileGroup: FileGroup): FileGroup
-
-    /** deletes the `FileGroup` owned by the user and associated data */
-    def deleteFileGroupByUser(userEmail: String): Unit
   }
 
   trait MessageQueue {
@@ -107,88 +153,9 @@ trait MassUploadController extends Controller {
     def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit]
   }
 
-  private def authorizedUploadBodyParser(guid: UUID) =
-    AuthorizedBodyParser(anyUser) { user => uploadBodyParser(user.email, guid) }
-
-  private def uploadBodyParser(userEmail: String, guid: UUID) =
-    BodyParser("Mass upload bodyparser") { request =>
-      massUploadFileIteratee(userEmail, request, guid)
-    }
-
-  private def findUploadInCurrentFileGroup(userEmail: String, guid: UUID): Option[GroupedFileUpload] =
-    for {
-      fileGroup <- storage.findCurrentFileGroup(userEmail)
-      upload <- storage.findGroupedFileUpload(fileGroup.id, guid)
-    } yield upload
-
-  private def isUploadComplete(upload: GroupedFileUpload): Boolean =
-    upload.uploadedSize == upload.size
-
-  private def isUploadEmpty(upload: GroupedFileUpload): Boolean =
-    upload.uploadedSize == 0
-
-  private def showRequestHeaders(upload: GroupedFileUpload): Seq[(String, String)] = {
-    def computeEnd(uploadedSize: Long): Long =
-      if (upload.uploadedSize == 0) 0
-      else upload.uploadedSize - 1
-
-    Seq(
-      (CONTENT_LENGTH, s"${upload.uploadedSize}"),
-      (CONTENT_RANGE, s"bytes 0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
-      (CONTENT_DISPOSITION, upload.contentDisposition))
-  }
-
-  private def startClusteringFileGroupWithOptions(userEmail: String,
-                                                  options: (String, String, Boolean, String, String)): Future[Result] = {
-    val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
-
-    val dbResult : Option[DocumentSetCreationJob] = OverviewDatabase.inTransaction {
-      storage.findCurrentFileGroup(userEmail).map { fileGroup =>
-        storage.completeFileGroup(fileGroup)
-
-        val documentSet = storage.createDocumentSet(userEmail, name, lang)
-        storage.createMassUploadDocumentSetCreationJob(
-          documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
-      }
-    }
-
-    dbResult match {
-      case Some(job) => {
-        messageQueue
-          .startClustering(job, name)
-          .map((Unit) => Redirect(routes.DocumentSetController.index()))
-      }
-      case None => Future(NotFound)
-    }
-  }
-
-  private def uploadRequestFailed(request: Request[GroupedFileUpload]): Result = {
-    val upload = request.body
-    Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
-
-    BadRequest
-  }
-}
-
-/** Controller implementation */
-object MassUploadController extends MassUploadController {
-
-  override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
-    MassUploadFileIteratee(userEmail, request, guid)
-
-  override val storage = new DatabaseStorage
-  override val messageQueue = new ApolloQueue
-
-  class DatabaseStorage extends Storage {
-    import org.overviewproject.tree.orm.FileJobState._
+  object DatabaseStorage extends Storage {
     import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
     import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
-
-    override def findCurrentFileGroup(userEmail: String): Option[FileGroup] =
-      FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
-
-    override def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] =
-      GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
 
     override def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet = {
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title = title))
@@ -212,22 +179,9 @@ object MassUploadController extends MassUploadController {
           state = FilesUploaded,
           jobType = FileUpload))
     }
-
-    override def completeFileGroup(fileGroup: FileGroup): FileGroup =
-      FileGroupStore.insertOrUpdate(fileGroup.copy(state = Complete))
-
-    override def deleteFileGroupByUser(userEmail: String): Unit = {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      
-      findCurrentFileGroup(userEmail).map { fileGroup =>
-        GroupedFileUploadStore.deleteLargeObjectsInFileGroup(fileGroup.id)
-        GroupedFileUploadStore.deleteByFileGroup(fileGroup.id)
-        FileGroupStore.delete(fileGroup.id)
-      }
-    }
   }
 
-  class ApolloQueue extends MessageQueue {
+  object ApolloQueue extends MessageQueue {
     override def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit] = {
       val command = ClusterFileGroup(
         documentSetId=job.documentSetId,
@@ -243,6 +197,3 @@ object MassUploadController extends MassUploadController {
     }
   }
 }
-
-
-

@@ -17,8 +17,8 @@ class DBSpec extends DbSpecification {
 
   private def insertFileGroup(implicit connection: Connection): Unit =
     SQL("""
-          INSERT INTO file_group (user_email, state)
-          VALUES ('user@host', 1)
+          INSERT INTO file_group (user_email, api_token, completed, deleted)
+          VALUES ('user@host', NULL, false, false)
         """).executeInsert()
 
   "DB object" should {

@@ -7,6 +7,9 @@ import scala.runtime.ScalaRunTime
 
 import org.overviewproject.postgres.PostgresqlEnum
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.models.{DocumentSetCreationJob => GoodDocumentSetCreationJob}
+import org.overviewproject.models.{DocumentSetCreationJobType => GoodDocumentSetCreationJobType}
+import org.overviewproject.models.{DocumentSetCreationJobState => GoodDocumentSetCreationJobState}
 import org.overviewproject.tree.DocumentSetCreationJobType
 
 object DocumentSetCreationJobState extends Enumeration {
@@ -52,4 +55,26 @@ case class DocumentSetCreationJob(
   }
 
   override def isPersisted(): Boolean = (id > 0)
+
+  def toDocumentSetCreationJob: GoodDocumentSetCreationJob = GoodDocumentSetCreationJob(
+    id,
+    documentSetId,
+    GoodDocumentSetCreationJobType(jobType.id),
+    retryAttempts,
+    lang,
+    suppliedStopWords,
+    importantWords,
+    splitDocuments,
+    documentcloudUsername,
+    documentcloudPassword,
+    contentsOid,
+    fileGroupId,
+    sourceDocumentSetId,
+    treeTitle,
+    treeDescription,
+    tagId,
+    GoodDocumentSetCreationJobState(state.id),
+    fractionComplete,
+    statusDescription
+  )
 }

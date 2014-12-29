@@ -1,16 +1,17 @@
 package org.overviewproject.jobhandler.filegroup.task
 
+import java.sql.Connection
+
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.stores.GroupedFileUploadStore
-import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.database.orm.finders.DocumentFinder
 import org.overviewproject.database.orm.Schema._
-import org.overviewproject.database.orm.finders.FileGroupFinder
-import org.overviewproject.database.orm.stores.FileStore
-import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.database.orm.stores.FileStore
+import org.overviewproject.database.orm.stores.GroupedFileUploadStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import org.overviewproject.database.orm.finders.DocumentFinder
+import org.overviewproject.tree.orm.finders.FinderById
+import org.overviewproject.tree.orm.stores.BaseStore
 
 trait FileUploadDeleter {
 
@@ -54,10 +55,11 @@ object FileUploadDeleter {
         GroupedFileUploadStore.deleteByFileGroup(fileGroupId)
       }
 
-      override def deleteFileGroup(fileGroupId: Long): Unit = Database.inTransaction {
-        val fileGroupStore = new BaseStore(fileGroups)
-
-        fileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
+      override def deleteFileGroup(fileGroupId: Long): Unit = Database.inTransaction { connection: Connection =>
+        import org.overviewproject.database.Slick.simple._
+        import org.overviewproject.models.tables.FileGroups
+        val session = new scala.slick.jdbc.UnmanagedSession(connection)
+        FileGroups.filter(_.id === fileGroupId).delete(session)
       }
 
       override def deletePages(documentSetId: Long): Unit = Database.inTransaction {

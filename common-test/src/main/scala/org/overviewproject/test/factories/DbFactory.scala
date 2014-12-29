@@ -140,6 +140,34 @@ class DbFactory(connection: Connection) extends Factory {
     json
   )
 
+  override def fileGroup(
+    id: Long,
+    userEmail: String,
+    apiToken: Option[String],
+    completed: Boolean,
+    deleted: Boolean
+  ) = q.insertFileGroup += podoFactory.fileGroup(id, userEmail, apiToken, completed, deleted)
+
+  override def groupedFileUpload(
+    id: Long,
+    fileGroupId: Long,
+    guid: UUID,
+    contentType: String,
+    name: String,
+    size: Long,
+    uploadedSize: Long,
+    contentsOid: Long
+  ) = q.insertGroupedFileUpload += podoFactory.groupedFileUpload(
+    id,
+    fileGroupId,
+    guid,
+    contentType,
+    name,
+    size,
+    uploadedSize,
+    contentsOid
+  )
+
   override def node(
     id: Long = 0L,
     rootId: Long = 0L,
@@ -361,6 +389,8 @@ object DbFactory {
     val insertView = (Views returning Views).insertInvoker
     val insertPage = (Pages returning Pages).insertInvoker
     val insertFile = (Files returning Files).insertInvoker
+    val insertFileGroup = (FileGroups returning FileGroups).insertInvoker
+    val insertGroupedFileUpload = (GroupedFileUploads returning GroupedFileUploads).insertInvoker
     val insertUploadedFile = (UploadedFiles returning UploadedFiles).insertInvoker
     val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors).insertInvoker
     val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs).insertInvoker
