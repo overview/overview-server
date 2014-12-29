@@ -22,4 +22,10 @@ object GroupedFileUploadFinder extends FinderById[GroupedFileUpload](Schema.grou
     from(Schema.groupedFileUploads)(f => 
       where (f.fileGroupId === fileGroup)
       select (f))
+
+  def countsByFileGroup(fileGroupId: Long): Long = {
+    from(Schema.groupedFileUploads)(f =>
+      where(f.fileGroupId === fileGroupId)
+        compute (count))
+  }
 }

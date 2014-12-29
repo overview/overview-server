@@ -1,8 +1,5 @@
 package org.overviewproject.models
 
-import org.overviewproject.tree.orm.{DocumentSetCreationJob => DeprecatedDocumentSetCreationJob}
-import org.overviewproject.tree.{DocumentSetCreationJobType => DeprecatedDocumentSetCreationJobType}
-import org.overviewproject.tree.orm.{DocumentSetCreationJobState => DeprecatedDocumentSetCreationJobState}
 
 object DocumentSetCreationJobType extends Enumeration {
   type DocumentSetCreationJobType = Value
@@ -48,26 +45,5 @@ case class DocumentSetCreationJob(
   state: DocumentSetCreationJobState,
   fractionComplete: Double,
   statusDescription: String
-) {
-  def toDeprecatedDocumentSetCreationJob = DeprecatedDocumentSetCreationJob(
-    id,
-    documentSetId,
-    DeprecatedDocumentSetCreationJobType(jobType.id),
-    lang,
-    suppliedStopWords,
-    importantWords,
-    documentcloudUsername,
-    documentcloudPassword,
-    splitDocuments,
-    contentsOid,
-    sourceDocumentSetId,
-    fileGroupId,
-    treeTitle,
-    tagId,
-    DeprecatedDocumentSetCreationJobState(state.id),
-    fractionComplete,
-    statusDescription,
-    treeDescription,
-    retryAttempts
-  )
-}
+)
+

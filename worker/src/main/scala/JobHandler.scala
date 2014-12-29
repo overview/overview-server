@@ -16,7 +16,7 @@ import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOp
 import org.overviewproject.database.{ DatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence.{ DocumentSetCleaner, DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob }
 import org.overviewproject.persistence.orm.finders.DocumentSetFinder
-import org.overviewproject.persistence.orm.finders.{ GroupedProcessedFileFinder, GroupedFileUploadFinder }
+import org.overviewproject.persistence.orm.finders.{ GroupedProcessedFileFinder, FileGroupFinder, GroupedFileUploadFinder }
 import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
 import org.overviewproject.persistence.orm.finders.TreeFinder
 import org.overviewproject.persistence.orm.stores._
@@ -256,10 +256,7 @@ object JobHandler {
       tempDocumentSetFileStore.delete(TempDocumentSetFileFinder.byDocumentSet(job.documentSetId).toQuery)
       GroupedFileUploadStore.delete(GroupedFileUploadFinder.byFileGroup(fileGroupId).toQuery)
 
-      val session = new scala.slick.jdbc.UnmanagedSession(Database.currentConnection)
-      import org.overviewproject.database.Slick.simple._
-      import org.overviewproject.models.tables.FileGroups
-      FileGroups.filter(_.id === fileGroupId).delete(session)
+      FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
     }
   }
 

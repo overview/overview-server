@@ -2,112 +2,196 @@ package controllers
 
 import java.util.UUID
 import org.specs2.mock.Mockito
+import org.specs2.mutable.Before
+import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
-import play.api.mvc.BodyParsers.parse
-import play.api.test.FakeRequest
+import play.api.libs.iteratee.Iteratee
+import play.api.mvc.{ RequestHeader, Result }
+import play.api.Play.{ start, stop }
+import play.api.test.{ FakeApplication, FakeHeaders, FakeRequest }
+import play.api.test.Helpers._
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
-import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
+import models.OverviewUser
 import models.{ Session, User }
-import org.overviewproject.models.{FileGroup,GroupedFileUpload}
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob}
+import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,FileGroup,GroupedFileUpload}
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
-class MassUploadControllerSpec extends ControllerSpecification {
-  trait BaseScope extends Scope {
-    val mockFileGroupBackend = smartMock[FileGroupBackend]
-    val mockUploadBackend = smartMock[GroupedFileUploadBackend]
-    val mockStorage = smartMock[MassUploadController.Storage]
-    val mockMessageQueue = smartMock[MassUploadController.MessageQueue]
 
-    val controller = new MassUploadController {
-      override val fileGroupBackend = mockFileGroupBackend
-      override val groupedFileUploadBackend = mockUploadBackend
-      override val storage = mockStorage
-      override val messageQueue = mockMessageQueue
-      override val uploadBodyParserFactory = ((guid: UUID) => parse.empty)
-    }
+class MassUploadControllerSpec extends Specification with Mockito {
 
-    val factory = org.overviewproject.test.factories.PodoFactory
+  step(start(FakeApplication()))
+
+  class TestMassUploadController extends MassUploadController {
+    // We can leave this undefined, since it will not be called.
+    override def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
+      ???
+
+    override val storage = smartMock[Storage]
+    override val messageQueue = smartMock[MessageQueue]
+    messageQueue.startClustering(any, any) returns Future.successful(Unit)
   }
 
-  "#create" should {
-    trait CreateScope extends BaseScope {
-      val user = User(id=123L, email="user@example.org")
-      val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user)
-      val guid = UUID.randomUUID()
-      lazy val result = controller.create(guid)(request)
-    }
-
-    "return Ok" in new CreateScope {
-      h.status(Enumerator(Array[Byte]()).run(result)) must beEqualTo(h.CREATED)
-    }
+  trait FileGroupProvider {
+    def createFileGroup: Option[FileGroup]
   }
 
-  "#show" should {
-    trait ShowScope extends BaseScope {
-      val guid = UUID.randomUUID()
-      val userId = 123L
-      val userEmail = "show-user@example.org"
-      val fileGroupId = 234L
+  trait UploadProvider {
+    def createUpload: Option[GroupedFileUpload]
+  }
 
-      val user = User(id=userId, email=userEmail)
-      def fileGroup: Option[FileGroup] = Some(factory.fileGroup(id=fileGroupId))
-      def groupedFileUpload: Option[GroupedFileUpload] = Some(factory.groupedFileUpload())
+  trait UploadContext extends Before with FileGroupProvider with UploadProvider {
+    val fileGroupId = 1l
+    val guid = UUID.randomUUID
+    val user = OverviewUser(User(1l))
+    val controller = new TestMassUploadController
+    var foundFileGroup: Option[FileGroup] = _
+    var foundUpload: Option[GroupedFileUpload] = _
 
-      mockFileGroupBackend.find(any, any) returns Future(fileGroup)
-      mockUploadBackend.find(any, any) returns Future(groupedFileUpload)
+    def before: Unit = {
+      foundFileGroup = createFileGroup
+      foundUpload = createUpload
 
-      val request = new AuthorizedRequest(FakeRequest(), Session(userId, "127.0.0.1"), user)
-      lazy val result = controller.show(guid)(request)
+      controller.storage.findCurrentFileGroup(user.email) returns foundFileGroup
+      foundFileGroup map { fg => fg.id returns fileGroupId }
+
+      controller.storage.findGroupedFileUpload(fileGroupId, guid) returns foundUpload
+      foundUpload map { u => u.fileGroupId returns fileGroupId }
     }
 
-    "find the upload" in new ShowScope {
-      h.status(result)
-      there was one(mockFileGroupBackend).find(userEmail, None)
-      there was one(mockUploadBackend).find(fileGroupId, guid)
-    }
+    def executeRequest: Future[Result]
 
-    "return 404 if the GroupedFileUpload does not exist" in new ShowScope {
-      override def groupedFileUpload = None
-      h.status(result) must beEqualTo(h.NOT_FOUND)
-    }
+    lazy val result = executeRequest
+  }
 
-    "return 404 if the FileGroup does not exist" in new ShowScope {
-      override def fileGroup = None
-      h.status(result) must beEqualTo(h.NOT_FOUND)
-    }
+  trait NoFileGroup extends FileGroupProvider {
+    override def createFileGroup() = None
+  }
 
-    "return 200 with Content-Length if upload is complete" in new ShowScope {
-      override def groupedFileUpload = Some(factory.groupedFileUpload(size=1234, uploadedSize=1234))
-      h.status(result) must beEqualTo(h.OK)
-      h.header(h.CONTENT_LENGTH, result) must beSome("1234")
-    }
+  trait InProgressFileGroup extends FileGroupProvider {
+    override def createFileGroup = Some(smartMock[FileGroup])
+  }
 
-    "return PartialContent with Content-Range if upload is not complete" in new ShowScope {
-      override def groupedFileUpload = Some(factory.groupedFileUpload(size=2345, uploadedSize=1234))
-      h.status(result) must beEqualTo(h.PARTIAL_CONTENT)
-      h.header(h.CONTENT_RANGE, result) must beSome("bytes 0-1233/2345")
-    }
+  trait NoUpload extends UploadProvider {
+    override def createUpload = None
+  }
 
-    "return NoContent if uploaded file is empty" in new ShowScope {
-      override def groupedFileUpload = Some(factory.groupedFileUpload(name="filename.abc", size=0, uploadedSize=0))
-      h.status(result) must beEqualTo(h.NO_CONTENT)
-      h.header(h.CONTENT_DISPOSITION, result) must beSome("attachment; filename=\"filename.abc\"")
-    }
+  trait UploadInfo {
+    val size = 1000l
+    val filename = "foo.pdf"
+    val contentDisposition = s"attachment ; filename=$filename"
+  }
 
-    "return NoContent if uploaded file was created but no bytes were ever added" in new ShowScope {
-      override def groupedFileUpload = Some(factory.groupedFileUpload(name="filename.abc", size=1234, uploadedSize=0))
-      h.status(result) must beEqualTo(h.NO_CONTENT)
-      h.header(h.CONTENT_DISPOSITION, result) must beSome("attachment; filename=\"filename.abc\"")
+  trait CompleteUpload extends UploadProvider with UploadInfo {
+    val uploadId = 10l
+
+    override def createUpload = {
+      val upload = smartMock[GroupedFileUpload]
+
+      upload.id returns uploadId
+      upload.size returns size
+      upload.uploadedSize returns size
+      upload.name returns filename
+
+      Some(upload)
     }
   }
 
-  "#startClustering" should {
-    trait StartClusteringScope extends BaseScope {
+  trait IncompleteUpload extends UploadProvider with UploadInfo {
+    val uploadSize = 500l
+
+    override def createUpload = {
+      val upload = smartMock[GroupedFileUpload]
+
+      upload.size returns size
+      upload.uploadedSize returns uploadSize
+      upload.name returns filename
+
+      Some(upload)
+    }
+  }
+
+  trait EmptyUpload extends UploadProvider with UploadInfo {
+    val uploadSize = 0L
+
+    override def createUpload = {
+      val upload = smartMock[GroupedFileUpload]
+
+      upload.size returns 0
+      upload.uploadedSize returns uploadSize
+      upload.name returns filename
+      upload.contentDisposition returns contentDisposition
+
+      Some(upload)
+    }
+  }
+
+  "MassUploadController.create" should {
+
+    trait CreateRequest extends UploadContext {
+      override def executeRequest = {
+        val baseRequest = FakeRequest[GroupedFileUpload]("POST", s"/files/$guid", FakeHeaders(), foundUpload.get)
+        val request = new AuthorizedRequest(baseRequest, Session(user.id, "127.0.0.1"), user.toUser)
+
+        controller.create(guid)(request)
+      }
+    }
+
+    "return Ok when upload is complete" in new CreateRequest with CompleteUpload with InProgressFileGroup {
+      status(result) must be equalTo (OK)
+    }
+
+    "return BadRequest if upload is not complete" in new CreateRequest with IncompleteUpload with InProgressFileGroup {
+      status(result) must be equalTo (BAD_REQUEST)
+    }
+
+    "return Ok when the upload is an empty file" in new CreateRequest with EmptyUpload with InProgressFileGroup {
+      override val size = 0L
+      override val uploadSize = 0L
+      status(result) must be equalTo (OK)
+    }
+  }
+
+  "MassUploadController.show" should {
+
+    trait ShowRequest extends UploadContext {
+      override def executeRequest = {
+        val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user.toUser)
+
+        controller.show(guid)(request)
+      }
+    }
+
+    "return NOT_FOUND if upload does not exist" in new ShowRequest with NoUpload with InProgressFileGroup {
+      status(result) must be equalTo (NOT_FOUND)
+    }
+
+    "return NOT_FOUND if no InProgress FileGroup exists" in new ShowRequest with CompleteUpload with NoFileGroup {
+      status(result) must be equalTo (NOT_FOUND)
+    }
+
+    "return Ok with content length if upload is complete" in new ShowRequest with CompleteUpload with InProgressFileGroup {
+      status(result) must be equalTo (OK)
+      header(CONTENT_LENGTH, result) must beSome(s"$size")
+    }
+
+    "return PartialContent with content range if upload is not complete" in new ShowRequest with IncompleteUpload with InProgressFileGroup {
+      status(result) must be equalTo (PARTIAL_CONTENT)
+      header(CONTENT_RANGE, result) must beSome(s"bytes 0-${uploadSize - 1}/$size")
+    }
+
+    "return NoContent uploaded file is empty" in new ShowRequest with EmptyUpload with InProgressFileGroup {
+      status(result) must be equalTo (NO_CONTENT)
+      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
+    }
+
+  }
+
+  "MassUploadController.startClustering" should {
+
+    trait StartClusteringRequest extends UploadContext {
       val fileGroupName = "This becomes the Document Set Name"
       val lang = "sv"
       val splitDocuments = false
@@ -115,82 +199,66 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val stopWords = "ignore these words"
       val importantWords = "important words?"
       def formData = Seq(
-        "name" -> fileGroupName,
-        "lang" -> lang,
-        "split_documents" -> splitDocumentsString,
-        "supplied_stop_words" -> stopWords,
-        "important_words" -> importantWords
-      )
-      val documentSetId = 11L
-      val job = factory.documentSetCreationJob()
-      val user = User(id=123L, email="start-user@example.org")
-      val fileGroup = factory.fileGroup(id=234L)
-      val documentSet = factory.documentSet(id=documentSetId)
+        ("name" -> fileGroupName),
+        ("lang" -> lang),
+        ("split_documents" -> splitDocumentsString),
+        ("supplied_stop_words" -> stopWords),
+        ("important_words") -> importantWords)
+      val documentSetId = 11l
+      val job = mock[DocumentSetCreationJob]
+      
+      override def executeRequest = {
+        val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user.toUser)
+        controller.startClustering(request)
+      }
 
-      mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
-      mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
-      mockStorage.createDocumentSet(any, any, any) returns documentSet.toDeprecatedDocumentSet
-      mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
-      mockMessageQueue.startClustering(any, any) returns Future(())
+      override def before: Unit = {
+        super.before
+        val documentSet = mock[DocumentSet]
+        documentSet.id returns documentSetId
 
-      lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
-      lazy val result = controller.startClustering()(request)
+        controller.storage.createDocumentSet(user.email, fileGroupName, lang) returns documentSet
+        controller.storage.createMassUploadDocumentSetCreationJob(
+            documentSetId, fileGroupId, lang, splitDocuments, stopWords, importantWords) returns job
+      }
     }
 
-    "redirect" in new StartClusteringScope {
-      h.status(result) must beEqualTo(h.SEE_OTHER)
+    "create job and send ClusterFileGroup command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
+      status(result) must be equalTo (SEE_OTHER)
+      there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
+      there was one(controller.storage).createMassUploadDocumentSetCreationJob(
+        documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
+      there was one(controller.messageQueue).startClustering(job, fileGroupName)
     }
 
-    "create a DocumentSetCreationJob" in new StartClusteringScope {
-      h.status(result)
-      there was one(mockStorage).createDocumentSet(user.email, fileGroupName, lang)
-      there was one(mockStorage).createMassUploadDocumentSetCreationJob(
-        documentSetId, 234L, lang, false, stopWords, importantWords)
-    }
-
-    "send a ClusterFileGroup message" in new StartClusteringScope {
-      h.status(result)
-      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, fileGroupName)
-    }
-
-    "set splitDocuments=true when asked" in new StartClusteringScope {
+    "set splitDocuments=true when asked" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
       override val splitDocumentsString = "true"
-      h.status(result)
-      there was one(mockStorage).createMassUploadDocumentSetCreationJob(
-        documentSetId, 234L, lang, true, stopWords, importantWords)
+      result
+      there was one(controller.storage).createMassUploadDocumentSetCreationJob(
+        documentSetId, fileGroupId, lang, true, stopWords, importantWords)
     }
 
-    "return NotFound if user has no FileGroup in progress" in new StartClusteringScope {
-      mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
-      h.status(result) must beEqualTo(h.NOT_FOUND)
-      there was no(mockStorage).createDocumentSet(any, any, any)
+    "return NotFound if user has no FileGroup InProgress" in new StartClusteringRequest with NoUpload with NoFileGroup {
+      status(result) must be equalTo (NOT_FOUND)
     }
   }
 
-  "#cancel" should {
-    trait CancelScope extends BaseScope {
-      mockFileGroupBackend.destroy(any) returns Future.successful(())
-      val user = User(id=123L, email="cancel-user@example.org")
+  "MassUploadController.cancelUpload" should {
 
-      val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user)
-      lazy val result = controller.cancel()(request)
+    trait CancelClusteringRequest extends UploadContext {
+
+      override def executeRequest = {
+        val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user.toUser)
+
+        controller.cancelUpload(request)
+      }
     }
 
-    "mark a file group as deleted" in new CancelScope {
-      mockFileGroupBackend.find(user.email, None) returns Future.successful(Some(factory.fileGroup(id=234L)))
-      h.status(result)
-      there was one(mockFileGroupBackend).destroy(234L)
-    }
+    "send cancel message" in new CancelClusteringRequest with IncompleteUpload with InProgressFileGroup {
+      result
 
-    "do nothing when the file group does not exist" in new CancelScope {
-      mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
-      h.status(result)
-      there was no(mockFileGroupBackend).destroy(any)
-    }
-
-    "return Accepted" in new CancelScope {
-      mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
-      h.status(result) must beEqualTo(h.ACCEPTED)
+      there was one(controller.storage).deleteFileGroupByUser(user.toUser.email)
     }
   }
+  step(stop)
 }

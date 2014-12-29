@@ -1,171 +1,315 @@
 package controllers.util
 
+import java.io.ByteArrayInputStream
+import java.net.URLEncoder
 import java.util.UUID
+import org.mockito.ArgumentCaptor
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
-import play.api.mvc.RequestHeader
-import play.api.test.{FakeRequest,FutureAwaits,DefaultAwaitTimeout}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.Results._
+import play.api.test.{ FakeApplication, FakeHeaders }
+import play.api.test.Helpers._
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.util.Random
+import play.api.Play.{ start, stop }
 
-import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
-import org.overviewproject.models.{FileGroup, GroupedFileUpload}
-import org.overviewproject.test.factories.PodoFactory
+import views.html.defaultpages.badRequest
+import org.overviewproject.tree.orm.{ FileGroup, GroupedFileUpload }
 
-class MassUploadFileIterateeSpec extends Specification with Mockito with FutureAwaits with DefaultAwaitTimeout {
-  sequential
-
-  trait BaseScope extends Scope {
-    val mockFileGroupBackend = smartMock[FileGroupBackend]
-    val mockUploadBackend = smartMock[GroupedFileUploadBackend]
-
-    val guid: UUID = UUID.randomUUID
-
-    val iterateeFactory = new MassUploadFileIteratee {
-      override val fileGroupBackend = mockFileGroupBackend
-      override val groupedFileUploadBackend = mockUploadBackend
-    }
-
-    val factory = PodoFactory
-
-    lazy val fileGroup = factory.fileGroup()
-    lazy val groupedFileUpload = factory.groupedFileUpload(guid=guid)
-
-    mockFileGroupBackend.findOrCreate(any) returns Future(fileGroup)
-    mockUploadBackend.findOrCreate(any) returns Future(groupedFileUpload)
-    mockUploadBackend.writeBytes(any, any, any) returns Future(())
-
-    val userEmail: String = "user@example.org"
-    val baseHeaders: Seq[(String,String)] = Seq(
-      "Content-Type" -> "application/pdf",
-      "Content-Disposition" -> "attachment; filename=foo.pdf"
-    )
-    def requestHeaders: Seq[(String,String)] = baseHeaders
-    def request: RequestHeader = FakeRequest().withHeaders(requestHeaders: _*)
-    val bufferSize: Int = 10
-
-    def iteratee = iterateeFactory(userEmail, request, guid, bufferSize)
-
-    def byteArrays: Seq[Array[Byte]] = Seq("1234567890".getBytes("utf-8"))
-    def enumerator = Enumerator.enumerate(byteArrays)
-
-    def run = enumerator.run(iteratee)
-  }
-
+class MassUploadFileIterateeSpec extends Specification with Mockito {
+  step(start(FakeApplication()))
+  
   "MassUploadFileIteratee" should {
-    "fail if there is neither Content-Range nor Content-Length" in new BaseScope {
-      await(run).toString must beEqualTo(MassUploadFileIteratee.BadRequest("Request did not specify Content-Range or Content-Length").toString)
-      there was no(mockUploadBackend).writeBytes(any, any, any)
+    val start = 0
+    val end = 255
+    val total = 256
+    val guid = UUID.randomUUID
+    val userEmail = "user@ema.il"
+    val contentType = "ignoredForNow"
+    val filename = "filename.ext"
+    val contentDisposition = s"""attachment; filename=$filename"""
+    val fileGroupId = 1l
+    val fileUpload = GroupedFileUpload(1l, guid, contentType, filename, total, 0, 1)
+    val fileUpload2 = GroupedFileUpload(1l, guid, contentType, filename, total, 100, 1)
+
+    abstract class TestMassUploadFileIteratee extends MassUploadFileIteratee {
+      override val storage = smartMock[Storage]
+      val fileGroup = smartMock[FileGroup]
+      fileGroup.id returns fileGroupId
     }
 
-    "work with Content-Length" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "10")
-      await(run).toString must beEqualTo(MassUploadFileIteratee.Ok.toString)
+    class SucceedingMassUploadFileIteratee(createFileGroup: Boolean) extends TestMassUploadFileIteratee {
+
+      if (createFileGroup) {
+        storage.findCurrentFileGroup(any) returns None
+        storage.createFileGroup(any) returns fileGroup
+      } else storage.findCurrentFileGroup(any) returns Some(fileGroup)
+
+      storage.findUpload(any, any) returns None
+      storage.createUpload(fileGroupId, contentType, filename, guid, total) returns fileUpload
+
     }
 
-    "work with Content-Range" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Range" -> "bytes 1-10/10")
-      await(run).toString must beEqualTo(MassUploadFileIteratee.Ok.toString)
+    class FailingMassUploadFileIteratee extends TestMassUploadFileIteratee {
+
+      storage.findCurrentFileGroup(any) returns Some(fileGroup)
+
+      storage.findUpload(any, any) returns None
+      storage.createUpload(fileGroupId, contentType, filename, guid, total) returns fileUpload
+      storage.appendData(any, any) throws new RuntimeException("append failed")
     }
 
-    "create a FileGroup is there is none" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "10")
-      await(run)
-      there was one(mockFileGroupBackend).findOrCreate(FileGroup.CreateAttributes(userEmail, None))
+    class RestartingMassUploadFileIteratee extends TestMassUploadFileIteratee {
+      storage.findCurrentFileGroup(any) returns Some(fileGroup)
     }
 
-    "create a GroupedFileUpload if there is none" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "10")
-      await(run)
-      there was one(mockUploadBackend).findOrCreate(GroupedFileUpload.CreateAttributes(fileGroup.id, guid, "application/pdf", "foo.pdf", 10L))
+    trait FileGroupProvider {
+      val createFileGroup: Boolean
     }
 
-    "write bytes to the GroupedFileUpload" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "10")
-      await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
+    trait Headers {
+      val headers: Seq[(String, Seq[String])]
     }
 
-    "write multiple chunks" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "20")
-      override def byteArrays = Seq("1234567890".getBytes("utf-8"), "0987654321".getBytes("utf-8"))
-      await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "0987654321".getBytes("utf-8"))
+    trait UploadContext extends Scope with FileGroupProvider with Headers {
+      val bufferSize: Int
+
+      val data = Array.tabulate[Byte](total)(_.toByte)
+
+      val input = new ByteArrayInputStream(data)
+      val enumerator: Enumerator[Array[Byte]]
+
+      def createRequest: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(headers)
+        r
+      }
+
+      lazy val iteratee: TestMassUploadFileIteratee = new SucceedingMassUploadFileIteratee(createFileGroup)
+
+      def result = {
+        val resultFuture = enumerator.run(iteratee(userEmail, createRequest, guid, bufferSize))
+        Await.result(resultFuture, Duration.Inf)
+      }
     }
 
-    "buffer chunks" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "20")
-      override def byteArrays = Seq("123".getBytes("utf-8"), "45".getBytes("utf-8"), "67890".getBytes("utf-8"), "0987654321".getBytes("utf-8"))
-      await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "0987654321".getBytes("utf-8"))
+    trait FailingUploadContext extends UploadContext {
+      override lazy val iteratee: TestMassUploadFileIteratee = new FailingMassUploadFileIteratee
+      override val bufferSize = total
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
+      override val createFileGroup = false
     }
 
-    "buffer chunks even when sizes don't fit into each other perfectly" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "19")
-      override def byteArrays = Seq("1234567".getBytes("utf-8"), "890098".getBytes("utf-8"), "765432".getBytes("utf-8"))
-      await(run)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 0L, "1234567890".getBytes("utf-8"))
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "098765432".getBytes("utf-8"))
+    trait RestartingUploadContext extends Scope with Headers {
+      val bufferSize: Int
+
+      val data = Array.tabulate[Byte](total)(_.toByte)
+
+      val input = new ByteArrayInputStream(data)
+      val enumerator: Enumerator[Array[Byte]]
+
+      def createRequest: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(headers)
+        r
+      }
+
+      lazy val iteratee: TestMassUploadFileIteratee = new RestartingMassUploadFileIteratee
+
+      def result = {
+        val resultFuture = enumerator.run(iteratee(userEmail, createRequest, guid, bufferSize))
+        Await.result(resultFuture, Duration.Inf)
+      }
+
     }
 
-    "use empty strings for missing headers" in new BaseScope {
-      override def requestHeaders = Seq("Content-Length" -> "10")
-      await(run)
-      there was one(mockUploadBackend).findOrCreate(GroupedFileUpload.CreateAttributes(fileGroup.id, guid, "", "", 10L))
+    trait GoodHeaders extends Headers {
+
+      override val headers: Seq[(String, Seq[String])] = Seq(
+        (CONTENT_TYPE, Seq(contentType)),
+        (CONTENT_RANGE, Seq(s"bytes $start-$end/$total")),
+        (CONTENT_LENGTH, Seq(s"$total")),
+        (CONTENT_DISPOSITION, Seq(contentDisposition)))
     }
 
-    "fail if appending data fails" in new BaseScope {
-      override def requestHeaders = baseHeaders :+ ("Content-Length" -> "10")
-      mockUploadBackend.writeBytes(any, any, any) returns Future(throw new Exception("random"))
-      await(run) must throwA[Exception]
+    trait MissingOptionalHeaders extends Headers {
+      override val headers: Seq[(String, Seq[String])] = Seq(
+        (CONTENT_RANGE, Seq(s"bytes $start-$end/$total")))
     }
 
-    "append data at start byte" in new BaseScope {
-      override lazy val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
-      override def requestHeaders = baseHeaders ++ Seq(
-        "Content-Range" -> "bytes 10-19/20",
-        "Content-Length" -> "10"
+    trait RestartHeaders extends Headers {
+      val restart = 100
+
+      override val headers: Seq[(String, Seq[String])] = Seq(
+        (CONTENT_TYPE, Seq(contentType)),
+        (CONTENT_RANGE, Seq(s"bytes $restart-$end/$total")),
+        (CONTENT_LENGTH, Seq(s"${total - restart}")),
+        (CONTENT_DISPOSITION, Seq(contentDisposition)))
+
+    }
+    trait ExistingFileGroup extends FileGroupProvider {
+      override val createFileGroup: Boolean = false
+    }
+
+    trait NoFileGroup extends FileGroupProvider {
+      override val createFileGroup: Boolean = true
+    }
+
+    trait SingleChunkUpload extends UploadContext with GoodHeaders {
+      override val bufferSize = total
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
+    }
+
+    trait MultipleChunksUpload extends UploadContext with GoodHeaders {
+      val chunkSize = 100
+      override val bufferSize = chunkSize
+      override val enumerator = Enumerator.fromStream(input, chunkSize)(Execution.defaultContext)
+    }
+
+    trait BufferedUpload extends UploadContext with GoodHeaders {
+      val chunkSize = 64
+      override val bufferSize = 150
+      override val enumerator = Enumerator.fromStream(input, chunkSize)(Execution.defaultContext)
+    }
+
+    trait UploadWithMissingHeaders extends UploadContext with MissingOptionalHeaders {
+      override val bufferSize = total
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
+    }
+
+    trait RestartContext extends RestartingUploadContext with RestartHeaders {
+      override val bufferSize = total
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
+    }
+
+    "create a FileGroup if there is none" in new SingleChunkUpload with NoFileGroup {
+      iteratee.storage.appendData(any, any) returns fileUpload.copy(uploadedSize = total)
+
+      result must beRight
+
+      there was one(iteratee.storage).createFileGroup(userEmail)
+    }
+
+    "produce a MassUploadFile" in new SingleChunkUpload with ExistingFileGroup {
+      iteratee.storage.appendData(any, any) returns fileUpload.copy(uploadedSize = total)
+
+      result must beRight
+
+      val upload = ArgumentCaptor.forClass(classOf[GroupedFileUpload])
+      val chunk = ArgumentCaptor.forClass(classOf[Iterable[Byte]])
+
+      there was one(iteratee.storage).findCurrentFileGroup(userEmail)
+      there was one(iteratee.storage).createUpload(1l, contentType, filename, guid, total)
+      there was one(iteratee.storage).appendData(upload.capture, chunk.capture)
+
+      upload.getValue.guid must be equalTo guid
+      chunk.getValue must be equalTo data
+    }
+
+    "handle chunked input" in new MultipleChunksUpload with ExistingFileGroup {
+      iteratee.storage.appendData(any, any) returns
+        fileUpload.copy(uploadedSize = chunkSize) thenReturns
+        fileUpload.copy(uploadedSize = 2 * chunkSize) thenReturns
+        fileUpload.copy(uploadedSize = total)
+
+      result must beRight
+
+      val upload = ArgumentCaptor.forClass(classOf[GroupedFileUpload])
+      val chunk = ArgumentCaptor.forClass(classOf[Iterable[Byte]])
+
+      there were three(iteratee.storage).appendData(upload.capture, chunk.capture)
+
+      chunk.getAllValues().get(0) must be equalTo (data.slice(0, chunkSize))
+      chunk.getAllValues().get(1) must be equalTo (data.slice(chunkSize, 2 * chunkSize))
+      chunk.getAllValues().get(2) must be equalTo (data.slice(2 * chunkSize, total))
+
+      upload.getValue().guid must be equalTo (guid)
+      upload.getAllValues().get(1).uploadedSize must be equalTo (chunkSize)
+      upload.getAllValues().get(2).uploadedSize must be equalTo (2 * chunkSize)
+    }
+
+    "buffer chunks" in new BufferedUpload with ExistingFileGroup {
+      iteratee.storage.appendData(any, any) returns
+        fileUpload.copy(uploadedSize = 192) thenReturns
+        fileUpload.copy(uploadedSize = 256)
+
+      result must beRight
+
+      val upload = ArgumentCaptor.forClass(classOf[GroupedFileUpload])
+      val chunk = ArgumentCaptor.forClass(classOf[Iterable[Byte]])
+
+      there were two(iteratee.storage).appendData(upload.capture, chunk.capture)
+
+      chunk.getAllValues().get(0) must be equalTo (data.slice(0, 192))
+      chunk.getAllValues().get(1) must be equalTo (data.slice(192, 256))
+    }
+
+    "Use empty strings for missing optional headers" in new UploadWithMissingHeaders with ExistingFileGroup {
+      iteratee.storage.createUpload(fileGroupId, "", "", guid, total) returns fileUpload
+      iteratee.storage.appendData(any, any) returns fileUpload
+      result must beRight
+
+      there was one(iteratee.storage).createUpload(1l, "", "", guid, total)
+    }
+
+    "Return an error result if appending data fails" in new FailingUploadContext with GoodHeaders {
+      result must beLeft
+    }.pendingUntilFixed // possibly scala bug? https://github.com/scala/scala/pull/3082
+
+    "append data at start byte if less than uploadedSize" in new RestartContext {
+      iteratee.storage.findUpload(fileGroupId, guid) returns Some(fileUpload.copy(uploadedSize = restart + 10))
+
+      iteratee.storage.appendData(any, any) returns fileUpload.copy(uploadedSize = total)
+
+      result must beRight
+
+      val upload = ArgumentCaptor.forClass(classOf[GroupedFileUpload])
+      val chunk = ArgumentCaptor.forClass(classOf[Iterable[Byte]])
+
+      there was one(iteratee.storage).appendData(upload.capture, chunk.capture)
+
+      upload.getValue.uploadedSize must be equalTo restart
+    }
+
+    "return an error if start of content range is past uploadedSize" in new RestartContext {
+      iteratee.storage.findUpload(fileGroupId, guid) returns Some(fileUpload.copy(uploadedSize = restart - 10))
+
+      result must beLeft((r: Result) => r.header.status must beEqualTo(BAD_REQUEST))
+    }
+
+    "succeed if request has zero length" in new UploadContext {
+      override val bufferSize = 10
+      override val enumerator = Enumerator.eof[Array[Byte]]
+      override val headers = Seq(
+        CONTENT_LENGTH -> Seq("0"),
+        CONTENT_DISPOSITION -> Seq(contentDisposition),
+        CONTENT_TYPE -> Seq(contentType)
       )
+      override val createFileGroup = false
 
-      await(run).toString must beEqualTo(MassUploadFileIteratee.Ok.toString)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "1234567890".getBytes("utf-8"))
-    }
+      override lazy val iteratee = new TestMassUploadFileIteratee {
+        storage.findCurrentFileGroup(any) returns Some(fileGroup)
+        storage.findUpload(any, any) returns None
+        storage.createUpload(fileGroupId, contentType, filename, guid, 0L) returns GroupedFileUpload(
+          fileGroupId=1L,
+          guid=guid,
+          contentType=contentType,
+          name=filename,
+          size=0L,
+          uploadedSize=0L,
+          contentsOid=0L,
+          id=1L
+        )
+      }
 
-    "overwrite data at start byte" in new BaseScope {
-      override lazy val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=11L)
-      override def requestHeaders = baseHeaders ++ Seq(
-        "Content-Range" -> "bytes 10-19/20",
-        "Content-Length" -> "10"
-      )
-
-      await(run).toString must beEqualTo(MassUploadFileIteratee.Ok.toString)
-      there was one(mockUploadBackend).writeBytes(groupedFileUpload.contentsOid, 10L, "1234567890".getBytes("utf-8"))
-    }
-
-    "return an error when start of content range is too high" in new BaseScope {
-      override lazy val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=9L)
-      override def requestHeaders = baseHeaders ++ Seq(
-        "Content-Range" -> "bytes 11-19/20",
-        "Content-Length" -> "10"
-      )
-
-      await(run).toString must beEqualTo(MassUploadFileIteratee.BadRequest("Tried to resume past last uploaded byte. Resumed at byte 11, but only 9 bytes have been uploaded.").toString)
-      there was no(mockUploadBackend).writeBytes(any, any, any)
-    }
-
-    "succeed with zero-length requests" in new BaseScope {
-      override lazy val groupedFileUpload = factory.groupedFileUpload(size=0L, uploadedSize=0L)
-      override def requestHeaders = baseHeaders ++ Seq(
-        "Content-Length" -> "0"
-      )
-      override def byteArrays = Seq(Array[Byte]())
-      await(run).toString must beEqualTo(MassUploadFileIteratee.Ok.toString)
-      there was no(mockUploadBackend).writeBytes(any, any, any)
+      result must beRight
     }
   }
+  
+  step(stop)
 }
