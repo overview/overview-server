@@ -38,6 +38,35 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     val apiToken = factory.apiToken(createdBy="user@example.org", token="api-token")
   }
 
+  "#index" should {
+    trait IndexScope extends BaseScope {
+      lazy val request = new ApiAuthorizedRequest(FakeRequest(), apiToken)
+      lazy val result = controller.index(request)
+
+      val fileGroup = factory.fileGroup()
+      val upload1 = factory.groupedFileUpload(name="foo.txt", contentType="application/foo", size=20L, uploadedSize=10L, guid=UUID.randomUUID)
+      val upload2 = factory.groupedFileUpload(name="bar.pdf", contentType="application/bar", size=30L, uploadedSize=30L, guid=UUID.randomUUID)
+
+      mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
+      mockUploadBackend.index(any) returns Future.successful(Seq(upload1, upload2))
+    }
+
+    "return JSON files" in new IndexScope {
+      status(result) must beEqualTo(OK)
+      val json = contentAsString(result)
+
+      json must */("name" -> "foo.txt")
+      json must */("total" -> 20)
+      json must */("loaded" -> 10)
+      json must */("guid" -> upload1.guid.toString)
+
+      json must */("name" -> "bar.pdf")
+      json must */("total" -> 30)
+      json must */("loaded" -> 30)
+      json must */("guid" -> upload2.guid.toString)
+    }
+  }
+
   "#create" should {
     trait CreateScope extends BaseScope {
       val baseRequest = FakeRequest().withHeaders("Content-Length" -> "20")

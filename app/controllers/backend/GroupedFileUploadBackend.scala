@@ -9,6 +9,10 @@ import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.postgres.LO
 
 trait GroupedFileUploadBackend extends Backend {
+  /** Lists GroupedFileUploads in a FileGroup.
+    */
+  def index(fileGroupId: Long): Future[Seq[GroupedFileUpload]]
+
   /** Finds or creates a GroupedFileUpload.
     *
     * If the guid matches an existing guid in the given FileGroup, this will
@@ -41,6 +45,10 @@ trait GroupedFileUploadBackend extends Backend {
 trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend { self: DbBackend =>
   import org.overviewproject.database.Slick.simple._
 
+  lazy val byFileGroupId = Compiled { (fileGroupId: Column[Long]) =>
+    GroupedFileUploads.filter(_.fileGroupId === fileGroupId)
+  }
+
   lazy val byFileGroupAndGuidCompiled = Compiled { (fileGroupId: Column[Long], guid: Column[UUID]) =>
     GroupedFileUploads
       .filter(_.fileGroupId === fileGroupId)
@@ -63,6 +71,10 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend { self: DbBack
 
   lazy val loidByIdCompiled = Compiled { (id: Column[Long]) =>
     GroupedFileUploads.filter(_.id === id).map(_.contentsOid)
+  }
+
+  def index(fileGroupId: Long) = db { session =>
+    byFileGroupId(fileGroupId).list(session)
   }
 
   def find(fileGroupId: Long, guid: UUID) = db { session =>

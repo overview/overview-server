@@ -14,7 +14,7 @@ import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.OverviewDatabase
-import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.models.{FileGroup,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
 import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,DocumentSetUser}
 import org.overviewproject.tree.Ownership
@@ -27,6 +27,13 @@ trait MassUploadController extends ApiController {
   protected val messageQueue: MassUploadController.MessageQueue
   protected val apiTokenFactory: ApiTokenFactory
   protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
+
+  def index = ApiAuthorizedAction(anyUser).async { request =>
+    for {
+      fileGroup <- fileGroupBackend.findOrCreate(FileGroup.CreateAttributes(request.apiToken.createdBy, Some(request.apiToken.token)))
+      uploads <- groupedFileUploadBackend.index(fileGroup.id)
+    } yield Ok(views.json.api.MassUpload.index(uploads))
+  }
 
   /** Starts or resumes a file upload. */
   def create(guid: UUID) = EssentialAction { request =>
