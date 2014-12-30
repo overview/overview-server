@@ -28,16 +28,22 @@ trait MassUploadController extends ApiController {
   protected val apiTokenFactory: ApiTokenFactory
   protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
 
-  /** Starts or resumes a file upload.  */
-  def create(guid: UUID): EssentialAction = {
-    MassUploadControllerMethods.Create(
-      guid,
-      fileGroupBackend,
-      groupedFileUploadBackend,
-      apiTokenFactory,
-      uploadIterateeFactory,
-      true
-    )
+  /** Starts or resumes a file upload. */
+  def create(guid: UUID) = EssentialAction { request =>
+    val futureIteratee: Future[Iteratee[Array[Byte],Result]] = apiTokenFactory.loadAuthorizedApiToken(request, anyUser).map(_ match {
+      case Left(result) => Iteratee.ignore.map(_ => result)
+      case Right(apiToken) => MassUploadControllerMethods.Create(
+        apiToken.createdBy,
+        Some(apiToken.token),
+        guid,
+        fileGroupBackend,
+        groupedFileUploadBackend,
+        uploadIterateeFactory,
+        true
+      )(request)
+    })
+
+    Iteratee.flatten(futureIteratee)
   }
 
   /** Responds to a HEAD request.

@@ -41,21 +41,11 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
   "#create" should {
     trait CreateScope extends BaseScope {
-      val headers: Seq[(String,String)] = Seq("Content-Length" -> "20")
-      lazy val baseRequest = FakeRequest().withHeaders(headers: _*)
+      val baseRequest = FakeRequest().withHeaders("Content-Length" -> "20")
       lazy val request = new ApiAuthorizedRequest(baseRequest, apiToken)
-      val guid = UUID.randomUUID()
       val enumerator: Enumerator[Array[Byte]] = Enumerator()
-      lazy val action: EssentialAction = controller.create(guid)
+      lazy val action: EssentialAction = controller.create(UUID.randomUUID)
       lazy val result = enumerator.run(action(request))
-
-      val fileGroup = factory.fileGroup()
-      val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
-
-      mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
-      mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
-      mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
-      mockUploadIterateeFactory(any, any) returns Iteratee.ignore[Array[Byte]]
     }
 
     "return a Result if ApiTokenFactory returns a Left[Result]" in new CreateScope {
@@ -63,63 +53,14 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       status(result) must beEqualTo(BAD_REQUEST)
     }
 
-    "return BadRequest if missing Content-Length and Content-Range" in new CreateScope {
-      override val headers = Seq()
-      status(result) must beEqualTo(BAD_REQUEST)
-      contentAsString(result) must beEqualTo("""{"message":"Request must have Content-Range or Content-Length header"}""")
-    }
-
-    "return BadRequest if uploading past uploadedSize" in new CreateScope {
-      override val headers = Seq("Content-Range" -> "bytes 12-19/20")
-      status(result) must beEqualTo(BAD_REQUEST)
-      contentAsString(result) must beEqualTo("""{"message":"Tried to resume past last uploaded byte. Resumed at byte 12, but only 10 bytes have been uploaded."}""")
-    }
-
-    "create a GroupedFileUpload using Content-Length, Content-Type and Content-Disposition" in new CreateScope {
-      override val headers = Seq(
-        "Content-Length" -> "20",
-        "Content-Type" -> "application/foo",
-        "Content-Disposition" -> "attachment; filename=foobar.txt"
-      )
-      status(result)
-      there was one(mockUploadBackend).findOrCreate(GroupedFileUpload.CreateAttributes(
-        fileGroup.id,
-        guid,
-        "application/foo",
-        "foobar.txt",
-        20L
-      ))
-    }
-
-    "decode Content-Disposition into a complex filename" in new CreateScope {
-      override val headers = Seq(
-        "Content-Length" -> "20",
-        "Content-Type" -> "application/foo",
-        "Content-Disposition" -> "attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf"
-      )
-      status(result)
-      there was one(mockUploadBackend).findOrCreate(GroupedFileUpload.CreateAttributes(
-        fileGroup.id,
-        guid,
-        "application/foo",
-        "元気なですか？.pdf",
-        20L
-      ))
-    }
-
-    "create a GroupedUploadIteratee using Content-Length" in new CreateScope {
-      override val headers = Seq("Content-Length" -> "20")
-      status(result)
-      there was one(mockUploadIterateeFactory).apply(groupedFileUpload, 0L)
-    }
-
-    "create a GroupedUploadIteratee using Content-Range" in new CreateScope {
-      override val headers = Seq("Content-Range" -> "bytes 10-19/20")
-      status(result)
-      there was one(mockUploadIterateeFactory).apply(groupedFileUpload, 10L)
-    }
-
     "return Ok" in new CreateScope {
+      val fileGroup = factory.fileGroup()
+      val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
+      mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
+      mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
+      mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
+      mockUploadIterateeFactory(any, any) returns Iteratee.ignore[Array[Byte]]
+
       status(result) must beEqualTo(CREATED)
     }
   }

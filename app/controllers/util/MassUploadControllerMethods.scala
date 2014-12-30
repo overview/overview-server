@@ -21,10 +21,11 @@ import org.overviewproject.util.ContentDisposition
 
 private[controllers] object MassUploadControllerMethods extends controllers.Controller {
   case class Create(
+    userEmail: String,
+    apiToken: Option[String],
     guid: UUID,
     fileGroupBackend: FileGroupBackend, 
     groupedFileUploadBackend: GroupedFileUploadBackend,
-    apiTokenFactory: ApiTokenFactory,
     uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit],
     wantJsonResponse: Boolean
   ) extends EssentialAction {
@@ -66,8 +67,8 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
       Iteratee.ignore.map(_ => result)
     }
 
-    private def findOrCreateFileGroup(apiToken: ApiToken): Future[FileGroup] = {
-      val attributes = FileGroup.CreateAttributes(apiToken.createdBy, Some(apiToken.token))
+    private def findOrCreateFileGroup: Future[FileGroup] = {
+      val attributes = FileGroup.CreateAttributes(userEmail, apiToken)
       fileGroupBackend.findOrCreate(attributes)
     }
 
@@ -91,21 +92,15 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
     }
 
     override def apply(request: RequestHeader): Iteratee[Array[Byte],Result] = {
-      val futureApiToken: Future[Either[Result,ApiToken]] = apiTokenFactory.loadAuthorizedApiToken(request, anyUser)
-      val futureIteratee: Future[Iteratee[Array[Byte],Result]] = futureApiToken.flatMap(_ match {
-        case Left(result) => Future.successful(Iteratee.ignore.map(_ => result))
-        case Right(apiToken) => {
-          RequestInfo.fromRequest(request) match {
-            case Some(info) => {
-              for {
-                fileGroup <- findOrCreateFileGroup(apiToken)
-                groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
-              } yield createIteratee(groupedFileUpload, info)
-            }
-            case None => Future.successful(badRequest(("Request must have Content-Range or Content-Length header")))
-          }
+      val futureIteratee: Future[Iteratee[Array[Byte],Result]] = RequestInfo.fromRequest(request) match {
+        case None => Future.successful(badRequest("Request must have Content-Range or Content-Length header"))
+        case Some(info) => {
+          for {
+            fileGroup <- findOrCreateFileGroup
+            groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
+          } yield createIteratee(groupedFileUpload, info)
         }
-      })
+      }
 
       Iteratee.flatten(futureIteratee)
     }
