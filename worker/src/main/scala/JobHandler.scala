@@ -280,7 +280,7 @@ object JobHandler {
         documentSetId = documentSet.id,
         rootNodeId = rootNodeId,
         jobId = job.id,
-        title = job.treeTitle.getOrElse(documentSet.title),
+        title = job.treeTitle.getOrElse("Tree"), // FIXME: Translate by making treeTitle a String instead of Option[String]
         documentCount = numberOfDocuments,
         lang = job.lang,
         description = job.treeDescription.getOrElse(""),
@@ -307,7 +307,7 @@ object JobHandler {
     } {
       val clusteringJob = DocumentSetCreationJob(
         documentSetId = documentSet.id,
-        treeTitle = Some(documentSet.title),
+        treeTitle = Some("Tree"), // FIXME: Translate by making treeTitle come from a job
         jobType = Recluster,
         lang = job.lang,
         suppliedStopWords = job.suppliedStopWords,
