@@ -19,26 +19,22 @@ trait MassUploadFileIteratee {
   protected val fileGroupBackend: FileGroupBackend
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
 
-  sealed trait Result
-  case class BadRequest(message: String) extends Result
-  case object Ok extends Result
-
-  private def badRequest(message: String): Iteratee[Array[Byte], Result] = {
-    Iteratee.ignore.map(_ => BadRequest(message))
+  private def badRequest(message: String): Iteratee[Array[Byte], MassUploadFileIteratee.Result] = {
+    Iteratee.ignore.map(_ => MassUploadFileIteratee.BadRequest(message))
   }
 
-  private def bufferedUploadIteratee(upload: GroupedFileUpload, position: Long, bufferSize: Int): Iteratee[Array[Byte], Result] = {
+  private def bufferedUploadIteratee(upload: GroupedFileUpload, position: Long, bufferSize: Int): Iteratee[Array[Byte], MassUploadFileIteratee.Result] = {
     if (position > upload.uploadedSize) {
       badRequest(s"Tried to resume past last uploaded byte. Resumed at byte ${position}, but only ${upload.uploadedSize} bytes have been uploaded.")
     } else {
-      val it: Iteratee[Array[Byte], Result] = uploadIteratee(upload.id, position)
+      val it: Iteratee[Array[Byte], MassUploadFileIteratee.Result] = uploadIteratee(upload.id, position)
       val consumeOneChunk = Traversable.takeUpTo[Array[Byte]](bufferSize).transform(Iteratee.consume())
       val consumeChunks: Enumeratee[Array[Byte], Array[Byte]] = Enumeratee.grouped(consumeOneChunk)
       consumeChunks.transform(it)
     }
   }
 
-  private def uploadIteratee(id: Long, initialPosition: Long): Iteratee[Array[Byte], Result] = {
+  private def uploadIteratee(id: Long, initialPosition: Long): Iteratee[Array[Byte], MassUploadFileIteratee.Result] = {
     Iteratee.foldM(initialPosition) { (position: Long, bytes: Array[Byte]) =>
       bytes.length match {
         case 0 => Future.successful(position)
@@ -49,15 +45,15 @@ trait MassUploadFileIteratee {
         }
       }
     }
-      .map { _ => Ok }
+      .map { _ => MassUploadFileIteratee.Ok }
   }
 
-  def apply(userEmail: String, request: RequestHeader, guid: UUID, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Result] = {
+  def apply(userEmail: String, apiToken: Option[String], request: RequestHeader, guid: UUID, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], MassUploadFileIteratee.Result] = {
     RequestInformation.fromRequest(request) match {
       case None => badRequest("Request did not specify Content-Range or Content-Length")
       case Some(requestInformation) => {
         val futureIteratee = for { 
-          fileGroup <- fileGroupBackend.findOrCreate(FileGroup.CreateAttributes(userEmail, None))
+          fileGroup <- fileGroupBackend.findOrCreate(FileGroup.CreateAttributes(userEmail, apiToken))
           upload <- groupedFileUploadBackend.findOrCreate(GroupedFileUpload.CreateAttributes(
             fileGroup.id,
             guid,
@@ -105,4 +101,8 @@ trait MassUploadFileIteratee {
 object MassUploadFileIteratee extends MassUploadFileIteratee {
   override protected val fileGroupBackend = FileGroupBackend
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
+
+  sealed trait Result
+  case class BadRequest(message: String) extends Result
+  case object Ok extends Result
 }

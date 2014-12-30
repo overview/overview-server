@@ -17,7 +17,7 @@ trait MassUploadBodyParser extends BodyParser[Unit] {
 
 class UserMassUploadBodyParser(userEmail: String, override val guid: UUID) extends MassUploadBodyParser {
   override def apply(request: RequestHeader): Iteratee[Array[Byte], Either[Result, Unit]] = {
-    MassUploadFileIteratee(userEmail, request, guid)
+    MassUploadFileIteratee(userEmail, None, request, guid)
       .map(_ match {
         case MassUploadFileIteratee.Ok => Right(Unit)
         case MassUploadFileIteratee.BadRequest(message) => Left(Results.BadRequest(message))

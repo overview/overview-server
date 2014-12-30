@@ -47,7 +47,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito with FutureA
     def request: RequestHeader = FakeRequest().withHeaders(requestHeaders: _*)
     val bufferSize: Int = 10
 
-    def iteratee = iterateeFactory(userEmail, request, guid, bufferSize)
+    def iteratee = iterateeFactory(userEmail, None, request, guid, bufferSize)
 
     def byteArrays: Seq[Array[Byte]] = Seq("1234567890".getBytes("utf-8"))
     def enumerator = Enumerator.enumerate(byteArrays)
