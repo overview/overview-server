@@ -84,14 +84,19 @@ define [
           complete: -> onSubmit(data)
 
     _onClickNewView: (options) ->
-      new NewViewDialog
-        url: options?.url
-        success: (attrs) =>
-          $.ajax
-            type: 'post'
-            data: attrs
-            url: "#{@documentSet.url}/views"
-            success: (json) =>
-              view = @views.add(json)[0]
-              @state.setView(view) if view?
-            error: console.log.bind(console, 'Server error creating view')
+      addView = (attrs) =>
+        $.ajax
+          type: 'post'
+          data: attrs
+          url: "#{@documentSet.url}/views"
+          success: (json) =>
+            view = @views.add(json)[0]
+            @state.setView(view) if view?
+          error: console.log.bind(console, 'Server error creating view')
+
+      if options?.url && options?.title
+        addView(options)
+      else
+        new NewViewDialog
+          url: options?.url
+          success: addView

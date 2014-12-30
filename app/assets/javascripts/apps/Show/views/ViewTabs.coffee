@@ -269,8 +269,8 @@ define [
       url = e.currentTarget.getAttribute('data-plugin-url')
       switch url
         when 'about:tree' then @trigger('click-new-tree')
-        when 'about:custom' then @trigger('click-new-view', url: null)
-        else @trigger('click-new-view', url: url)
+        when 'about:custom' then @trigger('click-new-view')
+        else @trigger('click-new-view', url: url, title: $('span.name', e.currentTarget).text())
 
     _onClickCancel: (e) ->
       e.preventDefault()

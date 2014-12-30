@@ -30,7 +30,7 @@ define [
     beforeEach ->
       @sandbox = sinon.sandbox.create()
       @plugin1 = new Plugin(name: 'tree', description: 'treedesc', url: 'about:tree')
-      @plugin2 = new Plugin(name: 'url', description: 'urldesc', url: 'http://example.org')
+      @plugin2 = new Plugin(name: 'plugin2', description: 'urldesc', url: 'http://example.org')
       @plugins = new Plugins([ @plugin1, @plugin2 ])
 
       i18n.reset_messages
@@ -181,14 +181,14 @@ define [
         @view.on('click-new-view', spy)
         @view.$('a[data-toggle=dropdown]').click()
         @view.$('a[data-plugin-url="http://example.org"]').click()
-        expect(spy).to.have.been.calledWith(url: 'http://example.org')
+        expect(spy).to.have.been.calledWith(url: 'http://example.org', title: 'plugin2')
 
-      it 'should emit click-new-view with url: null for about:custom', ->
+      it 'should emit click-new-view with no args about:custom', ->
         spy = sinon.spy()
         @view.on('click-new-view', spy)
         @view.$('a[data-toggle=dropdown]').click()
         @view.$('a[data-plugin-url="about:custom"]').click()
-        expect(spy).to.have.been.calledWith(url: null)
+        expect(spy).to.have.been.calledWith(undefined)
 
       it 'should destroy a view when it is removed', ->
         @viewList.remove(@view1)
