@@ -15,6 +15,31 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
     }
   }
 
+  "#index" should {
+    trait IndexScope extends BaseScope {
+      val fileGroup = factory.fileGroup()
+      def index = await(backend.index(fileGroup.id))
+    }
+
+    "find an empty list" in new IndexScope {
+      index must beEqualTo(Seq[GroupedFileUpload]())
+    }
+
+    "find GroupedFileUploads" in new IndexScope {
+      val existing1 = factory.groupedFileUpload(fileGroupId=fileGroup.id)
+      val existing2 = factory.groupedFileUpload(fileGroupId=fileGroup.id)
+      index must containTheSameElementsAs(Seq(existing1, existing2))
+    }
+
+    "skip GroupedFileUploads in other FileGroups" in new IndexScope {
+      val existing = factory.groupedFileUpload(fileGroupId=fileGroup.id)
+      val otherFileGroup = factory.fileGroup()
+      val other = factory.groupedFileUpload(fileGroupId=otherFileGroup.id)
+
+      index must beEqualTo(Seq(existing))
+    }
+  }
+
   "#find" should {
     trait FindScope extends BaseScope {
       val fileGroup = factory.fileGroup()

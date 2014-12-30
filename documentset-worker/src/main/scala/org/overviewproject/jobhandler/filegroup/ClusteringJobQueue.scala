@@ -54,7 +54,7 @@ object ClusteringJobQueue {
         } {
           val clusteringJob = DocumentSetCreationJob(
             documentSetId = documentSet.id,
-            treeTitle = Some(documentSet.title),
+            treeTitle = Some("Tree"), // FIXME translate by creating this job somewhere else
             jobType = Recluster,
             lang = createDocumentsJob.lang,
             suppliedStopWords = createDocumentsJob.suppliedStopWords,

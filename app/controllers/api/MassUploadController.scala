@@ -1,47 +1,56 @@
-package controllers
+package controllers.api
 
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{EssentialAction, Result}
-import scala.concurrent.{Future,blocking}
+import play.api.mvc.{EssentialAction,RequestHeader,Result}
+import scala.concurrent.Future
 
+import controllers.auth.{ApiAuthorizedAction,ApiTokenFactory}
 import controllers.auth.Authorities.anyUser
-import controllers.auth.{AuthorizedAction,SessionFactory}
 import controllers.backend.{ FileGroupBackend, GroupedFileUploadBackend }
 import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.OverviewDatabase
-import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.models.{FileGroup,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
 import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,DocumentSetUser}
 import org.overviewproject.tree.Ownership
 import org.overviewproject.util.ContentDisposition
 
-trait MassUploadController extends Controller {
+trait MassUploadController extends ApiController {
   protected val fileGroupBackend: FileGroupBackend
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
-  protected val sessionFactory: SessionFactory
   protected val storage: MassUploadController.Storage
   protected val messageQueue: MassUploadController.MessageQueue
+  protected val apiTokenFactory: ApiTokenFactory
   protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
+
+  def index = ApiAuthorizedAction(anyUser).async { request =>
+    for {
+      fileGroup <- fileGroupBackend.findOrCreate(FileGroup.CreateAttributes(request.apiToken.createdBy, Some(request.apiToken.token)))
+      uploads <- groupedFileUploadBackend.index(fileGroup.id)
+    } yield Ok(views.json.api.MassUpload.index(uploads))
+  }
 
   /** Starts or resumes a file upload. */
   def create(guid: UUID) = EssentialAction { request =>
-    blocking(OverviewDatabase.inTransaction(sessionFactory.loadAuthorizedSession(request, anyUser))) match {
+    val futureIteratee: Future[Iteratee[Array[Byte],Result]] = apiTokenFactory.loadAuthorizedApiToken(request, anyUser).map(_ match {
       case Left(result) => Iteratee.ignore.map(_ => result)
-      case Right((session, user)) => MassUploadControllerMethods.Create(
-        user.email,
-        None,
+      case Right(apiToken) => MassUploadControllerMethods.Create(
+        apiToken.createdBy,
+        Some(apiToken.token),
         guid,
         fileGroupBackend,
         groupedFileUploadBackend,
         uploadIterateeFactory,
-        false
+        true
       )(request)
-    }
+    })
+
+    Iteratee.flatten(futureIteratee)
   }
 
   /** Responds to a HEAD request.
@@ -66,7 +75,7 @@ trait MassUploadController extends Controller {
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def show(guid: UUID) = AuthorizedAction(anyUser).async { request =>
+  def show(guid: UUID) = ApiAuthorizedAction(anyUser).async { request =>
     def contentDisposition(upload: GroupedFileUpload) = {
       ContentDisposition.fromFilename(upload.name).contentDisposition
     }
@@ -82,7 +91,7 @@ trait MassUploadController extends Controller {
         (CONTENT_DISPOSITION, contentDisposition(upload)))
     }
 
-    findUploadInCurrentFileGroup(request.user.email, guid).map(_ match {
+    findUploadInCurrentFileGroup(request.apiToken.createdBy, request.apiToken.token, guid).map(_ match {
       case None => NotFound
       case Some(u) if (u.uploadedSize == 0L) => {
         // You can't send an Ok or PartialContent when Content-Length=0
@@ -98,10 +107,10 @@ trait MassUploadController extends Controller {
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def startClustering = AuthorizedAction(anyUser).async { request =>
+  def startClustering = ApiAuthorizedAction(anyUser).async { request =>
     MassUploadControllerForm().bindFromRequest()(request).fold(
       e => Future(BadRequest),
-      startClusteringFileGroupWithOptions(request.user.email, _)
+      startClusteringFileGroupWithOptions(request.apiToken.createdBy, request.apiToken.token, _)
     )
   }
 
@@ -109,8 +118,8 @@ trait MassUploadController extends Controller {
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def cancel = AuthorizedAction(anyUser).async { request =>
-    fileGroupBackend.find(request.user.email, None)
+  def cancel = ApiAuthorizedAction(anyUser).async { request =>
+    fileGroupBackend.find(request.apiToken.createdBy, Some(request.apiToken.token))
       .flatMap(_ match {
         case Some(fileGroup) => fileGroupBackend.destroy(fileGroup.id)
         case None => Future.successful(())
@@ -118,29 +127,29 @@ trait MassUploadController extends Controller {
       .map(_ => Accepted)
   }
 
-  private def findUploadInCurrentFileGroup(userEmail: String, guid: UUID): Future[Option[GroupedFileUpload]] = {
-    fileGroupBackend.find(userEmail, None)
+  private def findUploadInCurrentFileGroup(userEmail: String, apiToken: String, guid: UUID): Future[Option[GroupedFileUpload]] = {
+    fileGroupBackend.find(userEmail, Some(apiToken))
       .flatMap(_ match {
         case None => Future.successful(None)
         case Some(fileGroup) => groupedFileUploadBackend.find(fileGroup.id, guid)
       })
   }
 
-  private def startClusteringFileGroupWithOptions(userEmail: String,
+  private def startClusteringFileGroupWithOptions(userEmail: String, apiToken: String,
                                                   options: (String, String, Boolean, String, String)): Future[Result] = {
     val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
 
-    fileGroupBackend.find(userEmail, None).flatMap(_ match {
+    fileGroupBackend.find(userEmail, Some(apiToken)).flatMap(_ match {
       case Some(fileGroup) => {
-        val job: DocumentSetCreationJob = blocking(OverviewDatabase.inTransaction {
-          val documentSet = storage.createDocumentSet(userEmail, name, lang)
+        val job: DocumentSetCreationJob = /*OverviewDatabase.inTransaction*/ {
+          val documentSet = storage.createDocumentSet(userEmail, name)
           storage.createMassUploadDocumentSetCreationJob(
             documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
-        })
+        }
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
           .map(_ => messageQueue.startClustering(job, name))
-          .map(_ => Redirect(routes.DocumentSetController.index()))
+          .map(_ => Created)
       }
       case None => Future.successful(NotFound)
     })
@@ -152,13 +161,13 @@ object MassUploadController extends MassUploadController {
   override protected val storage = DatabaseStorage
   override protected val messageQueue = ApolloQueue
   override protected val fileGroupBackend = FileGroupBackend
-  override protected val sessionFactory = SessionFactory
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
+  override protected val apiTokenFactory = ApiTokenFactory
   override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
 
   trait Storage {
     /** @returns a newly created DocumentSet */
-    def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet
+    def createDocumentSet(userEmail: String, title: String): DocumentSet
 
     /** @returns a newly created DocumentSetCreationJob */
     def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, splitDocuments: Boolean,
@@ -174,7 +183,7 @@ object MassUploadController extends MassUploadController {
     import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
     import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 
-    override def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet = {
+    override def createDocumentSet(userEmail: String, title: String): DocumentSet = {
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title = title))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, userEmail, Ownership.Owner))
 
