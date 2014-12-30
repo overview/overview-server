@@ -30,4 +30,16 @@ define [
         url: @view.get('url')
         params: params
       @$el.html(html)
+
+      @iframe = @$('iframe').get(0)
       @
+
+    onDocumentListParamsChanged: (params) ->
+
+      message = {
+        event: 'change:documentListParams'
+        args: params.toJSON()
+      }
+
+      targetOrigin = @view.get('url').split('/')[0...3].join('/')
+      @iframe.contentWindow.postMessage(message, targetOrigin)
