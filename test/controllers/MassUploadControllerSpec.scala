@@ -3,12 +3,12 @@ package controllers
 import java.util.UUID
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
-import play.api.mvc.BodyParsers.parse
+import play.api.libs.iteratee.{Enumerator,Iteratee}
+import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
 
-import controllers.auth.AuthorizedRequest
+import controllers.auth.{AuthorizedRequest,SessionFactory}
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import models.{ Session, User }
 import org.overviewproject.models.{FileGroup,GroupedFileUpload}
@@ -20,15 +20,18 @@ class MassUploadControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockFileGroupBackend = smartMock[FileGroupBackend]
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
+    val mockSessionFactory = smartMock[SessionFactory]
     val mockStorage = smartMock[MassUploadController.Storage]
     val mockMessageQueue = smartMock[MassUploadController.MessageQueue]
+    val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
 
     val controller = new MassUploadController {
       override val fileGroupBackend = mockFileGroupBackend
       override val groupedFileUploadBackend = mockUploadBackend
       override val storage = mockStorage
       override val messageQueue = mockMessageQueue
-      override val uploadBodyParserFactory = ((guid: UUID) => parse.empty)
+      override val sessionFactory = mockSessionFactory
+      override val uploadIterateeFactory = mockUploadIterateeFactory
     }
 
     val factory = org.overviewproject.test.factories.PodoFactory
@@ -37,13 +40,28 @@ class MassUploadControllerSpec extends ControllerSpecification {
   "#create" should {
     trait CreateScope extends BaseScope {
       val user = User(id=123L, email="user@example.org")
-      val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user)
-      val guid = UUID.randomUUID()
-      lazy val result = controller.create(guid)(request)
+      val session = Session(123L, "127.0.0.1")
+      val baseRequest = FakeRequest().withHeaders("Content-Length" -> "20")
+      lazy val request = new AuthorizedRequest(baseRequest, session, user)
+      val enumerator: Enumerator[Array[Byte]] = Enumerator()
+      lazy val action: EssentialAction = controller.create(UUID.randomUUID)
+      lazy val result = enumerator.run(action(request))
+    }
+
+    "return a Result if ApiTokenFactory returns a Left[Result]" in new CreateScope {
+      mockSessionFactory.loadAuthorizedSession(any, any) returns Left(Results.BadRequest)
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
     }
 
     "return Ok" in new CreateScope {
-      h.status(Enumerator(Array[Byte]()).run(result)) must beEqualTo(h.CREATED)
+      val fileGroup = factory.fileGroup()
+      val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
+      mockSessionFactory.loadAuthorizedSession(any, any) returns Right((session, user))
+      mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
+      mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
+      mockUploadIterateeFactory(any, any) returns Iteratee.ignore[Array[Byte]]
+
+      h.status(result) must beEqualTo(h.CREATED)
     }
   }
 

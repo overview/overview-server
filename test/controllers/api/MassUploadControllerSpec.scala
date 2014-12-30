@@ -4,7 +4,7 @@ import java.util.UUID
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.libs.json.Json
-import play.api.mvc.{EssentialAction,RequestHeader,Results}
+import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

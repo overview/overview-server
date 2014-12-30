@@ -65,6 +65,8 @@ trait MassUploadController extends ApiController {
     * </ul>
     *
     * Regardless of the status code, the body will be empty.
+    *
+    * TODO refactor into MassUploadControllerMethods
     */
   def show(guid: UUID) = ApiAuthorizedAction(anyUser).async { request =>
     def contentDisposition(upload: GroupedFileUpload) = {
@@ -95,6 +97,8 @@ trait MassUploadController extends ApiController {
 
   /** Marks the FileGroup as <tt>completed</tt> and kicks off a
     * DocumentSetCreationJob.
+    *
+    * TODO refactor into MassUploadControllerMethods
     */
   def startClustering = ApiAuthorizedAction(anyUser).async { request =>
     MassUploadControllerForm().bindFromRequest()(request).fold(
@@ -104,6 +108,8 @@ trait MassUploadController extends ApiController {
   }
 
   /** Cancels the upload and notify the worker to delete all uploaded files
+    *
+    * TODO refactor into MassUploadControllerMethods
     */
   def cancel = ApiAuthorizedAction(anyUser).async { request =>
     fileGroupBackend.find(request.apiToken.createdBy, Some(request.apiToken.token))
