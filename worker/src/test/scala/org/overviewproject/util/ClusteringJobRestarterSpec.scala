@@ -12,21 +12,21 @@ class ClusteringJobRestarterSpec extends Specification with Mockito {
   "ClusteringJobRestarter" should {
 
     "remove job if tree exists" in new CompleteTree {
-      jobRestarter.restart(job)
+      jobRestarter.restart
 
       there was one(jobRestarter.mockStorage).deleteDocumentSetCreationJobNode(jobId)
       there was one(jobRestarter.mockStorage).deleteJob(jobId)
     }
 
     "delete nodes and restart job" in new JobScope {
-      jobRestarter.restart(job)
+      jobRestarter.restart
 
       there was one(jobRestarter.mockStorage).deleteNodes(jobId)
       there was one(jobRestarter.mockStorage).updateValidJob(job.copy(state = NotStarted, retryAttempts = retryAttempts + 1))
     }
 
     "fail job if restart limit is reached" in new MaxRetryAttemptsScope {
-      jobRestarter.restart(job)
+      jobRestarter.restart
 
       there was one(jobRestarter.mockStorage).updateValidJob(job.copy(state = Error,
         statusDescription = "max_retry_attempts"))
@@ -39,7 +39,7 @@ class ClusteringJobRestarterSpec extends Specification with Mockito {
     val job = DocumentSetCreationJob(jobId, 10l, Recluster, retryAttempts, "en", "", "", false,
       None, None, None, None, None, Some("tree"), None, None, InProgress, 0.4, "")
 
-    val jobRestarter = new TestClusteringJobRestarter(rootNodeId, isTreeComplete)
+    val jobRestarter = new TestClusteringJobRestarter(job, isTreeComplete)
 
     protected def isTreeComplete = false
     protected def retryAttempts = 0
@@ -53,7 +53,7 @@ class ClusteringJobRestarterSpec extends Specification with Mockito {
     override protected def retryAttempts = Configuration.getInt("max_job_retry_attempts")
   }
 
-  class TestClusteringJobRestarter(rootNodeId: Long, treeIsComplete: Boolean) extends ClusteringJobRestarter {
+  class TestClusteringJobRestarter(val job: DocumentSetCreationJob, treeIsComplete: Boolean) extends ClusteringJobRestarter {
     override protected val storage = smartMock[Storage]
 
     storage.treeExists(any) returns treeIsComplete
