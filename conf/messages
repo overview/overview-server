@@ -428,7 +428,6 @@ views.Tree.show.DocumentListTitle.untagged.title_html=<strong>{0}</strong> witho
 
 views.Tree.show.InlineSearchResultList.query_placeholder=Search all documents
 views.Tree.show.InlineSearchResultList.search=Search
-views.Tree.show.InlineSearchResultList.create_tag=Create tag from search results
 
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
 

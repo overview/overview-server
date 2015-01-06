@@ -5,9 +5,6 @@ define [
 ], (DocumentListParams, InlineSearchResultListView, i18n) ->
   t = i18n.namespaced('views.Tree.show.SearchResultList')
 
-  searchResultToTagName = (searchResultModel) ->
-    t('tag_name', searchResultModel.get('query'))
-
   # SearchResult controller
   #
   # Arguments:
@@ -28,18 +25,11 @@ define [
 
     view = new InlineSearchResultListView
       collection: searchResults
-      canCreateTagFromSearchResult: (searchResult) ->
-        searchResult && !tags.findWhere(name: searchResultToTagName(searchResult))?
       state: state
       el: el
 
     view.on 'search-result-clicked', (searchResult) ->
       state.resetDocumentListParams().bySearchResult(searchResult)
-
-    view.on 'create-tag-clicked', (searchResult) ->
-      tag = tags.create(name: searchResultToTagName(searchResult))
-      params = state.get('documentListParams').reset.bySearchResult(searchResult)
-      documentSet.tag(tag, params)
 
     view.on 'create-submitted', (query) ->
       searchResult = searchResults.create(query: query)

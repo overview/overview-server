@@ -7,7 +7,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
   #
   # * collection, a Backbone.Collection of SearchResults
   # * state, a State
-  # * (optional) canCreateTagFromSearchResult, a function mapping search-result model to boolean.
   #
   # Events:
   #
@@ -15,14 +14,12 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
   # * create-submitted(query): The user requested adding a new search with
   #   the given query. query is guaranteed not to match any search results in
   #   the collection, and the query will always be trimmed of whitespace.
-  # * create-tag-clicked(searchResult): A "create tag" button was clicked
   class InlineSearchResultList extends Backbone.View
     id: 'search-result-list'
 
     events:
       'click li.search-result': '_onClickSearchResult'
       'click .dropdown-toggle': '_onClickDropdownToggle'
-      'click a.create-tag:not(.disabled)': '_onClickCreateTag'
       'input input[type=text]': '_onInput'
       'submit form': '_onSubmit'
 
@@ -55,10 +52,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
             </ul>
           </span>
         </form>
-        <a
-          class="create-tag"
-          style="display:none;"
-          ><i class="overview-icon-tag"></i><%- t('create_tag') %></a>
         """)
 
     initialize: ->
@@ -77,15 +70,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
         params.searchResult
       else
         null
-
-    _renderCreateTag: ->
-      model = @_getSelectedSearchResult()
-      enabled = model? && @options.canCreateTagFromSearchResult?(model)
-      @_$els.createTag
-        .attr('data-cid', model?.cid || '')
-        .prop('disabled', !enabled)
-        .toggleClass('disabled', !enabled)
-        .toggle(enabled)
 
     _renderDropdown: ->
       html = @templates.dropdownContents
@@ -122,7 +106,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @$el.html(html)
 
       @_$els =
-        createTag: @$('a.create-tag')
         dropdownButton: @$('button.dropdown-toggle')
         dropdown: @$('.dropdown-menu')
         input: @$('input[name=query]')
@@ -132,7 +115,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       this
 
     render: ->
-      @_renderCreateTag()
       @_renderDropdown()
       @_renderInput()
 
@@ -147,14 +129,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
 
     _onClickDropdownToggle: (e) ->
       e.preventDefault() # don't submit the form
-
-    _onClickCreateTag: (e) ->
-      e.preventDefault()
-      model = @_eventToModel(e)
-      $(e.target).closest('a')
-        .addClass('disabled')
-        .fadeOut()
-      @trigger('create-tag-clicked', model)
 
     _onInput: (e) ->
       @_setInputClass('editing')
