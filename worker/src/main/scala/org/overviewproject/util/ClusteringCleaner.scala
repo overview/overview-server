@@ -42,4 +42,10 @@ trait ClusteringCleaner extends SlickClient {
      nodeDocuments.delete
      nodes.delete
   }
+  
+  def deleteDocumentSetCreationJobNode(jobId: Long): Future[Unit] = db { implicit session =>
+    val documentSetCreationJobNodes = DocumentSetCreationJobNodes.filter(_.documentSetCreationJobId === jobId)
+    
+    documentSetCreationJobNodes.delete
+  }
 }
