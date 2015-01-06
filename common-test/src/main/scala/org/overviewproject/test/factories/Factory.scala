@@ -234,6 +234,11 @@ trait Factory {
     statusDescription: String = ""
   ): DocumentSetCreationJob
   
+
+  def documentSetCreationJobNode(
+    documentSetCreationJobId: Long = 0L,
+    nodeId: Long = 0L
+  ): DocumentSetCreationJobNode
   
   private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
 }

@@ -400,5 +400,9 @@ object PodoFactory extends Factory {
       splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId, 
       treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription)
   
-    
+   override def documentSetCreationJobNode(
+     documentSetCreationJobId: Long,
+     nodeId: Long
+   ) = DocumentSetCreationJobNode(documentSetCreationJobId, nodeId)
+  
 }
