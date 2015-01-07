@@ -26,11 +26,6 @@ define [
       state.resetDocumentListParams().byTag(tag)
       state.set(taglikeCid: tag.cid)
 
-    view.on 'create-submitted', (name) ->
-      tag = tags.create(name: name)
-      documentSet.tag(tag, state.getSelection())
-      state.set(taglikeCid: tag.cid)
-
     view.on 'organize-clicked', ->
       new TagDialogController(tags: tags, state: state)
 

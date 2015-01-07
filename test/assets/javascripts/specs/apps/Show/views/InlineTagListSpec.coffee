@@ -11,7 +11,6 @@ define [
   describe 'views/InlineTagList', ->
     beforeEach ->
       i18n.reset_messages
-        'views.InlineTagList.create': 'create'
         'views.InlineTagList.add': 'add'
         'views.InlineTagList.remove': 'remove'
         'views.InlineTagList.show_untagged': 'show_untagged'
@@ -27,10 +26,7 @@ define [
       @view.remove()
 
     it 'should start without tags', ->
-      expect(@view.$('li').length).to.eq(3)
-
-    it 'should show a form', ->
-      expect(@view.$('form').length).to.eq(1)
+      expect(@view.$('li').length).to.eq(2)
 
     describe 'with tags', ->
       beforeEach ->
@@ -55,53 +51,6 @@ define [
         @collection.sort()
         expect(@view.$('li:eq(0) .tag-name').text()).to.eq('BB')
 
-      it 'should not re-render the whole thing when a tag is added', ->
-        # If the whole thing did re-render, then the form.submit event would
-        # bubble up to the document but the form would no longer be a child
-        # of div#tag-list. That means the tracking code wouldn't be able to
-        # tell it's a "created tag" event.
-        #
-        # See https://www.pivotaltracker.com/story/show/67400952
-        el = @view.$('form')[0]
-        @collection.add(new MockTag(id: 3, name: 'CC', color: '#cccccc'), at: 1)
-        while el? && el != @view.el
-          el = el.parentNode
-
-        expect(el).to.eq(@view.el)
-
-      it 'should notify :create-submitted', ->
-        spy = sinon.spy()
-        @view.on('create-submitted', spy)
-        @view.$('input[type=text]').val('foo')
-        @view.$('form').submit()
-        expect(spy).to.have.been.calledWith('foo')
-
-      it 'should trim the string in :create-submitted', ->
-        spy = sinon.spy()
-        @view.on('create-submitted', spy)
-        @view.$('input[type=text]').val('   foo ')
-        @view.$('form').submit()
-        expect(spy).to.have.been.calledWith('foo')
-
-      it 'should not notify :create-submitted when input is empty', ->
-        # https://github.com/overview/overview-server/issues/567
-        spy = sinon.spy()
-        @view.on('create-submitted', spy)
-        @view.$('form').submit()
-        expect(spy).not.to.have.been.called
-
-      it 'should focus the input when trying to add just spaces', ->
-        spy = sinon.spy()
-        $('body').append(@view.$el) # to make focusing work
-        $input = @view.$('input[type=text]')
-        @view.$('form').submit()
-        expect($input[0]).to.eq($input[0].ownerDocument.activeElement)
-
-      it 'should reset the form after :create-submitted', ->
-        @view.$('input[type=text]').val('   foo ')
-        @view.$('form').submit()
-        expect(@view.$('input[type=text]').val()).to.eq('')
-
       it 'should notify :add-clicked', ->
         spy = sinon.spy()
         @view.on('add-clicked', spy)
@@ -113,14 +62,6 @@ define [
         spy = sinon.spy()
         @view.on('remove-clicked', spy)
         @view.$('.tag-remove:eq(0)').click()
-        expect(spy).to.have.been.called
-        expect(spy.lastCall.args[0].id).to.eq(1)
-
-      it 'should notify :add-clicked when trying to create an existing tag', ->
-        spy = sinon.spy()
-        @view.on('add-clicked', spy)
-        @view.$('input[type=text]').val('AA')
-        @view.$('form').submit()
         expect(spy).to.have.been.called
         expect(spy.lastCall.args[0].id).to.eq(1)
 

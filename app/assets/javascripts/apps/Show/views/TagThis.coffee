@@ -101,7 +101,7 @@ define [
 
     _onSubmit: (e) ->
       e.preventDefault()
-      @trigger('tag', name: @$input.val())
+      @trigger('tag', name: @$input.val().trim())
       @_reset()
 
     _onChangeState: -> @_reset()

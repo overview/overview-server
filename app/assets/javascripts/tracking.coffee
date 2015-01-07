@@ -57,7 +57,7 @@ run = ->
   # in modern browsers (not IE8). http://www.quirksmode.org/dom/events/submit.html
   document.addEventListener('submit', (e) ->
     el = e.target
-    while el? && el.getAttribute? && (el.getAttribute('id') != 'tree-app-tags' && el.getAttribute('class') != 'vertical-tag-list')
+    while el? && el.getAttribute? && (el.getAttribute('id') != 'tree-app-tag-this' && el.getAttribute('class') != 'vertical-tag-list')
       el = el.parentNode
 
     if el? && el.getAttribute?

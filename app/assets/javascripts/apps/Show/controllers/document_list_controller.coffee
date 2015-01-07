@@ -289,6 +289,7 @@ define [
         tags = documentSet.tags
         tag = tags.findWhere(attributes) || tags.create(attributes)
         documentSet.tag(tag, state.getSelection())
+        state.set(taglikeCid: tag.cid)
     )()
 
     keyboardController.register

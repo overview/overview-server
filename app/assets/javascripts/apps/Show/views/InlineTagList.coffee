@@ -39,14 +39,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         <div class="label">Tags</div>
         <ul class="btn-toolbar">
           <%= collection.map(renderModel).join('') %>
-          <li class="btn-group tag-new">
-            <form method="post" action="#" class="input-group form-inline">
-              <input type="text" name="tag_name" placeholder="tag name" class="input-sm form-control" />
-              <span class="input-group-btn">
-                <input type="submit" value="<%- t('create') %>" class="btn" />
-              </span>
-            </form>
-          </li>
           <li class="btn-group untagged">
             <a class="btn untagged" href="#"><%- t('show_untagged') %></a>
           </li>
@@ -157,21 +149,3 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     _onClickUntagged: (e) ->
       e.preventDefault()
       @trigger('untagged-clicked')
-
-    _onSubmit: (e) ->
-      e.preventDefault()
-
-      $input = @$('input[type=text]')
-      name = $input.val().replace(/^\s*(.*?)\s*$/, '$1')
-
-      if !name
-        $input.focus()
-      else
-        existing = @collection.findWhere({ name: name })
-
-        if existing?
-          @trigger('add-clicked', existing)
-        else
-          @trigger('create-submitted', name)
-
-      $input.val('')

@@ -84,6 +84,12 @@ define [
           @view.$('.details form').trigger('submit')
           expect(spy).to.have.been.calledWith(name: 'foo,bar')
 
+        it 'should trim the tag name', ->
+          @view.on('tag', spy = sinon.spy())
+          @view.$('input').val(' foo ')
+          @view.$('.details form').trigger('submit')
+          expect(spy).to.have.been.calledWith(name: 'foo')
+
         it 'should hide details after tagging', ->
           @view.$('.details form').trigger('submit')
           expect(@view.$el).not.to.have.class('show-details')
