@@ -1,7 +1,7 @@
 package controllers.auth
 
 import play.api.libs.concurrent.Execution.Implicits._
-import scala.concurrent.Future
+import scala.concurrent.{Future,blocking}
 
 import models.{OverviewDatabase,OverviewUser}
 import models.orm.finders.{DocumentFinder,TreeFinder}
@@ -24,6 +24,47 @@ object Authorities {
   def userOwningDocumentSet(id: Long) = new Authority {
     override def apply(user: OverviewUser) = user.ownsDocumentSet(id)
     override def apply(apiToken: ApiToken) = Future(apiToken.documentSetId == id)
+  }
+
+  /** Allows any user who is owner of the DocumentSet associated with the given Tag. */
+  def userOwningTag(documentSetId: Long, id: Long) = new Authority {
+    override def apply(user: OverviewUser) = {
+      OverviewDatabase.withSlickSession { session =>
+        import org.overviewproject.database.Slick.simple._
+        import org.overviewproject.models.tables.{DocumentSetUsers,Tags}
+
+        val checkedDocumentSetId = DocumentSetUsers
+          .filter(_.documentSetId === documentSetId)
+          .filter(_.userEmail === user.email)
+          .map(_.documentSetId)
+
+        Tags
+          .filter(_.documentSetId in checkedDocumentSetId)
+          .filter(_.id === id)
+          .length
+          .run(session) == 1
+      }
+    }
+
+    override def apply(apiToken: ApiToken) = (apiToken.documentSetId == documentSetId) match {
+      case true => Future(blocking {
+        OverviewDatabase.withSlickSession { session =>
+          import org.overviewproject.database.Slick.simple._
+          import org.overviewproject.models.tables.{DocumentSetUsers,Tags}
+
+          val checkedDocumentSetId = DocumentSetUsers
+            .filter(_.documentSetId === documentSetId)
+            .map(_.documentSetId)
+
+          Tags
+            .filter(_.documentSetId in checkedDocumentSetId)
+            .filter(_.id === id)
+            .length
+            .run(session) == 1
+        }
+      })
+      case false => Future.successful(false)
+    }
   }
 
   /** Allows any user who is owner of the DocumentSet associated with the given Tree ID */
