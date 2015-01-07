@@ -23,7 +23,7 @@ define [
 
     getSelection: -> {}
 
-  describe.only 'apps/Show/views/TagThis', ->
+  describe 'apps/Show/views/TagThis', ->
     beforeEach ->
       i18n.reset_messages_namespaced 'views.DocumentSet.show.TagThis',
         'button.list': 'button.list'
