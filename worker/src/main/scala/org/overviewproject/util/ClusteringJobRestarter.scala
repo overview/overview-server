@@ -43,13 +43,8 @@ object ClusteringJobRestarter {
   private class ClusteringJobRestarterWithStorage(val job: DocumentSetCreationJob)
     (implicit executionContext: ExecutionContext) extends ClusteringJobRestarter {
     import scala.concurrent.{ Await, Future }
-    import scala.concurrent.ExecutionContext.Implicits.global
     import scala.concurrent.duration.Duration
-    import scala.slick.jdbc.StaticQuery.interpolation
     import org.overviewproject.database.SlickSessionProvider
-    import org.overviewproject.database.Slick.simple._
-    import org.overviewproject.models.DocumentSetCreationJobState
-    import org.overviewproject.models.tables.{ DocumentSetCreationJobs, Trees }
 
     override protected val storage = new DbSyncedStorage
 
