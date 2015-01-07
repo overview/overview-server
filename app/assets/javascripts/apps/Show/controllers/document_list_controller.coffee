@@ -7,11 +7,12 @@ define [
   '../views/DocumentList'
   '../views/DocumentListTitle'
   '../views/DocumentListCursor'
+  '../views/TagThis'
   './ListSelectionController'
   './node_form_controller'
   './tag_form_controller'
   'apps/DocumentDisplay/app'
-], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, DocumentDisplayApp) ->
+], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, TagThisView, ListSelectionController, node_form_controller, tag_form_controller, DocumentDisplayApp) ->
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
   DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
@@ -72,17 +73,20 @@ define [
       throw 'Must specify options.state, a State' if !options.state
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
+      throw 'Must specify options.tagThisEl, an HTMLElement' if !options.tagThisEl
 
       @tags = options.tags
       @state = options.state
       @listEl = options.listEl
       @cursorEl = options.cursorEl
+      @tagThisEl = options.tagThisEl
 
       @_addDocumentList()
       @_addListSelection()
       @_addTitleView()
       @_addListView()
       @_addCursorView()
+      @_addTagThisView()
 
     _addDocumentList: ->
       refresh = =>
@@ -231,12 +235,21 @@ define [
 
       @cursorView = view
 
-  document_list_controller = (listDiv, cursorDiv, documentSet, state, keyboardController) ->
+    _addTagThisView: ->
+      view = new TagThisView
+        state: @state
+        tags: @tags
+        el: @tagThisEl
+
+      @tagThisView = view
+
+  document_list_controller = (listDiv, tagThisDiv, cursorDiv, documentSet, state, keyboardController) ->
     controller = new Controller({},
       tags: documentSet.tags
       state: state
       listEl: listDiv
       cursorEl: cursorDiv
+      tagThisEl: tagThisDiv
     )
 
     go_up_or_down = (up_or_down, event) ->
@@ -268,6 +281,14 @@ define [
       $listView = controller.listView.$el
       view.$el.on('mouseenter', -> $listView.addClass('hover'))
       view.$el.on('mouseleave', -> $listView.removeClass('hover'))
+    )()
+
+    (->
+      view = controller.tagThisView
+      view.on 'tag', (attributes) ->
+        tags = documentSet.tags
+        tag = tags.findWhere(attributes) || tags.create(attributes)
+        documentSet.tag(tag, state.getSelection())
     )()
 
     keyboardController.register

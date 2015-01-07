@@ -1,0 +1,45 @@
+#tree-app-tag-this {
+  .prompt, .details {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+
+  .details { display: none; }
+
+  &.show-details {
+    .details { display: block; }
+  }
+
+  form {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  label {
+    font-weight: normal;
+    padding-right: .5em;
+    margin-bottom: 0;
+  }
+
+  .form-group {
+    display: inline-block;
+  }
+
+  .form-group:last-child {
+    display: inline-block;
+    max-width: 25em;
+  }
+
+  .close {
+    // Reset all that Bootstrap default stuff
+    display: inline-block;
+    margin-right: 2em;
+    color: inherit;
+    opacity: 1;
+    font: inherit;
+    float: none;
+    .text-muted();
+  }
+}

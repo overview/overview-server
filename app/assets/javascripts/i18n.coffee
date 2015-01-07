@@ -7,6 +7,9 @@
 #     console.log(i18n('temp.message', param1))
 #
 #     i18n.reset_messages({ 'temp.message': 'bar {0}' })
+#     # or
+#     i18n.reset_messages_namespaced('temp', { message: 'bar {0}' })
+#
 #
 # The message formats are described at
 # http://docs.oracle.com/javase/6/docs/api/java/text/MessageFormat.html
@@ -169,6 +172,14 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
 
   i18n.reset_messages = (messages) ->
     cache.reset(messages)
+
+  i18n.reset_messages_namespaced = (namespace, messages) ->
+    namespaced_messages = {}
+
+    for k, v of messages
+      namespaced_messages["#{namespace}.#{k}"] = v
+
+    i18n.reset_messages(namespaced_messages)
 
   i18n.namespaced = (namespace) ->
     (key, args...) -> i18n("#{namespace}.#{key}", args...)

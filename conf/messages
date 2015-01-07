@@ -348,6 +348,19 @@ views.DocumentSet.show.NewViewDialog.url.insecure_html=This URL does not start w
 views.DocumentSet.show.NewViewDialog.url.insecure.dismiss=use it anyway
 views.DocumentSet.show.NewViewDialog.url.invalid=This is not a valid URL
 
+views.DocumentSet.show.TagThis.button.document=Tag this document
+views.DocumentSet.show.TagThis.button.list=Tag these documents
+views.DocumentSet.show.TagThis.hide=hide
+views.DocumentSet.show.TagThis.label.existing=(existing) tag name:
+views.DocumentSet.show.TagThis.label.new=(new) tag name:
+views.DocumentSet.show.TagThis.placeholder=Tag name
+views.DocumentSet.show.TagThis.value.all=all
+views.DocumentSet.show.TagThis.value.json={0}
+views.DocumentSet.show.TagThis.value.node={0}
+views.DocumentSet.show.TagThis.value.searchResult=contains “{0}”
+views.DocumentSet.show.TagThis.value.tag={0}
+views.DocumentSet.show.TagThis.value.untagged=previously untagged
+
 views.DocumentSet.show.TransactionQueueErrorMonitor.error.title=Please refresh the page
 views.DocumentSet.show.TransactionQueueErrorMonitor.error.description=Overview has encountered an unusual error. Some of your work from the last few seconds may have been lost.
 views.DocumentSet.show.TransactionQueueErrorMonitor.networkError.title=Network problems
