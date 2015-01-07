@@ -10,8 +10,6 @@ import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetC
 
 trait ClusteringCleaner extends SlickClient {
 
-
-
   def updateValidJob(job: DocumentSetCreationJob): Future[Unit] = db { implicit session =>
     val updatedJob = sqlu"""
           WITH ids AS (
@@ -26,26 +24,40 @@ trait ClusteringCleaner extends SlickClient {
         """
     updatedJob.execute
   }
-  
-  def treeExists(jobId: Long): Future[Boolean] = db { implicit session => 
+
+  def treeExists(jobId: Long): Future[Boolean] = db { implicit session =>
     Trees.filter(_.jobId === jobId).firstOption.isDefined
   }
- 
+
   def deleteNodes(jobId: Long): Future[Unit] = db { implicit session =>
-     val documentSetCreationJobNodes = DocumentSetCreationJobNodes.filter(_.documentSetCreationJobId === jobId)
-     val rootNode = documentSetCreationJobNodes.map(_.nodeId).firstOption
-     
-     val nodes = Nodes.filter(_.rootId === rootNode)
-     val nodeDocuments = NodeDocuments.filter(_.nodeId in nodes.map(_.id))
-     
-     documentSetCreationJobNodes.delete
-     nodeDocuments.delete
-     nodes.delete
+
+    val allTheDeletes = sqlu"""
+        WITH root_node AS (
+          DELETE FROM document_set_creation_job_node WHERE document_set_creation_job_id = $jobId
+          RETURNING node_id
+        ), nodes AS (
+          SELECT id FROM node WHERE root_id IN (SELECT node_id FROM root_node)
+        ), nd_delete AS (
+          DELETE FROM node_document WHERE node_id IN (SELECT id FROM nodes)
+          RETURNING node_id
+        )
+        DELETE FROM node WHERE id IN (SELECT id FROM nodes) 
+      """
+
+    allTheDeletes.execute
   }
-  
+
   def deleteDocumentSetCreationJobNode(jobId: Long): Future[Unit] = db { implicit session =>
     val documentSetCreationJobNodes = DocumentSetCreationJobNodes.filter(_.documentSetCreationJobId === jobId)
-    
+
     documentSetCreationJobNodes.delete
+  }
+
+  def deleteJob(jobId: Long): Future[Unit] = db { implicit session =>
+    val documentSetCreationJobNodes = DocumentSetCreationJobNodes.filter(_.documentSetCreationJobId === jobId)
+    val jobs = DocumentSetCreationJobs.filter(_.id === jobId)
+
+    documentSetCreationJobNodes.delete
+    jobs.delete
   }
 }

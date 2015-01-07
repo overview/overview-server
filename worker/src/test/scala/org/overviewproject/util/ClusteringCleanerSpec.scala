@@ -38,12 +38,13 @@ class ClusteringCleanerSpec extends SlickSpecification {
       Nodes.filter(_.id === rootNode.id).firstOption must beNone
     }
     
-    "delete DocumentSetCreationJobNode" in {
-      todo
-    }
     
-    "delete job" in {
-      todo
+    "delete job" in new TreeScope {
+      await(cleaner.deleteJob(job.id))
+      
+      val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id)
+      
+      updatedJob.firstOption must beNone
     }
   }
   
