@@ -2,13 +2,14 @@ package controllers.api
 
 import scala.concurrent.Future
 
-import org.overviewproject.tree.orm.Tag
+import controllers.backend.TagBackend
+import org.overviewproject.models.Tag
 
 class TagControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    val mockStorage = mock[TagController.Storage]
+    val mockBackend = mock[TagBackend]
     val controller = new TagController {
-      override val storage = mockStorage
+      override val tagBackend = mockBackend
     }
   }
 
@@ -16,7 +17,7 @@ class TagControllerSpec extends ApiControllerSpecification {
     trait IndexScope extends BaseScope {
       val documentSetId = 1L
       def tags: Seq[Tag] = Seq()
-      mockStorage.index(1L) returns Future(tags) // async, so we get overrides
+      mockBackend.index(1L) returns Future(tags) // async, so we get overrides
       override lazy val action = controller.index(documentSetId)
     }
 
@@ -32,8 +33,8 @@ class TagControllerSpec extends ApiControllerSpecification {
 
     "return some Tags when there are Tags" in new IndexScope {
       override def tags = Seq(
-        Tag(documentSetId=documentSetId, name="foo", color="123456", id=1L),
-        Tag(documentSetId=documentSetId, name="bar", color="234567", id=2L)
+        factory.tag(id=1L, name="foo", color="123456"),
+        factory.tag(id=2L, name="bar", color="234567")
       )
       val json = contentAsString(result)
       json must /#(0) /("name" -> "foo")

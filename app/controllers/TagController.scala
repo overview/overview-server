@@ -7,37 +7,38 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{SelectionBackend,TagDocumentBackend}
+import controllers.backend.{SelectionBackend,TagBackend,TagDocumentBackend}
 import controllers.forms.{TagForm,NodeIdsForm}
 import models.orm.finders.{NodeDocumentFinder,TagFinder}
-import models.orm.stores.TagStore
 import models.OverviewDatabase
-import org.overviewproject.tree.orm.Tag
+import org.overviewproject.tree.orm.{Tag=>DeprecatedTag}
+import org.overviewproject.models.Tag
 
 trait TagController extends Controller {
   protected val selectionBackend: SelectionBackend
-  protected val tagDocumentBackend: TagDocumentBackend
   protected val storage: TagController.Storage
+  protected val tagBackend: TagBackend
+  protected val tagDocumentBackend: TagDocumentBackend
 
-  def create(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    TagForm(documentSetId).bindFromRequest.fold(
-      formWithErrors => BadRequest,
-      unsavedTag => {
-        val tag = storage.insertOrUpdate(unsavedTag)
-        Ok(views.json.Tag.create(tag))
+  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    TagForm.forCreate.bindFromRequest.fold(
+      formWithErrors => Future.successful(BadRequest),
+      attributes => {
+        tagBackend.create(documentSetId, attributes)
+          .map(tag => Created(views.json.Tag.create(tag)))
       }
     )
   }
 
   def indexJsonWithTree(documentSetId: Long, treeId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val tagsWithCounts = storage.findTagsWithCounts(documentSetId, treeId)
-    Ok(views.json.Tag.index(tagsWithCounts))
+    Ok(views.json.Tag.index.withDocsetCountsAndTreeCounts(tagsWithCounts))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
   def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val tagsWithCounts = storage.findTagsWithCounts(documentSetId)
-    Ok(views.json.Tag.index(tagsWithCounts))
+    Ok(views.json.Tag.index.withDocsetCounts(tagsWithCounts))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
@@ -85,30 +86,21 @@ trait TagController extends Controller {
     }
   }
 
-  def delete(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
-    OverviewDatabase.inTransaction { storage.findTag(documentSetId, tagId) } match {
-      case None => Future.successful(NotFound)
-      case Some(tag) => {
-        tagDocumentBackend.destroyAll(tagId)
-          .map(Unit => OverviewDatabase.inTransaction { storage.delete(tag) })
-          .map(Unit => NoContent)
-      }
-    }
+  def destroy(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    tagBackend.destroy(documentSetId, tagId)
+      .map(_ => NoContent)
   }
 
-  def update(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    storage.findTag(documentSetId, tagId) match {
-      case None => NotFound
-      case Some(tag) => {
-        TagForm(tag).bindFromRequest.fold(
-          formWithErrors => BadRequest,
-          unsavedTag => {
-            val savedTag = storage.insertOrUpdate(unsavedTag)
-            Ok(views.json.Tag.update(savedTag))
-          }
-        )
+  def update(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    TagForm.forUpdate.bindFromRequest.fold(
+      formWithErrors => Future.successful(BadRequest),
+      attributes => {
+        tagBackend.update(documentSetId, tagId, attributes).map(_ match {
+          case None => NotFound
+          case Some(tag) => Ok(views.json.Tag.update(tag))
+        })
       }
-    }
+    )
   }
 
   def nodeCounts(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
@@ -129,20 +121,19 @@ trait TagController extends Controller {
 }
 
 object TagController extends TagController {
-  override protected val tagDocumentBackend = TagDocumentBackend
   override protected val selectionBackend = SelectionBackend
+  override protected val tagBackend = TagBackend
+  override protected val tagDocumentBackend = TagDocumentBackend
 
   trait Storage {
-    def insertOrUpdate(tag: Tag) : Tag
-
     /** @return a Tag if it exists */
     def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
 
     /** @return (Tag, docset-count) pairs.  */
-    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)]
+    def findTagsWithCounts(documentSetId: Long) : Seq[(Tag,Long)]
 
     /** @return (Tag, docset-count, tree-count) tuples. */
-    def findTagsWithCounts(documentSetId: Long, treeId: Long) : Iterable[(Tag,Long,Long)]
+    def findTagsWithCounts(documentSetId: Long, treeId: Long) : Seq[(Tag,Long,Long)]
 
     /** Returns an Iterable of (nodeId, count) pairs.
       *
@@ -159,41 +150,32 @@ object TagController extends TagController {
       * @return Iterable of (nodeId, count) pairs
       */
     def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)]
-
-    /** Deletes the tag. */
-    def delete(tag: Tag) : Unit
   }
 
   override protected val storage = new Storage {
-    override def insertOrUpdate(tag: Tag) : Tag = {
-      TagStore.insertOrUpdate(tag)
-    }
-
     override def findTag(documentSetId: Long, tagId: Long) : Option[Tag] = {
-      TagFinder.byDocumentSetAndId(documentSetId, tagId).headOption
+      TagFinder.byDocumentSetAndId(documentSetId, tagId).headOption.map(_.toTag)
     }
 
-    override def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)] = {
+    override def findTagsWithCounts(documentSetId: Long) : Seq[(Tag,Long)] = {
       TagFinder
         .byDocumentSet(documentSetId)
         .withCounts
+        .toSeq
+        .map((t: Tuple2[DeprecatedTag,Long]) => (t._1.toTag, t._2))
     }
 
-    override def findTagsWithCounts(documentSetId: Long, treeId: Long) : Iterable[(Tag,Long,Long)] = {
+    override def findTagsWithCounts(documentSetId: Long, treeId: Long) : Seq[(Tag,Long,Long)] = {
       TagFinder
         .byDocumentSet(documentSetId)
         .withCountsForDocumentSetAndTree(treeId)
+        .toSeq
+        .map((t: Tuple3[DeprecatedTag,Long,Long]) => (t._1.toTag, t._2, t._3))
     }
 
     override def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)] = {
       val counts = NodeDocumentFinder.byNodeIds(nodeIds).tagCountsByNodeId(tagId).toMap
       nodeIds.map(nodeId => (nodeId -> counts.getOrElse(nodeId, 0L).toInt))
-    }
-
-    override def delete(tag: Tag) : Unit = {
-      // FIXME remove next line
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      TagStore.delete(tag.id)
     }
   }
 }

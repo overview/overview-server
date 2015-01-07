@@ -81,7 +81,7 @@ GET    /trees/:treeId/nodes/:nodeId.json controllers.NodeController.show(treeId:
 POST   /trees/:treeId/nodes/:nodeId      controllers.NodeController.update(treeId: Long, nodeId: Long)
 
 PUT    /documentsets/:id/tags/:tagId             controllers.TagController.update(id: Long, tagId: Long)
-DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
+DELETE /documentsets/:id/tags/:tagId             controllers.TagController.destroy(id: Long, tagId: Long)
 GET    /documentsets/:id/tags.csv                controllers.TagController.indexCsv(id: Long)
 GET    /documentsets/:id/tags                    controllers.TagController.indexJson(id: Long)
 GET    /documentsets/:id/trees/:treeId/tags      controllers.TagController.indexJsonWithTree(id: Long, treeId: Long)

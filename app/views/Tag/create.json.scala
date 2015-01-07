@@ -1,18 +1,13 @@
 package views.json.Tag
 
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.tree.orm.Tag
+import org.overviewproject.models.Tag
 
 object create {
-  def apply(tag: Tag): JsValue = {
-    Json.obj(
-      "id" -> tag.id,
-      "name" -> tag.name,
-      "color" -> ("#" + tag.color)
-    )
-  }
+  def apply(tag: Tag): JsValue = Json.obj(
+    "id" -> tag.id,
+    "name" -> tag.name,
+    "color" -> ("#" + tag.color)
+  )
 }
-
-

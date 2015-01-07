@@ -3,7 +3,7 @@ package views.json.Tag
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-import org.overviewproject.tree.orm.Tag
+import org.overviewproject.models.Tag
 
 class createSpec extends Specification with JsonMatchers {
   "Json for create tag result" should {

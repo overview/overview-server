@@ -2,11 +2,11 @@ package views.json.Tag
 
 import play.api.libs.json.{JsArray,JsValue,Json}
 
-import org.overviewproject.tree.orm.Tag
+import org.overviewproject.models.Tag
 
 object index {
-  def apply(tags: Iterable[(Tag,Long)]) = {
-    val objs = tags.toSeq.map { case (tag: Tag, docsetCount: Long) => Json.obj(
+  def withDocsetCounts(tags: Seq[(Tag,Long)]) = {
+    val objs: Seq[JsValue] = tags.map { case (tag: Tag, docsetCount: Long) => Json.obj(
       "id" -> tag.id,
       "name" -> tag.name,
       "color" -> s"#${tag.color}",
@@ -16,8 +16,8 @@ object index {
     JsArray(objs)
   }
 
-  def apply(tags: Iterable[(Tag,Long,Long)])(implicit _notUsed: DummyImplicit) = {
-    val objs = tags.toSeq.map { case (tag: Tag, docsetCount: Long, treeCount: Long) => Json.obj(
+  def withDocsetCountsAndTreeCounts(tags: Seq[(Tag,Long,Long)]) = {
+    val objs: Seq[JsValue] = tags.map { case (tag: Tag, docsetCount: Long, treeCount: Long) => Json.obj(
       "id" -> tag.id,
       "name" -> tag.name,
       "color" -> s"#${tag.color}",

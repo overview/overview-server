@@ -4,32 +4,19 @@ import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
-import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet}
-import org.overviewproject.tree.orm.Tag
+import controllers.auth.Authorities.{userViewingDocumentSet}
+import controllers.backend.TagBackend
+import org.overviewproject.models.Tag
 
 trait TagController extends ApiController {
-  protected val storage: TagController.Storage
+  protected val tagBackend: TagBackend
 
   def index(documentSetId: Long) = ApiAuthorizedAction(userViewingDocumentSet(documentSetId)).async { request =>
-    for (tags <- storage.index(documentSetId))
-      yield Ok(views.json.api.Tag.index(tags))
+    tagBackend.index(documentSetId)
+      .map(tags => Ok(views.json.api.Tag.index(tags)))
   }
 }
 
 object TagController extends TagController {
-  trait Storage {
-    /** Retries a list of Tags for the given DocumentSet */
-    def index(documentSetId: Long): Future[Seq[Tag]]
-  }
-
-  override protected val storage = new Storage {
-    import models.OverviewDatabase
-    import models.orm.finders.TagFinder
-
-    override def index(documentSetId: Long) = Future {
-      OverviewDatabase.inTransaction {
-        TagFinder.byDocumentSet(documentSetId).map(_.copy()).toSeq
-      }
-    }
-  }
+  override protected val tagBackend = TagBackend
 }

@@ -1,26 +1,33 @@
 package controllers.forms
 
-import play.api.data.Form
-import play.api.data.Forms._
+import play.api.data.{Form,Forms,Mapping}
 
-import org.overviewproject.tree.orm.Tag
+import org.overviewproject.models.Tag
 
 object TagForm {
-  private val colorFormat = "^#[0-9a-fA-F]{6}$"
-
-  def apply(tag: Tag) : Form[Tag] = {
-    Form(
-      mapping(
-        "name" -> nonEmptyText,
-        "color" -> nonEmptyText.verifying("color.invalid_format", _.matches(colorFormat))
-      )
-      ((name, color) => tag.copy(name=name, color=color.substring(1).toLowerCase()))
-      (aTag => Some(aTag.name, "#" + aTag.color))
-    )
+  /** Parses "#abc123" as "abc123". */
+  private val colorMapping: Mapping[String] = {
+    val format = "^#[0-9a-fA-F]{6}$"
+    Forms.nonEmptyText
+      .verifying("color.invalid_format", _.matches(format))
+      .transform(_.substring(1), "#" + _)
   }
 
-  def apply(documentSetId: Long) : Form[Tag] = {
-    val baseTag = Tag(documentSetId=documentSetId, name="", color="000000")
-    apply(baseTag)
+  /** Parses name+color from the form. */
+  private val tupleMapping: Mapping[(String,String)] = Forms.tuple(
+    "name" -> Forms.nonEmptyText,
+    "color" -> colorMapping
+  )
+
+  private def mapping[A](apply: (String,String) => A, unapply: A => Option[(String,String)]): Mapping[A] = {
+    tupleMapping.transform(apply.tupled, unapply(_).get)
+  }
+
+  val forCreate: Form[Tag.CreateAttributes] = {
+    Form(mapping(Tag.CreateAttributes.apply _, Tag.CreateAttributes.unapply _))
+  }
+
+  val forUpdate: Form[Tag.UpdateAttributes] = {
+    Form(mapping(Tag.UpdateAttributes.apply _, Tag.UpdateAttributes.unapply _))
   }
 }
