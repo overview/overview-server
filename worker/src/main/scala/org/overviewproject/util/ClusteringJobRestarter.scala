@@ -24,7 +24,6 @@ trait ClusteringJobRestarter {
     storage.updateValidJob(job.copy(state = Error, statusDescription = "max_retry_attempts"))
 
   private def finishJob: Unit = {
-    storage.deleteDocumentSetCreationJobNode(job.id)
     storage.deleteJob(job.id)
   }
 
@@ -34,7 +33,6 @@ trait ClusteringJobRestarter {
     def updateValidJob(job: DocumentSetCreationJob): Unit
     def treeExists(jobId: Long): Boolean
     def deleteNodes(jobId: Long): Unit
-    def deleteDocumentSetCreationJobNode(jobId: Long): Unit
     def deleteJob(jobId: Long): Unit
   }
 }
@@ -59,17 +57,25 @@ object ClusteringJobRestarter {
     // until we can make caller deal with Futures
     class DbSyncedStorage extends Storage {
       
+      private def await[A](block: => Future[A]): A = 
+        Await.result(block, Duration.Inf)
+      
+        
       private val cleaner = new ClusteringCleaner with SlickSessionProvider {
         override implicit protected val executor = executionContext
       }
       
       override def updateValidJob(job: DocumentSetCreationJob): Unit = 
-        cleaner.updateValidJob(job)
+        await(cleaner.updateValidJob(job))
 
-      override def treeExists(jobId: Long): Boolean = ??? 
-      override def deleteNodes(rootNodeId: Long): Unit = ???
-      override def deleteDocumentSetCreationJobNode(jobId: Long): Unit = ???
-      override def deleteJob(jobId: Long): Unit = ???
+      override def treeExists(jobId: Long): Boolean = 
+        await(cleaner.treeExists(jobId))
+        
+      override def deleteNodes(rootNodeId: Long): Unit = 
+        await(cleaner.deleteNodes(rootNodeId))
+        
+      override def deleteJob(jobId: Long): Unit = 
+        await(cleaner.deleteJob(jobId))
 
     }
   }

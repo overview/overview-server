@@ -14,7 +14,6 @@ class ClusteringJobRestarterSpec extends Specification with Mockito {
     "remove job if tree exists" in new CompleteTree {
       jobRestarter.restart
 
-      there was one(jobRestarter.mockStorage).deleteDocumentSetCreationJobNode(jobId)
       there was one(jobRestarter.mockStorage).deleteJob(jobId)
     }
 
