@@ -61,7 +61,7 @@ trait TagController extends Controller {
   }
 
   def add(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
-    OverviewDatabase.inTransaction { storage.findTag(documentSetId, tagId) } match {
+    tagBackend.show(documentSetId, tagId).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(tag) => {
         val sr = selectionRequest(documentSetId, request)
@@ -70,11 +70,11 @@ trait TagController extends Controller {
           .flatMap { (ids) => tagDocumentBackend.createMany(tagId, ids) }
           .map(Unit => Created)
       }
-    }
+    })
   }
 
   def remove(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
-    OverviewDatabase.inTransaction { storage.findTag(documentSetId, tagId) } match {
+    tagBackend.show(documentSetId, tagId).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(tag) => {
         val sr = selectionRequest(documentSetId, request)
@@ -83,7 +83,7 @@ trait TagController extends Controller {
           .flatMap { (ids) => tagDocumentBackend.destroyMany(tagId, ids) }
           .map(Unit => NoContent)
       }
-    }
+    })
   }
 
   def destroy(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
@@ -103,18 +103,18 @@ trait TagController extends Controller {
     )
   }
 
-  def nodeCounts(documentSetId: Long, tagId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
+  def nodeCounts(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     NodeIdsForm().bindFromRequest.fold(
-      formWithErrors => BadRequest,
+      formWithErrors => Future.successful(BadRequest),
       nodeIds => {
-        storage.findTag(documentSetId, tagId) match {
+        tagBackend.show(documentSetId, tagId).map(_ match {
           case None => NotFound
           case Some(tag) => {
-            val counts = storage.tagCountsByNodeId(tagId, nodeIds)
+            val counts = OverviewDatabase.inTransaction { storage.tagCountsByNodeId(tagId, nodeIds) }
             Ok(views.json.helper.nodeCounts(counts))
               .withHeaders(CACHE_CONTROL -> "max-age=0")
           }
-        }
+        })
       }
     )
   }
@@ -126,9 +126,6 @@ object TagController extends TagController {
   override protected val tagDocumentBackend = TagDocumentBackend
 
   trait Storage {
-    /** @return a Tag if it exists */
-    def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
-
     /** @return (Tag, docset-count) pairs.  */
     def findTagsWithCounts(documentSetId: Long) : Seq[(Tag,Long)]
 
@@ -153,10 +150,6 @@ object TagController extends TagController {
   }
 
   override protected val storage = new Storage {
-    override def findTag(documentSetId: Long, tagId: Long) : Option[Tag] = {
-      TagFinder.byDocumentSetAndId(documentSetId, tagId).headOption.map(_.toTag)
-    }
-
     override def findTagsWithCounts(documentSetId: Long) : Seq[(Tag,Long)] = {
       TagFinder
         .byDocumentSet(documentSetId)
