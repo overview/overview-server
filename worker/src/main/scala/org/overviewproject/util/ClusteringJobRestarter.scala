@@ -4,6 +4,12 @@ import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
 import scala.concurrent.ExecutionContext
 
+
+/**
+ * Restarts an interrupted clustering job, if necessary.
+ * If the tree exists, the job is finished, and simply deleted. Otherwise,
+ * previously created nodes are deleted.
+ */
 trait ClusteringJobRestarter {
   val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
 

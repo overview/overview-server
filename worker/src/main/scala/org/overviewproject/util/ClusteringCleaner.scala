@@ -8,8 +8,14 @@ import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentSetCreationJobState
 import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobNodes, NodeDocuments, Nodes, Trees }
 
+
+/**
+ * Provides methods to cleanup an interrupted clustering, prior to restart.
+ */
 trait ClusteringCleaner extends SlickClient {
 
+  // The raw SQL statements ensure that we don't end up with partially deleted/updated
+  // pieces. It might have been easier to use transactions.
   def updateValidJob(job: DocumentSetCreationJob): Future[Unit] = db { implicit session =>
     val updatedJob = sqlu"""
           WITH ids AS (
@@ -35,9 +41,11 @@ trait ClusteringCleaner extends SlickClient {
         WITH root_node AS (
           DELETE FROM document_set_creation_job_node WHERE document_set_creation_job_id = $jobId
           RETURNING node_id
-        ), nodes AS (
+        ),
+        nodes AS (
           SELECT id FROM node WHERE root_id IN (SELECT node_id FROM root_node)
-        ), nd_delete AS (
+        ),
+        nd_delete AS (
           DELETE FROM node_document WHERE node_id IN (SELECT id FROM nodes)
           RETURNING node_id
         )
