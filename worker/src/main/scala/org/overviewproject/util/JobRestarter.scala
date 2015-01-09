@@ -48,16 +48,20 @@ object JobRestarter extends DocumentSetCreationJobMappings {
   
   
   def restartInterruptedJobs: Unit = {
-    interruptedJobs.map(createRestarter).map(_.restart)
+    interruptedJobs.flatMap(createRestarter).map(_.restart)
   } 
 
   private def interruptedJobs: Seq[DocumentSetCreationJob] = Database.withSlickSession { implicit session =>
     DocumentSetCreationJobs.filter(_.state === InProgress).list
   }
   
-  private def createRestarter(job: DocumentSetCreationJob): NewJobRestarter = 
-    if (job.jobType == Recluster) ClusteringJobRestarter(job)
-    else DocumentSetCreationJobRestarter(job, SearchIndex)
+  private def createRestarter(job: DocumentSetCreationJob): Option[NewJobRestarter] = job.jobType match {
+    case Recluster => Some(ClusteringJobRestarter(job))
+    case DocumentCloud => Some(DocumentSetCreationJobRestarter(job, SearchIndex))
+    case CsvUpload => Some(DocumentSetCreationJobRestarter(job, SearchIndex))
+    case _ => None
+  }
+
   
 }
 /**

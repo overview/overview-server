@@ -196,13 +196,8 @@ object JobHandler {
     validSourceDocumentSet.getOrElse { throw new DisplayedError("source_documentset_deleted") }
   }
 
-  private def restartInterruptedJobs: Unit = Database.inTransaction {
-    val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
-    val restarter = new JobRestarter(new DocumentSetCleaner, SearchIndex)
-
-    restarter.restart(interruptedJobs)
-  }
-
+  private def restartInterruptedJobs: Unit = JobRestarter.restartInterruptedJobs
+  
   private def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
     import scala.language.postfixOps
     import anorm._

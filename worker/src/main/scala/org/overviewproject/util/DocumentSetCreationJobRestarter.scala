@@ -22,7 +22,9 @@ trait DocumentSetCreationJobRestarter extends NewJobRestarter {
 
 object DocumentSetCreationJobRestarter {
 
-  def apply(job: DocumentSetCreationJob, searchIndex: SearchIndex)(implicit executionContext: ExecutionContext): DocumentSetCreationJobRestarter = ???
+  def apply(job: DocumentSetCreationJob, searchIndex: SearchIndex)(
+      implicit executionContext: ExecutionContext): DocumentSetCreationJobRestarter = 
+    new DocumentSetCreationJobRestarterWithStorage(job, searchIndex)
 
   private class DocumentSetCreationJobRestarterWithStorage(val job: DocumentSetCreationJob, val searchIndex: SearchIndex)(
     implicit executionContext: ExecutionContext) extends DocumentSetCreationJobRestarter {
