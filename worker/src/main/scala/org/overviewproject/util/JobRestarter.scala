@@ -6,7 +6,7 @@
  */
 package org.overviewproject.util
 
-import org.overviewproject.persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.{ DocumentSetCleaner => OldClean, PersistentDocumentSetCreationJob }
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
 
@@ -38,7 +38,7 @@ trait NewJobRestarter {
 /**
  * Removes data related to documentsets in jobs, and resets job state to Submitted.
  */
-class JobRestarter(cleaner: DocumentSetCleaner, searchIndex: SearchIndex) {
+class JobRestarter(cleaner: OldClean, searchIndex: SearchIndex) {
 
   private val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
 

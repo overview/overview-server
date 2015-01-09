@@ -3,7 +3,7 @@ package org.overviewproject.util
 import java.sql.Connection
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import org.overviewproject.persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.{ DocumentSetCleaner => OldClean, PersistentDocumentSetCreationJob }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.DocumentSetCreationJobType.CsvUpload
 
@@ -47,7 +47,7 @@ class JobRestarterSpec extends Specification with Mockito {
   "JobRestarter" should {
 
     "clean and restart jobs" in {
-      val databaseCleaner = smartMock[DocumentSetCleaner]
+      val databaseCleaner = smartMock[OldClean]
       val searchIndexCleaner = smartMock[SearchIndex]
 
       val job = new TestJob
