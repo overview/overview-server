@@ -9,6 +9,7 @@ package org.overviewproject.util
 import org.overviewproject.persistence.{ DocumentSetCleaner => OldClean, PersistentDocumentSetCreationJob }
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
+import org.overviewproject.models.tables.DocumentSetCreationJobMappings
 
 trait NewJobRestarter {
   val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
@@ -34,6 +35,30 @@ trait NewJobRestarter {
   protected trait Storage {
     def updateValidJob(job: DocumentSetCreationJob)
   }
+}
+
+object JobRestarter extends DocumentSetCreationJobMappings {
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import org.overviewproject.database.Database
+  import org.overviewproject.database.Slick.simple._
+  import org.overviewproject.models.tables.DocumentSetCreationJobsImpl
+  import org.overviewproject.models.DocumentSetCreationJobType._
+  import org.overviewproject.models.DocumentSetCreationJobState._
+  import org.overviewproject.models.tables.DocumentSetCreationJobs
+  
+  
+  def restartInterruptedJobs: Unit = {
+    interruptedJobs.map(createRestarter).map(_.restart)
+  } 
+
+  private def interruptedJobs: Seq[DocumentSetCreationJob] = Database.withSlickSession { implicit session =>
+    DocumentSetCreationJobs.filter(_.state === InProgress).list
+  }
+  
+  private def createRestarter(job: DocumentSetCreationJob): NewJobRestarter = 
+    if (job.jobType == Recluster) ClusteringJobRestarter(job)
+    else DocumentSetCreationJobRestarter(job, SearchIndex)
+  
 }
 /**
  * Removes data related to documentsets in jobs, and resets job state to Submitted.
