@@ -6,11 +6,14 @@ import scala.concurrent.ExecutionContext
 
 trait DocumentSetCreationJobRestarter extends NewJobRestarter {
 
-  override protected def removeInterruptedJobData: Unit =
+  override protected def removeInterruptedJobData: Unit = {
     storage.deleteDocuments(job.documentSetId)
+    searchIndex.deleteDocumentSetAliasAndDocuments(job.documentSetId)
+  }
 
   protected val storage: DocumentStorage
-
+  protected val searchIndex: SearchIndex
+  
   protected trait DocumentStorage extends Storage {
     def deleteDocuments(jobId: Long): Unit
   }
@@ -19,9 +22,9 @@ trait DocumentSetCreationJobRestarter extends NewJobRestarter {
 
 object DocumentSetCreationJobRestarter {
 
-  def apply(job: DocumentSetCreationJob)(implicit executionContext: ExecutionContext): DocumentSetCreationJobRestarter = ???
+  def apply(job: DocumentSetCreationJob, searchIndex: SearchIndex)(implicit executionContext: ExecutionContext): DocumentSetCreationJobRestarter = ???
 
-  private class DocumentSetCreationJobRestarterWithStorage(val job: DocumentSetCreationJob)(
+  private class DocumentSetCreationJobRestarterWithStorage(val job: DocumentSetCreationJob, val searchIndex: SearchIndex)(
     implicit executionContext: ExecutionContext) extends DocumentSetCreationJobRestarter {
 
     import scala.concurrent.{ Await, Future }
