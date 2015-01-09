@@ -53,7 +53,7 @@ class ClusteringJobRestarterSpec extends Specification with Mockito {
   }
 
   class TestClusteringJobRestarter(val job: DocumentSetCreationJob, treeIsComplete: Boolean) extends ClusteringJobRestarter {
-    override protected val storage = smartMock[Storage]
+    override protected val storage = smartMock[NodeStorage]
 
     storage.treeExists(any) returns treeIsComplete
 

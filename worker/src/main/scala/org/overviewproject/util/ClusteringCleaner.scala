@@ -12,25 +12,11 @@ import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetC
 /**
  * Provides methods to cleanup an interrupted clustering, prior to restart.
  */
-trait ClusteringCleaner extends SlickClient {
+trait ClusteringCleaner extends JobUpdater with SlickClient {
 
   // The raw SQL statements ensure that we don't end up with partially deleted/updated
   // pieces. It might have been easier to use transactions.
-  def updateValidJob(job: DocumentSetCreationJob): Future[Unit] = db { implicit session =>
-    val updatedJob = sqlu"""
-          WITH ids AS (
-            SELECT id FROM document_set_creation_job
-            WHERE state <> ${DocumentSetCreationJobState.Cancelled.id}
-          )
-          UPDATE document_set_creation_job
-          SET state = ${job.state.id},
-              retry_attempts = ${job.retryAttempts},
-              status_description = ${job.statusDescription}
-          WHERE id IN (SELECT id FROM ids)    
-        """
-    updatedJob.execute
-  }
-
+  
   def treeExists(jobId: Long): Future[Boolean] = db { implicit session =>
     Trees.filter(_.jobId === jobId).firstOption.isDefined
   }

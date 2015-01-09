@@ -9,24 +9,6 @@ class ClusteringCleanerSpec extends SlickSpecification {
 
   "ClusteringCleaner" should {
     
-    "update job retry parameters" in new JobScope {
-      val jobUpdate = job.copy(state = NotStarted, retryAttempts = 5, statusDescription = "updated")
-      cleaner.updateValidJob(jobUpdate)
-      
-      val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id)
-      
-      updatedJob.firstOption must beSome(jobUpdate)
-    }
-    
-    "not update cancelled jobs" in new CancelledJobScope {
-      val jobUpdate = job.copy(state = NotStarted, retryAttempts = 5, statusDescription = "updated")
-      cleaner.updateValidJob(jobUpdate)
-      
-      val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id)
-      
-      updatedJob.firstOption must beSome(job)
-    }
-    
     "find existing tree with job id" in new TreeScope {
       cleaner.treeExists(job.id) must beTrue.await
       cleaner.treeExists(-1) must beFalse.await
@@ -54,10 +36,6 @@ class ClusteringCleanerSpec extends SlickSpecification {
     val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = jobState)
 
     def jobState = InProgress
-  }
-  
-  trait CancelledJobScope extends JobScope {
-    override def jobState = Cancelled
   }
   
   

@@ -40,7 +40,7 @@ class DocumentSetCreationJobRestarterSpec extends Specification with Mockito {
   }
 
   class TestDocumentSetCreationJobRestarter(val job: DocumentSetCreationJob) extends DocumentSetCreationJobRestarter {
-     override protected val storage = smartMock[Storage]
+     override protected val storage = smartMock[DocumentStorage]
      
      def mockStorage = storage
   }

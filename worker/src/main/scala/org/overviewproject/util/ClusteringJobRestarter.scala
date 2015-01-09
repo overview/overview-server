@@ -4,39 +4,28 @@ import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
 import scala.concurrent.ExecutionContext
 
-
 /**
  * Restarts an interrupted clustering job, if necessary.
  * If the tree exists, the job is finished, and simply deleted. Otherwise,
  * previously created nodes are deleted.
  */
-trait ClusteringJobRestarter {
-  val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
+trait ClusteringJobRestarter extends NewJobRestarter {
 
-  protected val job: DocumentSetCreationJob
-
-  def restart: Unit = {
+  override def restart: Unit = {
     if (storage.treeExists(job.id)) finishJob
-    else if (job.retryAttempts < MaxRetryAttempts) attemptRestart
-    else failJob
+    else super.restart
   }
 
-  private def attemptRestart: Unit = {
+  override protected def removeInterruptedJobData = 
     storage.deleteNodes(job.id)
-    storage.updateValidJob(job.copy(state = NotStarted, retryAttempts = job.retryAttempts + 1))
-  }
-
-  private def failJob: Unit =
-    storage.updateValidJob(job.copy(state = Error, statusDescription = "max_retry_attempts"))
 
   private def finishJob: Unit = {
     storage.deleteJob(job.id)
   }
 
-  protected val storage: Storage
+  override protected val storage: NodeStorage
 
-  protected trait Storage {
-    def updateValidJob(job: DocumentSetCreationJob): Unit
+  protected trait NodeStorage extends Storage {
     def treeExists(jobId: Long): Boolean
     def deleteNodes(jobId: Long): Unit
     def deleteJob(jobId: Long): Unit
@@ -46,8 +35,7 @@ trait ClusteringJobRestarter {
 object ClusteringJobRestarter {
   def apply(job: DocumentSetCreationJob)(implicit executionContext: ExecutionContext): ClusteringJobRestarter = new ClusteringJobRestarterWithStorage(job)
 
-  private class ClusteringJobRestarterWithStorage(val job: DocumentSetCreationJob)
-    (implicit executionContext: ExecutionContext) extends ClusteringJobRestarter {
+  private class ClusteringJobRestarterWithStorage(val job: DocumentSetCreationJob)(implicit executionContext: ExecutionContext) extends ClusteringJobRestarter {
     import scala.concurrent.{ Await, Future }
     import scala.concurrent.duration.Duration
     import org.overviewproject.database.SlickSessionProvider
@@ -56,26 +44,25 @@ object ClusteringJobRestarter {
 
     // Wait for db access Futures to complete
     // until we can make caller deal with Futures
-    class DbSyncedStorage extends Storage {
-      
-      private def await[A](block: => Future[A]): A = 
+    class DbSyncedStorage extends NodeStorage {
+
+      private def await[A](block: => Future[A]): A =
         Await.result(block, Duration.Inf)
-      
-        
+
       private val cleaner = new ClusteringCleaner with SlickSessionProvider {
         override implicit protected val executor = executionContext
       }
-      
-      override def updateValidJob(job: DocumentSetCreationJob): Unit = 
+
+      override def updateValidJob(job: DocumentSetCreationJob): Unit =
         await(cleaner.updateValidJob(job))
 
-      override def treeExists(jobId: Long): Boolean = 
+      override def treeExists(jobId: Long): Boolean =
         await(cleaner.treeExists(jobId))
-        
-      override def deleteNodes(rootNodeId: Long): Unit = 
+
+      override def deleteNodes(rootNodeId: Long): Unit =
         await(cleaner.deleteNodes(rootNodeId))
-        
-      override def deleteJob(jobId: Long): Unit = 
+
+      override def deleteJob(jobId: Long): Unit =
         await(cleaner.deleteJob(jobId))
 
     }
