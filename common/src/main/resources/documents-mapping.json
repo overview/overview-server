@@ -1,0 +1,12 @@
+{
+  "document": {
+    "_id": { "path": "id" },
+    "properties": {
+      "id":              { "type": "long", "store": "yes" },
+      "document_set_id": { "type": "long" },
+      "text":            { "type": "string" },
+      "supplied_id":     { "type": "string" },
+      "title":           { "type": "string" }
+    }
+  }
+}

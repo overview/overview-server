@@ -22,8 +22,6 @@ class InMemoryIndexClient extends ElasticSearchIndexClient {
   val clusterName = UUID.randomUUID().toString()
   val path = Files.createTempDirectory(s"in-memory-index-client-${clusterName}").toString
 
-  def publicClientFuture = clientFuture
-
   private lazy val node: Node = {
     val settings = ImmutableSettings.settingsBuilder
       .put("index.store.type", "memory")
@@ -41,6 +39,11 @@ class InMemoryIndexClient extends ElasticSearchIndexClient {
       .settings(settings)
       .node()
   }
+
+  override protected def defaultIndexSettings = ImmutableSettings.settingsBuilder
+    .put("index.store.type", "memory")
+    .put("index.number_of_shards", 1)
+    .put("index.number_of_replicas", 0)
 
   override def connect = {
     Future.successful(node.client())

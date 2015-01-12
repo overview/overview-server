@@ -6,13 +6,64 @@ import org.elasticsearch.client.Client
 import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.index.query.{FilterBuilders,QueryBuilders}
+import org.elasticsearch.indices.IndexMissingException
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
 
 import org.overviewproject.tree.orm.Document // FIXME should be model
+import org.overviewproject.util.Logger
 
+/** ElasticSearch index client.
+  *
+  * Within ElasticSearch, we use these indices and aliases:
+  *
+  * <ul>
+  *   <li><tt>documents_v1</tt> (or <tt>_v2</tt>, etc.) is the actual index.
+  *       ElasticSearchIndexClient will create <tt>documents_v1</tt> if there is
+  *       no <tt>documents</tt> alias.</li>
+  *   <li><tt>documents</tt> is an alias to the <tt>documents_v1</tt>.
+  *       ElasticSearchIndexClient reads this alias in order to create other
+  *       aliases.</li>
+  *   <li><tt>documents_123</tt> is a filtered alias to <tt>documents_v1</tt>,
+  *       with <tt>document_set_id = 123</tt>. ElasticSearchIndexClient creates
+  *       this within addDocumentSet() and uses it within addDocuments().</li>
+  * </ul>
+  *
+  * We can reindex seamlessly while Overview is running, like this. (All these
+  * steps should take place <em>outside</em> ElasticSearchIndexClient.
+  * ElasticSearchIndexClient must behave correctly at any point in this
+  * process.)
+  *
+  * <ol>
+  *   <li>Create <tt>documents_v2</tt>.</li>
+  *   <li>Add a new <tt>document</tt> mapping. It should be a mirror of
+  *       <tt>common/src/main/resources/documents-mapping.json</tt>.</li>
+  *   <li>Modify the <tt>documents</tt> alias. (ElasticSearchIndexClient will
+  *       write new documents to <tt>documents_v2</tt>.
+  *   <li>For each document set <tt>N</tt>, add a second alias
+  *       <tt>documents_N</tt> that points to <tt>documents_v2</tt>.
+  *       (ElasticSearchIndexClient will "see" the new documents when
+  *       querying.)</li>
+  *   <li>For each document set <tt>N</tt>:
+  *     <ol>
+  *       <li>Skip if <tt>documents_N</tt> points to exactly
+  *           <tt>documents_v2</tt> and not <tt>documents_v1</tt>.</li>
+  *       <li>Index all documents in document set <tt>N</tt> into
+  *           <tt>documents_v2</tt>, from scratch. (<tt>_id</tt> will
+  *           ensure you overwrite rather than add documents.)</li>
+  *     </ol>
+  *   </li>
+  * </ol>
+  *
+  * This process will handle resumes and writes that happen during indexing.
+  * Only when the <tt>documents_N</tt> alias points to only
+  * <tt>documents_v2</tt> is document set <tt>N</tt> complete.
+  */
 trait ElasticSearchIndexClient extends IndexClient {
+  protected val AllDocumentsAlias = "documents"
+  protected val DefaultIndexName = "documents_v1"
+
   @volatile private var connected = false
 
   /** Calls connect(), then adds necessary data structures to ElasticSearch
@@ -25,10 +76,7 @@ trait ElasticSearchIndexClient extends IndexClient {
     */
   protected lazy val clientFuture: Future[Client] = {
     connected = true
-    connect.flatMap { client =>
-      ensureInitializedImpl(client)
-        .map(_ => client)
-    }
+    connect
   }
 
   /** Returns an ElasticSearch client handle.
@@ -58,20 +106,13 @@ trait ElasticSearchIndexClient extends IndexClient {
   private val ScrollTimeout: Int = 60000
 
   protected val DocumentTypeName = "document"
-  protected val IndexName = "documents"
-  protected val RealIndexName = "documents_v1"
   protected def aliasName(documentSetId: Long) = s"documents_$documentSetId"
-  protected val Mapping = s"""{
-    "document": {
-      "properties": {
-        "$DocumentSetIdField": { "type": "long" },
-        "id":                  { "type": "long", "store": "yes" },
-        "text":                { "type": "string" },
-        "supplied_id":         { "type": "string" },
-        "title":               { "type": "string" }
-      }
-    }
-  }"""
+
+  protected lazy val Mapping = {
+    val inputStream = getClass.getResourceAsStream("/documents-mapping.json")
+    val source = scala.io.Source.fromInputStream(inputStream)
+    source.getLines.mkString("\n")
+  }
 
   def close: Future[Unit] = {
     if (connected) {
@@ -99,88 +140,85 @@ trait ElasticSearchIndexClient extends IndexClient {
     promise.future
   }
 
-  private def indexExists(client: Client): Future[Boolean] = {
-    execute(client.admin.indices.prepareExists(RealIndexName))
-      .map(_.isExists)
+  /** Returns the name of the index that contains all new documents.
+    *
+    * If there is no <tt>documents</tt> alias in ElasticSearch, this method
+    * will create a new <tt>documents_v1</tt> index and <tt>documents</tt>
+    * alias and return <tt>"documents_v1"</tt>>
+    */
+  private def getAllDocumentsIndexName(client: Client): Future[String] = {
+    val exists = client.admin.indices.prepareExistsAliases(AllDocumentsAlias)
+    val get = client.admin.indices.prepareGetAliases(AllDocumentsAlias)
+
+    execute(exists).map(_.isExists).flatMap(_ match {
+      case true => execute(get).map(_.getAliases.keySet.toArray.head.asInstanceOf[String])
+      case false => createDefaultIndexAndAlias(client).map(_ => DefaultIndexName)
+    })
   }
 
-  private def createIndex(client: Client): Future[Unit] = {
-    val settings = ImmutableSettings.settingsBuilder
-      .put("index.store.type", "memory")
-      .put("index.number_of_shards", 1)
-      .put("index.number_of_replicas", 0)
+  private def createDefaultIndexAndAlias(client: Client): Future[Unit] = {
+    createDefaultIndex(client)
+      .flatMap(_ => createDefaultAlias(client))
+  }
 
-    val req = client.admin.indices.prepareCreate(RealIndexName)
-      .setSettings(settings)
+  protected def defaultIndexSettings = ImmutableSettings.settingsBuilder
+
+  private def createDefaultIndex(client: Client): Future[Unit] = {
+    val req = client.admin.indices.prepareCreate(DefaultIndexName)
+      .setSettings(defaultIndexSettings)
       .addMapping(DocumentTypeName, Mapping)
 
-    execute(req)
+    execute(req).map(_ => Unit)
+  }
+
+  private def createDefaultAlias(client: Client): Future[Unit] = {
+    execute(client.admin.indices.prepareAliases.addAlias(DefaultIndexName, AllDocumentsAlias))
       .map(_ => Unit)
-  }
-
-  private def aliasExists(client: Client): Future[Boolean] = {
-    execute(client.admin.indices.prepareExistsAliases(IndexName))
-      .map(_.isExists)
-  }
-
-  private def createAlias(client: Client): Future[Unit] = {
-    execute(client.admin.indices.prepareAliases.addAlias(RealIndexName, IndexName))
-      .map(_ => Unit)
-  }
-
-  private def ensureIndexExists(client: Client): Future[Unit] = {
-    indexExists(client).flatMap((exists) =>
-      if (exists) {
-        Future.successful(Unit)
-      } else {
-        createIndex(client)
-      }
-    )
-  }
-
-  private def ensureAliasExists(client: Client): Future[Unit] = {
-    aliasExists(client).flatMap((exists) =>
-      if (exists) {
-        Future.successful(Unit)
-      } else {
-        createAlias(client)
-      }
-    )
-  }
-
-  private def ensureInitializedImpl(client: Client): Future[Unit] = {
-    ensureIndexExists(client)
-      .flatMap { _ => ensureAliasExists(client) }
   }
 
   private def addDocumentSetImpl(client: Client, id: Long): Future[Unit] = {
-    val filter = FilterBuilders.termFilter(DocumentSetIdField, id)
-    val alias = client.admin.indices.prepareAliases()
-      .addAlias(RealIndexName, aliasName(id), filter)
+    getAllDocumentsIndexName(client)
+      .flatMap { indexName =>
+        val filter = FilterBuilders.termFilter(DocumentSetIdField, id)
+        val alias = client.admin.indices.prepareAliases()
+          .addAlias(indexName, aliasName(id), filter)
 
-    execute(alias)
+        execute(alias).map(_.isAcknowledged)
+      }
       .map(_ => Unit)
   }
 
   private def removeDocumentSetImpl(client: Client, id: Long): Future[Unit] = {
-    val unalias = client.admin.indices.prepareAliases()
-      .removeAlias(RealIndexName, aliasName(id))
+    // The index must create if we're to delete it. So let's create it if it
+    // does not exist.
+    getAllDocumentsIndexName(client)
+      .flatMap { indexName =>
+        val unalias = client.admin.indices.prepareAliases()
+          .removeAlias(indexName, aliasName(id))
 
-    val delete = client.prepareDeleteByQuery(IndexName)
-      .setTypes(DocumentTypeName)
-      .setQuery(QueryBuilders.termQuery(DocumentSetIdField, id))
+        val delete = client.prepareDeleteByQuery(AllDocumentsAlias)
+          .setTypes(DocumentTypeName)
+          .setQuery(QueryBuilders.termQuery(DocumentSetIdField, id))
 
-    Future.sequence(Seq(execute(unalias), execute(delete)))
+        Future.sequence(Seq(execute(unalias), execute(delete)))
+      }
       .map(_ => Unit)
   }
 
   private def addDocumentsImpl(client: Client, documents: Iterable[Document]): Future[Unit] = {
     val bulkBuilder = client.prepareBulk()
-    val baseReq = client.prepareIndex(IndexName, DocumentTypeName)
+
+    /*
+     * We write to the all-documents alias, not the docset alias. That's a
+     * side-effect of the design, but if we change the design, we must keep
+     * that property: "It is an error to index to an alias which points to more
+     * than one index."
+     * http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html
+     */
 
     documents.foreach { document =>
       bulkBuilder.add(
-        client.prepareIndex(IndexName, DocumentTypeName)
+        client.prepareIndex(AllDocumentsAlias, DocumentTypeName)
           .setSource(Json.obj(
             "document_set_id" -> document.documentSetId,
             "id" -> document.id,
@@ -205,18 +243,17 @@ trait ElasticSearchIndexClient extends IndexClient {
     val query = QueryBuilders.queryString(q)
 
     // ElasticSearch shouldn't sort results. [refs #83002148]
-    val filter = FilterBuilders.andFilter(
-      FilterBuilders.termFilter("document_set_id", documentSetId),
-      FilterBuilders.queryFilter(query)
-    )
+    val filter = FilterBuilders.queryFilter(query)
 
-    val req = client.prepareSearch(IndexName)
+    val req = client.prepareSearch(aliasName(documentSetId))
       .setSearchType(SearchType.SCAN)
       .setScroll(new TimeValue(ScrollTimeout))
       .setTypes(DocumentTypeName)
       .setFilter(filter)
       .setSize(scrollSize)
-      .addField("id")
+      .addField("id") // We started using _id on 2015-01-12 but some end-users
+                      // might not have reindexed yet. So we index and store
+                      // "id" instead.
 
     def throwIfError(response: SearchResponse): Unit = {
       response.getShardFailures.headOption match {
@@ -255,18 +292,24 @@ trait ElasticSearchIndexClient extends IndexClient {
       execute(scrollReq)
     }
 
-    execute(req).flatMap { response =>
-      throwIfError(response)
-      if (response.getHits.totalHits == 0) {
-        Future.successful(Seq())
-      } else {
-        requestScroll(response.getScrollId()).flatMap(step(Seq(), _))
+    execute(req)
+      .flatMap { response =>
+        throwIfError(response)
+        if (response.getHits.totalHits == 0) {
+          Future.successful(Seq())
+        } else {
+          requestScroll(response.getScrollId()).flatMap(step(Seq(), _))
+        }
       }
-    }
+      .recover {
+        case e: IndexMissingException =>
+          Logger.forClass(getClass).warn("IndexMissingException on index {}", aliasName(documentSetId))
+          Seq()
+      }
   }
 
   private def refreshImpl(client: Client): Future[Unit] = {
-    val req = client.admin.indices.prepareRefresh(IndexName)
+    val req = client.admin.indices.prepareRefresh(AllDocumentsAlias)
 
     execute(req).map { response =>
       response.getShardFailures.headOption match {
