@@ -14,7 +14,7 @@ trait JobUpdater extends SlickClient {
     val updatedJob = sqlu"""
           WITH ids AS (
             SELECT id FROM document_set_creation_job
-            WHERE state <> ${DocumentSetCreationJobState.Cancelled.id}
+            WHERE id = ${job.id} AND state <> ${DocumentSetCreationJobState.Cancelled.id}
           )
           UPDATE document_set_creation_job
           SET state = ${job.state.id},

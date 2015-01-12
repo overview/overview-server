@@ -26,6 +26,15 @@ class JobUpdaterSpec extends SlickSpecification {
       updatedJob.firstOption must beSome(job)
     }
     
+    
+    "only update specified job" in new MultipleJobScope {
+      val jobUpdate = job.copy(state = NotStarted, retryAttempts = 5, statusDescription = "updated")
+      updater.updateValidJob(jobUpdate)
+
+      val unchangedJob = DocumentSetCreationJobs.filter(_.id === job2.id)
+      
+      unchangedJob.firstOption must beSome(job2)
+    }
 
   }
 
@@ -40,6 +49,11 @@ class JobUpdaterSpec extends SlickSpecification {
   
   trait CancelledJobScope extends JobScope {
     override def jobState = Cancelled
+  }
+  
+  trait MultipleJobScope extends JobScope {
+    val documentSet2 = factory.documentSet()
+    val job2 = factory.documentSetCreationJob(documentSetId = documentSet2.id, treeTitle = Some("another job"), state = InProgress)
   }
   
   class TestJobUpdater(implicit val session: Session) extends JobUpdater with SlickClientInSession
