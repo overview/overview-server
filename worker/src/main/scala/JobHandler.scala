@@ -47,9 +47,7 @@ object JobHandler {
   private def startHandlingJobs: Unit = {
     val pollingInterval = 500 //milliseconds
 
-    DB.withConnection { implicit connection =>
-      restartInterruptedJobs
-    }
+    restartInterruptedJobs
 
     while (true) {
       // Exit when the user enters Ctrl-D
@@ -73,7 +71,7 @@ object JobHandler {
     }
 
     firstSubmittedJob.map { j =>
-      logger.info(s"Processing job: ${j.documentSetId}")
+      logger.info(s"Processing job: [${j.id}] ${j.documentSetId}")
       handleSingleJob(j)
       System.gc()
     }
@@ -163,7 +161,7 @@ object JobHandler {
           createTree(treeId, nodeWriter.rootNodeId, ds, numberOfDocuments, job)
         else submitClusteringJob(ds.id)
       }
-      
+
       val t3 = System.currentTimeMillis()
       logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
     }
@@ -197,7 +195,7 @@ object JobHandler {
   }
 
   private def restartInterruptedJobs: Unit = JobRestarter.restartInterruptedJobs
-  
+
   private def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
     import scala.language.postfixOps
     import anorm._
@@ -295,7 +293,6 @@ object JobHandler {
     val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
     val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)
 
-
     for {
       documentSet <- DocumentSetFinder.byId(documentSetId).headOption
       job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).forUpdate.headOption if (job.state != Cancelled)
@@ -307,7 +304,7 @@ object JobHandler {
         lang = job.lang,
         suppliedStopWords = job.suppliedStopWords,
         importantWords = job.importantWords,
-        contentsOid = job.contentsOid,  // FIXME: should be deleted when we delete original job 
+        contentsOid = job.contentsOid, // FIXME: should be deleted when we delete original job 
         splitDocuments = job.splitDocuments,
         state = NotStarted)
 
