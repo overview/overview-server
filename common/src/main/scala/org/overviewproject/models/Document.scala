@@ -2,6 +2,7 @@ package org.overviewproject.models
 
 import java.util.Date // should be java.time.LocalDateTime
 
+
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
 
 /** A complete Document.
@@ -30,7 +31,7 @@ case class Document(
     text=Some(text),
     url=url,
     documentcloudId=None,
-    createdAt=new java.sql.Timestamp(createdAt.getDate),
+    createdAt=new java.sql.Timestamp(createdAt.getTime),
     fileId=fileId,
     pageId=pageId,
     pageNumber=pageNumber,
