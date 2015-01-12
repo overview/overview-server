@@ -4,7 +4,7 @@ import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
 import scala.concurrent.ExecutionContext
 
-trait DocumentSetCreationJobRestarter extends NewJobRestarter {
+trait DocumentSetCreationJobRestarter extends JobRestarter {
 
   override protected def removeInterruptedJobData: Unit = {
     storage.deleteDocuments(job.documentSetId)

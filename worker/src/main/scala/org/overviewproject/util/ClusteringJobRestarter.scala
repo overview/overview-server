@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
  * If the tree exists, the job is finished, and simply deleted. Otherwise,
  * previously created nodes are deleted.
  */
-trait ClusteringJobRestarter extends NewJobRestarter {
+trait ClusteringJobRestarter extends JobRestarter {
 
   override def restart: Unit = {
     if (storage.treeExists(job.id)) finishJob
