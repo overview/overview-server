@@ -30,8 +30,12 @@ class DocumentClonerSpec extends DbSpecification {
         documentSet.id
       }
 
-      def documents: Seq[Document] = Seq.tabulate(10)(i =>
-        Document(documentSetId, text = Some("text-" + i), id = ids.next))
+      def documents: Seq[Document] = Seq.tabulate(10) { i => Document(
+        documentSetId,
+        text = Some("text-" + i),
+        id = ids.next,
+        createdAt = new java.sql.Timestamp(1234L)
+      )}
 
       override def setupWithDb = {
         documentSetId = createCsvImportDocumentSet
@@ -71,7 +75,9 @@ class DocumentClonerSpec extends DbSpecification {
             text = Some("text"),
             fileId = Some(file.id),
             pageId = documentPage(file.id),
-            id = ids.next))
+            createdAt = new java.sql.Timestamp(1234L),
+            id = ids.next
+          ))
 
         documentSetId = documentSet.id
         documentSetCloneId = documentSetClone.id

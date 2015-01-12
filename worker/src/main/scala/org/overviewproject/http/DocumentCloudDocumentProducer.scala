@@ -126,11 +126,13 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
     val id = Database.inTransaction {
       val document = Document(documentSetId, 
-          id = ids.next, 
-          title = Some(doc.title), 
-          text = Some(text),
-          documentcloudId = Some(doc.id),
-          pageNumber = doc.pageNumber)
+        id = ids.next, 
+        title = Some(doc.title), 
+        text = Some(text),
+        createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime),
+        documentcloudId = Some(doc.id),
+        pageNumber = doc.pageNumber
+      )
       DocumentWriter.write(document)
       document.id
     }

@@ -1,5 +1,7 @@
 package org.overviewproject.models.tables
 
+import java.util.Date // should be java.time.LocalDateTime
+
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentInfo
 
@@ -13,9 +15,15 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     _.split(",?\\s+").toSeq
   )
 
+  private val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
+    d => new java.sql.Timestamp(d.getTime),
+    d => new Date(d.getTime)
+  )
+
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
   def keywords = column[Seq[String]]("description")(keywordColumnType)
+  def createdAt = column[Date]("created_at")(dateColumnType)
   def url = column[Option[String]]("url")
   def suppliedId = column[Option[String]]("supplied_id")
   def documentcloudId = column[Option[String]]("documentcloud_id")
@@ -35,16 +43,18 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     documentcloudId,
     title,
     pageNumber,
-    keywords
-  ).<>[DocumentInfo,Tuple8[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String]]](
-    (t: Tuple8[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String]]) => DocumentInfo.apply(
+    keywords,
+    createdAt
+  ).<>[DocumentInfo,Tuple9[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date]](
+    (t: Tuple9[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date]) => DocumentInfo.apply(
       t._1,
       t._2,
       t._3,
       t._4.orElse(t._5).getOrElse(""), // suppliedId || documentcloudId || ""
       t._6.getOrElse(""),              // title
       t._7,
-      t._8
+      t._8,
+      t._9
     ),
     { d: DocumentInfo => Some(
       d.id,
@@ -54,7 +64,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       None,
       Some(d.title),
       d.pageNumber,
-      d.keywords
+      d.keywords,
+      d.createdAt
     )}
   )
 }

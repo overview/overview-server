@@ -1,7 +1,7 @@
 package org.overviewproject.test.factories
 
 import java.sql.Timestamp
-import java.util.UUID
+import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import org.overviewproject.models._
 import org.overviewproject.tree.orm.{ Document => DeprecatedDocument }
@@ -39,6 +39,7 @@ trait Factory {
     suppliedId: String = "",
     title: String = "",
     keywords: Seq[String] = Seq(),
+    createdAt: Date = new Date(1234L),
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
@@ -54,6 +55,7 @@ trait Factory {
     text: Option[String] = None,
     url: Option[String] = None,
     documentcloudId: Option[String] = None,
+    createdAt: Timestamp = new Timestamp(1234L),
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     pageNumber: Option[Int] = None): DeprecatedDocument

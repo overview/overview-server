@@ -21,12 +21,14 @@ object DocumentCloner extends InDatabaseCloner {
   override def cloneQuery: SqlQuery =
     SQL("""
           INSERT INTO document 
-            (id, document_set_id, 
-             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id)
+            (id, document_set_id,
+             description, documentcloud_id, text, url, supplied_id, title,
+             created_at, file_id, page_id)
            SELECT 
              ({cloneDocumentSetId} << 32) | ({documentSetIdMask} & id) AS clone_id, 
              {cloneDocumentSetId} AS clone_document_set_id, 
-             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id
+             description, documentcloud_id, text, url, supplied_id, title,
+             created_at, file_id, page_id
              FROM document WHERE document_set_id = {sourceDocumentSetId}    	
         """)
 

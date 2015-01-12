@@ -98,8 +98,15 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
 
   private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long = {
     Database.inTransaction {
-      val document = Document(documentSetId, id = ids.next, title = doc.title,
-        suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
+      val document = Document(
+        documentSetId,
+        id = ids.next,
+        title = doc.title,
+        suppliedId = doc.suppliedId,
+        createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime),
+        text = Some(doc.text),
+        url = doc.url
+      )
       DocumentWriter.write(document)
       writeTags(document, doc.tags)
       document.id

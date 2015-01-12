@@ -109,7 +109,9 @@ trait CreateDocumentsProcess {
         id = documentIdGenerator.nextId,
         title = Some(file.name),
         text = Some(text),
-        fileId = Some(file.id))
+        fileId = Some(file.id),
+        createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime)
+      )
     }
   }
 
@@ -133,9 +135,11 @@ trait CreateDocumentsProcess {
           id = documentIdGenerator.nextId,
           title = Some(file.name),
           text = p.text,
+          createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime),
           fileId = Some(file.id),
           pageId = Some(p.id),
-          pageNumber = Some(p.number))
+          pageNumber = Some(p.number)
+        )
       }
     }
   }

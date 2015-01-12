@@ -1,5 +1,6 @@
 package org.overviewproject.tree.orm
 
+import java.sql.Timestamp
 import org.squeryl.KeyedEntity
 
 import org.overviewproject.models.{DocumentInfo,Document => BetterDocument}
@@ -12,6 +13,7 @@ case class Document(
   val text: Option[String] = None,
   val url: Option[String] = None,
   val documentcloudId: Option[String] = None,
+  val createdAt: Timestamp = new Timestamp(0),
   val fileId: Option[Long] = None,
   val pageId: Option[Long] = None,
   val pageNumber: Option[Int] = None,
@@ -27,7 +29,8 @@ case class Document(
     suppliedId=suppliedId.orElse(documentcloudId).getOrElse(""),
     title=title.getOrElse(""),
     pageNumber=pageNumber,
-    keywords=description.split(" ")
+    keywords=description.split(" "),
+    createdAt=createdAt
   )
 
   def toDocument = BetterDocument(
@@ -38,6 +41,7 @@ case class Document(
     title=title.getOrElse(""),
     pageNumber=pageNumber,
     keywords=description.split(" "),
+    createdAt=createdAt,
     fileId=fileId,
     pageId=pageId,
     text=text.getOrElse("")

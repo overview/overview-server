@@ -1,5 +1,7 @@
 package org.overviewproject.models
 
+import java.util.Date // should be java.time.LocalDateTime
+
 /** A DocumentHeader that's as lightweight as possible.
   *
   * The main difference between this and a full-fledged Document: its "text" is
@@ -13,7 +15,8 @@ case class DocumentInfo(
   override val suppliedId: String,
   override val title: String,
   override val pageNumber: Option[Int],
-  override val keywords: Seq[String]
+  override val keywords: Seq[String],
+  override val createdAt: Date
 ) extends DocumentHeader {
   override val text = ""
 }

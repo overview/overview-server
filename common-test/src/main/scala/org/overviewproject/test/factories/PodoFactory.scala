@@ -1,7 +1,7 @@
 package org.overviewproject.test.factories
 
 import java.sql.Timestamp
-import java.util.UUID
+import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import scala.util.Random
 import org.overviewproject.models._
@@ -69,6 +69,7 @@ object PodoFactory extends Factory {
     suppliedId: String = "",
     title: String = "",
     keywords: Seq[String] = Seq(),
+    createdAt: Date = new Date(1234L),
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
@@ -81,6 +82,7 @@ object PodoFactory extends Factory {
     title,
     pageNumber,
     keywords,
+    createdAt,
     fileId,
     pageId,
     text
@@ -95,6 +97,7 @@ object PodoFactory extends Factory {
     text: Option[String] = None,
     url: Option[String] = None,
     documentcloudId: Option[String] = None,
+    createdAt: Timestamp = new Timestamp(1234L),
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     pageNumber: Option[Int] = None
@@ -106,6 +109,7 @@ object PodoFactory extends Factory {
     text,
     url,
     documentcloudId,
+    createdAt,
     fileId,
     pageId,
     pageNumber,

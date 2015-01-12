@@ -1,5 +1,7 @@
 package org.overviewproject.models
 
+import java.util.Date // should be java.time.LocalDateTime
+
 /** Metadata about a Document.
   */
 trait DocumentHeader {
@@ -10,5 +12,6 @@ trait DocumentHeader {
   val title: String
   val pageNumber: Option[Int]
   val keywords: Seq[String]
+  val createdAt: Date
   val text: String
 }

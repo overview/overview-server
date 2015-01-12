@@ -12,6 +12,7 @@ class DeprecatedDocumentsImpl(tag: Tag) extends Table[DeprecatedDocument](tag, "
   def url = column[Option[String]]("url")
   def suppliedId = column[Option[String]]("supplied_id")
   def title = column[Option[String]]("title")
+  def createdAt = column[java.sql.Timestamp]("created_at")
   def fileId = column[Option[Long]]("file_id")
   def pageId = column[Option[Long]]("page_id")
   def pageNumber = column[Option[Int]]("page_number")
@@ -24,6 +25,7 @@ class DeprecatedDocumentsImpl(tag: Tag) extends Table[DeprecatedDocument](tag, "
     text,
     url,
     documentcloudId,
+    createdAt,
     fileId,
     pageId,
     pageNumber,

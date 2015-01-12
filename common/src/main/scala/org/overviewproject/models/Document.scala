@@ -1,5 +1,7 @@
 package org.overviewproject.models
 
+import java.util.Date // should be java.time.LocalDateTime
+
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
 
 /** A complete Document.
@@ -15,6 +17,7 @@ case class Document(
   override val title: String,
   override val pageNumber: Option[Int],
   override val keywords: Seq[String],
+  override val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
   override val text: String
@@ -27,6 +30,7 @@ case class Document(
     text=Some(text),
     url=url,
     documentcloudId=None,
+    createdAt=new java.sql.Timestamp(createdAt.getDate),
     fileId=fileId,
     pageId=pageId,
     pageNumber=pageNumber,
@@ -40,6 +44,7 @@ case class Document(
     suppliedId,
     title,
     pageNumber,
-    keywords
+    keywords,
+    createdAt
   )
 }
