@@ -39,12 +39,11 @@ import org.overviewproject.util.Logger
   *   <li>Create <tt>documents_v2</tt>.</li>
   *   <li>Add a new <tt>document</tt> mapping. It should be a mirror of
   *       <tt>common/src/main/resources/documents-mapping.json</tt>.</li>
-  *   <li>Modify the <tt>documents</tt> alias. (ElasticSearchIndexClient will
-  *       write new documents to <tt>documents_v2</tt>.)</li>
   *   <li>For each document set <tt>N</tt>, add a second alias
   *       <tt>documents_N</tt> that points to <tt>documents_v2</tt>.
-  *       (ElasticSearchIndexClient will "see" the new documents when
-  *       querying.)</li>
+  *       (So ElasticSearchIndexClient see new documents.)</li>
+  *   <li>Modify the <tt>documents</tt> alias. (ElasticSearchIndexClient will
+  *       write new documents to <tt>documents_v2</tt>.)</li>
   *   <li>For each document set <tt>N</tt>:
   *     <ol>
   *       <li>Skip if <tt>documents_N</tt> points to exactly
@@ -52,6 +51,8 @@ import org.overviewproject.util.Logger
   *       <li>Index all documents in document set <tt>N</tt> into
   *           <tt>documents_v2</tt>, from scratch. (<tt>_id</tt> will
   *           ensure you overwrite rather than add documents.)</li>
+  *       <li>Drop the alias from <tt>documents_N</tt> to 
+  *           any index other than <tt>documents_v2</tt>.</li>
   *     </ol>
   *   </li>
   * </ol>
