@@ -32,7 +32,7 @@ import org.overviewproject.util.Logger
   *
   * We can reindex seamlessly while Overview is running, like this. (All these
   * steps should take place <em>outside</em> ElasticSearchIndexClient.
-  * ElasticSearchIndexClient must behave correctly at any point in this
+  * ElasticSearchIndexClient will behave correctly at any point in this
   * process.)
   *
   * <ol>
@@ -40,7 +40,7 @@ import org.overviewproject.util.Logger
   *   <li>Add a new <tt>document</tt> mapping. It should be a mirror of
   *       <tt>common/src/main/resources/documents-mapping.json</tt>.</li>
   *   <li>Modify the <tt>documents</tt> alias. (ElasticSearchIndexClient will
-  *       write new documents to <tt>documents_v2</tt>.
+  *       write new documents to <tt>documents_v2</tt>.)</li>
   *   <li>For each document set <tt>N</tt>, add a second alias
   *       <tt>documents_N</tt> that points to <tt>documents_v2</tt>.
   *       (ElasticSearchIndexClient will "see" the new documents when
