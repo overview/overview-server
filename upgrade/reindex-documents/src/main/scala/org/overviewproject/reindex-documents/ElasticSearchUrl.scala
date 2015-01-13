@@ -7,7 +7,7 @@ case class ElasticSearchUrl(host: String, port: Int) {
 object ElasticSearchUrl {
   implicit val elasticSearchUrlRead: scopt.Read[ElasticSearchUrl] = scopt.Read.reads { s: String =>
     def err(s: String) = throw new IllegalArgumentException(s)
-    val Pattern = """^([a-zA-Z][\.\w]+\w):(\d+)$""".r
+    val Pattern = """^(\w[\.\w]+\w):(\d+)$""".r
     s match {
       case Pattern(host, portString) => {
         val i = portString.toInt // may throw
