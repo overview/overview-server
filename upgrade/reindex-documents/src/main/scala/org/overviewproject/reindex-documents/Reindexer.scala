@@ -1,9 +1,10 @@
 package org.overviewproject.upgrade.reindex_documents
 
 import org.elasticsearch.client.Client
+import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.transport.InetSocketTransportAddress
 import org.elasticsearch.index.query.FilterBuilders
-import org.elasticsearch.node.{Node,NodeBuilder}
 
 class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
   val DocumentsAlias = "documents"
@@ -11,20 +12,14 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
   val DocumentSetIdField = "document_set_id"
   val BatchSize = 2000
 
-  lazy val node = {
+  lazy val client = {
     val settings = ImmutableSettings.settingsBuilder
-      .put("node.http.enabled", false)
-      .put("node.gateway.type", "none")
-      .put("discovery.zen.ping.unicast.hosts", url.toString)
+      .put("cluster.name", clusterName)
 
-    NodeBuilder.nodeBuilder
-      .clusterName(clusterName)
-      .client(true)
-      .settings(settings)
-      .node
+    val ret = new TransportClient(settings)
+    ret.addTransportAddress(new InetSocketTransportAddress(url.host, url.port))
+    ret
   }
-
-  lazy val client = node.client
 
   /** Point "documents_N" to the new index, leaving existing aliases intact.
     *
