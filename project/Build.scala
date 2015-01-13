@@ -143,6 +143,13 @@ object ApplicationBuild extends Build with ProjectSettings {
     )
     .dependsOn(common)
 
+  val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
+    .settings(Defaults.coreDefaultSettings: _*)
+    .settings(packageArchetype.java_application: _*)
+    .settings(scalacOptions ++= ourScalacOptions)
+    .settings(libraryDependencies += "com.github.scopt" %% "scopt" % "3.3.0")
+    .dependsOn(common)
+
   /*
    * Ideally, common would depend on commonTest, which would mock out the
    * database.
