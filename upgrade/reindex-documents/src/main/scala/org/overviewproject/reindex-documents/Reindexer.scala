@@ -10,7 +10,7 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
   val DocumentsAlias = "documents"
   val DocumentTypeName = "document"
   val DocumentSetIdField = "document_set_id"
-  val BatchSize = 2000
+  val BatchSize = 1000
 
   lazy val client = {
     val settings = ImmutableSettings.settingsBuilder
