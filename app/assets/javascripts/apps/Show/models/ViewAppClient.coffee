@@ -18,7 +18,7 @@ define [
 
       @listenTo(@state, 'change:documentListParams', @onDocumentListParamsChanged)
       @listenTo(@state, 'change:document', @onDocumentChanged)
-      @listenTo(@state, 'change:taglikeCid', @onTaglikeCidChanged)
+      @listenTo(@state, 'change:highlightedDocumentListParams', @onHighlightedDocumentListParamsChanged)
       @listenTo(@documentSet, 'tag', @onTag)
       @listenTo(@documentSet, 'untag', @onUntag)
       @onMessageCallback = @_onMessage.bind(@)
@@ -26,7 +26,7 @@ define [
 
     onDocumentListParamsChanged: (__, value) -> @viewApp.onDocumentListParamsChanged?(value)
     onDocumentChanged: (__, value) -> @viewApp.onDocumentChanged?(value)
-    onTaglikeCidChanged: (__, value) -> @viewApp.onTaglikeCidChanged?(value)
+    onHighlightedDocumentListParamsChanged: (__, value) -> @viewApp.onHighlightedDocumentListParamsChanged?(value)
     onTag: (tag, params) -> @viewApp.onTag?(tag, params)
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
 

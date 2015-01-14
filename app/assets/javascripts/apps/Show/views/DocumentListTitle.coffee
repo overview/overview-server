@@ -99,7 +99,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
         # Listen for tag/node name change
         param = @documentList.params?.params?[0]
-        if param? && 'on' of param # it's Backbone.Model-ish
+        if param?.on? # it's Backbone.Model-ish
           @listenTo(param, 'change', @render)
 
       @render()

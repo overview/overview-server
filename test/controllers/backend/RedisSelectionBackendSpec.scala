@@ -20,7 +20,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   }
 
   trait CreateScopeLike extends BaseScope {
-    val request = SelectionRequest(1L, Seq(), Seq(), Seq(), Seq(), Seq(), None, "")
+    val request = SelectionRequest(1L, Seq(), Seq(), Seq(), Seq(), None, "")
     def go: SelectionLike
   }
 

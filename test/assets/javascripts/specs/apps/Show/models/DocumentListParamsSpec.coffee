@@ -162,17 +162,16 @@ define [
         result = @params.findDocumentsInList(list)
         expect(x.id for x in result).to.deep.eq([ 2 ])
 
-    describe 'bySearchResult', ->
+    describe 'bySearch', ->
       beforeEach ->
-        @searchResult = new MockSearchResult(id: 3, query: 'a query')
-        @params = @builder.bySearchResult(@searchResult)
+        @params = @builder.bySearch('foo')
 
-      it 'should have type searchResult', -> expect(@params.type).to.eq('searchResult')
-      it 'should have one param', -> expect(@params.params).to.deep.eq([@searchResult])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(searchResult:3)')
-      it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq({ searchResults: [3] })
-      it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(searchResults: '3')
-      it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'searchResult', 'a query' ])
+      it 'should have type search', -> expect(@params.type).to.eq('search')
+      it 'should have one param', -> expect(@params.params).to.deep.eq(['foo'])
+      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(search:foo)')
+      it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq(q: 'foo')
+      it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(q: 'foo')
+      it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'search', 'foo' ])
 
       it 'should find no documents from a list', ->
         list = [

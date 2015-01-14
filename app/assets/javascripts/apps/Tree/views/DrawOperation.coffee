@@ -26,7 +26,7 @@ define [], ->
     ctx.closePath()
 
   class DrawOperation
-    constructor: (@canvas, @tree, @taglikeColor, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
+    constructor: (@canvas, @tree, @highlightColor, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
       parent = @canvas.parentNode
       style = parent.ownerDocument.defaultView.getComputedStyle(parent, null)
 
@@ -93,7 +93,7 @@ define [], ->
       classifiedDrawableNodes = @_classifyDrawableNodes(drawableNodes)
 
       this._drawNodeFills(classifiedDrawableNodes)
-      this._draw_colors(drawableNodes)
+      this._draw_colors(drawableNodes) if @highlightColor
       this._drawNodeBorders(classifiedDrawableNodes)
       this._draw_labels(drawableNodes)
       this._draw_lines_from_parents_to_children(drawableNodes)
@@ -134,7 +134,7 @@ define [], ->
       else
         undefined
 
-    _draw_tagcount: (left, top, width, height, color, fraction) ->
+    _draw_highlight_count: (left, top, width, height, color, fraction) ->
       return if fraction == 0
 
       slant_offset = 0 # disable slant drawing, for greater legibility of fraction of folder tagged
@@ -155,14 +155,14 @@ define [], ->
 
       ctx.save()
 
-      color = @taglikeColor
+      color = @highlightColor
 
       for px in drawableNodes
         json = px.json
-        count = json.taglikeCount
+        count = json.highlightCount
 
         if count
-          @_draw_tagcount(px.left, px.top, px.width, px.height, color, count / json.size)
+          @_draw_highlight_count(px.left, px.top, px.width, px.height, color, count / json.size)
 
       ctx.restore()
       undefined

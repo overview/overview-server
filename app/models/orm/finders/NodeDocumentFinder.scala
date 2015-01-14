@@ -33,27 +33,6 @@ object NodeDocumentFinder extends BaseNodeDocumentFinder(Schema.nodeDocuments, S
       from(main)(row => select(row.key._1, row.key._2, row.measures))
     }
 
-    /** @return (nodeId, count) pairs. */
-    def searchResultCountsByNodeId(searchResult: Long): FinderResult[(Long, Long)] = {
-      val main: Query[GroupWithMeasures[Long, Long]] = join(query, Schema.documentSearchResults)((nd, ds) =>
-        where(ds.searchResultId === searchResult)
-          groupBy (nd.nodeId)
-          compute (org.overviewproject.postgres.SquerylEntrypoint.count)
-          on (nd.documentId === ds.documentId))
-
-      from(main)(row => select(row.key, row.measures))
-    }
-
-    /** @return (nodeId, tagId, count) tuples. */
-    def allSearchResultCountsByNodeId: FinderResult[(Long, Long, Long)] = {
-      val main: Query[GroupWithMeasures[Product2[Long, Long], Long]] = join(query, Schema.documentSearchResults)((nd, ds) =>
-        groupBy(nd.nodeId, ds.searchResultId)
-          compute (org.overviewproject.postgres.SquerylEntrypoint.count)
-          on (nd.documentId === ds.documentId))
-
-      from(main)(row => select(row.key._1, row.key._2, row.measures))
-    }
-
     def untaggedDocumentCountsByNodeId: FinderResult[(Long, Long)] = {
       val main: Query[GroupWithMeasures[Long, Long]] = join(query, Schema.documentTags.leftOuter)((nd, dt) =>
         where(dt.map(_.tagId).getOrElse(-1l) isNull) // Not clear if get would be safe here

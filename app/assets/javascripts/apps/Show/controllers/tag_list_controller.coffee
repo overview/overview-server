@@ -1,8 +1,7 @@
 define [
-  '../models/DocumentListParams'
   '../views/InlineTagList'
   './TagDialogController'
-], (DocumentListParams, InlineTagListView, TagDialogController) ->
+], (InlineTagListView, TagDialogController) ->
   tag_list_controller = (options) ->
     documentSet = options.documentSet
     tags = documentSet.tags
@@ -16,21 +15,21 @@ define [
 
     view.on 'add-clicked', (tag) ->
       documentSet.tag(tag, state.getSelection())
-      state.set(taglikeCid: tag.cid)
+      state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
 
     view.on 'remove-clicked', (tag) ->
       documentSet.untag(tag, state.getSelection())
-      state.set(taglikeCid: tag.cid)
+      state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
 
     view.on 'name-clicked', (tag) ->
       state.resetDocumentListParams().byTag(tag)
-      state.set(taglikeCid: tag.cid)
+      state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
 
     view.on 'organize-clicked', ->
       new TagDialogController(tags: tags, state: state)
 
     view.on 'untagged-clicked', ->
       state.resetDocumentListParams().untagged()
-      state.set(taglikeCid: 'untagged')
+      state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.untagged())
 
     { view: view }

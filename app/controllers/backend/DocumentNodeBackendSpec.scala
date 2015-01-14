@@ -1,0 +1,55 @@
+package controllers.backend
+
+import scala.concurrent.Future
+
+import models.SelectionLike
+import org.overviewproject.models.NodeDocument
+import org.overviewproject.models.tables.{NodeDocuments,Nodes,Trees}
+
+trait DocumentNodeBackend extends Backend {
+  /** Counts how many NodeDocuments exist, counted by Node.
+    *
+    * There are no zero counts: they are not defined.
+    *
+    * Security implications: a user can query across multiple trees. The user
+    * is restricted to the current document set by <tt>selection</tt>.
+    *
+    * @param selection The documents we care about
+    * @param nodeIds The nodes we care about
+    */
+  def countByNode(selection: SelectionLike, nodeIds: Seq[Long]): Future[Map[Long,Int]]
+}
+
+trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
+  import org.overviewproject.database.Slick.simple._
+  import scala.concurrent.ExecutionContext.Implicits._
+
+  private def countByDocumentsAndNodes(documentIds: Seq[Long], nodeIds: Seq[Long]): Future[Map[Long,Int]] = {
+    if (documentIds.isEmpty) {
+      Future.successful(Map())
+    } else if (nodeIds.isEmpty) {
+      Future.successful(Map())
+    } else {
+      // Slick is slow at compiling queries. We need this query _fast_
+      import scala.slick.jdbc.{GetResult, StaticQuery => Q}
+      val query = Q.queryNA[(Long,Int)](s"""
+        SELECT node_id, COUNT(*)
+        FROM node_document
+        WHERE node_id IN (${nodeIds.mkString(",")})
+          AND document_id IN (${documentIds.mkString(",")})
+        GROUP BY node_id
+      """)
+
+      db { session => query.list(session).toMap }
+    }
+  }
+
+  override def countByNode(selection: SelectionLike, nodeIds: Seq[Long]) = {
+    for {
+      documentIds <- selection.getAllDocumentIds
+      result <- countByDocumentsAndNodes(documentIds, nodeIds)
+    } yield result
+  }
+}
+
+object DocumentNodeBackend extends DbDocumentNodeBackend with DbBackend

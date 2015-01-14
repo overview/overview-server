@@ -3,18 +3,17 @@ define [
   'jquery'
   'backbone'
   '../collections/Tags'
-  '../collections/SearchResults'
   '../collections/Views'
   './DocumentListParams'
-], (_, $, Backbone, Tags, SearchResults, Views, DocumentListParams) ->
-  # Holds Tags, SearchResults and Views. Oh, and nDocuments.
+], (_, $, Backbone, Tags, Views, DocumentListParams) ->
+  # Holds Tags and Views. Oh, and nDocuments.
   #
   # On the client, a DocumentSet doesn't hold a list of Documents because
   # there are way too many of them. To fetch a sample, use a DocumentList.
   #
   # Because DocumentSet doesn't store Documents, it also doesn't store any
   # associations between its elements: for instance, there is no count of tags
-  # per search result. Each set is independent of the others.
+  # per node. Each set is independent of the others.
   #
   # Methods that change stuff on the server
   # ---------------------------------------
@@ -45,7 +44,6 @@ define [
 
       @nDocuments = null
       @tags = new Tags([], url: "#{@url}/tags")
-      @searchResults = new SearchResults([], url: "#{@url}/searches")
       @views = new Views([], url: "#{@url}/views")
 
       @_load()
@@ -63,7 +61,6 @@ define [
     _onSuccess: (data) ->
       @nDocuments = data.nDocuments
       @tags.reset(data.tags)
-      @searchResults.reset(data.searchResults)
       @views.reset(data.views)
 
     _onError: (xhr) ->

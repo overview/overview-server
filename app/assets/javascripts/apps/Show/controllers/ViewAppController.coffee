@@ -55,7 +55,7 @@ define [
           keyboardController: @keyboardController
           documentListParams: @state.attributes.documentListParams
           document: @state.attributes.document
-          taglikeCid: @state.attributes.taglikeCid
+          highlightedDocumentListParams: @state.attributes.highlightedDocumentListParams
           el: el
           documentSet: @documentSet
           state: @state

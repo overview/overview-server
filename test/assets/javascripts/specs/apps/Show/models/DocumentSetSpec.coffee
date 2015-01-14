@@ -26,8 +26,6 @@ define [
     it 'should have nDocuments', -> expect(@subject.nDocuments).to.be.null
     it 'should have tags', -> expect(@subject.tags.models).to.deep.eq([])
     it 'should give tags the proper URL', -> expect(@subject.tags.url).to.eq('/documentsets/12/tags')
-    it 'should have searchResults', -> expect(@subject.searchResults.models).to.deep.eq([])
-    it 'should give searchResults the proper URL', -> expect(@subject.searchResults.url).to.eq('/documentsets/12/searches')
     it 'should have views', -> expect(@subject.views.models).to.deep.eq([])
 
     it 'should request stuff', ->
@@ -43,11 +41,6 @@ define [
       json = [ { id: 258, name: 'Some tag', color: '#612345' } ]
       @respondJson(200, tags: json)
       expect(@subject.tags.toJSON()).to.deep.eq(json)
-
-    it 'should fill in searchResults', ->
-      json = [ { id: 256, query: 'Query', createdAt: (new Date().toISOString()), state: 'InProgress' } ]
-      @respondJson(200, searchResults: json)
-      expect(@subject.searchResults.toJSON()).to.deep.eq(json)
 
     it 'should fill in views', ->
       json = [ { id: 257, title: 'View', creationData: [] } ]

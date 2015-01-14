@@ -1,8 +1,8 @@
 define [
   '../models/DocumentListParams'
-  '../views/InlineSearchResultList'
+  '../views/SearchView'
   'i18n'
-], (DocumentListParams, InlineSearchResultListView, i18n) ->
+], (DocumentListParams, SearchView, i18n) ->
   t = i18n.namespaced('views.Tree.show.SearchResultList')
 
   # SearchResult controller
@@ -23,18 +23,15 @@ define [
     state = options.state
     el = options.el
 
-    view = new InlineSearchResultListView
-      collection: searchResults
+    view = new SearchView
       state: state
       el: el
 
-    view.on 'search-result-clicked', (searchResult) ->
-      state.resetDocumentListParams().bySearchResult(searchResult)
-
-    view.on 'create-submitted', (query) ->
-      searchResult = searchResults.create(query: query)
-      searchResults.pollUntilStable()
+    view.on 'search', (q) ->
       state.set(oneDocumentSelected: false) # https://www.pivotaltracker.com/story/show/65130854
-      state.resetDocumentListParams().bySearchResult(searchResult)
+      if q.length > 0
+        state.resetDocumentListParams().bySearch(q)
+      else
+        state.resetDocumentListParams().all()
 
     { view: view }

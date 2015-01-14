@@ -6,7 +6,6 @@ import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
-import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mutable.Specification
 import org.specs2.mutable.Before
@@ -15,10 +14,9 @@ import org.specs2.mutable.Before
 class DocumentSetMessageHandlerSpec extends Specification {
 
   class TestMessageHandler(specificHandlerProbe: ActorRef) extends DocumentSetMessageHandler
-      with SearchComponent {
+    with SearchComponent {
 
     val actorCreator = new ActorCreator {
-      override def produceSearchHandler: Actor = new ForwardingActor(specificHandlerProbe)
       override def produceDeleteHandler: Actor = new ForwardingActor(specificHandlerProbe)
     }
   }
@@ -32,7 +30,6 @@ class DocumentSetMessageHandlerSpec extends Specification {
   class FailingTestMessagHandler extends DocumentSetMessageHandler with SearchComponent {
 
     val actorCreator = new ActorCreator {
-      override def produceSearchHandler: Actor = new FailingActor
       override def produceDeleteHandler: Actor = new FailingActor
     }
   }
@@ -42,20 +39,6 @@ class DocumentSetMessageHandlerSpec extends Specification {
     trait DocumentSetInfo {
       val documentSetId = 1l
       val jobId = 2L
-    }
-
-    abstract class SearchContext extends ActorSystemContext with DocumentSetInfo with Before {
-      val query = "query string"
-      val searchCommand = SearchCommand(documentSetId, query)
-      val searchMessage = SearchDocumentSet(documentSetId, query)
-
-      var searchHandler: TestProbe = _
-      var messageHandler: TestActorRef[TestMessageHandler] = _
-
-      def before = {
-        searchHandler = TestProbe()
-        messageHandler = TestActorRef(new TestMessageHandler(searchHandler.ref))
-      }
     }
 
     trait DeleteInfo extends DocumentSetInfo {
@@ -95,12 +78,6 @@ class DocumentSetMessageHandlerSpec extends Specification {
         messageHandler = TestActorRef(Props(new FailingTestMessagHandler), parent.ref, "Message Handler")
 
       }
-    }
-
-    "start search handler" in new SearchContext {
-      messageHandler ! searchCommand
-
-      searchHandler.expectMsg(searchMessage)
     }
 
     "start delete handler" in new DeleteContext {

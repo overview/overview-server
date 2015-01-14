@@ -15,7 +15,7 @@ import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
 import org.overviewproject.test.factories.PodoFactory
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,SearchResult,SearchResultState,Tag,Tree}
+import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,Tag,Tree}
 import org.overviewproject.tree.orm.DocumentSetCreationJobState
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.ResultPage
@@ -134,18 +134,10 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
           color="FFFFFF"
         )
 
-        val sampleSearchResult = SearchResult(
-          id=1L,
-          documentSetId=1L,
-          query="a search query",
-          state=SearchResultState.Complete
-        )
-
         mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(documentCount=10))
         mockStorage.findTrees(documentSetId) returns Seq(sampleTree)
         mockViewBackend.index(documentSetId) returns Future.successful(Seq(sampleView))
         mockStorage.findViewJobs(documentSetId) returns Seq()
-        mockStorage.findSearchResults(documentSetId) returns Seq(sampleSearchResult)
         mockStorage.findTags(documentSetId) returns Seq(sampleTag)
       }
 
@@ -158,7 +150,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         resultJson must /("views") */("title" -> sampleTree.title)
         resultJson must /("views") */("title" -> "a view")
         resultJson must /("tags") */("name" -> "a tag")
-        resultJson must /("searchResults") */("query" -> "a search query")
       }
 
       "include view creation jobs" in new ShowJsonScope {

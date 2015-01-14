@@ -25,7 +25,7 @@ define [ 'underscore' ], (_) ->
   #     DocumentListParams(documentSet).untagged()
   #     DocumentListParams(documentSet).byNode(node)
   #     DocumentListParams(documentSet).byTag(tag)
-  #     DocumentListParams(documentSet).bySearchResult(searchResult)
+  #     DocumentListParams(documentSet).bySearch(q)
   #
   # Each object is immutable.
   class AbstractDocumentListParams
@@ -34,7 +34,7 @@ define [ 'underscore' ], (_) ->
 
     toString: ->
       if @params.length
-        ids = (x.id for x in @params)
+        ids = ((x.id || x) for x in @params)
         "DocumentListParams(#{@type}:#{ids.join(',')})"
       else
         "DocumentListParams(#{@type})"
@@ -68,7 +68,7 @@ define [ 'underscore' ], (_) ->
     # * [ 'node', 'node description' ]
     # * [ 'tag', 'tag name' ]
     # * [ 'untagged' ]
-    # * [ 'searchResult', 'query' ]
+    # * [ 'search', 'terms' ]
     toI18n: -> throw new Error('not implemented')
 
     # Returns the parameters such that Overview servers can understand them.
@@ -153,12 +153,12 @@ define [ 'underscore' ], (_) ->
 
     toI18n: -> [ 'untagged' ]
 
-  class SearchResultDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view, @searchResult) -> super(documentSet, view, 'searchResult', @searchResult)
+  class SearchDocumentListParams extends AbstractDocumentListParams
+    constructor: (documentSet, view, @q) -> super(documentSet, view, 'search', @q)
 
-    toJSON: -> { searchResults: [ @searchResult.get('id') || 0 ] }
+    toJSON: -> { q: @q }
 
-    toI18n: -> [ 'searchResult', @searchResult.attributes.query || '' ]
+    toI18n: -> [ 'search', @q ]
 
   class JsonDocumentListParams extends AbstractDocumentListParams
     constructor: (documentSet, view, @json) -> super(documentSet, view, 'json', @json)
@@ -178,5 +178,5 @@ define [ 'underscore' ], (_) ->
     byJson: (json) -> new JsonDocumentListParams(@documentSet, @view, json)
     byNode: (node) -> new NodeDocumentListParams(@documentSet, @view, node)
     byTag: (tag) -> new TagDocumentListParams(@documentSet, @view, tag)
-    bySearchResult: (searchResult) -> new SearchResultDocumentListParams(@documentSet, @view, searchResult)
+    bySearch: (q) -> new SearchDocumentListParams(@documentSet, @view, q)
     untagged: -> new UntaggedDocumentListParams(@documentSet, @view)

@@ -96,12 +96,9 @@ PUT    /documentsets/:id/views/:viewId controllers.ViewController.update(id: Lon
 DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Long, viewId: Long)
 
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
+POST   /documentsets/:id/document-nodes/count-by-node controllers.DocumentNodeController.countByNode(id: Long)
 POST   /documentsets/:id/node-counts/tags/:tagId              controllers.TagController.nodeCounts(id: Long, tagId: Long)
 POST   /documentsets/:id/node-counts/untagged                 controllers.UntaggedDocumentsController.nodeCounts(id: Long)
-POST   /documentsets/:id/node-counts/searches/:searchResultId controllers.SearchResultController.nodeCounts(id: Long, searchResultId: Long)
-
-POST   /documentsets/:id/searches controllers.SearchController.create(id: Long)
-GET    /documentsets/:id/searches controllers.SearchResultController.index(id: Long)
 
 GET    /documentsets/:id/error-list controllers.DocumentProcessingErrorController.index(id: Long)
 
@@ -137,11 +134,6 @@ GET    /api/v1/files         controllers.api.MassUploadController.index()
 HEAD   /api/v1/files/:guid   controllers.api.MassUploadController.show(guid: java.util.UUID)
 POST   /api/v1/files/:guid   controllers.api.MassUploadController.create(guid: java.util.UUID)
 DELETE /api/v1/files         controllers.api.MassUploadController.cancel()
-
-GET    /api/v1/document-sets/:id/saved-searches        controllers.api.SavedSearchController.index(id: Long)
-POST   /api/v1/document-sets/:id/saved-searches        controllers.api.SavedSearchController.create(id: Long)
-GET    /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.show(id: Long, query: String)
-DELETE /api/v1/document-sets/:id/saved-searches/:query controllers.api.SavedSearchController.destroy(id: Long, query: String)
 
 GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
 GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)

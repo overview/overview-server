@@ -348,6 +348,9 @@ views.DocumentSet.show.NewViewDialog.url.insecure_html=This URL does not start w
 views.DocumentSet.show.NewViewDialog.url.insecure.dismiss=use it anyway
 views.DocumentSet.show.NewViewDialog.url.invalid=This is not a valid URL
 
+views.DocumentSet.show.SearchView.query_placeholder=Search all documents
+views.DocumentSet.show.SearchView.search=Search
+
 views.DocumentSet.show.TagThis.button.document=Tag this document
 views.DocumentSet.show.TagThis.button.list=Tag these documents
 views.DocumentSet.show.TagThis.hide=hide
@@ -357,7 +360,7 @@ views.DocumentSet.show.TagThis.placeholder=Tag name
 views.DocumentSet.show.TagThis.value.all=all
 views.DocumentSet.show.TagThis.value.json={0}
 views.DocumentSet.show.TagThis.value.node={0}
-views.DocumentSet.show.TagThis.value.searchResult=contains “{0}”
+views.DocumentSet.show.TagThis.value.search=contains “{0}”
 views.DocumentSet.show.TagThis.value.tag={0}
 views.DocumentSet.show.TagThis.value.untagged=previously untagged
 
@@ -420,7 +423,7 @@ views.Tree.show.DocumentListCursor.selection.all_html=in document set
 views.Tree.show.DocumentListCursor.selection.untagged_html=without any tags
 views.Tree.show.DocumentListCursor.selection.node_html=in folder <strong>{0}</strong>
 views.Tree.show.DocumentListCursor.selection.tag_html=with tag <strong>{0}</strong>
-views.Tree.show.DocumentListCursor.selection.searchResult_html=for search <strong>{0}</strong>
+views.Tree.show.DocumentListCursor.selection.search_html=containing <strong>{0}</strong>
 views.Tree.show.DocumentListCursor.selection.json_html={0}
 views.Tree.show.DocumentListCursor.description.empty=(no key words)
 views.Tree.show.DocumentListCursor.description=Key words: {0}
@@ -431,16 +434,10 @@ views.Tree.show.DocumentListTitle.json.title_html=<strong>{0}</strong> {1}
 views.Tree.show.DocumentListTitle.node.edit=edit folder…
 views.Tree.show.DocumentListTitle.node.title_html=<strong>{0}</strong> in folder “{1}”
 views.Tree.show.DocumentListTitle.num_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
-views.Tree.show.DocumentListTitle.searchResult.edit=edit tag…
-views.Tree.show.DocumentListTitle.searchResult.Complete.title_html=<strong>{0}</strong> in search “{1}”
-views.Tree.show.DocumentListTitle.searchResult.Error.title_html=Overview error during search “{0}”
-views.Tree.show.DocumentListTitle.searchResult.InProgress.title_html=Searching for “{0}”…
+views.Tree.show.DocumentListTitle.search.title_html=<strong>{0}</strong> containing “{1}”
 views.Tree.show.DocumentListTitle.tag.edit=edit tag…
 views.Tree.show.DocumentListTitle.tag.title_html=<strong>{0}</strong> with tag “{1}”
 views.Tree.show.DocumentListTitle.untagged.title_html=<strong>{0}</strong> without any tags
-
-views.Tree.show.InlineSearchResultList.query_placeholder=Search all documents
-views.Tree.show.InlineSearchResultList.search=Search
 
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
 

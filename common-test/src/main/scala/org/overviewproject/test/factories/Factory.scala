@@ -79,11 +79,6 @@ trait Factory {
     userEmail: String = "user@example.com",
     role: DocumentSetUser.Role = DocumentSetUser.Role(1)  
   ): DocumentSetUser
-  
-  def documentSearchResult(
-    documentId: Long,
-    searchResultId: Long
-  ): DocumentSearchResult
 
   def documentTag(documentId: Long, tagId: Long): DocumentTag
 
@@ -127,14 +122,6 @@ trait Factory {
     name: String = "name",
     description: String = "description",
     url: String = "http://example.org"): Plugin
-
-  def searchResult(
-    id: Long = 0L,
-    state: SearchResultState.Value = SearchResultState.Complete,
-    documentSetId: Long = 0L,
-    query: String = "query",
-    createdAt: Timestamp = now
-  ): SearchResult
 
   def tag(
     id: Long = 0L,

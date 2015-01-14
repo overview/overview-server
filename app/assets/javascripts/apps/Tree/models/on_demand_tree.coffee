@@ -229,14 +229,13 @@ define [
 
     _demand: (arg) ->
       @transactionQueue.ajax
+        debugInfo: 'OnDemandTree._demand'
         type: 'get'
         url: "/trees/#{@view.get('id')}/#{arg}.json"
         success: (json) =>
           @_add_json(json)
-          if @taglikeUrlPart
-            nodeIds = (n.id for n in json.nodes)
-            @_refreshTaglikeCounts(@taglikeUrlPart, nodeIds)
-        debugInfo: 'OnDemandTree._demand'
+          if @highlightJson
+            @_refreshHighlightCounts(@highlightJson, (n.id for n in json.nodes), false)
 
     _collapse_node: (idTreeRemove, id) ->
       idsToRemove = []
@@ -287,44 +286,33 @@ define [
         success: => @id_tree.batchAdd(->) # refresh
         debugInfo: 'OnDemandTree.saveNode'
 
-    setTaglikeUrlPart: (urlPart) ->
-      return if @taglikeUrlPart == urlPart
+    setHighlightJson: (json) ->
+      return if _.isEqual(@highlightJson, json)
 
-      @taglikeUrlPart = urlPart
+      @highlightJson = json
 
-      # Find IDs and drop existing counts
-      nodeIds = []
-      for id, node of @nodes
-        node.taglikeCount = null
-        nodeIds.push(id)
+      # drop existing counts
+      (node.highlightCount = null) for __, node of @nodes
 
-      @_refreshTaglikeCounts(@taglikeUrlPart, nodeIds) if @taglikeUrlPart
+      @refreshHighlightCountsOnCurrentNodes()
 
-    refreshCurrentTaglikeCountsOnCurrentNodes: ->
-      if @taglikeUrlPart
-        nodeIds = []
-        nodeIds.push(id) for id, __ of @nodes
-        @_refreshTaglikeCounts(@taglikeUrlPart, nodeIds)
+    refreshHighlightCountsOnCurrentNodes: ->
+      if @highlightJson
+        @_refreshHighlightCounts(@highlightJson, Object.keys(@nodes), true)
 
-    _refreshTaglikeCounts: (urlPart, nodeIds) ->
+    _refreshHighlightCounts: (json, nodeIds, forceRefresh) ->
       return if !nodeIds?.length
 
       @transactionQueue.ajax
         type: 'POST'
-        url: "/documentsets/#{@documentSet.id}/node-counts/#{urlPart}" # at the time the transaction was _scheduled_
-        data: { nodes: nodeIds.join(',') } # at the time the transaction was _scheduled_
-        debugInfo: 'OnDemandTree._refreshTaglikeCounts'
+        url: "/documentsets/#{@documentSet.id}/document-nodes/count-by-node"
+        data: _.extend({ countNodes: nodeIds.join(','), refresh: forceRefresh }, json) # at the time the transaction was _scheduled_
+        debugInfo: 'OnDemandTree._refreshHighlightCounts'
         success: (data) =>
-          # Data is an Array of [ nodeId1, count1, nodeId2, count2, ... ]
-          #
-          # It's guaranteed to contain an entry for every nodeId requested.
-          i = 0
-          while i < data.length
-            nodeId = data[i++]
-            count = data[i++]
-
-            node = @nodes[nodeId]
-            if node? # it might have been unloaded since
-              node.taglikeCount = count
+          # data is an Object of counts keyed by id
+          for id in nodeIds
+            node = @nodes[id]
+            continue if !node? # it might have been unloaded since
+            node.highlightCount = data[id] || 0
 
           @id_tree.batchAdd(->) # trigger update

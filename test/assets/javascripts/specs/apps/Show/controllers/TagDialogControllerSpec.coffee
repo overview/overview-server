@@ -13,7 +13,8 @@ define [
 
     class State extends Backbone.Model
       defaults:
-        taglikeCid: null
+        highlightedDocumentListParams: null
+        documentListParams: null
         view: null
 
       initialize: ->
@@ -68,15 +69,15 @@ define [
         @view.trigger('remove', @tag)
         expect(Backbone.sync).to.have.been.calledWith('delete', @tag)
 
-      it 'should unset the state taglikeCid if needed', ->
-        @state.set(taglikeCid: @tag.cid)
+      it 'should unset the state highlightedDocumentListParams if needed', ->
+        @state.set(highlightedDocumentListParams: { type: 'tag', tag: @tag })
         @view.trigger('remove', @tag)
-        expect(@state.get('taglikeCid')).to.be.null
+        expect(@state.get('highlightedDocumentListParams')).to.be.null
 
-      it 'should not unset the state taglikeCid if not needed', ->
-        @state.set(taglikeCid: 'foo')
+      it 'should not unset the state highlightedDocumentListParams if not needed', ->
+        @state.set(highlightedDocumentListParams: { type: 'tag', tag: 'foo' })
         @view.trigger('remove', @tag)
-        expect(@state.get('taglikeCid')).to.eq('foo')
+        expect(@state.get('highlightedDocumentListParams')).to.deep.eq(type: 'tag', tag: 'foo')
 
       it 'should reset the documentListParams if needed', ->
         @state.set(documentListParams: { type: 'tag', tag: @tag })

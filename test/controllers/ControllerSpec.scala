@@ -127,10 +127,6 @@ class ControllerSpec extends Specification with JsonMatchers {
         test("/?tags=3,4,5", SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L)))
       }
 
-      "make a SelectionRequest with searchResults" in new SelectionScope {
-        test("/?searchResults=4,5,6", SelectionRequest(1L, searchResultIds=Seq(4L, 5L, 6L)))
-      }
-
       "make a SelectionRequest with storeObjects" in new SelectionScope {
         test("/?objects=5,6,7", SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L)))
       }
@@ -163,10 +159,6 @@ class ControllerSpec extends Specification with JsonMatchers {
 
       "make a SelectionRequest with tags" in new SelectionScope {
         test(Seq("tags" -> "3,4,5"), SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L)))
-      }
-
-      "make a SelectionRequest with searchResults" in new SelectionScope {
-        test(Seq("searchResults" -> "4,5,6"), SelectionRequest(1L, searchResultIds=Seq(4L, 5L, 6L)))
       }
 
       "make a SelectionRequest with storeObjects" in new SelectionScope {

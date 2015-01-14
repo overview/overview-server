@@ -22,7 +22,7 @@ class showSpec extends Specification with JsonMatchers {
         baseTag.copy(id=5L, name="tag1"),
         baseTag.copy(id=15L, name="tag2")
       )
-      val treeJson = show(buildDocumentSet(10), Seq(), Seq(), Seq(), tags, Seq()).toString
+      val treeJson = show(buildDocumentSet(10), Seq(), Seq(), Seq(), tags).toString
       
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")
@@ -30,7 +30,7 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "show nDocuments" in {
-      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(), Seq()).toString
       json must /("nDocuments" -> 10L)
     }
 
@@ -46,7 +46,7 @@ class showSpec extends Specification with JsonMatchers {
         lang="en"
       )
 
-      val json = show(buildDocumentSet(10), Seq(tree), Seq(), Seq(), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(tree), Seq(), Seq(), Seq()).toString
 
       json must /("views") */("type" -> "tree")
       json must /("views") */("id" -> 2L)
@@ -67,7 +67,7 @@ class showSpec extends Specification with JsonMatchers {
         apiToken="api-token"
       )
 
-      val json: String = show(buildDocumentSet(10), Seq(), Seq(view), Seq(), Seq(), Seq()).toString
+      val json: String = show(buildDocumentSet(10), Seq(), Seq(view), Seq(), Seq()).toString
 
       json must /("views") */("type" -> "view")
       json must /("views") */("id" -> 1L)
@@ -86,7 +86,7 @@ class showSpec extends Specification with JsonMatchers {
         state=DocumentSetCreationJobState.InProgress
       )
 
-      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(viewJob), Seq(), Seq()).toString
+      val json = show(buildDocumentSet(10), Seq(), Seq(), Seq(viewJob), Seq()).toString
 
       json must /("views") /#(0) /("id" -> 2.0)
       json must /("views") /#(0) /("type" -> "job")

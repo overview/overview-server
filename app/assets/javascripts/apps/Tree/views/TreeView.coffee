@@ -66,9 +66,9 @@ define [
       @options = _.extend({}, DEFAULT_OPTIONS, options)
       @state = @tree.state
 
-      @setTaglikeCid(@state.get('taglikeCid'))
+      @setHighlightedDocumentListParams(@state.get('highlightedDocumentListParams'))
 
-      @listenTo(@state, 'change:taglikeCid', (state, taglikeCid) => @setTaglikeCid(taglikeCid))
+      @listenTo(@state, 'change:highlightedDocumentListParams', (state, params) => @setHighlightedDocumentListParams(params))
       @listenTo(@documentSet, 'tag', @_onTag)
       @listenTo(@documentSet, 'untag', @_onUntag)
 
@@ -126,7 +126,7 @@ define [
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
-      @tree.state.on('change:documentListParams change:document change:taglikeCid', update)
+      @tree.state.on('change:documentListParams change:document change:highlightedDocumentListParams', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
       @documentSet.tags.on('change:color', update)
@@ -248,24 +248,24 @@ define [
 
       @last_draw?.pixel_to_action(x, y)
 
-    _getTaglikeColor: ->
-      if (taglikeCid = @tree.state.get('taglikeCid'))?
-        if (tag = @documentSet.tags.get(taglikeCid))?
+    _getHighlightColor: ->
+      if (highlightedDocumentListParams = @tree.state.get('highlightedDocumentListParams'))?
+        if (tag = highlightedDocumentListParams.tag)?
           tag.get('color')
-        else if @documentSet.searchResults.get(taglikeCid)?
-          '#50ade5'
-        else if taglikeCid == 'untagged'
+        else if highlightedDocumentListParams.type == 'untagged'
           '#dddddd'
+        else if highlightedDocumentListParams.type != 'all'
+          '#50ade5'
         else
-          throw new Error('unreachable code')
+          null
       else
         null
 
     _redraw: ->
-      taglikeColor = @_getTaglikeColor()
+      highlightColor = @_getHighlightColor()
       highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('documentListParams'), @state.get('document'), @tree.on_demand_tree)
 
-      @last_draw = new DrawOperation(@canvas, @tree, taglikeColor, highlightedNodeIds, @hoverNodeId, @focus, @options)
+      @last_draw = new DrawOperation(@canvas, @tree, highlightColor, highlightedNodeIds, @hoverNodeId, @focus, @options)
       @last_draw.draw()
 
     update: ->
@@ -337,63 +337,38 @@ define [
       @_set_needs_update()
 
     _onTag: (tag, documentListParams) ->
-      if @_isCurrent(tag.cid) || @_isCurrent('untagged')
-        @tree.on_demand_tree.refreshCurrentTaglikeCountsOnCurrentNodes()
+      if @_isCurrentTag(tag) || @_isCurrentUntagged()
+        @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
 
     _onUntag: (tag, documentListParams) ->
-      if @_isCurrent(tag.cid) || @_isCurrent('untagged')
-        @tree.on_demand_tree.refreshCurrentTaglikeCountsOnCurrentNodes()
+      if @_isCurrentTag(tag) || @_isCurrentUntagged()
+        @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
 
-    _isCurrent: (taglikeCid) -> @state.get('taglikeCid') == taglikeCid
+    _isCurrentTag: (tag) -> @state.get('highlightedDocumentListParams').tag == tag
+    _isCurrentUntagged: -> @state.get('highlightedDocumentListParams').type == 'untagged'
 
-    _findTaglikeAndType: (cid) ->
-      if cid == 'untagged'
-        { type: 'untagged', taglike: 'untagged' }
-      else if (searchResult = @documentSet.searchResults.get(cid))?
-        { type: 'searchResult', taglike: searchResult }
-      else if (tag = @documentSet.tags.get(cid))?
-        { type: 'tag', taglike: tag }
+    setHighlightedDocumentListParams: (params) ->
+      @stopListening(@_newHighlightedBackboneModel) if @_newHighlightedBackboneModel?
+      @_newHighlightedBackboneModel = null
+      if params
+        if (tag = params.tag)? && !tag.id
+          # New tags have no IDs. Let's call this method again when we get one.
+          @listenTo(tag, 'sync', => @setHighlightedDocumentListParams(params))
+        else
+          @tree.on_demand_tree.setHighlightJson(params.toApiParams())
       else
-        { type: 'null', taglike: null }
-
-    setTaglikeCid: (taglikeCid) ->
-      @stopListening(@_taglike) if @_taglike?.get? # if it's a Backbone.Model
-
-      taglikeAndType = @_findTaglikeAndType(taglikeCid)
-      taglike = taglikeAndType.taglike
-      type = taglikeAndType.type
-
-      @_taglike = taglike
-
-      if type == 'tag' && !taglike.get('id')
-        @listenTo taglike, 'change:id', =>
-          @resetTaglikeUrlPartFromTaglike(type, taglike)
-
-      if type == 'searchResult' && taglike.get('state') != 'Complete'
-        @listenTo taglike, 'change:id change:state', =>
-          if taglike.get('state') == 'Complete'
-            @resetTaglikeUrlPartFromTaglike(type, taglike)
-
-      @resetTaglikeUrlPartFromTaglike(type, taglike)
-
-    resetTaglikeUrlPartFromTaglike: (type, taglike) ->
-      part = if type == 'untagged'
-        'untagged'
-      else if type == 'searchResult' && taglike.get('id')
-        "searches/#{taglike.get('id')}"
-      else if type == 'tag' && taglike.get('id')
-        "tags/#{taglike.get('id')}"
-      else
-        null
-
-      @tree.on_demand_tree.setTaglikeUrlPart(null) # flush counts
-      @tree.on_demand_tree.setTaglikeUrlPart(part) if part?
+        @tree.on_demand_tree.setHighlightJson(null)
 
   TreeView.helpers =
     # Returns a set of { nodeid: null }.
     #
     # A node is highlighted if we are viewing a document that is contained
     # in the node.
+    #
+    # Do not confuse this with a *highlightedDocumentList*, which highlights
+    # _documents_, not nodes. (As of 2015-01-14, a DocumentList is highlighted
+    # by drawing within the nodes; a node is highlighted by changing its
+    # border.)
     getHighlightedNodeIds: (documentListParams, document, onDemandTree) ->
       return {} if !document?
 

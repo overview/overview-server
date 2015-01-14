@@ -10,19 +10,17 @@ define [
   describe 'apps/Show/controllers/ViewAppController', ->
     beforeEach ->
       @tags = 'tags'
-      @searchResults = 'searchResults'
 
       @documentSet = new Backbone.Model # hack! testing ViewAppClient can listen to it
       @documentSet.tags = @tags
-      @documentSet.searchResults = @searchResults
 
       @jobView = new MockView(type: 'job')
       @treeView = new MockView(type: 'tree')
 
       @state = new MockState
+        highlightedDocumentListParams: 'highlightedDocumentListParams'
         documentListParams: 'documentListParams'
         document: 'document'
-        taglikeCid: 'taglikeCid'
         view: @jobView
 
       @transactionQueue = 'transactionQueue'
@@ -86,7 +84,7 @@ define [
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch
           documentListParams: 'documentListParams'
           document: 'document'
-          taglikeCid: 'taglikeCid'
+          highlightedDocumentListParams: 'highlightedDocumentListParams'
 
       it 'should pass transactionQueue to the viewApp', ->
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch
@@ -107,7 +105,6 @@ define [
         expect(app).not.to.be.undefined
         expect(app).to.respondTo('resetDocumentListParams')
         expect(app).to.respondTo('getTag')
-        expect(app).to.respondTo('getSearchResult')
 
       it 'should use ViewAppClient to notify the viewApp of changes', ->
         @state.set(document: 'document2')

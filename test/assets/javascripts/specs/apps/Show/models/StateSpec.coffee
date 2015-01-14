@@ -7,11 +7,11 @@ define [
       beforeEach ->
         @params2 = 
           equals: sinon.stub().returns(false)
-          taglikeCid: null
+          type: 'params2'
 
         @params1 =
           equals: sinon.stub().returns(false)
-          taglikeCid: null
+          type: 'params1'
           reset:
             bySomething: sinon.stub().returns(@params2)
 
@@ -29,21 +29,18 @@ define [
         state.resetDocumentListParams().bySomething()
         expect(state.get('document')).to.be.null
 
-      it 'should change taglikeCid to the new value when changing documentListParams to a tag', ->
-        state = new State(documentListParams: @params1, taglikeCid: 'foo')
+      it 'should change highlightedDocumentListParams to the new value when changing documentListParams to a tag', ->
+        state = new State(documentListParams: @params1)
         @params1.equals.returns(false)
-        @params2.type = 'tag'
-        @params2.tag = { cid: 'bar' }
         state.resetDocumentListParams().bySomething()
-        expect(state.get('taglikeCid')).to.eq('bar')
+        expect(state.get('highlightedDocumentListParams')).to.have.property('type', 'params2')
 
-      it 'should not change taglikeCid when changing documentListParams to a node', ->
-        state = new State(documentListParams: @params1, taglikeCid: 'foo')
+      it 'should not change highlightedDocumentListParams when changing documentListParams to a node', ->
+        state = new State(documentListParams: @params1, highlightedDocumentListParams: @params1)
+        @params1.reset.bySomething.returns(type: 'node')
         @params1.equals.returns(false)
-        @params2.type = 'node'
-        @params2.node = { cid: 'bar' }
         state.resetDocumentListParams().bySomething()
-        expect(state.get('taglikeCid')).to.eq('foo')
+        expect(state.get('highlightedDocumentListParams')).to.have.property('type', 'params1')
 
     describe 'document and oneDocumentSelected', ->
       state = undefined

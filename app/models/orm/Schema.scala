@@ -36,7 +36,6 @@ object Schema extends org.squeryl.Schema {
 
   val apiTokens = table[ApiToken]
   val documentProcessingErrors = table[DocumentProcessingError]
-  val documentSearchResults = table[DocumentSearchResult]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSets = table[DocumentSet]
   val documentSetUsers = table[DocumentSetUser]
@@ -46,7 +45,6 @@ object Schema extends org.squeryl.Schema {
   val nodeDocuments = table[NodeDocument]
   val nodes = table[Node]
   val pages = table[Page]
-  val searchResults = table[SearchResult]
   val tags = table[Tag]
   val uploadedFiles = table[UploadedFile]
   val uploads = table[Upload]

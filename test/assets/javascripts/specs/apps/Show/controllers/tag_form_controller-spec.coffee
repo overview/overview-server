@@ -47,15 +47,15 @@ define [
         view.delete()
         expect(@tag.destroy).to.have.been.called
 
-      it 'should deselect state.taglikeCid if necessary on delete', ->
-        @state.set('taglikeCid', @tag.cid)
+      it 'should deselect state.highlightedDocumentListParams if necessary on delete', ->
+        @state.set(highlightedDocumentListParams: { type: 'tag', tag: @tag })
         view.delete()
-        expect(@state.get('taglikeCid')).to.be.null
+        expect(@state.get('highlightedDocumentListParams')).to.be.null
 
-      it 'should not deselect state.taglikeCid if unnecessary on delete', ->
-        @state.set('taglikeCid', 'untagged')
+      it 'should not deselect state.highlightedDocumentListParams if unnecessary on delete', ->
+        @state.set(highlightedDocumentListParams: { type: 'tag', tag: 'foo' })
         view.delete()
-        expect(@state.get('taglikeCid')).to.eq('untagged')
+        expect(@state.get('highlightedDocumentListParams')).to.deep.eq(type: 'tag', tag: 'foo')
 
       it 'should change documentListParams if necessary on delete', ->
         @state.set(documentListParams: { type: 'tag', tag: @tag })

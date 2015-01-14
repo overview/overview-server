@@ -7,13 +7,13 @@ import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.backend.ViewBackend
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
-import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,SearchResultFinder,TagFinder,TreeFinder}
+import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetStore
 import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.Delete
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree, SearchResult }
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.ResultPage
 
@@ -96,7 +96,6 @@ trait DocumentSetController extends Controller {
         val trees = storage.findTrees(id).map(_.copy()).toArray
         val viewJobs = storage.findViewJobs(id).map(_.copy()).toArray
         val tags = storage.findTags(id).map(_.copy()).toArray
-        val searchResults = storage.findSearchResults(id).map(_.copy()).toArray
 
         for {
           _views <- viewBackend.index(id)
@@ -105,8 +104,7 @@ trait DocumentSetController extends Controller {
           trees,
           _views,
           viewJobs,
-          tags,
-          searchResults
+          tags
         ))
       }
     }
@@ -231,9 +229,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     /** All Tags for the document set. */
     def findTags(documentSetId: Long) : Iterable[Tag]
 
-    /** All SearchResults for the document set. */
-    def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
-
     /** Returns true iff we can search the document set.
       *
       * This is a '''hack'''. All document sets ''should'' be searchable, but
@@ -313,12 +308,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
 
     override def findTags(documentSetId: Long) = {
       TagFinder.byDocumentSet(documentSetId).toSeq
-    }
-
-    override def findSearchResults(documentSetId: Long) = {
-      SearchResultFinder
-        .byDocumentSet(documentSetId)
-        .onlyNewest
     }
 
     override def isDocumentSetSearchable(documentSet: DocumentSet) = documentSet.version >= FirstSearchableDocumentSetVersion

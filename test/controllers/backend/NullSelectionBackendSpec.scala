@@ -25,12 +25,11 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
         val nodeIds: Seq[Long] = Seq()
         val tagIds: Seq[Long] = Seq()
         val documentIds: Seq[Long] = Seq()
-        val searchResultIds: Seq[Long] = Seq()
         val storeObjectIds: Seq[Long] = Seq()
         val tagged: Option[Boolean] = None
         val q: String = ""
 
-        lazy val request = SelectionRequest(documentSetId, nodeIds, tagIds, documentIds, searchResultIds, storeObjectIds, tagged, q)
+        lazy val request = SelectionRequest(documentSetId, nodeIds, tagIds, documentIds, storeObjectIds, tagged, q)
         def create = await(backend.create(userEmail, request))
         lazy val result = create
       }

@@ -18,15 +18,16 @@ define [ 'backbone' ], (Backbone) ->
       # but right now we are selecting the doclist.
       oneDocumentSelected: false
 
-      # Which tag-like is under view: 'untagged' for untagged, or a Tag or
-      # SearchResult's CID.
+      # Which document list is under view as far as the Tree is concerned.
       #
-      # We use this to highlight the last-selected tag while navigating nodes.
-      # We set it in setDocumentListParams. Since we only ever check for
-      # equality, we don't need to store the actual object. (We wouldn't
-      # benefit from storing the actual object, since 'untagged' is not like
-      # the others.)
-      taglikeCid: null
+      # This gets set in documentListParams, except when searching by Node.
+      # That's so you can:
+      #
+      # 1. Select a tag (sets highlightedDocumentListParams)
+      # 2. See the tree highlight the tag
+      # 3. Click one of the nodes (_doesn't_ set highlightedDocumentListParams)
+      # 4. Still see the tag highlighted
+      highlightedDocumentListParams: null
 
     # Sets new documentListParams and unsets documentId.
     #
@@ -37,17 +38,16 @@ define [ 'backbone' ], (Backbone) ->
       params1 = @get('documentListParams')
       return if params1?.equals(params)
 
-      taglikeCid = if params.type == 'tag'
-        params.tag.cid
-      else if params.type == 'searchResult'
-        params.searchResult.cid
+      highlightedDocumentListParams = if params.type == 'node'
+        # Don't change
+        @get('highlightedDocumentListParams')
       else
-        @get('taglikeCid')
+        params
 
       @set
         documentListParams: params
+        highlightedDocumentListParams: highlightedDocumentListParams
         document: null
-        taglikeCid: taglikeCid
 
     # Return a DocumentList that describes all documents that will be affected
     # by tagging.

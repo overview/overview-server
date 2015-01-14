@@ -90,7 +90,6 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         val documentIds: Seq[Long] = Seq()
         val tagIds: Seq[Long] = Seq()
         val nodeIds: Seq[Long] = Seq()
-        val searchResultIds: Seq[Long] = Seq()
         val storeObjectIds: Seq[Long] = Seq()
         val tagged: Option[Boolean] = None
         val q: String = ""
@@ -100,7 +99,6 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
           documentIds=documentIds,
           tagIds=tagIds,
           nodeIds=nodeIds,
-          searchResultIds=searchResultIds,
           storeObjectIds=storeObjectIds,
           tagged=tagged,
           q=q
@@ -181,15 +179,6 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         override val nodeIds = Seq(node.id)
         override val tagIds = Seq(tag.id)
         ret must beEqualTo(Seq(doc1.id))
-      }
-
-      "search by searchResultIds" in new IndexIdsScope {
-        val sr = factory.searchResult(documentSetId=documentSet.id)
-        val dsr1 = factory.documentSearchResult(doc1.id, sr.id)
-        val dsr2 = factory.documentSearchResult(doc2.id, sr.id)
-
-        override val searchResultIds = Seq(sr.id)
-        ret must beEqualTo(Seq(doc2.id, doc1.id))
       }
 
       "search by storeObjectIds" in new IndexIdsScope {

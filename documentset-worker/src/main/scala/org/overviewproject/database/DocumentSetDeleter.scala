@@ -42,14 +42,9 @@ trait DocumentSetDeleter extends SlickClient {
   private def deleteUserAddedData(documentSetId: Long)(implicit session: Session): Unit = {
     val tags = Tags.filter(_.documentSetId === documentSetId)
     val documentTags = DocumentTags.filter(_.tagId in tags.map(_.id))
-    val searchResults = SearchResults.filter(_.documentSetId === documentSetId)
-    val documentSearchResults = DocumentSearchResults.filter(_.searchResultId in searchResults.map(_.id))
     
     documentTags.delete
     tags.delete
-    
-    documentSearchResults.delete
-    searchResults.delete
   }
 
   

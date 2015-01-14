@@ -6,11 +6,10 @@ import akka.actor.SupervisorStrategy._
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
-import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.messagequeue.{ AcknowledgingMessageReceiver, MessageService }
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageService
-import org.overviewproject.searchindex.ElasticSearchComponents
+import org.overviewproject.searchindex.ElasticSearchClient
 import org.overviewproject.util.Configuration
 import org.overviewproject.util.Logger
 import javax.jms._
@@ -27,7 +26,6 @@ trait Command
 object DocumentSetJobHandlerProtocol {
   // Internal messages that should really be private, but are 
   // public for easier testing. 
-  case class SearchCommand(documentSetId: Long, query: String) extends Command
   case class DeleteCommand(documentSetId: Long, waitForJobRemoval: Boolean) extends Command
   case class DeleteTreeJobCommand(jobId: Long) extends Command
 }
@@ -49,14 +47,12 @@ object DocumentSetJobHandlerFSM {
   case object Working extends Data
 }
 
-/**
- * Component for creating a SearchHandler actor
- */
+/** Component for creating a SearchHandler actor
+  */
 trait SearchComponent {
   val actorCreator: ActorCreator
 
   trait ActorCreator {
-    def produceSearchHandler: Actor
     def produceDeleteHandler: Actor
   }
 }
@@ -80,14 +76,6 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
   startWith(Ready, Working)
 
   when(Ready) {
-    case Event(SearchCommand(documentSetId, query), _) => {
-      Logger.info(s"Received Search($documentSetId, $query)")
-      val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
-      context.watch(searchHandler)
-
-      searchHandler ! SearchDocumentSet(documentSetId, query)
-      goto(WaitingForCompletion)
-    }
     case Event(DeleteCommand(documentSetId, waitForJobRemoval), _) => {
       Logger.info(s"Received Delete($documentSetId)")
       val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
@@ -126,10 +114,8 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
 /** Create a SearchHandler */
 trait SearchComponentImpl extends SearchComponent {
   class ActorCreatorImpl extends ActorCreator {
-    override def produceSearchHandler: Actor = new SearchHandler with SearchIndexAndSearchStorage
-
-    override def produceDeleteHandler: Actor = new DeleteHandler with ElasticSearchComponents {
-	  
+    override def produceDeleteHandler: Actor = new DeleteHandler {
+      override val searchIndexClient = ElasticSearchClient.client
       override val documentSetDeleter = DocumentSetDeleter(context.dispatcher)
       override val jobDeleter = DocumentSetCreationJobDeleter(context.dispatcher)
       override val jobStatusChecker = JobStatusChecker()

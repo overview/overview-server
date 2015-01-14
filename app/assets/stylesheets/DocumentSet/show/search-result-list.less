@@ -19,22 +19,8 @@
     z-index: 0;
   }
 
-  input[type=submit] {
-    .border-right-radius(0);
-  }
-
-  input[type=text] {
-    &.state-inprogress {
-      color: white;
-      text-shadow: 0 0 .1em @gray-dark;
-      background-color: @in-progress-color;
-    }
-    &.state-error {
-      color: white;
-      text-shadow: 0 0 .1em @gray-dark;
-      background-color: @error-color;
-    }
-    &.state-complete {
+  &:not(.changing):not(.empty) {
+    input[type=text] {
       color: white;
       text-shadow: 0 0 .1em @gray-dark;
       background-color: @complete-color;

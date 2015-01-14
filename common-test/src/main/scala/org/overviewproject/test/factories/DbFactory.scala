@@ -91,13 +91,6 @@ class DbFactory(connection: Connection) extends Factory {
     pageNumber
   ).toDocument).toDeprecatedDocument
 
-  override def documentSearchResult(documentId: Long, searchResultId: Long) = {
-    q.insertDocumentSearchResult += podoFactory.documentSearchResult(
-      documentId = documentId,
-      searchResultId = searchResultId
-    )
-  }
-
   override def documentSet(
     id: Long = 0L,
     title: String = "",
@@ -198,20 +191,6 @@ class DbFactory(connection: Connection) extends Factory {
     description: String = "description",
     url: String = "http://example.org"
   ) = q.insertPlugin += podoFactory.plugin(id, name, description, url)
-
-  override def searchResult(
-    id: Long = 0L,
-    state: SearchResultState.Value = SearchResultState.Complete,
-    documentSetId: Long = 0L,
-    query: String = "query",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ) = q.insertSearchResult += podoFactory.searchResult(
-    id,
-    state,
-    documentSetId,
-    query,
-    createdAt
-  )
 
   override def tree(
     id: Long = 0L,
@@ -381,7 +360,6 @@ object DbFactory {
     // Compile queries once, instead of once per test
     val insertApiToken = (ApiTokens returning ApiTokens).insertInvoker
     val insertDocument = (Documents returning Documents).insertInvoker
-    val insertDocumentSearchResult = (DocumentSearchResults returning DocumentSearchResults).insertInvoker
     val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
     val insertDocumentTag = (DocumentTags returning DocumentTags).insertInvoker
     val insertDocumentSetUser = (DocumentSetUsers returning DocumentSetUsers).insertInvoker
@@ -389,7 +367,6 @@ object DbFactory {
     val insertNode = (Nodes returning Nodes).insertInvoker
     val insertNodeDocument = (NodeDocuments returning NodeDocuments).insertInvoker
     val insertPlugin = (Plugins returning Plugins).insertInvoker
-    val insertSearchResult = (SearchResults returning SearchResults).insertInvoker
     val insertStore = (Stores returning Stores).insertInvoker
     val insertStoreObject = (StoreObjects returning StoreObjects).insertInvoker
     val insertTree = (Trees returning Trees).insertInvoker

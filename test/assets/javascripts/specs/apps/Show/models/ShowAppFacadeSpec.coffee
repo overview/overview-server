@@ -4,8 +4,6 @@ define [
 ], (Backbone, ShowAppFacade) ->
   class MockTags extends Backbone.Collection
 
-  class MockSearchResults extends Backbone.Collection
-
   describe 'apps/Show/models/ShowAppFacade', ->
     beforeEach ->
       @resetByNodeSpy = sinon.spy()
@@ -13,11 +11,9 @@ define [
         resetDocumentListParams: =>
           byNode: @resetByNodeSpy
       @tags = new MockTags([ id: 1 ])
-      @searchResults = new MockSearchResults([ id: 2 ])
       @subject = new ShowAppFacade
         state: @state
         tags: @tags
-        searchResults: @searchResults
 
     describe 'resetDocumentListParams', ->
       it 'should delegate to State', ->
@@ -32,11 +28,3 @@ define [
 
       it 'should return undefined on a missing tag', ->
         expect(@subject.getTag(123456)).to.be.undefined
-
-    describe 'getSearchResult', ->
-      it 'should find a valid searchResult by CID', ->
-        searchResult = @searchResults.at(0)
-        expect(@subject.getSearchResult(searchResult.cid)).to.eq(searchResult)
-
-      it 'should return undefined on a missing searchResult', ->
-        expect(@subject.getSearchResult(123456)).to.be.undefined

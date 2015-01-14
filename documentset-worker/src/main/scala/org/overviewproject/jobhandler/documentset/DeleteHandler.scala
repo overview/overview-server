@@ -1,15 +1,17 @@
 package org.overviewproject.jobhandler.documentset
 
-import scala.language.postfixOps
-import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
 import akka.actor.Actor
 import akka.actor.FSM
 import akka.pattern.pipe
+import scala.concurrent.duration._
+import scala.language.postfixOps
+import scala.util.{ Failure, Success }
+
+import org.overviewproject.database.DocumentSetCreationJobDeleter
+import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.database.DocumentSetCreationJobDeleter
+import org.overviewproject.searchindex.IndexClient
 
 /**
  * [[DeleteHandler]] deletes a document set and all associated data if deletion is requested after
@@ -36,7 +38,6 @@ import org.overviewproject.database.DocumentSetCreationJobDeleter
  *   * Uploaded documents
  *   * Documents
  *   * DocumentProcessingErrors
- *   * SearchResults
  */
 object DeleteHandlerProtocol {
   case class DeleteDocumentSet(documentSetId: Long, waitForJobRemoval: Boolean)
@@ -58,10 +59,11 @@ object DeleteHandlerFSM {
 
 import DeleteHandlerFSM._
 
-trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents {
+trait DeleteHandler extends Actor with FSM[State, Data] {
   import DeleteHandlerProtocol._
   import context.dispatcher
 
+  val searchIndexClient: IndexClient
   val documentSetDeleter: DocumentSetDeleter
   val jobDeleter: DocumentSetCreationJobDeleter
   val jobStatusChecker: JobStatusChecker
@@ -146,7 +148,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     val deleteJobThenDocumentSet = jobDeleter.deleteByDocumentSet(documentSetId)
       .flatMap(_ => documentSetDeleter.delete(documentSetId))
 
-    val deleteIndex = searchIndex.removeDocumentSet(documentSetId)
+    val deleteIndex = searchIndexClient.removeDocumentSet(documentSetId)
 
     val result = for {
       dsResult <- deleteJobThenDocumentSet

@@ -6,7 +6,7 @@ define [
     defaults:
       documentListParams: 'foo'
       document: 'bar'
-      taglikeCid: 'c1'
+      highlightedDocumentListParams: 'baz'
 
   class DocumentSet extends Backbone.Model
 
@@ -20,7 +20,7 @@ define [
         @viewApp =
           onDocumentListParamsChanged: sinon.spy()
           onDocumentChanged: sinon.spy()
-          onTaglikeCidChanged: sinon.spy()
+          onHighlightedDocumentListParamsChanged: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -40,9 +40,9 @@ define [
         @state.set(document: 'baz')
         expect(@viewApp.onDocumentChanged).to.have.been.calledWith('baz')
 
-      it 'should invoke onTaglikeCidChanged', ->
-        @state.set(taglikeCid: 'c2')
-        expect(@viewApp.onTaglikeCidChanged).to.have.been.calledWith('c2')
+      it 'should invoke onHighlightedDocumentListParamsChanged', ->
+        @state.set(highlightedDocumentListParams: 'baz2')
+        expect(@viewApp.onHighlightedDocumentListParamsChanged).to.have.been.calledWith('baz2')
 
       it 'should invoke onTag', ->
         @documentSet.trigger('tag', 'foo', 'bar')
@@ -61,15 +61,15 @@ define [
           @subject.remove()
 
           @state.set
-            documentListParams: 'baz'
-            document: 'baz'
-            taglikeCid: 'c2'
+            documentListParams: 'foo2'
+            document: 'bar2'
+            highlightedDocumentListParams: 'baz2'
           @documentSet.trigger('tag', 'foo', 'bar')
           @documentSet.trigger('untag', 'foo', 'bar')
 
           expect(@viewApp.onDocumentListParamsChanged).not.to.have.been.called
           expect(@viewApp.onDocumentChanged).not.to.have.been.called
-          expect(@viewApp.onTaglikeCidChanged).not.to.have.been.called
+          expect(@viewApp.onHighlightedDocumentListParamsChanged).not.to.have.been.called
           expect(@viewApp.onTag).not.to.have.been.called
           expect(@viewApp.onUntag).not.to.have.been.called
 
@@ -87,9 +87,9 @@ define [
 
       it 'should do nothing', ->
         @state.set
-          documentListParams: 'baz'
-          document: 'baz'
-          taglikeCid: 'c2'
+          documentListParams: 'foo2'
+          document: 'bar2'
+          highlightedDocumentListParams: 'baz2'
         @documentSet.trigger('tag', 'foo', 'bar')
         @documentSet.trigger('untag', 'foo', 'bar')
         expect(true).to.be.true # really, we're just testing nothing crashes

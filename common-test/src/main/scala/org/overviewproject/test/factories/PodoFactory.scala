@@ -116,11 +116,6 @@ object PodoFactory extends Factory {
     getId(id)
   )
 
-  override def documentSearchResult(
-    documentId: Long,
-    searchResultId: Long
-  ) = DocumentSearchResult(documentId, searchResultId)
-
   override def documentSet(
     id: Long = 0L,
     title: String = "",
@@ -227,20 +222,6 @@ object PodoFactory extends Factory {
     description: String = "description",
     url: String = "http://example.org"
   ) = Plugin(getId(id), name, description, url)
-
-  override def searchResult(
-    id: Long = 0L,
-    state: SearchResultState.Value = SearchResultState.Complete,
-    documentSetId: Long = 0L,
-    query: String = "query",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ) = SearchResult(
-    getId(id), 
-    documentSetId,
-    query,
-    createdAt,
-    state
-  )
 
   override def store(
     id: Long = 0L,

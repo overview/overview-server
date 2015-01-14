@@ -1,26 +1,28 @@
 package org.overviewproject.jobhandler.documentset
 
-import scala.concurrent.Promise
-import scala.concurrent.duration._
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.database.DocumentSetCreationJobDeleter
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 import org.specs2.time.NoTimeConversions
+import scala.concurrent.duration._
+import scala.concurrent.Promise
+
+import org.overviewproject.database.DocumentSetCreationJobDeleter
+import org.overviewproject.database.DocumentSetDeleter
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
+import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.searchindex.IndexClient
+import org.overviewproject.test.ActorSystemContext
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
 
   "DeleteHandler" should {
 
     trait MockComponents {
-      val searchIndex = mock[SearchIndexComponent]
+      val searchIndexClient = smartMock[IndexClient]
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val jobDeleter = smartMock[DocumentSetCreationJobDeleter]
       val jobStatusChecker = smartMock[JobStatusChecker]
@@ -29,7 +31,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       val deleteDocumentSetPromise = Promise[Unit]
       val deleteJobPromise = Promise[Unit]
 
-      searchIndex.removeDocumentSet(anyLong) returns searchIndexRemoveDocumentSetPromise.future
+      searchIndexClient.removeDocumentSet(anyLong) returns searchIndexRemoveDocumentSetPromise.future
       documentSetDeleter.delete(anyLong) returns deleteDocumentSetPromise.future
       jobDeleter.deleteByDocumentSet(anyLong) returns deleteJobPromise.future
       jobDeleter.delete(anyLong) returns deleteJobPromise.future
@@ -49,7 +51,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
       protected def da = deleteHandler.underlyingActor
 
-      protected def searchIndex = da.searchIndex
+      protected def searchIndexClient = da.searchIndexClient
       protected def searchIndexRemoveDocumentSetResult = da.searchIndexRemoveDocumentSetPromise
       protected def deleteDocumentSetResult = da.deleteDocumentSetPromise
       protected def deleteJobResult = da.deleteJobPromise
@@ -87,7 +89,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     "delete documents and alias with the specified documentSetId from the index" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
       
-      there was one(searchIndex).removeDocumentSet(documentSetId)
+      there was one(searchIndexClient).removeDocumentSet(documentSetId)
     }
 
     "delete document set related data" in new DeleteContext {

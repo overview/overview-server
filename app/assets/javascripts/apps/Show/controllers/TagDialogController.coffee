@@ -66,10 +66,10 @@ define [
         tag.save(attrs)
 
       @listenTo @listView, 'remove', (tag) ->
-        if @state.get('taglikeCid') == tag.cid
-          @state.set(taglikeCid: null)
         if (params = @state.get('documentListParams'))? && params.type == 'tag' && params.tag == tag
           @state.resetDocumentListParams().all()
+        if (params = @state.get('highlightedDocumentListParams'))? && params.type == 'tag' && params.tag == tag
+          @state.set(highlightedDocumentListParams: null)
         tag.destroy()
 
       @$dialog = $dialog = $(template({ t: t }))
