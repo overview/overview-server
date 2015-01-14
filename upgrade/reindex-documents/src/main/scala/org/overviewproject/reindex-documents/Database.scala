@@ -36,7 +36,8 @@ class Database(url: PostgresUrl) {
   }
 
   def forEachBatchOfDocumentsInSet(documentSetId: Long, nPerBatch: Int)(f: Seq[Document] => Unit): Unit = {
-    documentsByDocumentSetId(documentSetId)
+    val query = documentsByDocumentSetId(documentSetId)
+    SlickQueryBatcher.batch(query, nPerBatch)
       .iterator(session)
       .grouped(nPerBatch)
       .foreach(f)

@@ -9,7 +9,7 @@ import play.api.libs.json.{JsValue,Json}
   * <pre>
   *   reindex-documents                                          \
   *     --database-url "postgres://user:pass@localhost/overview" \
-  *     --elasticsearch-url "localhost:9200"                     \
+  *     --elasticsearch-url "localhost:9300"                     \
   *     --elasticsearch-cluster "SearchIndex"                    \
   *     --index-name "documents_v2"                              \
   * </pre>
@@ -50,7 +50,7 @@ object Main extends App {
 
     opt[ElasticSearchUrl]("elasticsearch-url")
       .action { (x, c) => c.copy(elasticsearchUrl = x) }
-      .text("ElasticSearch URL like \"localhost:9200\"")
+      .text("ElasticSearch URL like \"localhost:9300\"")
       .required()
 
     opt[String]("elasticsearch-cluster")
