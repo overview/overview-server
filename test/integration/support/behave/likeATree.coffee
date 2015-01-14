@@ -50,7 +50,7 @@ module.exports = (opts) ->
       @userBrowser
         .elementByCss('#tree-app-search [name=query]').type(search.query)
         .listenForJqueryAjaxComplete()
-        .elementByCss('#tree-app-search input[type=submit]').click()
+        .elementByCss('#tree-app-search button[type=submit]').click()
         .waitForJqueryAjaxComplete() # wait for UI to clear previous search results
         .waitForElementBy({ tag: 'h4', contains: "#{search.nResults} document" }, 20000).should.eventually.exist
 
