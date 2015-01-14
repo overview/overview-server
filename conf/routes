@@ -97,8 +97,6 @@ DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Lo
 
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
 POST   /documentsets/:id/document-nodes/count-by-node controllers.DocumentNodeController.countByNode(id: Long)
-POST   /documentsets/:id/node-counts/tags/:tagId              controllers.TagController.nodeCounts(id: Long, tagId: Long)
-POST   /documentsets/:id/node-counts/untagged                 controllers.UntaggedDocumentsController.nodeCounts(id: Long)
 
 GET    /documentsets/:id/error-list controllers.DocumentProcessingErrorController.index(id: Long)
 

@@ -8,9 +8,8 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{SelectionBackend,TagBackend,TagDocumentBackend}
-import controllers.forms.{TagForm,NodeIdsForm}
-import models.orm.finders.{NodeDocumentFinder,TagFinder}
-import models.OverviewDatabase
+import controllers.forms.TagForm
+import models.orm.finders.TagFinder
 import org.overviewproject.tree.orm.{Tag=>DeprecatedTag}
 import org.overviewproject.models.Tag
 
@@ -102,22 +101,6 @@ trait TagController extends Controller {
       }
     )
   }
-
-  def nodeCounts(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
-    NodeIdsForm().bindFromRequest.fold(
-      formWithErrors => Future.successful(BadRequest),
-      nodeIds => {
-        tagBackend.show(documentSetId, tagId).map(_ match {
-          case None => NotFound
-          case Some(tag) => {
-            val counts = OverviewDatabase.inTransaction { storage.tagCountsByNodeId(tagId, nodeIds) }
-            Ok(views.json.helper.nodeCounts(counts))
-              .withHeaders(CACHE_CONTROL -> "max-age=0")
-          }
-        })
-      }
-    )
-  }
 }
 
 object TagController extends TagController {
@@ -131,22 +114,6 @@ object TagController extends TagController {
 
     /** @return (Tag, docset-count, tree-count) tuples. */
     def findTagsWithCounts(documentSetId: Long, treeId: Long) : Seq[(Tag,Long,Long)]
-
-    /** Returns an Iterable of (nodeId, count) pairs.
-      *
-      * Security considerations: for speed, we do not verify that the user has
-      * access to the given nodeIds. Therefore this method should return every
-      * nodeId provided--as 0 if there are no node+tag connections. Furthermore,
-      * the node IDs should be returned in the order they are provided, so users
-      * can't glean any information about their existence from their ordering.
-      *
-      * The caller must verify that the user has access to the given tagId. That
-      * is enough to ensure the user can't gain information about other users'
-      * nodes.
-      *
-      * @return Iterable of (nodeId, count) pairs
-      */
-    def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)]
   }
 
   override protected val storage = new Storage {
@@ -164,11 +131,6 @@ object TagController extends TagController {
         .withCountsForDocumentSetAndTree(treeId)
         .toSeq
         .map((t: Tuple3[DeprecatedTag,Long,Long]) => (t._1.toTag, t._2, t._3))
-    }
-
-    override def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)] = {
-      val counts = NodeDocumentFinder.byNodeIds(nodeIds).tagCountsByNodeId(tagId).toMap
-      nodeIds.map(nodeId => (nodeId -> counts.getOrElse(nodeId, 0L).toInt))
     }
   }
 }
