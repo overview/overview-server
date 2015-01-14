@@ -1,15 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task
 
+import org.apache.pdfbox.util.PDFTextStripper
 import scala.collection.JavaConverters._
 import scala.util.control.Exception._
-import org.apache.pdfbox.util.PDFTextStripper
+
 import org.overviewproject.database.orm.Schema
-import org.overviewproject.tree.orm.GroupedFileUpload
-import org.overviewproject.tree.orm.Page
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.tree.orm.File
-import org.overviewproject.jobhandler.filegroup.task.MimeTypeDetectingDocumentConverter._
 import org.overviewproject.jobhandler.filegroup.task.LibreOfficeDocumentConverter._
+import org.overviewproject.jobhandler.filegroup.task.MimeTypeDetectingDocumentConverter._
+import org.overviewproject.models.{File,GroupedFileUpload}
+import org.overviewproject.tree.orm.Page
 import org.overviewproject.util.Logger
 
 /**
@@ -43,7 +42,7 @@ trait CreatePagesProcess {
   // Read the pdf document 
   private case class LoadPdf(taskInformation: TaskInformation, file: File) extends ErrorSavingTaskStep {
     override def executeTaskStep: FileGroupTaskStep = {
-      val pdfDocument = pdfProcessor.loadFromDatabase(file.viewOid)
+      val pdfDocument = pdfProcessor.loadFromBlobStorage(file.viewLocation)
 
       WritePdfPages(taskInformation, file, pdfDocument)
     }
@@ -93,7 +92,7 @@ trait CreatePagesProcess {
   protected val createFile: CreateFile
   protected val pdfProcessor: PdfProcessor
   protected trait PdfProcessor {
-    def loadFromDatabase(oid: Long): PdfDocument
+    def loadFromBlobStorage(location: String): PdfDocument
   }
 
   protected val storage: Storage

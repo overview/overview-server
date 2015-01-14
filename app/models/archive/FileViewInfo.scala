@@ -7,7 +7,7 @@ import org.overviewproject.blobstorage.BlobStorage
 
 abstract class FileViewInfo(
   documentTitle: String,
-  viewOid: Long,
+  location: String,
   override val size: Long
 ) extends DocumentViewInfo {
   override def name = asPdf(removePdf(documentTitle))
@@ -16,13 +16,13 @@ abstract class FileViewInfo(
 object FileViewInfo {
   private class BlobStorageFileViewInfo(
     documentTitle: String,
-    viewOid: Long,
+    location: String,
     size: Long,
     private val blobStorage: BlobStorage
-  ) extends FileViewInfo(documentTitle, viewOid, size) {
-    override def stream() = blobStorage.get("pglo:" + viewOid)
+  ) extends FileViewInfo(documentTitle, location, size) {
+    override def stream() = blobStorage.get(location)
   }
 
-  def apply(documentTitle: String, viewOid: Long, size: Long): FileViewInfo =
-    new BlobStorageFileViewInfo(documentTitle, viewOid, size, BlobStorage)
+  def apply(documentTitle: String, location: String, size: Long): FileViewInfo =
+    new BlobStorageFileViewInfo(documentTitle, location, size, BlobStorage)
 }

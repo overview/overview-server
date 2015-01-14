@@ -6,10 +6,9 @@ import org.overviewproject.database.Database
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import org.overviewproject.database.orm.stores.GroupedFileUploadStore
-import org.overviewproject.models.Page
-import org.overviewproject.models.tables.Pages
+import org.overviewproject.models.{GroupedFileUpload,Page}
+import org.overviewproject.models.tables.{GroupedFileUploads,Pages}
 import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.DocumentProcessingError
 import org.overviewproject.util.TempFile
 import org.overviewproject.database.SlickSessionProvider
@@ -33,8 +32,12 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
           .insertInvoker
       }
 
-      def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload] = Database.inTransaction {
-        GroupedFileUploadFinder.byId(uploadedFileId).headOption
+      def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload] = {
+        import org.overviewproject.database.Slick.simple._
+
+        org.overviewproject.database.Database.withSlickSession { session =>
+          GroupedFileUploads.filter(_.id === uploadedFileId).firstOption(session)
+        }
       }
 
       def deleteUploadedFile(upload: GroupedFileUpload): Unit = Database.inTransaction {
@@ -105,7 +108,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
   private object PdfBoxProcessor {
     def apply(): PdfProcessor = new PdfProcessor {
-      override def loadFromDatabase(oid: Long): PdfDocument = new PdfBoxDocument(oid)
+      override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
     }
   }
 }

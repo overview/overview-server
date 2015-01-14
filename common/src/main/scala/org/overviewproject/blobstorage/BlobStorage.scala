@@ -1,6 +1,6 @@
 package org.overviewproject.blobstorage
 
-import java.io.InputStream
+import java.io.{File,InputStream}
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
@@ -35,6 +35,17 @@ trait BlobStorage {
     */
   def get(location: String): Future[Enumerator[Array[Byte]]] = {
     strategyFactory.forLocation(location).get(location)
+  }
+
+  /** Streams the blob into a file, runs the callback, and deletes the file.
+    *
+    * Remember, when writing async code, that the File will be deleted as soon
+    * as the callback completes. On UNIX that's fine: anything that has already
+    * opened the file will keep a handle on it.
+    */
+  def getAsTempFile[A](location: String)(callback: File => A): Future[A] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    Future(callback(new File(".")))
   }
 
   /** Deletes a blob.

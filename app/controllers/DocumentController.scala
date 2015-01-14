@@ -80,10 +80,7 @@ trait DocumentController extends Controller {
   }
 
   private def fileToBodyAndLength(file: File): Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
-    Future.successful(Tuple2(
-      Enumerator.fromStream(new PlayLargeObjectInputStream(file.viewOid)),
-      file.viewSize
-    ))
+    blobStorage.get(file.viewLocation).map((_, file.viewSize))
   }
 
   private def documentToBodyAndLength(document: Document): Future[Tuple2[Enumerator[Array[Byte]], Long]] = {

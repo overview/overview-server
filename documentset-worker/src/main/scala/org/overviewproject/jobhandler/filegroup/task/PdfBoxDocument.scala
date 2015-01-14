@@ -1,17 +1,18 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import scala.collection.JavaConverters._
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.overviewproject.postgres.LargeObjectInputStream
-import org.apache.pdfbox.util.PDFTextStripper
 import java.io.ByteArrayOutputStream
-import org.overviewproject.util.Textify
+import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
+import org.apache.pdfbox.util.PDFTextStripper
+import scala.collection.JavaConverters._
 
+import org.overviewproject.blobstorage.BlobStorage
+import org.overviewproject.postgres.LargeObjectInputStream
+import org.overviewproject.util.Textify
 
-class PdfBoxDocument(oid: Long) extends PdfDocument {
+class PdfBoxDocument(location: String) extends PdfDocument {
 
-  private val document: PDDocument = loadFromOid(oid)
+  private val document: PDDocument = loadFromLocation(location)
   private val documentPages: Iterable[PDDocument] = splitPages
   private val textStripper: PDFTextStripper = new PDFTextStripper
 
@@ -51,11 +52,12 @@ class PdfBoxDocument(oid: Long) extends PdfDocument {
     document.close()
   }
 
-  private def loadFromOid(oid: Long): PDDocument = {
-    val documentStream = new LargeObjectInputStream(oid)
-    PDDocument.load(documentStream)
+  private def loadFromLocation(location: String): PDDocument = {
+    scala.concurrent.Await.result(
+      BlobStorage.getAsTempFile(location)(PDDocument.load _),
+      scala.concurrent.duration.Duration.Inf
+    )
   }
-
 
   private def getData(page: PDDocument): Array[Byte] = {
     val outputStream = new ByteArrayOutputStream()

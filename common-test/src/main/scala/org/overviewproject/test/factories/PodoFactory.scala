@@ -328,18 +328,18 @@ object PodoFactory extends Factory {
   override def file(
     id: Long,
     referenceCount: Int,
-    contentsOid: Long,
-    viewOid: Long,
     name: String,
+    contentsLocation: String,
     contentsSize: Long,
+    viewLocation: String,
     viewSize: Long
   ) = File(
     getId(id),
     referenceCount,
-    getId(contentsOid),
-    getId(viewOid),
     name,
+    contentsLocation,
     contentsSize,
+    viewLocation,
     viewSize
   )
   

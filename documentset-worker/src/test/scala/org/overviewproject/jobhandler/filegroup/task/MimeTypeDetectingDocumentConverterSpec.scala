@@ -24,9 +24,9 @@ class MimeTypeDetectingDocumentConverterSpec extends Specification with Mockito 
     val mimeType = "text/plain"
     val parentMimeType = "text/*"
 
-    def goodConverter(expectedValue: InputStream) = new DocumentConverter {
-      override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: InputStream => T) = {
-        f(expectedValue)
+    def goodConverter(expectedValue: InputStream, expectedLength: Long) = new DocumentConverter {
+      override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: (InputStream,Long) => T) = {
+        f(expectedValue, expectedLength)
       }
     }
 
@@ -39,7 +39,7 @@ class MimeTypeDetectingDocumentConverterSpec extends Specification with Mockito 
       mockMimeTypeToConverter.get(mimeType) returns None
       mockMimeTypeToConverter.get(parentMimeType) returns None
 
-      converter.withStreamAsPdf(guid, filename, inputStream)(identity) must throwA[DocumentConverterDoesNotExistException]
+      converter.withStreamAsPdf(guid, filename, inputStream)(Tuple2.apply) must throwA[DocumentConverterDoesNotExistException]
     }
 
     "throw an exception when delegated DocumentConverter throws an exception" in new BaseScope {
@@ -47,38 +47,40 @@ class MimeTypeDetectingDocumentConverterSpec extends Specification with Mockito 
 
       mockMimeTypeDetector.detectMimeType(org.mockito.Matchers.eq(filename), any[BufferedInputStream]) returns mimeType
       mockMimeTypeToConverter.get(mimeType) returns Some(new DocumentConverter {
-        override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: InputStream => T) = {
+        override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: (InputStream,Long) => T) = {
           throw new FunkyException
         }
       })
 
-      converter.withStreamAsPdf(guid, filename, inputStream)(identity) must throwA[FunkyException]
+      converter.withStreamAsPdf(guid, filename, inputStream)(Tuple2.apply) must throwA[FunkyException]
     }
 
     "throw a CouldNotDetectMimeTypeException when MIME type detection fails" in new BaseScope {
       class FunkyException extends RuntimeException
 
       mockMimeTypeDetector.detectMimeType(org.mockito.Matchers.eq(filename), any[BufferedInputStream]) throws new FunkyException
-      converter.withStreamAsPdf(guid, filename, inputStream)(identity) must throwA[CouldNotDetectMimeTypeException]
+      converter.withStreamAsPdf(guid, filename, inputStream)(Tuple2.apply) must throwA[CouldNotDetectMimeTypeException]
     }
 
     "convert a stream to PDF" in new BaseScope {
       val expectedValue = mock[InputStream]
+      val expectedLength = 3L
       mockMimeTypeDetector.detectMimeType(org.mockito.Matchers.eq(filename), any[BufferedInputStream]) returns mimeType
-      mockMimeTypeToConverter.get(mimeType) returns Some(goodConverter(expectedValue))
+      mockMimeTypeToConverter.get(mimeType) returns Some(goodConverter(expectedValue, expectedLength))
 
-      val actualValue = converter.withStreamAsPdf(guid, filename, inputStream)(identity)
-      actualValue must beEqualTo(expectedValue)
+      val actualValue = converter.withStreamAsPdf(guid, filename, inputStream)(Tuple2.apply)
+      actualValue must beEqualTo((expectedValue,expectedLength))
     }
 
     "convert a stream to PDF using text/* as MIME type" in new BaseScope {
       val expectedValue = mock[InputStream]
+      val expectedLength = 3L
       mockMimeTypeDetector.detectMimeType(org.mockito.Matchers.eq(filename), any[BufferedInputStream]) returns "text/something-funny"
       mockMimeTypeToConverter.get("text/something-funny") returns None
-      mockMimeTypeToConverter.get("text/*") returns Some(goodConverter(expectedValue))
+      mockMimeTypeToConverter.get("text/*") returns Some(goodConverter(expectedValue, expectedLength))
 
-      val actualValue = converter.withStreamAsPdf(guid, filename, inputStream)(identity)
-      actualValue must beEqualTo(expectedValue)
+      val actualValue = converter.withStreamAsPdf(guid, filename, inputStream)(Tuple2.apply)
+      actualValue must beEqualTo((expectedValue,expectedLength))
     }
   }
 }

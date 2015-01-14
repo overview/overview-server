@@ -19,7 +19,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
     "find info for files" in new FileScope {
       val infos = await(backend.indexDocumentViewInfos(documentSet.id))
 
-      there was one(backend.mockFactory).fromFile((filename, oid, size))
+      there was one(backend.mockFactory).fromFile((filename, location, size))
     }
 
     "find info for text documents" in new TextScope {
@@ -58,10 +58,10 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
   }
 
   trait FileScope extends DocumentScope {
-    val oid = 1234l
+    val location = "location:view"
     val size = 456l
 
-    val file = factory.file(name = filename, viewOid = oid, viewSize = size)
+    val file = factory.file(name = filename, viewLocation = location, viewSize = size)
     val document = factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id))
   }
 

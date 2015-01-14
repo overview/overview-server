@@ -3,20 +3,29 @@ package org.overviewproject.jobhandler.filegroup.task
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import org.overviewproject.tree.orm.GroupedFileUpload
-import org.overviewproject.tree.orm.File
+
+import org.overviewproject.models.{File,GroupedFileUpload}
+import org.overviewproject.test.factories.PodoFactory
 
 class CreatePagesProcessSpec extends Specification with Mockito {
 
   "CreatePagesProcess" should {
     
-    "first create a file" in new CreatePagesContext {
+    "create a file" in new CreatePagesContext {
       val createPagesProcess = new TestCreatePagesProcess(documentSetId, upload, pdfDocument, file)
       
       val firstStep = createPagesProcess.start(documentSetId, fileGroupId, uploadedFileId)
       firstStep.execute
       
       there was one(createPagesProcess.createFile).apply(documentSetId, upload)
+    }
+
+    "delete the groupedFileUpload" in new CreatePagesContext {
+      val createPagesProcess = new TestCreatePagesProcess(documentSetId, upload, pdfDocument, file)
+      
+      val firstStep = createPagesProcess.start(documentSetId, fileGroupId, uploadedFileId)
+      firstStep.execute
+      
       there was one(createPagesProcess.storage).deleteUploadedFile(upload)
     }
     
@@ -28,7 +37,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       
       secondStep.execute
       
-      there was one(createPagesProcess.pdfProcessor).loadFromDatabase(viewOid)
+      there was one(createPagesProcess.pdfProcessor).loadFromBlobStorage(viewLocation)
     }
     
     "finally write the pdf pages" in new CreatePagesContext {
@@ -68,14 +77,12 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       val fileGroupId = 10l
       val uploadedFileId = 15l
       val fileId = 17l
-      val viewOid = 20l
+      val viewLocation = "location:view"
       val upload = smartMock[GroupedFileUpload]
-      val file = smartMock[File]
       val page = PdfPage(Array[Byte](10, 11, 12), "Text")
       val pdfDocument = smartMock[PdfDocument]
-      
-      file.id returns fileId
-      file.viewOid returns viewOid
+
+      val file = PodoFactory.file(id=fileId, viewLocation=viewLocation)
       pdfDocument.pages returns Seq(page)
     }
     
@@ -86,7 +93,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
 
       storage.loadUploadedFile(any) returns Some(upload) 
       createFile.apply(documentSetId, upload) returns file
-      pdfProcessor.loadFromDatabase(any) returns pdfDocument
+      pdfProcessor.loadFromBlobStorage(any) returns pdfDocument
       
       def start(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
         startCreatePagesTask(documentSetId, uploadedFileId)

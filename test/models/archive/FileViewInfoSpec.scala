@@ -28,16 +28,16 @@ class FileViewInfoSpec extends Specification {
   }
   
   trait FileViewInfoContext extends Scope {
-    val viewOid = 123L
+    val location = "location"
     val originalName = "title"
     val size = 234L
 
-    def viewInfo = new TestFileViewInfo(originalName, viewOid, size)
+    def viewInfo = new TestFileViewInfo(originalName, location, size)
     def entry = viewInfo.archiveEntry
   }
 
-  class TestFileViewInfo(title: String, oid: Long, size: Long)
-    extends FileViewInfo(title, oid, size) {
+  class TestFileViewInfo(title: String, location: String, size: Long)
+    extends FileViewInfo(title, location, size) {
 
     override def stream = ???
   }

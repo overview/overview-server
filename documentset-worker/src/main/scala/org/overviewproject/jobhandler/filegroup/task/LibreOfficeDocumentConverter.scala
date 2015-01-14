@@ -38,7 +38,7 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
   private val LibreOfficeLocation = Configuration.getString("libre_office_path")
   private val OutputFileExtension = "pdf"
 
-  override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: InputStream => T): T = {
+  override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: (InputStream, Long) => T): T = {
     withStreamAsTemporaryFile(guid, inputStream) { tempFile =>
       convertFileToPdf(tempFile) { pdfTempFile =>
         withFileAsStream(pdfTempFile)(f)
@@ -91,12 +91,13 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
   // reads the given outputFile as a stream, passed to f
   // Closes the stream after call to f
   // If output file does not exist, a LibreOfficeNoOutput exception is thrown
-  private def withFileAsStream[T](file: File)(f: InputStream => T): T = {
+  private def withFileAsStream[T](file: File)(f: (InputStream,Long) => T): T = {
     val detectingNoFile = handling(classOf[FileNotFoundException]) by { e => throw LibreOfficeNoOutputException(e.getMessage) }
     def fileStream = detectingNoFile { fileSystem.readFile(file) }
+    def fileLength = detectingNoFile { fileSystem.getFileLength(file) }
 
     ultimately(fileStream.close) {
-      f(fileStream)
+      f(fileStream, fileLength)
     }
   }
 
@@ -130,6 +131,7 @@ object LibreOfficeDocumentConverter extends LibreOfficeDocumentConverter {
   trait FileSystem {
     def saveToFile(inputStream: InputStream, filePath: Path): File
     def readFile(file: File): InputStream
+    def getFileLength(file: File): Long
     def deleteFile(file: File): Boolean
   }
 
@@ -141,6 +143,7 @@ object LibreOfficeDocumentConverter extends LibreOfficeDocumentConverter {
     }
 
     override def readFile(file: File): InputStream = new FileInputStream(file)
+    override def getFileLength(file: File): Long = file.length
     override def deleteFile(file: File): Boolean = file.delete
   }
 

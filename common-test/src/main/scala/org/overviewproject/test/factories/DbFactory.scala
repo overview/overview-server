@@ -286,18 +286,18 @@ class DbFactory(connection: Connection) extends Factory {
   override def file(
     id: Long,
     referenceCount: Int,
-    contentsOid: Long,
-    viewOid: Long,
     name: String,
+    contentsLocation: String,
     contentsSize: Long,
+    viewLocation: String,
     viewSize: Long
   ) = q.insertFile += podoFactory.file(
     id,
     referenceCount,
-    contentsOid,
-    viewOid,
     name,
+    contentsLocation,
     contentsSize,
+    viewLocation,
     viewSize
   )
   

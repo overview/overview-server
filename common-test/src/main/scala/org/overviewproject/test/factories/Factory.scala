@@ -178,11 +178,12 @@ trait Factory {
   def file(
     id: Long = 0L,
     referenceCount: Int = 1,
-    contentsOid: Long = 1,
-    viewOid: Long = 1,
     name: String = "filename",
-    contentsSize: Long = 1L,
-    viewSize: Long = 1L): File
+    contentsLocation: String = "contents:location",
+    contentsSize: Long = 2L,
+    viewLocation: String = "view:location",
+    viewSize: Long = 3L
+  ): File
 
   def uploadedFile(
     id: Long = 0L,

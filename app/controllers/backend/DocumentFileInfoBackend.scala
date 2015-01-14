@@ -46,7 +46,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
     val q = for {
         d <- Documents if (d.documentSetId === documentSetId) && d.pageId.isEmpty
         f <- Files if d.fileId === f.id
-      } yield (d.title, f.viewOid, f.viewSize)
+      } yield (d.title, f.viewLocation, f.viewSize)
 
     val fileInfo = q.list.map(f => (f._1.getOrElse(""), f._2, f._3))
     fileInfo.map(documentViewInfoFactory.fromFile)
@@ -71,7 +71,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
   
   protected trait DocumentViewInfoFactory {
     def fromPage(info: (String, Int, String, Long)): DocumentViewInfo
-    def fromFile(info: (String, Long, Long)): DocumentViewInfo
+    def fromFile(info: (String, String, Long)): DocumentViewInfo
     def fromText(info: (String, String, Long, Option[Int], Long)): DocumentViewInfo
     
   }
@@ -81,7 +81,7 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
 object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend {
   override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
     def fromPage(info: (String, Int, String, Long)): DocumentViewInfo = (PageViewInfo.apply _).tupled(info)
-    def fromFile(info: (String, Long, Long)): DocumentViewInfo = (FileViewInfo.apply _).tupled(info)
+    def fromFile(info: (String, String, Long)): DocumentViewInfo = (FileViewInfo.apply _).tupled(info)
     def fromText(info: (String, String, Long, Option[Int], Long)): DocumentViewInfo = (TextViewInfo.apply _).tupled(info)
   } 
 }

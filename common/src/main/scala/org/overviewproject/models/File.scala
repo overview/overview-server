@@ -8,10 +8,10 @@ package org.overviewproject.models
 case class File(
   id: Long,
   referenceCount: Int,
-  contentsOid: Long,
-  viewOid: Long,
   name: String,
+  contentsLocation: String,
   contentsSize: Long,
+  viewLocation: String,
   viewSize: Long
 )
 

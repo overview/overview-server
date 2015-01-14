@@ -8,7 +8,7 @@ trait MimeTypeDetectingDocumentConverter extends DocumentConverter {
   val mimeTypeDetector: MimeTypeDetectingDocumentConverter.MimeTypeDetector
   val mimeTypeToConverter: Map[String,DocumentConverter]
 
-  override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: InputStream => T) = {
+  override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: (InputStream,Long) => T) = {
     val bufferedInputStream = new BufferedInputStream(inputStream, mimeTypeDetector.nBytesNeededToDetectMimeType)
 
     val mimeType = try {
