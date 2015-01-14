@@ -12,8 +12,6 @@ import controllers.auth.Authorities.userOwningDocument
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import controllers.util.PlayLargeObjectInputStream
-import models.orm.finders.FileFinder
-import models.orm.finders.PageFinder
 import models.OverviewDocument
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.{Document,File,Page}
