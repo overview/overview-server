@@ -81,9 +81,6 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
 
     class TestPageByteAStrategy(session: Session) extends PageByteAStrategy  {
 
-      
-      override implicit protected val executor = scala.concurrent.ExecutionContext.global
-
       override def db[A](block: Session => A)(implicit executor: ExecutionContext): Future[A] = Future {
         block(session)
       }

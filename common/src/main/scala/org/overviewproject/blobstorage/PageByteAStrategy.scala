@@ -8,6 +8,7 @@ import org.overviewproject.models.tables.Pages
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.database.{ SlickClient, SlickSessionProvider }
 import java.io.ByteArrayInputStream
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait PageByteAStrategy extends BlobStorageStrategy with SlickClient {
 
@@ -45,9 +46,4 @@ trait PageByteAStrategy extends BlobStorageStrategy with SlickClient {
 
 }
 
-object PageByteAStrategy extends PageByteAStrategy with SlickSessionProvider {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  override protected implicit val executor = global
-}
-
+object PageByteAStrategy extends PageByteAStrategy with SlickSessionProvider 

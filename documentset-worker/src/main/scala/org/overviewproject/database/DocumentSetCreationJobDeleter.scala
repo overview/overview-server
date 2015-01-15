@@ -1,6 +1,6 @@
 package org.overviewproject.database
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
@@ -42,8 +42,7 @@ trait DocumentSetCreationJobDeleter extends SlickClient {
 }
 
 object DocumentSetCreationJobDeleter {
-  def apply(implicit executionContext: ExecutionContext): DocumentSetCreationJobDeleter = new DocumentSetCreationJobDeleter with SlickSessionProvider {
-    override implicit protected val executor = executionContext
+  def apply(): DocumentSetCreationJobDeleter = new DocumentSetCreationJobDeleter with SlickSessionProvider {
     override protected val blobStorage = BlobStorage
   }
 }
