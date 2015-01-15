@@ -4,7 +4,7 @@ import org.specs2.specification.Scope
 import org.specs2.matcher.JsonMatchers
 
 import controllers.auth.AuthorizedRequest
-import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState, Node, Tag, SearchResult, SearchResultState, Tree}
+import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState, Node, Tag, Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
 import models.OverviewUser
 import models.User
