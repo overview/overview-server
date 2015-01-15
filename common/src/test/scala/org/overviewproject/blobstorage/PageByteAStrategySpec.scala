@@ -7,6 +7,7 @@ import org.overviewproject.models.Page
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.database.Slick.simple._
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
 
@@ -78,10 +79,12 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
 
   trait PageBaseScope extends DbScope {
 
-    class TestPageByteAStrategy(session: Session) extends PageByteAStrategy {
-      import scala.concurrent.ExecutionContext.Implicits.global
+    class TestPageByteAStrategy(session: Session) extends PageByteAStrategy  {
 
-      override def db[A](block: Session => A): Future[A] = Future {
+      
+      override implicit protected val executor = scala.concurrent.ExecutionContext.global
+
+      override def db[A](block: Session => A)(implicit executor: ExecutionContext): Future[A] = Future {
         block(session)
       }
     }

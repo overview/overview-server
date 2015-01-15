@@ -1,7 +1,6 @@
 package org.overviewproject.jobhandler.filegroup.task
 
 import scala.concurrent.{Await,Future,blocking}
-
 import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.Schema
@@ -13,6 +12,8 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.DocumentProcessingError
 import org.overviewproject.util.TempFile
+import org.overviewproject.database.SlickSessionProvider
+import scala.concurrent.duration.Duration
 
 /** Provides database storage and pdfbox pdfProcessor implementations for [[CreatePagesProcess]] */
 trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
@@ -24,7 +25,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
   private object DatabaseStorage {
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
 
-    def apply(): Storage = new Storage {
+    def apply(): Storage = new Storage with SlickSessionProvider {
       private lazy val pageInserter = {
         import org.overviewproject.database.Slick.simple._
         Pages
@@ -72,7 +73,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
         val pageAttributes = blocking {
           // SLOW: wait for all saves to finish
-          Await.result(futurePageAttributes, scala.concurrent.duration.Duration.Inf)
+          Await.result(futurePageAttributes, Duration.Inf)
         }
 
         val tuples = pageAttributes
@@ -81,11 +82,13 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
           }
           .toSeq
 
-        Database.withSlickSession { session =>
-          session.withTransaction {
-            pageInserter.insertAll(tuples: _*)(session)
+          
+          val r = db { session =>
+            session.withTransaction {
+              pageInserter.insertAll(tuples: _*)(session)
+            }
           }
-        }
+          Await.result(r, Duration.Inf) // FIXME: make more async
       }
 
       def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit = Database.inTransaction {

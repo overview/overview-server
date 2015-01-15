@@ -3,23 +3,20 @@ package org.overviewproject.blobstorage
 import java.io.InputStream
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{ Future, blocking }
-import scala.concurrent.ExecutionContext.Implicits.global
 import org.overviewproject.database.Database
 import org.overviewproject.models.tables.Pages
 import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.{ SlickClient, SlickSessionProvider }
 import java.io.ByteArrayInputStream
 
-
-trait PageByteAStrategy extends BlobStorageStrategy {
-
-  protected def db[A](block: Session => A): Future[A]
+trait PageByteAStrategy extends BlobStorageStrategy with SlickClient {
 
   private val LocationRegex = """^pagebytea:(\d+)$""".r
   private case class Location(pageId: Long)
 
   private def stringToLocation(locationString: String): Location = locationString match {
     case LocationRegex(pageId) => Location(pageId.toLong)
-    case _ => throw new IllegalArgumentException(s"Invalid location string: '${locationString}'")
+    case _                     => throw new IllegalArgumentException(s"Invalid location string: '${locationString}'")
   }
 
   override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
@@ -39,22 +36,18 @@ trait PageByteAStrategy extends BlobStorageStrategy {
 
   /** A noop since we never write data */
   override def delete(location: String): Future[Unit] = Future.successful()
-  
-  /** 
+
+  /**
    *  @throws NotImplementedError always, because we don't want to store blobs in the page table
    */
-  override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = 
+  override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] =
     throw new NotImplementedError("Blobs cannot be stored in byte arrays in the database")
-  
+
 }
 
-object PageByteAStrategy extends PageByteAStrategy {
-  override protected def db[A](block: Session => A): Future[A] = Future {
-    blocking {
-      Database.withSlickSession { session =>
-        block(session)
-      }
-    }
-  }
-  
+object PageByteAStrategy extends PageByteAStrategy with SlickSessionProvider {
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  override protected implicit val executor = global
 }
+
