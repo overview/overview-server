@@ -10,6 +10,7 @@ import FileGroupTaskWorkerFSM._
 import akka.actor.Status.Failure
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
+import org.overviewproject.database.DocumentSetCreationJobDeleter
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -186,6 +187,7 @@ object FileGroupTaskWorker {
     override protected def progressReporterPath: String = progressReporterActorPath
 
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep = 
-      new DeleteFileUploadTaskStep(documentSetId, fileGroupId, DocumentSetDeleter(), FileGroupDeleter())
+      new DeleteFileUploadTaskStep(documentSetId, fileGroupId, 
+          DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter())
   })
 }
