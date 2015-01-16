@@ -25,7 +25,7 @@ class GatedTaskWorker(override protected val jobQueuePath: String,
       this
     }
     
-    override def cancel: Unit = cancelFn.store()
+    override def cancel: Unit = cancelFn.store(())
   }
   
 
@@ -35,11 +35,13 @@ class GatedTaskWorker(override protected val jobQueuePath: String,
   override protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean, progressReporter: ActorRef): FileGroupTaskStep = 
     new GatedTask(taskGate.future)
   
-  override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = {}
+  override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep = 
+    new GatedTask(taskGate.future)
+    
 
   private def manageTaskGate: PartialFunction[Any, Unit] = {
     case CancelYourself => self ! CancelTask
-    case CompleteTaskStep => taskGate.success()
+    case CompleteTaskStep => taskGate.success(())
   }
 
   override def receive = manageTaskGate orElse super.receive

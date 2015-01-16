@@ -7,8 +7,9 @@ import scala.language.postfixOps
 import scala.concurrent.Future
 import org.overviewproject.util.Logger
 import FileGroupTaskWorkerFSM._
-import scala.util.control.Exception._
 import akka.actor.Status.Failure
+import org.overviewproject.database.DocumentSetDeleter
+import org.overviewproject.database.FileGroupDeleter
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -68,12 +69,13 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
 
   private val progressReporterSelection = system.actorSelection(progressReporterPath)
-
+  private case class DeleteFileUploadJobComplete(documentSetId: Long)
+  
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
   protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
                                          progressReporter: ActorRef): FileGroupTaskStep
+  protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep
 
-  protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
 
   lookForExternalActors
 
@@ -113,11 +115,9 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
-      ignoringExceptions { deleteFileUploadJob(documentSetId, fileGroupId) }
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
-
-      stay
+      executeTaskStep(startDeleteFileUploadJob(documentSetId, fileGroupId))
+      
+      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
     case Event(CancelTask, _) => stay
   }
@@ -133,6 +133,12 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
+      goto(Ready) using ExternalActors(jobQueue, progressReporter)
+    }
+    case Event(DeleteFileUploadComplete(documentSetId, fileGroupId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
+      jobQueue ! TaskDone(documentSetId, None)
+      jobQueue ! ReadyForTask
+      
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(step: FileGroupTaskStep, _) => {
@@ -171,8 +177,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
-
-  private def ignoringExceptions = handling(classOf[Exception]) by { e => Logger.error(e.toString) }
+  
 }
 
 object FileGroupTaskWorker {
@@ -180,7 +185,7 @@ object FileGroupTaskWorker {
     override protected def jobQueuePath: String = jobQueueActorPath
     override protected def progressReporterPath: String = progressReporterActorPath
 
-    override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit =
-      FileUploadDeleter().deleteFileUpload(documentSetId, fileGroupId)
+    override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep = 
+      new DeleteFileUploadTaskStep(documentSetId, fileGroupId, DocumentSetDeleter(), FileGroupDeleter())
   })
 }

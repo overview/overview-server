@@ -3,16 +3,19 @@ package org.overviewproject.jobhandler.filegroup.task
 import akka.actor.Props
 import org.overviewproject.test.ParameterStore
 import akka.actor.ActorRef
+import scala.concurrent.Future
+import scala.concurrent.Promise
 
 class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
                               override protected val progressReporterPath: String, outputFileId: Long) extends FileGroupTaskWorker {
 
   val executeFn = ParameterStore[Unit]
   val deleteFileUploadJobFn = ParameterStore[(Long, Long)]
-
+  val deleteFileUploadPromise = Promise[Unit]
+  
   private case class StepInSequence(n: Int, finalStep: FileGroupTaskStep) extends FileGroupTaskStep {
     def execute: FileGroupTaskStep = {
-      executeFn.store()
+      executeFn.store(())
       if (n > 0) StepInSequence(n - 1, finalStep)
       else finalStep
     }
@@ -25,8 +28,8 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
                                                   progressReporter: ActorRef): FileGroupTaskStep =
     StepInSequence(1, CreateDocumentsProcessComplete(documentSetId))
 
-  override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit =
-    deleteFileUploadJobFn.store((documentSetId, fileGroupId))
+  override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep = 
+    StepInSequence(1, DeleteFileUploadComplete(documentSetId, fileGroupId))
 
 }
 

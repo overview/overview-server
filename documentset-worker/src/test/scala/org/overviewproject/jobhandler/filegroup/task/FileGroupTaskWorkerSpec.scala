@@ -99,11 +99,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       jobQueueProbe.expectInitialReadyForTask
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-      deleteFileUploadJobWasCalled(documentSetId, fileGroupId)
-
-      jobQueueProbe.expectMsg(ReadyForTask)
-      failure // sometimes
-    }.pendingUntilFixed("WHY does this fail?")
+    }
 
     "ignore CancelTask message if not working on a task" in new RunningTaskWorkerContext {
       createJobQueue
