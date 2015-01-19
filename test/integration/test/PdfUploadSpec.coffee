@@ -41,9 +41,10 @@ describe 'PdfUpload', ->
         .chooseFile('PdfUpload/Jules2.pdf')
         .chooseFile('PdfUpload/Jules3.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
-        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
-        .elementBy(tag: 'textarea', name: 'supplied_stop_words', visible: true).type('moose frog')
-        .elementBy(tag: 'textarea', name: 'important_words', visible: true).type('couch face')
+        .waitForElementBy(tag: 'input', name: 'name', visible: true)
+        .elementBy(tag: 'input', name: 'name').type('Pdf Upload')
+        .elementBy(tag: 'textarea', name: 'supplied_stop_words').type('moose frog')
+        .elementBy(tag: 'textarea', name: 'important_words').type('couch face')
         .doImport()
         .waitForJobsToComplete()
 

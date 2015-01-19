@@ -51,9 +51,10 @@ describe 'FileUpload', ->
         .chooseFile('FileUpload/Jules2.pptx')
         .chooseFile('FileUpload/Jules3.xlsx')
         .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
-        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('File Upload')
-        .elementBy(tag: 'textarea', name: 'supplied_stop_words', visible: true).type('moose frog')
-        .elementBy(tag: 'textarea', name: 'important_words', visible: true).type('couch face')
+        .waitForElementBy(tag: 'input', name: 'name', visible: true)
+        .elementBy(tag: 'input', name: 'name').type('File Upload')
+        .elementBy(tag: 'textarea', name: 'supplied_stop_words').type('moose frog')
+        .elementBy(tag: 'textarea', name: 'important_words').type('couch face')
         .doImport()
         .waitForJobsToComplete(20000)
 
