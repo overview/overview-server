@@ -1,6 +1,7 @@
 define [
   'jquery'
   'apps/Show/app'
+  'bootstrap-dropdown'
 ], ($, App) ->
   $ ->
     el = (id) -> document.getElementById(id)
