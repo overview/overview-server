@@ -37,7 +37,7 @@ trait CreateFile {
    * @throws Exception on error. See [[DocumentConverter]] for details on conversion errors.
    */
   def apply(documentSetId: Long, upload: GroupedFileUpload): File = {
-    val magicNumber = withLargeObjectInputStream(upload.contentsOid)(peekAtMagicNumber _)
+    val magicNumber = blocking(withLargeObjectInputStream(upload.contentsOid)(peekAtMagicNumber _))
 
     if (magicNumber.sameElements(PdfMagicNumber)) {
       applyPdf(documentSetId, upload)
@@ -47,26 +47,22 @@ trait CreateFile {
   }
 
   private def applyPdf(documentSetId: Long, upload: GroupedFileUpload): File = {
-    var location: String = withLargeObjectInputStream(upload.contentsOid) { stream: InputStream =>
-      await(blobStorage.create(BlobBucketId.FileContents, stream, upload.size))
-    }
+    var location: String = await(moveLargeObjectToBlobStorage(upload.contentsOid, upload.size))
 
     storage.createFile(documentSetId, upload.name, location, upload.size, location, upload.size)
   }
 
   private def applyNonPdf(documentSetId: Long, upload: GroupedFileUpload): File = {
-    var contentLocationFuture: Future[String] = withLargeObjectInputStream(upload.contentsOid) { stream: InputStream =>
-      blobStorage.create(BlobBucketId.FileContents, stream, upload.size)
-    }
+    var contentLocationFuture: Future[String] = moveLargeObjectToBlobStorage(upload.contentsOid, upload.size)
 
-    var viewLocationFuture: Future[(String,Long)] = withLargeObjectInputStream(upload.contentsOid) { stream =>
+    var viewLocationFuture: Future[(String,Long)] = blocking(withLargeObjectInputStream(upload.contentsOid) { stream =>
       logger.logExecutionTime("Converting {} ({}, {}kb) to PDF", upload.name, upload.guid, upload.size / 1024) {
         converter.withStreamAsPdf(upload.guid, upload.name, stream) { (viewStream: InputStream, viewSize: Long) =>
           blobStorage.create(BlobBucketId.FileView, viewStream, viewSize)
             .map(location => (location, viewSize))
         }
       }
-    }
+    })
 
     val contentLocation = await(contentLocationFuture)
     val (viewLocation, viewSize) = await(viewLocationFuture)
@@ -79,6 +75,13 @@ trait CreateFile {
     val magicNumber = new Array[Byte](PdfMagicNumber.length)
     inputStream.read(magicNumber, 0, magicNumber.length)
     magicNumber
+  }
+
+  private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[String] = {
+    val stream = blocking(storage.getLargeObjectInputStream(oid))
+
+    blobStorage.create(BlobBucketId.FileContents, stream, size)
+      .andThen { case _ => stream.close }
   }
 
   private def withLargeObjectInputStream[T](oid: Long)(f: InputStream => T): T = {
