@@ -1,94 +1,34 @@
 package org.overviewproject.database.orm.stores
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.database.DB
-import org.overviewproject.postgres.LO
-import org.overviewproject.tree.orm.File
 import org.overviewproject.database.orm.Schema.files
-import org.squeryl.Query
-import scala.util.Try
+import org.overviewproject.test.DbSpecification
+import org.overviewproject.tree.orm.File
 
 class FileStoreSpec extends DbSpecification {
+  import org.overviewproject.postgres.SquerylEntrypoint._
 
   step(setupDb)
 
   "FileStore" should {
-
     trait FileContext extends DbTestContext {
-
-      var singleRefOids: Seq[Long] = _
-      var multipleRefOids: Seq[Long] = _
-
-      override def setupWithDb {
-        singleRefOids = Seq.fill(5)(createContents)
-        multipleRefOids = Seq.fill(5)(createContents)
-
-        val singleRefFiles = singleRefOids.map(oid => File(1, oid, oid, "name1", Some(100), Some(100)))
-        val multipleRefFiles = multipleRefOids.map(oid => File(2, oid, oid, "name2", Some(100), Some(100)))
-        files.insert(singleRefFiles ++ multipleRefFiles)
-      }
-
-      private def createContents: Long = {
-        implicit val pgConnection = DB.pgConnection
-
-        LO.withLargeObject(_.oid)
-      }
-
-      protected def findSingleRefFileIds: Seq[Long] =
-        from(files)(f =>
-          where(f.referenceCount === 1)
-            select (f.id)).toSeq
-
-      protected def findMultipleRefFileIds: Seq[Long] =
-        from(files)(f =>
-          where(f.referenceCount gt 1)
-            select (f.id)).toSeq
-
-      protected def findZeroRefFileIds: Seq[Long] =
-        from(files)(f =>
-          where(f.referenceCount === 0)
-            select (f.id)).toSeq
-
-      protected def findByIds(ids: Iterable[Long]): Seq[File] =
+      protected def findByIds(ids: Iterable[Long]): Seq[File] = {
         from(files)(f =>
           where(f.id in ids)
             select (f)).toSeq
-
-      // This test generates an exception which aborts the transaction
-      // No further database access is possible, so make this the last 
-      // assertion in the test
-      protected def contentIsRemoved(oid: Long): Boolean = {
-        implicit val pgConnection = DB.pgConnection
-
-        val findOid = Try(LO.withLargeObject(oid)(lo => lo.oid))
-        findOid.isFailure
       }
     }
 
-    "keep file if refcount > 0 after reference removal" in new FileContext {
-      val fileIds = findMultipleRefFileIds
-
-      FileStore.removeReference(fileIds)
-
-      val updatedFiles = findByIds(fileIds)
-
-      updatedFiles.map(_.referenceCount must be equalTo (1))
-      multipleRefOids.map(oid => contentIsRemoved(oid) must beFalse)
+    "decrement the refcount when it is >1" in new FileContext {
+      val multipleRefFile = files.insert(File(2, "name2", "loc2", 100L, "loc2", 100L))
+      FileStore.removeReference(Seq(multipleRefFile.id))
+      findByIds(Seq(multipleRefFile.id)).map(_.referenceCount) must beEqualTo(Seq(1))
     }
 
-    "delete file if refcount == 0 after reference removal" in new FileContext {
-      val fileIds = findSingleRefFileIds
-
-      FileStore.removeReference(fileIds)
-
-      val updatedFiles = findByIds(fileIds)
-
-      updatedFiles must beEmpty
-      findZeroRefFileIds must beEmpty
-
-      singleRefOids.map(oid => contentIsRemoved(oid) must beTrue)
-    }.pendingUntilFixed
+    "decrement the refcount when it is 1" in new FileContext {
+      val singleRefFile = files.insert(File(1, "name1", "loc1", 100L, "loc1", 100L))
+      FileStore.removeReference(Seq(singleRefFile.id))
+      findByIds(Seq(singleRefFile.id)).map(_.referenceCount) must beEqualTo(Seq(0))
+    }
   }
 
   step(shutdownDb)

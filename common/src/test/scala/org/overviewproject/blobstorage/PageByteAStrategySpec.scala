@@ -1,63 +1,73 @@
 package org.overviewproject.blobstorage
 
-import org.overviewproject.models.tables.Files
-import org.overviewproject.models.File
-import org.overviewproject.models.tables.Pages
-import org.overviewproject.models.Page
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.database.Slick.simple._
-import scala.concurrent.Future
+import java.io.ByteArrayInputStream
+import scala.concurrent.{ExecutionContext,Future}
 import scala.concurrent.ExecutionContext
 
+import org.overviewproject.database.Slick.simple.Session
+import org.overviewproject.models.{File,Page}
+import org.overviewproject.models.tables.{Files,Pages}
+import org.overviewproject.test.SlickSpecification
+
 class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
-
-  "PageByteAStrategy" should {
-
-    "#get" should {
-
-      "return an enumerator from data" in new ExistingPageScope {
-        val future = strategy.get(s"pagebytea:${page.id}")
-        val enumerator = await(future)
-        val bytesRead = consume(enumerator)
-
-        bytesRead must be equalTo data
-      }
-
-      "throw a delayed exception if data is NULL" in new NoDataPageScope {
-        val future = strategy.get(s"pagebytea:${page.id}")
-        await(future) must throwA[Exception]
-      }
-
-      "throw an exception when get location does not look like pagebytea:PAGEID" in new ExistingPageScope {
-        invalidLocationThrowsException(strategy.get)
-      }
-
-      "throw a delayed exception if pageId is not a valid id" in new ExistingFileScope {
-        val future = strategy.get(s"pagebytea:0")
-        await(future) must throwA[Exception]
-      }
+  trait BaseScope extends DbScope {
+    class TestPageByteAStrategy(session: Session) extends PageByteAStrategy {
+      override def db[A](block: Session => A)(implicit executor: ExecutionContext) = Future(block(session))
     }
 
-    "#delete" should {
-      "not do anything" in new ExistingPageScope {
-        val future = strategy.delete(s"pagebytea:${page.id}")
-        await(future)
+    val strategy = new TestPageByteAStrategy(session)
+  }
 
-        pageData must beSome(data)
-      }
+  "#get" should {
+    trait GetScope extends BaseScope {
+      val file = Db.insertFile
     }
 
-    "#create" should {
-      "throw NotImplementedError" in new ExistingPageScope { 
-        strategy.create(s"pagebytea:${page.id}", contentStream, data.length) must throwA[NotImplementedError]
-      }
+    "return an enumerator from data" in new GetScope {
+      val page = Db.insertPage(file.id, Some("blah".getBytes("utf-8")), 4L)
+      val enumerator = await(strategy.get(s"pagebytea:${page.id}"))
+      consume(enumerator) must beEqualTo("blah".getBytes("utf-8"))
+    }
+
+    "throw a delayed exception if data is NULL" in new GetScope {
+      val page = Db.insertPage(file.id, None, 4L)
+      val future = strategy.get(s"pagebytea:${page.id}")
+      await(future) must throwA[Exception]
+    }
+
+    "throw an exception when get location does not look like pagebytea:PAGEID" in new GetScope {
+      await(strategy.get("pagebyteX:1234")) must throwA[IllegalArgumentException]
+      await(strategy.get("pagebytea::1234")) must throwA[IllegalArgumentException]
+      await(strategy.get("pagebytea:")) must throwA[IllegalArgumentException]
+    }
+
+    "throw a delayed exception if pageId is not a valid id" in new GetScope {
+      val page = Db.insertPage(file.id, Some("blah".getBytes("utf-8")), 4L)
+      await(strategy.get(s"pagebytea:${page.id + 1L}")) must throwA[Exception]
     }
   }
 
-  object DbFactory {
+  "#delete" should {
+    "not do anything" in new BaseScope {
+      val file = Db.insertFile
+      val page = Db.insertPage(file.id, Some("blah".getBytes("utf-8")), 4L)
+      await(strategy.delete(s"pagebytea:${page.id}"))
+      Db.getPage(page.id) must beSome
+    }
+  }
+
+  "#create" should {
+    "throw NotImplementedError" in new BaseScope { 
+      val contentStream = new ByteArrayInputStream("blah".getBytes("utf-8"))
+      strategy.create("pagebytea", contentStream, 4) must throwA[NotImplementedError]
+    }
+  }
+
+  object Db {
+    import org.overviewproject.database.Slick.simple._
 
     private val insertFileInvoker = {
-      val q = for (f <- Files) yield (f.referenceCount, f.contentsOid, f.viewOid, f.name, f.contentsSize, f.viewSize)
+      val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)
       (q returning Files).insertInvoker
     }
 
@@ -66,53 +76,16 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
       (q returning Pages).insertInvoker
     }
 
-    def insertFile(implicit session: Session): File =
-      insertFileInvoker.insert(1, 10l, 10l, "name", 100l, 100l)
-
-    def insertPage(fileId: Long, data: Array[Byte])(implicit session: Session): Page =
-      insertPageInvoker.insert(fileId, 1, Some(data), data.length)
-
-    def insertPageNoData(fileId: Long)(implicit session: Session): Page =
-      insertPageInvoker.insert(fileId, 1, None, 0)
-
-  }
-
-  trait PageBaseScope extends DbScope {
-
-    class TestPageByteAStrategy(session: Session) extends PageByteAStrategy  {
-
-      override def db[A](block: Session => A)(implicit executor: ExecutionContext): Future[A] = Future {
-        block(session)
-      }
+    def insertFile(implicit session: Session): File = {
+      insertFileInvoker.insert(1, "name", "location", 10L, "location", 10L)(session)
     }
 
-    val strategy = new TestPageByteAStrategy(session)
+    def insertPage(fileId: Long, data: Option[Array[Byte]], length: Long)(implicit session: Session): Page = {
+      insertPageInvoker.insert(fileId, 1, data, length)(session)
+    }
 
-    def invalidLocationThrowsException[T](f: String => T) =
-      (f("pagebyteX:1234") must throwA[IllegalArgumentException]) and
-        (f("pagebytea::1234") must throwA[IllegalArgumentException]) and
-        (f("pagebytea:") must throwA[IllegalArgumentException])
-
-  }
-
-  trait ExistingFileScope extends PageBaseScope {
-    val file = DbFactory.insertFile
-  }
-
-  trait ExistingPageScope extends ExistingFileScope {
-    val data = Array[Byte](1, 2, 3)
-    val page = DbFactory.insertPage(file.id, data)
-    
-    val contentStream = byteArrayInputStream(data)
-    
-    def pageData = {
-      val q = for (p <- Pages if p.id === page.id) yield p.data
-      q.firstOption.flatten
-    } 
-  }
-
-  trait NoDataPageScope extends ExistingFileScope {
-    val page = DbFactory.insertPageNoData(file.id)
+    def getPage(id: Long)(implicit session: Session): Option[Page] = {
+      Pages.filter(_.id === id).firstOption(session)
+    }
   }
 }
-

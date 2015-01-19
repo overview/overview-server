@@ -1,9 +1,11 @@
 package org.overviewproject.blobstorage
 
-import java.io.InputStream
+import java.io.{File,InputStream}
+import java.nio.file.Files
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
@@ -32,6 +34,50 @@ class BlobStorageSpec extends Specification with Mockito {
         mockStrategyFactory.forLocation(anyString) returns mockStrategy
         TestBlobStorage.get("s3:foo:bar")
         there was one(mockStrategy).get("s3:foo:bar")
+      }
+    }
+
+    "#withBlobInTempFile" should {
+      trait WithBlobInTempFileScope extends BaseScope {
+        val mockStrategy = mock[BlobStorageStrategy]
+        mockStrategyFactory.forLocation("bucket:id") returns mockStrategy
+        mockStrategy.get("bucket:id") returns Future.successful(Enumerator("blob".getBytes("utf-8")))
+      }
+
+      "supply a readable File to the callback" in new WithBlobInTempFileScope {
+        val futureBytes = TestBlobStorage.withBlobInTempFile("bucket:id") { tempFile =>
+          Future.successful(Files.readAllBytes(tempFile.toPath))
+        }
+
+        await(futureBytes) must beEqualTo("blob".getBytes("utf-8"))
+      }
+
+      "delete the File after the callback succeeds" in new WithBlobInTempFileScope {
+        val futureFile = TestBlobStorage.withBlobInTempFile("bucket:id") { tempFile => Future.successful(tempFile) }
+        await(futureFile).exists must beFalse
+      }
+
+      "throw an exception and delete the File after the callback throws an exception synchronously" in new WithBlobInTempFileScope {
+        var file: Option[File] = None
+        val exception = new Exception("foo")
+        val future: Future[Unit] = TestBlobStorage.withBlobInTempFile("bucket:id") { tempFile =>
+          file = Some(tempFile)
+          throw exception
+          Future.successful(())
+        }
+        await(future) must throwA(exception)
+        file.map(_.exists) must beSome(false)
+      }
+
+      "throw an exception and delete the File after the callback throws an exception asynchronously" in new WithBlobInTempFileScope {
+        var file: Option[File] = None
+        val exception = new Exception("foo")
+        val future: Future[Unit] = TestBlobStorage.withBlobInTempFile("bucket:id") { tempFile =>
+          file = Some(tempFile)
+          Future.failed(exception)
+        }
+        await(future) must throwA(exception)
+        file.map(_.exists) must beSome(false)
       }
     }
 

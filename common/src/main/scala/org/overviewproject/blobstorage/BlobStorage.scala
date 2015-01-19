@@ -1,8 +1,10 @@
 package org.overviewproject.blobstorage
 
 import java.io.{File,InputStream}
-import play.api.libs.iteratee.Enumerator
-import scala.concurrent.Future
+import java.nio.file.Files
+import play.api.libs.iteratee.{Enumerator,Iteratee}
+import scala.concurrent.{Future,blocking}
+import scala.util.{Failure,Success,Try}
 
 /** Stores blobs, which are like files without the file part.
   *
@@ -39,13 +41,27 @@ trait BlobStorage {
 
   /** Streams the blob into a file, runs the callback, and deletes the file.
     *
-    * Remember, when writing async code, that the File will be deleted as soon
-    * as the callback completes. On UNIX that's fine: anything that has already
-    * opened the file will keep a handle on it.
+    * The File will be deleted after the callback ends, whether it succeeds or
+    * fails.
+    *
+    * If the caller is killed (or crashes) while executing the callback, the
+    * temporary file will not be deleted.
     */
-  def getAsTempFile[A](location: String)(callback: File => A): Future[A] = {
+  def withBlobInTempFile[A](location: String)(callback: File => Future[A]): Future[A] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    Future(callback(new File(".")))
+
+    def callCallbackSafely(file: File): Future[A] = {
+      Try[Future[A]](callback(file)) match {
+        case Success(future) => future
+        case Failure(error) => Future.failed(error)
+      }
+    }
+
+    for {
+      enumerator <- get(location)
+      file <- enumerator.run(BlobStorage.enumerateeToFile)
+      result <- callCallbackSafely(file).andThen { case _ => blocking(file.delete) }
+    } yield result
   }
 
   /** Deletes a blob.
@@ -121,4 +137,17 @@ trait BlobStorage {
 object BlobStorage extends BlobStorage {
   override protected val config = BlobStorageConfig
   override protected val strategyFactory = StrategyFactory
+
+  private def enumerateeToFile: Iteratee[Array[Byte], File] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    val path = Files.createTempFile("blob-storage", null)
+    val outputStream = blocking(Files.newOutputStream(path))
+    Iteratee.foreach((input: Array[Byte]) => blocking(outputStream.write(input)))
+      .map { _ => blocking(outputStream.close); path.toFile }
+      .recover { case t: Throwable =>
+        Files.delete(path)
+        throw t
+        new File(".") // compile
+      }
+  }
 }

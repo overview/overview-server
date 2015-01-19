@@ -2,7 +2,7 @@ package org.overviewproject.blobstorage
 
 trait StrategyFactory {
   def forLocation(s: String): BlobStorageStrategy = {
-    val strategyId = s.substring(0, s.indexOf(":"))
+    val strategyId: String = s.split(":")(0)
 
     strategyId match {
       case "s3" => S3Strategy

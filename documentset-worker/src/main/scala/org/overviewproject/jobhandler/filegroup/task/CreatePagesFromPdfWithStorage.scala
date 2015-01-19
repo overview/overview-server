@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task
 
 import scala.concurrent.{Await,Future,blocking}
 import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
-import org.overviewproject.database.Database
+import org.overviewproject.database.{DB,Database}
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import org.overviewproject.database.orm.stores.GroupedFileUploadStore
@@ -35,7 +35,8 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
       def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload] = {
         import org.overviewproject.database.Slick.simple._
 
-        org.overviewproject.database.Database.withSlickSession { session =>
+        DB.withConnection { connection =>
+          val session = DB.slickSession(connection)
           GroupedFileUploads.filter(_.id === uploadedFileId).firstOption(session)
         }
       }

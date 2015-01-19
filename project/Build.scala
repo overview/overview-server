@@ -29,7 +29,8 @@ object ApplicationBuild extends Build with ProjectSettings {
   }
 
   val ourTestWithNoDbOptions = Seq(
-    Tests.Argument(TestFrameworks.Specs2, "xonly"),
+    //Tests.Argument(TestFrameworks.Specs2, "xonly"),
+    Tests.Argument(TestFrameworks.Specs2, "showtimes"),
     Tests.Argument("junitxml", "console")/*,
     Tests.Setup { loader =>
       // Load Logger so configurations happen in the right order

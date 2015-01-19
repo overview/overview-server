@@ -8,10 +8,9 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.overviewproject.blobstorage.{BlobStorage,BlobBucketId}
-import org.overviewproject.database.Database
+import org.overviewproject.database.DB
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.postgres.LargeObjectInputStream
-import org.overviewproject.postgres.LO
 import org.overviewproject.models.{File,GroupedFileUpload}
 import org.overviewproject.models.tables.Files
 import org.overviewproject.tree.orm.stores.BaseStore
@@ -126,18 +125,17 @@ object CreateFile extends CreateFile {
       viewLocation: String,
       viewSize: Long)
     : File = {
-      Database.withSlickSession { session =>
-        session.withTransaction {
-          val file = fileInserter.insert(1, name, contentsLocation, contentsSize, viewLocation, viewSize)(session)
+      DB.withTransaction { connection =>
+        val session = DB.slickSession(connection)
+        val file = fileInserter.insert(1, name, contentsLocation, contentsSize, viewLocation, viewSize)(session)
 
-          import org.squeryl.Session
-          import org.overviewproject.postgres.{SquerylEntrypoint,SquerylPostgreSqlAdapter}
+        import org.squeryl.Session
+        import org.overviewproject.postgres.{SquerylEntrypoint,SquerylPostgreSqlAdapter}
 
-          SquerylEntrypoint.using(Session.create(session.conn, new SquerylPostgreSqlAdapter())) {
-            tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
-          }
-          file
+        SquerylEntrypoint.using(Session.create(connection, new SquerylPostgreSqlAdapter())) {
+          tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
         }
+        file
       }
     }
   }

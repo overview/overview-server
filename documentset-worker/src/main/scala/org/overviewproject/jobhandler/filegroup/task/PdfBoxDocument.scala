@@ -5,6 +5,7 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.util.PDFTextStripper
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.postgres.LargeObjectInputStream
@@ -54,7 +55,7 @@ class PdfBoxDocument(location: String) extends PdfDocument {
 
   private def loadFromLocation(location: String): PDDocument = {
     scala.concurrent.Await.result(
-      BlobStorage.getAsTempFile(location)(PDDocument.load _),
+      BlobStorage.withBlobInTempFile(location)(file => Future.successful(PDDocument.load(file))),
       scala.concurrent.duration.Duration.Inf
     )
   }

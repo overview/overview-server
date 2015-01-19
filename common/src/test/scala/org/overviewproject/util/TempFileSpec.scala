@@ -6,8 +6,8 @@
  * 
  */
 
-import java.io.Reader
-import org.overviewproject.util.TempFile
+package org.overviewproject.util
+
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 

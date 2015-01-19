@@ -3,10 +3,8 @@ package org.overviewproject.clone
 import org.overviewproject.database.DB
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ Document, DocumentSet, File, UploadedFile }
-import org.overviewproject.tree.orm.Page
+import org.overviewproject.tree.orm.{ Document, DocumentSet, File, Page, UploadedFile }
 
 class DocumentClonerSpec extends DbSpecification {
   step(setupDb)
@@ -67,8 +65,7 @@ class DocumentClonerSpec extends DbSpecification {
         val documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "Clone"))
 
         val ids = new DocumentSetIdGenerator(documentSet.id)
-        val oid = createContents
-        val file = Schema.files.insertOrUpdate(File(1, oid, oid, "name", Some(100), Some(100)))
+        val file = Schema.files.insertOrUpdate(File(1, "name", "location", 100L, "location", 100L))
         Schema.documents.insert(
           Document(
             documentSet.id,
@@ -86,12 +83,6 @@ class DocumentClonerSpec extends DbSpecification {
       protected def documentPage(fileId: Long): Option[Long] = {
         createPage(fileId)
         None
-      }
-
-      private def createContents: Long = {
-        implicit val pgConnection = DB.pgConnection
-
-        LO.withLargeObject(_.oid)
       }
 
       protected def findFiles: Iterable[File] = {
