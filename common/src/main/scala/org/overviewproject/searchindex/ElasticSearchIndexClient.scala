@@ -46,8 +46,6 @@ import org.overviewproject.util.Logger
   *       write new documents to <tt>documents_v2</tt>.)</li>
   *   <li>For each document set <tt>N</tt>:
   *     <ol>
-  *       <li>Skip if <tt>documents_N</tt> points to exactly
-  *           <tt>documents_v2</tt> and not <tt>documents_v1</tt>.</li>
   *       <li>Index all documents in document set <tt>N</tt> into
   *           <tt>documents_v2</tt>, from scratch. (<tt>_id</tt> will
   *           ensure you overwrite rather than add documents.)</li>

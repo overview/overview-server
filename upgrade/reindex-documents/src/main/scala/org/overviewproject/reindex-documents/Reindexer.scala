@@ -66,12 +66,7 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
 
   def reindexDocumentSet(documentSetId: Long, database: Database): Unit = {
     System.err.println(s"Starting reindex of document set ${documentSetId}...")
-    if (documentSetIsAlreadyReindexed(documentSetId)) {
-      System.err.println("Already indexed")
-      return
-    }
 
-    System.err.println("Querying...")
     database.forEachBatchOfDocumentsInSet(documentSetId, BatchSize) { documents: Seq[Document] =>
       System.err.println(s"Indexing ${documents.length} documents...")
       indexDocuments(documents)
@@ -91,10 +86,6 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
   }
 
   private def aliasName(documentSetId: Long): String = "documents_" + documentSetId
-
-  private def documentSetIsAlreadyReindexed(documentSetId: Long): Boolean = {
-    indicesForAlias(aliasName(documentSetId)) == Set(indexName)
-  }
 
   private def removeOldDocumentSetAliases(documentSetId: Long): Unit = {
     val alias = aliasName(documentSetId)
