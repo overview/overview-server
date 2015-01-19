@@ -53,16 +53,8 @@ wd.addAsyncMethod 'dumpLog', ->
 wd.addPromiseChainMethod 'listenForJqueryAjaxComplete', ->
   @executeFunction ->
     if 'listenForJqueryAjaxComplete' not of window
-      window.listenForJqueryAjaxComplete =
-        current: 0 # number of times we've listened
-        total: 0   # number of ajax requests that completed since we first
-                   # called listenForAjaxComplete
-      $(document).ajaxComplete ->
-        window.listenForJqueryAjaxComplete.total += 1
-    else
-      # Skip all unhandled ajax-complete events
-      x = window.listenForJqueryAjaxComplete
-      x.current = x.total
+      $(document).ajaxComplete(-> window.listenForJqueryAjaxComplete.done = true)
+    window.listenForJqueryAjaxComplete = { done: false }
 
 # Finishes when an $.ajaxComplete method is fired.
 #
@@ -76,8 +68,11 @@ wd.addPromiseChainMethod 'listenForJqueryAjaxComplete', ->
 # there are no pending AJAX requests.
 wd.addPromiseChainMethod 'waitForJqueryAjaxComplete', ->
   @
-    .waitForFunctionToReturnTrueInBrowser((-> window.listenForJqueryAjaxComplete.current < window.listenForJqueryAjaxComplete.total), Constants.ajaxTimeout, Constants.pollLength)
-    .executeFunction(-> window.listenForJqueryAjaxComplete.current += 1)
+    .waitForFunctionToReturnTrueInBrowser(
+      (-> window.listenForJqueryAjaxComplete.done)
+      Constants.ajaxTimeout,
+      Constants.pollLength
+    )
 
 wd.addPromiseChainMethod 'waitForJqueryReady', ->
   @.waitForFunctionToReturnTrueInBrowser(-> $?.isReady)
@@ -88,7 +83,30 @@ wd.addPromiseChainMethod 'executeFunction', (js) ->
   @execute(wrapJsFunction(js))
 
 wd.addPromiseChainMethod 'waitForFunctionToReturnTrueInBrowser', (js, timeout, pollLength) ->
-  @waitForConditionInBrowser(wrapJsFunction(js), timeout, pollLength)
+  start = new Date()
+
+  timeout ?= Constants.ajaxTimeout
+  pollLength ?= Constants.pollLength
+
+  deferred = Q.defer()
+  promise = deferred.promise
+  wd.transferPromiseness(promise, @)
+
+  jsToExecute = "return true == #{wrapJsFunction(js)};"
+
+  poll = =>
+    @execute(jsToExecute)
+      .then (r) ->
+        if r
+          deferred.resolve(null)
+        else if new Date() - start + pollLength > timeout
+          deferred.reject(new Error("Waited, but never calculated JS to be true: #{jsToExecute}"))
+        else
+          setTimeout(poll, pollLength)
+
+  poll()
+
+  promise
 
 ValidArgs =
   name: null
@@ -196,9 +214,8 @@ module.exports =
       .configureHttp
         baseUrl: module.exports.baseUrl
         timeout: Constants.pageLoadTimeout
-        retries: 1
-        retryDelay: 10
-      .setWindowSize(1280, 800)
+        retries: -1
+      .setWindowSize(1024, 768)
       .setImplicitWaitTimeout(0)   # we only wait explicitly! We don't want to code race conditions
       .setAsyncScriptTimeout(Constants.asyncTimeout) # in case there are HTTP requests
       .setPageLoadTimeout(Constants.pageLoadTimeout) # in case, on a slow computer, something slow happens
