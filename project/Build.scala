@@ -144,6 +144,16 @@ object ApplicationBuild extends Build with ProjectSettings {
     )
     .dependsOn(common)
 
+  val upgrade20150119MoveFiles = Project("upgrade-2015-01-19-move-files", file("upgrade/2015-01-19-move-files"))
+    .settings(Defaults.coreDefaultSettings: _*)
+    .settings(packageArchetype.java_application: _*)
+    .settings(
+      scalacOptions ++= ourScalacOptions,
+      resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
+      includeFilter in (Compile, resourceDirectory) := "application.conf"
+    )
+    .dependsOn(common)
+
   val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
     .settings(Defaults.coreDefaultSettings: _*)
     .settings(packageArchetype.java_application: _*)
