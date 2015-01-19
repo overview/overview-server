@@ -59,9 +59,11 @@ module.exports = (opts) ->
       @userBrowser
         .elementByCss("li.active a .toggle-popover").click()
         .elementBy(tag: 'dd', contains: word).should.eventually.exist
+        .elementByCss("li.active a .toggle-popover").click()
 
   opts.importantWords?.forEach (word) ->
     it "should show important word #{word}", ->
       @userBrowser
         .elementByCss("li.active a .toggle-popover").click()
         .elementBy(tag: 'dd', contains: word).should.eventually.exist
+        .elementByCss("li.active a .toggle-popover").click()
