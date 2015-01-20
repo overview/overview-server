@@ -24,11 +24,7 @@ class InMemoryIndexClient extends ElasticSearchIndexClient {
 
   private lazy val node: Node = {
     val settings = ImmutableSettings.settingsBuilder
-      .put("index.store.type", "memory")
-      .put("index.number_of_shards", 1)
-      .put("index.number_of_replicas", 0)
-      .put("node.http.enabled", false)
-      .put("node.gateway.type", "none")
+      .put("http.enabled", false)
       .put("path.logs", s"$path/logs")
       .put("path.data", s"$path/data")
 

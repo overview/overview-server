@@ -37,7 +37,7 @@ package object commands {
         "-Des.foreground=yes",
         "-Des.path.home=./search-index"
       ),
-      Seq("org.elasticsearch.bootstrap.ElasticSearch")
+      Seq("org.elasticsearch.bootstrap.Bootstrap")
     )
 
     override def messageBroker = new JvmCommandWithAppendableClasspath(

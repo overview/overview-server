@@ -128,7 +128,7 @@ trait ElasticSearchIndexClient extends IndexClient {
     * exception, the Future fails. If the ElasticSearch execution fails, the
     * Future fails.
     */
-  private def execute[Request <: ActionRequest[Request],Response <: ActionResponse,RequestBuilder <: ActionRequestBuilder[Request,Response,RequestBuilder]](req: ActionRequestBuilder[Request,Response,RequestBuilder]): Future[Response] = {
+  private def execute[Response <: ActionResponse](req: ActionRequestBuilder[_,Response,_,_]): Future[Response] = {
     val promise = Promise[Response]()
 
     req.execute(new ActionListener[Response] {
@@ -146,11 +146,11 @@ trait ElasticSearchIndexClient extends IndexClient {
     * alias and return <tt>"documents_v1"</tt>>
     */
   private def getAllDocumentsIndexName(client: Client): Future[String] = {
-    val exists = client.admin.indices.prepareExistsAliases(AllDocumentsAlias)
+    val exists = client.admin.indices.prepareAliasesExist(AllDocumentsAlias)
     val get = client.admin.indices.prepareGetAliases(AllDocumentsAlias)
 
     execute(exists).map(_.isExists).flatMap(_ match {
-      case true => execute(get).map(_.getAliases.keySet.toArray.head.asInstanceOf[String])
+      case true => execute(get).map(_.getAliases.keys.toArray.head.asInstanceOf[String])
       case false => createDefaultIndexAndAlias(client).map(_ => DefaultIndexName)
     })
   }
@@ -248,7 +248,7 @@ trait ElasticSearchIndexClient extends IndexClient {
       .setSearchType(SearchType.SCAN)
       .setScroll(new TimeValue(ScrollTimeout))
       .setTypes(DocumentTypeName)
-      .setFilter(filter)
+      .setQuery(QueryBuilders.filteredQuery(null, filter))
       .setSize(scrollSize)
       .addField("id") // We started using _id on 2015-01-12 but some end-users
                       // might not have reindexed yet. So we index and store

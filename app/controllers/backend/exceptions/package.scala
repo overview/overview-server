@@ -3,7 +3,7 @@ package controllers.backend
 import java.sql.SQLException
 import org.apache.lucene.queryparser.classic.ParseException
 import org.elasticsearch.action.search.{SearchPhaseExecutionException,ShardSearchFailure}
-import org.elasticsearch.ElasticSearchException
+import org.elasticsearch.{ElasticsearchException,ElasticsearchParseException}
 
 package object exceptions {
   /** You tried to duplicate a primary key or unique index tuple. */
@@ -61,10 +61,11 @@ package object exceptions {
      * ~[elasticsearch-0.90.2.jar:na]
      */
     def findParseError(t: Any): Option[String] = t match {
-      case s: String => Some(s.split("; nested: \\w+\\[").takeRight(2).head.split("\n").head) // because there's no ShardSearchFailure.failure() in v0.90.2
-      case ssf: ShardSearchFailure => findParseError(ssf.reason) // should recurse through ssf.failure() but that doesn't exist in v0.90.2 :(
+      case ssf: ShardSearchFailure => Some(ssf.reason.split("; nested: \\w+\\[").takeRight(2).head.split("\n").head)
+      case epe: ElasticsearchParseException => Some(epe.getMessage)
       case spee: SearchPhaseExecutionException => spee.shardFailures.flatMap(findParseError(_)).headOption
-      case ese: ElasticSearchException if (ese.getCause != null) => findParseError(ese.getCause)
+      case ese: ElasticsearchException if (ese.getCause != null) => findParseError(ese.getCause)
+      case t: Throwable => System.err.println(t); None
       case _ => None
     }
 

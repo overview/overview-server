@@ -32,6 +32,7 @@ class InMemoryIndexClientSpec extends Specification {
 
       indexClient.preInitClient.admin.indices.prepareCreate(name)
         .setSettings(settings)
+        .addMapping("document", """{ "document": { "properties": { "document_set_id": { "type": "long" } } } }""")
         .execute.get
     }
 
@@ -43,7 +44,7 @@ class InMemoryIndexClientSpec extends Specification {
 
     def aliasExists(index: String, alias: String) = {
       val exists = indexClient.preInitClient
-        .admin.indices.prepareExistsAliases(alias)
+        .admin.indices.prepareAliasesExist(alias)
         .execute.get.isExists
 
       if (exists) {

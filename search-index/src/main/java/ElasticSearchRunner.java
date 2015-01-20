@@ -1,4 +1,3 @@
+import org.elasticsearch.bootstrap.Bootstrap;
 
-import org.elasticsearch.bootstrap.ElasticSearch;
-
-public class ElasticSearchRunner extends ElasticSearch { }
+public class ElasticSearchRunner extends Bootstrap { }
