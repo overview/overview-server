@@ -4,9 +4,8 @@ define [
   './models/Document'
   './models/State'
   './models/UrlPropertiesExtractor'
-  './views/Heading'
   './views/Page'
-], (_, $, Document, State, UrlPropertiesExtractor, Heading, Page) ->
+], (_, $, Document, State, UrlPropertiesExtractor, Page) ->
   alreadyLoaded = false
 
   class App
@@ -18,11 +17,6 @@ define [
       @state = new State()
       @urlPropertiesExtractor = new UrlPropertiesExtractor(documentCloudUrl: window.documentCloudUrl)
       @el = options?.el || document.createElement('div')
-
-      heading = new Heading({
-        model: @state
-      })
-      @el.appendChild(heading.el)
 
       page = new Page({
         model: @state
