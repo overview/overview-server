@@ -6,6 +6,7 @@ import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.database.SlickClient
 import org.overviewproject.models.tables.Files
+import org.overviewproject.database.SlickSessionProvider
 
 /**
  * Delete the file, associated data, including pages.
@@ -48,4 +49,17 @@ trait FileRemover extends SlickClient {
   
   protected val pageRemover: PageRemover
   protected val blobStorage: BlobStorage
+}
+
+object FileRemover {
+  def apply(): FileRemover = new FileRemoverImpl
+  
+  class PageRemoverImpl extends PageRemover with SlickSessionProvider {
+    override protected val blobStorage = BlobStorage
+  }
+  
+  class FileRemoverImpl extends FileRemover with SlickSessionProvider {
+    override protected val blobStorage = BlobStorage
+    override protected val pageRemover = new PageRemoverImpl
+  }
 }
