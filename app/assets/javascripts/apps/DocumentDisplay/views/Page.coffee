@@ -209,19 +209,6 @@ define [
 
       @postRender[type]?.call(this) if type
 
-    # Scroll the view by the specified number of pages.
-    #
-    # 1 means scroll forward; 0 means scroll backward.
-    scrollByPages: (n) ->
-      # We can only scroll CSV documents.
-      csv = @$('csv')[0]
-      if csv?
-        h = csv.clientHeight
-        page_height = Math.round(Math.max(
-          h * PAGE_KEY_FRACTION, h - PAGE_KEY_MARGIN
-        ))
-        csv.scrollTop += n * page_height
-
     onClickBooleanPreference: (e) ->
       e.preventDefault()
       a = e.currentTarget
