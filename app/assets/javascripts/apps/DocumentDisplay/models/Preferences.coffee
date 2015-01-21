@@ -1,7 +1,7 @@
 define [ 'backbone' ], (Backbone) ->
   PREFIX = 'apps/DocumentDisplay/models/Preferences/'
   PREFERENCES = {
-    'iframe': { type: 'boolean', default: false }
+    'text': { type: 'boolean', default: false }
     'sidebar': { type: 'boolean', default: false }
     'wrap': { type: 'boolean', default: true }
   }
@@ -23,19 +23,15 @@ define [ 'backbone' ], (Backbone) ->
         localStorage.setItem(PREFIX + key, value && 'true' || 'false')
   }
 
-  Backbone.Model.extend
-    getPreference: (key) ->
-      throw "Invalid key '#{key}' in get" if !PREFERENCES[key]
-      pref = PREFERENCES[key]
-      item = storage.get[pref.type](key)
-      if item?
-        item
-      else
-        pref.default
+  class Preferences extends Backbone.Model
+    initialize: ->
+      attrs = {}
+      for pref, options of PREFERENCES
+        attrs[pref] = storage.get[options.type](pref)
+      @set(attrs, fromInit: true)
 
-    setPreference: (key, value) ->
-      throw "Invalid key '#{key}' in set" if !PREFERENCES[key]
-      pref = PREFERENCES[key]
-      storage.set[pref.type](key, value)
-      realValue = storage.get[pref.type](key)
-      @set(key, realValue) # calls @trigger()
+    set: (attrs, options=null) ->
+      if !options?.fromInit
+        for pref, options of PREFERENCES
+          storage.set[options.type](pref, attrs[pref]) if attrs[pref]?
+      super(attrs, options)

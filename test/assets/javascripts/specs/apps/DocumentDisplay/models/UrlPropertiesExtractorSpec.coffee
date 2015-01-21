@@ -104,21 +104,21 @@ define [
       itShouldRecognize(
         'a local PDF',
         '/documents/1234/contents',
-          type: 'localObject'
+          type: 'pdf'
           url: '/documents/1234/contents'
       )
 
       itShouldRecognize(
         'a secure web page',
         'https://example.org',
-          type: 'secure'
+          type: 'https'
           url: 'https://example.org'
       )
 
       itShouldRecognize(
         'an insecure web page',
         'http://example.org',
-          type: 'insecure'
+          type: 'http'
           url: 'http://example.org'
       )
 

@@ -33,21 +33,21 @@ define [], ->
           url: (o) -> "#{documentCloudUrl}/documents/#{o.id}.html"
         }
         {
-          id: 'localObject'
-          name: 'Local document (object)'
+          id: 'pdf'
+          name: 'PDF'
           regex: /// ^(/documents/\d+/contents)$ ///
           capture: [ 'uri' ]
           url: (o) -> o.uri
         }
         {
-          id: 'secure'
+          id: 'https'
           name: 'Secure web page'
           regex: /// ^(https://.*) ///
           capture: [ 'rawUrl' ]
           url: (o) -> o.rawUrl
         }
         {
-          id: 'insecure'
+          id: 'http'
           name: 'Insecure web page'
           regex: /// ^(http://.*) ///
           capture: [ 'rawUrl' ]

@@ -4,7 +4,7 @@
 
 // The preview-a-single-document view
 #tree-app-document-cursor article {
-  iframe.document {
+  iframe {
     position: absolute;
     top: 0;
     left: 0;
@@ -16,11 +16,8 @@
     margin: 0;
   }
 
-  h3 {
+  div.document, div.text {
     display: none;
-  }
-
-  div.document {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -28,46 +25,102 @@
     right: 0;
   }
 
-  div.document > div {
-    width: 100%;
-    height: 100%;
+  &.showing-document div.document { display: block; }
+  &.showing-text div.text { display: block; }
+
+  div.preferences {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 0;
+
+    a.collapse { display: block; }
+
+    .expanded { display: none; }
+
+    &.expanded .expanded { display: block; }
+
+    .compact {
+      white-space: nowrap;
+      position: absolute;
+      top: -2em;
+      right: 0;
+      height: 2em;
+      background: @body-bg-dark;
+      padding-top: .8em;
+      padding-left: .5em;
+
+      a {
+        display: block;
+        font-size: .9em;
+        line-height: 1.2 / .9;
+        text-decoration: none;
+      }
+      a:hover span.expand { text-decoration: underline; }
+
+      span.showing {
+        border-top-left-radius: @border-radius-small;
+        border-top-right-radius: @border-radius-small;
+        overflow: hidden; // for the border
+        background-color: @brand-primary;
+        color: white;
+        padding: 0 .5em;
+      }
+      span.expand {
+        .text-muted();
+        padding: 0 .5em;
+      }
+    }
+
+    .expanded {
+      background: white;
+      border: 1px solid @table-border-color;
+      a.collapse:first-child { display: none; }
+      a.collapse { text-align: right; }
+      padding: 1em;
+    }
+
+    legend {
+      font: inherit;
+      font-weight: bold;
+      border: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .radio-inline label {
+      font: inherit;
+      margin: 0;
+    }
+
+    p.text-disabled { display: none; }
+
+    &:not(.can-show-document) p.text-disabled { display: block; }
+    &:not(.can-wrap) .wrap { .text-muted(); }
+
+    // Animate options in and out
+    // http://jsfiddle.net/thechrisjordan/3Fc7D/23/
+    // We have to be pretty fast, because otherwise you notice the seam
+    //
+    // With Firefox 35, setting max-height on the <fieldset> doesn't hide the
+    // <legend>; we'll set max-height on the <legend> instead
+    fieldset.options legend, fieldset.options .sidebar, fieldset.options .wrap {
+      max-height: 0;
+      min-height: 0; // Bootstrap
+      margin: 0;
+      transition: max-height .2s ease, padding .2s ease;
+      overflow: hidden;
+    }
+    fieldset.options legend { padding: 0; }
   }
 
-  ul.actions {
-    position: relative;
-    float: right;
-    box-sizing: border-box;
-    font-size: 1em;
-    line-height: 1.5em;
-    top: -2em;
-    padding: 0 .5em .5em;
-    list-style: none;
-
-    padding-left: 20px;
-    @gradient1: fade(@body-bg-dark, 0%);
-    @gradient2: fade(@body-bg-dark, 100%);
-    background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ1cmwoI2dyYWQtdWNnZy1nZW5lcmF0ZWQpIiAvPgo8L3N2Zz4=);
-    background: -moz-linear-gradient(left, @gradient1 0%, @gradient2 10px);
-    background: -webkit-gradient(linear, left top, right top, color-stop(0%,@gradient1), color-stop(10px,@gradient2));
-    background: -webkit-linear-gradient(left, @gradient1 0%,@gradient2 10px);
-    background: -o-linear-gradient(left, @gradient1 0%,@gradient2 10px);
-    background: -ms-linear-gradient(left, @gradient1 0%,@gradient2 10px);
-    background: linear-gradient(to right, @gradient1 0%,@gradient2 10px);
-    @msGradient2: `"@{body-bg-dark}"`;
-    @msGradient1: ~`@{msGradient2}.replace("#", "#00")`;
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr="@{msGradient1}", endColorstr="@{msGradient2}",GradientType=1 );
+  &.showing-text .preferences fieldset.options {
+    legend { padding: 10px 0 0; }
+    legend, .wrap { max-height: 3em; } // or less
   }
-
-  li {
-    display: inline;
-  }
-
-  p.source {
-    margin: 0;
-    padding: 10px;
-    line-height: 14px;
-    white-space: nowrap;
-    overflow: hidden;
+  &.showing-document .can-show-sidebar fieldset.options {
+    legend { padding: 10px 0 0; }
+    legend, .sidebar { max-height: 3em; } // or less
   }
 
   pre, iframe:not(.twitter-tweet) {
@@ -98,6 +151,12 @@
     background: #f8f8f8;
     padding: 10px;
     border-top: 1px solid #ccc;
+  }
+
+  pre:not(.wrap) {
+    // undo bootstrap code.less
+    word-break: normal;
+    word-wrap: normal;
   }
 
   pre.wrap {
