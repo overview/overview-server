@@ -35,7 +35,7 @@ define [], ->
         {
           id: 'pdf'
           name: 'PDF'
-          regex: /// ^(/documents/\d+/contents)$ ///
+          regex: /// ^(/documents/\d+.pdf)$ ///
           capture: [ 'uri' ]
           url: (o) -> o.uri
         }

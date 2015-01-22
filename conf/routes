@@ -23,10 +23,9 @@ POST   /reset-password/:token controllers.PasswordController.update(token)
 
 DELETE /tour controllers.TourController.delete()
 
-GET    /documents/:id.json     controllers.DocumentController.showJson(id: Long)
-GET    /documents/:id.txt      controllers.DocumentController.showText(id: Long)
-GET    /documents/:id/contents controllers.DocumentController.showContents(id: Long)
-GET    /documents/:id          controllers.DocumentController.show(id: Long)
+GET    /documents/:id.json controllers.DocumentController.showJson(id: Long)
+GET    /documents/:id.txt  controllers.DocumentController.showText(id: Long)
+GET    /documents/:id.pdf  controllers.DocumentController.showPdf(id: Long)
 
 HEAD   /uploads/:uuid        controllers.UploadController.show(uuid: java.util.UUID)
 POST   /uploads/:uuid        controllers.UploadController.create(uuid: java.util.UUID)

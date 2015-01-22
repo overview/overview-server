@@ -46,21 +46,6 @@ class DocumentControllerSpec extends ControllerSpecification {
   }
 
   "DocumentController" should {
-    "show()" should {
-      trait ShowScope extends DocumentScope {
-        lazy val result = controller.show(requestedDocumentId)(request)
-      }
-
-      "return NotFound when ID is invalid" in new ShowScope {
-        h.status(result) must beEqualTo(h.NOT_FOUND)
-      }
-
-      "return Ok when ID is valid" in new ShowScope {
-        override def foundDocument = Some(factory.document())
-        h.status(result) must beEqualTo(h.OK)
-      }
-    }
-
     "showText()" should {
       trait ShowTextScope extends DocumentScope {
         lazy val result = controller.showText(requestedDocumentId)(request)
@@ -79,23 +64,23 @@ class DocumentControllerSpec extends ControllerSpecification {
       }
     }
 
-    "showContents()" should {
-      trait ShowContentsScope extends DocumentScope {
-        lazy val result = controller.showContents(requestedDocumentId)(request)
+    "showPdf()" should {
+      trait ShowPdfScope extends DocumentScope {
+        lazy val result = controller.showPdf(requestedDocumentId)(request)
       }
 
-      "return NotFound when ID is invalid" in new ShowContentsScope {
+      "return NotFound when ID is invalid" in new ShowPdfScope {
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return no content when document has no file or page" in new ShowContentsScope {
+      "return no content when document has no file or page" in new ShowPdfScope {
         override def foundDocument = Some(factory.document(fileId=None, pageId=None))
         h.status(result) must beEqualTo(h.OK)
         h.header("Content-Length", result) must beSome("0")
         h.contentAsString(result) must beEqualTo("")
       }
 
-      "return empty content when the page does not exist" in new ShowContentsScope {
+      "return empty content when the page does not exist" in new ShowPdfScope {
         override def foundDocument = Some(factory.document(fileId=Some(fileId), pageId=Some(pageId)))
         override def foundPage = None
         h.status(result) must beEqualTo(h.OK)
@@ -103,7 +88,7 @@ class DocumentControllerSpec extends ControllerSpecification {
         h.contentAsString(result) must beEqualTo("")
       }
 
-      "return page content from blob storage" in new ShowContentsScope {
+      "return page content from blob storage" in new ShowPdfScope {
         override def foundDocument = Some(factory.document(fileId=Some(fileId), pageId=Some(pageId)))
         override def foundPage = Some(factory.page(dataLocation=validLocation, dataSize=9))
         override def foundBlob = Enumerator("page data".getBytes("utf-8"))

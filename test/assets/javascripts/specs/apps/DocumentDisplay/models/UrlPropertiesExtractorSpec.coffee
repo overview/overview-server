@@ -103,9 +103,9 @@ define [
 
       itShouldRecognize(
         'a local PDF',
-        '/documents/1234/contents',
+        '/documents/1234.pdf',
           type: 'pdf'
-          url: '/documents/1234/contents'
+          url: '/documents/1234.pdf'
       )
 
       itShouldRecognize(

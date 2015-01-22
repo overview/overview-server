@@ -214,7 +214,6 @@ object ApplicationBuild extends Build with ProjectSettings {
           WebJs.JS.Object("name" -> "bundle/DocumentCloudProject/index"),
           WebJs.JS.Object("name" -> "bundle/DocumentSet/index"),
           WebJs.JS.Object("name" -> "bundle/DocumentSet/show"),
-          WebJs.JS.Object("name" -> "bundle/Document/show"),
           WebJs.JS.Object("name" -> "bundle/FileImport/new"),
           WebJs.JS.Object("name" -> "bundle/PublicDocumentSet/index"),
           WebJs.JS.Object("name" -> "bundle/SharedDocumentSet/index"),

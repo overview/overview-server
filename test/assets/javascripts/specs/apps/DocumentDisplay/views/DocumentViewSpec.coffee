@@ -99,10 +99,10 @@ define [
       beforeEach ->
         @init
           type: 'pdf'
-          url: '/documents/1234/contents'
+          url: '/documents/1234.pdf'
 
       it 'should render an object', ->
         $object = @$('object')
         expect($object).to.exist
-        expect($object).to.have.attr('data', '/documents/1234/contents#scrollbar=1&toolbar=1&navpanes=1&view=FitH')
+        expect($object).to.have.attr('data', '/documents/1234.pdf#scrollbar=1&toolbar=1&navpanes=1&view=FitH')
         expect($object).to.contain('missingPlugin')

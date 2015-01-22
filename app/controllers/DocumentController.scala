@@ -25,13 +25,6 @@ trait DocumentController extends Controller {
     })
   }
 
-  def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
-    documentBackend.show(documentId).map(_ match {
-      case Some(document) => Ok(views.html.Document.show(OverviewDocument(document.toDeprecatedDocument)))
-      case None => NotFound
-    })
-  }
-
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
       case Some(document) => Ok(document.text)
@@ -39,7 +32,7 @@ trait DocumentController extends Controller {
     })
   }
 
-  def showContents(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+  def showPdf(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(document) => {

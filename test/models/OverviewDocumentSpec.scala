@@ -109,11 +109,11 @@ class OverviewDocumentSpec extends DbSpecification {
     }
     
     "give the proper url for an uploaded document" in new UploadedDocumentScope {
-      document.url must beSome(s"/documents/$ormDocumentId/contents")
+      document.url must beSome(s"/documents/$ormDocumentId.pdf")
     }
     
     "give the proper url for a split uploaded document" in new SplitUploadedDocumentScope {
-      document.url must beSome(s"/documents/$ormDocumentId/contents")
+      document.url must beSome(s"/documents/$ormDocumentId.pdf")
     }
     
     "give a title for a Document if there is one" in new CsvImportDocumentScope {
