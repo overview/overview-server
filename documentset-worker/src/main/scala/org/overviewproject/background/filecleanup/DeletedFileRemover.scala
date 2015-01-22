@@ -6,8 +6,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.collection.immutable.Queue
 import org.overviewproject.util.Logger
-
 import DeletedFileRemoverFSM._
+import akka.actor.Props
 
 
 object DeletedFileRemoverProtocol {
@@ -83,4 +83,14 @@ trait DeletedFileRemover extends Actor with FSM[State, Data] {
         id <- fileIds
       } fileCleaner ! Clean(id)
     }
+}
+
+object DeletedFileRemover {
+  
+  def apply(fileCleaner: ActorRef) = Props(new DeletedFileRemoverImpl(fileCleaner))
+  
+  class DeletedFileRemoverImpl(val fileCleaner: ActorRef) extends DeletedFileRemover {
+    override protected val deletedFileScanner = DeletedFileScanner()
+  }
+  
 }
