@@ -48,7 +48,7 @@ trait DeletedFileRemover extends Actor with FSM[State, Data] {
       fileCleaner ! Clean(id)
       goto(Working) using IdQueue(r, tail)
     }
-    case Event(ScanComplete(_), IdQueue(r, _)) => {
+    case Event(ScanComplete(Nil), IdQueue(r, _)) => {
       r ! FileRemovalComplete
       goto(Idle) using NoRequest
     }
@@ -60,7 +60,7 @@ trait DeletedFileRemover extends Actor with FSM[State, Data] {
       fileCleaner ! Clean(id)
       stay using IdQueue(r, tail)
     }
-    case Event(CleanComplete(_), IdQueue(r, _)) => {
+    case Event(CleanComplete(_), IdQueue(r, Nil)) => {
       r ! FileRemovalComplete
       goto(Idle) using NoRequest
     }
