@@ -37,7 +37,7 @@ class FileCleanerSpec extends Specification with Mockito with NoTimeConversions 
       val error = new Exception("something baaad is happening in Oz")
       deleteFile.failure(error)
       
-      expectMsg(CleanFailed(fileId, error))
+      expectMsg(CleanComplete(fileId))
     }
   }
 
