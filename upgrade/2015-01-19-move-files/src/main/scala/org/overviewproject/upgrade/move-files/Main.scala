@@ -1,14 +1,15 @@
 package org.overviewproject.upgrade.move_files
 
-import java.io.ByteArrayInputStream
 import play.api.libs.iteratee.Iteratee
 import scala.concurrent.{Await,Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
 import org.overviewproject.database.{DB,DataSource,DatabaseConfiguration}
 import org.overviewproject.models.File
 import org.overviewproject.models.tables.Files
+import org.overviewproject.util.TempFile
 
 /** Move File blobs to wherever it is configured to go in application.conf.
   *
@@ -61,12 +62,12 @@ object Main {
     * Because it's simple!
     */
   private def moveFile(file: File): Unit = {
-    val contentsLocation: Future[String] = copyBlob(BlobBucketId.FileContents, file.contentsLocation)
+    val contentsLocation: Future[String] = copyBlob(BlobBucketId.FileContents, file.contentsLocation, file.contentsSize)
 
     val viewLocation: Future[String] = if (file.contentsLocation == file.viewLocation) {
       contentsLocation
     } else {
-      copyBlob(BlobBucketId.FileView, file.viewLocation)
+      copyBlob(BlobBucketId.FileView, file.viewLocation, file.viewSize)
     }
 
     updateFile(file, await(contentsLocation), await(viewLocation))
@@ -79,12 +80,16 @@ object Main {
     *
     * @return The new location.
     */
-  private def copyBlob(bucket: BlobBucketId, location1: String): Future[String] = {
+  private def copyBlob(bucket: BlobBucketId, location1: String, nBytes: Long): Future[String] = {
     System.out.println(s"Copying blob at  ${location1}...")
 
+    val tempFile = new TempFile
+
     val enumerator = await(BlobStorage.get(location1))
-    val bytes: Array[Byte] = await(enumerator.run(Iteratee.consume()))
-    BlobStorage.create(bucket, new ByteArrayInputStream(bytes), bytes.length)
+    await(enumerator.run(Iteratee.foreach(tempFile.outputStream.write)))
+    tempFile.outputStream.close
+
+    BlobStorage.create(bucket, tempFile.inputStream, nBytes)
   }
 
   /** Updates a File in the database to have the new location.
@@ -119,7 +124,7 @@ object Main {
 
       import org.overviewproject.database.Slick.simple._
       Files
-        .filter(_.contentsLocation.startsWith("pglo:"))
+        .filter(!_.contentsLocation.startsWith("s3:"))
         .take(limit)
         .list(session)
     }
