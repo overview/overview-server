@@ -5,6 +5,10 @@ import akka.actor.ActorRef
 import akka.actor.FSM
 
 
+import FileRemovalQueueFSM._
+import akka.actor.Props
+
+
 object FileRemovalQueueProtocol {
   case object RemoveFiles  
 }
@@ -18,9 +22,6 @@ object FileRemovalQueueFSM {
   sealed trait Data
   case class RequestPending(isPending: Boolean) extends Data
 }
-
-
-import FileRemovalQueueFSM._
 
 
 trait FileRemovalQueue extends Actor with FSM[State, Data] {
@@ -49,4 +50,11 @@ trait FileRemovalQueue extends Actor with FSM[State, Data] {
     case Event(RemoveFiles, _) => stay using RequestPending(true)
   }
   
+}
+
+object FileRemovalQueue {
+  def apply(fileRemover: ActorRef) = Props(new FileRemovalQueueImpl(fileRemover))
+  
+  class FileRemovalQueueImpl(val fileRemover: ActorRef) extends FileRemovalQueue 
+
 }
