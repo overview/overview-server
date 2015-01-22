@@ -5,6 +5,10 @@ import akka.pattern.pipe
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.collection.immutable.Queue
+import org.overviewproject.util.Logger
+
+import DeletedFileRemoverFSM._
+
 
 object DeletedFileRemoverProtocol {
   case object RemoveDeletedFiles
@@ -21,8 +25,6 @@ object DeletedFileRemoverFSM {
   case object NoRequest extends Data
   case class IdQueue(requester: ActorRef, fileIds: Iterable[Long]) extends Data
 }
-
-import DeletedFileRemoverFSM._
 
 trait DeletedFileRemover extends Actor with FSM[State, Data] {
   import DeletedFileRemoverProtocol._
@@ -67,6 +69,14 @@ trait DeletedFileRemover extends Actor with FSM[State, Data] {
     case Event(RemoveDeletedFiles, _) => stay
   }
 
+  
+  whenUnhandled {
+    case Event(t, _) => {
+      Logger.error("Unexpected event while removing files", t)
+      goto(Idle) using NoRequest
+    }
+  }
+  
   private def removeDeletedFiles: Future[Unit] =
     deletedFileScanner.deletedFileIds.map { fileIds =>
       for {
