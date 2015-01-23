@@ -48,7 +48,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
       fileGroupJobQueue.tell(ReadyForTask, worker.ref)
 
-      worker.expectNoMsg(500 millis)
+      worker.expectNoMsg(50 millis)
     }
 
     "notify requester when all tasks for a fileGroupId are complete" in new JobQueueContext {
@@ -67,7 +67,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       worker.expectMsg(TaskAvailable)
 
       submitJob(documentSetId)
-      worker.expectNoMsg(500 millis)
+      worker.expectNoMsg(50 millis)
 
     }
 
@@ -138,7 +138,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       worker.expectATask
       
       submitJob(documentSetId + 1)
-      worker.expectNoMsg(200 millis)
+      worker.expectNoMsg(50 millis)
     }
 
     "don't send tasks to busy workers even if they ask for them" in new JobQueueContext {
@@ -150,7 +150,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       submitJob(documentSetId + 1)
       fileGroupJobQueue.tell(ReadyForTask, worker.ref)
 
-      worker.expectNoMsg(200 millis)
+      worker.expectNoMsg(50 millis)
     }
 
     "reschedule an in progress task if worker terminates" in new SingleTaskContext {
@@ -217,7 +217,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       def expectNoTaskAvailable(jobQueue: ActorRef) = {
         jobQueue ! ReadyForTask
-        expectNoMsg(500 millis)
+        expectNoMsg(50 millis)
       }
 
       def completeCancelledTask(uploadedFileId: Long) = {
