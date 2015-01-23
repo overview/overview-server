@@ -37,7 +37,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       jobDeleter.delete(anyLong) returns deleteJobPromise.future
     }
 
-    class TestDeleteHandler extends DeleteHandler with MockComponents {
+    class TestDeleteHandler(val fileGroupRemovalQueuePath: String) extends DeleteHandler with MockComponents {
       override protected val JobWaitDelay = 5 milliseconds
       override protected val MaxRetryAttempts = 3
     }
@@ -64,7 +64,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
       override def before = {
         parentProbe = TestProbe()
-        deleteHandler = TestActorRef(Props(new TestDeleteHandler), parentProbe.ref, "DeleteHandler")
+        deleteHandler = TestActorRef(Props(new TestDeleteHandler("")), parentProbe.ref, "DeleteHandler")
         jobStatusChecker = da.jobStatusChecker
 
         setJobStatus

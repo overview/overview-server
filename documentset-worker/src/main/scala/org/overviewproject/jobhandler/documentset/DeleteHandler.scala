@@ -73,6 +73,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] {
   protected val JobWaitDelay = 100 milliseconds
   protected val MaxRetryAttempts = 600
 
+  protected val fileGroupRemovalQueuePath: String
+  
   private object Message {
     case object RetryDelete
     case object DeleteComplete
