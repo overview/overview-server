@@ -50,10 +50,11 @@ object DocumentSetJobHandlerFSM {
 /** Component for creating a SearchHandler actor
   */
 trait SearchComponent {
+  
   val actorCreator: ActorCreator
 
   trait ActorCreator {
-    def produceDeleteHandler: Actor
+    def produceDeleteHandler(fileGroupRemovalQueuePath: String): Actor
   }
 }
 
@@ -62,7 +63,7 @@ trait SearchComponent {
  * and forwards them to command specific actors. When the command actors 
  * are done, an acknowledgment is sent to the requesting parent actor.
  */
-class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
+class DocumentSetMessageHandler(fileRemovalQueuePath: String) extends Actor with FSM[State, Data] {
   this: SearchComponent =>
 
   import DocumentSetJobHandlerProtocol._
@@ -78,7 +79,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
   when(Ready) {
     case Event(DeleteCommand(documentSetId, waitForJobRemoval), _) => {
       Logger.info(s"Received Delete($documentSetId)")
-      val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
+      val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler(fileRemovalQueuePath)))
       context.watch(deleteHandler)
 
       deleteHandler ! DeleteDocumentSet(documentSetId, waitForJobRemoval)
@@ -86,7 +87,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
     }
     case Event(DeleteTreeJobCommand(jobId), _) => {
       Logger.info(s"Received DeleteTreeJob($jobId)")
-      val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
+      val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler(fileRemovalQueuePath)))
       context.watch(deleteHandler)
       
       deleteHandler ! DeleteReclusteringJob(jobId)
@@ -114,7 +115,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
 /** Create a SearchHandler */
 trait SearchComponentImpl extends SearchComponent {
   class ActorCreatorImpl extends ActorCreator {
-    override def produceDeleteHandler: Actor = new DeleteHandler {
+    override def produceDeleteHandler(fileGroupRemovalQueue: String): Actor = new DeleteHandler {
       override val searchIndexClient = ElasticSearchClient.client
       override val documentSetDeleter = DocumentSetDeleter()
       override val jobDeleter = DocumentSetCreationJobDeleter()
@@ -123,13 +124,16 @@ trait SearchComponentImpl extends SearchComponent {
   }
 }
 
-class DocumentSetMessageHandlerImpl extends DocumentSetMessageHandler with SearchComponentImpl {
+class DocumentSetMessageHandlerImpl(fileRemovalQueuePath: String) extends
+  DocumentSetMessageHandler(fileRemovalQueuePath) with SearchComponentImpl {
   override val actorCreator = new ActorCreatorImpl
 }
 
-class DocumentSetJobHandler(messageService: MessageService) extends AcknowledgingMessageReceiver[Command](messageService) {
-  override def createMessageHandler: Props = Props[DocumentSetMessageHandlerImpl]
+class DocumentSetJobHandler(messageService: MessageService, fileRemovalQueuePath: String) extends AcknowledgingMessageReceiver[Command](messageService) {
+  override def createMessageHandler: Props = Props(new DocumentSetMessageHandlerImpl(fileRemovalQueuePath))
   override def convertMessage(message: String): Command = ConvertDocumentSetMessage(message)
+  
+
 
 }
 
@@ -137,5 +141,6 @@ object DocumentSetJobHandler {
   private val messageService =
     new ApolloMessageService(Configuration.messageQueue.getString("queue_name"), Session.CLIENT_ACKNOWLEDGE)
 
-  def apply(): Props = Props(new DocumentSetJobHandler(messageService))
+  def apply(fileRemovalQueuePath: String): Props = 
+    Props(new DocumentSetJobHandler(messageService, fileRemovalQueuePath))
 }

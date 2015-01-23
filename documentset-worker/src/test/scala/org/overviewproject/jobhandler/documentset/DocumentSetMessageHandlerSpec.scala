@@ -12,12 +12,15 @@ import org.specs2.mutable.Before
 
 
 class DocumentSetMessageHandlerSpec extends Specification {
+  
+  private val fileGroupRemovalQueuePath = "ignored path"
 
-  class TestMessageHandler(specificHandlerProbe: ActorRef) extends DocumentSetMessageHandler
-    with SearchComponent {
+  class TestMessageHandler(specificHandlerProbe: ActorRef)
+  extends DocumentSetMessageHandler(fileGroupRemovalQueuePath) with SearchComponent {
 
     val actorCreator = new ActorCreator {
-      override def produceDeleteHandler: Actor = new ForwardingActor(specificHandlerProbe)
+      override def produceDeleteHandler(fileRemovalQueuePath: String): Actor =
+        new ForwardingActor(specificHandlerProbe)
     }
   }
 
@@ -27,10 +30,10 @@ class DocumentSetMessageHandlerSpec extends Specification {
     }
   }
 
-  class FailingTestMessagHandler extends DocumentSetMessageHandler with SearchComponent {
+  class FailingTestMessagHandler extends DocumentSetMessageHandler(fileGroupRemovalQueuePath) with SearchComponent {
 
     val actorCreator = new ActorCreator {
-      override def produceDeleteHandler: Actor = new FailingActor
+      override def produceDeleteHandler(fileRemovalQueuePath: String): Actor = new FailingActor
     }
   }
 

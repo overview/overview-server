@@ -39,9 +39,7 @@ object DocumentSetWorker extends App {
   
   private val NumberOfJobHandlers = 8
 
-  private def fileGroupJobQueuePath =
-    s"$WorkerActorSystemName/user/$FileGroupJobQueueSupervisorName/$FileGroupJobQueueName"
-
+  
   val config = DatabaseConfiguration.fromSystemProperties
   val dataSource = DataSource(config)
 
@@ -66,10 +64,16 @@ object DocumentSetWorker extends App {
 class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fileRemovalQueueName: String) extends Actor {
   import ActorCareTakerProtocol._
 
+  // File removal background worker      
+  private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner") 
+  private val deletedFileRemover = createMonitoredActor(DeletedFileRemover(fileCleaner), "DeletedFileRemover")
+  private val fileRemovalQueue = createMonitoredActor(FileRemovalQueue(deletedFileRemover), fileRemovalQueueName)
+  
+
   private val connectionMonitor = createMonitoredActor(ApolloMessageQueueConnection(), "MessageQueueConnection")
   // Start as many job handlers as you need
   private val jobHandlers = Seq.tabulate(numberOfJobHandlers)(n =>
-    createMonitoredActor(DocumentSetJobHandler(), s"DocumentSetJobHandler-$n"))
+    createMonitoredActor(DocumentSetJobHandler(fileRemovalQueue.path.toString), s"DocumentSetJobHandler-$n"))
 
   private val progressReporter = createMonitoredActor(ProgressReporter(), "ProgressReporter")
   private val fileGroupJobQueue = createMonitoredActor(FileGroupJobQueue(progressReporter), fileGroupJobQueueName)
@@ -82,11 +86,6 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
       FileGroupTaskWorkerStartup(fileGroupJobQueue.path.toString, progressReporter.path.toString), "TaskWorkerSupervisor")
 
       
-  // File removal background worker      
-  private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner") 
-  private val deletedFileRemover = createMonitoredActor(DeletedFileRemover(fileCleaner), "DeletedFileRemover")
-  private val fileRemovalQueue = createMonitoredActor(FileRemovalQueue(deletedFileRemover), fileRemovalQueueName)
-  
   /**
    *   A more optimistic approach would be to simply restart the actor. At the moment, we don't know
    *   enough about the error modes to know whether an actor restart would be successful.
