@@ -2,15 +2,16 @@ package org.overviewproject.jobhandler.filegroup.task
 
 import akka.actor._
 import akka.testkit._
-import org.specs2.mutable.Specification
-
+import scala.concurrent.duration._
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.test.{ActorSystemContext,ParameterStore,ForwardingActor}
+import org.overviewproject.test.{ ActorSystemContext, ParameterStore, ForwardingActor }
+import org.specs2.mutable.Specification
+import org.specs2.time.NoTimeConversions
 
-class FileGroupTaskWorkerSpec extends Specification {
+class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential
 
-  "FileGroupJobQueue" should {
+  "FileGroupTaskWorker" should {
 
     "register with job queue" in new RunningTaskWorkerContext {
       createJobQueue
@@ -46,17 +47,18 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     "step through CreateDocumentsTask" in new RunningTaskWorkerContext {
+      createWorker
       createJobQueue.handingOutTask(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments = true))
 
-      createWorker
+      
       jobQueueProbe.expectInitialReadyForTask
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
 
       createPagesTaskStepsWereExecuted
-      failure // sometimes
-    }.pendingUntilFixed("WHY does this fail?")
+      
+    }
 
     "cancel a job in progress" in new GatedTaskWorkerContext {
       import GatedTaskWorkerProtocol._
@@ -92,9 +94,9 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     "delete a file upload job" in new RunningTaskWorkerContext {
-      createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
-
       createWorker
+
+      createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
 
       jobQueueProbe.expectInitialReadyForTask
 
@@ -109,7 +111,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       worker ! CancelTask
 
-      jobQueueProbe.expectNoMsg
+      jobQueueProbe.expectNoMsg(50 millis)
     }
 
     trait TaskWorkerContext extends ActorSystemContext {
