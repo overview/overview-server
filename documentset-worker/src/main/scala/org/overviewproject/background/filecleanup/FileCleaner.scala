@@ -1,8 +1,9 @@
 package org.overviewproject.background.filecleanup
 
-import akka.actor.{ Actor, ActorRef }
+import akka.actor.{ Actor, ActorRef, Props}
 import akka.pattern.pipe
 import org.overviewproject.util.Logger
+
 
 object FileCleanerProtocol {
   case class Clean(fileId: Long)
@@ -43,4 +44,13 @@ trait FileCleaner extends Actor {
           CleanComplete(fileId)
       }
 
+}
+
+object FileCleaner {
+  
+  def apply() = Props(new FileCleanerImpl)
+  
+  private class FileCleanerImpl extends FileCleaner {
+    override protected val fileRemover = FileRemover()
+  }
 }

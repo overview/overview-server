@@ -11,6 +11,7 @@ import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
 import org.overviewproject.util.Logger
+import org.overviewproject.background.filecleanup.{ DeletedFileRemover, FileCleaner, FileRemovalQueue }
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -34,7 +35,8 @@ object DocumentSetWorker extends App {
   private val WorkerActorSystemName = "WorkerActorSystem"
   private val FileGroupJobQueueSupervisorName = "FileGroupJobQueueSupervisor"
   private val FileGroupJobQueueName = "FileGroupJobQueue"
-
+  private val FileRemovalQueueName = "FileRemovalQueue"
+  
   private val NumberOfJobHandlers = 8
 
   private def fileGroupJobQueuePath =
@@ -47,7 +49,7 @@ object DocumentSetWorker extends App {
 
   implicit val system = ActorSystem(WorkerActorSystemName)
   val actorCareTaker = system.actorOf(
-    ActorCareTaker(NumberOfJobHandlers, FileGroupJobQueueName),
+    ActorCareTaker(NumberOfJobHandlers, FileGroupJobQueueName, FileRemovalQueueName),
     FileGroupJobQueueSupervisorName)
 
   actorCareTaker ! StartListening
@@ -61,7 +63,7 @@ object DocumentSetWorker extends App {
  * If an error occurs at this level, we assume that something catastrophic has occurred.
  * All actors get killed, and the process exits.
  */
-class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) extends Actor {
+class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fileRemovalQueueName: String) extends Actor {
   import ActorCareTakerProtocol._
 
   private val connectionMonitor = createMonitoredActor(ApolloMessageQueueConnection(), "MessageQueueConnection")
@@ -79,7 +81,12 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) ex
   private val taskWorkerSupervisor = createMonitoredActor(
       FileGroupTaskWorkerStartup(fileGroupJobQueue.path.toString, progressReporter.path.toString), "TaskWorkerSupervisor")
 
-
+      
+  // File removal background worker      
+  private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner") 
+  private val deletedFileRemover = createMonitoredActor(DeletedFileRemover(fileCleaner), "DeletedFileRemover")
+  private val fileRemovalQueue = createMonitoredActor(FileRemovalQueue(deletedFileRemover), fileRemovalQueueName)
+  
   /**
    *   A more optimistic approach would be to simply restart the actor. At the moment, we don't know
    *   enough about the error modes to know whether an actor restart would be successful.
@@ -110,7 +117,7 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) ex
 }
 
 object ActorCareTaker {
-  def apply(numberOfJobHandlers: Int, fileGroupJobQueueName: String): Props =
-    Props(new ActorCareTaker(numberOfJobHandlers, fileGroupJobQueueName))
+  def apply(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fileRemovalQueueName: String): Props =
+    Props(new ActorCareTaker(numberOfJobHandlers, fileGroupJobQueueName, fileRemovalQueueName))
 }
 

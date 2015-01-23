@@ -77,6 +77,13 @@ trait DeletedFileRemover extends Actor with FSM[State, Data] {
     }
   }
   
+  onTransition {
+    case Idle -> Scanning => Logger.info("Scanning for deleted files")
+    case Scanning -> Idle => Logger.info("No deleted files found")
+    case Scanning -> Working => Logger.info("Starting removal of deleted files")
+    case Working -> Idle => Logger.info("Completed removal of deleted files")
+  }
+  
   private def removeDeletedFiles: Future[Unit] =
     deletedFileScanner.deletedFileIds.map { fileIds =>
       for {
