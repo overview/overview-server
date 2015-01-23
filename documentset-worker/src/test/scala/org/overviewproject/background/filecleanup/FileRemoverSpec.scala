@@ -1,6 +1,5 @@
 package org.overviewproject.background.filecleanup
 
-
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration._
@@ -17,32 +16,33 @@ class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
   "FileRemover" should {
 
     "remove pages" in new FileScope {
-      deleteFile 
-      
+      deleteFile
+
       there was one(pageRemover).deleteFilePages(file.id)
     }
 
     "delete file content" in new FileScope {
       deleteFile
-      
-      there was one(blobStorage).delete(s"pglo:${file.contentsOid}")
+
+      there was one(blobStorage).delete(contentsLoc)
     }
 
     "delete content and view if different" in new FileWithViewScope {
       deleteFile
-      
-      there was one(blobStorage).deleteMany(Seq(s"pglo:${file.contentsOid}", s"pglo:${file.viewOid}"))
+
+      there was one(blobStorage).deleteMany(Seq(contentsLoc, viewLoc))
     }
 
     "delete file" in new FileScope {
       deleteFile
-      
+
       Files.filter(_.id === file.id).firstOption must beNone
     }
 
   }
 
   trait FileScope extends DbScope {
+    def contentsLoc = "contents:location"
     val file = createFile
 
     val blobStorage = smartMock[BlobStorage]
@@ -50,31 +50,35 @@ class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
 
     val blobDelete = Promise[Unit]()
     blobStorage.delete(any) returns blobDelete.future
-    
+
     pageRemover.deleteFilePages(file.id) returns Future.successful(())
 
     val fileRemover = new TestFileRemover(blobStorage, pageRemover)
 
-    protected def createFile = factory.file(referenceCount = 0)
-    
+    protected def createFile = factory.file(referenceCount = 0,
+        contentsLocation = contentsLoc, viewLocation = contentsLoc)
+
     protected def deleteFile = {
       val r = fileRemover.deleteFile(file.id)
       Await.result(r, 10 millis) must throwA[TimeoutException]
-      
+
       completeDelete
       await(r)
     }
-    
+
     protected def completeDelete = blobDelete.success(())
   }
 
   trait FileWithViewScope extends FileScope {
-    override def createFile = factory.file(referenceCount = 0, contentsOid = 1l, viewOid = 22l)
+    def viewLoc = "view:location"
+    override def createFile = factory.file(referenceCount = 0,
+      contentsLocation = contentsLoc, viewLocation = viewLoc)
+
     val blobDeleteMany = Promise[Unit]()
-    
+
     blobStorage.deleteMany(any) returns blobDeleteMany.future
-    
-    override protected def completeDelete = blobDeleteMany.success(()) 
+
+    override protected def completeDelete = blobDeleteMany.success(())
 
   }
 

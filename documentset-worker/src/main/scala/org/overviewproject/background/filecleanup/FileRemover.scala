@@ -31,14 +31,15 @@ trait FileRemover extends SlickClient {
     contents.flatMap(deleteContents)
   }
 
-  private def findContentIds(fileId: Long): Future[Option[(Long, Long)]] = db { implicit session =>
-    Files.filter(_.id === fileId).map(f => (f.contentsOid, f.viewOid)).firstOption
+  private def findContentIds(fileId: Long): Future[Option[(String, String)]] = db { implicit session =>
+    Files.filter(_.id === fileId).map(f => (f.contentsLocation, f.viewLocation)).firstOption
   }
 
-  private def deleteContents(contentIds: Option[(Long, Long)]): Future[Unit] =
+  private def deleteContents(contentIds: Option[(String, String
+      )]): Future[Unit] =
     contentIds match {
-      case Some((cId, vId)) if (cId != vId) => blobStorage.deleteMany(Seq(s"pglo:$cId", s"pglo:$vId"))
-      case Some((cId, _)) => blobStorage.delete(s"pglo:$cId")
+      case Some((cId, vId)) if (cId != vId) => blobStorage.deleteMany(Seq(cId, vId))
+      case Some((cId, _)) => blobStorage.delete(cId)
       case _ => Future.successful(())
     }
 
