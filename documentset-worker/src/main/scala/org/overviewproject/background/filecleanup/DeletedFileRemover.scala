@@ -72,16 +72,16 @@ trait DeletedFileRemover extends Actor with FSM[State, Data] {
   
   whenUnhandled {
     case Event(t, _) => {
-      Logger.error("Unexpected event while removing files", t)
+      Logger.error("[FileRemover] Unexpected event while removing files", t)
       goto(Idle) using NoRequest
     }
   }
   
   onTransition {
-    case Idle -> Scanning => Logger.info("Scanning for deleted files")
-    case Scanning -> Idle => Logger.info("No deleted files found")
-    case Scanning -> Working => Logger.info("Starting removal of deleted files")
-    case Working -> Idle => Logger.info("Completed removal of deleted files")
+    case Idle -> Scanning => Logger.info("[FileRemover] Scanning for deleted files")
+    case Scanning -> Idle => Logger.info("[FileRemover] No deleted files found")
+    case Scanning -> Working => Logger.info("[FileRemover] Starting removal of deleted files")
+    case Working -> Idle => Logger.info("[FileRemover] Completed removal of deleted files")
   }
   
   private def removeDeletedFiles: Future[Unit] =
