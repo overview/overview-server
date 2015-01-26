@@ -3,6 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task
 import akka.actor._
 import akka.testkit._
 import scala.concurrent.duration._
+import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.test.{ ActorSystemContext, ParameterStore, ForwardingActor }
 import org.specs2.mutable.Specification
@@ -50,14 +51,13 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       createWorker
       createJobQueue.handingOutTask(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments = true))
 
-      
       jobQueueProbe.expectInitialReadyForTask
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
 
       createPagesTaskStepsWereExecuted
-      
+
     }
 
     "cancel a job in progress" in new GatedTaskWorkerContext {
@@ -103,6 +103,16 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
     }
 
+    "notify file removal queue after file upload job is deleted" in new RunningTaskWorkerContext {
+      createWorker
+
+      createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
+
+      jobQueueProbe.expectInitialReadyForTask
+
+      fileRemovalQueueProbe.expectMsg(RemoveFiles)
+    }
+
     "ignore CancelTask message if not working on a task" in new RunningTaskWorkerContext {
       createJobQueue
       createWorker
@@ -124,12 +134,17 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       var jobQueueProbe: JobQueueTestProbe = _
       var progressReporter: ActorRef = _
       var progressReporterProbe: TestProbe = _
+      var fileRemovalQueue: ActorRef = _
+      var fileRemovalQueueProbe: TestProbe = _
 
       val JobQueueName = "jobQueue"
       val JobQueuePath = s"/user/$JobQueueName"
 
       val ProgressReporterName = "progressReporter"
       val ProgressReporterPath = s"/user/$ProgressReporterName"
+
+      val FileRemovalQueueName = "fileRemovalQueue"
+      val FileRemovalQueuePath = s"/user/$FileRemovalQueueName"
 
       protected def createProgressReporter: TestProbe = {
         progressReporterProbe = new TestProbe(system)
@@ -144,6 +159,13 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
         jobQueueProbe
       }
+
+      protected def createFileRemovalQueue: TestProbe = {
+        fileRemovalQueueProbe = new TestProbe(system)
+        fileRemovalQueue = system.actorOf(ForwardingActor(fileRemovalQueueProbe.ref), FileRemovalQueueName)
+        
+        fileRemovalQueueProbe
+      }
     }
 
     trait RunningTaskWorkerContext extends TaskWorkerContext {
@@ -151,8 +173,10 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       var worker: TestActorRef[TestFileGroupTaskWorker] = _
 
       protected def createWorker: Unit = {
+        createFileRemovalQueue
         createProgressReporter
-        worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath, ProgressReporterPath, fileId))
+        worker =
+          TestActorRef(new TestFileGroupTaskWorker(JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, fileId))
       }
 
       protected def createPagesTaskStepsWereExecuted =
@@ -168,8 +192,10 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       private val cancelFn = ParameterStore[Unit]
 
       protected def createWorker: Unit = {
+        createFileRemovalQueue
         createProgressReporter
-        worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath, ProgressReporterPath, cancelFn)))
+        worker = 
+          system.actorOf(Props(new GatedTaskWorker(JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, cancelFn)))
       }
 
       protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)

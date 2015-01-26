@@ -8,6 +8,7 @@ import scala.concurrent.Future
 import org.overviewproject.util.Logger
 import FileGroupTaskWorkerFSM._
 import akka.actor.Status.Failure
+import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
@@ -39,7 +40,7 @@ object FileGroupTaskWorkerFSM {
 
   sealed trait Data
   case class ExternalActorsFound(jobQueue: Option[ActorRef], progressReporter: Option[ActorRef]) extends Data
-  case class ExternalActors(queue: ActorRef, reporter: ActorRef) extends Data
+  case class ExternalActors(jobQueue: ActorRef, reporter: ActorRef) extends Data
   case class TaskInfo(queue: ActorRef, reporter: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
 
 }
@@ -69,8 +70,9 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private val RetryInterval: FiniteDuration = 1 second
 
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
-
   private val progressReporterSelection = system.actorSelection(progressReporterPath)
+  private lazy val fileRemovalQueue = system.actorSelection(fileRemovalQueuePath)  
+  
   private case class DeleteFileUploadJobComplete(documentSetId: Long)
 
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
@@ -137,6 +139,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(DeleteFileUploadComplete(documentSetId, fileGroupId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
+      fileRemovalQueue ! RemoveFiles
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 

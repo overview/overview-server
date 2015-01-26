@@ -7,9 +7,10 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 
 class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
-                              override protected val progressReporterPath: String, outputFileId: Long) extends FileGroupTaskWorker {
+                              override protected val progressReporterPath: String, 
+                              override protected val fileRemovalQueuePath: String,
+                              outputFileId: Long) extends FileGroupTaskWorker {
 
-  override protected val fileRemovalQueuePath: String = ""
   val executeFn = ParameterStore[Unit]
   val deleteFileUploadJobFn = ParameterStore[(Long, Long)]
   val deleteFileUploadPromise = Promise[Unit]
@@ -35,6 +36,6 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
 }
 
 object TestFileGroupTaskWorker {
-  def apply(jobQueuePath: String, progressReporterPath: String, outputFileId: Long): Props =
-    Props(new TestFileGroupTaskWorker(jobQueuePath, progressReporterPath, outputFileId))
+  def apply(jobQueuePath: String, progressReporterPath: String, fileRemovalQueuePath: String, outputFileId: Long): Props =
+    Props(new TestFileGroupTaskWorker(jobQueuePath, progressReporterPath, fileRemovalQueuePath, outputFileId))
 }
