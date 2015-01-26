@@ -270,7 +270,7 @@ trait ElasticSearchIndexClient extends IndexClient {
     def findHighlightsRec(textWithHighlights: String, cur: Int, n: Int, acc: List[Highlight]): List[Highlight] = {
       findHighlight(textWithHighlights, cur, n) match {
         case None => acc.reverse
-        case Some(highlight) => findHighlightsRec(textWithHighlights, highlight.end, n + 1, highlight :: acc)
+        case Some(highlight) => findHighlightsRec(textWithHighlights, highlight.end + n * 2 + 2, n + 1, highlight :: acc)
       }
     }
 
