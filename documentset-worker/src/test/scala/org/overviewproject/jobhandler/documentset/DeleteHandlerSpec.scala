@@ -10,12 +10,13 @@ import org.specs2.time.NoTimeConversions
 import scala.concurrent.duration._
 import scala.concurrent.Promise
 
+import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.searchindex.IndexClient
-import org.overviewproject.test.ActorSystemContext
+import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
 
@@ -37,7 +38,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       jobDeleter.delete(anyLong) returns deleteJobPromise.future
     }
 
-    class TestDeleteHandler(val fileGroupRemovalQueuePath: String) extends DeleteHandler with MockComponents {
+    class TestDeleteHandler(val fileRemovalQueuePath: String) extends DeleteHandler with MockComponents {
       override protected val JobWaitDelay = 5 milliseconds
       override protected val MaxRetryAttempts = 3
     }
@@ -48,7 +49,10 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       protected var parentProbe: TestProbe = _
       protected var deleteHandler: TestActorRef[TestDeleteHandler] = _
       protected var jobStatusChecker: JobStatusChecker = _
-
+      
+      protected var fileRemovalQueueProbe: TestProbe = _
+      protected var fileRemovalQueue: ActorRef = _
+      
       protected def da = deleteHandler.underlyingActor
 
       protected def searchIndexClient = da.searchIndexClient
@@ -64,7 +68,11 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
       override def before = {
         parentProbe = TestProbe()
-        deleteHandler = TestActorRef(Props(new TestDeleteHandler("")), parentProbe.ref, "DeleteHandler")
+        fileRemovalQueueProbe = TestProbe()
+        fileRemovalQueue = system.actorOf(ForwardingActor(fileRemovalQueueProbe.ref))
+        val fileRemovalQueuePath = fileRemovalQueue.path.toString
+        
+        deleteHandler = TestActorRef(Props(new TestDeleteHandler(fileRemovalQueuePath)), parentProbe.ref, "DeleteHandler")
         jobStatusChecker = da.jobStatusChecker
 
         setJobStatus
@@ -124,6 +132,16 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
       // FIXME: We can't distinguish between failure and success right now
       parentProbe.expectMsg(JobDone(documentSetId))
+    }
+    
+    "tell file removal queue to scan for deleted files" in new DeleteContext {
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
+      
+      searchIndexRemoveDocumentSetResult.success(())
+      deleteDocumentSetResult.success(())
+      deleteJobResult.success(())
+      
+      fileRemovalQueueProbe.expectMsg(RemoveFiles)
     }
 
     "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {

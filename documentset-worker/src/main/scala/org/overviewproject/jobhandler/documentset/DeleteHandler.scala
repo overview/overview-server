@@ -7,6 +7,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{ Failure, Success }
 
+import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.jobhandler.JobProtocol._
@@ -73,7 +74,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] {
   protected val JobWaitDelay = 100 milliseconds
   protected val MaxRetryAttempts = 600
 
-  protected val fileGroupRemovalQueuePath: String
+  protected val fileRemovalQueuePath: String
+  protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   
   private object Message {
     case object RetryDelete
@@ -116,6 +118,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] {
 
   when(Running) {
     case Event(Message.DeleteComplete, DeleteTarget(documentSetId)) => {
+      fileRemovalQueue ! RemoveFiles
       context.parent ! JobDone(documentSetId)
       stop
     }
