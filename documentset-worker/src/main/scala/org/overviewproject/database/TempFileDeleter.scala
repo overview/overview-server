@@ -24,6 +24,7 @@ trait TempFileDeleter extends SlickClient {
       UPDATE file
       SET reference_count = reference_count - 1
       WHERE id IN (SELECT id FROM ids)
+      AND reference_count > 0
     """
 
     fileReferences.execute
