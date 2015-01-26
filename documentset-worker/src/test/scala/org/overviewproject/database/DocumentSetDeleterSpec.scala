@@ -44,6 +44,12 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       fileReferenceCount must beSome(0)
     }
 
+    "only decrement reference count to 0" in new InterruptedDeleteScope {
+      deleteDocumentSet
+      
+      fileReferenceCount must beSome(0)
+    }
+    
     "delete tree data" in new TreeScope {
       deleteDocumentSet
 
@@ -83,8 +89,10 @@ class DocumentSetDeleterSpec extends SlickSpecification {
   }
 
   trait FileUploadScope extends BasicDocumentSetScope {
+    def refCount = 1
+    
     override def createDocument = {
-      val file = factory.file()
+      val file = factory.file(referenceCount = refCount)
       factory.page(fileId = file.id, pageNumber = 1)
 
       factory.document(documentSetId = documentSet.id, fileId = Some(file.id))
@@ -133,9 +141,12 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     val storeObject = factory.storeObject(storeId = store.id)
     documents.map(d => factory.documentStoreObject(documentId = d.id, storeObjectId = storeObject.id))
     factory.view(documentSetId = documentSet.id, apiToken = apiToken.token)
-
   }
 
+  trait InterruptedDeleteScope extends FileUploadScope {
+    override def refCount = 0
+  }
+  
   class TestDocumentSetDeleter(implicit val session: Session) extends DocumentSetDeleter with SlickClientInSession 
     
 }
