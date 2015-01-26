@@ -9,6 +9,7 @@ import scala.concurrent.Promise
 class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
                               override protected val progressReporterPath: String, outputFileId: Long) extends FileGroupTaskWorker {
 
+  override protected val fileRemovalQueuePath: String = ""
   val executeFn = ParameterStore[Unit]
   val deleteFileUploadJobFn = ParameterStore[(Long, Long)]
   val deleteFileUploadPromise = Promise[Unit]

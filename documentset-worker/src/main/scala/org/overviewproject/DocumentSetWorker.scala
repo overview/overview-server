@@ -36,10 +36,9 @@ object DocumentSetWorker extends App {
   private val FileGroupJobQueueSupervisorName = "FileGroupJobQueueSupervisor"
   private val FileGroupJobQueueName = "FileGroupJobQueue"
   private val FileRemovalQueueName = "FileRemovalQueue"
-  
+
   private val NumberOfJobHandlers = 8
 
-  
   val config = DatabaseConfiguration.fromSystemProperties
   val dataSource = DataSource(config)
 
@@ -65,10 +64,9 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
   import ActorCareTakerProtocol._
 
   // File removal background worker      
-  private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner") 
+  private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner")
   private val deletedFileRemover = createMonitoredActor(DeletedFileRemover(fileCleaner), "DeletedFileRemover")
   private val fileRemovalQueue = createMonitoredActor(FileRemovalQueue(deletedFileRemover), fileRemovalQueueName)
-  
 
   private val connectionMonitor = createMonitoredActor(ApolloMessageQueueConnection(), "MessageQueueConnection")
   // Start as many job handlers as you need
@@ -83,15 +81,17 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
   private val uploadClusteringCommandBridge = createMonitoredActor(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager), "ClusteringCommandsMessageQueueBridge")
 
   private val taskWorkerSupervisor = createMonitoredActor(
-      FileGroupTaskWorkerStartup(fileGroupJobQueue.path.toString, progressReporter.path.toString), "TaskWorkerSupervisor")
+    FileGroupTaskWorkerStartup(
+      fileGroupJobQueue.path.toString,
+      progressReporter.path.toString,
+      fileRemovalQueue.path.toString), "TaskWorkerSupervisor")
 
-      
   /**
    *   A more optimistic approach would be to simply restart the actor. At the moment, we don't know
    *   enough about the error modes to know whether an actor restart would be successful.
    *   Instead, we stop everything and exit the process. On production, the process will be automatically
    *   restarted.
-   */  
+   */
   override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
     case _ => stop
   }
@@ -108,7 +108,7 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
       System.exit(-1)
     }
   }
-  
+
   private def createMonitoredActor(props: Props, name: String): ActorRef = {
     val monitee = context.actorOf(props, name) // like manatee? get it?
     context.watch(monitee)

@@ -60,6 +60,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   protected def jobQueuePath: String
   protected def progressReporterPath: String
+  protected def fileRemovalQueuePath: String
 
   private val NumberOfExternalActors = 2
   private val JobQueueId: String = "Job Queue"
@@ -71,12 +72,11 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   private val progressReporterSelection = system.actorSelection(progressReporterPath)
   private case class DeleteFileUploadJobComplete(documentSetId: Long)
-  
+
   protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep
   protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
                                          progressReporter: ActorRef): FileGroupTaskStep
   protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep
-
 
   lookForExternalActors
 
@@ -117,7 +117,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
       executeTaskStep(startDeleteFileUploadJob(documentSetId, fileGroupId))
-      
+
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
     case Event(CancelTask, _) => stay
@@ -130,7 +130,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
-    case Event(CreateDocumentsProcessComplete(documentSetId), TaskInfo(jobQueue,progressReporter, _, _, _)) => {
+    case Event(CreateDocumentsProcessComplete(documentSetId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
@@ -139,7 +139,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(DeleteFileUploadComplete(documentSetId, fileGroupId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
-      
+
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(step: FileGroupTaskStep, _) => {
@@ -147,7 +147,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
       stay
     }
-    case Event(CancelTask, _) => goto(Cancelled)
+    case Event(CancelTask, _)    => goto(Cancelled)
     case Event(TaskAvailable, _) => stay
   }
 
@@ -178,16 +178,18 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
-  
+
 }
 
 object FileGroupTaskWorker {
-  def apply(jobQueueActorPath: String, progressReporterActorPath: String): Props = Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage with CreateDocumentsWithStorage {
-    override protected def jobQueuePath: String = jobQueueActorPath
-    override protected def progressReporterPath: String = progressReporterActorPath
-
-    override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep = 
-      new DeleteFileUploadTaskStep(documentSetId, fileGroupId, 
+  def apply(jobQueueActorPath: String, progressReporterActorPath: String, fileRemovalQueueActorPath: String): Props =
+    Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage with CreateDocumentsWithStorage {
+      override protected def jobQueuePath: String = jobQueueActorPath
+      override protected def progressReporterPath: String = progressReporterActorPath
+      override protected def fileRemovalQueuePath: String = fileRemovalQueueActorPath
+      
+      override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
+        new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
           DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter())
-  })
+    })
 }

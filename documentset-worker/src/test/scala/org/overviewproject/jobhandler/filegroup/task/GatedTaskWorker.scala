@@ -17,6 +17,7 @@ class GatedTaskWorker(override protected val jobQueuePath: String,
   import GatedTaskWorkerProtocol._
   import FileGroupTaskWorkerProtocol._
 
+  override protected def fileRemovalQueuePath: String = ""
   private val taskGate: Promise[Unit] = Promise()
 
   private class GatedTask(gate: Future[Unit]) extends FileGroupTaskStep {
