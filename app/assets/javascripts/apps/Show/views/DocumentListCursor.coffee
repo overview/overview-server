@@ -163,6 +163,8 @@ define [
       @documentList = documentList
 
       if @documentList?
+        @documentDisplayApp.setSearch(@documentList.params?.q || null)
+
         @listenTo(@documentList, 'change:length', => @render())
         if @documentList.documents
           @listenTo(@documentList.documents, 'change', => @render())

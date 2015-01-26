@@ -22,6 +22,7 @@ trait HighlightController extends Controller {
         JsArray(Seq(JsNumber(highlight.begin), JsNumber(highlight.end)))
       })
       Ok(json)
+        .withHeaders(CACHE_CONTROL -> "no-cache")
     }
   }
 }

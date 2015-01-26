@@ -31,6 +31,7 @@ define [
 
       @_initialRender()
 
+      @q = null
       @setDocument(null)
 
     _initialRender: ->
@@ -50,18 +51,44 @@ define [
     #
     # The document may be:
     #
-    # * A JSON object with an id and url property (in our database)
+    # * A JSON object with id and url properties (in our database)
     # * A JSON object with an id property (in our database)
     # * null
-    # * undefined
     setDocument: (json) ->
-      return if json?.id == @document?.id && json?.url == @document?.url
+      return if json?.id == @document?.id
 
       @document = json
       @render()
 
-    _getTextPromise: (id) ->
-      RSVP.resolve($.ajax(dataType: 'text', url: "/documents/#{id}.txt"))
+    # Highlight a new search phrase
+    #
+    # The search phrase may be a String or <tt>null</tt>.
+    setSearch: (q) ->
+      return if @q == q
+
+      @q = q
+      @render()
+
+    _getTextPromise: ->
+      if !@document?
+        RSVP.resolve(null)
+      else
+        RSVP.resolve($.ajax(
+          dataType: 'text'
+          url: "/documents/#{@document.id}.txt"
+        ))
+
+    _getDocumentSetId: ->
+      parts = window.location.pathname.split('/')
+      parts[parts.length - 1]
+
+    _getHighlightsPromise: ->
+      if !@q? || !@document?
+        RSVP.resolve(null)
+      else
+        RSVP.resolve($.ajax(
+          url: "/documentsets/#{@_getDocumentSetId()}/documents/#{@document.id}/highlights?q=" + encodeURIComponent(@q)
+        ))
 
     render: ->
       id = @document?.id
@@ -81,14 +108,15 @@ define [
         if @currentCapabilities.get('canShowDocument') && !@preferences.get('text')
           @_renderDocument(urlProperties)
         else
-          @_renderText(id)
+          @_renderText()
 
     _renderDocument: (urlProperties) ->
       @textView.setTextPromise(null)
       @documentView.setUrlProperties(urlProperties)
       @$el.attr(class: 'showing-document')
 
-    _renderText: (id) ->
+    _renderText: ->
       @documentView.setUrlProperties(null)
-      @textView.setTextPromise(@_getTextPromise(id))
+      @textView.setTextPromise(@_getTextPromise())
+      @textView.setHighlightsPromise(@_getHighlightsPromise())
       @$el.attr(class: 'showing-text')

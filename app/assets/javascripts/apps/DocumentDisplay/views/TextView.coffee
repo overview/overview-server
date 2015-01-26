@@ -1,8 +1,9 @@
 define [
   'jquery'
   'backbone'
+  'rsvp'
   'i18n'
-], ($, Backbone, i18n) ->
+], ($, Backbone, RSVP, i18n) ->
   t = i18n.namespaced('views.Document.show.TextView')
 
   WrapString = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
@@ -17,45 +18,104 @@ define [
       @currentCapabilities = options.currentCapabilities
       @listenTo(@preferences, 'change:wrap', @_onChangeWrap)
       @textPromise = null
+      @model = new Backbone.Model(text: null, highlights: null, error: null) # null means "loading"
+
+      @listenTo(@model, 'change', @render)
 
       $(window).on('resize.DocumentDisplay-TextView', => @_onWindowResize())
+
+      @render()
 
     remove: ->
       $(window).off('.DocumentDisplay-TextView')
       super
 
+    # Returns a Promise that is completed when setting is done
     setTextPromise: (@textPromise) ->
-      @render()
+      @model.set(error: null, text: null)
+
+      if @textPromise
+        textPromise = @textPromise
+        textPromise
+          .then (text) =>
+            try
+              @model.set(text: text) if textPromise == @textPromise
+            catch e
+              console.warn(e)
+              throw e
+          .catch (error) =>
+            @model.set(error: error) if textPromise == @textPromise
+      else
+        RSVP.resolve(null)
+
+    # Returns a Promise that is completed when setting is done
+    setHighlightsPromise: (@highlightsPromise) ->
+      @model.set(highlights: null)
+
+      if @highlightsPromise
+        highlightsPromise = @highlightsPromise
+        highlightsPromise
+          .then (highlights) =>
+            try
+              @model.set(highlights: highlights) if highlightsPromise == @highlightsPromise
+            catch e
+              console.warn(e)
+              throw e
+          .catch (error) => console.warn(error)
+      else
+        RSVP.resolve(null)
 
     render: ->
-      return @$el.empty() if !@textPromise
+      attrs = @model.attributes
 
-      textPromise = @textPromise
-
-      @_renderLoading()
-      textPromise
-        .then (text) =>
-          try
-            @_renderText(text || '') if textPromise == @textPromise
-          catch e
-            console.warn(e)
-        .catch (error) =>
-          @_renderError(error) if textPromise == @textPromise
-      @
+      if attrs.error?
+        @_renderError(error)
+      else if attrs.text?
+        @_renderTextWithHighlights(attrs.text, attrs.highlights || [])
+      else
+        @_renderLoading()
 
     _renderLoading: ->
-      @currentCapabilities.set(canWrap: null)
       @$el.html($('<div class="loading"></div>').text(t('loading')))
+      @currentCapabilities.set(canWrap: null)
+      @
 
     _renderError: ->
       @$el.html($('<div class="error"></div>').text(t('error')))
+      @
 
-    _renderText: (text) ->
+    # If there are no highlights, call this with highlights=[]
+    _renderTextWithHighlights: (text, highlights) ->
       @_setCanWrapFromText(text)
+
+      highlighting = false
+      position = 0
+
+      nodes = []
+
+      for [ begin, end ] in highlights
+        text1 = text.substring(position, begin)
+        text2 = text.substring(begin, end)
+
+        if text1.length
+          nodes.push(document.createTextNode(text1))
+
+        node2 = document.createElement('em')
+        node2.className = 'highlight'
+        node2.appendChild(document.createTextNode(text2))
+        nodes.push(node2)
+
+        position = end
+
+      finalText = text.substring(position)
+      if finalText.length
+        nodes.push(document.createTextNode(finalText))
+
       $pre = $('<pre></pre>')
         .toggleClass('wrap', @preferences.get('wrap') == true)
-        .text(text)
+        .append(nodes)
       @$el.empty().append($pre)
+      @
 
     # Returns the maximum line number of chars that fit in a <pre>
     _calculateMaxLineLength: ->
@@ -100,13 +160,12 @@ define [
     _setCanWrapFromText: (text) ->
       maxLineLength = @_calculateMaxLineLength()
       canWrap = @_textMaxLineLengthExceeds(text, maxLineLength)
-
       @currentCapabilities.set(canWrap: canWrap)
 
     _onChangeWrap: ->
       @$('pre').toggleClass('wrap', @preferences.get('wrap') == true)
 
-    _onWindowResize: ->
-      @_cachedWidth = false
-      text = @$('pre').text() || ''
-      @_setCanWrapFromText(text)
+    _onWindowResize: (e) ->
+      if @currentCapabilities.get('canWrap')?
+        text = @$('pre').text() || null
+        @_setCanWrapFromText(text)

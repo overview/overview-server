@@ -41,6 +41,7 @@ define [
         documentDisplayApp: (options) ->
           @options = options
           @setDocument = sinon.spy()
+          @setSearch = sinon.spy()
           displayApp = this
 
     testClickTriggersEvent = (selector, trigger, shouldBeCalled) ->
@@ -158,6 +159,15 @@ define [
       documentList.documents = new Backbone.Collection()
       view.setDocumentList(documentList)
       expect(view.el.className).to.eq('showing-unloaded-document')
+
+    it 'should call documentDisplayApp.setSearch with a search when changing params', ->
+      initAt(5, 10)
+      documentList = new DocumentList({ n: 3 })
+      documentList.documents = new Backbone.Collection()
+      documentList.params = new Params
+      documentList.params.q = 'foo'
+      view.setDocumentList(documentList)
+      expect(displayApp.setSearch).to.have.been.calledWith('foo')
 
     it 'should allow setDocumentList with a filled DocumentList', ->
       initAt(1, 10)

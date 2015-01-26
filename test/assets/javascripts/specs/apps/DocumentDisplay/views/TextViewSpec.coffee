@@ -15,7 +15,9 @@ define [
       @capabilities = new Backbone.Model(canWrap: null)
       @$ = (args...) => @subject.$(args...)
       @textDeferred = RSVP.defer()
+      @highlightsDeferred = RSVP.defer()
       @promise = @textDeferred.promise
+      @highlightsPromise = @highlightsDeferred.promise
       @$div = $('<div></div>').appendTo('body')
       @subject = new TextView(preferences: @preferences, currentCapabilities: @capabilities)
       @subject.render()
@@ -26,12 +28,12 @@ define [
       @subject.remove()
       @$div.remove()
 
-    it 'should render null as empty', ->
-      @subject.setTextPromise(null)
-      expect(@subject.$el).to.be.empty
-
     it 'should render a loading message when loading', ->
       @subject.setTextPromise(@promise)
+      expect(@subject.$('.loading')).to.contain('loading')
+
+    it 'should render loading when given null text', ->
+      @subject.setTextPromise(null)
       expect(@subject.$('.loading')).to.contain('loading')
 
     it 'should render an error message when loading fails', ->
@@ -53,6 +55,23 @@ define [
       @textDeferred.resolve('foobar')
       @subject.setTextPromise(@promise)
       @promise.then => expect(@subject.$('pre')).to.contain('foobar')
+
+    it 'should render highlights', ->
+      @textDeferred.resolve('foo bar moo mar')
+      @highlightsDeferred.resolve([[4, 7], [12, 15]])
+      p1 = @subject.setTextPromise(@promise)
+      p2 = @subject.setHighlightsPromise(@highlightsPromise)
+      RSVP.all([ p1, p2 ])
+        .then =>
+          expect(@subject.$('pre').html()).to.eq('foo <em class="highlight">bar</em> moo <em class="highlight">mar</em>')
+
+    it 'should render highlights if they load before the text', ->
+      @highlightsDeferred.resolve([[0, 3]])
+      @subject.setTextPromise(@promise)
+      @subject.setHighlightsPromise(@highlightsPromise)
+      @highlightsPromise
+        .then => @textDeferred.resolve('foo bar')
+        .then => expect(@subject.$('pre').html()).to.eq('<em class="highlight">foo</em> bar')
 
     it 'should wrap when preference is set', ->
       @preferences.set(wrap: true)
@@ -83,9 +102,10 @@ define [
         .then => expect(@subject.$('pre')).to.have.class('wrap')
 
     it 'should set currentCapabilities.canWrap=null when loading', ->
-      @capabilities.set(canWrap: true)
-      @subject.setTextPromise(@promise)
-      expect(@capabilities.get('canWrap')).to.be.null
+      @subject.setTextPromise(new RSVP.Promise((resolve, reject) -> resolve('foo')))
+        .then =>
+          @subject.setTextPromise(null)
+          expect(@capabilities.get('canWrap')).to.be.null
 
     it 'should set currentCapabilities.canWrap=false when the text is not as wide as its container', ->
       @$div.css(width: '3em')
@@ -105,5 +125,5 @@ define [
       @textDeferred.resolve('foo bar baz')
       @promise.then =>
         @$div.css(width: '3em')
-        $(window).resize()
+        $(window).trigger('resize')
         expect(@capabilities.get('canWrap')).to.be.true
