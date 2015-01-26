@@ -350,6 +350,11 @@ class DbFactory(connection: Connection) extends Factory {
     nodeId: Long
   ) = q.insertDocumentSetCreationJobNode += podoFactory.documentSetCreationJobNode(documentSetCreationJobId, nodeId)
   
+  
+  override def tempDocumentSetFile(
+     documentSetId: Long,
+     fileId: Long
+  ) = q.insertTempDocumentSetFile += podoFactory.tempDocumentSetFile(documentSetId, fileId)
     
 }
 
@@ -380,5 +385,6 @@ object DbFactory {
     val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors).insertInvoker
     val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs).insertInvoker
     val insertDocumentSetCreationJobNode = (DocumentSetCreationJobNodes returning DocumentSetCreationJobNodes).insertInvoker
+    val insertTempDocumentSetFile = (TempDocumentSetFiles returning TempDocumentSetFiles).insertInvoker
   }
 }

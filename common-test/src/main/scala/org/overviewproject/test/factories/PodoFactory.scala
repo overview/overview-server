@@ -7,7 +7,6 @@ import scala.util.Random
 import org.overviewproject.models._
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
 import org.overviewproject.util.DocumentSetVersion
-import org.overviewproject.models.{ File, Page }
 
 /** Plain Old Data Object factory.
   *
@@ -390,4 +389,8 @@ object PodoFactory extends Factory {
      nodeId: Long
    ) = DocumentSetCreationJobNode(documentSetCreationJobId, nodeId)
   
+   override def tempDocumentSetFile(
+     documentSetId: Long,
+     fileId: Long
+   ) = TempDocumentSetFile(documentSetId, fileId)
 }

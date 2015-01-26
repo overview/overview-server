@@ -229,6 +229,8 @@ trait Factory {
     documentSetCreationJobId: Long = 0L,
     nodeId: Long = 0L
   ): DocumentSetCreationJobNode
+
+  def tempDocumentSetFile(documentSetId: Long, fileId: Long): TempDocumentSetFile
   
   private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
 }
