@@ -29,9 +29,8 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
     }
 
     "request task when available" in new RunningTaskWorkerContext {
-      createJobQueue.withTaskAvailable
-
       createWorker
+      createJobQueue.withTaskAvailable
 
       jobQueueProbe.expectInitialReadyForTask
     }
