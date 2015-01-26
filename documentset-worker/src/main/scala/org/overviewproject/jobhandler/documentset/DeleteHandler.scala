@@ -75,7 +75,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] {
   protected val MaxRetryAttempts = 600
 
   protected val fileRemovalQueuePath: String
-  protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
+  private lazy val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath) 
   
   private object Message {
     case object RetryDelete
