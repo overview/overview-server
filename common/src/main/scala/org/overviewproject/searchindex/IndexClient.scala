@@ -55,8 +55,19 @@ trait IndexClient {
     *
     * The query language is here:
     * http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
+    *
+    * @param documentSetId Document set ID
+    * @param q Search string
     */
   def searchForIds(documentSetId: Long, q: String): Future[Seq[Long]]
+
+  /** Finds all highlights of a given query in a document.
+    *
+    * @param documentSetId Document set ID (says which alias to search under)
+    * @param documentId Document ID
+    * @param q Search string
+    */
+  def highlight(documentSetId: Long, documentId: Long, q: String): Future[Seq[Highlight]]
 
   /** Guarantees all past added documents are searchable. */
   def refresh(): Future[Unit]

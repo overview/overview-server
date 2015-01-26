@@ -238,6 +238,88 @@ trait ElasticSearchIndexClient extends IndexClient {
     }
   }
 
+  private def highlightImpl(client: Client, documentSetId: Long, documentId: Long, q: String): Future[Seq[Highlight]] = {
+    val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
+    val HighlightEnd: Char = '\u0002'
+
+    /** Searches for "\u0001" and "\u0002" and uses them to create a Highlight.
+      *
+      * @param textWithHighlights Text we're searching in
+      * @param cur Index into text
+      * @param n How many highlights came before this one
+      */
+    def findHighlight(textWithHighlights: String, cur: Int, n: Int): Option[Highlight] = {
+      val begin = textWithHighlights.indexOf(HighlightBegin, cur)
+      if (begin == -1) {
+        None
+      } else {
+        val end = textWithHighlights.indexOf(HighlightEnd, begin)
+        if (end == -1) throw new Exception(s"Found begin without end starting at index ${begin} in text: ${textWithHighlights}")
+        Some(Highlight(begin - n * 2, end - n * 2 - 1))
+      }
+    }
+
+    /** Recursively finds Highlights in the given text.
+      *
+      * @param textWithHighlights Text we're searching in
+      * @param cur Index into the text
+      * @param n Number of highlights we've found already
+      * @param acc Return value we're building
+      */
+    @scala.annotation.tailrec
+    def findHighlightsRec(textWithHighlights: String, cur: Int, n: Int, acc: List[Highlight]): List[Highlight] = {
+      findHighlight(textWithHighlights, cur, n) match {
+        case None => acc.reverse
+        case Some(highlight) => findHighlightsRec(textWithHighlights, highlight.end, n + 1, highlight :: acc)
+      }
+    }
+
+    /** Finds Highlights in the given text.
+      *
+      * The given text has highlights delimited by <tt>\u0001</tt> and
+      * <tt>\u0002</tt>. We return Highlights that <em>ignore</em> those values:
+      * that means the indices we return in the Highlights are less than or
+      * equal to the indices in the input text.
+      *
+      * @param textWithHighlights Text we're searching in
+      */
+    def findHighlights(textWithHighlights: String): Seq[Highlight] = findHighlightsRec(textWithHighlights, 0, 0, Nil)
+
+    val byQ = QueryBuilders.queryString(q)
+    val byId = QueryBuilders.idsQuery(DocumentTypeName).ids(documentId.toString)
+
+    val req = client.prepareSearch(aliasName(documentSetId))
+      .setQuery(byId)
+      .addHighlightedField("text")
+      .setHighlighterQuery(byQ)
+      .setHighlighterNumOfFragments(0)
+      .setHighlighterPreTags(HighlightBegin.toString)
+      .setHighlighterPostTags(HighlightEnd.toString)
+
+    execute(req).map { response =>
+      throwIfError(response)
+      response.getHits.hits.headOption match {
+        case Some(hit) => {
+          Option(hit.highlightFields.get("text")) match {
+            case Some(field) => {
+              val textWithHighlights = field.fragments.apply(0).string
+              findHighlights(textWithHighlights)
+            }
+            case None => Seq()
+          }
+        }
+        case None => Seq()
+      }
+    }
+  }
+
+  private def throwIfError(response: SearchResponse): Unit = {
+    response.getShardFailures.headOption match {
+      case None => ()
+      case Some(failure) => throw new Exception(failure.reason)
+    }
+  }
+
   private def searchForIdsImpl(client: Client, documentSetId: Long, q: String, scrollSize: Int): Future[Seq[Long]] = {
     val query = QueryBuilders.queryString(q)
 
@@ -253,13 +335,6 @@ trait ElasticSearchIndexClient extends IndexClient {
       .addField("id") // We started using _id on 2015-01-12 but some end-users
                       // might not have reindexed yet. So we index and store
                       // "id" instead.
-
-    def throwIfError(response: SearchResponse): Unit = {
-      response.getShardFailures.headOption match {
-        case None => ()
-        case Some(failure) => throw new Exception(failure.reason)
-      }
-    }
 
     def responseToLongs(response: SearchResponse): Seq[Long] = {
       throwIfError(response)
@@ -322,6 +397,10 @@ trait ElasticSearchIndexClient extends IndexClient {
   override def removeDocumentSet(id: Long) = clientFuture.flatMap(removeDocumentSetImpl(_, id))
   override def addDocuments(documents: Iterable[Document]) = clientFuture.flatMap(addDocumentsImpl(_, documents))
   override def refresh = clientFuture.flatMap(refreshImpl(_))
+
+  override def highlight(documentSetId: Long, documentId: Long, q: String) = {
+    clientFuture.flatMap(highlightImpl(_, documentSetId, documentId, q))
+  }
 
   override def searchForIds(documentSetId: Long, q: String) = {
     clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q, DefaultScrollSize))

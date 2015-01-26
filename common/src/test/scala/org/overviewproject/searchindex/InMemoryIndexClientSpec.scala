@@ -8,7 +8,8 @@ import org.specs2.mutable.{After,Specification}
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.tree.orm.Document // FIXME should be model
+import org.overviewproject.models.Document
+import org.overviewproject.tree.orm.{Document => DeprecatedDocument} // FIXME remove
 
 class InMemoryIndexClientSpec extends Specification {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,7 +59,7 @@ class InMemoryIndexClientSpec extends Specification {
       }
     }
 
-    def buildDocument(id: Long, documentSetId: Long) = Document(
+    def buildDocument(id: Long, documentSetId: Long) = DeprecatedDocument(
       id=id,
       documentSetId=documentSetId,
       description=s"description$id",
@@ -119,6 +120,54 @@ class InMemoryIndexClientSpec extends Specification {
           .toSeq
           
         ids must beEqualTo(Seq(123L))
+      }
+    }
+
+    "#highlight" should {
+      trait HighlightScope extends BaseScope {
+        object factory {
+          def document(documentSetId: Long, id: Long, text: String) = Document(
+            id,
+            documentSetId,
+            None,
+            "",
+            "",
+            None,
+            Seq(),
+            new java.util.Date(),
+            None,
+            None,
+            text
+          )
+        }
+
+        await(indexClient.addDocumentSet(1L))
+        await(indexClient.refresh)
+      }
+
+      "return an empty list when there is no document" in new HighlightScope {
+        await(indexClient.highlight(1L, 2L, "foo")) must beEqualTo(Seq())
+      }
+
+      "return an empty list when the term is not in the document" in new HighlightScope {
+        await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="bar boo baz").toDeprecatedDocument)))
+        await(indexClient.refresh)
+        await(indexClient.highlight(1L, 2L, "foo")) must beEqualTo(Seq())
+      }
+
+      "return a highlight" in new HighlightScope {
+        await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar").toDeprecatedDocument)))
+        await(indexClient.refresh)
+        await(indexClient.highlight(1L, 2L, "foo")) must beEqualTo(Seq(Highlight(4, 7)))
+      }
+
+      "return multiple highlights" in new HighlightScope {
+        await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar foo").toDeprecatedDocument)))
+        await(indexClient.refresh)
+        await(indexClient.highlight(1L, 2L, "foo")) must beEqualTo(Seq(
+          Highlight(4, 7),
+          Highlight(12, 15)
+        ))
       }
     }
 
