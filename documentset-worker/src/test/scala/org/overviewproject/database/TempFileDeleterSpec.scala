@@ -11,8 +11,7 @@ class TempFileDeleterSpec extends SlickSpecification {
   "TempFileDeleterSpec" should {
     
     "decrease file reference count" in new TempFileScope {
-      
-      tempFileDeleter.delete(documentSetId)
+      await(tempFileDeleter.delete(documentSetId))
       
       val referenceCounts = Files.map(_.referenceCount).list
       
@@ -20,7 +19,11 @@ class TempFileDeleterSpec extends SlickSpecification {
     }
     
     "delete temp_document_set_files" in new TempFileScope {
-      todo
+      await(tempFileDeleter.delete(documentSetId))
+      
+      val tempDocumentSets = TempDocumentSetFiles.filter(_.documentSetId === documentSetId).list
+      
+      tempDocumentSets must beEmpty
     }
   }
  

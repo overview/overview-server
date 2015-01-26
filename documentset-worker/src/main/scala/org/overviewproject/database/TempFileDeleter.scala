@@ -3,16 +3,16 @@ package org.overviewproject.database
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.slick.jdbc.StaticQuery.interpolation
+import org.overviewproject.models.tables.TempDocumentSetFiles
 import org.overviewproject.database.Slick.simple._
 
 trait TempFileDeleter extends SlickClient {
 
   def delete(documentSetId: Long): Future[Unit] = db { implicit session =>
-
-     releaseFiles(documentSetId)
+    releaseFiles(documentSetId)
+    deleteTempDocumentSets(documentSetId)
   }
-  
-  
+
   private def releaseFiles(documentSetId: Long)(implicit session: Session): Unit = {
     val fileReferences = sqlu"""
       WITH ids AS (
@@ -29,5 +29,10 @@ trait TempFileDeleter extends SlickClient {
     fileReferences.execute
   }
   
-  
+  private def deleteTempDocumentSets(documentSetId: Long)(implicit session: Session): Unit = {
+    val tempDocumentSetFiles = TempDocumentSetFiles.filter(_.documentSetId === documentSetId)
+
+    tempDocumentSetFiles.delete
+  }
+
 }
