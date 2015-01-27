@@ -62,12 +62,6 @@ trait DocumentSetDeleter extends SlickClient {
     uploadedFileId.map { uid => UploadedFiles.filter(_.id === uid).delete }
 
   
-  private def deleteDocumentsAndFiles(documentSetId: Long)(implicit session: Session): Unit = 
-    withTransaction { implicit session => 
-      releaseFiles(documentSetId)
-      deleteDocuments(documentSetId)
-    }
-
   private def deleteDocuments(documentSetId: Long)(implicit session: Session): Unit = {
     val documents = Documents.filter(_.documentSetId === documentSetId)
     documents.delete
@@ -76,21 +70,27 @@ trait DocumentSetDeleter extends SlickClient {
   // Decrement reference counts on Files
   // Assume something else deletes them when reference count is 0
   // Delete documents in the same transaction to avoid race conditions
-  private def releaseFiles(documentSetId: Long)(implicit session: Session): Unit = {
-    val fileReferences = sqlu"""
-      WITH ids AS (
+  private def deleteDocumentsAndFiles(documentSetId: Long)(implicit session: Session): Unit = {
+   val fileAndDocumentDeletion = sqlu"""
+     WITH
+      deleted_documents AS (
+        DELETE FROM document
+        WHERE document_set_id = $documentSetId
+        RETURNING file_id
+      ),
+      file_ids AS (
         SELECT id
         FROM file
-        WHERE id IN (SELECT file_id FROM document WHERE document_set_id = $documentSetId)
+        WHERE id IN (SELECT DISTINCT file_id FROM deleted_documents)
         FOR UPDATE
       )
       UPDATE file
       SET reference_count = reference_count - 1
-      WHERE id IN (SELECT id FROM ids)
+      WHERE id IN (SELECT id FROM file_ids)
       AND reference_count > 0
     """
-
-    fileReferences.execute
+        
+    fileAndDocumentDeletion.execute
   }
 
   // Components added with the API
