@@ -12,68 +12,33 @@ define [
     className: 'text'
 
     initialize: (options) ->
+      throw 'Must pass options.model, a TextDocument' if !@model
       throw 'Must pass options.preferences, a Preferences' if !options.preferences
       throw 'Must pass options.currentCapabilities, a CurrentCapabilities' if !options.currentCapabilities
+
       @preferences = options.preferences
       @currentCapabilities = options.currentCapabilities
-      @listenTo(@preferences, 'change:wrap', @_onChangeWrap)
-      @textPromise = null
-      @model = new Backbone.Model(text: null, highlights: null, error: null) # null means "loading"
 
-      @listenTo(@model, 'change', @render)
+      @listenTo(@preferences, 'change:wrap', @_onChangeWrap)
+      @listenTo(@model, 'change:text change:error change:highlights', @render)
 
       $(window).on('resize.DocumentDisplay-TextView', => @_onWindowResize())
 
       @render()
 
-    remove: ->
-      $(window).off('.DocumentDisplay-TextView')
-      super
-
-    # Returns a Promise that is completed when setting is done
-    setTextPromise: (@textPromise) ->
-      @model.set(error: null, text: null)
-
-      if @textPromise
-        textPromise = @textPromise
-        textPromise
-          .then (text) =>
-            try
-              @model.set(text: text) if textPromise == @textPromise
-            catch e
-              console.warn(e)
-              throw e
-          .catch (error) =>
-            @model.set(error: error) if textPromise == @textPromise
-      else
-        RSVP.resolve(null)
-
-    # Returns a Promise that is completed when setting is done
-    setHighlightsPromise: (@highlightsPromise) ->
-      @model.set(highlights: null)
-
-      if @highlightsPromise
-        highlightsPromise = @highlightsPromise
-        highlightsPromise
-          .then (highlights) =>
-            try
-              @model.set(highlights: highlights) if highlightsPromise == @highlightsPromise
-            catch e
-              console.warn(e)
-              throw e
-          .catch (error) => console.warn(error)
-      else
-        RSVP.resolve(null)
-
     render: ->
       attrs = @model.attributes
 
       if attrs.error?
-        @_renderError(error)
+        @_renderError()
       else if attrs.text?
         @_renderTextWithHighlights(attrs.text, attrs.highlights || [])
       else
         @_renderLoading()
+
+    remove: ->
+      $(window).off('resize.DocumentDisplay-TextView')
+      super()
 
     _renderLoading: ->
       @$el.html($('<div class="loading"></div>').text(t('loading')))
@@ -82,6 +47,7 @@ define [
 
     _renderError: ->
       @$el.html($('<div class="error"></div>').text(t('error')))
+      @currentCapabilities.set(canWrap: null)
       @
 
     # If there are no highlights, call this with highlights=[]

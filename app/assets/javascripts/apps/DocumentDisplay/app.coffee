@@ -1,15 +1,16 @@
 define [
-  'underscore'
-  'jquery'
-  'rsvp'
+  './models/TextDocument'
   './models/UrlPropertiesExtractor'
   './models/CurrentCapabilities'
   './models/Preferences'
   './views/DocumentView'
   './views/PreferencesView'
   './views/TextView'
-], (_, $, RSVP, UrlPropertiesExtractor, CurrentCapabilities, Preferences, DocumentView, PreferencesView, TextView) ->
-  alreadyLoaded = false
+], (TextDocument, UrlPropertiesExtractor, CurrentCapabilities, Preferences, DocumentView, PreferencesView, TextView) ->
+  DocumentSetId = (->
+    parts = window.location.pathname.split('/')
+    parts[parts.length - 1]
+  )()
 
   ViewableDocumentTypes =
     documentCloud: null
@@ -37,15 +38,14 @@ define [
     _initialRender: ->
       @preferencesView = new PreferencesView(preferences: @preferences, currentCapabilities: @currentCapabilities)
       @documentView = new DocumentView(preferences: @preferences)
-      @textView = new TextView(preferences: @preferences, currentCapabilities: @currentCapabilities)
+      @$textViewEl = Backbone.$('<div class="text-view"></div>')
 
       @preferencesView.render()
       @documentView.render()
-      @textView.render()
 
       @$el.append(@preferencesView.el)
       @$el.append(@documentView.el)
-      @$el.append(@textView.el)
+      @$el.append(@$textViewEl)
 
     # Show a new document.
     #
@@ -56,7 +56,6 @@ define [
     # * null
     setDocument: (json) ->
       return if json?.id == @document?.id
-
       @document = json
       @render()
 
@@ -65,30 +64,8 @@ define [
     # The search phrase may be a String or <tt>null</tt>.
     setSearch: (q) ->
       return if @q == q
-
       @q = q
-      @render()
-
-    _getTextPromise: ->
-      if !@document?
-        RSVP.resolve(null)
-      else
-        RSVP.resolve($.ajax(
-          dataType: 'text'
-          url: "/documents/#{@document.id}.txt"
-        ))
-
-    _getDocumentSetId: ->
-      parts = window.location.pathname.split('/')
-      parts[parts.length - 1]
-
-    _getHighlightsPromise: ->
-      if !@q? || !@document?
-        RSVP.resolve(null)
-      else
-        RSVP.resolve($.ajax(
-          url: "/documentsets/#{@_getDocumentSetId()}/documents/#{@document.id}/highlights?q=" + encodeURIComponent(@q)
-        ))
+      @textDocument?.fetchHighlights(q)
 
     render: ->
       id = @document?.id
@@ -97,8 +74,9 @@ define [
       urlProperties = @urlPropertiesExtractor.urlToProperties(url) if url?
 
       if !id? || !urlProperties?
+        @textDocument = null
+        @textView?.remove()
         @documentView.setUrlProperties(null)
-        @textView.setTextPromise(null)
         @$el.attr(class: '')
       else
         @currentCapabilities.set
@@ -111,12 +89,24 @@ define [
           @_renderText()
 
     _renderDocument: (urlProperties) ->
-      @textView.setTextPromise(null)
-      @documentView.setUrlProperties(urlProperties)
       @$el.attr(class: 'showing-document')
+      @textDocument = null
+      @textView?.remove()
+      @documentView.setUrlProperties(urlProperties)
 
     _renderText: ->
-      @documentView.setUrlProperties(null)
-      @textView.setTextPromise(@_getTextPromise())
-      @textView.setHighlightsPromise(@_getHighlightsPromise())
       @$el.attr(class: 'showing-text')
+      @textView?.remove()
+      if @document?
+        @textDocument = new TextDocument
+          id: @document.id
+          documentSetId: DocumentSetId
+        @textDocument.fetchText()
+        @textDocument.fetchHighlights(@q)
+      else
+        @textDocument = null
+      @textView = new TextView
+        model: @textDocument
+        currentCapabilities: @currentCapabilities
+        preferences: @preferences
+      @$textViewEl.append(@textView.el)
