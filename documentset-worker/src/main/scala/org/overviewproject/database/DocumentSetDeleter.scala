@@ -12,8 +12,6 @@ trait DocumentSetDeleter extends SlickClient {
   def delete(documentSetId: Long): Future[Unit] = db { implicit session =>
     val uploadedFileId = findUploadedFileId(documentSetId)
 
-    releaseFiles(documentSetId)
-
     deleteViews(documentSetId)
     deleteUserAddedData(documentSetId)
     deleteTrees(documentSetId)
@@ -28,12 +26,12 @@ trait DocumentSetDeleter extends SlickClient {
   // The minimal set of components, common to all document sets
   private def deleteCore(documentSetId: Long)(implicit session: Session): Unit = {
     val documentProcessingErrors = DocumentProcessingErrors.filter(_.documentSetId === documentSetId)
-    val documents = Documents.filter(_.documentSetId === documentSetId)
     val documentSetUser = DocumentSetUsers.filter(_.documentSetId === documentSetId)
     val documentSet = DocumentSets.filter(_.id === documentSetId)
 
+    deleteDocumentsAndFiles(documentSetId)
+    
     documentProcessingErrors.delete
-    documents.delete
     documentSetUser.delete
     documentSet.delete
 
@@ -63,8 +61,21 @@ trait DocumentSetDeleter extends SlickClient {
   private def deleteUploadedFile(uploadedFileId: Option[Long])(implicit session: Session): Unit =
     uploadedFileId.map { uid => UploadedFiles.filter(_.id === uid).delete }
 
+  
+  private def deleteDocumentsAndFiles(documentSetId: Long)(implicit session: Session): Unit = 
+    withTransaction { implicit session => 
+      releaseFiles(documentSetId)
+      deleteDocuments(documentSetId)
+    }
+
+  private def deleteDocuments(documentSetId: Long)(implicit session: Session): Unit = {
+    val documents = Documents.filter(_.documentSetId === documentSetId)
+    documents.delete
+  }
+  
   // Decrement reference counts on Files
   // Assume something else deletes them when reference count is 0
+  // Delete documents in the same transaction to avoid race conditions
   private def releaseFiles(documentSetId: Long)(implicit session: Session): Unit = {
     val fileReferences = sqlu"""
       WITH ids AS (
