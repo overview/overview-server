@@ -6,6 +6,13 @@ import scala.slick.jdbc.StaticQuery.interpolation
 import org.overviewproject.models.tables.TempDocumentSetFiles
 import org.overviewproject.database.Slick.simple._
 
+
+/**
+ * Deletes [[File]]s referenced by [[TempDocumentSetFile]] entries.
+ * If upload processing is interrupted before a [[File]] has been associated with a [[Document]],
+ * then the [[File]] is only referred to by a [[TempDocumentSetFile]].  [[TempFileDeleter]] is used
+ * to cleanup a cancelled or interrupted upload processing job.
+ */
 trait TempFileDeleter extends SlickClient {
 
   def delete(documentSetId: Long): Future[Unit] = db { implicit session =>
@@ -36,4 +43,8 @@ trait TempFileDeleter extends SlickClient {
     tempDocumentSetFiles.delete
   }
 
+}
+
+object TempFileDeleter {
+  def apply(): TempFileDeleter = new TempFileDeleter with SlickSessionProvider
 }

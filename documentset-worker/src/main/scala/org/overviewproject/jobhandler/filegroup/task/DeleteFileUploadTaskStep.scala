@@ -6,6 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
+import org.overviewproject.database.TempFileDeleter
 
 case class DeleteFileUploadComplete(documentSetId: Long, fileGroupId: Long) extends FileGroupTaskStep {
   override def execute = this
@@ -19,7 +20,8 @@ case class DeleteFileUploadComplete(documentSetId: Long, fileGroupId: Long) exte
 class DeleteFileUploadTaskStep(documentSetId: Long, fileGroupId: Long,
                                jobDeleter: DocumentSetCreationJobDeleter,
                                documentSetDeleter: DocumentSetDeleter,
-                               fileGroupDeleter: FileGroupDeleter)
+                               fileGroupDeleter: FileGroupDeleter,
+                               tempFileDeleter: TempFileDeleter)
   extends FileGroupTaskStep {
 
   override def execute: FileGroupTaskStep =
@@ -30,9 +32,16 @@ class DeleteFileUploadTaskStep(documentSetId: Long, fileGroupId: Long,
   private def deleteJobThenCleanup: Future[FileGroupTaskStep] =
     for {
       first <- jobDeleter.deleteByDocumentSet(documentSetId)
-      next <- deleteUploadRemains
+      next <- deleteTempFilesThenDeleteUpload
     } yield next
 
+  private def deleteTempFilesThenDeleteUpload: Future[FileGroupTaskStep] =
+    for {
+      first <- tempFileDeleter.delete(documentSetId)
+      next <- deleteUploadRemains
+    } yield next
+    
+    
   private def deleteUploadRemains: Future[FileGroupTaskStep] = {
     val documentSetDeletion = documentSetDeleter.delete(documentSetId)
     val fileGroupDeletion = fileGroupDeleter.delete(fileGroupId)

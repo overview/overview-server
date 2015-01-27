@@ -12,6 +12,7 @@ import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
+import org.overviewproject.database.TempFileDeleter
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -193,6 +194,6 @@ object FileGroupTaskWorker {
       
       override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
         new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
-          DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter())
+          DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter(), TempFileDeleter())
     })
 }
