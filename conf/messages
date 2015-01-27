@@ -191,6 +191,9 @@ views.CsvUpload.new.leavePageWarning=The upload will stop if you leave this page
 views.Document.show.DocumentView.missingPlugin=Your browser cannot display this document as a PDF file. Click above to download, or try the <a href="http://get.adobe.com/reader/" target="_blank">Acrobat Reader</a> plugin.
 views.Document.show.DocumentView.twitter.loading.text=Loading tweet…
 views.Document.show.DocumentView.twitter.loading.url=
+views.Document.show.FindView.label=Highlighting match {1,number,integer} of {2,number,integer} for “{0}”
+views.Document.show.FindView.nextHighlight=Highlight next match
+views.Document.show.FindView.previousHighlight=Highlight previous match
 views.Document.show.PreferencesView.collapse.bottom=close
 views.Document.show.PreferencesView.collapse.top=close
 views.Document.show.PreferencesView.options=Options

@@ -21,6 +21,7 @@ define [
 
       @listenTo(@preferences, 'change:wrap', @_onChangeWrap)
       @listenTo(@model, 'change:text change:error change:highlights', @render)
+      @listenTo(@model, 'change:highlightsIndex', @_renderHighlightsIndex)
 
       $(window).on('resize.DocumentDisplay-TextView', => @_onWindowResize())
 
@@ -81,7 +82,42 @@ define [
         .toggleClass('wrap', @preferences.get('wrap') == true)
         .append(nodes)
       @$el.empty().append($pre)
+      @_renderHighlightsIndex()
       @
+
+    # Fits the <em> into its <pre> parent node if it isn't visible
+    _scrollToHighlight: (em) ->
+      pre = em.parentNode
+
+      buffer = 20 # px
+
+      current =
+        top: pre.scrollTop
+        bottom: pre.scrollTop + pre.clientHeight
+        left: pre.scrollLeft
+        right: pre.scrollLeft + pre.clientWidth
+      wanted =
+        top: em.offsetTop
+        bottom: em.offsetTop + em.offsetHeight
+        left: em.offsetLeft
+        right: em.offsetLeft + em.offsetWidth
+
+      if wanted.bottom + buffer > current.bottom
+        pre.scrollTop = wanted.bottom + buffer - pre.clientHeight
+      if wanted.right > current.right
+        pre.scrollLeft = wanted.right - pre.clientWidth
+      if wanted.left < current.left
+        pre.scrollLeft = wanted.left
+      if wanted.top - buffer < current.top
+        pre.scrollTop = wanted.top - buffer
+
+    _renderHighlightsIndex: ->
+      $ems = @$('em.highlight')
+      $ems.removeClass('current')
+      current = @model.get('highlightsIndex')
+      if current? && ($current = $ems.eq(current)).length
+        $current.addClass('current')
+        @_scrollToHighlight($current[0])
 
     # Returns the maximum line number of chars that fit in a <pre>
     _calculateMaxLineLength: ->

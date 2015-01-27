@@ -6,7 +6,8 @@ define [
   './views/DocumentView'
   './views/PreferencesView'
   './views/TextView'
-], (TextDocument, UrlPropertiesExtractor, CurrentCapabilities, Preferences, DocumentView, PreferencesView, TextView) ->
+  './views/FindView'
+], (TextDocument, UrlPropertiesExtractor, CurrentCapabilities, Preferences, DocumentView, PreferencesView, TextView, FindView) ->
   DocumentSetId = (->
     parts = window.location.pathname.split('/')
     parts[parts.length - 1]
@@ -66,6 +67,7 @@ define [
       return if @q == q
       @q = q
       @textDocument?.fetchHighlights(q)
+      @$el.toggleClass('highlighting', @q?)
 
     render: ->
       id = @document?.id
@@ -88,25 +90,34 @@ define [
         else
           @_renderText()
 
+    _removeTextViews: ->
+      @textView?.remove()
+      @findView?.remove()
+      @textView = null
+      @findView = null
+
     _renderDocument: (urlProperties) ->
       @$el.attr(class: 'showing-document')
+      @_removeTextViews()
       @textDocument = null
-      @textView?.remove()
       @documentView.setUrlProperties(urlProperties)
 
     _renderText: ->
       @$el.attr(class: 'showing-text')
-      @textView?.remove()
+      @$el.toggleClass('highlighting', @q?)
+      @_removeTextViews()
       if @document?
         @textDocument = new TextDocument
           id: @document.id
           documentSetId: DocumentSetId
         @textDocument.fetchText()
         @textDocument.fetchHighlights(@q)
+        @textView = new TextView
+          model: @textDocument
+          currentCapabilities: @currentCapabilities
+          preferences: @preferences
+        @findView = new FindView(model: @textDocument)
+        @$textViewEl.append(@textView.el)
+        @$textViewEl.append(@findView.el)
       else
         @textDocument = null
-      @textView = new TextView
-        model: @textDocument
-        currentCapabilities: @currentCapabilities
-        preferences: @preferences
-      @$textViewEl.append(@textView.el)

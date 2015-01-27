@@ -27,6 +27,8 @@ define [
       highlights: null
       # set iff we could not load the highlights
       highlightsError: null
+      # indexes into the highlights array
+      highlightsIndex: null
 
     initialize: (attrs, options) ->
       throw 'Must set id attribute' if !attrs.id?
@@ -35,7 +37,7 @@ define [
     fetchHighlights: (query) ->
       return if @get('highlightsQuery') == query
       @_highlightsFetch.abort() if @_highlightsFetch?
-      @set(highlightsQuery: query, highlights: null, highlightsError: null)
+      @set(highlightsQuery: query, highlights: null, highlightsError: null, highlightsIndex: null)
       if query
         highlightsFetch = @_highlightsFetch = Backbone.$.ajax
           url: "/documentsets/#{@get('documentSetId')}/documents/#{@id}/highlights?q=#{encodeURIComponent(query)}"
@@ -43,6 +45,7 @@ define [
           success: (arrays) =>
             return if highlightsFetch != @_highlightsFetch
             @set(highlights: arrays)
+            @set(highlightsIndex: 0) if arrays.length
             @_highlightsFetch = null
 
           error: (jqXHR, textStatus, errorThrown) =>

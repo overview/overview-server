@@ -28,6 +28,37 @@
   &.showing-document div.document { display: block; }
   &.showing-text div.text { display: block; }
 
+  &.highlighting {
+    div.text {
+      bottom: 1.5em;
+    }
+  }
+
+  div.find {
+    position: absolute;
+    height: 2em;
+    line-height: 1.6;
+    padding: .2em;
+    text-align: center;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: @body-bg-dark;
+    border-top: 1px solid @table-border-color;
+
+    * {
+      display: inline;
+    }
+
+    i {
+      font-size: 1em;
+    }
+
+    a {
+      padding: 0 .5em;
+    }
+  }
+
   div.preferences {
     position: absolute;
     z-index: 1;
@@ -151,12 +182,17 @@
     background: #f8f8f8;
     padding: 10px;
     border-top: 1px solid #ccc;
+    border-radius: 0;
 
     em.highlight {
       font-style: normal;
       font-weight: bold;
-      background: white;
-      box-shadow: 0 0 5px 1px @brand-primary;
+      background: @highlight;
+
+      &.current {
+        box-shadow: 0 0 5px 1px @brand-primary;
+        border-radius: @border-radius-small;
+      }
     }
   }
 

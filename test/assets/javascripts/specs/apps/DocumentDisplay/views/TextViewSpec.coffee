@@ -18,6 +18,7 @@ define [
         text: null
         error: null
         highlights: null
+        highlightsIndex: null
       @$div = $('<div></div>').appendTo('body') # so we can calculate widths
       @subject = new TextView(model: @model, preferences: @preferences, currentCapabilities: @capabilities)
       @subject.$el.appendTo(@$div)
@@ -55,6 +56,14 @@ define [
       @model.set(highlights: [[4,7],[12,15]])
       @model.set(text: 'foo bar moo mar')
       expect(@subject.$('pre').html()).to.eq('foo <em class="highlight">bar</em> moo <em class="highlight">mar</em>')
+
+    it 'should render the current highlight specially', ->
+      @model.set
+        highlights: [[4,7],[12,15]]
+        text: 'foo bar moo mar'
+        highlightsIndex: 1
+      expect(@subject.$('pre em:eq(0)')).not.to.have.class('current')
+      expect(@subject.$('pre em:eq(1)')).to.have.class('current')
 
     it 'should wrap when preference is set', ->
       @preferences.set(wrap: true)

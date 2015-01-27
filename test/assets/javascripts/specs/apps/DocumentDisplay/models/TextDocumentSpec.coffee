@@ -43,11 +43,16 @@ define [
       expect(@subject.get('error')).not.to.be.null
 
     it 'should start with highlight stuff null', ->
-      expect(@subject.get('highlightsQuery')).to.be.null
-      @subject.fetchHighlights('foo')
-      expect(@subject.get('highlightsQuery')).to.eq('foo')
+      @subject.set
+        highlightsQuery: 'foo'
+        highlights: [[1,2]]
+        highlightsError: null
+        highlightsIndex: 0
+      @subject.fetchHighlights('bar')
+      expect(@subject.get('highlightsQuery')).to.eq('bar')
       expect(@subject.get('highlights')).to.be.null
       expect(@subject.get('highlightsError')).to.be.null
+      expect(@subject.get('highlightsIndex')).to.be.null
 
     it 'should set highlights on success', ->
       @subject.fetchHighlights('foo')
@@ -55,6 +60,12 @@ define [
       expect(@subject.get('highlightsQuery')).to.eq('foo')
       expect(@subject.get('highlights')).to.deep.eq([[1,2],[3,4]])
       expect(@subject.get('highlightsError')).to.be.null
+      expect(@subject.get('highlightsIndex')).to.eq(0)
+
+    it 'should set highlightsIndex=0 when highlights=[]', ->
+      @subject.fetchHighlights('foo')
+      @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '[]')
+      expect(@subject.get('highlightsIndex')).to.be.null
 
     it 'should set highlightsError on error', ->
       @subject.fetchHighlights('foo')
@@ -63,6 +74,7 @@ define [
       expect(@subject.get('highlightsQuery')).to.eq('foo')
       expect(@subject.get('highlights')).to.be.null
       expect(@subject.get('highlightsError')).not.to.be.null
+      expect(@subject.get('highlightsIndex')).to.be.null
 
     it 'should not fetch text twice', ->
       @subject.fetchText()
@@ -96,3 +108,4 @@ define [
       expect(@subject.get('highlightsQuery')).to.be.null
       expect(@subject.get('highlights')).to.be.null
       expect(@subject.get('highlightsError')).to.be.null
+      expect(@subject.get('highlightsIndex')).to.be.null
