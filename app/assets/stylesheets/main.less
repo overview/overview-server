@@ -151,6 +151,18 @@ body.password-edit, body.password-new, body.confirmation-index {
   color: @brand-danger;
 }
 
+// Sliding modals confuse Selenium, because it tries to click in text
+// fields that move. Also, they're ugly.
+// http://stackoverflow.com/questions/10143444/twitter-bootstrap-modal-how-to-remove-slide-down-effect
+.modal.fade .modal-dialog {
+  .translate(0, 0);
+  opacity: 0;
+  .transition(~"opacity 0.2s ease-in");
+}
+.modal.fade.in .modal-dialog {
+  opacity: 1;
+}
+
 @import "common/nav.less";
 @import "sidebar.less";
 @import "import-options.less";

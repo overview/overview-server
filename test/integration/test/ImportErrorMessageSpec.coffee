@@ -11,9 +11,9 @@ Url =
 
 describe 'ImportError', ->
   asUserUploadingFiles('ImportErrorMessage')
-  
+
   testMethods.usingPromiseChainMethods
-  
+
     cancelTopJob: ->
       @
         .get(Url.index)
@@ -25,44 +25,38 @@ describe 'ImportError', ->
       @userBrowser
         .openFileUploadPage()
         .chooseFile('PdfUpload/OnePage.pdf')
-        .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
+        .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
         .doImport()
 
     after ->
       @userBrowser
         .cancelTopJob()
-    
+
     it 'should show Too Few Documents error', ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
         .waitForElementBy(tag: 'div', class: 'job-app error', visible: true).should.eventually.exist
         .waitForElementBy(tag: 'p', class: 'status', contains: 'Need at least 2 documents').should.eventually.exist
-        
 
   describe 'after entering a bad regex in Important Words', ->
     before ->
       @userBrowser
         .openFileUploadPage()
         .chooseFile('PdfUpload/Cat1.pdf')
-        .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
+        .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
-        .elementBy(tag: 'textarea', name: 'important_words', visible: true).type('***')        
+        .elementBy(tag: 'textarea', name: 'important_words').type('***')
         .doImport()
 
     after ->
       @userBrowser
         .cancelTopJob()
-    
+
     it 'should show Bad Pattern error', ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
         .waitForElementBy(tag: 'div', class: 'job-app error', visible: true).should.eventually.exist
         .waitForElementBy(tag: 'p', class: 'status', contains: 'Invalid pattern in Important Words').should.eventually.exist
-
-        
-
-
-  
