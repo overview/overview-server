@@ -75,15 +75,15 @@ define [
 
       urlProperties = @urlPropertiesExtractor.urlToProperties(url) if url?
 
-      if !id? || !urlProperties?
+      if !id?
+        @_removeTextViews()
         @textDocument = null
-        @textView?.remove()
         @documentView.setUrlProperties(null)
         @$el.attr(class: '')
       else
         @currentCapabilities.set
-          canShowDocument: urlProperties.type of ViewableDocumentTypes
-          canShowSidebar: urlProperties.type == 'documentCloud'
+          canShowDocument: urlProperties?.type of ViewableDocumentTypes
+          canShowSidebar: urlProperties?.type == 'documentCloud'
           canWrap: null
         if @currentCapabilities.get('canShowDocument') && !@preferences.get('text')
           @_renderDocument(urlProperties)
