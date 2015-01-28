@@ -34,7 +34,7 @@ define [
       @state.resetDocumentListParams().byJson(params)
 
     _onMessage: (e) ->
-      viewUrl = @viewApp.view.attributes.url
+      viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message
       viewUrl = "#{window.location.protocol}#{viewUrl}" if viewUrl.substring(0, 2) == '//'
       if e.origin != viewUrl.substring(0, e.origin.length)
         console.log("Dropped message from #{e.origin}: expected #{viewUrl}", e)

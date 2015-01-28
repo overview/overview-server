@@ -59,44 +59,24 @@ define [
       @
 
     _renderTweet: ->
-      # Twitter's API is undocumented. It goes like this:
+      # Twitter's JS docs are here: https://dev.twitter.com/web/javascript/events
       #
-      # * On load, twttr.widgets.load() is called (and can't be stopped?).
-      #   It replaces any blockquote.twitter-tweet with a tweet, using the
-      #   URL in the <a> tag. If the tweet can't be loaded, the blockquote
-      #   stays. When the tweet loads, the blockquote is removed.
-      #
-      # * After load, twttr.widgets.load() can't be called again. But we can
-      #   call twttr.widgets.createTweetEmbed(). This accepts an ID, a DOM
-      #   element, and an on-finished callback. It appends an iframe to the
-      #   DOM element then calls the callback. No iframe, no callback.
-      #
-      # There's no error-handling.
-      if !@twttrLoad?
-        # First load. Twitter will automatically find the blockquote and
-        # apply itself to it.
-        @twttrLoad = $.getScript(TWITTER_WIDGETS_URL)
-      else if !twttr?.widgets?.loaded
-        # Twitter still hasn't loaded; it will soon, and when it does it will
-        # find and change the blockquote
-      else
-        # Twitter is loaded
-        blockquote = @$('blockquote')[0]
-        id = blockquote.getAttribute('data-tweet-id')
+      # 1. First tweet: we include the script. (This is complicated just for steps 2+3)
+      # 2. Another tweet, before the script is loaded: we do nothing
+      # 3. Another tweet, after the script is loaded: we call createTweet
+      @twttrState ||= "unloaded"
 
-        twttr.widgets.createTweetEmbed id, blockquote.parentNode, ->
-          $(blockquote).remove()
-
-      # Sometimes Twitter doesn't load or doesn't return a tweet--if it's
-      # private or if it was deleted.
-      #
-      # Show the block quote after a delay. This will only be noticeable when
-      # the blockquote is still in the DOM -- meaning Twitter isn't feeding us
-      # the tweet.
-      #
-      # From a 1hr search, it seems impossible to detect a failure from
-      # Twitter's JavaScript--and the iframe-insertion happens asynchronously.
-      # So there's nothing better than this.
-      #
-      # If the embed succeeds, the blockquote will not be on the page.
-      window.setTimeout((-> $(blockquote).show()), 1000)
+      switch @twttrState
+        when "unloaded"
+          @twttrState = "loading"
+          window.twttr =
+            _e: [ => twttr.events.bind('loaded', => @twttrState = "loaded") ]
+          $.getScript(TWITTER_WIDGETS_URL)
+        when "loading" then # do nothing
+        when "loaded"
+          # Twitter is loaded
+          blockquote = @$('blockquote')[0]
+          id = blockquote.getAttribute('data-tweet-id')
+          twttr.widgets.createTweet(id, blockquote.parentNode)
+            .then -> $(blockquote).remove()
+            .catch -> $(blockquote).show()

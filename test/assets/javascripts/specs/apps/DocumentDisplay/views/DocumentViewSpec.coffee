@@ -1,9 +1,10 @@
 define [
   'jquery'
+  'rsvp'
   'backbone'
   'i18n'
   'apps/DocumentDisplay/views/DocumentView'
-], ($, Backbone, i18n, DocumentView) ->
+], ($, RSVP, Backbone, i18n, DocumentView) ->
   describe 'apps/DocumentDisplay/views/DocumentView', ->
     beforeEach ->
       i18n.reset_messages_namespaced 'views.Document.show.DocumentView',
@@ -49,8 +50,7 @@ define [
 
     describe 'with a tweet', ->
       beforeEach ->
-        @twttrDeferred = new $.Deferred()
-        @sandbox.stub($, 'getScript').returns(@twttrDeferred)
+        @sandbox.stub($, 'getScript')
         @init
           type: 'twitter'
           username: 'username'
@@ -66,25 +66,22 @@ define [
       it 'should load Twitter', ->
         expect($.getScript).to.have.been.called
 
-      it 'should not call twttr.widgets.createTweetEmbed with the first tweet', ->
-        window.twttr = { widgets: { loaded: true, createTweetEmbed: sinon.spy() } }
-        @twttrDeferred.resolve()
-        expect(window.twttr.widgets.createTweetEmbed).not.to.have.been.called
+      it 'should call getScript() on the first call', ->
+        @subject.twttrState = 'unloaded'
+        @subject.render()
+        expect($.getScript).to.have.been.called
 
-      it 'should not call twttr.widgets.createTweetEmbed if Twitter is not loaded', ->
-        # This is a race:
-        # 1) Twitter finishes loading
-        # 2) user clicks new tweet
-        # 3) Twitter's "ready" code runs
-        window.twttr = { widgets: { loaded: false, createTweetEmbed: sinon.spy() } }
-        @twttrDeferred.resolve()
-        expect(window.twttr.widgets.createTweetEmbed).not.to.have.been.called
+      it 'should do nothing if Twitter is loading', ->
+        window.twttr = { widgets: { createTweet: sinon.stub().returns(new RSVP.resolve(null)) } }
+        @subject.twttrState = 'loading'
+        @subject.render()
+        expect(window.twttr.widgets.createTweet).not.to.have.been.called
 
-      it 'should call twttr.widgets.createTweetEmbed if twttr.widgets.loaded', ->
-        window.twttr = { widgets: { loaded: true, createTweetEmbed: sinon.spy() } }
-        @twttrDeferred.resolve()
-        @subject.setUrlProperties(type: 'twitter', username: 'username', id: 1234512322, url: '//twitter.com')
-        expect(window.twttr.widgets.createTweetEmbed).to.have.been.called
+      it 'should call twttr.widgets.createTweet if Twitter was loaded', ->
+        window.twttr = { widgets: { createTweet: sinon.stub().returns(new RSVP.resolve(null)) } }
+        @subject.twttrState = 'loaded'
+        @subject.render()
+        expect(window.twttr.widgets.createTweet).to.have.been.calledWith('1234512321')
 
     describe 'with an https document', ->
       beforeEach ->
