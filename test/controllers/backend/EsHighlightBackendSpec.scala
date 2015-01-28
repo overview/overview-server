@@ -25,19 +25,19 @@ class EsHighlightBackendSpec extends NullBackendSpecification {
     }
 
     "return an empty list when the term is not in the document" in new IndexScope {
-      await(testIndexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="bar boo baz").toDeprecatedDocument)))
+      await(testIndexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="bar boo baz"))))
       await(testIndexClient.refresh)
       await(backend.index(1L, 2L, "foo")) must beEqualTo(Seq())
     }
 
     "return a highlight" in new IndexScope {
-      await(testIndexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar").toDeprecatedDocument)))
+      await(testIndexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar"))))
       await(testIndexClient.refresh)
       await(backend.index(1L, 2L, "foo")) must beEqualTo(Seq(Highlight(4, 7)))
     }
 
     "return multiple highlights" in new IndexScope {
-      await(testIndexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar foo").toDeprecatedDocument)))
+      await(testIndexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar foo"))))
       await(testIndexClient.refresh)
       await(backend.index(1L, 2L, "foo")) must beEqualTo(Seq(
         Highlight(4, 7),

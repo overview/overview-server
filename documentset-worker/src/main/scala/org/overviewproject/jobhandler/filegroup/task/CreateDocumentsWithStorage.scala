@@ -1,17 +1,19 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import org.overviewproject.tree.orm.File
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.database.Database
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import org.overviewproject.database.{Database,SlickSessionProvider}
 import org.overviewproject.database.orm.finders.FileFinder
 import org.overviewproject.database.orm.finders.PageFinder
-import org.overviewproject.database.orm.Schema.{ documentProcessingErrors, documentSets }
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.database.orm.finders.DocumentFinder
+import org.overviewproject.models.Document
+import org.overviewproject.models.tables.{DocumentSets,Documents,DocumentProcessingErrors}
+import org.overviewproject.searchindex.TransportIndexClient
+import org.overviewproject.tree.orm.File
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.tree.orm.finders.FinderById
+import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.util.SearchIndex
-import org.overviewproject.searchindex.TransportIndexClient
 
 /**
  * Implementation of [[CreateDocumentsProcess]] with actual database queries and [[SearchIndex]]
@@ -24,41 +26,41 @@ trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
   override protected def getDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator = DocumentIdGenerator(documentSetId)
   override protected val createDocumentsProcessStorage: CreateDocumentsProcessStorage = new DatabaseStorage
 
-  protected class DatabaseStorage extends CreateDocumentsProcessStorage {
-    import org.overviewproject.database.orm.Schema.documents
-    private val documentStore = BaseStore(documents)
+  protected class DatabaseStorage extends CreateDocumentsProcessStorage with SlickSessionProvider {
+    private def await[A](f: Future[A]): A = {
+      scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
+    }
 
-    def findFilesQueryPage(documentSetId: Long, queryPage: Int): Iterable[File] = Database.inTransaction {
+    override def findFilesQueryPage(documentSetId: Long, queryPage: Int): Iterable[File] = Database.inTransaction {
       FileFinder.byDocumentSetPaged(documentSetId, queryPage, PageSize).map(f => f.copy())
     }
 
-    def findFilePageText(fileId: Long): Iterable[PageText] = Database.inTransaction {
+    override def findFilePageText(fileId: Long): Iterable[PageText] = Database.inTransaction {
       PageFinder.byFileId(fileId).withoutData.map(p => PageText.tupled(p))
     }
 
-    def writeDocuments(documents: Iterable[Document]): Unit = Database.inTransaction {
-      documentStore.insertBatch(documents)
-    }
+    override def writeDocuments(documents: Iterable[Document]): Unit = await(db { session =>
+      import org.overviewproject.database.Slick.simple._
+      Documents.++=(documents)(session)
+    })
 
-    def saveDocumentCount(documentSetId: Long): Unit = Database.inTransaction {
-      val documentProcessingErrorFinder = DocumentSetComponentFinder(documentProcessingErrors)
-      val documentSetFinder = new FinderById(documentSets)
-      val documentSetStore = BaseStore(documentSets)
+    override def saveDocumentCount(documentSetId: Long): Unit = await(db { session =>
+      import org.overviewproject.database.Slick.simple._
+      val numberOfDocuments: Int = Documents
+        .filter(_.documentSetId === documentSetId)
+        .length.run(session)
 
-      val numberOfDocuments = DocumentFinder.byDocumentSet(documentSetId).count.toInt
-      val numberOfDocumentProcessingErrors = documentProcessingErrorFinder.byDocumentSet(documentSetId).count.toInt
+      val numberOfDocumentProcessingErrors: Int = DocumentProcessingErrors
+        .filter(_.documentSetId === documentSetId)
+        .length.run(session)
 
-      val documentSet = documentSetFinder.byId(documentSetId).headOption
+      DocumentSets
+        .filter(_.id === documentSetId)
+        .map(ds => (ds.documentCount, ds.documentProcessingErrorCount))
+        .update((numberOfDocuments, numberOfDocumentProcessingErrors))(session)
+    })
 
-      documentSet.map { ds =>
-        val updatedDocumentSet = ds.copy(documentCount = numberOfDocuments,
-          documentProcessingErrorCount = numberOfDocumentProcessingErrors)
-
-        documentSetStore.insertOrUpdate(updatedDocumentSet)
-      }
-    }
-
-    def deleteTempFiles(documentSetId: Long): Unit = Database.inTransaction {
+    override def deleteTempFiles(documentSetId: Long): Unit = Database.inTransaction {
       import org.overviewproject.database.orm.Schema.tempDocumentSetFiles
 
       val tempDocumentSetFileStore = BaseStore(tempDocumentSetFiles)

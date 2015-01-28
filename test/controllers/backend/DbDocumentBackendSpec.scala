@@ -36,7 +36,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     val documents = Seq(doc1, doc2, doc3)
 
     await(testIndexClient.addDocumentSet(documentSet.id))
-    await(testIndexClient.addDocuments(documents.map(_.toDeprecatedDocument)))
+    await(testIndexClient.addDocuments(documents))
     await(testIndexClient.refresh())
   }
 

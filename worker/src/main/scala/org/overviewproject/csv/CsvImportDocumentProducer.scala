@@ -6,31 +6,33 @@
  */
 package org.overviewproject.csv
 
-import scala.language.postfixOps
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import org.overviewproject.database.{ Database, DB }
-import org.overviewproject.persistence._
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, DocumentSetIndexingSession, Logger, SearchIndex }
-import org.overviewproject.util.DocumentSetCreationJobStateDescription._
-import org.overviewproject.util.Progress._
-import org.overviewproject.persistence.orm.finders.DocumentSetFinder
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
-import org.overviewproject.tree.orm.finders.FinderById
-import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+import scala.collection.mutable.Buffer
+import scala.concurrent.{Future,blocking}
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import org.overviewproject.database.{Database,SlickSessionProvider}
+import org.overviewproject.models.{Document,DocumentTag,Tag}
+import org.overviewproject.models.tables.{Documents,DocumentTags,Tags}
+import org.overviewproject.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
+import org.overviewproject.searchindex.TransportIndexClient
+import org.overviewproject.util.{BulkDocumentWriter,DocumentProducer,Logger,TagColorList}
+import org.overviewproject.util.Progress.{Progress,ProgressAbortFn}
+import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
  */
-class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, maxDocuments: Int, progAbort: ProgressAbortFn)
-  extends DocumentProducer with PersistentDocumentSet {
-
-  private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done  
+class CsvImportDocumentProducer(
+  documentSetId: Long,
+  contentsOid: Long,
+  uploadedFileId: Long,
+  maxDocuments: Int,
+  progAbort: ProgressAbortFn
+)
+  extends DocumentProducer
+  with PersistentDocumentSet
+  with SlickSessionProvider
+{
   private val FetchingFraction = 1.0
   private val uploadReader = new UploadReader()
   private var bytesRead = 0l
@@ -38,48 +40,69 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   private var jobCancelled: Boolean = false
   private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
   private val ids = new DocumentSetIdGenerator(documentSetId)
-  private val documentTagWriter = new DocumentTagWriter(documentSetId)
-  private var indexingSession: DocumentSetIndexingSession = _
+  // XXX tagDocumentIds could cause OutOfMemoryError given a malicious document
+  private val tagDocumentIds: collection.mutable.Map[String,Buffer[Long]] = collection.mutable.Map()
+  private val logger = Logger.forClass(getClass)
+
+  private def await[A](f: Future[A]): A = {
+    scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
+  }
   
   /** Start parsing the CSV upload and feeding the result to the consumer */
   override def produce(): Int = {
-    
-    indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
-    
     val uploadedFile = Database.inTransaction {
       EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
     }
     val reader = uploadReader.reader(contentsOid, uploadedFile)
     val documentSource = new CsvImportSource(org.overviewproject.util.Textify.apply, reader)
 
-    val iterator = documentSource.iterator
+    await(TransportIndexClient.singleton.addDocumentSet(documentSetId))
+    val bulkWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
 
-    var numberOfSkippedDocuments = 0
-    var numberOfParsedDocuments = 0
+    val iterator = documentSource.iterator
+    var nDocuments = 0
 
     while (!jobCancelled && iterator.hasNext) {
-      val doc = iterator.next
+      val csvDocument = iterator.next
+      nDocuments += 1
 
-      if (numberOfParsedDocuments < maxDocuments) {
-        val documentId = writeAndCommitDocument(documentSetId, doc)
-        indexingSession.indexDocument(documentSetId, documentId, doc.text, doc.title, doc.suppliedId)
-
-        numberOfParsedDocuments += 1
-      } else numberOfSkippedDocuments += 1
+      if (nDocuments <= maxDocuments) {
+        val document = csvDocument.toDocument(ids.next, documentSetId)
+        csvDocument.tags.foreach { tagName =>
+          tagDocumentIds.getOrElseUpdate(tagName, Buffer()).append(document.id)
+        }
+        await(bulkWriter.addAndFlushIfNeeded(document))
+      }
 
       reportProgress(uploadReader.bytesRead, uploadedFile.size)
-
     }
-    indexingSession.complete
-    
-    Database.inTransaction{ documentTagWriter.flush() }
 
-    Await.result(indexingSession.requestsComplete, IndexingTimeout)
-    Logger.info("Indexing complete")
-    
-    updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
-    
-    numberOfParsedDocuments
+    await(bulkWriter.flush)
+    logger.info("Flushed documents")
+
+    flushTagDocumentIds
+    logger.info("Flushed tags")
+
+    updateDocumentSetCounts(documentSetId, math.min(maxDocuments, nDocuments), math.max(0, nDocuments - maxDocuments))
+
+    math.min(maxDocuments, nDocuments)
+  }
+
+  private def flushTagDocumentIds: Unit = db { session =>
+    import org.overviewproject.database.Slick.simple._
+
+    val tagInserter = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags).insertInvoker
+    val tagsToInsert: Iterable[(Long,String,String)] = tagDocumentIds.keys
+      .map { name => (documentSetId, name, TagColorList.forString(name)) }
+    val tags = tagInserter.++=(tagsToInsert)(session)
+
+    val dtInserter = DocumentTags.insertInvoker
+
+    tags.foreach { tag =>
+      val documentIds = tagDocumentIds(tag.name)
+      val documentTags = documentIds.map(DocumentTag(_, tag.id))
+      dtInserter.++=(documentTags)(session)
+    }
   }
 
   private def reportProgress(n: Long, size: Long) {
@@ -95,28 +118,4 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
       }
     }
   }
-
-  private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long = {
-    Database.inTransaction {
-      val document = Document(
-        documentSetId,
-        id = ids.next,
-        title = doc.title,
-        suppliedId = doc.suppliedId,
-        createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime),
-        text = Some(doc.text),
-        url = doc.url
-      )
-      DocumentWriter.write(document)
-      writeTags(document, doc.tags)
-      document.id
-    }
-  }
-  
-  private def writeTags(document: Document, tagNames: Set[String]): Unit = {
-    val tags = tagNames.map(PersistentTag.findOrCreate(documentSetId, _))
-    
-    documentTagWriter.write(document, tags)
-  }
-
 }

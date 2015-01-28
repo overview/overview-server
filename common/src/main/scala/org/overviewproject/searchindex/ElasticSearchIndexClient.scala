@@ -11,7 +11,7 @@ import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
 
-import org.overviewproject.tree.orm.Document // FIXME should be model
+import org.overviewproject.models.Document
 import org.overviewproject.util.Logger
 
 /** ElasticSearch index client.

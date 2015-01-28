@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.models.Document
 import org.overviewproject.tree.orm.File
 import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
@@ -94,23 +94,31 @@ trait CreateDocumentsProcess {
                                                       progressReporter: ActorRef)
       extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, progressReporter) {
 
-    override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
+    override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] = {
       files.map(createDocument(documentSetId, _))
+    }
 
-    override protected def nextStep: FileGroupTaskStep =
+    override protected def nextStep: FileGroupTaskStep = {
       CreateDocumentsFromFileQueryPage(documentSetId, queryPage + 1, documentIdGenerator, progressReporter)
+    }
 
     private def createDocument(documentSetId: Long, file: File) = {
       val pages = createDocumentsProcessStorage.findFilePageText(file.id)
 
       val text = pages.foldLeft("")((text, page) => text + page.text.getOrElse(""))
 
-      Document(documentSetId,
-        id = documentIdGenerator.nextId,
-        title = Some(file.name),
-        text = Some(text),
-        fileId = Some(file.id),
-        createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime)
+      Document(
+        documentIdGenerator.nextId,
+        documentSetId,
+        None,
+        "",
+        file.name,
+        None,
+        Seq(),
+        new java.util.Date(),
+        Some(file.id),
+        None,
+        text
       )
     }
   }
@@ -121,26 +129,30 @@ trait CreateDocumentsProcess {
                                                        progressReporter: ActorRef)
       extends CreateAndIndexDocument(documentSetId, queryPage, documentIdGenerator, progressReporter) {
 
-    override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] =
+    override protected def createDocumentsFromFiles(files: Iterable[File]): Iterable[Document] = {
       files.flatMap(createDocumentsFromPages(documentSetId, _))
+    }
 
-    override protected def nextStep: FileGroupTaskStep =
+    override protected def nextStep: FileGroupTaskStep = {
       CreateDocumentsFromPagesQueryPage(documentSetId, queryPage + 1, documentIdGenerator, progressReporter)
+    }
 
     private def createDocumentsFromPages(documentSetId: Long, file: File): Iterable[Document] = {
       val pages = createDocumentsProcessStorage.findFilePageText(file.id)
 
-      pages.map { p =>
-        Document(documentSetId,
-          id = documentIdGenerator.nextId,
-          title = Some(file.name),
-          text = p.text,
-          createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime),
-          fileId = Some(file.id),
-          pageId = Some(p.id),
-          pageNumber = Some(p.number)
-        )
-      }
+      pages.map { page => Document(
+        documentIdGenerator.nextId,
+        documentSetId,
+        None,
+        "",
+        file.name,
+        Some(page.number),
+        Seq(),
+        new java.util.Date(),
+        Some(file.id),
+        Some(page.id),
+        page.text.getOrElse("")
+      )}
     }
   }
 

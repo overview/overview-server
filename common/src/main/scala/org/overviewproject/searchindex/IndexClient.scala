@@ -2,7 +2,7 @@ package org.overviewproject.searchindex
 
 import scala.concurrent.Future
 
-import org.overviewproject.tree.orm.{Document,DocumentSet} // FIXME should be models
+import org.overviewproject.models.Document
 
 /** Interacts with a search index.
   *
