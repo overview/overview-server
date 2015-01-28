@@ -7,16 +7,17 @@
 package org.overviewproject.http
 
 import scala.language.postfixOps
-import scala.concurrent.{Await, Promise}
+import scala.concurrent.{Await,Future,Promise,blocking}
 import scala.concurrent.duration._
 import akka.actor._
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.{Document => RetrievedDocument, _ }
 import org.overviewproject.documentcloud.ImporterProtocol._
 import org.overviewproject.persistence._
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.models.Document
+import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
-import org.overviewproject.util._
+import org.overviewproject.util.{BulkDocumentWriter,Configuration,DocumentProducer,Logger,WorkerActorSystem}
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
 import java.util.concurrent.TimeoutException
@@ -25,6 +26,8 @@ import java.util.concurrent.TimeoutException
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
+
+  private val logger: Logger = Logger.forClass(this.getClass)
 
   private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
   private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
@@ -38,8 +41,11 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var numDocs = 0
   private var totalDocs: Option[Int] = None
-  private var indexingSession: DocumentSetIndexingSession = _ 
   private var importer: ActorRef = _
+
+  private def await[A](f: Future[A]): A = {
+    scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
+  }
   
   override def produce() = {
     val t0 = System.nanoTime()
@@ -58,9 +64,31 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     // retrieverGenerator - A factory for actors that will retrieve documents. One actor is 
     //   responsible for one document only. DocumentRetrievers simply retrieve the document. 
     //   A different retriever could be used to request the document text page-by-page.
+    val bulkWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
+    blocking(await(TransportIndexClient.singleton.addDocumentSet(documentSetId)))
 
-    indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)  
     var result: RetrievalResult = null
+
+    def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
+      val document = Document(
+        ids.next,
+        documentSetId,
+        Some(doc.url),
+        doc.id,
+        doc.title,
+        doc.pageNumber,
+        Seq(),
+        new java.util.Date(),
+        None,
+        None,
+        text
+      )
+      blocking(await(bulkWriter.addAndFlushIfNeeded(document)))
+
+      numDocs += 1
+
+      if (job.state == Cancelled) shutdownActors
+    }
     
     WorkerActorSystem.withActorSystem { implicit context =>
 
@@ -97,7 +125,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       try {
         importer ! StartImport()
         result = Await.result(importResult.future, Duration.Inf)
-        Logger.info("Failed to retrieve " + result.failedRetrievals.length + " documents")
+        logger.info("Failed to retrieve " + result.failedRetrievals.length + " documents")
         Database.inTransaction {
           DocRetrievalErrorWriter.write(documentSetId, result.failedRetrievals)
         }
@@ -109,44 +137,21 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       }
     }
 
-    indexingSession.complete
-    
-    Await.result(indexingSession.requestsComplete, IndexingTimeout)
-    Logger.info("Indexing complete")
-    
+    await(bulkWriter.flush)
+    logger.info("Indexing complete")
+
     val overflowCount = result.totalDocumentsInQuery - result.numberOfDocumentsRetrieved
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
     
     numDocs
   }
 
-  private def updateRetrievalProgress(retrieved: Int, total: Int): Unit =
+  private def updateRetrievalProgress(retrieved: Int, total: Int): Unit = {
     progAbort(Progress(retrieved * FetchingFraction / total, Retrieving(retrieved, total)))
-
-  private def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
-    val id = Database.inTransaction {
-      val document = Document(documentSetId, 
-        id = ids.next, 
-        title = Some(doc.title), 
-        text = Some(text),
-        createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime),
-        documentcloudId = Some(doc.id),
-        pageNumber = doc.pageNumber
-      )
-      DocumentWriter.write(document)
-      document.id
-    }
-    
-    indexingSession.indexDocument(documentSetId, id, text, Some(doc.title), Some(doc.id))
-
-    numDocs += 1
-
-    if (job.state == Cancelled) shutdownActors
   }
 
   private def shutdownActors(implicit context: ActorSystem): Unit = {
     context.stop(importer)
   }
 
-  
 }

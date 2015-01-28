@@ -1,11 +1,13 @@
 package org.overviewproject.util
 
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.DocumentSetCreationJobType._
-import org.specs2.mock.Mockito
+import org.overviewproject.searchindex.IndexClient
 
 class DocumentSetCreationJobRestarterSpec extends Specification with Mockito {
 
@@ -16,7 +18,7 @@ class DocumentSetCreationJobRestarterSpec extends Specification with Mockito {
       
       there was one(jobRestarter.mockStorage).deleteDocuments(documentSetId)
       there was one(jobRestarter.mockStorage).updateValidJob(job.copy(state = NotStarted, retryAttempts = retryAttempts + 1))
-      there was one(jobRestarter.mockSearchIndex).deleteDocumentSetAliasAndDocuments(documentSetId)
+      there was one(jobRestarter.mockSearchIndex).removeDocumentSet(documentSetId)
     }
 
     "fail job if restart limit is reached" in new MaxRetryAttemptJobScope {
@@ -42,7 +44,7 @@ class DocumentSetCreationJobRestarterSpec extends Specification with Mockito {
 
   class TestDocumentSetCreationJobRestarter(val job: DocumentSetCreationJob) extends DocumentSetCreationJobRestarter {
      override protected val storage = smartMock[DocumentStorage]
-     override protected val searchIndex = smartMock[SearchIndex]
+     override protected val searchIndex = smartMock[IndexClient]
      
      def mockStorage = storage
      def mockSearchIndex = searchIndex

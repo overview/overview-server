@@ -4,6 +4,7 @@ import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.tables.DocumentSetCreationJobMappings
 import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.searchindex.TransportIndexClient
 
 trait JobRestarter {
   val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
@@ -55,8 +56,8 @@ object JobRestarter extends DocumentSetCreationJobMappings with SlickSessionProv
 
   private def createRestarter(job: DocumentSetCreationJob): Option[JobRestarter] = job.jobType match {
     case Recluster     => Some(ClusteringJobRestarter(job))
-    case DocumentCloud => Some(DocumentSetCreationJobRestarter(job, SearchIndex))
-    case CsvUpload     => Some(DocumentSetCreationJobRestarter(job, SearchIndex))
+    case DocumentCloud => Some(DocumentSetCreationJobRestarter(job, TransportIndexClient.singleton))
+    case CsvUpload     => Some(DocumentSetCreationJobRestarter(job, TransportIndexClient.singleton))
     case _             => None
   }
 

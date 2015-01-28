@@ -1,45 +1,45 @@
 package org.overviewproject.util
 
+import scala.concurrent.ExecutionContext
+
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
-import scala.concurrent.ExecutionContext
+import org.overviewproject.searchindex.IndexClient
 
 trait DocumentSetCreationJobRestarter extends JobRestarter {
 
   override protected def removeInterruptedJobData: Unit = {
     storage.deleteDocuments(job.documentSetId)
-    searchIndex.deleteDocumentSetAliasAndDocuments(job.documentSetId)
+    searchIndex.removeDocumentSet(job.documentSetId)
   }
 
   protected val storage: DocumentStorage
-  protected val searchIndex: SearchIndex
-  
+  protected val searchIndex: IndexClient
+
   protected trait DocumentStorage extends Storage {
     def deleteDocuments(jobId: Long): Unit
   }
-
 }
 
 object DocumentSetCreationJobRestarter {
 
-  def apply(job: DocumentSetCreationJob, searchIndex: SearchIndex)(
-      implicit executionContext: ExecutionContext): DocumentSetCreationJobRestarter = 
+  def apply(job: DocumentSetCreationJob, searchIndex: IndexClient)(
+      implicit executionContext: ExecutionContext): DocumentSetCreationJobRestarter =
     new DocumentSetCreationJobRestarterWithStorage(job, searchIndex)
 
-  private class DocumentSetCreationJobRestarterWithStorage(val job: DocumentSetCreationJob, val searchIndex: SearchIndex)(
-    implicit executionContext: ExecutionContext) extends DocumentSetCreationJobRestarter {
+  private class DocumentSetCreationJobRestarterWithStorage(val job: DocumentSetCreationJob, val searchIndex: IndexClient)(implicit executionContext: ExecutionContext) extends DocumentSetCreationJobRestarter {
 
     import scala.concurrent.{ Await, Future }
     import scala.concurrent.duration.Duration
     import org.overviewproject.database.SlickSessionProvider
 
     override protected val storage = new DbSyncedStorage
-    
+
     class DbSyncedStorage extends DocumentStorage {
       private def await[A](block: => Future[A]): A =
         Await.result(block, Duration.Inf)
 
-      private val cleaner = new DocumentSetCleaner with SlickSessionProvider 
+      private val cleaner = new DocumentSetCleaner with SlickSessionProvider
 
       override def updateValidJob(job: DocumentSetCreationJob): Unit =
         await(cleaner.updateValidJob(job))
