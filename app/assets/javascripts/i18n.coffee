@@ -156,7 +156,7 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
       this
 
     get_ast: (key) ->
-      @asts[key] ||= if @messages[key]
+      @asts[key] ||= if @messages[key]?
         MessageFormatParser.parse(@messages[key])
       else
         throw "Unknown i18n message key '#{key}'"
