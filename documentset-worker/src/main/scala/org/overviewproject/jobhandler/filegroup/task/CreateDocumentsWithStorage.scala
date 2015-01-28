@@ -13,10 +13,9 @@ import org.overviewproject.tree.orm.File
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.util.SearchIndex
 
 /**
- * Implementation of [[CreateDocumentsProcess]] with actual database queries and [[SearchIndex]]
+ * Implementation of [[CreateDocumentsProcess]] with actual database queries
  */
 trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
   private val PageSize = 50
