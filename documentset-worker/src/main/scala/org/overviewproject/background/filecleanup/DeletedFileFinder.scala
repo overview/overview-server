@@ -24,5 +24,5 @@ trait DeletedFileFinder extends SlickClient {
 object DeletedFileFinder {
   def apply(): DeletedFileFinder = new DeletedFileFinderImpl
   
-  class DeletedFileFinderImpl extends DeletedFileFinder with SlickSessionProvider
+  private class DeletedFileFinderImpl extends DeletedFileFinder with SlickSessionProvider
 }
