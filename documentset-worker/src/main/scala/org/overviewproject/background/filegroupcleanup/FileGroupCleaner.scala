@@ -1,6 +1,6 @@
 package org.overviewproject.background.filegroupcleanup
 
-import akka.actor.Actor
+import akka.actor.{ Actor, Props }
 import akka.pattern.pipe
 import org.overviewproject.util.Logger
 
@@ -31,4 +31,12 @@ trait FileGroupCleaner extends Actor {
   
   protected val fileGroupRemover: FileGroupRemover
   
+}
+
+object FileGroupCleaner {
+  def apply(): Props = Props(new FileGroupCleanerImpl)
+  
+  private class FileGroupCleanerImpl extends FileGroupCleaner {
+    override protected val fileGroupRemover = FileGroupRemover()
+  }
 }

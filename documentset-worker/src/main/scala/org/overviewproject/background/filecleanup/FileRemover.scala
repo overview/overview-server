@@ -55,11 +55,11 @@ trait FileRemover extends SlickClient {
 object FileRemover {
   def apply(): FileRemover = new FileRemoverImpl
   
-  class PageRemoverImpl extends PageRemover with SlickSessionProvider {
+  private class PageRemoverImpl extends PageRemover with SlickSessionProvider {
     override protected val blobStorage = BlobStorage
   }
   
-  class FileRemoverImpl extends FileRemover with SlickSessionProvider {
+  private class FileRemoverImpl extends FileRemover with SlickSessionProvider {
     override protected val blobStorage = BlobStorage
     override protected val pageRemover = new PageRemoverImpl
   }

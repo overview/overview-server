@@ -1,7 +1,7 @@
 package org.overviewproject.background.filegroupcleanup
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.database.SlickClient
+import org.overviewproject.database.{ SlickClient, SlickSessionProvider }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
@@ -28,4 +28,13 @@ trait FileGroupRemover extends SlickClient {
 
   protected val groupedFileUploadRemover: GroupedFileUploadRemover
   protected val blobStorage: BlobStorage
+}
+
+object FileGroupRemover {
+  def apply(): FileGroupRemover = new FileGroupRemoverImpl
+  
+  private class FileGroupRemoverImpl extends FileGroupRemover with SlickSessionProvider {
+    override protected val groupedFileUploadRemover = GroupedFileUploadRemover()
+    override protected val blobStorage = BlobStorage
+  }
 }
