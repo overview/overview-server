@@ -7,6 +7,10 @@ import org.overviewproject.database.SlickClient
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.GroupedFileUploads
 
+
+/**
+ * Delete [[GroupedFileUpload]]s and their contents.
+ */
 trait GroupedFileUploadRemover extends SlickClient {
 
   def removeUploadsFromFileGroup(fileGroupId: Long): Future[Unit] =
