@@ -13,7 +13,7 @@ import org.overviewproject.models.tables.GroupedFileUploads
  */
 trait GroupedFileUploadRemover extends SlickClient {
 
-  def removeUploadsFromFileGroup(fileGroupId: Long): Future[Unit] =
+  def removeFileGroupUploads(fileGroupId: Long): Future[Unit] =
     for {
       c <- deleteContents(fileGroupId)
       g <- deleteGroupedFileUploads(fileGroupId)  

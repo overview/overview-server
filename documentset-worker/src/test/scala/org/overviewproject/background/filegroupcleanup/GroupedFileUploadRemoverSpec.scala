@@ -15,13 +15,13 @@ class GroupedFileUploadRemoverSpec extends SlickSpecification with Mockito with 
 
     "delete content" in new GroupedFileUploadScope {
       deleteMany.success(())
-      await(remover.removeUploadsFromFileGroup(fileGroup.id))
+      await(remover.removeFileGroupUploads(fileGroup.id))
 
       there was one(mockBlobStorage).deleteMany(contentLocations)
     }
 
     "complete when content deletion completes" in new GroupedFileUploadScope {
-      val r = remover.removeUploadsFromFileGroup(fileGroup.id)
+      val r = remover.removeFileGroupUploads(fileGroup.id)
 
       Await.result(r, 10 millis) must throwA[TimeoutException]
       r.isCompleted must beFalse
@@ -34,7 +34,7 @@ class GroupedFileUploadRemoverSpec extends SlickSpecification with Mockito with 
 
     "delete GroupedFileUpload" in new GroupedFileUploadScope {
       deleteMany.success(())
-      await(remover.removeUploadsFromFileGroup(fileGroup.id))
+      await(remover.removeFileGroupUploads(fileGroup.id))
       
       GroupedFileUploads.firstOption must beNone
     }

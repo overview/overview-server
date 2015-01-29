@@ -15,14 +15,14 @@ class PageRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
 
     "delete blobs" in new PageScope {
       blobsDeleted.success(())
-      await(remover.deleteFilePages(file.id))
+      await(remover.removeFilePages(file.id))
       
       val locations = pages.map(_.dataLocation) 
       there was one(mockBlobStorage).deleteMany(locations)
     }
 
     "delete pages after blobs are deleted" in new PageScope {
-      val r = remover.deleteFilePages(file.id)
+      val r = remover.removeFilePages(file.id)
       
       Await.result(r, 10 millis) must throwA[TimeoutException]
       

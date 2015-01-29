@@ -18,7 +18,7 @@ trait FileGroupRemover extends SlickClient {
 
   def remove(fileGroupId: Long): Future[Unit] =
     for {
-      g <- groupedFileUploadRemover.removeUploadsFromFileGroup(fileGroupId)
+      g <- groupedFileUploadRemover.removeFileGroupUploads(fileGroupId)
       f <- deleteFileGroup(fileGroupId)
     } yield ()
 

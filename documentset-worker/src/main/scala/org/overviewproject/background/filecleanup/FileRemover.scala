@@ -14,7 +14,7 @@ import org.overviewproject.database.SlickSessionProvider
 trait FileRemover extends SlickClient {
 
   def deleteFile(fileId: Long): Future[Unit] = {
-    val pageRemoval = pageRemover.deleteFilePages(fileId)
+    val pageRemoval = pageRemover.removeFilePages(fileId)
     val contentRemoval = removeContent(fileId)
 
     

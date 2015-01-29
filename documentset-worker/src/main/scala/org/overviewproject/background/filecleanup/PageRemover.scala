@@ -11,7 +11,7 @@ import org.overviewproject.database.Slick.simple._
  *  Delete pages and the data they refer to
  */
 trait PageRemover extends SlickClient {
-  def deleteFilePages(fileId: Long): Future[Unit] = 
+  def removeFilePages(fileId: Long): Future[Unit] = 
     for {
       d <- deletePageData(fileId)
       p <- deletePages(fileId)

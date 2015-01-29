@@ -18,7 +18,7 @@ class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
     "remove pages" in new FileScope {
       deleteFile
 
-      there was one(pageRemover).deleteFilePages(file.id)
+      there was one(pageRemover).removeFilePages(file.id)
     }
 
     "delete file content" in new FileScope {
@@ -51,7 +51,7 @@ class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
     val blobDelete = Promise[Unit]()
     blobStorage.delete(any) returns blobDelete.future
 
-    pageRemover.deleteFilePages(file.id) returns Future.successful(())
+    pageRemover.removeFilePages(file.id) returns Future.successful(())
 
     val fileRemover = new TestFileRemover(blobStorage, pageRemover)
 

@@ -15,7 +15,7 @@ class FileGroupRemoverSpec extends SlickSpecification with Mockito {
       uploadsRemoved.success(())
       await(fileGroupRemover.remove(fileGroup.id))
       
-      there was one(groupedFileUploadRemover).removeUploadsFromFileGroup(fileGroup.id)
+      there was one(groupedFileUploadRemover).removeFileGroupUploads(fileGroup.id)
     }
 
     "delete FileGroup after uploads are deleted" in new FileGroupScope {
@@ -40,7 +40,7 @@ class FileGroupRemoverSpec extends SlickSpecification with Mockito {
     val fileGroupRemover = new TestFileGroupRemover(groupedFileUploadRemover, mockBlobStorage)
     
     val uploadsRemoved = Promise[Unit]()
-    groupedFileUploadRemover.removeUploadsFromFileGroup(any) returns uploadsRemoved.future
+    groupedFileUploadRemover.removeFileGroupUploads(any) returns uploadsRemoved.future
   }
 
   class TestFileGroupRemover(remover: GroupedFileUploadRemover, storage: BlobStorage)(implicit val session: Session) extends FileGroupRemover with SlickClientInSession {
