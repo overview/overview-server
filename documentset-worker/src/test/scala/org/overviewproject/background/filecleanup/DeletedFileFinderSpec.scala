@@ -6,6 +6,7 @@ import org.overviewproject.database.Slick.simple._
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 
+/** Find [[File]] ids where `referenceCount == 0` */
 class DeletedFileFinderSpec extends SlickSpecification {
 
   "DeletedFileFinder" should {

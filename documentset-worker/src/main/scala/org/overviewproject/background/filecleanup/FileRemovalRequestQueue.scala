@@ -24,6 +24,20 @@ object FileRemovalRequestQueueFSM {
 }
 
 
+/**
+ * Receives requests to remove deleted [[File]]s and associated data
+ * Currently, request do not include ids, so the entire `file` table will
+ * be scanned to find [[Files]]s with `referenceCount = 0.
+ * 
+ * A request is forwarded to a [[DeletedFileCleaner]], which performs the scan 
+ * and initiates the removal of data. If requests are received while the [[DeletedFileCleaner]]
+ * is working, one request will be submitted to the [[DeletedFileCleaner]] after it completes
+ * its current request.
+ * 
+ * When the [[FileRemovalRequestQueue]] starts up, it sends a request to the [[DeletedFileCleaner]],
+ * ensuring that all deleted [[File]] data is removed even if previous requests have been lost or 
+ * interrupted.
+ */
 trait FileRemovalRequestQueue extends Actor with FSM[State, Data] {
   import FileRemovalRequestQueueProtocol._
   import DeletedFileCleanerProtocol._

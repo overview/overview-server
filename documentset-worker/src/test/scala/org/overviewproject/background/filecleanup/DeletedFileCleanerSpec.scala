@@ -105,7 +105,7 @@ class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConve
 
   
   class TestDeletedFileCleaner(val fileCleaner: ActorRef, fileIds: Seq[Long]) extends DeletedFileCleaner {
-    override protected val deletedFileScanner = smartMock[DeletedFileFinder]
-    deletedFileScanner.deletedFileIds returns Future.successful(fileIds)
+    override protected val deletedFileFinder = smartMock[DeletedFileFinder]
+    deletedFileFinder.deletedFileIds returns Future.successful(fileIds)
   }
 }

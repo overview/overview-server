@@ -26,11 +26,19 @@ object DeletedFileCleanerFSM {
   case class IdQueue(requester: ActorRef, fileIds: Iterable[Long]) extends Data
 }
 
+
+/**
+ * When a [[RemoveDeletedFiles]] request is received, the [[DeletedFileCleaner]] finds
+ * all [[File]]s with `referenceCount = 0`. Each [[File]] found is sent, sequentially,
+ * to the [[FileCleaner]], which performs the actual removal of data.
+ * 
+ * Any requests received while a previous request is being processed are ignored.
+ */
 trait DeletedFileCleaner extends Actor with FSM[State, Data] {
   import DeletedFileCleanerProtocol._
   import FileCleanerProtocol._
 
-  protected val deletedFileScanner: DeletedFileFinder
+  protected val deletedFileFinder: DeletedFileFinder
   protected val fileCleaner: ActorRef
 
   private case class ScanComplete(ids: Iterable[Long])
@@ -39,7 +47,7 @@ trait DeletedFileCleaner extends Actor with FSM[State, Data] {
 
   when(Idle) {
     case Event(RemoveDeletedFiles, _) => {
-      deletedFileScanner.deletedFileIds.map(ScanComplete) pipeTo self
+      deletedFileFinder.deletedFileIds.map(ScanComplete) pipeTo self
 
       goto(Scanning) using IdQueue(sender, Iterable.empty)
     }
@@ -85,7 +93,7 @@ trait DeletedFileCleaner extends Actor with FSM[State, Data] {
   }
   
   private def removeDeletedFiles: Future[Unit] =
-    deletedFileScanner.deletedFileIds.map { fileIds =>
+    deletedFileFinder.deletedFileIds.map { fileIds =>
       for {
         id <- fileIds
       } fileCleaner ! Clean(id)
@@ -97,7 +105,7 @@ object DeletedFileCleaner {
   def apply(fileCleaner: ActorRef) = Props(new DeletedFileCleanerImpl(fileCleaner))
   
   class DeletedFileCleanerImpl(val fileCleaner: ActorRef) extends DeletedFileCleaner {
-    override protected val deletedFileScanner = DeletedFileFinder()
+    override protected val deletedFileFinder = DeletedFileFinder()
   }
   
 }

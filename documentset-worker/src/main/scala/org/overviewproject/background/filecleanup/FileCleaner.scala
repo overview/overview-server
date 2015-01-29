@@ -19,7 +19,6 @@ object FileCleanerProtocol {
  * be friendly if the caller maintains a queue, to ensure only one deletion is in 
  * progress at a time.
  * 
- * 
  */
 trait FileCleaner extends Actor {
   import context._
@@ -29,7 +28,8 @@ trait FileCleaner extends Actor {
 
   /**
    * The caller will be notified when the deletion attempt is complete.
-   * On succcess, a [[CleanComplete]] is sent, otherwise [[CleanFailed]].
+   * Any failures are logged, and the [[FileCleaner]] attempts to proceed as
+   * if deletion is completed normally.
    */
   override def receive = {
     case Clean(fileId) => attemptDeleteFile(fileId) pipeTo sender
