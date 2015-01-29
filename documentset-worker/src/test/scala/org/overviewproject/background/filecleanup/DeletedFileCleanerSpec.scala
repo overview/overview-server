@@ -1,59 +1,60 @@
 package org.overviewproject.background.filecleanup
 
 import akka.actor.{ ActorRef, Props }
+import akka.testkit.TestActor
 import akka.testkit.TestProbe
 import scala.concurrent.duration._
+import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import org.overviewproject.test.ActorSystemContext
-import org.specs2.mutable.Before
-import org.overviewproject.background.filecleanup.DeletedFileRemoverProtocol._
+import org.overviewproject.background.filecleanup.DeletedFileCleanerProtocol._
 import org.overviewproject.background.filecleanup.FileCleanerProtocol._
 import scala.concurrent.Future
 import org.specs2.time.NoTimeConversions
-import akka.testkit.TestActor
 
-class DeletedFileRemoverSpec extends Specification with Mockito with NoTimeConversions {
 
-  "DeletedFileRemover" should {
+class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConversions {
+
+  "DeletedFileCleaner" should {
 
     "request file removal" in new DeletedFileScope {
-      remover ! RemoveDeletedFiles
+      deletedFileCleaner ! RemoveDeletedFiles
 
       cleaner.expectMsg(Clean(0))
     }
 
     "request next file removal when previous one is complete" in new DeletedFileScope {
-      remover ! RemoveDeletedFiles
+      deletedFileCleaner ! RemoveDeletedFiles
       
       cleaner.expectMsg(Clean(0))
       cleaner.expectNoMsg(10 millis)
       
-      remover ! CleanComplete(0)
+      deletedFileCleaner ! CleanComplete(0)
       cleaner.expectMsg(Clean(1))
     }
     
     "notify requester when file removal is complete" in new CompletingCleanerScope {
-      remover ! RemoveDeletedFiles
+      deletedFileCleaner ! RemoveDeletedFiles
       expectMsg(FileRemovalComplete)
     }
     
 
     "handle request recived after previous request completed" in new CompletingCleanerScope {
-      remover ! RemoveDeletedFiles
+      deletedFileCleaner ! RemoveDeletedFiles
       expectMsg(FileRemovalComplete)
       
-      remover ! RemoveDeletedFiles
+      deletedFileCleaner ! RemoveDeletedFiles
       expectMsg(FileRemovalComplete)
     }
     
     "ignore request received while previous request is in progress" in new DeletedFileScope {
-      remover ! RemoveDeletedFiles
+      deletedFileCleaner ! RemoveDeletedFiles
       
       cleaner.expectMsg(Clean(0))
       cleaner.reply(CleanComplete(0))
       
-      remover ! RemoveDeletedFiles 
+      deletedFileCleaner ! RemoveDeletedFiles 
       
       cleaner.expectMsg(Clean(1))
       cleaner.reply(CleanComplete(1))
@@ -63,7 +64,7 @@ class DeletedFileRemoverSpec extends Specification with Mockito with NoTimeConve
     }
     
     "notify requester that file removal is complete when no deleted files are found" in new NoDeletedFileScope {
-      remover ! RemoveDeletedFiles
+      deletedFileCleaner ! RemoveDeletedFiles
       expectMsg(FileRemovalComplete)
     }
 
@@ -71,12 +72,12 @@ class DeletedFileRemoverSpec extends Specification with Mockito with NoTimeConve
 
   abstract class DeletedFileScope extends ActorSystemContext with Before {
     def fileIds = Seq(0L, 1L)
-    var remover: ActorRef = _
+    var deletedFileCleaner: ActorRef = _
     var cleaner: TestProbe = _
     
     override def before = {
       cleaner = TestProbe()
-      remover = system.actorOf(Props(new TestDeletedFileRemover(cleaner.ref, fileIds)))
+      deletedFileCleaner = system.actorOf(Props(new TestDeletedFileCleaner(cleaner.ref, fileIds)))
     }
   }
   
@@ -103,7 +104,7 @@ class DeletedFileRemoverSpec extends Specification with Mockito with NoTimeConve
   }
 
   
-  class TestDeletedFileRemover(val fileCleaner: ActorRef, fileIds: Seq[Long]) extends DeletedFileRemover {
+  class TestDeletedFileCleaner(val fileCleaner: ActorRef, fileIds: Seq[Long]) extends DeletedFileCleaner {
     override protected val deletedFileScanner = smartMock[DeletedFileScanner]
     deletedFileScanner.deletedFileIds returns Future.successful(fileIds)
   }

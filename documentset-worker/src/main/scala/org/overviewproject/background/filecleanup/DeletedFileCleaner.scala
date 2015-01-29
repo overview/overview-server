@@ -6,16 +6,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.collection.immutable.Queue
 import org.overviewproject.util.Logger
-import DeletedFileRemoverFSM._
+import DeletedFileCleanerFSM._
 import akka.actor.Props
 
 
-object DeletedFileRemoverProtocol {
+object DeletedFileCleanerProtocol {
   case object RemoveDeletedFiles
   case object FileRemovalComplete
 }
 
-object DeletedFileRemoverFSM {
+object DeletedFileCleanerFSM {
   sealed trait State
   case object Idle extends State
   case object Scanning extends State
@@ -26,8 +26,8 @@ object DeletedFileRemoverFSM {
   case class IdQueue(requester: ActorRef, fileIds: Iterable[Long]) extends Data
 }
 
-trait DeletedFileRemover extends Actor with FSM[State, Data] {
-  import DeletedFileRemoverProtocol._
+trait DeletedFileCleaner extends Actor with FSM[State, Data] {
+  import DeletedFileCleanerProtocol._
   import FileCleanerProtocol._
 
   protected val deletedFileScanner: DeletedFileScanner
@@ -92,11 +92,11 @@ trait DeletedFileRemover extends Actor with FSM[State, Data] {
     }
 }
 
-object DeletedFileRemover {
+object DeletedFileCleaner {
   
-  def apply(fileCleaner: ActorRef) = Props(new DeletedFileRemoverImpl(fileCleaner))
+  def apply(fileCleaner: ActorRef) = Props(new DeletedFileCleanerImpl(fileCleaner))
   
-  class DeletedFileRemoverImpl(val fileCleaner: ActorRef) extends DeletedFileRemover {
+  class DeletedFileCleanerImpl(val fileCleaner: ActorRef) extends DeletedFileCleaner {
     override protected val deletedFileScanner = DeletedFileScanner()
   }
   

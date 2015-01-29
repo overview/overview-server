@@ -26,7 +26,7 @@ object FileRemovalQueueFSM {
 
 trait FileRemovalQueue extends Actor with FSM[State, Data] {
   import FileRemovalQueueProtocol._
-  import DeletedFileRemoverProtocol._
+  import DeletedFileCleanerProtocol._
   
   protected val fileRemover: ActorRef
   

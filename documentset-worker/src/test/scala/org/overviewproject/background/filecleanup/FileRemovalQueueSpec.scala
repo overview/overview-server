@@ -4,8 +4,7 @@ import scala.concurrent.duration.DurationInt
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.TestProbe
-import org.overviewproject.background.filecleanup.DeletedFileRemoverProtocol.FileRemovalComplete
-import org.overviewproject.background.filecleanup.DeletedFileRemoverProtocol.RemoveDeletedFiles
+import org.overviewproject.background.filecleanup.DeletedFileCleanerProtocol._
 import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol.RemoveFiles
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Before
