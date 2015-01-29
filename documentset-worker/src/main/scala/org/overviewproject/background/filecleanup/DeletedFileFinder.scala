@@ -11,7 +11,7 @@ import org.overviewproject.database.SlickSessionProvider
 /**
  * Looks for [[File]]s with `referenceCount == 0`
  */
-trait DeletedFileScanner extends SlickClient {
+trait DeletedFileFinder extends SlickClient {
   
   def deletedFileIds: Future[Iterable[Long]] = db { implicit session =>
     Files.filter(_.referenceCount === 0)
@@ -21,8 +21,8 @@ trait DeletedFileScanner extends SlickClient {
 
 }
 
-object DeletedFileScanner {
-  def apply(): DeletedFileScanner = new DeletedFileScannerImpl
+object DeletedFileFinder {
+  def apply(): DeletedFileFinder = new DeletedFileFinderImpl
   
-  class DeletedFileScannerImpl extends DeletedFileScanner with SlickSessionProvider
+  class DeletedFileFinderImpl extends DeletedFileFinder with SlickSessionProvider
 }

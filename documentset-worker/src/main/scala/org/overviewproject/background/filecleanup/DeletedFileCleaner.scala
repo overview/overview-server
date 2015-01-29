@@ -30,7 +30,7 @@ trait DeletedFileCleaner extends Actor with FSM[State, Data] {
   import DeletedFileCleanerProtocol._
   import FileCleanerProtocol._
 
-  protected val deletedFileScanner: DeletedFileScanner
+  protected val deletedFileScanner: DeletedFileFinder
   protected val fileCleaner: ActorRef
 
   private case class ScanComplete(ids: Iterable[Long])
@@ -97,7 +97,7 @@ object DeletedFileCleaner {
   def apply(fileCleaner: ActorRef) = Props(new DeletedFileCleanerImpl(fileCleaner))
   
   class DeletedFileCleanerImpl(val fileCleaner: ActorRef) extends DeletedFileCleaner {
-    override protected val deletedFileScanner = DeletedFileScanner()
+    override protected val deletedFileScanner = DeletedFileFinder()
   }
   
 }

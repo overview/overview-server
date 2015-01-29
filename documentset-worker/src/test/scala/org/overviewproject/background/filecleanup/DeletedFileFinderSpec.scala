@@ -6,12 +6,12 @@ import org.overviewproject.database.Slick.simple._
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 
-class DeletedFileScannerSpec extends SlickSpecification {
+class DeletedFileFinderSpec extends SlickSpecification {
 
-  "DeletedFileScanner" should {
+  "DeletedFileFinder" should {
     
     "find deleted files" in new DeletedFilesScope {
-      val fileIds = await(deletedFileScanner.deletedFileIds)
+      val fileIds = await(deletedFileFinder.deletedFileIds)
       
       fileIds must containTheSameElementsAs(deletedFiles.map(_.id))
     }
@@ -24,8 +24,8 @@ class DeletedFileScannerSpec extends SlickSpecification {
     val numberOfFiles = 10
     val existingFiles = Seq.fill(numberOfFiles)(factory.file(referenceCount = 1))
     
-    val deletedFileScanner = new TestDeletedFileScanner
+    val deletedFileFinder = new TestDeletedFileFinder
   }
   
-  class TestDeletedFileScanner(implicit val session: Session) extends DeletedFileScanner with SlickClientInSession
+  class TestDeletedFileFinder(implicit val session: Session) extends DeletedFileFinder with SlickClientInSession
 }
