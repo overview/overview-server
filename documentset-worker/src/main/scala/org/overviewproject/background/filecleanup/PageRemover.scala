@@ -7,19 +7,27 @@ import org.overviewproject.database.SlickClient
 import org.overviewproject.models.tables.Pages
 import org.overviewproject.database.Slick.simple._
 
-
-/** 
+/**
  *  Delete pages and the data they refer to
  */
 trait PageRemover extends SlickClient {
-  def deleteFilePages(fileId: Long): Future[Unit] = db { implicit session =>
-
-    val pageLocationQuery = Pages.filter(_.fileId === fileId)
-    val pageLocations = pageLocationQuery.map(_.dataLocation).list.flatten
-
-    blobStorage.deleteMany(pageLocations)
+  def deleteFilePages(fileId: Long): Future[Unit] = 
+    for {
+      d <- deletePageData(fileId)
+      p <- deletePages(fileId)
+    } yield ()
     
-    pageLocationQuery.delete
+  private def pageQuery(fileId: Long) = Pages.filter(_.fileId === fileId)
+
+  private def deletePageData(fileId: Long): Future[Unit] =
+    findDataLocations(fileId).flatMap(blobStorage.deleteMany)
+
+  private def findDataLocations(fileId: Long): Future[List[String]] = db { implicit session =>
+    pageQuery(fileId).map(_.dataLocation).list.flatten
+  }
+  
+  def deletePages(fileId: Long): Future[Unit] = db { implicit session =>
+    pageQuery(fileId).delete  
   }
 
   protected val blobStorage: BlobStorage
