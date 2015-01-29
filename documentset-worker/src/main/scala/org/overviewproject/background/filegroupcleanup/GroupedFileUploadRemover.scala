@@ -8,15 +8,17 @@ import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.GroupedFileUploads
 
 trait GroupedFileUploadRemover extends SlickClient {
-  
-  def removeUploadsFromFileGroup(fileGroupId: Long): Future[Unit]  = db { implicit session =>
-    val uploadQuery = GroupedFileUploads.filter(_.fileGroupId === fileGroupId)
-    val contentOids = uploadQuery.map(_.contentsOid).list
 
-    val contentLocations = contentOids.map(coid => s"pglo:$coid")
+  def removeUploadsFromFileGroup(fileGroupId: Long): Future[Unit] =
+    findContentOids(fileGroupId).flatMap { oids =>
+      val contentLocations = oids.map(oid => s"pglo:$oid")
+      blobStorage.deleteMany(contentLocations)
+    }
 
-    blobStorage.deleteMany(contentLocations)
+  private def uploadQuery(fileGroupId: Long) = GroupedFileUploads.filter(_.fileGroupId === fileGroupId)
+
+  private def findContentOids(fileGroupId: Long): Future[List[Long]] = db { implicit session =>
+    uploadQuery(fileGroupId).map(_.contentsOid).list
   }
-
   protected val blobStorage: BlobStorage
 }
