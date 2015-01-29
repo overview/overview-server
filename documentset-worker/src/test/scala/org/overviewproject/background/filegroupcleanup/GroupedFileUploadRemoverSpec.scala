@@ -2,8 +2,9 @@ package org.overviewproject.background.filegroupcleanup
 
 import scala.concurrent.{ Await, Promise, TimeoutException }
 import scala.concurrent.duration._
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.blobstorage.BlobStorage
+import org.overviewproject.database.Slick.simple._
+import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
@@ -31,8 +32,11 @@ class GroupedFileUploadRemoverSpec extends SlickSpecification with Mockito with 
       r.isCompleted must beTrue
     }
 
-    "delete GroupedFileUpload" in {
-      todo
+    "delete GroupedFileUpload" in new GroupedFileUploadScope {
+      deleteMany.success(())
+      await(remover.removeUploadsFromFileGroup(fileGroup.id))
+      
+      GroupedFileUploads.firstOption must beNone
     }
   }
 
