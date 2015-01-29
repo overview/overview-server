@@ -6,12 +6,18 @@ object FileGroupRemovalRequestQueueProtocol {
   case class RemoveFileGroup(fileGroupId: Long)
 }
 
+
+/**
+ * Queue for [[FileGroup]] removal requests. When one request is complete, the next one is sent.
+ * 
+ * No checks for duplicate requests are made
+ */
 trait FileGroupRemovalRequestQueue extends Actor {
   import FileGroupRemovalRequestQueueProtocol._
   import FileGroupCleanerProtocol._
 
   import scala.collection.mutable.Queue
-  protected val requests: Queue[Long] = Queue[Long]()
+  protected val requests: Queue[Long] = Queue[Long]() // The first element in the queue is in progress
 
   override def receive = {
     case RemoveFileGroup(fileGroupId) => {
