@@ -11,7 +11,7 @@ import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
 import org.overviewproject.util.Logger
-import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalQueue }
+import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -66,7 +66,7 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
   // File removal background worker      
   private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner")
   private val deletedFileRemover = createMonitoredActor(DeletedFileCleaner(fileCleaner), "DeletedFileCleaner")
-  private val fileRemovalQueue = createMonitoredActor(FileRemovalQueue(deletedFileRemover), fileRemovalQueueName)
+  private val fileRemovalQueue = createMonitoredActor(FileRemovalRequestQueue(deletedFileRemover), fileRemovalQueueName)
 
   private val connectionMonitor = createMonitoredActor(ApolloMessageQueueConnection(), "MessageQueueConnection")
   // Start as many job handlers as you need

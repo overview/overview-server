@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import org.overviewproject.util.Logger
 import FileGroupTaskWorkerFSM._
 import akka.actor.Status.Failure
-import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
+import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter

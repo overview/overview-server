@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task
 import akka.actor._
 import akka.testkit._
 import scala.concurrent.duration._
-import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
+import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.test.{ ActorSystemContext, ParameterStore, ForwardingActor }
 import org.specs2.mutable.Specification

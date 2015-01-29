@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{ Failure, Success }
 
-import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
+import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.jobhandler.JobProtocol._

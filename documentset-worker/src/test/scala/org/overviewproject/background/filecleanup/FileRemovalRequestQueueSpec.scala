@@ -5,16 +5,16 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.TestProbe
 import org.overviewproject.background.filecleanup.DeletedFileCleanerProtocol._
-import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol.RemoveFiles
+import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol.RemoveFiles
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 
 
-class FileRemovalQueueSpec extends Specification with NoTimeConversions {
+class FileRemovalRequestQueueSpec extends Specification with NoTimeConversions {
 
-  "FileRemovalQueue" should {
+  "FileRemovalRequestQueue" should {
 
     "send a request on startup" in new QueueScope {
       fileRemover.expectMsg(RemoveDeletedFiles)
@@ -49,8 +49,8 @@ class FileRemovalQueueSpec extends Specification with NoTimeConversions {
 
     override def before = {
       fileRemover = TestProbe()
-      fileRemovalQueue = system.actorOf(Props(new TestFileRemovalQueue(fileRemover.ref)))
+      fileRemovalQueue = system.actorOf(Props(new TestFileRemovalRequestQueue(fileRemover.ref)))
     }
   }
-  class TestFileRemovalQueue(val fileRemover: ActorRef) extends FileRemovalQueue
+  class TestFileRemovalRequestQueue(val fileRemover: ActorRef) extends FileRemovalRequestQueue
 }

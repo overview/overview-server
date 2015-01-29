@@ -5,16 +5,16 @@ import akka.actor.ActorRef
 import akka.actor.FSM
 
 
-import FileRemovalQueueFSM._
+import FileRemovalRequestQueueFSM._
 import akka.actor.Props
 
 
-object FileRemovalQueueProtocol {
+object FileRemovalRequestQueueProtocol {
   case object RemoveFiles  
 }
 
 
-object FileRemovalQueueFSM {
+object FileRemovalRequestQueueFSM {
   sealed trait State
   case object Working extends State
   case object Idle extends State
@@ -24,8 +24,8 @@ object FileRemovalQueueFSM {
 }
 
 
-trait FileRemovalQueue extends Actor with FSM[State, Data] {
-  import FileRemovalQueueProtocol._
+trait FileRemovalRequestQueue extends Actor with FSM[State, Data] {
+  import FileRemovalRequestQueueProtocol._
   import DeletedFileCleanerProtocol._
   
   protected val fileRemover: ActorRef
@@ -52,9 +52,9 @@ trait FileRemovalQueue extends Actor with FSM[State, Data] {
   
 }
 
-object FileRemovalQueue {
+object FileRemovalRequestQueue {
   def apply(fileRemover: ActorRef) = Props(new FileRemovalQueueImpl(fileRemover))
   
-  class FileRemovalQueueImpl(val fileRemover: ActorRef) extends FileRemovalQueue 
+  class FileRemovalQueueImpl(val fileRemover: ActorRef) extends FileRemovalRequestQueue 
 
 }

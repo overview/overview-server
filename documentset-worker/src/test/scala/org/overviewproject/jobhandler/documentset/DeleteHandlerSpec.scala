@@ -10,7 +10,7 @@ import org.specs2.time.NoTimeConversions
 import scala.concurrent.duration._
 import scala.concurrent.Promise
 
-import org.overviewproject.background.filecleanup.FileRemovalQueueProtocol._
+import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
