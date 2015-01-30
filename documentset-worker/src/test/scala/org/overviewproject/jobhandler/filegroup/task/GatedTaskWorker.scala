@@ -14,7 +14,7 @@ object GatedTaskWorkerProtocol {
 class GatedTaskWorker(override protected val jobQueuePath: String, 
     override protected val progressReporterPath: String, 
     override protected val fileRemovalQueuePath: String,
-    override protected val fileGroupRemovalQueuePath: String,
+    fileGroupRemovalQueuePath: String,
     cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
 
   import GatedTaskWorkerProtocol._
@@ -31,7 +31,8 @@ class GatedTaskWorker(override protected val jobQueuePath: String,
     override def cancel: Unit = cancelFn.store(())
   }
   
-
+  override protected val fileGroupRemovalQueueS = context.actorSelection(fileGroupRemovalQueuePath)
+  
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     new GatedTask(taskGate.future)
 
