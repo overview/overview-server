@@ -8,7 +8,7 @@ import scala.concurrent.Promise
 
 class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
                               override protected val progressReporterPath: String,
-                              override protected val fileRemovalQueuePath: String,
+                              fileRemovalQueuePath: String,
                               fileGroupRemovalQueuePath: String, 
                               outputFileId: Long) extends FileGroupTaskWorker {
 
@@ -24,7 +24,9 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
     }
   }
 
-  override protected val fileGroupRemovalQueueS = context.actorSelection(fileGroupRemovalQueuePath)
+  override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
+  override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
+  
   
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     StepInSequence(1, CreatePagesProcessComplete(documentSetId, uploadedFileId, Some(outputFileId)))

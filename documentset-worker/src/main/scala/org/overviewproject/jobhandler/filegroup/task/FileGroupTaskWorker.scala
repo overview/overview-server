@@ -63,8 +63,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   protected def jobQueuePath: String
   protected def progressReporterPath: String
-  protected def fileRemovalQueuePath: String
-  protected val fileGroupRemovalQueueS: ActorSelection
+  protected val fileRemovalQueue: ActorSelection
+  protected val fileGroupRemovalQueue: ActorSelection
   
   private val NumberOfExternalActors = 2
   private val JobQueueId: String = "Job Queue"
@@ -74,9 +74,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
   private val progressReporterSelection = system.actorSelection(progressReporterPath)
-  private lazy val fileRemovalQueue = system.actorSelection(fileRemovalQueuePath)
-
-  
 
   private case class DeleteFileUploadJobComplete(documentSetId: Long)
 
@@ -145,7 +142,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(DeleteFileUploadComplete(documentSetId, fileGroupId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
       fileRemovalQueue ! RemoveFiles
-      fileGroupRemovalQueueS ! RemoveFileGroup(fileGroupId)
+      fileGroupRemovalQueue ! RemoveFileGroup(fileGroupId)
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
@@ -210,9 +207,9 @@ object FileGroupTaskWorker {
 
     override protected def jobQueuePath: String = jobQueueActorPath
     override protected def progressReporterPath: String = progressReporterActorPath
-    override protected def fileRemovalQueuePath: String = fileRemovalQueueActorPath
-
-    override protected val fileGroupRemovalQueueS = context.actorSelection(fileGroupRemovalQueueActorPath)
+    
+    override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
+    override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
     
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
       new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
