@@ -7,7 +7,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 
 class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
-                              override protected val progressReporterPath: String,
+                              progressReporterPath: String,
                               fileRemovalQueuePath: String,
                               fileGroupRemovalQueuePath: String, 
                               outputFileId: Long) extends FileGroupTaskWorker {
@@ -24,6 +24,7 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
     }
   }
 
+  override protected val progressReporterSelection = context.actorSelection(progressReporterPath)
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
   

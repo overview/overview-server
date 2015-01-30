@@ -62,7 +62,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   import FileGroupTaskWorkerProtocol._
 
   protected def jobQueuePath: String
-  protected def progressReporterPath: String
+  protected val progressReporterSelection: ActorSelection
   protected val fileRemovalQueue: ActorSelection
   protected val fileGroupRemovalQueue: ActorSelection
   
@@ -73,7 +73,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private val RetryInterval: FiniteDuration = 1 second
 
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
-  private val progressReporterSelection = system.actorSelection(progressReporterPath)
 
   private case class DeleteFileUploadJobComplete(documentSetId: Long)
 
@@ -82,7 +81,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
                                          progressReporter: ActorRef): FileGroupTaskStep
   protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep
 
-  lookForExternalActors
+  override def preStart = lookForExternalActors
 
   startWith(LookingForExternalActors, ExternalActorsFound(None, None))
 
@@ -206,8 +205,8 @@ object FileGroupTaskWorker {
     with CreatePagesFromPdfWithStorage with CreateDocumentsWithStorage {
 
     override protected def jobQueuePath: String = jobQueueActorPath
-    override protected def progressReporterPath: String = progressReporterActorPath
-    
+
+    override protected val progressReporterSelection = context.actorSelection(progressReporterActorPath)
     override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
     override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
     
