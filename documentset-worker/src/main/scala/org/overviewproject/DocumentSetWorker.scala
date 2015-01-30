@@ -12,6 +12,7 @@ import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
 import org.overviewproject.util.Logger
 import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
+import org.overviewproject.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -62,6 +63,16 @@ object DocumentSetWorker extends App {
  */
 class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fileRemovalQueueName: String) extends Actor {
   import ActorCareTakerProtocol._
+
+  // FileGroup removal background worker
+  private val fileGroupCleaner = createMonitoredActor(FileGroupCleaner(), "FileGroupCleaner")
+  private val fileGroupRemovalRequestQueue = createMonitoredActor(FileGroupRemovalRequestQueue(fileGroupCleaner),
+    "FileGroupRemovalRequestQueue")
+
+  // deletedFileGroupRemover is not monitored, because it requests removals for
+  // deleted FileGroups on startup, and then terminates.
+  private val deletedFileGroupRemover =
+    context.actorOf(DeletedFileGroupCleaner(fileGroupRemovalRequestQueue), "DeletedFileGroupRemover")
 
   // File removal background worker      
   private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner")
