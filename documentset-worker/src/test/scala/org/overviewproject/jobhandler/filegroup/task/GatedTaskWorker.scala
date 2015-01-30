@@ -11,7 +11,7 @@ object GatedTaskWorkerProtocol {
   case object CompleteTaskStep
 }
 
-class GatedTaskWorker(override protected val jobQueuePath: String, 
+class GatedTaskWorker(jobQueuePath: String, 
     progressReporterPath: String, 
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String,
@@ -31,6 +31,7 @@ class GatedTaskWorker(override protected val jobQueuePath: String,
     override def cancel: Unit = cancelFn.store(())
   }
   
+  override protected val jobQueueSelection = context.actorSelection(jobQueuePath)
   override protected val progressReporterSelection = context.actorSelection(progressReporterPath)
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
