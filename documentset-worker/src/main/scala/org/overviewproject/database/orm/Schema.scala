@@ -21,6 +21,7 @@ object Schema extends org.squeryl.Schema {
   val documentSets = table[DocumentSet]
   val groupedProcessedFiles = table[GroupedProcessedFile]
   val fileTexts = table[FileText]
+  val fileGroups = table[FileGroup]
   val groupedFileUploads = table[GroupedFileUpload]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSetUsers = table[DocumentSetUser]

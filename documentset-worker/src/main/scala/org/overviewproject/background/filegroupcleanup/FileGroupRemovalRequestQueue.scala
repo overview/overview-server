@@ -29,14 +29,14 @@ trait FileGroupRemovalRequestQueue extends Actor {
     case CleanComplete(fileGroupId) => {
       requests.dequeue
 
-      Logger.info(s"[FileGroupRemovalRequestQueue] Removal complete $fileGroupId. Queue size ${requests.size}")
+      Logger.info(s"[FileGroupRemovalRequestQueue] ($fileGroupId) Removal complete. Queue size ${requests.size}")
       submitNextRequest
     }
   }
 
   private def readyToSubmitRequest: Boolean = requests.size == 1
   private def submitNextRequest: Unit = requests.headOption.map{ fileGroupId =>
-    Logger.info(s"[FileGroupRemovalRequestQueue] Removing file group $fileGroupId")
+    Logger.info(s"[FileGroupRemovalRequestQueue] ($fileGroupId) Removing file group")
     fileGroupCleaner ! Clean(fileGroupId)
   }
   
