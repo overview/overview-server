@@ -14,6 +14,7 @@ object GatedTaskWorkerProtocol {
 class GatedTaskWorker(override protected val jobQueuePath: String, 
     override protected val progressReporterPath: String, 
     override protected val fileRemovalQueuePath: String,
+    override protected val fileGroupRemovalQueuePath: String,
     cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
 
   import GatedTaskWorkerProtocol._

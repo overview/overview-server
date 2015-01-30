@@ -96,7 +96,8 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
     FileGroupTaskWorkerStartup(
       fileGroupJobQueue.path.toString,
       progressReporter.path.toString,
-      fileRemovalQueue.path.toString), "TaskWorkerSupervisor")
+      fileRemovalQueue.path.toString,
+      fileGroupRemovalRequestQueue.path.toString), "TaskWorkerSupervisor")
 
   /**
    *   A more optimistic approach would be to simply restart the actor. At the moment, we don't know

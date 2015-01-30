@@ -13,6 +13,7 @@ import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.TempFileDeleter
+import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol.RemoveFileGroup
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -63,6 +64,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected def jobQueuePath: String
   protected def progressReporterPath: String
   protected def fileRemovalQueuePath: String
+  protected def fileGroupRemovalQueuePath: String
 
   private val NumberOfExternalActors = 2
   private val JobQueueId: String = "Job Queue"
@@ -73,6 +75,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
   private val progressReporterSelection = system.actorSelection(progressReporterPath)
   private lazy val fileRemovalQueue = system.actorSelection(fileRemovalQueuePath)  
+  protected lazy val fileGroupRemovalQueue = system.actorSelection(fileGroupRemovalQueuePath)
   
   private case class DeleteFileUploadJobComplete(documentSetId: Long)
 
@@ -141,6 +144,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(DeleteFileUploadComplete(documentSetId, fileGroupId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
       fileRemovalQueue ! RemoveFiles
+      fileGroupRemovalQueue ! RemoveFileGroup(fileGroupId)
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
@@ -186,11 +190,15 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 }
 
 object FileGroupTaskWorker {
-  def apply(jobQueueActorPath: String, progressReporterActorPath: String, fileRemovalQueueActorPath: String): Props =
+  def apply(jobQueueActorPath: String,
+      progressReporterActorPath: String, 
+      fileRemovalQueueActorPath: String,
+      fileGroupRemovalQueueActorPath: String): Props =
     Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage with CreateDocumentsWithStorage {
       override protected def jobQueuePath: String = jobQueueActorPath
       override protected def progressReporterPath: String = progressReporterActorPath
       override protected def fileRemovalQueuePath: String = fileRemovalQueueActorPath
+      override protected def fileGroupRemovalQueuePath: String = fileGroupRemovalQueueActorPath
       
       override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
         new DeleteFileUploadTaskStep(documentSetId, fileGroupId,

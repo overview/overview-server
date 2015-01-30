@@ -7,14 +7,15 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 
 class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
-                              override protected val progressReporterPath: String, 
+                              override protected val progressReporterPath: String,
                               override protected val fileRemovalQueuePath: String,
+                              override protected val fileGroupRemovalQueuePath: String, 
                               outputFileId: Long) extends FileGroupTaskWorker {
 
   val executeFn = ParameterStore[Unit]
   val deleteFileUploadJobFn = ParameterStore[(Long, Long)]
   val deleteFileUploadPromise = Promise[Unit]
-  
+
   private case class StepInSequence(n: Int, finalStep: FileGroupTaskStep) extends FileGroupTaskStep {
     def execute: FileGroupTaskStep = {
       executeFn.store(())
@@ -30,12 +31,20 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String,
                                                   progressReporter: ActorRef): FileGroupTaskStep =
     StepInSequence(1, CreateDocumentsProcessComplete(documentSetId))
 
-  override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep = 
+  override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
     StepInSequence(1, DeleteFileUploadComplete(documentSetId, fileGroupId))
 
 }
 
 object TestFileGroupTaskWorker {
-  def apply(jobQueuePath: String, progressReporterPath: String, fileRemovalQueuePath: String, outputFileId: Long): Props =
-    Props(new TestFileGroupTaskWorker(jobQueuePath, progressReporterPath, fileRemovalQueuePath, outputFileId))
+  def apply(
+    jobQueuePath: String, 
+    progressReporterPath: String, 
+    fileRemovalQueuePath: String, 
+    fileGroupRemovalQueuePath: String, outputFileId: Long): Props =
+    Props(new TestFileGroupTaskWorker(
+        jobQueuePath, 
+        progressReporterPath, 
+        fileRemovalQueuePath, 
+        fileGroupRemovalQueuePath, outputFileId))
 }

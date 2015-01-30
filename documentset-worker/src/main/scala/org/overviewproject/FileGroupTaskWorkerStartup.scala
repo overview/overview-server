@@ -9,23 +9,33 @@ import org.overviewproject.jobhandler.filegroup.task.TempDirectory
 
 object FileGroupTaskWorkerStartup {
 
-  def apply(fileGroupJobQueuePath: String, progressReporterPath: String, fileRemovalQueuePath: String)(implicit context: ActorContext): Props = {
+  def apply(
+    fileGroupJobQueuePath: String,
+    progressReporterPath: String,
+    fileRemovalQueuePath: String,
+    fileGroupRemovalQueuePath: String)(implicit context: ActorContext): Props = {
     TempDirectory.create
-    TaskWorkerSupervisor(fileGroupJobQueuePath, progressReporterPath, fileRemovalQueuePath)
+    TaskWorkerSupervisor(fileGroupJobQueuePath, progressReporterPath, fileRemovalQueuePath, fileGroupRemovalQueuePath)
   }
 
 }
 
-class TaskWorkerSupervisor(jobQueuePath: String, progressReporterPath: String, fileRemovalQueuePath: String) extends Actor {
+class TaskWorkerSupervisor(
+  jobQueuePath: String,
+  progressReporterPath: String,
+  fileRemovalQueuePath: String,
+  fileGroupRemovalQueuePath: String) extends Actor {
 
   private val NumberOfTaskWorkers = 2
   private val taskWorkers: Seq[ActorRef] = Seq.tabulate(NumberOfTaskWorkers)(n =>
-    context.actorOf(FileGroupTaskWorker(jobQueuePath, progressReporterPath, fileRemovalQueuePath), workerName(n)))
+    context.actorOf(
+      FileGroupTaskWorker(jobQueuePath, progressReporterPath, fileRemovalQueuePath, fileGroupRemovalQueuePath),
+      workerName(n)))
 
   private def workerName(n: Int): String = s"TaskWorker-$n"
 
-  override def preStart = taskWorkers.foreach(context.watch) 
-    
+  override def preStart = taskWorkers.foreach(context.watch)
+
   // If an error escapes out of the workers, it is sufficiently serious 
   // that the JVM should be shut down
   override def supervisorStrategy = OneForOneStrategy(-1, Duration.Inf) {
@@ -39,6 +49,11 @@ class TaskWorkerSupervisor(jobQueuePath: String, progressReporterPath: String, f
 }
 
 object TaskWorkerSupervisor {
-  def apply(jobQueuePath: String, progressReporterPath: String, fileRemovalQueuePath: String): Props =
-    Props(new TaskWorkerSupervisor(jobQueuePath, progressReporterPath, fileRemovalQueuePath))
+  def apply(
+    jobQueuePath: String,
+    progressReporterPath: String,
+    fileRemovalQueuePath: String,
+    fileGroupRemovalQueuePath: String): Props =
+      
+    Props(new TaskWorkerSupervisor(jobQueuePath, progressReporterPath, fileRemovalQueuePath, fileGroupRemovalQueuePath))
 }
