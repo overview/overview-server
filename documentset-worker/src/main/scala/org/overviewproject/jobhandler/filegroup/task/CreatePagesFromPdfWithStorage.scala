@@ -41,12 +41,6 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
         }
       }
 
-      def deleteUploadedFile(upload: GroupedFileUpload): Unit = Database.inTransaction {
-        import org.overviewproject.postgres.SquerylEntrypoint._
-
-        GroupedFileUploadStore.delete(upload.id)
-      } 
-      
       def savePages(fileId: Long, pages: Iterable[Tuple2[Array[Byte],String]]): Unit = {
         import scala.concurrent.ExecutionContext.Implicits.global
 

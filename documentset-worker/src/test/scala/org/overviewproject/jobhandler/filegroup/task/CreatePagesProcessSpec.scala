@@ -20,14 +20,6 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       there was one(createPagesProcess.createFile).apply(documentSetId, upload)
     }
 
-    "delete the groupedFileUpload" in new CreatePagesContext {
-      val createPagesProcess = new TestCreatePagesProcess(documentSetId, upload, pdfDocument, file)
-      
-      val firstStep = createPagesProcess.start(documentSetId, fileGroupId, uploadedFileId)
-      firstStep.execute
-      
-      there was one(createPagesProcess.storage).deleteUploadedFile(upload)
-    }
     
     "then create pdf document with pages" in new CreatePagesContext {
       val createPagesProcess = new TestCreatePagesProcess(documentSetId, upload, pdfDocument, file)

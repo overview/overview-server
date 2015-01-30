@@ -33,7 +33,6 @@ trait CreatePagesProcess {
     override def executeTaskStep: FileGroupTaskStep = {
       val upload = storage.loadUploadedFile(taskInformation.uploadedFileId).get // throws if not found.
       val file = createFile(taskInformation.documentSetId, upload)
-      storage.deleteUploadedFile(upload)
 
       LoadPdf(taskInformation, file)
     }
@@ -98,7 +97,6 @@ trait CreatePagesProcess {
   protected val storage: Storage
   protected trait Storage {
     def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
-    def deleteUploadedFile(upload: GroupedFileUpload): Unit
 
     /** Saves pages permanently.
       *
