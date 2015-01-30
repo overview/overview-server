@@ -25,7 +25,7 @@ trait FileGroupCleaner extends Actor {
       .map(_ => CleanComplete(fileGroupId))
       .recover {
     case t: Throwable =>
-      Logger.error(s"FileGroup removal failed for FileGroup $fileGroupId")
+      Logger.error(s"FileGroup removal failed for FileGroup $fileGroupId", t)
       CleanComplete(fileGroupId)
   }
   
