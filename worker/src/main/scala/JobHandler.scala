@@ -116,7 +116,6 @@ object JobHandler {
       Database.inTransaction {
         deleteJobCleanupData(j)
         j.delete
-        deleteFileGroupData(j)
       }
 
     } catch {
@@ -212,7 +211,6 @@ object JobHandler {
       SQL("DELETE FROM document_set_creation_job WHERE id = {jobId}").on('jobId -> job.id).executeUpdate()
 
       deleteJobCleanupData(job)
-      deleteFileGroupData(job)
     }
   }
 
@@ -238,22 +236,6 @@ object JobHandler {
     import org.overviewproject.postgres.SquerylEntrypoint._
 
     Schema.documentSetCreationJobNodes.deleteWhere(_.documentSetCreationJobId === job.id)
-  }
-
-  private def deleteFileGroupData(job: PersistentDocumentSetCreationJob): Unit = {
-    import org.overviewproject.persistence.orm.Schema._
-
-    val tempDocumentSetFileStore = BaseStore(tempDocumentSetFiles)
-
-    job.fileGroupId.map { fileGroupId =>
-      tempDocumentSetFileStore.delete(TempDocumentSetFileFinder.byDocumentSet(job.documentSetId).toQuery)
-      GroupedFileUploadStore.delete(GroupedFileUploadFinder.byFileGroup(fileGroupId).toQuery)
-
-      val session = new scala.slick.jdbc.UnmanagedSession(Database.currentConnection)
-      import org.overviewproject.database.Slick.simple._
-      import org.overviewproject.models.tables.FileGroups
-      FileGroups.filter(_.id === fileGroupId).delete(session)
-    }
   }
 
   private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = Database.inTransaction {
