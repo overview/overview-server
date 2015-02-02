@@ -63,6 +63,11 @@ define [
         @$('.collapse:eq(1)').click()
         expect(@subject.$el).not.to.have.class('expanded')
 
+      it 'should collapse when calling hide()', ->
+        @$('.expand').click()
+        @subject.hide()
+        expect(@subject.$el).not.to.have.class('expanded')
+
       it 'should set the current preferences', ->
         expect(@$('[name=text][value=false]')).to.be.checked
         expect(@$('[name=wrap]')).to.be.checked

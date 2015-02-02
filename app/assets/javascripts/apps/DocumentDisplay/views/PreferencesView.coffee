@@ -102,6 +102,9 @@ define [
       e.preventDefault()
       @$el.removeClass('expanded')
 
+    hide: (e) ->
+      @$el.removeClass('expanded')
+
     _onChangeText: ->
       @preferences.set(text: @ui.text.filter(':checked').val() == 'true')
 

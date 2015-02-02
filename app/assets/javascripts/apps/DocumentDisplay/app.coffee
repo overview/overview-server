@@ -57,6 +57,7 @@ define [
     # * null
     setDocument: (json) ->
       return if json?.id == @document?.id
+      @preferencesView.hide()
       @document = json
       @render()
 
