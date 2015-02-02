@@ -53,6 +53,7 @@ define [
 
       html = @templates[type]?(t: t, preferences: @preferences, url: @urlProperties) || ''
       @$el.html(html)
+      @$el.attr('data-document-type', type)
 
       @_renderTweet() if type == 'twitter'
 

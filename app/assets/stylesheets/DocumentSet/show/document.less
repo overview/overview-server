@@ -4,7 +4,11 @@
 
 // The preview-a-single-document view
 #tree-app-document-cursor article {
-  iframe {
+  .document[data-document-type=twitter] {
+    overflow: auto;
+  }
+
+  iframe:not(.twitter-tweet) {
     position: absolute;
     top: 0;
     left: 0;
@@ -154,7 +158,7 @@
     legend, .sidebar { max-height: 3em; } // or less
   }
 
-  pre, iframe:not(.twitter-tweet) {
+  pre {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
