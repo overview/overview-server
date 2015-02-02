@@ -81,13 +81,21 @@ object Main {
     * @return The new location.
     */
   private def copyBlob(bucket: BlobBucketId, location1: String, nBytes: Long): Future[String] = {
-    System.out.println(s"Copying blob at  ${location1}...")
+    System.out.println(s"Copying blob at ${location1} (${nBytes} bytes) ...")
 
     val tempFile = new TempFile
+    var realNBytes = 0L
 
     val enumerator = await(BlobStorage.get(location1))
-    await(enumerator.run(Iteratee.foreach(tempFile.outputStream.write)))
+    await(enumerator.run(Iteratee.foreach { bytes: Array[Byte] =>
+      tempFile.outputStream.write(bytes)
+      realNBytes += bytes.length
+    }))
     tempFile.outputStream.close
+
+    if (realNBytes != nBytes) {
+      throw new Exception(s"Wrong nBytes. Read ${realNBytes}, expected ${nBytes}")
+    }
 
     BlobStorage.create(bucket, tempFile.inputStream, nBytes)
   }
