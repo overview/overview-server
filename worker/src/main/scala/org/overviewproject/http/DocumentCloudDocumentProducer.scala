@@ -30,6 +30,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private val logger: Logger = Logger.forClass(this.getClass)
 
   private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
+  private val DocumentCloudUrl = Configuration.getString("documentcloud_url")
   private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
   private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done
   private val RequestQueueName = "requestqueue"
@@ -73,7 +74,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       val document = Document(
         ids.next,
         documentSetId,
-        Some(doc.url),
+        Some(s"${DocumentCloudUrl}/documents/${doc.id}"),
         doc.id,
         doc.title,
         doc.pageNumber,
