@@ -14,7 +14,7 @@ import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.OverviewDatabase
-import org.overviewproject.models.{FileGroup,GroupedFileUpload}
+import org.overviewproject.models.{ApiToken,FileGroup,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
 import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,DocumentSetUser}
 import org.overviewproject.tree.Ownership
@@ -110,7 +110,7 @@ trait MassUploadController extends ApiController {
   def startClustering = ApiAuthorizedAction(anyUser).async { request =>
     MassUploadControllerForm().bindFromRequest()(request).fold(
       e => Future(BadRequest),
-      startClusteringFileGroupWithOptions(request.apiToken.createdBy, request.apiToken.token, _)
+      startClusteringFileGroupWithOptions(request.apiToken, _)
     )
   }
 
@@ -135,16 +135,17 @@ trait MassUploadController extends ApiController {
       })
   }
 
-  private def startClusteringFileGroupWithOptions(userEmail: String, apiToken: String,
+  private def startClusteringFileGroupWithOptions(apiToken: ApiToken,
                                                   options: (String, String, Boolean, String, String)): Future[Result] = {
+    val userEmail: String = apiToken.createdBy
+    val documentSetId: Long = apiToken.documentSetId
     val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
 
-    fileGroupBackend.find(userEmail, Some(apiToken)).flatMap(_ match {
+    fileGroupBackend.find(userEmail, Some(apiToken.token)).flatMap(_ match {
       case Some(fileGroup) => {
         val job: DocumentSetCreationJob = /*OverviewDatabase.inTransaction*/ {
-          val documentSet = storage.createDocumentSet(userEmail, name)
           storage.createMassUploadDocumentSetCreationJob(
-            documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
+            documentSetId, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
         }
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
@@ -166,9 +167,6 @@ object MassUploadController extends MassUploadController {
   override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
 
   trait Storage {
-    /** @returns a newly created DocumentSet */
-    def createDocumentSet(userEmail: String, title: String): DocumentSet
-
     /** @returns a newly created DocumentSetCreationJob */
     def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, splitDocuments: Boolean,
                                                suppliedStopWords: String, importantWords: String): DocumentSetCreationJob
@@ -180,30 +178,25 @@ object MassUploadController extends MassUploadController {
   }
 
   object DatabaseStorage extends Storage {
-    import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
-    import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
-
-    override def createDocumentSet(userEmail: String, title: String): DocumentSet = {
-      val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title = title))
-      DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, userEmail, Ownership.Owner))
-
-      documentSet
-    }
-
     override def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long,
                                                         lang: String, splitDocuments: Boolean,
                                                         suppliedStopWords: String,
                                                         importantWords: String): DocumentSetCreationJob = {
-      DocumentSetCreationJobStore.insertOrUpdate(
-        DocumentSetCreationJob(
-          documentSetId = documentSetId,
-          fileGroupId = Some(fileGroupId),
-          lang = lang,
-          splitDocuments = splitDocuments,
-          suppliedStopWords = suppliedStopWords,
-          importantWords = importantWords,
-          state = FilesUploaded,
-          jobType = FileUpload))
+      import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
+      import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
+
+      OverviewDatabase.inTransaction {
+        DocumentSetCreationJobStore.insertOrUpdate(
+          DocumentSetCreationJob(
+            documentSetId = documentSetId,
+            fileGroupId = Some(fileGroupId),
+            lang = lang,
+            splitDocuments = splitDocuments,
+            suppliedStopWords = suppliedStopWords,
+            importantWords = importantWords,
+            state = FilesUploaded,
+            jobType = FileUpload))
+      }
     }
   }
 

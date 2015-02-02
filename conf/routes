@@ -130,6 +130,7 @@ DELETE /plugins/:id controllers.PluginController.destroy(id: java.util.UUID)
 GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(id: Long)
 
 GET    /api/v1/files         controllers.api.MassUploadController.index()
+POST   /api/v1/files/finish  controllers.api.MassUploadController.startClustering()
 HEAD   /api/v1/files/:guid   controllers.api.MassUploadController.show(guid: java.util.UUID)
 POST   /api/v1/files/:guid   controllers.api.MassUploadController.create(guid: java.util.UUID)
 DELETE /api/v1/files         controllers.api.MassUploadController.cancel()
