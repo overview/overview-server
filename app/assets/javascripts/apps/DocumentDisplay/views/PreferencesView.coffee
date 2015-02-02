@@ -12,7 +12,7 @@ define [
     template: _.template('''
       <div class="compact">
         <a href="#" class="expand">
-          <span class="showing"></span><span class="expand"><%- t('expand') %></span>
+          <span class="showing"></span>
         </a>
       </div>
       <div class="expanded">

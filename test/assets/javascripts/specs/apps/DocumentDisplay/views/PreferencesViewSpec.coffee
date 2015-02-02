@@ -21,7 +21,6 @@ define [
       i18n.reset_messages_namespaced 'views.Document.show.PreferencesView',
         'showing.document': 'showing.document'
         'showing.text': 'showing.text'
-        'expand': 'expand'
         'showing.expanded': 'showing.expanded'
         'collapse.top': 'collapse.top'
         'collapse.bottom': 'collapse.bottom'

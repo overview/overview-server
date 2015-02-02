@@ -87,24 +87,27 @@
 
       a {
         display: block;
-        font-size: .9em;
-        line-height: 1.2 / .9;
-        text-decoration: none;
-      }
-      a:hover span.expand { text-decoration: underline; }
-
-      span.showing {
         border-top-left-radius: @border-radius-small;
-        border-top-right-radius: @border-radius-small;
         overflow: hidden; // for the border
         background-color: @brand-primary;
         color: white;
+        font-size: .9em;
+        line-height: 1.2 / .9;
+        text-decoration: none;
         padding: 0 .5em;
+
+        &:hover {
+          background-color: @brand-primary-muted;
+        }
       }
-      span.expand {
-        .text-muted();
-        padding: 0 .5em;
+
+      span.showing::before {
+        content: "▸ ";
       }
+    }
+
+    &.expanded .compact span.showing::before {
+      content: "▾ ";
     }
 
     .expanded {
