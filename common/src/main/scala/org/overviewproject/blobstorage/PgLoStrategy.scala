@@ -6,20 +6,29 @@ import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future,blocking}
+import scala.concurrent.{ Future, blocking }
 import scala.slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.DB
-import org.overviewproject.postgres.{LO,LargeObject}
+import org.overviewproject.postgres.{ LO, LargeObject }
 
 trait PgLoStrategy extends BlobStorageStrategy {
 
-  /** Size of each Array[Byte] we push.
-    *
-    * Larger causes blocking operations to block longer. Smaller causes more
-    * database connections.
-    */
+  /**
+   * Size of each Array[Byte] we push.
+   *
+   * Larger causes blocking operations to block longer. Smaller causes more
+   * database connections.
+   */
   protected val BufferSize = 4 * 1024 * 1024 // 4MB, chosen at random
+
+  /**
+   * Number of large objects we delete in one go
+   *
+   *  Only needed because Postgres 9.1 cannot handle deletion of more than 1000
+   *  large objects in one transaction
+   */
+  protected val DeleteManyChunkSize = 1000
 
   /** Execute code with a PGConnection. */
   protected def withPgConnection[A](code: PGConnection => A): A
@@ -60,7 +69,7 @@ trait PgLoStrategy extends BlobStorageStrategy {
     //
     // Returns Some(newPosition, bytes) if there are more bytes; otherwise
     // returns None
-    def continue(position: Int): Future[Option[(Int,Array[Byte])]] = {
+    def continue(position: Int): Future[Option[(Int, Array[Byte])]] = {
       Future(withLargeObject(loid) { lo =>
         lo.seek(position)
         val nBytes = lo.read(buffer, 0, BufferSize)
@@ -96,7 +105,8 @@ trait PgLoStrategy extends BlobStorageStrategy {
       import org.overviewproject.database.Slick.simple._
       import scala.slick.jdbc.StaticQuery
 
-      val q = s"""
+      def deleteSome(loids: Seq[Long]): Unit = {
+        val q = s"""
         DO $$$$
         DECLARE
           loids BIGINT[] := ARRAY[${loids.mkString(",")}];
@@ -112,9 +122,13 @@ trait PgLoStrategy extends BlobStorageStrategy {
         END$$$$;
       """
 
-      withSlickSession { session =>
-        StaticQuery.updateNA(q).apply().execute(session)
+        withSlickSession { session =>
+          StaticQuery.updateNA(q).apply().execute(session)
+        }
       }
+
+      val loidGroups = loids.grouped(DeleteManyChunkSize)
+      loidGroups.foreach(deleteSome)
     })
   }
 

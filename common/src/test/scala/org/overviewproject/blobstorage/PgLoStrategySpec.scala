@@ -26,6 +26,7 @@ class PgLoStrategySpec extends SlickSpecification with StrategySpecification {
     // connection, even though it's in a Future.
     object TestStrategy extends PgLoStrategy {
       override protected val BufferSize = 10 // to prove we paginate
+      override protected val DeleteManyChunkSize = 2
       override protected def withPgConnection[A](f: PGConnection => A) = _withPgConnection(f)
       override protected def withSlickSession[A](f: Session => A) = _withSlickSession(f)
     }
@@ -136,6 +137,15 @@ class PgLoStrategySpec extends SlickSpecification with StrategySpecification {
       await(TestStrategy.deleteMany(Seq("pglo:" + loid1, "pglo:" + loid2, "pglo:" + loid3))) must beEqualTo(())
       // largeObjectExists(loid1) must beEqualTo(false)
       largeObjectExists(loid3) must beEqualTo(false) // largeObjectExists() breaks if called twice
+    }
+    
+    "delete many large objects in chunks" in new DeleteManyScope {
+      val loids = Seq.fill(3)(createLargeObject("foo".getBytes("utf-8")))
+      val loLocations = loids.map("pglo:" + _)
+      
+      await(TestStrategy.deleteMany(loLocations))
+      
+      largeObjectExists(loids.last) must beFalse  
     }
   }
 
