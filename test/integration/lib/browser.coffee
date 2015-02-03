@@ -115,6 +115,7 @@ ValidArgs =
   className: null
   contains: null
   tag: null
+  index: null
   visible: true # handled outside argsToXPath()
 
 argsToXPath = (args) ->
@@ -135,6 +136,9 @@ argsToXPath = (args) ->
   for attr in [ 'name', 'value' ]
     if attr of args
       attrs.push("@#{attr}='#{args[attr]}'")
+
+  if 'index' of args
+    attrs.push("position()=#{args.index}")
 
   xpath = "//#{tag}"
   for attr in attrs
