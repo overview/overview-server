@@ -82,7 +82,7 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
     client.admin.indices
       .prepareGetAliases(alias)
       .execute.get
-      .getAliases.keySet.toArray.map(_.toString).toSet
+      .getAliases.keys.toArray.map(_.toString).toSet
   }
 
   private def aliasName(documentSetId: Long): String = "documents_" + documentSetId
