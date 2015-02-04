@@ -151,6 +151,14 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
   "#startClustering" should {
     trait StartClusteringScope extends BaseScope {
+      lazy val request = new ApiAuthorizedRequest(FakeRequest().withJsonBody(formData), apiToken)
+      lazy val documentSetId = {
+        val ret = request.apiToken.documentSetId
+        factory.documentSet(id=ret)
+        ret
+      }
+      lazy val result = controller.startClustering()(request)
+
       val fileGroupName = "This becomes the Document Set Name"
       val lang = "sv"
       val splitDocuments = false
@@ -163,19 +171,13 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
         "supplied_stop_words" -> stopWords,
         "important_words" -> importantWords
       )
-      val documentSetId = 11L
       val job = factory.documentSetCreationJob()
       val fileGroup = factory.fileGroup(id=234L)
-      val documentSet = factory.documentSet(id=documentSetId)
 
       mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
       mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
-      mockStorage.createDocumentSet(any, any) returns documentSet.toDeprecatedDocumentSet
       mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
       mockMessageQueue.startClustering(any, any) returns Future(())
-
-      lazy val request = new ApiAuthorizedRequest(FakeRequest().withJsonBody(formData), apiToken)
-      lazy val result = controller.startClustering()(request)
     }
 
     "return Created" in new StartClusteringScope {
@@ -184,7 +186,6 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
     "create a DocumentSetCreationJob" in new StartClusteringScope {
       status(result)
-      there was one(mockStorage).createDocumentSet("user@example.org", fileGroupName)
       there was one(mockStorage).createMassUploadDocumentSetCreationJob(
         documentSetId, 234L, lang, false, stopWords, importantWords)
     }
@@ -204,7 +205,6 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     "return NotFound if user has no FileGroup in progress" in new StartClusteringScope {
       mockFileGroupBackend.find(any, any) returns Future.successful(None)
       status(result) must beEqualTo(NOT_FOUND)
-      there was no(mockStorage).createDocumentSet(any, any)
     }
   }
 
