@@ -4,7 +4,6 @@ import scala.collection.mutable
 import akka.actor.Actor
 import akka.actor.ActorRef
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import akka.actor.Props
 import org.overviewproject.util.Logger
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._

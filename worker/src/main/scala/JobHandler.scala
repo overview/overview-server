@@ -16,7 +16,7 @@ import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOp
 import org.overviewproject.database.{ DatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob }
 import org.overviewproject.persistence.orm.finders.DocumentSetFinder
-import org.overviewproject.persistence.orm.finders.{ GroupedProcessedFileFinder, GroupedFileUploadFinder }
+import org.overviewproject.persistence.orm.finders.GroupedProcessedFileFinder
 import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
 import org.overviewproject.persistence.orm.finders.TreeFinder
 import org.overviewproject.persistence.orm.stores._
