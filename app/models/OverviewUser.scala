@@ -38,12 +38,6 @@ trait OverviewUser {
   /** @return The same user, with a different email */
   def withEmail(email: String): OverviewUser
 
-  /** @return The same user, as an administrator */
-  def asAdministrator: OverviewUser
-
-  /** @return The same user, as a non-administrator */
-  def asNormalUser: OverviewUser
-
   /** @return True if the user has permission to read/write the DocumentSet */
   def ownsDocumentSet(documentSetId: Long): Boolean
 
@@ -239,14 +233,6 @@ object OverviewUser {
 
     def withEmail(email: String): OverviewUser = {
       new OverviewUserImpl(user.copy(email = email))
-    }
-
-    def asAdministrator: OverviewUser = {
-      new OverviewUserImpl(user.copy(role = UserRole.Administrator))
-    }
-
-    def asNormalUser: OverviewUser = {
-      new OverviewUserImpl(user.copy(role = UserRole.NormalUser))
     }
 
     def canViewDocumentSet(id: Long) = {
