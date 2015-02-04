@@ -25,11 +25,6 @@ object Schema extends org.squeryl.Schema {
   val groupedFileUploads = table[GroupedFileUpload]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSetUsers = table[DocumentSetUser]
-  /*
-   * We don't write to logEntries any more. But we need to delete from it when
-   * we delete a document set, to protect users' privacy.
-   */
-  val logEntries = table[LogEntry]
   val documentTags = table[DocumentTag]
   val tags = table[Tag]
   val nodeDocuments = table[NodeDocument]
