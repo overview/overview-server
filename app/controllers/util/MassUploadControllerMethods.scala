@@ -6,17 +6,8 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
 
-import controllers.auth.{ApiAuthorizedAction,ApiTokenFactory}
-import controllers.auth.Authorities.anyUser
-import controllers.backend.{ FileGroupBackend, GroupedFileUploadBackend }
-import controllers.forms.MassUploadControllerForm
-import controllers.iteratees.GroupedFileUploadIteratee
-import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
-import models.OverviewDatabase
-import org.overviewproject.models.{ApiToken,FileGroup,GroupedFileUpload}
-import org.overviewproject.jobs.models.ClusterFileGroup
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,DocumentSetUser}
-import org.overviewproject.tree.Ownership
+import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
+import org.overviewproject.models.{FileGroup,GroupedFileUpload}
 import org.overviewproject.util.ContentDisposition
 
 private[controllers] object MassUploadControllerMethods extends controllers.Controller {

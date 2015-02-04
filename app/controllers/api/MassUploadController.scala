@@ -12,7 +12,7 @@ import controllers.backend.{ FileGroupBackend, GroupedFileUploadBackend }
 import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
-import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
+import models.orm.stores.DocumentSetCreationJobStore
 import models.OverviewDatabase
 import org.overviewproject.models.{ApiToken,FileGroup,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
