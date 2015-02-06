@@ -11,7 +11,8 @@ object SupportedLanguages {
     "fr",
     "sv",
     "nl",
-    "it", 
+    "it",
+    "pt",
     "ru"
   )
 
