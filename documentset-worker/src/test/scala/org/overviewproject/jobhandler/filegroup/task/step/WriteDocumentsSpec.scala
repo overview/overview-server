@@ -18,22 +18,35 @@ class WriteDocumentsSpec extends Specification with Mockito {
       there was one(mockDocumentWriter).flush
     }
     
+    "delete TempDocumentSetFile" in new DocumentScope {
+      writeDocuments.execute
+      
+      there was one(mockStorage).deleteTempDocumentSetFiles(any)
+    }
+    
     "be the last step" in new DocumentScope {
       writeDocuments.execute must be_==(FinalStep).await
     }
   }
   
   trait DocumentScope extends Scope {
+    val fileId = 1l
     val mockDocumentWriter = smartMock[BulkDocumentWriter]
     val mockDocument = smartMock[Document]
     val writeDocuments = new TestWriteDocuments(mockDocumentWriter, mockDocument)
     
+    def mockStorage = writeDocuments.mockStorage
+    
+    mockDocument.fileId returns Some(fileId)
     mockDocumentWriter.addAndFlushIfNeeded(any) returns Future.successful(())
     mockDocumentWriter.flush returns Future.successful(())
   }
 
   class TestWriteDocuments(val bulkDocumentWriter: BulkDocumentWriter, document: Document) extends WriteDocuments {
     override protected val documents = Seq(document)
+    override protected val storage = smartMock[Storage]
+    storage.deleteTempDocumentSetFiles(any) returns Future.successful(1)
+    def mockStorage = storage
   } 
 
 }
