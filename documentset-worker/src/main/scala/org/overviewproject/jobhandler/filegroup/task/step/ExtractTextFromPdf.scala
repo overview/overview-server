@@ -36,3 +36,26 @@ trait ExtractTextFromPdf extends TaskStep {
     def loadFromBlobStorage(location: String): PdfDocument
   }
 }
+
+
+object ExtractTextFromPdf {
+  import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
+  
+  def apply(documentSetId: Long, file: File): ExtractTextFromPdf = 
+    new ExtractTextFromPdfImpl(documentSetId, file)
+  
+  private class ExtractTextFromPdfImpl(
+      documentSetId: Long,
+      override protected val file: File) extends ExtractTextFromPdf {
+    
+    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl 
+    
+    override protected def nextStep(document: PdfFileDocumentData): TaskStep = 
+      WriteDocuments(document.toDocument(documentSetId))
+      
+    private class PdfProcessorImpl extends PdfProcessor {
+      override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
+    }
+
+  }
+}

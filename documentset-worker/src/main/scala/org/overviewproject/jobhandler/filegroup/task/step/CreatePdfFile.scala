@@ -10,6 +10,8 @@ import org.overviewproject.models.{ File, TempDocumentSetFile }
 import java.io.InputStream
 import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.blobstorage.BlobBucketId
+import org.overviewproject.postgres.LargeObjectInputStream
+import org.overviewproject.database.SlickSessionProvider
 
 trait CreatePdfFile extends TaskStep with SlickClient {
 
@@ -46,5 +48,22 @@ trait CreatePdfFile extends TaskStep with SlickClient {
     val fileId = (Files returning Files.map(_.id)) += file
     TempDocumentSetFiles += TempDocumentSetFile(documentSetId, fileId)
     file.copy(id = fileId)
+  }
+}
+
+object CreatePdfFile {
+  
+  def apply(documentSetId: Long, uploadedFileId: Long): CreatePdfFile = 
+    new CreatePdfFileImpl(documentSetId, uploadedFileId)
+  
+  private class CreatePdfFileImpl(
+    override protected val documentSetId: Long,
+    override protected val uploadedFileId: Long
+  ) extends CreatePdfFile with SlickSessionProvider {
+    
+    override protected val blobStorage = BlobStorage
+    override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid)
+    
+    override protected def nextStep(file: File) = ExtractTextFromPdf(documentSetId, file)
   }
 }
