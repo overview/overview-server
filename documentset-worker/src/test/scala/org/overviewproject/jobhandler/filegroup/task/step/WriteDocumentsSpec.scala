@@ -6,20 +6,23 @@ import org.overviewproject.util.BulkDocumentWriter
 import org.specs2.mock.Mockito
 import org.overviewproject.models.Document
 import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import org.specs2.time.NoTimeConversions
 
-class WriteDocumentsSpec extends Specification with Mockito {
+class WriteDocumentsSpec extends Specification with NoTimeConversions with Mockito {
   
   "WriteDocuments" should {
     
     "write and index added document" in new DocumentScope {
-      writeDocuments.execute
+      await(writeDocuments.execute)
       
       there was one(mockDocumentWriter).addAndFlushIfNeeded(mockDocument)
       there was one(mockDocumentWriter).flush
     }
     
     "delete TempDocumentSetFile" in new DocumentScope {
-      writeDocuments.execute
+      await(writeDocuments.execute)
       
       there was one(mockStorage).deleteTempDocumentSetFiles(any)
     }
@@ -36,7 +39,8 @@ class WriteDocumentsSpec extends Specification with Mockito {
     val writeDocuments = new TestWriteDocuments(mockDocumentWriter, mockDocument)
     
     def mockStorage = writeDocuments.mockStorage
-    
+    def await[A](f: => Future[A]) = Await.result(f, 100 millis) 
+      
     mockDocument.fileId returns Some(fileId)
     mockDocumentWriter.addAndFlushIfNeeded(any) returns Future.successful(())
     mockDocumentWriter.flush returns Future.successful(())
