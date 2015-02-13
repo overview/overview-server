@@ -10,6 +10,7 @@ import java.io.InputStream
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.models.File
 import org.overviewproject.models.tables.Files
+import org.overviewproject.models.tables.TempDocumentSetFiles
 
 class CreatePdfFileSpec extends SlickSpecification with Mockito {
 
@@ -40,6 +41,11 @@ class CreatePdfFileSpec extends SlickSpecification with Mockito {
       createFile.execute must throwA[Exception].await
     }
     
+    "write a tempDocumentSetFile" in new UploadScope {
+      await(createFile.execute)
+      
+      TempDocumentSetFiles.firstOption must beSome
+    }
 
     trait UploadScope extends DbScope {
       val fileGroup = factory.fileGroup()
@@ -68,7 +74,7 @@ class CreatePdfFileSpec extends SlickSpecification with Mockito {
 
   class TestCreatePdfFile(val uploadedFileId: Long, val blobStorage: BlobStorage, loInputStream: InputStream)
   (implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
-    
+    override protected val documentSetId = 1l
     override protected def nextStep(file: File) = NextStep
     override protected def largeObjectInputStream(oid: Long) = loInputStream
   }

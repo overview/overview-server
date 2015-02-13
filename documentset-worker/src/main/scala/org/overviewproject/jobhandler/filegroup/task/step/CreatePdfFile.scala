@@ -6,13 +6,14 @@ import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.database.SlickClient
 import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.models.File
+import org.overviewproject.models.{ File, TempDocumentSetFile }
 import java.io.InputStream
-import org.overviewproject.models.tables.{ Files, GroupedFileUploads }
+import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.blobstorage.BlobBucketId
 
 trait CreatePdfFile extends TaskStep with SlickClient {
 
+  protected val documentSetId: Long
   protected val uploadedFileId: Long
 
   protected val blobStorage: BlobStorage
@@ -38,9 +39,12 @@ trait CreatePdfFile extends TaskStep with SlickClient {
 
   private def createFile(name: String, size: Long, location: String): Future[File] = db { implicit session =>
     val file = File(0l, 1, name, location, size, location, size)
+    withTransaction(writeFileAndTempDocumentSetFile(file)(_))
+  }
 
+  private def writeFileAndTempDocumentSetFile(file: File)(implicit session: Session): File = {
     val fileId = (Files returning Files.map(_.id)) += file
-
+    TempDocumentSetFiles += TempDocumentSetFile(documentSetId, fileId)
     file.copy(id = fileId)
   }
 }
