@@ -172,7 +172,7 @@ package object commands {
         // hack.)
         "-Des.path.data=database/search-index"
       ),
-      Seq("org.elasticsearch.bootstrap.ElasticSearch")
+      Seq("org.elasticsearch.bootstrap.Bootstrap")
     )
 
     override def redis = new ShCommand(Seq(), Seq("./deps/redis/dev.sh"))
