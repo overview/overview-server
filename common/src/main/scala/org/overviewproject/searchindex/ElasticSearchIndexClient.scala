@@ -7,6 +7,7 @@ import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.index.query.{FilterBuilders,QueryBuilders}
 import org.elasticsearch.indices.IndexMissingException
+import org.elasticsearch.rest.action.admin.indices.alias.delete.AliasesMissingException
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
@@ -188,20 +189,27 @@ trait ElasticSearchIndexClient extends IndexClient {
   }
 
   private def removeDocumentSetImpl(client: Client, id: Long): Future[Unit] = {
-    // The index must create if we're to delete it. So let's create it if it
-    // does not exist.
-    getAllDocumentsIndexName(client)
-      .flatMap { indexName =>
-        val unalias = client.admin.indices.prepareAliases()
-          .removeAlias(indexName, aliasName(id))
+    val unalias = client.admin.indices.prepareAliases()
+      .removeAlias("_all", aliasName(id))
 
-        val delete = client.prepareDeleteByQuery(AllDocumentsAlias)
-          .setTypes(DocumentTypeName)
-          .setQuery(QueryBuilders.termQuery(DocumentSetIdField, id))
-
-        Future.sequence(Seq(execute(unalias), execute(delete)))
-      }
+    val unaliasFuture = execute(unalias)
       .map(_ => Unit)
+      .recover { case e: AliasesMissingException => Unit }
+
+    // Note: if we're reindexing into documents_v2 while we call this method,
+    // the documents won't be deleted from documents_v1. But that's okay, since
+    // we're going to delete documents_v1 _entirely_ soon, and there won't be
+    // any alias pointing towards it.
+    val delete = client.prepareDeleteByQuery(AllDocumentsAlias)
+      .setTypes(DocumentTypeName)
+      .setQuery(QueryBuilders.termQuery(DocumentSetIdField, id))
+
+    val deleteFuture = execute(delete)
+
+    for {
+      _ <- unaliasFuture
+      _ <- deleteFuture
+    } yield Unit
   }
 
   private def addDocumentsImpl(client: Client, documents: Iterable[Document]): Future[Unit] = {

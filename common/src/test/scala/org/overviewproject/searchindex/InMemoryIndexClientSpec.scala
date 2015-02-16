@@ -184,6 +184,16 @@ class InMemoryIndexClientSpec extends Specification {
         aliasExists("documents_v1", "documents_234") must beEqualTo(false)
       }
 
+      "succeed when removing an alias that does not exist" in new BaseScope {
+        // removeDocumentSet() doesn't work when ElasticSearch is completely
+        // empty. These two lines ensure there's an (empty) index.
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.removeDocumentSet(234L))
+
+        // On to the test
+        await(indexClient.removeDocumentSet(234L)) must not(throwA[Exception])
+      }
+
       "delete associated documents" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 235L))))
