@@ -7,13 +7,11 @@ define [ 'underscore' ], (_) ->
   #     params.type       # "all" -- useful for crafting user-visible messages
   #     params.params     # [] -- useful for creafting user-visible messages
   #     params.toString() # "DocumentListParams(root)"
-  #     params.findDocumentsInList(documentList) # Array: all documents
   #
   #     params2 = params.reset.byNode(node)
   #     params2.type       # "node"
   #     params2.params     # [ 2 ] -- the node ID
   #     params2.toString() # "DocumentListParams(node=2)"
-  #     params2.findDocumentsInList(documentList) # Array: all docs in cache with node 2
   #
   #     params.equals(params2) # false -- unless node 2 is the root node
   #
@@ -43,15 +41,6 @@ define [ 'underscore' ], (_) ->
     # the same parameters.
     equals: (rhs) ->
       @type == rhs.type && _.isEqual(@params, rhs.params)
-
-    # Returns an Array of Document objects.
-    #
-    # We use this to optimize some obvious cases: for instance, when we send
-    # a tag operation to the server, we can predict which of the
-    # locally-shown documents will change and update them ahead of time.
-    #
-    # The default result, `[]`, must work in all cases.
-    findDocumentsInList: (documentList) -> []
 
     # Returns the parameters in pure JSON format.
     #
@@ -104,18 +93,12 @@ define [ 'underscore' ], (_) ->
   class AllDocumentListParams extends AbstractDocumentListParams
     constructor: (documentSet, view) -> super(documentSet, view, 'all')
 
-    findDocumentsInList: (list) -> list
-
     toJSON: -> {}
 
     toI18n: -> [ 'all' ]
 
   class DocumentDocumentListParams extends AbstractDocumentListParams
     constructor: (documentSet, view, @document) -> super(documentSet, view, 'document', @document)
-
-    findDocumentsInList: (list) ->
-      documentId = @document.id
-      list.filter((x) -> documentId == x.id)
 
     toJSON: ->
       # Prevent "undefined" at all costs: it'll tag/untag all docs
@@ -125,10 +108,6 @@ define [ 'underscore' ], (_) ->
   class NodeDocumentListParams extends AbstractDocumentListParams
     constructor: (documentSet, view, @node) -> super(documentSet, view, 'node', @node)
 
-    findDocumentsInList: (list) ->
-      nodeId = @node.id
-      list.filter((d) -> nodeId in d.attributes.nodeids)
-
     toJSON: -> { nodes: [ @node.id ] }
 
     toI18n: -> [ 'node', @node.description || '' ]
@@ -136,18 +115,12 @@ define [ 'underscore' ], (_) ->
   class TagDocumentListParams extends AbstractDocumentListParams
     constructor: (documentSet, view, @tag) -> super(documentSet, view, 'tag', @tag)
 
-    findDocumentsInList: (list) ->
-      tagId = @tag.id
-      list.filter((d) -> tagId in d.attributes.tagids)
-
     toJSON: -> { tags: [ @tag.id ] }
 
     toI18n: -> [ 'tag', @tag.attributes?.name || '' ]
 
   class UntaggedDocumentListParams extends AbstractDocumentListParams
     constructor: (documentSet, view) -> super(documentSet, view, 'untagged')
-
-    findDocumentsInList: (list) -> list.filter((x) -> x.attributes.tagids.length == 0)
 
     toJSON: -> { tags: [ MagicUntaggedTagId ] }
 

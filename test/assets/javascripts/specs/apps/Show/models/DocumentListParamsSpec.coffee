@@ -39,15 +39,6 @@ define [
       it 'should have a documentSet', -> expect(@params.documentSet).to.eq(@documentSet)
       it 'should have a view', -> expect(@params.view).to.eq(@view)
 
-      it 'should find all documents from cache, sorted', ->
-        list = [
-          new MockDocument(id: 1)
-          new MockDocument(id: 2)
-          new MockDocument(id: 3)
-        ]
-        result = @params.findDocumentsInList(list)
-        expect(x.id for x in result).to.deep.eq([ 1, 2, 3 ])
-
     describe 'byNode', ->
       beforeEach ->
         @node = { id: 2, description: 'foo' }
@@ -61,15 +52,6 @@ define [
       it 'should equals() another', -> expect(@params.equals(@params.reset.byNode(@node))).to.be.true
       it 'should not equals() something else', -> expect(@params.equals(@params.reset.byNode(id: 3))).to.be.false
       it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'node', 'foo' ])
-
-      it 'should find relevant documents from a list', ->
-        list = [
-          new MockDocument(id: 1, nodeids: [ 1, 2 ])
-          new MockDocument(id: 2, nodeids: [ 1, 3, 4 ])
-          new MockDocument(id: 3, nodeids: [ 1, 2 ])
-        ]
-        result = @params.findDocumentsInList(list)
-        expect(x.id for x in result).to.deep.eq([ 1, 3 ])
 
     describe 'byTag', ->
       beforeEach ->
@@ -102,15 +84,6 @@ define [
         params2 = @params.reset.withView(view2).all()
         expect(params2.view).to.eq(view2)
 
-      it 'should find relevant documents from a list', ->
-        list = [
-          new MockDocument(id: 1, tagids: [ 1, 2 ])
-          new MockDocument(id: 2, tagids: [ 3, 4 ])
-          new MockDocument(id: 3, tagids: [ 1, 4 ])
-        ]
-        result = @params.findDocumentsInList(list)
-        expect(x.id for x in result).to.deep.eq([ 1, 3 ])
-
     describe 'byDocument', ->
       beforeEach ->
         @document = new MockDocument(id: 1)
@@ -126,23 +99,6 @@ define [
         @document.id = undefined
         expect(@params.toApiParams()).to.deep.eq(documents: '0')
 
-      it 'should find the relevant document from a list', ->
-        list = [
-          new MockDocument(id: 2)
-          @document
-          new MockDocument(id: 3)
-        ]
-        result = @params.findDocumentsInList(list)
-        expect(x.id for x in result).to.deep.eq([ 1 ])
-
-      it 'should not find the document if it is not in the list', ->
-        list = [
-          new MockDocument(id: 2)
-          new MockDocument(id: 3)
-        ]
-        result = @params.findDocumentsInList(list)
-        expect(x.id for x in result).to.deep.eq([])
-
     describe 'untagged', ->
       beforeEach -> @params = @builder.untagged()
 
@@ -152,15 +108,6 @@ define [
       it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq({ tags: [0] })
       it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(tags: '0')
       it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'untagged' ])
-
-      it 'should find all untagged documents from a list', ->
-        list = [
-          new MockDocument(id: 1, tagids: [ 1, 2 ])
-          new MockDocument(id: 2, tagids: [])
-          new MockDocument(id: 3, tagids: [ 4 ])
-        ]
-        result = @params.findDocumentsInList(list)
-        expect(x.id for x in result).to.deep.eq([ 2 ])
 
     describe 'bySearch', ->
       beforeEach ->
@@ -172,11 +119,3 @@ define [
       it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq(q: 'foo')
       it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(q: 'foo')
       it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'search', 'foo' ])
-
-      it 'should find no documents from a list', ->
-        list = [
-          new MockDocument(id: 2)
-          new MockDocument(id: 3)
-        ]
-        result = @params.findDocumentsInList(list)
-        expect(x.id for x in result).to.deep.eq([])
