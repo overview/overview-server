@@ -143,16 +143,7 @@ class S3StrategySpec extends StrategySpecification {
     }
 
     "succeed when the object does not exist" in new S3BaseScope {
-      import com.amazonaws.services.s3.model.MultiObjectDeleteException
-      import java.util.Collections
-
-      val deleteError = new MultiObjectDeleteException.DeleteError()
-      deleteError.setCode("NoSuchKey")
-      val ex = new MultiObjectDeleteException(Collections.singletonList(deleteError), Collections.emptyList())
-
-      mockS3.deleteObjects(any[DeleteObjectsRequest]) throws ex
-
-      await(TestStrategy.delete("s3:foo:bar")) must not(throwA[Exception])
+      // S3 already succeeds when the object does not exist
     }
   }
 
@@ -196,31 +187,7 @@ class S3StrategySpec extends StrategySpecification {
     }
 
     "succeed when an object does not exist" in new S3BaseScope {
-      import com.amazonaws.services.s3.model.MultiObjectDeleteException
-      import java.util.Collections
-
-      val deleteError = new MultiObjectDeleteException.DeleteError()
-      deleteError.setCode("NoSuchKey")
-      val ex = new MultiObjectDeleteException(Collections.singletonList(deleteError), Collections.emptyList())
-
-      mockS3.deleteObjects(any[DeleteObjectsRequest]) throws ex
-
-      await(TestStrategy.deleteMany(Seq("s3:foo:bar", "s3:foo:baz"))) must not(throwA[Exception])
-    }
-
-    "fail on AccessDenied" in new S3BaseScope {
-      // Mostly, we're testing that our succeed-when-not-exists logic isn't
-      // simply succeed-on-error.
-      import com.amazonaws.services.s3.model.MultiObjectDeleteException
-      import java.util.Collections
-
-      val deleteError = new MultiObjectDeleteException.DeleteError()
-      deleteError.setCode("AccessDenied")
-      val ex = new MultiObjectDeleteException(Collections.singletonList(deleteError), Collections.emptyList())
-
-      mockS3.deleteObjects(any[DeleteObjectsRequest]) throws ex
-
-      await(TestStrategy.deleteMany(Seq("s3:foo:bar", "s3:foo:baz"))) must throwA[Exception]
+      // S3 already succeeds when the object does not exist
     }
 
     "succeed without sending a request when there are no locations" in new S3BaseScope {

@@ -2,7 +2,7 @@ package org.overviewproject.blobstorage
 
 import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client}
 import com.amazonaws.services.s3.transfer.TransferManager
-import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
+import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,ObjectMetadata}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
 import java.io.InputStream
 import java.nio.file.Files
@@ -111,22 +111,14 @@ trait S3Strategy extends BlobStorageStrategy {
         new DeleteObjectsRequest(bucket).withKeys(keyGroup: _*)
       }.tupled)
 
-    def allExceptionsAreNoSuchKey(ex: MultiObjectDeleteException): Boolean = {
-      import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-
-      val errors: Iterable[MultiObjectDeleteException.DeleteError] = ex.getErrors.asScala
-      !errors.exists(_.getCode != "NoSuchKey")
-    }
-
     Future.traverse(requests) { (request: DeleteObjectsRequest) => Future[Unit] { blocking {
       try {
         s3.deleteObjects(request)
       } catch {
-        case ex: AmazonS3Exception if ex.getStatusCode == 404 => Unit
-        case ex: MultiObjectDeleteException if allExceptionsAreNoSuchKey(ex) => Unit
+        case ex: AmazonS3Exception if ex.getStatusCode == 404 =>
       }
     }}}
-      .map((_) => ()) // Seq[Unit] => Unit. Bonus points: it looks like a wink
+      .map((_) => ()) // Seq[Unit] => Unit. side-feature: it looks like a wink
   }
 
   override def create(locationPrefixString: String, inputStream: InputStream, nBytes: Long): Future[String] = {
