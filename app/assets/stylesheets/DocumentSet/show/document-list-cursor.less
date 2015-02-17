@@ -41,40 +41,36 @@
     background: @body-bg-dark;
     .display-flex();
     .flex-direction-column();
+  }
 
-    i {
-      display: block;
-      font-size: 1.5em;
-      line-height: 1em;
+  .position {
+    line-height: 1em;
+    display: flex;
+
+    h4 {
+      flex-grow: 1;
+      font: inherit;
+      line-height: inherit;
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-  }
 
-  a.previous, a.next {
-    height: 3em;
-  }
-
-  a.previous, a.next {
-    line-height: 1.5em;
-    width: @navWidth;
-    display: block;
-    overflow: hidden;
-    .box-sizing(border-box);
-  }
-
-  a.previous {
-    float: left;
-    text-align: left;
-    padding-right: 1em;
-  }
-
-  a.next {
-    float: right;
-    text-align: right;
-    padding-left: 1em;
-
-    i {
-      margin: 0 0 0 auto;
+    a.previous {
+      padding-right: 1em;
     }
+
+    a.next {
+      padding-left: 1em;
+    }
+
+    // font-awesome puts the chevron on the baseline; we want it descending
+    i { vertical-align: middle; }
+    // Now the on-hover underlines look terrible; stop underlining the space between
+    a { text-decoration: none; }
+    a:hover span, a:hover i { text-decoration: underline; }
   }
 
   .disabled {
@@ -91,19 +87,6 @@
   article {
     position: relative;
     .flex(1 0 auto);
-  }
-
-  div.position, div.selection {
-    margin: 0 @navWidth;
-    height: 1.5em;
-    line-height: 1.5em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  div.selection {
-    color: @brand-primary;
   }
 
   h2 {

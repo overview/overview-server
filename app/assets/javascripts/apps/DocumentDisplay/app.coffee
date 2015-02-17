@@ -8,10 +8,7 @@ define [
   './views/TextView'
   './views/FindView'
 ], (TextDocument, UrlPropertiesExtractor, CurrentCapabilities, Preferences, DocumentView, PreferencesView, TextView, FindView) ->
-  DocumentSetId = (->
-    parts = window.location.pathname.split('/')
-    parts[parts.length - 1]
-  )()
+  DocumentSetId = /\/documentsets\/(\d+)/.exec(window.location.pathname)[1]
 
   ViewableDocumentTypes =
     documentCloud: null

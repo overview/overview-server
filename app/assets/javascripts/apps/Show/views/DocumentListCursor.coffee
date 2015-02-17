@@ -27,7 +27,7 @@ define [
   # * documentDisplayApp: a DocumentDisplay/App constructor, such that
   #   `new options.documentDisplayApp({ el: HTMLElement })` will create an
   #   object with a `setDocument()` method.
-  Backbone.View.extend
+  class DocumentListCursor extends Backbone.View
     events:
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
@@ -42,10 +42,11 @@ define [
         </div>
         """)
       header: _.template("""
-        <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="overview-icon-chevron-left"></i><span><%- t('previous') %></span></a>
-        <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><i class="overview-icon-chevron-right"></i><span><%- t('next') %></span></a>
-        <div class="position"><%= t('position_html', cursorIndex + 1, nDocuments) %></div>
-        <div class="selection"><%= selectionHtml %></div>
+        <div class="position">
+          <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-chevron-left"></i> <span><%- t('previous') %></span></a>
+          <h4><%= t('position_html', cursorIndex + 1, nDocuments) %></h4>
+          <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><span><%- t('next') %></span> <i class="icon-chevron-right"></i></a>
+        </div>
         <h2><%- title %></h2>
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
@@ -92,12 +93,6 @@ define [
 
       tags = @options.tags.filter((x) -> maybeDocument?.hasTag(x))
 
-      selectionI18n = @documentList?.params?.toI18n?() || [ 'all' ]
-      selectionI18n[0] = "selection.#{selectionI18n[0]}_html"
-      if selectionI18n[1]
-        selectionI18n[1] = _.escape(selectionI18n[1])
-      selectionHtml = t.apply({}, selectionI18n)
-
       html = if !nDocuments || !cursorIndex? || cursorIndex >= nDocuments
         ''
       else
@@ -108,7 +103,6 @@ define [
           tags: tags
           document: maybeDocument
           title: DocumentHelper.title(maybeDocument?.attributes)
-          selectionHtml: selectionHtml
 
       @$headerEl.html(html)
 
@@ -163,7 +157,7 @@ define [
       @documentList = documentList
 
       if @documentList?
-        @documentDisplayApp.setSearch(@documentList.params?.q || null)
+        @documentDisplayApp.setSearch(@documentList.params?.params?.q || null)
 
         @listenTo(@documentList, 'change:length', => @render())
         if @documentList.documents

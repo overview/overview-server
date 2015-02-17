@@ -2,9 +2,6 @@ define [
   'apps/Show/views/DocumentListCursor',
   'i18n'
 ], (View, i18n) ->
-  class Params
-    toI18n: (cache) -> [ 'all' ]
-
   class Document extends Backbone.Model
     defaults:
       title: 'title'
@@ -18,7 +15,7 @@ define [
       length: null
 
     initialize: ->
-      @params = new Params
+      @params = { params: {} }
       @documents = new Documents
 
   class Selection extends Backbone.Model
@@ -56,11 +53,6 @@ define [
         'views.Tree.show.DocumentListCursor.next': 'next'
         'views.Tree.show.DocumentListCursor.previous': 'previous'
         'views.Tree.show.DocumentListCursor.list': 'list'
-        'views.Tree.show.DocumentListCursor.selection.all_html': 'selection.all_html'
-        'views.Tree.show.DocumentListCursor.selection.node_html': 'selection.node_html,{0}'
-        'views.Tree.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
-        'views.Tree.show.DocumentListCursor.selection.tag_html': 'selection.tag_html,{0}'
-        'views.Tree.show.DocumentListCursor.selection.untagged_html': 'selection.untagged_html,{0}'
         'views.Tree.show.DocumentListCursor.description': 'description,{0}'
         'views.Tree.show.DocumentListCursor.description.empty': 'description.empty'
         'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
@@ -84,11 +76,6 @@ define [
         selection.set({ cursorIndex: 1 })
         expect(view.el.className).to.eq('showing-document')
 
-      it 'should render the selection', ->
-        documentList.params.toI18n = -> [ 'node', 'foo' ]
-        selection.set({ cursorIndex: 1 })
-        expect(view.$('.selection').html()).to.eq('selection.node_html,foo')
-
       it 'should have className showing-document when the document list is populated', ->
         documentList.documents.reset([])
         selection.set({ cursorIndex: 1 })
@@ -107,7 +94,7 @@ define [
 
     it 'should recognize document 0/10 as "1 of 10"', ->
       initAt(0, 10)
-      expect(view.$('div.position').text()).to.eq('position_html,1,10')
+      expect(view.$('div.position h4').text()).to.eq('position_html,1,10')
 
     it 'should disable "previous" at 0/10', ->
       initAt(0, 10)
@@ -164,8 +151,7 @@ define [
       initAt(5, 10)
       documentList = new DocumentList({ n: 3 })
       documentList.documents = new Backbone.Collection()
-      documentList.params = new Params
-      documentList.params.q = 'foo'
+      documentList.params = { params: { q: 'foo' } }
       view.setDocumentList(documentList)
       expect(displayApp.setSearch).to.have.been.calledWith('foo')
 

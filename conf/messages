@@ -427,12 +427,6 @@ views.Tree.show.DocumentListCursor.position_html=Document <strong>{0,number,inte
 views.Tree.show.DocumentListCursor.next=Next
 views.Tree.show.DocumentListCursor.previous=Previous
 views.Tree.show.DocumentListCursor.list=Back to list
-views.Tree.show.DocumentListCursor.selection.all_html=in document set
-views.Tree.show.DocumentListCursor.selection.untagged_html=without any tags
-views.Tree.show.DocumentListCursor.selection.node_html=in folder <strong>{0}</strong>
-views.Tree.show.DocumentListCursor.selection.tag_html=with tag <strong>{0}</strong>
-views.Tree.show.DocumentListCursor.selection.search_html=containing <strong>{0}</strong>
-views.Tree.show.DocumentListCursor.selection.json_html={0}
 views.Tree.show.DocumentListCursor.description.empty=(no key words)
 views.Tree.show.DocumentListCursor.description=Key words: {0}
 
