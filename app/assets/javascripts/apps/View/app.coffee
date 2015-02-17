@@ -34,12 +34,13 @@ define [
       @iframe = @$('iframe').get(0)
       @
 
-    onDocumentListParamsChanged: (params) ->
+    onDocumentListParamsChanged: (params) -> @notifyDocumentListParams(params)
 
-      message = {
-        event: 'change:documentListParams'
-        args: params.toJSON()
-      }
+    notifyDocumentListParams: (params) ->
+      @_postMessage
+        event: 'notify:documentListParams'
+        args: [ params.toQueryString() ]
 
+    _postMessage: (message) ->
       targetOrigin = @view.get('url').split('/')[0...3].join('/')
       @iframe.contentWindow.postMessage(message, targetOrigin)

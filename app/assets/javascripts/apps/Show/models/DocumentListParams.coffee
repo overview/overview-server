@@ -146,7 +146,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
 
     toQueryString: ->
       arr = []
-      for k, v of @_toQueryParams()
+      for k, v of @toQueryParams()
         arr.push("#{encodeURIComponent(k)}=#{encodeURIComponent(v)}")
       arr.join('&')
 

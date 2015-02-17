@@ -41,6 +41,7 @@ define [
         return
 
       switch e.data.call
+        when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@state.get('documentListParams'))
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
         else console.log("Invalid message from view: #{e.data.call}", e.data)
 
