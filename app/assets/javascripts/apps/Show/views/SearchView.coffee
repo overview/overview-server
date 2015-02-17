@@ -37,12 +37,12 @@ define [
     render: ->
       @initialRender() if !@$input
 
-      @$input.val(@state.get('documentListParams').q || '')
+      @$input.val(@state.get('documentListParams').params.q || '')
       @_refreshChanging()
       @_refreshEmpty()
 
     _refreshChanging: ->
-      realQ = @state.get('documentListParams').q || ''
+      realQ = @state.get('documentListParams').params.q || ''
       q = @$input.val().trim()
       @$el.toggleClass('changing', q != realQ)
 
