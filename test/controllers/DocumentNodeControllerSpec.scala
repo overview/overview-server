@@ -5,6 +5,7 @@ import org.specs2.matcher.JsonMatchers
 import scala.concurrent.Future
 
 import controllers.backend.{DocumentNodeBackend,SelectionBackend}
+import controllers.backend.exceptions.SearchParseFailed
 import models.{SelectionLike,SelectionRequest}
 
 class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatchers {
@@ -72,6 +73,12 @@ class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatche
       h.status(result) must beEqualTo(h.OK)
       there was one(mockSelectionBackend)
         .findOrCreate(request.user.email, SelectionRequest(documentSetId))
+    }
+
+    "succeed if SearchParseFailed prevents us from creating a Selection" in new CountByNodeScope {
+      mockSelectionBackend.findOrCreate(any, any) returns Future.failed(new SearchParseFailed("foo", new Exception()))
+      h.status(result) must beEqualTo(h.OK)
+      h.contentAsString(result) must beEqualTo("{}")
     }
   }
 }

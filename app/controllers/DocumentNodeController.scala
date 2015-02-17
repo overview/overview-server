@@ -7,6 +7,7 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
 import controllers.backend.{DocumentNodeBackend,SelectionBackend}
+import controllers.backend.exceptions.SearchParseFailed
 import models.{IdList,SelectionLike}
 
 trait DocumentNodeController extends Controller {
@@ -39,10 +40,10 @@ trait DocumentNodeController extends Controller {
       case _ => selectionBackend.findOrCreate(request.user.email, sr)
     }
 
-    for {
-      selection <- selectionFuture
-      counts <- documentNodeBackend.countByNode(selection, nodeIds.getOrElse(Seq()))
-    } yield Ok(formatCounts(counts))
+    selectionFuture
+      .flatMap(selection => documentNodeBackend.countByNode(selection, nodeIds.getOrElse(Seq())))
+      .recover { case e: SearchParseFailed => Map[Long,Int]() }
+      .map(counts => Ok(formatCounts(counts)))
   }
 }
 
