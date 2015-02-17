@@ -38,7 +38,7 @@ define [ 'backbone' ], (Backbone) ->
       params1 = @get('documentListParams')
       return if params1?.equals(params)
 
-      highlightedDocumentListParams = if params.type == 'node'
+      highlightedDocumentListParams = if 'nodes' of params.params
         # Don't change
         @get('highlightedDocumentListParams')
       else
@@ -49,17 +49,23 @@ define [ 'backbone' ], (Backbone) ->
         highlightedDocumentListParams: highlightedDocumentListParams
         document: null
 
-    # Return a DocumentList that describes all documents that will be affected
-    # by tagging.
+    # Return JSON that describes all documents that will be affected by, say,
+    # tagging.
     #
-    # Returns { documents: [ -1 ] } if documentId is null and
+    # You can use this JSON to build a query string. For instance, it might
+    # be `{ nodes: '2,3', tags: '1'}`.
+    #
+    # Returns { documents: '-1' } if documentId is null and
     # oneDocumentSelected is true.
-    getSelection: ->
+    getSelectionQueryParams: ->
       if @get('oneDocumentSelected')
         document = @get('document')
-        @get('documentListParams').reset.byDocument(document)
+        if document?.id?
+          documents: String(document.id)
+        else
+          documents: '-1'
       else
-        @get('documentListParams')
+        @get('documentListParams').toQueryParams()
 
     # _sets up_ a reset.
     #
@@ -67,27 +73,39 @@ define [ 'backbone' ], (Backbone) ->
     #
     #   state.resetDocumentListParams().byDocument(document)
     #
-    # It will call `reset.byDocument(document)` on the current document list,
+    # It will call `reset.byDocument(document)` on the documentListParams
     # to get new DocumentListParams, and then it will call
     # `setDocumentListParams`.
+    #
+    # The special
+    #
+    #   state.resetDocumentListParams().byJSON(nodes: [ 3 ])
+    #
+    # ... will call `reset(nodes: [3])` on the current documentListParams.
     resetDocumentListParams: ->
-      ret = {}
       params = @get('documentListParams')
-      builder = params.reset
+      reset = params.reset
+
+      ret = {}
 
       scopedBuilder = (key) =>
         (args...) =>
-          newParams = builder[key].apply(builder, args)
+          newParams = reset[key].apply(params, args)
           @setDocumentListParams(newParams)
 
-      for k, v of builder
+      for k, v of params.reset
         ret[k] = scopedBuilder(k)
+
+      ret.byJSON = (args...) =>
+        newParams = reset.apply(params, args)
+        @setDocumentListParams(newParams)
+
       ret
 
     setView: (view) ->
       reset = =>
         params = @get('documentListParams')
-        params = params?.reset.withView(view).all()
+        params = params?.withView(view)
 
         @set
           documentListParams: params

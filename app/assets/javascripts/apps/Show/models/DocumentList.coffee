@@ -1,8 +1,9 @@
 define [
+  'underscore'
   'backbone'
   '../collections/Documents'
   'rsvp'
-], (Backbone, Documents, RSVP) ->
+], (_, Backbone, Documents, RSVP) ->
   # A sorted list of Document objects on the server.
   #
   # A DocumentList is composed of:
@@ -74,16 +75,18 @@ define [
       undefined
 
     _onTag: (tag, params) ->
-      if params.equals(@params)
+      if _.isEqual(params, @params.toQueryParams())
         @documents.tag(tag)
-      else if params.document?
-        params.document.tag(tag)
+      else if params.documents?
+        for documentId in params.documents
+          @documents.get(documentId)?.tag(tag)
 
     _onUntag: (tag, params) ->
-      if params.equals(@params)
+      if _.isEqual(params, @params.toQueryParams())
         @documents.untag(tag)
-      else if params.document?
-        params.document.untag(tag)
+      else if params.documents?
+        for documentId in params.documents
+          @documents.get(documentId)?.untag(tag)
 
     isComplete: ->
       length = @get('length')
@@ -101,7 +104,7 @@ define [
 
     _doFetch: ->
       new RSVP.Promise (resolve, reject) =>
-        query = @params.toApiParams()
+        query = @params.toQueryParams()
         query.limit = @nDocumentsPerPage
         query.offset = @get('nPagesFetched') * @nDocumentsPerPage
 

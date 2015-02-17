@@ -79,12 +79,12 @@ define [
         expect(spy).to.have.been.called
 
       it 'should set "selected" on selected tags', ->
-        @state.set(documentListParams: { type: 'tag', tag: @tag1 })
+        @state.set(documentListParams: { params: { tags: [ 1 ] }})
         expect(@view.$('li:eq(0)').hasClass('selected')).to.be.true
         expect(@view.$('li:eq(1)').hasClass('selected')).to.be.false
 
       it 'should set "selected" on untagged', ->
-        @state.set(documentListParams: { type: 'untagged' })
+        @state.set(documentListParams: { params: { untagged: true }})
         expect(@view.$('li.untagged').hasClass('selected')).to.be.true
 
       it 'should use the tag color when given', ->

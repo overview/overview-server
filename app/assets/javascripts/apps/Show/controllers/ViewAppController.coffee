@@ -60,6 +60,12 @@ define [
           documentSet: @documentSet
           state: @state
 
+        # EVIL HACK
+        # DocumentListParams can include "nodes" and we need to resolve those
+        # nodes in the Show app for now because Show and Tree are too
+        # intertwined. So let's expose view.onDemandTree.
+        view.onDemandTree = viewApp.onDemandTree if viewApp.onDemandTree?
+
         @viewAppClient = new ViewAppClient
           viewApp: viewApp
           state: @state

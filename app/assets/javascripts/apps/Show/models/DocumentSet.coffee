@@ -6,6 +6,15 @@ define [
   '../collections/Views'
   './DocumentListParams'
 ], (_, $, Backbone, Tags, Views, DocumentListParams) ->
+  # Calls callback() as soon as model.isNew() is false
+  #
+  # Sometimes this is synchronous
+  whenExists = (model, callback, listener) ->
+    if !model.isNew()
+      callback()
+    else
+      listener.listenToOnce(model, 'sync', -> whenExists(model, callback, listener))
+
   # Holds Tags and Views. Oh, and nDocuments.
   #
   # On the client, a DocumentSet doesn't hold a list of Documents because
@@ -18,11 +27,9 @@ define [
   # Methods that change stuff on the server
   # ---------------------------------------
   #
-  # These operations assume there is a transaction queue. In particular, you
-  # may call tag() and untag() using a Tag that has not yet been saved on the
-  # server, even though the POST requests will use the Tag ID. That's because
-  # these POST requests won't be created until the previous transactions have
-  # all completed.
+  # You may call tag() and untag() using a Tag. If the tag hasn't been saved to
+  # the server yet, the actual tagging operation will be postponed until it
+  # has.
   #
   # tag: (tag, documentListParams): tells the server to tag a set of documents.
   # untag: (tag, documentListParams): tells the server to untag documents.
@@ -66,20 +73,26 @@ define [
     _onError: (xhr) ->
       console.log('ERROR loading document set', xhr)
 
-    tag: (tag, documentListParams) ->
-      @transactionQueue.ajax =>
-        type: 'POST'
-        url: "/documentsets/#{@id}/tags/#{tag.id}/add"
-        data: documentListParams.toApiParams()
-        debugInfo: 'DocumentSet.tag'
+    tag: (tag, queryParams) ->
+      call = =>
+        @transactionQueue.ajax
+          type: 'POST'
+          url: "/documentsets/#{@id}/tags/#{tag.id}/add"
+          data: queryParams
+          debugInfo: 'DocumentSet.tag'
 
-      @trigger('tag', tag, documentListParams)
+      whenExists(tag, call, @)
 
-    untag: (tag, documentListParams) ->
-      @transactionQueue.ajax =>
-        type: 'POST'
-        url: "/documentsets/#{@id}/tags/#{tag.id}/remove"
-        data: documentListParams.toApiParams()
-        debugInfo: 'DocumentSet.untag'
+      @trigger('tag', tag, queryParams)
 
-      @trigger('untag', tag, documentListParams)
+    untag: (tag, queryParams) ->
+      call = =>
+        @transactionQueue.ajax
+          type: 'POST'
+          url: "/documentsets/#{@id}/tags/#{tag.id}/remove"
+          data: queryParams
+          debugInfo: 'DocumentSet.untag'
+
+      whenExists(tag, call, @)
+
+      @trigger('untag', tag, queryParams)

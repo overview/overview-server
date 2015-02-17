@@ -161,7 +161,7 @@ define [
         view = documentSet.views.get(m[1])
       view ||= documentSet.views.at(0)
 
-      state = new State(documentListParams: documentSet.documentListParams(view).all(), view: view)
+      state = new State(documentListParams: documentSet.documentListParams(view), view: view)
 
       state.on 'change:view', (__, view) ->
         return if !view?

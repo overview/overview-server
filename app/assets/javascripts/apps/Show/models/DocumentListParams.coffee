@@ -1,64 +1,124 @@
-define [ 'underscore' ], (_) ->
-  # Describes a document list
-  #
-  # For instance:
-  #
-  #     params = DocumentListParams(documentSet).all()
-  #     params.type       # "all" -- useful for crafting user-visible messages
-  #     params.params     # [] -- useful for creafting user-visible messages
-  #     params.toString() # "DocumentListParams(root)"
-  #
-  #     params2 = params.reset.byNode(node)
-  #     params2.type       # "node"
-  #     params2.params     # [ 2 ] -- the node ID
-  #     params2.toString() # "DocumentListParams(node=2)"
-  #
-  #     params.equals(params2) # false -- unless node 2 is the root node
-  #
-  #     params.toApiParams() # Params for the public client/server API
-  #
-  # Here are all the possibilities:
-  #
-  #     DocumentListParams(documentSet).all()
-  #     DocumentListParams(documentSet).untagged()
-  #     DocumentListParams(documentSet).byNode(node)
-  #     DocumentListParams(documentSet).byTag(tag)
-  #     DocumentListParams(documentSet).bySearch(q)
-  #
-  # Each object is immutable.
-  class AbstractDocumentListParams
-    constructor: (@documentSet, @view, @type, @params...) ->
-      @reset = new DocumentListParamsBuilder(@documentSet, @view)
+define [ 'underscore', 'i18n' ], (_, i18n) ->
+  t = i18n.namespaced('views.DocumentSet.show.DocumentListParams')
 
-    toString: ->
-      if @params.length
-        ids = ((x.id || x) for x in @params)
-        "DocumentListParams(#{@type}:#{ids.join(',')})"
+  string =
+    toParam: (s) -> String(s)
+    toString: (s) -> s
+    toQueryParam: (s) -> s
+
+  intArray =
+    toParam: (arr) ->
+      if _.isEmpty(arr)
+        null
       else
-        "DocumentListParams(#{@type})"
+        arr = [ arr ] if !_.isArray(arr)
+        (Math.round(Number(n))) for n in arr
+    toString: (arr) -> String(arr)
+    toQueryParam: (arr) -> String(arr)
 
-    # Returns true iff the types of this object and rhs were constructed using
-    # the same parameters.
+  boolean =
+    toParam: (b) ->
+      if b == true
+        true
+      else
+        false
+    toString: (b) -> String(b)
+    toQueryParam: (b) -> String(b)
+
+  Attributes =
+    q: string
+    nodes: intArray
+    untagged: boolean
+    objects: intArray
+    nodes: intArray
+    tags: intArray
+
+  # Describes how to find a document list.
+  #
+  # Each DocumentListParams is immutable.
+  #
+  # Example usage:
+  #
+  #     params = new DocumentListParams(documentSet, view, nodes: [ 123 ], title: '%s in topic “blah”')
+  #     params.toString()        # "DocumentListParams(nodes=123)"
+  #     params2 = params.reset(tags: [ 2,3 ], title: '%s tagged “foo”')
+  #     params2.toString()       # "DocumentListParams(tags=2,3)"
+  #     params3 = params2.withView(view2).reset(nodes: 234, tags: [2,3], title: '%s in topic “bleh”)
+  #     params3.toString()       # "DocumentListParams(tags=2,3;nodes=234)"
+  #     params3.equals(params3)  # true
+  #     params3.equals(params2)  # false
+  #     params3.title            # '%s in topic “bleh”' ... %s will be replaced elsewhere
+  #
+  #     params3.toJSON()         # { tags: [ 2, 3 ], nodes: 234 }
+  #     params3.toQueryString()  # tags=2,3&nodes=234&q=foo with no initial '?'
+  #                              # if view2.addScopeToQueryParams(tags: [ 2, 3 ], nodes: 234)
+  #                              # returns { tags: [ 2, 3 ], nodes: 234, q: 'foo' }
+  #     params3.toQueryParams()  # { tags: '2,3', nodes: '234', q: 'foo' }
+  #
+  # Here are the possible attributes, which become query string parameters:
+  #
+  # * q: a full-text search query string (toQueryString() url-encodes it)
+  # * tags: an Array of Tag IDs, or null
+  # * objects: an Array of StoreObject IDs, or null
+  # * untagged: a boolean, or null
+  # * nodes: Tree nodes (TODO: nix and use objects instead)
+  #
+  # You're expected to use .reset() and .withView() instead of constructing
+  # DocumentListParams from scratch. Here are some helper methods:
+  #
+  #     params.reset.byNode(node) # nodes: [ node.id ], title: '%s in topic “#{node.description}”
+  #     params.reset.byTag(tag)   # tags: [ tag.id ], title: '%s tagged “#{tag.name}”
+  #     params.reset.byUntagged() # untagged: true, title: '%s without any tags'
+  #     params.reset.byQ(q)       # q: q, title: '%s matching “#{q}”
+  #     params.reset.all()        # title: '%s in document set
+  #
+  # If you call reset() without a title, some calls will auto-generate titles
+  #
+  #     params.reset(nodes: [ 2 ])   # nodes: [ 2 ], title: '%s in topic “#{node.description}”'
+  #     params.reset(tags: [ 1 ])    # tags: [ 1 ], title: '%s tagged “#{tag.name}”
+  #     params.reset(untagged: true) # untagged: true, title: '%s without any tags'
+  #     params.reset(q: 'foo')       # q: 'foo', title: '%s matching “foo”
+  #     params.reset({})             # title: '%s in document set'
+  #
+  # These five title strings come from i18n constants defined here. Plugins can
+  # pass their own i18n strings.
+  class DocumentListParams
+    constructor: (@documentSet, @view, options={}) ->
+      @title = options.title || t('all')
+      @params = {}
+      for k, type of Attributes
+        @params[k] = type.toParam(options[k]) if k of options
+
+      @reset = @_buildReset()
+
+    # Return some params with a different view
+    withView: (view) ->
+      return @ if view == @view
+      newParams = if @params.nodes
+        # Switching to a new view will _always_ break the Tree
+        {}
+      else
+        _.extend({ title: @title }, @params)
+      new DocumentListParams(@documentSet, view, newParams)
+
+    # Returns a String representation, useful for debugging
+    toString: ->
+      parts = [ 'DocumentListParams(' ]
+      for k, type of Attributes
+        parts.push("#{k}=#{type.toString(@params[k])}") if k of @params
+      parts.push(')')
+      parts.join('')
+
+    # Returns a JSON representation, useful for debugging.
+    #
+    # This is simply @params.
+    toJSON: -> @params
+
+    # Returns true iff rhs is certainly equivalent to this one.
+    #
+    # This means same documentSet, view, title and params.
     equals: (rhs) ->
-      @type == rhs.type && _.isEqual(@params, rhs.params)
-
-    # Returns the parameters in pure JSON format.
-    #
-    # For instance, a hypothetical server API might accept a `POST` to
-    # ".../tag?nodes[]=2". This method would return `{ nodes: 2 }` to help
-    # generate that URL.
-    toJSON: -> throw new Error('not implemented')
-
-    # Returns all you need for i18n-ized names.
-    #
-    # For instance:
-    #
-    # * [ 'all' ]
-    # * [ 'node', 'node description' ]
-    # * [ 'tag', 'tag name' ]
-    # * [ 'untagged' ]
-    # * [ 'search', 'terms' ]
-    toI18n: -> throw new Error('not implemented')
+      @documentSet == rhs.documentSet && @view == rhs.view && @title == rhs.title && _.isEqual(@params, rhs.params)
 
     # Returns the parameters such that Overview servers can understand them.
     #
@@ -69,87 +129,53 @@ define [ 'underscore' ], (_) ->
     # commas delimiting each ID.
     #
     # If there is a View, this selection's return value will be passed through
-    # View.scopeApiParams(). For instance, a Tree view can add a `node` property
-    # to selections that don't already have one.
-    toApiParams: ->
-      apiParams = {}
-      for k, v of @toJSON() when k != 'name'
-        apiParams[k] = _.flatten([v]).map(String).join(',')
+    # View.addScopeToQueryParams(). For instance, a Tree view can add a `node`
+    # property to selections that don't already have one.
+    #
+    # Note that query params may be rather verbose. You should use POST
+    # requests where these parameters are involved.
+    toQueryParams: ->
+      queryParams = {}
+      for k, type of Attributes
+        queryParams[k] = type.toQueryParam(@params[k]) if k of @params
 
       if @view?
-        @view.scopeApiParams(apiParams)
+        @view.addScopeToQueryParams(queryParams)
       else
-        apiParams
+        queryParams
 
-  MagicUntaggedTagId = 0
+    toQueryString: ->
+      arr = []
+      for k, v of @_toQueryParams()
+        arr.push("#{encodeURIComponent(k)}=#{encodeURIComponent(v)}")
+      arr.join('&')
 
-  sortDocumentsArray = (documentsArray) ->
-    documentsArray.sort (a, b) ->
-      (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase()) ||
-        (a.description || '').toLowerCase().localeCompare((b.description || '').toLowerCase()) ||
-        a.id - b.id
-    documentsArray
+    _buildReset: ->
+      reset = (options={}) =>
+        realOptions = _.extend({}, options)
+        if 'title' not of realOptions
+          keys = Object.keys(realOptions)
+          realOptions.title = if keys.length == 0
+            t('all')
+          else if keys.length == 1
+            if keys[0] == 'nodes' && options.nodes.length == 1
+              t('node', @view?.onDemandTree?.getNode?(options.nodes[0])?.description)
+            else if keys[0] == 'tags' && options.tags.length == 1
+              t('tag', @documentSet?.tags?.get?(options.tags[0])?.attributes?.name)
+            else if keys[0] == 'untagged' && options.untagged
+              t('untagged')
+            else if keys[0] == 'q'
+              t('q', options.q)
+            else
+              undefined
+          else
+            undefined
 
-  class AllDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view) -> super(documentSet, view, 'all')
+        new DocumentListParams(@documentSet, @view, realOptions)
 
-    toJSON: -> {}
-
-    toI18n: -> [ 'all' ]
-
-  class DocumentDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view, @document) -> super(documentSet, view, 'document', @document)
-
-    toJSON: ->
-      # Prevent "undefined" at all costs: it'll tag/untag all docs
-      safeDocumentId = @document.id || 0
-      { documents: [ safeDocumentId ] }
-
-  class NodeDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view, @node) -> super(documentSet, view, 'node', @node)
-
-    toJSON: -> { nodes: [ @node.id ] }
-
-    toI18n: -> [ 'node', @node.description || '' ]
-
-  class TagDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view, @tag) -> super(documentSet, view, 'tag', @tag)
-
-    toJSON: -> { tags: [ @tag.id ] }
-
-    toI18n: -> [ 'tag', @tag.attributes?.name || '' ]
-
-  class UntaggedDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view) -> super(documentSet, view, 'untagged')
-
-    toJSON: -> { tags: [ MagicUntaggedTagId ] }
-
-    toI18n: -> [ 'untagged' ]
-
-  class SearchDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view, @q) -> super(documentSet, view, 'search', @q)
-
-    toJSON: -> { q: @q }
-
-    toI18n: -> [ 'search', @q ]
-
-  class JsonDocumentListParams extends AbstractDocumentListParams
-    constructor: (documentSet, view, @json) -> super(documentSet, view, 'json', @json)
-
-    toString: -> "DocumentListParams(json, #{JSON.stringify(@json)})"
-
-    toJSON: -> @json
-
-    toI18n: -> [ 'json', @json.name ]
-
-  class DocumentListParamsBuilder
-    constructor: (@documentSet, @view) ->
-    withView: (view) -> new DocumentListParamsBuilder(@documentSet, view)
-
-    all: -> new AllDocumentListParams(@documentSet, @view)
-    byDocument: (document) -> new DocumentDocumentListParams(@documentSet, @view, document)
-    byJson: (json) -> new JsonDocumentListParams(@documentSet, @view, json)
-    byNode: (node) -> new NodeDocumentListParams(@documentSet, @view, node)
-    byTag: (tag) -> new TagDocumentListParams(@documentSet, @view, tag)
-    bySearch: (q) -> new SearchDocumentListParams(@documentSet, @view, q)
-    untagged: -> new UntaggedDocumentListParams(@documentSet, @view)
+      reset.byNode = (node) -> reset(nodes: [ node.id ], title: t('node', node.description))
+      reset.byTag = (tag) -> reset(tags: [ tag.id ], title: t('tag', tag.attributes.name))
+      reset.byUntagged = -> reset(untagged: true, title: t('untagged'))
+      reset.byQ = (q) -> reset(q: q, title: t('q', q))
+      reset.all = -> reset(title: t('all'))
+      reset

@@ -14,22 +14,20 @@ define [
       el: el
 
     view.on 'add-clicked', (tag) ->
-      documentSet.tag(tag, state.getSelection())
+      documentSet.tag(tag, state.getSelectionQueryParams())
       state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
 
     view.on 'remove-clicked', (tag) ->
-      documentSet.untag(tag, state.getSelection())
+      documentSet.untag(tag, state.getSelectionQueryParams())
       state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
 
     view.on 'name-clicked', (tag) ->
       state.resetDocumentListParams().byTag(tag)
-      state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
 
     view.on 'organize-clicked', ->
       new TagDialogController(tags: tags, state: state)
 
     view.on 'untagged-clicked', ->
-      state.resetDocumentListParams().untagged()
-      state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.untagged())
+      state.resetDocumentListParams().byUntagged()
 
     { view: view }

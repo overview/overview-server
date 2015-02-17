@@ -7,11 +7,11 @@ define [
       beforeEach ->
         @params2 = 
           equals: sinon.stub().returns(false)
-          type: 'params2'
+          params: {}
 
         @params1 =
           equals: sinon.stub().returns(false)
-          type: 'params1'
+          params: {}
           reset:
             bySomething: sinon.stub().returns(@params2)
 
@@ -33,14 +33,14 @@ define [
         state = new State(documentListParams: @params1)
         @params1.equals.returns(false)
         state.resetDocumentListParams().bySomething()
-        expect(state.get('highlightedDocumentListParams')).to.have.property('type', 'params2')
+        expect(state.get('highlightedDocumentListParams')).to.eq(@params2)
 
       it 'should not change highlightedDocumentListParams when changing documentListParams to a node', ->
         state = new State(documentListParams: @params1, highlightedDocumentListParams: @params1)
-        @params1.reset.bySomething.returns(type: 'node')
+        @params1.reset.bySomething.returns(params: { nodes: [ 2 ] })
         @params1.equals.returns(false)
         state.resetDocumentListParams().bySomething()
-        expect(state.get('highlightedDocumentListParams')).to.have.property('type', 'params1')
+        expect(state.get('highlightedDocumentListParams')).to.eq(@params1)
 
     describe 'document and oneDocumentSelected', ->
       state = undefined
@@ -50,26 +50,24 @@ define [
           document: null
           oneDocumentSelected: false
           documentListParams:
-            toJSON: -> { nodes: [ 1 ] }
-            reset:
-              byDocument: (x) ->
-                toJSON: -> [ 'byDocument', x ]
+            params: { nodes: [ 1 ] }
+            toQueryParams: -> { nodes: '1' }
 
       it 'should give empty selection when document is null and oneDocumentSelected is true', ->
         state.set(document: null, oneDocumentSelected: true)
-        expect(state.getSelection().toJSON()).to.deep.eq([ 'byDocument', null ])
+        expect(state.getSelectionQueryParams()).to.deep.eq(documents: '-1')
 
       it 'should give document selection when document is set and oneDocumentSelected is true', ->
-        state.set(document: 'foo', oneDocumentSelected: true)
-        expect(state.getSelection().toJSON()).to.deep.eq([ 'byDocument', 'foo' ])
+        state.set(document: { id: 10 }, oneDocumentSelected: true)
+        expect(state.getSelectionQueryParams()).to.deep.eq(documents: '10')
 
       it 'should give doclist selection when document is null and oneDocumentSelected is false', ->
         state.set(document: null, oneDocumentSelected: false)
-        expect(state.getSelection().toJSON()).to.deep.eq({ nodes: [ 1 ] })
+        expect(state.getSelectionQueryParams()).to.deep.eq(nodes: '1')
 
       it 'should give doclist selection when document is set and oneDocumentSelected is false', ->
         state.set(document: 'foo', oneDocumentSelected: false)
-        expect(state.getSelection().toJSON()).to.deep.eq({ nodes: [ 1 ] })
+        expect(state.getSelectionQueryParams()).to.deep.eq(nodes: '1')
 
     describe 'setView', ->
       class DocumentSet
@@ -84,11 +82,9 @@ define [
         @params =
           documentSet: @documentSet
           view: @view1
-          reset:
-            withView: (view) =>
-              all: =>
-                documentSet: @documentSet
-                view: view
+          withView: (view) =>
+            documentSet: @documentSet
+            view: view
 
         @state = new State
           view: @view1

@@ -249,12 +249,12 @@ define [
       @last_draw?.pixel_to_action(x, y)
 
     _getHighlightColor: ->
-      if (highlightedDocumentListParams = @tree.state.get('highlightedDocumentListParams'))?
-        if (tag = highlightedDocumentListParams.tag)?
-          tag.get('color')
-        else if highlightedDocumentListParams.type == 'untagged'
+      if (highlightedDocumentListParams = @tree.state.get('highlightedDocumentListParams')?.params)?
+        if (tagId = highlightedDocumentListParams.tags?[0])?
+          @documentSet.tags.get(tagId)?.get('color')
+        else if _.isBoolean(highlightedDocumentListParams.untagged)
           '#dddddd'
-        else if highlightedDocumentListParams.type != 'all'
+        else if !_.isEmpty(highlightedDocumentListParams)
           '#50ade5'
         else
           null
@@ -344,20 +344,11 @@ define [
       if @_isCurrentTag(tag) || @_isCurrentUntagged()
         @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
 
-    _isCurrentTag: (tag) -> @state.get('highlightedDocumentListParams').tag == tag
-    _isCurrentUntagged: -> @state.get('highlightedDocumentListParams').type == 'untagged'
+    _isCurrentTag: (tag) -> @state.get('highlightedDocumentListParams')?.params?.tags?[0] == tag.id
+    _isCurrentUntagged: -> Boolean(@state.get('highlightedDocumentListParams')?.params?.untagged)
 
     setHighlightedDocumentListParams: (params) ->
-      @stopListening(@_newHighlightedBackboneModel) if @_newHighlightedBackboneModel?
-      @_newHighlightedBackboneModel = null
-      if params
-        if (tag = params.tag)? && !tag.id
-          # New tags have no IDs. Let's call this method again when we get one.
-          @listenTo(tag, 'sync', => @setHighlightedDocumentListParams(params))
-        else
-          @tree.on_demand_tree.setHighlightJson(params.toApiParams())
-      else
-        @tree.on_demand_tree.setHighlightJson(null)
+      @tree.on_demand_tree.setHighlightJson(params?.toQueryParams() || null)
 
   TreeView.helpers =
     # Returns a set of { nodeid: null }.
@@ -371,12 +362,13 @@ define [
     # border.)
     getHighlightedNodeIds: (documentListParams, document, onDemandTree) ->
       return {} if !document?
+      params = documentListParams?.params || {}
 
       # parentNodes: if our doclist is showing a node's contents, no need to
       # highlight its parents.
       parentNodes = {}
-      if documentListParams.type == 'node'
-        nodeId = documentListParams.node.id
+      for nodeId in (params.nodes || [])
+        parentNodes[nodeId] = null
         while (nodeId = onDemandTree.nodes[nodeId]?.parentId)?
           parentNodes[nodeId] = null
 

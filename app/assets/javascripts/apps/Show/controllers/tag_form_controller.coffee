@@ -1,4 +1,4 @@
-define [ '../views/tag_form_view' ], (TagFormView) ->
+define [ 'underscore', '../views/tag_form_view' ], (_, TagFormView) ->
   # Pops up a modal dialog to modify/delete a tag
   #
   # Handles logging and hiding the dialog. Just call and forget.
@@ -13,9 +13,9 @@ define [ '../views/tag_form_view' ], (TagFormView) ->
       tag.collection?.sort()
 
     form.observe 'delete', ->
-      if (params = state.get('documentListParams'))? && params.type == 'tag' && params.tag == tag
+      if tag.id in (state.get('documentListParams')?.params?.tags || [])
         state.resetDocumentListParams().all()
-      if (params = state.get('highlightedDocumentListParams'))? && params.type == 'tag' && params.tag == tag
+      if tag.id in (state.get('highlightedDocumentListParams')?.params?.tags || [])
         state.set(highlightedDocumentListParams: null)
       tag.destroy()
 

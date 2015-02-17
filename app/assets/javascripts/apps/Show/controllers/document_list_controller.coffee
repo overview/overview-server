@@ -17,6 +17,12 @@ define [
 
   DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
 
+  whenExists = (model, callback) ->
+    if !model.isNew()
+      callback()
+    else
+      model.once('sync', -> whenExists(model, callback))
+
   doUntilWithSetInterval = (func, test, period) ->
     interval = undefined
 
@@ -288,8 +294,9 @@ define [
       view.on 'tag', (attributes) ->
         tags = documentSet.tags
         tag = tags.findWhere(attributes) || tags.create(attributes)
-        documentSet.tag(tag, state.getSelection())
-        state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
+        whenExists tag, =>
+          documentSet.tag(tag, state.getSelectionQueryParams())
+          state.set(highlightedDocumentListParams: state.get('documentListParams').reset.byTag(tag))
     )()
 
     keyboardController.register

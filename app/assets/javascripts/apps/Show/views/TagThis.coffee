@@ -79,8 +79,7 @@ define [
       @$button.prop('disabled', disabled)
 
     _getDefaultValue: ->
-      valueArgs = @state.get('documentListParams').toI18n?() || ['all']
-      t("value.#{valueArgs[0]}", valueArgs.slice(1)...)
+      @state.get('documentListParams').title.replace('%s', t('documents'))
 
     _initialRender: ->
       @$el.html(@template(t: t))

@@ -48,21 +48,21 @@ define [
         expect(@tag.destroy).to.have.been.called
 
       it 'should deselect state.highlightedDocumentListParams if necessary on delete', ->
-        @state.set(highlightedDocumentListParams: { type: 'tag', tag: @tag })
+        @state.set(highlightedDocumentListParams: { params: { tags: [ @tag.id ] } })
         view.delete()
         expect(@state.get('highlightedDocumentListParams')).to.be.null
 
       it 'should not deselect state.highlightedDocumentListParams if unnecessary on delete', ->
-        @state.set(highlightedDocumentListParams: { type: 'tag', tag: 'foo' })
+        @state.set(highlightedDocumentListParams: { params: { tags: [ 2 ] } })
         view.delete()
-        expect(@state.get('highlightedDocumentListParams')).to.deep.eq(type: 'tag', tag: 'foo')
+        expect(@state.get('highlightedDocumentListParams').params).to.deep.eq(tags: [ 2 ])
 
       it 'should change documentListParams if necessary on delete', ->
-        @state.set(documentListParams: { type: 'tag', tag: @tag })
+        @state.set(documentListParams: { params: { tags: [ @tag.id ]} })
         view.delete()
         expect(@resetSpy).to.have.been.called
 
       it 'should not change documentListParams if unnecessary on delete', ->
-        @state.set(documentListParams: { type: 'foo' })
+        @state.set(documentListParams: { params: { tags: [ 2 ] } })
         view.delete()
         expect(@resetSpy).not.to.have.been.called

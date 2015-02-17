@@ -70,21 +70,21 @@ define [
         expect(Backbone.sync).to.have.been.calledWith('delete', @tag)
 
       it 'should unset the state highlightedDocumentListParams if needed', ->
-        @state.set(highlightedDocumentListParams: { type: 'tag', tag: @tag })
+        @state.set(highlightedDocumentListParams: { params: { tags: [ 1 ] }})
         @view.trigger('remove', @tag)
         expect(@state.get('highlightedDocumentListParams')).to.be.null
 
       it 'should not unset the state highlightedDocumentListParams if not needed', ->
-        @state.set(highlightedDocumentListParams: { type: 'tag', tag: 'foo' })
+        @state.set(highlightedDocumentListParams: { params: { tags: [ 2 ] }})
         @view.trigger('remove', @tag)
-        expect(@state.get('highlightedDocumentListParams')).to.deep.eq(type: 'tag', tag: 'foo')
+        expect(@state.get('highlightedDocumentListParams')?.params).to.deep.eq(tags: [ 2 ])
 
       it 'should reset the documentListParams if needed', ->
-        @state.set(documentListParams: { type: 'tag', tag: @tag })
+        @state.set(documentListParams: { params: { tags: [ 1 ] }})
         @view.trigger('remove', @tag)
         expect(@state._reset.all).to.have.been.called
 
       it 'should not reset the documentListParams if not needed', ->
-        @state.set(documentListParams: { type: 'tag', tag: new Tag() })
+        @state.set(documentListParams: { params: { tags: [ 2 ] }})
         @view.trigger('remove', @tag)
         expect(@state._reset.all).not.to.have.been.called

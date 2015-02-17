@@ -2,18 +2,18 @@ define [
   'jquery'
   'backbone'
   'apps/Show/models/DocumentSet'
-], ($, Backbone, DocumentSet) ->
+  'i18n'
+], ($, Backbone, DocumentSet, i18n) ->
   class Tag extends Backbone.Model
 
-  class DocumentListParams
-    constructor: (@props) ->
-    toApiParams: -> @props
-
   class TransactionQueue
-    ajax: (optionsCallback) -> $.ajax(optionsCallback())
+    ajax: (options) -> $.ajax(options)
 
   describe 'apps/Show/models/DocumentSet', ->
     beforeEach ->
+      i18n.reset_messages
+        'views.DocumentSet.show.DocumentListParams.all': 'hack'
+
       @sandbox = sinon.sandbox.create(useFakeServer: true)
       @transactionQueue = new TransactionQueue()
       @subject = new DocumentSet(12, @transactionQueue)
@@ -48,12 +48,11 @@ define [
       expect(@subject.views.pluck('title')).to.deep.eq([ 'View' ])
 
     it 'should have documentListParams', ->
-      expect(@subject.documentListParams(null).all().documentSet).to.eq(@subject)
+      expect(@subject.documentListParams(null).documentSet).to.eq(@subject)
 
     it 'should tag on the server', ->
       tag = new Tag(id: 2)
-      params = new DocumentListParams(foo: 'bar')
-      @subject.tag(tag, params)
+      @subject.tag(tag, foo: 'bar')
       req = @sandbox.server.requests[1]
       expect(req.method).to.eq('POST')
       expect(req.url).to.eq('/documentsets/12/tags/2/add')
@@ -61,23 +60,40 @@ define [
 
     it 'should untag on the server', ->
       tag = new Tag(id: 2)
-      params = new DocumentListParams(foo: 'bar')
-      @subject.untag(tag, params)
+      @subject.untag(tag, foo: 'bar')
       req = @sandbox.server.requests[1]
       expect(req.method).to.eq('POST')
       expect(req.url).to.eq('/documentsets/12/tags/2/remove')
       expect(req.requestBody).to.eq('foo=bar')
 
+    it 'should only tag once the Tag has been created', ->
+      tag = new Tag(name: 'foo')
+      @subject.tag(tag, foo: 'bar')
+      expect(@sandbox.server.requests).to.have.length(1)
+      tag.set(id: 3)
+      tag.trigger('sync')
+      expect(@sandbox.server.requests).to.have.length(2)
+      req = @sandbox.server.requests[1]
+      expect(req.url).to.eq('/documentsets/12/tags/3/add')
+
+    it 'should only untag once the Tag has been created', ->
+      tag = new Tag(name: 'foo')
+      @subject.untag(tag, foo: 'bar')
+      expect(@sandbox.server.requests).to.have.length(1)
+      tag.set(id: 3)
+      tag.trigger('sync')
+      expect(@sandbox.server.requests).to.have.length(2)
+      req = @sandbox.server.requests[1]
+      expect(req.url).to.eq('/documentsets/12/tags/3/remove')
+
     it 'should emit "tag"', ->
       tag = new Tag(id: 2)
-      params = new DocumentListParams(foo: 'bar')
       @subject.on('tag', spy = sinon.spy())
-      @subject.tag(tag, params)
-      expect(spy).to.have.been.calledWith(tag, params)
+      @subject.tag(tag, foo: 'bar')
+      expect(spy).to.have.been.calledWith(tag, foo: 'bar')
 
     it 'should emit "untag"', ->
       tag = new Tag(id: 2)
-      params = new DocumentListParams(foo: 'bar')
       @subject.on('untag', spy = sinon.spy())
-      @subject.untag(tag, params)
-      expect(spy).to.have.been.calledWith(tag, params)
+      @subject.untag(tag, foo: 'bar')
+      expect(spy).to.have.been.calledWith(tag, foo: 'bar')

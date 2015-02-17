@@ -112,20 +112,19 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       undefined
 
     _attachState: ->
-      lastSelectedId = null
+      selectedNodeIds = []
 
       @state.on 'change:documentListParams', (__, params) =>
         @_maybe_notifying_needs_update =>
           time = Date.now()
 
-          if lastSelectedId?
-            @nodes[lastSelectedId]?.setSelected(false, @animator, time)
+          for nodeId in selectedNodeIds
+            @nodes[nodeId]?.setSelected(false, @animator, time)
 
-          if params.type == 'node'
-            lastSelectedId = params.node.id
-            @nodes[lastSelectedId]?.setSelected(true, @animator, time)
-          else
-            lastSelectedId = null
+          selectedNodeIds = params.params.nodes || []
+
+          for nodeId in selectedNodeIds
+            @nodes[nodeId]?.setSelected(true, @animator, time)
 
           undefined
         undefined

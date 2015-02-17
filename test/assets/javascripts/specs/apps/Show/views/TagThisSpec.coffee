@@ -17,7 +17,7 @@ define [
     # The ThisTag view cares about oneDocumentSelected and the result of
     # getSelection().
     defaults:
-      documentListParams: { toI18n: -> [ 'foo', 'bar' ] }
+      documentListParams: { title: '%s with title' }
       oneDocumentSelected: false
       document: null
 
@@ -28,7 +28,7 @@ define [
       i18n.reset_messages_namespaced 'views.DocumentSet.show.TagThis',
         'button.list': 'button.list'
         'button.document': 'button.document'
-        'value.foo': 'foo,{0}'
+        'documents': 'documents'
         'label.new': 'label.new'
         'label.existing': 'label.existing'
         'placeholder': 'placeholder'
@@ -59,7 +59,7 @@ define [
           # skip this test; it's a pain
 
         it 'should show a tag name', ->
-          expect(@view.$('.details input')).to.have.value('foo,bar')
+          expect(@view.$('.details input')).to.have.value('documents with title')
 
         it 'should show a second submit button with the same text', ->
           expect(@view.$('.details button')).to.have.text('button.document')
@@ -82,7 +82,7 @@ define [
         it 'should trigger tag', ->
           @view.on('tag', spy = sinon.spy())
           @view.$('.details form').trigger('submit')
-          expect(spy).to.have.been.calledWith(name: 'foo,bar')
+          expect(spy).to.have.been.calledWith(name: 'documents with title')
 
         it 'should trim the tag name', ->
           @view.on('tag', spy = sinon.spy())
@@ -104,10 +104,10 @@ define [
           expect(@view.$el).not.to.have.class('show-details')
 
         it 'should switch tag name', ->
-          @state.set(documentListParams: { toI18n: -> [ 'foo', 'baz' ] })
+          @state.set(documentListParams: { title: 'baz' })
           expect(@view.$el).not.to.have.class('show-details')
           @view.$('.prompt button').click()
-          expect(@view.$('.details input')).to.have.value('foo,baz')
+          expect(@view.$('.details input')).to.have.value('baz')
 
         it 'should reset on document change', ->
           @state.set(document: 'bar')

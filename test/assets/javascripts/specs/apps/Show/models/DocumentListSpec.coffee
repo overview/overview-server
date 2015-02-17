@@ -14,7 +14,7 @@ define [
         @documentSet = new DocumentSet()
         @params =
           documentSet: @documentSet
-          toApiParams: -> { tags: '2' }
+          toQueryParams: -> { tags: '2' }
           equals: -> true
           reset:
             byDocument: (document) ->
@@ -114,28 +114,28 @@ define [
 
           it 'should tag the list, client-side', ->
             tag = new Tag(name: 'a tag')
-            @documentSet.trigger('tag', tag, @params)
+            @documentSet.trigger('tag', tag, @params.toQueryParams())
             expect(@docs.at(0).hasTag(tag)).to.be.true
             expect(@docs.at(1).hasTag(tag)).to.be.true
 
           it 'should untag the list, client-side', ->
             tag = new Tag(name: 'a tag')
             @docs.at(0).tag(tag)
-            @documentSet.trigger('untag', tag, @params)
+            @documentSet.trigger('untag', tag, @params.toQueryParams())
             expect(@docs.at(0).hasTag(tag)).to.be.false
             expect(@docs.at(1).hasTag(tag)).to.be.false
 
           it 'should untag a document, client-side', ->
             tag = new Tag(name: 'a tag')
-            @documentSet.trigger('tag', tag, @params.reset.byDocument(@docs.at(0)))
+            @documentSet.trigger('tag', tag, documents: String(@docs.at(0).id))
             expect(@docs.at(0).hasTag(tag)).to.be.true
             expect(@docs.at(1).hasTag(tag)).to.be.false
 
           it 'should trigger nothing when tagging or untagging a single document', ->
             tag = new Tag(name: 'a tag')
             @list.on('all', spy = sinon.spy())
-            @documentSet.trigger('tag', tag, @params.reset.byDocument(@docs.at(0)))
-            @documentSet.trigger('untag', tag, @params.reset.byDocument(@docs.at(0)))
+            @documentSet.trigger('tag', tag, documents: String(@docs.at(0).id))
+            @documentSet.trigger('untag', tag, documents: String(@docs.at(0).id))
             expect(spy).not.to.have.been.called
 
           describe 'on subsequent fetchNextPage()', ->
@@ -175,7 +175,7 @@ define [
         @params =
           documentSet: @documentSet
           searchResult: new SearchResult(query: 'foo')
-          toApiParams: -> { searchResults: '2' }
+          toQueryParams: -> { searchResults: '2' }
 
         @list = new DocumentList({}, {
           params: @params

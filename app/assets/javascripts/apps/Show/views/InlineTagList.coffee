@@ -28,6 +28,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         <li
             class="btn-group"
             data-cid="<%- model.cid %>"
+            data-id="<%- model.id %>"
             style="background-color:<%- model.get('color') %>">
           <a class="btn tag-name"><%- model.get('name') %></a>
           <a class="btn tag-add" title="<%- t('add') %>"><i class="overview-icon-plus"></i></a>
@@ -69,23 +70,16 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
     # Adds a 'selected' class to the selected tag's <li>
     _renderTagSelected: ->
-      oldCid = @$('li.selected').attr('data-cid') ? null
-      newCid = @state.get('documentListParams')?.tag?.cid
-
-      return if oldCid == newCid
-
-      if oldCid?
-        @$('li.selected').removeClass('selected')
-
-      if newCid?
-        @$("li[data-cid='#{newCid}']").addClass('selected')
+      @$('li[data-id].selected').removeClass('selected')
+      ids = @state.get('documentListParams')?.params?.tags || []
+      @$("li[data-id='#{ids[0]}']").addClass('selected') if ids.length
 
       undefined
 
     # Adds a 'selected' class to li.untagged
     _renderUntaggedSelected: ->
-      oldUntagged = @$('li.untagged').hasClass('selected')
-      newUntagged = @state.get('documentListParams')?.type == 'untagged'
+      oldUntagged = Boolean(@$('li.untagged').hasClass('selected'))
+      newUntagged = Boolean(@state.get('documentListParams')?.params?.untagged)
 
       return if oldUntagged == newUntagged
 
@@ -114,6 +108,8 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       $li = @$("li[data-cid='#{model.cid}']")
       $li.css('background-color': model.get('color'))
       $li.find('.tag-name').text(model.get('name'))
+      $li.attr('data-id', model.id)
+      @_renderTagSelected() # in case data-id changed
       this
 
     render: ->

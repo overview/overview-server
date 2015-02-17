@@ -14,17 +14,17 @@ define [
       view = new View({ id: 3, creationData: [ [ 'foo', 'bar' ], [ 'rootNodeId', '123456' ] ] }, parse: true)
       expect(view.get('rootNodeId')).to.eq(123456)
 
-    it 'should scope a non-Node apiParams', ->
+    it 'should scope a non-Node queryParams', ->
       view = new View(id: 3, rootNodeId: 123)
       params = { tags: '3' }
-      scoped = view.scopeApiParams(params)
+      scoped = view.addScopeToQueryParams(params)
       expect(params).to.deep.eq(tags: '3')
       expect(scoped).to.deep.eq(tags: '3', nodes: '123')
 
-    it 'should not scope a Node apiParams', ->
+    it 'should not scope a Node queryParams', ->
       view = new View(id: 3, rootNodeId: 123)
       params = { nodes: '3' }
-      scoped = view.scopeApiParams(params)
+      scoped = view.addScopeToQueryParams(params)
       expect(scoped).to.deep.eq(nodes: '3')
 
     describe 'in a collection', ->

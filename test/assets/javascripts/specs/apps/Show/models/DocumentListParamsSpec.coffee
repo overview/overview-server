@@ -2,120 +2,115 @@ define [
   'underscore'
   'backbone'
   'apps/Show/models/DocumentListParams'
-], (_, Backbone, DocumentListParams) ->
-  class MockDocument extends Backbone.Model
-    defaults:
-      tagids: []
-      nodeids: []
-
-  class MockTag extends Backbone.Model
-    defaults:
-      name: ''
-
-  class MockSearchResult extends Backbone.Model
-    defaults:
-      query: ''
-
+  'i18n'
+], (_, Backbone, DocumentListParams, i18n) ->
   describe 'apps/Show/models/DocumentListParams', ->
     beforeEach ->
+      i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentListParams',
+        all: 'all'
+        node: 'node,{0}'
+        tag: 'tag,{0}'
+        untagged: 'untagged'
+        q: 'q,{0}'
+
+      class MockTag extends Backbone.Model
+      @tag = new MockTag(id: 1, name: 'tag 1')
+
+      @node = { id: 2, description: 'node 2' }
+      _.extend(@node, Backbone.Events)
+
       @documentSet =
         id: 12
         url: "/documentsets/12"
+        tags:
+          get: (id) => if id == 1 then @tag else undefined
       @view =
         id: 13
-        scopeApiParams: (params) -> params
-      @builder = new DocumentListParams(@documentSet, @view)
+        addScopeToQueryParams: (params) -> params
+        onDemandTree:
+          getNode: (id) => if id == 2 then @node else undefined
+      @builder = new DocumentListParams(@documentSet, @view).reset
+
+    describe 'reset()', ->
+      beforeEach -> @reset = @builder.all().reset
+
+      it 'should set a node title from the view', -> expect(@reset(nodes: [ @node.id ]).title).to.eq('node,node 2')
+      it 'should set a tag title from the docset', -> expect(@reset(tags: [ @tag.id ]).title).to.eq('tag,tag 1')
+      it 'should set a query title', -> expect(@reset(q: 'foo').title).to.eq('q,foo')
+      it 'should set an untagged title', -> expect(@reset(untagged: true).title).to.eq('untagged')
+      it 'should set an all title', -> expect(@reset().title).to.eq('all')
+      it 'should not override a title', -> expect(@reset(title: 'blah').title).to.eq('blah')
 
     describe 'all', ->
       beforeEach -> @params = @builder.all()
 
-      it 'should have type all', -> expect(@params.type).to.eq('all')
-      it 'should have no params', -> expect(@params.params).to.deep.eq([])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(all)')
-      it 'should set JSON empty', -> expect(@params.toJSON()).to.deep.eq({})
+      it 'should have no params', -> expect(@params.params).to.deep.eq({})
+      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams()')
       it 'should equals() another', -> expect(@params.equals(@builder.all())).to.be.true
-      it 'should not equals() something else', -> expect(@params.equals(@builder.untagged())).to.be.false
-      it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'all' ])
+      it 'should not equals() something else', -> expect(@params.equals(@builder.byUntagged())).to.be.false
+      it 'should give empty query params', -> expect(@params.toQueryParams()).to.deep.eq({})
+      it 'should have correct i18n', -> expect(@params.title).to.eq('all')
       it 'should have a documentSet', -> expect(@params.documentSet).to.eq(@documentSet)
       it 'should have a view', -> expect(@params.view).to.eq(@view)
 
+      it 'should reset to add objects', ->
+        params2 = @params.reset(objects: [ 1, 2, 3 ], title: 'blah')
+        expect(params2.params).to.deep.eq(objects: [ 1, 2, 3 ])
+        expect(params2.title).to.eq('blah')
+
     describe 'byNode', ->
       beforeEach ->
-        @node = { id: 2, description: 'foo' }
         @params = @builder.byNode(@node)
 
-      it 'should have type node', -> expect(@params.type).to.eq('node')
-      it 'should have one param', -> expect(@params.params).to.deep.eq([@node])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(node:2)')
-      it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq({ nodes: [2] })
-      it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(nodes: '2')
+      it 'should have one param', -> expect(@params.params).to.deep.eq(nodes: [ 2 ])
+      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(nodes=2)')
+      it 'should give query params', -> expect(@params.toQueryParams()).to.deep.eq(nodes: '2')
       it 'should equals() another', -> expect(@params.equals(@params.reset.byNode(@node))).to.be.true
       it 'should not equals() something else', -> expect(@params.equals(@params.reset.byNode(id: 3))).to.be.false
-      it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'node', 'foo' ])
+      it 'should have correct title', -> expect(@params.title).to.eq('node,node 2')
 
     describe 'byTag', ->
       beforeEach ->
-        @tag = new MockTag(id: 1, name: 'tag 1')
         @params = @builder.byTag(@tag)
 
-      it 'should have type tag', -> expect(@params.type).to.eq('tag')
-      it 'should have one param', -> expect(@params.params).to.deep.eq([@tag])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(tag:1)')
-      it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq({ tags: [1] })
-      it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq({ tags: '1' })
-      it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'tag', 'tag 1' ])
+      it 'should have one param', -> expect(@params.params).to.deep.eq(tags: [1])
+      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(tags=1)')
+      it 'should give query params', -> expect(@params.toQueryParams()).to.deep.eq(tags: '1')
+      it 'should have correct title', -> expect(@params.title).to.eq('tag,tag 1')
 
-      it 'should use view.scopeApiParams() in toApiParams()', ->
-        @view.scopeApiParams = (apiParams) -> _.extend({ foo: 'bar' }, apiParams)
-        expect(@params.toApiParams()).to.deep.eq(tags: '1', foo: 'bar')
+      it 'should use view.addScopeToQueryParams() in toQueryParams()', ->
+        @view.addScopeToQueryParams = (apiParams) -> _.extend({ foo: 'bar' }, apiParams)
+        expect(@params.toQueryParams()).to.deep.eq(tags: '1', foo: 'bar')
 
-      it 'should not use view.scopeApiParams() in toApiParams() if view is null', ->
-        params = @builder.withView(null).byTag(@tag)
-        expect(params.toApiParams()).to.deep.eq(tags: '1')
+      it 'should not use view.addScopeToQueryParams() in toApiParams() if view is null', ->
+        params = @params.withView(null).reset.byTag(@tag)
+        expect(params.toQueryParams()).to.deep.eq(tags: '1')
 
       it 'should reset', ->
-        params2 = @params.reset.byNode(id: 3)
-        expect(params2.params).to.deep.eq([ id: 3 ])
+        params2 = @params.reset.byNode(id: 3, description: 'foo')
+        expect(params2.params).to.deep.eq(nodes: [ 3 ])
+        expect(params2.title).to.eq('node,foo')
         expect(params2.documentSet).to.eq(@documentSet)
         expect(params2.view).to.eq(@view)
 
       it 'should reset to a different view', ->
         view2 = 'view2'
-        params2 = @params.reset.withView(view2).all()
+        params2 = @params.withView(view2).reset.all()
         expect(params2.view).to.eq(view2)
 
-    describe 'byDocument', ->
-      beforeEach ->
-        @document = new MockDocument(id: 1)
-        @params = @builder.byDocument(@document)
-
-      it 'should have type document', -> expect(@params.type).to.eq('document')
-      it 'should have one param', -> expect(@params.params).to.deep.eq([@document])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(document:1)')
-      it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq({ documents: [1] })
-      it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(documents: '1')
-
-      it 'should never, EVER return undefined in its API params', ->
-        @document.id = undefined
-        expect(@params.toApiParams()).to.deep.eq(documents: '0')
-
     describe 'untagged', ->
-      beforeEach -> @params = @builder.untagged()
+      beforeEach -> @params = @builder.byUntagged()
 
-      it 'should have type untagged', -> expect(@params.type).to.eq('untagged')
-      it 'should have no params', -> expect(@params.params).to.deep.eq([])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(untagged)')
-      it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq({ tags: [0] })
-      it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(tags: '0')
-      it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'untagged' ])
+      it 'should have no params', -> expect(@params.params).to.deep.eq(untagged: true)
+      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(untagged=true)')
+      it 'should have a query param', -> expect(@params.toQueryParams()).to.deep.eq(untagged: 'true')
+      it 'should have correct title', -> expect(@params.title).to.eq('untagged')
 
-    describe 'bySearch', ->
+    describe 'byQ', ->
       beforeEach ->
-        @params = @builder.bySearch('foo')
+        @params = @builder.byQ('foo')
 
-      it 'should have type search', -> expect(@params.type).to.eq('search')
-      it 'should have one param', -> expect(@params.params).to.deep.eq(['foo'])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(search:foo)')
-      it 'should have a JSON param', -> expect(@params.toJSON()).to.deep.eq(q: 'foo')
-      it 'should have an API param', -> expect(@params.toApiParams()).to.deep.eq(q: 'foo')
-      it 'should have correct toI18n()', -> expect(@params.toI18n()).to.deep.eq([ 'search', 'foo' ])
+      it 'should have one param', -> expect(@params.params).to.deep.eq(q: 'foo')
+      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(q=foo)')
+      it 'should have a query param', -> expect(@params.toQueryParams()).to.deep.eq(q: 'foo')
+      it 'should have correct title', -> expect(@params.title).to.deep.eq('q,foo')
