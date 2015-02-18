@@ -6,19 +6,20 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.exceptions.SearchParseFailed
-import controllers.backend.SelectionBackend
-import models.orm.finders.DocumentFinder
+import controllers.backend.{DocumentBackend,DocumentNodeBackend,DocumentTagBackend,SelectionBackend}
 import models.pagination.Page
 import models.{IdList,OverviewDatabase,SelectionLike}
-import org.overviewproject.tree.orm.{Document=>OldDocument}
+import org.overviewproject.models.DocumentHeader
 
 trait DocumentListController extends Controller {
   protected val selectionBackend: SelectionBackend
-  protected val storage: DocumentListController.Storage
+  protected val documentBackend: DocumentBackend
+  protected val documentNodeBackend: DocumentNodeBackend
+  protected val documentTagBackend: DocumentTagBackend
+
   private val MaxPageSize = 100
 
-  def index(documentSetId: Long, pageSize: Int, page: Int)
-            = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     val sr = selectionRequest(documentSetId, request)
     val pr = pageRequest(request, MaxPageSize)
 
@@ -27,13 +28,21 @@ trait DocumentListController extends Controller {
       case _ => selectionBackend.findOrCreate(request.user.email, sr)
     }
 
+    type Item = (DocumentHeader, Seq[Long], Seq[Long])
+
     val happyFuture = for {
       selection <- selectionFuture
-      ids <- selection.getDocumentIds(pr)
-      documents <- storage.getDocuments(ids.items)
+      page <- documentBackend.index(selection, pr, false)
+      // In serial so as not to bombard Postgres
+      nodeIds <- documentNodeBackend.indexMany(page.items.map(_.id))
+      tagIds <- documentTagBackend.indexMany(page.items.map(_.id))
     } yield {
-      val page = Page(documents, ids.pageInfo)
-      Ok(views.json.DocumentList.show(page))
+      val pageOfItems = page.map { document => (
+        document,
+        nodeIds.getOrElse(document.id, Seq()),
+        tagIds.getOrElse(document.id, Seq())
+      )}
+      Ok(views.json.DocumentList.show(pageOfItems))
     }
 
     // TODO move away from Squeryl and put this .transform() in the backend
@@ -44,35 +53,8 @@ trait DocumentListController extends Controller {
 }
 
 object DocumentListController extends DocumentListController {
+  override val documentBackend = DocumentBackend
+  override val documentNodeBackend = DocumentNodeBackend
+  override val documentTagBackend = DocumentTagBackend
   override val selectionBackend = SelectionBackend
-
-  trait Storage {
-    type Row = Tuple3[OldDocument,Seq[Long],Seq[Long]]
-
-    /** Given a list of IDs, returns Documents, node IDs and tag IDs.
-      *
-      * The response documents are in the same order as the IDs.
-      */
-    def getDocuments(ids: Seq[Long]): Future[Seq[Row]]
-  }
-
-  object DbStorage extends Storage {
-    override def getDocuments(ids: Seq[Long]) = Future {
-      OverviewDatabase.inTransaction {
-        def stringToIds(s: Option[String]): Seq[Long] = IdList.longs(s.getOrElse("")).ids
-
-        val rows: Map[Long,Row] = DocumentFinder
-          .byIds(ids)
-          .withNodeIdsAndTagIdsAsLongStrings
-          .map { (t: Tuple3[OldDocument,Option[String],Option[String]]) =>
-            t._1.id -> (t._1, stringToIds(t._2), stringToIds(t._3))
-          }
-          .toMap
-
-        ids.flatMap(rows.get(_))
-      }
-    }
-  }
-
-  override val storage = DbStorage
 }

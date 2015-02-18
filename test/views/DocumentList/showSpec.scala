@@ -6,12 +6,12 @@ import org.specs2.specification.Scope
 import play.api.libs.json.Json
 
 import models.pagination.Page
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.test.factories.{PodoFactory=>factory}
 
 class showSpec extends Specification with JsonMatchers {
   trait BaseScope extends Scope {
-    def doc1 = Document(documentSetId=1L, id=1L, description="description1")
-    def doc2 = Document(documentSetId=1L, id=2L, description="description2")
+    def doc1 = factory.document()
+    def doc2 = factory.document()
 
     def doc1AndIds = (doc1, Seq[Long](), Seq[Long]())
     def doc2AndIds = (doc2, Seq[Long](), Seq[Long]())
@@ -32,24 +32,22 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "contain documents" in new BaseScope {
+      override def doc2 = factory.document(id=2L)
       result must /("documents") /#(1) /("id" -> 2)
     }
 
-    "default to empty title" in new BaseScope {
-      result must /("documents") /#(0) /("title" -> "")
-    }
-
     "set a title" in new BaseScope {
-      override def doc1 = super.doc1.copy(title=Some("aTitle"))
+      override def doc1 = factory.document(title="aTitle")
       result must /("documents") /#(0) /("title" -> "aTitle")
     }
 
-    "default to null page_number" in new BaseScope {
+    "handle a null page_number" in new BaseScope {
+      override def doc1 = factory.document(pageNumber=None)
       result must /("documents") /#(0) /("page_number" -> null)
     }
 
-    "set a page_number" in new BaseScope {
-      override def doc1 = super.doc1.copy(pageNumber=Some(4))
+    "handle a page_number" in new BaseScope {
+      override def doc1 = factory.document(pageNumber=Some(4))
       result must /("documents") /#(0) /("page_number" -> 4)
     }
 
@@ -64,7 +62,7 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "set a URL" in new BaseScope {
-      override def doc1 = super.doc1.copy(url=Some("http://example.org"))
+      override def doc1 = factory.document(url=Some("http://example.org"))
       result must /("documents") /#(0) /("url" -> "http://example.org")
     }
   }
