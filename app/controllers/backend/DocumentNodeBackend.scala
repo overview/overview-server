@@ -3,10 +3,16 @@ package controllers.backend
 import scala.concurrent.Future
 
 import models.SelectionLike
-import org.overviewproject.models.NodeDocument
-import org.overviewproject.models.tables.{NodeDocuments,Nodes,Trees}
 
 trait DocumentNodeBackend extends Backend {
+  /** Gives a list of Node IDs for each Document.
+    *
+    * There are no empty lists: they are not defined.
+    *
+    * The returned lists are not ordered.
+    */
+  def indexMany(documentIds: Seq[Long]): Future[Map[Long,Seq[Long]]]
+
   /** Counts how many NodeDocuments exist, counted by Node.
     *
     * There are no zero counts: they are not defined.
@@ -38,6 +44,24 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
         WHERE node_id IN (${nodeIds.mkString(",")})
           AND document_id IN (${documentIds.mkString(",")})
         GROUP BY node_id
+      """)
+
+      db { session => query.list(session).toMap }
+    }
+  }
+
+  override def indexMany(documentIds: Seq[Long]) = {
+    if (documentIds.isEmpty) {
+      Future.successful(Map())
+    } else {
+      import org.overviewproject.database.Slick.Implicit.PgArrayPositionedResult
+      import scala.slick.jdbc.{GetResult, StaticQuery => Q}
+      implicit val rconv = GetResult(r => (r.nextLong() -> r.nextLongArray()))
+      val query = Q.queryNA[(Long,Seq[Long])](s"""
+        SELECT document_id, ARRAY_AGG(node_id)
+        FROM node_document
+        WHERE document_id IN (${documentIds.mkString(",")})
+        GROUP BY document_id
       """)
 
       db { session => query.list(session).toMap }

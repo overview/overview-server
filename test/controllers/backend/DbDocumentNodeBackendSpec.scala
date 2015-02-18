@@ -1,8 +1,6 @@
 package controllers.backend
 
 import models.{Selection,SelectionLike,SelectionRequest}
-import org.overviewproject.models.NodeDocument
-import org.overviewproject.models.tables.NodeDocuments
 
 class DbDocumentNodeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
@@ -10,6 +8,42 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
   }
 
   "DbDocumentNodeBackend" should {
+    "#indexMany" should {
+      trait IndexManyScope extends BaseScope {
+        val documentSet = factory.documentSet()
+        val doc1 = factory.document(documentSetId=documentSet.id)
+        val doc2 = factory.document(documentSetId=documentSet.id)
+        val doc3 = factory.document(documentSetId=documentSet.id) // no joins
+        val node1 = factory.node()
+        val node2 = factory.node(rootId=node1.id)
+        val node3 = factory.node(rootId=node1.id) // no joins
+        factory.nodeDocument(nodeId=node1.id, documentId=doc1.id)
+        factory.nodeDocument(nodeId=node1.id, documentId=doc2.id)
+        factory.nodeDocument(nodeId=node2.id, documentId=doc1.id)
+
+        lazy val result: Map[Long,Seq[Long]] = await(backend.indexMany(Seq(doc1.id, doc2.id, doc3.id)))
+      }
+
+      "return Node IDs for Documents that have them" in new IndexManyScope {
+        result(doc1.id) must containTheSameElementsAs(Seq(node1.id, node2.id))
+        result(doc2.id) must beEqualTo(Seq(node1.id))
+      }
+
+      "return nothing for Documents that have no Nodes" in new IndexManyScope {
+        result.isDefinedAt(doc3.id) must beFalse
+      }
+
+      "not return Documents that were not requested" in new IndexManyScope {
+        val doc4 = factory.document(documentSetId=documentSet.id)
+        factory.nodeDocument(nodeId=node1.id, documentId=doc4.id)
+        result.isDefinedAt(doc4.id) must beFalse
+      }
+
+      "work with an empty set of documents" in new IndexManyScope {
+        await(backend.indexMany(Seq())) must beEqualTo(Map())
+      }
+    }
+
     "#countByNode" should {
       trait CountByNodeScope extends BaseScope {
         val documentSet = factory.documentSet()
