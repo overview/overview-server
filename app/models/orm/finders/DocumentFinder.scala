@@ -33,28 +33,6 @@ object DocumentFinder extends Finder {
         select(d, ts.flatMap(_.measures))
           on (d.id === ts.map(_.key)))
     }
-
-    /** Returns just the IDs. */
-    def toIds: FinderResult[Long] = {
-      from(query)(d => select(d.id))
-    }
-
-    /** 
-     *  Returns file related info: (title, fileId, pageId, pageNumber)
-     *  All fields are optional.
-     */
-    def toFileInfo: FinderResult[(Option[String], Option[Long], Option[Long], Option[Int] )] = 
-      from(query)(d =>
-        select (d.title, d.fileId, d.pageId, d.pageNumber))
-  }
-
-  /**
-   * @return All `Document`s with the given ID.
-   *
-   * This can have 0 or 1 row.
-   */
-  def byId(id: Long): DocumentFinderResult = {
-    Schema.documents.where(_.id === id)
   }
 
   /** @return All `Document`s with the given DocumentSet. */
