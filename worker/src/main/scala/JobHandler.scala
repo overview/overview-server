@@ -14,11 +14,8 @@ import scala.util.control.NonFatal
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
 import org.overviewproject.database.{ DatabaseConfiguration, Database, DataSource, DB }
-import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.{ NodeWriter, PersistentDocumentSetCreationJob }
 import org.overviewproject.persistence.orm.finders.DocumentSetFinder
-import org.overviewproject.persistence.orm.finders.GroupedProcessedFileFinder
-import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
-import org.overviewproject.persistence.orm.finders.TreeFinder
 import org.overviewproject.persistence.orm.stores._
 import org.overviewproject.persistence.TreeIdGenerator
 import org.overviewproject.tree.DocumentSetCreationJobType
