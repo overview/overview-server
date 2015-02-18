@@ -4,12 +4,12 @@ import play.api.i18n.Lang
 import play.api.libs.json.{Json,JsValue}
 import play.api.mvc.RequestHeader
 
-import models.OverviewUser
-import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, Tree}
+import models.User
+import org.overviewproject.tree.orm.DocumentSet
 
 object showHtml {
   def apply(
-      user: OverviewUser,
+      user: User,
       documentSet: DocumentSet,
       nTrees: Int,
       nJobs: Int

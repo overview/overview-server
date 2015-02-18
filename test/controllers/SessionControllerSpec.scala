@@ -4,7 +4,7 @@ import org.specs2.specification.Scope
 import play.api.mvc.AnyContent
 
 import controllers.auth.OptionallyAuthorizedRequest
-import models.{OverviewUser,Session}
+import models.{Session,User}
 
 class SessionControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -18,7 +18,7 @@ class SessionControllerSpec extends ControllerSpecification {
   "SessionController" should {
     "new_" should {
       trait NewScope extends BaseScope {
-        def maybeUser : Option[OverviewUser] = Some(fakeUser)
+        def maybeUser : Option[User] = Some(fakeUser)
         def request = fakeOptionallyAuthorizedRequest(maybeUser)
         lazy val result = controller.new_()(request)
       }
@@ -35,7 +35,7 @@ class SessionControllerSpec extends ControllerSpecification {
 
     "delete" should {
       trait DeleteScope extends BaseScope {
-        def maybeUser : Option[OverviewUser] = Some(fakeUser)
+        def maybeUser : Option[User] = Some(fakeUser)
         def request = fakeOptionallyAuthorizedRequest(maybeUser)
         lazy val result = controller.delete()(request)
       }

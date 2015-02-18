@@ -4,7 +4,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.{Future,blocking}
 import scala.slick.lifted.{RunnableCompiled}
 
-import models.{OverviewDatabase,OverviewUser}
+import models.{OverviewDatabase,User,UserRole}
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.ApiToken
 
@@ -15,25 +15,25 @@ trait Authorities {
 
   /** Allows any user. */
   def anyUser = new Authority {
-    override def apply(user: OverviewUser) = true
+    override def apply(user: User) = true
     override def apply(apiToken: ApiToken) = Future.successful(true)
   }
 
   /** Allows only admin users. */
   def adminUser = new Authority {
-    override def apply(user: OverviewUser) = user.isAdministrator
+    override def apply(user: User) = user.role == UserRole.Administrator
     override def apply(apiToken: ApiToken) = Future.successful(false)
   }
 
   /** Allows any user who is owner of the given DocumentSet ID. */
   def userOwningDocumentSet(id: Long) = new Authority {
-    override def apply(user: OverviewUser) = check(q.userDocumentSet(user.email, id))
+    override def apply(user: User) = check(q.userDocumentSet(user.email, id))
     override def apply(apiToken: ApiToken) = Future.successful(apiToken.documentSetId == id)
   }
 
   /** Allows any user who is owner of the DocumentSet associated with the given Tag. */
   def userOwningTag(documentSetId: Long, id: Long) = new Authority {
-    override def apply(user: OverviewUser) = check(q.userDocumentSetTag(user.email, documentSetId, id))
+    override def apply(user: User) = check(q.userDocumentSetTag(user.email, documentSetId, id))
     override def apply(apiToken: ApiToken) = (apiToken.documentSetId == documentSetId) match {
       case true => Future(check(q.documentSetTag(documentSetId, id)))
       case false => Future.successful(false)
@@ -42,19 +42,19 @@ trait Authorities {
 
   /** Allows any user who is owner of the DocumentSet associated with the given Tree ID */
   def userOwningTree(id: Long) = new Authority {
-    override def apply(user: OverviewUser) = check(q.userTree(user.email, id))
+    override def apply(user: User) = check(q.userTree(user.email, id))
     override def apply(apiToken: ApiToken) = Future.successful(false)
   }
 
   /** Allows any user who is owner of the given View */
   def userOwningView(id: Long) = new Authority {
-    override def apply(user: OverviewUser) = check(q.userView(user.email, id))
+    override def apply(user: User) = check(q.userView(user.email, id))
     override def apply(apiToken: ApiToken) = Future(check(q.apiTokenView(apiToken.token, id)))
   }
 
   /** Allows any user who is owner of the given StoreObject */
   def userOwningStoreObject(id: Long) = new Authority {
-    override def apply(user: OverviewUser) = false
+    override def apply(user: User) = false
     override def apply(apiToken: ApiToken) = Future(check(q.apiTokenStoreObject(apiToken.token, id)))
   }
   
@@ -63,12 +63,12 @@ trait Authorities {
 
   /** Allows any user with any role for the given Document ID. */
   def userOwningDocument(id: Long) = new Authority {
-    override def apply(user: OverviewUser) = check(q.userDocument(user.email, id))
+    override def apply(user: User) = check(q.userDocument(user.email, id))
     override def apply(apiToken: ApiToken) = Future(check(q.documentSetDocument(apiToken.documentSetId, id)))
   }
 
   def userOwningJob(id: Long) = new Authority {
-    override def apply(user: OverviewUser) = check(q.userJob(user.email, id))
+    override def apply(user: User) = check(q.userJob(user.email, id))
     override def apply(apiToken: ApiToken) = Future.successful(false)
   }
 

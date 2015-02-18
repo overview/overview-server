@@ -8,7 +8,6 @@ import play.api.Play.{start,stop}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import models.OverviewUser
 import models.{Session, User, UserRole}
 
 class SessionFactorySpec extends Specification with Mockito {
@@ -24,13 +23,13 @@ class SessionFactorySpec extends Specification with Mockito {
       override protected val storage = mockStorage
     }
 
-    case class PossibleSession(id: UUID, user: Option[OverviewUser]) {
-      def sessionAndUser = user.map((u) => (Session(u.id, "127.0.0.1").copy(id=id), u.toUser))
+    case class PossibleSession(id: UUID, user: Option[User]) {
+      def sessionAndUser = user.map((u) => (Session(u.id, "127.0.0.1").copy(id=id), u))
     }
 
     val unauthenticatedSession = PossibleSession(UUID.randomUUID(), None)
-    val authenticatedSession = PossibleSession(UUID.randomUUID(), Some(OverviewUser(User(2L, "user2@example.org"))))
-    val authorizedSession = PossibleSession(UUID.randomUUID(), Some(OverviewUser(User(3L, "user3@example.org"))))
+    val authenticatedSession = PossibleSession(UUID.randomUUID(), Some(User(2L, "user2@example.org")))
+    val authorizedSession = PossibleSession(UUID.randomUUID(), Some(User(3L, "user3@example.org")))
 
     mockStorage.loadSessionAndUser(unauthenticatedSession.id) returns unauthenticatedSession.sessionAndUser
     mockStorage.loadSessionAndUser(authenticatedSession.id) returns authenticatedSession.sessionAndUser

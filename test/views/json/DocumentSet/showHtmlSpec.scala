@@ -9,7 +9,7 @@ import play.api.test.{FakeApplication,FakeRequest}
 
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.test.Specification
-import models.OverviewUser
+import models.User
 
 class showHtmlSpec extends Specification with JsonMatchers {
   step(start(FakeApplication()))
@@ -18,9 +18,8 @@ class showHtmlSpec extends Specification with JsonMatchers {
     trait DocumentSetContext extends Scope with Mockito {
       implicit val request = FakeRequest()
       val documentSet = DocumentSet()
-      val user = mock[OverviewUser].smart
-      user.isAdministrator returns false
-      
+      val user = User()
+
       lazy val documentSetJson = showHtml(user, documentSet, 1, 0).toString
     }
 

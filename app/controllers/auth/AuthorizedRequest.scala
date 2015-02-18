@@ -2,12 +2,8 @@ package controllers.auth
 
 import play.api.mvc.{Request,WrappedRequest}
 
-import models.OverviewUser
-import models.{Session, User}
+import models.{Session,User}
 
-case class AuthorizedRequest[A](request: Request[A], val userSession: Session, private val plainUser: User)
+case class AuthorizedRequest[A](request: Request[A], val userSession: Session, val user: User)
   extends WrappedRequest(request) {
-
-  /** TODO make this a plain User */
-  val user : OverviewUser = OverviewUser(plainUser)
 }

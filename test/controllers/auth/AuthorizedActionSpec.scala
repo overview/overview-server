@@ -79,7 +79,7 @@ class AuthorizedActionSpec extends test.InAppSpecification with Mockito {
       // request does weird type stuff, such that request != request. Hence toString.
       r.request.toString must beEqualTo(request.toString)
       r.userSession must beEqualTo(sessionAndUser._1)
-      r.user.toUser must beEqualTo(sessionAndUser._2)
+      r.user must beEqualTo(sessionAndUser._2)
     }
   }
 }

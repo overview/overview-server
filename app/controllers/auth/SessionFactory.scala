@@ -7,7 +7,6 @@ import play.api.Play.current
 import play.api.mvc.{RequestHeader, Result}
 import scala.util.control.Exception.catching
 
-import models.OverviewUser
 import models.{Session,User,UserRole}
 import models.orm.finders.{SessionFinder,UserFinder}
 import org.overviewproject.postgres.InetAddress
@@ -47,7 +46,7 @@ trait SessionFactory {
     request.session.get(SessionIdKey).toRight(unauthenticated)
       .right.flatMap((s: String) => catching(classOf[IllegalArgumentException]).opt(UUID.fromString(s)).toRight(unauthenticated))
       .right.flatMap((id: UUID) => storage.loadSessionAndUser(id).toRight(unauthenticated))
-      .right.flatMap((x: (Session,User)) => Either.cond(authority(OverviewUser(x._2)), x, unauthorized))
+      .right.flatMap((x: (Session,User)) => Either.cond(authority(x._2), x, unauthorized))
   }
 }
 

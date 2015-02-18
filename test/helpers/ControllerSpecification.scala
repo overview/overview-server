@@ -10,7 +10,6 @@ import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 import play.api.Play.{start,stop}
 
 import controllers.auth.{AuthorizedRequest, OptionallyAuthorizedRequest}
-import models.OverviewUser
 import models.{Session, User}
 
 /** A test environment for controllers.
@@ -74,9 +73,9 @@ trait ControllerSpecification extends Specification with Mockito {
 
   implicit def augmentRequest[T](r: AuthorizedRequest[T]) = new AugmentedRequest[T, AuthorizedRequest[T], AuthorizedRequest[AnyContentAsJson], AuthorizedRequest[AnyContentAsFormUrlEncoded]](
     r,
-    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user.toUser),
-    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user.toUser),
-    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user.toUser)
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user),
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user),
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user)
   )
   implicit def augmentRequest[T](r: OptionallyAuthorizedRequest[T]) = new AugmentedRequest[T, OptionallyAuthorizedRequest[T], OptionallyAuthorizedRequest[AnyContentAsJson], OptionallyAuthorizedRequest[AnyContentAsFormUrlEncoded]](
     r,
@@ -85,24 +84,21 @@ trait ControllerSpecification extends Specification with Mockito {
     (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.sessionAndUser)
   )
 
-  def fakeUser : OverviewUser = {
-    val user = User(id=2L, email="user@example.org")
-    OverviewUser(user)
-  }
+  def fakeUser : User = User(id=2L, email="user@example.org")
   def fakeRequest = FakeRequest()
-  def fakeAuthorizedRequest(user: OverviewUser, method: String = "GET", url: String = ""): AuthorizedRequest[AnyContent] = {
+  def fakeAuthorizedRequest(user: User, method: String = "GET", url: String = ""): AuthorizedRequest[AnyContent] = {
     new AuthorizedRequest(
       FakeRequest(method, url),
       Session(user.id, "127.0.0.1"),
-      user.toUser
+      user
     )
   }
   def fakeAuthorizedRequest(): AuthorizedRequest[AnyContent] = fakeAuthorizedRequest(fakeUser)
   def fakeAuthorizedRequest(method: String, url: String): AuthorizedRequest[AnyContent] = fakeAuthorizedRequest(fakeUser, method, url)
-  def fakeOptionallyAuthorizedRequest(user: Option[OverviewUser]) = {
+  def fakeOptionallyAuthorizedRequest(user: Option[User]) = {
     new OptionallyAuthorizedRequest(
       fakeRequest,
-      user.map((u: OverviewUser) => (Session(u.id, "127.0.0.1"), u.toUser))
+      user.map(u => (Session(u.id, "127.0.0.1"), u))
     )
   }
 

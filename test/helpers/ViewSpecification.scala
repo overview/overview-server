@@ -11,7 +11,7 @@ import play.api.mvc.Flash
 import play.twirl.api.Html
 import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 
-import models.OverviewUser
+import models.{User=>UserModel,UserRole}
 
 class ViewSpecification extends Specification with Mockito with JsonMatchers {
   // Need fake application, because some views show CSRF tokens
@@ -19,12 +19,7 @@ class ViewSpecification extends Specification with Mockito with JsonMatchers {
     Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
   }
 
-  def fakeUser : OverviewUser = {
-    val ret = mock[OverviewUser]
-    ret.email returns "user@example.org"
-    ret.isAdministrator returns false
-    ret
-  }
+  def fakeUser: UserModel = UserModel(email="user@example.org", role=UserRole.NormalUser)
 
   trait ViewSpecificationScope[Result] extends Scope {
     implicit def request = FakeRequest()

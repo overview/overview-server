@@ -2,7 +2,6 @@ package views.html.DocumentSet
 
 import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
-import models.OverviewUser
 
 class _documentSetSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {

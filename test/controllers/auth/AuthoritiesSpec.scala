@@ -7,7 +7,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future}
 import scala.slick.jdbc.UnmanagedSession
 
-import models.{OverviewUser,User,UserRole} // FIXME just use User
+import models.{User,UserRole}
 import org.overviewproject.database.Slick.simple.Session
 import org.overviewproject.database.DB
 import org.overviewproject.test.DbSpecification
@@ -63,8 +63,8 @@ class AuthoritiesSpec extends DbSpecification {
   "Authorities" should {
     "with a User" should {
       trait UserScope extends BaseScope {
-        val goodUser = OverviewUser(User(email="good@example.org"))
-        val badUser = OverviewUser(User(email="bad@example.org"))
+        val goodUser = User(email="good@example.org")
+        val badUser = User(email="bad@example.org")
       }
 
       "anyUser" should {
@@ -75,11 +75,11 @@ class AuthoritiesSpec extends DbSpecification {
 
       "adminUser" should {
         "return true for an admin" in new UserScope {
-          auth.adminUser(OverviewUser(User(role=UserRole.Administrator))) must beTrue
+          auth.adminUser(User(role=UserRole.Administrator)) must beTrue
         }
 
         "return false for a non-admin" in new UserScope {
-          auth.adminUser(OverviewUser(User(role=UserRole.NormalUser))) must beFalse
+          auth.adminUser(User(role=UserRole.NormalUser)) must beFalse
         }
       }
 

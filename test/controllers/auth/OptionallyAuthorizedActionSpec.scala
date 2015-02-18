@@ -8,7 +8,6 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 
 import models.{Session, User}
-import models.OverviewUser
 
 class OptionallyAuthorizedActionSpec extends test.InAppSpecification with Mockito {
   trait BaseScope extends Scope {
@@ -53,7 +52,7 @@ class OptionallyAuthorizedActionSpec extends test.InAppSpecification with Mockit
       // request does weird type stuff, such that request != request. Hence toString.
       r.request.toString must beEqualTo(request.toString)
       r.userSession must beSome(sessionAndUser._1)
-      r.user.map(_.toUser) must beSome(sessionAndUser._2)
+      r.user must beSome(sessionAndUser._2)
     }
   }
 }

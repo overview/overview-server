@@ -1,5 +1,5 @@
 @(
-  optionalUser: Option[OverviewUser],
+  optionalUser: Option[User],
   title: String,
   bodyClass: String="default",
   h1: String="",
@@ -101,7 +101,7 @@
       }
     }
 
-    @for(user <- optionalUser.map(_.toUser);
+    @for(user <- optionalUser;
          intercomSettings <- IntercomConfiguration.settingsForUser(user)) {
       <script id="IntercomSettingsScriptTag">
         window.intercomSettings = {
