@@ -11,8 +11,7 @@ import com.github.t3hnar.bcrypt._
 import java.sql.Timestamp
 import java.util.Date
 
-import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder, DocumentSetCreationJobFinder, TreeFinder, UserFinder }
-import org.overviewproject.tree.Ownership
+import models.orm.finders.UserFinder
 
 /**
  * A user that exists in the database
@@ -37,21 +36,6 @@ trait OverviewUser {
 
   /** @return The same user, with a different email */
   def withEmail(email: String): OverviewUser
-
-  /** @return True if the user has permission to read/write the DocumentSet */
-  def ownsDocumentSet(documentSetId: Long): Boolean
-
-  /** @return True if the user has permission to read the DocumentSet */
-  def canViewDocumentSet(documentSetId: Long): Boolean
-
-  /** @return True if the user has permission to read/write the Document */
-  def isAllowedDocument(documentId: Long): Boolean
-
-  /** @return True if the user owns the DocumentSet that owns the Tree */
-  def isAllowedTree(treeId: Long): Boolean
-
-  /** @return True iff the user owns the DocumentSetCreationJob */
-  def isAllowedJob(jobId: Long) : Boolean
   
   /** @return True if the user has permission to administer the website */
   def isAdministrator: Boolean
@@ -166,8 +150,6 @@ object OverviewUser {
   private def generateToken = scala.util.Random.alphanumeric.take(TokenLength).mkString
   private def generateTimestamp = new Timestamp(new Date().getTime())
 
-  def findById(id: Long) : Option[OverviewUser] = UserFinder.byId(id).headOption.map(OverviewUser.apply)
-
   def findByEmail(email: String) : Option[OverviewUser] = UserFinder.byEmail(email).headOption.map(OverviewUser.apply)
 
   def findByResetPasswordTokenAndMinDate(token: String, minDate: Date): Option[OverviewUser with ResetPasswordRequest] = {
@@ -233,41 +215,6 @@ object OverviewUser {
 
     def withEmail(email: String): OverviewUser = {
       new OverviewUserImpl(user.copy(email = email))
-    }
-
-    def canViewDocumentSet(id: Long) = {
-      // lazy val so we don't run two queries when one will do
-      lazy val byUser = DocumentSetUserFinder.byDocumentSetAndUser(id, email).nonEmpty
-      lazy val byPublic = DocumentSetFinder.byDocumentSetAndIsPublic(id, true).nonEmpty
-      byUser || byPublic
-    }
-
-    def ownsDocumentSet(id: Long) = {
-      DocumentSetUserFinder.byDocumentSetAndUserAndRole(id, email, Ownership.Owner).nonEmpty
-    }
-
-    def isAllowedTree(treeId: Long): Boolean = {
-      val tree = TreeFinder.byId(treeId).headOption
-      
-      tree.map {t => ownsDocumentSet(t.documentSetId) } getOrElse(false)
-    }
-
-    def isAllowedJob(jobId: Long): Boolean = {
-      DocumentSetCreationJobFinder.byDocumentSetCreationJob(jobId).headOption
-        .flatMap((job) => DocumentSetUserFinder.byDocumentSetAndUserAndRole(job.documentSetId, email, Ownership.Owner).headOption)
-        .isDefined
-    }
-
-    def isAllowedDocument(id: Long) = {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      import models.orm.Schema
-      val documentQuery = Schema.documents.where(d => d.id === id)
-      val rolesQuery = Schema.documentSetUsers.where(dsu => dsu.userEmail === email)
-      val joinQuery = from(rolesQuery, documentQuery)((dsu, d) =>
-        where(dsu.documentSetId === d.documentSetId)
-        select(dsu)
-      )
-      joinQuery.nonEmpty
     }
 
     def isAdministrator = user.role == UserRole.Administrator

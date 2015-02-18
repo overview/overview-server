@@ -1,6 +1,5 @@
 package models
 
-import java.sql.Timestamp
 import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -8,10 +7,7 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
 import helpers.DbTestContext
-import models.orm.Schema
 import models.orm.stores.UserStore
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetUser, Node, Tree }
-import org.overviewproject.tree.Ownership._
 
 class OverviewUserSpec  extends Specification {
   
@@ -28,29 +24,18 @@ class OverviewUserSpec  extends Specification {
   }
 
   trait LoadedUserContext extends ExistingUserContext {
-    lazy val user : OverviewUser = OverviewUser.findById(id).get
+    lazy val user : OverviewUser = OverviewUser.findByEmail(email).get
   }
     
   trait LoadedUserWithResetRequestContext extends ExistingUserContext {
-    lazy val user : OverviewUser with ResetPasswordRequest = OverviewUser.findById(id).get.withResetPasswordRequest
+    lazy val user : OverviewUser with ResetPasswordRequest = OverviewUser.findByEmail(email).get.withResetPasswordRequest
   }
 
-  trait TreeContext extends LoadedUserContext {
-    val treeId = 1l
-    
-    override def setupWithDb = {
-      val documentSet = Schema.documentSets.insert(DocumentSet(title = "OverviewUserSpec"))
-      val rootNodeId = 3L
-      Schema.nodes.insert(Node(rootNodeId, rootNodeId, None, "root", 0, true))
-      Schema.trees.insert(Tree(treeId, documentSet.id, rootNodeId, 0L, "title", 100, "en"))
-      Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, email, Owner))
-    }
-  }
   step(start(FakeApplication()))
   
   "OverviewUser" should {
     "find user by id" in new ExistingUserContext {
-      OverviewUser.findById(id) must beSome.like {case u =>
+      OverviewUser.findByEmail(email) must beSome.like {case u =>
         u.email must be equalTo(email)
         } 
     }
@@ -103,14 +88,6 @@ class OverviewUserSpec  extends Specification {
       val ormUser = user2.toUser
       ormUser.resetPasswordToken must beNone
       ormUser.resetPasswordSentAt must beNone
-    }
-    
-    "not allow access to trees that don't belong to user" in new LoadedUserContext {
-       user.isAllowedTree(1l) must beFalse 
-    }
-    
-    "allow access to trees that belong to the user" in new TreeContext {
-      user.isAllowedTree(treeId) must beTrue
     }
   }
 
