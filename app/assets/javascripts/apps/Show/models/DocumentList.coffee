@@ -78,14 +78,14 @@ define [
       if _.isEqual(params, @params.toQueryParams())
         @documents.tag(tag)
       else if params.documents?
-        for documentId in params.documents
+        for documentId in (params.documents || '').split(',')
           @documents.get(documentId)?.tag(tag)
 
     _onUntag: (tag, params) ->
       if _.isEqual(params, @params.toQueryParams())
         @documents.untag(tag)
       else if params.documents?
-        for documentId in params.documents
+        for documentId in (params.documents || '').split(',')
           @documents.get(documentId)?.untag(tag)
 
     isComplete: ->

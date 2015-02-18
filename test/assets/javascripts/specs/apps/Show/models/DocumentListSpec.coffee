@@ -125,11 +125,50 @@ define [
             expect(@docs.at(0).hasTag(tag)).to.be.false
             expect(@docs.at(1).hasTag(tag)).to.be.false
 
-          it 'should untag a document, client-side', ->
+          it 'should tag a document, client-side', ->
             tag = new Tag(name: 'a tag')
+            @docs.at(0).untag(tag)
+            @docs.at(1).untag(tag)
             @documentSet.trigger('tag', tag, documents: String(@docs.at(0).id))
             expect(@docs.at(0).hasTag(tag)).to.be.true
             expect(@docs.at(1).hasTag(tag)).to.be.false
+
+          it 'should untag a document, client-side', ->
+            tag = new Tag(name: 'a tag')
+            @docs.at(0).tag(tag)
+            @docs.at(1).tag(tag)
+            @documentSet.trigger('untag', tag, documents: String(@docs.at(0).id))
+            expect(@docs.at(0).hasTag(tag)).to.be.false
+            expect(@docs.at(1).hasTag(tag)).to.be.true
+
+          it 'should tag two documents with multi-digit IDs', ->
+            # JavaScript idiosyncracy: a simple for-loop over "123" will
+            # iterate over "1", "2" and "3".
+            tag = new Tag(name: 'a tag')
+            @docs.add([
+              { id: 123 }
+              { id: 234 }
+              { id: 345 }
+            ])
+            @documentSet.trigger('tag', tag, documents: '123,345')
+            expect(@docs.get(123).hasTag(tag)).to.be.true
+            expect(@docs.get(234).hasTag(tag)).to.be.false
+            expect(@docs.get(345).hasTag(tag)).to.be.true
+
+          it 'should untag two documents with multi-digit IDs', ->
+            tag = new Tag(name: 'a tag')
+            @docs.add([
+              { id: 123 }
+              { id: 234 }
+              { id: 345 }
+            ])
+            @docs.get(123).tag(tag)
+            @docs.get(234).tag(tag)
+            @docs.get(345).tag(tag)
+            @documentSet.trigger('untag', tag, documents: '123,345')
+            expect(@docs.get(123).hasTag(tag)).to.be.false
+            expect(@docs.get(234).hasTag(tag)).to.be.true
+            expect(@docs.get(345).hasTag(tag)).to.be.false
 
           it 'should trigger nothing when tagging or untagging a single document', ->
             tag = new Tag(name: 'a tag')
