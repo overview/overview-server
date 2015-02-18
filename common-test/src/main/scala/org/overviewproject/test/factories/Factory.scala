@@ -216,7 +216,7 @@ trait Factory {
     contentsOid: Option[Long] = None,
     fileGroupId: Option[Long] = None,
     sourceDocumentSetId: Option[Long] = None,
-    treeTitle: Option[String] = None,
+    treeTitle: Option[String] = Some(""), // Because our default is Recluster
     treeDescription: Option[String] = None,
     tagId: Option[Long] = None,
     state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.NotStarted,

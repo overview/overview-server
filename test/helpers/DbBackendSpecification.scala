@@ -1,8 +1,7 @@
 package controllers.backend
 
 import java.sql.Connection
-import org.specs2.execute.AsResult
-import org.specs2.mutable.{BeforeAfter, Specification}
+import org.specs2.mutable.BeforeAfter
 import org.specs2.specification.{Fragments, Step}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits._
