@@ -12,7 +12,7 @@ import models.orm.Schema
 import models.SelectionRequest
 
 object DocumentFinder extends Finder {
-  class DocumentFinderResult(query: Query[Document]) extends FinderResult(query) {
+  implicit class DocumentFinderResult(query: Query[Document]) extends FinderResult(query) {
     def withTagsAsStrings: FinderResult[(Document, Option[String])] = {
       val tagStringsByDocumentId = join(Schema.documentTags, Schema.tags.leftOuter)((dt, t) =>
         groupBy(dt.documentId)
@@ -39,29 +39,6 @@ object DocumentFinder extends Finder {
       from(query)(d => select(d.id))
     }
 
-    /**
-     * Returns (Document,nodeIdsString,tagIdsString) tuples.
-     *
-     * Squeryl does not work with Option[Array] at this time, so we use
-     * string_agg instead of array_agg.
-     */
-    def withNodeIdsAndTagIdsAsLongStrings: FinderResult[(Document, Option[String], Option[String])] = {
-      val nodeIdStrings: Query[GroupWithMeasures[Long, Option[String]]] = join(query, Schema.nodeDocuments)((q, nd) =>
-        groupBy(nd.documentId)
-          compute (string_agg(cast(nd.nodeId, "varchar"), ","))
-          on (nd.documentId === q.id))
-
-      val tagIdStrings: Query[GroupWithMeasures[Long, Option[String]]] = join(query, Schema.documentTags)((q, dt) =>
-        groupBy(dt.documentId)
-          compute (string_agg(cast(dt.tagId, "varchar"), ","))
-          on (dt.documentId === q.id))
-
-      join(query, nodeIdStrings.leftOuter, tagIdStrings.leftOuter)((d, n, t) =>
-        select(d, n.flatMap(_.measures), t.flatMap(_.measures))
-          orderBy (d.title, d.pageNumber, d.description, d.id)
-          on (d.id === n.map(_.key), d.id === t.map(_.key)))
-    }
-    
     /** 
      *  Returns file related info: (title, fileId, pageId, pageNumber)
      *  All fields are optional.
@@ -69,9 +46,7 @@ object DocumentFinder extends Finder {
     def toFileInfo: FinderResult[(Option[String], Option[Long], Option[Long], Option[Int] )] = 
       from(query)(d =>
         select (d.title, d.fileId, d.pageId, d.pageNumber))
-        
   }
-  implicit private def queryToDocumentFinderResult(query: Query[Document]): DocumentFinderResult = new DocumentFinderResult(query)
 
   /**
    * @return All `Document`s with the given ID.
@@ -80,11 +55,6 @@ object DocumentFinder extends Finder {
    */
   def byId(id: Long): DocumentFinderResult = {
     Schema.documents.where(_.id === id)
-  }
-
-  /** @return All `Document`s with any of the given IDs. */
-  def byIds(ids: Traversable[Long]): DocumentFinderResult = {
-    Schema.documents.where(_.id in ids)
   }
 
   /** @return All `Document`s with the given DocumentSet. */
