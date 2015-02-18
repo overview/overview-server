@@ -1,6 +1,6 @@
 package models.pagination
 
-case class Page[A](
+case class Page[+A](
   items: Seq[A],
   pageInfo: PageInfo
 ) {
