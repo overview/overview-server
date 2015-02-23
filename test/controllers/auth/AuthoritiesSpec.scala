@@ -10,6 +10,7 @@ import scala.slick.jdbc.UnmanagedSession
 import models.{User,UserRole}
 import org.overviewproject.database.Slick.simple.Session
 import org.overviewproject.database.DB
+import org.overviewproject.models.DocumentSetUser
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.factories.DbFactory
 
@@ -101,6 +102,44 @@ class AuthoritiesSpec extends DbSpecification {
           val otherDocumentSet = factory.documentSet()
           factory.documentSetUser(otherDocumentSet.id, goodUser.email)
           auth.userOwningDocumentSet(documentSet.id)(badUser) must beFalse
+        }
+      }
+
+      "userViewingDocumentSet" should {
+        "return true when the user owns the document set" in new UserScope {
+          val documentSet = factory.documentSet()
+          factory.documentSetUser(documentSet.id, goodUser.email)
+          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beTrue
+        }
+
+        "return true then the user views the document set" in new UserScope {
+          val documentSet = factory.documentSet()
+          factory.documentSetUser(documentSet.id, goodUser.email, new DocumentSetUser.Role(false))
+          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beTrue
+        }
+
+        "return true when the document set is public" in new UserScope {
+          val documentSet = factory.documentSet(isPublic=true)
+          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beTrue
+        }
+
+        "return false when another document set is public" in new UserScope {
+          val documentSet = factory.documentSet(isPublic=false)
+          val otherDocumentSet = factory.documentSet(isPublic=true)
+          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beFalse
+        }
+
+        "return false when another user owns the document set" in new UserScope {
+          val documentSet = factory.documentSet()
+          factory.documentSetUser(documentSet.id, goodUser.email)
+          auth.userViewingDocumentSet(documentSet.id)(badUser) must beFalse
+        }
+
+        "return false when the user owns another document set" in new UserScope {
+          val documentSet = factory.documentSet()
+          val otherDocumentSet = factory.documentSet()
+          factory.documentSetUser(otherDocumentSet.id, goodUser.email)
+          auth.userViewingDocumentSet(documentSet.id)(badUser) must beFalse
         }
       }
 
@@ -270,6 +309,17 @@ class AuthoritiesSpec extends DbSpecification {
         "return false when another user owns the document set" in new ApiTokenScope {
           val otherDocumentSet = factory.documentSet()
           await(auth.userOwningDocumentSet(otherDocumentSet.id)(apiToken)) must beFalse
+        }
+      }
+
+      "userViewingDocumentSet" should {
+        "return true when the user owns the document set" in new ApiTokenScope {
+          await(auth.userViewingDocumentSet(documentSet.id)(apiToken)) must beTrue
+        }
+
+        "return false when another user owns the document set" in new ApiTokenScope {
+          val otherDocumentSet = factory.documentSet()
+          await(auth.userViewingDocumentSet(otherDocumentSet.id)(apiToken)) must beFalse
         }
       }
 

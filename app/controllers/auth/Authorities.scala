@@ -59,7 +59,10 @@ trait Authorities {
   }
   
   /** Allows any user who is a viewer of the given DocumentSet ID. */
-  def userViewingDocumentSet(id: Long) = userOwningDocumentSet(id)
+  def userViewingDocumentSet(id: Long) = new Authority {
+    override def apply(user: User) = check(q.userDocumentSet(user.email, id)) || check(q.documentSetPublic(id))
+    override def apply(apiToken: ApiToken) = userOwningDocumentSet(id)(apiToken)
+  }
 
   /** Allows any user with any role for the given Document ID. */
   def userOwningDocument(id: Long) = new Authority {
@@ -137,6 +140,13 @@ object Authorities extends Authorities {
       DocumentSetUsers
         .filter(_.userEmail === email)
         .filter(_.documentSetId === documentSetId)
+        .map(_ => (true))
+    }
+
+    lazy val documentSetPublic = Compiled { (documentSetId: Column[Long]) =>
+      DocumentSets
+        .filter(_.id === documentSetId)
+        .filter(_.isPublic === true)
         .map(_ => (true))
     }
 
