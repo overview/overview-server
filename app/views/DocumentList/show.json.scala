@@ -12,7 +12,7 @@ object show {
       "description" -> document.keywords,
       "title" -> document.title,
       "page_number" -> document.pageNumber,
-      "url" -> document.url,
+      "url" -> document.viewUrl,
       "nodeids" -> nodeIds,
       "tagids" -> tagIds
     )

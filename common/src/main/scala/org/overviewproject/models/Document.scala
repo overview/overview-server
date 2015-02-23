@@ -2,7 +2,6 @@ package org.overviewproject.models
 
 import java.util.Date // should be java.time.LocalDateTime
 
-
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
 
 /** A complete Document.
@@ -46,6 +45,12 @@ case class Document(
     title,
     pageNumber,
     keywords,
-    createdAt
+    createdAt,
+    fileId.isDefined
   )
+
+  override def viewUrl: Option[String] = {
+    url
+      .orElse(fileId.map(_ => s"/documents/${id}.pdf"))
+  }
 }

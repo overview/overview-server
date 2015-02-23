@@ -30,7 +30,8 @@ case class Document(
     title=title.getOrElse(""),
     pageNumber=pageNumber,
     keywords=description.split(" "),
-    createdAt=createdAt
+    createdAt=createdAt,
+    fileId.isDefined
   )
 
   def toDocument = BetterDocument(

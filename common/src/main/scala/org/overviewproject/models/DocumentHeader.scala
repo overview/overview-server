@@ -14,4 +14,6 @@ trait DocumentHeader {
   val keywords: Seq[String]
   val createdAt: Date
   val text: String
+
+  def viewUrl: Option[String] = url
 }

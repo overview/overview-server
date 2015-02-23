@@ -16,7 +16,13 @@ case class DocumentInfo(
   override val title: String,
   override val pageNumber: Option[Int],
   override val keywords: Seq[String],
-  override val createdAt: Date
+  override val createdAt: Date,
+  val hasFileView: Boolean
 ) extends DocumentHeader {
   override val text = ""
+
+  override def viewUrl: Option[String] = {
+    url
+      .orElse(if (hasFileView) Some(s"/documents/${id}.pdf") else None)
+  }
 }

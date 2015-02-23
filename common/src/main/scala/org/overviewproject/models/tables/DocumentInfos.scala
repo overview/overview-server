@@ -29,6 +29,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   def documentcloudId = column[Option[String]]("documentcloud_id")
   def title = column[Option[String]]("title")
   def pageNumber = column[Option[Int]]("page_number")
+  def fileId = column[Option[Long]]("file_id")
 
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
@@ -44,9 +45,10 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     title,
     pageNumber,
     keywords,
-    createdAt
-  ).<>[DocumentInfo,Tuple9[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date]](
-    (t: Tuple9[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date]) => DocumentInfo.apply(
+    createdAt,
+    fileId
+  ).<>[DocumentInfo,Tuple10[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long]]](
+    (t: Tuple10[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long]]) => DocumentInfo.apply(
       t._1,
       t._2,
       t._3,
@@ -54,7 +56,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       t._6.getOrElse(""),              // title
       t._7,
       t._8,
-      t._9
+      t._9,
+      t._10.isDefined
     ),
     { d: DocumentInfo => Some(
       d.id,
@@ -65,7 +68,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       Some(d.title),
       d.pageNumber,
       d.keywords,
-      d.createdAt
+      d.createdAt,
+      None
     )}
   )
 }
