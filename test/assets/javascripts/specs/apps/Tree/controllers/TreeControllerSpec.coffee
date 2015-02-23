@@ -7,10 +7,9 @@ define [
     class MockState extends Backbone.Model
 
     class Params
-      constructor: (@stuff) ->
-        @node = @stuff.node
+      constructor: (@params) ->
         @reset =
-          byNode: (node) -> new Params(node: node)
+          byNode: (node) -> new Params(nodes: [node.id])
 
       equals: (rhs) ->
         _.isEqual(@, rhs)
@@ -24,7 +23,7 @@ define [
         oneDocumentSelected: false
       @state.resetDocumentListParams = =>
         byNode: (node) =>
-          @state.set(documentListParams: new Params(node: node))
+          @state.set(documentListParams: new Params(nodes: [node.id]))
 
       @focus =
         animateNode: sinon.spy()
@@ -97,9 +96,9 @@ define [
 
         @selectedNodeId = =>
           params = @state.get('documentListParams')
-          stuff = params.stuff
-          throw "No stuff in params #{JSON.stringify(params)}" if !stuff?
-          stuff.node?.id
+          params = params.params
+          throw "No params in params #{JSON.stringify(params)}" if !params?
+          params.nodes?[0]
 
       it 'should not update when it does not need an update on init', (done) ->
         _.defer =>
@@ -143,7 +142,7 @@ define [
           @view.nodeid_below.withArgs(1).returns(2)
           @tree.id_tree.children[1] = [ 2, 3, 4 ]
           @tree.getNode.withArgs(2).returns(id: 2)
-          @state.set(documentListParams: new Params(node: { id: 1 }))
+          @state.set(documentListParams: new Params(nodes: [1]))
           @subject.goDown()
 
         it 'should select the node', -> expect(@selectedNodeId()).to.eq(2)
@@ -155,7 +154,7 @@ define [
           @tree.id_tree.parent[2] = 1
           @view.nodeid_above.withArgs(2).returns(1)
           @tree.getNode.withArgs(1).returns(id: 1)
-          @state.set(documentListParams: new Params(node: { id: 2 }))
+          @state.set(documentListParams: new Params(nodes: [2]))
           @subject.goUp()
 
         it 'should select the parent node', -> expect(@selectedNodeId()).to.eq(1)
@@ -171,7 +170,7 @@ define [
           @view.nodeid_right.withArgs(4).returns(null)
           @tree.getNode.withArgs(2).returns(id: 2)
           @tree.getNode.withArgs(4).returns(id: 4)
-          @state.set(documentListParams: new Params(node: { id: 3 }))
+          @state.set(documentListParams: new Params(nodes: [3]))
 
         it 'should go Right', ->
           @subject.goRight()

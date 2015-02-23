@@ -76,7 +76,7 @@ define [
       @tree.demandNode(node.id)
 
     _findNodeRelativeToSelectedNode: (finder) ->
-      nodeId = @state.get('documentListParams')?.node?.id || null
+      nodeId = @state.get('documentListParams')?.params?.nodes?[0] || null
       return @tree.getRoot() if !nodeId?
       newId = @view[finder](nodeId)
       if newId?
