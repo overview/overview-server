@@ -84,7 +84,7 @@ define [
         expect(@view.$('li:eq(1)').hasClass('selected')).to.be.false
 
       it 'should set "selected" on untagged', ->
-        @state.set(documentListParams: { params: { untagged: true }})
+        @state.set(documentListParams: { params: { tagged: false }})
         expect(@view.$('li.untagged').hasClass('selected')).to.be.true
 
       it 'should use the tag color when given', ->

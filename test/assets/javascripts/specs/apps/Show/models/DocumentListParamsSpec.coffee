@@ -37,7 +37,7 @@ define [
       it 'should set a node title from the view', -> expect(@reset(nodes: [ @node.id ]).title).to.eq('node,node 2')
       it 'should set a tag title from the docset', -> expect(@reset(tags: [ @tag.id ]).title).to.eq('tag,tag 1')
       it 'should set a query title', -> expect(@reset(q: 'foo').title).to.eq('q,foo')
-      it 'should set an untagged title', -> expect(@reset(untagged: true).title).to.eq('untagged')
+      it 'should set an untagged title', -> expect(@reset(tagged: false).title).to.eq('untagged')
       it 'should set an all title', -> expect(@reset().title).to.eq('all')
       it 'should not override a title', -> expect(@reset(title: 'blah').title).to.eq('blah')
 
@@ -101,9 +101,9 @@ define [
     describe 'untagged', ->
       beforeEach -> @params = @builder.byUntagged()
 
-      it 'should have no params', -> expect(@params.params).to.deep.eq(untagged: true)
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(untagged=true)')
-      it 'should have a query param', -> expect(@params.toQueryParams()).to.deep.eq(untagged: 'true')
+      it 'should have no params', -> expect(@params.params).to.deep.eq(tagged: false)
+      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(tagged=false)')
+      it 'should have a query param', -> expect(@params.toQueryParams()).to.deep.eq(tagged: 'false')
       it 'should have correct title', -> expect(@params.title).to.eq('untagged')
 
     describe 'byQ', ->

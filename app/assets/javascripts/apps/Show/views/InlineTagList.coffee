@@ -79,7 +79,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     # Adds a 'selected' class to li.untagged
     _renderUntaggedSelected: ->
       oldUntagged = Boolean(@$('li.untagged').hasClass('selected'))
-      newUntagged = Boolean(@state.get('documentListParams')?.params?.untagged)
+      newUntagged = false == @state.get('documentListParams')?.params?.tagged
 
       return if oldUntagged == newUntagged
 

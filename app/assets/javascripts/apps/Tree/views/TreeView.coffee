@@ -252,7 +252,7 @@ define [
       if (highlightedDocumentListParams = @tree.state.get('highlightedDocumentListParams')?.params)?
         if (tagId = highlightedDocumentListParams.tags?[0])?
           @documentSet.tags.get(tagId)?.get('color')
-        else if _.isBoolean(highlightedDocumentListParams.untagged)
+        else if false == highlightedDocumentListParams.tagged
           '#dddddd'
         else if !_.isEmpty(highlightedDocumentListParams)
           '#50ade5'
@@ -345,7 +345,7 @@ define [
         @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
 
     _isCurrentTag: (tag) -> @state.get('highlightedDocumentListParams')?.params?.tags?[0] == tag.id
-    _isCurrentUntagged: -> Boolean(@state.get('highlightedDocumentListParams')?.params?.untagged)
+    _isCurrentUntagged: -> false == @state.get('highlightedDocumentListParams')?.params?.tagged
 
     setHighlightedDocumentListParams: (params) ->
       @tree.on_demand_tree.setHighlightJson(params?.toQueryParams() || null)

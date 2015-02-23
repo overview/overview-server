@@ -28,7 +28,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
   Attributes =
     q: string
     nodes: intArray
-    untagged: boolean
+    tagged: boolean
     objects: intArray
     nodes: intArray
     tags: intArray
@@ -60,7 +60,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
   # * q: a full-text search query string (toQueryString() url-encodes it)
   # * tags: an Array of Tag IDs, or null
   # * objects: an Array of StoreObject IDs, or null
-  # * untagged: a boolean, or null
+  # * tagged: a boolean, or null
   # * nodes: Tree nodes (TODO: nix and use objects instead)
   #
   # You're expected to use .reset() and .withView() instead of constructing
@@ -68,17 +68,17 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
   #
   #     params.reset.byNode(node) # nodes: [ node.id ], title: '%s in topic “#{node.description}”
   #     params.reset.byTag(tag)   # tags: [ tag.id ], title: '%s tagged “#{tag.name}”
-  #     params.reset.byUntagged() # untagged: true, title: '%s without any tags'
+  #     params.reset.byUntagged() # tagged: false, title: '%s without any tags'
   #     params.reset.byQ(q)       # q: q, title: '%s matching “#{q}”
   #     params.reset.all()        # title: '%s in document set
   #
   # If you call reset() without a title, some calls will auto-generate titles
   #
-  #     params.reset(nodes: [ 2 ])   # nodes: [ 2 ], title: '%s in topic “#{node.description}”'
-  #     params.reset(tags: [ 1 ])    # tags: [ 1 ], title: '%s tagged “#{tag.name}”
-  #     params.reset(untagged: true) # untagged: true, title: '%s without any tags'
-  #     params.reset(q: 'foo')       # q: 'foo', title: '%s matching “foo”
-  #     params.reset({})             # title: '%s in document set'
+  #     params.reset(nodes: [ 2 ])  # nodes: [ 2 ], title: '%s in topic “#{node.description}”'
+  #     params.reset(tags: [ 1 ])   # tags: [ 1 ], title: '%s tagged “#{tag.name}”
+  #     params.reset(tagged: false) # tagged: false, title: '%s without any tags'
+  #     params.reset(q: 'foo')      # q: 'foo', title: '%s matching “foo”
+  #     params.reset({})            # title: '%s in document set'
   #
   # These five title strings come from i18n constants defined here. Plugins can
   # pass their own i18n strings.
@@ -162,7 +162,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
               t('node', @view?.onDemandTree?.getNode?(options.nodes[0])?.description)
             else if keys[0] == 'tags' && options.tags.length == 1
               t('tag', @documentSet?.tags?.get?(options.tags[0])?.attributes?.name)
-            else if keys[0] == 'untagged' && options.untagged
+            else if keys[0] == 'tagged' && !options.tagged
               t('untagged')
             else if keys[0] == 'q'
               t('q', options.q)
@@ -175,7 +175,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
 
       reset.byNode = (node) -> reset(nodes: [ node.id ], title: t('node', node.description))
       reset.byTag = (tag) -> reset(tags: [ tag.id ], title: t('tag', tag.attributes.name))
-      reset.byUntagged = -> reset(untagged: true, title: t('untagged'))
+      reset.byUntagged = -> reset(tagged: false, title: t('untagged'))
       reset.byQ = (q) -> reset(q: q, title: t('q', q))
       reset.all = -> reset(title: t('all'))
       reset
