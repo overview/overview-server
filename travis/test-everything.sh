@@ -14,15 +14,8 @@ deps/redis/build.sh
 # Suppress excessive output from Sbt (resolving / downloading). Either it
 # works or it doesn't; all errors are the same to us.
 #
-# We cache with Artifactory. Configure repos here: http://repo-proxy.overviewproject.org.
-# Any repo that's in Build.scala, plugins.sbt or default sbt needs to be in
-# there for Travis to build. Any repo that _isn't_ should be _gone_, because
-# that will make cache misses much faster.
-#
-# Set the cache expiry times for hits _and_ misses far into the future. Ivy
-# generates N-1 misses for every 1 hit, where N is the total number of
-# repositories.
-./sbt -Dsbt.log.noformat=true -Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories '; set every logLevel := Level.Warn; common/update; common-test/update; overview-server/update; documentset-worker/update; worker/update; runner/update; db-evolution-applier/update; search-index/update; message-broker/update'
+# test:update downloads test deps, which are always a superset of deps
+./sbt '; set every logLevel := Level.Warn; common/test:update; common-test/update; overview-server/test:update; documentset-worker/test:update; worker/test:update; runner/test:update; db-evolution-applier/update; search-index/update; message-broker/update'
 
 # CoffeeScript tests are the fastest, so we put them first
 ./auto/test-coffee-once.sh || true # Jenkins will pick up test-result XML
