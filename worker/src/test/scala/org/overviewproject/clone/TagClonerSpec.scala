@@ -5,9 +5,6 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ DocumentSet, Tag }
 
 class TagClonerSpec extends DbSpecification {
-
-  step(setupDb)
-
   "TagCloner" should {
 
     trait TagContext extends DbTestContext {
@@ -46,6 +43,4 @@ class TagClonerSpec extends DbSpecification {
       mappedIds must containTheSameElementsAs(cloneTags.map(_.id))
     }
   }
-
-  step(shutdownDb)
 }

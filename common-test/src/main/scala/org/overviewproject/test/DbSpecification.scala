@@ -1,26 +1,30 @@
-/*
- * DbSpecification.scala
- * 
- * Overview Project
- * Created by Jonas Karlsson, Aug 2012
- */
-
 package org.overviewproject.test
 
-import org.junit.runner.RunWith
+import java.sql.Connection
 import org.specs2.execute.AsResult
-import org.specs2.mutable.Around
-import org.squeryl.Session
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import org.overviewproject.postgres.SquerylEntrypoint._
+import org.specs2.mutable.{After,Around}
+import org.specs2.specification.{Fragments, Step}
+import org.squeryl.{Session=>SquerylSession}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await,Future}
+import scala.slick.jdbc.UnmanagedSession
+import scala.slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.{DB, DataSource, DatabaseConfiguration}
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylEntrypoint.using
+import org.overviewproject.test.factories.DbFactory
 
 /**
  * Tests that access the database should extend DbSpecification.
- * Before any examples, call step(setupDB), and after examples call step(shutdownDB).
  */
 class DbSpecification extends Specification {
+  sequential
+
+  override def map(fs: => Fragments) = {
+    Step(setupDb) ^ super.map(fs) ^ Step(shutdownDb)
+  }
+
   private val DatabaseProperty = "datasource.default.url"
   private val TestDatabase = "postgres://overview:overview@localhost:9010/overview-test"
 
@@ -28,6 +32,8 @@ class DbSpecification extends Specification {
    * Context for test accessing the database. All tests are run inside a transaction
    * which is rolled back after the test is complete.
    */
+  // Commented out @deprecated because it produces too many warnings.
+  //@deprecated("Use DbScope instead: it supports Slick and only connects on-demand", "2015-02-24")
   trait DbTestContext extends Around {
     lazy implicit val connection = DB.getConnection()
 
@@ -38,7 +44,7 @@ class DbSpecification extends Specification {
       try {
         connection.setAutoCommit(false)
         val adapter = new SquerylPostgreSqlAdapter()
-        val session = new Session(connection, adapter)
+        val session = new SquerylSession(connection, adapter)
         using(session) { // sets thread-local variable
           setupWithDb
           AsResult(test)
@@ -48,6 +54,45 @@ class DbSpecification extends Specification {
         connection.close()
       }
     }
+  }
+
+  /** Context for test accessing the database.
+    *
+    * Provides these variables:
+    *
+    * <ul>
+    *   <li><em>connection</em> (lazy): a Connection
+    *   <li><em>session</em> (lazy): a Slick Session</li>
+    *   <li><em>factory</em>: a DbFactory for constructing objects</li>
+    *   <li><em>await</em>: awaits a Future</li>
+    *   <li><em>sql</em>: runs arbitrary SQL, returning nothing</li>
+    * </ul>
+    *
+    * Whatever code you test with <em>must not commit or start a
+    * transaction</em>. When you first use the connection, a transaction will
+    * begin; when your test finishes, the transaction will be rolled back.
+    */
+  trait DbScope extends After {
+    private var connected = false
+    lazy val connection: Connection = {
+      connected = true
+      val ret = DB.getConnection()
+      ret.setAutoCommit(false)
+      ret
+    }
+    lazy implicit val session: Session = new UnmanagedSession(connection)
+    lazy val factory: DbFactory = new DbFactory(connection)
+
+    def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
+
+    override def after = {
+      if (connected) {
+        connection.rollback()
+        connection.close()
+      }
+    }
+
+    def sql(q: String): Unit = session.withPreparedStatement(q) { (st) => st.execute }
   }
 
   def setupDb() {

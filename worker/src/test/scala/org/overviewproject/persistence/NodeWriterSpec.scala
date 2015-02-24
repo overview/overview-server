@@ -7,19 +7,17 @@
 
 package org.overviewproject.persistence
 
-import scala.collection.mutable.Set
-import org.overviewproject.clustering.DocTreeNode
-import org.overviewproject.test.DbSpecification
 import org.specs2.execute.PendingUntilFixed
+import scala.collection.mutable.Set
+
+import org.overviewproject.clustering.DocTreeNode
+import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.test.DbSpecification
+import org.overviewproject.test.IdGenerator
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm.{Document, DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Node, NodeDocument}
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.test.IdGenerator
 
 class NodeWriterSpec extends DbSpecification {
-
-  step(setupDb)
-
   private def addChildren(parent: DocTreeNode, description: String): Seq[DocTreeNode] = {
     val children = for (i <- 1 to 2) yield new DocTreeNode(Set())
     children.foreach(_.description = description)
@@ -181,6 +179,4 @@ class NodeWriterSpec extends DbSpecification {
       findAllRootNodes must haveSize(2)
     }
   }
-
-  step(shutdownDb)
 }

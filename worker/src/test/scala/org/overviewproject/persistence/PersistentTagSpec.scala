@@ -6,9 +6,6 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ DocumentSet, Tag }
 
 class PersistentTagSpec extends DbSpecification {
-
-  step(setupDb)
-
   "PersisentTag" should {
 
     trait TagContext extends DbTestContext {
@@ -36,6 +33,4 @@ class PersistentTagSpec extends DbSpecification {
       foundTag must be equalTo(tag)
     }
   }
-
-  step(shutdownDb)
 }

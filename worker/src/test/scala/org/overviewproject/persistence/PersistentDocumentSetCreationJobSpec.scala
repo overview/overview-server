@@ -4,21 +4,17 @@
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
-
 package org.overviewproject.persistence
 
 import org.overviewproject.database.DB
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._ 
 import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._ 
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
-
-  step(setupDb)
-
   def insertDocumentSetCreationJob(documentSetId: Long, state: DocumentSetCreationJobState): Long = {
     import org.overviewproject.postgres.SquerylEntrypoint._
     val job = DocumentSetCreationJob(
@@ -263,6 +259,4 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
        notStartedJob.state must be equalTo(Cancelled)
     }
   }
-
-  step(shutdownDb)
 }

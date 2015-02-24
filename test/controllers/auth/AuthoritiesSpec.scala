@@ -1,18 +1,10 @@
 package controllers.auth
 
-import java.sql.Connection
-import org.specs2.mutable.BeforeAfter
-import org.specs2.specification.{Fragments, Step}
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await,Future}
-import scala.slick.jdbc.UnmanagedSession
+import scala.slick.jdbc.JdbcBackend.Session
 
 import models.{User,UserRole}
-import org.overviewproject.database.Slick.simple.Session
-import org.overviewproject.database.DB
 import org.overviewproject.models.DocumentSetUser
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.factories.DbFactory
 
 /** Tests authorities.
   *
@@ -24,37 +16,8 @@ import org.overviewproject.test.factories.DbFactory
   * the Authorities.
   */
 class AuthoritiesSpec extends DbSpecification {
-  sequential
-
-  override def map(fs: => Fragments) = {
-    Step(setupDb) ^ super.map(fs) ^ Step(shutdownDb)
-  }
-
   class TestAuthorities(val session: Session) extends Authorities {
     override def db[A](block: Session => A) = block(session)
-  }
-
-  trait DbScope extends BeforeAfter {
-    var connected = false
-    lazy val connection: Connection = {
-      connected = true
-      val ret = DB.getConnection()
-      ret.setAutoCommit(false)
-      ret
-    }
-    lazy val session: Session = new UnmanagedSession(connection)
-    lazy val factory = new DbFactory(connection)
-
-    def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
-
-    override def before = ()
-
-    override def after = {
-      if (connected) {
-        connection.rollback()
-        connection.close()
-      }
-    }
   }
 
   trait BaseScope extends DbScope {

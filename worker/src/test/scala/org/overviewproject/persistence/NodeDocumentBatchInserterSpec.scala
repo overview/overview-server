@@ -4,7 +4,6 @@
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
-
 package org.overviewproject.persistence
 
 import org.overviewproject.persistence.orm.Schema
@@ -13,8 +12,6 @@ import org.overviewproject.test.IdGenerator
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument }
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
-  step(setupDb)
-
   trait DocumentsSetup extends DbTestContext {
     import org.overviewproject.postgres.SquerylEntrypoint._
     var documentSet: DocumentSet = _
@@ -101,6 +98,4 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       "did not crash" must be equalTo ("did not crash")
     }
   }
-
-  step(shutdownDb)
 }

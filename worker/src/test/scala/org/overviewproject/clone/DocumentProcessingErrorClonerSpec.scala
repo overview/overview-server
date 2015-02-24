@@ -6,9 +6,6 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.DocumentSet
 
 class DocumentProcessingErrorClonerSpec extends DbSpecification {
-  
-  step(setupDb)
-  
   "DocumentProcessingErrorCloner" should {
     
     "clone DocumentProcessingErrors" in new DbTestContext {
@@ -20,6 +17,4 @@ class DocumentProcessingErrorClonerSpec extends DbSpecification {
       val clonedErrors = Schema.documentProcessingErrors.where(dpe => dpe.documentSetId === cloneDocumentSet.id)
     }
   }
-  
-  step(shutdownDb)
 }

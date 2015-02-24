@@ -5,8 +5,6 @@ import org.overviewproject.test.IdGenerator._
 import org.overviewproject.postgres.SquerylEntrypoint._
 
 class DocumentSpec extends DbSpecification {
-  step(setupDb)
-  
   "Document" should {
     
     trait DocumentContext extends DbTestContext {
@@ -65,5 +63,4 @@ class DocumentSpec extends DbSpecification {
       foundDocument.title must beNone
     }
   }
-  step(shutdownDb)
 }

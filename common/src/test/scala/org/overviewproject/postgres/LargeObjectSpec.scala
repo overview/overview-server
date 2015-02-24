@@ -7,9 +7,6 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.database.DB
 
 class LargeObjectSpec extends DbSpecification {
-
-  step(setupDb)
-
   "LargeObject" should {
 
     trait LoContext extends DbTestContext {
@@ -149,7 +146,4 @@ class LargeObjectSpec extends DbSpecification {
       }
     }
   }
-
-  step(shutdownDb)
-
 }

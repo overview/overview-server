@@ -6,10 +6,7 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.DocumentSet
 
-
 class DocRetrievalErrorWriterSpec extends DbSpecification {
-  step(setupDb)
-
   trait OurContext extends DbTestContext {
     var documentSetId: Long = _
     var errors: Seq[DocumentRetrievalError] = _
@@ -34,6 +31,4 @@ class DocRetrievalErrorWriterSpec extends DbSpecification {
 
     documentSet.documentProcessingErrorCount must beEqualTo(errors.length)
   }
-  
-  step(shutdownDb)
 }

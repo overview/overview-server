@@ -4,8 +4,6 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 
 class DocumentProcessingErrorSpec extends DbSpecification {
-  step(setupDb)
-  
   "DocumentProcessingError" should {
 
     "write and read from the database" in new DbTestContext {
@@ -24,7 +22,4 @@ class DocumentProcessingErrorSpec extends DbSpecification {
       foundError.get must be equalTo(documentProcessingError)
     }
   } 
-  
-  step(shutdownDb)
-
 }

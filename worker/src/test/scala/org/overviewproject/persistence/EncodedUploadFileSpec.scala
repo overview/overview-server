@@ -5,9 +5,6 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.UploadedFile
 
 class EncodedUploadFileSpec extends DbSpecification {
-
-  step(setupDb)
-
   "EncodedUploadedFile" should {
 
     trait UploadedFileContext extends DbTestContext {
@@ -29,13 +26,10 @@ class EncodedUploadFileSpec extends DbSpecification {
 
   }
 
-  step(shutdownDb)
-
-  case class TestUploadFile(contentType: String) extends EncodedUploadFile {
-    val size: Long = 100
-  }
-
   "EncodedUploadedFile" should {
+    case class TestUploadFile(contentType: String) extends EncodedUploadFile {
+      val size: Long = 100
+    }
 
     "return None if no encoding can be found" in {
       val uploadedFile = TestUploadFile("application/octet-stream")

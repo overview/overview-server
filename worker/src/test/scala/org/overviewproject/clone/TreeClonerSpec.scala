@@ -4,12 +4,9 @@ import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeIdGenerator
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.{ DocumentSet, Node, Tree }
 
 class TreeClonerSpec extends DbSpecification {
-  step(setupDb)
-
   "TreeCloner" should {
     trait TreeCloneContext extends DbTestContext {
       var sourceDocumentSet: DocumentSet = _
@@ -64,6 +61,4 @@ class TreeClonerSpec extends DbSpecification {
       findClonedTree must beSome(expectedCloneTree)
     }
   }
-
-  step(shutdownDb)
 }

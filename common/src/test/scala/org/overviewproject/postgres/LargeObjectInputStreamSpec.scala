@@ -5,9 +5,6 @@ import org.postgresql.PGConnection
 import org.overviewproject.database.DB
 
 class LargeObjectInputStreamSpec extends DbSpecification {
-
-  step(setupDb)
-
   "LargeObjectInputStream" should {
 
     trait LoContext extends DbTestContext {
@@ -107,8 +104,5 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       
       readData must be equalTo data.take(20)
     }
-    
-    
   }
-  step(shutdownDb)
 }

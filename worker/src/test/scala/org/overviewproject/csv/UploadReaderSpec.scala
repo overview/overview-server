@@ -3,6 +3,7 @@ package org.overviewproject.csv
 import java.io.Reader
 import java.nio.charset.Charset
 import scala.Array.canBuildFrom
+
 import org.overviewproject.database.DB
 import org.overviewproject.persistence.EncodedUploadFile
 import org.overviewproject.postgres.LO
@@ -11,9 +12,6 @@ import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.tree.orm.UploadedFile
 
 class UploadReaderSpec extends DbSpecification {
-
-  step(setupDb)
-
   "UploadReader" should {
 
     trait UploadContext extends DbTestContext {
@@ -119,6 +117,4 @@ class UploadReaderSpec extends DbSpecification {
       buffer must be equalTo (replacement)
     }
   }
-
-  step(shutdownDb)
 }

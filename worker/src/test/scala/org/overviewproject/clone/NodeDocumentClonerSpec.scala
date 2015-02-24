@@ -1,16 +1,14 @@
 package org.overviewproject.clone
 
+import org.squeryl.KeyedEntity
+
+import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeIdGenerator }
 import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.persistence.orm.Schema.documentSets
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
-import org.squeryl.KeyedEntity
-import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeIdGenerator }
-import org.overviewproject.persistence.orm.Schema.documentSets
 
 class NodeDocumentClonerSpec extends DbSpecification {
-
-  step(setupDb)
-
   implicit object NodeDocumentOrdering extends math.Ordering[NodeDocument] {
     override def compare(a: NodeDocument, b: NodeDocument) = {
       val c1 = a.documentId compare b.documentId
@@ -80,6 +78,4 @@ class NodeDocumentClonerSpec extends DbSpecification {
       allNodeDocuments.sorted must beEqualTo((sourceNodeDocuments ++ cloneNodeDocuments).sorted)
     }
   }
-
-  step(shutdownDb)
 }

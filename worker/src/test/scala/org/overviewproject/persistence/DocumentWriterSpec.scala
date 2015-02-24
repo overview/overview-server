@@ -4,7 +4,6 @@
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
-
 package org.overviewproject.persistence
 
 import org.overviewproject.test.DbSpecification
@@ -13,9 +12,6 @@ import org.overviewproject.persistence.orm.Schema.{ documents, documentSets }
 import org.overviewproject.postgres.SquerylEntrypoint._
 
 class DocumentWriterSpec extends DbSpecification {
-
-  step(setupDb)
-
   "DocumentWriter" should {
 
     trait Setup extends DbTestContext {
@@ -59,6 +55,4 @@ class DocumentWriterSpec extends DbSpecification {
       document.id must not be equalTo(0)
     }
   }
-
-  step(shutdownDb)
 }

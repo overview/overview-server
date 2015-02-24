@@ -4,8 +4,6 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.IdGenerator
 
 class NodeSpec extends DbSpecification {
-  step(setupDb)
-
   "Node" should {
     "write and read from the database" in new DbTestContext {
       import org.overviewproject.postgres.SquerylEntrypoint._
@@ -25,6 +23,4 @@ class NodeSpec extends DbSpecification {
       Schema.nodes.lookup(node.id) must beSome(node)
     }
   }
-
-  step(shutdownDb)
 }

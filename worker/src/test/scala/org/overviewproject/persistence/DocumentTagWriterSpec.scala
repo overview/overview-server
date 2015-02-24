@@ -1,15 +1,11 @@
 package org.overviewproject.persistence
 
-
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Tag }
 
 class DocumentTagWriterSpec extends DbSpecification {
-
-  step(setupDb)
-  
   "DocumentTagWriter" should {
     
     "write DocumentTags in batches" in new DbTestContext {
@@ -37,6 +33,4 @@ class DocumentTagWriterSpec extends DbSpecification {
 
     
   }
-  
-  step(shutdownDb)
 }

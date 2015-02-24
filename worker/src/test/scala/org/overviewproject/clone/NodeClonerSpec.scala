@@ -1,13 +1,11 @@
 package org.overviewproject.clone
 
+import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeIdGenerator }
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.Node
-import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeIdGenerator }
 
 class NodeClonerSpec extends DbSpecification {
-  step(setupDb)
-
   trait CloneContext extends DbTestContext {
     def createTreeNodes(ids: NodeIdGenerator, parentId: Option[Long], depth: Int): Seq[Node] = {
       import org.overviewproject.postgres.SquerylEntrypoint._
@@ -65,6 +63,4 @@ class NodeClonerSpec extends DbSpecification {
       cloneIndices must beEqualTo(sourceIndices)
     }
   }
-
-  step(shutdownDb)
 }

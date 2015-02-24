@@ -1,14 +1,11 @@
 package org.overviewproject.clone
 
-import org.overviewproject.database.DB
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet, File, Page, UploadedFile }
 
 class DocumentClonerSpec extends DbSpecification {
-  step(setupDb)
-
   "DocumentCloner" should {
 
     trait CloneContext extends DbTestContext {
@@ -154,5 +151,4 @@ class DocumentClonerSpec extends DbSpecification {
       document must beSome
     }
   }
-  step(shutdownDb)
 }

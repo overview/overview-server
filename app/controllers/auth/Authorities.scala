@@ -2,11 +2,12 @@ package controllers.auth
 
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.{Future,blocking}
-import scala.slick.lifted.{RunnableCompiled}
+import scala.slick.jdbc.JdbcBackend.Session
+import scala.slick.lifted.RunnableCompiled
 
 import models.{OverviewDatabase,User,UserRole}
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.ApiToken
+import org.overviewproject.database.Slick.simple.{Column,Query}
 
 trait Authorities {
   protected def db[A](f: Session => A): A
@@ -76,6 +77,7 @@ trait Authorities {
   }
 
   private def check(f: RunnableCompiled[Query[Column[Boolean],Boolean,Seq],Seq[Boolean]]): Boolean = {
+    import org.overviewproject.database.Slick.simple._
     db { session => f.firstOption(session).getOrElse(false) }
   }
 }
@@ -85,6 +87,7 @@ object Authorities extends Authorities {
 
   /** A bunch of queries that return true if successful and no rows otherwise. */
   private object queries {
+    import org.overviewproject.database.Slick.simple._
     import org.overviewproject.models.tables._
 
     lazy val userDocumentSetTag = Compiled { (email: Column[String], documentSetId: Column[Long], tagId: Column[Long]) =>

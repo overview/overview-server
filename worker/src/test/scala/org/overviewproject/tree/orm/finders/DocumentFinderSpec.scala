@@ -1,15 +1,12 @@
 package org.overviewproject.tree.orm.finders
 
+import org.overviewproject.persistence.orm.finders.DocumentFinder
+import org.overviewproject.persistence.orm.Schema._
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet }
-import org.overviewproject.persistence.orm.Schema._
-import org.overviewproject.persistence.orm.finders.DocumentFinder
 
 class DocumentFinderSpec extends DbSpecification {
-
-  step(setupDb)
-  
   "DocumentFinder" should {
     
     trait DocumentContext extends DbTestContext {
@@ -29,5 +26,4 @@ class DocumentFinderSpec extends DbSpecification {
       docs.map(_.id) must be equalTo(documentIds.sorted)
     }
   }
-  step(shutdownDb)
 }

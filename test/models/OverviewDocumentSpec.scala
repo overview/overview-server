@@ -1,9 +1,10 @@
 package models
 
-import org.overviewproject.test.DbSpecification
 import org.specs2.specification.Scope
 import play.api.Play.{start,stop}
 import play.api.test.{FakeApplication,WithApplication}
+
+import org.overviewproject.test.DbSpecification
 
 // OverviewDocument wraps models.orm.Document. Let's be transparent about that
 // in this test.

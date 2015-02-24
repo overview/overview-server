@@ -1,16 +1,11 @@
 package org.overviewproject.reclustering
 
+import org.overviewproject.persistence.orm.Schema._
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ Document, DocumentSet }
-import org.overviewproject.persistence.orm.Schema._
-import org.overviewproject.tree.orm.Tag
-import org.overviewproject.tree.orm.DocumentTag
+import org.overviewproject.tree.orm.{ Document, DocumentSet, DocumentTag, Tag }
 
 class PagedDocumentFinderSpec extends DbSpecification {
-
-  step(setupDb)
-
   "PagedDocumentFinder" should {
 
     trait DocumentContext extends DbTestContext {
@@ -77,6 +72,4 @@ class PagedDocumentFinderSpec extends DbSpecification {
       pagedDocumentFinder.numberOfDocuments must be equalTo(5)
     }
   }
-
-  step(shutdownDb)
 }

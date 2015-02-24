@@ -1,14 +1,9 @@
 package org.overviewproject.database.orm.finders
 
-import org.specs2.mutable.Specification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.Document
 
 class DocumentFinderSpec extends DbSpecification {
-
-  step(setupDb)
-
   "DocumentFinder" should {
 
     trait DocumentSetup extends DbTestContext {
@@ -34,7 +29,4 @@ class DocumentFinderSpec extends DbSpecification {
       foundDocuments must have size (0)
     }
   }
-
-  step(shutdownDb)
-
 }

@@ -7,8 +7,6 @@ import org.overviewproject.tree.orm.File
 class FileStoreSpec extends DbSpecification {
   import org.overviewproject.postgres.SquerylEntrypoint._
 
-  step(setupDb)
-
   "FileStore" should {
     trait FileContext extends DbTestContext {
       protected def findByIds(ids: Iterable[Long]): Seq[File] = {
@@ -30,6 +28,4 @@ class FileStoreSpec extends DbSpecification {
       findByIds(Seq(singleRefFile.id)).map(_.referenceCount) must beEqualTo(Seq(0))
     }
   }
-
-  step(shutdownDb)
 }

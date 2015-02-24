@@ -1,13 +1,10 @@
 package org.overviewproject.persistence
 
-import org.overviewproject.test.{ DbSpecification, IdGenerator }
 import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.test.{ DbSpecification, IdGenerator }
 import org.overviewproject.tree.orm.{ DocumentSet, Node, Tree }
 
-
 class TreeIdGeneratorSpec extends DbSpecification {
-  step(setupDb)
-
   "TreeIdGenerator" should {
 
     trait DocumentSetSetup extends DbTestContext {
@@ -56,6 +53,4 @@ class TreeIdGeneratorSpec extends DbSpecification {
       id must be equalTo ((documentSet.id <<32) | (treeIndex + 1))
     }
   }
-
-  step(shutdownDb)
 }

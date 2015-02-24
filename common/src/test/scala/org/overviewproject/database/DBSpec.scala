@@ -13,8 +13,6 @@ import org.overviewproject.test.DbSpecification
 import java.sql.{ Connection, SQLException }
 
 class DBSpec extends DbSpecification {
-  step(setupDb)
-
   private def insertFileGroup(implicit connection: Connection): Unit =
     SQL("""
           INSERT INTO file_group (user_email, api_token, completed, deleted)
@@ -64,6 +62,4 @@ class DBSpec extends DbSpecification {
       }
     }
   }
-
-  step(shutdownDb)
 }
