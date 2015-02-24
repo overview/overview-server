@@ -1,11 +1,12 @@
 package org.overviewproject.background.filecleanup
 
 import java.util.concurrent.TimeoutException
-import scala.concurrent.{ Await, Future, Promise }
-import scala.concurrent.duration._
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.database.Slick.simple._
+import scala.concurrent.{ Await, Future, Promise }
+import scala.slick.jdbc.JdbcBackend.Session
+import scala.concurrent.duration._
+
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.blobstorage.BlobStorage
@@ -36,6 +37,7 @@ class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
     "delete file" in new FileScope {
       deleteFile
 
+      import org.overviewproject.database.Slick.simple._
       Files.filter(_.id === file.id).firstOption must beNone
     }
 

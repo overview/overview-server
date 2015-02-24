@@ -1,15 +1,12 @@
 package org.overviewproject.database
 
-import org.postgresql.util.PSQLException
-import org.overviewproject.test._
-import org.overviewproject.database.Slick.simple._
+import scala.slick.jdbc.JdbcBackend.Session
+
+import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 import org.overviewproject.models.{ Document, DocumentSet, UploadedFile }
 import org.overviewproject.models.tables.{ Documents, DocumentSets, Files, Pages, UploadedFiles }
-import java.sql.Timestamp
-import scala.concurrent.Future
-import org.overviewproject.test.factories.DbFactory
 
-class DocumentSetDeleterSpec extends SlickSpecification {
+class DocumentSetDeleterSpec extends DbSpecification {
 
   "DocumentSetDeleter" should {
 
@@ -66,7 +63,7 @@ class DocumentSetDeleterSpec extends SlickSpecification {
   trait BasicDocumentSetScope extends DbScope {
     def numberOfDocuments = 10
 
-    val deleter = new TestDocumentSetDeleter
+    val deleter = new TestDocumentSetDeleter(session)
     val documentSet = createDocumentSet
 
     val documents = createDocuments
@@ -74,14 +71,18 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     factory.documentSetUser(documentSetId = documentSet.id)
     factory.documentProcessingError(documentSetId = documentSet.id)
 
-    def deleteDocumentSet = await { deleter.delete(documentSet.id) } must not(throwA[PSQLException])
+    def deleteDocumentSet = await { deleter.delete(documentSet.id) } must not(throwA[Exception])
 
-    def findDocumentSet(documentSetId: Long)(implicit session: Session): Option[DocumentSet] = {
+    def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
+      import org.overviewproject.database.Slick.simple._
       val q = DocumentSets.filter(_.id === documentSetId)
-      q.firstOption
+      q.firstOption(session)
     }
 
-    def fileReferenceCount: Option[Int] = Files.map(_.referenceCount).firstOption
+    def fileReferenceCount: Option[Int] = {
+      import org.overviewproject.database.Slick.simple._
+      Files.map(_.referenceCount).firstOption(session)
+    }
 
     def createDocumentSet: DocumentSet = factory.documentSet()
     def createDocuments: Seq[Document] = Seq.fill(numberOfDocuments)(createDocument)
@@ -118,8 +119,10 @@ class DocumentSetDeleterSpec extends SlickSpecification {
       factory.documentSet(uploadedFileId = Some(uploadedFile.id))
     }
 
-    def findUploadedFile(implicit session: Session): Option[UploadedFile] =
-      UploadedFiles.firstOption
+    def findUploadedFile: Option[UploadedFile] = {
+      import org.overviewproject.database.Slick.simple._
+      UploadedFiles.firstOption(session)
+    }
 
   }
 
@@ -147,6 +150,5 @@ class DocumentSetDeleterSpec extends SlickSpecification {
     override def refCount = 0
   }
   
-  class TestDocumentSetDeleter(implicit val session: Session) extends DocumentSetDeleter with SlickClientInSession 
-    
+  class TestDocumentSetDeleter(val session: Session) extends DocumentSetDeleter with SlickClientInSession 
 }

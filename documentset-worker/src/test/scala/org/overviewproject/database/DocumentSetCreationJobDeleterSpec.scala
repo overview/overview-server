@@ -1,7 +1,9 @@
 package org.overviewproject.database
 
+import org.specs2.mock.Mockito
+import scala.slick.jdbc.JdbcBackend.Session
+
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState
 import org.overviewproject.models.DocumentSetCreationJobState._
@@ -9,7 +11,6 @@ import org.overviewproject.models.DocumentSetCreationJobType._
 import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobMappings }
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
-import org.specs2.mock.Mockito
 
 class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito {
 
@@ -18,13 +19,15 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
     "delete a job" in new JobScope {
       await { deleter.deleteByDocumentSet(documentSet.id) }
 
-      DocumentSetCreationJobs.list must beEmpty
+      import org.overviewproject.database.Slick.simple._
+      DocumentSetCreationJobs.list(session) must beEmpty
     }
 
     "delete uploaded csv" in new CsvImportJobScope {
       await { deleter.deleteByDocumentSet(documentSet.id) }
 
-      DocumentSetCreationJobs.list must beEmpty
+      import org.overviewproject.database.Slick.simple._
+      DocumentSetCreationJobs.list(session) must beEmpty
 
       there was one(deleter.mockBlobStorage).delete(s"pglo:$oid")
     }
@@ -32,13 +35,14 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
     "delete job with state" in new CancelledJobScope {
       await { deleter.delete(cancelledJob.id) }
 
-      DocumentSetCreationJobs.filter(_.state === Cancelled.value).list must beEmpty
-      DocumentSetCreationJobs.list must haveSize(1)
+      import org.overviewproject.database.Slick.simple._
+      DocumentSetCreationJobs.filter(_.state === Cancelled.value).list(session) must beEmpty
+      DocumentSetCreationJobs.list(session) must haveSize(1)
     }
   }
 
   trait JobScope extends DbScope {
-    val deleter = new TestDocumentSetDeleter
+    val deleter = new TestDocumentSetDeleter(session)
 
     val documentSet = factory.documentSet()
     val job = createJob
@@ -59,7 +63,7 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
       state = Cancelled)
 
   }
-  class TestDocumentSetDeleter(implicit val session: Session) extends DocumentSetCreationJobDeleter
+  class TestDocumentSetDeleter(val session: Session) extends DocumentSetCreationJobDeleter
       with SlickClientInSession {
 
     override protected val blobStorage = mock[BlobStorage]

@@ -1,19 +1,19 @@
 package org.overviewproject.database
 
+import scala.slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
+import org.overviewproject.test.{ DbSpecification, SlickClientInSession }
 import org.overviewproject.models.tables.{ Files, TempDocumentSetFiles }
 
-class TempFileDeleterSpec extends SlickSpecification {
+class TempFileDeleterSpec extends DbSpecification {
 
   "TempFileDeleterSpec" should {
     
     "decrease file reference count" in new TempFileScope {
       await(tempFileDeleter.delete(documentSetId))
       
-      val referenceCounts = Files.map(_.referenceCount).list
+      import org.overviewproject.database.Slick.simple._
+      val referenceCounts = Files.map(_.referenceCount).list(session)
       
       referenceCounts must contain(0).exactly(numberOfFiles.times)
     }
@@ -21,7 +21,8 @@ class TempFileDeleterSpec extends SlickSpecification {
     "delete temp_document_set_files" in new TempFileScope {
       await(tempFileDeleter.delete(documentSetId))
       
-      val tempDocumentSets = TempDocumentSetFiles.filter(_.documentSetId === documentSetId).list
+      import org.overviewproject.database.Slick.simple._
+      val tempDocumentSets = TempDocumentSetFiles.filter(_.documentSetId === documentSetId).list(session)
       
       tempDocumentSets must beEmpty
     }
@@ -29,7 +30,8 @@ class TempFileDeleterSpec extends SlickSpecification {
     "only delete temp_document_set_files with specified document set id" in new TempFileScope {
       await(tempFileDeleter.delete(documentSetId))
       
-      val otherTempDocumentSets = TempDocumentSetFiles.filter(_.documentSetId === otherDocumentSetId).list
+      import org.overviewproject.database.Slick.simple._
+      val otherTempDocumentSets = TempDocumentSetFiles.filter(_.documentSetId === otherDocumentSetId).list(session)
       
       otherTempDocumentSets must not beEmpty
     }
@@ -37,7 +39,8 @@ class TempFileDeleterSpec extends SlickSpecification {
     "only decrease reference count to 0" in new InterruptedDeletionScope {
       await(tempFileDeleter.delete(documentSetId))
       
-      val referenceCounts = Files.map(_.referenceCount).list
+      import org.overviewproject.database.Slick.simple._
+      val referenceCounts = Files.map(_.referenceCount).list(session)
       
       referenceCounts must contain(0).exactly(numberOfFiles.times)
     }
@@ -47,19 +50,19 @@ class TempFileDeleterSpec extends SlickSpecification {
   trait TempFileScope extends DbScope {
     val documentSetId = 1l
     val otherDocumentSetId = 2l
-    val numberOfFiles = 10
+    val numberOfFiles = 3
     def refCount = 1
     val files = Seq.tabulate(numberOfFiles)(n => factory.file(name = s"file-$n", referenceCount = refCount))
-    
+
     files.foreach(f => factory.tempDocumentSetFile(documentSetId, f.id))
     factory.tempDocumentSetFile(otherDocumentSetId, 234l)
     
-    val tempFileDeleter = new TestTempFileDeleter
+    val tempFileDeleter = new TestTempFileDeleter(session)
   }
   
   trait InterruptedDeletionScope extends TempFileScope {
     override def refCount = 0
   }
   
-  class TestTempFileDeleter(implicit val session: Session) extends TempFileDeleter with SlickClientInSession
+  class TestTempFileDeleter(val session: Session) extends TempFileDeleter with SlickClientInSession
 }

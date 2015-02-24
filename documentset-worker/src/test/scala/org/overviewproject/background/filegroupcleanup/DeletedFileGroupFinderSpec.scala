@@ -1,6 +1,7 @@
 package org.overviewproject.background.filegroupcleanup
 
-import org.overviewproject.database.Slick.simple._
+import scala.slick.jdbc.JdbcBackend.Session
+
 import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
 
 class DeletedFileGroupFinderSpec extends SlickSpecification {

@@ -4,10 +4,11 @@ import scala.concurrent.{ Await, Future, Promise, TimeoutException }
 import scala.concurrent.duration._
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
+import scala.slick.jdbc.JdbcBackend.Session
+
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.tables.Pages
+import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
 
 class PageRemoverSpec extends SlickSpecification with Mockito with NoTimeConversions {
 
@@ -16,21 +17,23 @@ class PageRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
     "delete blobs" in new PageScope {
       blobsDeleted.success(())
       await(remover.removeFilePages(file.id))
-      
-      val locations = pages.map(_.dataLocation) 
+
+      val locations = pages.map(_.dataLocation)
       there was one(mockBlobStorage).deleteMany(locations)
     }
 
     "delete pages after blobs are deleted" in new PageScope {
       val r = remover.removeFilePages(file.id)
-      
+
       Await.result(r, 10 millis) must throwA[TimeoutException]
-      
+
+      import org.overviewproject.database.Slick.simple._
+
       Pages.filter(_.fileId === file.id).firstOption must beSome
-      
+
       blobsDeleted.success(())
       await(r)
-      
+
       Pages.filter(_.fileId === file.id).firstOption must beNone
     }
   }
@@ -43,9 +46,9 @@ class PageRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
 
     val mockBlobStorage = smartMock[BlobStorage]
     val blobsDeleted = Promise[Unit]()
-    
+
     mockBlobStorage.deleteMany(any) returns blobsDeleted.future
-    
+
     val remover = new TestPageRemover(mockBlobStorage)
   }
 

@@ -1,18 +1,18 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
-import org.specs2.mock.Mockito
-import org.overviewproject.blobstorage.BlobStorage
-import scala.concurrent.Future
 import java.io.InputStream
+import org.specs2.mock.Mockito
+import scala.concurrent.Future
+import scala.slick.jdbc.JdbcBackend.Session
+
 import org.overviewproject.blobstorage.BlobBucketId
+import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.File
 import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.TempDocumentSetFiles
+import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 
-class CreatePdfFileSpec extends SlickSpecification with Mockito {
+class CreatePdfFileSpec extends DbSpecification with Mockito {
 
   "CreatePdfFile" should {
 
@@ -25,7 +25,8 @@ class CreatePdfFileSpec extends SlickSpecification with Mockito {
     "create a file with PDF content" in new UploadScope {
       await(createFile.execute)
       
-      val file = Files.firstOption
+      import org.overviewproject.database.Slick.simple._
+      val file = Files.firstOption(session)
       
       file.map(f => (f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) must 
         beSome((location, uploadSize, location, uploadSize))
@@ -44,7 +45,8 @@ class CreatePdfFileSpec extends SlickSpecification with Mockito {
     "write a tempDocumentSetFile" in new UploadScope {
       await(createFile.execute)
       
-      TempDocumentSetFiles.firstOption must beSome
+      import org.overviewproject.database.Slick.simple._
+      TempDocumentSetFiles.firstOption(session) must beSome
     }
 
     trait UploadScope extends DbScope {

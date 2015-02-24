@@ -1,11 +1,12 @@
 package org.overviewproject.background.filegroupcleanup
 
+import org.specs2.mock.Mockito
 import scala.concurrent.Promise
+import scala.slick.jdbc.JdbcBackend.Session
+
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.tables.FileGroups
 import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
-import org.specs2.mock.Mockito
 
 class FileGroupRemoverSpec extends SlickSpecification with Mockito {
 
@@ -20,13 +21,15 @@ class FileGroupRemoverSpec extends SlickSpecification with Mockito {
 
     "delete FileGroup after uploads are deleted" in new FileGroupScope {
       val r = fileGroupRemover.remove(fileGroup.id)
+
+      import org.overviewproject.database.Slick.simple._
       
-      FileGroups.firstOption must beSome
+      FileGroups.firstOption(session) must beSome
       
       uploadsRemoved.success(())
       await(r)
       
-      FileGroups.firstOption must beNone
+      FileGroups.firstOption(session) must beNone
     }
 
   }
@@ -37,7 +40,7 @@ class FileGroupRemoverSpec extends SlickSpecification with Mockito {
     val groupedFileUploadRemover = smartMock[GroupedFileUploadRemover]
     val mockBlobStorage = smartMock[BlobStorage]
     
-    val fileGroupRemover = new TestFileGroupRemover(groupedFileUploadRemover, mockBlobStorage)
+    val fileGroupRemover = new TestFileGroupRemover(groupedFileUploadRemover, mockBlobStorage)(session)
     
     val uploadsRemoved = Promise[Unit]()
     groupedFileUploadRemover.removeFileGroupUploads(any) returns uploadsRemoved.future

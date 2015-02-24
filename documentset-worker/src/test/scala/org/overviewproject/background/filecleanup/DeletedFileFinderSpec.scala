@@ -1,8 +1,7 @@
 package org.overviewproject.background.filecleanup
 
+import scala.slick.jdbc.JdbcBackend.Session
 
-
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 

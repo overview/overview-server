@@ -1,11 +1,12 @@
 package org.overviewproject.util
 
-import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
+import scala.slick.jdbc.JdbcBackend.Session
+
+import org.overviewproject.test.{ DbSpecification, SlickClientInSession }
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.tables.{ DocumentSetCreationJobs, Nodes }
-import org.overviewproject.database.Slick.simple._
 
-class ClusteringCleanerSpec extends SlickSpecification {
+class ClusteringCleanerSpec extends DbSpecification {
 
   "ClusteringCleaner" should {
     
@@ -17,21 +18,23 @@ class ClusteringCleanerSpec extends SlickSpecification {
     "delete nodes" in new NodeScope {
       await(cleaner.deleteNodes(job.id))
       
-      Nodes.filter(_.id === rootNode.id).firstOption must beNone
+      import org.overviewproject.database.Slick.simple._
+      Nodes.filter(_.id === rootNode.id).firstOption(session) must beNone
     }
     
     
     "delete job" in new TreeScope {
       await(cleaner.deleteJob(job.id))
       
-      val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id)
+      import org.overviewproject.database.Slick.simple._
+      val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id).firstOption(session)
       
-      updatedJob.firstOption must beNone
+      updatedJob must beNone
     }
   }
   
   trait JobScope extends DbScope {
-    val cleaner = new TestClusteringCleaner
+    val cleaner = new TestClusteringCleaner(session)
     val documentSet = factory.documentSet()
     val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = jobState)
 
@@ -45,12 +48,11 @@ class ClusteringCleanerSpec extends SlickSpecification {
     
     factory.nodeDocument(rootNode.id, document.id)
     factory.documentSetCreationJobNode(job.id, rootNode.id)
-    
   }
-  
+
   trait TreeScope extends NodeScope {
     val tree = factory.tree(documentSetId = documentSet.id, jobId = job.id, rootNodeId = rootNode.id)
   }
-  
-  class TestClusteringCleaner(implicit val session: Session) extends ClusteringCleaner with SlickClientInSession
+
+  class TestClusteringCleaner(val session: Session) extends ClusteringCleaner with SlickClientInSession
 }

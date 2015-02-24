@@ -1,7 +1,8 @@
 package org.overviewproject.util
 
+import scala.slick.jdbc.JdbcBackend.Session
+
 import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.tables.DocumentSetCreationJobs
 
@@ -12,18 +13,20 @@ class JobUpdaterSpec extends SlickSpecification {
       val jobUpdate = job.copy(state = NotStarted, retryAttempts = 5, statusDescription = "updated")
       updater.updateValidJob(jobUpdate)
       
+      import org.overviewproject.database.Slick.simple._
       val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id)
       
-      updatedJob.firstOption must beSome(jobUpdate)
+      updatedJob.firstOption(session) must beSome(jobUpdate)
     }
     
     "not update cancelled jobs" in new CancelledJobScope {
       val jobUpdate = job.copy(state = NotStarted, retryAttempts = 5, statusDescription = "updated")
       updater.updateValidJob(jobUpdate)
       
+      import org.overviewproject.database.Slick.simple._
       val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id)
       
-      updatedJob.firstOption must beSome(job)
+      updatedJob.firstOption(session) must beSome(job)
     }
     
     
@@ -31,15 +34,16 @@ class JobUpdaterSpec extends SlickSpecification {
       val jobUpdate = job.copy(state = NotStarted, retryAttempts = 5, statusDescription = "updated")
       updater.updateValidJob(jobUpdate)
 
+      import org.overviewproject.database.Slick.simple._
       val unchangedJob = DocumentSetCreationJobs.filter(_.id === job2.id)
       
-      unchangedJob.firstOption must beSome(job2)
+      unchangedJob.firstOption(session) must beSome(job2)
     }
 
   }
 
   trait JobScope extends DbScope {
-    val updater = new TestJobUpdater
+    val updater = new TestJobUpdater(session)
     val documentSet = factory.documentSet()
     val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = jobState)
 
@@ -56,5 +60,5 @@ class JobUpdaterSpec extends SlickSpecification {
     val job2 = factory.documentSetCreationJob(documentSetId = documentSet2.id, treeTitle = Some("another job"), state = InProgress)
   }
   
-  class TestJobUpdater(implicit val session: Session) extends JobUpdater with SlickClientInSession
+  class TestJobUpdater(val session: Session) extends JobUpdater with SlickClientInSession
 }
