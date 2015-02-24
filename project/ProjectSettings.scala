@@ -44,7 +44,7 @@ trait ProjectSettings {
   val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.3"
   val slickDep = "com.typesafe.slick" %% "slick" % "2.1.0"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.4"
-  val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC2"
+  val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC3"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
 
   // WHY doesn't this work? I can't seem to refer to sbt.ModuleId here.
