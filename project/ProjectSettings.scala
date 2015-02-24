@@ -38,7 +38,7 @@ trait ProjectSettings {
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val openCsvDep = "net.sf.opencsv" % "opencsv" % "2.3"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
-  val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
+  val postgresqlDep = "org.postgresql" % "postgresql" % "9.3-1103-jdbc41"
   val pgSlickDep = "com.github.tminglei" %% "slick-pg" % "0.8.1"
   val redisDep = "net.debasishg" %% "redisreact" % "0.6"
   val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.3"
