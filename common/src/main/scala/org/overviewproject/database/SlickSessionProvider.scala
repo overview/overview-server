@@ -1,9 +1,7 @@
 package org.overviewproject.database
 
 import scala.concurrent.{ blocking, ExecutionContext, Future }
-import scala.slick.jdbc.JdbcBackend.{ Database => SlickDatabase }
-import org.overviewproject.database.Slick.simple.Session
-import java.sql.Connection
+import scala.slick.jdbc.JdbcBackend.{ Database => SlickDatabase, Session }
 
 trait SlickSessionProvider extends SlickClient {
 

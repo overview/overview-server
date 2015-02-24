@@ -64,7 +64,7 @@ class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
   }
 
   object Db {
-    import org.overviewproject.database.Slick.simple._
+    import org.overviewproject.database.Slick.simple.{Session=>XXX,_}
 
     private val insertFileInvoker = {
       val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)

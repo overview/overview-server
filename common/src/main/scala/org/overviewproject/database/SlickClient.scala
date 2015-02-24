@@ -1,10 +1,9 @@
 package org.overviewproject.database
 
 import scala.concurrent.{ ExecutionContext, Future }
-import org.overviewproject.database.Slick.simple._
+import scala.slick.jdbc.JdbcBackend.Session
 
 trait SlickClient {
-  
   protected def db[A](block: Session => A)(implicit executor: ExecutionContext): Future[A]
   
   protected def withTransaction[A](block: Session => A)(implicit session: Session): A = {
