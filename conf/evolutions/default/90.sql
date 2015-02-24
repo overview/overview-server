@@ -52,11 +52,11 @@ $$ LANGUAGE plpgsql;
 
 UPDATE document_set
 SET sorted_document_ids = (
-  SELECT ARRAY_AGG(id ORDER BY title, supplied_id, page_number, id)
+  SELECT COALESCE(ARRAY_AGG(id ORDER BY title, supplied_id, page_number, id), '{}')
   FROM document
   WHERE document_set_id = document_set.id
 )
-WHERE ARRAY_LENGTH(sorted_document_ids, 1) = 0 OR ARRAY_LENGTH(sorted_document_ids, 1) IS NULL;
+WHERE COALESCE(ARRAY_LENGTH(sorted_document_ids, 1), 0) = 0;
 
 -- we don't DROP DEFAULT: the ORM doesn't even _know_ about sorted_document_ids
 
