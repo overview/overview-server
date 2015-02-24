@@ -3,20 +3,30 @@ package controllers.backend
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{SelectionLike,SelectionRequest}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
+import org.overviewproject.util.SortedDocumentIdsRefresher
 import org.overviewproject.models.Document
+import org.overviewproject.test.SlickClientInSession
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
-  trait BaseScopeNoIndex extends DbScope {
+  class InSessionSortedDocumentIdsRefresher(val session: Session)
+    extends SortedDocumentIdsRefresher with SlickClientInSession
+
+  trait BaseScope extends DbScope {
+    val refresher = new InSessionSortedDocumentIdsRefresher(session)
+  }
+
+  trait BaseScopeNoIndex extends BaseScope {
     val backend = new TestDbBackend(session) with DbDocumentBackend {
       override val indexClient = mock[IndexClient]
     }
   }
 
-  trait BaseScopeWithIndex extends DbScope {
+  trait BaseScopeWithIndex extends BaseScope {
     val testIndexClient: InMemoryIndexClient = new InMemoryIndexClient()
     val backend = new TestDbBackend(session) with DbDocumentBackend {
       override val indexClient: IndexClient = testIndexClient
@@ -38,6 +48,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     await(testIndexClient.addDocumentSet(documentSet.id))
     await(testIndexClient.addDocuments(documents))
     await(testIndexClient.refresh())
+    await(refresher.refreshDocumentSet(documentSet.id))
   }
 
   "DbDocumentBackendSpec" should {
