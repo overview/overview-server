@@ -143,6 +143,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
     val overflowCount = result.totalDocumentsInQuery - result.numberOfDocumentsRetrieved
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
+    refreshSortedDocumentIds(documentSetId)
     
     numDocs
   }

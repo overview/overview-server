@@ -1,15 +1,15 @@
 package org.overviewproject.clone
 
-import org.overviewproject.database.Database
-import org.overviewproject.persistence.PersistentDocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.util.{ DocumentSetCreationJobStateDescription, Logger }
-import org.overviewproject.util.Progress.Progress
-import org.overviewproject.util.DocumentSetCreationJobStateDescription._
-import java.sql.Connection
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+
+import org.overviewproject.database.Database
+import org.overviewproject.persistence.PersistentDocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.util.{ DocumentSetCreationJobStateDescription, Logger, SortedDocumentIdsRefresher }
+import org.overviewproject.util.Progress.Progress
+import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 
 /**
  * The Procedure trait enables the specification of blocks of code
@@ -89,8 +89,10 @@ class JobProgressReporter(job: PersistentDocumentSetCreationJob) {
  * it to report that a job has been cancelled.
  */
 object JobProgressLogger {
+  private val logger = Logger.forClass(CloneDocumentSet.getClass)
+
   def apply(documentSetId: Long, progress: Progress) {
-    Logger.info("[%d] PROGRESS: %f%% done. %s, OK".format(documentSetId, progress.fraction * 100, progress.status.toString))
+    logger.info("[%d] PROGRESS: %f%% done. %s".format(documentSetId, progress.fraction * 100, progress.status.toString))
   }
 }
 
@@ -114,6 +116,7 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
   val cloneTrees: (Long, Long) => Boolean
   val cloneNodeDocuments: (Long, Long) => Boolean
   val cloneDocumentTags: (Long, Long, TagIdMap) => Unit
+  val refreshSortedDocumentIds: (Long) => Unit
 
   val indexDocuments: (Long) => Future[Unit]
 
@@ -124,22 +127,23 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
     // The alternative would be to not return values from a step, and instead 
     // nest the step scopes (which would be even uglier)
 
-    stepInTransaction(0.15, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
+    stepInTransaction(0.10, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
     val indexing = stepInTransaction(0.20, Saving)(indexDocuments(cloneDocumentSetId))
+    stepInTransaction(0.30, Saving)(refreshSortedDocumentIds(cloneDocumentSetId))
     stepInTransaction(0.40, Saving) {
       cloneNodes(sourceDocumentSetId, cloneDocumentSetId)
       cloneTrees(sourceDocumentSetId, cloneDocumentSetId)
     }
 
-    for (tagIdMapping <- stepInTransaction(0.50, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
-      stepInTransaction(0.60, Saving) {
+    for (tagIdMapping <- stepInTransaction(0.60, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
+      stepInTransaction(0.70, Saving) {
         cloneDocumentTags(sourceDocumentSetId, cloneDocumentSetId, tagIdMapping)
       }
 
-    stepInTransaction(0.90, Saving) {
+    stepInTransaction(0.80, Saving) {
       cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
     }
-    stepInTransaction(0.95, Saving) {
+    stepInTransaction(0.90, Saving) {
       cloneNodeDocuments(sourceDocumentSetId, cloneDocumentSetId)
     }
     stepInTransaction(1.00, Done) {
@@ -172,6 +176,9 @@ object CloneDocumentSet {
       override val cloneTrees = TreeCloner.clone _
       override val cloneNodeDocuments = NodeDocumentCloner.clone _
       override val cloneDocumentTags = DocumentTagCloner.clone _
+      override val refreshSortedDocumentIds = (documentSetId: Long) => {
+        Await.result(SortedDocumentIdsRefresher.refreshDocumentSet(documentSetId), Duration.Inf)
+      }
 
       override val indexDocuments = DocumentSetIndexer.indexDocuments _
     }

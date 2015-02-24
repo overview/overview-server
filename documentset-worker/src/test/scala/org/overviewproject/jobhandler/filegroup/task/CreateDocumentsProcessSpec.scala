@@ -51,6 +51,7 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
       )
 
       there was one(createDocumentsProcess.createDocumentsProcessStorage).saveDocumentCount(documentSetId)
+      there was one(createDocumentsProcess.createDocumentsProcessStorage).refreshSortedDocumentIds(documentSetId)
       there was one(createDocumentsProcess.createDocumentsProcessStorage).deleteTempFiles(documentSetId)
 
       finalStep must haveClass[CreateDocumentsProcessComplete]

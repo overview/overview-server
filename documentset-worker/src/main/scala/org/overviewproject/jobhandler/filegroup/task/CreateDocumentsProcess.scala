@@ -66,6 +66,7 @@ trait CreateDocumentsProcess {
         //
       } else {
         createDocumentsProcessStorage.saveDocumentCount(documentSetId)
+        createDocumentsProcessStorage.refreshSortedDocumentIds(documentSetId)
         createDocumentsProcessStorage.deleteTempFiles(documentSetId)
 
         waitForIndexCompletion
@@ -164,6 +165,7 @@ trait CreateDocumentsProcess {
     def findFilePageText(fileId: Long): Iterable[PageText]
     def writeDocuments(documents: Iterable[Document]): Unit
     def saveDocumentCount(documentSetId: Long): Unit
+    def refreshSortedDocumentIds(documentSetId: Long): Unit
     def deleteTempFiles(documentSetId: Long): Unit
   }
 }

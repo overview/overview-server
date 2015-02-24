@@ -13,6 +13,7 @@ import org.overviewproject.tree.orm.File
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.util.SortedDocumentIdsRefresher
 
 /**
  * Implementation of [[CreateDocumentsProcess]] with actual database queries
@@ -58,6 +59,10 @@ trait CreateDocumentsWithStorage extends CreateDocumentsProcess {
         .map(ds => (ds.documentCount, ds.documentProcessingErrorCount))
         .update((numberOfDocuments, numberOfDocumentProcessingErrors))(session)
     })
+
+    override def refreshSortedDocumentIds(documentSetId: Long): Unit = await {
+      SortedDocumentIdsRefresher.refreshDocumentSet(documentSetId)
+    }
 
     override def deleteTempFiles(documentSetId: Long): Unit = Database.inTransaction {
       import org.overviewproject.database.orm.Schema.tempDocumentSetFiles

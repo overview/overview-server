@@ -84,6 +84,7 @@ class CsvImportDocumentProducer(
     logger.info("Flushed tags")
 
     updateDocumentSetCounts(documentSetId, math.min(maxDocuments, nDocuments), math.max(0, nDocuments - maxDocuments))
+    refreshSortedDocumentIds(documentSetId)
 
     math.min(maxDocuments, nDocuments)
   }

@@ -1,6 +1,7 @@
 package controllers.backend
 
 import scala.concurrent.Future
+import scala.slick.jdbc.{GetResult,StaticQuery}
 
 import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
 import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
@@ -52,8 +53,21 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
 
   override def indexIds(request: SelectionRequest) = {
     import scala.concurrent.ExecutionContext.Implicits._
-    DbDocumentBackend.bySelectionRequest(request, indexClient)
-      .flatMap(list(_))
+
+    val allSortedIdsFuture: Future[Seq[Long]] = db { session =>
+      DbDocumentBackend.sortedIds(request.documentSetId)
+        .firstOption(session)
+        .getOrElse(Seq())
+    }
+
+    val selectedUnsortedIdsFuture: Future[Set[Long]] =
+      DbDocumentBackend.bySelectionRequest(request, indexClient).flatMap(list(_))
+        .map(_.toSet)
+
+    for {
+      allSortedIds <- allSortedIdsFuture
+      selectedIds <- selectedUnsortedIdsFuture
+    } yield allSortedIds.filter(selectedIds.contains(_))
   }
 
   override def show(documentSetId: Long, documentId: Long) = {
@@ -77,6 +91,15 @@ object DbDocumentBackend {
   }
   private implicit class AugmentedDocumentsQuery(query: Query[DocumentsImpl,DocumentsImpl#TableElementType,Seq]) {
     implicit def sortedByInfo = query.sortBy(sortKey)
+  }
+
+  def sortedIds(documentSetId: Long) = {
+    implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextLongArray()))
+
+    // The ORM is unaware of DocumentSet.sortedDocumentIds
+    val q = "SELECT sorted_document_ids FROM document_set WHERE id = ?"
+    val sq = StaticQuery.query[Long,Seq[Long]](q)
+    sq.apply(documentSetId)
   }
 
   def bySelectionRequest(request: SelectionRequest, indexClient: IndexClient) = {
@@ -126,16 +149,14 @@ object DbDocumentBackend {
       }
     }
 
-    val futureSql = request.q match {
-      case "" => Future.successful(sql)
+    request.q match {
+      case "" => Future.successful(sql.map(_.id))
       case s => {
         indexClient.searchForIds(request.documentSetId, s)
           .transform(identity(_), exceptions.wrapElasticSearchException(_))
-          .map { (ids: Seq[Long]) => sql.filter(_.id inSet ids) }
+          .map { (ids: Seq[Long]) => sql.filter(_.id inSet ids).map(_.id) }
       }
     }
-
-    futureSql.map(_.sortBy(sortKey).map(_.id))
   }
 
   object InfosByIds {
