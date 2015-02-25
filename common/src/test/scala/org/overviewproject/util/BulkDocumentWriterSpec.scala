@@ -4,34 +4,50 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import scala.collection.mutable.Buffer
 import scala.concurrent.Future
+import scala.slick.jdbc.StaticQuery
 
-import org.overviewproject.models.Document
+import org.overviewproject.models.tables.{DocumentSets,Documents,Files,Pages}
+import org.overviewproject.models.{Document,DocumentSet,File,Page}
+import org.overviewproject.test.DbSpecification
 
-class BulkDocumentWriterSpec extends Specification {
-  private def await[A](f: Future[A]): A = scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
+class BulkDocumentWriterSpec extends DbSpecification {
+  sequential
 
-  trait BaseScope extends Scope {
-    val flushes: Buffer[Iterable[Document]] = Buffer()
+  trait BaseScope extends DbScope {
+    import org.overviewproject.database.Slick.simple._
+
+    val documentSet: DocumentSet = {
+      val ret = DocumentSet(1L, "", None, false, new java.sql.Timestamp(1424898930910L), 0, 0, 0, None, 0, false)
+      DocumentSets.+=(ret)(session)
+      ret
+    }
+
+    def fetchDocuments: Seq[Document] = {
+      Documents.filter(_.documentSetId === documentSet.id).list(session)
+    }
+
+    var nFlushes = 0
+
     val subject = new BulkDocumentWriter {
       override val maxNDocuments = 3
       override val maxNBytes = 1000
 
       override def flushImpl(documents: Iterable[Document]) = {
-        flushes.append(documents)
-        Future.successful(())
+        nFlushes += 1
+        Future.successful(flushDocumentsToDatabase(session, documents))
       }
     }
 
     object factory {
-      def document(text: String) = Document(
-        1L,
-        1L,
+      def document(id: Long, text: String) = Document(
+        id,
+        documentSet.id,
         Some("http://18-byte-url"),
         "18-char-suppliedId",
         "13-char-title",
         None,
         Seq(),
-        new java.util.Date(),
+        new java.util.Date(documentSet.createdAt.getTime()),
         None,
         None,
         text
@@ -44,41 +60,43 @@ class BulkDocumentWriterSpec extends Specification {
     }
 
     // Convenience method. Adds and returns a Document with text
-    def addText(text: String): Document = add(factory.document(text))
+    def addText(id: Long, text: String): Document = add(factory.document(id, text))
   }
 
   "should not flush when empty" in new BaseScope {
     await(subject.flush)
-    flushes must beEmpty
+    nFlushes must beEqualTo(0)
+    fetchDocuments must beEmpty
   }
 
   "should flush when non-empty" in new BaseScope {
-    val doc1 = addText("foobar")
-    flushes.length must beEqualTo(0)
+    val doc1 = addText(1L, "foobar")
+    fetchDocuments.length must beEqualTo(0)
     await(subject.flush)
-    flushes.length must beEqualTo(1)
-    flushes(0) must containTheSameElementsAs(Seq(doc1))
+    nFlushes must beEqualTo(1)
+    fetchDocuments.length must beEqualTo(1)
   }
 
   "should empty when flushing" in new BaseScope {
-    addText("foobar")
+    addText(1L, "foobar")
     await(subject.flush)
     await(subject.flush)
-    flushes.length must beEqualTo(1)
+    nFlushes must beEqualTo(1)
+    fetchDocuments.length must beEqualTo(1)
   }
 
   "flush on add when adding more than N documents" in new BaseScope {
-    addText("doc1")
-    addText("doc2")
-    flushes.length must beEqualTo(0)
-    addText("doc3")
-    flushes.length must beEqualTo(1)
+    addText(1L, "doc1")
+    addText(2L, "doc2")
+    fetchDocuments.length must beEqualTo(0)
+    addText(3L, "doc3")
+    fetchDocuments.length must beEqualTo(3)
   }
 
   "flush on add when adding more than N bytes" in new BaseScope {
-    addText("doc1")
-    flushes.length must beEqualTo(0)
-    addText("""
+    addText(1L, "doc1")
+    fetchDocuments.length must beEqualTo(0)
+    addText(2L, """
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
@@ -90,6 +108,52 @@ class BulkDocumentWriterSpec extends Specification {
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
     """)
-    flushes.length must beEqualTo(1)
+    fetchDocuments.length must beEqualTo(2)
+  }
+
+  "handle NULLs when writing" in new BaseScope {
+    add(factory.document(1L, "").copy(url=None, pageNumber=None, fileId=None, pageId=None))
+    await(subject.flush)
+    val doc = fetchDocuments(0)
+    doc.url must beNone
+    doc.pageNumber must beNone
+    doc.fileId must beNone
+    doc.pageId must beNone
+  }
+
+  "handle non-NULLs when writing" in new BaseScope {
+    import org.overviewproject.database.Slick.simple._
+    Files.+=(File(3L, 0, "", "", 0, "", 0))
+    Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None))
+    add(factory.document(2L, "").copy(url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))
+    await(subject.flush)
+    val doc = fetchDocuments(0)
+    doc.url must beSome("http://example.org")
+    doc.pageNumber must beSome(5)
+    doc.fileId must beSome(3L)
+    doc.pageId must beSome(4L)
+  }
+
+  "handle utf-8 text when writing" in new BaseScope {
+    val text = "ᚠᛇᚻ᛫ᛒᛦᚦ᛫ᚠᚱᚩᚠᚢᚱ᛫ᚠᛁᚱᚪ᛫ᚷᛖᚻᚹᛦᛚᚳᚢᛗ\nLaȝamon\nΤη γλώσσα μου έδωσαν ελληνική\nನಿತ್ಯವೂ ಅವತರಿಪ ಸತ್ಯಾವ"
+    add(factory.document(2L, text))
+    await(subject.flush)
+    fetchDocuments(0).text must beEqualTo(text)
+  }
+
+  "handle keywords" in new BaseScope {
+    val keywords = Seq("foo", "bar", "baz")
+    add(factory.document(1L, "").copy(keywords=keywords))
+    await(subject.flush)
+    fetchDocuments(0).keywords must beEqualTo(keywords)
+  }
+
+  "handle the other fields" in new BaseScope {
+    add(factory.document(2L, "").copy(documentSetId=1L, suppliedId="suppl", title="title"))
+    await(subject.flush)
+    val doc = fetchDocuments(0)
+    doc.documentSetId must beEqualTo(1L)
+    doc.suppliedId must beEqualTo("suppl")
+    doc.title must beEqualTo("title")
   }
 }

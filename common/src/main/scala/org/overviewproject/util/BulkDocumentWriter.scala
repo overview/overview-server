@@ -1,8 +1,12 @@
 package org.overviewproject.util
 
+import java.io.{ByteArrayInputStream,ByteArrayOutputStream,DataOutputStream}
+import org.postgresql.PGConnection
+import org.postgresql.copy.CopyManager
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.models.Document
@@ -37,6 +41,8 @@ trait BulkDocumentWriter {
   private var currentBuffer: Buffer[Document] = Buffer()
   private var currentNBytes: Int = 0
 
+  private val Millennium = 946684800000L // 2000-01-01 since the epoch, in ms
+
   /** Actual flush operation. */
   protected def flushImpl(documents: Iterable[Document]): Future[Unit]
 
@@ -69,12 +75,99 @@ trait BulkDocumentWriter {
       flushImpl(documents)
     }
   }
+
+  protected def flushDocumentsToDatabase(session: Session, documents: Iterable[Document]): Unit = {
+    // Blocking method. It's in the trait because we test it.
+    val out = new ByteArrayOutputStream
+    val dataOut = new DataOutputStream(out)
+    val charset = "utf-8"
+
+    // Binary COPY format: http://www.postgresql.org/docs/9.4/static/sql-copy.html
+    // Header: "PGCOPY\n\0xff\r\n\0"
+    dataOut.writeBytes("PGCOPY\n")
+    dataOut.writeByte(0xff)
+    dataOut.writeBytes("\r\n")
+    dataOut.writeByte(0)
+
+    // Flags
+    dataOut.writeInt(0)
+
+    // Header extension area length
+    dataOut.writeInt(0)
+
+    def writeInt(i: Int) = { dataOut.writeInt(4); dataOut.writeInt(i) }
+    def writeIntOption(i: Option[Int]) = i match {
+      case Some(j) => writeInt(j)
+      case None => dataOut.writeInt(-1)
+    }
+    def writeLong(i: Long) = { dataOut.writeInt(8); dataOut.writeLong(i) }
+    def writeLongOption(i: Option[Long]) = i match {
+      case Some(j) => writeLong(j)
+      case None => dataOut.writeInt(-1)
+    }
+    def writeString(s: String) = {
+      val b = s.getBytes(charset)
+      dataOut.writeInt(b.length)
+      dataOut.write(b)
+    }
+    def writeStringOption(s: Option[String]) = s match {
+      case Some(t) => writeString(t)
+      case None => dataOut.writeInt(-1)
+    }
+    def writeTimestamp(d: java.util.Date) = writeLong((d.getTime() - Millennium) * 1000L)
+
+    // Tuples
+    // Tracks models/tables/Documents.scala and models/Document.scala
+    documents.foreach { document =>
+      // Number of fields
+      dataOut.writeShort(11)
+
+      writeLong(document.id)
+      writeLong(document.documentSetId)
+      writeStringOption(document.url)
+      writeString(document.suppliedId)
+      writeString(document.title)
+      writeIntOption(document.pageNumber)
+      writeString(document.keywords.mkString(" "))
+      writeTimestamp(document.createdAt)
+      writeLongOption(document.fileId)
+      writeLongOption(document.pageId)
+      writeString(document.text)
+    }
+
+    // File trailer
+    dataOut.writeShort(-1)
+
+    dataOut.flush()
+    val bytesAsInputStream = new ByteArrayInputStream(out.toByteArray)
+
+    val pgConnection = session.conn.unwrap(classOf[PGConnection])
+    val copyManager = pgConnection.getCopyAPI
+
+    copyManager.copyIn("""
+      COPY document (
+        id,
+        document_set_id,
+        url,
+        supplied_id,
+        title,
+        page_number,
+        description,
+        created_at,
+        file_id,
+        page_id,
+        text
+      )
+      FROM STDIN
+      BINARY
+    """, bytesAsInputStream)
+  }
 }
 
 object BulkDocumentWriter extends SlickSessionProvider {
   def forDatabaseAndSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {
     override def flushImpl(documents: Iterable[Document]) = {
-      val dbFuture = flushDocumentsToDatabase(documents)
+      val dbFuture = db { session => flushDocumentsToDatabase(session, documents) }
       val siFuture = flushDocumentsToSearchIndex(documents)
 
       for {
@@ -86,14 +179,6 @@ object BulkDocumentWriter extends SlickSessionProvider {
 
   def forSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {
     override def flushImpl(documents: Iterable[Document]) = flushDocumentsToSearchIndex(documents)
-  }
-
-  private lazy val insertInvoker = {
-    import org.overviewproject.database.Slick.simple._
-    Documents.insertInvoker
-  }
-  private def flushDocumentsToDatabase(documents: Iterable[Document]): Future[Unit] = db { session =>
-    insertInvoker.++=(documents)(session)
   }
 
   private lazy val indexClient = TransportIndexClient.singleton
