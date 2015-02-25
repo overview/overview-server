@@ -14,8 +14,11 @@ object Hack {
 }
 
 object Flags {
-  val DatabaseUrl = s"""-Ddatasource.default.url=postgres://overview:overview@localhost:9010/overview${if (Hack.isDevMode) "-dev" else ""}"""
-  val DatabaseDriver = "-Ddatasource.default.driver=org.postgresql.Driver"
+  val DatabaseEnv = Seq(
+    "DATABASE_NAME" -> (if (Hack.isDevMode) "overview-dev" else "overview"),
+    "DATABASE_PORT" -> "9010",
+    "DATABASE_SSL_FACTORY" -> "org.postgresql.ssl.NonValidatingFactory"
+  )
   val ApolloBase = "-Dapollo.base=message-broker"
   val SearchCluster = "DevSearchIndex"
 }
@@ -174,7 +177,11 @@ class Main(conf: Conf) {
       if (conf.withDatabase()) {
         val database = new Database(
           new File("database"),
-          getClass.getResourceAsStream("/postgresql.conf"),
+          Seq(
+            "postgresql.conf" -> getClass.getResourceAsStream("/postgresql.conf"),
+            "server.crt" -> getClass.getResourceAsStream("/server.crt"),
+            "server.key" -> getClass.getResourceAsStream("/server.key")
+          ),
           logger.sublogger("database", Some(Console.BLACK.getBytes())).treatingErrorsAsInfo
         )
         database.withDatabase { () =>

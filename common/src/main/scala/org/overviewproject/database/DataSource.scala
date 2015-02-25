@@ -7,7 +7,7 @@
 
 package org.overviewproject.database
 
-import com.jolbox.bonecp._
+import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
 import java.sql.Connection
 import javax.sql.{ DataSource => JDataSource }
 import org.slf4j.LoggerFactory
@@ -31,23 +31,11 @@ object DataSource {
   }
 
   /**
-   * Wrapper for BoneCPDataSource, that applies the given configuration.
+   * Wrapper for HikariCPDataSource, that applies the given configuration.
    * Should be shutdown() when program ends to shutdown BoneCP connection pool.
    */
-  def apply(configuration: DatabaseConfiguration) = new DataSource {
-    Class.forName(configuration.databaseDriver) // initialize
-
-    private val dataSource = new BoneCPDataSource()
-
-    dataSource.setJdbcUrl(configuration.databaseUrl)
-    dataSource.setUsername(configuration.username)
-    dataSource.setPassword(configuration.password)
-    dataSource.setMinConnectionsPerPartition(1)
-    dataSource.setMaxConnectionsPerPartition(5)
-    dataSource.setAcquireIncrement(1)
-    dataSource.setPartitionCount(1)
-    dataSource.setDisableJMX(true)
-    dataSource.setLogStatementsEnabled(LoggerFactory.getLogger(classOf[BoneCPConfig]).isDebugEnabled())
+  def apply(configuration: HikariConfig) = new DataSource {
+    private val dataSource = new HikariDataSource(configuration)
 
     override def getConnection: Connection = dataSource.getConnection()
     override def shutdown: Unit = dataSource.close()

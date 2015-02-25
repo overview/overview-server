@@ -40,7 +40,7 @@ object DocumentSetWorker extends App {
 
   private val NumberOfJobHandlers = 8
 
-  val config = DatabaseConfiguration.fromSystemProperties
+  val config = DatabaseConfiguration.fromConfig
   val dataSource = DataSource(config)
 
   DB.connect(dataSource)

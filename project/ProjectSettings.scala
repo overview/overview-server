@@ -9,10 +9,8 @@ trait ProjectSettings {
   val ourScalaVersion = "2.10.4"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.7", "-encoding", "UTF8")
 
-  val appDatabaseUrl = "postgres://overview:overview@localhost:9010/overview-dev"
-  val testDatabaseUrl	= "postgres://overview:overview@localhost:9010/overview-test"
-
   val ourResolvers = Seq(
+    Resolver.url("Edulify repository", url("http://edulify.github.io/modules/releases/"))(Resolver.ivyStylePatterns),
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
     "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
@@ -26,17 +24,18 @@ trait ProjectSettings {
   val awsCoreDep = "com.amazonaws" % "aws-java-sdk-core" % "1.9.9"
   val awsS3Dep = "com.amazonaws" % "aws-java-sdk-s3" % "1.9.9"
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
-  val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
   val commonsIoDep = "commons-io" % "commons-io" % "2.4"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "1.4.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
   val guavaDep = "com.google.guava" % "guava" % "16.0"
+  val hikariCpDep = "com.zaxxer" % "HikariCP-java6" % "2.3.2"
   val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
   val junitDep = "junit" % "junit-dep" % "4.11"
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
   val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val openCsvDep = "net.sf.opencsv" % "opencsv" % "2.3"
+  val playHikariCpDep = "com.edulify" %% "play-hikaricp" % "2.0.0"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
   val postgresqlDep = "org.postgresql" % "postgresql" % "9.3-1103-jdbc41"
   val pgSlickDep = "com.github.tminglei" %% "slick-pg" % "0.8.1"
@@ -62,6 +61,7 @@ trait ProjectSettings {
     filters,
     openCsvDep,
     slickDep,
+    playHikariCpDep,
     "com.typesafe" %% "play-plugins-util" % "2.2.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.2.0",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.2",
@@ -72,6 +72,8 @@ trait ProjectSettings {
 
   val dbEvolutionApplierDependencies = Seq(guavaDep) ++ (Seq(
     jdbc,
+    hikariCpDep,
+    playHikariCpDep,
     postgresqlDep
   )).map(_.exclude("com.google.guava", "guava"))
 
@@ -80,7 +82,7 @@ trait ProjectSettings {
     akkaDep,
     asyncHttpClientDep,
     awsS3Dep,
-    boneCpDep,
+    hikariCpDep,
     redisDep,
     commonsIoDep,
     elasticSearchDep,

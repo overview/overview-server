@@ -30,7 +30,7 @@ class DatabaseSpec extends Specification with Mockito {
     lazy val database = new DatabaseLike {
       override val file = mockFile
       override val logger = mockLogger
-      override val postgresqlConfContents = "# Config file contents"
+      override val postgresqlConfContents = Seq("postgresql.conf" -> "# Config file contents")
       override protected val postgresCommands = mockPostgresCommands
       override protected val postgresInstructions = mockPostgresInstructions
       override protected val runner = mockRunner

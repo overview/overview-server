@@ -24,9 +24,6 @@ class DbSpecification extends Specification {
     Step(setupDb) ^ super.map(fs) ^ Step(shutdownDb)
   }
 
-  private val DatabaseProperty = "datasource.default.url"
-  private val TestDatabase = "postgres://overview:overview@localhost:9010/overview-test"
-
   /**
    * Context for test accessing the database. All tests are run inside a transaction
    * which is rolled back after the test is complete.
@@ -93,8 +90,7 @@ class DbSpecification extends Specification {
   }
 
   def setupDb() {
-    System.setProperty(DatabaseProperty, TestDatabase)
-    val dataSource = DataSource(DatabaseConfiguration.fromSystemProperties)
+    val dataSource = DataSource(DatabaseConfiguration.fromConfig)
     DB.connect(dataSource)
   }
 

@@ -18,7 +18,6 @@
 
   <logger name="play" level="TRACE" />
   <logger name="application" level="TRACE" />
-  <logger name="com.jolbox.bonecp" level="DEBUG" /><!-- Show connect/disconnect -->
   <logger name="com.gargoylesoftware.htmlunit.DefaultCssErrorHandler" level="ERROR" /><!-- CSS errors are built into Bootstrap for IE support -->
   <logger name="com.gargoylesoftware.htmlunit.html.InputElementFactory" level="WARN" /><!-- It warns about <input type="email"> -->
   <logger name="com.gargoylesoftware.htmlunit.IncorrectnessListenerImpl" level="ERROR" /><!-- It warns about vendor JavaScript quirks -->

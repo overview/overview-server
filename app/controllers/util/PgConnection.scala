@@ -5,7 +5,6 @@ import play.api.Play.current
 import org.postgresql.PGConnection
 import org.overviewproject.postgres.SquerylEntrypoint.using
 import org.squeryl.Session
-import com.jolbox.bonecp.ConnectionHandle
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 
 trait PgConnection {
@@ -18,14 +17,14 @@ trait PgConnection {
    * be converted to the PGConnection we need for dealing with Postgres
    * LargeObjects.
    */
+  @deprecated("Use TransactionActionController and java.sql.Connection#unwrap()", "2015-02-25")
   def withPgConnection[A](f: PGConnection => A) = {
     val connection = DB.getConnection(autocommit = false)
     try {
       val adapter = new SquerylPostgreSqlAdapter()
       val session = new Session(connection, adapter)
       using(session) {
-        val connectionHandle = connection.asInstanceOf[ConnectionHandle]
-        val pgConnection = connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
+        val pgConnection = connection.unwrap(classOf[PGConnection])
 
         val r = f(pgConnection)
         connection.commit // simply closing the connection does not seem to commit the transaction.

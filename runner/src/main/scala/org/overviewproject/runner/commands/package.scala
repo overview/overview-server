@@ -68,25 +68,22 @@ package object commands {
     )
 
     override def documentSetWorker = new JvmCommandWithAppendableClasspath(
-      Seq(),
-      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
+      Flags.DatabaseEnv,
+      Seq("-Dlogback.configurationFile=workerdevlog.xml"),
       Seq("org.overviewproject.DocumentSetWorker")
     )
 
     override def redis = new ShCommand(Seq(), Seq("./deps/redis/dev.sh"))
 
     override def worker = new JvmCommandWithAppendableClasspath(
-      Seq(),
-      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
+      Flags.DatabaseEnv,
+      Seq("-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
       Seq("JobHandler")
     ).with32BitSafe
 
     override def runEvolutions = new JvmCommand(
-      Seq(),
-      Seq(
-        Flags.DatabaseUrl,
-        "-Dsbt.log.format=false"
-      ),
+      Flags.DatabaseEnv,
+      Seq("-Dsbt.log.format=false"),
       Seq(
         "-jar", sbtLaunchPath,
         "db-evolution-applier/run"
@@ -122,7 +119,7 @@ package object commands {
   }
 
   object production extends UsefulCommands {
-    private def cmd(prefix: String, jvmArgs: Seq[String], args: Seq[String]) = {
+    private def cmd(prefix: String, env: Seq[(String,String)], jvmArgs: Seq[String], args: Seq[String]) = {
       val classPath = Source
         .fromFile(s"${prefix}/classpath.txt")
         .getLines
@@ -130,21 +127,19 @@ package object commands {
         .mkString(File.pathSeparator)
 
       val fullJvmArgs = jvmArgs ++ Seq("-cp", classPath)
-      new JvmCommand(Seq(), fullJvmArgs, args)
+      new JvmCommand(env, fullJvmArgs, args)
     }
 
     override def documentSetWorker = cmd(
       "documentset-worker",
-      Seq(
-        Flags.DatabaseUrl,
-        Flags.DatabaseDriver,
-        "-Dlogback.configurationFile=workerdevlog.xml"
-      ),
+      Flags.DatabaseEnv,
+      Seq("-Dlogback.configurationFile=workerdevlog.xml"),
       Seq("org.overviewproject.DocumentSetWorker")
     )
 
     override def messageBroker = cmd(
       "message-broker",
+      Seq(),
       Seq(Flags.ApolloBase),
       Seq(
         "org.apache.activemq.apollo.boot.Apollo",
@@ -156,6 +151,7 @@ package object commands {
 
     override def searchIndex = cmd(
       "search-index",
+      Seq(),
       Seq(
         "-Xmx1g",
         "-Xss256k",
@@ -181,8 +177,8 @@ package object commands {
       cmd(
         // In distribution mode, the web server is in the "frontend/" folder
         "frontend",
+        Flags.DatabaseEnv,
         Seq(
-          Flags.DatabaseUrl,
           "-Duser.timezone=UTC",
           "-Dpidfile.enabled=false"
         ),
@@ -194,9 +190,8 @@ package object commands {
 
     override def worker = cmd(
       "worker",
+      Flags.DatabaseEnv,
       Seq(
-        Flags.DatabaseUrl,
-        Flags.DatabaseDriver,
         "-Dlogback.configurationFile=workerdevlog.xml",
         "-Xmx2g"
       ),
@@ -205,7 +200,8 @@ package object commands {
 
     override def runEvolutions = cmd(
       "db-evolution-applier",
-      Seq(Flags.DatabaseUrl),
+      Flags.DatabaseEnv,
+      Seq(),
       Seq("org.overviewproject.db_evolution_applier.Main")
     )
   }

@@ -1,6 +1,8 @@
 package org.overviewproject.runner
 
 import java.io.{File,FileWriter,InputStream}
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.{Files,Paths}
 import java.sql.{Connection,DriverManager,PreparedStatement}
 import resource.managed
 import scala.annotation.tailrec
@@ -12,7 +14,7 @@ import org.overviewproject.runner.commands.{Command,PostgresCommand}
 
 trait DatabaseLike {
   val file: File
-  val postgresqlConfContents: String
+  val postgresqlConfContents: Seq[(String,String)]
   val logger : StdLogger
 
   protected val postgresCommands : DatabaseLike.PostgresCommands
@@ -66,10 +68,13 @@ trait DatabaseLike {
   }
 
   private[runner] def rewriteConfig: Unit = {
-    val path = new File(file.getAbsolutePath(), "postgresql.conf").getAbsolutePath()
+    def writeFile(filename: String, contents: String): Unit = {
+      val path = new File(file.getAbsolutePath(), filename).getAbsolutePath()
+      filesystem.createFileWithContents(path, contents)
+      logger.out.println(s"Wrote ${path}")
+    }
 
-    filesystem.createFileWithContents(path, postgresqlConfContents)
-    logger.out.println(s"Wrote ${path}")
+    postgresqlConfContents.foreach((writeFile _).tupled)
   }
 
   private[runner] def ensureUser(connection: Connection): Unit = {
@@ -136,8 +141,12 @@ object DatabaseLike {
   }
 }
 
-class Database(val file: File, val postgresqlConf: InputStream, val logger: StdLogger) extends DatabaseLike {
-  override val postgresqlConfContents = Source.fromInputStream(postgresqlConf).getLines.mkString("\n")
+class Database(val file: File, val postgresqlConf: Seq[(String,InputStream)], val logger: StdLogger) extends DatabaseLike {
+  private def readResource(name: String, inputStream: InputStream): (String,String) = {
+    (name -> Source.fromInputStream(inputStream).getLines.mkString("\n"))
+  }
+
+  override val postgresqlConfContents = postgresqlConf.map((readResource _).tupled)
 
   override protected val postgresCommands = new DatabaseLike.PostgresCommands {
     val initdb = PostgresCommand("initdb", "-D", file.getAbsolutePath, "-E", "UTF8", "--no-locale", "-U", "postgres")
@@ -200,7 +209,7 @@ class Database(val file: File, val postgresqlConf: InputStream, val logger: StdL
     @tailrec
     override def connect(retries: Int, retryWaitMilliseconds: Int) : Connection = {
       try {
-        DriverManager.getConnection("jdbc:postgresql://localhost:9010/postgres?user=postgres")
+        DriverManager.getConnection("jdbc:postgresql://localhost:9010/postgres?user=postgres&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory")
       } catch { case e: Exception =>
         if (retries <= 1) throw e
 
@@ -214,6 +223,8 @@ class Database(val file: File, val postgresqlConf: InputStream, val logger: StdL
     override def createFileWithContents(file: String, contents: String) = {
       for (out <- managed(new FileWriter(file))) {
         out.write(contents)
+        // server.key needs to be private, or Postgres won't start
+        Files.setPosixFilePermissions(Paths.get(file), PosixFilePermissions.fromString("rwxr-x---"))
       }
     }
   }

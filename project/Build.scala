@@ -23,29 +23,24 @@ object ApplicationBuild extends Build with ProjectSettings {
 
   val allJavaOpts = Seq("-Duser.timezone=UTC")
 
-  val workerJavaOpts = Seq("-Dlogback.configurationFile=workerdevlog.xml") ++: {
-    if (System.getProperty("datasource.default.url") == null) Seq("-Ddatasource.default.url=" + appDatabaseUrl)
-    else Nil
-  }
-
-  val ourTestWithNoDbOptions = Seq(
-    Tests.Argument(TestFrameworks.Specs2, "xonly"),
-    Tests.Argument(TestFrameworks.Specs2, "showtimes"),
-    Tests.Argument("junitxml", "console")/*,
-    Tests.Setup { loader =>
-      // Load Logger so configurations happen in the right order
-      loader.loadClass("org.slf4j.LoggerFactory")
-        .getMethod("getLogger", loader.loadClass("java.lang.String"))
-        .invoke(null, "ROOT")
-    }
-    */
+  val devJavaOpts = Seq(
+    "-Ddb.default.dataSource.sslfactory=org.postgresql.ssl.NonValidatingFactory",
+    "-Ddb.default.dataSource.databaseName=overview-dev",
+    "-Ddb.default.dataSource.portNumber=9010"
   )
 
-  val ourTestOptions = ourTestWithNoDbOptions ++ Seq(
-    Tests.Setup { () =>
-      System.setProperty("datasource.default.url", testDatabaseUrl)
-      System.setProperty("logback.configurationFile", "logback-test.xml")
-    }
+  val testJavaOpts = Seq(
+    "-Ddb.default.dataSource.sslfactory=org.postgresql.ssl.NonValidatingFactory",
+    "-Ddb.default.dataSource.databaseName=overview-test",
+    "-Ddb.default.dataSource.portNumber=9010"
+  )
+
+  val workerJavaOpts = Seq("-Dlogback.configurationFile=workerdevlog.xml")
+
+  val ourTestOptions = Seq(
+    //Tests.Argument(TestFrameworks.Specs2, "xonly"),
+    Tests.Argument(TestFrameworks.Specs2, "showtimes"),
+    Tests.Argument("junitxml", "console")
   )
 
   val printClasspathTask = TaskKey[Unit]("print-classpath")
@@ -96,6 +91,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     .settings(packageArchetype.java_application: _*)
     .settings(
       libraryDependencies ++= dbEvolutionApplierDependencies,
+      javaOptions ++= allJavaOpts ++ devJavaOpts,
       scalacOptions ++= ourScalacOptions,
       mappings in (Compile, packageBin) <++= baseDirectory map { base =>
         val evolutions = ((base / ".." / "conf" / "evolutions") ** "*").get
@@ -105,15 +101,16 @@ object ApplicationBuild extends Build with ProjectSettings {
 
   // Create a subProject with our common settings
   object OverviewProject {
-    def apply(name: String, dependencies: Seq[ModuleID],
-              useSharedConfig: Boolean = true,
-              theTestOptions: Seq[TestOption] = ourTestOptions) = {
+    def apply(name: String, dependencies: Seq[ModuleID]) = {
       Project(name, file(name))
         .settings(Defaults.coreDefaultSettings: _*)
-        .settings(addUnmanagedResourceDirectory(useSharedConfig): _*)
         .settings(
+          unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
           libraryDependencies ++= dependencies,
-          testOptions in Test ++= theTestOptions,
+          javaOptions in run ++= allJavaOpts ++ devJavaOpts,
+          javaOptions in Test ++= allJavaOpts ++ testJavaOpts,
+          fork := true, // to set javaOptions
+          testOptions in Test ++= ourTestOptions,
           scalacOptions ++= ourScalacOptions,
           logBuffered := false,
           parallelExecution in Test := false,
@@ -121,18 +118,10 @@ object ApplicationBuild extends Build with ProjectSettings {
           printClasspath
         )
     }
-
-    // don't clean the database if it isn't being used in tests
-    def withNoDbTests(name: String, dependencies: Seq[ModuleID], useSharedConfig: Boolean = true,
-                      theTestOptions: Seq[TestOption] = ourTestWithNoDbOptions) = apply(name, dependencies, useSharedConfig, theTestOptions)
-
-    private def addUnmanagedResourceDirectory(useSharedConfig: Boolean) =
-      if (useSharedConfig) Seq(unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" })
-      else Seq()
   }
 
   // Project definitions
-  val common = OverviewProject("common", commonProjectDependencies, useSharedConfig = false)
+  val common = OverviewProject("common", commonProjectDependencies)
 
   val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
     .settings(Defaults.coreDefaultSettings: _*)
@@ -168,16 +157,17 @@ object ApplicationBuild extends Build with ProjectSettings {
    * Reality is the other way around. The test suite relies on the database,
    * which common provides.
    */
-  val commonTest = OverviewProject("common-test", commonTestProjectDependencies, useSharedConfig = false)
+  val commonTest = OverviewProject("common-test", commonTestProjectDependencies)
     .dependsOn(common)
 
-  val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
+  val documentSetWorker = OverviewProject("documentset-worker", documentSetWorkerProjectDependencies)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
       Keys.fork := true,
-      javaOptions in run ++= allJavaOpts ++ workerJavaOpts,
-      javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml")
+      javaOptions in run ++= workerJavaOpts,
+      javaOptions in Test ++= Seq("-Dlogback.configurationFile=logback-test.xml")
+    )
     .dependsOn(common)
     .dependsOn(commonTest % "test")
 
@@ -186,8 +176,8 @@ object ApplicationBuild extends Build with ProjectSettings {
     .settings(packageArchetype.java_application: _*)
     .settings(
       Keys.fork := true,
-      javaOptions in run ++=  allJavaOpts ++ workerJavaOpts,
-      javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml"
+      javaOptions in run ++= workerJavaOpts,
+      javaOptions in Test ++= Seq("-Dlogback.configurationFile=logback-test.xml")
     )
     .dependsOn(common)
     .dependsOn(commonTest % "test")
@@ -221,14 +211,13 @@ object ApplicationBuild extends Build with ProjectSettings {
         ),
         aggregate in Compile := true,
         parallelExecution in IntegrationTest := false,
-        javaOptions in run ++= allJavaOpts,
-        javaOptions in Test ++= allJavaOpts ++ Seq(
+        javaOptions ++= allJavaOpts ++ devJavaOpts,
+        fork := true, // so javaOptions get set
+        javaOptions in Test ++= allJavaOpts ++ testJavaOpts ++ Seq(
           "-Dconfig.file=conf/application-test.conf",
           "-Dlogger.resource=logback-test.xml",
-          "-Ddb.default.url=" + testDatabaseUrl,
           "-XX:MaxPermSize=256m"
         ),
-        Keys.fork in Test := true,
         aggregate in Test := false,
         testOptions in Test ++= ourTestOptions,
         logBuffered := false,

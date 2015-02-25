@@ -13,15 +13,32 @@ import play.api.{Configuration,DefaultApplication,Mode,Plugin,Play}
   */
 object Main {
   def main(args: Array[String]) : Unit = {
-    val config = ConfigFactory.parseString(s"""
+    val config = ConfigFactory.parseString("""
       |applyEvolutions.default=true
       |applyDownEvolutions.default=true
-      |db.default.driver=org.postgresql.Driver
-      |db.default.url="${sys.props("datasource.default.url")}"
-      |db.default.logStatements=false
-      |db.default.partitionCount=1
-      |db.default.maxConnectionsPerPartition=2 # not 1. rrgh, Play. rrgh.
-      |db.default.minConnectionsPerPartition=1
+      |db {
+      |  default {
+      |    dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
+      |    minimumIdle=2
+      |    maximumPoolSize=3
+      |    dataSource {
+      |      serverName="localhost"
+      |      portNumber="9010" # overridden in production.conf
+      |      databaseName="overview-dev"
+      |      user="overview"
+      |      password="overview"
+      |      serverName=${?DATABASE_SERVER_NAME}
+      |      portNumber=${?DATABASE_PORT}
+      |      databaseName=${?DATABASE_NAME}
+      |      username=${?DATABASE_USERNAME}
+      |      password=${?DATABASE_PASSWORD}
+
+      |      ssl=true
+      |      ssl=${?DATABASE_SSL} # or better yet, turn on SSL on your database
+      |      sslfactory=${?DATABASE_SSL_FACTORY}
+      |    }
+      |  }
+      |}
       |""".stripMargin).resolve()
 
     val application = new DefaultApplication(
@@ -33,7 +50,7 @@ object Main {
       override lazy val configuration = Configuration(config)
 
       override lazy val plugins : Seq[play.api.Plugin] = Seq(
-        new play.api.db.BoneCPPlugin(this),
+        new com.edulify.play.hikaricp.HikariCPPlugin(this),
         new play.api.db.evolutions.EvolutionsPlugin(this)
       )
     }

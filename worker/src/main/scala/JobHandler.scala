@@ -32,7 +32,7 @@ object JobHandler {
     // Make sure java.sql.Timestamp values are correct
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
-    val config = DatabaseConfiguration.fromSystemProperties
+    val config = DatabaseConfiguration.fromConfig
     val dataSource = DataSource(config)
 
     DB.connect(dataSource)

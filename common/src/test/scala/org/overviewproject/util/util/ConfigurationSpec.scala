@@ -46,7 +46,7 @@ class ConfigurationSpec extends Specification {
     }
 
     "have MaxDocuments value" in {
-      Configuration.getInt("max_documents") must be equalTo (50000)
+      Configuration.getInt("max_documents") must be equalTo (2000000)
     }
 /*
     "have BrokerUri value" in {

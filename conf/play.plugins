@@ -1,3 +1,4 @@
+200:com.edulify.play.hikaricp.HikariCPPlugin
 1500:com.typesafe.plugin.CommonsMailerPlugin
 1600:plugins.StompPlugin
 1600:plugins.RedisPlugin

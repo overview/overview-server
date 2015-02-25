@@ -1,6 +1,5 @@
 package helpers
 
-import com.jolbox.bonecp.ConnectionHandle
 import org.postgresql.PGConnection
 import org.specs2.execute.AsResult
 import org.specs2.mutable.Around
@@ -14,6 +13,9 @@ import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 // We can't use DbTestContext, because it uses a connection
 // returned from DB.withConnection, which is an AutoCleanConnection wrapper
 // around bonecp.ConnectionHandle
+//
+// FIXME Yes We Can! We use HikariCP now, which supports
+// java.sql.Connection#unwrap()
 trait PgConnectionContext extends Around {
   import scala.language.implicitConversions
   
@@ -31,8 +33,7 @@ trait PgConnectionContext extends Around {
       val adapter = new SquerylPostgreSqlAdapter()
       val session = new Session(connection, adapter)
 
-      val connectionHandle = connection.asInstanceOf[ConnectionHandle]
-      pgConnection = connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
+      pgConnection = connection.unwrap(classOf[PGConnection])
 
       using(session) {
         setupWithDb
