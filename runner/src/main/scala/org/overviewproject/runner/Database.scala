@@ -224,7 +224,7 @@ class Database(val file: File, val postgresqlConf: Seq[(String,InputStream)], va
       for (out <- managed(new FileWriter(file))) {
         out.write(contents)
         // server.key needs to be private, or Postgres won't start
-        Files.setPosixFilePermissions(Paths.get(file), PosixFilePermissions.fromString("rwxr-x---"))
+        Files.setPosixFilePermissions(Paths.get(file), PosixFilePermissions.fromString("rwx------"))
       }
     }
   }
