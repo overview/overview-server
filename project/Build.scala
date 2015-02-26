@@ -38,7 +38,7 @@ object ApplicationBuild extends Build with ProjectSettings {
   val workerJavaOpts = Seq("-Dlogback.configurationFile=workerdevlog.xml")
 
   val ourTestOptions = Seq(
-    //Tests.Argument(TestFrameworks.Specs2, "xonly"),
+    Tests.Argument(TestFrameworks.Specs2, "xonly"),
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
     Tests.Argument("junitxml", "console")
   )
@@ -108,7 +108,8 @@ object ApplicationBuild extends Build with ProjectSettings {
           unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
           libraryDependencies ++= dependencies,
           javaOptions in run ++= allJavaOpts ++ devJavaOpts,
-          javaOptions in Test ++= allJavaOpts ++ testJavaOpts,
+          javaOptions in Test ++= allJavaOpts ++ testJavaOpts :+ "-XX:MaxPermSize=256m",
+
           fork := true, // to set javaOptions
           testOptions in Test ++= ourTestOptions,
           scalacOptions ++= ourScalacOptions,
