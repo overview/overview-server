@@ -1,9 +1,6 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.InputStream
+import java.io.{BufferedInputStream,File,FileInputStream,FileNotFoundException,InputStream}
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption._
@@ -137,7 +134,8 @@ object LibreOfficeDocumentConverter extends LibreOfficeDocumentConverter {
 
   object OsFileSystem extends FileSystem {
     override def saveToFile(inputStream: InputStream, filePath: Path): File = {
-      Files.copy(inputStream, filePath, REPLACE_EXISTING)
+      val bufferedInputStream = new BufferedInputStream(inputStream, 5 * 1024 * 1024)
+      Files.copy(bufferedInputStream, filePath, REPLACE_EXISTING)
 
       filePath.toFile
     }

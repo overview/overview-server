@@ -1,101 +1,64 @@
 package org.overviewproject.postgres
 
-import scala.util.control.Exception._
-import java.io.InputStream
-import org.overviewproject.database.Database
-import org.overviewproject.database.DB
+import java.io.{IOException,InputStream}
+import org.postgresql.largeobject.{LargeObject=>PGLargeObject,LargeObjectManager}
 import org.postgresql.util.PSQLException
-import java.io.IOException
-import org.postgresql.util.PSQLException
+import org.postgresql.PGConnection
+import scala.concurrent.blocking
 
-class LargeObjectInputStream(oid: Long, bufferSize: Int = 1024 * 1024) extends InputStream {
-  private var ReadWhenClosedExceptionMessage = "Attempting to read from closed stream"
+import org.overviewproject.database.SlickClient
 
-  private val buffer = new Array[Byte](bufferSize)
-  private var markPosition: Int = 0
-  private var largeObjectPosition: Int = 0
-  private var bufferPosition: Int = bufferSize
-  private var bufferEnd: Int = bufferSize
-  private var isOpen: Boolean = true
+/** Reads data from a database LargeObject.
+  *
+  * Each call to read() opens a database connection. You should definitely wrap
+  * this with a BufferedInputStream to make reads less costly.
+  */
+class LargeObjectInputStream(oid: Long, slickClient: SlickClient) extends InputStream {
+  private var position: Long = 0L
 
-  def read(): Int = {
-    ifOpen {
-      convertPsqlException(refreshBuffer())
-      readNextFromBuffer()
-    }
-
-  }
-
-  override def read(outBuffer: Array[Byte], offset: Int, len: Int): Int = {
-    ifOpen {
-      readBytes(outBuffer, offset, len) match {
-        case 0 => -1
-        case n => n
+  override def read: Int = {
+    val bytes: Array[Byte] = try {
+      withLO { lo =>
+        lo.seek(position.toInt)
+        //lo.seek64(position)
+        lo.read(1)
       }
+    } catch {
+      case e: PSQLException => throw new IOException(e.getMessage, e)
+    }
+    if (bytes.length == 1) {
+      position += 1
+      bytes(0)
+    } else {
+      -1
     }
   }
 
-  def readBytes(outBuffer: Array[Byte], offset: Int, len: Int): Int = {
-    convertPsqlException(refreshBuffer())
-
-    val availableBytes = bufferEnd - bufferPosition
-
-    if (len == 0 || availableBytes == 0) 0
-    else {
-      val bytesRead = scala.math.min(len, availableBytes)
-
-      Array.copy(buffer, bufferPosition, outBuffer, offset, bytesRead)
-      bufferPosition += bytesRead
-
-      bytesRead + readBytes(outBuffer, offset + bytesRead, len - bytesRead)
+  override def read(b: Array[Byte], off: Int, len: Int): Int = {
+    val n = try {
+      withLO { lo =>
+        lo.seek(position.toInt)
+        //lo.seek64(position)
+        lo.read(b, off, len)
+      }
+    } catch {
+      case e: PSQLException => throw new IOException(e.getMessage, e)
+    }
+    if (n == 0) {
+      -1
+    } else {
+      position += n
+      n
     }
   }
 
-  override def mark(readlimit: Int) {
-    // Mark the actual byte we're at, and reset
-    markPosition = largeObjectPosition - buffer.length + bufferPosition
-    bufferPosition = buffer.length
-    bufferEnd = buffer.length
-  }
-
-  override def reset() {
-    // Reset the buffer
-    largeObjectPosition = markPosition
-    bufferPosition = buffer.length
-    bufferEnd = buffer.length
-  }
-
-  override def close() { isOpen = false }
-
-  private def readNextFromBuffer(): Int = {
-    val b =
-      if (bufferPosition < bufferEnd) toUnsignedInt(buffer(bufferPosition))
-      else -1
-
-    bufferPosition += 1
-
-    b
-  }
-
-  private def toUnsignedInt(b: Byte): Int = 0xff & b
-
-  private def ifOpen[A](f: => A) = {
-    if (isOpen) f
-    else throw new IOException(ReadWhenClosedExceptionMessage)
-  }
-
-  private def convertPsqlException(f: => Unit) { handling(classOf[PSQLException]) by (e => throw new IOException(e.getMessage)) apply f }
-
-  private def refreshBuffer() {
-    if (bufferPosition >= bufferSize) Database.inTransaction {
-      implicit val pgc = DB.pgConnection(Database.currentConnection)
-      LO.withLargeObject(oid) { largeObject =>
-        largeObject.seek(largeObjectPosition)
-        val bytesRead = largeObject.read(buffer, 0, bufferSize)
-
-        bufferEnd = bytesRead
-        largeObjectPosition += bytesRead
-        bufferPosition = 0
+  private def withLO[A](block: PGLargeObject => A): A = blocking {
+    slickClient.blockingDb { session =>
+      slickClient.withTransaction(session) {
+        val pgConnection = session.conn.unwrap(classOf[PGConnection])
+        val loManager = pgConnection.getLargeObjectAPI()
+        val lo = loManager.open(oid, LargeObjectManager.READ)
+        block(lo)
       }
     }
   }

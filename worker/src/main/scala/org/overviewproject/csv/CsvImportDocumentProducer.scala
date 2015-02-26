@@ -34,7 +34,6 @@ class CsvImportDocumentProducer(
   with SlickSessionProvider
 {
   private val FetchingFraction = 1.0
-  private val uploadReader = new UploadReader()
   private var bytesRead = 0l
   private var lastUpdateTime = 0l
   private var jobCancelled: Boolean = false
@@ -53,7 +52,8 @@ class CsvImportDocumentProducer(
     val uploadedFile = Database.inTransaction {
       EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
     }
-    val reader = uploadReader.reader(contentsOid, uploadedFile)
+    val uploadReader = new UploadReader(contentsOid, uploadedFile.encoding, this)
+    val reader = uploadReader.reader
     val documentSource = new CsvImportSource(org.overviewproject.util.Textify.apply, reader)
 
     await(TransportIndexClient.singleton.addDocumentSet(documentSetId))

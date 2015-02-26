@@ -1,108 +1,51 @@
 package org.overviewproject.postgres
 
-import org.overviewproject.test.DbSpecification
+import org.postgresql.largeobject.LargeObjectManager
 import org.postgresql.PGConnection
-import org.overviewproject.database.DB
+
+import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 
 class LargeObjectInputStreamSpec extends DbSpecification {
-  "LargeObjectInputStream" should {
+  trait BaseScope extends DbScope {
+    val data: Array[Byte] = "some contents".getBytes("ascii")
+    val buffer = new Array[Byte](100)
 
-    trait LoContext extends DbTestContext {
-      implicit var pgConnection: PGConnection = _
-      val data = Array.tabulate[Byte](100)(i => i.toByte)
-      val BufferSize: Int = 10
-      
-      var loInputStream: LargeObjectInputStream = _
-      
-      override def setupWithDb = {
-        pgConnection = DB.pgConnection
-        LO.withLargeObject { largeObject =>
-          largeObject.add(data)
-          loInputStream = new LargeObjectInputStream(largeObject.oid, BufferSize)
-        }
-      }
+    lazy val pgConnection = session.conn.unwrap(classOf[PGConnection])
+    lazy val loApi = pgConnection.getLargeObjectAPI()
+
+    lazy val loid = {
+      val ret = loApi.createLO(LargeObjectManager.READ | LargeObjectManager.WRITE)
+      val lo = loApi.open(ret, LargeObjectManager.WRITE)
+      lo.write(data)
+      lo.close
+      ret
     }
 
-    trait LoWith255 extends LoContext {
-      override val data = Array[Byte](255.toByte)
-    }
-    
-    trait LoWithSmallData extends LoContext {
-      override val data = Array.tabulate[Byte](BufferSize - 2)(i => i.toByte)
-    }
-    
-    "read one byte at a time from chunk" in new LoContext {
-      val readData = Array.fill(BufferSize)(loInputStream.read.toByte)
-       
-      readData must be equalTo data.take(BufferSize)
-    }
-    
-    "read beyond buffer size" in new LoContext {
-      val readData = new Array[Byte](100)
-      
-      loInputStream.read(readData, 0, 100) must be equalTo 100
-      
-      readData must be equalTo data
-    }
-    
-    "read beyond the end of the LargeObject" in new LoContext {
-      val readData = new Array[Byte](300)
-      
-      loInputStream.read(readData, 0, 200) must be equalTo 100
-      
-      readData.take(100) must be equalTo data
-      
-      loInputStream.read(readData, 0, 100) must be equalTo -1
-    }
-    
-    "close stream" in new LoContext {
-      loInputStream.close()
-      loInputStream.read must throwA[java.io.IOException]
-    }
+    lazy val subject = new LargeObjectInputStream(loid, SlickClientInSession(session))
+  }
 
-    "mark and reset stream" in new LoContext {
-      val readData = new Array[Byte](40)
+  "read one byte at a time" in new BaseScope {
+    override val data = "foo".getBytes("ascii")
+    subject.read must beEqualTo("f".charAt(0))
+    subject.read must beEqualTo("o".charAt(0))
+    subject.read must beEqualTo("o".charAt(0))
+    subject.read must beEqualTo(-1)
+  }
 
-      loInputStream.read(readData) // pos = 40
-      loInputStream.mark(40)       // pos = 40
-      loInputStream.read(readData) // pos = 80
-      loInputStream.reset()        // pos = 40
-      val nRead = loInputStream.read(readData)
+  "read multiple bytes" in new BaseScope {
+    override val data = "foo".getBytes("ascii")
+    subject.read(buffer, 0, 2) must beEqualTo(2) // plus side-effect
+    buffer(0) must beEqualTo("f".charAt(0))
+    buffer(1) must beEqualTo("o".charAt(0))
+    subject.read(buffer, 5, 2) must beEqualTo(1) // plus side-effect
+    buffer(5) must beEqualTo("o".charAt(0))
+    subject.read(buffer, 0, 1) must beEqualTo(-1)
+  }
 
-      nRead must be equalTo readData.length
-      readData(0) must be equalTo(40)
-    }
-    
-    "throw IOException on error" in new DbTestContext {
-      val loInputStream = new LargeObjectInputStream(-1)
-      loInputStream.read must throwA[java.io.IOException]
-    }
-    
-    "not read 255 as end of stream" in new LoWith255 {
-      val b = loInputStream.read
-      b must be equalTo 0x00ff
-    }
-    
-    "read beyond data, but not beyond buffer" in new LoWith255 {
-      val readData = new Array[Byte](10)
-      
-      loInputStream.read(readData, 0, 5) must be equalTo 1
-    }
-    
-    "read buffer in multiple chunks" in new LoWithSmallData {
-      val readData = new Array[Byte](10)
-      loInputStream.read(readData, 0, 5) must be equalTo 5
-      loInputStream.read(readData, 5, 4) must be equalTo 3
-      
-      readData.take(8) must be equalTo data.take(8)
-    }
-    
-    "read beyond buffer in multiple chunks" in new LoContext {
-      val readData = new Array[Byte](20)
-      loInputStream.read(readData, 0, 5) must be equalTo 5
-      loInputStream.read(readData, 5, 15) must be equalTo 15
-      
-      readData must be equalTo data.take(20)
-    }
+  "throw IOException if the object disappears" in new BaseScope {
+    subject // initialize lazy variables
+    loApi.delete(loid)
+    subject.read must throwA[java.io.IOException]
+    subject.read(buffer, 0, 1) must throwA[java.io.IOException]
   }
 }

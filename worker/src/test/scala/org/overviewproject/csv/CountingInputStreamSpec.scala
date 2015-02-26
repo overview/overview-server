@@ -40,25 +40,6 @@ class CountingInputStreamSpec extends Specification {
       countingStream.read(buffer, 0, len) must be equalTo (len)
       countingStream.bytesRead must be equalTo (len)
     }
-    
-    "handle mark and reset" in new FullStreamContext {
-      countingStream.read(buffer) must be equalTo(size)
-      countingStream.bytesRead must be equalTo(size)
-      
-      countingStream.mark(100)
-      countingStream.read(buffer) must be equalTo(size)
-      countingStream.bytesRead must be equalTo(2 * size)
-      
-      countingStream.reset
-      countingStream.bytesRead must be equalTo(size)
-      
-    }
-
-    "handle skip by counting skipped values" in new FullStreamContext {
-      val len = 24
-      countingStream.skip(len) must be equalTo (len)
-      countingStream.bytesRead must be equalTo (len)
-    }
 
     "handle single char read past eos" in new EmptyStreamContext {
       countingStream.read
@@ -68,11 +49,6 @@ class CountingInputStreamSpec extends Specification {
     "handle read into buffer past eos" in new EmptyStreamContext {
       countingStream.read(buffer) must be equalTo (-1)
       countingStream.bytesRead must be equalTo (0)
-    }
-    
-    "handle skip past eos" in new EmptyStreamContext {
-      countingStream.skip(10) must be equalTo(0)
-      countingStream.bytesRead must be equalTo(0)
     }
   }
 }

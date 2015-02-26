@@ -8,7 +8,6 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.util.Textify
 
 class PdfBoxDocument(location: String) extends PdfDocument {

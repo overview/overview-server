@@ -11,11 +11,9 @@ import scala.concurrent.Future
 import controllers.auth.Authorities.userOwningDocument
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import controllers.util.PlayLargeObjectInputStream
 import models.OverviewDocument
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.{Document,File,Page}
-import org.overviewproject.postgres.LargeObjectInputStream
 
 trait DocumentController extends Controller {
   def showJson(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>

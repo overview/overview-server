@@ -7,13 +7,11 @@ import scala.slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.models.{File,Page}
 import org.overviewproject.models.tables.{Files,Pages}
-import org.overviewproject.test.SlickSpecification
+import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 
-class PageByteAStrategySpec extends SlickSpecification with StrategySpecHelper {
+class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
   trait BaseScope extends DbScope {
-    class TestPageByteAStrategy(session: Session) extends PageByteAStrategy {
-      override def db[A](block: Session => A)(implicit executor: ExecutionContext) = Future(block(session))
-    }
+    class TestPageByteAStrategy(val session: Session) extends PageByteAStrategy with SlickClientInSession
 
     val strategy = new TestPageByteAStrategy(session)
   }

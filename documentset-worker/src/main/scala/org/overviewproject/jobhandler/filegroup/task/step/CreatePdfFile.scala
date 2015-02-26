@@ -1,20 +1,20 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
+import java.io.{BufferedInputStream,InputStream}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.database.SlickClient
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.models.{ File, TempDocumentSetFile }
-import java.io.InputStream
-import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
+
 import org.overviewproject.blobstorage.BlobBucketId
-import org.overviewproject.postgres.LargeObjectInputStream
+import org.overviewproject.blobstorage.BlobStorage
+import org.overviewproject.database.SlickClient
 import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.Slick.simple._
+import org.overviewproject.models.{ File, TempDocumentSetFile }
+import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
+import org.overviewproject.postgres.LargeObjectInputStream
 
 trait CreatePdfFile extends TaskStep with SlickClient {
-
   protected val documentSetId: Long
   protected val uploadedFileId: Long
 
@@ -52,6 +52,7 @@ trait CreatePdfFile extends TaskStep with SlickClient {
 }
 
 object CreatePdfFile {
+  private val LargeObjectBufferSize = 5 * 1024 * 1024
   
   def apply(documentSetId: Long, uploadedFileId: Long): CreatePdfFile = 
     new CreatePdfFileImpl(documentSetId, uploadedFileId)
@@ -60,9 +61,12 @@ object CreatePdfFile {
     override protected val documentSetId: Long,
     override protected val uploadedFileId: Long
   ) extends CreatePdfFile with SlickSessionProvider {
-    
+
     override protected val blobStorage = BlobStorage
-    override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid)
+    override protected def largeObjectInputStream(oid: Long) = {
+      val is = new LargeObjectInputStream(oid, new SlickSessionProvider {})
+      new BufferedInputStream(is, LargeObjectBufferSize)
+    }
     
     override protected def nextStep(file: File) = ExtractTextFromPdf(documentSetId, file)
   }

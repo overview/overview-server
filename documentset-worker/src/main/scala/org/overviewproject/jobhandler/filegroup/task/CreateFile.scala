@@ -1,14 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import java.io.InputStream
+import java.io.{BufferedInputStream,InputStream}
 import java.util.UUID
-import scala.util.control.Exception._
 import scala.concurrent.{Await,Future,blocking}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.control.Exception.ultimately
 
 import org.overviewproject.blobstorage.{BlobStorage,BlobBucketId}
-import org.overviewproject.database.DB
+import org.overviewproject.database.{DB,SlickSessionProvider}
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.models.{File,GroupedFileUpload}
@@ -22,6 +22,7 @@ import org.overviewproject.util.Logger
  * If necessary, the uploaded document is converted to PDF in order to provide a `File.view`.
  */
 trait CreateFile {
+  private val LargeObjectBufferSize = 5 * 1024 * 1024 // 5MB
   protected val blobStorage: BlobStorage
 
   private lazy val logger: Logger = Logger.forClass(getClass)
@@ -78,7 +79,8 @@ trait CreateFile {
   }
 
   private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[String] = {
-    val stream = blocking(storage.getLargeObjectInputStream(oid))
+    val lois = storage.getLargeObjectInputStream(oid)
+    val stream = new BufferedInputStream(lois, 5 * 1024 * 1024)
 
     blobStorage.create(BlobBucketId.FileContents, stream, size)
       .andThen { case _ => stream.close }
@@ -110,7 +112,9 @@ object CreateFile extends CreateFile {
   object DatabaseStorage extends Storage {
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
 
-    override def getLargeObjectInputStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
+    override def getLargeObjectInputStream(oid: Long): InputStream = {
+      new LargeObjectInputStream(oid, new SlickSessionProvider {})
+    }
 
     private lazy val fileInserter = {
       import org.overviewproject.database.Slick.simple._
