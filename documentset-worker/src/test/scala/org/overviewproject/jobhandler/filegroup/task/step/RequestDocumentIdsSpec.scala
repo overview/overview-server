@@ -24,7 +24,7 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
       val result = Await.result(requestDocumentIds.execute, Duration.Inf)
 
       result must beLike {
-        case WaitForResponse(nextStep) => nextStep must be equalTo(next)
+        case WaitForResponse(nextStep) => ok
       }
     }
   }
@@ -43,6 +43,6 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
 
   class TestRequestDocumentIds(override val documentIdSupplier: ActorRef, next: TaskStep) extends RequestDocumentIds {
     override protected val document = smartMock[PdfFileDocumentData]
-    override protected def nextStep = next
+    override protected def nextStepForResponse(documentSetIds: Seq[Long]) = next
   }
 }

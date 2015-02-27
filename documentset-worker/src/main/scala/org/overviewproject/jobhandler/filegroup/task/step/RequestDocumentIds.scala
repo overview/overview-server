@@ -10,11 +10,11 @@ trait RequestDocumentIds extends TaskStep {
    protected val documentIdSupplier: ActorRef
    protected val document: PdfFileDocumentData
    
-   protected def nextStep: TaskStep
+   protected def nextStepForResponse(documentsetIds: Seq[Long]): TaskStep
    
    override def execute: Future[TaskStep] = Future {
      documentIdSupplier ! DocumentIdRequest(1)
      
-     WaitForResponse(nextStep)
+     WaitForResponse(nextStepForResponse)
    }
 }
