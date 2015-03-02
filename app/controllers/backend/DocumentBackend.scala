@@ -60,14 +60,25 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
         .getOrElse(Seq())
     }
 
-    val selectedUnsortedIdsFuture: Future[Set[Long]] =
+    val selectedUnsortedIdsFuture: Future[Seq[Long]] =
       DbDocumentBackend.bySelectionRequest(request, indexClient).flatMap(list(_))
-        .map(_.toSet)
 
     for {
       allSortedIds <- allSortedIdsFuture
       selectedIds <- selectedUnsortedIdsFuture
-    } yield allSortedIds.filter(selectedIds.contains(_))
+    } yield {
+      if (allSortedIds.length == selectedIds.length) {
+        // Fast path: selectedIds contains the same elements as allSortedIds.
+        //
+        // This happens when, say, we select all documents in the root Node of
+        // an up-to-date Tree.
+        allSortedIds
+      } else {
+        // Catch-all: selectedIds is a subset of allSortedIds.
+        val set = selectedIds.toSet
+        allSortedIds.filter(set.contains(_))
+      }
+    }
   }
 
   override def show(documentSetId: Long, documentId: Long) = {
