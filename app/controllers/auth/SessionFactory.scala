@@ -98,7 +98,7 @@ trait SessionFactory {
     val validSessionAndUser: Future[Either[Result,(Session,User)]] = sessionAndUser
       .flatMap(_.fold(
         (result: Result) => Future.successful(Left(result)),
-        (su: (Session, User)) => Future.successful(Either.cond(authority(su._2), su, unauthorized))
+        (su: (Session, User)) => authority(su._2).map(Either.cond(_, su, unauthorized))
       ))
 
     val loggedSessionAndUser: Future[Either[Result,(Session,User)]] = validSessionAndUser.andThen {

@@ -39,8 +39,8 @@ class SessionFactorySpec extends Specification with Mockito {
     mockSessionBackend.showWithUser(authenticatedSession.id) returns Future.successful(authenticatedSession.sessionAndUser)
     mockSessionBackend.showWithUser(authorizedSession.id) returns Future.successful(authorizedSession.sessionAndUser)
 
-    authority.apply(authenticatedSession.user.get) returns false
-    authority.apply(authorizedSession.user.get) returns true
+    authority.apply(authenticatedSession.user.get) returns Future.successful(false)
+    authority.apply(authorizedSession.user.get) returns Future.successful(true)
 
     def await[A](f: => Future[A]): A = scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
 

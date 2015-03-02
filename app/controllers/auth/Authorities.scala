@@ -8,21 +8,20 @@ import scala.slick.lifted.RunnableCompiled
 import models.{OverviewDatabase,User,UserRole}
 import org.overviewproject.models.ApiToken
 import org.overviewproject.database.Slick.simple.{Column,Query}
+import org.overviewproject.database.{SlickClient,SlickSessionProvider}
 
-trait Authorities {
-  protected def db[A](f: Session => A): A
-
+trait Authorities extends SlickClient {
   private val q = Authorities.queries
 
   /** Allows any user. */
   def anyUser = new Authority {
-    override def apply(user: User) = true
+    override def apply(user: User) = Future.successful(true)
     override def apply(apiToken: ApiToken) = Future.successful(true)
   }
 
   /** Allows only admin users. */
   def adminUser = new Authority {
-    override def apply(user: User) = user.role == UserRole.Administrator
+    override def apply(user: User) = Future.successful(user.role == UserRole.Administrator)
     override def apply(apiToken: ApiToken) = Future.successful(false)
   }
 
@@ -36,7 +35,7 @@ trait Authorities {
   def userOwningTag(documentSetId: Long, id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocumentSetTag(user.email, documentSetId, id))
     override def apply(apiToken: ApiToken) = (apiToken.documentSetId == documentSetId) match {
-      case true => Future(check(q.documentSetTag(documentSetId, id)))
+      case true => check(q.documentSetTag(documentSetId, id))
       case false => Future.successful(false)
     }
   }
@@ -50,25 +49,31 @@ trait Authorities {
   /** Allows any user who is owner of the given View */
   def userOwningView(id: Long) = new Authority {
     override def apply(user: User) = check(q.userView(user.email, id))
-    override def apply(apiToken: ApiToken) = Future(check(q.apiTokenView(apiToken.token, id)))
+    override def apply(apiToken: ApiToken) = check(q.apiTokenView(apiToken.token, id))
   }
 
   /** Allows any user who is owner of the given StoreObject */
   def userOwningStoreObject(id: Long) = new Authority {
-    override def apply(user: User) = false
-    override def apply(apiToken: ApiToken) = Future(check(q.apiTokenStoreObject(apiToken.token, id)))
+    override def apply(user: User) = Future.successful(false)
+    override def apply(apiToken: ApiToken) = check(q.apiTokenStoreObject(apiToken.token, id))
   }
   
   /** Allows any user who is a viewer of the given DocumentSet ID. */
   def userViewingDocumentSet(id: Long) = new Authority {
-    override def apply(user: User) = check(q.userDocumentSet(user.email, id)) || check(q.documentSetPublic(id))
+    override def apply(user: User) = {
+      check(q.userDocumentSet(user.email, id))
+        .flatMap(_ match {
+          case false => check(q.documentSetPublic(id))
+          case true => Future.successful(true)
+        })
+    }
     override def apply(apiToken: ApiToken) = userOwningDocumentSet(id)(apiToken)
   }
 
   /** Allows any user with any role for the given Document ID. */
   def userOwningDocument(id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocument(user.email, id))
-    override def apply(apiToken: ApiToken) = Future(check(q.documentSetDocument(apiToken.documentSetId, id)))
+    override def apply(apiToken: ApiToken) = check(q.documentSetDocument(apiToken.documentSetId, id))
   }
 
   def userOwningJob(id: Long) = new Authority {
@@ -76,15 +81,13 @@ trait Authorities {
     override def apply(apiToken: ApiToken) = Future.successful(false)
   }
 
-  private def check(f: RunnableCompiled[Query[Column[Boolean],Boolean,Seq],Seq[Boolean]]): Boolean = {
+  private def check(f: RunnableCompiled[Query[Column[Boolean],Boolean,Seq],Seq[Boolean]]): Future[Boolean] = {
     import org.overviewproject.database.Slick.simple._
     db { session => f.firstOption(session).getOrElse(false) }
   }
 }
 
-object Authorities extends Authorities {
-  override protected def db[A](f: Session => A) = blocking(OverviewDatabase.withSlickSession(f))
-
+object Authorities extends Authorities with SlickSessionProvider {
   /** A bunch of queries that return true if successful and no rows otherwise. */
   private object queries {
     import org.overviewproject.database.Slick.simple._

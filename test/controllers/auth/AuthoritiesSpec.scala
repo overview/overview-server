@@ -4,7 +4,7 @@ import scala.slick.jdbc.JdbcBackend.Session
 
 import models.{User,UserRole}
 import org.overviewproject.models.DocumentSetUser
-import org.overviewproject.test.DbSpecification
+import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 
 /** Tests authorities.
   *
@@ -16,9 +16,7 @@ import org.overviewproject.test.DbSpecification
   * the Authorities.
   */
 class AuthoritiesSpec extends DbSpecification {
-  class TestAuthorities(val session: Session) extends Authorities {
-    override def db[A](block: Session => A) = block(session)
-  }
+  class TestAuthorities(override val session: Session) extends Authorities with SlickClientInSession
 
   trait BaseScope extends DbScope {
     lazy val auth = new TestAuthorities(session)
@@ -33,17 +31,17 @@ class AuthoritiesSpec extends DbSpecification {
 
       "anyUser" should {
         "return true" in new UserScope {
-          auth.anyUser(goodUser) must beTrue
+          await(auth.anyUser(goodUser)) must beTrue
         }
       }
 
       "adminUser" should {
         "return true for an admin" in new UserScope {
-          auth.adminUser(User(role=UserRole.Administrator)) must beTrue
+          await(auth.adminUser(User(role=UserRole.Administrator))) must beTrue
         }
 
         "return false for a non-admin" in new UserScope {
-          auth.adminUser(User(role=UserRole.NormalUser)) must beFalse
+          await(auth.adminUser(User(role=UserRole.NormalUser))) must beFalse
         }
       }
 
@@ -51,20 +49,20 @@ class AuthoritiesSpec extends DbSpecification {
         "return true when the user owns the document set" in new UserScope {
           val documentSet = factory.documentSet()
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningDocumentSet(documentSet.id)(goodUser) must beTrue
+          await(auth.userOwningDocumentSet(documentSet.id)(goodUser)) must beTrue
         }
 
         "return false when another user owns the document set" in new UserScope {
           val documentSet = factory.documentSet()
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningDocumentSet(documentSet.id)(badUser) must beFalse
+          await(auth.userOwningDocumentSet(documentSet.id)(badUser)) must beFalse
         }
 
         "return false when the user owns another document set" in new UserScope {
           val documentSet = factory.documentSet()
           val otherDocumentSet = factory.documentSet()
           factory.documentSetUser(otherDocumentSet.id, goodUser.email)
-          auth.userOwningDocumentSet(documentSet.id)(badUser) must beFalse
+          await(auth.userOwningDocumentSet(documentSet.id)(badUser)) must beFalse
         }
       }
 
@@ -72,37 +70,37 @@ class AuthoritiesSpec extends DbSpecification {
         "return true when the user owns the document set" in new UserScope {
           val documentSet = factory.documentSet()
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beTrue
+          await(auth.userViewingDocumentSet(documentSet.id)(goodUser)) must beTrue
         }
 
         "return true then the user views the document set" in new UserScope {
           val documentSet = factory.documentSet()
           factory.documentSetUser(documentSet.id, goodUser.email, new DocumentSetUser.Role(false))
-          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beTrue
+          await(auth.userViewingDocumentSet(documentSet.id)(goodUser)) must beTrue
         }
 
         "return true when the document set is public" in new UserScope {
           val documentSet = factory.documentSet(isPublic=true)
-          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beTrue
+          await(auth.userViewingDocumentSet(documentSet.id)(goodUser)) must beTrue
         }
 
         "return false when another document set is public" in new UserScope {
           val documentSet = factory.documentSet(isPublic=false)
           val otherDocumentSet = factory.documentSet(isPublic=true)
-          auth.userViewingDocumentSet(documentSet.id)(goodUser) must beFalse
+          await(auth.userViewingDocumentSet(documentSet.id)(goodUser)) must beFalse
         }
 
         "return false when another user owns the document set" in new UserScope {
           val documentSet = factory.documentSet()
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userViewingDocumentSet(documentSet.id)(badUser) must beFalse
+          await(auth.userViewingDocumentSet(documentSet.id)(badUser)) must beFalse
         }
 
         "return false when the user owns another document set" in new UserScope {
           val documentSet = factory.documentSet()
           val otherDocumentSet = factory.documentSet()
           factory.documentSetUser(otherDocumentSet.id, goodUser.email)
-          auth.userViewingDocumentSet(documentSet.id)(badUser) must beFalse
+          await(auth.userViewingDocumentSet(documentSet.id)(badUser)) must beFalse
         }
       }
 
@@ -111,7 +109,7 @@ class AuthoritiesSpec extends DbSpecification {
           val documentSet = factory.documentSet()
           val tag = factory.tag(documentSetId=documentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningTag(documentSet.id, tag.id)(goodUser) must beTrue
+          await(auth.userOwningTag(documentSet.id, tag.id)(goodUser)) must beTrue
         }
 
         "return false then the user owns the tag in a different document set" in new UserScope {
@@ -119,14 +117,14 @@ class AuthoritiesSpec extends DbSpecification {
           val otherDocumentSet = factory.documentSet()
           val tag = factory.tag(documentSetId=otherDocumentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningTag(documentSet.id, tag.id)(goodUser) must beFalse
+          await(auth.userOwningTag(documentSet.id, tag.id)(goodUser)) must beFalse
         }
 
         "return false when another user owns the document set" in new UserScope {
           val documentSet = factory.documentSet()
           val tag = factory.tag(documentSetId=documentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningTag(documentSet.id, tag.id)(badUser) must beFalse
+          await(auth.userOwningTag(documentSet.id, tag.id)(badUser)) must beFalse
         }
       }
 
@@ -136,7 +134,7 @@ class AuthoritiesSpec extends DbSpecification {
           val node = factory.node(parentId=None)
           val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=node.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningTree(tree.id)(goodUser) must beTrue
+          await(auth.userOwningTree(tree.id)(goodUser)) must beTrue
         }
 
         "return false when the user owns a tree in a different document set" in new UserScope {
@@ -145,13 +143,13 @@ class AuthoritiesSpec extends DbSpecification {
           val node = factory.node(parentId=None)
           val tree = factory.tree(documentSetId=otherDocumentSet.id, rootNodeId=node.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningTree(tree.id)(goodUser) must beFalse
+          await(auth.userOwningTree(tree.id)(goodUser)) must beFalse
         }
 
         "return false when the tree does not exist" in new UserScope {
           val documentSet = factory.documentSet()
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningTree(1L)(goodUser) must beFalse
+          await(auth.userOwningTree(1L)(goodUser)) must beFalse
         }
 
         "return false when a different user owns the tree" in new UserScope {
@@ -159,7 +157,7 @@ class AuthoritiesSpec extends DbSpecification {
           val node = factory.node(parentId=None)
           val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=node.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningTree(tree.id)(badUser) must beFalse
+          await(auth.userOwningTree(tree.id)(badUser)) must beFalse
         }
       }
 
@@ -169,7 +167,7 @@ class AuthoritiesSpec extends DbSpecification {
           val apiToken = factory.apiToken(documentSetId=documentSet.id)
           val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningView(view.id)(goodUser) must beTrue
+          await(auth.userOwningView(view.id)(goodUser)) must beTrue
         }
 
         "return false when the user owns a view in a different document set" in new UserScope {
@@ -178,13 +176,13 @@ class AuthoritiesSpec extends DbSpecification {
           val otherApiToken = factory.apiToken(documentSetId=otherDocumentSet.id)
           val view = factory.view(documentSetId=otherDocumentSet.id, apiToken=otherApiToken.token)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningView(view.id)(goodUser) must beFalse
+          await(auth.userOwningView(view.id)(goodUser)) must beFalse
         }
 
         "return false when the view does not exist" in new UserScope {
           val documentSet = factory.documentSet()
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningView(1L)(goodUser) must beFalse
+          await(auth.userOwningView(1L)(goodUser)) must beFalse
         }
 
         "return false when a different user owns the view" in new UserScope {
@@ -192,7 +190,7 @@ class AuthoritiesSpec extends DbSpecification {
           val apiToken = factory.apiToken(documentSetId=documentSet.id)
           val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningView(view.id)(badUser) must beFalse
+          await(auth.userOwningView(view.id)(badUser)) must beFalse
         }
       }
 
@@ -205,7 +203,7 @@ class AuthoritiesSpec extends DbSpecification {
           val documentSet = factory.documentSet()
           val document = factory.document(documentSetId=documentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningDocument(document.id)(goodUser) must beTrue
+          await(auth.userOwningDocument(document.id)(goodUser)) must beTrue
         }
 
         "return false when another user owns the document set" in new UserScope {
@@ -215,7 +213,7 @@ class AuthoritiesSpec extends DbSpecification {
           val badDocument = factory.document(documentSetId=badDocumentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
           factory.documentSetUser(badDocumentSet.id, badUser.email)
-          auth.userOwningDocument(document.id)(badUser) must beFalse
+          await(auth.userOwningDocument(document.id)(badUser)) must beFalse
         }
       }
 
@@ -224,14 +222,14 @@ class AuthoritiesSpec extends DbSpecification {
           val documentSet = factory.documentSet()
           val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningJob(job.id)(goodUser) must beTrue
+          await(auth.userOwningJob(job.id)(goodUser)) must beTrue
         }
 
         "return false when another user owns the job" in new UserScope {
           val documentSet = factory.documentSet()
           val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
-          auth.userOwningJob(job.id)(badUser) must beFalse
+          await(auth.userOwningJob(job.id)(badUser)) must beFalse
         }
 
         "return false when the user owns a different job" in new UserScope {
@@ -241,7 +239,7 @@ class AuthoritiesSpec extends DbSpecification {
           val otherJob = factory.documentSetCreationJob(documentSetId=otherDocumentSet.id)
           factory.documentSetUser(documentSet.id, goodUser.email)
           factory.documentSetUser(otherDocumentSet.id, badUser.email)
-          auth.userOwningJob(job.id)(badUser) must beFalse
+          await(auth.userOwningJob(job.id)(badUser)) must beFalse
         }
       }
     }
