@@ -50,8 +50,13 @@ object ExtractTextFromPdf {
     
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl 
     
-    override protected def nextStep(document: PdfFileDocumentData): TaskStep = 
-      WriteDocuments(document.toDocument(documentSetId))
+    override protected def nextStep(document: PdfFileDocumentData): TaskStep = {
+      def generateNextStep(documentIds: Seq[Long]) = 
+        WriteDocuments(document.toDocument(documentSetId, documentIds.head))
+        
+      WaitForResponse(generateNextStep)
+    }
+      
       
     private class PdfProcessorImpl extends PdfProcessor {
       override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
