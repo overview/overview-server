@@ -1,15 +1,16 @@
 package controllers.auth
 
-import java.sql.Timestamp
 import java.util.{Date,UUID}
-import play.api.Play
-import play.api.Play.current
+import java.sql.Timestamp
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}
+import scala.util.Success
 import scala.util.control.Exception.catching
+import scala.concurrent.Future
 
-import models.{Session,User,UserRole}
-import models.orm.finders.{SessionFinder,UserFinder}
-import org.overviewproject.postgres.InetAddress
+import controllers.backend.{SessionBackend,UserBackend}
+import models.{Session,User}
+import models.orm.finders.UserFinder
 
 /** Restores and authorizes sessions.
   *
@@ -29,50 +30,97 @@ import org.overviewproject.postgres.InetAddress
   */
 trait SessionFactory {
   private[auth] val SessionIdKey = AuthResults.SessionIdKey // TODO find a sensible place for this constant
-  protected val storage : SessionFactory.Storage
+
+  /** Determines when to log user actions to the database and when to skip it.
+    *
+    * Logging to the database is useful: user.lastActivityAt and
+    * user.lastActivityIp show up in our admin interface, and surely
+    * session.updatedAt will come in handy sometime. On the other hand, every
+    * endpoint hits this code path. If we log every time, we get big slowdowns.
+    *
+    * So we log only if the IP address would change or the time would change by
+    * more than this amount.
+    */
+  private val ActivityLoggingResolutinInMs = 5L * 60L * 1000L
+
+  protected val sessionBackend: SessionBackend
+  protected val userBackend: UserBackend
 
   /** Returns either a Result (no access) or a (Session,User) (access).
     *
     * See the class documentation for details.
     */
-  def loadAuthorizedSession(request: RequestHeader, authority: Authority) : Either[Result,(Session,User)] = {
+  def loadAuthorizedSession(request: RequestHeader, authority: Authority) : Future[Either[Result,(Session,User)]] = {
     loadMultiUserAuthorizedSession(request, authority)
   }
 
-  private def loadMultiUserAuthorizedSession(request: RequestHeader, authority: Authority) : Either[Result,(Session,User)] = {
+  private def maybeLogActivity(request: RequestHeader, session: Session, user: User): Future[Unit] = {
+    val now: Long = new Date().getTime()
+
+    val future1 = if (session.ip.getHostAddress != request.remoteAddress
+        || now > session.updatedAt.getTime + ActivityLoggingResolutinInMs) {
+      val attributes = Session.UpdateAttributes(request.remoteAddress, new Date(now))
+      sessionBackend.update(session.id, attributes)
+    } else {
+      Future.successful(())
+    }
+
+    val future2 = if (user.lastActivityIp != Some(request.remoteAddress)
+        || now > user.lastActivityAt.map(_.getTime).getOrElse(0L) + ActivityLoggingResolutinInMs) {
+      userBackend.updateLastActivity(user.id, request.remoteAddress, new Timestamp(now))
+    } else {
+      Future.successful(())
+    }
+
+    for {
+      _ <- future1
+      _ <- future2
+    } yield ()
+  }
+
+  private def loadMultiUserAuthorizedSession(request: RequestHeader, authority: Authority) : Future[Either[Result,(Session,User)]] = {
     def unauthenticated = AuthResults.authenticationFailed(request)
     def unauthorized = AuthResults.authorizationFailed(request)
 
-    request.session.get(SessionIdKey).toRight(unauthenticated)
-      .right.flatMap((s: String) => catching(classOf[IllegalArgumentException]).opt(UUID.fromString(s)).toRight(unauthenticated))
-      .right.flatMap((id: UUID) => storage.loadSessionAndUser(id).toRight(unauthenticated))
-      .right.flatMap((x: (Session,User)) => Either.cond(authority(x._2), x, unauthorized))
+    val sessionIdString: Either[Result,String] = request.session.get(SessionIdKey)
+      .toRight(unauthenticated)
+
+    val sessionId: Either[Result,UUID] = sessionIdString
+      .right.flatMap((s: String) => catching(classOf[IllegalArgumentException]).opt(UUID.fromString(s))
+      .toRight(unauthenticated))
+
+    val sessionAndUser: Future[Either[Result,(Session,User)]] = sessionId
+      .fold(
+        (result: Result) => Future.successful(Left(result)),
+        (id: UUID) => sessionBackend.showWithUser(id).map(_.toRight(unauthenticated))
+      )
+
+    val validSessionAndUser: Future[Either[Result,(Session,User)]] = sessionAndUser
+      .flatMap(_.fold(
+        (result: Result) => Future.successful(Left(result)),
+        (su: (Session, User)) => Future.successful(Either.cond(authority(su._2), su, unauthorized))
+      ))
+
+    val loggedSessionAndUser: Future[Either[Result,(Session,User)]] = validSessionAndUser.andThen {
+      case Success(Right(su)) => maybeLogActivity(request, su._1, su._2)
+    }
+
+    loggedSessionAndUser
   }
 }
 
 object SingleUserSessionFactory extends SessionFactory {
-  object NullStorage extends SessionFactory.Storage {
-    override def loadSessionAndUser(sessionId: UUID) = None
-  }
+  override val sessionBackend = SessionBackend // never used
+  override val userBackend = UserBackend // never used
 
-  override protected val storage = NullStorage
   override def loadAuthorizedSession(request: RequestHeader, authority: Authority) = {
     val session = Session(1L, request.remoteAddress)
     val user = UserFinder.byId(1L).head
-    Right((session, user))
+    Future.successful(Right((session, user)))
   }
 }
 
 object SessionFactory extends SessionFactory {
-  trait Storage {
-    def loadSessionAndUser(sessionId: UUID) : Option[(Session,User)]
-  }
-
-  object DatabaseStorage extends SessionFactory.Storage {
-    override def loadSessionAndUser(sessionId: UUID) = {
-      SessionFinder.byId(sessionId).notExpired.withUsers.headOption
-    }
-  }
-
-  override protected val storage = DatabaseStorage
+  override val sessionBackend = SessionBackend
+  override val userBackend = UserBackend
 }

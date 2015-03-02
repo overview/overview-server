@@ -58,5 +58,15 @@ class SessionSpec extends Specification {
     "update ip from String" in new BaseScope {
       session.update("192.168.1.103").ip.getHostAddress must beEqualTo("192.168.1.103")
     }
+
+    "update from attributes" in new BaseScope {
+      val ip2 = "192.168.1.103"
+      val date2 = new Date(1425306564964L)
+      val timestamp2 = new java.sql.Timestamp(1425306564964L)
+      val session2 = session.update(Session.UpdateAttributes(ip2, date2))
+      session2.ip.getHostAddress must beEqualTo(ip2)
+      session2.updatedAt must beEqualTo(timestamp2)
+      session2.createdAt must not(beEqualTo(timestamp2))
+    }
   }
 }

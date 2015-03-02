@@ -4,11 +4,13 @@ import java.util.UUID
 import play.api.mvc.{Result, RequestHeader}
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.Play.{start,stop}
+import scala.concurrent.Future
 
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import models.{Session, User, UserRole}
+import controllers.backend.{SessionBackend,UserBackend}
+import models.{Session, User}
 
 class SessionFactorySpec extends Specification with Mockito {
   step(start(FakeApplication())) // to load application.secret
@@ -17,10 +19,12 @@ class SessionFactorySpec extends Specification with Mockito {
 
   trait BaseScope extends Scope {
     val authority = mock[Authority]
-    val mockStorage = mock[SessionFactory.Storage]
+    val mockSessionBackend = smartMock[SessionBackend]
+    val mockUserBackend = smartMock[UserBackend]
 
     val factory = new SessionFactory {
-      override protected val storage = mockStorage
+      override protected val sessionBackend = mockSessionBackend
+      override protected val userBackend = mockUserBackend
     }
 
     case class PossibleSession(id: UUID, user: Option[User]) {
@@ -31,18 +35,21 @@ class SessionFactorySpec extends Specification with Mockito {
     val authenticatedSession = PossibleSession(UUID.randomUUID(), Some(User(2L, "user2@example.org")))
     val authorizedSession = PossibleSession(UUID.randomUUID(), Some(User(3L, "user3@example.org")))
 
-    mockStorage.loadSessionAndUser(unauthenticatedSession.id) returns unauthenticatedSession.sessionAndUser
-    mockStorage.loadSessionAndUser(authenticatedSession.id) returns authenticatedSession.sessionAndUser
-    mockStorage.loadSessionAndUser(authorizedSession.id) returns authorizedSession.sessionAndUser
+    mockSessionBackend.showWithUser(unauthenticatedSession.id) returns Future.successful(None)
+    mockSessionBackend.showWithUser(authenticatedSession.id) returns Future.successful(authenticatedSession.sessionAndUser)
+    mockSessionBackend.showWithUser(authorizedSession.id) returns Future.successful(authorizedSession.sessionAndUser)
 
     authority.apply(authenticatedSession.user.get) returns false
     authority.apply(authorizedSession.user.get) returns true
 
-    def sessionId : UUID = UUID.randomUUID()
-    def sessionIdString = sessionId.toString
-    def sessionData : Seq[(String,String)] = Seq(SessionFactory.SessionIdKey -> sessionIdString)
-    def request : RequestHeader = FakeRequest().withSession(sessionData: _*)
-    def result : Either[Result, (Session,User)] = factory.loadAuthorizedSession(request, authority)
+    def await[A](f: => Future[A]): A = scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
+
+    def sessionId: UUID = UUID.randomUUID()
+    def sessionIdString: String = sessionId.toString
+    def sessionData: Seq[(String,String)] = Seq(SessionFactory.SessionIdKey -> sessionIdString)
+    def request: RequestHeader = FakeRequest().withSession(sessionData: _*)
+    def resultFuture: Future[Either[Result,(Session,User)]] = factory.loadAuthorizedSession(request, authority)
+    def result: Either[Result,(Session,User)] = await(resultFuture)
   }
 
   "SessionFactory" should {

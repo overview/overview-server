@@ -5,7 +5,7 @@ import org.specs2.specification.Scope
 import play.api.mvc.{AnyContent, Request, RequestHeader, Results, Result}
 import play.api.test.FakeRequest
 import scala.concurrent.duration.Duration
-import scala.concurrent.Await
+import scala.concurrent.{Await,Future}
 
 import models.{Session, User}
 
@@ -44,7 +44,7 @@ class OptionallyAuthorizedActionSpec extends test.InAppSpecification with Mockit
 
   "should invoke the block if sessionFactory gives a Right" in new BaseScope {
     val sessionAndUser = (mock[Session], mock[User])
-    mockSessionFactory.loadAuthorizedSession(any[Request[_]], any[Authority]) returns Right(sessionAndUser)
+    mockSessionFactory.loadAuthorizedSession(any, any) returns Future.successful(Right(sessionAndUser))
 
     run
 

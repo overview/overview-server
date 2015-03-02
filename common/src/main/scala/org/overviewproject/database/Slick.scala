@@ -5,11 +5,16 @@ import scala.slick.driver.PostgresDriver
 
 trait MyPostgresDriver extends PostgresDriver
   with PgArraySupport
+  with PgNetSupport
 {
   override lazy val Implicit = new ImplicitsPlus {}
   override val simple = new SimpleQLPlus {}
 
-  trait ImplicitsPlus extends Implicits with ArrayImplicits with SimpleArrayPlainImplicits
+  trait ImplicitsPlus extends Implicits
+    with ArrayImplicits
+    with NetImplicits
+    with SimpleArrayPlainImplicits
+
   trait SimpleQLPlus extends SimpleQL with ImplicitsPlus
 }
 

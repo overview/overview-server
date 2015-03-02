@@ -150,16 +150,22 @@ object OverviewUser {
   private def generateToken = scala.util.Random.alphanumeric.take(TokenLength).mkString
   private def generateTimestamp = new Timestamp(new Date().getTime())
 
-  def findByEmail(email: String) : Option[OverviewUser] = UserFinder.byEmail(email).headOption.map(OverviewUser.apply)
+  def findByEmail(email: String) : Option[OverviewUser] = OverviewDatabase.inTransaction {
+    UserFinder.byEmail(email).headOption.map(OverviewUser.apply)
+  }
 
   def findByResetPasswordTokenAndMinDate(token: String, minDate: Date): Option[OverviewUser with ResetPasswordRequest] = {
-    val user = UserFinder.byResetPasswordTokenAndMinDate(token, minDate).headOption
-    user.map(new UserWithResetPasswordRequest(_))
+    OverviewDatabase.inTransaction {
+      val user = UserFinder.byResetPasswordTokenAndMinDate(token, minDate).headOption
+      user.map(new UserWithResetPasswordRequest(_))
+    }
   }
 
   def findByConfirmationToken(token: String): Option[OverviewUser with ConfirmationRequest] = {
-    val user = UserFinder.byConfirmationToken(token).headOption
-    user.map(new UnconfirmedUser(_))
+    OverviewDatabase.inTransaction {
+      val user = UserFinder.byConfirmationToken(token).headOption
+      user.map(new UnconfirmedUser(_))
+    }
   }
 
   def prepareNewRegistration(email: String, password: String, emailSubscriber: Boolean): OverviewUser with ConfirmationRequest = {

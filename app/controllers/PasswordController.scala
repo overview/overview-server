@@ -1,13 +1,12 @@
 package controllers
 
 import java.util.Date
-import play.api.mvc.{AnyContent,Request,RequestHeader}
+import play.api.mvc.{Action,AnyContent,Request,RequestHeader}
 
 import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser
-import controllers.util.TransactionAction
 import mailers.Mailer
-import models.{OverviewUser,ResetPasswordRequest,User}
+import models.{OverviewDatabase,OverviewUser,ResetPasswordRequest,User}
 import models.Session
 import models.orm.stores.{SessionStore,UserStore}
 
@@ -27,14 +26,14 @@ trait PasswordController extends Controller {
   private lazy val editForm = controllers.forms.EditPasswordForm()
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
 
-  def new_() = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
+  def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
       case None => Ok(views.html.Password.new_(newForm))
       case Some(_) => doRedirect
     }
   }
 
-  def edit(token: String) = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
+  def edit(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
       case Some(_) => doRedirect
       case None => {
@@ -49,7 +48,7 @@ trait PasswordController extends Controller {
   private def doRedirect = Redirect(routes.WelcomeController.show)
   private def showInvalidToken(implicit request: Request[AnyContent]) = BadRequest(views.html.Password.editError())
 
-  def create() = TransactionAction { implicit request =>
+  def create() = Action { implicit request =>
     newForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Password.new_(formWithErrors)), // no email address given
       email => {
@@ -60,7 +59,9 @@ trait PasswordController extends Controller {
           case Some(user) => {
             // Success: generate a token and send an email
             val userWithRequest = user.withResetPasswordRequest
-            storage.insertOrUpdateUser(userWithRequest.toUser)
+            OverviewDatabase.inTransaction {
+              storage.insertOrUpdateUser(userWithRequest.toUser)
+            }
             mail.sendCreated(userWithRequest)
           }
         }
@@ -74,15 +75,17 @@ trait PasswordController extends Controller {
     )
   }
 
-  def update(token: String) = TransactionAction { implicit request =>
+  def update(token: String) = Action { implicit request =>
     storage.findUserByResetToken(token) match {
       case None => showInvalidToken
       case Some(user) => {
         editForm.bindFromRequest.fold(
           formWithErrors => BadRequest(views.html.Password.edit(user, formWithErrors)),
           newPassword => {
-            storage.insertOrUpdateUser(user.withNewPassword(newPassword).toUser)
-            val session = storage.insertOrUpdateSession(Session(user.id, request.remoteAddress))
+            val session = OverviewDatabase.inTransaction {
+              storage.insertOrUpdateUser(user.withNewPassword(newPassword).toUser)
+              storage.insertOrUpdateSession(Session(user.id, request.remoteAddress))
+            }
             AuthResults.loginSucceeded(request, session).flashing(
               "success" -> m("update.success"),
               "event" -> "password-update"

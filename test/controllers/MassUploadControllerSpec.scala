@@ -49,14 +49,14 @@ class MassUploadControllerSpec extends ControllerSpecification {
     }
 
     "return a Result if ApiTokenFactory returns a Left[Result]" in new CreateScope {
-      mockSessionFactory.loadAuthorizedSession(any, any) returns Left(Results.BadRequest)
+      mockSessionFactory.loadAuthorizedSession(any, any) returns Future.successful(Left(Results.BadRequest))
       h.status(result) must beEqualTo(h.BAD_REQUEST)
     }
 
     "return Ok" in new CreateScope {
       val fileGroup = factory.fileGroup()
       val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
-      mockSessionFactory.loadAuthorizedSession(any, any) returns Right((session, user))
+      mockSessionFactory.loadAuthorizedSession(any, any) returns Future.successful(Right((session, user)))
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
       mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
       mockUploadIterateeFactory(any, any) returns Iteratee.ignore[Array[Byte]]

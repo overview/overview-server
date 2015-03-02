@@ -6,19 +6,20 @@ import play.api.mvc.BodyParsers.parse
 import play.api.Play
 import scala.concurrent.Future
 
-import models.OverviewDatabase
 import models.{Session, User}
 
 trait AuthorizedBodyParser {
   protected val sessionFactory: SessionFactory
 
+  private def await[A](f: => Future[A]): A = scala.concurrent.blocking {
+    scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
+  }
+
   def apply[A](authority: Authority)(parserGenerator: User => BodyParser[A]): BodyParser[A] = {
     parse.using { implicit request =>
-      OverviewDatabase.inTransaction {
-        sessionFactory.loadAuthorizedSession(request, authority) match {
-          case Left(e) => parse.error(Future(e))
-          case Right((session: Session, user: User)) => parserGenerator(user)
-        }
+      await(sessionFactory.loadAuthorizedSession(request, authority)) match {
+        case Left(e: Result) => parse.error(Future.successful(e))
+        case Right((session: Session, user: User)) => parserGenerator(user)
       }
     }
   }

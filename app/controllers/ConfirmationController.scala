@@ -1,10 +1,11 @@
 package controllers
 
+import play.api.mvc.Action
 import play.api.Logger
 
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
-import controllers.util.TransactionAction
+import models.OverviewDatabase
 import models.{IntercomConfiguration, MailChimp, OverviewUser}
 import models.Session
 import models.orm.stores.{SessionStore,UserStore}
@@ -14,7 +15,7 @@ object ConfirmationController extends Controller {
 
   /** Prompts for a confirmation token.
     */
-  def index(email: String) = TransactionAction { implicit request =>
+  def index(email: String) = Action { implicit request =>
     Ok(views.html.Confirmation.index(email))
   }
 
@@ -27,14 +28,17 @@ object ConfirmationController extends Controller {
     *
     * 1) The user is found
     */
-  def show(token: String) = OptionallyAuthorizedAction.inTransaction(anyUser) { implicit request =>
+  def show(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
       case None => OverviewUser.findByConfirmationToken(token) match {
         case Some(u) => {
-          val savedUser = OverviewUser(UserStore.insertOrUpdate(u.confirm.toUser))
-          val session = Session(savedUser.id, request.remoteAddress)
-          SessionStore.insertOrUpdate(session)
+          val session = OverviewDatabase.inTransaction {
+            val savedUser = OverviewUser(UserStore.insertOrUpdate(u.confirm.toUser))
+            val ret = Session(savedUser.id, request.remoteAddress)
+            SessionStore.insertOrUpdate(ret)
+            ret
+          }
 
           if (u.requestedEmailSubscription) {
             MailChimp.subscribe(u.email).getOrElse(Logger.info(s"Did not attempt requested subscription for ${u.email}"))
@@ -50,7 +54,7 @@ object ConfirmationController extends Controller {
           // This is untested because the most likely source of user-facing
           // error is a change to our Intercom settings, which our test suite
           // can't control.
-          IntercomConfiguration.settingsForUser(savedUser.toUser) match {
+          IntercomConfiguration.settingsForUser(u.toUser) match {
             case Some(_) =>
               result.flashing(
                 "event" -> "confirmation-update"

@@ -15,7 +15,13 @@ import java.net.{InetAddress=>JInetAddress}
   * java.net.InetAddress that we will ever use. Luckily, that isn't much (yet).
   */
 class InetAddress(val wrapped: JInetAddress) {
-  override def equals(o: Any) : Boolean = wrapped.equals(o)
+  override def equals(o: Any): Boolean = o match {
+    case ia: InetAddress => wrapped.equals(ia.wrapped)
+    case _ => false
+  }
+
+  override def toString: String = wrapped.toString
+
   def getHostAddress: String = wrapped.getHostAddress
 }
 

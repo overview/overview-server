@@ -30,7 +30,7 @@ trait MassUploadController extends Controller {
 
   /** Starts or resumes a file upload. */
   def create(guid: UUID) = EssentialAction { request =>
-    blocking(OverviewDatabase.inTransaction(sessionFactory.loadAuthorizedSession(request, anyUser))) match {
+    Iteratee.flatten(sessionFactory.loadAuthorizedSession(request, anyUser).map(_ match {
       case Left(result) => Iteratee.ignore.map(_ => result)
       case Right((session, user)) => MassUploadControllerMethods.Create(
         user.email,
@@ -41,7 +41,7 @@ trait MassUploadController extends Controller {
         uploadIterateeFactory,
         false
       )(request)
-    }
+    }))
   }
 
   /** Responds to a HEAD request.

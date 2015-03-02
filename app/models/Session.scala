@@ -25,21 +25,28 @@ import org.overviewproject.postgres.InetAddress
 case class Session(
   val id: UUID,
   val userId: Long,
-  val ip: InetAddress,
+  val ip: InetAddress, // TODO make this an InetString
   val createdAt: Timestamp,
   val updatedAt: Timestamp
 ) {
-  def update(ip: InetAddress) : Session = {
+  def update(ip: InetAddress): Session = {
     copy(
       ip=ip,
       updatedAt=new Timestamp((new Date()).getTime())
     )
   }
 
-  def update(ip: String) : Session = update(InetAddress.getByName(ip))
+  def update(ip: String): Session = update(InetAddress.getByName(ip))
+
+  def update(attributes: Session.UpdateAttributes): Session = copy(
+    ip=InetAddress.getByName(attributes.ip),
+    updatedAt=new Timestamp(attributes.updatedAt.getTime())
+  )
 }
 
 object Session {
+  case class UpdateAttributes(ip: String, updatedAt: Date)
+
   /** Constructor with default id and updatedAt */
   def apply(userId: Long, ip: InetAddress, createdAt: Timestamp) : Session = {
     apply(
