@@ -5,14 +5,13 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import play.api.mvc.RequestHeader
 
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
-
+import org.overviewproject.models.{ DocumentSet, DocumentSetCreationJob }
 
 object show {
   def apply(
     job: DocumentSetCreationJob,
     documentSet: DocumentSet,
-    nAheadInQueue: Long
+    nAheadInQueue: Int
   )(implicit
     lang: Lang,
     request: RequestHeader

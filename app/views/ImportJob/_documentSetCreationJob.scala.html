@@ -1,7 +1,7 @@
 @(
-  job: org.overviewproject.tree.orm.DocumentSetCreationJob,
-  documentSet: org.overviewproject.tree.orm.DocumentSet,
-  nAheadInQueue: Long
+  job: org.overviewproject.models.DocumentSetCreationJob,
+  documentSet: org.overviewproject.models.DocumentSet,
+  nAheadInQueue: Int
 )(implicit lang: Lang, request: RequestHeader)
 @import views.helper.DocumentSetHelper
 @defining(scopedMessages("views.ImportJob._documentSetCreationJob")) { m =>
@@ -22,7 +22,7 @@
         <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)"></progress><!-- IE9 needs start+end tags -->
         <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
       </label>
-      <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job, nAheadInQueue)</span>
+      <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job.toDeprecatedDocumentSetCreationJob, nAheadInQueue)</span>
     </p>
   </li>
 }
