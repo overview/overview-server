@@ -6,6 +6,8 @@ define [
   t = i18n.namespaced('views.Document.show.DocumentView')
   TWITTER_WIDGETS_URL = '//platform.twitter.com/widgets.js'
 
+  TweetCount = 0
+
   class DocumentView extends Backbone.View
     className: 'document'
 
@@ -65,19 +67,28 @@ define [
       # 1. First tweet: we include the script. (This is complicated just for steps 2+3)
       # 2. Another tweet, before the script is loaded: we do nothing
       # 3. Another tweet, after the script is loaded: we call createTweet
-      @twttrState ||= "unloaded"
 
+      tweetNumber = (TweetCount += 1)
+      blockquote = @$('blockquote')[0]
+      id = blockquote.getAttribute('data-tweet-id')
+      onCreate = =>
+        $(blockquote).remove()
+        if tweetNumber == TweetCount && @$('iframe').css('visibility') == 'hidden'
+          @trigger('tweet-deleted')
+
+      @twttrState ||= "unloaded"
       switch @twttrState
-        when "unloaded"
-          @twttrState = "loading"
-          window.twttr =
-            _e: [ => twttr.events.bind('loaded', => @twttrState = "loaded") ]
+        when 'unloaded'
+          @twttrState = 'loading'
+          onLoad = =>
+            @twttrState = 'loaded'
+            onCreate()
+
+          window.twttr = { _e: [ => twttr.events.bind('loaded', onLoad) ] }
           $.getScript(TWITTER_WIDGETS_URL)
-        when "loading" then # do nothing
-        when "loaded"
+        when 'loading' then # do nothing
+        when 'loaded'
           # Twitter is loaded
-          blockquote = @$('blockquote')[0]
-          id = blockquote.getAttribute('data-tweet-id')
           twttr.widgets.createTweet(id, blockquote.parentNode)
-            .then -> $(blockquote).remove()
-            .catch -> $(blockquote).show()
+            .then(onCreate)
+            .catch((err) -> console.log('Error from Twitter', error))

@@ -36,6 +36,7 @@ define [
     _initialRender: ->
       @preferencesView = new PreferencesView(preferences: @preferences, currentCapabilities: @currentCapabilities)
       @documentView = new DocumentView(preferences: @preferences)
+      @listenTo(@documentView, 'tweet-deleted', @_onTweetDeleted)
       @$textViewEl = Backbone.$('<div class="text-view"></div>')
 
       @preferencesView.render()
@@ -87,6 +88,10 @@ define [
           @_renderDocument(urlProperties)
         else
           @_renderText()
+
+    _onTweetDeleted: ->
+      @currentCapabilities.set(canShowDocument: false)
+      @_renderText()
 
     _removeTextViews: ->
       @textView?.remove()
