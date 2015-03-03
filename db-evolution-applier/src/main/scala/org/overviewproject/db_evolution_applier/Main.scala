@@ -19,8 +19,7 @@ object Main {
       |db {
       |  default {
       |    dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
-      |    minimumIdle=2
-      |    maximumPoolSize=3
+      |    maximumPoolSize=2
       |    dataSource {
       |      serverName="localhost"
       |      portNumber="9010" # overridden in production.conf
