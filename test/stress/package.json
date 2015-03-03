@@ -1,0 +1,32 @@
+{
+  "name": "overview-server-stress-test-suite",
+  "version": "0.0.0",
+  "description": "Stress-tests an Overview server",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/overview/overview-server.git"
+  },
+  "keywords": [
+    "Overview",
+    "stress",
+    "tests"
+  ],
+  "author": "Adam Hooper <adam@adamhooper.com>",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/overview/overview-server/issues"
+  },
+  "homepage": "https://github.com/overview/overview-server",
+  "dependencies": {
+    "bluebird": "^2.9.13",
+    "coffee-script": "^1.9.1",
+    "debug": "^2.1.2",
+    "ms": "^0.7.0",
+    "request": "^2.53.0",
+    "tough-cookie": "^0.12.1"
+  }
+}
