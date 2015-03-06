@@ -1,5 +1,6 @@
 package org.overviewproject.blobstorage
 
+import com.amazonaws.auth.AWSCredentials
 import com.typesafe.config.{Config,ConfigFactory}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -7,7 +8,7 @@ import org.specs2.specification.Scope
 
 class BlobStorageConfigSpec extends Specification with Mockito {
   trait BaseScope extends Scope {
-    val sysConfig: Config
+    val sysConfig: Config = ConfigFactory.parseString("")
     lazy val subject = new BlobStorageConfig {
       override protected val config = sysConfig
     }
@@ -28,18 +29,11 @@ class BlobStorageConfigSpec extends Specification with Mockito {
   }
 
   "#awsCredentials" should {
-    "get the credentials" in new BaseScope {
-      override val sysConfig = ConfigFactory.parseString("""
-        blobStorage: {
-          s3: {
-            accessKeyId: "access-key-id"
-            secretKey: "secret-key"
-          }
-        }
-      """)
-      val credentials = subject.awsCredentials
-      credentials.getAWSAccessKeyId must beEqualTo("access-key-id")
-      credentials.getAWSSecretKey must beEqualTo("secret-key")
+    "get default credentials" in new BaseScope {
+      // HACK set the Java system properties (one of the ways
+      // DefaultAWSCredentialsProviderChain finds credentials)
+      sys.props += ("aws.accessKeyId" -> "ACCESS", "aws.secretKey" -> "SECRET")
+      subject.awsCredentials must beAnInstanceOf[AWSCredentials]
     }
   }
 }

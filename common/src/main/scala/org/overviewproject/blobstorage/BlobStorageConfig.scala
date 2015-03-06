@@ -1,6 +1,6 @@
 package org.overviewproject.blobstorage
 
-import com.amazonaws.auth.{AWSCredentials,BasicAWSCredentials}
+import com.amazonaws.auth.{AWSCredentials,DefaultAWSCredentialsProviderChain}
 import com.typesafe.config.{Config,ConfigFactory}
 
 trait BlobStorageConfig {
@@ -40,19 +40,12 @@ trait BlobStorageConfig {
 
   /** The credentials for AWS.
     *
-    * This will only be called when trying to read from or write to S3.
-    *
-    * The configuration keys are <tt>blobStorage.s3.accessKeyId</tt> and
-    * <tt>blobStorage.s3.secretKey</tt>.
-    *
-    * @throws ConfigException.Missing if a config value is missing
-    * @throws ConfigException.WrongType if a config value is not a String
+    * This uses DefaultAWSCredentialsProviderChain. That means you can set
+    * AWS_ACCESS_KEY_ID/AWS_SECRET_KEY environment variables or simply run
+    * Overview from an EC2 machine that has an IAM role.
     */
   def awsCredentials: AWSCredentials = {
-    val accessKeyId = config.getString("blobStorage.s3.accessKeyId")
-    val secretKey = config.getString("blobStorage.s3.secretKey")
-
-    new BasicAWSCredentials(accessKeyId, secretKey)
+    new DefaultAWSCredentialsProviderChain().getCredentials
   }
 }
 
