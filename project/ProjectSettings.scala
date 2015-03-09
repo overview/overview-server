@@ -28,7 +28,7 @@ trait ProjectSettings {
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "1.4.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
   val guavaDep = "com.google.guava" % "guava" % "16.0"
-  val hikariCpDep = "com.zaxxer" % "HikariCP-java6" % "2.3.2"
+  val hikariCpDep = "com.zaxxer" % "HikariCP" % "2.3.2"
   val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
   val junitDep = "junit" % "junit-dep" % "4.11"
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
