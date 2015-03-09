@@ -108,7 +108,7 @@ object ApplicationBuild extends Build with ProjectSettings {
           unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
           libraryDependencies ++= dependencies,
           javaOptions in run ++= allJavaOpts ++ devJavaOpts,
-          javaOptions in Test ++= allJavaOpts ++ testJavaOpts :+ "-XX:MaxPermSize=256m",
+          javaOptions in Test ++= allJavaOpts ++ testJavaOpts,
 
           fork := true, // to set javaOptions
           testOptions in Test ++= ourTestOptions,
@@ -216,8 +216,7 @@ object ApplicationBuild extends Build with ProjectSettings {
         fork := true, // so javaOptions get set
         javaOptions in Test ++= allJavaOpts ++ testJavaOpts ++ Seq(
           "-Dconfig.file=conf/application-test.conf",
-          "-Dlogger.resource=logback-test.xml",
-          "-XX:MaxPermSize=256m"
+          "-Dlogger.resource=logback-test.xml"
         ),
         aggregate in Test := false,
         testOptions in Test ++= ourTestOptions,

@@ -56,7 +56,6 @@ package object commands {
       // as they're edited.
       Seq(),
       Seq(
-        "-XX:MaxPermSize=512M",
         "-Duser.timezone=UTC",
         "-Dpidfile.enabled=false",
         "-Dsbt.jse.engineType=" + scala.sys.props.getOrElse("sbt.jse.engineType", "Trireme")
@@ -107,7 +106,6 @@ package object commands {
         Seq(),
         currentSbtArgs ++ Seq(
           "-Dsbt.log.format=false",
-          "-XX:MaxPermSize=512M",
           "-Xmx2g"
         ),
         Seq(
