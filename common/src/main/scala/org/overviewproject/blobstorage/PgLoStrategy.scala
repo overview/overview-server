@@ -123,7 +123,7 @@ trait PgLoStrategy extends BlobStorageStrategy {
       """
 
         withSlickSession { session =>
-          StaticQuery.updateNA(q).apply().execute(session)
+          StaticQuery.updateNA(q).apply(()).execute(session)
         }
       }
 

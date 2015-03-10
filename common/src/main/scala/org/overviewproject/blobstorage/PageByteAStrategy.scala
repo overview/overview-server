@@ -36,7 +36,7 @@ trait PageByteAStrategy extends BlobStorageStrategy with SlickClient {
   }
 
   /** A noop since we never write data */
-  override def delete(location: String): Future[Unit] = Future.successful()
+  override def delete(location: String): Future[Unit] = Future.successful(())
 
   /**
    *  @throws NotImplementedError always, because we don't want to store blobs in the page table
