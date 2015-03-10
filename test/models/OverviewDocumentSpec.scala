@@ -1,18 +1,12 @@
 package models
 
+import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.Play.{start,stop}
 import play.api.test.{FakeApplication,WithApplication}
 
-import org.overviewproject.test.DbSpecification
-
-// OverviewDocument wraps models.orm.Document. Let's be transparent about that
-// in this test.
 import org.overviewproject.tree.orm.Document
 
-class OverviewDocumentSpec extends DbSpecification {
-  step(start(FakeApplication()))
-
+class OverviewDocumentSpec extends Specification {
   "OverviewDocument" should {
     trait OneDocument {
       def ormDocument: Document
@@ -121,8 +115,6 @@ class OverviewDocumentSpec extends DbSpecification {
       document.title must be equalTo title
     }
   }
-
-  step(stop)
 
   "OverviewDocument with nonstandard DocumentCloud URL" should {
     "give the proper URL when a custom DocumentCloud URL is configured" in new WithApplication(FakeApplication(additionalConfiguration = Map("overview.documentcloud_url" -> "https://foo.bar"))) {

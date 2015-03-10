@@ -1,5 +1,6 @@
 package controllers
 
+import java.sql.Connection
 import java.util.UUID
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -12,7 +13,7 @@ import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, Docum
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser, Authority, SessionFactory }
 import controllers.forms.UploadControllerForm
-import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
+import controllers.util.{ FileUploadIteratee, TransactionAction }
 import models.{Session, User}
 import models.orm.finders.UserFinder
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
@@ -101,14 +102,14 @@ trait UploadController extends Controller {
 /**
  * UploadController implementation that uses FileUploadIteratee
  */
-object UploadController extends UploadController with PgConnection {
+object UploadController extends UploadController {
 
   def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader)
 
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)
 
-  def deleteUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
+  def deleteUpload(upload: OverviewUpload) = OverviewDatabase.inTransaction { implicit connection: Connection =>
     upload.delete
   }
 

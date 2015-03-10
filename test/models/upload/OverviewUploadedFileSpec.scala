@@ -1,35 +1,28 @@
 package models.upload
 
-import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
-import play.api.Play.{ start, stop }
-import play.api.test.FakeApplication
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
-import helpers.PgConnectionContext
 import java.sql.Timestamp
-import play.api.test.FakeApplication
+import org.postgresql.PGConnection
+
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.postgres.LO
 
-@RunWith(classOf[JUnitRunner])
-class OverviewUploadedFileSpec extends Specification {
-
-  step(start(FakeApplication()))
-
+class OverviewUploadedFileSpec extends DbSpecification {
   "OverviewUploadedFile" should {
 
-    trait UploadedFileContext extends PgConnectionContext {
+    trait UploadedFileContext extends DbTestContext {
+      val before = new Timestamp(System.currentTimeMillis)
       var overviewUploadedFile: OverviewUploadedFile = _
-      var before: Timestamp = _
 
-      override def setupWithDb = LO.withLargeObject { lo =>
-        before = new Timestamp(System.currentTimeMillis)
-        overviewUploadedFile = OverviewUploadedFile(lo.oid, "attachment; filename=name", "content-type")
+      override def setupWithDb = {
+        implicit val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
+        overviewUploadedFile = LO.withLargeObject { lo =>
+          OverviewUploadedFile(lo.oid, "attachment; filename=name", "content-type")
+        }
       }
     }
 
     "set uploadedAt time on creation" in new UploadedFileContext {
-      overviewUploadedFile.uploadedAt.compareTo(before) must be greaterThanOrEqualTo (0)
+      overviewUploadedFile.uploadedAt.compareTo(before) must be greaterThanOrEqualTo(0)
     }
 
     "withSize results in updated size and time uploadedAt" in new UploadedFileContext {
@@ -63,8 +56,6 @@ class OverviewUploadedFileSpec extends Specification {
       foundUploadedFile must beNone
     }
   }
-
-  step(stop)
 
   "OverviewUploadedFile filename" should {
 

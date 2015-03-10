@@ -1,14 +1,17 @@
 package controllers.util
 
 import java.util.UUID
-import scala.util.control.Exception._
-import play.api.http.HeaderNames._
+import java.sql.Connection
+import org.postgresql.PGConnection
+import play.api.http.HeaderNames.{ CONTENT_DISPOSITION, CONTENT_TYPE, CONTENT_RANGE }
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.{ Done, Input, Iteratee }
 import play.api.mvc.{ RequestHeader, Result }
 import play.api.mvc.Results.BadRequest
-import org.overviewproject.postgres.LO
+
+import models.OverviewDatabase
 import models.upload.OverviewUpload
+import org.overviewproject.postgres.LO
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
@@ -122,29 +125,45 @@ trait FileUploadIteratee {
 }
 
 /** Implementation that writes to database */
-object FileUploadIteratee extends FileUploadIteratee with PgConnection {
+object FileUploadIteratee extends FileUploadIteratee {
   
-  def findUpload(userId: Long, guid: UUID) = withPgConnection { implicit c => OverviewUpload.find(userId, guid) }
-
-  def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject { lo => OverviewUpload(userId, guid, contentDisposition, contentType, contentLength, lo.oid).save }
+  def findUpload(userId: Long, guid: UUID) = OverviewDatabase.inTransaction {
+    OverviewUpload.find(userId, guid)
   }
 
-  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
-  }
-
-  def truncateUpload(upload: OverviewUpload): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject(upload.contentsOid) { lo =>
-      lo.truncate
-      upload.truncate.save
+  def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload = {
+    OverviewDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+      LO.withLargeObject { lo =>
+        OverviewUpload(userId, guid, contentDisposition, contentType, contentLength, lo.oid).save
+      }
     }
   }
 
-  def cancelUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
-    LO.delete(upload.contentsOid)
-    upload.uploadedFile.delete
-    upload.delete
+  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = {
+    OverviewDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+      LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
+    }
+  }
+
+  def truncateUpload(upload: OverviewUpload): OverviewUpload = {
+    OverviewDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+      LO.withLargeObject(upload.contentsOid) { lo =>
+        lo.truncate
+        upload.truncate.save
+      }
+    }
+  }
+
+  def cancelUpload(upload: OverviewUpload) = {
+    OverviewDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+      LO.delete(upload.contentsOid)
+      upload.uploadedFile.delete
+      upload.delete
+    }
   }
 }
 

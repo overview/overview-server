@@ -3,46 +3,30 @@ package models.orm.stores
 import java.util.Date
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.Play.{start, stop}
-import play.api.test.FakeApplication
 
-import org.overviewproject.tree.orm._
-import org.overviewproject.tree.orm.stores.{ BaseStore, NoInsertOrUpdate }
-import helpers.PgConnectionContext
-import models.orm._
-import models.orm.finders._
+import org.overviewproject.test.DbSpecification
+import org.overviewproject.tree.orm.DocumentSet
+import models.orm.finders.DocumentSetFinder
 
-class DocumentSetStoreSpec extends Specification {
-
-  trait DocumentSetContext extends PgConnectionContext {
-    private val documentStore = new BaseStore(models.orm.Schema.documents) with NoInsertOrUpdate[Document]
-    
+class DocumentSetStoreSpec extends DbSpecification {
+  trait DocumentSetContext extends DbTestContext {
     def insertDocumentSet = {
       DocumentSetStore.insertOrUpdate(DocumentSet(title="title", query=Some("query")))
     }
-
-    def insertUploadedFileAndDocumentSet = {
-      val uploadedFile = UploadedFileStore.insertOrUpdate(UploadedFile(contentDisposition = "content-disposition", contentType = "content-type", size = 100))
-      val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title="title", uploadedFileId = Some(uploadedFile.id)))
-      (uploadedFile, documentSet)
-    }
   }
-
-  step(start(FakeApplication()))
 
   "DocumentSetStore" should {
     "set createdAt to the current date by default" in new Scope {
       DocumentSet().createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
 
-    "set isPublic to false by default" in new DocumentSetContext {
+    "set isPublic to false by default" in new Scope {
       DocumentSet().isPublic must beFalse
     }
 
-    "set deleted to false by default" in new DocumentSetContext {
+    "set deleted to false by default" in new Scope {
       DocumentSet().deleted must beFalse
     }
-    
 
     "set document set deleted flag to true on delete" in new DocumentSetContext {
       val documentSet = insertDocumentSet
@@ -54,6 +38,4 @@ class DocumentSetStoreSpec extends Specification {
       deletedDocumentSet must beSome.like { case ds => ds.deleted must beTrue }
     }
   }
-
-  step(stop)
 }

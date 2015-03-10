@@ -1,31 +1,27 @@
 package models.upload
 
-import anorm.SQL
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
-import helpers.PgConnectionContext
+import helpers.DbTestContext
 import java.sql.Timestamp
-import java.util.UUID._
-import models.OverviewUser
-import org.specs2.mutable.Specification
-import play.api.Play.{ start, stop }
-import play.api.test.FakeApplication
+import java.util.UUID
+import org.postgresql.PGConnection
+
 import org.overviewproject.postgres.LO
+import org.overviewproject.test.DbSpecification
 
-@RunWith(classOf[JUnitRunner])
-class OverviewUploadSpec extends Specification {
-
-  step(start(FakeApplication()))
-
+class OverviewUploadSpec extends DbSpecification {
   "OverviewUpload" should {
-
-    trait UploadContext extends PgConnectionContext {
-      val guid = randomUUID
+    trait UploadContext extends DbTestContext {
+      val guid = UUID.randomUUID
       val contentDisposition = "attachment; filename=file"
       val contentType = "text/csv"
       val totalSize = 42l
       val chunk: Array[Byte] = Array(0x12, 0x13, 0x14)
       var userId = 1l
+
+      implicit var pgConnection: PGConnection = _
+      override def setupWithDb = {
+        pgConnection = connection.unwrap(classOf[PGConnection])
+      }
     }
 
     "create uploadedFile" in new UploadContext {
@@ -101,6 +97,4 @@ class OverviewUploadSpec extends Specification {
     }
 
   }
-
-  step(stop)
 }
