@@ -31,7 +31,7 @@ import DocumentDistanceFn.DocumentDistanceFn
 class SampledEdges extends HashMap[ DocumentID, CompactPairArray[DocumentID, Float] ] {
       
   def addEdge(a:DocumentID, b:DocumentID, dist:Float) : Unit = {
-    getOrElseUpdate(a, new CompactPairArray[DocumentID, Float]) += Pair(b,dist)
+    getOrElseUpdate(a, new CompactPairArray[DocumentID, Float]) += Tuple2(b,dist)
   }
 
   // Binary search the CompactPairArray first field (Document) to see if it contains an edge to node b
@@ -103,7 +103,7 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
     // First construct d: for each term, a list of containing docs, sorted by weight
     docVecs.foreach { case (id,vec) => 
       vec.foreach { case (term, weight) =>
-        termTable.getOrElseUpdate(term, new CompactPairArray[DocumentID, TermWeight]) += Pair(id, weight)
+        termTable.getOrElseUpdate(term, new CompactPairArray[DocumentID, TermWeight]) += Tuple2(id, weight)
         totalTerms += 1
       }
     }

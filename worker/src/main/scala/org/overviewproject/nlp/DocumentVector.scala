@@ -65,7 +65,7 @@ object DocumentVectorTypes {
   object DocumentVectorBuilder {
     def apply() = new DocumentVectorBuilder()             // construct an empty object
 
-    def apply(t:Pair[TermID,TermWeight]*) = {         // construct from pairs, like Map
+    def apply(t: Tuple2[TermID,TermWeight]*) = {         // construct from pairs, like Map
       val d = new DocumentVectorBuilder
       t foreach { d+= _ }
       d
@@ -83,15 +83,15 @@ object DocumentVectorTypes {
   // Document vector and vector set that has very efficient storage, but not mutable
   // - extracts terms and weights into separate arrays
   // - sorted by term ID for fast vector/vector products
-  // But, also extends Traversable so appears as a sequence of Pair[TermID, TermWeight]
+  // But, also extends Traversable so appears as a sequence of Tuple2[TermID, TermWeight]
   
-  class DocumentVector(val terms:Array[TermID], val weights:Array[TermWeight]) extends Traversable[Pair[TermID, TermWeight]] {
+  class DocumentVector(val terms:Array[TermID], val weights:Array[TermWeight]) extends Traversable[Tuple2[TermID, TermWeight]] {
     
     require(terms.length == weights.length)
     
     def length = terms.length
     
-    def foreach[U](f: Pair[TermID, TermWeight] => U): Unit = {
+    def foreach[U](f: Tuple2[TermID, TermWeight] => U): Unit = {
       for (i <- 0 until length)
         f((terms(i), weights(i)))
     }

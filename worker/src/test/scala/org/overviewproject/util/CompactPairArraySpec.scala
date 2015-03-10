@@ -18,9 +18,9 @@ class CompactPairArraySpec extends Specification {
     "basic operations" in {
       var cpa= new CompactPairArray[Int, Double]    // use Int, Double so we have two different types
  
-      val pair1 = Pair(2,5.9)
-      val pair2 = Pair(7,12.3)
-      val smallestPair = Pair(-12, 1001.1)
+      val pair1 = Tuple2(2,5.9)
+      val pair2 = Tuple2(7,12.3)
+      val smallestPair = Tuple2(-12, 1001.1)
 
       // Size zero after construction
       cpa.size must beEqualTo(0)

@@ -16,7 +16,7 @@ import scala.collection.mutable.{IndexedSeq,ArrayBuffer,Map,MapLike}
 // However, can only store keys/values that can be serialized to/from a fixed number of Int's
 
 // Base class for flattener 
-// K is key type. E is entry type. It's same as key type K for a set, but Pair[K,V] for Map
+// K is key type. E is entry type. It's same as key type K for a set, but Tuple2[K,V] for Map
 abstract class KeyFlattener[K, E] {
   type Entry = E
   
@@ -29,7 +29,7 @@ abstract class KeyFlattener[K, E] {
   def unFlatten(fromSeq:IndexedSeq[Int], atOffset:Int) : E  
   
   // Compute hash code
-  // If E is a Pair[A,B], for use in a map, this must compute hash code of key only
+  // If E is a Tuple2[A,B], for use in a map, this must compute hash code of key only
   def keyHashCode(entry:E) : Int
   
   // compute hash code from flattened representation
@@ -42,10 +42,10 @@ abstract class KeyFlattener[K, E] {
 }
 
 // K = key type, V = value type 
-// We extend KeyFlattener, with entry type Pair[K,V]. 
+// We extend KeyFlattener, with entry type Tuple2[K,V]. 
 // Add method to unflatten only the value
 // But keyHashCode etc. still needs to operate only on Key, not value!
-abstract class KeyValueFlattener[K, V] extends KeyFlattener[K, Pair[K,V]] {
+abstract class KeyValueFlattener[K, V] extends KeyFlattener[K, Tuple2[K,V]] {
   
   def flattenValue(v: V, toSeq:IndexedSeq[Int], atOffset:Int) : Unit
   def unFlattenValue(fromSeq:IndexedSeq[Int], atOffset:Int) : V  
@@ -56,7 +56,7 @@ abstract class KeyValueFlattener[K, V] extends KeyFlattener[K, Pair[K,V]] {
 // This is a growable, linked list chaining hash table
 // K = type of of Key (e.g, Int)
 // E = type of of what we store in a table entry
-// E will be K for a set, or Pair[K, value] for a map 
+// E will be K for a set, or Tuple2[K, value] for a map 
 abstract class FlatteningHashTable[K,E] {
     
   // derived classes must provider flattener
@@ -321,9 +321,9 @@ abstract class FlatteningHashTable[K,E] {
 
 // The actual Scala collection object. It's a map. That's it.
 // Only requirement is that a KeyValueFlattener[A,B] be in scope, for the implicit parameter
-// Implemented through a CompactHashTable that uses key type = A and entry type = Pair[A,B]
+// Implemented through a CompactHashTable that uses key type = A and entry type = Tuple2[A,B]
 class FlatteningHashMap[A, B](implicit val kvFlattener:KeyValueFlattener[A,B])
-  extends FlatteningHashTable[A, Pair[A,B]]
+  extends FlatteningHashTable[A, Tuple2[A,B]]
   with Map[A,B] 
   with MapLike[A, B, FlatteningHashMap[A,B]]
 {

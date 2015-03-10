@@ -1,7 +1,7 @@
 /**
  * CompactPairArray.scala
  *
- * An object that (mostly) looks like an ArrayBuffer[Pair[A,B]], but stores internally as two parallel arrays.
+ * An object that (mostly) looks like an ArrayBuffer[Tuple2[A,B]], but stores internally as two parallel arrays.
  * This can drastically improve the memory efficiency of storing large numbers of pairs of primitives.
  *
  * Overview Project, created November 2012
@@ -18,9 +18,9 @@ import scala.collection.generic.CanBuildFrom
 import scala.reflect.ClassTag
 
 class CompactPairArray[A : ClassTag,B : ClassTag] 
-    extends IndexedSeq[Pair[A,B]] 
-    with IndexedSeqOptimized[Pair[A,B], CompactPairArray[A,B]] 
-    with Builder[Pair[A,B], CompactPairArray[A,B]] 
+    extends IndexedSeq[Tuple2[A,B]] 
+    with IndexedSeqOptimized[Tuple2[A,B], CompactPairArray[A,B]] 
+    with Builder[Tuple2[A,B], CompactPairArray[A,B]] 
 {
   // Internal state: two Arrays, plus a size
   var aArray = new Array[A](0)
@@ -63,13 +63,13 @@ class CompactPairArray[A : ClassTag,B : ClassTag]
     numStoredElements
   }
   
-  def apply(idx:Int) : Pair[A,B] = {
+  def apply(idx:Int) : Tuple2[A,B] = {
     if (idx >= numStoredElements)
       throw new java.lang.ArrayIndexOutOfBoundsException
-    Pair[A,B](aArray(idx), bArray(idx))
+    Tuple2[A,B](aArray(idx), bArray(idx))
   }
   
-  def update(idx: Int, elem: Pair[A,B]) : Unit = {
+  def update(idx: Int, elem: Tuple2[A,B]) : Unit = {
     if (idx >= numStoredElements)
       throw new java.lang.ArrayIndexOutOfBoundsException
     aArray(idx) = elem._1
@@ -84,7 +84,7 @@ class CompactPairArray[A : ClassTag,B : ClassTag]
   }
   
   // --- Builder methods ---
-  override def +=(elem : Pair[A,B]) = {
+  override def +=(elem : Tuple2[A,B]) = {
     ensureSize(numStoredElements + 1)
     aArray(numStoredElements) = elem._1
     bArray(numStoredElements) = elem._2
@@ -116,11 +116,11 @@ object CompactPairArray {
  
   // trait CanBuildFrom[-From, -Elem, +To]
  
-  implicit def canBuildFrom[A,B] : CanBuildFrom[CompactPairArray[A,B], Pair[A,B], CompactPairArray[A,B]] = 
-    new CanBuildFrom[CompactPairArray[A, B], Pair[A,B], CompactPairArray[A, B]] {
+  implicit def canBuildFrom[A,B] : CanBuildFrom[CompactPairArray[A,B], Tuple2[A,B], CompactPairArray[A,B]] = 
+    new CanBuildFrom[CompactPairArray[A, B], Tuple2[A,B], CompactPairArray[A, B]] {
     
       // typical case: just forward to the object we're building from
-      def apply(from: CompactPairArray[A,B]): Builder[Pair[A,B], CompactPairArray[A, B]] = {
+      def apply(from: CompactPairArray[A,B]): Builder[Tuple2[A,B], CompactPairArray[A, B]] = {
          from.newBuilder
       }
 
@@ -129,7 +129,7 @@ object CompactPairArray {
       // Also somewhat complex to implement due to type erasure, since CPA needs to know the types of A,B
       // to create its array, and we don't have the appropriate manifests here. 
       // Nonetheless, implement by creating a CompactPairArray[Any,Any], which should work --jms 11/27/12
-      def apply(): Builder[Pair[A,B], CompactPairArray[A,B]] = {
+      def apply(): Builder[Tuple2[A,B], CompactPairArray[A,B]] = {
         new CompactPairArray[A,B]()(
             ClassTag.Any.asInstanceOf[ClassTag[A]],
             ClassTag.Any.asInstanceOf[ClassTag[B]])
@@ -138,7 +138,7 @@ object CompactPairArray {
   
   // Construct from a sequence: var c = CompactPairArray((1,2.0), (3,4.0), ... ) 
   // Really, we need to figure out how to derive from SeqFactory and we'll get this and more (e.g. Fill, Tabulate)
-  def apply[A:ClassTag,B:ClassTag](v : Pair[A,B]*) = {
+  def apply[A:ClassTag,B:ClassTag](v : Tuple2[A,B]*) = {
     var cpa = new CompactPairArray[A,B]
     cpa.sizeHint(v.size)
     v.foreach(cpa += _)

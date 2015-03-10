@@ -22,7 +22,7 @@ import org.overviewproject.util.Configuration
 object BuildDocTree {
 
   // Create two nodes: one with all empty docs (no terms), one with all the rest
-  def gatherEmptyDocs(docVecs: DocumentSetVectors) : Pair[DocTreeNode, DocTreeNode] = {
+  def gatherEmptyDocs(docVecs: DocumentSetVectors) : Tuple2[DocTreeNode, DocTreeNode] = {
     val nonEmptyDocs = Set[DocumentID]()
     val emptyDocs = Set[DocumentID]()
     docVecs foreach { case (id,vector) =>   // yes, I could use partition, but I only need the keys, and docVecs is potentially huge

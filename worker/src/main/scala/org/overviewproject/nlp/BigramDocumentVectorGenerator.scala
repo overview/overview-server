@@ -31,7 +31,7 @@ object BigramKey {
 // This is a hash map from BigramKey -> VocabRecord that is "flat",
 // that is, heavily optimized to use as little memory as possible
 object FlatBigrams {
-  // flattener object tells FlatteningHashMap how to go from Pair[BigramKey,VocabRecord] 
+  // flattener object tells FlatteningHashMap how to go from Tuple2[BigramKey,VocabRecord] 
   // to and from a series of 4 Ints (flatSize = 4) 
   implicit object BigramFlattener extends KeyValueFlattener[BigramKey,VocabRecord] {
     def flatSize = 4
