@@ -71,7 +71,7 @@ trait S3Strategy extends BlobStorageStrategy {
           file.delete
           promise.success(ret)
         }
-        case ProgressEventType.TRANSFER_FAILED_EVENT => {
+        case ProgressEventType.TRANSFER_FAILED_EVENT | ProgressEventType.CLIENT_REQUEST_FAILED_EVENT => {
           file.delete
           promise.failure(blocking(download.waitForException()))
         }
