@@ -157,10 +157,6 @@ trait S3Strategy extends BlobStorageStrategy {
 }
 
 object S3Strategy extends S3Strategy {
-  override lazy val s3 = {
-    val awsCredentials = BlobStorageConfig.awsCredentials
-    new AmazonS3Client(awsCredentials)
-  }
-
+  override lazy val s3 = new AmazonS3Client
   override lazy val transferManager = new TransferManager(s3)
 }

@@ -1,6 +1,5 @@
 package org.overviewproject.blobstorage
 
-import com.amazonaws.auth.{AWSCredentials,DefaultAWSCredentialsProviderChain}
 import com.typesafe.config.{Config,ConfigFactory}
 
 trait BlobStorageConfig {
@@ -36,16 +35,6 @@ trait BlobStorageConfig {
     */
   def fileBaseDirectory: String = {
     config.getString("blobStorage.file.baseDirectory")
-  }
-
-  /** The credentials for AWS.
-    *
-    * This uses DefaultAWSCredentialsProviderChain. That means you can set
-    * AWS_ACCESS_KEY_ID/AWS_SECRET_KEY environment variables or simply run
-    * Overview from an EC2 machine that has an IAM role.
-    */
-  def awsCredentials: AWSCredentials = {
-    new DefaultAWSCredentialsProviderChain().getCredentials
   }
 }
 
