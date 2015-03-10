@@ -49,6 +49,7 @@ object ApplicationBuild extends Build with ProjectSettings {
   }
 
   val messageBroker = Project("message-broker", file("message-broker"))
+    .settings(scalaVersion := "2.10.5")
     .settings(Defaults.coreDefaultSettings: _*)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)

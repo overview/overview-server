@@ -35,7 +35,7 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
   val iterator = new Iterator[CsvImportDocument] {
     private val Separator = ','
     private val Quote = '\"'
-    private val NoEscape = '\0' // Setting escape char to \0 disables escaping
+    private val NoEscape = '\u0000' // Setting escape char to \0 disables escaping
 
     private val csvParser = new CSVReader(reader, Separator, Quote, NoEscape)
     private var nextLine = csvParser.readNext() // read ahead to be able to evaluate hasNext

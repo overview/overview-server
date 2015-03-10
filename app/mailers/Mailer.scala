@@ -1,6 +1,6 @@
 package mailers
 
-import com.typesafe.plugin.{use,MailerPlugin}
+import play.api.libs.mailer.{Email,MailerPlugin}
 import play.api.Play.{current, configuration}
 import scala.xml.Node
 
@@ -32,12 +32,15 @@ trait Mailer {
   lazy val htmlString = "<!DOCTYPE html>\n" + html.buildString(true)
 
   def send = {
-    import play.api.Play.current
+    val email = Email(
+      subject,
+      from,
+      recipients,
+      bodyText=Some(wordWrappedText),
+      bodyHtml=Some(htmlString),
+      charset=Some("utf-8")
+    )
 
-    val mail = use[MailerPlugin].email
-    mail.setSubject(subject)
-    mail.setRecipient(recipients: _*)
-    mail.setFrom(from)
-    mail.send(wordWrappedText, htmlString)
+    MailerPlugin.send(email)
   }
 }
