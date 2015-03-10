@@ -1,23 +1,22 @@
 /*
  * UploadedFileLoader.scala
- * 
+ *
  * Overview Project
  * Created by Jonas Karlsson, November 2012
  */
 package org.overviewproject.persistence
 
 import java.sql.Connection
-import org.overviewproject.persistence.orm.Schema 
+
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.tree.orm.UploadedFile
-import org.overviewproject.database.DB
-import org.overviewproject.postgres.LO
 
 /** Information describing an uploaded file */
 trait EncodedUploadFile {
   val contentType: String
   val size: Long
-  
-  private var ContentTypeEncoding = ".*charset=([^\\s]*)".r 
+
+  private val ContentTypeEncoding = ".*charset=([^\\s]*)".r
 
   /**
    * @return a string with the value of the charset field in contentType,
@@ -39,7 +38,7 @@ object EncodedUploadFile {
 
     new EncodedUploadFileImpl(upload)
   }
-  
+
   private class EncodedUploadFileImpl(uploadedFile: UploadedFile) extends EncodedUploadFile {
     val contentType: String = uploadedFile.contentType
     val size: Long = uploadedFile.size
