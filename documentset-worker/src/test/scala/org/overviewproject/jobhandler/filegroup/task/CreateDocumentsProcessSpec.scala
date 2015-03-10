@@ -4,7 +4,7 @@ import akka.testkit.TestProbe
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
-import scala.concurrent.Promise
+import scala.concurrent.Future
 
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import org.overviewproject.models.Document
@@ -191,9 +191,9 @@ class TestCreateDocumentsProcess(
 
   override val searchIndex = smartMock[ElasticSearchIndexClient]
 
-  searchIndex.addDocumentSet(documentSetId) returns Promise.successful().future
-  searchIndex.addDocuments(any) returns Promise.successful().future
-  searchIndex.refresh returns Promise.successful().future
+  searchIndex.addDocumentSet(documentSetId) returns Future.successful(())
+  searchIndex.addDocuments(any) returns Future.successful(())
+  searchIndex.refresh returns Future.successful(())
   
   override val createDocumentsProcessStorage = smartMock[CreateDocumentsProcessStorage]
 
