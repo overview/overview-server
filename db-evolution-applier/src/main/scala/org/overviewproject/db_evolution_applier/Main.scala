@@ -32,7 +32,7 @@ object Main {
       |      user=${?DATABASE_USERNAME}
       |      password=${?DATABASE_PASSWORD}
       |      tcpKeepAlive=true
-      |      ssl=${?DATABASE_SSL} # or better yet, turn on SSL on your database
+      |      ssl=${?DATABASE_SSL}
       |      sslfactory=${?DATABASE_SSL_FACTORY}
       |    }
       |  }
