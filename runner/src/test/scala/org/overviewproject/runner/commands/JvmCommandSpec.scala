@@ -25,7 +25,7 @@ class JvmCommandSpec extends Specification {
     "find and run Java" in {
       val cmd = new JvmCommand(Seq(), Seq(), Seq("-version"))
       val (retval, stdout, stderr) = run(cmd)
-      stderr must contain("java version")
+      stderr must contain(" version ")
     }
 
     "not crash when deciding whether Java is 64-bit" in {
