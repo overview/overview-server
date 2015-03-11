@@ -24,13 +24,11 @@ object ApplicationBuild extends Build with ProjectSettings {
   val allJavaOpts = Seq("-Duser.timezone=UTC")
 
   val devJavaOpts = Seq(
-    "-Ddb.default.dataSource.sslfactory=org.postgresql.ssl.NonValidatingFactory",
     "-Ddb.default.dataSource.databaseName=overview-dev",
     "-Ddb.default.dataSource.portNumber=9010"
   )
 
   val testJavaOpts = Seq(
-    "-Ddb.default.dataSource.sslfactory=org.postgresql.ssl.NonValidatingFactory",
     "-Ddb.default.dataSource.databaseName=overview-test",
     "-Ddb.default.dataSource.portNumber=9010"
   )
