@@ -52,7 +52,6 @@ define [
         'views.Tree.show.DocumentListCursor.position_html': 'position_html,{0},{1}'
         'views.Tree.show.DocumentListCursor.next': 'next'
         'views.Tree.show.DocumentListCursor.previous': 'previous'
-        'views.Tree.show.DocumentListCursor.list': 'list'
         'views.Tree.show.DocumentListCursor.description': 'description,{0}'
         'views.Tree.show.DocumentListCursor.description.empty': 'description.empty'
         'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
@@ -116,10 +115,6 @@ define [
       initAt(10, 10)
       expect(view.el.className).to.eq('showing-unloaded-document')
 
-    it 'should link to "list"', ->
-      initAt(1, 10)
-      expect(view.$('a.list').text()).to.eq('list')
-
     it 'should trigger "next-clicked"', ->
       initAt(1, 10)
       testClickTriggersEvent('a.next', 'next-clicked', true)
@@ -135,10 +130,6 @@ define [
     it 'should not trigger "previous-clicked" when disabled', ->
       initAt(0, 10)
       testClickTriggersEvent('a.previous', 'previous-clicked', false)
-
-    it 'should trigger "list-clicked"', ->
-      initAt(1, 10)
-      testClickTriggersEvent('a.list', 'list-clicked', true)
 
     it 'should allow setDocumentList with an unfilled DocumentList', ->
       initAt(5, 10)

@@ -42,30 +42,29 @@ requirejs.config({
     'bootstrap-popover':
       deps: [ 'jquery', 'bootstrap-tooltip' ]
       exports: 'jQuery.fn.popover'
-    'bootstrap-tab': {
+    'bootstrap-tab':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tab'
-    }
+    'bootstrap-toggle':
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.bootstrapToggle'
     'bootstrap-tooltip':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tooltip'
-    'bootstrap-transition': {
+    'bootstrap-transition':
       deps: [ 'jquery' ]
-    }
-    'jquery.validate': {
+    'jquery.validate':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
-    }
     underscore: { exports: '_' }
-    spectrum: {
+    spectrum:
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
-    }
     tinycolor: { exports: 'tinycolor' }
     md5: { exports: 'CryptoJS.MD5' }
   }
 
-  paths: {
+  paths:
     'backbone': 'vendor/backbone'
     'backform': 'vendor/backform'
     'backgrid': 'vendor/backgrid'
@@ -76,6 +75,7 @@ requirejs.config({
     'bootstrap-modal': 'vendor/bootstrap-modal'
     'bootstrap-popover': 'vendor/bootstrap-popover'
     'bootstrap-tab': 'vendor/bootstrap-tab'
+    'bootstrap-toggle': 'vendor/bootstrap-toggle'
     'bootstrap-tooltip': 'vendor/bootstrap-tooltip'
     'bootstrap-transition': 'vendor/bootstrap-transition'
     jquery: 'vendor/jquery-2-1-0'
@@ -87,5 +87,4 @@ requirejs.config({
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
-  }
 })

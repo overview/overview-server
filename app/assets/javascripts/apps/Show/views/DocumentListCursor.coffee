@@ -31,16 +31,13 @@ define [
     events:
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
-      'click a.list': '_onClickList'
 
     templates:
       root: _.template("""
-        <a href="#" class="list"><i class="overview-icon-list"></i><%- t('list') %></a>
-        <div class="box">
-          <header></header>
-          <article></article>
-        </div>
-        """)
+        <header></header>
+        <article></article>
+      """)
+
       header: _.template("""
         <div class="position">
           <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-chevron-left"></i> <span><%- t('previous') %></span></a>
@@ -143,10 +140,6 @@ define [
 
     _onClickNext: (e) -> @_handleNextOrPrevious(e, 'next')
     _onClickPrevious: (e) -> @_handleNextOrPrevious(e, 'previous')
-
-    _onClickList: (e) ->
-      e.preventDefault()
-      @trigger('list-clicked')
 
     setDocumentList: (documentList) ->
       if @documentList?

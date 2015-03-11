@@ -1,15 +1,12 @@
 @import "../../variables.less";
 
 #document-list-title {
-  padding: .25em 10px;
-
-  // overlap #document-list
-  position: relative;
-  z-index: 1;
-  background: inherit;
+  padding: .25em 0;
+  .display-flex();
 
   h4 {
-    margin: 0 5em 0 0;
+    flex-grow: 1;
+    margin: 0;
     height: 1.5em;
     line-height: 1.5;
     white-space: nowrap;
@@ -21,6 +18,14 @@
     text-overflow: ellipsis;
   }
 
+  .edit-link {
+    flex-shrink: 0;
+  }
+
+  .show-list {
+    flex-shrink: 0;
+  }
+
   &.search-error h4 {
     color: @brand-danger;
   }
@@ -28,13 +33,7 @@
   a {
     .faded-link();
     display: inline-block;
-    position: absolute;
     cursor: pointer; // Why? Chrome 32.0.1700.68 beta still requires this...
-    top: 0;
-    right: 0;
-    height: 2.25em;
-    text-align: right;
-    padding: .25em .5em 0 0;
-    line-height: 2.25em;
+    padding: .5em;
   }
 }

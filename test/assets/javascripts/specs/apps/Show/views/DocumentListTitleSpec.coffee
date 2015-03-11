@@ -20,44 +20,65 @@ define [
     initialize: (attributes, options) ->
       @params = options.params
 
+  class State extends Backbone.Model
+    defaults:
+      oneDocumentSelected: false
+
   describe 'apps/Show/views/DocumentListTitleView', ->
     beforeEach ->
-      i18n.reset_messages
-        'views.Tree.show.DocumentListTitle.num_documents': 'num_documents,{0}'
-        'views.Tree.show.DocumentListTitle.loading': 'loading'
-        'views.Tree.show.DocumentListTitle.tag.edit': 'tag.edit'
-        'views.Tree.show.DocumentListTitle.node.edit': 'node.edit'
+      i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentListTitle',
+        'num_documents': 'num_documents,{0}'
+        'loading': 'loading'
+        'tag.edit': 'tag.edit'
+        'node.edit': 'node.edit'
+        'list': 'list'
+        'one': 'one'
 
-      @view = new DocumentListTitle(documentList: null)
+      @state = new State()
+      @view = new DocumentListTitle(documentList: null, state: @state)
 
     afterEach ->
       @view.remove()
 
-    it 'should render nothing with an undefined list', ->
-      expect(@view.$el.html()).to.eq('')
+    describe 'with an undefined list', ->
+      it 'should render nothing', ->
+        expect(@view.$('h4').html()).to.eq('')
+        expect(@view.$('.edit-link').html()).to.eq('')
+        expect(@view.$('input')).to.be.disabled
 
-    it 'should render loading message with an unloaded list', ->
-      @view.setDocumentList(new DocumentList({ length: null }, {
-        params:
-          title: '%s in document set'
-          params: {}
-      }))
-      expect(@view.$el.text()).to.match(/loading/)
+    describe 'with a loading list', ->
+      beforeEach ->
+        @view.setDocumentList(new DocumentList({ length: null }, {
+          params:
+            title: '%s in document set'
+            params: {}
+        }))
+
+      it 'should render loading message with an unloaded list', ->
+        expect(@view.$('h4').text()).to.match(/loading/)
+
+      it 'edit link', ->
+        expect(@view.$('a.edit')).not.to.be.empty
+
+      it 'should render a disabled one-document toggle', ->
+        expect(@view.$('input')).to.be.disabled
 
     describe 'with a Tag', ->
       beforeEach ->
         @tag = new Tag(id: 1, name: 'foo')
-        @view.setDocumentList(new DocumentList({ length: 4 }, {
-          params:
-            documentSet: { tags: { get: (id) => if id == 1 then @tag else undefined } }
-            title: '%s tagged foo'
-            params: { tags: [ 1 ] }
-            reset:
-              byTag: (t) ->
-                title: "%s tagged #{t.get('name')}"
-        }))
+        @params =
+          documentSet: { tags: { get: (id) => if id == 1 then @tag else undefined } }
+          title: '%s tagged foo'
+          params: { tags: [ @tag.id ] }
+          reset:
+            byTag: (t) ->
+              title: "%s tagged #{t.get('name')}"
 
-      it 'should render the title', -> expect(@view.$('h4').html()).to.eq('<strong>num_documents,4</strong> tagged foo')
+        @view.setDocumentList(new DocumentList({ length: 4 }, { params: @params }))
+
+      it 'should render the title', ->
+        expect(@view.$('h4').html()).to.eq('<strong>num_documents,4</strong> tagged foo')
+
       it 'should trigger edit-tag', ->
         @view.on('edit-tag', spy = sinon.spy())
         $a = @view.$('a.edit')
@@ -68,6 +89,27 @@ define [
       it 'should listen for tag title changes', ->
         @tag.set(name: 'bar')
         expect(@view.$('h4').html()).to.eq('<strong>num_documents,4</strong> tagged bar')
+
+      it 'should toggle to one document', ->
+        @view.$('input').prop('checked', false).change()
+        expect(@state.get('oneDocumentSelected')).to.be.true
+
+      it 'should toggle back to the list', ->
+        @view.$('input').prop('checked', false).change()
+        @view.$('input').prop('checked', true).change()
+        expect(@state.get('oneDocumentSelected')).to.be.false
+
+      it 'should disable the toggle when there are no documents', ->
+        @view.setDocumentList(new DocumentList({ length: 0 }, { params: @params }))
+        expect(@view.$('input')).to.be.disabled
+
+      it 'should turn on the toggle when state oneDocumentSelected becomes true', ->
+        @state.set(oneDocumentSelected: true)
+        expect(@view.$('input')).not.to.be.checked
+
+      it 'should turn off the toggle when state oneDocumentSelected becomes false', ->
+        @state.set(oneDocumentSelected: false)
+        expect(@view.$('input')).to.be.checked
 
     describe 'with a Node', ->
       beforeEach ->

@@ -1,14 +1,14 @@
 #tree-app-tag-this {
-  .prompt, .details {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-  }
-
+  .prompt { display: block; }
   .details { display: none; }
 
   &.show-details {
+    .prompt { display: none; }
     .details { display: block; }
+  }
+
+  .prompt {
+    text-align: right;
   }
 
   form {

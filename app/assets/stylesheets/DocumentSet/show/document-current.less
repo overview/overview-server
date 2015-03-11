@@ -1,47 +1,23 @@
 @import "../../variables.less";
 @import "../../mixins.less";
 
-#tree-app-document-cursor {
-  @navWidth: 8em;
+#main.document-selected #document-current { left: 0; }
 
+#document-current {
+  box-sizing: border-box;
   position: absolute;
-  z-index: 1;
-  left: 110%;
   width: 100%;
+  height: 100%;
   top: 0;
-  bottom: 40px;
-  .transition(left .35s ease-out);
+  left: 110%;
+  .transition(left .35s linear);
+  overflow: hidden;
 
-  &.showing-document, &.showing-unloaded-document {
-    left: 0;
-  }
-
-  a.list {
-    display: block;
-    font-size: 1.5em;
-    height: 2em;
-    line-height: 2em;
-    background: @body-bg;
-    padding: 0;
-    vertical-align: middle;
-
-    i {
-      margin-right: .5em;
-    }
-  }
-
-  .box {
-    position: absolute;
-    .overview-toplevel-box();
-    overflow: hidden;
-    top: 3em;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: @body-bg-dark;
-    .display-flex();
-    .flex-direction-column();
-  }
+  background: @body-bg-dark;
+  border: 1px solid @nav-tabs-border-color;
+  border-radius: 5px;
+  .display-flex();
+  .flex-direction-column();
 
   .position {
     line-height: 1em;

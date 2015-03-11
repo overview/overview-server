@@ -106,8 +106,11 @@ define [
           <div id="tree-app-tags"></div>
         </div>
         <div id="tree-app-right">
-          <div id="tree-app-document-list"></div>
-          <div id="tree-app-document-cursor"></div>
+          <div id="document-list-title"></div>
+          <div id="document-list-and-current">
+            <div id="document-list"></div>
+            <div id="document-current"></div>
+          </div>
           <div id="tree-app-tag-this"></div>
         </div>
         <div id="transaction-queue-error-monitor">
@@ -127,9 +130,10 @@ define [
       view: el('tree-app-view')
       tags: el('tree-app-tags')
       search: el('tree-app-search')
-      documentList: el('tree-app-document-list')
+      documentList: el('document-list')
+      documentListTitle: el('document-list-title')
       tagThis: el('tree-app-tag-this')
-      documentCursor: el('tree-app-document-cursor')
+      documentCursor: el('document-current')
       document: el('tree-app-document')
       transactionQueueErrorMonitor: el('transaction-queue-error-monitor')
 
@@ -188,7 +192,7 @@ define [
       @_listenForRefocus()
       @_listenForResize(els.document)
 
-      document_list_controller(els.documentList, els.tagThis, els.documentCursor, documentSet, state, keyboardController)
+      document_list_controller(els.documentListTitle, els.documentList, els.tagThis, els.documentCursor, documentSet, state, keyboardController)
 
       new ViewAppController
         el: els.view

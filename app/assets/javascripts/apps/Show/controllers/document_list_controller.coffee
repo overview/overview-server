@@ -62,6 +62,7 @@ define [
     # * tags (a Tags)
     # * state (a State)
     # * listEl (an HTMLElement)
+    # * titleEl (an HTMLElement)
     # * cursorEl (an HTMLElement)
     #
     # Properties created here, whose attributes may change:
@@ -78,12 +79,14 @@ define [
       throw 'Must specify options.tags, a Tags' if !options.tags
       throw 'Must specify options.state, a State' if !options.state
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
+      throw 'Must specify options.titleEl, an HTMLElement' if !options.titleEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
       throw 'Must specify options.tagThisEl, an HTMLElement' if !options.tagThisEl
 
       @tags = options.tags
       @state = options.state
       @listEl = options.listEl
+      @titleEl = options.titleEl
       @cursorEl = options.cursorEl
       @tagThisEl = options.tagThisEl
 
@@ -164,6 +167,8 @@ define [
     _addTitleView: ->
       view = new DocumentListTitleView
         documentList: @get('documentList')
+        state: @state
+        el: @titleEl
 
       @on 'change:documentList', (__, documentList) ->
         view.setDocumentList(documentList)
@@ -175,13 +180,13 @@ define [
         tag_form_controller(tag, @state)
 
       @titleView = view
-      view.$el.appendTo(@listEl)
 
     _addListView: ->
       view = new DocumentListView
         model: @get('documentList')
         selection: @listSelection
         tags: @tags
+        el: @listEl
 
       @listenTo view, 'click-document', (model, index, options) =>
         @listSelection.onClick(index, options)
@@ -226,7 +231,6 @@ define [
       startFetching()
 
       @listView = view
-      view.$el.appendTo(@listEl)
 
     _addCursorView: ->
       view = new DocumentListCursorView
@@ -249,11 +253,12 @@ define [
 
       @tagThisView = view
 
-  document_list_controller = (listDiv, tagThisDiv, cursorDiv, documentSet, state, keyboardController) ->
+  document_list_controller = (titleDiv, listDiv, tagThisDiv, cursorDiv, documentSet, state, keyboardController) ->
     controller = new Controller({},
       tags: documentSet.tags
       state: state
       listEl: listDiv
+      titleEl: titleDiv
       cursorEl: cursorDiv
       tagThisEl: tagThisDiv
     )

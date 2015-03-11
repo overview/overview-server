@@ -32,6 +32,9 @@ requirejs.config({
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tab'
     }
+    'bootstrap-toggle':
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.bootstrapToggle'
     'bootstrap-tooltip':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tooltip'
@@ -56,6 +59,7 @@ requirejs.config({
     'bootstrap-modal': 'vendor/bootstrap-modal'
     'bootstrap-popover': 'vendor/bootstrap-popover'
     'bootstrap-tab': 'vendor/bootstrap-tab'
+    'bootstrap-toggle': 'vendor/bootstrap-toggle'
     'bootstrap-tooltip': 'vendor/bootstrap-tooltip'
     'bootstrap-transition': 'vendor/bootstrap-transition'
     jquery: 'vendor/jquery-2-1-0'
