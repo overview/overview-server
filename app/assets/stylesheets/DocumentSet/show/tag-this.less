@@ -1,4 +1,6 @@
 #tree-app-tag-this {
+  display: flex;
+  justify-content: space-between;
   padding-top: 5px;
 
   .prompt { display: block; }
@@ -9,7 +11,12 @@
     .details { display: block; }
   }
 
-  .prompt {
+  a.back-to-list {
+    flex: 0 0 auto;
+    line-height: @input-height-small;
+  }
+  .prompt, .details {
+    flex: 1 1 auto;
     text-align: right;
   }
 

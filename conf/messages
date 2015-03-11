@@ -372,6 +372,7 @@ views.DocumentSet.show.NewViewDialog.url.invalid=This is not a valid URL
 views.DocumentSet.show.SearchView.query_placeholder=Search all documents
 views.DocumentSet.show.SearchView.search=Search
 
+views.DocumentSet.show.TagThis.backToList=Back to list
 views.DocumentSet.show.TagThis.button.document=Tag this document
 views.DocumentSet.show.TagThis.button.list=Tag these documents
 views.DocumentSet.show.TagThis.documents=documents

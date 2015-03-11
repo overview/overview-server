@@ -9,6 +9,7 @@ define [
     className: 'tag-this'
 
     template: _.template('''
+      <a href="#" class="back-to-list"><%- t('backToList') %></a>
       <div class="prompt">
         <button class="btn btn-default"></button>
       </div>
@@ -33,6 +34,7 @@ define [
     events:
       'click .prompt button': '_onClickPrompt'
       'click .close': '_onClickClose'
+      'click .back-to-list': '_onClickBackToList'
       'input input': '_onInput'
       'submit form': '_onSubmit'
 
@@ -52,11 +54,15 @@ define [
     render: ->
       @_initialRender() if !@$button
 
+      @_refreshBackToList()
       @_refreshShowingDetails()
       @_refreshButtonText()
       @_refreshInputValue()
       @_refreshLabelText()
       @_refreshButtonDisabled()
+
+    _refreshBackToList: ->
+      @$('.back-to-list').toggleClass('hide', !@state.get('oneDocumentSelected'))
 
     _refreshShowingDetails: ->
       @$el.toggleClass('show-details', @showDetails)
@@ -106,7 +112,12 @@ define [
     _onChangeState: -> @_reset()
     _onClickClose: (e) -> e.preventDefault(); @_reset()
 
+    _onClickBackToList: (e) ->
+      e.preventDefault()
+      @state.set(oneDocumentSelected: false)
+
     _reset: ->
       @showDetails = false
+      @_refreshBackToList()
       @_refreshShowingDetails()
       @_refreshButtonText()
