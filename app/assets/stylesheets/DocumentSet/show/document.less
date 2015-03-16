@@ -66,108 +66,34 @@
   div.preferences {
     position: absolute;
     z-index: 1;
-    top: 0;
-    right: 0;
+    top: -@btn-height;
+    right: 5px;
+    line-height: 1.5em;
 
-    a.collapse { display: block; }
+    .switch-text-mode {
+      display: block;
+      position: relative;
 
-    .expanded { display: none; }
+      input { display: none; }
 
-    &.expanded .expanded { display: block; }
-
-    .compact {
-      white-space: nowrap;
-      position: absolute;
-      top: -2em;
-      right: 0;
-      height: 2em;
-      background: @body-bg-dark;
-      padding-top: .8em;
-      padding-left: .5em;
-
-      a {
-        display: block;
-        border-top-left-radius: @border-radius-small;
-        overflow: hidden; // for the border
-        background-color: @brand-primary;
-        color: white;
-        font-size: .9em;
-        line-height: 1.2 / .9;
-        text-decoration: none;
-        padding: 0 .5em;
-
-        &:hover {
-          background-color: @brand-primary-muted;
-        }
+      .text-off {
+        // Bootstrap's nested .btn-group is a bit buggy on this front
+        border-bottom-left-radius: @border-radius-base;
+        border-top-left-radius: @border-radius-base;
       }
 
-      span.showing::before {
-        content: "▸ ";
+      input:not(:checked) + .btn-group {
+        .text-off { .btn-primary; .btn-primary.active; }
+      }
+      input:checked + .btn-group {
+        .text-on { .btn-primary; .btn-primary.active; }
       }
     }
 
-    &.expanded .compact span.showing::before {
-      content: "▾ ";
+    .options .btn-group .btn {
+      // Again, .btn-group lets us down.
+      border-radius: @border-radius-base;
     }
-
-    .expanded {
-      background: white;
-      border: 1px solid @table-border-color;
-      a.collapse:first-child { display: none; }
-      a.collapse { text-align: right; }
-      padding: 1em;
-    }
-
-    legend {
-      font: inherit;
-      font-weight: bold;
-      border: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    .radio-inline label {
-      font: inherit;
-      margin: 0;
-    }
-
-    p.text-disabled { display: none; }
-
-    &:not(.can-show-document) p.text-disabled { display: block; }
-    &:not(.can-wrap) .wrap { .text-muted(); }
-
-    // Animate options in and out
-    // http://jsfiddle.net/thechrisjordan/3Fc7D/23/
-    // We have to be pretty fast, because otherwise you notice the seam
-    //
-    // With Firefox 35, setting max-height on the <fieldset> doesn't hide the
-    // <legend>; we'll set max-height on the <legend> instead
-    fieldset.options legend, fieldset.options .sidebar, fieldset.options .wrap {
-      max-height: 0;
-      min-height: 0; // Bootstrap
-      margin: 0;
-      transition: max-height .2s ease, padding .2s ease;
-      overflow: hidden;
-    }
-    fieldset.options legend { padding: 0; }
-  }
-
-  &.showing-text .preferences fieldset.options {
-    legend { padding: 10px 0 0; }
-    legend, .wrap { max-height: 3em; } // or less
-  }
-  &.showing-document .can-show-sidebar fieldset.options {
-    legend { padding: 10px 0 0; }
-    legend, .sidebar { max-height: 3em; } // or less
-  }
-
-  pre {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    border: none;
-    width: 100%;
-    height: 100%;
   }
 
   .twitter-tweet-container {
@@ -184,33 +110,48 @@
     border-bottom: 34px solid white; /* p.source padding + 1 line */
   }
 
-  pre {
-    overflow: auto;
+  .text-view .text {
+    display: flex;
+    flex-direction: column;
     background: #f8f8f8;
-    padding: 10px;
     border-top: 1px solid #ccc;
-    border-radius: 0;
+    overflow: auto;
 
-    em.highlight {
-      font-style: normal;
-      font-weight: bold;
-      background: @highlight;
+    .only-text-available {
+      color: @brand-danger;
+      border-bottom: 1px solid #ccc;
+      padding: 10px;
+      margin: 0;
+    }
 
-      &.current {
-        box-shadow: 0 0 5px 1px @brand-primary;
-        border-radius: @border-radius-small;
+    pre {
+      flex-grow: 1;
+      padding: 10px;
+      // undo Bootstrap stuff
+      border: 0;
+      margin: 0;
+      background: transparent;
+
+      &.wrap {
+        white-space: pre-wrap;
+      }
+      &:not(.wrap) {
+        // undo bootstrap code.less
+        word-break: normal;
+        word-wrap: normal;
       }
     }
   }
 
-  pre:not(.wrap) {
-    // undo bootstrap code.less
-    word-break: normal;
-    word-wrap: normal;
-  }
+  em.highlight {
+    font-style: normal;
+    font-weight: bold;
+    background: @highlight;
 
-  pre.wrap {
-    white-space: pre-wrap;
+    &.current {
+      box-shadow: 0 0 5px 1px @brand-primary;
+      border-radius: @border-radius-small;
+    }
   }
 
   div.missing-plugin {

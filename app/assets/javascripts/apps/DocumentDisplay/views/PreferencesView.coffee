@@ -10,62 +10,39 @@ define [
     className: 'preferences'
 
     template: _.template('''
-      <div class="compact">
-        <a href="#" class="expand">
-          <span class="showing"></span>
-        </a>
-      </div>
-      <div class="expanded">
-        <a href="#" class="collapse"><%- t('collapse.top') %></a>
-        <form>
-          <fieldset class="showing">
-            <legend><%- t('showing.expanded') %></legend>
-            <div class="radio-inline">
-              <label>
-                <input type="radio" name="text" value="false" checked> <%- t('text.false') %>
-              </label>
-            </div>
-            <div class="radio-inline">
-              <label>
-                <input type="radio" name="text" value="true"> <%- t('text.true') %>
-              </label>
-            </div>
-            <p class="help-block text-disabled"><%- t('text.disabled') %></p>
-          </fieldset>
-
-          <fieldset class="options">
-            <legend class="options"><%- t('options') %></legend>
-            <div class="checkbox sidebar">
-              <label>
-                <input type="checkbox" name="sidebar"> <%- t('sidebar') %>
-              </label>
-            </div>
-            <div class="checkbox wrap">
-              <label>
-                <input type="checkbox" name="wrap"> <%- t('wrap') %>
-              </label>
-            </div>
-          </fieldset>
-        </form>
-        <a href="#" class="collapse"><%- t('collapse.bottom') %></a>
+      <div class="btn-toolbar">
+        <div class="btn-group switch-text-mode" role="group">
+          <input name="text" type="checkbox"/>
+          <div class="btn-group">
+            <a class="btn btn-default text-off"><%- t('text.false') %></a>
+            <a class="btn btn-default text-on"><%- t('text.true') %></a>
+          </div>
+        </div>
+        <div class="btn-group options" role="group">
+          <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" area-expanded="false">
+              <i class="icon-cog"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" role="menu">
+              <li><a href="#"><label class="checkbox"><input type="checkbox" name="sidebar"/> <%- t('sidebar') %></label></a></li>
+              <li><a href="#"><label class="checkbox"><input type="checkbox" name="wrap"/> <%- t('wrap') %></label></a></li>
+            </ul>
+          </div>
+        </div>
       </div>
     ''')
 
     events:
       'click a.expand': '_onClickExpand'
       'click a.collapse': '_onClickCollapse'
-      'change [name=text]': '_onChangeText'
+      'click .switch-text-mode': '_onClickText'
       'change [name=sidebar]': '_onChangeSidebar'
       'change [name=wrap]': '_onChangeWrap'
 
     initialize: (options) ->
       throw 'Must pass options.preferences, a Preferences' if !options.preferences
-      throw 'Must pass options.currentCapabilities, a CurrentCapabilities' if !options.currentCapabilities
 
       @preferences = options.preferences
-      @currentCapabilities = options.currentCapabilities
-
-      @listenTo(@currentCapabilities, 'change', @render)
       @listenTo(@preferences, 'change:text', @render)
 
       @render()
@@ -73,26 +50,18 @@ define [
     render: ->
       @_initialRender() if !@ui
 
-      @$el.toggleClass('can-show-document', @currentCapabilities.get('canShowDocument') == true)
-      @$el.toggleClass('can-show-sidebar', @currentCapabilities.get('canShowSidebar') == true)
-      @$el.toggleClass('can-wrap', @currentCapabilities.get('canWrap') == true)
-      @ui.showingFieldset.attr('disabled', @currentCapabilities.get('canShowDocument') != true)
-      @ui.showing.text(@currentCapabilities.get('canShowDocument') == true && !@preferences.get('text') && t('showing.document') || t('showing.text'))
+      @ui.text.prop('checked', @preferences.get('text'))
+      @ui.sidebar.prop('checked', @preferences.get('sidebar'))
+      @ui.wrap.prop('checked', @preferences.get('wrap'))
       @
 
     _initialRender: ->
       @$el.html(@template(t: t))
 
       @ui =
-        showing: @$('span.showing')
-        showingFieldset: @$('fieldset.showing')
         text: @$('[name=text]')
         sidebar: @$('[name=sidebar]')
         wrap: @$('[name=wrap]')
-
-      @ui.text.filter("[value=#{@preferences.get('text')}]").prop('checked', true)
-      @ui.sidebar.prop('checked', @preferences.get('sidebar'))
-      @ui.wrap.prop('checked', @preferences.get('wrap'))
 
     _onClickExpand: (e) ->
       e.preventDefault()
@@ -105,8 +74,8 @@ define [
     hide: (e) ->
       @$el.removeClass('expanded')
 
-    _onChangeText: ->
-      @preferences.set(text: @ui.text.filter(':checked').val() == 'true')
+    _onClickText: ->
+      @preferences.set(text: !@preferences.get('text'))
 
     _onChangeSidebar: ->
       @preferences.set(sidebar: @ui.sidebar.prop('checked'))

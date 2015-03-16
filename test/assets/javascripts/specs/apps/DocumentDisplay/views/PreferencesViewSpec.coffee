@@ -14,20 +14,11 @@ define [
     class CurrentCapabilities extends Backbone.Model
       defaults:
         canShowDocument: null
-        canShowSidebar: null
-        canWrap: null
 
     beforeEach ->
       i18n.reset_messages_namespaced 'views.Document.show.PreferencesView',
-        'showing.document': 'showing.document'
-        'showing.text': 'showing.text'
-        'showing.expanded': 'showing.expanded'
-        'collapse.top': 'collapse.top'
-        'collapse.bottom': 'collapse.bottom'
         'text.false': 'text.false'
         'text.true': 'text.true'
-        'text.disabled': 'text.disabled'
-        'options': 'options'
         'sidebar': 'sidebar'
         'wrap': 'wrap'
 
@@ -45,40 +36,21 @@ define [
     describe 'starting with typical capabilities', ->
       beforeEach ->
         @preferences.set(text: false, sidebar: false, wrap: true)
-        @capabilities.set(canShowDocument: true, canShowSidebar: false, canWrap: true)
+        @capabilities.set(canShowDocument: true)
         @init()
 
-      it 'should expand when clicking expand', ->
-        @$('a.expand').click()
-        expect(@subject.$el).to.have.class('expanded')
-
-      it 'should collapse when clicking top collapse button', ->
-        @$('.expand').click()
-        @$('.collapse:eq(0)').click()
-        expect(@subject.$el).not.to.have.class('expanded')
-
-      it 'should collapse when clicking bottom collapse button', ->
-        @$('.expand').click()
-        @$('.collapse:eq(1)').click()
-        expect(@subject.$el).not.to.have.class('expanded')
-
-      it 'should collapse when calling hide()', ->
-        @$('.expand').click()
-        @subject.hide()
-        expect(@subject.$el).not.to.have.class('expanded')
-
       it 'should set the current preferences', ->
-        expect(@$('[name=text][value=false]')).to.be.checked
+        expect(@$('[name=text]')).not.to.be.checked
         expect(@$('[name=wrap]')).to.be.checked
         expect(@$('[name=sidebar]')).not.to.be.checked
 
       it 'should set and unset text', ->
-        @$('[name=text][value=true]').prop('checked', true).change()
-        @$('[name=text][value=false]').prop('checked', false).change()
+        @$('.text-on').click()
         expect(@preferences.get('text')).to.be.true
-        @$('[name=text][value=true]').prop('checked', false).change()
-        @$('[name=text][value=false]').prop('checked', true).change()
+        expect(@$('[name=text]')).to.be.checked
+        @$('.text-off').click()
         expect(@preferences.get('text')).to.be.false
+        expect(@$('[name=text]')).not.to.be.checked
 
       it 'should set and unset sidebar', ->
         @$('[name=sidebar]').prop('checked', true).change()
@@ -91,39 +63,3 @@ define [
         expect(@preferences.get('wrap')).to.be.false
         @$('[name=wrap]').prop('checked', true).change()
         expect(@preferences.get('wrap')).to.be.true
-
-      it 'should say when showing text (canShowDocument=false)', ->
-        @preferences.set(text: false)
-        @capabilities.set(canShowDocument: false)
-        expect(@$('span.showing')).to.have.text('showing.text')
-
-      it 'should say when showing text (text=true)', ->
-        @preferences.set(text: true)
-        expect(@$('span.showing')).to.have.text('showing.text')
-
-      it 'should say when showing document', ->
-        @preferences.set(text: false)
-        @capabilities.set(canShowDocument: true)
-        expect(@$('span.showing')).to.have.text('showing.document')
-
-      it 'should add capabilities as classes', ->
-        @capabilities.set(canShowDocument: true, canShowSidebar: true, canWrap: true)
-        expect(@subject.$el).to.have.class('can-show-document')
-        expect(@subject.$el).to.have.class('can-show-sidebar')
-        expect(@subject.$el).to.have.class('can-wrap')
-        @capabilities.set(canShowDocument: false, canShowSidebar: false, canWrap: false)
-        expect(@subject.$el).not.to.have.class('can-show-document')
-        expect(@subject.$el).not.to.have.class('can-show-sidebar')
-        expect(@subject.$el).not.to.have.class('can-wrap')
-        @capabilities.set(canShowDocument: null, canShowSidebar: null, canWrap: null)
-        expect(@subject.$el).not.to.have.class('can-show-document')
-        expect(@subject.$el).not.to.have.class('can-show-sidebar')
-        expect(@subject.$el).not.to.have.class('can-wrap')
-
-      it 'should disable the showing fieldset when canShowDocument=false', ->
-        @capabilities.set(canShowDocument: true)
-        expect(@$('fieldset.showing')).to.be.enabled
-        @capabilities.set(canShowDocument: false)
-        expect(@$('fieldset.showing')).to.be.disabled
-        @capabilities.set(canShowDocument: null)
-        expect(@$('fieldset.showing')).to.be.disabled

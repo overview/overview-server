@@ -5,5 +5,3 @@ define [ 'backbone' ], (Backbone) ->
   class CurrentCapabilities extends Backbone.Model
     defaults:
       canShowDocument: null # "no document loaded"
-      canShowSidebar: null  # "no document loaded"
-      canWrap: null         # "we don't know if the text is wide enough to wrap"

@@ -14,47 +14,43 @@ define [
     initialize: (options) ->
       throw 'Must pass options.model, a TextDocument' if !@model
       throw 'Must pass options.preferences, a Preferences' if !options.preferences
-      throw 'Must pass options.currentCapabilities, a CurrentCapabilities' if !options.currentCapabilities
 
       @preferences = options.preferences
-      @currentCapabilities = options.currentCapabilities
 
       @listenTo(@preferences, 'change:wrap', @_onChangeWrap)
       @listenTo(@model, 'change:text change:error change:highlights', @render)
       @listenTo(@model, 'change:highlightsIndex', @_renderHighlightsIndex)
-
-      $(window).on('resize.DocumentDisplay-TextView', => @_onWindowResize())
 
       @render()
 
     render: ->
       attrs = @model.attributes
 
+      @$el.empty()
+
       if attrs.error?
         @_renderError()
       else if attrs.text?
+        if @preferences.get('text') == false
+          @_renderOnlyTextAvailable()
         @_renderTextWithHighlights(attrs.text, attrs.highlights || [])
       else
         @_renderLoading()
 
-    remove: ->
-      $(window).off('resize.DocumentDisplay-TextView')
-      super()
-
     _renderLoading: ->
       @$el.html($('<div class="loading"></div>').text(t('loading')))
-      @currentCapabilities.set(canWrap: null)
       @
 
     _renderError: ->
       @$el.html($('<div class="error"></div>').text(t('error')))
-      @currentCapabilities.set(canWrap: null)
       @
+
+    _renderOnlyTextAvailable: ->
+      $p = $('<p class="only-text-available"></p>').text(t('onlyTextAvailable'))
+      @$el.append($p)
 
     # If there are no highlights, call this with highlights=[]
     _renderTextWithHighlights: (text, highlights) ->
-      @_setCanWrapFromText(text)
-
       highlighting = false
       position = 0
 
@@ -81,7 +77,7 @@ define [
       $pre = $('<pre></pre>')
         .toggleClass('wrap', @preferences.get('wrap') == true)
         .append(nodes)
-      @$el.empty().append($pre)
+      @$el.append($pre)
       @_renderHighlightsIndex()
       @
 
@@ -119,55 +115,5 @@ define [
         $current.addClass('current')
         @_scrollToHighlight($current[0])
 
-    # Returns the maximum line number of chars that fit in a <pre>
-    _calculateMaxLineLength: ->
-      return @_cachedMaxLineLength if @$el.width() == @_cachedWidth
-
-      @_cachedWidth = @$el.width()
-      $pre = $('<pre></pre>').appendTo(@el)
-      $span = $('<span></span>').appendTo($pre)
-
-      max = WrapString.length
-      min = 5
-
-      preWidth = $pre.width()
-
-      while max > min
-        mid = Math.floor((max + min) / 2)
-        mid += 1 if mid == min
-        s = WrapString.slice(0, mid)
-        $span.text(s)
-
-        if $span.width() < preWidth
-          min = mid
-        else
-          max = mid - 1
-
-      $pre.remove()
-
-      @_cachedMaxLineLength = min
-
-    # Returns true iff there is a line of text longer than maxLength chars
-    _textMaxLineLengthExceeds: (text, maxLength) ->
-      index = 0
-      while true
-        newlineIndex = text.indexOf('\n', index)
-        if newlineIndex - index > maxLength
-          return true
-        else if newlineIndex == -1
-          return text.length - index > maxLength
-        else
-          index = newlineIndex + 1
-
-    _setCanWrapFromText: (text) ->
-      maxLineLength = @_calculateMaxLineLength()
-      canWrap = @_textMaxLineLengthExceeds(text, maxLineLength)
-      @currentCapabilities.set(canWrap: canWrap)
-
     _onChangeWrap: ->
       @$('pre').toggleClass('wrap', @preferences.get('wrap') == true)
-
-    _onWindowResize: (e) ->
-      if @currentCapabilities.get('canWrap')?
-        text = @$('pre').text() || null
-        @_setCanWrapFromText(text)

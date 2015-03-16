@@ -10,9 +10,9 @@ define [
       i18n.reset_messages_namespaced 'views.Document.show.TextView',
         loading: 'loading'
         error: 'error'
+        onlyTextAvailable: 'onlyTextAvailable'
 
       @preferences = new Backbone.Model(wrap: true)
-      @capabilities = new Backbone.Model(canWrap: null)
       @$ = (args...) => @subject.$(args...)
       @model = new Backbone.Model
         text: null
@@ -87,25 +87,12 @@ define [
       @preferences.set(wrap: true)
       expect(@subject.$('pre')).to.have.class('wrap')
 
-    it 'should set currentCapabilities.canWrap=null when loading', ->
-      @model.set(text: 'foo')
-      @capabilities.set(canWrap: true)
-      @model.set(text: null)
-      expect(@capabilities.get('canWrap')).to.be.null
+    it 'should render "only text available" when the preference is to render a document', ->
+      @preferences.set(text: false)
+      @model.set(text: 'foobar')
+      expect(@subject.$('.only-text-available').text()).to.eq('onlyTextAvailable')
 
-    it 'should set currentCapabilities.canWrap=false when the text is not as wide as its container', ->
-      @$div.css(width: '3em')
-      @model.set(text: 'foo\nbar\nbaz')
-      expect(@capabilities.get('canWrap')).to.be.false
-
-    it 'should set currentCapabilities.canWrap=true when the text is wider than its container', ->
-      @$div.css(width: '3em')
-      @model.set(text: 'foo bar baz')
-      expect(@capabilities.get('canWrap')).to.be.true
-
-    it 'should set currentCapabilities.canWrap=true when the div shrinks because of window resize', ->
-      @$div.css(width: '20em')
-      @model.set(text: 'foo bar baz')
-      @$div.css(width: '3em')
-      $(window).trigger('resize')
-      expect(@capabilities.get('canWrap')).to.be.true
+    it 'should not render "only text available" normally', ->
+      @preferences.set(text: true)
+      @model.set(text: 'foobar')
+      expect(@subject.$('.only-text-available')).not.to.exist

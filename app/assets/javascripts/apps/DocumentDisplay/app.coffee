@@ -82,8 +82,6 @@ define [
       else
         @currentCapabilities.set
           canShowDocument: urlProperties?.type of ViewableDocumentTypes
-          canShowSidebar: urlProperties?.type == 'documentCloud'
-          canWrap: null
         if @currentCapabilities.get('canShowDocument') && !@preferences.get('text')
           @_renderDocument(urlProperties)
         else
