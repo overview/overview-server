@@ -78,9 +78,6 @@ define [
       @$hover_node_description = $('<div class="hover-node-description" style="display:none;"></div>')
       $div.append(@$hover_node_description) # FIXME find a better place for this
 
-      $refresh_button = $("""<div class="refresh-button"><button type="button" class="refresh"></button></div>""")
-      $div.append($refresh_button)
-
       $zoom_buttons = $(_.template('''<div class="buttons">
           <button type="button" title="<%- t('refresh') %>" class="refresh"><i class="icon-level-up"/></button>
           <button type="button" title="<%- t('zoomIn') %>" class="zoom-in"><i class="icon-zoom-in"/></button>

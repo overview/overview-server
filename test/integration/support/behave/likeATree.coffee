@@ -42,6 +42,7 @@ module.exports = (opts) ->
         .waitForDocumentListToLoad()
         .elementBy(tag: 'h3', contains: document.title).should.eventually.exist
         .elementBy(tag: 'h3', contains: document.title).click()
+        .waitForElementBy(tag: 'h2', contains: document.title, visible: true) # animate
         .elementBy(tag: 'h3', contains: 'Key words: ').should.eventually.exist
         .then(extra)
 
