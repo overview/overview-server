@@ -44,7 +44,6 @@ define [
       it 'should render nothing', ->
         expect(@view.$('h4').html()).to.eq('')
         expect(@view.$('.edit-link').html()).to.eq('')
-        expect(@view.$('input')).to.be.disabled
 
     describe 'with a loading list', ->
       beforeEach ->
@@ -59,9 +58,6 @@ define [
 
       it 'edit link', ->
         expect(@view.$('a.edit')).not.to.be.empty
-
-      it 'should render a disabled one-document toggle', ->
-        expect(@view.$('input')).to.be.disabled
 
     describe 'with a Tag', ->
       beforeEach ->
@@ -90,26 +86,10 @@ define [
         @tag.set(name: 'bar')
         expect(@view.$('h4').html()).to.eq('<strong>num_documents,4</strong> tagged bar')
 
-      it 'should toggle to one document', ->
-        @view.$('input').prop('checked', false).change()
-        expect(@state.get('oneDocumentSelected')).to.be.true
-
-      it 'should toggle back to the list', ->
-        @view.$('input').prop('checked', false).change()
-        @view.$('input').prop('checked', true).change()
-        expect(@state.get('oneDocumentSelected')).to.be.false
-
-      it 'should disable the toggle when there are no documents', ->
-        @view.setDocumentList(new DocumentList({ length: 0 }, { params: @params }))
-        expect(@view.$('input')).to.be.disabled
-
-      it 'should turn on the toggle when state oneDocumentSelected becomes true', ->
-        @state.set(oneDocumentSelected: true)
-        expect(@view.$('input')).not.to.be.checked
-
-      it 'should turn off the toggle when state oneDocumentSelected becomes false', ->
+      it 'should switch to list view from document view', ->
         @state.set(oneDocumentSelected: false)
-        expect(@view.$('input')).to.be.checked
+        @view.$('.show-list').click()
+        expect(@state.get('oneDocumentSelected')).to.be.false
 
     describe 'with a Node', ->
       beforeEach ->
@@ -146,7 +126,7 @@ define [
         }))
 
       it 'should render loading message', ->
-        expect(@view.$el.text().trim()).to.eq('loading')
+        expect(@view.$('h4').html()).to.eq('loading')
 
       it 'should render the title when done', ->
         @view.documentList.set(length: 4)

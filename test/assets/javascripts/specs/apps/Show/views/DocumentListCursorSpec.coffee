@@ -93,7 +93,7 @@ define [
 
     it 'should recognize document 0/10 as "1 of 10"', ->
       initAt(0, 10)
-      expect(view.$('div.position h4').text()).to.eq('position_html,1,10')
+      expect(view.$('div.document-nav h4').text()).to.eq('position_html,1,10')
 
     it 'should disable "previous" at 0/10', ->
       initAt(0, 10)
