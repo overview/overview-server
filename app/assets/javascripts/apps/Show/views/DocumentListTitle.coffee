@@ -1,4 +1,4 @@
-define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-toggle' ], ($, _, Backbone, i18n) ->
+define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.DocumentListTitle')
 
   getTitleHtml = (nDocuments, titleString) ->
@@ -47,22 +47,16 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-toggle' ], ($, _
     id: 'document-list-title'
 
     template: _.template('''
+      <span class="show-list-link">
+        <a href="#" class="show-list"><i class="icon-chevron-left"></i> <%- t('list') %></a>
+      </span>
       <h4></h4>
       <span class="edit-link"></span>
-      <input
-        class="show-list"
-        type="checkbox"
-        data-toggle="toggle"
-        data-on="&lt;i title='<%- t('list') %>' class='icon icon-list'&gt;&lt;/i&gt;"
-        data-off="&lt;i title='<%- t('one') %>' class='icon icon-file-text'&gt;&lt;/i&gt;"
-        data-onstyle="primary"
-        data-offstyle="primary"
-        />
     ''')
 
     events:
-      'click a.edit': '_onEditClicked'
-      'change .show-list': '_onChangeShowList'
+      'click a.edit': '_onClickEdit'
+      'click .show-list': '_onClickShowList'
 
     initialize: ->
       throw 'Must supply options.documentList, a DocumentList' if 'documentList' not of @options
@@ -80,7 +74,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-toggle' ], ($, _
         title: @$('h4')
         editLink: @$('.edit-link')
         showList: @$('.show-list')
-      @ui.showList.bootstrapToggle?()
 
     render: ->
       checked = !@state.get('oneDocumentSelected')
@@ -94,18 +87,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-toggle' ], ($, _
 
       @ui.title.html(settings.titleHtml)
       @ui.editLink.html(settings.editLinkHtml)
-      if @ui.showList.bootstrapToggle?
-        @ui.showList
-          .bootstrapToggle(checked && 'on' || 'off')
-          .bootstrapToggle(settings.nDocuments && 'enable' || 'disable')
-      else
-        @ui.showList
-          .prop('disabled', !settings.nDocuments) # 0 or null => disabled
-          .prop('checked', checked)
       @$el.attr(class: settings.className)
       @
 
-    _onEditClicked: (e) ->
+    _onClickEdit: (e) ->
       e.preventDefault()
       params = @documentList.params
 
@@ -117,8 +102,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-toggle' ], ($, _
         when 'node' then @trigger('edit-node', params.view?.onDemandTree?.getNode?(id))
         when 'tag' then @trigger('edit-tag', params.documentSet.tags?.get?(id))
 
-    _onChangeShowList: ->
-      @state.set(oneDocumentSelected: !@ui.showList.prop('checked'))
+    _onClickShowList: (e) ->
+      e.preventDefault()
+      @state.set(oneDocumentSelected: false)
 
     setDocumentList: (documentList) ->
       for object in (@transientObjectsToListenTo || [])

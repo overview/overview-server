@@ -31,7 +31,6 @@ define [
     events:
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
-      'click a.back-to-list': '_onClickBackToList'
 
     templates:
       root: _.template("""
@@ -41,12 +40,9 @@ define [
 
       header: _.template("""
         <div class="document-nav">
-          <div class="pager">
-            <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-chevron-left"></i> <span><%- t('previous') %></span></a>
-            <h4><%= t('position_html', cursorIndex + 1, nDocuments) %></h4>
-            <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><span><%- t('next') %></span> <i class="icon-chevron-right"></i></a>
-          </div>
-          <a href="#" class="back-to-list"><span><%- t('close') %></span> <b>×</b></a>
+          <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-chevron-left"></i> <span><%- t('previous') %></span></a>
+          <h4><%= t('position_html', cursorIndex + 1, nDocuments) %></h4>
+          <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><span><%- t('next') %></span> <i class="icon-chevron-right"></i></a>
         </div>
         <h2><%- title %></h2>
         <ul class="tags">
@@ -144,10 +140,6 @@ define [
 
     _onClickNext: (e) -> @_handleNextOrPrevious(e, 'next')
     _onClickPrevious: (e) -> @_handleNextOrPrevious(e, 'previous')
-
-    _onClickBackToList: (e) ->
-      e.preventDefault()
-      @trigger("close-clicked")
 
     setDocumentList: (documentList) ->
       if @documentList?

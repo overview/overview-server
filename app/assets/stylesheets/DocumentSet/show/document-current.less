@@ -10,7 +10,7 @@
   height: 100%;
   top: 0;
   left: 110%;
-  .transition(left .35s linear);
+  .transition(left .35s ease);
   overflow: hidden;
 
   background: @body-bg-dark;
@@ -21,38 +21,22 @@
 
   .document-nav {
     line-height: 1em;
-    display: flex;
+    text-align: center;
 
-    .pager {
-      flex-grow: 1;
-      text-align: center;
-
-      h4 {
-        display: inline;
-        font: inherit;
-        line-height: inherit;
-        margin: 0;
-        padding: 0;
-      }
-
-      a.previous {
-        padding-right: 1em;
-      }
-
-      a.next {
-        padding-left: 1em;
-      }
+    h4 {
+      display: inline;
+      font: inherit;
+      line-height: inherit;
+      margin: 0;
+      padding: 0;
     }
 
-    .back-to-list {
-      display: block;
-      flex-shrink: 0;
+    a.previous {
+      padding-right: 1em;
+    }
 
-      b {
-        font-size: 2em;
-        line-height: .5;
-        vertical-align: top;
-      }
+    a.next {
+      padding-left: 1em;
     }
 
     // font-awesome puts the chevron on the baseline; we want it descending

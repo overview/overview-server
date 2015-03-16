@@ -1,39 +1,51 @@
 @import "../../variables.less";
 
+#main.document-selected #document-list-title span.show-list-link {
+  max-width: 15em;
+}
+
 #document-list-title {
   padding: .25em 0;
-  .display-flex();
+  display: flex;
+  font-family: @font-family-sans-serif;
+  font-weight: normal;
+  font-size: 1.25em;
 
   h4 {
     flex-grow: 1;
+    font: inherit;
+    line-height: inherit;
     margin: 0;
-    height: 1.5em;
-    line-height: 1.5;
     white-space: nowrap;
-    font-family: @font-family-sans-serif;
-    font-weight: normal;
-    font-size: 1.5em;
-    color: @text-muted;
+    color: @text-color;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .edit-link {
     flex-shrink: 0;
+    font-size: .8em;
+    line-height: 1.25 / .8;
+
+    a {
+      .faded-link();
+      vertical-align: middle;
+      padding: 0 0 0 .5em;
+    }
   }
 
-  .show-list {
+  span.show-list-link {
     flex-shrink: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+
+    .transition(max-width .35s ease);
   }
 
-  &.search-error h4 {
-    color: @brand-danger;
-  }
-
-  a {
-    .faded-link();
-    display: inline-block;
-    cursor: pointer; // Why? Chrome 32.0.1700.68 beta still requires this...
-    padding: .5em;
+  a.show-list {
+    display: block;
+    padding: 0 1em 0 0;
+    float: right; // so animation is slide, not reveal
   }
 }

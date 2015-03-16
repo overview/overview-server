@@ -285,7 +285,6 @@ define [
       view = controller.cursorView
       view.on('next-clicked', -> go_down({}))
       view.on('previous-clicked', -> go_up({}))
-      view.on('close-clicked', -> select_all({}))
 
       # With content <a></a><b></b>, CSS can match "a:hover ~ b", but
       # there's no way to do the reverse "b:hover ~ a".
