@@ -1,6 +1,6 @@
 #tree-app-tag-this {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding-top: 5px;
 
   .prompt { display: block; }
@@ -12,17 +12,16 @@
   }
 
   a.back-to-list {
-    flex: 0 0 auto;
+    margin-right: 1em;
     line-height: @input-height-small;
+    .faded-link();
   }
   .prompt, .details {
-    flex: 1 1 auto;
     text-align: right;
   }
 
   form {
     display: flex;
-    justify-content: flex-end;
     align-items: center;
   }
 
@@ -49,6 +48,6 @@
     opacity: 1;
     font: inherit;
     float: none;
-    .text-muted();
+    .faded-link();
   }
 }
