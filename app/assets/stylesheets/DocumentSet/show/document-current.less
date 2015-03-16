@@ -19,27 +19,40 @@
   .display-flex();
   .flex-direction-column();
 
-  .position {
+  .document-nav {
     line-height: 1em;
     display: flex;
 
-    h4 {
+    .pager {
       flex-grow: 1;
-      font: inherit;
-      line-height: inherit;
-      margin: 0;
-      padding: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      text-align: center;
+
+      h4 {
+        display: inline;
+        font: inherit;
+        line-height: inherit;
+        margin: 0;
+        padding: 0;
+      }
+
+      a.previous {
+        padding-right: 1em;
+      }
+
+      a.next {
+        padding-left: 1em;
+      }
     }
 
-    a.previous {
-      padding-right: 1em;
-    }
+    .back-to-list {
+      display: block;
+      flex-shrink: 0;
 
-    a.next {
-      padding-left: 1em;
+      b {
+        font-size: 2em;
+        line-height: .5;
+        vertical-align: top;
+      }
     }
 
     // font-awesome puts the chevron on the baseline; we want it descending
