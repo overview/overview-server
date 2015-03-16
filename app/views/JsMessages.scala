@@ -3,6 +3,7 @@ package views
 import play.api.Play.current
 import play.api.libs.json.{JsObject,JsString}
 import play.api.i18n.{Lang,Messages}
+import scala.annotation.tailrec
 
 /** Embeds translated messages in a JsObject.
  *
@@ -32,14 +33,50 @@ import play.api.i18n.{Lang,Messages}
  *       window.messages = @Html(views.JsMessages(jsMessageKeys));
  *     </script>
  * }}}
+ *
+ * Or, as a shortcut:
+ * {{{
+ *     @jsMessageKeys = @{Seq("views.DocumentSet._documentSet")}
+ *     ...
+ * }}}
+ * ..., which will expand to all keys with that prefix.
+ *
  * 
  * This is wired into `main.scala.html`: just pass the `jsMessageKeys`
  * argument, a `Seq` of `String`s. You can only use one such array per page.
  */
 object JsMessages {
-  def apply(keys: Seq[String])(implicit lang: Lang) = {
-    val allMessages = Messages.messages.get("default").getOrElse(Map.empty) ++ Messages.messages.get(lang.code).getOrElse(Map.empty)
-    val messages = keys.map(k => (k -> JsString(allMessages(k))))
-    JsObject(messages).toString()
+  private def parentKey(key: String): Option[String] = {
+    val dotIndex = key.lastIndexOf('.')
+    if (dotIndex == -1) None else Some(key.substring(0, dotIndex))
+  }
+
+  @tailrec
+  private def weWantKeyRec(keySet: Set[String], keyParent: Option[String]): Boolean = keyParent match {
+    case None => false
+    case Some(key) => keySet.contains(key) || weWantKeyRec(keySet, parentKey(key))
+  }
+
+  /** true iff key is allowed by keySet. */
+  private def weWantKey(keySet: Set[String], key: String): Boolean = {
+    keySet.contains(key) || weWantKeyRec(keySet, parentKey(key))
+  }
+
+  /** Returns a JSON object with translations for some strings.
+    *
+    * Not that this is a bottleneck, but it really ought to be memoized
+    * somehow.
+    */
+  def apply(keys: Seq[String])(implicit lang: Lang): String = {
+    val keySet = keys.toSet
+
+    val m = Messages.messages
+    val allMessages = m.get("default").getOrElse(Map.empty) ++ m.get(lang.code).getOrElse(Map.empty)
+
+    val jsMessages: Seq[(String,JsString)] = allMessages
+      .filterKeys(weWantKey(keySet, _))
+      .mapValues(JsString.apply _)
+      .toSeq
+    JsObject(jsMessages).toString
   }
 }
