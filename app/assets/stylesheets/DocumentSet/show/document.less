@@ -67,32 +67,57 @@
     position: absolute;
     z-index: 1;
     top: -@btn-height;
-    right: 5px;
-    line-height: 1.5em;
+    right: 0;
+    line-height: 2em;
 
     .switch-text-mode {
-      display: block;
-      position: relative;
+      display: inline-block;
 
       input { display: none; }
 
       .text-off {
-        // Bootstrap's nested .btn-group is a bit buggy on this front
-        border-bottom-left-radius: @border-radius-base;
+        border: 1px solid #ccc;
         border-top-left-radius: @border-radius-base;
+        border-bottom-left-radius: @border-radius-base;
+      }
+      .text-on {
+        border: 1px solid #ccc;
+        border-left: none;
+        border-top-right-radius: @border-radius-base;
+        border-bottom-right-radius: @border-radius-base;
       }
 
-      input:not(:checked) + .btn-group {
-        .text-off { .btn-primary; .btn-primary.active; }
+      .text-off, .text-on {
+        display: inline-block;
+        background: white;
+        color: @text-muted;
+        text-decoration: none;
+        padding: 0 .6em;
+        cursor: pointer;
       }
-      input:checked + .btn-group {
-        .text-on { .btn-primary; .btn-primary.active; }
+
+      input:not(:checked) + .text-off, input:checked + .text-off + .text-on {
+        text-shadow: 0 0 2px @text-color;
+        background-color: @brand-primary;
+        color: white;
       }
     }
 
-    .options .btn-group .btn {
-      // Again, .btn-group lets us down.
-      border-radius: @border-radius-base;
+    .options {
+      display: inline-block;
+      position: relative;
+      top: 2px; // 1px for the .switch-text-mode border; another 1px to look good.
+
+      a.dropdown-toggle {
+        display: block;
+        font-size: 1.25em;
+        padding: 0 .6em;
+      }
+
+      label {
+        font: inherit;
+        cursor: pointer;
+      }
     }
   }
 

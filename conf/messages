@@ -198,11 +198,11 @@ views.Document.show.FindView.previousHighlight=Highlight previous match
 views.Document.show.PreferencesView.sidebar=Show sidebar in DocumentCloud
 views.Document.show.PreferencesView.text.disabled=Overview can only show this document as plain text
 views.Document.show.PreferencesView.text.false=Document
-views.Document.show.PreferencesView.text.true=Plain text
-views.Document.show.PreferencesView.wrap=Wrap long lines of plain text
+views.Document.show.PreferencesView.text.true=Text
+views.Document.show.PreferencesView.wrap=Wrap long lines of text
 views.Document.show.TextView.error=We could not load the document text. Try refreshing the page.
 views.Document.show.TextView.loading=Loading text…
-views.Document.show.TextView.onlyTextAvailable=We only offer text view for this document.
+views.Document.show.TextView.onlyTextAvailable=Only text view is available for this document.
 
 views.DocumentCloudImportJob.new.title=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.h1=Import documents from DocumentCloud

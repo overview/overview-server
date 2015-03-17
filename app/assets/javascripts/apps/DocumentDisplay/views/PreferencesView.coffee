@@ -10,25 +10,17 @@ define [
     className: 'preferences'
 
     template: _.template('''
-      <div class="btn-toolbar">
-        <div class="btn-group switch-text-mode" role="group">
-          <input name="text" type="checkbox"/>
-          <div class="btn-group">
-            <a class="btn btn-default text-off"><%- t('text.false') %></a>
-            <a class="btn btn-default text-on"><%- t('text.true') %></a>
-          </div>
-        </div>
-        <div class="btn-group options" role="group">
-          <div class="btn-group">
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" area-expanded="false">
-              <i class="icon-cog"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-right" role="menu">
-              <li><a href="#"><label class="checkbox"><input type="checkbox" name="sidebar"/> <%- t('sidebar') %></label></a></li>
-              <li><a href="#"><label class="checkbox"><input type="checkbox" name="wrap"/> <%- t('wrap') %></label></a></li>
-            </ul>
-          </div>
-        </div>
+      <div class="switch-text-mode"><input name="text" type="checkbox"
+        /><a class="text-off"><%- t('text.false') %></a><a class="text-on"><%- t('text.true') %></a
+      ></div
+      ><div class="options">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+          <i class="icon-cog"></i>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-right" role="menu">
+          <li><a href="#"><label class="checkbox"><input type="checkbox" name="sidebar"/> <%- t('sidebar') %></label></a></li>
+          <li><a href="#"><label class="checkbox"><input type="checkbox" name="wrap"/> <%- t('wrap') %></label></a></li>
+        </ul>
       </div>
     ''')
 
