@@ -9,6 +9,7 @@ import org.specs2.mutable.Before
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import org.specs2.mock.Mockito
+import org.overviewproject.models.Document
 
 class RequestDocumentIdsSpec extends Specification with Mockito {
 
@@ -42,7 +43,8 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
   }
 
   class TestRequestDocumentIds(override val documentIdSupplier: ActorRef, next: TaskStep) extends RequestDocumentIds {
-    override protected val document = smartMock[PdfFileDocumentData]
-    override protected def nextStepForResponse(documentSetIds: Seq[Long]) = next
+    override protected val documentData = Seq(smartMock[PdfFileDocumentData])
+    override protected val documentSetId: Long = 1l
+    override protected def nextStep(documents: Seq[Document]) = next
   }
 }

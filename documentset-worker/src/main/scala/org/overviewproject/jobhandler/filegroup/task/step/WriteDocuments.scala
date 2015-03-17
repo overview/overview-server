@@ -27,7 +27,7 @@ trait WriteDocuments extends TaskStep {
 
 object WriteDocuments {
 
-  def apply(document: Document): WriteDocuments = new WriteDocumentsImpl(Seq(document))
+  def apply(documents: Seq[Document]): WriteDocuments = new WriteDocumentsImpl(documents)
   
   private class WriteDocumentsImpl(
     override protected val documents: Seq[Document]) extends WriteDocuments {

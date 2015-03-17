@@ -6,61 +6,75 @@ import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.models.File
 import scala.util.{ Failure, Success, Try }
 
-
-
 trait ExtractTextFromPdf extends TaskStep {
 
   protected val file: File
-  
+
   protected val pdfProcessor: PdfProcessor
-  protected def nextStep(document: PdfFileDocumentData): TaskStep 
-  
+  protected def nextStep(documentData: Seq[PdfFileDocumentData]): TaskStep
+
   override def execute: Future[TaskStep] = toFuture(nextStep(getDocumentInfo))
-  
-  private def getDocumentInfo: PdfFileDocumentData = {
+
+  private def getDocumentInfo: Seq[PdfFileDocumentData] = {
     val pdfDocument = pdfProcessor.loadFromBlobStorage(file.contentsLocation)
     val text = pdfDocument.text
-    
-    PdfFileDocumentData(file.name, file.id, text)
+
+    Seq(PdfFileDocumentData(file.name, file.id, text))
   }
-  
+
   // FIXME: replace with Future.fromTry in Scala 2.11
-  private def toFuture(f: => TaskStep): Future[TaskStep] = 
+  private def toFuture(f: => TaskStep): Future[TaskStep] =
     Try(f) match {
-    case Success(v) => Future.successful(v)
-    case Failure(e) => Future.failed(e)
-  }
-  
+      case Success(v) => Future.successful(v)
+      case Failure(e) => Future.failed(e)
+    }
+
   trait PdfProcessor {
     // should return Future[PdfDocument]
     def loadFromBlobStorage(location: String): PdfDocument
   }
 }
 
-
 object ExtractTextFromPdf {
   import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
-  
-  def apply(documentSetId: Long, file: File): ExtractTextFromPdf = 
-    new ExtractTextFromPdfImpl(documentSetId, file)
-  
-  private class ExtractTextFromPdfImpl(
-      documentSetId: Long,
-      override protected val file: File) extends ExtractTextFromPdf {
-    
-    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl 
-    
-    override protected def nextStep(document: PdfFileDocumentData): TaskStep = {
-      def generateNextStep(documentIds: Seq[Long]) = 
-        WriteDocuments(document.toDocument(documentSetId, documentIds.head))
-        
-      WaitForResponse(generateNextStep)
+
+  def apply(documentSetId: Long, file: File, next: Seq[PdfFileDocumentData] => TaskStep): ExtractTextFromPdf =
+    new ExtractTextFromPdfImpl(documentSetId, file, next)
+
+  private class ExtractTextFromPdfImpl(documentSetId: Long,
+                                        override protected val file: File,
+                                        next: Seq[PdfFileDocumentData] => TaskStep) extends ExtractTextFromPdf {
+    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
+
+    override protected def nextStep(documentData: Seq[PdfFileDocumentData]): TaskStep = {
+      next(documentData)
     }
-      
-      
     private class PdfProcessorImpl extends PdfProcessor {
       override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
     }
 
   }
+
+//  def apply(documentSetId: Long, file: File): ExtractTextFromPdf =
+//    new ExtractTextFromPdfImpl(documentSetId, file)
+//
+//  private class ExtractTextFromPdfImpl(
+//    documentSetId: Long,
+//    override protected val file: File) extends ExtractTextFromPdf {
+//
+//    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
+//
+//    override protected def nextStep(document: PdfFileDocumentData): TaskStep = {
+//      def generateNextStep(documentIds: Seq[Long]) =
+//        WriteDocuments(document.toDocument(documentSetId, documentIds.head))
+//
+//      WaitForResponse(generateNextStep)
+//    }
+//
+//    private class PdfProcessorImpl extends PdfProcessor {
+//      override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
+//    }
+//
+//  }
+
 }

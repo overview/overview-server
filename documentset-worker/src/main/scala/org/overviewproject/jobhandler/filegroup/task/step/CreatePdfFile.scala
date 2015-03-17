@@ -74,6 +74,6 @@ object CreatePdfFile {
       new BufferedInputStream(is, LargeObjectBufferSize)
     }
     
-    override protected def nextStep(file: File) = ExtractTextFromPdf(documentSetId, file)
+    override protected def nextStep(file: File) = ExtractTextFromPdf(documentSetId, file, null)
   }
 }

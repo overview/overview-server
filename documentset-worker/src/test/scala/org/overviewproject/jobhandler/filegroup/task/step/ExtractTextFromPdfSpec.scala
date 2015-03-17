@@ -19,7 +19,7 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
         case NextStep(d) => d
       }
       
-      r must be_==(PdfFileDocumentData(fileName, fileId, text)).await
+      r must be_==(List(PdfFileDocumentData(fileName, fileId, text))).await
     }
     
     "return failure on error" in new FailingTextExtractionScope {
@@ -62,12 +62,12 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
     }
   }
   
-  case class NextStep(document: PdfFileDocumentData) extends TaskStep {
+  case class NextStep(document: Seq[PdfFileDocumentData]) extends TaskStep {
     override def execute = Future.successful(this)
   }
   
   class TestExtractFromPdf(val file: File, pdfDocument: PdfDocument) extends ExtractTextFromPdf {
-    override def nextStep(document: PdfFileDocumentData) = NextStep(document)
+    override def nextStep(documentData: Seq[PdfFileDocumentData]) = NextStep(documentData)
     override protected val pdfProcessor = smartMock[PdfProcessor]
     
     pdfProcessor.loadFromBlobStorage(any) returns pdfDocument
