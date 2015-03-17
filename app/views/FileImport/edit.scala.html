@@ -25,10 +25,9 @@
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"))
   } {
-    <p class="instructions">@m("instructions1", documentSet.title)</p>
+    <p class="instructions">@Html(m("addingTo_html", HtmlFormat.escape(documentSet.title)))</p>
     <form class="file-import" method="post" action="@routes.MassUploadController.startClusteringExistingDocumentSet(documentSet.id)">
       @helper.Form.csrfToken
     </form>
-    <p class="instructions">@m("instructions2")</p>
   }
 }

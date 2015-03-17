@@ -423,8 +423,7 @@ views.FileImport.new.help2=You must import at least three documents.
 
 views.FileImport.edit.title=Add files to document set
 views.FileImport.edit.h1=Add files to document set
-views.FileImport.edit.instructions1=Select some files to upload to your document set, “{0}”.
-views.FileImport.edit.instructions2=When the upload finishes, Overview will create a new Tree view, including old and new documents.
+views.FileImport.edit.addingTo_html=Adding to document set: <strong>{0}</strong>
 views.FileImport.edit.help1=Overview can read many file formats, including PDF, Word, HTML and text.
 
 views.Tree.show.DocumentList.description.empty=(no key words)
