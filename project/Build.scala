@@ -36,7 +36,7 @@ object ApplicationBuild extends Build with ProjectSettings {
   val workerJavaOpts = Seq("-Dlogback.configurationFile=workerdevlog.xml")
 
   val ourTestOptions = Seq(
-    //Tests.Argument(TestFrameworks.Specs2, "xonly"),
+    Tests.Argument(TestFrameworks.Specs2, "xonly"),
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
     Tests.Argument("junitxml", "console")
   )
