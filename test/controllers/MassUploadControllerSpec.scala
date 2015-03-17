@@ -185,6 +185,64 @@ class MassUploadControllerSpec extends ControllerSpecification {
     }
   }
 
+  "#startClusteringExistingDocumentSet" should {
+    // XXX See how much of a hack this is? That's because we're combining two
+    // actions in one, all the way down the stack (add files + cluster).
+    //
+    // TODO make adding files and clustering two different things, so we can do
+    // everything with half the tests.
+    trait StartClusteringExistingDocumentSetScope extends BaseScope {
+      val fileGroupName = "This does *not* become the Document Set Name"
+      val lang = "sv"
+      val splitDocuments = false
+      val splitDocumentsString = s"$splitDocuments"
+      val stopWords = "ignore these words"
+      val importantWords = "important words?"
+      def formData = Seq(
+        "name" -> fileGroupName,
+        "lang" -> lang,
+        "split_documents" -> splitDocumentsString,
+        "supplied_stop_words" -> stopWords,
+        "important_words" -> importantWords
+      )
+      val documentSetId = 11L
+      val job = factory.documentSetCreationJob()
+      val user = User(id=123L, email="start-user@example.org")
+      val fileGroup = factory.fileGroup(id=234L)
+      val documentSet = factory.documentSet(id=documentSetId)
+
+      mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
+      mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
+      mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
+      mockMessageQueue.startClustering(any, any) returns Future(())
+
+      lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
+      lazy val result = controller.startClusteringExistingDocumentSet(documentSetId)(request)
+    }
+
+    "redirect" in new StartClusteringExistingDocumentSetScope {
+      h.status(result) must beEqualTo(h.SEE_OTHER)
+    }
+
+    "create a DocumentSetCreationJob" in new StartClusteringExistingDocumentSetScope {
+      h.status(result)
+      there was no(mockStorage).createDocumentSet(any, any, any)
+      there was one(mockStorage).createMassUploadDocumentSetCreationJob(
+        documentSetId, 234L, lang, false, stopWords, importantWords)
+    }
+
+    "send a ClusterFileGroup message" in new StartClusteringExistingDocumentSetScope {
+      h.status(result)
+      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, fileGroupName)
+    }
+
+    "return NotFound if user has no FileGroup in progress" in new StartClusteringExistingDocumentSetScope {
+      mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
+      h.status(result) must beEqualTo(h.NOT_FOUND)
+      there was no(mockMessageQueue).startClustering(any, any)
+    }
+  }
+
   "#cancel" should {
     trait CancelScope extends BaseScope {
       mockFileGroupBackend.destroy(any) returns Future.successful(())

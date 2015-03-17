@@ -25,6 +25,6 @@
   "views.Document.show",
   "views.InlineTagList"
 )}
-@main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+@main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys, optionalDocumentSet=Some(documentSet.toDocumentSet)) {
   <div id="main" data-is-searchable="@isSearchable" data-tooltips-enabled="@user.treeTooltipsEnabled"></div>
 }

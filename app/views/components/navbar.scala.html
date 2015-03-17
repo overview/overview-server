@@ -1,5 +1,6 @@
 @(
-  optionalUser: Option[User]
+  optionalUser: Option[User],
+  optionalDocumentSet: Option[org.overviewproject.models.DocumentSet]=None
 )(
   implicit lang: Lang
 )
@@ -7,7 +8,25 @@
 @defining(scopedMessages("views.components.navbar")) { m =>
   <nav>
     <header>
-      <a href="@routes.WelcomeController.show()"><img class="logo" src="@routes.Assets.at("images/logo-small.png")" alt="@Messages("brand.name")" /></a>
+      @optionalDocumentSet match {
+        case Some(documentSet) => {
+          <a class="logo" href="@routes.WelcomeController.show()"><img class="logo" src="@routes.Assets.at("images/logo-icon-small.png")" alt="@Messages("brand.name")" /></a>
+          <div class="dropdown">
+            <a href="#" class="title dropdown-toggle" data-toggle="dropdown">
+              <strong>@documentSet.title</strong>
+              <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+              <li><a href="@routes.FileImportController.edit(documentSet.id)">
+                @m("add.files")
+              </a></li>
+            </ul>
+          </div>
+        }
+        case None => {
+          <a class="logo" href="@routes.WelcomeController.show()"><img class="logo" src="@routes.Assets.at("images/logo-small.png")" alt="@Messages("brand.name")" /></a>
+        }
+      }
     </header>
     <div class="all">
       <ul>

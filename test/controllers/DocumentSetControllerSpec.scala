@@ -181,7 +181,10 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
     "show" should {
       trait ValidShowScope extends BaseScope {
-        mockStorage.findDocumentSet(1) returns Some(mock[DocumentSet])
+        val badDocumentSet = smartMock[DocumentSet]
+        val documentSet = smartMock[org.overviewproject.models.DocumentSet]
+        badDocumentSet.toDocumentSet returns documentSet
+        mockStorage.findDocumentSet(1) returns Some(badDocumentSet)
         val documentSetId = 1L
         def request = fakeAuthorizedRequest
         lazy val result = controller.show(documentSetId)(request)

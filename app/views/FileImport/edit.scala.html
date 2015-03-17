@@ -1,5 +1,6 @@
 @(
   user: User,
+  documentSet: org.overviewproject.models.DocumentSet,
   nOwnedDocumentSets: Int
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
@@ -19,13 +20,15 @@
   "views.DocumentSet._uploadProgress"
 )}
 
-@defining(scopedMessages("views.FileImport.new")) { m =>
+@defining(scopedMessages("views.FileImport.edit")) { m =>
   @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="file-import-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
-    @views.html.components.helpBox(m("help1"), m("help2"))
+    @views.html.components.helpBox(m("help1"))
   } {
-    <form class="file-import" method="post" action="@routes.MassUploadController.startClustering">
+    <p class="instructions">@m("instructions1", documentSet.title)</p>
+    <form class="file-import" method="post" action="@routes.MassUploadController.startClusteringExistingDocumentSet(documentSet.id)">
       @helper.Form.csrfToken
     </form>
+    <p class="instructions">@m("instructions2")</p>
   }
 }

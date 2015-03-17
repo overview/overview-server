@@ -31,19 +31,21 @@ HEAD   /uploads/:uuid        controllers.UploadController.show(uuid: java.util.U
 POST   /uploads/:uuid        controllers.UploadController.create(uuid: java.util.UUID)
 POST   /uploads/:uuid/finish controllers.UploadController.startClustering(uuid: java.util.UUID)
 
-POST   /files/finish  controllers.MassUploadController.startClustering()
-HEAD   /files/:guid   controllers.MassUploadController.show(guid: java.util.UUID)
-POST   /files/:guid   controllers.MassUploadController.create(guid: java.util.UUID)
-DELETE /files         controllers.MassUploadController.cancel()
+POST   /files/finish     controllers.MassUploadController.startClustering()
+POST   /files/finish/:id controllers.MassUploadController.startClusteringExistingDocumentSet(id: Long)
+HEAD   /files/:guid      controllers.MassUploadController.show(guid: java.util.UUID)
+POST   /files/:guid      controllers.MassUploadController.create(guid: java.util.UUID)
+DELETE /files            controllers.MassUploadController.cancel()
 
 GET    /imports.json controllers.ImportJobController.index()
 
-GET    /imports/csv                        controllers.CsvUploadController.new_()
-GET    /imports/file                       controllers.FileImportController.new_()
-GET    /imports/documentcloud-project      controllers.DocumentCloudProjectController.index()
-POST   /imports/documentcloud              controllers.DocumentCloudImportJobController.create()
-GET    /imports/documentcloud/new/:query   controllers.DocumentCloudImportJobController.new_(query: String)
-POST   /imports/clone/:sourceDocumentSetId controllers.CloneImportJobController.create(sourceDocumentSetId: Long)
+GET    /imports/csv                          controllers.CsvUploadController.new_()
+GET    /imports/file                         controllers.FileImportController.new_()
+GET    /imports/file/add-to-document-set/:id controllers.FileImportController.edit(id: Long)
+GET    /imports/documentcloud-project        controllers.DocumentCloudProjectController.index()
+POST   /imports/documentcloud                controllers.DocumentCloudImportJobController.create()
+GET    /imports/documentcloud/new/:query     controllers.DocumentCloudImportJobController.new_(query: String)
+POST   /imports/clone/:sourceDocumentSetId   controllers.CloneImportJobController.create(sourceDocumentSetId: Long)
 
 DELETE /trees/jobs/:jobId controllers.ReclusterJobController.delete(jobId: Long)
 
@@ -129,11 +131,11 @@ DELETE /plugins/:id controllers.PluginController.destroy(id: java.util.UUID)
 # Each is documented at https://github.com/overview/overview-server/wiki/API-v1
 GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(id: Long)
 
-GET    /api/v1/files         controllers.api.MassUploadController.index()
-POST   /api/v1/files/finish  controllers.api.MassUploadController.startClustering()
-HEAD   /api/v1/files/:guid   controllers.api.MassUploadController.show(guid: java.util.UUID)
-POST   /api/v1/files/:guid   controllers.api.MassUploadController.create(guid: java.util.UUID)
-DELETE /api/v1/files         controllers.api.MassUploadController.cancel()
+GET    /api/v1/files        controllers.api.MassUploadController.index()
+POST   /api/v1/files/finish controllers.api.MassUploadController.startClustering()
+HEAD   /api/v1/files/:guid  controllers.api.MassUploadController.show(guid: java.util.UUID)
+POST   /api/v1/files/:guid  controllers.api.MassUploadController.create(guid: java.util.UUID)
+DELETE /api/v1/files        controllers.api.MassUploadController.cancel()
 
 GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
 GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)

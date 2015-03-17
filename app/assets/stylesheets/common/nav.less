@@ -50,14 +50,27 @@ nav {
 
   header {
     float: left;
-    font-family: Montserrat, Verdana, Helvetica, Arial, sans-serif;
-    font-size: @maxFontSize;
     font-weight: bold;
-    letter-spacing: .3em;
-    text-transform: uppercase;
 
-    a {
+    a.logo {
       .styled-a();
+      padding: 0;
+      display: inline-block;
+    }
+
+    div.dropdown {
+      display: inline-block;
+
+      &>a {
+        display: block; // more clickable
+        padding: 0 .5em;
+        font-size: 1.25em;
+        line-height: 2; // found by trial and error
+
+        // Underline shouldn't include space before caret
+        text-decoration: none;
+        &:hover strong { text-decoration: underline; }
+      }
     }
   }
 

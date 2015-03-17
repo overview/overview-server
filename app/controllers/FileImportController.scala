@@ -1,29 +1,31 @@
 package controllers
 
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.anyUser
-import models.orm.finders.DocumentSetFinder
+import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
+import controllers.backend.DocumentSetBackend
 
 trait FileImportController extends Controller {
-  trait Storage {
-    def countUserOwnedDocumentSets(user: String) : Long
+  val documentSetBackend: DocumentSetBackend
+
+  def new_ = AuthorizedAction(anyUser).async { implicit request =>
+    for {
+      count <- documentSetBackend.countByUserEmail(request.user.email)
+    } yield Ok(views.html.FileImport.new_(request.user, count))
   }
 
-  def new_() = AuthorizedAction.inTransaction(anyUser) { implicit request =>
-    val count = storage.countUserOwnedDocumentSets(request.user.email)
+  def edit(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    val documentSetFuture = documentSetBackend.show(documentSetId)
+      .map(_.getOrElse(throw new Exception(s"DocumentSet $documentSetId disappeared!")))
 
-    Ok(views.html.FileImport.new_(request.user, count))
+    for {
+      documentSet <- documentSetFuture
+      count <- documentSetBackend.countByUserEmail(request.user.email)
+    } yield Ok(views.html.FileImport.edit(request.user, documentSet, count))
   }
-
-  val storage : Storage
 }
 
 object FileImportController extends FileImportController {
-  object DatabaseStorage extends FileImportController.Storage {
-    override def countUserOwnedDocumentSets(owner: String) = {
-      DocumentSetFinder.byOwner(owner).count
-    }
-  }
-
-  override val storage = DatabaseStorage
+  override val documentSetBackend = DocumentSetBackend
 }

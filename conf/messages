@@ -130,6 +130,7 @@ views.components.importNav.copy=Copy a document set:
 views.components.importNav.copy.public=Copy an example document set
 views.components.importNav.copy.shared=Copy document sets shared with you
 
+views.components.navbar.add.files=Upload more documents (experimental)
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_admin_plugins=Plugins
 views.components.navbar.link_admin_users=Users
@@ -419,6 +420,12 @@ views.FileImport.new.title=Upload files
 views.FileImport.new.h1=Upload files
 views.FileImport.new.help1=Overview can read many file formats, including PDF, Word, HTML and text.
 views.FileImport.new.help2=You must import at least three documents.
+
+views.FileImport.edit.title=Add files to document set
+views.FileImport.edit.h1=Add files to document set
+views.FileImport.edit.instructions1=Select some files to upload to your document set, “{0}”.
+views.FileImport.edit.instructions2=When the upload finishes, Overview will create a new Tree view, including old and new documents.
+views.FileImport.edit.help1=Overview can read many file formats, including PDF, Word, HTML and text.
 
 views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words: {0}

@@ -6,7 +6,7 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{EssentialAction, Result}
 import scala.concurrent.{Future,blocking}
 
-import controllers.auth.Authorities.anyUser
+import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
 import controllers.auth.{AuthorizedAction,SessionFactory}
 import controllers.backend.{ FileGroupBackend, GroupedFileUploadBackend }
 import controllers.forms.MassUploadControllerForm
@@ -105,6 +105,18 @@ trait MassUploadController extends Controller {
     )
   }
 
+  /** Marks the FileGroup as <tt>completed</tt> and kicks off a
+    * DocumentSetCreationJob.
+    *
+    * Does <em>not</em> create a DocumentSet.
+    */
+  def startClusteringExistingDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { request =>
+    MassUploadControllerForm().bindFromRequest()(request).fold(
+      e => Future(BadRequest),
+      startClusteringFileGroupWithDocumentSetAndOptions(request.user.email, id, _)
+    )
+  }
+
   /** Cancels the upload and notify the worker to delete all uploaded files
     *
     * TODO refactor into MassUploadControllerMethods
@@ -143,6 +155,29 @@ trait MassUploadController extends Controller {
           .map(_ => Redirect(routes.DocumentSetController.index()))
       }
       case None => Future.successful(NotFound)
+    })
+  }
+
+  // Yaaaay, copy/pasting! :)
+  private def startClusteringFileGroupWithDocumentSetAndOptions(
+    userEmail: String,
+    documentSetId: Long,
+    options: (String, String, Boolean, String, String)
+  ): Future[Result] = {
+    val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
+
+    fileGroupBackend.find(userEmail, None).flatMap(_ match {
+      case None => Future.successful(NotFound)
+      case Some(fileGroup) => {
+        val job: DocumentSetCreationJob = blocking(OverviewDatabase.inTransaction {
+          storage.createMassUploadDocumentSetCreationJob(
+            documentSetId, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
+        })
+
+        fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
+          .map(_ => messageQueue.startClustering(job, name))
+          .map(_ => Redirect(routes.DocumentSetController.index()))
+      }
     })
   }
 }

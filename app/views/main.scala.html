@@ -4,7 +4,8 @@
   bodyClass: String="default",
   h1: String="",
   javascripts: Html=Html(""),
-  jsMessageKeys: Seq[String]=Seq()
+  jsMessageKeys: Seq[String]=Seq(),
+  optionalDocumentSet: Option[org.overviewproject.models.DocumentSet]=None
 )(
   content: Html
 )(
@@ -45,7 +46,7 @@
       </div>
     <![endif]-->
 
-    @views.html.components.navbar(optionalUser)
+    @views.html.components.navbar(optionalUser, optionalDocumentSet)
 
     @if(flash.data.nonEmpty) {
       <div id="flash" class="container">
