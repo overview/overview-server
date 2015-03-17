@@ -33,8 +33,6 @@ define [
 
       @el = options.mainEl
 
-      # TODO remove searchDisabled entirely
-      @searchDisabled = @el.getAttribute('data-is-searchable') == 'false'
       @tourEnabled = @el.getAttribute('data-tooltips-enabled') == 'true'
 
       transactionQueue = @_initializeTransactionQueue()
@@ -119,10 +117,6 @@ define [
 
       $(@el).html(html)
 
-      if @searchDisabled
-        $('#tree-app-search').remove()
-        $('#tree-app-left').addClass('search-disabled')
-
       el = (id) -> document.getElementById(id)
 
       main: @el
@@ -183,11 +177,10 @@ define [
         state: state
         el: els.tags
 
-      if !@searchDisabled
-        search_result_list_controller
-          documentSet: documentSet
-          state: state
-          el: els.search
+      search_result_list_controller
+        documentSet: documentSet
+        state: state
+        el: els.search
 
       @_listenForRefocus()
       @_listenForResize(els.document)

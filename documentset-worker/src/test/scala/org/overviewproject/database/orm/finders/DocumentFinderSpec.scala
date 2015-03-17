@@ -1,6 +1,6 @@
 package org.overviewproject.database.orm.finders
 
-import org.overviewproject.test.DbSetup._
+import org.overviewproject.test.DbSetup.{insertDocumentSet,insertDocuments}
 import org.overviewproject.test.DbSpecification
 
 class DocumentFinderSpec extends DbSpecification {

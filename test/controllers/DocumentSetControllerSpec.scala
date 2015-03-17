@@ -202,16 +202,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       "return some HTML when okay" in new ValidShowScope {
         h.contentType(result) must beSome("text/html")
       }
-
-      "return data-is-searchable=false when it is not" in new ValidShowScope {
-        mockStorage.isDocumentSetSearchable(any[DocumentSet]) returns false
-        h.contentAsString(result) must contain("""<div id="main" data-is-searchable="false"""")
-      }
-
-      "return data-is-searchable=true when it is" in new ValidShowScope {
-        mockStorage.isDocumentSetSearchable(any[DocumentSet]) returns true
-        h.contentAsString(result) must contain("""<div id="main" data-is-searchable="true"""")
-      }
     }
 
     "index" should {

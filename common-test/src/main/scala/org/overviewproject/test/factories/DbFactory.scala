@@ -7,7 +7,6 @@ import scala.slick.jdbc.UnmanagedSession
 import org.overviewproject.models.tables._
 import org.overviewproject.models._
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
-import org.overviewproject.util.DocumentSetVersion
 import scala.slick.lifted.AbstractTable
 
 
@@ -101,7 +100,6 @@ class DbFactory(connection: Connection) extends Factory {
     documentProcessingErrorCount: Int = 3,
     importOverflowCount: Int = 2,
     uploadedFileId: Option[Long] = None,
-    version: Int = DocumentSetVersion.current,
     deleted: Boolean = false
   ) = q.insertDocumentSet += podoFactory.documentSet(
     id,
@@ -113,7 +111,6 @@ class DbFactory(connection: Connection) extends Factory {
     documentProcessingErrorCount,
     importOverflowCount,
     uploadedFileId,
-    version,
     deleted
   )
 

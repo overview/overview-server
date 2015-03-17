@@ -70,8 +70,7 @@ trait DocumentSetController extends Controller {
     storage.findDocumentSet(id) match {
       case None => NotFound
       case Some(documentSet) => {
-        val isSearchable = storage.isDocumentSetSearchable(documentSet)
-        Ok(views.html.DocumentSet.show(request.user, documentSet, isSearchable))
+        Ok(views.html.DocumentSet.show(request.user, documentSet))
       }
     }
   }
@@ -228,13 +227,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
 
     /** All Tags for the document set. */
     def findTags(documentSetId: Long) : Iterable[Tag]
-
-    /** Returns true iff we can search the document set.
-      *
-      * This is a '''hack'''. All document sets ''should'' be searchable, but
-      * document sets imported before indexing was implemented are not.
-      */
-    def isDocumentSetSearchable(documentSet: DocumentSet): Boolean
   }
 
   trait JobMessageQueue {
@@ -243,8 +235,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
   }
 
   object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
-    private val FirstSearchableDocumentSetVersion = 2
-
     override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
 
     override def findNTreesByDocumentSets(documentSetIds: Seq[Long]) = {
@@ -309,8 +299,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     override def findTags(documentSetId: Long) = {
       TagFinder.byDocumentSet(documentSetId).toSeq
     }
-
-    override def isDocumentSetSearchable(documentSet: DocumentSet) = documentSet.version >= FirstSearchableDocumentSetVersion
   }
 
   object ApolloJobMessageQueue extends JobMessageQueue with DocumentSetDeletionJobMessageQueue

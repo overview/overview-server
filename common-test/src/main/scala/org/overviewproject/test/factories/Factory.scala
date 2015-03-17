@@ -5,7 +5,6 @@ import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import org.overviewproject.models._
 import org.overviewproject.tree.orm.{ Document => DeprecatedDocument }
-import org.overviewproject.util.DocumentSetVersion
 
 /**
  * Creates models simply.
@@ -71,7 +70,6 @@ trait Factory {
     documentProcessingErrorCount: Int = 3,
     importOverflowCount: Int = 2,
     uploadedFileId: Option[Long] = None,
-    version: Int = DocumentSetVersion.current,
     deleted: Boolean = false): DocumentSet
 
   def documentSetUser(

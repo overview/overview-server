@@ -14,7 +14,6 @@ case class DocumentSet(
   documentProcessingErrorCount: Int,
   importOverflowCount: Int,
   uploadedFileId: Option[Long],
-  version: Int,
   deleted: Boolean
 ) {
   def toDeprecatedDocumentSet = DeprecatedDocumentSet(
@@ -27,7 +26,6 @@ case class DocumentSet(
     documentProcessingErrorCount,
     importOverflowCount,
     uploadedFileId,
-    version,
     deleted
   )
 }

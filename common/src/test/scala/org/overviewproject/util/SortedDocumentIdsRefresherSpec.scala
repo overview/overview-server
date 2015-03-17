@@ -67,7 +67,7 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     import scala.slick.jdbc.{GetResult,StaticQuery}
 
     def createDocumentSet(id: Long): DocumentSet = {
-      val ret = DocumentSet(id, "", None, false, new java.sql.Timestamp(0L), 0, 0, 0, None, 0, false)
+      val ret = DocumentSet(id, "", None, false, new java.sql.Timestamp(0L), 0, 0, 0, None, false)
       DocumentSets.+=(ret)(session)
       ret
     }

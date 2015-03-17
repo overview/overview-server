@@ -3,7 +3,7 @@ package org.overviewproject.models.tables
 import java.sql.Timestamp
 
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.DocumentSet // should be models.DocumentSet
+import org.overviewproject.models.DocumentSet
 
 class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set") {
   def id = column[Long]("id", O.PrimaryKey)
@@ -15,7 +15,6 @@ class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set")
   def documentProcessingErrorCount = column[Int]("document_processing_error_count")
   def importOverflowCount = column[Int]("import_overflow_count")
   def uploadedFileId = column[Option[Long]]("uploaded_file_id")
-  def version = column[Int]("version")
   def deleted = column[Boolean]("deleted")
 
   def * = (
@@ -28,7 +27,6 @@ class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set")
     documentProcessingErrorCount,
     importOverflowCount,
     uploadedFileId,
-    version,
     deleted
   ) <> ((DocumentSet.apply _).tupled, DocumentSet.unapply)
 }

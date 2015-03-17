@@ -2,7 +2,7 @@ package models
 
 import helpers.DbTestContext
 import models.orm.Schema
-import org.overviewproject.test.DbSetup._
+import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication

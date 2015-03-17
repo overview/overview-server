@@ -6,7 +6,6 @@ import play.api.libs.json.JsObject
 import scala.util.Random
 import org.overviewproject.models._
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
-import org.overviewproject.util.DocumentSetVersion
 
 /** Plain Old Data Object factory.
   *
@@ -125,7 +124,6 @@ object PodoFactory extends Factory {
     documentProcessingErrorCount: Int = 3,
     importOverflowCount: Int = 2,
     uploadedFileId: Option[Long] = None,
-    version: Int = DocumentSetVersion.current,
     deleted: Boolean = false
   ) = DocumentSet(
     get32BitId(id),
@@ -137,7 +135,6 @@ object PodoFactory extends Factory {
     documentProcessingErrorCount,
     importOverflowCount,
     uploadedFileId,
-    version,
     deleted
   )
 

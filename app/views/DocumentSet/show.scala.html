@@ -1,7 +1,6 @@
 @(
   user: User,
-  documentSet: org.overviewproject.tree.orm.DocumentSet,
-  isSearchable: Boolean /* HACK: remove once all docsets are searchable */
+  documentSet: org.overviewproject.tree.orm.DocumentSet
 )(
   implicit lang: Lang,
   flash: Flash,
@@ -26,5 +25,5 @@
   "views.InlineTagList"
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys, optionalDocumentSet=Some(documentSet.toDocumentSet)) {
-  <div id="main" data-is-searchable="@isSearchable" data-tooltips-enabled="@user.treeTooltipsEnabled"></div>
+  <div id="main" data-tooltips-enabled="@user.treeTooltipsEnabled"></div>
 }

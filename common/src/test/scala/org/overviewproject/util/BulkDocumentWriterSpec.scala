@@ -17,7 +17,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
     import org.overviewproject.database.Slick.simple._
 
     val documentSet: DocumentSet = {
-      val ret = DocumentSet(1L, "", None, false, new java.sql.Timestamp(1424898930910L), 0, 0, 0, None, 0, false)
+      val ret = DocumentSet(1L, "", None, false, new java.sql.Timestamp(1424898930910L), 0, 0, 0, None, false)
       DocumentSets.+=(ret)(session)
       ret
     }
