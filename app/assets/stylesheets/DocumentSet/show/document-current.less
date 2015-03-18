@@ -62,6 +62,72 @@
     .flex(1 1 auto);
   }
 
+  div.preferences {
+    float: right;
+    line-height: 2em;
+    margin-right: -1em; // a.dropdown-toggle has .5em padding; the -1em is to make symmetry with header's padding
+
+    .switch-text-mode {
+      display: inline-block;
+
+      input { display: none; }
+
+      .text-off {
+        border: 1px solid #ccc;
+        border-bottom: 0;
+        border-right: 0;
+        border-top-left-radius: @border-radius-base;
+      }
+      .text-on {
+        border: 1px solid #ccc;
+        border-bottom: 0;
+        border-left: 0;
+        border-top-right-radius: @border-radius-base;
+      }
+
+      .text-off, .text-on {
+        display: inline-block;
+        background: white;
+        color: @text-muted;
+        text-decoration: none;
+        padding: 0 .6em;
+        cursor: pointer;
+      }
+
+      input:not(:checked) + .text-off, input:checked + .text-off + .text-on {
+        text-shadow: 0 0 2px @text-color;
+        background-color: @brand-primary;
+        color: white;
+      }
+    }
+
+    .options {
+      display: inline-block;
+      position: relative;
+      top: 2px; // 1px for the .switch-text-mode border; another 1px to look good.
+
+      a.dropdown-toggle {
+        display: block;
+        font-size: 1.25em;
+        padding: 0 .5em;
+        text-decoration: none;
+      }
+
+      .dropdown-menu label.checkbox {
+        // margin is bad because clicking on it doesn't change the checkbox.
+        // use padding instead.
+        margin: 0;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      label {
+        font: inherit;
+        cursor: pointer;
+      }
+    }
+  }
+
   h2 {
     clear: both;
     font-family: inherit;
@@ -71,13 +137,11 @@
     margin: .8em 0 0 0;
   }
 
-  h3 {
-    font-family: inherit;
-    font-weight: normal;
-    font-size: 1em;
-    line-height: 1.5em;
-    margin: 0;
-    padding: 0 0 .5em;
+  .keywords {
+    float: left;
+    font: inherit;
+    line-height: 2em;
+    border-top: 1px solid transparent; // match .switch-text-mode
     .text-muted;
   }
 

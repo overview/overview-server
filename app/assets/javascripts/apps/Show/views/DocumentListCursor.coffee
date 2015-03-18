@@ -1,8 +1,10 @@
 define [
   'backbone'
   '../helpers/DocumentHelper'
+  '../models/DocumentDisplayPreferences'
+  './DocumentDisplayPreferencesView'
   'i18n'
-], (Backbone, DocumentHelper, i18n) ->
+], (Backbone, DocumentHelper, DocumentDisplayPreferences, DocumentDisplayPreferencesView, i18n) ->
   t = i18n.namespaced('views.Tree.show.DocumentListCursor')
 
   # Shows the Document corresponding to the user's cursor.
@@ -54,7 +56,8 @@ define [
             </li>
           <% }); %>
         </ul>
-        <h3><%- (document && document.get('description')) ? t('description', document.get('description')) : t('description.empty') %></h3>
+        <div class="keywords"><%- (document && document.get('description')) ? t('description', document.get('description')) : t('description.empty') %></div>
+        <div class="document-display-preferences"></div>
       """)
 
     initialize: ->
@@ -65,10 +68,11 @@ define [
 
       @selection = @options.selection
       @documentList = @options.documentList
+      @preferences = new DocumentDisplayPreferences() # it's a singleton, kinda
 
       @initialRender()
 
-      @documentDisplayApp = new @options.documentDisplayApp({ el: @documentEl })
+      @documentDisplayApp = new @options.documentDisplayApp(preferences: @preferences, el: @documentEl)
 
       @listenTo(@options.tags, 'change', => @renderHeader())
       @listenTo(@selection, 'change:cursorIndex', => @render())
@@ -82,7 +86,14 @@ define [
       @headerEl = @$headerEl[0]
       @documentEl = @$documentEl[0]
 
+      @preferencesView = new DocumentDisplayPreferencesView(model: @preferences)
+      @preferencesView.render()
+
       this
+
+    remove: ->
+      @preferencesView?.remove()
+      super()
 
     _renderHeader: (maybeDocument) ->
       cursorIndex = @selection.get('cursorIndex')
@@ -102,6 +113,7 @@ define [
           title: DocumentHelper.title(maybeDocument?.attributes)
 
       @$headerEl.html(html)
+      @$headerEl.find('.document-display-preferences').append(@preferencesView.el)
 
     _getDocument: ->
       cursorIndex = @selection.get('cursorIndex')

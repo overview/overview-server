@@ -56,6 +56,11 @@ define [
         'views.Tree.show.DocumentListCursor.description.empty': 'description.empty'
         'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
         'views.Tree.show.helpers.DocumentHelper.title.empty': 'title.empty'
+        # ick ick ick...
+        'views.DocumentSet.show.DocumentDisplayPreferences.text.false': 'prefs.text.false'
+        'views.DocumentSet.show.DocumentDisplayPreferences.text.true': 'prefs.text.true'
+        'views.DocumentSet.show.DocumentDisplayPreferences.sidebar': 'prefs.sidebar'
+        'views.DocumentSet.show.DocumentDisplayPreferences.wrap': 'prefs.wrap'
 
     describe 'starting with a full list at no index', ->
       beforeEach ->

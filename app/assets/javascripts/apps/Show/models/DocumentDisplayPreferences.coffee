@@ -1,15 +1,15 @@
 define [ 'backbone' ], (Backbone) ->
-  PREFIX = 'apps/DocumentDisplay/models/Preferences/'
-  PREFERENCES = {
+  PREFIX = 'apps/DocumentDisplay/models/Preferences/' # obsolete - for backwards compat
+
+  PREFERENCES =
     'text': { type: 'boolean', default: false }
     'sidebar': { type: 'boolean', default: false }
     'wrap': { type: 'boolean', default: true }
-  }
 
   # Helper methods for dealing with various types
   #
   # localStorage stores only strings. This sorts out the other types.
-  storage = {
+  storage =
     # Get something from local storage. Returns undefined, or the value
     get:
       'boolean': (key) ->
@@ -21,9 +21,8 @@ define [ 'backbone' ], (Backbone) ->
     set:
       'boolean': (key, value) ->
         localStorage.setItem(PREFIX + key, value && 'true' || 'false')
-  }
 
-  class Preferences extends Backbone.Model
+  class DocumentDisplayPreferences extends Backbone.Model
     initialize: ->
       attrs = {}
       for pref, options of PREFERENCES

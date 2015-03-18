@@ -2,12 +2,10 @@ define [
   './models/TextDocument'
   './models/UrlPropertiesExtractor'
   './models/CurrentCapabilities'
-  './models/Preferences'
   './views/DocumentView'
-  './views/PreferencesView'
   './views/TextView'
   './views/FindView'
-], (TextDocument, UrlPropertiesExtractor, CurrentCapabilities, Preferences, DocumentView, PreferencesView, TextView, FindView) ->
+], (TextDocument, UrlPropertiesExtractor, CurrentCapabilities, DocumentView, TextView, FindView) ->
   DocumentSetId = /\/documentsets\/(\d+)/.exec(window.location.pathname)[1]
 
   ViewableDocumentTypes =
@@ -22,8 +20,10 @@ define [
     # Callers should access the "el" property to insert it into
     # the page. Then they can call setDocument() to show a document.
     initialize: (options) ->
+      throw 'Must pass options.preferences, a DocumentDisplayPreferences' if !options.preferences
+
       @urlPropertiesExtractor = new UrlPropertiesExtractor(documentCloudUrl: window.documentCloudUrl)
-      @preferences = new Preferences()
+      @preferences = options.preferences
       @currentCapabilities = new CurrentCapabilities()
 
       @listenTo(@preferences, 'change:text', @render)
@@ -34,15 +34,12 @@ define [
       @setDocument(null)
 
     _initialRender: ->
-      @preferencesView = new PreferencesView(preferences: @preferences, currentCapabilities: @currentCapabilities)
       @documentView = new DocumentView(preferences: @preferences)
       @listenTo(@documentView, 'tweet-deleted', @_onTweetDeleted)
       @$textViewEl = Backbone.$('<div class="text-view"></div>')
 
-      @preferencesView.render()
       @documentView.render()
 
-      @$el.append(@preferencesView.el)
       @$el.append(@documentView.el)
       @$el.append(@$textViewEl)
 
@@ -55,7 +52,6 @@ define [
     # * null
     setDocument: (json) ->
       return if json?.id == @document?.id
-      @preferencesView.hide()
       @document = json
       @render()
 

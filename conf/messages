@@ -195,11 +195,6 @@ views.Document.show.DocumentView.twitter.loading.url=
 views.Document.show.FindView.label=Highlighting match {1,number,integer} of {2,number,integer} for “{0}”
 views.Document.show.FindView.nextHighlight=Highlight next match
 views.Document.show.FindView.previousHighlight=Highlight previous match
-views.Document.show.PreferencesView.sidebar=Show sidebar in DocumentCloud
-views.Document.show.PreferencesView.text.disabled=Overview can only show this document as plain text
-views.Document.show.PreferencesView.text.false=Document
-views.Document.show.PreferencesView.text.true=Text
-views.Document.show.PreferencesView.wrap=Wrap long lines of text
 views.Document.show.TextView.error=We could not load the document text. Try refreshing the page.
 views.Document.show.TextView.loading=Loading text…
 views.Document.show.TextView.onlyTextAvailable=Only text view is available for this document.
@@ -364,6 +359,12 @@ views.DocumentSet.show.NewViewDialog.url.unavailable.retry=retry
 views.DocumentSet.show.NewViewDialog.url.insecure_html=This URL does not start with <strong>https://</strong>. If you use this URL, an attacker may read and write all documents in this document set. Your web browser may also show warnings to this effect.
 views.DocumentSet.show.NewViewDialog.url.insecure.dismiss=use it anyway
 views.DocumentSet.show.NewViewDialog.url.invalid=This is not a valid URL
+
+views.DocumentSet.show.DocumentDisplayPreferences.sidebar=Show sidebar in DocumentCloud
+views.DocumentSet.show.DocumentDisplayPreferences.text.disabled=Overview can only show this document as plain text
+views.DocumentSet.show.DocumentDisplayPreferences.text.false=Document
+views.DocumentSet.show.DocumentDisplayPreferences.text.true=Text
+views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 
 views.DocumentSet.show.SearchView.query_placeholder=Search all documents
 views.DocumentSet.show.SearchView.search=Search
