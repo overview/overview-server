@@ -177,7 +177,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
       mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
       mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
-      mockMessageQueue.startClustering(any, any) returns Future(())
+      mockMessageQueue.startClustering(any) returns Future(())
     }
 
     "return Created" in new StartClusteringScope {
@@ -192,7 +192,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
     "send a ClusterFileGroup message" in new StartClusteringScope {
       status(result)
-      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, fileGroupName)
+      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob)
     }
 
     "set splitDocuments=true when asked" in new StartClusteringScope {

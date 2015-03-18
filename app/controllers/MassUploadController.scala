@@ -99,7 +99,7 @@ trait MassUploadController extends Controller {
     * TODO refactor into MassUploadControllerMethods
     */
   def startClustering = AuthorizedAction(anyUser).async { request =>
-    MassUploadControllerForm().bindFromRequest()(request).fold(
+    MassUploadControllerForm.new_.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       startClusteringFileGroupWithOptions(request.user.email, _)
     )
@@ -111,7 +111,7 @@ trait MassUploadController extends Controller {
     * Does <em>not</em> create a DocumentSet.
     */
   def startClusteringExistingDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { request =>
-    MassUploadControllerForm().bindFromRequest()(request).fold(
+    MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       startClusteringFileGroupWithDocumentSetAndOptions(request.user.email, id, _)
     )
@@ -162,9 +162,9 @@ trait MassUploadController extends Controller {
   private def startClusteringFileGroupWithDocumentSetAndOptions(
     userEmail: String,
     documentSetId: Long,
-    options: (String, String, Boolean, String, String)
+    options: (String, Boolean, String, String)
   ): Future[Result] = {
-    val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
+    val (lang, splitDocuments, suppliedStopWords, importantWords) = options
 
     fileGroupBackend.find(userEmail, None).flatMap(_ match {
       case None => Future.successful(NotFound)
@@ -175,7 +175,7 @@ trait MassUploadController extends Controller {
         })
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
-          .map(_ => messageQueue.startClustering(job, name))
+          .map(_ => messageQueue.startClustering(job, "[add-to-existing-docset]"))
           .map(_ => Redirect(routes.DocumentSetController.index()))
       }
     })

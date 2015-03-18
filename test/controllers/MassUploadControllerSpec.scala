@@ -192,14 +192,12 @@ class MassUploadControllerSpec extends ControllerSpecification {
     // TODO make adding files and clustering two different things, so we can do
     // everything with half the tests.
     trait StartClusteringExistingDocumentSetScope extends BaseScope {
-      val fileGroupName = "This does *not* become the Document Set Name"
       val lang = "sv"
       val splitDocuments = false
       val splitDocumentsString = s"$splitDocuments"
       val stopWords = "ignore these words"
       val importantWords = "important words?"
       def formData = Seq(
-        "name" -> fileGroupName,
         "lang" -> lang,
         "split_documents" -> splitDocumentsString,
         "supplied_stop_words" -> stopWords,
@@ -233,7 +231,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "send a ClusterFileGroup message" in new StartClusteringExistingDocumentSetScope {
       h.status(result)
-      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, fileGroupName)
+      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, "[add-to-existing-docset]")
     }
 
     "return NotFound if user has no FileGroup in progress" in new StartClusteringExistingDocumentSetScope {

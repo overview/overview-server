@@ -19,6 +19,7 @@ define [
         uploadCollectionViewClass: UploadCollectionView
         supportedLanguages: options.supportedLanguages
         defaultLanguageCode: options.defaultLanguageCode
+        onlyOptions: options.onlyOptions
 
       view.render()
 

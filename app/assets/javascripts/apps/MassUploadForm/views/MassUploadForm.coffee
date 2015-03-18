@@ -141,7 +141,7 @@ define [
       tooFewDocuments = @collection.length <= 2
       ImportOptionsApp.addHiddenInputsThroughDialog(
         @el,
-        onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
+        onlyOptions: @options.onlyOptions || [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
         supportedLanguages: @options.supportedLanguages
         defaultLanguageCode: @options.defaultLanguageCode
         tooFewDocuments: tooFewDocuments

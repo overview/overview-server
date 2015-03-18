@@ -108,7 +108,7 @@ trait MassUploadController extends ApiController {
     * TODO refactor into MassUploadControllerMethods
     */
   def startClustering = ApiAuthorizedAction(anyUser).async { request =>
-    MassUploadControllerForm().bindFromRequest()(request).fold(
+    MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       startClusteringFileGroupWithOptions(request.apiToken, _)
     )
@@ -136,10 +136,10 @@ trait MassUploadController extends ApiController {
   }
 
   private def startClusteringFileGroupWithOptions(apiToken: ApiToken,
-                                                  options: (String, String, Boolean, String, String)): Future[Result] = {
+                                                  options: (String, Boolean, String, String)): Future[Result] = {
     val userEmail: String = apiToken.createdBy
     val documentSetId: Long = apiToken.documentSetId
-    val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
+    val (lang, splitDocuments, suppliedStopWords, importantWords) = options
 
     fileGroupBackend.find(userEmail, Some(apiToken.token)).flatMap(_ match {
       case Some(fileGroup) => {
@@ -149,7 +149,7 @@ trait MassUploadController extends ApiController {
         }
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
-          .map(_ => messageQueue.startClustering(job, name))
+          .map(_ => messageQueue.startClustering(job))
           .map(_ => Created)
       }
       case None => Future.successful(NotFound)
@@ -174,7 +174,7 @@ object MassUploadController extends MassUploadController {
 
   trait MessageQueue {
     /** Notify the worker that clustering can start */
-    def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit]
+    def startClustering(job: DocumentSetCreationJob): Future[Unit]
   }
 
   object DatabaseStorage extends Storage {
@@ -201,11 +201,11 @@ object MassUploadController extends MassUploadController {
   }
 
   object ApolloQueue extends MessageQueue {
-    override def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit] = {
+    override def startClustering(job: DocumentSetCreationJob): Future[Unit] = {
       val command = ClusterFileGroup(
         documentSetId=job.documentSetId,
         fileGroupId=job.fileGroupId.get,
-        name=documentSetTitle,
+        name="api-add-documents-to-docset",
         lang=job.lang,
         splitDocuments=job.splitDocuments,
         stopWords=job.suppliedStopWords,
