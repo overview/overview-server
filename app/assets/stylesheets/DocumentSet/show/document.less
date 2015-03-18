@@ -20,33 +20,26 @@
     margin: 0;
   }
 
-  div.document, div.text {
+  div.document, div.text-view {
     display: none;
     position: absolute;
     top: 0;
-    bottom: 0;
     left: 0;
-    right: 0;
+    width: 100%;
+    bottom: 0;
   }
 
   &.showing-document div.document { display: block; }
-  &.showing-text div.text { display: block; }
+  &.showing-text div.text-view { display: flex; flex-direction: column; }
 
-  &.highlighting {
-    div.text {
-      bottom: 1.5em;
-    }
+  &.highlighting div.text-view div.text {
+    flex: 1 1 auto;
   }
 
   div.find {
-    position: absolute;
-    height: 2em;
-    line-height: 1.6;
+    flex: 0 0 auto;
     padding: .2em;
     text-align: center;
-    left: 0;
-    right: 0;
-    bottom: 0;
     background-color: @body-bg-dark;
     border-top: 1px solid @table-border-color;
 

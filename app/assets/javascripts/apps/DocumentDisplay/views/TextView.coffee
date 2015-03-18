@@ -83,15 +83,15 @@ define [
 
     # Fits the <em> into its <pre> parent node if it isn't visible
     _scrollToHighlight: (em) ->
-      pre = em.parentNode
+      container = em.parentNode
 
       buffer = 20 # px
 
       current =
-        top: pre.scrollTop
-        bottom: pre.scrollTop + pre.clientHeight
-        left: pre.scrollLeft
-        right: pre.scrollLeft + pre.clientWidth
+        top: container.scrollTop
+        bottom: container.scrollTop + container.clientHeight
+        left: container.scrollLeft
+        right: container.scrollLeft + container.clientWidth
       wanted =
         top: em.offsetTop
         bottom: em.offsetTop + em.offsetHeight
@@ -99,13 +99,13 @@ define [
         right: em.offsetLeft + em.offsetWidth
 
       if wanted.bottom + buffer > current.bottom
-        pre.scrollTop = wanted.bottom + buffer - pre.clientHeight
+        container.scrollTop = wanted.bottom + buffer - container.clientHeight
       if wanted.right > current.right
-        pre.scrollLeft = wanted.right - pre.clientWidth
+        container.scrollLeft = wanted.right - container.clientWidth
       if wanted.left < current.left
-        pre.scrollLeft = wanted.left
+        container.scrollLeft = wanted.left
       if wanted.top - buffer < current.top
-        pre.scrollTop = wanted.top - buffer
+        container.scrollTop = wanted.top - buffer
 
     _renderHighlightsIndex: ->
       $ems = @$('em.highlight')
