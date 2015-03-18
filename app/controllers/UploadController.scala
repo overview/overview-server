@@ -109,7 +109,7 @@ object UploadController extends UploadController {
 
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)
 
-  def deleteUpload(upload: OverviewUpload) = OverviewDatabase.inTransaction { implicit connection: Connection =>
+  def deleteUpload(upload: OverviewUpload) = OverviewDatabase.inTransaction {
     upload.delete
   }
 
