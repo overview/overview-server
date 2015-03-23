@@ -11,8 +11,6 @@ require [
     $modal = $('#export-modal')
     $modal.find('.modal-body').append($iframe)
 
-    console.log($modal)
-
     $iframe.on('load', refreshHeight)
 
     $(document).on 'click', 'a.show-export-options', (e) ->

@@ -50,7 +50,6 @@ define [
         success: => @state.setView(@views.at(0) || null)
 
     _onUpdate: (view, attrs) ->
-      console.log(view, attrs)
       view.save(attrs)
 
     _onClickNewTree: ->
