@@ -51,10 +51,6 @@ class _documentSetSpec extends views.html.ViewSpecification {
       span.text().trim.replace("\n", "").replaceAll("\\s+", " ") must beEqualTo("3 trees (clustering another…)")
     }
 
-    "should include a delete button" in new BaseScope {
-      $("form.delete").length must be_>=(1)
-    }
-
     "should show a document count" in new BaseScope {
       $("span.document-count").text() must equalTo("no documents")
     }
