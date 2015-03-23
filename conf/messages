@@ -131,6 +131,7 @@ views.components.importNav.copy.public=Copy an example document set
 views.components.importNav.copy.shared=Copy document sets shared with you
 
 views.components.navbar.add.files=Upload more documents (experimental)
+views.components.navbar.export=Export
 views.components.navbar.share=Share
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_admin_plugins=Plugins
@@ -258,6 +259,9 @@ views.DocumentSet._documentSet.share=Share
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.toggle_public=Share with all Overview users
+
+views.DocumentSet._export.h3=Export your document set
+views.DocumentSet._export.close=Close
 
 views.DocumentSet._manualForm.title=Import a DocumentCloud project
 views.DocumentSet._manualForm.label.title=Title
@@ -503,8 +507,6 @@ views.ImportJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.ImportJob._documentSetCreationJob.subtitle.other=From uploaded file
 
 
-views.DocumentSetExport.index.h3=Export your document set
-views.DocumentSetExport.index.close=Close
 views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet. Please choose the format:
 views.DocumentSetExport.index.formats.DocumentsWithStringTags.csv=CSV file, all tags in one column
 views.DocumentSetExport.index.formats.DocumentsWithStringTags.xlsx=Excel file, all tags in one column

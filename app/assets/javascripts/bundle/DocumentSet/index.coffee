@@ -36,6 +36,7 @@ requirejs.config
     underscore: 'vendor/underscore'
 
 require [
+  'for-view/DocumentSet/export-document-set',
   'for-view/DocumentSet/share-document-set',
   'for-view/DocumentSet/_index/watch-jobs',
   'for-view/DocumentSet/index',

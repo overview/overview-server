@@ -74,6 +74,7 @@ requirejs.config({
 })
 
 require [
+  'for-view/DocumentSet/export-document-set',
   'for-view/DocumentSet/share-document-set'
   'for-view/DocumentSet/show'
 ], ->

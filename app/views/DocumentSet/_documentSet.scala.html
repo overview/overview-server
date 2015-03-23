@@ -14,10 +14,7 @@
         <i class="overview-icon-share"></i> @m("share")
       </a>
 
-      <a class="btn"
-        data-remote="@routes.DocumentSetExportController.index(documentSet.id)"
-        data-toggle="modal"
-        data-target="#export-modal">
+      <a href="#" class="btn show-export-options" data-document-set-id="@documentSet.id">
         <i class="overview-icon-download"></i> @m("export")
       </a>
 
