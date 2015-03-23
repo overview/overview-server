@@ -1,7 +1,7 @@
 require [
   'jquery'
 ], ($) ->
-  $iframe = $('<iframe src="about:blank"></iframe>')
+  $iframe = $('<iframe name="export-document-set" src="about:blank"></iframe>')
 
   refreshHeight = (e) ->
     height = $iframe[0].contentDocument?.body?.offsetHeight || 0

@@ -38,12 +38,15 @@ describe 'ExampleDocumentSets', ->
       checkbox = { tag: 'label', contains: 'Set as example document set', visible: true }
 
       @
-        .elementBy(tag: 'a', contains: 'Share').click()
-        .waitForElementBy(checkbox, 10000)
+        .elementByCss('.actions .dropdown-toggle').click()
+        .elementByCss('.dropdown-menu .show-sharing-settings').click()
+        .frame('share-document-set')
+        .waitForElementBy(checkbox)
         .listenForJqueryAjaxComplete()
         .elementBy(checkbox).click()
         .waitForJqueryAjaxComplete()
-        .waitForElementBy(tag: 'a', contains: 'Close', visible: true).click()
+        .frame(null)
+        .elementBy(tag: 'a', contains: 'Close', visible: true).click()
 
     waitForRequirements: ->
       @
@@ -63,10 +66,10 @@ describe 'ExampleDocumentSets', ->
     deleteTopUpload: ->
       @
         .get(Url.index)
+        .elementByCss('.actions .dropdown-toggle').click()
         .acceptingNextAlert()
-        .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
+        .elementByCss('.dropdown-menu .delete-document-set').click()
 
-        
     waitForJobsToComplete: ->
       @
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
