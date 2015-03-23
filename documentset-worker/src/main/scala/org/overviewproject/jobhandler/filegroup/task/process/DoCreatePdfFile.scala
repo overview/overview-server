@@ -8,6 +8,6 @@ object DoCreatePdfFile {
    def  apply(documentSetId: Long) = new StepGenerator[Long, File] {
      
      override def generate(uploadedFileId: Long): TaskStep = 
-       CreatePdfFile(documentSetId, uploadedFileId, nextStepGenerator.get.generate _) 
+       CreatePdfFile(documentSetId, uploadedFileId, nextStepFn)
    }
 }

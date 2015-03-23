@@ -10,7 +10,7 @@ object DoRequestDocumentIds {
   def apply(documentIdSupplier: ActorRef, documentSetId: Long) =
     new StepGenerator[Seq[PdfFileDocumentData], Seq[Document]] {
       override def generate(d: Seq[PdfFileDocumentData]): TaskStep = {
-        RequestDocumentIds(documentIdSupplier, documentSetId, d, nextStepGenerator.get.generate _)
+        RequestDocumentIds(documentIdSupplier, documentSetId, d, nextStepFn)
       }
     }
 }

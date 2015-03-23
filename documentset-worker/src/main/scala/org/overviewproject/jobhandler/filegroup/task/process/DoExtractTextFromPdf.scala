@@ -10,7 +10,7 @@ object DoExtractTextFromPdf {
   def apply(documentSetId: Long) = new StepGenerator[File, Seq[PdfFileDocumentData]] {
 
     override def generate(f: File): TaskStep = {
-      ExtractTextFromPdf(documentSetId, f, nextStepGenerator.get.generate _)
+      ExtractTextFromPdf(documentSetId, f, nextStepFn)
     }
   }
 }
