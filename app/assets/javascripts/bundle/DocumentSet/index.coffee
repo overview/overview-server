@@ -36,7 +36,7 @@ requirejs.config
     underscore: 'vendor/underscore'
 
 require [
-  'for-view/DocumentSet/_index/share-document-set',
+  'for-view/DocumentSet/share-document-set',
   'for-view/DocumentSet/_index/watch-jobs',
   'for-view/DocumentSet/index',
   'elements/form-submit-with-feedback',

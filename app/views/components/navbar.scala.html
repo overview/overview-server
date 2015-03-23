@@ -17,7 +17,12 @@
               <b class="caret"></b>
             </a>
             <ul class="dropdown-menu" role="menu">
+              <li><a href="#" class="show-sharing-settings" data-document-set-id="@documentSet.id">
+                <i class="icon overview-icon-share"></i>
+                @m("share")
+              </a></li>
               <li><a href="@routes.FileImportController.edit(documentSet.id)">
+                <i class="icon icon-upload"></i>
                 @m("add.files")
               </a></li>
             </ul>
@@ -66,4 +71,8 @@
       }
     }
   </nav>
+  @(optionalDocumentSet match {
+    case None =>
+    case Some(documentSet) => views.html.DocumentSet._sharingOptions()
+  })
 }

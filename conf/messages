@@ -131,6 +131,7 @@ views.components.importNav.copy.public=Copy an example document set
 views.components.importNav.copy.shared=Copy document sets shared with you
 
 views.components.navbar.add.files=Upload more documents (experimental)
+views.components.navbar.share=Share
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_admin_plugins=Plugins
 views.components.navbar.link_admin_users=Users
