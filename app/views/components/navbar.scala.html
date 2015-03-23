@@ -2,7 +2,7 @@
   optionalUser: Option[User],
   optionalDocumentSet: Option[org.overviewproject.models.DocumentSet]=None
 )(
-  implicit lang: Lang
+  implicit lang: Lang, request: RequestHeader
 )
 @import play.api.Play
 @defining(scopedMessages("views.components.navbar")) { m =>
@@ -28,6 +28,10 @@
               <li><a href="@routes.FileImportController.edit(documentSet.id)">
                 <i class="icon icon-upload"></i>
                 @m("add.files")
+              </a></li>
+              <li><a href="#" class="delete-document-set" data-confirm="@m("delete.confirm", documentSet.title)" data-document-set-id="@documentSet.id">
+                <i class="icon icon-remove"></i>
+                @m("delete")
               </a></li>
             </ul>
           </div>

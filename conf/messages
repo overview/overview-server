@@ -143,6 +143,8 @@ views.components.navbar.link_help=Help
 views.components.navbar.logged_in={0}
 views.components.navbar.link_document_sets=Your document sets
 views.components.navbar.link_logout=Log out
+views.components.navbar.delete=Delete
+views.components.navbar.delete.confirm=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.
 
 views.ApiToken.index.title=API Tokens
 views.ApiToken.index.h1=API Tokens
