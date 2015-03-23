@@ -59,5 +59,6 @@ module.exports = (title, csvPath) ->
     after: ->
       @userBrowser
         .get(Url.index)
+        .elementByCss('.actions .dropdown-toggle').click()
         .acceptingNextAlert()
-        .waitForElementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
+        .elementByCss('.delete-document-set').click()

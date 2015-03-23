@@ -19,8 +19,9 @@ describe 'PdfUpload', ->
     deleteTopUpload: ->
       @
         .get(Url.index)
+        .elementByCss('.actions .dropdown-toggle').click()
         .acceptingNextAlert()
-        .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
+        .elementByCss('.delete-document-set').click()
 
     loadImportedTree: (name) ->
       @
