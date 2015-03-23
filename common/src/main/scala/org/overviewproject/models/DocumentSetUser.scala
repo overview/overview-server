@@ -7,11 +7,8 @@ case class DocumentSetUser(
 )
 
 object DocumentSetUser {
-  class Role(val isOwner: Boolean)
+  case class Role(val isOwner: Boolean)
   object Role {
-    def apply(i: Int) = i match {
-      case 2 => new Role(true)
-      case _ => new Role(false)
-    }
+    def apply(i: Int): Role = Role(i == 1) // database int to role
   }
 }

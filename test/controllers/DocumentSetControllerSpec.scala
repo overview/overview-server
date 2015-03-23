@@ -57,9 +57,9 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def result = controller.update(documentSetId)(request)
       }
 
-      "return 200 ok" in new UpdateScope {
+      "return 204" in new UpdateScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(id = documentSetId))
-        h.status(result) must beEqualTo(h.OK)
+        h.status(result) must beEqualTo(h.NO_CONTENT)
       }
 
       "update the DocumentSet" in new UpdateScope {

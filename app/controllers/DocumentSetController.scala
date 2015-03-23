@@ -162,7 +162,7 @@ trait DocumentSetController extends Controller {
       DocumentSetUpdateForm(documentSet).bindFromRequest().fold(
         f => BadRequest, { updatedDocumentSet =>
           storage.insertOrUpdateDocumentSet(updatedDocumentSet)
-          Ok
+          NoContent
         })
     }.getOrElse(NotFound)
   }

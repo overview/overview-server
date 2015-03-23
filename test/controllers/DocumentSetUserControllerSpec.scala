@@ -1,91 +1,77 @@
 package controllers
 
 import org.specs2.specification.Scope
-import play.api.mvc.{ Request, AnyContent }
+import scala.concurrent.Future
 
-import org.overviewproject.tree.Ownership
-import org.overviewproject.tree.orm.DocumentSetUser
+import controllers.backend.{DocumentSetBackend,DocumentSetUserBackend}
+import org.overviewproject.test.factories.{PodoFactory=>factory}
 
 class DocumentSetUserControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
-    val mockStorage = mock[DocumentSetUserController.Storage]
+    val mockBackend = smartMock[DocumentSetUserBackend]
+    val mockDocumentSetBackend = smartMock[DocumentSetBackend]
     val controller = new DocumentSetUserController {
-      override val storage = mockStorage
+      override val backend = mockBackend
+      override val documentSetBackend = mockDocumentSetBackend
+    }
+    val documentSetId = 123L
+  }
+
+  "#index" should {
+    trait IndexScope extends BaseScope {
+      mockBackend.index(documentSetId) returns Future.successful(Seq())
+      mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet()))
+      lazy val result = controller.index(documentSetId)(fakeAuthorizedRequest)
+    }
+
+    "set data-emails" in new IndexScope {
+      mockBackend.index(documentSetId) returns Future.successful(Seq(factory.documentSetUser(1L, "user-x@example.org")))
+      h.contentAsString(result) must contain("""data-emails="[&quot;user-x@example.org&quot;]"""")
+    }
+
+    "set data-public=true" in new IndexScope {
+      mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(isPublic=true)))
+      h.contentAsString(result) must contain("""data-public="true"""")
+    }
+
+    "set data-public=false" in new IndexScope {
+      mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(isPublic=false)))
+      h.contentAsString(result) must contain("""data-public="false"""")
     }
   }
 
-  trait IndexJsonScope extends BaseScope {
-    val documentSetId = 1L
-    lazy val result = controller.indexJson(documentSetId)(fakeAuthorizedRequest)
-  }
-
-  trait CreateScope extends BaseScope {
-    val documentSetId = 1L
-    val email = "user1@example.org"
-    val formBody = Seq("email" -> email, "role" -> "Viewer")
-    def request = fakeAuthorizedRequest(fakeUser).withFormUrlEncodedBody(formBody : _*)
-    lazy val result = controller.create(documentSetId)(request)
-  }
-
-  trait DeleteScope extends BaseScope {
-    val documentSetId = 1L
-    val email = "user1@example.org"
-    lazy val result = controller.delete(documentSetId, email)(fakeAuthorizedRequest)
-  }
-
-  "DocumentSetUserController" should {
-    "call loadDocumentSetUsers() with the document set ID and Ownership.Viewer" in new IndexJsonScope {
-      mockStorage.loadDocumentSetUsers(documentSetId, Some(Ownership.Viewer)) returns Seq()
-      result
-      there was one(mockStorage).loadDocumentSetUsers(1L, Some(Ownership.Viewer))
+  "#update" should {
+    trait UpdateScope extends BaseScope {
+      val userEmail = "user@example.org"
+      mockBackend.update(documentSetId, userEmail) returns Future.successful(None)
+      lazy val result = controller.update(documentSetId, userEmail)(fakeAuthorizedRequest)
     }
 
-    "show an empty JSON list of users when empty" in new IndexJsonScope {
-      mockStorage.loadDocumentSetUsers(documentSetId, Some(Ownership.Viewer)) returns Seq()
-      h.status(result) must beEqualTo(h.OK)
-      h.contentType(result) must beSome("application/json")
-      h.contentAsString(result) must beEqualTo("""{"viewers":[]}""")
+    "return NotFound" in new UpdateScope {
+      mockBackend.update(documentSetId, userEmail) returns Future.successful(None)
+      h.status(result) must beEqualTo(h.NOT_FOUND)
     }
 
-    "show viewers" in new IndexJsonScope {
-      val users = Seq(
-        DocumentSetUser(documentSetId, "user1@example.org", Ownership.Viewer),
-        DocumentSetUser(documentSetId, "user2@example.org", Ownership.Viewer)
-      )
-      mockStorage.loadDocumentSetUsers(documentSetId, Some(Ownership.Viewer)) returns users
-      h.contentAsString(result) must beMatching(""".*"email":"user1@example.org".*""".r)
-      h.contentAsString(result) must beMatching(""".*"email":"user2@example.org".*""".r)
+    "return NoContent" in new UpdateScope {
+      mockBackend.update(documentSetId, userEmail) returns Future.successful(Some(factory.documentSetUser()))
+      h.status(result) must beEqualTo(h.NO_CONTENT)
     }
 
-    "return OK from create()" in new CreateScope {
-      h.status(result) must beEqualTo(h.OK)
-    }
-
-    "add a user in create()" in new CreateScope {
-      result
-      there was one(mockStorage).insertOrUpdateDocumentSetUser(any[DocumentSetUser])
-    }
-
-    "throw BadRequest when trying to create() the existing user" in new CreateScope {
-      override val email = fakeUser.email
-      result
-      there were noMoreCallsTo(mockStorage)
-    }
-
-    "throw BadRequest from create()" in new CreateScope {
-      override val formBody = Seq("email" -> "x", "role" -> "[invalid]")
+    "return BadRequest" in new UpdateScope {
+      override val userEmail = "foo@"
       h.status(result) must beEqualTo(h.BAD_REQUEST)
     }
+  }
 
-    "remove a user in delete()" in new DeleteScope {
-      result
-      there was one(mockStorage).deleteDocumentSetUser(documentSetId, email)
+  "#destroy" should {
+    trait DestroyScope extends BaseScope {
+      val userEmail = "user@example.org"
+      mockBackend.destroy(documentSetId, userEmail) returns Future.successful(())
+      lazy val result = controller.delete(documentSetId, userEmail)(fakeAuthorizedRequest)
     }
 
-    "throw BadRequest when trying to delete() the existing user" in new DeleteScope {
-      override val email = fakeUser.email
-      result
-      there were noMoreCallsTo(mockStorage)
+    "return NoContent" in new DestroyScope {
+      h.status(result) must beEqualTo(h.NO_CONTENT)
     }
   }
 }

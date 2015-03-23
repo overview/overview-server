@@ -63,8 +63,8 @@ GET    /documentsets/:id/api-tokens        controllers.ApiTokenController.index(
 POST   /documentsets/:id/api-tokens        controllers.ApiTokenController.create(id: Long)
 DELETE /documentsets/:id/api-tokens/:token controllers.ApiTokenController.destroy(id: Long, token: String)
 
-GET    /documentsets/:id/users.json   controllers.DocumentSetUserController.indexJson(id: Long)
-POST   /documentsets/:id/users        controllers.DocumentSetUserController.create(id: Long)
+GET    /documentsets/:id/users        controllers.DocumentSetUserController.index(id: Long)
+PUT    /documentsets/:id/users/:email controllers.DocumentSetUserController.update(id: Long, email: String)
 DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.delete(id: Long, email: String)
 
 GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long)

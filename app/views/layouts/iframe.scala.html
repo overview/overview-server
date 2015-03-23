@@ -1,0 +1,26 @@
+@(
+  bodyClass: String = "",
+  javascripts: Html = Html(""),
+  jsMessageKeys: Seq[String] = Seq()
+)(
+  content: Html
+)(
+  implicit lang: Lang
+)
+<!DOCTYPE html>
+<html lang="@lang.code">
+  <head>
+    <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
+  </head>
+
+  <body class="@bodyClass">
+    @content
+
+    @if(!jsMessageKeys.isEmpty) {
+      <script>
+        window.messages = @Html(views.JsMessages(jsMessageKeys));
+      </script>
+    }
+
+    @javascripts
+</html>
