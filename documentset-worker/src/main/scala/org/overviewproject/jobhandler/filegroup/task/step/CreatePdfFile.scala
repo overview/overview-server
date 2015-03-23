@@ -60,12 +60,13 @@ trait CreatePdfFile extends TaskStep with SlickClient {
 object CreatePdfFile {
   private val LargeObjectBufferSize = 5 * 1024 * 1024
   
-  def apply(documentSetId: Long, uploadedFileId: Long): CreatePdfFile = 
-    new CreatePdfFileImpl(documentSetId, uploadedFileId)
+  def apply(documentSetId: Long, uploadedFileId: Long, next: File => TaskStep): CreatePdfFile = 
+    new CreatePdfFileImpl(documentSetId, uploadedFileId, next)
   
   private class CreatePdfFileImpl(
     override protected val documentSetId: Long,
-    override protected val uploadedFileId: Long
+    override protected val uploadedFileId: Long,
+    next: File => TaskStep
   ) extends CreatePdfFile with SlickSessionProvider {
 
     override protected val blobStorage = BlobStorage
@@ -74,6 +75,6 @@ object CreatePdfFile {
       new BufferedInputStream(is, LargeObjectBufferSize)
     }
     
-    override protected def nextStep(file: File) = ExtractTextFromPdf(documentSetId, file, null)
+    override protected def nextStep(file: File) = next(file)
   }
 }
