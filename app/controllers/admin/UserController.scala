@@ -1,20 +1,25 @@
 package controllers.admin
 
+import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.Future
+
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
+import controllers.backend.DocumentSetBackend
 import controllers.forms.admin.{NewUserForm, EditUserForm}
 import controllers.Controller
-import models.User
-import models.orm.finders.{ UserFinder, SessionFinder, DocumentSetUserFinder }
+import models.{OverviewDatabase,User}
+import models.orm.finders.{UserFinder, SessionFinder}
 import models.orm.stores.{SessionStore, UserStore}
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.finders.ResultPage
 
 trait UserController extends Controller {
+  protected val documentSetBackend: DocumentSetBackend
+
   trait Storage {
     def findUser(email: String) : Option[User]
     def findUsers(page: Int) : ResultPage[User]
-    def countDocumentSetsForEmail(email: String) : Long
     def storeUser(user: User) : User // FIXME differentiate between INSERT and UPDATE
     def deleteUser(user: User) : Unit
   }
@@ -65,18 +70,20 @@ trait UserController extends Controller {
     }
   }
 
-  def delete(email: String) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
+  def delete(email: String) = AuthorizedAction(adminUser).async { implicit request =>
     if (email == request.user.email) {
-      BadRequest
+      Future.successful(BadRequest)
     } else {
       storage.findUser(email) match {
-        case None => NotFound
+        case None => Future.successful(NotFound)
         case Some(otherUser) => {
-          if (storage.countDocumentSetsForEmail(email) == 0) {
-            storage.deleteUser(otherUser)
-            NoContent
-          } else {
-            BadRequest(m("delete.failure", email))
+          documentSetBackend.countByUserEmail(email).map { nDocumentSets =>
+            if (nDocumentSets == 0) {
+              storage.deleteUser(otherUser)
+              NoContent
+            } else {
+              BadRequest(m("delete.failure", email))
+            }
           }
         }
       }
@@ -88,22 +95,17 @@ trait UserController extends Controller {
 
 object UserController extends UserController {
   object DatabaseStorage extends Storage {
-    override def findUser(email: String) = UserFinder.byEmail(email).headOption
-    override def findUsers(page: Int) = ResultPage(UserFinder.all, PageSize, page)
-    override def storeUser(user: User) = UserStore.insertOrUpdate(user)
-    override def deleteUser(user: User) = {
+    override def findUser(email: String) = OverviewDatabase.inTransaction { UserFinder.byEmail(email).headOption }
+    override def findUsers(page: Int) = OverviewDatabase.inTransaction { ResultPage(UserFinder.all, PageSize, page) }
+    override def storeUser(user: User) = OverviewDatabase.inTransaction { UserStore.insertOrUpdate(user) }
+    override def deleteUser(user: User) = OverviewDatabase.inTransaction {
       import org.overviewproject.postgres.SquerylEntrypoint._
       import models.orm.Schema._
       SessionStore.delete(SessionFinder.byUserId(user.id).toQuery)
       UserStore.delete(user.id)
     }
-    override def countDocumentSetsForEmail(email: String) = {
-      DocumentSetUserFinder
-        .byUserAndRole(email, Ownership.Owner)
-        .exceptDeletedDocumentSets
-        .count
-    }
   }
 
+  override protected val documentSetBackend = DocumentSetBackend
   override val storage = DatabaseStorage
 }

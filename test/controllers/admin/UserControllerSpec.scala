@@ -6,15 +6,20 @@ import org.specs2.matcher.JsonMatchers
 import play.api.mvc.Result
 import scala.concurrent.Future
 
+import controllers.backend.DocumentSetBackend
 import models.{User,UserRole}
 import org.overviewproject.tree.orm.finders.ResultPage
 
 class UserControllerSpec extends controllers.ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val mockStorage = mock[UserController.Storage]
+    val mockDocumentSetBackend = mock[DocumentSetBackend]
+
+    mockDocumentSetBackend.countByUserEmail(any) returns Future.successful(0)
 
     val controller = new UserController {
       override val storage = mockStorage
+      override val documentSetBackend = mockDocumentSetBackend
     }
 
     def result : Future[Result]
@@ -186,8 +191,8 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "return BadRequest when deleting a user with document sets" in new DeleteScope {
-        mockStorage.findUser(email) returns Some(User())
-        mockStorage.countDocumentSetsForEmail(email) returns 4
+        mockDocumentSetBackend.countByUserEmail(email) returns Future.successful(4)
+        mockStorage.findUser(email) returns Some(User(email=email))
         h.status(result) must beEqualTo(h.BAD_REQUEST)
         h.contentAsString(result) must beEqualTo("Document sets owned by user2@example.org must be removed before the user can be deleted.")
         there was no(mockStorage).deleteUser(any[User])
@@ -196,7 +201,6 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       "delete a user" in new DeleteScope {
         val userToDelete = User()
         mockStorage.findUser(email) returns Some(userToDelete)
-        mockStorage.countDocumentSetsForEmail(email) returns 0
         h.status(result) must beEqualTo(h.NO_CONTENT)
         there was one(mockStorage).deleteUser(any[User])
       }
