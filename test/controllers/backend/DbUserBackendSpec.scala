@@ -23,6 +23,22 @@ class DbUserBackendSpec extends DbBackendSpecification {
     }
   }
 
+  "#destroy" should {
+    trait DestroyScope extends BaseScope {
+      val user = insertUser(123L, "user-123@example.org")
+    }
+
+    "destroy a normal user" in new DestroyScope {
+      await(backend.destroy(user.id)) must beEqualTo(())
+      findUser(user.id) must beNone
+    }
+
+    "not destroy a nonexistent user" in new DestroyScope {
+      await(backend.destroy(122L)) must beEqualTo(())
+      findUser(user.id) must beSome
+    }
+  }
+
   "#updateLastActivity" should {
     trait UpdateLastActivityScope extends BaseScope {
       val user = insertUser(123L, "user@example.org")
