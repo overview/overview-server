@@ -243,9 +243,9 @@ views.DocumentSet._dcimport.explanation=Your password will be sent (securely) to
 views.DocumentSet._dcimport.explanation_no_cors=Your browser will momentarily share these credentials with Overview servers. Overview servers will only use the credentials to show you a list of all your Overview projects and to import your project. Overview servers will not store your credentials any longer than is absolutely necessary.
 views.DocumentSet._dcimport.nFiles={0,choice,0#no files|1#one file|1<{0,number,integer} files}
 
-views.DocumentSet._documentSet.action_delete=Delete
-views.DocumentSet._documentSet.action_import=Import
-views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.
+views.DocumentSet._documentSet.add.files=Upload more documents (experimental)
+views.DocumentSet._documentSet.delete=Delete
+views.DocumentSet._documentSet.delete.confirm=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.
 views.DocumentSet._documentSet.nDocuments={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet._documentSet.nErrors={0,choice,0#no errors|1#One document could not be loaded|1<{0,number,integer} documents could not be loaded}
 views.DocumentSet._documentSet.nOverflow={0,choice,0#within limit|1#One document over the limit|1<{0,number,integer} documents over the limit}
@@ -260,7 +260,6 @@ views.DocumentSet._documentSet.help_delete=Permanently delete this document set.
 views.DocumentSet._documentSet.share=Share
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
-views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 
 views.DocumentSet._export.h3=Export your document set
 views.DocumentSet._export.close=Close

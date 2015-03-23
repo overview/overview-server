@@ -10,17 +10,29 @@
 @defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
   <li data-document-set-id="@documentSet.id">
     <div class="actions">
-      <a href="#" class="btn show-sharing-settings" data-document-set-id="@documentSet.id">
-        <i class="overview-icon-share"></i> @m("share")
-      </a>
-
-      <a href="#" class="btn show-export-options" data-document-set-id="@documentSet.id">
-        <i class="overview-icon-download"></i> @m("export")
-      </a>
-
-      <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete", documentSet.title)" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE"
-        >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="@m("action_delete")"
-      /></form>
+      <div class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="@m("menu")">
+          <i class="icon-reorder"><!-- FIXME should be icon-bars --></i>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-right" role="menu">
+          <li><a href="#" class="show-sharing-settings" data-document-set-id="@documentSet.id">
+            <i class="icon overview-icon-share"></i>
+            @m("share")
+          </a></li>
+          <li><a href="#" class="show-export-options" data-document-set-id="@documentSet.id">
+            <i class="icon overview-icon-download"></i>
+            @m("export")
+          </a></li>
+          <li><a href="@routes.FileImportController.edit(documentSet.id)">
+            <i class="icon icon-upload"></i>
+            @m("add.files")
+          </a></li>
+          <li><a href="#" class="delete-document-set" data-confirm="@m("delete.confirm", documentSet.title)" data-document-set-id="@documentSet.id">
+            <i class="icon icon-remove"></i>
+            @m("delete")
+          </a></li>
+        </ul>
+      </div>
     </div>
     <h3>
       <a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a>
