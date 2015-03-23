@@ -86,7 +86,8 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
   class TestCreatePdfFile(val uploadedFileId: Long, val blobStorage: BlobStorage, loInputStream: InputStream)
   (implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
     override protected val documentSetId = 1l
-    override protected def nextStep(file: File) = NextStep
+    override protected val nextStep = { f: File => NextStep }
+    
     override protected def largeObjectInputStream(oid: Long) = loInputStream
   }
 }

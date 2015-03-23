@@ -13,7 +13,6 @@ trait WriteDocuments extends TaskStep {
   protected val bulkDocumentWriter: BulkDocumentWriter
   protected val documents: Seq[Document]
 
-  // FIXME: Request document ids
   override def execute: Future[TaskStep] = for {
     docsAdded <- Future.sequence(documents.map(bulkDocumentWriter.addAndFlushIfNeeded)) // FIXME: should be done in serial
     batchFlushed <- bulkDocumentWriter.flush

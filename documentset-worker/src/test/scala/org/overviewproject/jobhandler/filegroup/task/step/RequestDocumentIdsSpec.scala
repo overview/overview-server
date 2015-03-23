@@ -45,6 +45,6 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
   class TestRequestDocumentIds(override val documentIdSupplier: ActorRef, next: TaskStep) extends RequestDocumentIds {
     override protected val documentData = Seq(smartMock[PdfFileDocumentData])
     override protected val documentSetId: Long = 1l
-    override protected def nextStep(documents: Seq[Document]) = next
+    override protected val nextStep = { d : Seq[Document] => next }
   }
 }

@@ -13,7 +13,7 @@ trait RequestDocumentIds extends TaskStep {
   protected val documentSetId: Long
   protected val documentData: Seq[PdfFileDocumentData]
 
-  protected def nextStep(documents: Seq[Document]): TaskStep
+  protected val nextStep: Seq[Document] => TaskStep
 
   protected def nextStepForResponse(documentSetIds: Seq[Long]): TaskStep = {
     val documents = for {
@@ -40,8 +40,6 @@ object RequestDocumentIds {
     override protected val documentIdSupplier: ActorRef,
     override protected val documentSetId: Long,
     override protected val documentData: Seq[PdfFileDocumentData],
-    next: Seq[Document] => TaskStep) extends RequestDocumentIds {
+    override protected val nextStep: Seq[Document] => TaskStep) extends RequestDocumentIds 
 
-    override protected def nextStep(documents: Seq[Document]): TaskStep = next(documents)
-  }
 }

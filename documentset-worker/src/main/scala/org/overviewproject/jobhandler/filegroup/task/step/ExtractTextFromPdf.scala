@@ -11,7 +11,7 @@ trait ExtractTextFromPdf extends TaskStep {
   protected val file: File
 
   protected val pdfProcessor: PdfProcessor
-  protected def nextStep(documentData: Seq[PdfFileDocumentData]): TaskStep
+  protected val nextStep: Seq[PdfFileDocumentData] => TaskStep
 
   override def execute: Future[TaskStep] = toFuture(nextStep(getDocumentInfo))
 
@@ -41,40 +41,15 @@ object ExtractTextFromPdf {
   def apply(documentSetId: Long, file: File, next: Seq[PdfFileDocumentData] => TaskStep): ExtractTextFromPdf =
     new ExtractTextFromPdfImpl(documentSetId, file, next)
 
-  private class ExtractTextFromPdfImpl(documentSetId: Long,
-                                        override protected val file: File,
-                                        next: Seq[PdfFileDocumentData] => TaskStep) extends ExtractTextFromPdf {
+  private class ExtractTextFromPdfImpl(
+    documentSetId: Long,
+    override protected val file: File,
+    override protected val nextStep: Seq[PdfFileDocumentData] => TaskStep) extends ExtractTextFromPdf {
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
 
-    override protected def nextStep(documentData: Seq[PdfFileDocumentData]): TaskStep = {
-      next(documentData)
-    }
     private class PdfProcessorImpl extends PdfProcessor {
       override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
     }
 
   }
-
-//  def apply(documentSetId: Long, file: File): ExtractTextFromPdf =
-//    new ExtractTextFromPdfImpl(documentSetId, file)
-//
-//  private class ExtractTextFromPdfImpl(
-//    documentSetId: Long,
-//    override protected val file: File) extends ExtractTextFromPdf {
-//
-//    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
-//
-//    override protected def nextStep(document: PdfFileDocumentData): TaskStep = {
-//      def generateNextStep(documentIds: Seq[Long]) =
-//        WriteDocuments(document.toDocument(documentSetId, documentIds.head))
-//
-//      WaitForResponse(generateNextStep)
-//    }
-//
-//    private class PdfProcessorImpl extends PdfProcessor {
-//      override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
-//    }
-//
-//  }
-
 }
