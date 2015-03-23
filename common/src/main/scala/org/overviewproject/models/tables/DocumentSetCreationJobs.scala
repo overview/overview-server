@@ -35,11 +35,12 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
   def state = column[DocumentSetCreationJobState.Value]("state")
   def fractionComplete = column[Double]("fraction_complete")
   def statusDescription = column[String]("status_description")
+  def canBeCancelled = column[Boolean]("can_be_cancelled")
 
   def * =
     (id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
       documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId,
-      treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription) <>
+      treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled) <>
       ((DocumentSetCreationJob.apply _).tupled, DocumentSetCreationJob.unapply)
 
 }

@@ -195,7 +195,10 @@ object MassUploadController extends MassUploadController {
             suppliedStopWords = suppliedStopWords,
             importantWords = importantWords,
             state = FilesUploaded,
-            jobType = FileUpload))
+            jobType = FileUpload,
+            canBeCancelled = false
+          )
+        )
       }
     }
   }

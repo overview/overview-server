@@ -219,7 +219,8 @@ trait Factory {
     tagId: Option[Long] = None,
     state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.NotStarted,
     fractionComplete: Double = 0.0,
-    statusDescription: String = ""
+    statusDescription: String = "",
+    canBeCancelled: Boolean = true
   ): DocumentSetCreationJob
   
 

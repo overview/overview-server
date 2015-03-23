@@ -44,7 +44,8 @@ case class DocumentSetCreationJob(
   fractionComplete: Double = 0.0,
   statusDescription: String = "",
   treeDescription: Option[String] = None,
-  retryAttempts: Int = 0
+  retryAttempts: Int = 0,
+  canBeCancelled: Boolean = true
   ) extends KeyedEntity[Long] with DocumentSetComponent {
 
   def this() = this(jobType = DocumentSetCreationJobType.DocumentCloud, state = NotStarted)
@@ -75,6 +76,7 @@ case class DocumentSetCreationJob(
     tagId,
     GoodDocumentSetCreationJobState(state.id),
     fractionComplete,
-    statusDescription
+    statusDescription,
+    canBeCancelled
   )
 }

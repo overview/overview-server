@@ -47,7 +47,8 @@ case class DocumentSetCreationJob(
   tagId: Option[Long],
   state: DocumentSetCreationJobState,
   fractionComplete: Double,
-  statusDescription: String
+  statusDescription: String,
+  canBeCancelled: Boolean
 ) {
   def toDeprecatedDocumentSetCreationJob = DeprecatedDocumentSetCreationJob(
     id,
@@ -68,6 +69,7 @@ case class DocumentSetCreationJob(
     fractionComplete,
     statusDescription,
     treeDescription,
-    retryAttempts
+    retryAttempts,
+    canBeCancelled
   )
 }

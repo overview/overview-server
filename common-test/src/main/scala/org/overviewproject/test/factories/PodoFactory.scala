@@ -376,10 +376,11 @@ object PodoFactory extends Factory {
     tagId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
-    statusDescription: String
+    statusDescription: String,
+    canBeCancelled: Boolean
   ) = DocumentSetCreationJob(getId(id), documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
       splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId, 
-      treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription)
+      treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled)
   
    override def documentSetCreationJobNode(
      documentSetCreationJobId: Long,

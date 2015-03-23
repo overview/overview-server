@@ -335,13 +335,14 @@ class DbFactory(connection: Connection) extends Factory {
     tagId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
-    statusDescription: String
-  ) = q.insertDocumentSetCreationJob += podoFactory.documentSetCreationJob(id, documentSetId, jobType, retryAttempts,
-      lang, suppliedStopWords, importantWords, splitDocuments, documentcloudUsername, documentcloudPassword, 
-      contentsOid, fileGroupId,  sourceDocumentSetId, treeTitle, treeDescription, tagId,
-      state, fractionComplete, statusDescription)
+    statusDescription: String,
+    canBeCancelled: Boolean
+  ) = q.insertDocumentSetCreationJob += podoFactory.documentSetCreationJob(
+    id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
+    documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId,  sourceDocumentSetId,
+    treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled
+  )
 
-  
   override def documentSetCreationJobNode(
     documentSetCreationJobId: Long,
     nodeId: Long

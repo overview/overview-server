@@ -148,7 +148,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
       mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
       mockStorage.createDocumentSet(any, any, any) returns documentSet.toDeprecatedDocumentSet
-      mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
+      mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
       mockMessageQueue.startClustering(any, any) returns Future(())
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
@@ -163,7 +163,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       h.status(result)
       there was one(mockStorage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(mockStorage).createMassUploadDocumentSetCreationJob(
-        documentSetId, 234L, lang, false, stopWords, importantWords)
+        documentSetId, 234L, lang, false, stopWords, importantWords, true)
     }
 
     "send a ClusterFileGroup message" in new StartClusteringScope {
@@ -175,7 +175,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       override val splitDocumentsString = "true"
       h.status(result)
       there was one(mockStorage).createMassUploadDocumentSetCreationJob(
-        documentSetId, 234L, lang, true, stopWords, importantWords)
+        documentSetId, 234L, lang, true, stopWords, importantWords, true)
     }
 
     "return NotFound if user has no FileGroup in progress" in new StartClusteringScope {
@@ -211,7 +211,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
       mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
       mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
-      mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
+      mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
       mockMessageQueue.startClustering(any, any) returns Future(())
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
@@ -226,7 +226,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       h.status(result)
       there was no(mockStorage).createDocumentSet(any, any, any)
       there was one(mockStorage).createMassUploadDocumentSetCreationJob(
-        documentSetId, 234L, lang, false, stopWords, importantWords)
+        documentSetId, 234L, lang, false, stopWords, importantWords, false)
     }
 
     "send a ClusterFileGroup message" in new StartClusteringExistingDocumentSetScope {
