@@ -11,24 +11,6 @@ import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 import org.overviewproject.tree.Ownership
 
 object UserFinder extends Finder {
-  /** @return All Users with some access to a DocumentSet. */
-  def byDocumentSet(documentSet: Long) : FinderResult[User] = {
-    val dsus = DocumentSetUserFinder.byDocumentSet(documentSet)
-    join(dsus, Schema.users)((dsu, u) =>
-      select(u)
-      on(dsu.userEmail === u.email)
-    )
-  }
-
-  /** @return All Users with the given access to a DocumentSet. */
-  def byDocumentSetAndRole(documentSet: Long, role: Ownership.Value) : FinderResult[User] = {
-    val dsus = DocumentSetUserFinder.byDocumentSetAndRole(documentSet, role)
-    join(dsus, Schema.users)((dsu, u) =>
-      select(u)
-      on(dsu.userEmail === u.email)
-    )
-  }
-
   /** @return All Users, sorted by email */
   def all : FinderResult[User] = {
     from(Schema.users)(u =>
