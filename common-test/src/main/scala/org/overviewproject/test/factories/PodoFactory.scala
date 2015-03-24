@@ -338,6 +338,24 @@ object PodoFactory extends Factory {
     viewLocation,
     viewSize
   )
+
+  override def upload(
+    id: Long,
+    userId: Long,
+    guid: UUID,
+    contentsOid: Long,
+    uploadedFileId: Long,
+    lastActivity: Timestamp,
+    totalSize: Long
+  ) = Upload(
+    getId(id),
+    getId(userId),
+    getId(guid),
+    contentsOid,
+    uploadedFileId,
+    lastActivity,
+    totalSize
+  )
   
   override def uploadedFile(
     id: Long,

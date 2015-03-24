@@ -305,6 +305,24 @@ class DbFactory(connection: Connection) extends Factory {
     size: Long,
     uploadedAt: Timestamp 
   ) = q.insertUploadedFile += podoFactory.uploadedFile(id, contentDisposition, contentType, size, uploadedAt)
+
+  override def upload(
+    id: Long,
+    userId: Long,
+    guid: UUID,
+    contentsOid: Long,
+    uploadedFileId: Long,
+    lastActivity: Timestamp,
+    totalSize: Long
+  ) = q.insertUpload += podoFactory.upload(
+    id,
+    userId,
+    guid,
+    contentsOid,
+    uploadedFileId,
+    lastActivity,
+    totalSize
+  )
   
   override def documentProcessingError(
     id: Long,
@@ -379,6 +397,7 @@ object DbFactory {
     val insertFile = (Files returning Files).insertInvoker
     val insertFileGroup = (FileGroups returning FileGroups).insertInvoker
     val insertGroupedFileUpload = (GroupedFileUploads returning GroupedFileUploads).insertInvoker
+    val insertUpload = (Uploads returning Uploads).insertInvoker
     val insertUploadedFile = (UploadedFiles returning UploadedFiles).insertInvoker
     val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors).insertInvoker
     val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs).insertInvoker

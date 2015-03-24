@@ -32,7 +32,36 @@ trait DbUserBackend extends UserBackend { self: DbBackend =>
   }
 
   override def destroy(id: Long) = db { session =>
-    byId(id).delete(session)
+    import scala.slick.jdbc.StaticQuery
+
+    // One Big Query: simulate a transaction and avoid round trips
+    val q = s"""
+      DO $$$$
+      DECLARE
+        loids BIGINT[];
+        loid BIGINT;
+      BEGIN
+        WITH x AS (
+          DELETE FROM upload
+          WHERE user_id = $id
+          RETURNING contents_oid
+        ), subdelete2 AS (
+          DELETE FROM session
+          WHERE user_id = $id
+        ), subdelete3 AS (
+          DELETE FROM "user"
+          WHERE id = $id
+        )
+        SELECT COALESCE(ARRAY_AGG(contents_oid), ARRAY[]::BIGINT[])
+        INTO loids
+        FROM x;
+
+        FOREACH loid IN ARRAY loids LOOP
+          PERFORM lo_unlink(loid);
+        END LOOP;
+      END$$$$ LANGUAGE plpgsql;
+    """
+    StaticQuery.updateNA(q).apply(()).execute(session)
   }
 }
 

@@ -183,6 +183,16 @@ trait Factory {
     viewSize: Long = 3L
   ): File
 
+  def upload(
+    id: Long = 0L,
+    userId: Long = 0L,
+    guid: UUID = new UUID(0L, 0L),
+    contentsOid: Long = 0L,
+    uploadedFileId: Long = 0L,
+    lastActivity: Timestamp = now,
+    totalSize: Long = 0L
+  ): Upload
+
   def uploadedFile(
     id: Long = 0L,
     contentDisposition: String = "attachment; filename=file.csv",

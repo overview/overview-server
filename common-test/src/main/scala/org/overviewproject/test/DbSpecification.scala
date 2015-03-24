@@ -1,6 +1,7 @@
 package org.overviewproject.test
 
 import java.sql.Connection
+import org.postgresql.PGConnection
 import org.specs2.execute.AsResult
 import org.specs2.mutable.{After,Around}
 import org.specs2.specification.{Fragments, Step}
@@ -80,6 +81,7 @@ class DbSpecification extends Specification {
       ret.setAutoCommit(false)
       ret
     }
+    lazy val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
     lazy implicit val session: Session = new UnmanagedSession(connection)
     lazy val factory: DbFactory = new DbFactory(connection)
 
