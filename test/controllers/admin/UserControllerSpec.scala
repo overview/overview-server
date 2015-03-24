@@ -6,20 +6,22 @@ import org.specs2.matcher.JsonMatchers
 import play.api.mvc.Result
 import scala.concurrent.Future
 
-import controllers.backend.DocumentSetBackend
+import controllers.backend.UserBackend
 import models.{User,UserRole}
 import org.overviewproject.tree.orm.finders.ResultPage
 
 class UserControllerSpec extends controllers.ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
-    val mockStorage = mock[UserController.Storage]
-    val mockDocumentSetBackend = mock[DocumentSetBackend]
+    val mockStorage = smartMock[UserController.Storage]
+    val mockBackend = smartMock[UserBackend]
 
-    mockDocumentSetBackend.countByUserEmail(any) returns Future.successful(0)
+    mockBackend.updateIsAdmin(any, any) returns Future.successful(())
+    mockBackend.updatePasswordHash(any, any) returns Future.successful(())
+    mockBackend.destroy(any) returns Future.successful(())
 
     val controller = new UserController {
       override val storage = mockStorage
-      override val documentSetBackend = mockDocumentSetBackend
+      override val backend = mockBackend
     }
 
     def result : Future[Result]
@@ -122,54 +124,57 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "return NotFound when user does not exist" in new UpdateScope {
-        mockStorage.findUser(email) returns None
+        mockBackend.showByEmail(email) returns Future.successful(None)
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return BadRequest when is_admin is wrong" in new UpdateScope {
-        mockStorage.findUser(email) returns Some(User(email=email))
+      "not change role when is_admin is neither 'true' nor 'false'" in new UpdateScope {
+        mockBackend.showByEmail(email) returns Future.successful(Some(User(email=email)))
         override def data = Seq("is_admin" -> "not true or false")
-        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        h.status(result) must beEqualTo(h.NO_CONTENT)
+        there was no(mockBackend).updateIsAdmin(any, any)
       }
 
       "promote a user" in new UpdateScope {
-        mockStorage.findUser(email) returns Some(User(email=email, role=UserRole.NormalUser))
+        val user = User(id=123L, email=email, role=UserRole.NormalUser)
+        mockBackend.showByEmail(email) returns Future.successful(Some(user))
         override def data = Seq("is_admin" -> "true")
-        h.status(result) // finish request
-        there was one(mockStorage).storeUser(beLike[User] { case (u: User) => u.role must beEqualTo(UserRole.Administrator) })
+        h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
+        there was one(mockBackend).updateIsAdmin(123L, true)
       }
 
       "demote a user" in new UpdateScope {
-        mockStorage.findUser(email) returns Some(User(email=email, role=UserRole.NormalUser))
+        val user = User(id=123L, email=email, role=UserRole.Administrator)
+        mockBackend.showByEmail(email) returns Future.successful(Some(user))
         override def data = Seq("is_admin" -> "false")
-        h.status(result) // finish request
-        there was one(mockStorage).storeUser(beLike[User] { case (u: User) => u.role must beEqualTo(UserRole.NormalUser) })
+        h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
+        there was one(mockBackend).updateIsAdmin(123L, false)
       }
 
       "not change password when not given" in new UpdateScope {
-        mockStorage.findUser(email) returns Some(User(email=email, passwordHash="hash"))
+        val user = User(id=123L, email=email, passwordHash="hash")
+        mockBackend.showByEmail(email) returns Future.successful(Some(user))
         override def data = Seq("is_admin" -> "false")
-        h.status(result) // finish request
-        there was one(mockStorage).storeUser(beLike[User] { case (u: User) => u.passwordHash must beEqualTo("hash") })
+        h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
+        there was no(mockBackend).updatePasswordHash(any, any)
       }
 
       "change password when one is given" in new UpdateScope {
-        mockStorage.findUser(email) returns Some(User(email=email, passwordHash="hash"))
+        val user = User(id=123L, email=email, passwordHash="hash")
+        mockBackend.showByEmail(email) returns Future.successful(Some(user))
         override def data = Seq("password" -> "as;dj#$xfF")
-        h.status(result) // finish request
-        there was one(mockStorage).storeUser(beLike[User] { case (u: User) => "as;dj#$xfF".isBcrypted(u.passwordHash) must beTrue })
-      }
-
-      "return NoContent" in new UpdateScope {
-        mockStorage.findUser(email) returns Some(User(email=email))
-        override def data = Seq("is_admin"-> "false")
-        h.status(result) must beEqualTo(h.NO_CONTENT)
+        h.status(result) must beEqualTo(h.NO_CONTENT) // finish request
+        there was one(mockBackend).updatePasswordHash(any, beLike[String] { case (s: String) =>
+          "as;dj#$xfF".isBcrypted(s) must beTrue
+        })
       }
 
       "return BadRequest for the current user" in new UpdateScope {
         override val email = request.user.email
         override def data = Seq("is_admin" -> "false")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
+        there was no(mockBackend).updatePasswordHash(any, any)
+        there was no(mockBackend).updateIsAdmin(any, any)
       }
     }
 
@@ -186,23 +191,15 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "return NotFound for a non-user" in new DeleteScope {
-        mockStorage.findUser(email) returns None
+        mockBackend.showByEmail(email) returns Future.successful(None)
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return BadRequest when deleting a user with document sets" in new DeleteScope {
-        mockDocumentSetBackend.countByUserEmail(email) returns Future.successful(4)
-        mockStorage.findUser(email) returns Some(User(email=email))
-        h.status(result) must beEqualTo(h.BAD_REQUEST)
-        h.contentAsString(result) must beEqualTo("Document sets owned by user2@example.org must be removed before the user can be deleted.")
-        there was no(mockStorage).deleteUser(any[User])
-      }
-
       "delete a user" in new DeleteScope {
-        val userToDelete = User()
-        mockStorage.findUser(email) returns Some(userToDelete)
+        val userToDelete = User(id=123L)
+        mockBackend.showByEmail(email) returns Future.successful(Some(userToDelete))
         h.status(result) must beEqualTo(h.NO_CONTENT)
-        there was one(mockStorage).deleteUser(any[User])
+        there was one(mockBackend).destroy(123L)
       }
     }
 

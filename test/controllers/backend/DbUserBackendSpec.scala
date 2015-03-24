@@ -3,23 +3,74 @@ package controllers.backend
 import java.util.{Date,UUID}
 import java.sql.{SQLException,Timestamp}
 
-import models.User
+import models.{User,UserRole}
 import models.tables.Users
 
 class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
     val backend = new TestDbBackend(session) with DbUserBackend
 
-    def insertUser(id: Long, email: String): User = {
+    def insertUser(id: Long, email: String, passwordHash: String = "", role: UserRole.Value = UserRole.NormalUser): User = {
       import org.overviewproject.database.Slick.simple._
-      val ret = User(id=id, email=email)
-      Users.insertInvoker.insert(ret)(session)
-      ret
+      val user = User(id=id, email=email, passwordHash=passwordHash, role=role)
+      (Users returning Users).+=(user)(session)
     }
 
     def findUser(id: Long): Option[User] = {
       import org.overviewproject.database.Slick.simple._
       Users.filter(_.id === id).firstOption(session)
+    }
+  }
+
+  "#showByEmail" should {
+    trait ShowByEmailScope extends BaseScope {
+      val user = insertUser(123L, "user-123@example.org")
+    }
+
+    "show a User" in new ShowByEmailScope {
+      await(backend.showByEmail("user-123@example.org")) must beSome(user.copy(passwordHash="                                                            "))
+    }
+
+    "return None for a non-User" in new ShowByEmailScope {
+      await(backend.showByEmail("nonexistent-user@example.org")) must beNone
+    }
+  }
+
+  "#updateIsAdmin" should {
+    trait UpdateIsAdminScope extends BaseScope {
+      val user = insertUser(123L, "user-123@example.org", role=UserRole.NormalUser)
+    }
+
+    "promote a user" in new UpdateIsAdminScope {
+      await(backend.updateIsAdmin(123L, true))
+      findUser(123L).map(_.role) must beSome(UserRole.Administrator)
+    }
+
+    "demote a user" in new UpdateIsAdminScope {
+      await(backend.updateIsAdmin(123L, true))
+      await(backend.updateIsAdmin(123L, false))
+      findUser(123L).map(_.role) must beSome(UserRole.NormalUser)
+    }
+
+    "not affect another user" in new UpdateIsAdminScope {
+      await(backend.updateIsAdmin(124L, true))
+      findUser(123L).map(_.role) must beSome(UserRole.NormalUser)
+    }
+  }
+
+  "#updatePasswordHash" should {
+    trait UpdatePasswordHashScope extends BaseScope {
+      val user = insertUser(123L, "user-123@example.org", passwordHash="hash1")
+    }
+
+    "set the hash" in new UpdatePasswordHashScope {
+      await(backend.updatePasswordHash(123L, "hash2"))
+      findUser(123L).map(_.passwordHash.trim) must beSome("hash2")
+    }
+
+    "not set other users' hashes" in new UpdatePasswordHashScope {
+      await(backend.updatePasswordHash(124L, "hash2"))
+      findUser(123L).map(_.passwordHash.trim) must beSome("hash1")
     }
   }
 

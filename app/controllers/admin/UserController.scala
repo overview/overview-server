@@ -5,8 +5,8 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
-import controllers.backend.DocumentSetBackend
-import controllers.forms.admin.{NewUserForm, EditUserForm}
+import controllers.backend.UserBackend
+import controllers.forms.admin.NewUserForm
 import controllers.Controller
 import models.{OverviewDatabase,User}
 import models.orm.finders.{UserFinder, SessionFinder}
@@ -15,13 +15,12 @@ import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.finders.ResultPage
 
 trait UserController extends Controller {
-  protected val documentSetBackend: DocumentSetBackend
+  protected val backend: UserBackend
 
   trait Storage {
     def findUser(email: String) : Option[User]
     def findUsers(page: Int) : ResultPage[User]
     def storeUser(user: User) : User // FIXME differentiate between INSERT and UPDATE
-    def deleteUser(user: User) : Unit
   }
 
   private[admin] val PageSize = 50
@@ -51,49 +50,55 @@ trait UserController extends Controller {
     )
   }
 
-  def show(email: String) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
-    storage.findUser(email) match {
+  def show(email: String) = AuthorizedAction(adminUser).async { implicit request =>
+    backend.showByEmail(email).map(_ match {
       case None => NotFound
       case Some(otherUser) => Ok(views.json.admin.User.show(otherUser))
-    }
+    })
   }
 
-  def update(email: String) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
+  def update(email: String) = AuthorizedAction(adminUser).async { implicit request =>
     if (email == request.user.email) {
-      BadRequest
+      Future.successful(BadRequest)
     } else {
-      storage.findUser(email) match {
-        case None => NotFound
+      import com.github.t3hnar.bcrypt._
+
+      backend.showByEmail(email).flatMap(_ match {
+        case None => Future.successful(NotFound)
         case Some(otherUser) => {
-          EditUserForm(otherUser).bindFromRequest().fold(
-            formWithErrors => BadRequest,
-            updatedUser => {
-              storage.storeUser(updatedUser)
-              NoContent
-            }
-          )
+          val data: Map[String,String] = flatRequestData(request)
+
+          val setAdminFuture = data.get("is_admin")
+            .flatMap(_ match {
+              case "true" => Some(true)
+              case "false" => Some(false)
+              case _ => None
+            })
+            .map(backend.updateIsAdmin(otherUser.id, _))
+            .getOrElse(Future.successful(()))
+          val setPasswordHashFuture = data.get("password")
+            .map(s => backend.updatePasswordHash(otherUser.id, s.bcrypt(models.OverviewUser.BcryptRounds)))
+            .getOrElse(Future.successful(()))
+
+          for {
+            _ <- setAdminFuture
+            _ <- setPasswordHashFuture
+          } yield NoContent
         }
-      }
+      })
     }
   }
 
   def delete(email: String) = AuthorizedAction(adminUser).async { implicit request =>
     if (email == request.user.email) {
-      Future.successful(BadRequest)
+      Future.successful(BadRequest("You cannot delete yourself"))
     } else {
-      storage.findUser(email) match {
+      backend.showByEmail(email).flatMap(_ match {
         case None => Future.successful(NotFound)
         case Some(otherUser) => {
-          documentSetBackend.countByUserEmail(email).map { nDocumentSets =>
-            if (nDocumentSets == 0) {
-              storage.deleteUser(otherUser)
-              NoContent
-            } else {
-              BadRequest(m("delete.failure", email))
-            }
-          }
+          backend.destroy(otherUser.id).map(_ => NoContent)
         }
-      }
+      })
     }
   }
 
@@ -105,14 +110,8 @@ object UserController extends UserController {
     override def findUser(email: String) = OverviewDatabase.inTransaction { UserFinder.byEmail(email).headOption }
     override def findUsers(page: Int) = OverviewDatabase.inTransaction { ResultPage(UserFinder.all, PageSize, page) }
     override def storeUser(user: User) = OverviewDatabase.inTransaction { UserStore.insertOrUpdate(user) }
-    override def deleteUser(user: User) = OverviewDatabase.inTransaction {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      import models.orm.Schema._
-      SessionStore.delete(SessionFinder.byUserId(user.id).toQuery)
-      UserStore.delete(user.id)
-    }
   }
 
-  override protected val documentSetBackend = DocumentSetBackend
+  override protected val backend = UserBackend
   override val storage = DatabaseStorage
 }

@@ -3,11 +3,20 @@ package controllers.backend
 import java.sql.Timestamp
 import scala.concurrent.Future
 
-import models.User
+import models.{User,UserRole}
 import models.tables.Users
 import org.overviewproject.models.tables.DocumentSetUsers
 
 trait UserBackend extends Backend {
+  /** Returns a User, if that User exists. */
+  def showByEmail(email: String): Future[Option[User]]
+
+  /** Modifies a User, or does nothing if the User does not exist. */
+  def updateIsAdmin(id: Long, isAdmin: Boolean): Future[Unit]
+
+  /** Modifies a User, or does nothing if the User does not exist. */
+  def updatePasswordHash(id: Long, passwordHash: String): Future[Unit]
+
   /** Updates lastActivityAt and lastActivityIp. */
   def updateLastActivity(id: Long, ip: String, at: Timestamp): Future[Unit]
 
@@ -18,13 +27,36 @@ trait UserBackend extends Backend {
 trait DbUserBackend extends UserBackend { self: DbBackend =>
   import org.overviewproject.database.Slick.simple._
 
+  private lazy val byEmail = Compiled { (email: Column[String]) =>
+    Users.filter(_.email === email)
+  }
+
   private lazy val byId = Compiled { (id: Column[Long]) =>
     Users.filter(_.id === id)
+  }
+
+  private lazy val updateRoleCompiled = Compiled { (id: Column[Long]) =>
+    Users.filter(_.id === id).map(_.role)
+  }
+
+  private lazy val updatePasswordHashCompiled = Compiled { (id: Column[Long]) =>
+    Users.filter(_.id === id).map(_.passwordHash)
   }
 
   private lazy val updateLastActivityCompiled = Compiled { (id: Column[Long]) =>
     for { user <- Users.filter(_.id === id) }
     yield (user.lastActivityIp, user.lastActivityAt)
+  }
+
+  override def showByEmail(email: String) = firstOption(byEmail(email))
+
+  override def updateIsAdmin(id: Long, isAdmin: Boolean) = db { session =>
+    val role = if (isAdmin) UserRole.Administrator else UserRole.NormalUser
+    updateRoleCompiled(id).update(role)(session)
+  }
+
+  override def updatePasswordHash(id: Long, passwordHash: String) = db { session =>
+    updatePasswordHashCompiled(id).update(passwordHash)(session)
   }
 
   override def updateLastActivity(id: Long, ip: String, at: Timestamp) = db { session =>
