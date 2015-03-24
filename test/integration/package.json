@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/overview/overview-server",
   "devDependencies": {
+    "bluebird": "^2.9.14",
     "chai": "~1.9.0",
     "chai-as-promised": "~4.1.1",
     "coffee-script": "~1.8.0",
@@ -30,7 +31,9 @@
     "faker": "~2.0.0",
     "mocha": "~1.21.4",
     "q": "~1.0.0",
+    "request": "^2.53.0",
     "selenium-server-standalone-jar": "~2.45.0",
+    "tough-cookie": "^0.12.1",
     "wd": "~0.3.11"
   }
 }

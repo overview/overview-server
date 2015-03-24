@@ -1,6 +1,7 @@
 wd = require('wd')
 Q = require('q')
 escapeRegexp = require('escape-regexp')
+UserAdminSession = require('./UserAdminSession')
 
 Constants =
   ajaxTimeout: 10000 # timeout waiting for AJAX requests
@@ -207,6 +208,12 @@ module.exports =
   adminLogin:
     email: 'admin@overviewproject.org'
     password: 'admin@overviewproject.org'
+
+  createUserAdminSession: (title) ->
+    new UserAdminSession
+      baseUrl: module.exports.baseUrl
+      timeout: Constants.pageLoadTimeout
+      login: module.exports.adminLogin
 
   # Returns a promise of a browser.
   create: (title) ->

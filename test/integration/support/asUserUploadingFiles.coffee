@@ -25,6 +25,5 @@ module.exports = (title) ->
         .elementBy(tag: 'button', contains: 'Import documents').click()
         .waitForUrl(Url.index, 10000)
 
-    asUser.usingTemporaryUser
-      title: title
-
+  asUser.usingTemporaryUser
+    title: title

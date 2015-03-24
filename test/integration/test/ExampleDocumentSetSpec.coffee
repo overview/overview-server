@@ -74,7 +74,7 @@ describe 'ExampleDocumentSets', ->
       @
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
 
-  asUser.usingTemporaryUser(title: 'ExampleDocumentSets')
+  asUser.usingTemporaryUser(title: 'ExampleDocumentSets', adminBrowser: true)
   
   describe 'after being set as an example', ->
     before ->

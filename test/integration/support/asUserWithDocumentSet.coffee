@@ -6,7 +6,7 @@ Url =
   index: '/documentsets'
   csvUpload: '/imports/csv'
 
-module.exports = (title, csvPath) ->
+module.exports = (title, csvPath, additionalOptions={}) ->
   testMethods.usingPromiseChainMethods
     goToFirstDocumentSet: ->
       @
@@ -47,7 +47,7 @@ module.exports = (title, csvPath) ->
       @
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 10000)
 
-  asUser.usingTemporaryUser
+  options =
     title: title
 
     before: ->
@@ -62,3 +62,6 @@ module.exports = (title, csvPath) ->
         .elementByCss('.actions .dropdown-toggle').click()
         .acceptingNextAlert()
         .elementByCss('.delete-document-set').click()
+
+  options[k] = v for k, v of additionalOptions
+  asUser.usingTemporaryUser(options)

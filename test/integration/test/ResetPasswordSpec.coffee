@@ -54,13 +54,8 @@ describe 'ResetPassword', ->
   asUser.usingTemporaryUser(title: 'ResetPassword')
 
   # We'll start this test suite logged out
-  before -> @userBrowser.logOut()
-
-  getUserDataElement = (context) ->
-    context.adminBrowser
-      .refresh()
-      .waitForElementBy(tag: 'tr', contains: context.userEmail)
-        .elementByCss('>', 'td.confirmed-at')
+  before ->
+    @userBrowser.logOut()
 
   describe 'When the user tries to reset a password', ->
     beforeEach ->
@@ -82,12 +77,10 @@ describe 'ResetPassword', ->
 
     describe 'when the user clicks the token from the email', ->
       beforeEach ->
-        getUserDataElement(@)
-          .getAttribute('data-reset-password-token')
+        @adminSession.showUser(email: @userEmail)
+          .then((x) -> JSON.parse(x).reset_password_token)
           .then (token) =>
-            @userBrowser
-              .get(Url.resetPassword(token))
-              .waitForJqueryReady()
+            @userBrowser.get(Url.resetPassword(token)).waitForJqueryReady()
 
       it 'should show a reset-password form', ->
         @userBrowser

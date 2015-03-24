@@ -51,6 +51,13 @@ trait UserController extends Controller {
     )
   }
 
+  def show(email: String) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
+    storage.findUser(email) match {
+      case None => NotFound
+      case Some(otherUser) => Ok(views.json.admin.User.show(otherUser))
+    }
+  }
+
   def update(email: String) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
     if (email == request.user.email) {
       BadRequest

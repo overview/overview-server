@@ -6,8 +6,6 @@ browser = require('../lib/browser')
 Url =
   login: '/login'
   confirm: (token) -> "/confirm/#{token}"
-  deleteUser: (email) -> "/admin/users/#{encodeURIComponent(email)}?X-HTTP-Method-Override=DELETE"
-  adminUserIndex: '/admin/users'
 
 describe 'Registration', ->
   testMethods.usingPromiseChainMethods
@@ -24,25 +22,6 @@ describe 'Registration', ->
         .elementByCss('.user-form [name=password2]').type(password2)
         .elementByCss('.user-form [type=submit]').click()
 
-    tryConfirm: (token) ->
-      @
-        .elementByCss('input[name=token]').type(token)
-        .elementByCss('input[type=submit]').click()
-
-    createUser: (email, password) ->
-      @
-        .get(Url.adminUserIndex)
-        .waitForElementByCss('.new-user form')
-        .elementByCss('.new-user [name=email]').type(email)
-        .elementByCss('.new-user [name=password]').type(password)
-        .listenForJqueryAjaxComplete()
-        .elementByCss('.new-user [type=submit]').click()
-        .waitForJqueryAjaxComplete()
-
-    deleteUser: (email) ->
-      @
-        .get(Url.deleteUser(email))
-
     shouldBeLoggedInAs: (email) ->
       @elementByCss('.logged-in strong').text().should.eventually.equal(email)
 
@@ -51,29 +30,18 @@ describe 'Registration', ->
         .url().should.eventually.match(/\/login\b/)
         .elementByCss('.session-form').text().should.eventually.contain('Wrong email address or password')
 
-    shouldBeLoggedOut: ->
-      @elementByCss('.session-form').should.eventually.exist
-
     logOut: ->
       @elementByXPath("//a[@href='/logout']").click()
         .waitForElementByCss('.session-form')
 
   before ->
     @userEmail = faker.internet.email()
-    @userBrowser = browser.create('Registration - user')
-    @adminBrowser = browser.create('Registration - admin')
-      .get(Url.adminUserIndex)
-      .tryLogIn(browser.adminLogin.email, browser.adminLogin.password)
-      # We don't actually want to do anything. We just keep this around for later.
-
-  after ->
-    Q.all([
-      @userBrowser.deleteAllCookies().quit()
-      @adminBrowser.deleteAllCookies().quit()
-    ])
-
-  before ->
     @validPassword = 'icrucGofbap4'
+
+    @userBrowser = browser.create('Registration - user')
+    @adminSession = browser.createUserAdminSession('Registration')
+
+  after -> @userBrowser.deleteAllCookies().quit()
 
   it 'should not register a bad email format', ->
     @userBrowser
@@ -102,13 +70,13 @@ describe 'Registration', ->
       .elementByCss('a[href="/reset-password"]').should.eventually.exist
 
   describe 'when the user already exists', ->
-    before -> @adminBrowser.createUser(@userEmail, @userEmail)
-    after -> @adminBrowser.deleteUser(@userEmail)
+    before -> @adminSession.createUser(email: @userEmail, password: @validPassword)
+    after -> @adminSession.deleteUser(email: @userEmail)
 
     before ->
       @userBrowser
         .get(Url.login)
-        .tryRegister(@userEmail, @validPassword, @validPassword)
+        .tryRegister(@userEmail, @validPassword + '1', @validPassword + '1')
 
     it 'should prompt the user to check his or her email', ->
       @userBrowser
@@ -118,33 +86,31 @@ describe 'Registration', ->
       # This would be a huge security hole!
       @userBrowser
         .get(Url.login)
-        .tryLogIn(@userEmail, @userEmail)
+        .tryLogIn(@userEmail, @validPassword)
         .shouldBeLoggedInAs(@userEmail)
         .logOut()
-        .tryLogIn(@userEmail, @validPassword)
+        .tryLogIn(@userEmail, @validPassword + '1')
         .shouldHaveFailedToLogIn()
 
     it 'should not give the user a confirmation token', ->
-      @adminBrowser
-        .get(Url.adminUserIndex)
-        .waitForElementBy(tag: 'tr', contains: @userEmail)
-        .elementByCss('>', 'td.confirmed-at').getAttribute('data-confirmation-token').should.eventually.not.exist
+      @adminSession
+        .showUser(email: @userEmail)
+        .then((u) -> JSON.parse(u).confirmation_token).should.eventually.not.exist
 
   describe 'when the user tries to register', ->
+    before ->
+      @getConfirmationToken = =>
+        @adminSession
+          .showUser(email: @userEmail)
+          .then((u) -> JSON.parse(u).confirmation_token)
+
     beforeEach ->
       @userBrowser
         .get(Url.login)
         .tryRegister(@userEmail, @validPassword, @validPassword)
 
     afterEach ->
-      @adminBrowser.deleteUser(@userEmail)
-
-    beforeEach ->
-      @getConfirmationToken = =>
-        @adminBrowser
-          .get(Url.adminUserIndex)
-          .waitForElementBy(tag: 'tr', contains: @userEmail)
-          .elementByCss('>', 'td.confirmed-at').getAttribute('data-confirmation-token')
+      @adminSession.deleteUser(email: @userEmail)
 
     it 'should prompt the user to check his or her email', ->
       @userBrowser

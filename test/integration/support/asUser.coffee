@@ -27,55 +27,43 @@ module.exports =
   # Tests should make use of @userBrowser and @userEmail. The user's password
   # is always equal to @userEmail.
   #
-  # Tests may also make use of @adminBrowser. Note that this framework expects
-  # @adminBrowser to stay on the same page, always, and it expects @userEmail
-  # to exist after the test is complete.
-  #
   # You may also pass an "options" parameter. It's an Object with any of:
   #
   # * before: block called once the variables are set up.
   # * after: block called before the variables are torn down.
   # * title: title of the block (very useful for debugging).
+  # * adminBrowser: if true, lets tests use @adminBrowser.
   usingTemporaryUser: (options={}) ->
     title = options.title || 'usingTemporaryUser'
 
     before ->
-      @userEmail = faker.internet.email()
-      @userBrowser = userBrowser = browser.create("#{title} - #{@userEmail}")
-        .get(Url.login)
-        .waitForElementByCss('.session-form')
-        .elementByCss('.session-form [name=email]').type(@userEmail)
-        .elementByCss('.session-form [name=password]').type(@userEmail)
-        # Don't click yet: wait for the user to be created
+      @adminSession = browser.createUserAdminSession(title)
 
-      @adminBrowser = browser.create("#{title} - #{browser.adminLogin.email}")
-
-      @adminBrowser
-        .get(Url.adminUserIndex)
-        .waitForElementByCss('.session-form')
-        .elementByCss('.session-form [name=email]').type(browser.adminLogin.email)
-        .elementByCss('.session-form [name=password]').type(browser.adminLogin.password)
-        .elementByCss('.session-form [type=submit]').click()
-        .waitForElementByCss('.new-user form')
-        .elementByCss('.new-user [name=email]').type(@userEmail)
-        .elementByCss('.new-user [name=password]').type(@userEmail)
-        .listenForJqueryAjaxComplete()
-        .elementByCss('.new-user [type=submit]').click()
-        .waitForJqueryAjaxComplete()
-        .then ->
-          userBrowser.elementByCss('.session-form [type=submit]').click()
+      @adminSession.createTemporaryUser()
+        .then (user) =>
+          @userEmail = user.email
+          @userBrowser = userBrowser = browser.create("#{title} - #{@userEmail}")
+            .get(Url.login)
+            .waitForElementByCss('.session-form')
+            .elementByCss('.session-form [name=email]').type(@userEmail)
+            .elementByCss('.session-form [name=password]').type(@userEmail)
+            .elementByCss('.session-form [type=submit]').click()
         .then =>
-          options.before?.apply(@)
+          if options.adminBrowser
+            @adminBrowser = browser.create("#{title} - #{browser.adminLogin.email}")
+
+            @adminBrowser
+              .get(Url.login)
+              .waitForElementByCss('.session-form')
+              .elementByCss('.session-form [name=email]').type(browser.adminLogin.email)
+              .elementByCss('.session-form [name=password]').type(browser.adminLogin.password)
+              .elementByCss('.session-form [type=submit]').click()
+          else
+            null
+        .then => options.before?.apply(@)
 
     after ->
       Q(options.after?.apply(@)) # promise or undefined -- both work
-        .then =>
-          Q.all([
-            @adminBrowser
-              .get(Url.deleteUser(@userEmail))
-              .deleteAllCookies()
-              .quit()
-            @userBrowser
-              .deleteAllCookies()
-              .quit()
-          ])
+        .then => @adminSession.deleteUser(email: @userEmail).then(=> @adminSession = null)
+        .then => @userBrowser.deleteAllCookies().quit().then(=> @userBrowser = null)
+        .then => Q(@adminBrowser?.deleteAllCookies()?.quit()).then(=> @adminBrowser = null)
