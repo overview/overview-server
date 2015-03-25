@@ -14,7 +14,6 @@ class UploadReaderSpec extends DbSpecification {
     val encodingStringOption: Option[String] = None
     val buffer = new Array[Char](1024)
 
-    lazy val pgConnection = session.conn.unwrap(classOf[PGConnection])
     lazy val loApi = pgConnection.getLargeObjectAPI()
 
     lazy val loid = {
