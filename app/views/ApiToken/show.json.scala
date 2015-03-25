@@ -14,7 +14,8 @@ object show {
     Json.obj(
       "token" -> token.token,
       "description" -> token.description,
-      "createdAt" -> formatDate(token.createdAt)
+      "createdAt" -> formatDate(token.createdAt),
+      "createdBy" -> token.createdBy
     )
   }
 }

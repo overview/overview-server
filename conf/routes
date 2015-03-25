@@ -132,6 +132,8 @@ DELETE /plugins/:id controllers.PluginController.destroy(id: java.util.UUID)
 # Each is documented at https://github.com/overview/overview-server/wiki/API-v1
 GET    /api/v1/document-sets/:id/tags      controllers.api.TagController.index(id: Long)
 
+POST   /api/v1/document-sets controllers.api.DocumentSetController.create()
+
 GET    /api/v1/files        controllers.api.MassUploadController.index()
 POST   /api/v1/files/finish controllers.api.MassUploadController.startClustering()
 HEAD   /api/v1/files/:guid  controllers.api.MassUploadController.show(guid: java.util.UUID)
