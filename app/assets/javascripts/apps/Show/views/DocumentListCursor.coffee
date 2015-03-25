@@ -114,6 +114,7 @@ define [
 
       @$headerEl.html(html)
       @$headerEl.find('.document-display-preferences').append(@preferencesView.el)
+      @preferencesView.delegateEvents()
 
     _getDocument: ->
       cursorIndex = @selection.get('cursorIndex')
