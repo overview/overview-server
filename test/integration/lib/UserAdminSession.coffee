@@ -21,9 +21,9 @@ module.exports = class UserAdminSession
         else
           resolve(response: response, body: body)
 
-  GET: (url) -> @r(method: 'GET', url: "#{@options.baseUrl}#{url}")
-  POST: (url, json) -> @r(method: 'POST', url: "#{@options.baseUrl}#{url}", json: json)
-  DELETE: (url) -> @r(method: 'DELETE', url: "#{@options.baseUrl}#{url}")
+  GET: (url) -> @r(method: 'GET', url: url)
+  POST: (url, json) -> @r(method: 'POST', url: url, json: json)
+  DELETE: (url) -> @r(method: 'DELETE', url: url)
 
   _then: (code) ->
     @promise = @promise.then(code)
