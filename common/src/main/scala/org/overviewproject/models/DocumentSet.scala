@@ -29,3 +29,18 @@ case class DocumentSet(
     deleted
   )
 }
+
+object DocumentSet {
+  case class CreateAttributes(
+    title: String,
+    // For the rest, callers should stick with these default values
+    query: Option[String] = None,
+    public: Boolean = false,
+    createdAt: Timestamp = new Timestamp(System.currentTimeMillis),
+    documentCount: Int = 0,
+    documentProcessingErrorCount: Int = 0,
+    importOverflowCount: Int = 0,
+    uploadedFileId: Option[Long] = None,
+    deleted: Boolean = false
+  )
+}

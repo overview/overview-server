@@ -29,6 +29,21 @@ class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set")
     uploadedFileId,
     deleted
   ) <> ((DocumentSet.apply _).tupled, DocumentSet.unapply)
+
+  def createAttributes = (
+    title,
+    query,
+    isPublic,
+    createdAt,
+    documentCount,
+    documentProcessingErrorCount,
+    importOverflowCount,
+    uploadedFileId,
+    deleted
+  ) <> (
+    DocumentSet.CreateAttributes.tupled,
+    DocumentSet.CreateAttributes.unapply
+  )
 }
 
 object DocumentSets extends TableQuery(new DocumentSetsImpl(_))

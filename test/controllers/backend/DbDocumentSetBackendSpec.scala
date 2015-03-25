@@ -1,10 +1,27 @@
 package controllers.backend
 
+import org.overviewproject.models.tables.DocumentSets
 import org.overviewproject.models.DocumentSet
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
     val backend = new TestDbBackend(session) with DbDocumentSetBackend
+
+    def findDocumentSet(id: Long): Option[DocumentSet] = {
+      import org.overviewproject.database.Slick.simple._
+      DocumentSets.filter(_.id === id).firstOption(session)
+    }
+  }
+
+  "#create" should {
+    trait CreateScope extends BaseScope
+
+    "create a document set with a title" in new CreateScope {
+      val ret = await(backend.create(DocumentSet.CreateAttributes("our-title")))
+      val dbRet = findDocumentSet(ret.id)
+      dbRet must beSome(ret)
+      ret.title must beEqualTo("our-title")
+    }
   }
 
   "#show" should {
