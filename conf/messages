@@ -233,6 +233,7 @@ views.DocumentProcessingError.index.h4=Documents with errors
 views.DocumentProcessingError.index.failedBecause=Failed with error “{0}”
 views.DocumentProcessingError.index.close=Close
 
+views.DocumentSet._dcimport.import=Import
 views.DocumentSet._dcimport.preamble_html=Enter your <span class="documentcloud-logo">DocumentCloud</span> email and password to access your projects.
 views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
 views.DocumentSet._dcimport.labels.email=Email
