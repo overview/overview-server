@@ -87,15 +87,15 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         override val formBody = validFormBody
         mockAppUrlChecker.check(any[String]) returns Future.failed(new Throwable("some error"))
         h.status(result) must beEqualTo(h.BAD_REQUEST)
-        there was no(mockApiTokenBackend).create(any[Long], any[ApiToken.CreateAttributes])
+        there was no(mockApiTokenBackend).create(any[Option[Long]], any[ApiToken.CreateAttributes])
       }
 
       "create an ApiToken" in new CreateScope {
         override val formBody = validFormBody
         mockAppUrlChecker.check(any[String]) returns Future.successful(Unit)
-        mockApiTokenBackend.create(any[Long], any[ApiToken.CreateAttributes]) returns Future.failed(new Throwable("goto end"))
+        mockApiTokenBackend.create(any[Option[Long]], any[ApiToken.CreateAttributes]) returns Future.failed(new Throwable("goto end"))
         h.status(result)
-        there was one(mockApiTokenBackend).create(documentSetId, ApiToken.CreateAttributes(
+        there was one(mockApiTokenBackend).create(Some(documentSetId), ApiToken.CreateAttributes(
           email="user@example.org",
           description="title"
         ))
@@ -104,7 +104,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       "create a View" in new CreateScope {
         override val formBody = validFormBody
         mockAppUrlChecker.check(any[String]) returns Future.successful(Unit)
-        mockApiTokenBackend.create(any[Long], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken(token="api-token"))
+        mockApiTokenBackend.create(any[Option[Long]], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken(token="api-token"))
         mockViewBackend.create(any[Long], any[View.CreateAttributes]) returns Future.failed(new Throwable("goto end"))
         h.status(result)
         there was one(mockViewBackend).create(documentSetId, View.CreateAttributes(
@@ -117,7 +117,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       "return the View" in new CreateScope {
         override val formBody = validFormBody
         mockAppUrlChecker.check(any[String]) returns Future.successful(())
-        mockApiTokenBackend.create(any[Long], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken())
+        mockApiTokenBackend.create(any[Option[Long]], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken())
         mockViewBackend.create(any[Long], any[View.CreateAttributes]) returns Future.successful(factory.view(
           id=123L,
           url="http://localhost:9001",

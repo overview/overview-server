@@ -29,7 +29,7 @@ trait ApiControllerSpecification
 
     val factory: Factory = PodoFactory
 
-    private def fakeApiToken = ApiToken("12345", new java.sql.Timestamp(0L), "user@example.org", "foo", 1L)
+    private def fakeApiToken = ApiToken("12345", new java.sql.Timestamp(0L), "user@example.org", "foo", Some(1L))
 
     def fakeRequest[T](body: T): ApiAuthorizedRequest[T] = {
       new ApiAuthorizedRequest(FakeRequest().withBody(body), fakeApiToken)

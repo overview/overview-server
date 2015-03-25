@@ -23,8 +23,8 @@ class ApiTokenFactorySpec extends test.InAppSpecification with Mockito with Json
       override protected val storage = mockStorage
     }
 
-    val rightToken = ApiToken("12345", new java.sql.Timestamp(0L), "user@example.org", "foo", 4L)
-    val wrongToken = ApiToken("23456", new java.sql.Timestamp(0L), "user@example.com", "bar", 5L)
+    val rightToken = ApiToken("12345", new java.sql.Timestamp(0L), "user@example.org", "foo", Some(4L))
+    val wrongToken = ApiToken("23456", new java.sql.Timestamp(0L), "user@example.com", "bar", Some(5L))
 
     authority.apply(rightToken) returns Future(true)
     authority.apply(wrongToken) returns Future(false)

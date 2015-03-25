@@ -3,15 +3,13 @@ package org.overviewproject.models
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import org.overviewproject.tree.orm.DocumentSetComponent
-
 case class ApiToken(
   token: String,
   createdAt: java.sql.Timestamp, // Squeryl drops time when we use Date
   createdBy: String,
   description: String,
-  documentSetId: Long
-) extends DocumentSetComponent
+  documentSetId: Option[Long]
+)
 
 object ApiToken {
   case class CreateAttributes(
@@ -61,11 +59,11 @@ object ApiToken {
     }
   }
 
-  def build(documentSetId: Long, attributes: CreateAttributes) : ApiToken = {
+  def build(documentSetId: Option[Long], attributes: CreateAttributes) : ApiToken = {
     generate(attributes.email, documentSetId, attributes.description)
   }
 
-  def generate(email: String, documentSetId: Long, description: String) : ApiToken = {
+  def generate(email: String, documentSetId: Option[Long], description: String) : ApiToken = {
     ApiToken(
       token=TokenGenerator.next,
       createdBy=email,

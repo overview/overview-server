@@ -34,7 +34,7 @@ class DbStoreBackendSpec extends DbBackendSpecification {
     "#showOrCreate" should {
       trait ShowOrCreateScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
       }
 
       "show a Store" in new ShowOrCreateScope {
@@ -60,7 +60,7 @@ class DbStoreBackendSpec extends DbBackendSpecification {
     "#upsert" should {
       trait UpdateOrCreateScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
       }
 
       "overwrite JSON" in new UpdateOrCreateScope {
@@ -89,7 +89,7 @@ class DbStoreBackendSpec extends DbBackendSpecification {
     "#destroy" should {
       trait DestroyScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
 
         def destroy = await(backend.destroy(store.apiToken))
@@ -124,7 +124,7 @@ class DbStoreBackendSpec extends DbBackendSpecification {
       }
 
       "not delete another Store's StoreObjects and DocumentStoreObjects" in new DestroyScope {
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val view2 = factory.view(documentSetId=documentSet.id, apiToken=apiToken2.token)
         val store2 = factory.store(apiToken=apiToken2.token)
         val storeObject = factory.storeObject(storeId=store2.id)

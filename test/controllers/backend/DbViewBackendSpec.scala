@@ -17,8 +17,8 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#index" should {
       "index a document set's views" in new BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken1 = factory.apiToken(documentSetId=documentSet.id, token="token1")
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken1 = factory.apiToken(documentSetId=Some(documentSet.id), token="token1")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val view1 = factory.view(documentSetId=documentSet.id, apiToken=apiToken1.token)
         val view2 = factory.view(documentSetId=documentSet.id, apiToken=apiToken2.token)
 
@@ -31,7 +31,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
       "not index a different document set's views" in new BaseScope {
         val documentSet1 = factory.documentSet()
         val documentSet2 = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet2.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet2.id))
         val view = factory.view(documentSetId=documentSet2.id, apiToken=apiToken.token)
 
         val ret = await(backend.index(documentSet1.id))
@@ -42,7 +42,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#show" should {
       "show a view" in new BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         val ret = await(backend.show(view.id))
         ret.map(_.id) must beSome(view.id)
@@ -57,7 +57,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#create" should {
       trait CreateScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id, token="api-token")
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id), token="api-token")
 
         val attributes = View.CreateAttributes(
           url="http://example.org",
@@ -92,7 +92,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#update" should {
       trait UpdateScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         val attributes = View.UpdateAttributes(title="new title")
         val viewId = view.id
@@ -120,7 +120,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
       }
 
       "not update other Views" in new UpdateScope {
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val view2 = factory.view(documentSetId=documentSet.id, apiToken=apiToken2.token)
         updateView
         val dbView2 = findView(view2.id)
@@ -133,7 +133,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
     "#destroy" should {
       trait DestroyScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val view = factory.view(documentSetId=documentSet.id, apiToken=apiToken.token)
         def destroy = await(backend.destroy(view.id))
       }
@@ -144,7 +144,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
       }
 
       "not delete a different View" in new DestroyScope {
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val view2 = factory.view(documentSetId=documentSet.id, apiToken=apiToken2.token)
         destroy
         findView(view2.id) must beSome

@@ -19,7 +19,7 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
     "#create" should {
       trait CreateScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val documentSetId = documentSet.id
+        val documentSetId = Some(documentSet.id)
         val attributes = ApiToken.CreateAttributes(
           email="user@example.org",
           description="description"
@@ -30,7 +30,7 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
       }
 
       "return an ApiToken" in new CreateScope {
-        apiToken.documentSetId must beEqualTo(documentSet.id)
+        apiToken.documentSetId must beSome(documentSet.id)
         apiToken.createdBy must beEqualTo("user@example.org")
         apiToken.description must beEqualTo("description")
       }
@@ -47,7 +47,7 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
       }
 
       "fail when writing an invalid document set ID" in new CreateScope {
-        override val documentSetId = documentSet.id + 1L
+        override val documentSetId = Some(documentSet.id + 1L)
         createApiToken must throwA[exceptions.ParentMissing]
       }
     }
@@ -55,7 +55,7 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
     "#destroy" should {
       trait DestroyScope extends BaseScope {
         val documentSet = factory.documentSet()
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         def destroy = await(backend.destroy(apiToken.token))
       }
 
@@ -65,7 +65,7 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
       }
 
       "not delete a different ApiToken" in new DestroyScope {
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         destroy
         findApiToken(apiToken2.token) must beSome
       }

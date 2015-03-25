@@ -139,7 +139,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
   }
   
   trait PluginScope extends BasicDocumentSetScope {
-    val apiToken = factory.apiToken(documentSetId = documentSet.id)
+    val apiToken = factory.apiToken(documentSetId = Some(documentSet.id))
     val store = factory.store(apiToken = apiToken.token)
     val storeObject = factory.storeObject(storeId = store.id)
     documents.map(d => factory.documentStoreObject(documentId = d.id, storeObjectId = storeObject.id))

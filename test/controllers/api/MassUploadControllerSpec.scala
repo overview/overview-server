@@ -35,7 +35,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     }
 
     val factory = org.overviewproject.test.factories.PodoFactory
-    val apiToken = factory.apiToken(createdBy="user@example.org", token="api-token")
+    val apiToken = factory.apiToken(createdBy="user@example.org", token="api-token", documentSetId=Some(1L))
   }
 
   "#index" should {
@@ -153,7 +153,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     trait StartClusteringScope extends BaseScope {
       lazy val request = new ApiAuthorizedRequest(FakeRequest().withJsonBody(formData), apiToken)
       lazy val documentSetId = {
-        val ret = request.apiToken.documentSetId
+        val ret = request.apiToken.documentSetId.get
         factory.documentSet(id=ret)
         ret
       }

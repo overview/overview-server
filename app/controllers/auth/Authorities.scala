@@ -28,13 +28,13 @@ trait Authorities extends SlickClient {
   /** Allows any user who is owner of the given DocumentSet ID. */
   def userOwningDocumentSet(id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocumentSet(user.email, id))
-    override def apply(apiToken: ApiToken) = Future.successful(apiToken.documentSetId == id)
+    override def apply(apiToken: ApiToken) = Future.successful(apiToken.documentSetId == Some(id))
   }
 
   /** Allows any user who is owner of the DocumentSet associated with the given Tag. */
   def userOwningTag(documentSetId: Long, id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocumentSetTag(user.email, documentSetId, id))
-    override def apply(apiToken: ApiToken) = (apiToken.documentSetId == documentSetId) match {
+    override def apply(apiToken: ApiToken) = (apiToken.documentSetId == Some(documentSetId)) match {
       case true => check(q.documentSetTag(documentSetId, id))
       case false => Future.successful(false)
     }
@@ -73,7 +73,7 @@ trait Authorities extends SlickClient {
   /** Allows any user with any role for the given Document ID. */
   def userOwningDocument(id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocument(user.email, id))
-    override def apply(apiToken: ApiToken) = check(q.documentSetDocument(apiToken.documentSetId, id))
+    override def apply(apiToken: ApiToken) = check(q.maybeDocumentSetDocument(apiToken.documentSetId, id))
   }
 
   def userOwningJob(id: Long) = new Authority {
@@ -156,10 +156,10 @@ object Authorities extends Authorities with SlickSessionProvider {
         .map(_ => (true))
     }
 
-    lazy val documentSetDocument = Compiled { (documentSetId: Column[Long], documentId: Column[Long]) =>
+    lazy val maybeDocumentSetDocument = Compiled { (maybeDocumentSetId: Column[Option[Long]], documentId: Column[Long]) =>
       Documents
         .filter(_.id === documentId)
-        .filter(_.documentSetId === documentSetId)
+        .filter(_.documentSetId === maybeDocumentSetId)
         .map(_ => (true))
     }
 

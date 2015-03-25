@@ -44,7 +44,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
         override lazy val request = fakeRequest("GET", "/?q=foo")
         mockObjectBackend.countByObject(123L, mockSelection) returns Future.successful(Map(1L -> 2, 3L -> 4))
         status(result)
-        there was one(mockSelectionBackend).findOrCreate(request.apiToken.createdBy, SelectionRequest(apiToken.documentSetId, q="foo"))
+        there was one(mockSelectionBackend).findOrCreate(request.apiToken.createdBy, SelectionRequest(apiToken.documentSetId.get, q="foo"))
       }
     }
 

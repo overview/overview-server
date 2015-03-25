@@ -40,7 +40,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     "call getTokens()" in new IndexJsonScope {
       mockStorage.getTokens(any, any).returns(Seq())
       result
-      there was one(mockStorage).getTokens(request.user.email, documentSetId)
+      there was one(mockStorage).getTokens(request.user.email, Some(documentSetId))
     }
 
     "respond with JSON" in new IndexJsonScope {
@@ -54,7 +54,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
         token="12345",
         createdAt=new java.sql.Timestamp(1405522589794L),
         createdBy="user@example.org",
-        documentSetId=documentSetId,
+        documentSetId=Some(documentSetId),
         description="description"
       )
       mockStorage.getTokens(any, any).returns(Seq(token))
@@ -76,7 +76,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
         token="12345",
         createdAt=new java.sql.Timestamp(1405522589794L),
         createdBy="user@example.org",
-        documentSetId=documentSetId,
+        documentSetId=Some(documentSetId),
         description="description"
       )
       mockStorage.createToken(any, any, any).returns(token)
@@ -84,7 +84,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
 
     "create the token" in new CreateJsonScope {
       result
-      there was one(mockStorage).createToken(request.user.email, documentSetId, "foo")
+      there was one(mockStorage).createToken(request.user.email, Some(documentSetId), "foo")
     }
 
     "create the token with a JSON-encoded request" in new BaseScope {
@@ -94,7 +94,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
         token="12345",
         createdAt=new java.sql.Timestamp(1405522589794L),
         createdBy="user@example.org",
-        documentSetId=documentSetId,
+        documentSetId=Some(documentSetId),
         description="description"
       )
       mockStorage.createToken(any, any, any).returns(token)
@@ -103,7 +103,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
       val result = controller.create(documentSetId)(request)
 
       h.status(result) must beEqualTo(h.OK)
-      there was one(mockStorage).createToken(request.user.email, documentSetId, "foo")
+      there was one(mockStorage).createToken(request.user.email, Some(documentSetId), "foo")
     }
 
     "return the object as JSON" in new CreateJsonScope {
@@ -119,7 +119,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     "create an object with an empty description if the request is wrong" in new CreateJsonScope {
       override lazy val result = controller.create(documentSetId)(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.OK)
-      there was one(mockStorage).createToken(request.user.email, documentSetId, "")
+      there was one(mockStorage).createToken(request.user.email, Some(documentSetId), "")
     }
   }
 

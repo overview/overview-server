@@ -55,7 +55,8 @@ trait DocumentStoreObjectController extends ApiController {
       JsObject(values)
     }
 
-    val sr = selectionRequest(request.apiToken.documentSetId, request)
+    // FIXME untyped .get. Change the URL.
+    val sr = selectionRequest(request.apiToken.documentSetId.get, request)
 
     for {
       store <- storeBackend.showOrCreate(request.apiToken.token)

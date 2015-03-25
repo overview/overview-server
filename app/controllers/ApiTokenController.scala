@@ -18,7 +18,7 @@ trait ApiTokenController extends Controller {
         Ok(views.html.ApiToken.index(request.user, id))
       }
       case Accepts.Json() => {
-        val tokens = storage.getTokens(request.user.email, id)
+        val tokens = storage.getTokens(request.user.email, Some(id))
         Ok(views.json.ApiToken.index(tokens))
       }
     }
@@ -30,7 +30,7 @@ trait ApiTokenController extends Controller {
       f => "",
       f => f
     )
-    val token = storage.createToken(request.user.email, id, description)
+    val token = storage.createToken(request.user.email, Some(id), description)
     Ok(views.json.ApiToken.show(token))
   }
 
@@ -48,13 +48,13 @@ trait ApiTokenController extends Controller {
 
 object ApiTokenController extends ApiTokenController {
   trait Storage {
-    def getTokens(email: String, documentSetId: Long) : Seq[ApiToken]
-    def createToken(email: String, documentSetId: Long, description: String) : ApiToken
+    def getTokens(email: String, documentSetId: Option[Long]) : Seq[ApiToken]
+    def createToken(email: String, documentSetId: Option[Long], description: String) : ApiToken
     def destroyToken(token: String) : Unit
   }
 
   override val storage = new Storage {
-    override def getTokens(email: String, documentSetId: Long) = {
+    override def getTokens(email: String, documentSetId: Option[Long]) = {
       OverviewDatabase.inTransaction {
         import models.orm.Schema
         import org.overviewproject.postgres.SquerylEntrypoint._
@@ -66,7 +66,7 @@ object ApiTokenController extends ApiTokenController {
       }
     }
 
-    override def createToken(email: String, documentSetId: Long, description: String) = {
+    override def createToken(email: String, documentSetId: Option[Long], description: String) = {
       val token = ApiToken.generate(email, documentSetId, description)
       OverviewDatabase.inTransaction {
         import models.orm.Schema

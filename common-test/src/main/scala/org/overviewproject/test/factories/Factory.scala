@@ -28,7 +28,7 @@ trait Factory {
     createdAt: Timestamp = now,
     createdBy: String = "user@example.org",
     description: String = "description",
-    documentSetId: Long = 0L): ApiToken
+    documentSetId: Option[Long] = None): ApiToken
 
   /** Creates a new Document with the given parameters. */
   def document(

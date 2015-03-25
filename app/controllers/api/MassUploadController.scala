@@ -138,7 +138,8 @@ trait MassUploadController extends ApiController {
   private def startClusteringFileGroupWithOptions(apiToken: ApiToken,
                                                   options: (String, Boolean, String, String)): Future[Result] = {
     val userEmail: String = apiToken.createdBy
-    val documentSetId: Long = apiToken.documentSetId
+    // FIXME type-unsafe .get. Change the URL.
+    val documentSetId: Long = apiToken.documentSetId.get
     val (lang, splitDocuments, suppliedStopWords, importantWords) = options
 
     fileGroupBackend.find(userEmail, Some(apiToken.token)).flatMap(_ match {

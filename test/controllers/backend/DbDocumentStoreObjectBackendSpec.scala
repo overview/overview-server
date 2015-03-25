@@ -24,7 +24,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       trait ShowScope extends BaseScope {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id)
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
         val storeObject = factory.storeObject(storeId=store.id)
         val documentStoreObject=factory.documentStoreObject(
@@ -57,7 +57,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val doc1 = factory.document(documentSetId=documentSet.id)
         val doc2 = factory.document(documentSetId=documentSet.id)
         val doc3 = factory.document(documentSetId=documentSet.id) // no joins
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
         val so1 = factory.storeObject(storeId=store.id)
         val so2 = factory.storeObject(storeId=store.id)
@@ -94,7 +94,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       trait CreateScope extends BaseScope {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id)
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
         val storeObject = factory.storeObject(storeId=store.id)
 
@@ -141,7 +141,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val documentSet = factory.documentSet()
         val doc1 = factory.document(documentSetId=documentSet.id)
         val doc2 = factory.document(documentSetId=documentSet.id)
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
         val storeId = store.id
         val obj1 = factory.storeObject(storeId=store.id)
@@ -207,7 +207,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       }
 
       "filter by Store ID" in new CreateManyScope {
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val store2 = factory.store(apiToken=apiToken2.token)
         val obj3 = factory.storeObject(storeId=store2.id)
         override val args = Seq(
@@ -224,7 +224,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       trait UpdateScope extends BaseScope {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id)
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
         val storeObject = factory.storeObject(storeId=store.id)
         val documentStoreObject = factory.documentStoreObject(
@@ -272,7 +272,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       trait DestroyScope extends BaseScope {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id)
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
         val storeObject = factory.storeObject(storeId=store.id)
         val documentStoreObject = factory.documentStoreObject(documentId=document.id, storeObjectId=storeObject.id)
@@ -306,7 +306,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val documentSet = factory.documentSet()
         val doc1 = factory.document(documentSetId=documentSet.id)
         val doc2 = factory.document(documentSetId=documentSet.id)
-        val apiToken = factory.apiToken(documentSetId=documentSet.id)
+        val apiToken = factory.apiToken(documentSetId=Some(documentSet.id))
         val store = factory.store(apiToken=apiToken.token)
         val obj1 = factory.storeObject(storeId=store.id)
         val obj2 = factory.storeObject(storeId=store.id)
@@ -330,7 +330,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       "skip documents in other document sets" in new DestroyManyScope {
         val documentSet2 = factory.documentSet()
         val doc3 = factory.document(documentSetId=documentSet.id)
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val store2 = factory.store(apiToken=apiToken2.token)
         val obj3 = factory.storeObject(storeId=store2.id)
         val dvo4 = factory.documentStoreObject(documentId=doc3.id, storeObjectId=obj3.id)
@@ -352,7 +352,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       }
 
       "skip objects in other stores" in new DestroyManyScope {
-        val apiToken2 = factory.apiToken(documentSetId=documentSet.id, token="token2")
+        val apiToken2 = factory.apiToken(documentSetId=Some(documentSet.id), token="token2")
         val store2 = factory.store(apiToken=apiToken2.token)
         val obj3 = factory.storeObject(storeId=store2.id)
         val dvo4 = factory.documentStoreObject(documentId=doc1.id, storeObjectId=obj3.id)

@@ -10,7 +10,7 @@ class ApiTokensImpl(tag: Tag) extends Table[ApiToken](tag, "api_token") {
   def createdAt = column[Timestamp]("created_at")
   def createdBy = column[String]("created_by")
   def description = column[String]("description")
-  def documentSetId = column[Long]("document_set_id")
+  def documentSetId = column[Option[Long]]("document_set_id")
 
   def * = (token, createdAt, createdBy, description, documentSetId) <> ((ApiToken.apply _).tupled, ApiToken.unapply)
 }

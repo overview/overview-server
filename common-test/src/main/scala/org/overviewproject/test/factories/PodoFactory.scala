@@ -47,17 +47,17 @@ object PodoFactory extends Factory {
   }
 
   override def apiToken(
-    token: String = "token",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
-    createdBy: String = "user@example.org",
-    description: String = "description",
-    documentSetId: Long = 0L
+    token: String,
+    createdAt: Timestamp,
+    createdBy: String,
+    description: String,
+    documentSetId: Option[Long]
   ) = ApiToken(
     token,
     createdAt,
     createdBy,
     description,
-    getId(documentSetId)
+    documentSetId
   )
 
   override def document(

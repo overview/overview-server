@@ -10,7 +10,7 @@ trait ApiTokenBackend {
     *
     * Returns an error if the database write fails.
     */
-  def create(documentSetId: Long, attributes: ApiToken.CreateAttributes): Future[ApiToken]
+  def create(documentSetId: Option[Long], attributes: ApiToken.CreateAttributes): Future[ApiToken]
 
   /** Destroys an ApiToken.
     *
@@ -28,7 +28,7 @@ trait DbApiTokenBackend extends ApiTokenBackend { self: DbBackend =>
 
   lazy val insertInvoker = (ApiTokens returning ApiTokens).insertInvoker
 
-  override def create(documentSetId: Long, attributes: ApiToken.CreateAttributes) = db { session =>
+  override def create(documentSetId: Option[Long], attributes: ApiToken.CreateAttributes) = db { session =>
     val apiToken = ApiToken.build(documentSetId, attributes)
     exceptions.wrap {
       insertInvoker.insert(apiToken)(session)

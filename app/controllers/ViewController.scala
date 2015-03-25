@@ -31,7 +31,7 @@ trait ViewController extends Controller {
       case Some(attributes) => {
         val result: Future[Result] = for {
           u <- appUrlChecker.check(attributes.url + "/metadata")
-          apiToken <- apiTokenBackend.create(documentSetId, ApiToken.CreateAttributes(request.user.email, attributes.title))
+          apiToken <- apiTokenBackend.create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, attributes.title))
           view <- viewBackend.create(documentSetId, View.CreateAttributes(attributes.url, apiToken.token, attributes.title))
         } yield Created(views.json.api.View.show(view))
         result.recover { case t: Throwable => BadRequest(t.getMessage) }
