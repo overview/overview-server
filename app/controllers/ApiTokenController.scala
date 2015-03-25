@@ -1,37 +1,35 @@
 package controllers
 
-import play.api.mvc.Action
 import play.api.data.{Form,Forms}
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.mvc.Action
+import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
 import controllers.auth.Authorities.userOwningDocumentSet
-import models.User
-import models.OverviewDatabase
+import controllers.backend.ApiTokenBackend
 import org.overviewproject.models.ApiToken
 
 trait ApiTokenController extends Controller {
-  protected val storage : ApiTokenController.Storage
+  protected val backend: ApiTokenBackend
 
-  def index(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    render {
+  def index(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+    render.async {
       case Accepts.Html() => {
-        Ok(views.html.ApiToken.index(request.user, id))
+        Future.successful(Ok(views.html.ApiToken.index(request.user, id)))
       }
       case Accepts.Json() => {
-        val tokens = storage.getTokens(request.user.email, Some(id))
-        Ok(views.json.ApiToken.index(tokens))
+        backend.index(request.user.email, Some(id))
+          .map(tokens => Ok(views.json.ApiToken.index(tokens)))
       }
     }
   }
 
-  def create(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    val form = Form("description" -> Forms.nonEmptyText)
-    val description = form.bindFromRequest().fold(
-      f => "",
-      f => f
-    )
-    val token = storage.createToken(request.user.email, Some(id), description)
-    Ok(views.json.ApiToken.show(token))
+  def create(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+    val description = flatRequestData(request).getOrElse("description", "")
+    val attributes = ApiToken.CreateAttributes(request.user.email, description)
+    backend.create(Some(id), attributes)
+      .map(token => Ok(views.json.ApiToken.show(token)))
   }
 
   /** Destroys the token.
@@ -40,48 +38,11 @@ trait ApiTokenController extends Controller {
     * authenticated by definition. Skipping auth here can only benefit the
     * legitimate owner of a token, by deleting his/her leaked token.
     */
-  def destroy(id: Long, token: String) = Action { request =>
-    storage.destroyToken(token)
-    NoContent
+  def destroy(id: Long, token: String) = Action.async { request =>
+    backend.destroy(token).map(_ => NoContent)
   }
 }
 
 object ApiTokenController extends ApiTokenController {
-  trait Storage {
-    def getTokens(email: String, documentSetId: Option[Long]) : Seq[ApiToken]
-    def createToken(email: String, documentSetId: Option[Long], description: String) : ApiToken
-    def destroyToken(token: String) : Unit
-  }
-
-  override val storage = new Storage {
-    override def getTokens(email: String, documentSetId: Option[Long]) = {
-      OverviewDatabase.inTransaction {
-        import models.orm.Schema
-        import org.overviewproject.postgres.SquerylEntrypoint._
-
-        from(Schema.apiTokens)(t =>
-          where(t.createdBy === email and t.documentSetId === documentSetId)
-          select(t)
-        ).map(_.copy()).toSeq
-      }
-    }
-
-    override def createToken(email: String, documentSetId: Option[Long], description: String) = {
-      val token = ApiToken.generate(email, documentSetId, description)
-      OverviewDatabase.inTransaction {
-        import models.orm.Schema
-        Schema.apiTokens.insert(token)
-      }
-    }
-
-    override def destroyToken(token: String) = {
-      OverviewDatabase.inTransaction {
-        import models.orm.Schema
-        import models.orm.Schema.ApiTokenKED
-        import org.overviewproject.postgres.SquerylEntrypoint._
-
-        Schema.apiTokens.delete(token)
-      }
-    }
-  }
+  override protected val backend = ApiTokenBackend
 }

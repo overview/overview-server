@@ -3,17 +3,18 @@ package controllers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
 import play.api.libs.json.Json
-import play.api.mvc.{AnyContent,Request}
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
+import controllers.backend.ApiTokenBackend
 import org.overviewproject.models.ApiToken
 
 class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
-    val mockStorage = mock[ApiTokenController.Storage]
+    val mockBackend = smartMock[ApiTokenBackend]
 
     val controller = new ApiTokenController {
-      override val storage = mockStorage
+      override val backend = mockBackend
     }
   }
 
@@ -38,13 +39,13 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     }
 
     "call getTokens()" in new IndexJsonScope {
-      mockStorage.getTokens(any, any).returns(Seq())
+      mockBackend.index(any, any) returns Future.successful(Seq())
       result
-      there was one(mockStorage).getTokens(request.user.email, Some(documentSetId))
+      there was one(mockBackend).index(request.user.email, Some(documentSetId))
     }
 
     "respond with JSON" in new IndexJsonScope {
-      mockStorage.getTokens(any, any).returns(Seq())
+      mockBackend.index(any, any) returns Future.successful(Seq())
       h.status(result) must beEqualTo(h.OK)
       h.contentType(result) must beSome("application/json")
     }
@@ -57,7 +58,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
         documentSetId=Some(documentSetId),
         description="description"
       )
-      mockStorage.getTokens(any, any).returns(Seq(token))
+      mockBackend.index(any, any) returns Future.successful(Seq(token))
 
       val j = h.contentAsString(result)
       j must /#(0) /("token" -> "12345")
@@ -79,12 +80,12 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
         documentSetId=Some(documentSetId),
         description="description"
       )
-      mockStorage.createToken(any, any, any).returns(token)
+      mockBackend.create(any, any) returns Future.successful(token)
     }
 
     "create the token" in new CreateJsonScope {
       result
-      there was one(mockStorage).createToken(request.user.email, Some(documentSetId), "foo")
+      there was one(mockBackend).create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, "foo"))
     }
 
     "create the token with a JSON-encoded request" in new BaseScope {
@@ -97,13 +98,13 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
         documentSetId=Some(documentSetId),
         description="description"
       )
-      mockStorage.createToken(any, any, any).returns(token)
+      mockBackend.create(any, any) returns Future.successful(token)
 
       val request = fakeAuthorizedRequest.withJsonBody(Json.obj("description" -> "foo"))
       val result = controller.create(documentSetId)(request)
 
       h.status(result) must beEqualTo(h.OK)
-      there was one(mockStorage).createToken(request.user.email, Some(documentSetId), "foo")
+      there was one(mockBackend).create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, "foo"))
     }
 
     "return the object as JSON" in new CreateJsonScope {
@@ -119,7 +120,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     "create an object with an empty description if the request is wrong" in new CreateJsonScope {
       override lazy val result = controller.create(documentSetId)(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.OK)
-      there was one(mockStorage).createToken(request.user.email, Some(documentSetId), "")
+      there was one(mockBackend).create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, ""))
     }
   }
 
@@ -130,11 +131,13 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
 
       val request = fakeAuthorizedRequest
       lazy val result = controller.destroy(documentSetId, token)(request)
+
+      mockBackend.destroy(any) returns Future.successful(())
     }
 
     "destroy the token" in new DestroyScope {
       result
-      there was one(mockStorage).destroyToken(token)
+      there was one(mockBackend).destroy(token)
     }
 
     "return 204 No Content" in new DestroyScope {

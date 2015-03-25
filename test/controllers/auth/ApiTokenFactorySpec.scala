@@ -9,6 +9,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import controllers.backend.ApiTokenBackend
 import org.overviewproject.models.ApiToken
 
 class ApiTokenFactorySpec extends test.InAppSpecification with Mockito with JsonMatchers {
@@ -17,10 +18,10 @@ class ApiTokenFactorySpec extends test.InAppSpecification with Mockito with Json
   trait BaseScope extends Scope {
     implicit val timeout = new akka.util.Timeout(Duration(1000, "hours"))
     val authority = mock[Authority]
-    val mockStorage = mock[ApiTokenFactory.Storage]
+    val mockBackend = mock[ApiTokenBackend]
 
     val factory = new ApiTokenFactory {
-      override protected val storage = mockStorage
+      override protected val backend = mockBackend
     }
 
     val rightToken = ApiToken("12345", new java.sql.Timestamp(0L), "user@example.org", "foo", Some(4L))
@@ -29,8 +30,8 @@ class ApiTokenFactorySpec extends test.InAppSpecification with Mockito with Json
     authority.apply(rightToken) returns Future(true)
     authority.apply(wrongToken) returns Future(false)
 
-    mockStorage.loadApiToken(rightToken.token) returns Future(Some(rightToken))
-    mockStorage.loadApiToken(wrongToken.token) returns Future(Some(wrongToken))
+    mockBackend.show(rightToken.token) returns Future(Some(rightToken))
+    mockBackend.show(wrongToken.token) returns Future(Some(wrongToken))
 
     def encode64(s: String) = {
       javax.xml.bind.DatatypeConverter.printBase64Binary(s.getBytes)

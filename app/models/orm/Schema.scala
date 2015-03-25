@@ -16,12 +16,6 @@ object Schema extends org.squeryl.Schema {
   override def tableNameFromClassName(className: String) =
     NamingConventionTransforms.snakify(className)
 
-  implicit object ApiTokenKED extends KeyedEntityDef[ApiToken, String] {
-    override def getId(t: ApiToken) = t.token
-    override def idPropertyName = "token"
-    override def isPersisted(t: ApiToken) = false // Only INSERT -- no UPDATE
-  }
-
   implicit object UserKED extends KeyedEntityDef[User, Long] {
     override def getId(u: User) = u.id
     override def idPropertyName = "id"
@@ -34,7 +28,6 @@ object Schema extends org.squeryl.Schema {
     override def isPersisted(s: Session) = (s.createdAt != s.updatedAt) // ugly hack!
   }
 
-  val apiTokens = table[ApiToken]
   val documentProcessingErrors = table[DocumentProcessingError]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSets = table[DocumentSet]
@@ -51,7 +44,6 @@ object Schema extends org.squeryl.Schema {
   val files = table[File]
   val trees = table[Tree]
  
-  on(apiTokens)(t => declare(t.token is (primaryKey)))
   on(documents)(d => declare(d.id is (primaryKey)))
   on(nodes)(n => declare(n.id is (primaryKey)))
   on(sessions)(s => declare(s.id is (primaryKey)))

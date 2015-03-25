@@ -7,6 +7,7 @@ import play.api.mvc.{RequestHeader,Result,Results}
 import scala.concurrent.Future
 import scala.util.control.Exception.catching
 
+import controllers.backend.ApiTokenBackend
 import org.overviewproject.models.ApiToken
 
 /** Authorizes API tokens.
@@ -17,7 +18,7 @@ import org.overviewproject.models.ApiToken
   * 2. Check if the user is authorized for the task at hand (no? authorization failed)
   */
 trait ApiTokenFactory {
-  protected val storage: ApiTokenFactory.Storage
+  protected val backend: ApiTokenBackend
 
   private def unauthenticated: Result = {
     Results.Unauthorized(views.json.api.auth.unauthenticated())
@@ -65,7 +66,7 @@ trait ApiTokenFactory {
       match {
         case Left(result) => Future(Left(result))
         case Right(tokenString) => {
-          storage.loadApiToken(tokenString).flatMap(_ match {
+          backend.show(tokenString).flatMap(_ match {
             case None => Future(Left(unauthenticated))
             case Some(apiToken) => {
               authority(apiToken).map((allowed: Boolean) => allowed match {
@@ -80,21 +81,5 @@ trait ApiTokenFactory {
 }
 
 object ApiTokenFactory extends ApiTokenFactory {
-  trait Storage {
-    def loadApiToken(token: String) : Future[Option[ApiToken]]
-  }
-
-  override protected val storage = new Storage {
-    import models.OverviewDatabase
-    import org.overviewproject.database.Slick.simple._
-    import org.overviewproject.models.tables.ApiTokens
-
-    lazy val lookupToken = Compiled((token: Column[String]) => ApiTokens.filter(_.token === token))
-
-    override def loadApiToken(token: String) = Future {
-      OverviewDatabase.withSlickSession { session =>
-        lookupToken(token).firstOption(session)
-      }
-    }
-  }
+  override protected val backend = ApiTokenBackend
 }
