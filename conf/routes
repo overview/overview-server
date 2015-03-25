@@ -10,6 +10,10 @@ GET    /login  controllers.SessionController.new_()
 POST   /login  controllers.SessionController.create()
 GET    /logout controllers.SessionController.delete()
 
+GET    /api-tokens        controllers.ApiTokenController.index()
+POST   /api-tokens        controllers.ApiTokenController.create()
+DELETE /api-tokens/:token controllers.ApiTokenController.destroy(token: String)
+
 GET    /confirm/prompt/:email controllers.ConfirmationController.index(email)
 GET    /confirm/:token        controllers.ConfirmationController.show(token)
 
@@ -59,9 +63,9 @@ GET    /documentsets/:id/$jsParams<[a-zA-Z]+-[0-9]+> controllers.DocumentSetCont
 DELETE /documentsets/:id                  controllers.DocumentSetController.delete(id: Long)
 PUT    /documentsets/:id                  controllers.DocumentSetController.update(id: Long)
 
-GET    /documentsets/:id/api-tokens        controllers.ApiTokenController.index(id: Long)
-POST   /documentsets/:id/api-tokens        controllers.ApiTokenController.create(id: Long)
-DELETE /documentsets/:id/api-tokens/:token controllers.ApiTokenController.destroy(id: Long, token: String)
+GET    /documentsets/:id/api-tokens        controllers.ApiTokenController.indexForDocumentSet(id: Long)
+POST   /documentsets/:id/api-tokens        controllers.ApiTokenController.createForDocumentSet(id: Long)
+DELETE /documentsets/:id/api-tokens/:token controllers.ApiTokenController.destroyForDocumentSet(id: Long, token: String)
 
 GET    /documentsets/:id/users        controllers.DocumentSetUserController.index(id: Long)
 PUT    /documentsets/:id/users/:email controllers.DocumentSetUserController.update(id: Long, email: String)

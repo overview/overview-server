@@ -148,7 +148,8 @@ views.components.navbar.delete.confirm=Are you sure you want to permanently dele
 
 views.ApiToken.index.title=API Tokens
 views.ApiToken.index.h1=API Tokens
-views.ApiToken.index.description=You can access this document set via scripts or plugins using an API token. Here is an example request:
+views.ApiToken.index.description.withDocumentSet=You can access this document set via scripts or plugins using these API tokens. Here is an example request:
+views.ApiToken.index.description.withoutDocumentSet=You can create document sets using one of the following API tokens. Each document-set creation will return an API token for you to add documents to it. Here is an example request:
 
 views.ApiTokens.form.heading=Generate a new token
 views.ApiTokens.form.description.label=App name

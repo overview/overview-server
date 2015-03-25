@@ -12,3 +12,8 @@ define [
       # Not quite a unit test, but ApiToken on its own doesn't know its URL
       @subject = new ApiTokens([{ token: '12345' }], documentSetId: 10)
       expect(@subject.at(0).url()).to.eq('/documentsets/10/api-tokens/12345')
+
+    it 'should use a documentSetId-free URL', ->
+      @subject = new ApiTokens([{ token: '12345' }])
+      expect(@subject.url()).to.eq('/api-tokens')
+      expect(@subject.at(0).url()).to.eq('/api-tokens/12345')

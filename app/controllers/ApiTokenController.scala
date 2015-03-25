@@ -2,35 +2,51 @@ package controllers
 
 import play.api.data.{Form,Forms}
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Action
+import play.api.mvc.{Action,Result}
 import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
-import controllers.auth.Authorities.userOwningDocumentSet
+import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
 import controllers.backend.ApiTokenBackend
 import org.overviewproject.models.ApiToken
 
 trait ApiTokenController extends Controller {
   protected val backend: ApiTokenBackend
 
-  def index(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+  private def indexHtml(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
+    Future.successful(Ok(views.html.ApiToken.index(request.user, documentSetId)))
+  }
+
+  private def indexJson(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
+    backend.index(request.user.email, documentSetId)
+      .map(tokens => Ok(views.json.ApiToken.index(tokens)))
+  }
+
+  private def indexAny(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
     render.async {
-      case Accepts.Html() => {
-        Future.successful(Ok(views.html.ApiToken.index(request.user, id)))
-      }
-      case Accepts.Json() => {
-        backend.index(request.user.email, Some(id))
-          .map(tokens => Ok(views.json.ApiToken.index(tokens)))
-      }
+      case Accepts.Html() => indexHtml(documentSetId)
+      case Accepts.Json() => indexJson(documentSetId)
     }
   }
 
-  def create(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+  def indexForDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request
+    => indexAny(Some(id))
+  }
+  def index = AuthorizedAction(anyUser).async { implicit request => indexAny(None) }
+
+  private def createAny(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
     val description = flatRequestData(request).getOrElse("description", "")
     val attributes = ApiToken.CreateAttributes(request.user.email, description)
-    backend.create(Some(id), attributes)
+    backend.create(documentSetId, attributes)
       .map(token => Ok(views.json.ApiToken.show(token)))
   }
+
+  def createForDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+    createAny(Some(id))
+  }
+  def create = AuthorizedAction(anyUser).async { implicit request => createAny(None) }
+
+  private def realDestroy(token: String): Future[Result] = backend.destroy(token).map(_ => NoContent)
 
   /** Destroys the token.
     *
@@ -38,9 +54,8 @@ trait ApiTokenController extends Controller {
     * authenticated by definition. Skipping auth here can only benefit the
     * legitimate owner of a token, by deleting his/her leaked token.
     */
-  def destroy(id: Long, token: String) = Action.async { request =>
-    backend.destroy(token).map(_ => NoContent)
-  }
+  def destroyForDocumentSet(id: Long, token: String) = Action.async { _ => realDestroy(token) }
+  def destroy(token: String) = Action.async { _ => realDestroy(token) }
 }
 
 object ApiTokenController extends ApiTokenController {

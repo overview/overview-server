@@ -22,10 +22,16 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     trait IndexScope extends BaseScope {
       val documentSetId = 1
       def request = fakeAuthorizedRequest
-      lazy val result = controller.index(documentSetId)(request)
+      lazy val result = controller.indexForDocumentSet(documentSetId)(request)
     }
 
     "return 200 ok with some HTML" in new IndexScope {
+      h.status(result) must beEqualTo(h.OK)
+      h.contentType(result) must beSome("text/html")
+    }
+
+    "work with documentSetId=None" in new IndexScope {
+      override lazy val result = controller.index(request)
       h.status(result) must beEqualTo(h.OK)
       h.contentType(result) must beSome("text/html")
     }
@@ -35,7 +41,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     trait IndexJsonScope extends BaseScope {
       val documentSetId = 1
       lazy val request = fakeAuthorizedRequest.withHeaders("Accept" -> "application/json")
-      lazy val result = controller.index(documentSetId)(request)
+      lazy val result = controller.indexForDocumentSet(documentSetId)(request)
     }
 
     "call getTokens()" in new IndexJsonScope {
@@ -65,13 +71,21 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
       j must /#(0) /("createdAt" -> "2014-07-16T14:56:29.794Z")
       j must /#(0) /("description" -> "description")
     }
+
+    "work with documentSetId=None" in new IndexJsonScope {
+      override lazy val result = controller.index(request)
+      mockBackend.index(any, any) returns Future.successful(Seq())
+      h.status(result) must beEqualTo(h.OK)
+      h.contentType(result) must beSome("application/json")
+      there was one(mockBackend).index(request.user.email, None)
+    }
   }
 
   "createJson" should {
     trait CreateJsonScope extends BaseScope {
       val documentSetId = 1
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody("description" -> "foo")
-      lazy val result = controller.create(documentSetId)(request)
+      lazy val result = controller.createForDocumentSet(documentSetId)(request)
 
       val token = ApiToken(
         token="12345",
@@ -101,7 +115,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
       mockBackend.create(any, any) returns Future.successful(token)
 
       val request = fakeAuthorizedRequest.withJsonBody(Json.obj("description" -> "foo"))
-      val result = controller.create(documentSetId)(request)
+      val result = controller.createForDocumentSet(documentSetId)(request)
 
       h.status(result) must beEqualTo(h.OK)
       there was one(mockBackend).create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, "foo"))
@@ -118,9 +132,18 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
     }
 
     "create an object with an empty description if the request is wrong" in new CreateJsonScope {
-      override lazy val result = controller.create(documentSetId)(fakeAuthorizedRequest)
+      override lazy val result = controller.createForDocumentSet(documentSetId)(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.OK)
       there was one(mockBackend).create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, ""))
+    }
+
+    "work when documentSetId=None" in new CreateJsonScope {
+      override lazy val result = controller.create(request)
+
+      h.status(result) must beEqualTo(h.OK)
+      h.contentType(result) must beSome("application/json")
+
+      there was one(mockBackend).create(None, ApiToken.CreateAttributes(request.user.email, "foo"))
     }
   }
 
@@ -130,7 +153,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
       val token = "12345";
 
       val request = fakeAuthorizedRequest
-      lazy val result = controller.destroy(documentSetId, token)(request)
+      lazy val result = controller.destroyForDocumentSet(documentSetId, token)(request)
 
       mockBackend.destroy(any) returns Future.successful(())
     }
@@ -142,6 +165,12 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
 
     "return 204 No Content" in new DestroyScope {
       h.status(result) must beEqualTo(h.NO_CONTENT)
+    }
+
+    "work when documentSetId=None" in new DestroyScope {
+      override lazy val result = controller.destroy(token)(request)
+      h.status(result) must beEqualTo(h.NO_CONTENT)
+      there was one(mockBackend).destroy(token)
     }
   }
 }

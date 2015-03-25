@@ -1,6 +1,6 @@
 @(
   user: User,
-  documentSetId: Long
+  maybeDocumentSetId: Option[Long]
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
@@ -23,16 +23,34 @@
 
 @defining(scopedMessages("views.ApiToken.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="api-token-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    <p class="description">@m("description")</p>
-    <pre class="example">val token = "TOKEN";
-val documentSetId = @documentSetId;
+    @maybeDocumentSetId match {
+      case Some(documentSetId) => {
+        <p class="description">@m("description.withDocumentSet")</p>
+        <pre class="example">var token = "TOKEN";
+var documentSetId = @documentSetId;
+var authHeader = "Basic " + btoa(token + ":x-auth-token");
 $.ajax({
   type: 'GET',
-  url: "https://www.overviewproject.org/api/v1/documentsets/" + documentSetId + "/tags",
-  username: token,
-  password: "x-auth-token",
+  url: "https://www.overviewproject.org/api/v1/document-sets/" + documentSetId + "/tags",
+  headers: { 'Authorization': authHeader },
   success: console.log
 });</pre>
-    <div id="api-tokens-app" data-document-set-id="@documentSetId"></div>
+      }
+      case None => {
+        <p class="description">@m("description.withoutDocumentSet")</p>
+        <pre class="example">var token="TOKEN";
+var authHeader = "Basic " + btoa(token + ":x-auth-token");
+$.ajax({
+  type: 'POST',
+  url: 'https://www.overviewproject.org/api/v1/document-sets',
+  headers: { 'Authorization': authHeader },
+  data: { 'title': 'Some title' },
+  success: console.log
+});
+// The request returns the document set ID and a document-set
+// specific API token you can use to read/write it.</pre>
+      }
+    }
+    <div id="api-tokens-app" data-document-set-id="@maybeDocumentSetId.map(_.toString).getOrElse("")"></div>
   }
 }

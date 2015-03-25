@@ -6,7 +6,10 @@ define [
     model: ApiToken
 
     initialize: (items, options) ->
-      throw 'Must pass options.documentSetId, a Number' if !options.documentSetId
-      @documentSetId = options.documentSetId
+      @documentSetId = options?.documentSetId || null
 
-    url: -> "/documentsets/#{@documentSetId}/api-tokens"
+    url: ->
+      if @documentSetId?
+        "/documentsets/#{@documentSetId}/api-tokens"
+      else
+        "/api-tokens"

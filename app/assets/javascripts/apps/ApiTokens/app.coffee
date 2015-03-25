@@ -5,8 +5,6 @@ define [
 ], (ApiTokens, FormView, TableView) ->
   class ApiTokensApp extends Backbone.View
     initialize: (options) ->
-      throw 'Must pass options.documentSetId, a Number' if !options.documentSetId
-
       @documentSetId = options.documentSetId
 
       @tokens = new ApiTokens([], documentSetId: @documentSetId)
