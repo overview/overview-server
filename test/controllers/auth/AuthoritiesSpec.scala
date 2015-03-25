@@ -44,6 +44,12 @@ class AuthoritiesSpec extends DbSpecification {
       }
     }
 
+    "apiDocumentSetCreator" should {
+      "return false" in new UserScope {
+        await(auth.apiDocumentSetCreator(User(role=UserRole.NormalUser))) must beFalse
+      }
+    }
+
     "userOwningDocumentSet" should {
       "return true when the user owns the document set" in new UserScope {
         val documentSet = factory.documentSet()
@@ -261,6 +267,12 @@ class AuthoritiesSpec extends DbSpecification {
       }
     }
 
+    "apiDocumentSetCreator" should {
+      "return false" in new ApiTokenScope {
+        await(auth.apiDocumentSetCreator(apiToken)) must beFalse
+      }
+    }
+
     "userOwningDocumentSet" should {
       "return true when the user owns the document set" in new ApiTokenScope {
         await(auth.userOwningDocumentSet(documentSet.id)(apiToken)) must beTrue
@@ -375,6 +387,12 @@ class AuthoritiesSpec extends DbSpecification {
     "adminUser" should {
       "return false" in new ApiTokenScope {
         await(auth.adminUser(apiToken)) must beFalse
+      }
+    }
+
+    "apiDocumentSetCreator" should {
+      "return true" in new ApiTokenScope {
+        await(auth.apiDocumentSetCreator(apiToken)) must beTrue
       }
     }
 

@@ -25,6 +25,12 @@ trait Authorities extends SlickClient {
     override def apply(apiToken: ApiToken) = Future.successful(false)
   }
 
+  /** Allows API tokens with documentSetId=None. */
+  def apiDocumentSetCreator = new Authority {
+    override def apply(user: User) = Future.successful(false)
+    override def apply(apiToken: ApiToken) = Future.successful(apiToken.documentSetId.isEmpty)
+  }
+
   /** Allows any user who is owner of the given DocumentSet ID. */
   def userOwningDocumentSet(id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocumentSet(user.email, id))
