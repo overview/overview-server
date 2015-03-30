@@ -11,6 +11,12 @@ trait DocumentSetUserBackend {
   /** Returns non-owner DocumentSetUsers for a given DocumentSet. */
   def index(documentSetId: Long): Future[Seq[DocumentSetUser]]
 
+  /** Adds an owner DocumentSetUser.
+    *
+    * Error if the DocumentSetUser already exists.
+    */
+  def createOwner(documentSetId: Long, userEmail: String): Future[DocumentSetUser]
+
   /** Adds or modifies a non-owner DocumentSetUser.
     *
     * Returns the DocumentSetUser if it was added or modified. (If there is
@@ -44,6 +50,13 @@ trait DbDocumentSetUserBackend extends DocumentSetUserBackend { self: DbBackend 
   }
 
   override def index(documentSetId: Long) = list(byDocumentSetId(documentSetId))
+
+  override def createOwner(documentSetId: Long, userEmail: String) = db { session =>
+    val row = DocumentSetUser(documentSetId, userEmail, Role(true))
+    exceptions.wrap {
+      (DocumentSetUsers returning DocumentSetUsers).+=(row)(session)
+    }
+  }
 
   override def update(documentSetId: Long, userEmail: String) = db { session =>
     val row = DocumentSetUser(documentSetId, userEmail, Role(false))

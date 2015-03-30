@@ -49,6 +49,27 @@ class DbDocumentSetUserBackendSpec extends DbBackendSpecification {
     }
   }
 
+  "#createOwner" should {
+    trait CreateOwnerScope extends BaseScope {
+      val documentSet = factory.documentSet()
+      def go(documentSetId: Long, userEmail: String) = await(backend.createOwner(documentSetId, userEmail))
+    }
+
+    "create a DocumentSetUser" in new CreateOwnerScope {
+      val expect = DocumentSetUser(documentSet.id, "user@example.org", Role(true))
+      go(documentSet.id, "user@example.org") must beEqualTo(expect)
+      find(documentSet.id, "user@example.org") must beSome(expect)
+    }
+
+    "not overwrite a DocumentSetUser" in new CreateOwnerScope {
+      val existing = factory.documentSetUser(documentSet.id, "user@example.org", Role(true))
+      go(documentSet.id, "user@example.org") must throwA[Exception]
+      // PSQLException: : ERROR: current transaction is aborted, commands ignored until end of transaction block
+      //find(documentSet.id, "user@example.org") must beSome(existing) // role stays the same
+      //findAll(documentSet.id).length must beEqualTo(1) // no extra row added
+    }
+  }
+
   "#update" should {
     trait UpdateScope extends BaseScope {
       val documentSet = factory.documentSet()
