@@ -57,7 +57,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         val selection = mock[SelectionLike]
         val pageRequest = PageRequest(0, 1000)
         val includeText = false
-        selection.getDocumentIds(pageRequest) returns Future.successful(Page(Seq(doc1.id, doc2.id, doc3.id), PageInfo(pageRequest, 3)))
+        selection.getDocumentIds(pageRequest) returns Future.successful(Page(Seq(doc2.id, doc3.id, doc1.id), PageInfo(pageRequest, 3)))
         lazy val ret = await(backend.index(selection, pageRequest, includeText))
       }
 
@@ -66,10 +66,8 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "sort documents by title" in new IndexScope {
-        // XXX documents _should_ always be ordered such that they're in the
-        // same order as selection.documentIds. That's not trivial in straight
-        // SQL, and we don't have a feature that requires it yet; hence this
-        // ordering.
+        // Actually, selection.getDocumentIds() takes care of sorting.
+        // Consider this an integration test.
         ret.items.map(_.id) must beEqualTo(Seq(doc2.id, doc3.id, doc1.id))
       }
 

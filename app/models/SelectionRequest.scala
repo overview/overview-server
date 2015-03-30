@@ -15,4 +15,18 @@ case class SelectionRequest(
   val q: String = ""
 ) {
   lazy val hash = hashCode
+
+  /** Returns true iff this selection request is for all Documents in the
+    * DocumentSet.
+    */
+  def isAll: Boolean = {
+    (
+      nodeIds.isEmpty
+      && tagIds.isEmpty
+      && documentIds.isEmpty
+      && storeObjectIds.isEmpty
+      && tagged.isEmpty
+      && q == ""
+    )
+  }
 }

@@ -1,5 +1,6 @@
 package controllers.backend
 
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.slick.jdbc.{GetResult,StaticQuery}
 
@@ -32,39 +33,56 @@ trait DocumentBackend {
 }
 
 trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
-  val indexClient: IndexClient
+  private val NullDocumentHeader = new DocumentHeader {
+    override val id = 0L
+    override val documentSetId = 0L
+    override val url = None
+    override val suppliedId = ""
+    override val title = ""
+    override val pageNumber = None
+    override val keywords = Seq()
+    override val createdAt = new java.util.Date(0L)
+    override val text = ""
+  }
+
+  protected val indexClient: IndexClient
 
   override def index(selection: SelectionLike, pageRequest: PageRequest, includeText: Boolean) = {
-    import scala.concurrent.ExecutionContext.Implicits._
-
     selection.getDocumentIds(pageRequest)
       .flatMap { (page: Page[Long]) =>
         if (page.pageInfo.total == 0) {
           emptyPage[DocumentHeader](pageRequest)
         } else {
-          val items: Future[Seq[DocumentHeader]] = includeText match {
+          val documentsFuture: Future[Seq[DocumentHeader]] = includeText match {
             case false => list(DbDocumentBackend.InfosByIds.page(page.items))
             case true => list(DbDocumentBackend.DocumentsByIds.page(page.items))
           }
-          items.map(Page(_, page.pageInfo))
+
+          documentsFuture.map { documents: Seq[DocumentHeader] =>
+            val documentsById: Map[Long,DocumentHeader] = documents
+              .map(document => (document.id -> document))
+              .toMap
+
+            page.map(id => documentsById.getOrElse(id, NullDocumentHeader))
+          }
         }
       }
   }
 
-  override def indexIds(request: SelectionRequest) = {
-    import scala.concurrent.ExecutionContext.Implicits._
+  /** Returns all a DocumentSet's Document IDs, sorted. */
+  private def indexAllIds(documentSetId: Long): Future[Seq[Long]] = db { session =>
+    DbDocumentBackend.sortedIds(documentSetId)
+      .firstOption(session)
+      .getOrElse(Seq())
+  }
 
-    val allSortedIdsFuture: Future[Seq[Long]] = db { session =>
-      DbDocumentBackend.sortedIds(request.documentSetId)
-        .firstOption(session)
-        .getOrElse(Seq())
-    }
-
+  /** Returns a subset of the DocumentSet's Document IDs, sorted. */
+  private def indexSelectedIds(request: SelectionRequest): Future[Seq[Long]] = {
     val selectedUnsortedIdsFuture: Future[Seq[Long]] =
       DbDocumentBackend.bySelectionRequest(request, indexClient).flatMap(list(_))
 
     for {
-      allSortedIds <- allSortedIdsFuture
+      allSortedIds <- indexAllIds(request.documentSetId)
       selectedIds <- selectedUnsortedIdsFuture
     } yield {
       if (allSortedIds.length == selectedIds.length) {
@@ -81,6 +99,14 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
     }
   }
 
+  override def indexIds(request: SelectionRequest) = {
+    if (request.isAll) {
+      indexAllIds(request.documentSetId)
+    } else {
+      indexSelectedIds(request)
+    }
+  }
+
   override def show(documentSetId: Long, documentId: Long) = {
     firstOption(DbDocumentBackend.byDocumentSetIdAndId(documentSetId, documentId))
   }
@@ -93,16 +119,6 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
 object DbDocumentBackend {
   import org.overviewproject.database.Slick.simple._
   import scala.language.implicitConversions
-
-  private def sortKey(info: DocumentInfosImpl) = (info.title, info.suppliedId, info.pageNumber, info.id)
-  private def sortKey(document: DocumentsImpl) = (document.title, document.suppliedId, document.pageNumber, document.id)
-
-  private implicit class AugmentedDocumentInfosQuery(query: Query[DocumentInfosImpl,DocumentInfosImpl#TableElementType,Seq]) {
-    implicit def sortedByInfo = query.sortBy(sortKey)
-  }
-  private implicit class AugmentedDocumentsQuery(query: Query[DocumentsImpl,DocumentsImpl#TableElementType,Seq]) {
-    implicit def sortedByInfo = query.sortBy(sortKey)
-  }
 
   def sortedIds(documentSetId: Long) = {
     implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextLongArray()))
@@ -173,7 +189,7 @@ object DbDocumentBackend {
   object InfosByIds {
     private def q(ids: Seq[Long]) = DocumentInfos.filter(_.id inSet ids)
 
-    def ids(ids: Seq[Long]) = q(ids).sortedByInfo.map(_.id)
+    def ids(ids: Seq[Long]) = q(ids).map(_.id)
 
     def page(ids: Seq[Long]) = {
       // We call this one when we're paginating.
@@ -181,7 +197,6 @@ object DbDocumentBackend {
       // number of document IDs. (This request is called within a page.)
       DocumentInfos
         .filter(_.id inSetBind ids) // bind: we know we don't have 10M IDs here
-        .sortedByInfo // this is O(1) because we have a maximum number of IDs
     }
   }
 
@@ -194,7 +209,6 @@ object DbDocumentBackend {
       // number of document IDs. (This request is called within a page.)
       Documents
         .filter(_.id inSetBind ids) // bind: we know we don't have 10M IDs here
-        .sortedByInfo // this is O(1) because we have a maximum number of IDs
     }
   }
 
@@ -210,5 +224,5 @@ object DbDocumentBackend {
 }
 
 object DocumentBackend extends DbDocumentBackend with DbBackend {
-  override val indexClient = org.overviewproject.searchindex.TransportIndexClient.singleton
+  override protected val indexClient = org.overviewproject.searchindex.TransportIndexClient.singleton
 }
