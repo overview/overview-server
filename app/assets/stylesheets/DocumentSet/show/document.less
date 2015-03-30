@@ -30,9 +30,9 @@
   }
 
   &.showing-document div.document { display: block; }
-  &.showing-text div.text-view { display: flex; flex-direction: column; }
+  &.showing-text div.text-view { .display-flex(); .flex-direction-column(); }
 
-  &.highlighting div.text-view div.text {
+  div.text-view div.text {
     flex: 1 1 auto;
   }
 
@@ -71,8 +71,8 @@
   }
 
   .text-view .text {
-    display: flex;
-    flex-direction: column;
+    .display-flex();
+    .flex-direction-column();
     background: #f8f8f8;
     border-top: 1px solid #ccc;
     overflow: auto;
@@ -85,7 +85,7 @@
     }
 
     pre {
-      flex-grow: 1;
+      .flex(1 1 auto);
       padding: 10px;
       // undo Bootstrap stuff
       border: 0;

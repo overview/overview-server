@@ -84,27 +84,31 @@
 }
 
 .display-flex() {
-  display: -webkit-box;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: -webkit-flex;
-  display: flex;
+  display: -ms-flexbox; // IE10
+  display: -webkit-flex; // Safari 8
+  display: flex; // everything else
 }
 
 .flex(@values) {
-  -webkit-box-flex: @values;
-  -moz-box-flex: @values;
-  -webkit-flex: @values;
   -ms-flex: @values;
+  -webkit-flex: @values;
   flex: @values;
 }
 
+.flex-align-items(@value) {
+  -ms-align-items: @value;
+  -webkit-align-items: @value;
+  align-items: @value;
+}
+
 .flex-direction-column() {
-  -webkit-box-direction: normal;
-  -moz-box-direction: normal;
-  -webkit-box-orient: vertical;
-  -moz-box-orient: vertical;
-  -webkit-flex-direction: column;
   -ms-flex-direction: column;
+  -webkit-flex-direction: column;
   flex-direction: column;
+}
+
+.flex-justify-content(@value) {
+  -ms-justify-content: @value;
+  -webkit-justify-content: @value;
+  justify-content: @value;
 }

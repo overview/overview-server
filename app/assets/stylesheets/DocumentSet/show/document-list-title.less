@@ -6,13 +6,13 @@
 
 #document-list-title {
   padding: .25em 0;
-  display: flex;
+  .display-flex();
   font-family: @font-family-sans-serif;
   font-weight: normal;
   font-size: 1.25em;
 
   h4 {
-    flex-grow: 1;
+    .flex(1 1 auto);
     font: inherit;
     line-height: inherit;
     margin: 0;
@@ -23,7 +23,7 @@
   }
 
   .edit-link {
-    flex-shrink: 0;
+    .flex(1 0 auto);
     font-size: .8em;
     line-height: 1.25 / .8;
 
@@ -35,7 +35,7 @@
   }
 
   span.show-list-link {
-    flex-shrink: 0;
+    .flex(0 0 auto);
     max-width: 0;
     overflow: hidden;
     white-space: nowrap;
