@@ -7,6 +7,7 @@ import scala.slick.jdbc.{GetResult,StaticQuery}
 import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
 import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
 import org.overviewproject.searchindex.IndexClient
+import org.overviewproject.util.Logger
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{SelectionLike,SelectionRequest}
@@ -33,6 +34,8 @@ trait DocumentBackend {
 }
 
 trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
+  protected lazy val logger = Logger.forClass(getClass)
+
   private val NullDocumentHeader = new DocumentHeader {
     override val id = 0L
     override val documentSetId = 0L
@@ -43,6 +46,13 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
     override val keywords = Seq()
     override val createdAt = new java.util.Date(0L)
     override val text = ""
+  }
+
+  private val UniversalIdSet: Set[Long] = new Set[Long] {
+    override def contains(key: Long) = true
+    override def iterator = throw new UnsupportedOperationException()
+    override def +(elem: Long) = this
+    override def -(elem: Long) = throw new UnsupportedOperationException()
   }
 
   protected val indexClient: IndexClient
@@ -70,31 +80,57 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   }
 
   /** Returns all a DocumentSet's Document IDs, sorted. */
-  private def indexAllIds(documentSetId: Long): Future[Seq[Long]] = db { session =>
-    DbDocumentBackend.sortedIds(documentSetId)
-      .firstOption(session)
-      .getOrElse(Seq())
+  private def indexAllIds(documentSetId: Long): Future[Seq[Long]] = {
+    logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}]", documentSetId) {
+      db { session =>
+        DbDocumentBackend.sortedIds(documentSetId)
+          .firstOption(session)
+          .getOrElse(Seq())
+      }
+    }
+  }
+
+  /** Returns IDs that match a given search phrase, unsorted. */
+  private def indexByQ(documentSetId: Long, q: String): Future[Set[Long]] = {
+    logger.logExecutionTimeAsync("finding document IDs matching '{}'", q) {
+      indexClient.searchForIds(documentSetId, q)
+        .transform(_.toSet, exceptions.wrapElasticSearchException(_))
+    }
+  }
+
+  /** Returns IDs that match the given tags/objects/etc (everything but
+    * search pharse), unsorted.
+    */
+  private def indexByDB(request: SelectionRequest): Future[Set[Long]] = {
+    logger.logExecutionTimeAsync("finding document IDs matching '{}'", request.toString) {
+      list(DbDocumentBackend.idsBySelectionRequest(request))
+        .map(_.toSet)
+    }
   }
 
   /** Returns a subset of the DocumentSet's Document IDs, sorted. */
   private def indexSelectedIds(request: SelectionRequest): Future[Seq[Long]] = {
-    val selectedUnsortedIdsFuture: Future[Seq[Long]] =
-      DbDocumentBackend.bySelectionRequest(request, indexClient).flatMap(list(_))
+    val idsByQFuture: Future[Set[Long]] = if (request.q.isEmpty) {
+      Future.successful(UniversalIdSet)
+    } else {
+      indexByQ(request.documentSetId, request.q)
+    }
+
+    val idsByDBFuture: Future[Set[Long]] = if (request.copy(q="").isAll) {
+      Future.successful(UniversalIdSet)
+    } else {
+      indexByDB(request)
+    }
 
     for {
       allSortedIds <- indexAllIds(request.documentSetId)
-      selectedIds <- selectedUnsortedIdsFuture
+      idsByQ <- idsByQFuture
+      idsByDB <- idsByDBFuture
     } yield {
-      if (allSortedIds.length == selectedIds.length) {
-        // Fast path: selectedIds contains the same elements as allSortedIds.
-        //
-        // This happens when, say, we select all documents in the root Node of
-        // an up-to-date Tree.
+      logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
         allSortedIds
-      } else {
-        // Catch-all: selectedIds is a subset of allSortedIds.
-        val set = selectedIds.toSet
-        allSortedIds.filter(set.contains(_))
+          .filter(idsByQ.contains(_))
+          .filter(idsByDB.contains(_))
       }
     }
   }
@@ -129,35 +165,34 @@ object DbDocumentBackend {
     sq.apply(documentSetId)
   }
 
-  def bySelectionRequest(request: SelectionRequest, indexClient: IndexClient) = {
-    import scala.concurrent.ExecutionContext.Implicits._
-
+  def idsBySelectionRequest(request: SelectionRequest): Query[_,Long,Seq] = {
     var sql = DocumentInfos
       .filter(_.documentSetId === request.documentSetId)
+      .map(_.id)
 
     if (request.documentIds.nonEmpty) {
-      sql = sql.filter(_.id inSet request.documentIds)
+      sql = sql.filter(_ inSet request.documentIds)
     }
 
     if (request.tagIds.nonEmpty) {
       val tagDocumentIds = DocumentTags
         .filter(_.tagId inSet request.tagIds)
         .map(_.documentId)
-      sql = sql.filter(_.id in tagDocumentIds)
+      sql = sql.filter(_ in tagDocumentIds)
     }
 
     if (request.nodeIds.nonEmpty) {
       val nodeDocumentIds = NodeDocuments
         .filter(_.nodeId inSet request.nodeIds)
         .map(_.documentId)
-      sql = sql.filter(_.id in nodeDocumentIds)
+      sql = sql.filter(_ in nodeDocumentIds)
     }
 
     if (request.storeObjectIds.nonEmpty) {
       val storeObjectDocumentIds = DocumentStoreObjects
         .filter(_.storeObjectId inSet request.storeObjectIds)
         .map(_.documentId)
-      sql = sql.filter(_.id in storeObjectDocumentIds)
+      sql = sql.filter(_ in storeObjectDocumentIds)
     }
 
     request.tagged.foreach { tagged =>
@@ -170,20 +205,13 @@ object DbDocumentBackend {
         .map(_.documentId)
 
       if (tagged) {
-        sql = sql.filter(_.id in taggedDocumentIds)
+        sql = sql.filter(_ in taggedDocumentIds)
       } else {
-        sql = sql.filter((d) => !(d.id in taggedDocumentIds))
+        sql = sql.filter((id) => !(id in taggedDocumentIds))
       }
     }
 
-    request.q match {
-      case "" => Future.successful(sql.map(_.id))
-      case s => {
-        indexClient.searchForIds(request.documentSetId, s)
-          .transform(identity(_), exceptions.wrapElasticSearchException(_))
-          .map { (ids: Seq[Long]) => sql.filter(_.id inSet ids).map(_.id) }
-      }
-    }
+    sql
   }
 
   object InfosByIds {
@@ -193,10 +221,8 @@ object DbDocumentBackend {
 
     def page(ids: Seq[Long]) = {
       // We call this one when we're paginating.
-      // We use inSetBind instead of inSet, because we know there's a maximum
-      // number of document IDs. (This request is called within a page.)
       DocumentInfos
-        .filter(_.id inSetBind ids) // bind: we know we don't have 10M IDs here
+        .filter(_.id inSet ids) // bind: we know we don't have 10M IDs here
     }
   }
 
@@ -205,10 +231,8 @@ object DbDocumentBackend {
 
     def page(ids: Seq[Long]) = {
       // We call this one when we're paginating.
-      // We use inSetBind instead of inSet, because we know there's a maximum
-      // number of document IDs. (This request is called within a page.)
       Documents
-        .filter(_.id inSetBind ids) // bind: we know we don't have 10M IDs here
+        .filter(_.id inSet ids) // bind: we know we don't have 10M IDs here
     }
   }
 

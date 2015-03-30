@@ -3,6 +3,8 @@ package org.overviewproject.util
 import org.slf4j.LoggerFactory
 import org.slf4j.{Logger => JLogger}
 import scala.math.ScalaNumber
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait Logger {
   protected val jLogger : JLogger
@@ -37,6 +39,16 @@ trait Logger {
     } finally {
       logElapsedTime(op, t0, args: _*)
     }
+  }
+
+  def logExecutionTimeAsync[T](op: String, args: Any*)(fn: => Future[T]): Future[T] = {
+    val t0 = System.nanoTime()
+
+    fn
+      .transform(
+        { x => logElapsedTime(op, t0, args: _*); x },
+        { x => logElapsedTime(op, t0, args: _*); x }
+      )
   }
 }
 
