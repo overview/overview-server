@@ -77,7 +77,30 @@ If you want to read more documents, you'll have to make another request -- for i
 # Group Document Sets
 A **Document Set** is a collection of documents.
 
-We currently do not support any methods that read or write Document Set data.
+## Document Sets Collection [/document-sets]
+
+### Create a DocumentSet [POST]
+You need only provide a JSON Object with a `title` property to create an empty DocumentSet.
+
+The method will return the `documentSet` properties along with an `apiToken` you can use to add documents.
+
++ Request (application/json)
+
+        {
+            "title": "My fresh new document set"
+        }
+
++ Response 201 (application/json)
+
+        {
+            "documentSet": {
+                "id": 123,
+                "title": "My fresh new document set"
+            },
+            "apiToken": {
+                "token": "a-fresh-token-for-docset-123"
+            }
+        }
 
 # Group Tags
 A **Tag** is a label that can apply to documents.
