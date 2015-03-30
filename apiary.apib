@@ -109,7 +109,119 @@ A **Tag** is a label that can apply to documents.
 
 + Parameters
     + documentSetId (number,required,`1`) ... The DocumentSet ID.
+    
+# Group Files
+A **File** is something you upload to Overview. It will generate one or many *Documents*.
 
+The file-upload sequence looks like this:
+
+1. Upload a bunch of files, which will be attached to a singleton "file group" your API token grants access to
+2. POST `/files/finish`
+
+Your API token grants you access to a singleton collection of files. Some of these are fully-uploaded; others are only partially-uploaded. As soon as you `DELETE` or `finish` your upload, all files will disappear. You can then begin uploading anew.
+
+The file-upload API is complicated: Overview supports resuming huge uploads, but typical HTTP clients don't. This API documentation focuses on the simple bits. We provide a standalone Node client called [script-add-files](https://github.com/overview/script-add-files) and a JavaScript client library, [MassUpload](https://github.com/overview/js-mass-upload). Refer to those should you wish to develop a new client.
+
+## File [/files/{guid}]
+
+A File is an in-progress or completed file upload. It lasts until the file collection is `finish`ed or `DELETE`d.
+
+`loaded` indicates the number of bytes that have been uploaded. `total` indicates the total file size. When `loaded = total`, the file upload is complete.
+
++ Parameters
+    + guid (required, uuid, `bb7b0620-2e9c-4bf3-b283-45387e7b3d72`) ... The *File* GUID. The client must generate this: for a given file group, each File must have a unique GUID. These IDs help the client and server synchronize.
+    
++ Model (application/json)
+
+        {
+            "guid": "bb7b0620-2e9c-4bf3-b283-45387e7b3d72",
+            "name": "filename.pdf",
+            "total": "10240",
+            "loaded": "10240"
+        }
+
+### Show File Metadata [HEAD]
+There is no API endpoint for reading the file: Overview assumes the client knows the file contents already. (The `guid` can help look that up.)
+
+There is an API endpoint for finding out _progress_ of a file upload.
+
+Expect the following responses:
+
+* `404 Not Found`: No upload has ever begun for a file with this `guid`.
+* `204 No Content`: There is an empty file with the given `guid`. If this is an empty file (the client should know this, based on the `guid`), then this upload is completed.
+* `206 Partial Content`: The file is partially uploaded. The `Content-Range` header will indicate which bytes have been uploaded: for instance, `Content-Range: bytes 0-499/1234` means *500* bytes have been uploaded, and the client can resume at byte *500*. No, not *499*: the [Content-Range specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16) is clear about this off-by-one weirdness.
+* `200 OK`: The file is fully uploaded. The `Content-Length` header will indicate how large the file is; the client should already know the content length, though.
+
+For all but `404 Not Found`, the filename is in the `Content-Disposition` header and the file type is in the `Content-Type` header.
+
++ Response 200
+
+### Upload File [POST]
+(Astute readers will lament that this should be sometimes `PUT` and sometimes `PATCH`. Programmers will be glad we didn't add that distinction.)
+
+Upload a file by `POST`ing binary data to this endpoint. The `guid` must be unique with respect to other files in the same file group; and the client must be able to determine which file in the local system belongs to that GUID. (A hash of a filename or filename+timestamp is a good GUID.)
+
+Be sure to set the following headers:
+
+* `Content-Disposition`: File name. This cannot be changed after the first upload attempt.
+* `Content-Type`: File type. Overview stores this but does not read it; `application/octet-stream` should be fine. This cannot be changed after the first upload attempt.
+* `Content-Length` (to upload from scratch): File size. This cannot be changed after the first upload attempt.
+* `Content-Range` (to resume an upload): Bytes in this request. For instance: `Content-Range: bytes 10-1233/1234` will skip the first 10 bytes and go to the end of the file. Yes, that off-by-one is weird; that's described in the [Content-Range specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16)
+
++ Response 201
+
+## Files Collection [/files]
+
+### List Files [GET]
+This shows in-progress and completed File uploads.
+
++ Response 200 (application/json)
+
+        [
+            {
+                "guid": "a31dbc0a-e9e8-4ea9-99db-7c2755fed526",
+                "name": "filename.txt",
+                "total": "10240",
+                "loaded": "10240"
+            }, {
+                "guid": "db8c94df-1afb-4f9e-af74-5281a93f0f22",
+                "name": "incomplete-file.doc",
+                "total": "100000",
+                "loaded": "91000"
+            }
+        ]
+        
+### Delete files [DELETE]
+This deletes all uploaded files. After this, you can upload new files from scratch.
+
++ Response 204
+
+## Finish uploading files [/files/finish?documentSetId={documentSetId}]
+
++ Parameters
+    + documentSetId (number,required,`1`) ... The DocumentSet ID.
+    
+### Add files to existing document set [POST]
+HACK: For no good reason, the `documentSetId` is part of the URL and the rest of the form parameters are passed as JSON.
+
+Some of the request parameters are weird; here's a run-down:
+
+* `lang` is the two-letter langauge code that will be applied to all new documents.
+* `split_documents` is `false` by default, meaning each File becomes a Document. If `true`, each File will be split by page boundaries, and each Page will become a Document. (Files that don't have pages, such as `.txt` files, will never be split.)
+* `supplied_stop_words` is a space-separated list of stopwords for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
+* `important_words` is a space-separated list of important words for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
+
++ Request (application/json)
+
+        {
+            "lang": "en",
+            "split_documents": false,
+            "supplied_stop_words": "",
+            "important_words": ""
+        }
+        
++ Response 201
+        
 ### List all Tags [GET]
 + Response 200 (application/json)
 
