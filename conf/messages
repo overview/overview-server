@@ -374,8 +374,6 @@ views.DocumentSet.show.TagThis.button.document=Tag this document
 views.DocumentSet.show.TagThis.button.list=Tag these documents
 views.DocumentSet.show.TagThis.documents=documents
 views.DocumentSet.show.TagThis.hide=hide
-views.DocumentSet.show.TagThis.label.existing=(existing) tag name:
-views.DocumentSet.show.TagThis.label.new=(new) tag name:
 views.DocumentSet.show.TagThis.placeholder=Tag name
 
 views.DocumentSet.show.TransactionQueueErrorMonitor.error.title=Please refresh the page

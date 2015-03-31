@@ -82,6 +82,7 @@ define [
       throw 'Must specify options.titleEl, an HTMLElement' if !options.titleEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
       throw 'Must specify options.tagThisEl, an HTMLElement' if !options.tagThisEl
+      throw 'Must specify options.keyboardController, a KeyboardController' if !options.keyboardController
 
       @tags = options.tags
       @state = options.state
@@ -89,6 +90,7 @@ define [
       @titleEl = options.titleEl
       @cursorEl = options.cursorEl
       @tagThisEl = options.tagThisEl
+      @keyboardController = options.keyboardController
 
       @_addDocumentList()
       @_addListSelection()
@@ -249,6 +251,7 @@ define [
       view = new TagThisView
         state: @state
         tags: @tags
+        keyboardController: @keyboardController
         el: @tagThisEl
 
       @tagThisView = view
@@ -261,6 +264,7 @@ define [
       titleEl: titleDiv
       cursorEl: cursorDiv
       tagThisEl: tagThisDiv
+      keyboardController: keyboardController
     )
 
     go_up_or_down = (up_or_down, event) ->

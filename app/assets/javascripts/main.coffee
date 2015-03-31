@@ -4,41 +4,34 @@
 #
 # The rest of RequireJS requires a separate config per bundle (I think?). Make
 # each file start with a copy of this requirejs.config() call.
-requirejs.config({
+requirejs.config
   baseUrl: '/assets/javascripts'
 
   #enforceDefine: true
 
-  shim: {
-    'backbone': {
+  shim:
+    'backbone':
       deps: [ 'jquery', 'underscore' ]
       exports: 'Backbone'
-    }
-    'backform': {
+    'backform':
       deps: [ 'backbone' ]
       exports: 'Backform'
-    }
-    'backgrid': {
+    'backgrid':
       deps: [ 'backbone' ]
       exports: 'Backgrid'
-    }
     'base64': { exports: 'Base64' }
-    'bootstrap-alert': {
+    'bootstrap-alert':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.alert'
-    }
-    'bootstrap-collapse': {
+    'bootstrap-collapse':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.collapse'
-    }
-    'bootstrap-dropdown': {
+    'bootstrap-dropdown':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.dropdown'
-    }
-    'bootstrap-modal': {
+    'bootstrap-modal':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.modal'
-    }
     'bootstrap-popover':
       deps: [ 'jquery', 'bootstrap-tooltip' ]
       exports: 'jQuery.fn.popover'
@@ -56,13 +49,15 @@ requirejs.config({
     'jquery.validate':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
-    underscore: { exports: '_' }
+    md5: { exports: 'CryptoJS.MD5' }
     spectrum:
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
     tinycolor: { exports: 'tinycolor' }
-    md5: { exports: 'CryptoJS.MD5' }
-  }
+    typeahead:
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.typeahead'
+    underscore: { exports: '_' }
 
   paths:
     'backbone': 'vendor/backbone'
@@ -86,5 +81,5 @@ requirejs.config({
     rsvp: 'vendor/rsvp'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
+    typeahead: 'vendor/typeahead.jquery'
     underscore: 'vendor/underscore'
-})

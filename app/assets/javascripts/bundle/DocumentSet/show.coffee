@@ -1,4 +1,4 @@
-requirejs.config({
+requirejs.config
   baseUrl: '/assets/javascripts'
 
   #enforceDefine: true
@@ -41,16 +41,19 @@ requirejs.config({
     'bootstrap-transition': {
       deps: [ 'jquery' ]
     }
+    md5: { exports: 'CryptoJS.MD5' }
     spectrum: {
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
     }
-    underscore: { exports: '_' }
     tinycolor: { exports: 'tinycolor' }
-    md5: { exports: 'CryptoJS.MD5' }
+    typeahead:
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.typeahead'
+    underscore: { exports: '_' }
   }
 
-  paths: {
+  paths:
     'backbone': 'vendor/backbone'
     'base64': 'vendor/base64'
     'bootstrap-alert': 'vendor/bootstrap-alert'
@@ -69,9 +72,8 @@ requirejs.config({
     rsvp: 'vendor/rsvp'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
+    typeahead: 'vendor/typeahead.jquery'
     underscore: 'vendor/underscore'
-  }
-})
 
 require [
   'for-view/DocumentSet/delete-document-set',

@@ -44,6 +44,19 @@
   }
 }
 
+.tag() {
+  padding: 0 .5em;
+  color: black;
+  .border-radius(.5em);
+
+  @shadow: rgba(255, 255, 255, .8);
+  text-shadow:
+    -1px -1px 0 @shadow,
+    1px 1px 0 @shadow,
+    -1px 1px 0 @shadow,
+    1px -1px 0 @shadow;
+}
+
 // Set this on a ul.tags to make 2d-looking tags
 .tag-list-2d() {
   display: block;
@@ -59,17 +72,9 @@
   div.tag {
     font-weight: normal;
     font-size: .8em;
-    padding: 0 .5em;
-    .border-radius(.5em);
+    .tag();
 
     a { display: none; } // this button doesn't work yet
-
-    @shadow: rgba(255, 255, 255, .8);
-    text-shadow:
-      -1px -1px 0 @shadow,
-      1px 1px 0 @shadow,
-      -1px 1px 0 @shadow,
-      1px -1px 0 @shadow;
   }
 }
 

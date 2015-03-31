@@ -31,6 +31,9 @@ requirejs.config
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
     tinycolor: { exports: 'tinycolor' }
+    typeahead:
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.typeahead'
     'jquery.mousewheel':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.mousewheel'
@@ -53,6 +56,7 @@ requirejs.config
     md5: 'vendor/md5'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
+    typeahead: 'vendor/typeahead.jquery'
     underscore: 'vendor/underscore'
     rsvp: 'vendor/rsvp'
     MassUpload: 'vendor/mass-upload'

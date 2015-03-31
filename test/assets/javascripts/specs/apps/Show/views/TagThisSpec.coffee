@@ -29,8 +29,6 @@ define [
         'button.list': 'button.list'
         'button.document': 'button.document'
         'documents': 'documents'
-        'label.new': 'label.new'
-        'label.existing': 'label.existing'
         'placeholder': 'placeholder'
         'hide': 'hide'
         'backToList': 'backToList'
@@ -65,24 +63,15 @@ define [
           # skip this test; it's a pain
 
         it 'should show a tag name', ->
-          expect(@view.$('.details input')).to.have.value('documents with title')
+          expect(@view.$('.details input[name=name]')).to.have.value('documents with title')
 
         it 'should show a second submit button with the same text', ->
           expect(@view.$('.details button')).to.have.text('button.document')
 
-        it 'should show we are creating a new tag', ->
-          expect(@view.$('.details label')).to.have.text('label.new')
-
-        it 'should show we are creating an existing tag on edit', ->
-          @view.$('input').val('foo')
-          @view.$('input').trigger('input')
-          expect(@view.$('.details label')).to.have.text('label.existing')
-
         it 'should disable input and show a placeholder on edit-to-empty', ->
-          @view.$('input').val('')
+          @view.$('input').typeahead('val', '')
           @view.$('input').trigger('input')
-          expect(@view.$('.details label')).to.have.text('label.new')
-          expect(@view.$('input')).to.have.attr('placeholder', 'placeholder')
+          expect(@view.$('input[name=name]')).to.have.attr('placeholder', 'placeholder')
           expect(@view.$('.details button')).to.be.disabled
 
         it 'should trigger tag', ->
@@ -92,7 +81,7 @@ define [
 
         it 'should trim the tag name', ->
           @view.on('tag', spy = sinon.spy())
-          @view.$('input').val(' foo ')
+          @view.$('input').typeahead('val', ' foo ')
           @view.$('.details form').trigger('submit')
           expect(spy).to.have.been.calledWith(name: 'foo')
 
@@ -113,7 +102,7 @@ define [
           @state.set(documentListParams: { title: 'baz' })
           expect(@view.$el).not.to.have.class('show-details')
           @view.$('.prompt button').click()
-          expect(@view.$('.details input')).to.have.value('baz')
+          expect(@view.$('.details input[name=name]')).to.have.value('baz')
 
         it 'should reset on document change', ->
           @state.set(document: 'bar')

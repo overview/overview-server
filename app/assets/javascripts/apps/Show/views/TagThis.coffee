@@ -2,6 +2,7 @@ define [
   'underscore'
   'backbone'
   'i18n'
+  'typeahead'
 ], (_, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.TagThis')
 
@@ -17,7 +18,6 @@ define [
         <form method="post" action="#" class="form-inline">
           <div class="form-group">
             <a class="close"><%- t('hide') %></a>
-            <label for="tag-this-name"></label>
           </div>
           <div class="form-group">
             <div class="input-group">
@@ -35,7 +35,8 @@ define [
       'click .prompt button': '_onClickPrompt'
       'click .close': '_onClickClose'
       'click .back-to-list': '_onClickBackToList'
-      'input input': '_onInput'
+      'input input[name=name]': '_onInput'
+      'keydown input[name=name]': '_onKeyDown'
       'submit form': '_onSubmit'
 
     initialize: (options) ->
@@ -44,21 +45,30 @@ define [
 
       @tags = options.tags
       @state = options.state
+      @keyboardController = options.keyboardController # optional
 
       @showDetails = false
+
+      if @keyboardController?
+        @keyBindings =
+          T: => @_open()
+        @keyboardController.register(@keyBindings)
 
       @listenTo(@state, 'change:oneDocumentSelected change:documentListParams change:document', @_onChangeState)
 
       @render()
 
+    remove: ->
+      @keyboardController?.unregister(@keyBindings)
+      super()
+
     render: ->
-      @_initialRender() if !@$button
+      @_initialRender() if !@ui?
 
       @_refreshBackToList()
       @_refreshShowingDetails()
       @_refreshButtonText()
       @_refreshInputValue()
-      @_refreshLabelText()
       @_refreshButtonDisabled()
 
     _refreshBackToList: ->
@@ -69,44 +79,63 @@ define [
 
     _refreshButtonText: ->
       variant = @state.get('oneDocumentSelected') && 'document' || 'list'
-      @$button.text(t("button.#{variant}"))
+      @ui.buttons.text(t("button.#{variant}"))
 
     _refreshInputValue: ->
-      @$input.val(@_getDefaultValue())
-
-    _refreshLabelText: ->
-      value = @$input.val()
-      isNew = @tags.where(name: value).length == 0
-      @$label.text(isNew && t('label.new') || t('label.existing'))
+      @ui.input.typeahead('val', @_getDefaultValue())
 
     _refreshButtonDisabled: ->
-      value = @$input.val()
+      value = @ui.input.val()
       disabled = (value.trim() == '')
-      @$button.prop('disabled', disabled)
+      @ui.submit.prop('disabled', disabled)
 
     _getDefaultValue: ->
       @state.get('documentListParams').title.replace('%s', t('documents'))
 
     _initialRender: ->
       @$el.html(@template(t: t))
-      @$button = @$('button')
-      @$input = @$('input')
-      @$label = @$('label')
+
+      @ui =
+        prompt: @$('.prompt button')
+        input: @$('.details input[name=name]')
+        submit: @$('.details button')
+        buttons: @$('button')
+
+      @ui.input.typeahead {},
+        name: 'tags'
+        source: (query, cb) =>
+          tags = @tags
+            .filter((tag) -> tag.get('name').toLowerCase().indexOf(query.toLowerCase()) == 0)
+          cb(tags)
+        displayKey: (tag) -> tag.get('name')
+        templates:
+          suggestion: _.template("""
+            <p><span class="tag" style="background-color: <%- get('color') %>"><%- get('name') %></span></p>
+          """)
+
+      # Stupid typeahead JS has styles in it. Counter with more styles. This
+      # dialog shows up at the bottom of the page, so it should open upwards.
+      @ui.input.nextAll('.tt-dropdown-menu').css(top: 'auto', bottom: '100%')
 
     _onClickPrompt: ->
+      @_open()
+
+    _open: ->
       @showDetails = true
       @_refreshInputValue()
-      @_refreshLabelText()
       @_refreshShowingDetails()
-      @$input.focus().select()
+      @ui.input.focus().select()
 
     _onInput: ->
-      @_refreshLabelText()
       @_refreshButtonDisabled()
+
+    _onKeyDown: (e) ->
+      if e.keyCode == 27 # Escape
+        @_reset()
 
     _onSubmit: (e) ->
       e.preventDefault()
-      @trigger('tag', name: @$input.val().trim())
+      @trigger('tag', name: @ui.input.val().trim())
       @_reset()
 
     _onChangeState: -> @_reset()
