@@ -105,14 +105,14 @@ The method will return the `documentSet` properties along with an `apiToken` you
 # Group Files
 A **File** is something you upload to Overview. It will generate one or many *Documents*.
 
+The file-upload API is complicated: Overview supports resuming huge uploads, but typical HTTP clients don't. This API documentation focuses on the simple bits. We provide a standalone Node client called [script-add-files](https://github.com/overview/script-add-files) and a JavaScript client library, [MassUpload](https://github.com/overview/js-mass-upload). Refer to those should you wish to develop a new client.
+
 The file-upload sequence looks like this:
 
 1. Upload a bunch of files, which will be attached to a singleton "file group" your API token grants access to
 2. POST `/files/finish`
 
 Your API token grants you access to a singleton collection of files. Some of these are fully-uploaded; others are only partially-uploaded. As soon as you `DELETE` or `finish` your upload, all files will disappear. You can then begin uploading anew.
-
-The file-upload API is complicated: Overview supports resuming huge uploads, but typical HTTP clients don't. This API documentation focuses on the simple bits. We provide a standalone Node client called [script-add-files](https://github.com/overview/script-add-files) and a JavaScript client library, [MassUpload](https://github.com/overview/js-mass-upload). Refer to those should you wish to develop a new client.
 
 ## File [/files/{guid}]
 
