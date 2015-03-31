@@ -579,7 +579,6 @@ views.Tag._form.delete=Delete tag
 views.Tag._form.close=Close without saving
 views.Tag._form.submit=Save tag
 
-views.InlineTagList.add=add tag to selection
 views.InlineTagList.remove=remove tag from selection
 views.InlineTagList.show_untagged=Show untagged
 views.InlineTagList.organize=Organize tags…

@@ -1,23 +1,17 @@
 define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   t = i18n.namespaced('views.InlineTagList')
 
-  # A list of inline tags, with controls for adding or removing them.
+  # A list of inline tags, with controls for removing them.
   #
   # Events:
   #
   # * name-clicked(tag): A tag was clicked
-  # * add-clicked(tag): A tag "add" button was clicked
   # * remove-clicked(tag): A tag "remove" button was clicked
-  # * create-submitted(newTagName): The user requested adding a new tag with
-  #   the given name. newTagName is guaranteed not to match any tags in the
-  #   collection (otherwise add-clicked will be triggered in its stead), and
-  #   the name will always be trimmed of whitespace.
   Backbone.View.extend
     id: 'tag-list'
 
     events:
       'click a.tag-name': '_onClickName'
-      'click a.tag-add': '_onClickAdd'
       'click a.tag-remove': '_onClickRemove'
       'click a.organize': '_onClickOrganize'
       'click a.untagged': '_onClickUntagged'
@@ -31,7 +25,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
             data-id="<%- model.id %>"
             style="background-color:<%- model.get('color') %>">
           <a class="btn tag-name"><%- model.get('name') %></a>
-          <a class="btn tag-add" title="<%- t('add') %>"><i class="overview-icon-plus"></i></a>
           <a class="btn tag-remove" title="<%- t('remove') %>"><i class="overview-icon-minus"></i></a>
         </li>
       """)
@@ -135,7 +128,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @trigger(triggerEvent, model)
 
     _onClickName: (e) -> @_onEvent(e, 'name-clicked')
-    _onClickAdd: (e) -> @_onEvent(e, 'add-clicked')
     _onClickRemove: (e) -> @_onEvent(e, 'remove-clicked')
 
     _onClickOrganize: (e) ->

@@ -11,7 +11,6 @@ define [
   describe 'views/InlineTagList', ->
     beforeEach ->
       i18n.reset_messages
-        'views.InlineTagList.add': 'add'
         'views.InlineTagList.remove': 'remove'
         'views.InlineTagList.show_untagged': 'show_untagged'
         'views.InlineTagList.organize': 'organize'
@@ -50,13 +49,6 @@ define [
         @collection.comparator = (a, b) -> b.attributes.id - a.attributes.id
         @collection.sort()
         expect(@view.$('li:eq(0) .tag-name').text()).to.eq('BB')
-
-      it 'should notify :add-clicked', ->
-        spy = sinon.spy()
-        @view.on('add-clicked', spy)
-        @view.$('.tag-add:eq(0)').click()
-        expect(spy).to.have.been.called
-        expect(spy.lastCall.args[0].id).to.eq(1)
 
       it 'should notify :remove-clicked', ->
         spy = sinon.spy()
