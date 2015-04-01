@@ -369,7 +369,7 @@ views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 views.DocumentSet.show.SearchView.query_placeholder=Search all documents
 views.DocumentSet.show.SearchView.search=Search
 
-views.DocumentSet.show.TagCountList.prompt=Tags on these documents
+views.DocumentSet.show.TagCountList.prompt=Applied tags
 views.DocumentSet.show.TagCountList.empty=These documents are all untagged
 views.DocumentSet.show.TagCountList.loading=Loading tag counts…
 views.DocumentSet.show.TagCountList.error=Overview failed to load tag counts. Please try again.
