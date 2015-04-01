@@ -3,8 +3,6 @@ define [
 ], (DocumentList) ->
   describe 'apps/Show/models/DocumentList', ->
     class DocumentSet extends Backbone.Model
-      initialize: ->
-        @searchResults = new Backbone.Collection
 
     class Tag extends Backbone.Model
 
@@ -204,35 +202,3 @@ define [
               it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
               it 'should have all documents', -> expect(@docs.pluck('id')).to.deep.eq([ 1 .. (@list.nDocumentsPerPage + 1) ])
               it 'should return a resolved promise on fetchNextPage()', -> expect(@list.fetchNextPage()).to.be.fulfilled
-
-    describe 'with an unfinished SearchResult', ->
-      class SearchResult extends Backbone.Model
-        idAttribute: 'query'
-
-      beforeEach ->
-        @documentSet = new DocumentSet()
-        @params =
-          documentSet: @documentSet
-          searchResult: new SearchResult(query: 'foo')
-          toQueryParams: -> { searchResults: '2' }
-
-        @list = new DocumentList({}, {
-          params: @params
-          url: '/documentsets/1/documents'
-        })
-        @docs = @list.documents
-
-      afterEach ->
-        @documentSet.off()
-        @list.stopListening()
-        @list.off()
-        @docs.off()
-
-      it 'should be isComplete() to begin with', -> expect(@list.isComplete()).to.be.true
-
-      describe 'when the searchResult changes', ->
-        beforeEach -> @params.searchResult.set(state: 'Complete')
-
-        it 'should have isComplete() false', -> expect(@list.isComplete()).to.be.false
-        it 'should have no length', -> expect(@list.get('length')).to.be.null
-        it 'should have no pages fetched', -> expect(@list.get('nPagesFetched')).to.eq(0)

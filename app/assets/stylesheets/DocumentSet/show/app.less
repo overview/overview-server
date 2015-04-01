@@ -52,11 +52,25 @@
 
   #document-list-title { .flex(0 0 auto); }
   #document-list-and-current { .flex(1 1 auto); }
-  #tree-app-tag-this { .flex(0 0 auto); }
+  #tree-app-document-list-tags { .flex(0 0 auto); }
 
   #document-list-and-current {
     position: relative;
     overflow: hidden;
+  }
+
+  #tree-app-document-list-tags {
+    // tag-this should be on the right, the other on the left.
+    // tag-this is right-aligned. counts is sometimes invisible.
+    .display-flex();
+    padding-top: 5px;
+
+    &>:first-child {
+      .flex(0 0 auto);
+    }
+    &>:last-child {
+      .flex(1 1 auto);
+    }
   }
 }
 

@@ -369,6 +369,13 @@ views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 views.DocumentSet.show.SearchView.query_placeholder=Search all documents
 views.DocumentSet.show.SearchView.search=Search
 
+views.DocumentSet.show.TagCountList.prompt=Tags on these documents
+views.DocumentSet.show.TagCountList.empty=These documents are all untagged
+views.DocumentSet.show.TagCountList.loading=Loading tag counts…
+views.DocumentSet.show.TagCountList.error=Overview failed to load tag counts. Please try again.
+views.DocumentSet.show.TagCountList.nDocuments={0,choice,0#no documents|1#1 document|1<{0,number,integer} documents}
+views.DocumentSet.show.TagCountList.remove=remove
+
 views.DocumentSet.show.TagThis.backToList=Back to list
 views.DocumentSet.show.TagThis.button.document=Tag this document
 views.DocumentSet.show.TagThis.button.list=Tag these documents
@@ -436,8 +443,7 @@ views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words: {0}
 views.Tree.show.DocumentList.loading=…
 views.Tree.show.DocumentList.placeholder=…
-views.Tree.show.DocumentList.tag.remove=×
-views.Tree.show.DocumentList.tag.remove.title=Remove tag
+views.Tree.show.DocumentList.tag.remove=Remove tag from document
 
 views.Tree.show.DocumentListCursor.position_html=Document <strong>{0,number,integer}</strong> of <strong>{1,number,integer}</strong>
 views.Tree.show.DocumentListCursor.close=Back to list
@@ -445,6 +451,7 @@ views.Tree.show.DocumentListCursor.next=Next
 views.Tree.show.DocumentListCursor.previous=Previous
 views.Tree.show.DocumentListCursor.description.empty=(no key words)
 views.Tree.show.DocumentListCursor.description=Key words: {0}
+views.Tree.show.DocumentListCursor.tag.remove=Remove tag from document
 
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
 

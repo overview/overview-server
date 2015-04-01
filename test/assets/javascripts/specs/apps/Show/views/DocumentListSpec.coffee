@@ -26,6 +26,7 @@ define [
     loading: false
 
     initialize: (attrs, options) -> @documents = options.documents
+    untag: ->
 
   makeDummyDocument = -> new Document
   makeDocument = (id) ->
@@ -209,11 +210,10 @@ define [
         documents.get(0).set({ title: 'new title' })
         expect(view.$('ul.documents>li:eq(0)').hasClass('selected')).to.be.true
 
-      it 'should fire remove-tag', ->
-        args = undefined
-        view.on('remove-tag', -> args = _.toArray(arguments))
+      it 'should fire tag-remove-clicked', ->
+        view.on('tag-remove-clicked', spy = sinon.spy())
         view.$('ul.documents>li:eq(0) .tag:eq(0) .remove').click()
-        expect(_.pluck(args, 'cid')).to.deep.eq(_.pluck([documents.get(0), tags.get(0)], 'cid'))
+        expect(spy).to.have.been.calledWith(tagCid: tags.get(0).cid, documentId: documents.get(0).id)
 
       it 'should fire click', ->
         callback = sinon.spy()

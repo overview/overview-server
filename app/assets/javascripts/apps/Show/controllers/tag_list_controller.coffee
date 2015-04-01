@@ -13,10 +13,6 @@ define [
       state: state
       el: el
 
-    view.on 'remove-clicked', (tag) ->
-      documentSet.untag(tag, state.getSelectionQueryParams())
-      state.set(highlightedDocumentListParams: @state.get('documentListParams').reset.byTag(tag))
-
     view.on 'name-clicked', (tag) ->
       state.resetDocumentListParams().byTag(tag)
 

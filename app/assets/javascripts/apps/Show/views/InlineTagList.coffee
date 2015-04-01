@@ -6,13 +6,11 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   # Events:
   #
   # * name-clicked(tag): A tag was clicked
-  # * remove-clicked(tag): A tag "remove" button was clicked
   Backbone.View.extend
     id: 'tag-list'
 
     events:
       'click a.tag-name': '_onClickName'
-      'click a.tag-remove': '_onClickRemove'
       'click a.organize': '_onClickOrganize'
       'click a.untagged': '_onClickUntagged'
       'submit form': '_onSubmit'
@@ -25,7 +23,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
             data-id="<%- model.id %>"
             style="background-color:<%- model.get('color') %>">
           <a class="btn tag-name"><%- model.get('name') %></a>
-          <a class="btn tag-remove" title="<%- t('remove') %>"><i class="overview-icon-minus"></i></a>
         </li>
       """)
 
@@ -122,13 +119,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       cid = $(e.currentTarget).closest('[data-cid]').attr('data-cid')
       @collection.get(cid)
 
-    _onEvent: (e, triggerEvent) ->
+    _onClickName: (e) ->
       e.preventDefault()
       model = @_eventToModel(e)
-      @trigger(triggerEvent, model)
-
-    _onClickName: (e) -> @_onEvent(e, 'name-clicked')
-    _onClickRemove: (e) -> @_onEvent(e, 'remove-clicked')
+      @trigger('name-clicked', model)
 
     _onClickOrganize: (e) ->
       e.preventDefault()

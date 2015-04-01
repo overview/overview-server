@@ -57,23 +57,6 @@ define [
       @listenTo(@params.documentSet, 'tag', @_onTag)
       @listenTo(@params.documentSet, 'untag', @_onUntag)
 
-      if @params.searchResult? && !@params.searchResult.get('id')
-        # The search result isn't loaded yet, so it can't have any documents.
-        @set
-          length: 0
-          nPagesFetched: 1
-        @listenTo(@params.searchResult, 'change:state', @_onSearchResultChangeState)
-
-    _onSearchResultChangeState: (searchResult) ->
-      if @params.searchResult == searchResult && searchResult.get('state') == 'Complete'
-        @documents.reset([])
-        @set
-          length: null
-          nPagesFetched: 0
-          # Setting nPagesFetched to 0 will make DocumentListController check
-          # if it needs to start fetching.
-      undefined
-
     _onTag: (tag, params) ->
       if _.isEqual(params, @params.toQueryParams())
         @documents.tag(tag)

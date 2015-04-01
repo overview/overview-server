@@ -18,7 +18,7 @@ define [
             <li class="tag" data-cid="<%- tag.cid %>">
               <div class="tag" style="background-color: <%= tag.get('color') %>;">
                 <span class="name"><%- tag.get('name') %></span>
-                <a class="remove" href="#" title="<%- t('tag.remove.title') %>"><%- t('tag.remove') %></a>
+                <a class="remove" href="#" title="<%- t('tag.remove') %>">&times;</a>
               </div>
             </li>
           <% }); %>
@@ -41,7 +41,7 @@ define [
   #
   # The following events can be fired:
   #
-  # * remove-tag(document, tag): user requested to remove a tag from a document
+  # * tag-remove-clicked(tagCid: cid, documentId: id): user requested to remove a tag from a document
   # * click-document(document, index, { shift: boolean, meta: boolean }): user clicked a document
   #
   # The following options must be passed:
@@ -252,12 +252,12 @@ define [
 
     _onClickTagRemove: (e) ->
       e.preventDefault()
+      e.stopPropagation() # skip _onClickDocument
       $target = $(e.target)
       tagCid = $target.closest('.tag[data-cid]').attr('data-cid')
       documentCid = $target.closest('.document[data-cid]').attr('data-cid')
-      tag = @options.tags.get(tagCid)
       document = @collection.get(documentCid)
-      @trigger('remove-tag', document, tag)
+      @trigger('tag-remove-clicked', tagCid: tagCid, documentId: document.id)
 
     _onClickDocument: (e) ->
       e.preventDefault()

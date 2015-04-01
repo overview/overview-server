@@ -1,10 +1,11 @@
 define [
+  'jquery'
   'backbone'
   '../helpers/DocumentHelper'
   '../models/DocumentDisplayPreferences'
   './DocumentDisplayPreferencesView'
   'i18n'
-], (Backbone, DocumentHelper, DocumentDisplayPreferences, DocumentDisplayPreferencesView, i18n) ->
+], ($, Backbone, DocumentHelper, DocumentDisplayPreferences, DocumentDisplayPreferencesView, i18n) ->
   t = i18n.namespaced('views.Tree.show.DocumentListCursor')
 
   # Shows the Document corresponding to the user's cursor.
@@ -33,6 +34,7 @@ define [
     events:
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
+      'click a.remove': '_onClickRemoveTag'
 
     templates:
       root: _.template("""
@@ -52,6 +54,7 @@ define [
             <li class="tag" data-cid="<%- tag.cid %>">
               <div class="tag" style="background-color: <%= tag.get('color') %>;">
                 <span class="name"><%- tag.get('name') %></span>
+                <a href="#" class="remove" title="<%- t('tag.remove') %>">&times;</a>
               </div>
             </li>
           <% }); %>
@@ -122,6 +125,12 @@ define [
 
     _renderDocument: (maybeDocument) ->
       @documentDisplayApp.setDocument(maybeDocument?.attributes)
+
+    _onClickRemoveTag: (e) ->
+      e.preventDefault()
+      document = @_getDocument()
+      cid = $(e.currentTarget).closest('[data-cid]').attr('data-cid')
+      @trigger('tag-remove-clicked', tagCid: cid, documentId: document.id)
 
     renderHeader: ->
       maybeDocument = @_getDocument()

@@ -1,0 +1,26 @@
+#tree-app-tag-document-counts {
+  .dropdown-menu > li {
+    white-space: nowrap;
+    padding: .5em 20px;
+    .display-flex();
+
+    span.name {
+      .tag();
+    }
+
+    span.count {
+      // Eat up the space, so counts line up, right-aligned.
+      .flex(1 1 auto);
+      text-align: right;
+      padding-left: .5em;
+    }
+
+    & > a {
+      display: inline;
+      padding: 0;
+      padding-left: .5em;
+      .faded-link();
+      background-color: inherit;
+    }
+  }
+}

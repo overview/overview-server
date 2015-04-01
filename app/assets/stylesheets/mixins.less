@@ -49,17 +49,20 @@
   color: black;
   .border-radius(.5em);
 
-  @shadow: rgba(255, 255, 255, .8);
   text-shadow:
-    -1px -1px 0 @shadow,
-    1px 1px 0 @shadow,
-    -1px 1px 0 @shadow,
-    1px -1px 0 @shadow;
+    -1px -1px .5px white,
+    1px 1px .5px white,
+    -1px 1px .5px white,
+    1px -1px .5px white,
+    -1px 0 .5px white,
+    1px 0 .5px white,
+    0 -1px .5px white,
+    0 1px .5px white;
 }
 
 // Set this on a ul.tags to make 2d-looking tags
 .tag-list-2d() {
-  display: block;
+  .display-flex();
   margin: 0 -.5em 0 0;
   padding: 0;
   list-style: none;
@@ -73,8 +76,15 @@
     font-weight: normal;
     font-size: .8em;
     .tag();
+  }
 
-    a { display: none; } // this button doesn't work yet
+  a.remove {
+    color: black;
+    font-size: 1.4em;
+    line-height: 1;
+    vertical-align: middle;
+    border-left: 1px solid rgba(255, 255, 255, 0.5);
+    padding-left: .3em;
   }
 }
 

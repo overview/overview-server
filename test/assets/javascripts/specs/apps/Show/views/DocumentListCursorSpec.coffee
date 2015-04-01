@@ -6,6 +6,9 @@ define [
     defaults:
       title: 'title'
       description: 'description'
+      tags: []
+
+    hasTag: (tag) -> tag.id in @get('tags')
 
   class Documents extends Backbone.Collection
     model: Document
@@ -22,6 +25,7 @@ define [
 
   describe 'apps/Show/views/DocumentListCursor', ->
     view = undefined
+    tags = undefined
     selection = undefined
     documentList = undefined
     displayApp = undefined
@@ -30,11 +34,12 @@ define [
       selection = new Selection(cursorIndex: cursorIndex)
       documentList = nDocuments? && new DocumentList(length: nDocuments) || undefined
       documentList?.documents = new Backbone.Collection([])
+      tags = new Backbone.Collection([])
 
       view = new View
         selection: selection
         documentList: documentList
-        tags: new Backbone.Collection([])
+        tags: tags
         documentDisplayApp: (options) ->
           @options = options
           @setDocument = sinon.spy()
@@ -50,6 +55,7 @@ define [
     beforeEach ->
       i18n.reset_messages
         'views.Tree.show.DocumentListCursor.position_html': 'position_html,{0},{1}'
+        'views.Tree.show.DocumentListCursor.tag.remove': 'tag.remove'
         'views.Tree.show.DocumentListCursor.next': 'next'
         'views.Tree.show.DocumentListCursor.previous': 'previous'
         'views.Tree.show.DocumentListCursor.description': 'description,{0}'
@@ -169,3 +175,19 @@ define [
     it 'should allow starting with documentList undefined', ->
       initAt(5, undefined)
       expect(view.el.className).to.eq('showing-unloaded-document')
+
+    it 'should trigger "tag-remove-clicked"', ->
+      initAt(undefined, 10)
+      tags.add(id: 123, name: 'abc', color: '#abcdef')
+      tags.add(id: 234, name: 'fde', color: '#fedcba')
+      documentList = new DocumentList(n: 10, length: 2)
+      documentList.documents = new Backbone.Collection([
+        new Document({ id: 1 })
+        new Document({ id: 2, tags: [ 123, 234 ]})
+      ])
+      view.setDocumentList(documentList)
+      selection.set({ cursorIndex: 1 })
+
+      view.on('tag-remove-clicked', spy = sinon.spy())
+      view.$('ul.tags li:eq(1) a.remove').click()
+      expect(spy).to.have.been.calledWith(tagCid: tags.get(234).cid, documentId: 2)
