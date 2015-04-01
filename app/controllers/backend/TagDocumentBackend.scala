@@ -7,6 +7,13 @@ import org.overviewproject.models.DocumentTag
 import org.overviewproject.models.tables.DocumentTags
 
 trait TagDocumentBackend {
+  /** Returns a mapping from tag ID to number of documents with that tag.
+    *
+    * @param documentSetId Document set ID.
+    * @param documentIds Documents to check for tags.
+    */
+  def count(documentSetId: Long, documentIds: Iterable[Long]): Future[Map[Long,Int]]
+
   /** Create many DocumentTag objects, one per documentId.
     *
     * The caller must ensure the tagId and documentIds belong to the same
@@ -29,6 +36,16 @@ trait TagDocumentBackend {
 }
 
 trait DbTagDocumentBackend extends TagDocumentBackend { self: DbBackend =>
+  override def count(documentSetId: Long, documentIds: Iterable[Long]) = {
+    if (documentIds.nonEmpty) {
+      db { session =>
+        DbTagDocumentBackend.count(documentSetId, documentIds)(session)
+      }
+    } else {
+      Future.successful(Map())
+    }
+  }
+
   override def createMany(tagId: Long, documentIds: Seq[Long]) = {
     if (documentIds.nonEmpty) {
       db { session =>
@@ -55,7 +72,26 @@ trait DbTagDocumentBackend extends TagDocumentBackend { self: DbBackend =>
 }
 
 object DbTagDocumentBackend {
+  import org.overviewproject.database.Slick.SimpleArrayJdbcType
   import org.overviewproject.database.Slick.simple._
+  implicit val longSeqMapper = new SimpleArrayJdbcType[Long]("int8")
+
+  lazy val countCompiled = {
+    StaticQuery.query[(Long,Seq[Long]),(Long,Int)]("""
+      WITH
+      t AS (SELECT id FROM tag WHERE document_set_id = ?),
+      d AS (SELECT UNNEST(?) AS id)
+      SELECT dt.tag_id, COUNT(*)
+      FROM document_tag dt
+      INNER JOIN t ON dt.tag_id = t.id
+      INNER JOIN d ON dt.document_id = d.id
+      GROUP BY dt.tag_id
+    """)
+  }
+
+  def count(documentSetId: Long, documentIds: Iterable[Long])(session: Session): Map[Long,Int] = {
+    countCompiled(documentSetId, documentIds.toSeq).list(session).toMap
+  }
 
   def insertMany(tagId: Long, documentIds: Seq[Long])(session: Session): Unit = {
     val idValues = documentIds.map(long => s"($long)")
