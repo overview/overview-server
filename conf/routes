@@ -94,6 +94,7 @@ GET    /documentsets/:id/tags.csv           controllers.TagController.indexCsv(i
 GET    /documentsets/:id/tags               controllers.TagController.indexJson(id: Long)
 GET    /documentsets/:id/trees/:treeId/tags controllers.TagController.indexJsonWithTree(id: Long, treeId: Long)
 
+GET    /documentsets/:id/tags/count         controllers.TagDocumentController.count(id: Long)
 POST   /documentsets/:id/tags/:tagId/add    controllers.TagDocumentController.createMany(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove controllers.TagDocumentController.destroyMany(id: Long, tagId: Long)
 
