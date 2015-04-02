@@ -20,4 +20,11 @@ object Page {
     dataSize: Long,
     text: String
   )
+  
+  case class ReferenceAttributes(
+    id: Long,
+    fileId: Long,
+    pageNumber: Long,
+    text: String
+  )
 }
