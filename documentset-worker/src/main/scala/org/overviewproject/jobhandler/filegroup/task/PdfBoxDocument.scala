@@ -33,6 +33,7 @@ class PdfBoxDocument(location: String) extends PdfDocument {
     document.close()
   }
 
+  // Use a view to prevent all page data from being loaded into memory at once
   private def splitPages: SeqView[PDDocument, Seq[_]] =
     document.getDocumentCatalog.getAllPages().asScala.view.map { p =>
       createDocument(p.asInstanceOf[PDPage])

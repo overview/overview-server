@@ -13,6 +13,9 @@ import org.overviewproject.database.SlickClient
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.overviewproject.database.SlickSessionProvider
 
+/**
+ * Store the page data with `BlobStorage`, then store `Page` attributes in the database.
+ */
 trait PageSaver extends SlickClient {
 
   protected val pageBlobSaver: PageBlobSaver
