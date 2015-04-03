@@ -24,7 +24,7 @@ trait PageSaver extends SlickClient {
     def save(page: PdfPage): Future[String]
   }
 
-  def savePages(fileId: Long, pdfPages: SeqView[PdfPage, Seq[_]]): Future[Iterable[Page.ReferenceAttributes]] = {
+  def savePages(fileId: Long, pdfPages: SeqView[PdfPage, Seq[_]]): Future[Seq[Page.ReferenceAttributes]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val pageAttributes = for {
@@ -54,11 +54,11 @@ trait PageSaver extends SlickClient {
     (q returning Pages.map(_.id)).insertInvoker
   }
 
-  private def writeToDatabase(pageAttributes: Iterable[Page.CreateAttributes]): Future[Iterable[Long]] =
+  private def writeToDatabase(pageAttributes: Seq[Page.CreateAttributes]): Future[Seq[Long]] =
     db { implicit session =>
       val attributeTuples = pageAttributes
         .map(p => (p.fileId, p.pageNumber, Some(p.dataLocation), p.dataSize, Some(p.text)))
-        .toSeq
+      
 
       session.withTransaction {
         pageInserter.insertAll(attributeTuples: _*)

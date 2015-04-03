@@ -11,7 +11,7 @@ trait RequestDocumentIds extends TaskStep {
   protected val documentIdSupplier: ActorRef
   
   protected val documentSetId: Long
-  protected val documentData: Seq[PdfFileDocumentData]
+  protected val documentData: Seq[DocumentData]
 
   protected val nextStep: Seq[Document] => TaskStep
 
@@ -32,14 +32,14 @@ trait RequestDocumentIds extends TaskStep {
 }
 
 object RequestDocumentIds {
-  def apply(documentIdSupplier: ActorRef, documentSetId: Long, documentData: Seq[PdfFileDocumentData],
+  def apply(documentIdSupplier: ActorRef, documentSetId: Long, documentData: Seq[DocumentData],
       nextStep: Seq[Document] => TaskStep)
   : RequestDocumentIds = new RequestDocumentIdsImpl(documentIdSupplier, documentSetId, documentData, nextStep)
 
   private class RequestDocumentIdsImpl(
     override protected val documentIdSupplier: ActorRef,
     override protected val documentSetId: Long,
-    override protected val documentData: Seq[PdfFileDocumentData],
+    override protected val documentData: Seq[DocumentData],
     override protected val nextStep: Seq[Document] => TaskStep) extends RequestDocumentIds 
 
 }

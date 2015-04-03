@@ -8,6 +8,7 @@ import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import scala.util.Try
 import scala.collection.SeqView
 import scala.concurrent.ExecutionContext.Implicits.global
+import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 
 trait CreatePdfPages extends TaskStep {
 
@@ -16,10 +17,10 @@ trait CreatePdfPages extends TaskStep {
 
   protected val pageSaver: PageSaver
 
-  protected val nextStep: Iterable[PdfPageDocumentData] => TaskStep
+  protected val nextStep: Seq[PdfPageDocumentData] => TaskStep
 
   protected trait Storage {
-    def savePages(fileId: Long, pdfPages: Iterable[PdfPage]): Iterable[Long]
+    def savePages(fileId: Long, pdfPages: Seq[PdfPage]): Seq[Long]
   }
 
   override def execute: Future[TaskStep] = for {
@@ -41,5 +42,24 @@ trait CreatePdfPages extends TaskStep {
 
   trait PdfProcessor {
     def loadFromBlobStorage(location: String): PdfDocument
+  }
+}
+
+object CreatePdfPages {
+
+  def apply(file: File, nextStep: Seq[PdfPageDocumentData] => TaskStep): CreatePdfPages = 
+    new CreatePdfPagesImpl(file, nextStep)
+  
+  private class CreatePdfPagesImpl(
+    override protected val file: File,
+    override protected val nextStep: Seq[PdfPageDocumentData] => TaskStep) extends CreatePdfPages {
+
+    override protected val pageSaver: PageSaver = PageSaver
+    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
+    
+    private class PdfProcessorImpl extends PdfProcessor {
+      override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
+    }
+
   }
 }
