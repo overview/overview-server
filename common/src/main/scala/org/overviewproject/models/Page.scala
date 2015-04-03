@@ -24,7 +24,7 @@ object Page {
   case class ReferenceAttributes(
     id: Long,
     fileId: Long,
-    pageNumber: Long,
+    pageNumber: Int,
     text: String
   )
 }

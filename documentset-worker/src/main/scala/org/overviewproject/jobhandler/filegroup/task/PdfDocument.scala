@@ -1,7 +1,9 @@
 package org.overviewproject.jobhandler.filegroup.task
 
+import scala.collection.SeqView
+
 trait PdfDocument {
-  def pages: Iterable[PdfPage]
+  def pages: SeqView[PdfPage, Seq[_]]
   def text: String
   def close(): Unit
 }

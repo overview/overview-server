@@ -75,7 +75,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       val pdfDocument = smartMock[PdfDocument]
 
       val file = PodoFactory.file(id=fileId, viewLocation=viewLocation)
-      pdfDocument.pages returns Seq(page)
+      pdfDocument.pages returns Seq(page).view
     }
     
     class TestCreatePagesProcess(documentSetId: Long, upload: GroupedFileUpload, pdfDocument: PdfDocument, file: File) extends CreatePagesProcess {

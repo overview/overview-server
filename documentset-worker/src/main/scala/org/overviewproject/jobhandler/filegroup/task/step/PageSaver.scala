@@ -6,7 +6,7 @@ import org.overviewproject.models.Page
 import org.overviewproject.util.TempFile
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.blobstorage.BlobBucketId
-import scala.collection.IterableView
+import scala.collection.SeqView
 import org.overviewproject.models.tables.Pages
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.database.SlickClient
@@ -21,7 +21,7 @@ trait PageSaver extends SlickClient {
     def save(page: PdfPage): Future[String]
   }
 
-  def savePages(fileId: Long, pdfPages: IterableView[PdfPage, Iterable[PdfPage]]): Future[Iterable[Page.ReferenceAttributes]] = {
+  def savePages(fileId: Long, pdfPages: SeqView[PdfPage, Seq[_]]): Future[Iterable[Page.ReferenceAttributes]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val pageAttributes = for {
