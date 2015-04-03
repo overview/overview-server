@@ -9,12 +9,12 @@ trait CreateDocumentFromPdfPage {
 
 object CreateDocumentFromPdfPage {
   def apply(documentSetId: Long, documentIdSupplier: ActorRef) = new CreateDocumentFromPdfPage {
-     private val steps = 
-       DoCreatePdfFile(documentSetId).andThen(
-           DoCreatePdfPages().andThen(
-             DoRequestDocumentIds(documentIdSupplier, documentSetId))
-       )
-    
-       override def start(uploadedFileId: Long) = steps.generate(uploadedFileId)
+    private val steps =
+      DoCreatePdfFile(documentSetId).andThen(
+        DoCreatePdfPages().andThen(
+          DoRequestDocumentIds(documentIdSupplier, documentSetId).andThen(
+            DoWriteDocuments())))
+
+    override def start(uploadedFileId: Long) = steps.generate(uploadedFileId)
   }
 }
