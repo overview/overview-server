@@ -10,8 +10,7 @@ import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.SlickClient
 import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.{ File, TempDocumentSetFile }
-import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.models.{ File, GroupedFileUpload, TempDocumentSetFile }
 import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.postgres.LargeObjectInputStream
 

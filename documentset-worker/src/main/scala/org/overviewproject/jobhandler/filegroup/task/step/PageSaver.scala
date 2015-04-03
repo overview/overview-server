@@ -1,17 +1,19 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.jobhandler.filegroup.task.PdfPage
-import scala.concurrent.Future
-import org.overviewproject.models.Page
-import org.overviewproject.util.TempFile
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.blobstorage.BlobBucketId
 import scala.collection.SeqView
-import org.overviewproject.models.tables.Pages
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.language.postfixOps
+
+import org.overviewproject.blobstorage.BlobBucketId
+import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.database.SlickClient
-import scala.concurrent.ExecutionContext.Implicits.global
 import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.jobhandler.filegroup.task.PdfPage
+import org.overviewproject.models.Page
+import org.overviewproject.models.tables.Pages
+import org.overviewproject.util.TempFile
 
 /**
  * Store the page data with `BlobStorage`, then store `Page` attributes in the database.

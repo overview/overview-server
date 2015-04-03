@@ -1,14 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import scala.concurrent.Future
-import org.overviewproject.models.File
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
-import scala.concurrent.Promise
-import org.overviewproject.jobhandler.filegroup.task.PdfPage
-import scala.util.Try
 import scala.collection.SeqView
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.Try
+
 import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
+import org.overviewproject.jobhandler.filegroup.task.PdfDocument
+import org.overviewproject.jobhandler.filegroup.task.PdfPage
+import org.overviewproject.models.File
 
 trait CreatePdfPages extends TaskStep {
 

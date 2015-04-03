@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.process
 
-import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 
 trait StepGenerator[Input, Output] {
 

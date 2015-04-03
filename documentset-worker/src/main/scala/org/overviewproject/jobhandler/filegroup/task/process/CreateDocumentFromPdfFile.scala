@@ -1,8 +1,8 @@
 package org.overviewproject.jobhandler.filegroup.task.process
 
 import akka.actor.ActorRef
-import org.overviewproject.models.File
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import org.overviewproject.models.File
 
 trait CreateDocumentFromPdfFile {
   def start(uploadedFileId: Long): TaskStep

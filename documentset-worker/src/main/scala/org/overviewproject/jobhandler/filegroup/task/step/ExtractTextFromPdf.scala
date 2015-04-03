@@ -1,10 +1,13 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import scala.concurrent.Future
-import org.overviewproject.models.Document
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.models.File
-import scala.util.{ Failure, Success, Try }
 
 trait ExtractTextFromPdf extends TaskStep {
 

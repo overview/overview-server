@@ -1,11 +1,12 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.util.BulkDocumentWriter
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import org.overviewproject.models.Document
 import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.models.Document
 import org.overviewproject.models.TempDocumentSetFile
+import org.overviewproject.util.BulkDocumentWriter
+
 
 trait WriteDocuments extends TaskStep {
 

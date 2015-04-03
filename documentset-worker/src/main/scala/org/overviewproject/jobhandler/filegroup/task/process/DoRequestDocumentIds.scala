@@ -1,9 +1,10 @@
 package org.overviewproject.jobhandler.filegroup.task.process
 
 import org.overviewproject.jobhandler.filegroup.task.step.DocumentData
-import org.overviewproject.models.Document
-import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.jobhandler.filegroup.task.step.RequestDocumentIds
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import org.overviewproject.models.Document
+
 import akka.actor.ActorRef
 
 object DoRequestDocumentIds {
