@@ -50,6 +50,9 @@ requirejs.config
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
     md5: { exports: 'CryptoJS.MD5' }
+    select2:
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.select2'
     spectrum:
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
@@ -79,6 +82,7 @@ requirejs.config
     'mass-upload': 'vendor/mass-upload'
     md5: 'vendor/md5'
     rsvp: 'vendor/rsvp'
+    select2: 'vendor/select2'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     typeahead: 'vendor/typeahead.jquery'

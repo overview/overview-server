@@ -4,48 +4,43 @@ requirejs.config
   #enforceDefine: true
 
   shim: {
-    'backbone': {
+    'backbone':
       deps: [ 'jquery', 'underscore' ]
       exports: 'Backbone'
-    }
     'base64': { exports: 'Base64' }
-    'bootstrap-alert': {
+    'bootstrap-alert':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.alert'
-    }
-    'bootstrap-collapse': {
+    'bootstrap-collapse':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.collapse'
-    }
-    'bootstrap-dropdown': {
+    'bootstrap-dropdown':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.dropdown'
-    }
-    'bootstrap-modal': {
+    'bootstrap-modal':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.modal'
-    }
     'bootstrap-popover':
       deps: [ 'jquery', 'bootstrap-tooltip' ]
       exports: 'jQuery.fn.popover'
-    'bootstrap-tab': {
+    'bootstrap-tab':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tab'
-    }
     'bootstrap-toggle':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.bootstrapToggle'
     'bootstrap-tooltip':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tooltip'
-    'bootstrap-transition': {
+    'bootstrap-transition':
       deps: [ 'jquery' ]
-    }
     md5: { exports: 'CryptoJS.MD5' }
-    spectrum: {
+    select2:
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.select2'
+    spectrum:
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
-    }
     tinycolor: { exports: 'tinycolor' }
     typeahead:
       deps: [ 'jquery' ]
@@ -70,6 +65,7 @@ requirejs.config
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
     rsvp: 'vendor/rsvp'
+    select2: 'vendor/select2'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     typeahead: 'vendor/typeahead.jquery'

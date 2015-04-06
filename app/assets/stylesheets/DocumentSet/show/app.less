@@ -19,7 +19,13 @@
     .flex(0 0 auto);
   }
 
+  #tree-app-search-and-tags {
+    .flex(0 0 auto);
+    border-bottom: 5px solid transparent;
+  }
+
   #tree-app-view {
+    .flex(1 1 auto);
     position: relative;
 
     &>.view {
@@ -34,8 +40,14 @@
     }
   }
 
-  #tree-app-tree, #tree-app-view {
+  // FIXME move the below code somewhere better
+  #tree-app-tree {
     .flex(1 1 auto);
+  }
+
+  #tree-app-zoom-slider {
+    position: relative;
+    height: @focus_height;
   }
 }
 
@@ -72,43 +84,4 @@
       .flex(1 1 auto);
     }
   }
-}
-
-#tree-app-zoom-slider {
-  position: relative;
-  height: @focus_height;
-}
-
-#tree-app-tags {
-  // We *should* set max-height; 50% to support multiple screen sizes.
-  // But we can't: Google Chrome has a bug (unfiled) in flexbox that makes it
-  // sometimes determine that max-height: 0 in that case. I haven't figured out
-  // a reduction.
-  //max-height: 50%; // for huge tag list
-  max-height: 20em; // should work for most users.
-  overflow: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-#tree-app-search {
-  // NOT absolute
-  margin: 0 -5px 5px;
-}
-
-#tree-app-document-list {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-
-#tree-app-document {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -100%;
-  height: @defaultDocumentHeight;
-  .transition(bottom .35s ease-out);
 }

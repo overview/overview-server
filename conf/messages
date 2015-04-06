@@ -366,8 +366,7 @@ views.DocumentSet.show.DocumentDisplayPreferences.text.false=Document
 views.DocumentSet.show.DocumentDisplayPreferences.text.true=Text
 views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 
-views.DocumentSet.show.SearchView.query_placeholder=Search all documents
-views.DocumentSet.show.SearchView.search=Search
+views.DocumentSet.show.SearchView.query_placeholder=Search for text
 
 views.DocumentSet.show.TagCountList.prompt=Applied tags
 views.DocumentSet.show.TagCountList.empty=These documents are all untagged
@@ -375,6 +374,11 @@ views.DocumentSet.show.TagCountList.loading=Loading tag counts…
 views.DocumentSet.show.TagCountList.error=Overview failed to load tag counts. Please try again.
 views.DocumentSet.show.TagCountList.nDocuments={0,choice,0#no documents|1#1 document|1<{0,number,integer} documents}
 views.DocumentSet.show.TagCountList.remove=remove
+
+views.DocumentSet.show.TagSelect.all=Select a tag
+views.DocumentSet.show.TagSelect.untagged=(untagged)
+views.DocumentSet.show.TagSelect.group.all=All tags
+views.DocumentSet.show.TagSelect.organize=Organize tags…
 
 views.DocumentSet.show.TagThis.backToList=Back to list
 views.DocumentSet.show.TagThis.button.document=Tag this document
@@ -585,10 +589,6 @@ views.Tag._form.confirm_delete=Are you sure you want to delete the tag “{0}”
 views.Tag._form.delete=Delete tag
 views.Tag._form.close=Close without saving
 views.Tag._form.submit=Save tag
-
-views.InlineTagList.remove=remove tag from selection
-views.InlineTagList.show_untagged=Show untagged
-views.InlineTagList.organize=Organize tags…
 
 views.User._form.h3=Create an account
 views.User._form.label.email=Email

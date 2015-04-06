@@ -7,17 +7,19 @@ define [
 
   class SearchView extends Backbone.View
     template: _.template("""
-      <form method="post" action="#" class="form-inline input-group">
-        <input
-          class="input-sm form-control"
-          type="text"
-          name="query"
-          placeholder="<%- t('query_placeholder') %>"
-          />
-        <%= window.csrfTokenHtml %>
-        <span class="input-group-btn">
-          <button class="btn" type="submit"><%- t('search') %></button>
-        </span>
+      <form method="post" action="#">
+        <div class="input-group">
+          <input
+            class="form-control"
+            type="text"
+            name="query"
+            placeholder="<%- t('query_placeholder') %>"
+            />
+          <%= window.csrfTokenHtml %>
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="submit"><i class="icon-search"></i></button>
+          </span>
+        </div>
       </form>
     """)
 

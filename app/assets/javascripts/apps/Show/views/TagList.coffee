@@ -114,7 +114,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
                 <div class="input-group">
                   <input type="text" class="form-control input-sm" name="name" required="required" placeholder="<%- t('tag_name.placeholder') %>" />
                   <span class="input-group-btn">
-                    <button type="submit" class="btn"><%- t('submit') %></button>
+                    <button type="submit" class="btn btn-sm"><%- t('submit') %></button>
                   </span>
                 </div>
               </form>

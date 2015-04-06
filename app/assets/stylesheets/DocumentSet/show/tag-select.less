@@ -1,0 +1,54 @@
+@import "../../mixins.less";
+@import "_variables.less";
+
+#tree-app-tags {
+  padding-left: 0;
+
+  form {
+    display: inline-block;
+  }
+
+  a.organize {
+    padding-left: .5em;
+    .faded-link();
+  }
+
+  span.tag {
+    .tag();
+
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  select {
+    max-width: 20em;
+    // select2 will copy the width from the select element
+  }
+
+  .select2-container .select2-selection--single {
+    height: auto;
+    .form-control;
+    //padding: @padding-base-vertical @padding-base-horizontal;
+
+    .select2-selection__rendered {
+      line-height: inherit;
+      padding: 0 8px 0 0;
+    }
+
+    span[data-special-tag-value=all] {
+      color: @input-color-placeholder;
+    }
+
+    .select2-selection__arrow {
+      top: 0;
+      height: 100%;
+    }
+  }
+
+  .select2-container--default .select2-results > .select2-results__options {
+    max-height: 30em; // TODO use JS to make this depend on page height
+  }
+}

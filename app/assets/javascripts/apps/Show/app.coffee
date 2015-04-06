@@ -98,10 +98,12 @@ define [
     _buildHtml: ->
       html = """
         <div id="tree-app-left">
-          <div id="tree-app-search"></div>
+          <div id="tree-app-search-and-tags" class="row">
+            <div id="tree-app-search" class="col-lg-4"></div>
+            <div id="tree-app-tags" class="col-lg-8"></div>
+          </div>
           <div id="tree-app-views"></div>
           <div id="tree-app-view"></div>
-          <div id="tree-app-tags"></div>
         </div>
         <div id="tree-app-right">
           <div id="document-list-title"></div>

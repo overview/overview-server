@@ -4,21 +4,6 @@
 @import "tag-like-list.less";
 
 #tree-app-search {
-  clear: both;
-  border: 5px solid transparent;
-  .clearfix();
-
-  form {
-    float: left;
-    margin: 0;
-    width: 20em;
-  }
-
-  input, button {
-    // so tree hover box shows up above: https://www.pivotaltracker.com/story/show/68629192
-    z-index: 0;
-  }
-
   &:not(.changing):not(.empty) {
     input[type=text] {
       color: white;

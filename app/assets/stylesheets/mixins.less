@@ -46,6 +46,7 @@
 
 .tag() {
   padding: 0 .5em;
+  white-space: nowrap;
   color: black;
   .border-radius(.5em);
 
@@ -62,14 +63,13 @@
 
 // Set this on a ul.tags to make 2d-looking tags
 .tag-list-2d() {
-  .display-flex();
-  margin: 0 -.5em 0 0;
+  margin: 0 -.5em -.3em 0;
   padding: 0;
   list-style: none;
 
   li {
     display: inline-block;
-    margin: .3em .5em .3em 0;
+    margin: 0 .5em .3em 0;
   }
 
   div.tag {

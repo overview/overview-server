@@ -27,6 +27,9 @@ requirejs.config
       exports: 'jQuery.fn.tooltip'
     underscore: { exports: '_' }
     md5: { exports: 'CryptoJS.MD5' }
+    select2:
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.select2'
     spectrum:
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
@@ -54,6 +57,7 @@ requirejs.config
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
+    select2: 'vendor/select2'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     typeahead: 'vendor/typeahead.jquery'
