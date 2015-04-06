@@ -13,7 +13,7 @@ define [
 
     templates:
       main: _.template("""
-        <div class="dropdown dropup">
+        <div class="dropdown">
           <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
             <%- t('prompt') %>
             <span class="caret"></span>
