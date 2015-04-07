@@ -6,6 +6,10 @@ define [
   class MockTag extends Backbone.Model
     defaults:
       name: 'foo'
+      color: '#abcdef'
+
+    getClass: -> 'tag'
+    getStyle: -> ''
 
   class MockTagCollection extends Backbone.Collection
     model: MockTag

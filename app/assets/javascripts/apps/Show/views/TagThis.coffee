@@ -104,7 +104,7 @@ define [
         displayKey: (tag) -> tag.get('name')
         templates:
           suggestion: _.template("""
-            <p><span class="tag" style="background-color: <%- get('color') %>"><%- get('name') %></span></p>
+            <p><span class="<%- getClass() %>" style="<%- getStyle() %>"><%- get('name') %></span></p>
           """)
 
       # Stupid typeahead JS has styles in it. Counter with more styles. This

@@ -36,8 +36,10 @@ define [
       """)
 
       tag: _.template("""
-        <li role="presentation" class="tag" data-cid="<%- tag.cid %>">
-          <span class="name" style="background-color: <%- tag.get('color') %>"><%- tag.get('name') %></span>
+        <li role="presentation" data-cid="<%- tag.cid %>">
+          <div class="<%- tag.getClass() %> style="<%- tag.getStyle() %>">
+            <span class="name"><%- tag.get('name') %></span>
+          </div>
           <span class="count"><%- t('nDocuments', nDocuments) %></span>
           <a href="#" class="remove"><%- t('remove') %></a>
         </li>

@@ -32,7 +32,7 @@ define [
         <a href="#" class="organize"><%- t('organize') %></a>
       ''')
       option: _.template('''
-        <span class="tag" style="background-color: <%- tag.get('color') %>">
+        <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
           <span class="name"><%- tag.get('name') %></span>
         </span>
       ''')

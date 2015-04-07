@@ -16,7 +16,7 @@ define [
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
             <li class="tag" data-cid="<%- tag.cid %>">
-              <div class="tag" style="background-color: <%= tag.get('color') %>;">
+              <div class="<%= tag.getClass() %>" style="<%= tag.getStyle() %>">
                 <span class="name"><%- tag.get('name') %></span>
                 <a class="remove" href="#" title="<%- t('tag.remove') %>">&times;</a>
               </div>

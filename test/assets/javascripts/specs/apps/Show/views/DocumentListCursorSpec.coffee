@@ -13,6 +13,17 @@ define [
   class Documents extends Backbone.Collection
     model: Document
 
+  class Tag extends Backbone.Model
+    defaults:
+      name: 'tag'
+      color: '#abcdef'
+
+    getClass: -> 'tag'
+    getStyle: -> ''
+
+  class Tags extends Backbone.Collection
+    model: Tag
+
   class DocumentList extends Backbone.Model
     defaults:
       length: null
@@ -34,7 +45,7 @@ define [
       selection = new Selection(cursorIndex: cursorIndex)
       documentList = nDocuments? && new DocumentList(length: nDocuments) || undefined
       documentList?.documents = new Backbone.Collection([])
-      tags = new Backbone.Collection([])
+      tags = new Tags([])
 
       view = new View
         selection: selection

@@ -4,12 +4,17 @@ define [
   'backbone'
   'apps/Show/views/DocumentList'
   'i18n'
-  'tinycolor'
-], ($, _, Backbone, DocumentListView, i18n, tinycolor) ->
+], ($, _, Backbone, DocumentListView, i18n) ->
   HEIGHT = 100
   LI_HEIGHT = 10
 
   class Tag extends Backbone.Model
+    defaults:
+      name: 'tag'
+      color: '#abcdef'
+
+    getClass: -> 'tag'
+    getStyle: -> ''
 
   class Document extends Backbone.Model
     hasTag: (tag) -> tag.id of (@attributes.tagIds || {})
@@ -172,13 +177,11 @@ define [
       it 'should render document tags', ->
         $tagEl = view.$('ul.documents>li:eq(0) ul.tags>li:eq(0)')
         expect($tagEl.find('.name').text()).to.eq('Tag 0')
-        expect(tinycolor($tagEl.find('.tag').css('background-color')).toHex()).to.eq('abcdef')
 
       it 'should update tags as they change', ->
         tags.get(0).set({ color: '#111111', name: 'Tag 111111' })
         $tagEl = view.$('ul.documents>li:eq(0) div.tag:eq(0)')
         expect($tagEl.find('.name').text()).to.eq('Tag 111111')
-        expect(tinycolor($tagEl.css('background-color')).toHex()).to.eq('111111')
 
       it 'should re-render tags when the collection is tagged', ->
         # Hacky here. How do we detect that tags have been re-rendered?

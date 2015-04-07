@@ -50,15 +50,15 @@
   color: black;
   .border-radius(.5em);
 
-  text-shadow:
-    -1px -1px .5px white,
-    1px 1px .5px white,
-    -1px 1px .5px white,
-    1px -1px .5px white,
-    -1px 0 .5px white,
-    1px 0 .5px white,
-    0 -1px .5px white,
-    0 1px .5px white;
+  &.tag-light {
+    color: black;
+    text-shadow: 0 0 1px white, 0 0 1px white;
+  }
+
+  &.tag-dark {
+    color: white;
+    text-shadow: 0 0 1px black, 0 0 1px black;
+  }
 }
 
 // Set this on a ul.tags to make 2d-looking tags
@@ -79,10 +79,7 @@
   }
 
   a.remove {
-    color: black;
-    font-size: 1.4em;
-    line-height: 1;
-    vertical-align: middle;
+    color: inherit;
     border-left: 1px solid rgba(255, 255, 255, 0.5);
     padding-left: .3em;
   }
