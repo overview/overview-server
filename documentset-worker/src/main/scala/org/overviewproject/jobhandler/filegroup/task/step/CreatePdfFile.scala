@@ -14,12 +14,9 @@ import org.overviewproject.models.{ File, GroupedFileUpload, TempDocumentSetFile
 import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.postgres.LargeObjectInputStream
 
-trait CreatePdfFile extends TaskStep with SlickClient {
+trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
   protected val documentSetId: Long
   protected val uploadedFileId: Long
-
-  protected val blobStorage: BlobStorage
-  protected def largeObjectInputStream(oid: Long): InputStream
 
   protected val nextStep: File => TaskStep
 
@@ -57,22 +54,18 @@ trait CreatePdfFile extends TaskStep with SlickClient {
 }
 
 object CreatePdfFile {
-  private val LargeObjectBufferSize = 5 * 1024 * 1024
-  
-  def apply(documentSetId: Long, uploadedFileId: Long, next: File => TaskStep): CreatePdfFile = 
+
+  def apply(documentSetId: Long, uploadedFileId: Long, next: File => TaskStep): CreatePdfFile =
     new CreatePdfFileImpl(documentSetId, uploadedFileId, next)
-  
+
   private class CreatePdfFileImpl(
     override protected val documentSetId: Long,
     override protected val uploadedFileId: Long,
-    override protected val nextStep: File => TaskStep
-  ) extends CreatePdfFile with SlickSessionProvider {
+    override protected val nextStep: File => TaskStep) extends CreatePdfFile with SlickSessionProvider {
 
     override protected val blobStorage = BlobStorage
-    override protected def largeObjectInputStream(oid: Long) = {
-      val is = new LargeObjectInputStream(oid, new SlickSessionProvider {})
-      new BufferedInputStream(is, LargeObjectBufferSize)
-    }
-    
+    override protected def largeObjectInputStream(oid: Long) =
+      new LargeObjectInputStream(oid, new SlickSessionProvider {})
+
   }
 }

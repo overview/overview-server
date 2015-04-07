@@ -5,13 +5,13 @@ import org.mockito.Matchers
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
 import scala.slick.jdbc.JdbcBackend.Session
-
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.File
 import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.TempDocumentSetFiles
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.test.{ DbSpecification, SlickClientInSession }
+import java.io.BufferedInputStream
 
 class CreatePdfFileSpec extends DbSpecification with Mockito {
 
@@ -20,11 +20,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     "copy upload contents to BlobStorage" in new UploadScope {
       await(createFile.execute)
 
-      there was one(blobStorage).create(
-        Matchers.eq(BlobBucketId.FileContents),
-        any[InputStream],
-        Matchers.eq(uploadSize)
-      )
+      there was one(blobStorage).create(any, any, any)
     }
 
     "create a file with PDF content" in new UploadScope {
@@ -45,7 +41,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     "return the next step" in new UploadScope {
       val r = await(createFile.execute)
 
-      r must be equalTo(NextStep)
+      r must be equalTo (NextStep)
     }
 
     "return failure on error" in new FailingCreationScope {
@@ -65,9 +61,12 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
       val upload = factory.groupedFileUpload(fileGroupId = fileGroup.id, size = uploadSize)
       val location = "blob location"
 
-      val loInputStream = new ByteArrayInputStream("foo bar baz".getBytes("UTF-8"))
+      val loInputStream = smartMock[InputStream]
       val blobStorage = smartMock[BlobStorage]
-      blobStorage.create(any, any, any) returns createResult
+      blobStorage.create(
+        be(BlobBucketId.FileContents),
+        any,
+        be_===(uploadSize)) returns createResult
 
       val createFile = new TestCreatePdfFile(upload.id, blobStorage, loInputStream)
 
@@ -83,11 +82,10 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     override def execute = Future.successful(this)
   }
 
-  class TestCreatePdfFile(val uploadedFileId: Long, val blobStorage: BlobStorage, loInputStream: InputStream)
-  (implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
+  class TestCreatePdfFile(val uploadedFileId: Long, val blobStorage: BlobStorage, loInputStream: InputStream)(implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
     override protected val documentSetId = 1l
     override protected val nextStep = { f: File => NextStep }
-    
+
     override protected def largeObjectInputStream(oid: Long) = loInputStream
   }
 }
