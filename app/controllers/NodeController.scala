@@ -5,29 +5,10 @@ import scala.annotation.tailrec
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningTree
 import models.orm.finders.{NodeFinder,TreeFinder}
-import models.orm.stores.NodeStore
 import org.overviewproject.tree.orm.{Node,Tree}
 
 trait NodeController extends Controller {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
-
-  trait Storage {
-    /** A tree of Nodes for the document set, starting at the root.
-      *
-      * Nodes are returned in order: when iterating over the return value, if a
-      * Node refers to a parentId, the Node corresponding to that parentId has
-      * already appeared in the return value.
-      */
-    def findRootNodes(treeId: Long, depth: Int) : Iterable[Node]
-
-    /** The direct descendents of the given parent Node ID. */
-    def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
-
-    def findTree(treeId: Long) : Option[Tree]
-    def findNode(treeId: Long, nodeId: Long) : Iterable[Node]
-
-    def updateNode(node: Node) : Node
-  }
   val storage : NodeController.Storage
 
   def index(treeId: Long) = AuthorizedAction.inTransaction(userOwningTree(treeId)) { implicit request =>
@@ -52,25 +33,25 @@ trait NodeController extends Controller {
     Ok(views.json.Node.index(nodes))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
-
-  def update(treeId: Long, id: Long) = AuthorizedAction.inTransaction(userOwningTree(treeId)) { implicit request =>
-    storage.findNode(treeId, id).headOption match {
-      case None => NotFound
-      case Some(node) =>
-        val form = forms.NodeForm(node)
-
-        form.bindFromRequest().fold(
-          f => BadRequest,
-          node => {
-            val savedNode = storage.updateNode(node)
-            Ok(views.json.Node.show(savedNode))
-          })
-    }
-  }
 }
 
 object NodeController extends NodeController {
-  override val storage = new NodeController.Storage {
+  trait Storage {
+    /** A tree of Nodes for the document set, starting at the root.
+      *
+      * Nodes are returned in order: when iterating over the return value, if a
+      * Node refers to a parentId, the Node corresponding to that parentId has
+      * already appeared in the return value.
+      */
+    def findRootNodes(treeId: Long, depth: Int) : Iterable[Node]
+
+    /** The direct descendents of the given parent Node ID. */
+    def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
+
+    def findTree(treeId: Long) : Option[Tree]
+  }
+
+  override val storage = new Storage {
     private def childrenOf(nodes: Iterable[Node]) : Iterable[Node] = {
       if (nodes.nonEmpty) {
         val nodeIds = nodes.map(_.id)
@@ -106,14 +87,6 @@ object NodeController extends NodeController {
 
     override def findTree(treeId: Long) = {
       TreeFinder.byId(treeId).headOption
-    }
-
-    override def findNode(treeId: Long, nodeId: Long) = {
-      NodeFinder.byTreeAndId(treeId, nodeId)
-    }
-
-    override def updateNode(node: Node) = {
-      NodeStore.update(node)
     }
   }
 }

@@ -19,7 +19,6 @@ class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
 
     def index(treeId: Long) = controller.index(treeId)(fakeAuthorizedRequest)
     def show(treeId: Long, nodeId: Long) = controller.show(treeId, nodeId)(fakeAuthorizedRequest)
-    def update(treeId: Long, nodeId: Long) = controller.update(treeId, nodeId)(postRequest)
 
     val sampleNode = Node(
       id=1L,
@@ -29,22 +28,6 @@ class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
       cachedSize=0,
       isLeaf=false
     )
-  }
-
-  "update" should {
-    "edit a node" in new TestScope {
-      mockStorage.findNode(1L, 1L) returns Seq(sampleNode)
-      mockStorage.updateNode(any[Node]) returns sampleNode // unused
-
-      val result = update(1L, 1L)
-      there was one(mockStorage).updateNode(sampleNode.copy(description="new description"))
-    }
-
-    "return NotFound when a node isn't found" in new TestScope {
-      mockStorage.findNode(1L, 1L) returns Seq()
-      val result = update(1L, 1L)
-      h.status(result) must beEqualTo(h.NOT_FOUND)
-    }
   }
 
   "show" should {

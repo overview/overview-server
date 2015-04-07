@@ -9,10 +9,6 @@ define [
     defaults:
       name: 'tag'
 
-  class Node extends Backbone.Model
-    defaults:
-      description: 'node'
-
   class DocumentList extends Backbone.Model
     defaults:
       length: null
@@ -30,7 +26,6 @@ define [
         'num_documents': 'num_documents,{0}'
         'loading': 'loading'
         'tag.edit': 'tag.edit'
-        'node.edit': 'node.edit'
         'list': 'list'
         'one': 'one'
 
@@ -90,32 +85,6 @@ define [
         @state.set(oneDocumentSelected: false)
         @view.$('.show-list').click()
         expect(@state.get('oneDocumentSelected')).to.be.false
-
-    describe 'with a Node', ->
-      beforeEach ->
-        @node = { id: 1, description: 'foo' }
-        _.extend(@node, Backbone.Events)
-        @view.setDocumentList(new DocumentList({ length: 4 }, {
-          params:
-            title: '%s with node foo'
-            view: { onDemandTree: { getNode: (id) => if id == 1 then @node else undefined } }
-            params: { nodes: [ 1 ] }
-            reset:
-              byNode: (n) ->
-                title: "%s with node #{n.description}"
-        }))
-
-      it 'should trigger edit-node', ->
-        @view.on('edit-node', spy = sinon.spy())
-        $a = @view.$('a.edit')
-        expect($a.length).to.eq(1)
-        $a.click()
-        expect(spy).to.have.been.calledWith(@node)
-
-      it 'should listen for node description changes', ->
-        @node.description = 'bar'
-        @node.trigger('change', @node)
-        expect(@view.$('h4').html()).to.eq('<strong>num_documents,4</strong> with node bar')
 
     describe 'with a search query', ->
       beforeEach ->

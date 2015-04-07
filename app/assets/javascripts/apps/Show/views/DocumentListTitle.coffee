@@ -19,11 +19,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     if editTagId?
       editTagHtml = "<a href='#' data-type='tag' data-id='#{editTagId}' class='edit'>#{t('tag.edit')}</a>"
 
-    editNodeId = params.params?.nodes?[0]
-    if editNodeId?
-      editNodeHtml = "<a href='#' data-type='node' data-id='#{editNodeId}' class='edit'>#{t('node.edit')}</a>"
-
-    editLinkHtml: editTagHtml || editNodeHtml || ''
+    editLinkHtml: editTagHtml || ''
     titleHtml: getTitleHtml(nDocuments, params.title)
     className: if nDocuments? then 'loaded' else 'loading'
     nDocuments: nDocuments
@@ -42,7 +38,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   # Events:
   #
   # * edit-tag: (tag) indicates the user requests a tag edit
-  # * edit-node: (node) indicates the user requests a node edit
   class DocumentListTitleView extends Backbone.View
     id: 'document-list-title'
 
@@ -99,7 +94,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       id = Number($el.attr('data-id'))
 
       switch type
-        when 'node' then @trigger('edit-node', params.view?.onDemandTree?.getNode?(id))
         when 'tag' then @trigger('edit-tag', params.documentSet.tags?.get?(id))
 
     _onClickShowList: (e) ->
@@ -116,11 +110,11 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         @listenTo(@documentList, 'change', @render)
         @transientObjectsToListenTo.push(@documentList)
 
-        # Listen for tag/node name change.
+        # Listen for tag name change.
         #
         # HUGE HACK ahead!
         #
-        # We want to re-render the title when a node name or tag name changes.
+        # We want to re-render the title when a tag name changes.
         # But we do _not_ want to change the document list! So our huge hack
         # is to set the title on the existing, supposedly-immutable params.
         #
@@ -128,15 +122,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         # the rest of a documentListParams. We can either make
         # documentListParams mutable or alter other code such that a title
         # change doesn't trigger a refresh.
-        if @documentList.params?.view?.onDemandTree?.getNode?
-          for nodeId in (@documentList.params.params?.nodes || [])
-            if (node = @documentList.params.view.onDemandTree.getNode(nodeId))?
-              @transientObjectsToListenTo.push(node)
-              @listenTo node, 'change', (node) =>
-                title = @documentList.params.reset.byNode(node).title
-                @documentList.params.title = title
-                @render()
-
         if @documentList.params?.documentSet?.tags?.get?
           for tagId in (@documentList.params.params?.tags || [])
             if (tag = @documentList.params.documentSet.tags.get(tagId))?

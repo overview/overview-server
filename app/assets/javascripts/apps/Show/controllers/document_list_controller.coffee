@@ -10,10 +10,9 @@ define [
   '../views/TagThis'
   '../views/TagCountList'
   './ListSelectionController'
-  './node_form_controller'
   './tag_form_controller'
   'apps/DocumentDisplay/app'
-], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, TagThisView, TagCountListView, ListSelectionController, node_form_controller, tag_form_controller, DocumentDisplayApp) ->
+], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, TagThisView, TagCountListView, ListSelectionController, tag_form_controller, DocumentDisplayApp) ->
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
   DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
@@ -185,9 +184,6 @@ define [
 
       @on 'change:documentList', (__, documentList) ->
         view.setDocumentList(documentList)
-
-      @listenTo view, 'edit-node', (node) =>
-        node_form_controller(node, @state)
 
       @listenTo view, 'edit-tag', (tag) ->
         tag_form_controller(tag, @state)

@@ -340,10 +340,8 @@ views.DocumentSet.show.DocumentListParams.untagged=%s without any tags
 views.DocumentSet.show.DocumentListTitle.loading=Loading documents…
 views.DocumentSet.show.DocumentListTitle.json.title_html=<strong>{0}</strong> {1}
 views.DocumentSet.show.DocumentListTitle.num_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
-views.DocumentSet.show.DocumentListTitle.node.edit=edit folder…
 views.DocumentSet.show.DocumentListTitle.tag.edit=edit tag…
 views.DocumentSet.show.DocumentListTitle.list=Back to list
-views.DocumentSet.show.DocumentListTitle.one=Show one document
 
 views.DocumentSet.show.NewViewDialog.title=New visualization
 views.DocumentSet.show.NewViewDialog.cancel=Cancel
