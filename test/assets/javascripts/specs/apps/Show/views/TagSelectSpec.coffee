@@ -12,7 +12,7 @@ define [
 
   class MockState extends Backbone.Model
     defaults:
-      highlightedDocumentListParams: null
+      documentListParams: null
 
     initialize: ->
       @_reset =
@@ -54,25 +54,25 @@ define [
       @collection.reset([ { name: 'foo2' }, { name: 'bar2' }])
 
     it 'should select all on click', ->
-      @state.set(highlightedDocumentListParams: { toJSON: -> tags: [ 1 ] })
+      @state.set(documentListParams: { toJSON: -> tags: [ 1 ] })
       @$('select').val('all').change()
       expect(@state._reset.all).to.have.been.called
 
     it 'should select a tag on click', ->
       tag = @collection.get(2)
-      @state.set(highlightedDocumentListParams: { toJSON: -> tags: [ 3 ] })
+      @state.set(documentListParams: { toJSON: -> tags: [ 3 ] })
       @$('select').val(tag.cid).change()
       expect(@state._reset.byTag).to.have.been.calledWith(tag)
 
     it 'should reselect a tag on click', ->
       tag = @collection.get(2)
-      @state.set(highlightedDocumentListParams: { toJSON: -> tags: [ 2 ] })
+      @state.set(documentListParams: { toJSON: -> tags: [ 2 ] })
       @$('select').val(tag.cid).change()
       expect(@state._reset.byTag).to.have.been.calledWith(tag)
 
     it 'should set the selected value when the highlight changes', ->
       tag = @collection.get(2)
-      @state.set(highlightedDocumentListParams: { toJSON: -> tags: [ 2 ] })
+      @state.set(documentListParams: { toJSON: -> tags: [ 2 ] })
       expect(@$('select')).to.have.value(tag.cid)
 
     it 'should select untagged', ->
@@ -80,7 +80,7 @@ define [
       expect(@state._reset.byUntagged).to.have.been.called
 
     it 'should set the selected value when highlighting untagged', ->
-      @state.set(highlightedDocumentListParams: { toJSON: -> tagged: false })
+      @state.set(documentListParams: { toJSON: -> tagged: false })
       expect(@$('select')).to.have.value('untagged')
 
     it 'should trigger organize-clicked', ->

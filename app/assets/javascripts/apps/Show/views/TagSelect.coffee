@@ -18,12 +18,12 @@ define [
       main: _.template('''
         <form class="form-inline">
           <select class="form-control" name="tag-cid" value="">
-            <option value="all" <%= highlighted === 'all' ? 'selected' : '' %>><%- t('all') %></option>
-            <option value="untagged" <%= highlighted === 'untagged' ? 'selected' : '' %>><%- t('untagged') %></option>
+            <option value="all" <%= selected === 'all' ? 'selected' : '' %>><%- t('all') %></option>
+            <option value="untagged" <%= selected === 'untagged' ? 'selected' : '' %>><%- t('untagged') %></option>
             <% if (allTags.length > 0) { %>
               <optgroup label="<%- t('group.all') %>">
                 <% allTags.forEach(function(tag) { %>
-                  <option value="<%- tag.cid %>" <%= highlighted === tag ? 'selected' : '' %>><%- tag.get('name') %></option>
+                  <option value="<%- tag.cid %>" <%= selected === tag ? 'selected' : '' %>><%- tag.get('name') %></option>
                 <% }); %>
               </optgroup>
             <% } %>
@@ -49,7 +49,7 @@ define [
       @_idToLastHighlight = {} # cid -> Date
 
       @listenTo(@collection, 'add remove reset change', @render)
-      @listenTo(@state, 'change:highlightedDocumentListParams', @_onHighlight)
+      @listenTo(@state, 'change:documentListParams', @_onHighlight)
 
       @render()
 
@@ -59,9 +59,9 @@ define [
       @render()
 
     render: ->
-      highlighted = if (params = @state.get('highlightedDocumentListParams')?.toJSON())
-        if (highlightedId = params.tags?[0])
-          @collection.get(highlightedId) || 'all'
+      selected = if (params = @state.get('documentListParams')?.toJSON())
+        if (selectedId = params.tags?[0])
+          @collection.get(selectedId) || 'all'
         else if params.tagged == false # false != null
           'untagged'
         else
@@ -69,7 +69,7 @@ define [
       else
         'all'
       allTags = @collection.sortBy('name')
-      html = @templates.main(t: t, allTags: allTags, mostRecentTags: [], highlighted: highlighted)
+      html = @templates.main(t: t, allTags: allTags, mostRecentTags: [], selected: selected)
       @$el.html(html)
 
       @_addSelect2()
