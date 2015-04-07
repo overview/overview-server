@@ -378,7 +378,6 @@ views.DocumentSet.show.TagSelect.untagged=(untagged)
 views.DocumentSet.show.TagSelect.group.all=All tags
 views.DocumentSet.show.TagSelect.organize=Organize tags…
 
-views.DocumentSet.show.TagThis.backToList=Back to list
 views.DocumentSet.show.TagThis.button.document=Tag this document
 views.DocumentSet.show.TagThis.button.list=Tag these documents
 views.DocumentSet.show.TagThis.documents=documents

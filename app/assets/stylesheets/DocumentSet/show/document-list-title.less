@@ -5,8 +5,8 @@
 }
 
 #document-list-title {
-  padding: .25em 0;
   .display-flex();
+  padding: .25em 0;
   font-family: @font-family-sans-serif;
   font-weight: normal;
   font-size: 1.25em;
@@ -22,18 +22,6 @@
     text-overflow: ellipsis;
   }
 
-  .edit-link {
-    .flex(0 0 auto);
-    font-size: .8em;
-    line-height: 1.25 / .8;
-
-    a {
-      .faded-link();
-      vertical-align: middle;
-      padding: 0 0 0 .5em;
-    }
-  }
-
   span.show-list-link {
     .flex(0 0 auto);
     max-width: 0;
@@ -44,6 +32,7 @@
   }
 
   a.show-list {
+    .flex(0 0 auto);
     display: block;
     padding: 0 1em 0 0;
     float: right; // so animation is slide, not reveal

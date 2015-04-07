@@ -106,12 +106,14 @@ define [
           <div id="tree-app-view"></div>
         </div>
         <div id="tree-app-right">
-          <div id="document-list-title"></div>
-          <div id="tree-app-document-list-tags">
-            <div id="tree-app-tag-document-counts"></div>
-            <div id="tree-app-tag-this"></div>
+          <div id="tree-app-right-top">
+            <div id="document-list-title"></div>
+            <div id="tree-app-document-list-tags">
+              <div id="tree-app-tag-document-counts"></div>
+              <div id="tree-app-tag-this"></div>
+            </div>
           </div>
-          <div id="document-list-and-current">
+          <div id="tree-app-right-bottom">
             <div id="document-list"></div>
             <div id="document-current"></div>
           </div>

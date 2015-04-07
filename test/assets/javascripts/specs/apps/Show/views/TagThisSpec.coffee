@@ -31,7 +31,6 @@ define [
         'documents': 'documents'
         'placeholder': 'placeholder'
         'hide': 'hide'
-        'backToList': 'backToList'
 
       @tags = new Tags([
         { name: 'foo' }
@@ -47,11 +46,6 @@ define [
 
       it 'should show tag-this-document text', ->
         expect(@view.$('.prompt button')).to.have.text('button.document')
-
-      it 'should link to the list', ->
-        expect(@view.$('.back-to-list')).to.have.text('backToList')
-        @view.$('.back-to-list').click()
-        expect(@state.get('oneDocumentSelected')).to.be.false
 
       describe 'after first click', ->
         beforeEach -> @view.$('.prompt button').click()
@@ -115,6 +109,3 @@ define [
 
       it 'should show tag-this-list text', ->
         expect(@view.$('.prompt button')).to.have.text('button.list')
-
-      it 'should not show .back-to-list', ->
-        expect(@view.$('.back-to-list')).to.have.class('hide')

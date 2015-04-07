@@ -62,18 +62,26 @@
   .display-flex();
   .flex-direction-column();
 
-  #document-list-title { .flex(0 0 auto); }
-  #document-list-and-current { .flex(1 1 auto); }
-  #tree-app-document-list-tags { .flex(0 0 auto); }
+  #tree-app-right-top {
+    .flex(0 0 auto);
+    .display-flex();
+    .flex-wrap(wrap);
+    .flex-justify-content(flex-end);
 
-  #document-list-and-current {
-    position: relative;
-    overflow: hidden;
+    #document-list-title {
+      .flex(1 0 auto);
+      max-width: 100%;
+    }
+
+    #tree-app-document-list-tags {
+      .flex(0 0 auto);
+      .display-flex();
+    }
   }
 
-  #tree-app-document-list-tags {
-    .display-flex();
-    .flex-justify-content(flex-end);
-    padding-bottom: 5px;
+  #tree-app-right-bottom {
+    .flex(1 1 auto);
+    position: relative;
+    overflow: hidden;
   }
 }
