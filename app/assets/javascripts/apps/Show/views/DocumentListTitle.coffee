@@ -15,11 +15,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     params = documentList.params
     nDocuments = documentList.get('length')
 
-    editTagId = params.params?.tags?[0]
-    if editTagId?
-      editTagHtml = "<a href='#' data-type='tag' data-id='#{editTagId}' class='edit'>#{t('tag.edit')}</a>"
-
-    editLinkHtml: editTagHtml || ''
     titleHtml: getTitleHtml(nDocuments, params.title)
     className: if nDocuments? then 'loaded' else 'loading'
     nDocuments: nDocuments
@@ -34,10 +29,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   #   })
   #   documentList2 = new DocumentList(...)
   #   view.setDocumentList(documentList2)
-  #
-  # Events:
-  #
-  # * edit-tag: (tag) indicates the user requests a tag edit
   class DocumentListTitleView extends Backbone.View
     id: 'document-list-title'
 
@@ -46,11 +37,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         <a href="#" class="show-list"><i class="icon-chevron-left"></i> <%- t('list') %></a>
       </span>
       <h4></h4>
-      <span class="edit-link"></span>
     ''')
 
     events:
-      'click a.edit': '_onClickEdit'
       'click .show-list': '_onClickShowList'
 
     initialize: ->
@@ -67,7 +56,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @$el.html(@template(t: t))
       @ui =
         title: @$('h4')
-        editLink: @$('.edit-link')
         showList: @$('.show-list')
 
     render: ->
@@ -75,26 +63,13 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       settings = if @documentList?
         documentListToSettings(@documentList)
       else
-        editLinkHtml: ''
         titleHtml: ''
         className: ''
         nDocuments: null
 
       @ui.title.html(settings.titleHtml)
-      @ui.editLink.html(settings.editLinkHtml)
       @$el.attr(class: settings.className)
       @
-
-    _onClickEdit: (e) ->
-      e.preventDefault()
-      params = @documentList.params
-
-      $el = $(e.currentTarget)
-      type = $el.attr('data-type')
-      id = Number($el.attr('data-id'))
-
-      switch type
-        when 'tag' then @trigger('edit-tag', params.documentSet.tags?.get?(id))
 
     _onClickShowList: (e) ->
       e.preventDefault()

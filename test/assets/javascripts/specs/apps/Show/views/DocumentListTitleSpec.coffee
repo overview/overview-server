@@ -25,9 +25,7 @@ define [
       i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentListTitle',
         'num_documents': 'num_documents,{0}'
         'loading': 'loading'
-        'tag.edit': 'tag.edit'
         'list': 'list'
-        'one': 'one'
 
       @state = new State()
       @view = new DocumentListTitle(documentList: null, state: @state)
@@ -38,7 +36,6 @@ define [
     describe 'with an undefined list', ->
       it 'should render nothing', ->
         expect(@view.$('h4').html()).to.eq('')
-        expect(@view.$('.edit-link').html()).to.eq('')
 
     describe 'with a loading list', ->
       beforeEach ->
@@ -50,9 +47,6 @@ define [
 
       it 'should render loading message with an unloaded list', ->
         expect(@view.$('h4').text()).to.match(/loading/)
-
-      it 'edit link', ->
-        expect(@view.$('a.edit')).not.to.be.empty
 
     describe 'with a Tag', ->
       beforeEach ->
@@ -69,13 +63,6 @@ define [
 
       it 'should render the title', ->
         expect(@view.$('h4').html()).to.eq('<strong>num_documents,4</strong> tagged foo')
-
-      it 'should trigger edit-tag', ->
-        @view.on('edit-tag', spy = sinon.spy())
-        $a = @view.$('a.edit')
-        expect($a.length).to.eq(1)
-        $a.click()
-        expect(spy).to.have.been.calledWith(@tag)
 
       it 'should listen for tag title changes', ->
         @tag.set(name: 'bar')
