@@ -1,41 +1,86 @@
 define [
   'underscore'
+  'jquery'
   'backbone'
   'i18n'
   'typeahead'
-], (_, Backbone, i18n) ->
+], (_, $, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.TagThis')
 
+  fuzzyEquals = (text1, text2) ->
+    text1.toLowerCase() == text2.toLowerCase()
+
+  fuzzyContains = (full, partial) ->
+    full = full.toLowerCase().trim()
+    partial = partial.toLowerCase().trim()
+    full.indexOf(partial) == 0
+
+  # Tagging interface for the current document list
+  #
+  # Events:
+  # * create-clicked(tagName) (expected behavior: create, then add)
+  # * add-clicked(tag)
+  # * remove-clicked(tag)
   class TagThis extends Backbone.View
     className: 'tag-this'
 
-    template: _.template('''
-      <div class="prompt">
-        <button class="btn btn-default"></button>
-      </div>
-      <div class="details">
-        <form method="post" action="#" class="form-inline">
-          <div class="form-group">
-            <a class="close"><%- t('hide') %></a>
-          </div>
-          <div class="form-group">
-            <div class="input-group">
-              <input type="text" class="form-control input-sm" name="name" placeholder="<%- t('placeholder') %>">
-              <span class="input-group-btn">
-                <button class="btn btn-primary" type="submit"></button>
+    templates:
+      button: _.template('''
+        <button class="prompt btn btn-default"><i class="icon icon-tag"></i> <i class="caret"></i></button>
+        <div class="tag-this-main">
+        </div>
+      ''')
+
+      ulContents: _.template('''
+        <% tags.forEach(function(tag) { %>
+          <li data-cid="<%- tag.cid %>" class="some">
+            <i class="status"></i>
+            <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
+              <span class="name">
+                <% if (highlight) { %>
+                  <u><%- tag.get('name').substring(0, highlight.length) %></u
+                ><% } %><%- tag.get('name').substring(highlight.length) %>
               </span>
-            </div>
+            </span>
+          </li>
+        <% }); %>
+        <% if (newTagName) { %>
+          <li class="create" data-name="<%- newTagName %>"><%= t('create_html', _.escape(newTagName)) %></li>
+        <% } %>
+      ''')
+
+      main: _.template('''
+        <div class="search">
+          <label for="tag-this-name"><%- t('label', nDocuments) %></label>
+          <div class="search-input">
+            <input
+              id="tag-this-name"
+              autocomplete="off"
+              type="text"
+              class="form-control input-sm"
+              name="name"
+              placeholder="<%- t('placeholder') %>"
+            />
           </div>
-        </form>
-      </div>
-    ''')
+        </div>
+        <div class="existing-tags">
+          <ul></ul>
+        </div>
+        <div class="actions">
+          <div class="organize"><a href="#" class="organize-tags"><%- t('organize') %></a></div>
+        </div>
+      ''')
 
     events:
-      'click .prompt button': '_onClickPrompt'
-      'click .close': '_onClickClose'
+      'click': ((e) -> e.stopPropagation()) # don't clear
+      'click .prompt': 'toggle'
+      'click .organize-tags': '_onClickOrganizeTags'
+      'click li[data-cid]': '_onClickTag'
+      'click li.create': '_onClickCreate'
+      'mouseenter li': '_onMouseenterLi'
+      'mouseleave li': '_onMouseleaveLi'
       'input input[name=name]': '_onInput'
       'keydown input[name=name]': '_onKeyDown'
-      'submit form': '_onSubmit'
 
     initialize: (options) ->
       throw 'Must pass options.state, a State' if !options.state
@@ -45,97 +90,161 @@ define [
       @state = options.state
       @keyboardController = options.keyboardController # optional
 
-      @showDetails = false
-
       if @keyboardController?
         @keyBindings =
-          T: => @_open()
+          T: => @toggle()
         @keyboardController.register(@keyBindings)
 
-      @listenTo(@state, 'change:oneDocumentSelected change:documentListParams change:document', @_onChangeState)
+      @_clear = @clear.bind(@)
+      $(document).on('click.tag-this', @_clear)
 
       @render()
 
     remove: ->
       @keyboardController?.unregister(@keyBindings)
+      $(document).off('click.tag-this', @_clear)
       super()
 
     render: ->
-      @_initialRender() if !@ui?
-
-      @_refreshShowingDetails()
-      @_refreshButtonText()
-      @_refreshInputValue()
-      @_refreshButtonDisabled()
-
-    _refreshShowingDetails: ->
-      @$el.toggleClass('show-details', @showDetails)
-
-    _refreshButtonText: ->
-      variant = @state.get('oneDocumentSelected') && 'document' || 'list'
-      @ui.buttons.text(t("button.#{variant}"))
-
-    _refreshInputValue: ->
-      @ui.input.typeahead('val', @_getDefaultValue())
-
-    _refreshButtonDisabled: ->
-      value = @ui.input.val()
-      disabled = (value.trim() == '')
-      @ui.submit.prop('disabled', disabled)
-
-    _getDefaultValue: ->
-      @state.get('documentListParams').title.replace('%s', t('documents'))
-
-    _initialRender: ->
-      @$el.html(@template(t: t))
+      @$el.html(@templates.button())
 
       @ui =
-        prompt: @$('.prompt button')
-        input: @$('.details input[name=name]')
-        submit: @$('.details button')
-        buttons: @$('button')
+        button: @$('button')
+        main: @$('.tag-this-main')
 
-      @ui.input.typeahead {},
-        name: 'tags'
-        source: (query, cb) =>
-          tags = @tags
-            .filter((tag) -> tag.get('name').toLowerCase().indexOf(query.toLowerCase()) == 0)
-          cb(tags)
-        displayKey: (tag) -> tag.get('name')
-        templates:
-          suggestion: _.template("""
-            <p><span class="<%- getClass() %>" style="<%- getStyle() %>"><%- get('name') %></span></p>
-          """)
+    toggle: ->
+      if @$el.hasClass('open')
+        @clear()
+      else
+        @show()
 
-      # Stupid typeahead JS has styles in it. Counter with more styles. This
-      # dialog shows up at the bottom of the page, so it should open upwards.
-      @ui.input.nextAll('.tt-dropdown-menu').css(top: 'auto', bottom: '100%')
+    clear: ->
+      return if !@$el.hasClass('open')
+      @$el.removeClass('open')
+      @ui.button.removeClass('active btn-primary')
 
-    _onClickPrompt: ->
-      @_open()
+      @ui.main.empty()
+      @ui.main.css(minWidth: 'auto')
 
-    _open: ->
-      @showDetails = true
-      @_refreshInputValue()
-      @_refreshShowingDetails()
-      @ui.input.focus().select()
+      _.extend @ui,
+        search: null
+        ul: null
+        create: null
+        actions: null
+
+    show: ->
+      return if @$el.hasClass('open')
+      @$el.addClass('open')
+      @ui.button.addClass('active btn-primary')
+
+      nDocuments = @state.get('oneDocumentSelected') && 1 || 999999
+      html = @templates.main(t: t, nDocuments: nDocuments)
+      @ui.main.html(html)
+
+      _.extend @ui,
+        search: @$('input[name=name]')
+        ul: @$('ul')
+        create: @$('.create')
+        actions: @$('.actions')
+
+      @ui.search.focus()
+
+      @_refreshUl()
+
+      # Prevent reflow when autocompleting. +1 in case $.fn.width rounds down
+      @ui.main.css(minWidth: @ui.main.width() + 1)
 
     _onInput: ->
-      @_refreshButtonDisabled()
+      text = @ui.search.val().trim()
+
+      @ui.actions.toggleClass('hidden', !!text)
+      @_refreshUl(text)
+
+      if text
+        @_highlight(0)
+      else
+        @_highlight(null)
+
+    _refreshUl: (search) ->
+      search ||= ''
+
+      tags = @tags
+        .filter((tag) -> fuzzyContains(tag.get('name'), search))
+        .sort((a, b) -> a.get('name').localeCompare(b.get('name')))
+
+      newTagName = if search && tags.some((tag) -> fuzzyEquals(tag.get('name'), search))
+        ''
+      else
+        search
+
+      html = @templates.ulContents(t: t, tags: tags, newTagName: newTagName, highlight: search)
+      @ui.ul.html(html)
+
+      @_highlightedIndex = null
+      @_nLis = @ui.ul.children().length
+
+    # Marks one <li> as the active one. Affects Enter, Up, Down.
+    _highlight: (index) ->
+      # Wrap
+      if index?
+        index = @_nLis - 1 if index < 0
+        index = 0 if index >= @_nLis
+
+      $(@ui.ul.children()[@_highlightedIndex]).removeClass('active') if @_highlightedIndex?
+      @_highlightedIndex = index
+      $(@ui.ul.children()[@_highlightedIndex]).addClass('active') if @_highlightedIndex?
 
     _onKeyDown: (e) ->
-      if e.keyCode == 27 # Escape
-        @_reset()
+      switch e.keyCode
+        when 27 # Escape
+          @clear()
+        when 38 # Up
+          @_highlight((@_highlightedIndex ? 0) - 1)
+        when 40 # Down
+          @_highlight((@_highlightedIndex ? -1) + 1)
+        when 13 # Enter
+          @_onPressEnter(e)
+        when 9 # Tab
+          undefined
 
-    _onSubmit: (e) ->
+    _onMouseenterLi: (e) ->
+      index = $(e.currentTarget).prevAll().length
+      @_highlight(index)
+
+    _onMouseleaveLi: (e) ->
+      @_highlight(null)
+
+    _onClickOrganizeTags: (e) ->
       e.preventDefault()
-      @trigger('tag', name: @ui.input.val().trim())
-      @_reset()
+      @trigger('organize-tags-clicked')
 
-    _onChangeState: -> @_reset()
-    _onClickClose: (e) -> e.preventDefault(); @_reset()
+    _onClickTag: (e) ->
+      e.preventDefault()
+      @_actOnLi(e.currentTarget)
 
-    _reset: ->
-      @showDetails = false
-      @_refreshShowingDetails()
-      @_refreshButtonText()
+    _onPressEnter: (e) ->
+      e.preventDefault()
+      if @_highlightedIndex?
+        li = @ui.ul.children()[@_highlightedIndex]
+        @_actOnLi(li)
+
+    _actOnLi: (li) ->
+      $li = $(li)
+
+      if $li.hasClass('create')
+        @trigger('create-clicked', $li.attr('data-name'))
+        @clear()
+        @show()
+      else
+        cid = $li.attr('data-cid')
+        tag = @tags.get(cid) || null
+        if !tag?
+          console.warn("Could not find tag with cid #{cid} in li", li)
+          return
+
+        if $li.hasClass('all')
+          @trigger('remove-clicked', tag)
+          $li.attr(class: 'active none')
+        else
+          @trigger('add-clicked', tag)
+          $li.attr(class: 'active all')

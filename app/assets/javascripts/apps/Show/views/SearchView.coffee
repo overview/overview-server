@@ -17,7 +17,7 @@ define [
             />
           <%= window.csrfTokenHtml %>
           <span class="input-group-btn">
-            <button class="btn btn-default" type="submit"><i class="icon-search"></i></button>
+            <button class="btn btn-default" type="submit"><i class="icon icon-search"></i></button>
           </span>
         </div>
       </form>

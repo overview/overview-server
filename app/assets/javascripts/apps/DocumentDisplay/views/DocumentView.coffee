@@ -42,7 +42,7 @@ define [
       pdf: _.template("""
         <object data="<%- url.url + '#scrollbar=1&toolbar=1&navpanes=1&view=FitH' %>" type="application/pdf" width="100%" height="100%">
           <div class='missing-plugin'>
-            <a href="<%- url.url %>"><i class="icon-cloud-download"></i></a>
+            <a href="<%- url.url %>"><i class="icon icon-cloud-download"></i></a>
             <%= t('missingPlugin') %>
           </div>
         </object>

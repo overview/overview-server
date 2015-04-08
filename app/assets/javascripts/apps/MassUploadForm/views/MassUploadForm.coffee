@@ -19,7 +19,7 @@ define [
           <div class='right-controls'>
             <div class="upload-prompt">
               <button class="btn btn-primary select-files" type="button">
-                <i class="overview-icon-plus"></i>
+                <i class="icon overview-icon-plus"></i>
                 <%- t('upload_prompt') %>
               </button>
               <input type="file" class="invisible-file-input" multiple="multiple" />
@@ -28,7 +28,7 @@ define [
             <% if (isFolderUploadSupported) { %>
               <div class="upload-folder-prompt">
                 <button class="btn btn-primary select-folders" type="button">
-                  <i class="overview-icon-plus"></i>
+                  <i class="icon overview-icon-plus"></i>
                   <%- t('upload_folder_prompt') %>
                 </button>
                 <input type="file" class="invisible-file-input" multiple webkitdirectory />
@@ -36,7 +36,7 @@ define [
             <% } %>
 
             <button type='button' class="btn btn-primary choose-options" disabled="disabled">
-              <i class="icon-play-circle"></i>
+              <i class="icon icon-play-circle"></i>
               <%- t('choose_options') %>
             </button>
           </div>

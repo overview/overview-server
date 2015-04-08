@@ -45,12 +45,12 @@ define [
           <div class="actions">
             <span class="tip-number"><%- t('tipNumber', step, nSteps) %></span>
             <% if (!isFirst) { %>
-              <a class="previous" href="#"><i class="overview-icon-chevron-left"></i> <%- t('previous') %></a>
+              <a class="previous" href="#"><i class="icon overview-icon-chevron-left"></i> <%- t('previous') %></a>
             <% } %>
             <% if (isLast) { %>
               <a class="done" href="#"><%- t('done') %></a>
             <% } else { %>
-              <a class="next" href="#"><%- t('next') %> <i class="overview-icon-chevron-right"></i></a>
+              <a class="next" href="#"><%- t('next') %> <i class="icon overview-icon-chevron-right"></i></a>
               <a class="skip" href="#"><%- t('skip') %></a>
             <% } %>
           </div>

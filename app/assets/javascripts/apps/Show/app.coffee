@@ -109,7 +109,6 @@ define [
           <div id="tree-app-right-top">
             <div id="document-list-title"></div>
             <div id="tree-app-document-list-tags">
-              <div id="tree-app-tag-document-counts"></div>
               <div id="tree-app-tag-this"></div>
             </div>
           </div>
@@ -133,7 +132,6 @@ define [
       search: el('tree-app-search')
       documentList: el('document-list')
       documentListTitle: el('document-list-title')
-      tagDocumentCounts: el('tree-app-tag-document-counts')
       tagThis: el('tree-app-tag-this')
       documentCursor: el('document-current')
       document: el('tree-app-document')
@@ -193,7 +191,7 @@ define [
       @_listenForRefocus()
       @_listenForResize(els.document)
 
-      document_list_controller(els.documentListTitle, els.documentList, els.tagThis, els.tagDocumentCounts, els.documentCursor, documentSet, state, keyboardController)
+      document_list_controller(els.documentListTitle, els.documentList, els.tagThis, els.documentCursor, documentSet, state, keyboardController)
 
       new ViewAppController
         el: els.view

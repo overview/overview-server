@@ -79,9 +79,9 @@ define [
       $div.append(@$hover_node_description) # FIXME find a better place for this
 
       $zoom_buttons = $(_.template('''<div class="buttons">
-          <button type="button" title="<%- t('refresh') %>" class="refresh"><i class="icon-level-up"/></button>
-          <button type="button" title="<%- t('zoomIn') %>" class="zoom-in"><i class="icon-zoom-in"/></button>
-          <button type="button" title="<%- t('zoomOut') %>" class="zoom-out" disabled><i class="icon-zoom-out"/></button>
+          <button type="button" title="<%- t('refresh') %>" class="refresh"><i class="icon icon-level-up"/></button>
+          <button type="button" title="<%- t('zoomIn') %>" class="zoom-in"><i class="icon icon-search-plus"/></button>
+          <button type="button" title="<%- t('zoomOut') %>" class="zoom-out" disabled><i class="icon icon-search-minus"/></button>
         </div>''', t: t))
       $div.append($zoom_buttons)
       [ @refreshButton, @zoomInButton, @zoomOutButton ] = $zoom_buttons.children()

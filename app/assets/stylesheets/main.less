@@ -4,18 +4,17 @@
 @import "vendor/bootstrap/less/normalize.less";
 @import "vendor/bootstrap/less/print.less";
 
-@import "vendor/font-awesome/less/variables.less";
-@FontAwesomePath: "/assets/fonts";
-@import "vendor/font-awesome/less/mixins.less";
-@import "vendor/font-awesome/less/path.less";
-@import "vendor/font-awesome/less/core.less";
-@import "vendor/font-awesome/less/bootstrap.less";
-@import "vendor/font-awesome/less/extras.less";
-@import "vendor/font-awesome/less/icons.less";
-
 @import "variables.less"; // Modify this for custom colors, font-sizes, etc
 @import "buttons.less"; // (there's probably a reason it's this high)
 @import "mixins.less";
+
+@import "vendor/font-awesome/less/variables.less";
+@fa-css-prefix: icon;
+@fa-font-path: "/assets/fonts";
+@import "vendor/font-awesome/less/mixins.less";
+@import "vendor/font-awesome/less/path.less";
+@import "vendor/font-awesome/less/core.less";
+@import "vendor/font-awesome/less/icons.less";
 
 @import "vendor/bootstrap/less/scaffolding.less";
 @import "vendor/bootstrap/less/type.less";

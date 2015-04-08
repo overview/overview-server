@@ -66,7 +66,6 @@ define [
     # * titleEl (an HTMLElement)
     # * cursorEl (an HTMLElement)
     # * tagThisEl (an HTMLElement)
-    # * tagDocumentCountsEl (an HTMLElement)
     #
     # Properties created here, whose attributes may change:
     # * listSelection (a ListSelectionController)
@@ -87,7 +86,6 @@ define [
       throw 'Must specify options.titleEl, an HTMLElement' if !options.titleEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
       throw 'Must specify options.tagThisEl, an HTMLElement' if !options.tagThisEl
-      throw 'Must specify options.tagDocumentCountsEl, an HTMLElement' if !options.tagDocumentCountsEl
 
       @tags = options.tags
       @state = options.state
@@ -98,7 +96,6 @@ define [
       @titleEl = options.titleEl
       @cursorEl = options.cursorEl
       @tagThisEl = options.tagThisEl
-      @tagDocumentCountsEl = options.tagDocumentCountsEl
 
       @_addDocumentList()
       @_addListSelection()
@@ -106,7 +103,6 @@ define [
       @_addListView()
       @_addCursorView()
       @_addTagThisView()
-      @_addTagDocumentCountsView()
 
     _addDocumentList: ->
       refresh = =>
@@ -269,16 +265,7 @@ define [
 
       @tagThisView = view
 
-    _addTagDocumentCountsView: ->
-      view = new TagCountListView
-        documentSetId: @documentSet.id
-        state: @state
-        tags: @tags
-        el: @tagDocumentCountsEl
-
-      @tagDocumentCountsView = view
-
-  document_list_controller = (titleDiv, listDiv, tagThisDiv, tagDocumentCountsDiv, cursorDiv, documentSet, state, keyboardController) ->
+  document_list_controller = (titleDiv, listDiv, tagThisDiv, cursorDiv, documentSet, state, keyboardController) ->
     controller = new Controller({},
       tags: documentSet.tags
       state: state
@@ -288,7 +275,6 @@ define [
       titleEl: titleDiv
       cursorEl: cursorDiv
       tagThisEl: tagThisDiv
-      tagDocumentCountsEl: tagDocumentCountsDiv
     )
 
     go_up_or_down = (up_or_down, event) ->
@@ -323,20 +309,20 @@ define [
 
     (->
       view = controller.tagThisView
-      view.on 'tag', (attributes) ->
-        tags = documentSet.tags
-        tag = tags.findWhere(attributes) || tags.create(attributes)
-        whenExists tag, =>
-          documentSet.tag(tag, state.getSelectionQueryParams())
-          state.set(highlightedDocumentListParams: state.get('documentListParams').reset.byTag(tag))
-    )()
 
-    (->
-      view = controller.tagDocumentCountsView
-      view.on 'remove-clicked', (event) ->
-        console.log(event)
-        tag = documentSet.tags.get(event.tagCid)
-        documentSet.untag(tag, event.queryParams)
+      view.on 'create-clicked', (name) ->
+        tags = documentSet.tags
+        tag = tags.create(name: name)
+        params = state.getSelectionQueryParams()
+        whenExists(tag, -> documentSet.tag(tag, params))
+
+      view.on 'add-clicked', (tag) ->
+        params = state.getSelectionQueryParams()
+        whenExists(tag, -> documentSet.tag(tag, params))
+
+      view.on 'remove-clicked', (tag) ->
+        params = state.getSelectionQueryParams()
+        whenExists(tag, -> documentSet.untag(tag, params))
     )()
 
     keyboardController.register

@@ -378,11 +378,10 @@ views.DocumentSet.show.TagSelect.untagged=(untagged)
 views.DocumentSet.show.TagSelect.group.all=All tags
 views.DocumentSet.show.TagSelect.organize=Organize tags…
 
-views.DocumentSet.show.TagThis.button.document=Tag this document
-views.DocumentSet.show.TagThis.button.list=Tag these documents
-views.DocumentSet.show.TagThis.documents=documents
-views.DocumentSet.show.TagThis.hide=hide
-views.DocumentSet.show.TagThis.placeholder=Tag name
+views.DocumentSet.show.TagThis.label={0,choice,1#Tag this document as|1<Tag these documents as}
+views.DocumentSet.show.TagThis.placeholder=
+views.DocumentSet.show.TagThis.organize=Organize tags…
+views.DocumentSet.show.TagThis.create_html=Create tag “{0}”
 
 views.DocumentSet.show.TransactionQueueErrorMonitor.error.title=Please refresh the page
 views.DocumentSet.show.TransactionQueueErrorMonitor.error.description=Overview has encountered an unusual error. Some of your work from the last few seconds may have been lost.

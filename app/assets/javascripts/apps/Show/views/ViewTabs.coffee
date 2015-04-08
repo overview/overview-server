@@ -40,7 +40,7 @@ define [
             <% if (view.nDocuments) { %>
               <span class="count"><%- t('nDocuments', view.nDocuments) %></span>
             <% } %>
-            <span class="toggle-popover view-info-icon icon-info-sign"></span>
+            <span class="toggle-popover view-info-icon icon icon-info-sign"></span>
             <% if (view.type == 'job' || view.type == 'error') { %>
               <progress value="<%- view.progress.fraction %>"></progress>
             <% } %>

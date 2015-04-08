@@ -28,11 +28,11 @@
 
 .overview-toplevel-box() {
   .box-shadow(1px 1px 3px 1px @shade);
-  .border-radius(5px);
+  border-radius: 5px;
 }
 
 .overview-help-box() {
-  .border-radius(5px);
+  border-radius: 5px;
   border: 1px solid @text-color;
   font: 1em @font-family-serif;
   position: relative;
@@ -45,10 +45,11 @@
 }
 
 .tag() {
+  display: inline-block;
   padding: 0 .5em;
   white-space: nowrap;
   color: black;
-  .border-radius(.5em);
+  border-radius: .5em;
 
   &.tag-light {
     color: black;

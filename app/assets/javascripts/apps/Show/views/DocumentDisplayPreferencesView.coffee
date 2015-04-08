@@ -15,7 +15,7 @@ define [
       ></div
       ><div class="options">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-          <i class="icon-cog"></i>
+          <i class="icon icon-cog"></i>
         </a>
         <ul class="dropdown-menu dropdown-menu-right" role="menu">
           <li><a href="#"><label class="checkbox"><input type="checkbox" name="sidebar"/> <%- t('sidebar') %></label></a></li>

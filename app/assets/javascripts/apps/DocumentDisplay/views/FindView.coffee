@@ -11,8 +11,8 @@ define [
 
     template: _.template("""
       <div class="label"></div>
-      <a href="#" class="previous-highlight" title="<%- t('previousHighlight') %>"><i class="overview-icon-chevron-left"></i></a>
-      <a href="#" class="next-highlight" title="<%- t('nextHighlight') %>"><i class="overview-icon-chevron-right"></i></a>
+      <a href="#" class="previous-highlight" title="<%- t('previousHighlight') %>"><i class="icon overview-icon-chevron-left"></i></a>
+      <a href="#" class="next-highlight" title="<%- t('nextHighlight') %>"><i class="icon overview-icon-chevron-right"></i></a>
     """)
 
     events:

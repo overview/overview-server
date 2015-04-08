@@ -12,7 +12,7 @@ define [
     template: _.template("""
       <ul>
         <li class="empty-upload">
-          <i class='icon-cloud-upload'></i>
+          <i class='icon icon-cloud-upload'></i>
           <div><%- t('drop_target') %></div>
         </li>
       </ul>

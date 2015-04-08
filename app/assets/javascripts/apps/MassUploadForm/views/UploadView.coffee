@@ -10,7 +10,7 @@ define [
   Backbone.View.extend
     tagName: 'li'
     template: _.template('''
-      <i class='<%- icon %>'></i><span class='filename'><%- model.id %></span>
+      <i class='icon <%- icon %>'></i><span class='filename'><%- model.id %></span>
       ''')
 
     initialize: ->

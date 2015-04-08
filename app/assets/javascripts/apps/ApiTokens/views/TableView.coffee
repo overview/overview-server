@@ -25,7 +25,7 @@ define [
                 <% if (token.get('token')) { %>
                   <%- token.get('token') %>
                 <% } else { %>
-                  <i class="icon-spinner icon-spin"/>
+                  <i class="icon icon-spinner icon-spin"/>
                 <% } %>
               </td>
               <td class="description"><%- token.get('description') %></td>

@@ -44,9 +44,9 @@ define [
 
       header: _.template("""
         <div class="document-nav">
-          <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-chevron-left"></i> <span><%- t('previous') %></span></a>
+          <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon icon-chevron-left"></i> <span><%- t('previous') %></span></a>
           <h4><%= t('position_html', cursorIndex + 1, nDocuments) %></h4>
-          <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><span><%- t('next') %></span> <i class="icon-chevron-right"></i></a>
+          <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><span><%- t('next') %></span> <i class="icon icon-chevron-right"></i></a>
         </div>
         <h2><%- title %></h2>
         <ul class="tags">

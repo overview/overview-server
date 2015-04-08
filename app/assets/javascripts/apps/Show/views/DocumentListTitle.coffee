@@ -34,7 +34,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
     template: _.template('''
       <span class="show-list-link">
-        <a href="#" class="show-list"><i class="icon-chevron-left"></i> <%- t('list') %></a>
+        <a href="#" class="show-list"><i class="icon icon-chevron-left"></i> <%- t('list') %></a>
       </span>
       <h4></h4>
     ''')

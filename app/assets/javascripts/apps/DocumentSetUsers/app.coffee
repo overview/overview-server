@@ -22,7 +22,7 @@ define [
             />
           <span class="input-group-btn">
             <button type="submit" class="btn btn-primary">
-              <i class="overview-icon-plus"></i> <%- t('add') %>
+              <i class="icon overview-icon-plus"></i> <%- t('add') %>
             </button>
           </span>
         </form>
