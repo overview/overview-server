@@ -4,14 +4,14 @@ define [
   'backbone',
   '../models/DocumentList'
   '../models/list_selection'
+  '../controllers/TagDialogController'
   '../views/DocumentList'
   '../views/DocumentListTitle'
   '../views/DocumentListCursor'
   '../views/TagThis'
-  '../views/TagCountList'
   './ListSelectionController'
   'apps/DocumentDisplay/app'
-], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, TagThisView, TagCountListView, ListSelectionController, DocumentDisplayApp) ->
+], (_, $, Backbone, DocumentList, ListSelection, TagDialogController, DocumentListView, DocumentListTitleView, DocumentListCursorView, TagThisView, ListSelectionController, DocumentDisplayApp) ->
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
   DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
@@ -323,6 +323,9 @@ define [
       view.on 'remove-clicked', (tag) ->
         params = state.getSelectionQueryParams()
         whenExists(tag, -> documentSet.untag(tag, params))
+
+      view.on 'organize-clicked', ->
+        new TagDialogController(tags: documentSet.tags, state: state)
     )()
 
     keyboardController.register

@@ -21,6 +21,7 @@ define [
   # * create-clicked(tagName) (expected behavior: create, then add)
   # * add-clicked(tag)
   # * remove-clicked(tag)
+  # * organize-clicked()
   class TagThis extends Backbone.View
     className: 'tag-this'
 
@@ -35,11 +36,14 @@ define [
         <% tags.forEach(function(tag) { %>
           <li data-cid="<%- tag.cid %>" class="some">
             <i class="status"></i>
+            <span class="name">
+              <% if (highlight) { %>
+                <u><%- tag.get('name').substring(0, highlight.length) %></u
+              ><% } %><%- tag.get('name').substring(highlight.length) %>
+            <span>
             <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
               <span class="name">
-                <% if (highlight) { %>
-                  <u><%- tag.get('name').substring(0, highlight.length) %></u
-                ><% } %><%- tag.get('name').substring(highlight.length) %>
+                &nbsp;
               </span>
             </span>
           </li>
@@ -67,14 +71,14 @@ define [
           <ul></ul>
         </div>
         <div class="actions">
-          <div class="organize"><a href="#" class="organize-tags"><%- t('organize') %></a></div>
+          <div class="organize"><a href="#" class="organize"><%- t('organize') %></a></div>
         </div>
       ''')
 
     events:
-      'click': ((e) -> e.stopPropagation()) # don't clear
+      'click': ((e) -> e.stopPropagation()) # don't clear()
       'click .prompt': 'toggle'
-      'click .organize-tags': '_onClickOrganizeTags'
+      'click div.organize': '_onClickOrganize'
       'click li[data-cid]': '_onClickTag'
       'click li.create': '_onClickCreate'
       'mouseenter li': '_onMouseenterLi'
@@ -214,9 +218,9 @@ define [
     _onMouseleaveLi: (e) ->
       @_highlight(null)
 
-    _onClickOrganizeTags: (e) ->
+    _onClickOrganize: (e) ->
       e.preventDefault()
-      @trigger('organize-tags-clicked')
+      @trigger('organize-clicked')
 
     _onClickTag: (e) ->
       e.preventDefault()
