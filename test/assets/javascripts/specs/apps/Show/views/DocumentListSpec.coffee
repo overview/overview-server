@@ -96,8 +96,6 @@ define [
         'views.Tree.show.DocumentList.description.empty': 'description.empty'
         'views.Tree.show.DocumentList.loading': 'loading'
         'views.Tree.show.DocumentList.terms.label': 'terms.label'
-        'views.Tree.show.DocumentList.tag.remove': 'tag.remove'
-        'views.Tree.show.DocumentList.tag.remove.title': 'tag.remove'
         'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
         'views.Tree.show.helpers.DocumentHelper.title.empty': 'title.empty'
 
@@ -212,11 +210,6 @@ define [
         selection.set('selectedIndices', [0])
         documents.get(0).set({ title: 'new title' })
         expect(view.$('ul.documents>li:eq(0)').hasClass('selected')).to.be.true
-
-      it 'should fire tag-remove-clicked', ->
-        view.on('tag-remove-clicked', spy = sinon.spy())
-        view.$('ul.documents>li:eq(0) .tag:eq(0) .remove').click()
-        expect(spy).to.have.been.calledWith(tagCid: tags.get(0).cid, documentId: documents.get(0).id)
 
       it 'should fire click', ->
         callback = sinon.spy()
