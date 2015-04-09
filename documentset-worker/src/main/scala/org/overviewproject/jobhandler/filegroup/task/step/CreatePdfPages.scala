@@ -24,7 +24,7 @@ trait CreatePdfPages extends TaskStep {
   }
 
   override def execute: Future[TaskStep] = for {
-    pdfPages <- loadPages(file.contentsLocation)
+    pdfPages <- loadPages(file.viewLocation)
     pageAttributes <- pageSaver.savePages(file.id, pdfPages)
   } yield {
     val pageDocumentData = pageAttributes.map(p =>

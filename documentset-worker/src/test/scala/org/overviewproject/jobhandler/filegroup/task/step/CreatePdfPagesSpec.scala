@@ -37,10 +37,12 @@ class CreatePdfPagesSpec extends Specification with Mockito {
   trait FileScope extends Scope {
     val fileId: Long = 1l
     val fileName: String = "file name"
+    val viewLocation: String = "view:location"
     
     val file = smartMock[File]
     file.id returns fileId
     file.name returns fileName
+    file.viewLocation returns viewLocation
     
     val pageText = "page text"
     val pages = Seq.fill(3)(smartMock[PdfPage])
@@ -50,25 +52,25 @@ class CreatePdfPagesSpec extends Specification with Mockito {
 
     val pageData = pageAttributes.map { p => PdfPageDocumentData(fileName, fileId, p.pageNumber, p.id, pageText) }
 
-    val createPdfPages = new TestCreatePdfPages(file, pages, pageAttributes)
+    val createPdfPages = new TestCreatePdfPages(file)
 
     def pageSaver = createPdfPages.mockPageSaver
-  }
-
-  class TestCreatePdfPages(
-      override protected val file: File,
-      pages: Seq[PdfPage], pageAttributes: Seq[Page.ReferenceAttributes])
+    
+  class TestCreatePdfPages(override protected val file: File)
     extends CreatePdfPages {
     override protected val pdfProcessor = smartMock[PdfProcessor]
     override protected val pageSaver = smartMock[PageSaver]
-    override protected val nextStep = { pageData: Iterable[PdfPageDocumentData] => NextStep(pageData) }
+    override protected val nextStep = { pageData => NextStep(pageData) }
     private val pdfDocument = smartMock[PdfDocument]
 
-    pdfProcessor.loadFromBlobStorage(any) returns pdfDocument
+    pdfProcessor.loadFromBlobStorage(viewLocation) returns pdfDocument
     pdfDocument.pages returns pages.view
 
-    pageSaver.savePages(any, any) returns Future.successful(pageAttributes)
+    pageSaver.savePages(be_===(fileId), any) returns Future.successful(pageAttributes)
     
     def mockPageSaver = pageSaver
   }
+    
+  }
+
 }
