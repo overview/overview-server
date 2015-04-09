@@ -1,26 +1,32 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
+import java.io.InputStream
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.blocking
 import scala.concurrent.Future
+import scala.concurrent.blocking
+import scala.util.control.Exception.ultimately
+
 import org.overviewproject.blobstorage.BlobBucketId
+import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.database.SlickClient
+import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.jobhandler.filegroup.task.DocumentConverter
+import org.overviewproject.jobhandler.filegroup.task.LibreOfficeDocumentConverter
 import org.overviewproject.models.File
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.TempDocumentSetFile
 import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.models.tables.TempDocumentSetFiles
-import java.io.InputStream
-import scala.util.control.Exception.ultimately
-import org.overviewproject.jobhandler.filegroup.task.DocumentConverter
+import org.overviewproject.postgres.LargeObjectInputStream
 
 trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient {
   protected val documentSetId: Long
   protected val uploadedFileId: Long
   protected val converter: DocumentConverter
-  
+
   protected val nextStep: File => TaskStep
 
   override def execute: Future[TaskStep] =
@@ -38,7 +44,7 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
 
   private def createView(upload: GroupedFileUpload): Future[(String, Long)] = blocking {
     withLargeObjectInputStream(upload.contentsOid) { stream =>
-      converter.withStreamAsPdf(upload.guid, upload.name, stream){ (viewStream, viewSize) =>
+      converter.withStreamAsPdf(upload.guid, upload.name, stream) { (viewStream, viewSize) =>
         blobStorage.create(BlobBucketId.FileView, viewStream, viewSize)
           .map((_, viewSize))
       }
@@ -62,4 +68,22 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
       f(stream)
     }
   }
+}
+
+object CreateFileWithView {
+  def apply(documentSetId: Long, uploadedFileId: Long, next: File => TaskStep): CreateFileWithView =
+    new CreateFileWithViewImpl(documentSetId, uploadedFileId, next)
+
+  private class CreateFileWithViewImpl(
+    override protected val documentSetId: Long,
+    override protected val uploadedFileId: Long,
+    override protected val nextStep: File => TaskStep) extends CreateFileWithView with SlickSessionProvider {
+
+    override protected val converter = LibreOfficeDocumentConverter
+    override protected val blobStorage = BlobStorage
+    
+    override protected def largeObjectInputStream(oid: Long) = 
+      new LargeObjectInputStream(oid, new SlickSessionProvider {})
+  }
+
 }
