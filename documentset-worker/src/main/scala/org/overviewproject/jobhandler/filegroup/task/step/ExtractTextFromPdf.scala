@@ -19,7 +19,7 @@ trait ExtractTextFromPdf extends TaskStep {
   override def execute: Future[TaskStep] = toFuture(nextStep(getDocumentInfo))
 
   private def getDocumentInfo: Seq[PdfFileDocumentData] = {
-    val pdfDocument = pdfProcessor.loadFromBlobStorage(file.contentsLocation)
+    val pdfDocument = pdfProcessor.loadFromBlobStorage(file.viewLocation)
     val text = pdfDocument.text
 
     Seq(PdfFileDocumentData(file.name, file.id, text))
