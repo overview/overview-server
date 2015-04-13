@@ -53,8 +53,8 @@ define [
   # * cache_size (default 5000): number of nodes to *not* remove
   class OnDemandTree
     _.extend(@::, Backbone.Events)
-    constructor: (@documentSet, @view, options={}) ->
-      @transactionQueue = @documentSet.transactionQueue
+    constructor: (@state, @view, options={}) ->
+      @transactionQueue = @state.transactionQueue
       @options = options
 
       @id_tree = new IdTree()
@@ -305,7 +305,7 @@ define [
 
       @transactionQueue.ajax
         type: 'POST'
-        url: "/documentsets/#{@documentSet.id}/document-nodes/count-by-node"
+        url: "/documentsets/#{@state.documentSetId}/document-nodes/count-by-node"
         data: _.extend({ countNodes: nodeIds.join(','), refresh: forceRefresh }, json) # at the time the transaction was _scheduled_
         debugInfo: 'OnDemandTree._refreshHighlightCounts'
         success: (data) =>

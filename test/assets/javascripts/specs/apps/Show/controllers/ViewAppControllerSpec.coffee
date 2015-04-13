@@ -11,9 +11,6 @@ define [
     beforeEach ->
       @tags = 'tags'
 
-      @documentSet = new Backbone.Model # hack! testing ViewAppClient can listen to it
-      @documentSet.tags = @tags
-
       @jobView = new MockView(type: 'job')
       @treeView = new MockView(type: 'tree')
 
@@ -22,6 +19,7 @@ define [
         documentListParams: 'documentListParams'
         document: 'document'
         view: @jobView
+      @state.tags = @tags
 
       @transactionQueue = 'transactionQueue'
 
@@ -44,7 +42,6 @@ define [
       @init = =>
         @subject = new ViewAppController
           state: @state
-          documentSet: @documentSet
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
           viewAppConstructors: @viewAppConstructors
@@ -94,10 +91,9 @@ define [
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch
           keyboardController: @keyboardController
 
-      it 'should pass a DocumentSet and State to the viewApp', ->
+      it 'should pass a State to the viewApp', ->
         # These parameters won't work across iframes. We should deprecate them.
         options = @viewAppConstructors.job.lastCall.args[0]
-        expect(options.documentSet).to.eq(@documentSet)
         expect(options.state).to.eq(@state)
 
       it 'should pass an app facade to the viewApp', ->

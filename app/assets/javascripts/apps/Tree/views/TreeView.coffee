@@ -60,7 +60,7 @@ define [
   """)
 
   class TreeView
-    constructor: (@div, @documentSet, @tree, @focus, options={}) ->
+    constructor: (@div, @state, @tree, @focus, options={}) ->
       _.extend(@, Backbone.Events)
 
       @options = _.extend({}, DEFAULT_OPTIONS, options)
@@ -69,8 +69,8 @@ define [
       @setHighlightedDocumentListParams(@state.get('highlightedDocumentListParams'))
 
       @listenTo(@state, 'change:highlightedDocumentListParams', (state, params) => @setHighlightedDocumentListParams(params))
-      @listenTo(@documentSet, 'tag', @_onTag)
-      @listenTo(@documentSet, 'untag', @_onUntag)
+      @listenTo(@state, 'tag', @_onTag)
+      @listenTo(@state, 'untag', @_onUntag)
 
       $div = $(@div)
       @canvas = $('<canvas width="1" height="1"></canvas>')[0]
@@ -126,7 +126,7 @@ define [
       @tree.state.on('change:documentListParams change:document change:highlightedDocumentListParams', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
-      @documentSet.tags.on('change:color', update)
+      @state.tags.on('change:color', update)
       $(window).on('resize.tree-view', update)
 
       @focus.on('change:zoom', this._refresh_zoom_button_status.bind(this))
@@ -248,7 +248,7 @@ define [
     _getHighlightColor: ->
       if (highlightedDocumentListParams = @tree.state.get('highlightedDocumentListParams')?.params)?
         if (tagId = highlightedDocumentListParams.tags?[0])?
-          @documentSet.tags.get(tagId)?.get('color')
+          @state.tags.get(tagId)?.get('color')
         else if false == highlightedDocumentListParams.tagged
           '#dddddd'
         else if !_.isEmpty(highlightedDocumentListParams)

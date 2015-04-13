@@ -36,7 +36,6 @@ define [
       throw 'Must pass el, an HTMLElement' if !options.el
       throw 'Must pass app, a Show app' if !options.app
       throw 'Must pass view, a View' if !options.view
-      throw 'Must pass documentSet, a DocumentSet' if !options.documentSet
       throw 'Must pass options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must pass state, a State' if !options.state
 
@@ -53,12 +52,12 @@ define [
       animator = new Animator(interpolator)
       focus = new AnimatedFocus({}, { animator: animator })
 
-      @onDemandTree = new OnDemandTree(options.documentSet, options.view)
+      @onDemandTree = new OnDemandTree(options.state, options.view)
       treeLayout = new TreeLayout()
       animatedTree = new AnimatedTree(@onDemandTree, options.state, animator, treeLayout, 1, 1)
 
       @focusView = new FocusView(el: els.zoom, model: focus)
-      @treeView = new TreeView(els.tree, options.documentSet, animatedTree, focus)
+      @treeView = new TreeView(els.tree, options.state, animatedTree, focus)
 
       @focusController = new FocusController
         animatedTree: animatedTree

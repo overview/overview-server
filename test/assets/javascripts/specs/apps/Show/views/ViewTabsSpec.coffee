@@ -33,41 +33,41 @@ define [
       @plugin2 = new Plugin(name: 'plugin2', description: 'urldesc', url: 'http://example.org')
       @plugins = new Plugins([ @plugin1, @plugin2 ])
 
-      i18n.reset_messages
-        'views.DocumentSet.show.ViewTabs.cancelJob': 'cancelJob'
-        'views.DocumentSet.show.ViewTabs.newView': 'newView'
-        'views.DocumentSet.show.ViewTabs.newView.custom': 'newView.custom'
-        'views.DocumentSet.show.ViewTabs.nDocuments': 'nDocuments,{0}'
-        'views.DocumentSet.show.ViewTabs.view.close.top': 'view.close.top'
-        'views.DocumentSet.show.ViewTabs.view.close.bottom': 'view.close.bottom'
-        'views.DocumentSet.show.ViewTabs.view.delete': 'view.delete'
-        'views.DocumentSet.show.ViewTabs.view.delete.confirm': 'view.delete.confirm'
-        'views.DocumentSet.show.ViewTabs.view.title.dt': 'view.title.dt'
-        'views.DocumentSet.show.ViewTabs.view.title.dd': 'view.title.dd,{0}'
-        'views.DocumentSet.show.ViewTabs.view.title.rename': 'view.title.rename'
-        'views.DocumentSet.show.ViewTabs.view.title.label': 'view.title.label'
-        'views.DocumentSet.show.ViewTabs.view.title.placeholder': 'view.title.placeholder'
-        'views.DocumentSet.show.ViewTabs.view.title.save': 'view.title.save'
-        'views.DocumentSet.show.ViewTabs.view.title.reset': 'view.title.reset'
-        'views.DocumentSet.show.ViewTabs.view.nDocuments.dt': 'view.nDocuments.dt'
-        'views.DocumentSet.show.ViewTabs.view.nDocuments.dd': 'view.nDocuments.dd,{0},{1}'
-        'views.DocumentSet.show.ViewTabs.view.createdAt.dt': 'view.createdAt.dt'
-        'views.DocumentSet.show.ViewTabs.view.createdAt.dd': 'view.createdAt.dd,{0}'
-        'views.DocumentSet.show.ViewTabs.view.thing1.dt': 'view.thing1.dt'
-        'views.DocumentSet.show.ViewTabs.view.thing1.dd': 'view.thing1.dd,{0}'
-        'views.DocumentSet.show.ViewTabs.view.thing2.dt': 'view.thing2.dt'
-        'views.DocumentSet.show.ViewTabs.view.thing2.dd': 'view.thing2.dd,{0}'
+      i18n.reset_messages_namespaced 'views.DocumentSet.show.ViewTabs',
+        'cancelJob': 'cancelJob'
+        'newView': 'newView'
+        'newView.custom': 'newView.custom'
+        'nDocuments': 'nDocuments,{0}'
+        'view.close.top': 'view.close.top'
+        'view.close.bottom': 'view.close.bottom'
+        'view.delete': 'view.delete'
+        'view.delete.confirm': 'view.delete.confirm'
+        'view.title.dt': 'view.title.dt'
+        'view.title.dd': 'view.title.dd,{0}'
+        'view.title.rename': 'view.title.rename'
+        'view.title.label': 'view.title.label'
+        'view.title.placeholder': 'view.title.placeholder'
+        'view.title.save': 'view.title.save'
+        'view.title.reset': 'view.title.reset'
+        'view.nDocuments.dt': 'view.nDocuments.dt'
+        'view.nDocuments.dd': 'view.nDocuments.dd,{0},{1}'
+        'view.createdAt.dt': 'view.createdAt.dt'
+        'view.createdAt.dd': 'view.createdAt.dd,{0}'
+        'view.thing1.dt': 'view.thing1.dt'
+        'view.thing1.dd': 'view.thing1.dd,{0}'
+        'view.thing2.dt': 'view.thing2.dt'
+        'view.thing2.dd': 'view.thing2.dd,{0}'
 
     afterEach ->
       @sandbox.restore()
 
     describe 'starting with a View', ->
       beforeEach ->
-        @documentSet = { nDocuments: 1234 }
         @view1 = new View(type: 'view', id: 1, longId: 'view-1', title: 'foo', nDocuments: 10, createdAt: new Date(), creationData: [])
         @viewList = new ViewList([@view1])
         @state = new State(view: @view1)
-        @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state, documentSet: @documentSet)
+        @state.nDocuments = 1234
+        @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state)
 
       describe 'after opening the popover', ->
         beforeEach ->
@@ -107,12 +107,12 @@ define [
 
     describe 'starting with two views', ->
       beforeEach ->
-        @documentSet = { nDocuments: 1234 }
         @view1 = new View(type: 'view', id: 1, longId: 'view-1', title: 'foo', nDocuments: 10, createdAt: new Date(), creationData: [[ 'thing1', 'value1' ], [ 'thing2', 'value2' ]])
         @view2 = new View(type: 'view', id: 2, longId: 'view-2', title: 'bar', nDocuments: 10, createdAt: new Date(), creationData: [])
         @viewList = new ViewList([@view1, @view2])
         @state = new State(view: @view1)
-        @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state, documentSet: @documentSet)
+        @state.nDocuments = 1234
+        @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state)
         $('body').append(@view.el)
 
       afterEach ->
@@ -208,7 +208,6 @@ define [
 
     describe 'starting with a View and a Job', ->
       beforeEach ->
-        @documentSet = { nDocuments: 1234 }
         @job = new View
           type: 'job'
           id: 1
@@ -225,9 +224,10 @@ define [
           creationData: [[ 'rootNodeId', '123' ], [ 'thing1', 'value2' ], [ 'thing2', 'value3' ]]
 
         @state = new State(view: @view)
+        @state.nDocuments = 1234
 
         @viewList = new ViewList([@job, @view])
-        @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state, documentSet: @documentSet)
+        @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state)
         $('body').append(@view.el)
 
       afterEach ->

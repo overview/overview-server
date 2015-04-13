@@ -8,12 +8,9 @@ define [
       document: 'bar'
       highlightedDocumentListParams: 'baz'
 
-  class DocumentSet extends Backbone.Model
-
   describe 'apps/Show/models/ViewAppClient', ->
     beforeEach ->
       @state = new MockState()
-      @documentSet = new DocumentSet()
 
     describe 'with a complete viewApp', ->
       beforeEach ->
@@ -27,7 +24,6 @@ define [
 
         @subject = new ViewAppClient
           state: @state
-          documentSet: @documentSet
           viewApp: @viewApp
 
       afterEach -> @subject.stopListening()
@@ -45,11 +41,11 @@ define [
         expect(@viewApp.onHighlightedDocumentListParamsChanged).to.have.been.calledWith('baz2')
 
       it 'should invoke onTag', ->
-        @documentSet.trigger('tag', 'foo', 'bar')
+        @state.trigger('tag', 'foo', 'bar')
         expect(@viewApp.onTag).to.have.been.calledWith('foo', 'bar')
 
       it 'should invoke onUntag', ->
-        @documentSet.trigger('untag', 'foo', 'bar')
+        @state.trigger('untag', 'foo', 'bar')
         expect(@viewApp.onUntag).to.have.been.calledWith('foo', 'bar')
 
       describe 'on remove', ->
@@ -64,8 +60,8 @@ define [
             documentListParams: 'foo2'
             document: 'bar2'
             highlightedDocumentListParams: 'baz2'
-          @documentSet.trigger('tag', 'foo', 'bar')
-          @documentSet.trigger('untag', 'foo', 'bar')
+          @state.trigger('tag', 'foo', 'bar')
+          @state.trigger('untag', 'foo', 'bar')
 
           expect(@viewApp.onDocumentListParamsChanged).not.to.have.been.called
           expect(@viewApp.onDocumentChanged).not.to.have.been.called
@@ -80,7 +76,6 @@ define [
 
         @subject = new ViewAppClient
           state: @state
-          documentSet: @documentSet
           viewApp: @viewApp
 
       afterEach -> @subject.stopListening()
@@ -90,14 +85,13 @@ define [
           documentListParams: 'foo2'
           document: 'bar2'
           highlightedDocumentListParams: 'baz2'
-        @documentSet.trigger('tag', 'foo', 'bar')
-        @documentSet.trigger('untag', 'foo', 'bar')
+        @state.trigger('tag', 'foo', 'bar')
+        @state.trigger('untag', 'foo', 'bar')
         expect(true).to.be.true # really, we're just testing nothing crashes
 
     it 'should throw an error if the viewApp has no remove function', ->
       expect(=>
         new ViewAppClient
           state: @state
-          documentSet: @documentSet
           viewApp: {}
       ).to.throw('options.viewApp needs a remove() method which removes all traces of the view')

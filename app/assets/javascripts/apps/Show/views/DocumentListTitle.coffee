@@ -96,9 +96,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         # the rest of a documentListParams. We can either make
         # documentListParams mutable or alter other code such that a title
         # change doesn't trigger a refresh.
-        if @documentList.params?.documentSet?.tags?.get?
+        if @documentList.params?.state?.tags?.get?
           for tagId in (@documentList.params.params?.tags || [])
-            if (tag = @documentList.params.documentSet.tags.get(tagId))?
+            if (tag = @documentList.params.state.tags.get(tagId))?
               @transientObjectsToListenTo.push(tag)
               @listenTo tag, 'change', (tag) =>
                 title = @documentList.params.reset.byTag(tag).title

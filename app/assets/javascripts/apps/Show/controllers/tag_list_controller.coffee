@@ -3,9 +3,8 @@ define [
   './TagDialogController'
 ], (TagSelectView, TagDialogController) ->
   tag_list_controller = (options) ->
-    documentSet = options.documentSet
-    tags = documentSet.tags
     state = options.state
+    tags = state.tags
     el = options.el
 
     view = new TagSelectView

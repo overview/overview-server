@@ -39,7 +39,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
   #
   # Example usage:
   #
-  #     params = new DocumentListParams(documentSet, view, nodes: [ 123 ], title: '%s in topic “blah”')
+  #     params = new DocumentListParams(state, view, nodes: [ 123 ], title: '%s in topic “blah”')
   #     params.toString()        # "DocumentListParams(nodes=123)"
   #     params2 = params.reset(tags: [ 2,3 ], title: '%s tagged “foo”')
   #     params2.toString()       # "DocumentListParams(tags=2,3)"
@@ -83,7 +83,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
   # These five title strings come from i18n constants defined here. Plugins can
   # pass their own i18n strings.
   class DocumentListParams
-    constructor: (@documentSet, @view, options={}) ->
+    constructor: (@state, @view, options={}) ->
       @title = options.title || t('all')
       @params = {}
       for k, type of Attributes
@@ -99,7 +99,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
         {}
       else
         _.extend({ title: @title }, @params)
-      new DocumentListParams(@documentSet, view, newParams)
+      new DocumentListParams(@state, view, newParams)
 
     # Returns a String representation, useful for debugging
     toString: ->
@@ -116,9 +116,9 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
 
     # Returns true iff rhs is certainly equivalent to this one.
     #
-    # This means same documentSet, view, title and params.
+    # This means same state, view, title and params.
     equals: (rhs) ->
-      @documentSet == rhs.documentSet && @view == rhs.view && @title == rhs.title && _.isEqual(@params, rhs.params)
+      @state == rhs.state && @view == rhs.view && @title == rhs.title && _.isEqual(@params, rhs.params)
 
     # Returns the parameters such that Overview servers can understand them.
     #
@@ -161,7 +161,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
             if keys[0] == 'nodes' && options.nodes.length == 1
               t('node', @view?.onDemandTree?.getNode?(options.nodes[0])?.description)
             else if keys[0] == 'tags' && options.tags.length == 1
-              t('tag', @documentSet?.tags?.get?(options.tags[0])?.attributes?.name)
+              t('tag', @state?.tags?.get?(options.tags[0])?.attributes?.name)
             else if keys[0] == 'tagged' && !options.tagged
               t('untagged')
             else if keys[0] == 'q'
@@ -171,7 +171,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
           else
             undefined
 
-        new DocumentListParams(@documentSet, @view, realOptions)
+        new DocumentListParams(@state, @view, realOptions)
 
       reset.byNode = (node) -> reset(nodes: [ node.id ], title: t('node', node.description))
       reset.byTag = (tag) -> reset(tags: [ tag.id ], title: t('tag', tag.attributes.name))

@@ -7,11 +7,9 @@ define [
 
     constructor: (options) ->
       throw 'Must pass options.state, a State' if !options.state
-      throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must pass options.viewApp, the View app instance' if !options.viewApp
 
       @state = options.state
-      @documentSet = options.documentSet
       @viewApp = options.viewApp
 
       throw 'options.viewApp needs a remove() method which removes all traces of the view' if !@viewApp.remove
@@ -19,8 +17,8 @@ define [
       @listenTo(@state, 'change:documentListParams', @onDocumentListParamsChanged)
       @listenTo(@state, 'change:document', @onDocumentChanged)
       @listenTo(@state, 'change:highlightedDocumentListParams', @onHighlightedDocumentListParamsChanged)
-      @listenTo(@documentSet, 'tag', @onTag)
-      @listenTo(@documentSet, 'untag', @onUntag)
+      @listenTo(@state, 'tag', @onTag)
+      @listenTo(@state, 'untag', @onUntag)
       @onMessageCallback = @_onMessage.bind(@)
       window.addEventListener('message', @onMessageCallback, false)
 

@@ -16,12 +16,6 @@ define [
 
   DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
 
-  whenExists = (model, callback) ->
-    if !model.isNew()
-      callback()
-    else
-      model.once('sync', -> whenExists(model, callback))
-
   doUntilWithSetInterval = (func, test, period) ->
     interval = undefined
 
@@ -60,7 +54,6 @@ define [
     # Properties set on initialize:
     # * tags (a Tags)
     # * state (a State)
-    # * documentSet (a DocumentSet)
     # * keyboardController (a KeyboardController)
     # * listEl (an HTMLElement)
     # * titleEl (an HTMLElement)
@@ -80,7 +73,6 @@ define [
     initialize: (attrs, options) ->
       throw 'Must specify options.tags, a Tags' if !options.tags
       throw 'Must specify options.state, a State' if !options.state
-      throw 'Must specify options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must specify options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
       throw 'Must specify options.titleEl, an HTMLElement' if !options.titleEl
@@ -90,7 +82,6 @@ define [
       @tags = options.tags
       @state = options.state
       @keyboardController = options.keyboardController
-      @documentSet = options.documentSet
 
       @listEl = options.listEl
       @titleEl = options.titleEl
@@ -112,7 +103,7 @@ define [
           @stopListening(old)
 
         params = @state.get('documentListParams')
-        documentList = new DocumentList({}, params: params, url: DocumentsUrl)
+        documentList = new DocumentList({}, state: @state, params: params, url: DocumentsUrl)
         @set(documentList: documentList)
 
       @listenTo(@state, 'change:documentListParams', refresh)
@@ -165,7 +156,7 @@ define [
       @listenTo view, 'tag-remove-clicked', (event) =>
         tag = @tags.get(event.tagCid)
         queryParams = { documents: String(event.documentId || 0) }
-        @documentSet.untag(tag, queryParams)
+        @state.untag(tag, queryParams)
 
       @listenTo view, 'click-document', (model, index, options) =>
         @listSelection.onClick(index, options)
@@ -222,7 +213,7 @@ define [
       @listenTo view, 'tag-remove-clicked', (event) =>
         tag = @tags.get(event.tagCid)
         queryParams = { documents: String(event.documentId || 0) }
-        @documentSet.untag(tag, queryParams)
+        @state.untag(tag, queryParams)
 
       @on 'change:documentList', (__, documentList) ->
         view.setDocumentList(documentList)
@@ -238,11 +229,10 @@ define [
 
       @tagThisView = view
 
-  document_list_controller = (titleDiv, listDiv, tagThisDiv, cursorDiv, documentSet, state, keyboardController) ->
+  document_list_controller = (titleDiv, listDiv, tagThisDiv, cursorDiv, state, keyboardController) ->
     controller = new Controller({},
-      tags: documentSet.tags
+      tags: state.tags
       state: state
-      documentSet: documentSet
       keyboardController: keyboardController
       listEl: listDiv
       titleEl: titleDiv
@@ -284,21 +274,21 @@ define [
       view = controller.tagThisView
 
       view.on 'create-clicked', (name) ->
-        tags = documentSet.tags
+        tags = state.tags
         tag = tags.create(name: name)
         params = state.getSelectionQueryParams()
-        whenExists(tag, -> documentSet.tag(tag, params))
+        state.tag(tag, params)
 
       view.on 'add-clicked', (tag) ->
         params = state.getSelectionQueryParams()
-        whenExists(tag, -> documentSet.tag(tag, params))
+        state.tag(tag, params)
 
       view.on 'remove-clicked', (tag) ->
         params = state.getSelectionQueryParams()
-        whenExists(tag, -> documentSet.untag(tag, params))
+        state.untag(tag, params)
 
       view.on 'organize-clicked', ->
-        new TagDialogController(tags: documentSet.tags, state: state)
+        new TagDialogController(tags: state.tags, state: state)
     )()
 
     keyboardController.register

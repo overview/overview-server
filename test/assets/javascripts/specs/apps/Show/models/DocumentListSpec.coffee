@@ -2,32 +2,33 @@ define [
   'apps/Show/models/DocumentList'
 ], (DocumentList) ->
   describe 'apps/Show/models/DocumentList', ->
-    class DocumentSet extends Backbone.Model
+    class State extends Backbone.Model
 
     class Tag extends Backbone.Model
 
     describe 'normally', ->
       beforeEach ->
         @sandbox = sinon.sandbox.create(useFakeServer: true)
-        @documentSet = new DocumentSet()
+        @state = new State()
         @params =
-          documentSet: @documentSet
+          state: @state
           toQueryParams: -> { tags: '2' }
           equals: -> true
           reset:
             byDocument: (document) ->
-              documentSet: @documentSet
+              state: @state
               document: document
               equals: -> false
 
         @list = new DocumentList({}, {
+          state: @state
           params: @params
           url: '/documentsets/1/documents'
         })
         @docs = @list.documents
 
       afterEach ->
-        @documentSet.off()
+        @state.off()
         @list.stopListening()
         @list.off()
         @docs.off()
@@ -112,14 +113,14 @@ define [
 
           it 'should tag the list, client-side', ->
             tag = new Tag(name: 'a tag')
-            @documentSet.trigger('tag', tag, @params.toQueryParams())
+            @state.trigger('tag', tag, @params.toQueryParams())
             expect(@docs.at(0).hasTag(tag)).to.be.true
             expect(@docs.at(1).hasTag(tag)).to.be.true
 
           it 'should untag the list, client-side', ->
             tag = new Tag(name: 'a tag')
             @docs.at(0).tag(tag)
-            @documentSet.trigger('untag', tag, @params.toQueryParams())
+            @state.trigger('untag', tag, @params.toQueryParams())
             expect(@docs.at(0).hasTag(tag)).to.be.false
             expect(@docs.at(1).hasTag(tag)).to.be.false
 
@@ -127,7 +128,7 @@ define [
             tag = new Tag(name: 'a tag')
             @docs.at(0).untag(tag)
             @docs.at(1).untag(tag)
-            @documentSet.trigger('tag', tag, documents: String(@docs.at(0).id))
+            @state.trigger('tag', tag, documents: String(@docs.at(0).id))
             expect(@docs.at(0).hasTag(tag)).to.be.true
             expect(@docs.at(1).hasTag(tag)).to.be.false
 
@@ -135,7 +136,7 @@ define [
             tag = new Tag(name: 'a tag')
             @docs.at(0).tag(tag)
             @docs.at(1).tag(tag)
-            @documentSet.trigger('untag', tag, documents: String(@docs.at(0).id))
+            @state.trigger('untag', tag, documents: String(@docs.at(0).id))
             expect(@docs.at(0).hasTag(tag)).to.be.false
             expect(@docs.at(1).hasTag(tag)).to.be.true
 
@@ -148,7 +149,7 @@ define [
               { id: 234 }
               { id: 345 }
             ])
-            @documentSet.trigger('tag', tag, documents: '123,345')
+            @state.trigger('tag', tag, documents: '123,345')
             expect(@docs.get(123).hasTag(tag)).to.be.true
             expect(@docs.get(234).hasTag(tag)).to.be.false
             expect(@docs.get(345).hasTag(tag)).to.be.true
@@ -163,7 +164,7 @@ define [
             @docs.get(123).tag(tag)
             @docs.get(234).tag(tag)
             @docs.get(345).tag(tag)
-            @documentSet.trigger('untag', tag, documents: '123,345')
+            @state.trigger('untag', tag, documents: '123,345')
             expect(@docs.get(123).hasTag(tag)).to.be.false
             expect(@docs.get(234).hasTag(tag)).to.be.true
             expect(@docs.get(345).hasTag(tag)).to.be.false
@@ -171,8 +172,8 @@ define [
           it 'should trigger nothing when tagging or untagging a single document', ->
             tag = new Tag(name: 'a tag')
             @list.on('all', spy = sinon.spy())
-            @documentSet.trigger('tag', tag, documents: String(@docs.at(0).id))
-            @documentSet.trigger('untag', tag, documents: String(@docs.at(0).id))
+            @state.trigger('tag', tag, documents: String(@docs.at(0).id))
+            @state.trigger('untag', tag, documents: String(@docs.at(0).id))
             expect(spy).not.to.have.been.called
 
           describe 'on subsequent fetchNextPage()', ->

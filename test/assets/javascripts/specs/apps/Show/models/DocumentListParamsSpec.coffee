@@ -19,9 +19,8 @@ define [
       @node = { id: 2, description: 'node 2' }
       _.extend(@node, Backbone.Events)
 
-      @documentSet =
-        id: 12
-        url: "/documentsets/12"
+      @state =
+        documentSetId: 12
         tags:
           get: (id) => if id == 1 then @tag else undefined
       @view =
@@ -29,7 +28,7 @@ define [
         addScopeToQueryParams: (params) -> params
         onDemandTree:
           getNode: (id) => if id == 2 then @node else undefined
-      @builder = new DocumentListParams(@documentSet, @view).reset
+      @builder = new DocumentListParams(@state, @view).reset
 
     describe 'reset()', ->
       beforeEach -> @reset = @builder.all().reset
@@ -50,7 +49,7 @@ define [
       it 'should not equals() something else', -> expect(@params.equals(@builder.byUntagged())).to.be.false
       it 'should give empty query params', -> expect(@params.toQueryParams()).to.deep.eq({})
       it 'should have correct i18n', -> expect(@params.title).to.eq('all')
-      it 'should have a documentSet', -> expect(@params.documentSet).to.eq(@documentSet)
+      it 'should have a state', -> expect(@params.state).to.eq(@state)
       it 'should have a view', -> expect(@params.view).to.eq(@view)
 
       it 'should reset to add objects', ->
@@ -90,7 +89,7 @@ define [
         params2 = @params.reset.byNode(id: 3, description: 'foo')
         expect(params2.params).to.deep.eq(nodes: [ 3 ])
         expect(params2.title).to.eq('node,foo')
-        expect(params2.documentSet).to.eq(@documentSet)
+        expect(params2.state).to.eq(@state)
         expect(params2.view).to.eq(@view)
 
       it 'should reset to a different view', ->

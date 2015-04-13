@@ -52,7 +52,7 @@ define [
       beforeEach ->
         @tag = new Tag(id: 1, name: 'foo')
         @params =
-          documentSet: { tags: { get: (id) => if id == 1 then @tag else undefined } }
+          state: { tags: { get: (id) => if id == 1 then @tag else undefined } }
           title: '%s tagged foo'
           params: { tags: [ @tag.id ] }
           reset:

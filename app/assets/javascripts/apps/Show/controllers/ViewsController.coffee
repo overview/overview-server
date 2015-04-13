@@ -10,12 +10,11 @@ define [
   class ViewsController
     _.extend(@::, Backbone.Events)
 
-    constructor: (@documentSet, @views, @state) ->
+    constructor: (@views, @state) ->
       @plugins = new Plugins([])
       @plugins.fetch(reset: true)
 
       @view = new ViewTabs
-        documentSet: @documentSet
         collection: @views
         plugins: @plugins
         state: @state
@@ -87,7 +86,7 @@ define [
         $.ajax
           type: 'post'
           data: attrs
-          url: "#{@documentSet.url}/views"
+          url: "/documentsets/#{@state.documentSetId}/views"
           success: (json) =>
             view = @views.add(json)[0]
             @state.setView(view) if view?

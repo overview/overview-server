@@ -11,7 +11,6 @@ define [
     constructor: (options) ->
       throw 'Must pass options.el, an HTMLElement' if !options.el
       throw 'Must pass options.state, a State' if !options.state
-      throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must pass options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue
       throw 'Must pass options.viewAppConstructors, an Object mapping view type to an App' if !options.viewAppConstructors
@@ -19,15 +18,13 @@ define [
       @el = options.el
       @$el = $(@el)
       @state = options.state
-      @documentSet = options.documentSet
       @keyboardController = options.keyboardController
       @transactionQueue = options.transactionQueue
       @viewAppConstructors = options.viewAppConstructors
 
       @facade = new ShowAppFacade
         state: @state
-        tags: @documentSet.tags
-        searchResults: @documentSet.searchResults
+        tags: @state.tags
 
       @_setView(@state.get('view'))
       @listenTo(@state, 'change:view', (__, view) => @_setView(view))
@@ -49,7 +46,7 @@ define [
 
         viewApp = new @viewAppConstructors[type]
           app: @facade
-          documentSetId: @documentSet.id
+          documentSetId: @state.documentSetId
           view: view
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
@@ -57,7 +54,6 @@ define [
           document: @state.attributes.document
           highlightedDocumentListParams: @state.attributes.highlightedDocumentListParams
           el: el
-          documentSet: @documentSet
           state: @state
 
         # EVIL HACK
@@ -69,7 +65,6 @@ define [
         @viewAppClient = new ViewAppClient
           viewApp: viewApp
           state: @state
-          documentSet: @documentSet
 
         @view = view
         # When changing from "job" to "tree", reset everything

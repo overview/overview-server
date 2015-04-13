@@ -3,7 +3,6 @@ define [
   'jquery'
   'backbone'
   './models/TransactionQueue'
-  './models/DocumentSet'
   './models/State'
   './controllers/KeyboardController'
   './controllers/ViewsController'
@@ -18,7 +17,7 @@ define [
   '../View/app'
   '../Job/app'
 ], (_, $, Backbone, \
-    TransactionQueue, DocumentSet, State, \
+    TransactionQueue, State, \
     KeyboardController, \
     ViewsController, tag_list_controller, document_list_controller, \
     ViewAppController, \
@@ -36,9 +35,11 @@ define [
 
       @tourEnabled = @el.getAttribute('data-tooltips-enabled') == 'true'
 
-      transactionQueue = @_initializeTransactionQueue()
-      documentSet = @_initializeDocumentSet(transactionQueue)
-      documentSet.views.on('reset', => _.defer(=> @_initializeUi(documentSet)))
+      @transactionQueue = @_initializeTransactionQueue()
+      documentSetId = window.location.pathname.split('/')[2]
+      @state = new State({}, documentSetId: documentSetId, transactionQueue: @transactionQueue)
+      @state.once('sync', => @_initializeUi())
+      @state.init()
 
     _listenForRefocus: ->
       refocus = ->
@@ -150,51 +151,37 @@ define [
 
       transactionQueue
 
-    _initializeDocumentSet: (transactionQueue) ->
-      documentSetId = +window.location.pathname.split('/')[2]
-      new DocumentSet(documentSetId, transactionQueue)
-      # We just kicked off the initial server request
-
-    _initializeUi: (documentSet) ->
-      documentSet.views.pollUntilStable()
+    _initializeUi: ->
+      @state.views.pollUntilStable()
 
       els = @_buildHtml()
       keyboardController = new KeyboardController(document)
 
-      view = null
-      if (m = ///^\/documentsets\/#{documentSet.id}\/([a-zA-Z]+-[0-9]+)$///.exec(document.location.pathname))?
-        view = documentSet.views.get(m[1])
-      view ||= documentSet.views.at(0)
-
-      state = new State(documentListParams: documentSet.documentListParams(view), view: view)
-
-      state.on 'change:view', (__, view) ->
+      @state.on 'change:view', (__, view) ->
         return if !view?
         # Change URL so a page refresh brings us to this view
         url = "/documentsets/#{documentSet.id}/#{view.id}"
         window.history?.replaceState(url, '', url)
 
-      controller = new ViewsController(documentSet, documentSet.views, state)
+      controller = new ViewsController(@state.views, @state)
       els.views.appendChild(controller.el)
 
-      new ModeView(el: @el, state: state)
-      new SearchView(el: els.search, state: state)
+      new ModeView(el: @el, state: @state)
+      new SearchView(el: els.search, state: @state)
 
       tag_list_controller
-        documentSet: documentSet
-        state: state
+        state: @state
         el: els.tags
 
       @_listenForRefocus()
       @_listenForResize(els.document)
 
-      document_list_controller(els.documentListTitle, els.documentList, els.tagThis, els.documentCursor, documentSet, state, keyboardController)
+      document_list_controller(els.documentListTitle, els.documentList, els.tagThis, els.documentCursor, @state, keyboardController)
 
       new ViewAppController
         el: els.view
-        state: state
-        documentSet: documentSet
-        transactionQueue: documentSet.transactionQueue
+        state: @state
+        transactionQueue: @transactionQueue
         keyboardController: keyboardController
         viewAppConstructors:
           tree: TreeApp
@@ -203,7 +190,7 @@ define [
           error: JobApp
 
       new TransactionQueueErrorMonitor
-        model: documentSet.transactionQueue
+        model: @transactionQueue
         el: els.transactionQueueErrorMonitor
 
       if @tourEnabled

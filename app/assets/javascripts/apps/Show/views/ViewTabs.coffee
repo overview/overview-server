@@ -49,7 +49,7 @@ define [
           <div class="popover bottom">
             <div class="arrow"></div>
             <div class="popover-content">
-              <%= templates.viewDetails({ t: t, view: view, documentSet: documentSet }) %>
+              <%= templates.viewDetails({ t: t, view: view, state: state }) %>
             </div>
           </div>
         </li>
@@ -86,7 +86,7 @@ define [
 
           <% if (view.nDocuments) { %>
             <dt class="n-documents"><%- t('view.nDocuments.dt') %></dt>
-            <dd class="n-documents"><%- t('view.nDocuments.dd', view.nDocuments, documentSet.nDocuments) %></dd>
+            <dd class="n-documents"><%- t('view.nDocuments.dd', view.nDocuments, state.nDocuments) %></dd>
           <% } %>
 
           <% if (view.createdAt) { %>
@@ -119,7 +119,7 @@ define [
             isSelected: view == selectedView,
             id: view.id,
             view: view.attributes,
-            documentSet: documentSet
+            state: state
           }) %>
         <% }); %>
         <li class="dropdown">
@@ -147,13 +147,11 @@ define [
         ''')
 
     initialize: ->
-      throw 'must set options.documentSet' if !@options.documentSet
       throw 'must set options.plugins' if !@options.plugins
       throw 'must set options.collection' if !@options.collection
       throw 'must set options.state, a State' if !@options.state
 
       @state = @options.state
-      @documentSet = @options.documentSet
       @plugins = @options.plugins
 
       @listenTo(@collection, 'remove', @_onRemove)
@@ -168,7 +166,7 @@ define [
       html = @templates.main
         views: @collection
         plugins: @plugins
-        documentSet: @documentSet
+        state: @state
         selectedView: @state.get('view')
         templates: @templates
         t: t
@@ -190,7 +188,7 @@ define [
         templates: @templates
         isSelected: model == @state.get('view')
         view: model.attributes
-        documentSet: @documentSet
+        state: @state
 
     _onAdd: (model) ->
       # While we _expect_ the change won't break ordering of the set, we aren't
