@@ -61,12 +61,24 @@
 
     i.status {
       .fa-icon();
-      width: 1em; // icons vary in width
+      width: 1.5em; // icons vary in width
+
+      &::before {
+        display: inline-block;
+        box-sizing: border-box;
+        outline: 1px solid @table-border-color;
+        height: 1em;
+        width: 1em;
+        line-height: 1em;
+        text-align: center;
+        vertical-align: bottom;
+        color: @text-color;
+      }
     }
-    &.all i.status::before { content: @fa-var-check-square-o; }
-    &.some i.status::before { content: @fa-var-minus-square-o; }
-    &.some i.status { .text-muted(); }
-    &.none i.status::before { content: @fa-var-square-o; }
+    &.all i.status::before { content: @fa-var-check; }
+    &.some i.status::before { content: @fa-var-minus; }
+    &.unknown i.status::before { .text-muted(); content: "?"; }
+    &.none i.status::before { content: "\00a0"; } // &nbsp;
 
     &.create {
       // There's no icon on the create

@@ -34,7 +34,7 @@ define [
 
       ulContents: _.template('''
         <% tags.forEach(function(tag) { %>
-          <li data-cid="<%- tag.cid %>" class="some">
+          <li data-cid="<%- tag.cid %>" class="unknown">
             <i class="status"></i>
             <span class="name">
               <% if (highlight) { %>
