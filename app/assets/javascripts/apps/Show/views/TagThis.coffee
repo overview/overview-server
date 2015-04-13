@@ -216,6 +216,10 @@ define [
       e.preventDefault()
       @trigger('organize-clicked')
 
+    _onClickCreate: (e) ->
+      e.preventDefault()
+      @_actOnLi(e.currentTarget)
+
     _onClickTag: (e) ->
       e.preventDefault()
       @_actOnLi(e.currentTarget)
