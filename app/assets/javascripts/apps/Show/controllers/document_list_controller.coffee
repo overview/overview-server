@@ -132,44 +132,17 @@ define [
       # When the user clicks, here's what happens:
       #
       # * on click, listSelection changes selectedIndices.
-      # * here, we set the state's document to the first selected one.
-      #   (Because we assume there is only one -- if we want to change this,
-      #   we need to make the state have multiple documents.)
-      # * TODO on state document change, we modify listSelection. (We only do
-      #   this when changing oneDocumentSelected. Will the rest be needed?)
+      # * we grab the first (and, we assume, only) document.
+      # * we set the state's document.
       setStateSelectionFromListSelection = =>
         cursorIndex = @listSelection.get('cursorIndex')
         collection = @get('documentList')?.documents
         document = cursorIndex? && collection?.at(cursorIndex) || null
 
-        @state.set({
-          document: document
-          oneDocumentSelected: cursorIndex?
-        }, { fromDocumentListController: true })
-
-      setListSelectionFromStateSelection = (__, ___, options) =>
-        return if options?.fromDocumentListController
-
-        # If we're navigating individual documents and we change selection, go
-        # to the top of the new document list.
-        #
-        # The new doclist won't have loaded, so documentId will be null. We
-        # catch that by watching for add() on documentCollection.
-        if @state.get('oneDocumentSelected')
-          @listSelection.set
-            cursorIndex: 0
-            selectedIndices: [0]
-        else
-          @listSelection.onSelectAll()
+        @state.set(document: document)
 
       @listenTo(@listSelection, 'change:cursorIndex', setStateSelectionFromListSelection)
-      @listenTo(@state, 'change:oneDocumentSelected', setListSelectionFromStateSelection)
-      @on 'change:documentList', =>
-        setListSelectionFromStateSelection() # may call setStateSelectionFromListSelection
-        oldDocCollection = @previous('documentList')?.documents
-        newDocCollection = @get('documentList')?.documents
-        @stopListening(oldDocCollection) if oldDocCollection?
-        @listenToOnce(newDocCollection, 'add', setStateSelectionFromListSelection) if newDocCollection?
+      @on('change:documentList', => @listSelection.onSelectAll())
 
     _addTitleView: ->
       view = new DocumentListTitleView

@@ -23,7 +23,6 @@ define [
 
     afterEach -> @sandbox.restore()
 
-    it 'should have nDocuments', -> expect(@subject.nDocuments).to.be.null
     it 'should have tags', -> expect(@subject.tags.models).to.deep.eq([])
     it 'should give tags the proper URL', -> expect(@subject.tags.url).to.eq('/documentsets/12/tags')
     it 'should have views', -> expect(@subject.views.models).to.deep.eq([])
@@ -32,10 +31,6 @@ define [
       req = @sandbox.server.requests[0]
       expect(req.method).to.eq('GET')
       expect(req.url).to.eq('/documentsets/12.json')
-
-    it 'should fill in nDocuments', ->
-      @respondJson(200, nDocuments: 123)
-      expect(@subject.nDocuments).to.eq(123)
 
     it 'should fill in tags', ->
       json = [ { id: 258, name: 'Some tag', color: '#612345' } ]

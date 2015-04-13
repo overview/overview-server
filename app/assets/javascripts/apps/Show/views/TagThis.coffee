@@ -138,7 +138,7 @@ define [
       @$el.addClass('open')
       @ui.button.addClass('active btn-primary')
 
-      nDocuments = @state.get('oneDocumentSelected') && 1 || 999999
+      nDocuments = @state.get('document') && 1 || 999999
       html = @templates.main(t: t, nDocuments: nDocuments)
       @ui.main.html(html)
 

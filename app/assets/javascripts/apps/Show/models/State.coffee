@@ -5,18 +5,10 @@ define [ 'backbone' ], (Backbone) ->
       documentListParams: null
 
       # Which document is selected/viewed. `null` means all documents in the doclist
+      #
+      # When document is set, tagging/untagging applies to this document. When
+      # document is null, tagging/untagging applies to documentList.
       document: null
-
-      # Whether we want to show a single document, vs all documents
-      #
-      # If oneDocument is true and documentId is null, that means we expect
-      # documentId will be set soon and we shall view it when it is (and the
-      # selection is null in the meantime).
-      #
-      # If oneDocument is false and documentId is set, that means we _were_
-      # showing a document, and we may wish to toggle back to that state later,
-      # but right now we are selecting the doclist.
-      oneDocumentSelected: false
 
       # Which document list is under view as far as the Tree is concerned.
       #
@@ -54,16 +46,9 @@ define [ 'backbone' ], (Backbone) ->
     #
     # You can use this JSON to build a query string. For instance, it might
     # be `{ nodes: '2,3', tags: '1'}`.
-    #
-    # Returns { documents: '-1' } if documentId is null and
-    # oneDocumentSelected is true.
     getSelectionQueryParams: ->
-      if @get('oneDocumentSelected')
-        document = @get('document')
-        if document?.id?
-          documents: String(document.id)
-        else
-          documents: '-1'
+      if (documentId = @get('document')?.id)
+        documents: String(documentId)
       else
         @get('documentListParams').toQueryParams()
 
@@ -110,7 +95,6 @@ define [ 'backbone' ], (Backbone) ->
         @set
           documentListParams: params
           document: null
-          oneDocumentSelected: false
           view: view
 
       @stopListening(@get('view'))

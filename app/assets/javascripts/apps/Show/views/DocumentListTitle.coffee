@@ -49,7 +49,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @initialRender()
 
       @state = @options.state
-      @listenTo(@state, 'change:oneDocumentSelected', @render)
+      @listenTo(@state, 'change:document', @render)
       @setDocumentList(@options.documentList)
 
     initialRender: ->
@@ -59,7 +59,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         showList: @$('.show-list')
 
     render: ->
-      checked = !@state.get('oneDocumentSelected')
       settings = if @documentList?
         documentListToSettings(@documentList)
       else
@@ -73,7 +72,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
     _onClickShowList: (e) ->
       e.preventDefault()
-      @state.set(oneDocumentSelected: false)
+      @state.set(document: null)
 
     setDocumentList: (documentList) ->
       for object in (@transientObjectsToListenTo || [])

@@ -42,31 +42,22 @@ define [
         state.resetDocumentListParams().bySomething()
         expect(state.get('highlightedDocumentListParams')).to.eq(@params1)
 
-    describe 'document and oneDocumentSelected', ->
+    describe 'with documentListParams', ->
       state = undefined
 
       beforeEach ->
         state = new State
           document: null
-          oneDocumentSelected: false
           documentListParams:
             params: { nodes: [ 1 ] }
             toQueryParams: -> { nodes: '1' }
 
-      it 'should give empty selection when document is null and oneDocumentSelected is true', ->
-        state.set(document: null, oneDocumentSelected: true)
-        expect(state.getSelectionQueryParams()).to.deep.eq(documents: '-1')
-
-      it 'should give document selection when document is set and oneDocumentSelected is true', ->
-        state.set(document: { id: 10 }, oneDocumentSelected: true)
+      it 'should give document selection when document is set', ->
+        state.set(document: { id: 10 })
         expect(state.getSelectionQueryParams()).to.deep.eq(documents: '10')
 
-      it 'should give doclist selection when document is null and oneDocumentSelected is false', ->
-        state.set(document: null, oneDocumentSelected: false)
-        expect(state.getSelectionQueryParams()).to.deep.eq(nodes: '1')
-
-      it 'should give doclist selection when document is set and oneDocumentSelected is false', ->
-        state.set(document: 'foo', oneDocumentSelected: false)
+      it 'should give doclist selection when document is null', ->
+        state.set(document: null)
         expect(state.getSelectionQueryParams()).to.deep.eq(nodes: '1')
 
     describe 'setView', ->
@@ -90,12 +81,10 @@ define [
           view: @view1
           documentListParams: @params
           document: 'document'
-          oneDocumentSelected: true
         @state.setView(@view2)
 
       it 'should alter view', -> expect(@state.get('view')).to.eq(@view2)
       it 'should unset document', -> expect(@state.get('document')).to.be.null
-      it 'should unset oneDocumentSelected', -> expect(@state.get('oneDocumentSelected')).to.be.false
 
       it 'should alter documentListParams', ->
         params = @state.get('documentListParams')

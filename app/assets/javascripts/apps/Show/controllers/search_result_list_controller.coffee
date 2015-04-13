@@ -28,7 +28,6 @@ define [
       el: el
 
     view.on 'search', (q) ->
-      state.set(oneDocumentSelected: false) # https://www.pivotaltracker.com/story/show/65130854
       if q.length > 0
         state.resetDocumentListParams().byQ(q)
       else

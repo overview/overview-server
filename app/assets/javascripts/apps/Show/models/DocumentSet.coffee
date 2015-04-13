@@ -15,7 +15,7 @@ define [
     else
       listener.listenToOnce(model, 'sync', -> whenExists(model, callback, listener))
 
-  # Holds Tags and Views. Oh, and nDocuments.
+  # Holds Tags and Views.
   #
   # On the client, a DocumentSet doesn't hold a list of Documents because
   # there are way too many of them. To fetch a sample, use a DocumentList.
@@ -49,7 +49,6 @@ define [
 
       @url = "/documentsets/#{@id}"
 
-      @nDocuments = null
       @tags = new Tags([], url: "#{@url}/tags")
       @views = new Views([], url: "#{@url}/views")
 
@@ -66,7 +65,6 @@ define [
         error: (xhr) => @_onError(xhr)
 
     _onSuccess: (data) ->
-      @nDocuments = data.nDocuments
       @tags.reset(data.tags)
       @views.reset(data.views)
 

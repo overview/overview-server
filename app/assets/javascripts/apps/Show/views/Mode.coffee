@@ -18,11 +18,8 @@ define [ 'backbone' ], (Backbone) ->
 
       @state = @options.state
 
-      @listenTo(@state, 'change:oneDocumentSelected', => @render())
+      @listenTo(@state, 'change:document', @render)
       @render()
 
     render: ->
-      @el.className = if @state.get('oneDocumentSelected')
-        'document-selected'
-      else
-        ''
+      @$el.toggleClass('document-selected', @state.get('document')?)
