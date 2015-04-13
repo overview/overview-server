@@ -8,10 +8,10 @@ define [
   './controllers/KeyboardController'
   './controllers/ViewsController'
   './controllers/tag_list_controller'
-  './controllers/search_result_list_controller'
   './controllers/document_list_controller'
   './controllers/ViewAppController'
   './controllers/TourController'
+  './views/SearchView'
   './views/TransactionQueueErrorMonitor'
   './views/Mode'
   '../Tree/app'
@@ -20,9 +20,10 @@ define [
 ], (_, $, Backbone, \
     TransactionQueue, DocumentSet, State, \
     KeyboardController, \
-    ViewsController, tag_list_controller, search_result_list_controller, document_list_controller, \
+    ViewsController, tag_list_controller, document_list_controller, \
     ViewAppController, \
     TourController, \
+    SearchView, \
     TransactionQueueErrorMonitor, \
     ModeView, \
     TreeApp, ViewApp, JobApp) ->
@@ -177,16 +178,12 @@ define [
       els.views.appendChild(controller.el)
 
       new ModeView(el: @el, state: state)
+      new SearchView(el: els.search, state: state)
 
       tag_list_controller
         documentSet: documentSet
         state: state
         el: els.tags
-
-      search_result_list_controller
-        documentSet: documentSet
-        state: state
-        el: els.search
 
       @_listenForRefocus()
       @_listenForResize(els.document)

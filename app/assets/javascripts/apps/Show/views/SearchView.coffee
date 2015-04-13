@@ -5,6 +5,16 @@ define [
 ], (_, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.SearchView')
 
+  # Prompts the user to enter a search; displays the active search.
+  #
+  # Listens to:
+  # * state.change('documentListParams')
+  #
+  # Calls:
+  # * state.resetDocumentListParams().byQ()
+  # * state.resetDocumentListParams().all()
+  #
+  # Triggers: nothing
   class SearchView extends Backbone.View
     template: _.template("""
       <form method="post" action="#">
@@ -59,7 +69,10 @@ define [
     _onSubmit: (e) ->
       e.preventDefault()
       q = @$input.val().trim()
-      @trigger('search', q)
+      if q
+        @state.resetDocumentListParams().byQ(q)
+      else
+        @state.resetDocumentListParams().all()
 
     initialRender: ->
       html = @template(t: t)
