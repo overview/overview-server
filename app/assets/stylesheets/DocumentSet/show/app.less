@@ -20,8 +20,24 @@
   }
 
   #tree-app-search-and-tags {
-    .flex(0 0 auto);
     border-bottom: 5px solid transparent;
+    .display-flex();
+    .flex-wrap(wrap);
+    margin: -5px -5px 0;
+
+    &>* {
+      margin: 5px 5px 0;
+    }
+
+    #tree-app-search {  
+      min-width: 10em;
+      width: 16em;
+    }
+
+    #tree-app-tags {
+      min-width: 10em;
+      width: 16em;
+    }
   }
 
   #tree-app-view {

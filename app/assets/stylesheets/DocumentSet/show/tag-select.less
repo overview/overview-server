@@ -2,53 +2,65 @@
 @import "_variables.less";
 
 #tree-app-tags {
-  padding-left: 0;
-
-  form {
-    display: inline-block;
-  }
-
-  a.organize {
-    padding-left: .5em;
-    .faded-link();
-  }
+  position: relative;
+  .expanded { display: none; }
+  &.open .expanded { display: block; }
 
   span.tag {
     .tag();
+  }
 
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  input {
+    &.tag-light { .tag-light(); }
+    &.tag-dark { .tag-dark(); }
+  }
+
+  .expanded {
+    position: absolute;
+    top: 100%;
+    left: 0;
     white-space: nowrap;
+    background: white;
+    border: 1px solid @input-border;
+    z-index: 2; // above tree-hover popups
+    min-width: 100%;
   }
 
-  select {
+  ul, li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  ul.tags {
+    max-height: 20em;
+    overflow: auto;
+    overflow-x: hidden;
+  }
+
+  a {
+    display: block;
+    padding: .25em 1em;
+    font: inherit;
+    color: inherit;
+    text-decoration: none;
+
     max-width: 20em;
-    // select2 will copy the width from the select element
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
-  .select2-container .select2-selection--single {
-    height: auto;
-    .form-control;
-    //padding: @padding-base-vertical @padding-base-horizontal;
-
-    .select2-selection__rendered {
-      line-height: inherit;
-      padding: 0 8px 0 0;
-    }
-
-    span[data-special-tag-value=all] {
-      color: @input-color-placeholder;
-    }
-
-    .select2-selection__arrow {
-      top: 0;
-      height: 100%;
-    }
+  li.active a, a:hover {
+    background: @table-bg-hover;
   }
 
-  .select2-container--default .select2-results > .select2-results__options {
-    max-height: 30em; // TODO use JS to make this depend on page height
+  span.tag {
+    // Line up the text with the input box
+    padding-right: .8em;
+    margin-right: .7em;
+  }
+
+  ul.actions a {
+    padding-left: 3.5em;
   }
 }

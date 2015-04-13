@@ -51,15 +51,18 @@
   color: black;
   border-radius: .5em;
 
-  &.tag-light {
-    color: black;
-    text-shadow: 0 0 1px white, 0 0 1px white;
-  }
+  &.tag-light { .tag-light() }
+  &.tag-dark { .tag-dark() }
+}
 
-  &.tag-dark {
-    color: white;
-    text-shadow: 0 0 1px black, 0 0 1px black;
-  }
+.tag-light() {
+  color: black;
+  text-shadow: 0 0 1px white, 0 0 1px white;
+}
+
+.tag-dark() {
+  color: white;
+  text-shadow: 0 0 1px black, 0 0 1px black;
 }
 
 // Set this on a ul.tags to make 2d-looking tags

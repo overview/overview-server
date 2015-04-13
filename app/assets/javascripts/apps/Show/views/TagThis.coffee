@@ -42,9 +42,7 @@ define [
               ><% } %><%- tag.get('name').substring(highlight.length) %>
             <span>
             <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
-              <span class="name">
-                &nbsp;
-              </span>
+              <span class="name">&nbsp;</span>
             </span>
           </li>
         <% }); %>
@@ -82,7 +80,6 @@ define [
       'click li[data-cid]': '_onClickTag'
       'click li.create': '_onClickCreate'
       'mouseenter li': '_onMouseenterLi'
-      'mouseleave li': '_onMouseleaveLi'
       'input input[name=name]': '_onInput'
       'keydown input[name=name]': '_onKeyDown'
 
@@ -214,9 +211,6 @@ define [
     _onMouseenterLi: (e) ->
       index = $(e.currentTarget).prevAll().length
       @_highlight(index)
-
-    _onMouseleaveLi: (e) ->
-      @_highlight(null)
 
     _onClickOrganize: (e) ->
       e.preventDefault()
