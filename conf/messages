@@ -364,7 +364,7 @@ views.DocumentSet.show.DocumentDisplayPreferences.text.false=Document
 views.DocumentSet.show.DocumentDisplayPreferences.text.true=Text
 views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 
-views.DocumentSet.show.SearchView.query_placeholder=Search for text
+views.DocumentSet.show.SearchView.query_placeholder=Search documents
 
 views.DocumentSet.show.TagCountList.prompt=Applied tags
 views.DocumentSet.show.TagCountList.empty=These documents are all untagged
