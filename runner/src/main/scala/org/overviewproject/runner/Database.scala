@@ -44,7 +44,7 @@ trait DatabaseLike {
   private[runner] def ensureCluster : Either[String,Unit] = {
     def success(message: String) : Right[String,Unit] = {
       logger.out.println(message)
-      Right()
+      Right(())
     }
 
     def error(message: String) : Left[String,Unit] = {

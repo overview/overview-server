@@ -15,7 +15,7 @@ trait StdLogger {
 
 class Logger(private val baseOut: OutputStream, private val baseErr: OutputStream, val prefixAnsi: Option[Array[Byte]] = None) extends StdLogger {
   val outAnsiPrefix = prefixAnsi.getOrElse(Array[Byte]())
-  val errAnsiPrefix = Array.concat("\033[31;1mERROR - \033[0m".getBytes(), prefixAnsi.getOrElse(Array[Byte]()))
+  val errAnsiPrefix = Array.concat("\u001b[31;1mERROR - \u001b[0m".getBytes(), prefixAnsi.getOrElse(Array[Byte]()))
 
   override val out = Logger.wrapOutputStream(baseOut, outAnsiPrefix)
   override val err = Logger.wrapOutputStream(baseErr, errAnsiPrefix)
