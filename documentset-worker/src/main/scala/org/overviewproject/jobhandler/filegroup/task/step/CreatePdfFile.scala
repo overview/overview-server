@@ -16,7 +16,7 @@ import org.overviewproject.postgres.LargeObjectInputStream
 
 trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
   protected val documentSetId: Long
-  protected val uploadedFileId: Long
+  protected val uploadedFile: GroupedFileUpload
 
   protected val nextStep: File => TaskStep
 
@@ -26,9 +26,6 @@ trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
     file <- createFile(upload.name, upload.size, location, sha1)
   } yield nextStep(file)
 
-  private def findUpload: Future[GroupedFileUpload] = db { implicit session =>
-    GroupedFileUploads.filter(_.id === uploadedFileId).first
-  }
 
   /** Returns (blobLocation,sha1). */
   private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[(String,Array[Byte])] = {
@@ -55,12 +52,12 @@ trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
 
 object CreatePdfFile {
 
-  def apply(documentSetId: Long, uploadedFileId: Long, next: File => TaskStep): CreatePdfFile =
-    new CreatePdfFileImpl(documentSetId, uploadedFileId, next)
+  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, next: File => TaskStep): CreatePdfFile =
+    new CreatePdfFileImpl(documentSetId, uploadedFile, next)
 
   private class CreatePdfFileImpl(
     override protected val documentSetId: Long,
-    override protected val uploadedFileId: Long,
+    override protected val uploadedFile: GroupedFileUpload,
     override protected val nextStep: File => TaskStep) extends CreatePdfFile with SlickSessionProvider {
 
     override protected val blobStorage = BlobStorage

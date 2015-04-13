@@ -63,7 +63,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       
       class TestCreateFileWithView(implicit val session: Session) extends CreateFileWithView with SlickClientInSession {
         override protected val documentSetId = 1l
-        override protected val uploadedFileId = upload.id
+        override protected val uploadedFile = upload
         override protected val nextStep = { f: File => NextStep(f) }
         
         override protected val blobStorage = smartMock[BlobStorage]

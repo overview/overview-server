@@ -24,27 +24,23 @@ import org.overviewproject.postgres.LargeObjectInputStream
 
 trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient {
   protected val documentSetId: Long
-  protected val uploadedFileId: Long
+  protected val uploadedFile: GroupedFileUpload
   protected val converter: DocumentConverter
 
   protected val nextStep: File => TaskStep
 
   override def execute: Future[TaskStep] =
     for {
-      upload <- findUpload
-      contentsLocation <- moveLargeObjectToBlobStorage(upload.contentsOid, upload.size, BlobBucketId.FileContents)
-      (viewLocation, viewSize) <- createView(upload)
-      file = File(0l, 11, upload.name, contentsLocation, upload.size, viewLocation, viewSize)
+      contentsLocation <- moveLargeObjectToBlobStorage(uploadedFile.contentsOid, uploadedFile.size, BlobBucketId.FileContents)
+      (viewLocation, viewSize) <- createView(uploadedFile)
+      file = File(0l, 11, uploadedFile.name, contentsLocation, uploadedFile.size, viewLocation, viewSize)
       savedFile <- writeFile(file)
     } yield nextStep(savedFile)
 
-  private def findUpload: Future[GroupedFileUpload] = db { implicit session =>
-    GroupedFileUploads.filter(_.id === uploadedFileId).first
-  }
 
   private def createView(upload: GroupedFileUpload): Future[(String, Long)] = blocking {
-    withLargeObjectInputStream(upload.contentsOid) { stream =>
-      converter.withStreamAsPdf(upload.guid, upload.name, stream) { (viewStream, viewSize) =>
+    withLargeObjectInputStream(uploadedFile.contentsOid) { stream =>
+      converter.withStreamAsPdf(uploadedFile.guid, uploadedFile.name, stream) { (viewStream, viewSize) =>
         blobStorage.create(BlobBucketId.FileView, viewStream, viewSize)
           .map((_, viewSize))
       }
@@ -71,12 +67,12 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
 }
 
 object CreateFileWithView {
-  def apply(documentSetId: Long, uploadedFileId: Long, next: File => TaskStep): CreateFileWithView =
-    new CreateFileWithViewImpl(documentSetId, uploadedFileId, next)
+  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, next: File => TaskStep): CreateFileWithView =
+    new CreateFileWithViewImpl(documentSetId, uploadedFile, next)
 
   private class CreateFileWithViewImpl(
     override protected val documentSetId: Long,
-    override protected val uploadedFileId: Long,
+    override protected val uploadedFile: GroupedFileUpload,
     override protected val nextStep: File => TaskStep) extends CreateFileWithView with SlickSessionProvider {
 
     override protected val converter = LibreOfficeDocumentConverter

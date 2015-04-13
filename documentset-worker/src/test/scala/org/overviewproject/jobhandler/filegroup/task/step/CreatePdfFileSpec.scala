@@ -8,6 +8,7 @@ import scala.slick.jdbc.JdbcBackend.Session
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.File
+import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.TempDocumentSetFiles
 import org.overviewproject.test.{ DbSpecification, SlickClientInSession }
@@ -68,7 +69,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
         any,
         be_===(uploadSize)) returns createResult
 
-      val createFile = new TestCreatePdfFile(upload.id, blobStorage, loInputStream)
+      val createFile = new TestCreatePdfFile(upload, blobStorage, loInputStream)
 
       def createResult: Future[String] = Future.successful(location)
     }
@@ -82,7 +83,9 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     override def execute = Future.successful(this)
   }
 
-  class TestCreatePdfFile(val uploadedFileId: Long, val blobStorage: BlobStorage, loInputStream: InputStream)(implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
+  class TestCreatePdfFile(
+      override protected val uploadedFile: GroupedFileUpload, 
+      override protected val blobStorage: BlobStorage, loInputStream: InputStream)(implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
     override protected val documentSetId = 1l
     override protected val nextStep = { f: File => NextStep }
 
