@@ -22,9 +22,9 @@ define [
   # Lets the user select a Tag.
   #
   # Calls:
-  # * state.resetDocumentListParams().byTag(tag)
-  # * state.resetDocumentListParams().byUntagged()
-  # * state.resetDocumentListParams().all()
+  # * state.setDocumentListParams().byTag(tag)
+  # * state.setDocumentListParams().byUntagged()
+  # * state.setDocumentListParams().all()
   #
   # Emits `organize-clicked`
   class TagSelectView extends Backbone.View
@@ -112,13 +112,13 @@ define [
       @state = options.state
 
       @listenTo(@collection, 'change', @render) # handle tag name change
-      @listenTo(@state, 'change:documentListParams', @render)
+      @listenTo(@state, 'change:documentList', @render)
       @render()
 
     render: ->
       allTags = @collection.toArray().sort(compareTags)
 
-      params = @state.get('documentListParams')?.toJSON()
+      params = @state.get('documentList')?.params?.toJSON()
       tag = if (tagId = params?.tags?[0])?
         @collection.get(tagId)
       else if params?.tagged == false
@@ -213,24 +213,21 @@ define [
       @_activateLink(a)
 
     _onClick: (e) ->
-      console.log(e)
       e.preventDefault()
       @_activateLink(e.currentTarget)
 
     _activateLink: (a) ->
-      console.log(a)
       $a = $(a)
       if $a.hasClass('untagged')
-        @state.resetDocumentListParams().byUntagged()
+        @state.setDocumentListParams().byUntagged()
       else if $a.hasClass('organize')
         @trigger('organize-clicked')
       else if $a.hasClass('all')
-        @state.resetDocumentListParams().all()
+        @state.setDocumentListParams().all()
       else
         cid = $a.attr('data-cid')
         tag = @collection.get(cid)
-        console.log(cid, tag)
         if tag?
-          @state.resetDocumentListParams().byTag(tag)
+          @state.setDocumentListParams().byTag(tag)
 
       @close() # We only need this for organize-tags, but what the heck

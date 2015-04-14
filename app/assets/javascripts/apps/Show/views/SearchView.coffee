@@ -8,11 +8,11 @@ define [
   # Prompts the user to enter a search; displays the active search.
   #
   # Listens to:
-  # * state.change('documentListParams')
+  # * state.change('documentList')
   #
   # Calls:
-  # * state.resetDocumentListParams().byQ()
-  # * state.resetDocumentListParams().all()
+  # * state.setDocumentListParams().byQ()
+  # * state.setDocumentListParams().all()
   #
   # Triggers: nothing
   class SearchView extends Backbone.View
@@ -42,19 +42,19 @@ define [
 
       @state = options.state
 
-      @listenTo(@state, 'change:documentListParams', @render)
+      @listenTo(@state, 'change:documentList', @render)
 
       @render()
 
     render: ->
       @initialRender() if !@$input
 
-      @$input.val(@state.get('documentListParams').params.q || '')
+      @$input.val(@state.get('documentList')?.params?.params?.q || '')
       @_refreshChanging()
       @_refreshEmpty()
 
     _refreshChanging: ->
-      realQ = @state.get('documentListParams').params.q || ''
+      realQ = @state.get('documentList')?.params?.params?.q || ''
       q = @$input.val().trim()
       @$el.toggleClass('changing', q != realQ)
 
@@ -70,9 +70,9 @@ define [
       e.preventDefault()
       q = @$input.val().trim()
       if q
-        @state.resetDocumentListParams().byQ(q)
+        @state.setDocumentListParams().byQ(q)
       else
-        @state.resetDocumentListParams().all()
+        @state.setDocumentListParams().all()
 
     initialRender: ->
       html = @template(t: t)

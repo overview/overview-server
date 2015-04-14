@@ -22,12 +22,12 @@ define [
       @_startListening()
 
     _startListening: ->
-      @listenTo(@state, 'change:documentListParams', @_onChangeDocumentListParams)
+      @listenTo(@state, 'change:documentList', @_onChangeDocumentList)
       @listenTo(@focusView, 'zoom-pan', @_onFocusViewZoomPan)
       @listenTo(@treeView, 'zoom-pan', @_onTreeViewZoomPan)
 
-    _onChangeDocumentListParams: (state, params) ->
-      if (nodeId = params?.node?.id)?
+    _onChangeDocumentList: (state, documentList) ->
+      if (nodeId = documentList?.params?.params?.nodes?[0])?
         node = @animatedTree.getAnimatedNode(nodeId)
         parent = node.parent
         @focus.animateNode(parent ? node)

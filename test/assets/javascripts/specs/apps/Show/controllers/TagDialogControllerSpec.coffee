@@ -18,10 +18,10 @@ define [
         view: null
 
       initialize: ->
-        @_reset =
+        @_set =
           all: (->)
 
-      resetDocumentListParams: -> @_reset
+      setDocumentListParams: -> @_set
 
     beforeEach ->
       @sandbox = sinon.sandbox.create()
@@ -32,7 +32,7 @@ define [
         'views.Tree.show.tag_list.header': 'header'
 
       @state = new State()
-      @state._reset.all = sinon.spy()
+      @state._set.all = sinon.spy()
       @tags = new Tags(url: '/path/to/tags')
       @tags.fetch = sinon.stub()
       @view = new Backbone.View
@@ -80,11 +80,11 @@ define [
         expect(@state.get('highlightedDocumentListParams')?.params).to.deep.eq(tags: [ 2 ])
 
       it 'should reset the documentListParams if needed', ->
-        @state.set(documentListParams: { params: { tags: [ 1 ] }})
+        @state.set(documentList: { params: { params: { tags: [ 1 ] }}})
         @view.trigger('remove', @tag)
-        expect(@state._reset.all).to.have.been.called
+        expect(@state._set.all).to.have.been.called
 
       it 'should not reset the documentListParams if not needed', ->
-        @state.set(documentListParams: { params: { tags: [ 2 ] }})
+        @state.set(documentList: { params: { params: { tags: [ 2 ] }}})
         @view.trigger('remove', @tag)
-        expect(@state._reset.all).not.to.have.been.called
+        expect(@state._set.all).not.to.have.been.called

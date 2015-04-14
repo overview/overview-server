@@ -89,7 +89,7 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
       for k, type of Attributes
         @params[k] = type.toParam(options[k]) if k of options
 
-      @reset = @_buildReset()
+      @reset = new DocumentListParams.Builder(@state, @view)
 
     # Return some params with a different view
     withView: (view) ->
@@ -150,32 +150,34 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
         arr.push("#{encodeURIComponent(k)}=#{encodeURIComponent(v)}")
       arr.join('&')
 
-    _buildReset: ->
-      reset = (options={}) =>
-        realOptions = _.extend({}, options)
-        if 'title' not of realOptions
-          keys = Object.keys(realOptions)
-          realOptions.title = if keys.length == 0
-            t('all')
-          else if keys.length == 1
-            if keys[0] == 'nodes' && options.nodes.length == 1
-              t('node', @view?.onDemandTree?.getNode?(options.nodes[0])?.description)
-            else if keys[0] == 'tags' && options.tags.length == 1
-              t('tag', @state?.tags?.get?(options.tags[0])?.attributes?.name)
-            else if keys[0] == 'tagged' && !options.tagged
-              t('untagged')
-            else if keys[0] == 'q'
-              t('q', options.q)
-            else
-              undefined
+  DocumentListParams.Builder = (state, view) ->
+    build = (options={}) =>
+      realOptions = _.extend({}, options)
+      if 'title' not of realOptions
+        keys = Object.keys(realOptions)
+        realOptions.title = if keys.length == 0
+          t('all')
+        else if keys.length == 1
+          if keys[0] == 'nodes' && options.nodes.length == 1
+            t('node', view?.onDemandTree?.getNode?(options.nodes[0])?.description)
+          else if keys[0] == 'tags' && options.tags.length == 1
+            t('tag', state?.tags?.get?(options.tags[0])?.attributes?.name)
+          else if keys[0] == 'tagged' && !options.tagged
+            t('untagged')
+          else if keys[0] == 'q'
+            t('q', options.q)
           else
             undefined
+        else
+          undefined
 
-        new DocumentListParams(@state, @view, realOptions)
+      new DocumentListParams(state, view, realOptions)
 
-      reset.byNode = (node) -> reset(nodes: [ node.id ], title: t('node', node.description))
-      reset.byTag = (tag) -> reset(tags: [ tag.id ], title: t('tag', tag.attributes.name))
-      reset.byUntagged = -> reset(tagged: false, title: t('untagged'))
-      reset.byQ = (q) -> reset(q: q, title: t('q', q))
-      reset.all = -> reset(title: t('all'))
-      reset
+    build.byNode = (node) -> build(nodes: [ node.id ], title: t('node', node.description))
+    build.byTag = (tag) -> build(tags: [ tag.id ], title: t('tag', tag.attributes.name))
+    build.byUntagged = -> build(tagged: false, title: t('untagged'))
+    build.byQ = (q) -> build(q: q, title: t('q', q))
+    build.all = -> build(title: t('all'))
+    build
+
+  DocumentListParams

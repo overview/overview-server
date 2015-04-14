@@ -2,8 +2,9 @@ define [
   'backbone'
   '../collections/Tags'
   '../collections/Views'
+  './DocumentList'
   './DocumentListParams'
-], (Backbone, Tags, Views, DocumentListParams) ->
+], (Backbone, Tags, Views, DocumentList, DocumentListParams) ->
 
   # Calls the given callback only after the model exists.
   #
@@ -19,7 +20,7 @@ define [
   # * Provides `documentSetId` and `transactionQueue`: constants.
   # * Loads `tags`, `views` and `nDocuments`: constants, once set. (Set them
   #   via init() and wait for `sync`.)
-  # * Gives access to `view`, `documentListParams`, `document` and
+  # * Gives access to `view`, `documentList`, `document` and
   #   `highlightedDocumentListParams`: global state as Backbone.Model
   #   attributes.
   #
@@ -27,8 +28,8 @@ define [
   #
   #     transactionQueue = new TransactionQueue()
   #     state = new State({}, documentSetId: '123', transactionQueue: transactionQueue)
-  #     state.init()
   #     state.once('sync', -> renderEverything())
+  #     state.init()
   #
   # Methods that change stuff on the server
   # ---------------------------------------
@@ -37,14 +38,21 @@ define [
   # the server yet, the actual tagging operation will be postponed until it
   # has.
   #
-  # tag: (tag, documentListParams): tells the server to tag a set of documents.
-  # untag: (tag, documentListParams): tells the server to untag documents.
+  # tag: (tag, documentListQueryString): tells the server to tag a set of documents.
+  # untag: (tag, documentListQueryString): tells the server to untag documents.
   class State extends Backbone.Model
     defaults:
-      # What we want to show in the doclist and filter tagging with
-      documentListParams: null
+      # The currently displayed list of documents.
+      #
+      # This is a partially-loaded list. Callers can read its `.params`,
+      # `.length`, `.documents`; they can .tag() and .untag() it.
+      #
+      # Alter this list through `.setDocumentListParams()`.
+      documentList: null
 
-      # Which document is selected/viewed. `null` means all documents in the doclist
+      # The currently-displayed document.
+      #
+      # This is *always* a member of `documentList`.
       #
       # When document is set, tagging/untagging applies to this document. When
       # document is null, tagging/untagging applies to documentList.
@@ -52,7 +60,7 @@ define [
 
       # Which document list is under view as far as the Tree is concerned.
       #
-      # This gets set in documentListParams, except when searching by Node.
+      # This gets set in setDocumentListParams, except when searching by Node.
       # That's so you can:
       #
       # 1. Select a tag (sets highlightedDocumentListParams)
@@ -80,30 +88,57 @@ define [
           @views = new Views(json.views, url: "/documentsets/#{@documentSetId}/views")
           @nDocuments = json.nDocuments
 
-          @setView(@views.at(0))
-          @setDocumentListParams(new DocumentListParams(@, @views.at(0)))
+          view = @views.at(0)
+          attributes = @_createSetDocumentListParamsOptions(new DocumentListParams(@, view))
+          attributes.view = view
+          @set(attributes)
 
           @trigger('sync')
 
-    # Sets new documentListParams and unsets document.
+    # Sets new documentList params and unsets document.
     #
-    # Without knowledge of what is in the new document list, this is the only
-    # safe way to change document lists. Otherwise, you may try to show a
-    # document that isn't in the document list, leading to undefined behavior.
-    setDocumentListParams: (params) ->
-      params1 = @get('documentListParams')
-      return if params1?.equals(params)
+    # This is the only safe way to change document lists.
+    #
+    # Calling convention
+    # ------------------
+    #
+    # There are several ways to call this method:
+    #
+    # 1. call `setDocumentListParams(params)`, where `params` is a
+    #    DocumentListParams.
+    # 2. call `setDocumentListParams({ foo: 'bar' }), and the options will be
+    #    passed to `DocumentListParams.Builder`. For instance,
+    #    `{ tags: [ 1 ] }` will select Tag 1.
+    # 3. call `setDocumentListParams().all()`, `.byUntagged()`,
+    #    `.byQ('search')`, etc. See `DocumentListParams.Builder` for the full
+    #    list of methods.
+    setDocumentListParams: (args...) ->
+      return @_startResetDocumentListParams() if !args.length
 
-      highlightedDocumentListParams = if 'nodes' of params.params
-        # Don't change
-        @get('highlightedDocumentListParams')
+      oldParams = @get('documentList')?.params
+
+      params = if args[0] instanceof DocumentListParams
+        args[0]
       else
-        params
+        DocumentListParams.Builder(@, @get('view'))(args...)
 
-      @set
-        documentListParams: params
-        highlightedDocumentListParams: highlightedDocumentListParams
+      return if oldParams?.equals(params)
+
+      options = @_createSetDocumentListParamsOptions(params)
+      @set(options)
+
+    _createSetDocumentListParamsOptions: (params) ->
+      ret =
         document: null
+        documentList: new DocumentList {},
+          state: @
+          params: params
+          url: "/documentsets/#{@documentSetId}/documents"
+
+      if 'nodes' not of params.params
+        ret.highlightedDocumentListParams = params
+
+      ret
 
     # Return JSON that describes all documents that will be affected by, say,
     # tagging.
@@ -113,14 +148,16 @@ define [
     getSelectionQueryParams: ->
       if (documentId = @get('document')?.id)
         documents: String(documentId)
+      else if (params = @get('documentList')?.params)?
+        params.toQueryParams()
       else
-        @get('documentListParams').toQueryParams()
+        documents: '-1' # avoid tagging the entire docset by mistake
 
     # _sets up_ a reset.
     #
     # Use it like this:
     #
-    #   state.resetDocumentListParams().byDocument(document)
+    #   state._startResetDocumentListParams().byDocument(document)
     #
     # It will call `reset.byDocument(document)` on the documentListParams
     # to get new DocumentListParams, and then it will call
@@ -128,42 +165,36 @@ define [
     #
     # The special
     #
-    #   state.resetDocumentListParams().byJSON(nodes: [ 3 ])
+    #   state._startResetDocumentListParams().byJSON(nodes: [ 3 ])
     #
     # ... will call `reset(nodes: [3])` on the current documentListParams.
-    resetDocumentListParams: ->
-      params = @get('documentListParams')
-      reset = params.reset
-
+    _startResetDocumentListParams: ->
+      build = new DocumentListParams.Builder(this, @get('view'))
       ret = {}
 
-      scopedBuilder = (key) =>
-        (args...) =>
-          newParams = reset[key].apply(params, args)
-          @setDocumentListParams(newParams)
+      prepare = (func) =>
+        (args...) => @setDocumentListParams(func(args...))
 
-      for k, v of params.reset
-        ret[k] = scopedBuilder(k)
+      for k, v of build
+        ret[k] = prepare(build[k])
 
       ret.byJSON = (args...) =>
-        newParams = reset.apply(params, args)
-        @setDocumentListParams(newParams)
+        @setDocumentListParams(build(args...))
 
       ret
 
     # Switches to a new View.
     #
     # This is the correct way of calling .set('view', ...). The reason: we
-    # need to update documentListParams to point to the new view.
+    # need to update documentList to point to the new view.
     setView: (view) ->
       reset = =>
-        params = @get('documentListParams')
+        params = @get('documentList')?.params
         params = params?.withView(view)
 
-        @set
-          documentListParams: params
-          document: null
-          view: view
+        options = @_createSetDocumentListParamsOptions(params)
+        options.view = view
+        @set(options)
 
       @stopListening(@get('view'))
 

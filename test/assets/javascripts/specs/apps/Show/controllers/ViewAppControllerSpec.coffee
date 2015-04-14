@@ -99,7 +99,7 @@ define [
       it 'should pass an app facade to the viewApp', ->
         app = @viewAppConstructors.job.lastCall.args[0].app
         expect(app).not.to.be.undefined
-        expect(app).to.respondTo('resetDocumentListParams')
+        expect(app).to.respondTo('setDocumentListParams')
         expect(app).to.respondTo('getTag')
 
       it 'should use ViewAppClient to notify the viewApp of changes', ->

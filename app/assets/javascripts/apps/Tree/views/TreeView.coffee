@@ -68,7 +68,7 @@ define [
 
       @setHighlightedDocumentListParams(@state.get('highlightedDocumentListParams'))
 
-      @listenTo(@state, 'change:highlightedDocumentListParams', (state, params) => @setHighlightedDocumentListParams(params))
+      @listenTo(@state, 'change:highlightedDocumentListParams', (__, params) => @setHighlightedDocumentListParams(params))
       @listenTo(@state, 'tag', @_onTag)
       @listenTo(@state, 'untag', @_onUntag)
 
@@ -123,7 +123,7 @@ define [
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
-      @tree.state.on('change:documentListParams change:document change:highlightedDocumentListParams', update)
+      @tree.state.on('change:documentList change:document change:highlightedDocumentListParams', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
       @state.tags.on('change:color', update)
@@ -260,7 +260,7 @@ define [
 
     _redraw: ->
       highlightColor = @_getHighlightColor()
-      highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('documentListParams'), @state.get('document'), @tree.on_demand_tree)
+      highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('documentList')?.params, @state.get('document'), @tree.on_demand_tree)
 
       @last_draw = new DrawOperation(@canvas, @tree, highlightColor, highlightedNodeIds, @hoverNodeId, @focus, @options)
       @last_draw.draw()

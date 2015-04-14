@@ -14,7 +14,7 @@ define [
 
       throw 'options.viewApp needs a remove() method which removes all traces of the view' if !@viewApp.remove
 
-      @listenTo(@state, 'change:documentListParams', @onDocumentListParamsChanged)
+      @listenTo(@state, 'change:documentList', @onDocumentListChanged)
       @listenTo(@state, 'change:document', @onDocumentChanged)
       @listenTo(@state, 'change:highlightedDocumentListParams', @onHighlightedDocumentListParamsChanged)
       @listenTo(@state, 'tag', @onTag)
@@ -22,14 +22,13 @@ define [
       @onMessageCallback = @_onMessage.bind(@)
       window.addEventListener('message', @onMessageCallback, false)
 
-    onDocumentListParamsChanged: (__, value) -> @viewApp.onDocumentListParamsChanged?(value)
+    onDocumentListChanged: (__, value) -> @viewApp.onDocumentListParamsChanged?(value?.params)
     onDocumentChanged: (__, value) -> @viewApp.onDocumentChanged?(value)
     onHighlightedDocumentListParamsChanged: (__, value) -> @viewApp.onHighlightedDocumentListParamsChanged?(value)
     onTag: (tag, params) -> @viewApp.onTag?(tag, params)
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
 
-    setDocumentListParams: (params) ->
-      @state.resetDocumentListParams().byJSON(params)
+    setDocumentListParams: (params) -> @state.setDocumentListParams(params)
 
     _onMessage: (e) ->
       viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message
@@ -39,7 +38,7 @@ define [
         return
 
       switch e.data.call
-        when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@state.get('documentListParams'))
+        when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@state.get('documentList')?.params)
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
         else console.log("Invalid message from view: #{e.data.call}", e.data)
 

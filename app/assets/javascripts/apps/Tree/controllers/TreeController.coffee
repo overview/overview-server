@@ -47,16 +47,10 @@ define [
       node = maybeNode
       @tree.demandNode(node.id)
 
-      oldParams = @state.get('documentListParams')
-      newParams = @state.get('documentListParams').reset.byNode(node)
-      if newParams.equals(oldParams)
-        @state.set
-          document: null
-          oneDocumentSelected: false
+      if _.isEqual(@state.get('documentList')?.params?.params, nodes: [ node.id ])
+        @state.set(document: null)
       else
-        @state.set
-          document: null
-          documentListParams: newParams
+        @state.setDocumentListParams(nodes: [ node.id ])
 
     _onExpand: (node) ->
       @tree.demandNode(node.id)
@@ -64,19 +58,17 @@ define [
     _onCollapse: (node) ->
       @tree.unloadNodeChildren(node.id)
 
-      params = @state.get('documentListParams')
-      selectedNodeId = params?.node?.id
-      if selectedNodeId && @tree.id_tree.is_id_ancestor_of_id(node.id, selectedNodeId)
-        @state.set
-          document: null
-          documentListParams: params.reset.byNode(node)
+      selectedNodeIds = @state.get('documentList')?.params?.params?.nodes || []
+      collapsedIsSelected = selectedNodeIds.some((id) => @tree.id_tree.is_id_ancestor_of_id(node.id, id))
+      if collapsedIsSelected
+        @state.setDocumentListParams(nodes: [ node.id ])
 
     _selectNode: (node) ->
-      @state.resetDocumentListParams().byNode(node)
+      @state.setDocumentListParams(nodes: [ node.id ])
       @tree.demandNode(node.id)
 
     _findNodeRelativeToSelectedNode: (finder) ->
-      nodeId = @state.get('documentListParams')?.params?.nodes?[0] || null
+      nodeId = @state.get('documentList')?.params?.params?.nodes?[0] || null
       return @tree.getRoot() if !nodeId?
       newId = @view[finder](nodeId)
       if newId?

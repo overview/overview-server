@@ -114,14 +114,14 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     _attachState: ->
       selectedNodeIds = []
 
-      @state.on 'change:documentListParams', (__, params) =>
+      @state.on 'change:documentList', (__, documentList) =>
         @_maybe_notifying_needs_update =>
           time = Date.now()
 
           for nodeId in selectedNodeIds
             @nodes[nodeId]?.setSelected(false, @animator, time)
 
-          selectedNodeIds = params.params.nodes || []
+          selectedNodeIds = documentList?.params?.params?.nodes || []
 
           for nodeId in selectedNodeIds
             @nodes[nodeId]?.setSelected(true, @animator, time)
@@ -138,7 +138,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       nodes = @on_demand_tree.nodes
       animatedNodes = @nodes
       selectedNodeId = null
-      if (params = @state.get('documentListParams'))? && params.type == 'node'
+      if (params = @state.get('documentList')?.params)? && params.type == 'node'
         selectedNodeId = params.node.id
 
       # When ids are added to the tree, their parents become open. Assume their
@@ -183,7 +183,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       if rootId?
         ms ?= Date.now()
 
-        if (params = @state.get('documentListParams'))? && params.type == 'node'
+        if (params = @state.get('documentList')?.params)? && params.type == 'node'
           selectedNodeId = params.node.id
 
         json = @_getNode(rootId)

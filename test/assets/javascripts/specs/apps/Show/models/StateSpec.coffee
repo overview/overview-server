@@ -4,55 +4,63 @@ define [
   'i18n'
 ], (Backbone, State, i18n) ->
   describe 'apps/Show/models/State', ->
-    describe 'resetDocumentListParams', ->
+    afterEach ->
+      @state?.stopListening()
+
+    describe 'setDocumentListParams', ->
       beforeEach ->
         i18n.reset_messages
           'views.DocumentSet.show.DocumentListParams.all': 'hack'
-
-        @params2 = 
-          equals: sinon.stub().returns(false)
-          params: {}
+          'views.DocumentSet.show.DocumentListParams.q': 'hack2'
+          'views.DocumentSet.show.DocumentListParams.node': 'hack3'
+          'views.DocumentSet.show.DocumentListParams.tag': 'hack4'
 
         @params1 =
           equals: sinon.stub().returns(false)
           params: {}
-          reset:
-            bySomething: sinon.stub().returns(@params2)
 
-      it 'should do nothing when setting to equivalent documentListParams', ->
-        state = new State({ documentListParams: @params1, document: 'foo' }, documentSetId: 'xxx', transactionQueue: 'xxx')
+      it 'should do nothing when setting to equivalent documentList', ->
+        state = new State({}, documentSetId: 'xxx', transactionQueue: 'xxx')
+        state.setDocumentListParams(@params1)
+        state.set(document: 'foo')
         @params1.equals.returns(true)
         state.on('all', spy = sinon.spy())
-        state.resetDocumentListParams().bySomething()
+        state.setDocumentListParams(@params1)
         expect(spy).not.to.have.been.called
         expect(state.get('document')).to.eq('foo')
 
-      it 'should change document to null when changing documentListParams', ->
-        state = new State({ documentListParams: @params1, document: 'foo' }, documentSetId: 'xxx', transactionQueue: 'xxx')
+      it 'should change document to null when changing documentList', ->
+        state = new State({ document: 'foo' }, documentSetId: 'xxx', transactionQueue: 'xxx')
+        state.setDocumentListParams(@params1)
         @params1.equals.returns(false)
-        state.resetDocumentListParams().bySomething()
+        state.setDocumentListParams(@params1)
         expect(state.get('document')).to.be.null
 
-      it 'should change highlightedDocumentListParams to the new value when changing documentListParams to a tag', ->
-        state = new State({ documentListParams: @params1 }, documentSetId: 'xxx', transactionQueue: 'xxx')
+      it 'should change highlightedDocumentListParams to the new value when changing documentList to a tag', ->
+        state = new State({ highlightedDocumentListParams: @params1 }, documentSetId: 'xxx', transactionQueue: 'xxx')
         @params1.equals.returns(false)
-        state.resetDocumentListParams().bySomething()
-        expect(state.get('highlightedDocumentListParams')).to.eq(@params2)
+        state.setDocumentListParams(tags: [ 1 ])
+        expect(state.get('highlightedDocumentListParams')?.params?.tags).to.deep.eq([1])
 
-      it 'should not change highlightedDocumentListParams when changing documentListParams to a node', ->
-        state = new State({ documentListParams: @params1, highlightedDocumentListParams: @params1 }, documentSetId: 'xxx', transactionQueue: 'xxx')
-        @params1.reset.bySomething.returns(params: { nodes: [ 2 ] })
+      it 'should not change highlightedDocumentListParams when changing documentList to a node', ->
+        state = new State({ highlightedDocumentListParams: @params1 }, documentSetId: 'xxx', transactionQueue: 'xxx')
         @params1.equals.returns(false)
-        state.resetDocumentListParams().bySomething()
+        state.setDocumentListParams(nodes: [ 2 ])
         expect(state.get('highlightedDocumentListParams')).to.eq(@params1)
 
-    describe 'with documentListParams', ->
+      it 'should act as a factory method when called with no arguments', ->
+        state = new State({}, documentSetId: 'xxx', transactionQueue: 'xxx')
+        state.setDocumentListParams().byQ('search')
+        expect(state.get('documentList')?.params?.params?.q).to.eq('search')
+
+    describe 'with documentList', ->
       beforeEach ->
         @state = new State({
           document: null
-          documentListParams:
-            params: { nodes: [ 1 ] }
-            toQueryParams: -> { nodes: '1' }
+          documentList:
+            params:
+              params: { nodes: [ 1 ] }
+              toQueryParams: -> { nodes: '1' }
         }, documentSetId: 'xxx', transactionQueue: 'xxx')
 
       it 'should give document selection when document is set', ->
@@ -97,14 +105,15 @@ define [
         expect(_.result(@state.views, 'url')).to.eq('/documentsets/123/views')
         expect(@state.nDocuments).to.eq(12)
 
-      it 'should set documentListParams to all on success', ->
+      it 'should set documentList to all on success', ->
         @state.init()
-        expect(@state.get('documentListParams')).to.be.null
+        expect(@state.get('documentList')).not.to.exist
         @transactionQueue.ajax.args[0][0].success
           tags: []
           views: [ { id: 456, type: 'view' } ]
           nDocuments: 12
-        expect(@state.get('documentListParams')?.toJSON()).to.deep.eq({})
+        expect(@state.get('documentList')).to.exist
+        expect(@state.get('documentList').params.toJSON()).to.deep.eq({})
 
       it 'should set the view on success, if there is one', ->
         @state.init()
@@ -125,23 +134,26 @@ define [
         @view2 = new View(id: 'bar', rootNodeId: 2)
 
         @params =
-          documentSet: @documentSet
+          state: @state
           view: @view1
+          params: {}
           withView: (view) =>
-            documentSet: @documentSet
+            state: @state
             view: view
+            params: {}
 
         @state = new State({
           view: @view1
-          documentListParams: @params
           document: 'document'
         }, documentSetId: 'xxx', transactionQueue: 'xxx')
+        @state.set(documentList: { params: @params })
+
         @state.setView(@view2)
 
       it 'should alter view', -> expect(@state.get('view')).to.eq(@view2)
       it 'should unset document', -> expect(@state.get('document')).to.be.null
 
-      it 'should alter documentListParams', ->
-        params = @state.get('documentListParams')
-        expect(params.documentSet).to.eq(@documentSet)
+      it 'should set documentList', ->
+        params = @state.get('documentList')?.params
+        expect(params.state).to.eq(@state)
         expect(params.view).to.eq(@view2)

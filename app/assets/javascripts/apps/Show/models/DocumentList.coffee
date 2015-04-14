@@ -50,13 +50,15 @@ define [
       throw 'Must pass options.state, a State DELETEME' if !options.state?
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
       throw 'Must pass options.url, a String like /documentsets/1234/documents with no question mark' if !options.url?
+
+      @state = options.state
       @params = options.params
       @url = options.url
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
       @documents = new Documents([])
 
-      @listenTo(@params.state, 'tag', @_onTag)
-      @listenTo(@params.state, 'untag', @_onUntag)
+      @listenTo(@state, 'tag', @_onTag)
+      @listenTo(@state, 'untag', @_onUntag)
 
     _onTag: (tag, params) ->
       if _.isEqual(params, @params.toQueryParams())

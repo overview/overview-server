@@ -7,19 +7,17 @@ define [
   describe 'apps/Show/models/ShowAppFacade', ->
     beforeEach ->
       @resetByNodeSpy = sinon.spy()
-      @state =
-        resetDocumentListParams: =>
-          byNode: @resetByNodeSpy
+      @state = { setDocumentListParams: sinon.spy() }
       @tags = new MockTags([ id: 1 ])
       @subject = new ShowAppFacade
         state: @state
         tags: @tags
 
-    describe 'resetDocumentListParams', ->
+    describe 'setDocumentListParams', ->
       it 'should delegate to State', ->
         arg = { foo: 'bar' }
-        @subject.resetDocumentListParams().byNode(arg)
-        expect(@resetByNodeSpy).to.have.been.calledWith(arg)
+        @subject.setDocumentListParams(arg)
+        expect(@state.setDocumentListParams).to.have.been.calledWith(arg)
 
     describe 'getTag', ->
       it 'should find a valid tag by CID', ->

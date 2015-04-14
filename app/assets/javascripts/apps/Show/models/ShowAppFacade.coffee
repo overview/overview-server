@@ -8,5 +8,6 @@ define [
       @state = options.state
       @tags = options.tags
 
-    resetDocumentListParams: -> @state.resetDocumentListParams()
+    setDocumentListParams: (args...) -> @state.setDocumentListParams(args...)
+
     getTag: (cid) -> @tags.get(cid)

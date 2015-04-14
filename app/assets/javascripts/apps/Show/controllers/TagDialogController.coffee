@@ -68,8 +68,8 @@ define [
       state = @state
 
       @listenTo @listView, 'remove', (tag) ->
-        if tag.id in (state.get('documentListParams')?.params?.tags || [])
-          state.resetDocumentListParams().all()
+        if tag.id in (state.get('documentList')?.params?.params?.tags || [])
+          state.setDocumentListParams().all()
         if tag.id in (state.get('highlightedDocumentListParams')?.params?.tags || [])
           state.set(highlightedDocumentListParams: null)
         tag.destroy()

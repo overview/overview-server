@@ -157,10 +157,10 @@ define [
       els = @_buildHtml()
       keyboardController = new KeyboardController(document)
 
-      @state.on 'change:view', (__, view) ->
+      @state.on 'change:view', (__, view) =>
         return if !view?
         # Change URL so a page refresh brings us to this view
-        url = "/documentsets/#{documentSet.id}/#{view.id}"
+        url = "/documentsets/#{@state.documentSetId}/#{view.id}"
         window.history?.replaceState(url, '', url)
 
       controller = new ViewsController(@state.views, @state)

@@ -4,7 +4,7 @@ define [
 ], (Backbone, ViewAppClient) ->
   class MockState extends Backbone.Model
     defaults:
-      documentListParams: 'foo'
+      documentList: 'foo'
       document: 'bar'
       highlightedDocumentListParams: 'baz'
 
@@ -29,7 +29,7 @@ define [
       afterEach -> @subject.stopListening()
 
       it 'should invoke onDocumentListParamsChanged', ->
-        @state.set(documentListParams: 'baz')
+        @state.set(documentList: { params: 'baz' })
         expect(@viewApp.onDocumentListParamsChanged).to.have.been.calledWith('baz')
 
       it 'should invoke onDocumentChanged', ->
@@ -57,7 +57,7 @@ define [
           @subject.remove()
 
           @state.set
-            documentListParams: 'foo2'
+            documentList: 'foo2'
             document: 'bar2'
             highlightedDocumentListParams: 'baz2'
           @state.trigger('tag', 'foo', 'bar')
@@ -82,7 +82,7 @@ define [
 
       it 'should do nothing', ->
         @state.set
-          documentListParams: 'foo2'
+          documentList: 'foo2'
           document: 'bar2'
           highlightedDocumentListParams: 'baz2'
         @state.trigger('tag', 'foo', 'bar')

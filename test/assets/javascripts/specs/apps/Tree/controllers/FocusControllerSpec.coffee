@@ -37,13 +37,13 @@ define [
         parent = {}
         node = { parent: parent }
         @animatedTree.getAnimatedNode.withArgs(4).returns(node)
-        @state.set(documentListParams: { node: { id: 4 } })
+        @state.set(documentList: { params: { params: { nodes: [4] }}})
         expect(@focus.animateNode).to.have.been.calledWith(parent)
 
       it 'should animate focus to the root node', ->
         root = {} # no parent
         @animatedTree.getAnimatedNode.withArgs(4).returns(root)
-        @state.set(documentListParams: { node: { id: 4 } })
+        @state.set(documentList: { params: { params: { nodes: [4] }}})
         expect(@focus.animateNode).to.have.been.calledWith(root)
 
     describe 'on TreeView zoom-pan', ->

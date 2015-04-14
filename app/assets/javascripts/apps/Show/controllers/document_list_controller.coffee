@@ -31,10 +31,6 @@ define [
     else
       interval = undefined
 
-  VIEW_OPTIONS = {
-    buffer_documents: 5,
-  }
-
   tag_to_short_string = (tag) ->
     "#{tag.id} (#{tag.attributes.name})"
 
@@ -64,12 +60,6 @@ define [
     # * listSelection (a ListSelectionController)
     # * listView
     # * cursorView
-    #
-    # Read-only Backbone attributes, which can be replaced entirely:
-    # * documentList (a DocumentList, always non-null)
-    defaults:
-      documentList: null
-
     initialize: (attrs, options) ->
       throw 'Must specify options.tags, a Tags' if !options.tags
       throw 'Must specify options.state, a State' if !options.state
@@ -88,29 +78,14 @@ define [
       @cursorEl = options.cursorEl
       @tagThisEl = options.tagThisEl
 
-      @_addDocumentList()
       @_addListSelection()
       @_addTitleView()
       @_addListView()
       @_addCursorView()
       @_addTagThisView()
 
-    _addDocumentList: ->
-      refresh = =>
-        old = @get('documentList')
-        if old?
-          old.stopListening()
-          @stopListening(old)
-
-        params = @state.get('documentListParams')
-        documentList = new DocumentList({}, state: @state, params: params, url: DocumentsUrl)
-        @set(documentList: documentList)
-
-      @listenTo(@state, 'change:documentListParams', refresh)
-      refresh()
-
     _addListSelection: ->
-      isValidIndex = (i) => @get('documentList')?.documents?.at(i)?.id?
+      isValidIndex = (i) => @state.get('documentList')?.documents?.at(i)?.id?
 
       @listSelection = new ListSelectionController
         selection: new ListSelection()
@@ -127,28 +102,28 @@ define [
       # * we set the state's document.
       setStateSelectionFromListSelection = =>
         cursorIndex = @listSelection.get('cursorIndex')
-        collection = @get('documentList')?.documents
+        collection = @state.get('documentList')?.documents
         document = cursorIndex? && collection?.at(cursorIndex) || null
 
         @state.set(document: document)
 
       @listenTo(@listSelection, 'change:cursorIndex', setStateSelectionFromListSelection)
-      @on('change:documentList', => @listSelection.onSelectAll())
+      @listenTo(@state, 'change:documentList', => @listSelection.onSelectAll())
 
     _addTitleView: ->
       view = new DocumentListTitleView
-        documentList: @get('documentList')
+        documentList: @state.get('documentList')
         state: @state
         el: @titleEl
 
-      @on 'change:documentList', (__, documentList) ->
+      @listenTo @state, 'change:documentList', (__, documentList) ->
         view.setDocumentList(documentList)
 
       @titleView = view
 
     _addListView: ->
       view = new DocumentListView
-        model: @get('documentList')
+        model: @state.get('documentList')
         selection: @listSelection
         tags: @tags
         el: @listEl
@@ -166,7 +141,7 @@ define [
       fetching = false
 
       fetchAnotherPageIfNeeded = =>
-        documentList = @get('documentList')
+        documentList = @state.get('documentList')
 
         return if fetching
         return if !documentList?
@@ -180,7 +155,7 @@ define [
       startFetching = () =>
         fetching = false
         neededIndex = 0
-        documentList = @get('documentList')
+        documentList = @state.get('documentList')
         return if !documentList?
 
         fetchAnotherPageIfNeeded()
@@ -194,7 +169,7 @@ define [
         neededIndex = viewedIndex
         fetchAnotherPageIfNeeded()
 
-      @on 'change:documentList', (__, documentList) ->
+      @listenTo @state, 'change:documentList', (__, documentList) ->
         view.setModel(documentList)
         startFetching()
 
@@ -205,7 +180,7 @@ define [
     _addCursorView: ->
       view = new DocumentListCursorView
         selection: @listSelection
-        documentList: @get('documentList')
+        documentList: @state.get('documentList')
         documentDisplayApp: DocumentDisplayApp
         tags: @tags
         el: @cursorEl
@@ -215,7 +190,7 @@ define [
         queryParams = { documents: String(event.documentId || 0) }
         @state.untag(tag, queryParams)
 
-      @on 'change:documentList', (__, documentList) ->
+      @listenTo @state, 'change:documentList', (__, documentList) ->
         view.setDocumentList(documentList)
 
       @cursorView = view
@@ -250,7 +225,7 @@ define [
       new_index = (listSelection.cursorIndex || -1) + diff
       func = up_or_down == 'down' && 'onDown' || 'onUp'
 
-      docid = controller.get('documentList')?.documents?.at?(new_index)?.id
+      docid = state.get('documentList')?.documents?.at?(new_index)?.id
 
       listSelection[func](options)
 

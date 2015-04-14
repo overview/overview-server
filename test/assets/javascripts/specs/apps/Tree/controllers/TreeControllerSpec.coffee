@@ -5,25 +5,15 @@ define [
 ], (_, Backbone, TreeController) ->
   describe 'apps/Tree/controllers/TreeController', ->
     class MockState extends Backbone.Model
+      defaults:
+        document: null
+        documentList: null
 
-    class Params
-      constructor: (@params) ->
-        @reset =
-          byNode: (node) -> new Params(nodes: [node.id])
-
-      equals: (rhs) ->
-        _.isEqual(@, rhs)
+      initialize: ->
+        @setDocumentListParams = sinon.spy()
 
     beforeEach ->
-      @params = new Params({})
-
       @state = new MockState
-        document: 'document'
-        documentListParams: @params
-        oneDocumentSelected: false
-      @state.resetDocumentListParams = =>
-        byNode: (node) =>
-          @state.set(documentListParams: new Params(nodes: [node.id]))
 
       @focus =
         animateNode: sinon.spy()
@@ -94,12 +84,6 @@ define [
           view: @view
           requestAnimationFrame: (f) -> window.setTimeout(f, 1)
 
-        @selectedNodeId = =>
-          params = @state.get('documentListParams')
-          params = params.params
-          throw "No params in params #{JSON.stringify(params)}" if !params?
-          params.nodes?[0]
-
       it 'should not update when it does not need an update on init', (done) ->
         _.defer =>
           expect(@view.update).not.to.have.been.called
@@ -118,14 +102,13 @@ define [
               done()
 
       it 'should select nothing when navigating with no tree', ->
-        @params.reset.byNode = sinon.spy()
         expect(=>
           @subject.goDown()
           @subject.goUp()
           @subject.goLeft()
           @subject.goRight()
         ).not.to.throw
-        expect(@params.reset.byNode).not.to.have.been.called
+        expect(@state.setDocumentListParams).not.to.have.been.called
 
       describe 'when navigating Down from no selection', ->
         beforeEach ->
@@ -133,7 +116,7 @@ define [
           @tree.getRoot.returns(id: 1)
           @subject.goDown()
 
-        it 'should select the root node', -> expect(@selectedNodeId()).to.eq(1)
+        it 'should select the root node', -> expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [1])
         it 'should expand the root node', -> expect(@tree.demandNode).to.have.been.calledWith(1)
 
       describe 'when navigating Down from a node', ->
@@ -142,10 +125,10 @@ define [
           @view.nodeid_below.withArgs(1).returns(2)
           @tree.id_tree.children[1] = [ 2, 3, 4 ]
           @tree.getNode.withArgs(2).returns(id: 2)
-          @state.set(documentListParams: new Params(nodes: [1]))
+          @state.set(documentList: { params: { params: { nodes: [1] }}})
           @subject.goDown()
 
-        it 'should select the node', -> expect(@selectedNodeId()).to.eq(2)
+        it 'should select the node', -> expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [2])
         it 'should expand the node', -> expect(@tree.demandNode).to.have.been.calledWith(2)
 
       describe 'when navigating Up from a node', ->
@@ -154,10 +137,10 @@ define [
           @tree.id_tree.parent[2] = 1
           @view.nodeid_above.withArgs(2).returns(1)
           @tree.getNode.withArgs(1).returns(id: 1)
-          @state.set(documentListParams: new Params(nodes: [2]))
+          @state.set(documentList: { params: { params: { nodes: [2] }}})
           @subject.goUp()
 
-        it 'should select the parent node', -> expect(@selectedNodeId()).to.eq(1)
+        it 'should select the parent node', -> expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [1])
 
       describe 'when navigating left and right', ->
         beforeEach ->
@@ -170,25 +153,27 @@ define [
           @view.nodeid_right.withArgs(4).returns(null)
           @tree.getNode.withArgs(2).returns(id: 2)
           @tree.getNode.withArgs(4).returns(id: 4)
-          @state.set(documentListParams: new Params(nodes: [3]))
+          @state.set(documentList: { params: { params: { nodes: [3] }}})
 
         it 'should go Right', ->
           @subject.goRight()
-          expect(@selectedNodeId()).to.eq(4)
+          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [4])
           expect(@tree.demandNode).to.have.been.calledWith(4)
 
         it 'should go Left', ->
           @subject.goLeft()
-          expect(@selectedNodeId()).to.eq(2)
+          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [2])
           expect(@tree.demandNode).to.have.been.calledWith(2)
 
         it 'should not go too far Right', ->
-          @subject.goRight(); @subject.goRight()
-          expect(@selectedNodeId()).to.eq(4)
+          @state.set(documentList: { params: { params: { nodes: [4] }}})
+          @subject.goRight()
+          expect(@state.setDocumentListParams).not.to.have.been.called
 
         it 'should not go too far Left', ->
-          @subject.goLeft(); @subject.goLeft()
-          expect(@selectedNodeId()).to.eq(2)
+          @state.set(documentList: { params: { params: { nodes: [2] }}})
+          @subject.goLeft()
+          expect(@state.setDocumentListParams).not.to.have.been.called
 
       describe 'on expand', ->
         beforeEach ->
@@ -211,14 +196,13 @@ define [
           expect(spy).not.to.have.been.called
 
         it 'should change the document list params if a node is being unloaded', ->
-          @params.node = { id: 6 }
-          @params.reset.byNode = (node) -> { node: node }
+          @state.set(documentList: { params: { params: { nodes: [6] }}})
           @tree.id_tree.is_id_ancestor_of_id.returns(true)
 
           @view.trigger('collapse', @node)
 
           expect(@tree.id_tree.is_id_ancestor_of_id).to.have.been.calledWith(3, 6)
-          expect(@state.get('documentListParams').node).to.eq(@node)
+          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [3])
 
       describe 'when clicking a node', ->
         beforeEach ->
@@ -234,22 +218,14 @@ define [
             reset:
               byNode: -> params1
           @state.set
-            documentListParams: params1
             document: 'foo'
-            oneDocumentSelected: true
+            documentList: { params: { params: { nodes: [ @node.id ] }}}
           @view.trigger('click', @node)
           expect(@state.get('document')).to.be.null
-          expect(@state.get('oneDocumentSelected')).to.be.false
 
         it 'should change parameters when changing nodes', ->
-          params1 =
-            reset:
-              byNode: -> { foo: 'bar', equals: -> false }
           @state.set
-            documentListParams: params1
             document: 'foo'
-            oneDocumentSelected: true
+            documentList: { params: { params: { nodes: [ 1 ] }}}
           @view.trigger('click', @node)
-          expect(@state.get('document')).to.be.null
-          expect(@state.get('documentListParams').foo).to.eq('bar')
-          expect(@state.get('oneDocumentSelected')).to.be.true
+          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [ @node.id ])

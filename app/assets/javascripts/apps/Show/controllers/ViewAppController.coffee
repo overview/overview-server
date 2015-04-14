@@ -50,7 +50,6 @@ define [
           view: view
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
-          documentListParams: @state.attributes.documentListParams
           document: @state.attributes.document
           highlightedDocumentListParams: @state.attributes.highlightedDocumentListParams
           el: el

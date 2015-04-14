@@ -53,7 +53,7 @@ define [
 
     # Queues a $.ajax() call.
     #
-    # Params: a bunch of options:
+    # Options: a bunch of options:
     # * jQuery.ajax() options: see https://api.jquery.com/jquery.ajax/
     # * debugInfo: Anything you want; this will appear in the debugger if the
     #   callback fails.
