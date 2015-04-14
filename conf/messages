@@ -378,7 +378,7 @@ views.DocumentSet.show.TagSelect.all=(all documents)
 views.DocumentSet.show.TagSelect.untagged=(untagged documents)
 views.DocumentSet.show.TagSelect.organize=Organize tags…
 
-views.DocumentSet.show.TagThis.label={0,choice,1#Tag this document as|1<Tag these documents as}
+views.DocumentSet.show.TagThis.label=Tag {0,choice,0#no documents|1#this document|1<these {0,number,integer} documents} as
 views.DocumentSet.show.TagThis.placeholder=
 views.DocumentSet.show.TagThis.organize=Organize tags…
 views.DocumentSet.show.TagThis.create_html=Create tag “{0}”

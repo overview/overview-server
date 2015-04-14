@@ -148,7 +148,15 @@ define [
       @$el.addClass('open')
       @ui.button.addClass('active btn-primary')
 
-      nDocuments = @state.get('document') && 1 || 999999
+      taggable = @state.getCurrentTaggable()
+      nDocuments = if taggable?
+        if taggable.params? # a DocumentList
+          console.log(taggable.attributes)
+          taggable.get('length') || 0
+        else # a Document
+          1
+      else
+        0
       html = @templates.main(t: t, nDocuments: nDocuments)
       @ui.main.html(html)
 
@@ -215,7 +223,8 @@ define [
       count = @documentList.getTagCount(tag)
       total = @documentList.get('length')
       if count.n == @documentList.get('length') # even null
-        'all'
+        # This is 'all', but it's less confusing if we say 'none' when count=0
+        count.n == 0 && 'none' || 'all'
       else if count.n > 0
         'some'
       else if count.howSure == 'exact'
