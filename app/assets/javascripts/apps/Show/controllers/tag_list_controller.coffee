@@ -1,18 +1,25 @@
 define [
   '../views/TagSelect'
+  '../views/TagThis'
   './TagDialogController'
-], (TagSelectView, TagDialogController) ->
+], (TagSelectView, TagThisView, TagDialogController) ->
   tag_list_controller = (options) ->
-    state = options.state
-    tags = state.tags
-    el = options.el
+    openTagDialog = ->
+      new TagDialogController(tags: options.tags, state: options.state)
 
-    view = new TagSelectView
-      collection: tags
-      state: state
-      el: el
+    tagSelectView = new TagSelectView
+      collection: options.tags
+      state: options.state
+      el: options.tagSelectEl
 
-    view.on 'organize-clicked', ->
-      new TagDialogController(tags: tags, state: state)
+    tagThisView = new TagThisView
+      tags: options.tags
+      state: options.state
+      keyboardController: options.keyboardController
+      el: options.tagThisEl
 
-    { view: view }
+    tagSelectView.on('organize-clicked', openTagDialog)
+    tagThisView.on('organize-clicked', openTagDialog)
+
+    tagSelectView: tagSelectView
+    tagThisView: tagThisView

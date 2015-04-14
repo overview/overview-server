@@ -4,74 +4,70 @@ define [
 ], (Backbone, Document) ->
   describe 'apps/Show/models/Document', ->
     class Tag extends Backbone.Model
+      initialize: ->
+        @addToDocumentsOnServer = sinon.spy()
+        @removeFromDocumentsOnServer = sinon.spy()
 
-    class Documents extends Backbone.Collection
-      model: Document
-      hasTag: -> undefined
+    describe 'parse', ->
+      it 'should parse page_number to pageNumber', ->
+        document = new Document({ id: 1, page_number: 2 }, parse: true)
+        expect(document.get('pageNumber')).to.eq(2)
 
-    beforeEach ->
-      @collection = new Documents
-      @document = new Document(title: 'title', description: 'a description')
-      @collection.add(@document)
+      it 'should parse a null pageNumber by default', ->
+        document = new Document({ id: 1 }, parse: true)
+        expect(document.get('pageNumber')).to.be.null
 
-    it 'should have a type', ->
-      # We use the type in DocumentListView, to differentiate a Document from
-      # a placeholder
-      expect(@document.get('type')).to.eq('document')
+    describe 'with a typical document', ->
+      beforeEach ->
+        @document = new Document({ id: 1, title: 'title', description: 'a description', tagids: [ 3 ] }, parse: true)
 
-    it 'should not have a tag by default', ->
-      tag = new Tag()
-      expect(@document.hasTag(tag)).to.be.false
+      afterEach ->
+        @document.off()
 
-    it 'should have a tag if it is in tagIds', ->
-      tag = new Tag(id: 3)
-      @document.set(tagIds: { 3: null })
-      expect(@document.hasTag(tag)).to.be.true
+      it 'should not have a tag by default', ->
+        tag = new Tag(id: 1)
+        expect(@document.hasTag(tag)).to.be.false
 
-    it 'should have a tag if it is in tagCids', ->
-      tag = new Tag()
-      @document.attributes.tagCids = cids = {}
-      cids[tag.cid] = true
-      expect(@document.hasTag(tag)).to.be.true
+      it 'should have a tag if it is in tagIds', ->
+        tag = new Tag(id: 3)
+        expect(@document.hasTag(tag)).to.be.true
 
-    it 'should not have a tag if it in tagCids as false', ->
-      tag = new Tag(id: 3)
-      @document.set(tagIds: { 3: null })
-      @document.attributes.tagCids = cids = {}
-      cids[tag.cid] = false
-      expect(@document.hasTag(tag)).to.be.false
+      it 'should tag locally', ->
+        tag = new Tag()
+        @document.tagLocal(tag)
+        expect(@document.hasTag(tag)).to.be.true
 
-    it 'should have a tag if it is in collection', ->
-      tag = new Tag()
-      @collection.hasTag = (aTag) -> aTag == tag
-      expect(@document.hasTag(tag)).to.be.true
+      it 'should untag locally', ->
+        tag = new Tag(id: 3)
+        @document.untagLocal(tag)
+        expect(@document.hasTag(tag)).to.be.false
 
-    it 'should not have a tag if it is out of collection', ->
-      tag = new Tag(id: 3)
-      @document.set(tagIds: { 3: null })
-      @collection.hasTag = (aTag) -> aTag != tag
-      expect(@document.hasTag(tag)).to.be.false
+      it 'should tag then untag locally', ->
+        tag = new Tag()
+        @document.tagLocal(tag)
+        @document.untagLocal(tag)
+        expect(@document.hasTag(tag)).to.be.false
 
-    it 'should not have a tag if it is true in collection.tagCids and false in document.tagCids', ->
-      tag = new Tag(id: 3)
-      @document.set(tagIds: { 3: null })
-      @collection.tagCids = cids = {}
-      cids[tag.cid] = true
-      cids = {}
-      cids[tag.cid] = false
-      @document.set(tagCids: cids)
-      expect(@document.hasTag(tag)).to.be.false
+      it 'should trigger when tagging locally', ->
+        tag = new Tag()
+        @document.on('document-tagged', spy = sinon.spy())
+        @document.tagLocal(tag)
+        expect(spy).to.have.been.calledWith(@document, tag)
 
-    it 'should have tag() and untag()', ->
-      tag = new Tag()
-      @document.tag(tag)
-      expect(@document.hasTag(tag)).to.be.true
-      @document.untag(tag)
-      expect(@document.hasTag(tag)).to.be.false
+      it 'should trigger when untagging locally', ->
+        tag = new Tag(id: 3)
+        @document.on('document-untagged', spy = sinon.spy())
+        @document.untagLocal(tag)
+        expect(spy).to.have.been.calledWith(@document, tag)
 
-    it 'should have unsetTag() to undo the tag overriding', ->
-      tag = new Tag(id: 3)
-      @document.set(tagIds: { 3: null })
-      @document.untag(tag)
-      @document.unsetTag(tag)
-      expect(@document.hasTag(tag)).to.be.true
+      it 'should not trigger on spurious tagLocal', ->
+        tag = new Tag(id: 3)
+        @document.on('document-tagged', spy = sinon.spy())
+        @document.tagLocal(tag)
+        expect(spy).not.to.have.been.called
+
+      it 'should not trigger on spurious untagLocal', ->
+        tag = new Tag()
+        @document.on('document-untagged', spy = sinon.spy())
+        @document.untagLocal(tag)
+        expect(spy).not.to.have.been.called

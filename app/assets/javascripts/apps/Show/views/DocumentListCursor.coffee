@@ -34,7 +34,6 @@ define [
     events:
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
-      'click a.remove': '_onClickRemoveTag'
 
     templates:
       root: _.template("""
@@ -54,7 +53,6 @@ define [
             <li class="tag" data-cid="<%- tag.cid %>">
               <div class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
                 <span class="name"><%- tag.get('name') %></span>
-                <a href="#" class="remove" title="<%- t('tag.remove') %>">&times;</a>
               </div>
             </li>
           <% }); %>
@@ -126,12 +124,6 @@ define [
     _renderDocument: (maybeDocument) ->
       @documentDisplayApp.setDocument(maybeDocument?.attributes)
 
-    _onClickRemoveTag: (e) ->
-      e.preventDefault()
-      document = @_getDocument()
-      cid = $(e.currentTarget).closest('[data-cid]').attr('data-cid')
-      @trigger('tag-remove-clicked', tagCid: cid, documentId: document.id)
-
     renderHeader: ->
       maybeDocument = @_getDocument()
       @_renderHeader(maybeDocument)
@@ -176,9 +168,12 @@ define [
 
         @listenTo(@documentList, 'change:length', => @render())
         if @documentList.documents
-          @listenTo(@documentList.documents, 'change', => @render())
-          @listenTo(@documentList.documents, 'add', => @render())
-          @listenTo(@documentList.documents, 'remove', => @render())
-          @listenTo(@documentList.documents, 'reset', => @render())
+          @listenTo @documentList.documents,
+            change: @render
+            add: @render
+            remove: @render
+            reset: @render
+            'document-tagged': @render
+            'document-untagged': @render
 
       @render()

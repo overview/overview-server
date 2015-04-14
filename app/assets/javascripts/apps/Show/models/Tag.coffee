@@ -4,6 +4,10 @@ define [
   './color_table'
   'tinycolor'
 ], (_, Backbone, ColorTable, tinycolor) ->
+  # A Tag.
+  #
+  # You can tag/untag documents before the Tag is saved, thanks to its
+  # `whenExists()` method.
   class Tag extends Backbone.Model
     defaults:
       name: ''
@@ -41,6 +45,8 @@ define [
     #
     # For instance: `tag.addToDocumentsOnServer(nodes: '3,4')`
     #
+    # Triggers `documents-changed(tag)` on success.
+    #
     # RACE WARNING: the client waits until the tag exists before sending a
     # request to the server. This does not block future tagging operations
     # from occurring. So if you do something like this:
@@ -63,8 +69,11 @@ define [
           url: "#{_.result(@, 'url')}/add"
           data: documentQueryParams
           debugInfo: 'Tag.addToDocumentsOnServer'
+          success: => @trigger('documents-changed', @)
 
     # Sends a POST /documentsets/:id/tags/:id/remove for the given documents
+    #
+    # Triggers `documents-changed(tag)` on success.
     #
     # Beware the RACE WARNING described in addToDocumentsOnServer().
     removeFromDocumentsOnServer: (documentQueryParams) ->
@@ -74,3 +83,4 @@ define [
           url: "#{_.result(@, 'url')}/remove"
           data: documentQueryParams
           debugInfo: 'Tag.removeFromDocumentsOnServer'
+          success: => @trigger('documents-changed', @)

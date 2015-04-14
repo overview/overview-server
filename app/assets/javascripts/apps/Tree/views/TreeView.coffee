@@ -69,8 +69,7 @@ define [
       @setHighlightedDocumentListParams(@state.get('highlightedDocumentListParams'))
 
       @listenTo(@state, 'change:highlightedDocumentListParams', (__, params) => @setHighlightedDocumentListParams(params))
-      @listenTo(@state, 'tag', @_onTag)
-      @listenTo(@state, 'untag', @_onUntag)
+      @listenTo(@state.tags, 'documents-changed', @_onTagOrUntag)
 
       $div = $(@div)
       @canvas = $('<canvas width="1" height="1"></canvas>')[0]
@@ -333,11 +332,7 @@ define [
 
       @_set_needs_update()
 
-    _onTag: (tag, documentListParams) ->
-      if @_isCurrentTag(tag) || @_isCurrentUntagged()
-        @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
-
-    _onUntag: (tag, documentListParams) ->
+    _onTagOrUntag: (tag) ->
       if @_isCurrentTag(tag) || @_isCurrentUntagged()
         @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
 

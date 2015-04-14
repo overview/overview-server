@@ -20,16 +20,6 @@ define [
   #     state = new State({}, documentSetId: '123', transactionQueue: transactionQueue)
   #     state.once('sync', -> renderEverything())
   #     state.init()
-  #
-  # Methods that change stuff on the server
-  # ---------------------------------------
-  #
-  # You may call tag() and untag() using a Tag. If the tag hasn't been saved to
-  # the server yet, the actual tagging operation will be postponed until it
-  # has.
-  #
-  # tag: (tag, documentListQueryString): tells the server to tag a set of documents.
-  # untag: (tag, documentListQueryString): tells the server to untag documents.
   class State extends Backbone.Model
     defaults:
       # The currently displayed list of documents.
@@ -195,10 +185,12 @@ define [
 
       reset()
 
-    tag: (tag, queryParams) ->
-      tag.addToDocumentsOnServer(queryParams)
-      @trigger('tag', tag, queryParams)
-
-    untag: (tag, queryParams) ->
-      tag.removeFromDocumentsOnServer(queryParams)
-      @trigger('untag', tag, queryParams)
+    # Returns the thing Tagging operations should apply to.
+    #
+    # If there is a document, it's that. Othewise, it's the documentList.
+    #
+    # Usage:
+    #
+    #   state.getCurrentTaggable()?.tag(tag)
+    getCurrentTaggable: ->
+      @get('document') || @get('documentList') || null

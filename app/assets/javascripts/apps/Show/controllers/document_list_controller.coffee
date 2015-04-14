@@ -2,59 +2,20 @@ define [
   'underscore',
   'jquery',
   'backbone',
-  '../models/DocumentList'
   '../models/list_selection'
-  '../controllers/TagDialogController'
   '../views/DocumentList'
   '../views/DocumentListTitle'
   '../views/DocumentListCursor'
-  '../views/TagThis'
   './ListSelectionController'
   'apps/DocumentDisplay/app'
-], (_, $, Backbone, DocumentList, ListSelection, TagDialogController, DocumentListView, DocumentListTitleView, DocumentListCursorView, TagThisView, ListSelectionController, DocumentDisplayApp) ->
-  DOCUMENT_LIST_REQUEST_SIZE = 20
-
-  DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
-
-  doUntilWithSetInterval = (func, test, period) ->
-    interval = undefined
-
-    loopFunc = ->
-      func()
-      if test()
-        window.clearInterval(interval)
-      # no race: this function is atomic, because JS is single-threaded.
-
-    func()
-    if !test()
-      interval = setInterval(loopFunc, period)
-    else
-      interval = undefined
-
-  tag_to_short_string = (tag) ->
-    "#{tag.id} (#{tag.attributes.name})"
-
-  node_to_short_string = (node) ->
-    "#{node.id} (#{node.description})"
-
-  node_diff_to_string = (node1, node2) ->
-    changed = false
-    s = ''
-    if node1.description != node2.description
-      s += " description: <<#{node1.description}>> to <<#{node2.description}>>"
-    if !changed
-      s += ' (no change)'
-    s
-
+], (_, $, Backbone, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, DocumentDisplayApp) ->
   class Controller extends Backbone.Model
     # Properties set on initialize:
     # * tags (a Tags)
     # * state (a State)
-    # * keyboardController (a KeyboardController)
     # * listEl (an HTMLElement)
     # * titleEl (an HTMLElement)
     # * cursorEl (an HTMLElement)
-    # * tagThisEl (an HTMLElement)
     #
     # Properties created here, whose attributes may change:
     # * listSelection (a ListSelectionController)
@@ -63,26 +24,21 @@ define [
     initialize: (attrs, options) ->
       throw 'Must specify options.tags, a Tags' if !options.tags
       throw 'Must specify options.state, a State' if !options.state
-      throw 'Must specify options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
       throw 'Must specify options.titleEl, an HTMLElement' if !options.titleEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
-      throw 'Must specify options.tagThisEl, an HTMLElement' if !options.tagThisEl
 
       @tags = options.tags
       @state = options.state
-      @keyboardController = options.keyboardController
 
       @listEl = options.listEl
       @titleEl = options.titleEl
       @cursorEl = options.cursorEl
-      @tagThisEl = options.tagThisEl
 
       @_addListSelection()
       @_addTitleView()
       @_addListView()
       @_addCursorView()
-      @_addTagThisView()
 
     _addListSelection: ->
       isValidIndex = (i) => @state.get('documentList')?.documents?.at(i)?.id?
@@ -109,6 +65,7 @@ define [
 
       @listenTo(@listSelection, 'change:cursorIndex', setStateSelectionFromListSelection)
       @listenTo(@state, 'change:documentList', => @listSelection.onSelectAll())
+      @listenTo(@state, 'change:document', (__, newValue) => @listSelection.onSelectAll() if !newValue?)
 
     _addTitleView: ->
       view = new DocumentListTitleView
@@ -127,11 +84,6 @@ define [
         selection: @listSelection
         tags: @tags
         el: @listEl
-
-      @listenTo view, 'tag-remove-clicked', (event) =>
-        tag = @tags.get(event.tagCid)
-        queryParams = { documents: String(event.documentId || 0) }
-        @state.untag(tag, queryParams)
 
       @listenTo view, 'click-document', (model, index, options) =>
         @listSelection.onClick(index, options)
@@ -185,34 +137,18 @@ define [
         tags: @tags
         el: @cursorEl
 
-      @listenTo view, 'tag-remove-clicked', (event) =>
-        tag = @tags.get(event.tagCid)
-        queryParams = { documents: String(event.documentId || 0) }
-        @state.untag(tag, queryParams)
-
       @listenTo @state, 'change:documentList', (__, documentList) ->
         view.setDocumentList(documentList)
 
       @cursorView = view
 
-    _addTagThisView: ->
-      view = new TagThisView
-        state: @state
-        tags: @tags
-        keyboardController: @keyboardController
-        el: @tagThisEl
-
-      @tagThisView = view
-
-  document_list_controller = (titleDiv, listDiv, tagThisDiv, cursorDiv, state, keyboardController) ->
+  document_list_controller = (titleDiv, listDiv, cursorDiv, state, keyboardController) ->
     controller = new Controller({},
       tags: state.tags
       state: state
-      keyboardController: keyboardController
       listEl: listDiv
       titleEl: titleDiv
       cursorEl: cursorDiv
-      tagThisEl: tagThisDiv
     )
 
     go_up_or_down = (up_or_down, event) ->
@@ -243,27 +179,6 @@ define [
       $listView = controller.listView.$el
       view.$el.on('mouseenter', -> $listView.addClass('hover'))
       view.$el.on('mouseleave', -> $listView.removeClass('hover'))
-    )()
-
-    (->
-      view = controller.tagThisView
-
-      view.on 'create-clicked', (name) ->
-        tags = state.tags
-        tag = tags.create(name: name)
-        params = state.getSelectionQueryParams()
-        state.tag(tag, params)
-
-      view.on 'add-clicked', (tag) ->
-        params = state.getSelectionQueryParams()
-        state.tag(tag, params)
-
-      view.on 'remove-clicked', (tag) ->
-        params = state.getSelectionQueryParams()
-        state.untag(tag, params)
-
-      view.on 'organize-clicked', ->
-        new TagDialogController(tags: state.tags, state: state)
     )()
 
     keyboardController.register

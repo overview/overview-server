@@ -186,19 +186,3 @@ define [
     it 'should allow starting with documentList undefined', ->
       initAt(5, undefined)
       expect(view.el.className).to.eq('showing-unloaded-document')
-
-    it 'should trigger "tag-remove-clicked"', ->
-      initAt(undefined, 10)
-      tags.add(id: 123, name: 'abc', color: '#abcdef')
-      tags.add(id: 234, name: 'fde', color: '#fedcba')
-      documentList = new DocumentList(n: 10, length: 2)
-      documentList.documents = new Backbone.Collection([
-        new Document({ id: 1 })
-        new Document({ id: 2, tags: [ 123, 234 ]})
-      ])
-      view.setDocumentList(documentList)
-      selection.set({ cursorIndex: 1 })
-
-      view.on('tag-remove-clicked', spy = sinon.spy())
-      view.$('ul.tags li:eq(1) a.remove').click()
-      expect(spy).to.have.been.calledWith(tagCid: tags.get(234).cid, documentId: 2)

@@ -46,21 +46,29 @@ define [ 'backbone', 'apps/Show/models/Tag' ], (Backbone, Tag) ->
         tag = new Tag(id: 1, name: 'foo')
         tag.url = '/foo'
         tag.addToDocumentsOnServer(nodes: '2')
-        expect(Backbone.ajax).to.have.been.calledWith
-          type: 'POST'
-          url: '/foo/add'
-          data: { nodes: '2' }
-          debugInfo: 'Tag.addToDocumentsOnServer'
+        expect(Backbone.ajax).to.have.been.called
+        options = Backbone.ajax.args[0][0]
+        expect(options).to.have.property('type', 'POST')
+        expect(options).to.have.property('url', '/foo/add')
+        expect(options.data).to.deep.eq(nodes: '2')
+
+      it 'should trigger documents-changed once the server responds', ->
+        tag = new Tag(id: 1, name: 'foo')
+        tag.url = '/foo'
+        tag.addToDocumentsOnServer(nodes: '2')
+        tag.on('documents-changed', spy = sinon.spy())
+        Backbone.ajax.args[0][0].success()
+        expect(spy).to.have.been.calledWith(tag)
 
       it 'should POST to remove a document', ->
         tag = new Tag(id: 1, name: 'foo')
         tag.url = '/foo'
         tag.removeFromDocumentsOnServer(nodes: '2')
-        expect(Backbone.ajax).to.have.been.calledWith
-          type: 'POST'
-          url: '/foo/remove'
-          data: { nodes: '2' }
-          debugInfo: 'Tag.removeFromDocumentsOnServer'
+        expect(Backbone.ajax).to.have.been.called
+        options = Backbone.ajax.args[0][0]
+        expect(options).to.have.property('type', 'POST')
+        expect(options).to.have.property('url', '/foo/remove')
+        expect(options.data).to.deep.eq(nodes: '2')
 
       it 'should defer POST until the tag exists', ->
         tag = new Tag(name: 'foo')

@@ -16,8 +16,21 @@ define [
     getClass: -> 'tag'
     getStyle: -> ''
 
+  # Our mock Documents have the hasTag() method and two events:
+  # * document-tagged(document, tag)
+  # * document-untagged(document, tag)
+  #
+  # Callers can use .tag() and .untag() to invoke these.
   class Document extends Backbone.Model
     hasTag: (tag) -> tag.id of (@attributes.tagIds || {})
+
+    tag: (tag) ->
+      @attributes.tagIds[tag.id] = null
+      @trigger('document-tagged', @, tag)
+
+    untag: (tag) ->
+      delete @attributes.tagIds[tag.id]
+      @trigger('document-untagged', @, tag)
 
   class TagCollection extends Backbone.Collection
     model: Tag
@@ -131,10 +144,6 @@ define [
         expect(view.$('ul.documents>li').length).to.eq(4)
         expect(view.$('ul.documents>li:last').attr('data-cid')).to.eq(documents.last().cid)
 
-      it 'should remove an item', ->
-        documents.pop()
-        expect(view.$('ul.documents>li').length).to.eq(2)
-
       it 'should render selection', ->
         selection.set('selectedIndices', [0, 2])
         $lis = view.$('ul.documents>li')
@@ -181,15 +190,15 @@ define [
         $tagEl = view.$('ul.documents>li:eq(0) div.tag:eq(0)')
         expect($tagEl.find('.name').text()).to.eq('Tag 111111')
 
-      it 'should re-render tags when the collection is tagged', ->
-        # Hacky here. How do we detect that tags have been re-rendered?
-        tags.get(0).attributes.name = 'Tag 111111' # make a change that isn't rendered
-        documents.trigger('tag', tags.get(0)) # we're testing that this triggers a render of tags
-        $tagEl = view.$('ul.documents>li:eq(0) div.tag:eq(0)')
-        expect($tagEl.find('.name').text()).to.eq('Tag 111111')
+      it 'should re-render tags when a document is tagged', ->
+        documents.at(0).tag(tags.at(1))
+        $tagEl = view.$('ul.documents>li:eq(0) div.tag:eq(1)')
+        expect($tagEl.find('.name').text()).to.eq('Tag 1')
 
       it 'should sort tags in documents', ->
-        documents.at(0).set(tagIds: { 2: null, 1: null, 0: null })
+        documents.at(0).tag(tags.at(2))
+        documents.at(0).tag(tags.at(1))
+        documents.at(0).tag(tags.at(0))
         $tags = view.$('ul.documents>li:eq(0) li.tag')
         expect($tags.eq(0).attr('data-cid')).to.eq(tags.get(0).cid)
         expect($tags.eq(1).attr('data-cid')).to.eq(tags.get(1).cid)

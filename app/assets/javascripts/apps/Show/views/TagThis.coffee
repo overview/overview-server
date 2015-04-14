@@ -17,10 +17,13 @@ define [
 
   # Tagging interface for the current document list
   #
-  # Events:
-  # * create-clicked(tagName) (expected behavior: create, then add)
-  # * add-clicked(tag)
-  # * remove-clicked(tag)
+  # Calls the following:
+  #
+  # * tags.create(name: tagName)
+  # * state.getCurrentTaggable().tag(tag)
+  # * state.getCurrentTaggable().untag(tag)
+  #
+  # Triggers the following events:
   # * organize-clicked()
   class TagThis extends Backbone.View
     className: 'tag-this'
@@ -234,7 +237,8 @@ define [
       $li = $(li)
 
       if $li.hasClass('create')
-        @trigger('create-clicked', $li.attr('data-name'))
+        tag = @tags.create(name: $li.attr('data-name'))
+        @state.getCurrentTaggable()?.tag(tag)
         @clear()
         @show()
       else
@@ -245,8 +249,8 @@ define [
           return
 
         if $li.hasClass('all')
-          @trigger('remove-clicked', tag)
+          @state.getCurrentTaggable()?.untag(tag)
           $li.attr(class: 'active none')
         else
-          @trigger('add-clicked', tag)
+          @state.getCurrentTaggable()?.tag(tag)
           $li.attr(class: 'active all')

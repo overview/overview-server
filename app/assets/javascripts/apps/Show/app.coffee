@@ -169,14 +169,17 @@ define [
       new ModeView(el: @el, state: @state)
       new SearchView(el: els.search, state: @state)
 
-      tag_list_controller
-        state: @state
-        el: els.tags
-
       @_listenForRefocus()
       @_listenForResize(els.document)
 
-      document_list_controller(els.documentListTitle, els.documentList, els.tagThis, els.documentCursor, @state, keyboardController)
+      tag_list_controller
+        state: @state
+        tags: @state.tags
+        tagSelectEl: els.tags
+        tagThisEl: els.tagThis
+        keyboardController: keyboardController
+
+      document_list_controller(els.documentListTitle, els.documentList, els.documentCursor, @state, keyboardController)
 
       new ViewAppController
         el: els.view

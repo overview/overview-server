@@ -2,33 +2,25 @@ define [
   'apps/Show/models/DocumentList'
 ], (DocumentList) ->
   describe 'apps/Show/models/DocumentList', ->
-    class State extends Backbone.Model
-
     class Tag extends Backbone.Model
+      addToDocumentsOnServer: ->
+      removeFromDocumentsOnServer: ->
 
     describe 'normally', ->
       beforeEach ->
         @sandbox = sinon.sandbox.create(useFakeServer: true)
-        @state = new State()
+
         @params =
-          state: @state
           toQueryParams: -> { tags: '2' }
-          equals: -> true
-          reset:
-            byDocument: (document) ->
-              state: @state
-              document: document
-              equals: -> false
 
         @list = new DocumentList({}, {
-          state: @state
           params: @params
           url: '/documentsets/1/documents'
         })
+
         @docs = @list.documents
 
       afterEach ->
-        @state.off()
         @list.stopListening()
         @list.off()
         @docs.off()
@@ -113,68 +105,31 @@ define [
 
           it 'should tag the list, client-side', ->
             tag = new Tag(name: 'a tag')
-            @state.trigger('tag', tag, @params.toQueryParams())
+            @list.tagLocal(tag)
             expect(@docs.at(0).hasTag(tag)).to.be.true
             expect(@docs.at(1).hasTag(tag)).to.be.true
 
           it 'should untag the list, client-side', ->
             tag = new Tag(name: 'a tag')
             @docs.at(0).tag(tag)
-            @state.trigger('untag', tag, @params.toQueryParams())
+            @list.untagLocal(tag)
             expect(@docs.at(0).hasTag(tag)).to.be.false
             expect(@docs.at(1).hasTag(tag)).to.be.false
 
-          it 'should tag a document, client-side', ->
+          it 'should tag the list, server-side', ->
             tag = new Tag(name: 'a tag')
-            @docs.at(0).untag(tag)
-            @docs.at(1).untag(tag)
-            @state.trigger('tag', tag, documents: String(@docs.at(0).id))
+            @sandbox.stub(tag, 'addToDocumentsOnServer')
+            @list.tag(tag)
             expect(@docs.at(0).hasTag(tag)).to.be.true
-            expect(@docs.at(1).hasTag(tag)).to.be.false
+            expect(tag.addToDocumentsOnServer).to.have.been.calledWith(tags: '2')
 
-          it 'should untag a document, client-side', ->
+          it 'should untag the list, server-side', ->
             tag = new Tag(name: 'a tag')
-            @docs.at(0).tag(tag)
-            @docs.at(1).tag(tag)
-            @state.trigger('untag', tag, documents: String(@docs.at(0).id))
+            @sandbox.stub(tag, 'removeFromDocumentsOnServer')
+            @docs.at(0).tagLocal(tag)
+            @list.untag(tag)
             expect(@docs.at(0).hasTag(tag)).to.be.false
-            expect(@docs.at(1).hasTag(tag)).to.be.true
-
-          it 'should tag two documents with multi-digit IDs', ->
-            # JavaScript idiosyncracy: a simple for-loop over "123" will
-            # iterate over "1", "2" and "3".
-            tag = new Tag(name: 'a tag')
-            @docs.add([
-              { id: 123 }
-              { id: 234 }
-              { id: 345 }
-            ])
-            @state.trigger('tag', tag, documents: '123,345')
-            expect(@docs.get(123).hasTag(tag)).to.be.true
-            expect(@docs.get(234).hasTag(tag)).to.be.false
-            expect(@docs.get(345).hasTag(tag)).to.be.true
-
-          it 'should untag two documents with multi-digit IDs', ->
-            tag = new Tag(name: 'a tag')
-            @docs.add([
-              { id: 123 }
-              { id: 234 }
-              { id: 345 }
-            ])
-            @docs.get(123).tag(tag)
-            @docs.get(234).tag(tag)
-            @docs.get(345).tag(tag)
-            @state.trigger('untag', tag, documents: '123,345')
-            expect(@docs.get(123).hasTag(tag)).to.be.false
-            expect(@docs.get(234).hasTag(tag)).to.be.true
-            expect(@docs.get(345).hasTag(tag)).to.be.false
-
-          it 'should trigger nothing when tagging or untagging a single document', ->
-            tag = new Tag(name: 'a tag')
-            @list.on('all', spy = sinon.spy())
-            @state.trigger('tag', tag, documents: String(@docs.at(0).id))
-            @state.trigger('untag', tag, documents: String(@docs.at(0).id))
-            expect(spy).not.to.have.been.called
+            expect(tag.removeFromDocumentsOnServer).to.have.been.calledWith(tags: '2')
 
           describe 'on subsequent fetchNextPage()', ->
             beforeEach ->
@@ -189,6 +144,26 @@ define [
               req = @sandbox.server.requests[1]
               expect(req.method).to.eq('GET')
               expect(req.url).to.eq('/documentsets/1/documents?tags=2&limit=20&offset=20')
+
+            it 'should apply tags to the resulting documents', ->
+              tag = new Tag(name: 'a tag')
+              @list.tagLocal(tag)
+              @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
+                documents: [ { id: @list.nDocumentsPerPage + 1 } ]
+                total_items: @list.nDocumentsPerPage + 1
+              ))
+              @promise2.then =>
+                expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.true
+
+            it 'should unapply tags from the resulting documents', ->
+              tag = new Tag(id: 1, name: 'a tag')
+              @list.untagLocal(tag)
+              @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
+                documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
+                total_items: @list.nDocumentsPerPage + 1
+              ))
+              @promise2.then =>
+                expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.false
 
             describe 'on success', ->
               beforeEach ->

@@ -2,8 +2,9 @@ define [
   'underscore'
   'backbone'
   '../collections/Documents'
+  '../models/Document'
   'rsvp'
-], (_, Backbone, Documents, RSVP) ->
+], (_, Backbone, Documents, Document, RSVP) ->
   # A sorted list of Document objects on the server.
   #
   # A DocumentList is composed of:
@@ -38,6 +39,11 @@ define [
   #   documentList.stopListening() # when you're done with it
   #
   # A DocumentList starts empty. It only ever grows.
+  #
+  # Events:
+  #
+  #   list-tagged(documentList, tag)
+  #   list-untagged(documentList, tag)
   class DocumentList extends Backbone.Model
     defaults:
       length: null
@@ -47,38 +53,69 @@ define [
       error: null
 
     initialize: (attributes, options) ->
-      throw 'Must pass options.state, a State DELETEME' if !options.state?
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
       throw 'Must pass options.url, a String like /documentsets/1234/documents with no question mark' if !options.url?
 
-      @state = options.state
       @params = options.params
       @url = options.url
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
       @documents = new Documents([])
 
-      @listenTo(@state, 'tag', @_onTag)
-      @listenTo(@state, 'untag', @_onUntag)
+      @_nextPageTagOps = [] # Array of { op: '(tag|untag)', tag: Tag }
 
-    _onTag: (tag, params) ->
-      if _.isEqual(params, @params.toQueryParams())
-        @documents.tag(tag)
-      else if params.documents?
-        for documentId in (params.documents || '').split(',')
-          @documents.get(documentId)?.tag(tag)
+    # Tags all documents, without sending a server request.
+    #
+    # If a page is being requested, we presume the result might not contain
+    # the tag, even though it should. So we add the tag to the next page of
+    # results.
+    tagLocal: (tag) ->
+      for document in @documents.models
+        document.tagLocal(tag)
 
-    _onUntag: (tag, params) ->
-      if _.isEqual(params, @params.toQueryParams())
-        @documents.untag(tag)
-      else if params.documents?
-        for documentId in (params.documents || '').split(',')
-          @documents.get(documentId)?.untag(tag)
+      if @get('loading')
+        @_nextPageTagOps.push(op: 'tag', tag: tag)
 
+      @trigger('list-tagged', @, tag)
+
+    # Untags all documents, without sending a server request.
+    #
+    # If a page is being requested, we presume the result might contain the
+    # tag, even though it shouldn't. So we remove the tag from the next page of
+    # results.
+    untagLocal: (tag) ->
+      for document in @documents.models
+        document.untagLocal(tag)
+
+      if @get('loading')
+        @_nextPageTagOps.push(op: 'untag', tag: tag)
+
+      @trigger('list-untagged', @, tag)
+
+    # Tags all documents, on the server and locally.
+    #
+    # See `tagLocal()`.
+    tag: (tag) ->
+      @tagLocal(tag)
+      tag.addToDocumentsOnServer(@params.toQueryParams())
+
+    # Untags all documents, on the server and locally.
+    #
+    # See `untagLocal()`.
+    untag: (tag) ->
+      @untagLocal(tag)
+      tag.removeFromDocumentsOnServer(@params.toQueryParams())
+
+    # Returns true iff we have fetched every document in the list.
     isComplete: ->
       length = @get('length')
       ret = length? && @nDocumentsPerPage * @get('nPagesFetched') >= length
       ret
 
+    # Starts fetching another page of documents.
+    #
+    # Returns a Promise that resolves when the fetch is complete.
+    #
+    # Spurious calls are safe: they will return the same Promise.
     fetchNextPage: ->
       if @_fetchNextPagePromise?
         @_fetchNextPagePromise
@@ -97,7 +134,18 @@ define [
         @set(loading: true)
 
         onSuccess = (data) =>
-          @documents.add(data.documents, parse: true)
+          newDocuments = (new Document(document, parse: true) for document in data.documents)
+
+          if @_nextPageTagOps.length
+            for data in @_nextPageTagOps
+              # for each new doc: doc.tagLocal(tag) or doc.untagLocal(tag)
+              method = "#{data.op}Local"
+              tag = data.tag
+              document[method](tag) for document in newDocuments
+            @_nextPageTagOps = []
+
+          @documents.add(newDocuments)
+
           @set
             loading: false
             length: data.total_items

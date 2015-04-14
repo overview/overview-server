@@ -78,14 +78,16 @@ define [
       @_renderCursorIndex(@options.selection.get('cursorIndex'))
 
     _listenToModel: ->
-      @listenTo(@model, 'change:error', @render)
-      @listenTo(@model, 'change:loading', @_renderLoading)
-      @listenTo(@collection, 'reset', @render)
-      @listenTo(@collection, 'change', @_changeModel)
-      @listenTo(@collection, 'remove', @_removeModel)
-      @listenTo(@collection, 'add', @_addModel)
-      @listenTo(@collection, 'tag', @_renderAllTags)
-      @listenTo(@collection, 'untag', @_renderAllTags)
+      @listenTo @model,
+        'change:error': @render
+        'change:loading': @_renderLoading
+
+      @listenTo @collection,
+        'reset': @render
+        'change': @_renderModel
+        'document-tagged': @_renderModel
+        'document-untagged': @_renderModel
+        'add': @_addModel
 
     setModel: (model) ->
       @stopListening(@model) if @model?
@@ -129,14 +131,6 @@ define [
     _renderLoading: ->
       loading = @model.get('loading')
       @$el.toggleClass('loading', loading)
-
-    _renderAllTags: (tag) ->
-      # The tag has been added to or removed from lots of documents -- probably
-      # all of them have changed. But we don't want to reset the list, because
-      # that would break scrolling, cursor and selection. So we replace one at
-      # a time.
-      @_changeModel(model) for model in @collection.models
-      undefined
 
     # Returns the maximum index of a ul.documents>li that is presently visible.
     #
@@ -182,11 +176,7 @@ define [
         html = @_renderModelHtml(model)
         @_$els.ul.append(html)
 
-    _removeModel: (model) ->
-      $li = @$("li.document[data-cid=#{model.cid}]")
-      $li.remove()
-
-    _changeModel: (model) ->
+    _renderModel: (model) ->
       $li = @$("li.document[data-cid=#{model.cid}]")
 
       html = @_renderModelHtml(model)
@@ -203,11 +193,12 @@ define [
         for documentEl in $documents
           documentCid = documentEl.getAttribute('data-cid')
           document = @collection.get(documentCid)
-          @_changeModel(document)
+          @_renderModel(document)
       else
         $tags = @$(".tag[data-cid=#{tag.cid}]>div")
-        $tags.find('.name').text(tag.get('name'))
-        $tags.css('background-color', tag.get('color'))
+        $tags.attr
+          class: tag.getClass()
+          style: tag.getStyle()
 
     _renderSelectedIndices: (selectedIndices) ->
       @$('ul.documents>li.selected').removeClass('selected')
