@@ -10,4 +10,5 @@ object DocumentTypeDetector {
 
   trait DocumentType
   case object PdfDocument extends DocumentType
+  case object OfficeDocument extends DocumentType
 }
