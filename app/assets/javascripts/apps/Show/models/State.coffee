@@ -5,16 +5,6 @@ define [
   './DocumentList'
   './DocumentListParams'
 ], (Backbone, Tags, Views, DocumentList, DocumentListParams) ->
-
-  # Calls the given callback only after the model exists.
-  #
-  # This is synchronous if the model exists, async otherwise.
-  whenExists = (model, callback) ->
-    if !model.isNew()
-      callback()
-    else
-      model.once('sync', -> whenExists(model, callback))
-
   # Tracks global state.
   #
   # * Provides `documentSetId` and `transactionQueue`: constants.
@@ -77,6 +67,8 @@ define [
 
       @documentSetId = options.documentSetId
       @transactionQueue = options.transactionQueue
+      @tags = new Tags([], url: "/documentsets/#{@documentSetId}/tags")
+      @views = new Views([], url: "/documentsets/#{@documentSetId}/views")
 
     # Loads `tags`, `views` and `nDocuments` from the server.
     init: ->
@@ -84,8 +76,8 @@ define [
         debugInfo: 'State.init'
         url: "/documentsets/#{@documentSetId}.json"
         success: (json) =>
-          @tags = new Tags(json.tags, url: "/documentsets/#{@documentSetId}/tags")
-          @views = new Views(json.views, url: "/documentsets/#{@documentSetId}/views")
+          @tags.reset(json.tags)
+          @views.reset(json.views)
           @nDocuments = json.nDocuments
 
           view = @views.at(0)
@@ -204,25 +196,9 @@ define [
       reset()
 
     tag: (tag, queryParams) ->
-      call = =>
-        @transactionQueue.ajax
-          type: 'POST'
-          url: "/documentsets/#{@documentSetId}/tags/#{tag.id}/add"
-          data: queryParams
-          debugInfo: 'DocumentSet.tag'
-
-      whenExists(tag, call, @)
-
+      tag.addToDocumentsOnServer(queryParams)
       @trigger('tag', tag, queryParams)
 
     untag: (tag, queryParams) ->
-      call = =>
-        @transactionQueue.ajax
-          type: 'POST'
-          url: "/documentsets/#{@documentSetId}/tags/#{tag.id}/remove"
-          data: queryParams
-          debugInfo: 'DocumentSet.untag'
-
-      whenExists(tag, call, @)
-
+      tag.removeFromDocumentsOnServer(queryParams)
       @trigger('untag', tag, queryParams)

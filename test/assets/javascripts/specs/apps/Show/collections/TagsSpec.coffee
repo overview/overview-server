@@ -1,4 +1,4 @@
-define [ 'apps/Show/collections/Tags' ], (Tags) ->
+define [ 'underscore', 'apps/Show/collections/Tags' ], (_, Tags) ->
   describe 'apps/Show/collections/Tags', ->
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
@@ -17,3 +17,7 @@ define [ 'apps/Show/collections/Tags' ], (Tags) ->
       @subject.add({ name: 'tag2' })
       @subject.add({ name: 'tag1' })
       expect(@subject.pluck('name')).to.deep.eq([ 'tag1', 'tag2' ])
+
+    it 'should give each Tag the correct URL', ->
+      @subject.add(name: 'foo', id: 1)
+      expect(_.result(@subject.get(1), 'url')).to.eq('/documentsets/4/tags/1')
