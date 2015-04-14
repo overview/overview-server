@@ -44,7 +44,3 @@ define ->
     get: (s) ->
       i = string_to_colors_index(s)
       colors[i]
-
-    get_tag_color_class: (s) ->
-      i = string_to_colors_index(s)
-      "tag-color-#{i}"
