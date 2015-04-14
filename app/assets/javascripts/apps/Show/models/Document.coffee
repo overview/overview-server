@@ -57,34 +57,34 @@ define [
     #
     # This triggers `document-tagged` after adding the tag. If the tag was
     # already there, this is a no-op.
-    tagLocal: (tag) ->
+    tagLocal: (tag, options) ->
       return if @hasTag(tag)
 
       @tagCids[tag.cid] = true
-      @trigger('document-tagged', @, tag)
+      @trigger('document-tagged', @, tag, options)
 
     # Ensures this.hasTag(tag) == false.
     #
     # This triggers `document-untagged` after removing the tag. If the tag
     # wasn't there, this is a no-op.
-    untagLocal: (tag) ->
+    untagLocal: (tag, options) ->
       return if !@hasTag(tag)
 
       @tagCids[tag.cid] = false
-      @trigger('document-untagged', @, tag)
+      @trigger('document-untagged', @, tag, options)
 
     # Tags the document, locally and on the server.
     #
     # Triggers `document-tagged` if the tag is new.
-    tag: (tag) ->
+    tag: (tag, options) ->
       return if @hasTag(tag)
-      @tagLocal(tag)
+      @tagLocal(tag, options)
       tag.addToDocumentsOnServer(documents: String(@id))
 
     # Untags the document, locally and on the server.
     #
     # Triggers `document-untagged` if the tag was there before.
-    untag: (tag) ->
+    untag: (tag, options) ->
       return if !@hasTag(tag)
-      @untagLocal(tag)
+      @untagLocal(tag, options)
       tag.removeFromDocumentsOnServer(documents: String(@id))

@@ -92,6 +92,7 @@ define [
 
       @tags = options.tags
       @state = options.state
+      @documentList = null
       @keyboardController = options.keyboardController # optional
 
       if @keyboardController?
@@ -103,6 +104,8 @@ define [
       $(document).on('click.tag-this', @_clear)
 
       @render()
+
+      @listenTo(@state, 'change:documentList', @close)
 
     remove: ->
       @keyboardController?.unregister(@keyBindings)
@@ -127,6 +130,9 @@ define [
       @$el.removeClass('open')
       @ui.button.removeClass('active btn-primary')
 
+      @stopListening(@documentList)
+      @documentList = null
+
       @ui.main.empty()
       @ui.main.css(minWidth: 'auto')
 
@@ -135,6 +141,7 @@ define [
         ul: null
         create: null
         actions: null
+        tagStatuses: {}
 
     show: ->
       return if @$el.hasClass('open')
@@ -153,10 +160,15 @@ define [
 
       @ui.search.focus()
 
+      @documentList = @state.get('documentList')
+
       @_refreshUl()
 
       # Prevent reflow when autocompleting. +1 in case $.fn.width rounds down
       @ui.main.css(minWidth: @ui.main.width() + 1)
+
+      @listenTo(@documentList, 'tag-counts-changed', @_renderTagStatuses)
+      @_renderTagStatuses()
 
     _onInput: ->
       text = @ui.search.val().trim()
@@ -184,8 +196,40 @@ define [
       html = @templates.ulContents(t: t, tags: tags, newTagName: newTagName, highlight: search)
       @ui.ul.html(html)
 
+      @ui.tagStatuses = {}
+      for li in @ui.ul.children('li[data-cid]')
+        cid = li.getAttribute('data-cid')
+        @ui.tagStatuses[cid] = { li: li, status: 'unknown' }
+
+      @_renderTagStatuses()
+
       @_highlightedIndex = null
       @_nLis = @ui.ul.children().length
+
+    _renderTagStatuses: ->
+      for cid, __ of (@ui.tagStatuses || {})
+        @_renderTagStatus(@tags.get(cid))
+      undefined
+
+    _getTagStatus: (tag) ->
+      count = @documentList.getTagCount(tag)
+      total = @documentList.get('length')
+      if count.n == @documentList.get('length') # even null
+        'all'
+      else if count.n > 0
+        'some'
+      else if count.howSure == 'exact'
+        'none'
+      else
+        'unknown'
+
+    _renderTagStatus: (tag) ->
+      obj = @ui.tagStatuses[tag.cid]
+      oldStatus = obj.status
+      obj.status = @_getTagStatus(tag)
+
+      if obj.status != oldStatus
+        obj.li.className = obj.status
 
     # Marks one <li> as the active one. Affects Enter, Up, Down.
     _highlight: (index) ->
