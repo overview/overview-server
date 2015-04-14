@@ -67,22 +67,26 @@
         display: inline-block;
         box-sizing: border-box;
         outline: 1px solid @table-border-color;
+        font-weight: bold;
         height: 1em;
         width: 1em;
-        line-height: 1em;
+        line-height: 1;
         text-align: center;
         vertical-align: bottom;
         color: @text-color;
       }
     }
     &.all i.status::before { content: @fa-var-check; }
-    &.some i.status::before { content: @fa-var-minus; }
-    &.unknown i.status::before { .text-muted(); content: "?"; }
+    &.some i.status::before { content: "–"; }
     &.none i.status::before { content: "\00a0"; } // &nbsp;
+    &.unknown i.status::before {
+      .text-muted();
+      content: "⋯";
+    }
 
     &.create {
       // There's no icon on the create
-      padding-left: 2em;
+      padding-left: 2.25em;
     }
   }
 
