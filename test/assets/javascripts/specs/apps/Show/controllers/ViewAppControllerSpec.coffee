@@ -16,7 +16,7 @@ define [
 
       @state = new MockState
         highlightedDocumentListParams: 'highlightedDocumentListParams'
-        documentListParams: 'documentListParams'
+        documentList: { params: 'documentListParams' }
         document: 'document'
         view: @jobView
       @state.tags = @tags

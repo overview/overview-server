@@ -51,6 +51,7 @@ define [
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
           document: @state.attributes.document
+          documentListParams: @state.attributes.documentList?.params
           highlightedDocumentListParams: @state.attributes.highlightedDocumentListParams
           el: el
           state: @state
