@@ -5,8 +5,8 @@ import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.models.File
 
 
-object CreateDocumentFromPdfFile {
-  def apply(documentSetId: Long, documentIdSupplier: ActorRef) = new UploadedFileProcess {
+object CreateDocumentFromPdfFile extends UploadedFileProcessCreator {
+  def create(documentSetId: Long, documentIdSupplier: ActorRef) = new UploadedFileProcess {
     override protected val steps =
       DoCreatePdfFile(documentSetId).andThen(
         DoExtractTextFromPdf(documentSetId).andThen(
