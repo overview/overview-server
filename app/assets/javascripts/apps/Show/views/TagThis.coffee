@@ -123,10 +123,37 @@ define [
       else
         @show()
 
+    # Prevents pointer events from hitting iframes.
+    #
+    # This solves the problem:
+    #
+    # 1. User opens popup
+    # 2. User clicks on iframe behind the popup
+    # 3. Iframe eats the click event, so popup stays open
+    #
+    # It's better (still icky, but better) to make the click do nothing. That
+    # nullifies mousewheel events and on-hover stuff in the iframe, but at
+    # least it doesn't eat the click.
+    _muteIframes: ->
+      @_unmuteIframes()
+      @_iframesWithPointerEvents = for iframe in $('iframe')
+        $iframe = $(iframe)
+        value = $iframe.css('pointerEvents')
+        $iframe.css(pointerEvents: 'none')
+        [ $iframe, value ]
+      undefined
+
+    _unmuteIframes: ->
+      for [ $iframe, oldValue ] in (@_iframesWithPointerEvents || [])
+        $iframe.css(pointerEvents: oldValue)
+      @_iframesWithPointerEvents = []
+      undefined
+
     clear: ->
       return if !@$el.hasClass('open')
       @$el.removeClass('open')
       @ui.button.removeClass('active btn-primary')
+      @_unmuteIframes()
 
       @stopListening(@documentList)
       @documentList = null
@@ -145,6 +172,7 @@ define [
       return if @$el.hasClass('open')
       @$el.addClass('open')
       @ui.button.addClass('active btn-primary')
+      @_muteIframes()
 
       taggable = @state.getCurrentTaggable()
       nDocuments = if taggable?
