@@ -15,7 +15,7 @@ define [
     tag1.get('name').localeCompare(tag2.get('name'))
 
   Untagged =
-    getClass: -> 'tag untagged'
+    getClass: -> 'icon icon-tag'
     getStyle: -> ''
     get: -> t('untagged') # always just the name
 
@@ -36,16 +36,22 @@ define [
 
     templates:
       main: _.template('''
-        <div class="input-group">
-          <span class="input-group-addon"><i class="icon icon-tag"></i></span>
+        <div class="input-group input-group-sm">
+          <span class="input-group-addon">
+            <label
+              class="<%- tag ? tag.getClass() : 'icon icon-tag' %>"
+              style="<%- tag ? tag.getStyle() : '' %>"
+              for="tag-select-input"
+            ></label>
+          </span>
           <input
-            class="form-control <%- tag && tag.getClass() || '' %>"
-            style="<%- tag && tag.getStyle() || '' %>"
+            id="tag-select-input"
+            class="form-control"
             autocomplete="off"
             type="text"
             name="tag"
             placeholder="<%- t('placeholder') %>"
-            value="<%- tag && tag.get('name') || '' %>"
+            value="<%- tag ? tag.get('name') : '' %>"
           />
         </div>
         <div class="expanded">

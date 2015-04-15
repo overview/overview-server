@@ -18,7 +18,7 @@ define [
   class SearchView extends Backbone.View
     template: _.template("""
       <form method="post" action="#">
-        <div class="input-group">
+        <div class="input-group input-group-sm">
           <input
             class="form-control"
             type="text"
