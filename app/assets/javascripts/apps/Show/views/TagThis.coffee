@@ -43,7 +43,7 @@ define [
               <% if (highlight) { %>
                 <u><%- tag.get('name').substring(0, highlight.length) %></u
               ><% } %><%- tag.get('name').substring(highlight.length) %>
-            <span>
+            </span>
             <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
               <span class="name">&nbsp;</span>
             </span>
