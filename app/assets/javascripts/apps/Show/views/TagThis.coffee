@@ -309,3 +309,5 @@ define [
         else
           @state.getCurrentTaggable()?.tag(tag)
           $li.attr(class: 'active all')
+
+      @ui.search.focus().select()
