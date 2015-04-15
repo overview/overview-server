@@ -10,5 +10,49 @@
       text-shadow: 0 0 .1em @gray-dark;
       background-color: @complete-color;
     }
+
+    .input-group-btn .btn {
+      color: white;
+      text-shadow: 0 0 .1em @gray-dark;
+    }
+  }
+
+  &:not(.empty) {
+    .input-group-btn .btn {
+      color: @link-color;
+    }
+  }
+
+  // Undo Bootstrap; make the search button transparent
+  .input-group {
+    display: block; // not table
+  }
+
+  input.form-control {
+    border-top-right-radius: @input-border-radius;
+    border-bottom-right-radius: @input-border-radius;
+    padding-right: 2em;
+    display: block; // not table-cell
+    float: none; // not left
+  }
+
+  .input-group-btn {
+    display: block; // not table-cell
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto; // not 1%
+    z-index: 2;
+
+    .btn {
+      background: transparent;
+      border: none;
+      .text-muted();
+    }
+
+    i.icon {
+      position: relative;
+      top: -1px;
+    }
   }
 }
