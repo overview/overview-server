@@ -271,8 +271,8 @@ define [
 
     _onClickOrganize: (e) ->
       e.preventDefault()
-      @clear()
       @trigger('organize-clicked')
+      @clear()
 
     _onClickCreate: (e) ->
       e.preventDefault()
