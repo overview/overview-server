@@ -218,15 +218,20 @@ define [
       undefined
 
     _getTagStatus: (tag) ->
-      count = @documentList.getTagCount(tag)
-      total = @documentList.get('length')
-      if count.n == @documentList.get('length') # even null
-        # This is 'all', but it's less confusing if we say 'none' when count=0
-        count.n == 0 && 'none' || 'all'
-      else if count.n > 0 || count.howSure == 'atLeast'
-        'some'
-      else # exactly 0
-        'none'
+      taggable = @state.getCurrentTaggable()
+
+      if taggable.getTagCount? # it's a DocumentList
+        count = @documentList.getTagCount(tag)
+        total = @documentList.get('length')
+        if count.n == @documentList.get('length') # even null
+          # This is 'all', but it's less confusing if we say 'none' when count=0
+          count.n == 0 && 'none' || 'all'
+        else if count.n > 0 || count.howSure == 'atLeast'
+          'some'
+        else # exactly 0
+          'none'
+      else
+        taggable.hasTag(tag) && 'all' || 'none'
 
     _renderTagStatus: (tag) ->
       obj = @ui.tagStatuses[tag.cid]
