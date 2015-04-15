@@ -63,9 +63,7 @@ define [
           <% tags.forEach(function(tag) { %>
             <li>
               <a href="#" tabindex="-1" data-cid="<%- tag.cid %>">
-                <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
-                  <span class="name">&nbsp;</span>
-                </span>
+                <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>"></span>
                 <span class="name">
                   <% if (highlight) { %>
                     <u><%- tag.get('name').substring(0, highlight.length) %></u
