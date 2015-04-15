@@ -39,13 +39,11 @@ define [
         <% tags.forEach(function(tag) { %>
           <li data-cid="<%- tag.cid %>" class="unknown">
             <i class="status"></i>
+            <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>"></span>
             <span class="name">
               <% if (highlight) { %>
                 <u><%- tag.get('name').substring(0, highlight.length) %></u
               ><% } %><%- tag.get('name').substring(highlight.length) %>
-            </span>
-            <span class="<%- tag.getClass() %>" style="<%- tag.getStyle() %>">
-              <span class="name">&nbsp;</span>
             </span>
           </li>
         <% }); %>
@@ -225,12 +223,10 @@ define [
       if count.n == @documentList.get('length') # even null
         # This is 'all', but it's less confusing if we say 'none' when count=0
         count.n == 0 && 'none' || 'all'
-      else if count.n > 0
+      else if count.n > 0 || count.howSure == 'atLeast'
         'some'
-      else if count.howSure == 'exact'
+      else # exactly 0
         'none'
-      else
-        'unknown'
 
     _renderTagStatus: (tag) ->
       obj = @ui.tagStatuses[tag.cid]

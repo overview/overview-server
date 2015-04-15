@@ -10,6 +10,7 @@
     background: @body-bg;
     white-space: nowrap;
     border: 1px solid @btn-default-border;
+    box-shadow: 0 0 6px @input-border;
     min-width: 18em; // fit "Create tag 'foo bar'" widthout resizing when no tags exist
   }
 
@@ -61,28 +62,22 @@
 
     i.status {
       .fa-icon();
-      width: 1.5em; // icons vary in width
 
       &::before {
         display: inline-block;
-        box-sizing: border-box;
-        outline: 1px solid @table-border-color;
+        box-sizing: content-box;
+        border: 1px solid @table-border-color;
         font-weight: bold;
         height: 1em;
         width: 1em;
         line-height: 1;
         text-align: center;
-        vertical-align: bottom;
         color: @text-color;
       }
     }
     &.all i.status::before { content: @fa-var-check; }
     &.some i.status::before { content: "–"; }
     &.none i.status::before { content: "\00a0"; } // &nbsp;
-    &.unknown i.status::before {
-      .text-muted();
-      content: "⋯";
-    }
 
     &.create {
       // There's no icon on the create
@@ -90,8 +85,16 @@
     }
   }
 
-  .tag {
-    .tag();
+  span.tag {
+    display: inline-block;
+    box-sizing: content-box;
+    border: 1px solid @body-bg;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    position: relative;
+    top: .25em;
+    margin: 0 .25em;
   }
 
   a {
