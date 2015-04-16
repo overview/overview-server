@@ -2,12 +2,13 @@ package org.overviewproject.jobhandler.filegroup.task
 
 import java.io.InputStream
 import org.overviewproject.mime_types.MimeTypeDetector
+import java.io.BufferedInputStream
 
 trait DocumentTypeDetector {
-  protected val mimeTypeDetector: MimeTypeDetector
-  protected val mimeTypeToDocumentType: Map[String, DocumentTypeDetector.DocumentType]
 
   def detect(filename: String, stream: InputStream): DocumentTypeDetector.DocumentType = {
+    val bufferedInputStream = new BufferedInputStream(stream, maximumBytesRead)
+    
     val mimeType = mimeTypeDetector.detectMimeType(filename, stream)
 
     mimeTypeToDocumentType.get(mimeType)
@@ -16,7 +17,12 @@ trait DocumentTypeDetector {
 
   }
 
+  protected val mimeTypeDetector: MimeTypeDetector
+  protected val mimeTypeToDocumentType: Map[String, DocumentTypeDetector.DocumentType]
+  
+  
   private def parentType(mimeType: String): String = mimeType.replaceFirst("/.*$", "/*")
+  private def maximumBytesRead: Int = mimeTypeDetector.getMaxGetBytesLength
 }
 
 object DocumentTypeDetector extends DocumentTypeDetector {

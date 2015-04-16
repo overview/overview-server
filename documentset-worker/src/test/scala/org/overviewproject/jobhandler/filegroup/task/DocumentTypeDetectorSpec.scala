@@ -38,6 +38,7 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
       override protected val mimeTypeDetector = mockMimeTypeDetector
 
       mimeTypeDetector.detectMimeType(be(filename), any[InputStream]) returns mimeType
+      mimeTypeDetector.getMaxGetBytesLength returns 5
     }
   }
 
