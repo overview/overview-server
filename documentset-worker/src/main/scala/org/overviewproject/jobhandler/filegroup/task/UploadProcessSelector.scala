@@ -8,6 +8,8 @@ import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromP
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfPage
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentsFromConvertedFilePages
+import org.overviewproject.postgres.LargeObjectInputStream
+import org.overviewproject.database.SlickSessionProvider
 
 trait UploadProcessSelector {
   import DocumentTypeDetector._
@@ -33,4 +35,15 @@ trait UploadProcessSelector {
     }
   }
 
+}
+
+object UploadProcessSelector {
+  
+  def apply(): UploadProcessSelector = new UploadProcessSelectorImpl
+  
+  private class UploadProcessSelectorImpl extends UploadProcessSelector {
+    override protected val documentTypeDetector = DocumentTypeDetector
+    override protected def largeObjectInputStream(oid: Long) = 
+      new LargeObjectInputStream(oid, new SlickSessionProvider {})
+  } 
 }
