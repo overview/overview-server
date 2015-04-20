@@ -225,6 +225,9 @@ define [
       @trigger('click', view)
 
     _onClickPopover: (e) ->
+      e.stopPropagation()
+      e.preventDefault()
+
       $el = $(e.currentTarget)
       $li = $el.closest('li')
       $popover = $li.children('.popover')
@@ -259,8 +262,6 @@ define [
           .addClass('in')
 
         $arrow.css(left: arrowLeft)
-
-      e.stopPropagation()
 
     _onClickNewView: (e) ->
       e.preventDefault()
