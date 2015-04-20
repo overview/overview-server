@@ -1,8 +1,14 @@
 #tree-app-views {
+  li a span {
+    vertical-align: middle;
+  }
+
   .view-info-icon {
     cursor: pointer;
-    color: @text-color;
-    font-size: 1.1em;
+    color: @text-muted-light;
+    &:hover {
+      color: @link-color;
+    }
   }
 
   .close-top {
