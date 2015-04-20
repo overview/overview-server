@@ -122,19 +122,6 @@ define [
 
       ret
 
-    # Return JSON that describes all documents that will be affected by, say,
-    # tagging.
-    #
-    # You can use this JSON to build a query string. For instance, it might
-    # be `{ nodes: '2,3', tags: '1'}`.
-    getSelectionQueryParams: ->
-      if (documentId = @get('document')?.id)
-        documents: String(documentId)
-      else if (params = @get('documentList')?.params)?
-        params.toQueryParams()
-      else
-        documents: '-1' # avoid tagging the entire docset by mistake
-
     # _sets up_ a reset.
     #
     # Use it like this:

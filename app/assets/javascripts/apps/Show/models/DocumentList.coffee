@@ -16,6 +16,7 @@ define [
   # * the `length` _attribute_, a `Number` representing the number of documents
   #   on the server side. This attribute starts off `null` and changes when the
   #   server responds with some documents.
+  # * the `selectionId` _attribute_, null to begin with and then a UUID.
   #
   # Invoke it like this:
   #
@@ -47,11 +48,12 @@ define [
   #   someTag.documents-changed(tag) # documentList.getTagCount(tag) changed
   class DocumentList extends Backbone.Model
     defaults:
-      length: null
-      nPagesFetched: 0
-      loading: false
-      statusCode: null
       error: null
+      length: null
+      loading: false
+      nPagesFetched: 0
+      selectionId: null
+      statusCode: null
 
     initialize: (attributes, options) ->
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
@@ -68,6 +70,31 @@ define [
       @_nextPageTagOps = [] # Array of { op: '(tag|untag)', tag: Tag }
       @_tagCounts = {} # Object of Tag CID -> { n: Number, howSure: '(atLeast|exact)' }
       @_halfCountedTags = {} # Object of Tag CID -> Tag
+
+    # Returns the query-string parameters we're using to build this list.
+    #
+    # If you re-run a query with these parameters, consider adding another
+    # parameter: `"refresh":true`. (Without that parameter, Overview might use a
+    # cached document list to serve subsequent requests. if you wanted that
+    # behavior, you should use getSelectionQueryParams().
+    getQueryParams: -> @params.toQueryParams()
+
+    # Returns query-string parameters that tell the server about this exact
+    # list of documents.
+    #
+    # The server persists Selections for many minutes: long enough that users
+    # can paginate. If you're tagging, say, or counting things that relate to
+    # this document list, use getSelectionQueryParams(). See
+    # https://www.pivotaltracker.com/story/show/92354552 to see what can happen
+    # otherwise.
+    #
+    # Only call this method after the first page fetch is complete. Before, it
+    # will return `null`.
+    getSelectionQueryParams: ->
+      if @get('selectionId')
+        selectionId: @get('selectionId')
+      else
+        null
 
     # Tags all documents, without sending a server request.
     #
@@ -110,17 +137,35 @@ define [
 
     # Tags all documents, on the server and locally.
     #
+    # If no documents have loaded yet, this method will wait until the first
+    # page load. That's so we can use `getSelectionQueryParams()`.
+    #
     # See `tagLocal()`.
     tag: (tag) ->
+      params = @getSelectionQueryParams()
+
+      if !params?
+        return @fetchNextPage() # usually a no-op
+          .then(=> @tag(tag))
+
       @tagLocal(tag)
-      tag.addToDocumentsOnServer(@params.toQueryParams())
+      tag.addToDocumentsOnServer(params)
 
     # Untags all documents, on the server and locally.
     #
+    # If no documents have loaded yet, this method will wait until the first
+    # page load. That's so we can use `getSelectionQueryParams()`.
+    #
     # See `untagLocal()`.
     untag: (tag) ->
+      params = @getSelectionQueryParams()
+
+      if !params?
+        return @fetchNextPage() # usually a no-op
+          .then(=> @untag(tag))
+
       @untagLocal(tag)
-      tag.removeFromDocumentsOnServer(@params.toQueryParams())
+      tag.removeFromDocumentsOnServer(params)
 
     # Returns true iff we have fetched every document in the list.
     isComplete: ->
@@ -217,45 +262,60 @@ define [
         @_fetchNextPagePromise = @_doFetch()
           .then(=> @_fetchNextPagePromise = null) # returns null
 
+    _receivePage: (data) ->
+      newDocuments = (new Document(document, parse: true) for document in data.documents)
+
+      if @_nextPageTagOps.length
+        # Tag in-transit documents before adding them to the list. That way,
+        # the collection won't send spurious `document-tagged` and
+        # `document-untagged` events.
+        for op in @_nextPageTagOps
+          # for each new doc: doc.tagLocal(tag) or doc.untagLocal(tag)
+          method = "#{op.op}Local"
+          tag = op.tag
+          document[method](tag) for document in newDocuments
+        @_nextPageTagOps = []
+
+      @_addDocumentsToTagCounts(
+        newDocuments,
+        data.total_items,
+        @documents.length + newDocuments.length == @get('length')
+      )
+
+      @documents.add(newDocuments)
+
+      @set
+        loading: false
+        length: data.total_items
+        selectionId: data.selection_id
+        nPagesFetched: @get('nPagesFetched') + 1
+
+    _receiveError: (xhr) ->
+      message = xhr.responseJSON?.message || xhr.responseText
+      @set
+        loading: false
+        statusCode: xhr.status
+        error: message
+
     _doFetch: ->
       new RSVP.Promise (resolve, reject) =>
-        query = @params.toQueryParams()
+        query = if @get('length') == null
+          _.extend({ refresh: true }, @getQueryParams())
+        else
+          @getSelectionQueryParams()
+
         query.limit = @nDocumentsPerPage
         query.offset = @get('nPagesFetched') * @nDocumentsPerPage
 
         @set(loading: true)
 
         onSuccess = (data) =>
-          newDocuments = (new Document(document, parse: true) for document in data.documents)
-
-          if @_nextPageTagOps.length
-            # Tag in-transit documents before adding them to the list. That way,
-            # the collection won't send spurious `document-tagged` and
-            # `document-untagged` events.
-            for op in @_nextPageTagOps
-              # for each new doc: doc.tagLocal(tag) or doc.untagLocal(tag)
-              method = "#{op.op}Local"
-              tag = op.tag
-              document[method](tag) for document in newDocuments
-            @_nextPageTagOps = []
-
-          @_addDocumentsToTagCounts(newDocuments, data.total_items, @documents.length + newDocuments.length == @get('length'))
-
-          @documents.add(newDocuments)
-
-          @set
-            loading: false
-            length: data.total_items
-            nPagesFetched: @get('nPagesFetched') + 1
+          @_receivePage(data)
           resolve(null)
 
         onError = (xhr) =>
-          message = xhr.responseJSON?.message || xhr.responseText
-          @set
-            loading: false
-            statusCode: xhr.status
-            error: message
-          reject(message)
+          @_receiveError(xhr)
+          reject(@get('message'))
 
         Backbone.$.ajax
           type: 'get'

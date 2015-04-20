@@ -53,24 +53,6 @@ define [
         state.setDocumentListParams().byQ('search')
         expect(state.get('documentList')?.params?.params?.q).to.eq('search')
 
-    describe 'with documentList', ->
-      beforeEach ->
-        @state = new State({
-          document: null
-          documentList:
-            params:
-              params: { nodes: [ 1 ] }
-              toQueryParams: -> { nodes: '1' }
-        }, documentSetId: 'xxx', transactionQueue: 'xxx')
-
-      it 'should give document selection when document is set', ->
-        @state.set(document: { id: 10 })
-        expect(@state.getSelectionQueryParams()).to.deep.eq(documents: '10')
-
-      it 'should give doclist selection when document is null', ->
-        @state.set(document: null)
-        expect(@state.getSelectionQueryParams()).to.deep.eq(nodes: '1')
-
     describe 'init', ->
       beforeEach ->
         @transactionQueue =

@@ -177,7 +177,6 @@ define [
       taggable = @state.getCurrentTaggable()
       nDocuments = if taggable?
         if taggable.params? # a DocumentList
-          console.log(taggable.attributes)
           taggable.get('length') || 0
         else # a Document
           1

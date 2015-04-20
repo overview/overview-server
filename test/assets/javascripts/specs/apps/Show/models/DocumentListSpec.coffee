@@ -36,6 +36,13 @@ define [
     it 'should have nDocumentsPerPage=20', -> expect(@list.nDocumentsPerPage).to.eq(20)
     it 'should have nPagesFetched=0', -> expect(@list.get('nPagesFetched')).to.eq(0)
     it 'should have tagCount=0,atLeast', -> expect(@list.getTagCount(new Tag())).to.deep.eq(n: 0, howSure: 'atLeast')
+    it 'should have selectionId=null', -> expect(@list.get('selectionId')).to.be.null
+
+    it 'should have getQueryParams()=params.toQueryParams', ->
+      expect(@list.getQueryParams()).to.deep.eq(@list.params.toQueryParams())
+
+    it 'should have toSelectionQueryParams()=null', ->
+      expect(@list.getSelectionQueryParams()).to.be.null
 
     describe 'on first .fetchNextPage()', ->
       beforeEach ->
@@ -47,12 +54,13 @@ define [
       it 'should have loading=true', -> expect(@list.get('loading')).to.be.true
       it 'should have nPagesFetched=0', -> expect(@list.get('nPagesFetched')).to.eq(0)
       it 'should have isComplete=false', -> expect(@list.isComplete()).to.be.false
+      it 'should have selectionId=null', -> expect(@list.get('selectionId')).to.be.null
 
       it 'should request /documents', ->
         expect(@sandbox.server.requests.length).to.eq(1)
         req = @sandbox.server.requests[0]
         expect(req.method).to.eq('GET')
-        expect(req.url).to.eq('/documentsets/1/documents?tags=20&limit=20&offset=0')
+        expect(req.url).to.eq('/documentsets/1/documents?refresh=true&tags=20&limit=20&offset=0')
 
       it 'should return the same promise and not change anything when calling again', ->
         p1 = @list.fetchNextPage()
@@ -67,6 +75,7 @@ define [
         @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
           documents: ({ id: x } for x in [ 1 .. @list.nDocumentsPerPage ])
           total_items: @list.nDocumentsPerPage + 1
+          selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
         ))
         @promise1.then =>
           expect(@list.getTagCount(tag)).to.deep.eq(n: @list.nDocumentsPerPage + 1, howSure: 'exact')
@@ -86,6 +95,7 @@ define [
           @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
             documents: []
             total_items: 0
+            selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
           ))
           @promise1 # mocha-as-promised
 
@@ -102,6 +112,7 @@ define [
           @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
             documents: [ { id: 1, tagids: [ 5 ] }, { id: 2, tagids: [ 5 ] }, { id: 3 } ]
             total_items: 3
+            selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
           ))
           @promise1 # mocha-as-promised
 
@@ -128,6 +139,7 @@ define [
           @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
             documents: ({ id: x, tagids: [ 1+x%2 ] } for x in [ 1 .. @list.nDocumentsPerPage ])
             total_items: @list.nDocumentsPerPage + 1
+            selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
           ))
           @promise1 # mocha-as-promised
 
@@ -136,6 +148,13 @@ define [
         it 'should set length', -> expect(@list.get('length')).to.eq(@list.nDocumentsPerPage + 1)
         it 'should have isComplete=false', -> expect(@list.isComplete()).to.be.false
         it 'should have tagCount=0,atLeast', -> expect(@list.getTagCount(new Tag())).to.deep.eq(n: 0, howSure: 'atLeast')
+        it 'should have selectionId', -> expect(@list.get('selectionId')).to.eq('ea21b9a6-4f4b-42f9-a694-f177eba71ed7')
+
+        it 'should have getQueryParams()=params.toQueryParams', ->
+          expect(@list.getQueryParams()).to.deep.eq(@list.params.toQueryParams())
+
+        it 'should have toSelectionQueryParams()=[selectionId stuff]', ->
+          expect(@list.getSelectionQueryParams()).to.deep.eq(selectionId: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7')
 
         it 'should have tagCount=n,atLeast when computed from the server', ->
           tag = new Tag(id: 2)
@@ -164,7 +183,7 @@ define [
           @sandbox.stub(tag, 'addToDocumentsOnServer')
           @list.tag(tag)
           expect(@docs.at(0).hasTag(tag)).to.be.true
-          expect(tag.addToDocumentsOnServer).to.have.been.calledWith(tags: '20')
+          expect(tag.addToDocumentsOnServer).to.have.been.calledWith(selectionId: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7')
 
         it 'should untag the list, server-side', ->
           tag = new Tag(name: 'a tag')
@@ -172,7 +191,7 @@ define [
           @docs.at(0).tagLocal(tag)
           @list.untag(tag)
           expect(@docs.at(0).hasTag(tag)).to.be.false
-          expect(tag.removeFromDocumentsOnServer).to.have.been.calledWith(tags: '20')
+          expect(tag.removeFromDocumentsOnServer).to.have.been.calledWith(selectionId: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7')
 
         it 'should set tagCount=n,exact when tagging the list', ->
           tag = new Tag(name: 'a tag')
@@ -197,11 +216,11 @@ define [
           it 'should have nPagesFetched=1', -> expect(@list.get('nPagesFetched')).to.eq(1)
           it 'should have loading=true', -> expect(@list.get('loading')).to.be.true
 
-          it 'should send a new request', ->
+          it 'should send a new request with the selectionId', ->
             expect(@sandbox.server.requests.length).to.eq(2)
             req = @sandbox.server.requests[1]
             expect(req.method).to.eq('GET')
-            expect(req.url).to.eq('/documentsets/1/documents?tags=20&limit=20&offset=20')
+            expect(req.url).to.eq('/documentsets/1/documents?selectionId=ea21b9a6-4f4b-42f9-a694-f177eba71ed7&limit=20&offset=20')
 
           it 'should apply tags to the resulting documents', ->
             tag = new Tag(name: 'a tag')
@@ -209,6 +228,7 @@ define [
             @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
               documents: [ { id: @list.nDocumentsPerPage + 1 } ]
               total_items: @list.nDocumentsPerPage + 1
+              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
             ))
             @promise2.then =>
               expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.true
@@ -220,6 +240,7 @@ define [
             @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
               documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
               total_items: @list.nDocumentsPerPage + 1
+              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
             ))
             @promise2.then =>
               expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.false
@@ -232,6 +253,7 @@ define [
             @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
               documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
               total_items: @list.nDocumentsPerPage + 1
+              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
             ))
             @promise2.then =>
               expect(@list.getTagCount(tag)).to.deep.eq(n: (@list.nDocumentsPerPage>>1) + 1, howSure: 'exact')
@@ -241,6 +263,7 @@ define [
               @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
                 documents: [ { id: @list.nDocumentsPerPage + 1 } ]
                 total_items: @list.nDocumentsPerPage + 1
+                selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
               ))
               @promise2
 
