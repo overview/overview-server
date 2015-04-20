@@ -271,7 +271,7 @@ The Document resource has the following attributes:
 
     [Document][]
 
-## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&tags={tags}&tagged={tagged}&objects={objects}&fields={fields}&offset={offset}&limit={limit}&stream={stream}]
+## Documents Collection [/document-sets/{documentSetId}/documents?q={q}&tags={tags}&tagged={tagged}&objects={objects}&selectionId={selectionId}&refresh={refresh}&fields={fields}&offset={offset}&limit={limit}&stream={stream}]
 <a name="documents-collection"></a>Collection of Documents.
 
 Document collections can be rather large, so the `text` column doesn't appear in lists by default.
@@ -287,6 +287,8 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
     + tags (optional, string, `123,234,345`) ... A comma-separated list of Tag IDs. Return documents matching any tag in the list.
     + tagged (optional, boolean, `true`) ... If set, return all documents that have at least one tag (`true`) or that have zero tags (`false`).
     + objects (optional, string, `456,567,678`) ... A comma-separated list of StoreObject IDs. Return documents matching any StoreObject in the list.
+    + selectionId (optional, string, `f121bfdf-2afa-4a54-9e83-ed94047cf093`) ... A UUID returned from a previous request. This is key for pagination. On first request, the server compiles a long list of documents and only returns the first few. `selectionId` ensures you're using the same server-side list.
+    + refresh (optional, boolean, `false`) ... Tell the server to skip its cache. Normally, when you request a page of documents, the server computes a long list of all matching documents, even if it only returns a few. For subsequent requests with the same parameters (but different page numbers), the server normally reuses the cached list. If your query relies on tags that have recently been added to and removed from documents, the cached list might not be the list you expect; set `refresh=true` to make sure it's current. If `selectionId` is set, `refresh` is ignored.
     + fields (optional, string, `id`) ... Defaults to `id,keywords,pageNumber,suppliedId,title,url`. You may include `text` to include the document body, but that will limit page size. If you specify `id` on its own, return just a simple Array of Document IDs (without paginating) instead of an Array of Document JSON objects.
     + offset (optional, number, `0`) ... We're paginating; skip this many documents in the result list.
     + limit (optional, number, `1000`) ... We're paginating; return at most this many documents.
@@ -295,6 +297,7 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
 + Model (application/json)
 
         {
+            "selectionId": "f121bfdf-2afa-4a54-9e83-ed94047cf093",
             "pagination": {
                 "offset": 0,
                 "limit": 1000,
