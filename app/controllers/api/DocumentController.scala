@@ -1,8 +1,9 @@
 package controllers.api
 
+import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsArray,JsNumber}
-import play.api.mvc.RequestHeader
+import play.api.mvc.{RequestHeader,Result}
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
@@ -12,66 +13,58 @@ import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.PageRequest
 import models.{Selection,SelectionRequest}
 
-trait DocumentController extends ApiController {
+trait DocumentController extends ApiController with ApiSelectionHelpers {
   protected val documentBackend: DocumentBackend
-  protected val selectionBackend: SelectionBackend
 
-  private def _indexDocuments(userEmail: String, selectionRequest: SelectionRequest, pageRequest: PageRequest, fields: Set[String]) = {
-    val selectionFuture: Future[Selection] = pageRequest.offset match {
-      case 0 => selectionBackend.create(userEmail, selectionRequest)
-      case _ => selectionBackend.findOrCreate(userEmail, selectionRequest)
-    }
-
-    for {
-      selection <- selectionFuture
-      documents <- documentBackend.index(selection, pageRequest, fields.contains("text"))
-    } yield Ok(views.json.api.DocumentHeader.index(documents, fields))
+  private def _indexDocuments(selection: Selection, pageRequest: PageRequest, fields: Set[String]): Future[Result] = {
+    for { documents <- documentBackend.index(selection, pageRequest, fields.contains("text")) }
+    yield Ok(views.json.api.DocumentHeader.index(documents, fields))
   }
 
-  private def _streamDocuments(userEmail: String, selectionRequest: SelectionRequest, pageRequest: PageRequest, fields: Set[String]) = {
-    for {
-      selection <- selectionBackend.create(userEmail, selectionRequest)
-      documentCount <- selection.getDocumentCount
-    } yield {
-      import play.api.libs.iteratee._
+  private def _streamDocumentsInner(selection: Selection, pageRequest: PageRequest, fields: Set[String], documentCount: Int): Result = {
+    import play.api.libs.iteratee._
 
-      val start = pageRequest.offset
-      val end = scala.math.min(start + pageRequest.limit, documentCount)
-      val batchSize = DocumentController.StreamingPageLimit
+    val start = pageRequest.offset
+    val end = scala.math.min(start + pageRequest.limit, documentCount)
+    val batchSize = DocumentController.StreamingPageLimit
 
-      def fetchPage(pageStart: Int): Future[String] = {
-        import play.api.libs.iteratee.Execution.defaultExecutionContext
-        documentBackend.index(selection, PageRequest(pageStart, batchSize), fields.contains("text"))
-          .map { (documents) =>
-            val initialComma = if (pageStart != start && documents.items.nonEmpty) "," else ""
-            val jsObjects = documents.items.map { (document) =>
-              views.json.api.DocumentHeader.show(document, fields)
-            }
-            s"${initialComma}${jsObjects.map(_.toString).mkString(",")}"
+    def fetchPage(pageStart: Int): Future[String] = {
+      import play.api.libs.iteratee.Execution.defaultExecutionContext
+      documentBackend.index(selection, PageRequest(pageStart, batchSize), fields.contains("text"))
+        .map { (documents) =>
+          val initialComma = if (pageStart != start && documents.items.nonEmpty) "," else ""
+          val jsObjects = documents.items.map { (document) =>
+            views.json.api.DocumentHeader.show(document, fields)
           }
-      }
-
-      val jsObjectChunks = Enumerator.unfoldM[Int,String](start) { (pageStart) =>
-        if (pageStart < end) {
-          fetchPage(pageStart).map(Some(pageStart + batchSize, _))
-        } else {
-          Future.successful(None)
+          s"${initialComma}${jsObjects.map(_.toString).mkString(",")}"
         }
-      }
-
-      val content = Enumerator(s"""{"pagination":{"offset":${pageRequest.offset},"limit":${pageRequest.limit},"total":${documentCount}},"items":[""")
-        .andThen(jsObjectChunks)
-        .andThen(Enumerator("]}"))
-
-      Ok.chunked(content)
-        .as("application/json")
     }
+
+    val jsObjectChunks = Enumerator.unfoldM[Int,String](start) { (pageStart) =>
+      if (pageStart < end) {
+        fetchPage(pageStart).map(Some(pageStart + batchSize, _))
+      } else {
+        Future.successful(None)
+      }
+    }
+
+    val content = Enumerator(s"""{"pagination":{"offset":${pageRequest.offset},"limit":${pageRequest.limit},"total":${documentCount}},"items":[""")
+      .andThen(jsObjectChunks)
+      .andThen(Enumerator("]}"))
+
+    Ok.chunked(content)
+      .as("application/json")
   }
 
-  private def _indexIds(selectionRequest: SelectionRequest) = {
-    documentBackend.indexIds(selectionRequest).map { ids =>
-      Ok(JsArray(ids.map(JsNumber(_))))
-    }
+  private def _streamDocuments(selection: Selection, pageRequest: PageRequest, fields: Set[String]): Future[Result] = {
+    for {
+      documentCount <- selection.getDocumentCount
+    } yield _streamDocumentsInner(selection, pageRequest, fields, documentCount)
+  }
+
+  private def _indexIds(selection: Selection): Future[Result] = {
+    for { ids <- selection.getAllDocumentIds }
+    yield Ok(JsArray(ids.map(JsNumber(_))))
   }
 
   private def parseFields(fields: String): Set[String] = {
@@ -82,31 +75,33 @@ trait DocumentController extends ApiController {
   }
 
   def index(documentSetId: Long, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
-    val sr = selectionRequest(documentSetId, request)
-    val fieldSet = parseFields(fields)
+    requestToSelection(documentSetId, request).flatMap(_ match {
+      case Left(result) => Future.successful(result)
+      case Right(selection) => {
+        val fieldSet = parseFields(fields)
 
-    val responseFuture = if (fieldSet.size == 1) {
-      _indexIds(sr)
-    } else {
-      val streaming = request.queryString.get("stream").flatMap(_.headOption) == Some("true")
+        if (fieldSet.size == 1) {
+          _indexIds(selection)
+        } else {
+          val streaming = RequestData(request).getBoolean("stream").getOrElse(false)
 
-      val pageLimit = if (streaming) {
-        Int.MaxValue
-      } else if (fieldSet.contains("text")) {
-        DocumentController.MaxTextPageLimit
-      } else {
-        DocumentController.MaxPageLimit
+          val pageLimit = if (streaming) {
+            Int.MaxValue
+          } else if (fieldSet.contains("text")) {
+            DocumentController.MaxTextPageLimit
+          } else {
+            DocumentController.MaxPageLimit
+          }
+          val pr = pageRequest(request, pageLimit)
+
+          if (streaming) {
+            _streamDocuments(selection, pr, fieldSet)
+          } else {
+            _indexDocuments(selection, pr, fieldSet)
+          }
+        }
       }
-      val pr = pageRequest(request, pageLimit)
-
-      if (streaming) {
-        _streamDocuments(request.apiToken.createdBy, sr, pr, fieldSet)
-      } else {
-        _indexDocuments(request.apiToken.createdBy, sr, pr, fieldSet)
-      }
-    }
-
-    responseFuture.recover { case spf: SearchParseFailed => BadRequest(jsonError(spf.getMessage)) }
+    })
   }
 
   def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
@@ -119,7 +114,6 @@ trait DocumentController extends ApiController {
 
 object DocumentController extends DocumentController {
   override protected val documentBackend = DocumentBackend
-  override protected val selectionBackend = SelectionBackend
 
   private val MaxPageLimit = 1000
   private val MaxTextPageLimit = 20

@@ -3,48 +3,41 @@ package controllers.api
 import play.api.libs.json.{JsNull,JsObject,JsValue,Json}
 import scala.concurrent.Future
 
+import controllers.auth.ApiAuthorizedRequest
+import controllers.backend.{StoreBackend,DocumentStoreObjectBackend}
 import models.{Selection,SelectionRequest}
-import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
-import org.overviewproject.models.{DocumentStoreObject,Store}
+import org.overviewproject.models.{Store,DocumentStoreObject}
 
 class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
+    val selection = smartMock[Selection]
     val mockStoreBackend = smartMock[StoreBackend]
     val mockObjectBackend = smartMock[DocumentStoreObjectBackend]
-    val mockSelectionBackend = smartMock[SelectionBackend]
     val controller = new DocumentStoreObjectController {
       override val storeBackend = mockStoreBackend
       override val documentStoreObjectBackend = mockObjectBackend
-      override val selectionBackend = mockSelectionBackend
+      override def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]) = Future.successful(Right(selection))
     }
   }
 
   "DocumentStoreObjectController" should {
     "#countByObject" should {
       trait CountByObjectScope extends BaseScope {
-        val mockSelection = mock[Selection]
         mockStoreBackend.showOrCreate(any[String]) returns Future.successful(Store(123L, "foobar", Json.obj()))
-        mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
 
         override lazy val request = fakeRequest("GET", "")
         override def action = controller.countByObject()
       }
 
       "return all counts as a JsObject" in new CountByObjectScope {
-        mockObjectBackend.countByObject(123L, mockSelection) returns Future.successful(Map(1L -> 2, 3L -> 4))
+        mockObjectBackend.countByObject(any, any) returns Future.successful(Map(1L -> 2, 3L -> 4))
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
+        there was one(mockObjectBackend).countByObject(123L, selection)
 
         val json = contentAsString(result)
         json must /("1" -> 2)
         json must /("3" -> 4)
-      }
-
-      "grab selectionRequest from the HTTP request" in new CountByObjectScope {
-        override lazy val request = fakeRequest("GET", "/?q=foo")
-        mockObjectBackend.countByObject(123L, mockSelection) returns Future.successful(Map(1L -> 2, 3L -> 4))
-        status(result)
-        there was one(mockSelectionBackend).findOrCreate(request.apiToken.createdBy, SelectionRequest(apiToken.documentSetId.get, q="foo"))
       }
     }
 

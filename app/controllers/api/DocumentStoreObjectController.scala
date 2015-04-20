@@ -6,13 +6,12 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.anyUser
-import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
+import controllers.backend.{StoreBackend,DocumentStoreObjectBackend}
 import org.overviewproject.models.DocumentStoreObject
 
-trait DocumentStoreObjectController extends ApiController {
+trait DocumentStoreObjectController extends ApiController with ApiSelectionHelpers {
   protected val storeBackend: StoreBackend
   protected val documentStoreObjectBackend: DocumentStoreObjectBackend
-  protected val selectionBackend: SelectionBackend
 
   def createMany = ApiAuthorizedAction(anyUser).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsNull)
@@ -55,22 +54,21 @@ trait DocumentStoreObjectController extends ApiController {
     }
 
     // FIXME untyped .get. Change the URL.
-    val sr = selectionRequest(request.apiToken.documentSetId.get, request)
+    val documentSetId: Long = request.apiToken.documentSetId.get
 
-    for {
-      store <- storeBackend.showOrCreate(request.apiToken.token)
-      selection <- selectionBackend.findOrCreate(request.apiToken.createdBy, sr)
-      counts <- documentStoreObjectBackend.countByObject(store.id, selection)
-    } yield Ok(formatCounts(counts))
-
+    requestToSelection(documentSetId, request).flatMap(_ match {
+      case Left(result) => Future.successful(result)
+      case Right(selection) => for {
+        store <- storeBackend.showOrCreate(request.apiToken.token)
+        counts <- documentStoreObjectBackend.countByObject(store.id, selection)
+      } yield Ok(formatCounts(counts))
+    })
   }
-
 }
 
 object DocumentStoreObjectController extends DocumentStoreObjectController {
   override protected val storeBackend = StoreBackend
   override protected val documentStoreObjectBackend = DocumentStoreObjectBackend
-  override protected val selectionBackend = SelectionBackend
 
   private val nullReads: Reads[Option[JsObject]] = new Reads[Option[JsObject]] {
     override def reads(json: JsValue) = JsSuccess(None)

@@ -6,13 +6,11 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
-import controllers.backend.{DocumentNodeBackend,SelectionBackend}
+import controllers.backend.DocumentNodeBackend
 import controllers.backend.exceptions.SearchParseFailed
-import models.IdList
 
-trait DocumentNodeController extends Controller {
+trait DocumentNodeController extends Controller with SelectionHelpers {
   protected val documentNodeBackend: DocumentNodeBackend
-  protected val selectionBackend: SelectionBackend
 
   def countByNode(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { request =>
     def formatCounts(counts: Map[Long,Int]): JsValue = {
@@ -21,33 +19,19 @@ trait DocumentNodeController extends Controller {
       JsObject(values)
     }
 
-    val nodeIds: Option[Seq[Long]] = for {
-      postData <- request.body.asFormUrlEncoded
-      nodeIdsSeq <- postData.get("countNodes")
-      nodeIdsString <- nodeIdsSeq.headOption
-    } yield IdList.longs(nodeIdsString).ids
+    val nodeIds = RequestData(request).getLongs("countNodes")
 
-    val forceRefresh: Option[Boolean] = for {
-      postData <- request.body.asFormUrlEncoded
-      refreshStringSeq <- postData.get("refresh")
-      refreshString <- refreshStringSeq.headOption
-    } yield refreshString == "true"
-
-    val sr = selectionRequest(documentSetId, request)
-
-    val selectionFuture = forceRefresh match {
-      case Some(true) => selectionBackend.create(request.user.email, sr)
-      case _ => selectionBackend.findOrCreate(request.user.email, sr)
-    }
-
-    selectionFuture
-      .flatMap(selection => documentNodeBackend.countByNode(selection, nodeIds.getOrElse(Seq())))
-      .recover { case e: SearchParseFailed => Map[Long,Int]() }
-      .map(counts => Ok(formatCounts(counts)))
+    requestToSelection(documentSetId, request).flatMap(_ match {
+      case Left(result) => Future.successful(result)
+      case Right(selection) => {
+        documentNodeBackend.countByNode(selection, nodeIds)
+          .recover { case e: SearchParseFailed => Map[Long,Int]() }
+          .map(counts => Ok(formatCounts(counts)))
+      }
+    })
   }
 }
 
 object DocumentNodeController extends DocumentNodeController {
   override protected val documentNodeBackend = DocumentNodeBackend
-  override protected val selectionBackend = SelectionBackend
 }

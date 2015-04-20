@@ -7,17 +7,16 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{SelectionBackend,TagBackend,TagDocumentBackend}
+import controllers.backend.{SelectionBackend,TagBackend}
 import controllers.forms.TagForm
 import models.orm.finders.TagFinder
 import org.overviewproject.tree.orm.{Tag=>DeprecatedTag}
 import org.overviewproject.models.Tag
 
 trait TagController extends Controller {
-  protected val selectionBackend: SelectionBackend
   protected val storage: TagController.Storage
   protected val tagBackend: TagBackend
-  protected val tagDocumentBackend: TagDocumentBackend
+  private val selectionIdKey = "selectionId"
 
   def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     TagForm.forCreate.bindFromRequest.fold(
@@ -59,32 +58,6 @@ trait TagController extends Controller {
       )
   }
 
-  def add(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
-    tagBackend.show(documentSetId, tagId).flatMap(_ match {
-      case None => Future.successful(NotFound)
-      case Some(tag) => {
-        val sr = selectionRequest(documentSetId, request)
-        selectionBackend.findOrCreate(request.user.email, sr)
-          .flatMap(_.getAllDocumentIds)
-          .flatMap { (ids) => tagDocumentBackend.createMany(tagId, ids) }
-          .map(Unit => Created)
-      }
-    })
-  }
-
-  def remove(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
-    tagBackend.show(documentSetId, tagId).flatMap(_ match {
-      case None => Future.successful(NotFound)
-      case Some(tag) => {
-        val sr = selectionRequest(documentSetId, request)
-        selectionBackend.findOrCreate(request.user.email, sr)
-          .flatMap(_.getAllDocumentIds)
-          .flatMap { (ids) => tagDocumentBackend.destroyMany(tagId, ids) }
-          .map(Unit => NoContent)
-      }
-    })
-  }
-
   def destroy(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     tagBackend.destroy(documentSetId, tagId)
       .map(_ => NoContent)
@@ -104,9 +77,7 @@ trait TagController extends Controller {
 }
 
 object TagController extends TagController {
-  override protected val selectionBackend = SelectionBackend
   override protected val tagBackend = TagBackend
-  override protected val tagDocumentBackend = TagDocumentBackend
 
   trait Storage {
     /** @return (Tag, docset-count) pairs.  */

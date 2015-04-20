@@ -1,22 +1,25 @@
 package controllers.api
 
 import play.api.libs.json.Json
+import play.api.mvc.Result
 import play.api.test.WithApplication
 import scala.concurrent.Future
 
+import controllers.auth.ApiAuthorizedRequest
 import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
-import models.{InMemorySelection,SelectionRequest}
+import models.{InMemorySelection,Selection}
 import org.overviewproject.models.DocumentHeader
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    val mockSelectionBackend = mock[SelectionBackend]
+    val selection = InMemorySelection(Seq()) // override for a different Selection
+    def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
     val mockDocumentBackend = mock[DocumentBackend]
     val controller = new DocumentController {
       override val documentBackend = mockDocumentBackend
-      override val selectionBackend = mockSelectionBackend
+      override def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]) = buildSelection
     }
   }
 
@@ -32,10 +35,6 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         override lazy val request = fakeRequest("GET", "?q=" + q)
         override def action = controller.index(documentSetId, fields)
 
-        val selection = InMemorySelection(Seq[Long]())
-
-        mockSelectionBackend.create(any, any) returns Future.successful(selection)
-        mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
         mockDocumentBackend.index(any, any, any) returns Future.successful(emptyPage[DocumentHeader])
       }
 
@@ -44,35 +43,8 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         contentType(result) must beSome("application/json")
       }
 
-      "return 400 Bad Request on SearchParseFailed when streaming" in new IndexScope {
-        val failure = new SearchParseFailed("some error message", new RuntimeException("test"))
-        mockSelectionBackend.findOrCreate(any, any) returns Future.failed(failure)
-        mockSelectionBackend.create(any, any) returns Future.failed(failure)
-        override lazy val request = fakeRequest("GET", "/?stream=true")
-
-        status(result) must beEqualTo(BAD_REQUEST)
-        contentType(result) must beSome("application/json")
-        contentAsString(result) must beEqualTo("""{"message":"some error message"}""")
-      }
-
-      "return 400 Bad Request on SearchParseFailed" in new IndexScope {
-        val failure = new SearchParseFailed("some error message", new RuntimeException("test"))
-        mockSelectionBackend.findOrCreate(any, any) returns Future.failed(failure)
-        mockSelectionBackend.create(any, any) returns Future.failed(failure)
-
-        status(result) must beEqualTo(BAD_REQUEST)
-        contentType(result) must beSome("application/json")
-        contentAsString(result) must beEqualTo("""{"message":"some error message"}""")
-      }
-
       "return an empty Array when there are no Documents" in new IndexScope {
         contentAsString(result) must /("pagination") /("total" -> 0)
-      }
-
-      "grab selectionRequest from the HTTP request" in new IndexScope {
-        override val q = "foo"
-        status(result)
-        there was one(mockSelectionBackend).create(request.apiToken.createdBy, SelectionRequest(documentSetId, q="foo"))
       }
 
       "grab pageRequest from the HTTP request" in new IndexScope {
@@ -96,7 +68,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
       "return an Array of IDs when fields=id" in new IndexScope {
         override val fields = "id"
-        mockDocumentBackend.indexIds(any) returns Future(Seq(1L, 2L, 3L))
+        override val selection = InMemorySelection(Seq(1L, 2L, 3L))
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
         contentAsString(result) must beEqualTo("[1,2,3]")
@@ -115,8 +87,6 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         )
         override val selection = InMemorySelection(documents.map(_.id))
-        mockSelectionBackend.create(any, any) returns Future.successful(selection)
-        mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
         mockDocumentBackend.index(any, any, any) returns Future.successful(
           Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )

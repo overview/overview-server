@@ -1,5 +1,6 @@
 package controllers
 
+import java.util.UUID
 import play.api.mvc.{AnyContent,Controller => PlayController,Request,RequestHeader}
 import scala.util.control.Exception.catching
 
@@ -55,6 +56,42 @@ trait Controller extends PlayController {
     request.queryString ++ postData
   }
 
+  protected case class RequestData(request: Request[_]) {
+    val data = requestData(request)
+
+    /** Returns Some("foo") if query param key="foo"; returns Some("") if the
+      * key is set but empty; returns None otherwise.
+      */
+    def getString(key: String): Option[String] = {
+      data.get(key).flatMap(_.headOption)
+    }
+
+    /** Returns true if query param key="true"; returns false if the key is set
+      * to anything else; returns None otherwise.
+      */
+    def getBoolean(key: String): Option[Boolean] = {
+      data.get(key)
+        .flatMap(_.headOption)
+        .map(_ == "true")
+    }
+
+    /** Returns a UUID if query param key=[valid UUID]; returns None otherwise.
+      */
+    def getUUID(key: String): Option[UUID] = {
+      data.get(key)
+        .flatMap(_.headOption)
+        .flatMap((s) => catching(classOf[IllegalArgumentException]).opt(UUID.fromString(s)))
+    }
+
+    /** Returns a Seq[Long] if key is set to something like "1,2,3"; returns
+      * an empty Seq otherwise.
+      */
+    def getLongs(key: String): Seq[Long] = {
+      val s = data.get(key).flatMap(_.headOption).getOrElse("")
+      IdList.longs(s).ids
+    }
+  }
+
   protected def pageRequest(request: RequestHeader, maxLimit: Int) = {
     val requestOffset = queryStringParamToUnsignedInt(request, "offset")
     val requestLimit = queryStringParamToUnsignedInt(request, "limit")
@@ -64,51 +101,5 @@ trait Controller extends PlayController {
     PageRequest(offset, limit)
   }
 
-  protected def selectionRequest(documentSetId: Long, request: Request[_]) = {
-    val reqData = requestData(request)
-
-    def requestString(key: String): String = {
-      reqData
-        .getOrElse(key, Seq())
-        .headOption
-        .getOrElse("")
-    }
-
-    def requestIds(key: String): Seq[Long] = {
-      IdList.longs(requestString(key)).ids
-    }
-
-    val nodeIds = requestIds("nodes")
-    val tagIds = requestIds("tags")
-    val documentIds = requestIds("documents")
-    val storeObjectIds = requestIds("objects")
-    val q = requestString("q")
-
-    val deprecatedTagged = tagIds.indexOf(Controller.MagicTagIdThatMeansUntagged) match {
-      case -1 => None
-      case _ => Some(false)
-    }
-    val newTagged = requestString("tagged") match {
-      case "true" => Some(true)
-      case "false" => Some(false)
-      case _ => None
-    }
-    val tagged = (newTagged ++ deprecatedTagged).headOption
-
-    SelectionRequest(
-      documentSetId,
-      nodeIds,
-      tagIds.filter(_ != Controller.MagicTagIdThatMeansUntagged),
-      documentIds,
-      storeObjectIds,
-      tagged,
-      q
-    )
-  }
-
   protected def jsonError(message: String) = views.json.api.error(message)
-}
-
-object Controller {
-  private val MagicTagIdThatMeansUntagged = 0L
 }

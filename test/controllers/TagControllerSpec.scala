@@ -5,21 +5,17 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
 import scala.concurrent.Future
 
-import controllers.backend.{SelectionBackend,TagBackend,TagDocumentBackend}
+import controllers.backend.TagBackend
 import org.overviewproject.models.Tag
 import org.overviewproject.test.factories.PodoFactory
 
 class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   class BaseScope extends Scope {
     val mockStorage = mock[TagController.Storage]
-    val mockSelectionBackend = mock[SelectionBackend]
     val mockTagBackend = mock[TagBackend]
-    val mockTagDocumentBackend = mock[TagDocumentBackend]
     val controller = new TagController {
       override val storage = mockStorage
-      override val selectionBackend = mockSelectionBackend
       override val tagBackend = mockTagBackend
-      override val tagDocumentBackend = mockTagDocumentBackend
     }
 
     val factory = PodoFactory

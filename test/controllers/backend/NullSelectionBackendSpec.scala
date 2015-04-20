@@ -15,13 +15,14 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
       override def findDocumentIds(request: SelectionRequest) = finder(request)
     }
     finder.apply(any[SelectionRequest]) returns Future(resultIds)
+
+    val userEmail: String = "user@example.org"
+    val documentSetId: Long = 1L
   }
 
   "NullSelectionBackend" should {
     "#create" should {
       trait CreateScope extends BaseScope {
-        val userEmail: String = "user@example.org"
-        val documentSetId: Long = 1L
         val nodeIds: Seq[Long] = Seq()
         val tagIds: Seq[Long] = Seq()
         val documentIds: Seq[Long] = Seq()

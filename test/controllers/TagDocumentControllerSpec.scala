@@ -2,18 +2,21 @@ package controllers
 
 import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
+import play.api.mvc.Result
 import scala.concurrent.Future
 
-import controllers.backend.{SelectionBackend,TagDocumentBackend}
-import models.{Selection,SelectionRequest}
+import controllers.auth.AuthorizedRequest
+import controllers.backend.TagDocumentBackend
+import models.{InMemorySelection,Selection}
 
 class TagDocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
-    val mockSelectionBackend = smartMock[SelectionBackend]
+    val selection = InMemorySelection(Seq(2L, 3L, 4L)) // override for a different Selection
+    def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
     val mockTagDocumentBackend = smartMock[TagDocumentBackend]
     val controller = new TagDocumentController {
-      override val selectionBackend = mockSelectionBackend
       override val tagDocumentBackend = mockTagDocumentBackend
+      override def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]) = buildSelection
     }
   }
 
@@ -24,9 +27,6 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.count(documentSetId)(request)
 
-      val mockSelection = mock[Selection]
-      mockSelection.getAllDocumentIds returns Future.successful(Seq(2L, 3L, 4L))
-      mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
       mockTagDocumentBackend.count(any, any) returns Future.successful(Map())
     }
 
@@ -42,11 +42,9 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       json must /("7" -> 8)
     }
 
-    "findOrCreate a Selection and use its IDs" in new CountScope {
+    "Use IDs from a Selection" in new CountScope {
       override val formBody = Seq("q" -> "moo")
       h.status(result)
-      there was one(mockSelectionBackend).findOrCreate(request.user.email, SelectionRequest(documentSetId, q="moo"))
-      there was one(mockSelection).getAllDocumentIds
       there was one(mockTagDocumentBackend).count(documentSetId, Seq(2L, 3L, 4L))
     }
   }
@@ -59,9 +57,6 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.createMany(documentSetId, tagId)(request)
 
-      val mockSelection = mock[Selection]
-      mockSelection.getAllDocumentIds returns Future.successful(Seq(3L, 4L, 5L))
-      mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
       mockTagDocumentBackend.createMany(any, any) returns Future.successful(())
     }
 
@@ -69,16 +64,9 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       h.status(result) must beEqualTo(h.CREATED)
     }
 
-    "findOrCreate a Selection" in new CreateManyScope {
-      override val formBody = Seq("q" -> "moo")
-      h.status(result)
-      there was one(mockSelectionBackend).findOrCreate(request.user.email, SelectionRequest(documentSetId, q="moo"))
-      there was one(mockSelection).getAllDocumentIds
-    }
-
     "call tagDocumentBackend.createMany" in new CreateManyScope {
       h.status(result)
-      there was one(mockTagDocumentBackend).createMany(tagId, Seq(3L, 4L, 5L))
+      there was one(mockTagDocumentBackend).createMany(tagId, Seq(2L, 3L, 4L))
     }
   }
 
@@ -90,9 +78,6 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.destroyMany(documentSetId, tagId)(request)
 
-      val mockSelection = mock[Selection]
-      mockSelection.getAllDocumentIds returns Future.successful(Seq(3L, 4L, 5L))
-      mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
       mockTagDocumentBackend.destroyMany(any, any) returns Future.successful(())
     }
 
@@ -100,16 +85,9 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       h.status(result) must beEqualTo(h.NO_CONTENT)
     }
 
-    "findOrCreate a Selection" in new DestroyManyScope {
-      override val formBody = Seq("q" -> "moo")
-      h.status(result)
-      there was one(mockSelectionBackend).findOrCreate(request.user.email, SelectionRequest(documentSetId, q="moo"))
-      there was one(mockSelection).getAllDocumentIds
-    }
-
     "call tagDocumentBackend.destroyMany" in new DestroyManyScope {
       h.status(result)
-      there was one(mockTagDocumentBackend).destroyMany(tagId, Seq(3L, 4L, 5L))
+      there was one(mockTagDocumentBackend).destroyMany(tagId, Seq(2L, 3L, 4L))
     }
   }
 }
