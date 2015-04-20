@@ -1,6 +1,6 @@
 package controllers.backend
 
-import models.{Selection,SelectionLike,SelectionRequest}
+import models.{InMemorySelection,Selection,SelectionRequest}
 
 class DbDocumentNodeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
@@ -58,8 +58,7 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
         factory.nodeDocument(nodeId=node1.id, documentId=doc2.id)
         factory.nodeDocument(nodeId=node2.id, documentId=doc1.id)
 
-        val selectionRequest: SelectionRequest = SelectionRequest(documentSet.id) // utility val
-        val selection: SelectionLike = Selection(selectionRequest, Seq(doc1.id, doc2.id, doc3.id))
+        val selection: Selection = InMemorySelection(Seq(doc1.id, doc2.id, doc3.id))
         val requestedNodeIds: Seq[Long] = Seq(node1.id, node2.id, node3.id)
 
         lazy val result: Map[Long,Int] = await(backend.countByNode(selection, requestedNodeIds))
@@ -86,14 +85,14 @@ class DbDocumentNodeBackendSpec extends DbBackendSpecification {
       }
 
       "filter by the SelectionLike" in new CountByNodeScope {
-        override val selection = Selection(selectionRequest, Seq(doc2.id))
+        override val selection = InMemorySelection(Seq(doc2.id))
         result(node1.id) must beEqualTo(1)
         result.isDefinedAt(node2.id) must beFalse
         result.isDefinedAt(node3.id) must beFalse
       }
 
       "work when documentIds is empty" in new CountByNodeScope {
-        override val selection = Selection(selectionRequest, Seq())
+        override val selection = InMemorySelection(Seq())
         result.isEmpty must beTrue
       }
 

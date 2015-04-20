@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 import controllers.backend.{DocumentNodeBackend,SelectionBackend}
 import controllers.backend.exceptions.SearchParseFailed
-import models.{SelectionLike,SelectionRequest}
+import models.{Selection,SelectionRequest}
 
 class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
@@ -21,7 +21,7 @@ class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatche
   "#countByNode" should {
     trait CountByNodeScope extends BaseScope {
       val documentSetId = 123L
-      val mockSelection = smartMock[SelectionLike]
+      val mockSelection = smartMock[Selection]
       mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
       mockSelectionBackend.create(any, any) returns Future.successful(mockSelection)
       mockDocumentNodeBackend.countByNode(any, any) returns Future.successful(Map())

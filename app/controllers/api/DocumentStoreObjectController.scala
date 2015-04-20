@@ -7,7 +7,6 @@ import scala.concurrent.Future
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.anyUser
 import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
-import models.SelectionLike
 import org.overviewproject.models.DocumentStoreObject
 
 trait DocumentStoreObjectController extends ApiController {

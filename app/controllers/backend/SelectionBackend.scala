@@ -7,7 +7,7 @@ import java.util.{Date,UUID}
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
-import models.{Selection,SelectionLike,SelectionRequest}
+import models.{InMemorySelection,Selection,SelectionRequest}
 import models.pagination.{Page,PageInfo,PageRequest}
 
 /** A store of Selections.
@@ -21,7 +21,7 @@ import models.pagination.{Page,PageInfo,PageRequest}
   * back.
   *
   * How do we know the caller wants the cached selection? Well, that's outside
-  * the scope of this backend. Call `show()` if you <em>must</em> use a cached
+  * the scope of this backend. Call `find()` if you <em>must</em> use a cached
   * Selection, `create()` if you <em>must</em> build a new Selection (i.e., you
   * want your search results freshened) or `showOrCreate()` if you want to use
   * an existing one if it's present or create a new one otherwise. If you want
@@ -33,13 +33,13 @@ trait SelectionBackend extends Backend {
     *
     * This involves calling the DocumentIdFinder.
     */
-  def create(userEmail: String, request: SelectionRequest): Future[SelectionLike]
+  def create(userEmail: String, request: SelectionRequest): Future[Selection]
 
   /** Converts a SelectionRequest to a new or existing Selection.
     *
     * This calls DocumentIdFinder iff the selection does not exist.
     */
-  def findOrCreate(userEmail: String, request: SelectionRequest): Future[SelectionLike]
+  def findOrCreate(userEmail: String, request: SelectionRequest): Future[Selection]
 
   /** Does the grunt work for the create() method. */
   protected def findDocumentIds(request: SelectionRequest): Future[Seq[Long]]
@@ -47,7 +47,7 @@ trait SelectionBackend extends Backend {
 
 trait NullSelectionBackend extends SelectionBackend {
   override def create(userEmail: String, request: SelectionRequest) = {
-    findDocumentIds(request).map(Selection(request, _))
+    findDocumentIds(request).map(InMemorySelection(_))
   }
 
   override def findOrCreate(userEmail: String, request: SelectionRequest) = {
@@ -55,18 +55,35 @@ trait NullSelectionBackend extends SelectionBackend {
   }
 }
 
+/** Stores Selections in Redis.
+  *
+  * We store the following keys:
+  *
+  * * `selection:[documentSetId]:by-user-hash:[email]:[hash of query params]`:
+  *   A (String) Selection ID. The `documentSetId` is for consistency (and
+  *   sharding); the `email` is so that two users viewing the same document set
+  *   don't affect one another's sessions; and the `hash` is the part that
+  *   ensures that two subsequent requests for the same query parameters can
+  *   return the same Selection.
+  * * `selection:[documentSetId]:by-id:[id]:document-ids`: A (String) byte
+  *   array of 64-bit document IDs.
+  */
 trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
-  val ExpiresInSeconds: Long = 60 * 60
+  private[backend] val ExpiresInSeconds: Long = 60 * 60 // Used in unit tests, too
+  private val SizeOfLong = 8
 
-  class RedisSelection(
-    override val id: UUID,
-    override val timestamp: Date,
-    override val request: SelectionRequest
-  ) extends SelectionLike {
-    private val SizeOfLong = 8
+  private def requestHashKey(userEmail: String, request: SelectionRequest) = {
+    s"selection:${request.documentSetId}:by-user-hash:${userEmail}:${request.hash}"
+  }
+
+  private def documentIdsKey(documentSetId: Long, selectionId: UUID) = {
+    s"selection:${documentSetId}:by-id:${selectionId}:document-ids"
+  }
+
+  case class RedisSelection(val documentSetId: Long, override val id: UUID) extends Selection {
     private def throwMissingError = throw new Exception("document IDs disappeared even though we _just_ reset their expire time")
 
-    private val key = s"selection:${id.toString}:document-ids"
+    private val key = documentIdsKey(documentSetId, id)
 
     override def getDocumentCount: Future[Int] = {
       redis
@@ -101,40 +118,26 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
 
   private implicit val timeout: Timeout = Timeout.longToTimeout(1000)
 
-  private def requestHashKey(userEmail: String, request: SelectionRequest) = {
-    s"selection:by-user-hash:${userEmail}:${request.hash}"
+  private def encodeDocumentIds(documentIds: Seq[Long]): Array[Byte] = {
+    val buffer = ByteBuffer.allocate(documentIds.length * SizeOfLong)
+    documentIds.foreach(buffer.putLong)
+    buffer.array
   }
 
-  private def documentIdsKey(selection: Selection) = {
-    s"selection:${selection.id}:document-ids"
-  }
-
+  /** Creates a new Selection, always. */
   override def create(userEmail: String, request: SelectionRequest) = {
-    findDocumentIds(request)
-      .map(Selection(request, _))
-      .flatMap { selection: Selection =>
-        val key = requestHashKey(userEmail, request)
-        redis
-          .set(key, selection.id.toString, StringCommands.EX(ExpiresInSeconds))
-          .map((b) => selection)
-      }
-      .flatMap { selection: Selection =>
-        val buffer = ByteBuffer.allocate(selection.documentIds.length * 8)
-        selection.documentIds.foreach(buffer.putLong)
-        val key = documentIdsKey(selection)
+    val selectionId = UUID.randomUUID()
+    val byUserHashKey = requestHashKey(userEmail, request)
+    val byIdKey = documentIdsKey(request.documentSetId, selectionId)
 
-        redis
-          .set(key, buffer.array, StringCommands.EX(ExpiresInSeconds))
-          .map((b) => selection)
-      }
+    for {
+      documentIds <- findDocumentIds(request)
+      _ <- redis.set(byUserHashKey, selectionId.toString, StringCommands.EX(ExpiresInSeconds))
+      _ <- redis.set(byIdKey, encodeDocumentIds(documentIds), StringCommands.EX(ExpiresInSeconds))
+    } yield RedisSelection(request.documentSetId, selectionId)
   }
 
-  /** Finds the selection, if it exists.
-    *
-    * Note: we don't store dates in Redis, so the new selection will have
-    * the current date.
-    */
-  private def findAndExpire(userEmail: String, request: SelectionRequest): Future[Option[SelectionLike]] = {
+  private def findAndExpire(userEmail: String, request: SelectionRequest): Future[Option[Selection]] = {
     val hashKey = requestHashKey(userEmail, request)
     redis
       .eval("""
@@ -142,25 +145,28 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
         if selection_id == false then
           return nil
         else
-          redis.call("EXPIRE", KEYS[1], ARGV[1])
-          local selection_key = "selection:" .. selection_id .. ":document-ids"
-          if redis.call("EXPIRE", selection_key, ARGV[1]) == 0 then
+          redis.call("EXPIRE", KEYS[1], ARGV[2])
+          local selection_key = "selection:" .. ARGV[1] .. ":by-id:" .. selection_id .. ":document-ids"
+          if redis.call("EXPIRE", selection_key, ARGV[2]) == 0 then
             return nil
           else
             return selection_id
           end
         end
-      """, List(hashKey), List(ExpiresInSeconds.toString))
+      """, List(hashKey), List(request.documentSetId.toString, ExpiresInSeconds.toString))
       .map(_ match {
-        case List(id: String) => Some(new RedisSelection(UUID.fromString(id), new Date(), request))
+        case List(id: String) => Some(RedisSelection(request.documentSetId, UUID.fromString(id)))
         case _ => None
       })
   }
 
+  /** Finds the selection, if there is one for the given request; otherwise,
+    * creates a new one.
+    */
   override def findOrCreate(userEmail: String, request: SelectionRequest) = {
     findAndExpire(userEmail, request)
       .flatMap(_ match {
-        case Some(ret: SelectionLike) => Future.successful(ret)
+        case Some(ret: Selection) => Future.successful(ret)
         case None => create(userEmail, request)
       })
   }

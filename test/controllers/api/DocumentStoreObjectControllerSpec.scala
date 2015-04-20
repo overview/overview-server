@@ -3,7 +3,7 @@ package controllers.api
 import play.api.libs.json.{JsNull,JsObject,JsValue,Json}
 import scala.concurrent.Future
 
-import models.{SelectionLike,SelectionRequest}
+import models.{Selection,SelectionRequest}
 import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
 import org.overviewproject.models.{DocumentStoreObject,Store}
 
@@ -22,7 +22,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
   "DocumentStoreObjectController" should {
     "#countByObject" should {
       trait CountByObjectScope extends BaseScope {
-        val mockSelection = mock[SelectionLike]
+        val mockSelection = mock[Selection]
         mockStoreBackend.showOrCreate(any[String]) returns Future.successful(Store(123L, "foobar", Json.obj()))
         mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
 

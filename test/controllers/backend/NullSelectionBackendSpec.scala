@@ -34,26 +34,13 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
         lazy val result = create
       }
 
-      "return a Selection with the given SelectionRequest" in new CreateScope {
-        result.request must beEqualTo(request)
-      }
-
       "return a Selection with the returned document IDs" in new CreateScope {
         override def resultIds = Seq(1L, 2L, 3L)
-        result.documentIds must beEqualTo(Seq(1L, 2L, 3L))
+        result.getAllDocumentIds must beEqualTo(Seq(1L, 2L, 3L)).await
       }
 
       "return a different Selection each time" in new CreateScope {
         create.id must not(beEqualTo(create.id))
-      }
-
-      "allocate a timestamp" in new CreateScope {
-        val date1 = new Date()
-        val resultDate = create.timestamp
-        val date2 = new Date()
-
-        date1 must beLessThanOrEqualTo(resultDate)
-        resultDate must beLessThanOrEqualTo(date2)
       }
 
       "pass the SelectionRequest to the finder" in new CreateScope {

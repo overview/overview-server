@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import scala.slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
-import models.{SelectionLike,SelectionRequest}
+import models.{Selection,SelectionRequest}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
 import org.overviewproject.util.SortedDocumentIdsRefresher
 import org.overviewproject.models.Document
@@ -54,7 +54,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   "DbDocumentBackendSpec" should {
     "#index" should {
       trait IndexScope extends CommonIndexScope {
-        val selection = mock[SelectionLike]
+        val selection = mock[Selection]
         val pageRequest = PageRequest(0, 1000)
         val includeText = false
         selection.getDocumentIds(pageRequest) returns Future.successful(Page(Seq(doc2.id, doc3.id, doc1.id), PageInfo(pageRequest, 3)))

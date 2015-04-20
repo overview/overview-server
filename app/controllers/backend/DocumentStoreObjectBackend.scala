@@ -4,7 +4,7 @@ import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
 import scala.slick.jdbc.StaticQuery
 
-import models.SelectionLike
+import models.Selection
 import org.overviewproject.models.DocumentStoreObject
 import org.overviewproject.models.tables.{DocumentStoreObjects,StoreObjects}
 
@@ -22,7 +22,7 @@ trait DocumentStoreObjectBackend extends Backend {
     * @param storeId Store ID.
     * @param selection Documents to count.
     */
-  def countByObject(storeId: Long, selection: SelectionLike): Future[Map[Long,Int]]
+  def countByObject(storeId: Long, selection: Selection): Future[Map[Long,Int]]
 
   /** Creates a DocumentStoreObject and returns it.
     *
@@ -107,7 +107,7 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend { self: Db
     byIdsCompiled(documentId, storeObjectId).firstOption(session)
   }
 
-  override def countByObject(storeId: Long, selection: SelectionLike) = {
+  override def countByObject(storeId: Long, selection: Selection) = {
     import scala.concurrent.ExecutionContext.Implicits._
     selection.getAllDocumentIds.flatMap { documentIds: Seq[Long] =>
       // this val query is of different type than the other

@@ -1,26 +1,28 @@
 package models
 
-import java.util.{Date,UUID}
-import play.api.libs.concurrent.Execution.Implicits._
+import java.util.UUID
 import scala.concurrent.Future
 
 import models.pagination.{Page,PageInfo,PageRequest}
 
-trait SelectionLike {
+/** A list of document IDs, calculated once and analyzed one or more times. */
+trait Selection {
   val id: UUID
-  val timestamp: Date
-  val request: SelectionRequest
   def getDocumentIds(page: PageRequest): Future[Page[Long]]
   def getAllDocumentIds: Future[Seq[Long]]
   def getDocumentCount: Future[Int]
 }
 
-case class Selection(
+/** A list of document IDs in memory.
+  *
+  * This is useful in testing and processing. It can take a long time (even
+  * seconds) to generate an InMemorySelection and it doesn't persist between
+  * HTTP requests. Prefer RedisSelection when possible.
+  */
+case class InMemorySelection(
   override val id: UUID,
-  override val timestamp: Date,
-  override val request: SelectionRequest,
   val documentIds: Seq[Long]
-) extends SelectionLike {
+) extends Selection {
   override def getDocumentIds(page: PageRequest) = {
     Future.successful(Page(
       documentIds.drop(page.offset).take(page.limit),
@@ -31,11 +33,6 @@ case class Selection(
   override def getDocumentCount = Future.successful(documentIds.size)
 }
 
-object Selection {
-  def apply(request: SelectionRequest, documentIds: Seq[Long]): Selection = Selection(
-    UUID.randomUUID(),
-    new Date(),
-    request,
-    documentIds
-  )
+object InMemorySelection {
+  def apply(documentIds: Seq[Long]): Selection = InMemorySelection(UUID.randomUUID(), documentIds)
 }

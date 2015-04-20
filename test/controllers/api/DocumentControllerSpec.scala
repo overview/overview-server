@@ -7,7 +7,7 @@ import scala.concurrent.Future
 import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
-import models.{Selection,SelectionRequest}
+import models.{InMemorySelection,SelectionRequest}
 import org.overviewproject.models.DocumentHeader
 
 class DocumentControllerSpec extends ApiControllerSpecification {
@@ -32,7 +32,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         override lazy val request = fakeRequest("GET", "?q=" + q)
         override def action = controller.index(documentSetId, fields)
 
-        val selection = Selection(SelectionRequest(documentSetId, q=q), Seq[Long]())
+        val selection = InMemorySelection(Seq[Long]())
 
         mockSelectionBackend.create(any, any) returns Future.successful(selection)
         mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
@@ -114,7 +114,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         )
-        override val selection = Selection(SelectionRequest(documentSetId, q=q), documents.map(_.id))
+        override val selection = InMemorySelection(documents.map(_.id))
         mockSelectionBackend.create(any, any) returns Future.successful(selection)
         mockSelectionBackend.findOrCreate(any, any) returns Future.successful(selection)
         mockDocumentBackend.index(any, any, any) returns Future.successful(

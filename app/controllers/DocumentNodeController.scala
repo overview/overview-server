@@ -8,7 +8,7 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
 import controllers.backend.{DocumentNodeBackend,SelectionBackend}
 import controllers.backend.exceptions.SearchParseFailed
-import models.{IdList,SelectionLike}
+import models.IdList
 
 trait DocumentNodeController extends Controller {
   protected val documentNodeBackend: DocumentNodeBackend

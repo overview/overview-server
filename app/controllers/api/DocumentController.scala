@@ -10,14 +10,14 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.PageRequest
-import models.{SelectionLike,SelectionRequest}
+import models.{Selection,SelectionRequest}
 
 trait DocumentController extends ApiController {
   protected val documentBackend: DocumentBackend
   protected val selectionBackend: SelectionBackend
 
   private def _indexDocuments(userEmail: String, selectionRequest: SelectionRequest, pageRequest: PageRequest, fields: Set[String]) = {
-    val selectionFuture: Future[SelectionLike] = pageRequest.offset match {
+    val selectionFuture: Future[Selection] = pageRequest.offset match {
       case 0 => selectionBackend.create(userEmail, selectionRequest)
       case _ => selectionBackend.findOrCreate(userEmail, selectionRequest)
     }

@@ -2,7 +2,7 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import models.SelectionLike
+import models.Selection
 
 trait DocumentNodeBackend extends Backend {
   /** Gives a list of Node IDs for each Document.
@@ -23,7 +23,7 @@ trait DocumentNodeBackend extends Backend {
     * @param selection The documents we care about
     * @param nodeIds The nodes we care about
     */
-  def countByNode(selection: SelectionLike, nodeIds: Seq[Long]): Future[Map[Long,Int]]
+  def countByNode(selection: Selection, nodeIds: Seq[Long]): Future[Map[Long,Int]]
 }
 
 trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
@@ -68,7 +68,7 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
     }
   }
 
-  override def countByNode(selection: SelectionLike, nodeIds: Seq[Long]) = {
+  override def countByNode(selection: Selection, nodeIds: Seq[Long]) = {
     for {
       documentIds <- selection.getAllDocumentIds
       result <- countByDocumentsAndNodes(documentIds, nodeIds)

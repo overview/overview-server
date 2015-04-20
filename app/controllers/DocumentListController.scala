@@ -8,7 +8,7 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,DocumentNodeBackend,DocumentTagBackend,SelectionBackend}
 import models.pagination.Page
-import models.{IdList,OverviewDatabase,SelectionLike}
+import models.{IdList,OverviewDatabase,Selection}
 import org.overviewproject.models.DocumentHeader
 
 trait DocumentListController extends Controller {
@@ -23,7 +23,7 @@ trait DocumentListController extends Controller {
     val sr = selectionRequest(documentSetId, request)
     val pr = pageRequest(request, MaxPageSize)
 
-    val selectionFuture: Future[SelectionLike] = pr.offset match {
+    val selectionFuture: Future[Selection] = pr.offset match {
       case 0 => selectionBackend.create(request.user.email, sr)
       case _ => selectionBackend.findOrCreate(request.user.email, sr)
     }

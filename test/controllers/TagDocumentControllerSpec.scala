@@ -5,7 +5,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import controllers.backend.{SelectionBackend,TagDocumentBackend}
-import models.{SelectionLike,SelectionRequest}
+import models.{Selection,SelectionRequest}
 
 class TagDocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
@@ -24,7 +24,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.count(documentSetId)(request)
 
-      val mockSelection = mock[SelectionLike]
+      val mockSelection = mock[Selection]
       mockSelection.getAllDocumentIds returns Future.successful(Seq(2L, 3L, 4L))
       mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
       mockTagDocumentBackend.count(any, any) returns Future.successful(Map())
@@ -59,7 +59,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.createMany(documentSetId, tagId)(request)
 
-      val mockSelection = mock[SelectionLike]
+      val mockSelection = mock[Selection]
       mockSelection.getAllDocumentIds returns Future.successful(Seq(3L, 4L, 5L))
       mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
       mockTagDocumentBackend.createMany(any, any) returns Future.successful(())
@@ -90,7 +90,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.destroyMany(documentSetId, tagId)(request)
 
-      val mockSelection = mock[SelectionLike]
+      val mockSelection = mock[Selection]
       mockSelection.getAllDocumentIds returns Future.successful(Seq(3L, 4L, 5L))
       mockSelectionBackend.findOrCreate(any, any) returns Future.successful(mockSelection)
       mockTagDocumentBackend.destroyMany(any, any) returns Future.successful(())

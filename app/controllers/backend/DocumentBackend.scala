@@ -10,12 +10,12 @@ import org.overviewproject.searchindex.IndexClient
 import org.overviewproject.util.Logger
 
 import models.pagination.{Page,PageInfo,PageRequest}
-import models.{SelectionLike,SelectionRequest}
+import models.{Selection,SelectionRequest}
 
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
   def index(
-    selection: SelectionLike,
+    selection: Selection,
     pageRequest: PageRequest,
     includeText: Boolean
   ): Future[Page[DocumentHeader]]
@@ -57,7 +57,7 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
 
   protected val indexClient: IndexClient
 
-  override def index(selection: SelectionLike, pageRequest: PageRequest, includeText: Boolean) = {
+  override def index(selection: Selection, pageRequest: PageRequest, includeText: Boolean) = {
     selection.getDocumentIds(pageRequest)
       .flatMap { (page: Page[Long]) =>
         if (page.pageInfo.total == 0) {
