@@ -74,6 +74,11 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         contentAsString(result) must beEqualTo("[1,2,3]")
       }
 
+      "return the selectionId" in new IndexScope {
+        override val selection = InMemorySelection(Seq(1L, 2L, 3L))
+        contentAsString(result) must /("selectionId" -> selection.id.toString)
+      }
+
       trait IndexFieldsScope extends IndexScope {
         val documents = List(
           factory.document(

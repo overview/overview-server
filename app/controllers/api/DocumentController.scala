@@ -18,7 +18,7 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
 
   private def _indexDocuments(selection: Selection, pageRequest: PageRequest, fields: Set[String]): Future[Result] = {
     for { documents <- documentBackend.index(selection, pageRequest, fields.contains("text")) }
-    yield Ok(views.json.api.DocumentHeader.index(documents, fields))
+    yield Ok(views.json.api.DocumentHeader.index(selection.id, documents, fields))
   }
 
   private def _streamDocumentsInner(selection: Selection, pageRequest: PageRequest, fields: Set[String], documentCount: Int): Result = {
@@ -48,7 +48,7 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
       }
     }
 
-    val content = Enumerator(s"""{"pagination":{"offset":${pageRequest.offset},"limit":${pageRequest.limit},"total":${documentCount}},"items":[""")
+    val content = Enumerator(s"""{"selectionId":"${selection.id.toString}","pagination":{"offset":${pageRequest.offset},"limit":${pageRequest.limit},"total":${documentCount}},"items":[""")
       .andThen(jsObjectChunks)
       .andThen(Enumerator("]}"))
 
