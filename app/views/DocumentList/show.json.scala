@@ -1,5 +1,6 @@
 package views.json.DocumentList
 
+import java.util.UUID
 import play.api.libs.json.{JsValue,Json}
 
 import models.pagination.Page
@@ -18,10 +19,11 @@ object show {
     )
   }
 
-  def apply(documents: Page[(DocumentHeader,Seq[Long],Seq[Long])]) = {
+  def apply(selectionId: UUID, documents: Page[(DocumentHeader,Seq[Long],Seq[Long])]) = {
     Json.obj(
-      "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq,
-      "total_items" -> documents.pageInfo.total
+      "selection_id" -> selectionId.toString,
+      "total_items" -> documents.pageInfo.total,
+      "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq
     )
   }
 }

@@ -35,7 +35,7 @@ trait DocumentListController extends Controller with SelectionHelpers {
             nodeIds.getOrElse(document.id, Seq()),
             tagIds.getOrElse(document.id, Seq())
           )}
-          Ok(views.json.DocumentList.show(pageOfItems))
+          Ok(views.json.DocumentList.show(selection.id, pageOfItems))
         }
 
         // TODO move away from Squeryl and put this .transform() in the backend

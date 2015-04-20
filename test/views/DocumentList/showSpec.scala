@@ -1,5 +1,6 @@
 package views.json.DocumentList
 
+import java.util.UUID
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -10,6 +11,7 @@ import org.overviewproject.test.factories.{PodoFactory=>factory}
 
 class showSpec extends Specification with JsonMatchers {
   trait BaseScope extends Scope {
+    val selectionId = UUID.fromString("933c0b0b-fd89-4ed3-ad4a-731bbb04da43")
     def doc1 = factory.document()
     def doc2 = factory.document()
 
@@ -20,7 +22,7 @@ class showSpec extends Specification with JsonMatchers {
 
     def resultPage = Page(docsAndIds)
 
-    def result = show(resultPage).toString
+    def result = show(selectionId, resultPage).toString
   }
 
   "DocumentList view generated Json" should {
@@ -29,6 +31,10 @@ class showSpec extends Specification with JsonMatchers {
       //result must /("total_items" -> 2)
       // So we do this instead:
       result must contain(""""total_items":2""")
+    }
+
+    "contain selection_id" in new BaseScope {
+      result must contain(""""selection_id":"933c0b0b-fd89-4ed3-ad4a-731bbb04da43"""")
     }
 
     "contain documents" in new BaseScope {
