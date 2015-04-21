@@ -143,7 +143,7 @@ define [
         .sort(compareTags)
 
       showUntagged = fuzzyContains(t('untagged'), search)
-      showAll = !search
+      showAll = !search || fuzzyContains(t('all'), search)
       showOrganize = !search
 
       html = @templates.expanded
