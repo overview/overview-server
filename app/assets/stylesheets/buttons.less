@@ -55,7 +55,7 @@
 .btnColor(@color) {
   @shadowColor: contrast(@color);
   color: @color;
-  text-shadow: 0 0 1px @shadowColor;
+  text-shadow: 0 0 2px @shadowColor; // 0 0 1px looks bad on Safari
 
   &:hover, &.hover {
     color: @color; // override a:hover color
