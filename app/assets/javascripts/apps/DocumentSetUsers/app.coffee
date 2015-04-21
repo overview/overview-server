@@ -16,7 +16,7 @@ define [
           <input
             type="email"
             name="email"
-            class="input-sm form-control"
+            class="input form-control"
             required="required"
             placeholder="<%- t('email_placeholder') %>"
             />
