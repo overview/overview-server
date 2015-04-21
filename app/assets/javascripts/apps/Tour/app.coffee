@@ -128,6 +128,12 @@ define [
             left: (elRect.left + elRect.right) * 0.5 - (tipWidth * 0.5)
           else throw "Invalid placement #{options.placement}"
 
+        if positionCss.top < 0
+          console.log(positionCss)
+          $arrow = $popover.find('.arrow')
+          $arrow.css('margin-top': (positionCss.top + parseInt($arrow.css('margin-top'), 10)) + 'px')
+          positionCss.top = 0
+
         $popover
           .css(positionCss)
 
