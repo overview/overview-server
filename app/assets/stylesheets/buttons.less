@@ -55,11 +55,10 @@
 .btnColor(@color) {
   @shadowColor: contrast(@color);
   color: @color;
-  text-shadow: 0 0 2px @shadowColor;
+  text-shadow: 0 0 1px @shadowColor;
 
   &:hover, &.hover {
     color: @color; // override a:hover color
-    text-shadow: 0 0 2px @shadowColor, 0 0 2px @shadowColor; // up contrast
   }
 
   &:disabled, &.disabled, &[disabled] {

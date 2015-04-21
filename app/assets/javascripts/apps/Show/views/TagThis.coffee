@@ -30,7 +30,7 @@ define [
 
     templates:
       button: _.template('''
-        <button class="prompt btn btn-default"><i class="icon icon-tag"></i> <i class="caret"></i></button>
+        <button class="prompt btn btn-default"><i class="icon icon-tag"></i> <i class="icon icon-caret-down"></i></button>
         <div class="tag-this-main">
         </div>
       ''')
@@ -167,6 +167,8 @@ define [
         create: null
         actions: null
         tagStatuses: {}
+
+      @ui.button.blur()
 
     show: ->
       return if @$el.hasClass('open')
