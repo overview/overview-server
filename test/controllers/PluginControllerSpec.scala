@@ -58,7 +58,9 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
       there was one(mockBackend).create(Plugin.CreateAttributes(
         name="foo",
         description="bar",
-        url="http://baz.org"
+        url="http://baz.org",
+        autocreate=false,
+        autocreateOrder=0
       ))
     }
 
@@ -97,7 +99,9 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
       there was one(mockBackend).update(pluginId, Plugin.UpdateAttributes(
         name="foo",
         description="bar",
-        url="http://baz.org"
+        url="http://baz.org",
+        autocreate=false,
+        autocreateOrder=0
       ))
     }
 

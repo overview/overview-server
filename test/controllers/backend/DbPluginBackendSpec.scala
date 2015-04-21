@@ -35,7 +35,9 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         val attributes = Plugin.CreateAttributes(
           name="name",
           description="description",
-          url="https://example.org"
+          url="https://example.org",
+          autocreate=false,
+          autocreateOrder=0
         )
 
         def create = await(backend.create(attributes))
@@ -46,6 +48,8 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         plugin.name must beEqualTo(attributes.name)
         plugin.description must beEqualTo(attributes.description)
         plugin.url must beEqualTo(attributes.url)
+        plugin.autocreate must beEqualTo(attributes.autocreate)
+        plugin.autocreateOrder must beEqualTo(attributes.autocreateOrder)
       }
 
       "write the Plugin to the database" in new CreateScope {
@@ -53,6 +57,8 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         dbPlugin.map(_.name) must beSome(attributes.name)
         dbPlugin.map(_.description) must beSome(attributes.description)
         dbPlugin.map(_.url) must beSome(attributes.url)
+        dbPlugin.map(_.autocreate) must beSome(attributes.autocreate)
+        dbPlugin.map(_.autocreateOrder) must beSome(attributes.autocreateOrder)
       }
 
       "pick a random ID" in new CreateScope {
@@ -65,7 +71,9 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         val attributes = Plugin.UpdateAttributes(
           name="name",
           description="description",
-          url="https://example.org"
+          url="https://example.org",
+          autocreate=true,
+          autocreateOrder=1
         )
 
         val oldPlugin = factory.plugin(name="foo", description="bar", url="https://baz.org")
@@ -79,6 +87,8 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         plugin.map(_.name) must beSome(attributes.name)
         plugin.map(_.description) must beSome(attributes.description)
         plugin.map(_.url) must beSome(attributes.url)
+        plugin.map(_.autocreate) must beSome(attributes.autocreate)
+        plugin.map(_.autocreateOrder) must beSome(attributes.autocreateOrder)
       }
 
       "write the Plugin to the database" in new UpdateScope {
@@ -87,6 +97,8 @@ class DbPluginBackendSpec extends DbBackendSpecification {
         dbPlugin.map(_.name) must beSome(attributes.name)
         dbPlugin.map(_.description) must beSome(attributes.description)
         dbPlugin.map(_.url) must beSome(attributes.url)
+        dbPlugin.map(_.autocreate) must beSome(attributes.autocreate)
+        dbPlugin.map(_.autocreateOrder) must beSome(attributes.autocreateOrder)
       }
 
       "return None when the Plugin is missing" in new UpdateScope {

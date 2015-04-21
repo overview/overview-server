@@ -119,7 +119,10 @@ trait Factory {
     id: UUID = new UUID(0L, 0L),
     name: String = "name",
     description: String = "description",
-    url: String = "http://example.org"): Plugin
+    url: String = "http://example.org",
+    autocreate: Boolean = false,
+    autocreateOrder: Int = 0
+  ): Plugin
 
   def tag(
     id: Long = 0L,

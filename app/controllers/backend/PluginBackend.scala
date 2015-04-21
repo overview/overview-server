@@ -49,13 +49,20 @@ trait DbPluginBackend extends PluginBackend { self: DbBackend =>
   }
 
   private lazy val updatePluginAttributes = Compiled { (id: Column[UUID]) =>
-    for (p <- Plugins if p.id === id) yield (p.name, p.description, p.url)
+    for (p <- Plugins if p.id === id) yield (p.name, p.description, p.url, p.autocreate, p.autocreateOrder)
   }
   override def update(id: UUID, attributes: Plugin.UpdateAttributes) = {
     val s = selectPlugin(id) // avoid escaping defining scope
     val u = updatePluginAttributes(id) // avoid escaping defining scope
     db { session =>
-      val count = u.update(attributes.name, attributes.description, attributes.url)(session)
+      val row = (
+        attributes.name,
+        attributes.description,
+        attributes.url,
+        attributes.autocreate,
+        attributes.autocreateOrder
+      )
+      val count = u.update(row)(session)
       if (count > 0) s.firstOption(session) else None
     }
   }

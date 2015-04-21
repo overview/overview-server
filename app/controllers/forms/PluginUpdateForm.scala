@@ -10,7 +10,9 @@ object PluginUpdateForm {
       Forms.mapping(
         "name" -> Forms.nonEmptyText,
         "description" -> Forms.nonEmptyText,
-        "url" -> Forms.nonEmptyText
+        "url" -> Forms.nonEmptyText,
+        "autocreate" -> Forms.default(Forms.boolean, false),
+        "autocreateOrder" -> Forms.default(Forms.number, 0)
       )(Plugin.UpdateAttributes.apply)(Plugin.UpdateAttributes.unapply)
     )
   }

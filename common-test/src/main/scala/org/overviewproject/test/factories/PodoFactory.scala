@@ -213,11 +213,13 @@ object PodoFactory extends Factory {
   ) = NodeDocument(nodeId, documentId)
 
   override def plugin(
-    id: UUID = new UUID(0L, 0L),
-    name: String = "name", 
-    description: String = "description",
-    url: String = "http://example.org"
-  ) = Plugin(getId(id), name, description, url)
+    id: UUID,
+    name: String,
+    description: String,
+    url: String,
+    autocreate: Boolean,
+    autocreateOrder: Int
+  ) = Plugin(getId(id), name, description, url, autocreate, autocreateOrder)
 
   override def store(
     id: Long = 0L,

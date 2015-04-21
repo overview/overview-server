@@ -183,11 +183,13 @@ class DbFactory(connection: Connection) extends Factory {
   }
 
   override def plugin(
-    id: UUID = new UUID(0L, 0L),
-    name: String = "name", 
-    description: String = "description",
-    url: String = "http://example.org"
-  ) = q.insertPlugin += podoFactory.plugin(id, name, description, url)
+    id: UUID,
+    name: String,
+    description: String,
+    url: String,
+    autocreate: Boolean,
+    autocreateOrder: Int
+  ) = q.insertPlugin += podoFactory.plugin(id, name, description, url, autocreate, autocreateOrder)
 
   override def tree(
     id: Long = 0L,

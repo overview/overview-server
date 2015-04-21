@@ -12,26 +12,34 @@ case class Plugin(
   id: UUID,
   name: String,
   description: String,
-  url: String
+  url: String,
+  autocreate: Boolean,
+  autocreateOrder: Int
 )
 
 object Plugin {
   case class CreateAttributes(
     name: String,
     description: String,
-    url: String
+    url: String,
+    autocreate: Boolean,
+    autocreateOrder: Int
   )
 
   case class UpdateAttributes(
     name: String,
     description: String,
-    url: String
+    url: String,
+    autocreate: Boolean,
+    autocreateOrder: Int
   )
 
   def build(attributes: CreateAttributes) = apply(
     id=UUID.randomUUID(),
     name=attributes.name,
     description=attributes.description,
-    url=attributes.url
+    url=attributes.url,
+    autocreate=attributes.autocreate,
+    autocreateOrder=attributes.autocreateOrder
   )
 }
