@@ -326,13 +326,13 @@ define [
 
         undefined
 
-    _onDocumentTagged: (tag, document, options) ->
+    _onDocumentTagged: (document, tag, options) ->
       return if options?.fromList
       return unless tag.cid of @_tagCounts
       @_tagCounts[tag.cid].n += 1
       @trigger('tag-counts-changed')
 
-    _onDocumentUntagged: (tag, document, options) ->
+    _onDocumentUntagged: (document, tag, options) ->
       return if options?.fromList
       return unless tag.cid of @_tagCounts
       @_tagCounts[tag.cid].n -= 1
