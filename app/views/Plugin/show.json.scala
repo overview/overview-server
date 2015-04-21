@@ -9,6 +9,8 @@ object show {
     "id" -> plugin.id,
     "name" -> plugin.name,
     "description" -> plugin.description,
-    "url" -> plugin.url
+    "url" -> plugin.url,
+    "autocreate" -> plugin.autocreate,
+    "autocreateOrder" -> plugin.autocreateOrder
   )
 }

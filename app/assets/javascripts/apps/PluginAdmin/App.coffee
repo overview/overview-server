@@ -1,19 +1,70 @@
 define [
   './models/Plugin'
   './collections/Plugins'
+  'backbone'
   'backform'
   'backgrid'
   'i18n'
-], (Plugin, Plugins, Backform, Backgrid, i18n) ->
+], (Plugin, Plugins, Backbone, Backform, Backgrid, i18n) ->
   t = i18n.namespaced('views.admin.Plugin.index')
 
   class DeleteCell extends Backgrid.Cell
+    className: 'delete-cell'
     template: _.template('''<button class="btn btn-link delete"><%- t('action.delete') %></button>''')
     render: -> @$el.html(@template(t: t)); @
     events: { 'click .delete': 'onDelete' }
     onDelete: (e) ->
       e.preventDefault()
       @model.destroy()
+
+  class AutocreateCell extends Backgrid.Cell
+    className: 'autocreate-cell'
+
+    template: _.template('''
+      <input type="checkbox" name="autocreate" />
+      <label class="autocreate-order">
+        <%- t('label.order') %>
+        <input type="number" name="autocreateOrder" />
+      </label>
+    ''')
+
+    render: ->
+      @$el.html(@template(t: t))
+      @ui =
+        checkbox: @$('input[name=autocreate]')
+        label: @$('label')
+        order: @$('input[name=autocreateOrder]')
+
+      @ui.checkbox.prop('checked', !!@model.get('autocreate'))
+      @ui.order.val(@model.get('autocreateOrder') || '')
+      @_updateOrderEnabled()
+
+      @
+
+    events:
+      'change input[name=autocreate]': '_onChangeAutocreate'
+      'change input[name=autocreateOrder]': '_onChangeAutocreateOrder'
+
+    _onChangeAutocreate: ->
+      @_updateOrderEnabled()
+      @_updateModel()
+      if @$el.hasClass('order-enabled')
+        @ui.order.focus().select()
+
+    _onChangeAutocreateOrder: ->
+      @_updateModel()
+
+    _updateOrderEnabled: ->
+      checked = @ui.checkbox.prop('checked')
+      @ui.label.toggleClass('disabled', !checked)
+      @ui.order.prop('disabled', !checked)
+      @$el.toggleClass('order-enabled', checked)
+
+    _updateModel: ->
+      checked = @ui.checkbox.prop('checked')
+      @model.set
+        autocreate: checked
+        autocreateOrder: checked && parseInt(@ui.order.val(), 10) || 0
 
   class App
     constructor: (options) ->
@@ -43,6 +94,12 @@ define [
             name: 'url'
             label: t('th.url')
             cell: 'string'
+            sortable: false
+          }
+          {
+            name: 'autocreate'
+            label: t('th.autocreate')
+            cell: AutocreateCell
             sortable: false
           }
           {

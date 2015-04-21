@@ -6,3 +6,5 @@ define [
       name: ''
       description: ''
       url: ''
+      autocreate: false
+      autocreateOrder: 0

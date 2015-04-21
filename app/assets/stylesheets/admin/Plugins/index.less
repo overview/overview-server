@@ -1,0 +1,53 @@
+.admin-plugin-index {
+  .autocreate-cell {
+    &.order-enabled {
+      padding: 6px 8px;
+    }
+
+    label {
+      margin: 0;
+      padding-left: .5em;
+      font-weight: normal;
+      &.disabled { display: none; }
+    }
+  }
+
+  .string-cell {
+    padding: 8px 14px;
+
+    input {
+      display: block;
+    }
+  }
+
+  .string-cell.editor {
+    padding: 6px; // compensate for the extra border
+  }
+
+  .btn-link {
+    display: inline;
+    padding: 0;
+  }
+
+  input[type=checkbox] {
+    margin: 0;
+  }
+
+  input[type=number] {
+    width: 4em;
+  }
+
+  td.delete-cell {
+    width: 1px;
+    white-space: nowrap;
+  }
+
+  td.autocreate-cell {
+    width: 11em;
+    white-space: nowrap;
+  }
+
+  td>* {
+    vertical-align: middle;
+  }
+}
