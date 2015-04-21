@@ -25,10 +25,6 @@ body.file-import-new {
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow: hidden;
-
-      i {
-        margin-right: 1em; // not padding-right, or the padding will rotate with the spinner
-      }
     }
 
     li.empty-upload {
@@ -117,6 +113,10 @@ body.file-import-new {
 
   .waiting {
     .text-muted;
+  }
+
+  .filename {
+    padding-left: 1em;
   }
 
   .uploading {

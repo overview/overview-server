@@ -3,15 +3,15 @@ define [
   'backbone'
 ], (_, Backbone) ->
   STATUS_ICONS =
-    waiting: 'icon-time'
-    uploading: 'icon-spinner icon-spin'
-    uploaded: 'icon-ok'
+    waiting: 'icon icon-clock-o'
+    uploading: 'icon icon-spinner icon-spin'
+    uploaded: 'icon icon-check'
 
   Backbone.View.extend
     tagName: 'li'
     template: _.template('''
-      <i class='icon <%- icon %>'></i><span class='filename'><%- model.id %></span>
-      ''')
+      <i class='<%- icon %>'></i><span class='filename'><%- model.id %></span>
+    ''')
 
     initialize: ->
       @_initialRender()
@@ -24,16 +24,18 @@ define [
       @$el.html(@template
         model: @model
         icon: icon
-      ).attr('class', status)
+      ).attr(class: status)
 
       @$iconEl = @$('i')
+      @_lastStatus = status
 
     render: ->
       status = @_getStatus()
+      return if status == @_lastStatus
       icon = STATUS_ICONS[status]
 
-      @$iconEl.attr('class', icon)
-      @$el.attr('class', status)
+      @$iconEl.attr(class: icon)
+      @$el.attr(class: status)
 
     _getStatus: ->
       if @model.get('uploading')
