@@ -317,6 +317,24 @@ define [
         li = @ui.ul.children()[@_highlightedIndex]
         @_actOnLi(li)
 
+      # This @clear() is to speed up the workflow of a keyboard-shortcut power
+      # user who is only tagging and not untagging. It speeds up this tight
+      # loop:
+      #
+      # 1. Press 'j' to select a new document
+      # 2. Press 't' to open tagging interface
+      # 3. Auto-complete tag name
+      # 4. Press Enter to apply/unapply tag
+      # 5. Press Escape
+      # 6. Repeat
+      #
+      # It saves the user from step 5. In the process, it makes the UX
+      # inconsistent, and it makes untagging slower. (1/7 of tagging operations
+      # are untaggings.)
+      #
+      # [adam] I think it doesn't belong, but I've been out-voted.
+      @clear()
+
     _actOnLi: (li) ->
       $li = $(li)
 
