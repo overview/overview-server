@@ -284,8 +284,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val ds1 = j.$("[data-document-set-id='1']")
         val ds2 = j.$("[data-document-set-id='2']")
 
-        ds1.find(".view-count").text() must contain("4 trees")
-        ds2.find(".view-count").text() must contain("5 trees")
+        ds1.find(".view-count").text() must contain("4 views")
+        ds2.find(".view-count").text() must contain("6 views")
       }
 
       "show jobs" in new IndexScope {

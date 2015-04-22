@@ -36,19 +36,10 @@ class _documentSetSpec extends views.html.ViewSpecification {
       a.get().headOption.map(_.getAttribute("href")) must beSome(s"/documentsets/${documentSet.id}")
     }
 
-    "should show the number of views" in new BaseScope {
-      val span = $(".view-count")
-      span.attr("data-n-views") must beEqualTo(nViews.toString)
-      span.attr("data-n-view-jobs") must beEqualTo(nJobs.toString)
-      span.text().trim must beEqualTo("3 trees")
-    }
-
-    "should show view jobs" in new BaseScope {
+    "should show the number of views, including jobs" in new BaseScope {
       override def nJobs = 1
       val span = $(".view-count")
-      span.attr("data-n-views") must beEqualTo(nViews.toString)
-      span.attr("data-n-view-jobs") must beEqualTo(nJobs.toString)
-      span.text().trim.replace("\n", "").replaceAll("\\s+", " ") must beEqualTo("3 trees (clustering another…)")
+      span.text().trim must beEqualTo("4 views")
     }
 
     "should show a document count" in new BaseScope {
