@@ -23,9 +23,12 @@ If you're serving a custom View, Overview will automatically create an API token
 
 If you're creating a standalone program, though, you'll need to create your own token.
 
-While we work out the kinks, Overview's API is **experimental**; we've hidden the page that lets you generate an API token for a document set. To find it:
+While we work out the kinks, Overview's API is **experimental**. You'll have to edit URLs by hand to generate API tokens.
 
-1. Browse to a document set.
+### Generating an API token for a Document Set
+<a href="create-document-set-api-token"></a>
+
+1. Browse to a Document Set.
 2. Add "/api-tokens" to the URL. The URL should look like `http://www.overviewproject.org/documentsets/123/api-tokens`.
 3. Type in your app name and generate a token.
 
@@ -33,7 +36,15 @@ Now you can test your token. On a command-line:
 
 `curl -u 'MYTOKEN:x-auth-token' http://www.overviewproject.org/api/v1/document-sets/123/tags`
 
-This API endpoint will list all the tags on the document set.
+This API endpoint will list all the tags on the Document Set.
+
+### Generating an API token that can create new Document Sets
+<a name="create-global-api-token"></a>
+
+1. Browse to http://www.overviewproject.org/api-tokens.
+2. Type in your app name and generate a token.
+
+You can use this token to create new document sets for yourself. See the section on [Files](#files) for details.
 
 ## Rules of API requests
 
@@ -77,7 +88,7 @@ If you want to read more documents, you'll have to make another request -- for i
 # Group Document Sets
 A **Document Set** is a collection of documents.
 
-## Document Sets Collection [/document-sets]
+## Document Sets Collection
 
 ### Create a DocumentSet [POST]
 You need only provide a JSON Object with a `title` property to create an empty DocumentSet.
@@ -103,6 +114,8 @@ The method will return the `documentSet` properties along with an `apiToken` you
         }
     
 # Group Files
+<a name="files"></a>
+
 A **File** is something you upload to Overview. It will generate one or many *Documents*.
 
 The file-upload API is complicated: Overview supports resuming huge uploads, but typical HTTP clients don't. This API documentation focuses on the simple bits. We provide a standalone Node client called [script-add-files](https://github.com/overview/script-add-files) and a JavaScript client library, [MassUpload](https://github.com/overview/js-mass-upload). Refer to those should you wish to develop a new client.
@@ -193,10 +206,13 @@ This deletes all uploaded files. After this, you can upload new files from scrat
 ## Finish uploading files [/files/finish?documentSetId={documentSetId}]
 
 + Parameters
-    + documentSetId (number,required,`1`) ... The DocumentSet ID.
+    + documentSetId (number,optional,`1`) ... The DocumentSet ID.
     
-### Add files to existing document set [POST]
+### Add files to document set [POST]
+
 HACK: For no good reason, the `documentSetId` is part of the URL and the rest of the form parameters are passed as JSON.
+
+If you're adding documents to an existing document set, set `documentSetId` and use a [Document Set API token](#create-document-set-api-token). Otherwise, leave `documentSetId` unset and use a [Document-Set Creation API Token](create-global-api-token)
 
 Some of the request parameters are weird; here's a run-down:
 
