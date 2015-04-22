@@ -26,7 +26,6 @@ If you're creating a standalone program, though, you'll need to create your own 
 While we work out the kinks, Overview's API is **experimental**. You'll have to edit URLs by hand to generate API tokens.
 
 ### Generating an API token for a Document Set
-<a href="create-document-set-api-token"></a>
 
 1. Browse to a Document Set.
 2. Add "/api-tokens" to the URL. The URL should look like `http://www.overviewproject.org/documentsets/123/api-tokens`.
@@ -39,7 +38,6 @@ Now you can test your token. On a command-line:
 This API endpoint will list all the tags on the Document Set.
 
 ### Generating an API token that can create new Document Sets
-<a name="create-global-api-token"></a>
 
 1. Browse to http://www.overviewproject.org/api-tokens.
 2. Type in your app name and generate a token.
@@ -114,7 +112,6 @@ The method will return the `documentSet` properties along with an `apiToken` you
         }
     
 # Group Files
-<a name="files"></a>
 
 A **File** is something you upload to Overview. It will generate one or many *Documents*.
 
@@ -212,7 +209,7 @@ This deletes all uploaded files. After this, you can upload new files from scrat
 
 HACK: For no good reason, the `documentSetId` is part of the URL and the rest of the form parameters are passed as JSON.
 
-If you're adding documents to an existing document set, set `documentSetId` and use a [Document Set API token](#create-document-set-api-token). Otherwise, leave `documentSetId` unset and use a [Document-Set Creation API Token](#create-global-api-token)
+If you're adding documents to an existing document set, set `documentSetId` and use a Document Set-specific API token. Otherwise, leave `documentSetId` unset and use a Document-Set Creation API Token. See the section on [API Tokens](#introduction/api-tokens) for more details.
 
 Some of the request parameters are weird; here's a run-down:
 
