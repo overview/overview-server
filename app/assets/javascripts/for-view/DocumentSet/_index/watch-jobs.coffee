@@ -3,50 +3,6 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
 
   POLL_DELAY = 500 # ms between requests. Shorter makes the progress bar smoother.
   RETRY_DELAY = 2000 # ms before a failed request is retried.
-  JOB_POLL_DELAY=1000 # ms. Each reclustering document set has its own poll loop with this delay.
-
-  # Polls /documentsets/:id/views.jzon until there are no recluster jobs.
-  # Updates the text of @$el to match.
-  class ReclusterWatcher
-    constructor: (@$el, @documentSetId) ->
-      @schedulePoll()
-
-    schedulePoll: ->
-      window.setTimeout(@poll.bind(@), JOB_POLL_DELAY)
-
-    poll: ->
-      $.getJSON("/documentsets/#{@documentSetId}/views")
-        .success(@onSuccess.bind(@))
-        .error(@onError.bind(@))
-
-    jsonToCounts: (json) ->
-      nViews = 0
-      nJobs = 0
-      for view in json
-        if view.type == 'job'
-          nJobs += 1
-        else
-          nViews += 1
-
-      nViews: nViews
-      nJobs: nJobs
-
-    countsToText: (counts) ->
-      text1 = t('_documentSet.nViews', counts.nViews)
-      if counts.nJobs
-        text2 = t('_documentSet.nJobs', counts.nJobs, counts.nViews)
-        "#{text1} #{text2}"
-      else
-        text1
-
-    onSuccess: (json) ->
-      counts = @jsonToCounts(json)
-      text = @countsToText(counts)
-      @$el.text(text)
-      if counts.nJobs > 0
-        @schedulePoll()
-
-    onError: -> @schedulePoll()
 
   # The JobWatcher maintains the list of jobs, and it "moves" jobs to the
   # DocumentSet list when they're complete.
@@ -273,7 +229,6 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
         # 7. Restart if this was the last job removed
         .queue(done)
 
-      $new_li.find('.view-count').each(maybeWatchReclustering)
       $(@document_sets_ul).next('p.no-document-sets').fadeOut(-> $(this).remove())
 
     receive_jobs: (json) ->
@@ -281,17 +236,8 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
       @_merge_json_into_dom(json) # might fire _receive_document_set(), decrementing @document_sets_to_receive and calling restart()
       @restart() if !@document_sets_to_receive
 
-  maybeWatchReclustering = ->
-    $el = $(@)
-    nJobs = $el.attr('data-n-view-jobs')
-    if nJobs != '0'
-      documentSetId = $el.closest('[data-document-set-id]').attr('data-document-set-id')
-      new ReclusterWatcher($el, documentSetId)
-
   $ ->
     document_sets = $('.document-sets>ul')[0]
     $('.document-set-creation-jobs').each ->
       jobs_div = this
       new JobWatcher(jobs_div, document_sets)
-
-    $('li[data-document-set-id] .view-count[data-n-view-jobs]').each(maybeWatchReclustering)
