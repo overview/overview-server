@@ -5,6 +5,7 @@ import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration._
 import org.overviewproject.test.ParameterStore
 import akka.actor.ActorRef
+import org.overviewproject.models.GroupedFileUpload
 
 object GatedTaskWorkerProtocol {
   case object CancelYourself
@@ -15,6 +16,8 @@ class GatedTaskWorker(jobQueuePath: String,
     progressReporterPath: String, 
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String,
+    processSelector: UploadProcessSelector,
+    uploadedFile: Option[GroupedFileUpload],
     cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
 
   import GatedTaskWorkerProtocol._
@@ -36,6 +39,8 @@ class GatedTaskWorker(jobQueuePath: String,
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
   
+  override protected val uploadedFileProcessSelector = processSelector
+  
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     new GatedTask(taskGate.future)
 
@@ -45,6 +50,7 @@ class GatedTaskWorker(jobQueuePath: String,
   override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep = 
     new GatedTask(taskGate.future)
     
+  override protected def findUploadedFile(uploadedFileId: Long) = Future.successful(uploadedFile)
 
   private def manageTaskGate: PartialFunction[Any, Unit] = {
     case CancelYourself => self ! CancelTask

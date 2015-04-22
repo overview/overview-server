@@ -14,6 +14,12 @@ import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.TempFileDeleter
 import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol.RemoveFileGroup
+import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.models.tables.GroupedFileUploads
+import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import org.overviewproject.jobhandler.filegroup.task.step.WaitForResponse
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -21,11 +27,15 @@ object FileGroupTaskWorkerProtocol {
   case object ReadyForTask
   case object CancelTask
 
+ case class RequestResponse(documentIds: Seq[Long])                             
+
   trait TaskWorkerTask {
     val documentSetId: Long
     val fileGroupId: Long
   }
 
+  case class CreateDocuments(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long, options: UploadProcessOptions,
+                             documentIdSupplier: ActorRef) extends TaskWorkerTask
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
   case class CreateDocumentsTask(documentSetId: Long, fileGroupId: Long, splitDocuments: Boolean) extends TaskWorkerTask
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
@@ -38,12 +48,14 @@ object FileGroupTaskWorkerFSM {
   case object LookingForExternalActors extends State
   case object Ready extends State
   case object Working extends State
+  case object WaitingForResponse extends State
   case object Cancelled extends State
 
   sealed trait Data
   case class ExternalActorsFound(jobQueue: Option[ActorRef], progressReporter: Option[ActorRef]) extends Data
   case class ExternalActors(jobQueue: ActorRef, reporter: ActorRef) extends Data
   case class TaskInfo(queue: ActorRef, reporter: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
+  case class WaitingTaskInfo(nextStep: Either[Seq[Long], Seq[Long] => TaskStep], taskInfo: TaskInfo) extends Data
 
 }
 
@@ -65,7 +77,9 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected val progressReporterSelection: ActorSelection
   protected val fileRemovalQueue: ActorSelection
   protected val fileGroupRemovalQueue: ActorSelection
-  
+
+  protected val uploadedFileProcessSelector: UploadProcessSelector
+
   private val NumberOfExternalActors = 2
   private val JobQueueId: String = "Job Queue"
   private val ProgressReporterId: String = "Progress Reporter"
@@ -78,6 +92,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
                                          progressReporter: ActorRef): FileGroupTaskStep
   protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep
+
+  protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
 
   override def preStart = lookForExternalActors
 
@@ -107,6 +123,17 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(TaskAvailable, ExternalActors(jobQueue, _)) => {
       jobQueue ! ReadyForTask
       stay
+    }
+    case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier),
+      ExternalActors(jobQueue, progressReporter)) => {
+      findUploadedFile(uploadedFileId).flatMap { uploadedFile =>
+        val processCreator = uploadedFileProcessSelector.select(uploadedFile.get, options)
+        val process = processCreator.create(documentSetId, documentIdSupplier)
+        val firstStep = process.start(uploadedFile.get)
+        firstStep.execute
+      } pipeTo self
+
+      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)
     }
     case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), ExternalActors(jobQueue, progressReporter)) => {
       executeTaskStep(startCreatePagesTask(documentSetId, uploadedFileId))
@@ -145,6 +172,22 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
+    case Event(WaitForResponse(nextStep), t: TaskInfo) => {
+      goto(WaitingForResponse) using WaitingTaskInfo(Right(nextStep), t)
+    }
+    case Event(RequestResponse(ids), t: TaskInfo) => {
+      goto(WaitingForResponse) using WaitingTaskInfo(Left(ids), t)
+    }
+    case Event(FinalStep, TaskInfo(jobQueue, progressReporter, documentSetId, _, _)) => {
+      jobQueue ! TaskDone(documentSetId, None)
+      jobQueue ! ReadyForTask
+      
+      goto(Ready) using ExternalActors(jobQueue, progressReporter)
+    }
+    case Event(step: TaskStep, _) => {
+      step.execute pipeTo self
+      stay
+    }
     case Event(step: FileGroupTaskStep, _) => {
       executeTaskStep(step)
 
@@ -154,6 +197,19 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(TaskAvailable, _) => stay
   }
 
+  when  (WaitingForResponse) {
+    case Event(RequestResponse(ids: Seq[Long]), WaitingTaskInfo(Right(nextStep), taskInfo)) => {
+      self ! nextStep(ids)
+      
+      goto(Working) using taskInfo
+    }
+    case Event(WaitForResponse(nextStep), WaitingTaskInfo(Left(ids), taskInfo)) => {
+      self ! nextStep(ids)
+      
+      goto(Working) using taskInfo
+    }
+  }
+  
   when(Cancelled) {
     case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)) => {
       step.cancel
@@ -194,22 +250,30 @@ object FileGroupTaskWorker {
       progressReporterActorPath,
       fileRemovalQueueActorPath,
       fileGroupRemovalQueueActorPath))
-    
+
   private class FileGroupTaskWorkerImpl(
     jobQueueActorPath: String,
     progressReporterActorPath: String,
     fileRemovalQueueActorPath: String,
     fileGroupRemovalQueueActorPath: String) extends FileGroupTaskWorker
-    with CreatePagesFromPdfWithStorage with CreateDocumentsWithStorage {
+    with CreatePagesFromPdfWithStorage with CreateDocumentsWithStorage with SlickSessionProvider {
+
+    import org.overviewproject.database.Slick.simple._
+    import context.dispatcher
 
     override protected val jobQueueSelection = context.actorSelection(jobQueueActorPath)
     override protected val progressReporterSelection = context.actorSelection(progressReporterActorPath)
     override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
     override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
-    
+
+    override protected val uploadedFileProcessSelector = UploadProcessSelector()
+
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
       new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
         DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter(), TempFileDeleter())
 
+    protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]] = db { implicit session =>
+      GroupedFileUploads.filter(_.id === uploadedFileId).firstOption
+    }
   }
 }

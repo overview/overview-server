@@ -5,12 +5,16 @@ import org.overviewproject.test.ParameterStore
 import akka.actor.ActorRef
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcessCreator
+import org.overviewproject.models.GroupedFileUpload
 
 class TestFileGroupTaskWorker(jobQueuePath: String,
                               progressReporterPath: String,
                               fileRemovalQueuePath: String,
                               fileGroupRemovalQueuePath: String, 
-                              outputFileId: Long) extends FileGroupTaskWorker {
+                              processSelector: UploadProcessSelector,
+                              uploadedFile: Option[GroupedFileUpload],
+                              outputFileId: Long) extends FileGroupTaskWorker  {
 
   val executeFn = ParameterStore[Unit]
   val deleteFileUploadJobFn = ParameterStore[(Long, Long)]
@@ -29,6 +33,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
   
+  override protected val uploadedFileProcessSelector = processSelector
   
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     StepInSequence(1, CreatePagesProcessComplete(documentSetId, uploadedFileId, Some(outputFileId)))
@@ -40,6 +45,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
   override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
     StepInSequence(1, DeleteFileUploadComplete(documentSetId, fileGroupId))
 
+    override protected def findUploadedFile(uploadedFileId: Long) = Future.successful(uploadedFile)
 }
 
 object TestFileGroupTaskWorker {
@@ -47,10 +53,14 @@ object TestFileGroupTaskWorker {
     jobQueuePath: String, 
     progressReporterPath: String, 
     fileRemovalQueuePath: String, 
-    fileGroupRemovalQueuePath: String, outputFileId: Long): Props =
+    fileGroupRemovalQueuePath: String, 
+    uploadedFileProcessSelector: UploadProcessSelector,
+    uploadedFile: Option[GroupedFileUpload],
+    outputFileId: Long): Props =
     Props(new TestFileGroupTaskWorker(
         jobQueuePath, 
         progressReporterPath, 
         fileRemovalQueuePath, 
-        fileGroupRemovalQueuePath, outputFileId))
+        fileGroupRemovalQueuePath, 
+        uploadedFileProcessSelector, uploadedFile, outputFileId))
 }

@@ -9,6 +9,15 @@ import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol
 import org.overviewproject.test.{ ActorSystemContext, ParameterStore, ForwardingActor }
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
+import org.overviewproject.jobhandler.filegroup.task.process.StepGenerator
+import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcessCreator
+import org.specs2.mock.Mockito
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import scala.concurrent.Future
+import org.overviewproject.jobhandler.filegroup.task.step.WaitForResponse
 
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential
@@ -34,6 +43,34 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       createJobQueue.withTaskAvailable
 
       jobQueueProbe.expectInitialReadyForTask
+    }
+
+    "step from selected process" in new MultistepProcessContext {
+      createJobQueue.handingOutTask(
+        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
+
+      createWorker
+
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
+
+      jobQueueProbe.expectReadyForTask
+    }
+
+    "wait for a request response" in new ProcessWithRequestContext {
+      createJobQueue.handingOutTask(
+        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
+
+      createWorker
+
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
+
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
+
+      jobQueueProbe.expectReadyForTask
+
     }
 
     "step through task until done" in new RunningTaskWorkerContext {
@@ -134,7 +171,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectNoMsg(50 millis)
     }
 
-    trait TaskWorkerContext extends ActorSystemContext {
+    trait TaskWorkerContext extends ActorSystemContext with Mockito {
       protected val documentSetId: Long = 1l
       protected val fileGroupId: Long = 2l
       protected val uploadedFileId: Long = 10l
@@ -160,6 +197,9 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       val FileGroupRemovalQueueName = "fileGroupRemovalQueue"
       val FileGroupRemovalQueuePath = s"/user/$FileGroupRemovalQueueName"
+
+      val uploadedFileProcessSelector = smartMock[UploadProcessSelector]
+      val documentIdSupplier: TestProbe = new TestProbe(system)
 
       protected def createProgressReporter: TestProbe = {
         progressReporterProbe = new TestProbe(system)
@@ -189,6 +229,19 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
         fileGroupRemovalQueueProbe
       }
 
+      protected def setupProcessSelection = {
+        val uploadedFileProcessCreator = smartMock[UploadedFileProcessCreator]
+        val uploadedFileProcess = smartMock[UploadedFileProcess]
+
+        uploadedFileProcessSelector.select(any, any) returns uploadedFileProcessCreator
+        uploadedFileProcessCreator.create(any, any) returns uploadedFileProcess
+        uploadedFileProcess.start(any) returns firstStep
+      }
+
+      protected def firstStep: TaskStep = FinalStep
+
+      protected def uploadedFile: Option[GroupedFileUpload] = Some(smartMock[GroupedFileUpload])
+
     }
 
     trait RunningTaskWorkerContext extends TaskWorkerContext {
@@ -199,8 +252,11 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
         createFileGroupRemovalQueue
         createFileRemovalQueue
         createProgressReporter
+        setupProcessSelection
+
         worker = TestActorRef(new TestFileGroupTaskWorker(
-          JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath, fileId))
+          JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
+          uploadedFileProcessSelector, uploadedFile, fileId))
       }
 
       protected def createPagesTaskStepsWereExecuted =
@@ -218,12 +274,44 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       protected def createWorker: Unit = {
         createFileRemovalQueue
         createProgressReporter
+        setupProcessSelection
+
         worker =
           system.actorOf(Props(new GatedTaskWorker(
-            JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath, cancelFn)))
+            JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
+            uploadedFileProcessSelector, uploadedFile, cancelFn)))
       }
 
       protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)
+    }
+
+    trait MultistepProcessContext extends RunningTaskWorkerContext {
+      val options = UploadProcessOptions("en", false)
+
+      class SimpleTaskStep(n: Int) extends TaskStep {
+        override def execute: Future[TaskStep] = {
+          val nextStep = if (n == 0) FinalStep else new SimpleTaskStep(n - 1)
+          Future.successful(nextStep)
+        }
+      }
+
+      override def firstStep: TaskStep = new SimpleTaskStep(1)
+    }
+
+    trait ProcessWithRequestContext extends MultistepProcessContext {
+      val documentIds = Seq[Long](1, 2, 53)
+
+      class IdRequestingStep extends TaskStep {
+        override def execute: Future[TaskStep] = {
+          worker ! RequestResponse(documentIds)
+
+          Future.successful(WaitForResponse(finish))
+        }
+
+        private def finish(ids: Seq[Long]): TaskStep = FinalStep
+      }
+
+      override def firstStep: TaskStep = new IdRequestingStep
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {
