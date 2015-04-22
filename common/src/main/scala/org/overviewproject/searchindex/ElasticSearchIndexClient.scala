@@ -1,5 +1,6 @@
 package org.overviewproject.searchindex
 
+import org.elasticsearch.ElasticsearchWrapperException
 import org.elasticsearch.action.{ActionListener,ActionRequest,ActionRequestBuilder,ActionResponse}
 import org.elasticsearch.action.search.{SearchResponse,SearchType}
 import org.elasticsearch.client.Client
@@ -128,6 +129,10 @@ trait ElasticSearchIndexClient extends IndexClient {
     * the future resolves to the return value. If onSuccess() throws an
     * exception, the Future fails. If the ElasticSearch execution fails, the
     * Future fails.
+    *
+    * On failure, this method will unwrap an ElasticsearchWrapperException.
+    * That's because production ElasticSearch throws RemoteTransportExceptions
+    * and in-memory (e.g., un-test) ElasticSearch doesn't.
     */
   private def execute[Response <: ActionResponse](req: ActionRequestBuilder[_,Response,_,_]): Future[Response] = {
     val promise = Promise[Response]()
@@ -138,6 +143,11 @@ trait ElasticSearchIndexClient extends IndexClient {
     })
 
     promise.future
+      .transform(identity, _ match {
+        // Unwrap ElasticsearchWrapperException
+        case w: ElasticsearchWrapperException => w.getCause()
+        case t: Throwable => t
+      })
   }
 
   /** Returns the name of the index that contains all new documents.
