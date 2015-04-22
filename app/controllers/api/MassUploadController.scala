@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 import controllers.auth.{ApiAuthorizedAction,ApiTokenFactory}
 import controllers.auth.Authorities.anyUser
-import controllers.backend.{ FileGroupBackend, GroupedFileUploadBackend }
+import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
@@ -16,8 +16,7 @@ import models.orm.stores.DocumentSetCreationJobStore
 import models.OverviewDatabase
 import org.overviewproject.models.{ApiToken,FileGroup,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,DocumentSetUser}
-import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.util.ContentDisposition
 
 trait MassUploadController extends ApiController {

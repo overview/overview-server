@@ -1,163 +1,174 @@
 package controllers
 
+import java.sql.Timestamp
 import java.util.UUID
-import org.junit.runner.RunWith
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
-import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Done
-import play.api.libs.iteratee.Input
-import play.api.libs.iteratee.Iteratee
-import play.api.mvc.AnyContent
-import play.api.mvc.{ Request, RequestHeader, Result }
-import play.api.mvc.Result
-import play.api.Play.{start, stop}
-import play.api.test.{FakeHeaders, FakeRequest, FakeApplication}
-import play.api.test.Helpers._
-import play.api.test.Helpers._
+import play.api.libs.iteratee.{Done,Input,Iteratee}
+import play.api.mvc.{AnyContent,Request,RequestHeader,Result}
+import play.api.test.{FakeHeaders,FakeRequest,FakeApplication}
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
+import controllers.backend.DocumentSetBackend
 import models.upload.{OverviewUpload,OverviewUploadedFile}
-import models.OverviewUser
 import models.{Session,User}
+import org.overviewproject.models.DocumentSet
+import org.overviewproject.test.factories.{PodoFactory=>factory}
 
-@RunWith(classOf[JUnitRunner])
-class UploadControllerSpec extends Specification with Mockito {
-  step(start(FakeApplication()))
+class UploadControllerSpec extends ControllerSpecification with Mockito {
+  class MockOverviewUploadedFile(
+    override val id: Long,
+    override val uploadedAt: Timestamp,
+    override val contentDisposition: String,
+    override val contentType: String,
+    override val size: Long
+  ) extends OverviewUploadedFile {
+    override def filename = "foo.csv"
+    override def withSize(size: Long) = this
+    override def withContentInfo(contentDisposition: String, contentType: String) = this
+    override def save = this
+    override def delete = ()
+  }
 
-  class TestUploadController(upload: Option[OverviewUpload] = None) extends UploadController {
-    var uploadDeleted: Boolean = false
+  class MockOverviewUpload(val uploaded: Long, override val size: Long) extends OverviewUpload {
+    override val userId = 123L
+    override val lastActivity = new Timestamp(1234L)
+    override val uploadedFile = new MockOverviewUploadedFile(
+      234L, new Timestamp(2345L), "attachment; filename=foo.csv", "text/csv", uploaded
+    )
+    override val contentsOid = 345L
+
+    override def withUploadedBytes(bytesUploaded: Long) = this
+    override def save = this
+    override def truncate = this
+    override def delete = ()
+  }
+
+  class TestController(upload: Option[OverviewUpload] = None) extends UploadController {
+    override val documentSetBackend = smartMock[DocumentSetBackend]
+    documentSetBackend.create(any, any) returns Future.successful(factory.documentSet(id=456L))
+
     var jobStarted: Boolean = false
-    var lang: Option[String] = _
-    var stopWords: Option[String] = _
-    var importantWords: Option[String] = _
+    var lang: Option[String] = None
+    var stopWords: Option[String] = None
+    var importantWords: Option[String] = None
 
-    def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
+    override def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
       Done(Right(mock[OverviewUpload]), Input.EOF)
 
-    def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
-    def deleteUpload(upload: OverviewUpload) { uploadDeleted = true }
-    def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String, suppliedImportantWords:String) {
+    override def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
+
+    override def createJobAndDeleteUpload(
+      documentSet: DocumentSet,
+      user: User,
+      upload: OverviewUpload,
+      aLang: String,
+      aStopWords: String,
+      aImportantWords: String
+    ) = {
       jobStarted = true
-      lang = Some(documentSetLanguage)
-      stopWords = Some(suppliedStopWords)
-      importantWords = Some(suppliedImportantWords)
+      lang = Some(aLang)
+      stopWords = Some(aStopWords)
+      importantWords = Some(aImportantWords)
+      Future.successful(())
     }
   }
 
-  trait UploadContext[A] extends Scope {
+  trait BaseScope extends Scope {
     val guid = UUID.randomUUID
-
-    def upload: OverviewUpload
-    val controller: TestUploadController
-    val request: Request[A]
-    val result: Future[Result]
   }
 
-  trait CreateRequest extends UploadContext[OverviewUpload] {
-    val controller = new TestUploadController
-    val request = FakeRequest[OverviewUpload]("POST", "/upload", FakeHeaders(), upload, "controllers.UploadController.create")
-    val result = controller.create(guid)(request)
-  }
+  "#create" should {
+    trait CreateScope extends BaseScope {
+      val controller = new TestController()
+      val upload: OverviewUpload
+      lazy val request = FakeRequest[OverviewUpload]("POST", "/upload", FakeHeaders(), upload, "controllers.UploadController.create")
+      lazy val result = controller.create(guid)(request)
+    }
 
-  trait HeadRequest extends UploadContext[AnyContent] {
-    val user = OverviewUser(User(1l))
-    val controller = new TestUploadController(Option(upload))
-    val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user.toUser)
-    val result = controller.show(guid)(request)
-  }
+    "return OK if upload is complete" in new CreateScope {
+      override val upload = new MockOverviewUpload(1000, 1000)
+      h.status(result) must beEqualTo(h.OK)
+    }
 
-  trait StartClusteringRequest extends UploadContext[AnyContent] {
-    val user = OverviewUser(User(1l))
-    val controller = new TestUploadController(Option(upload))
-    val lang = "sv"
-    val stopWords = "some stop words"
-    val request = new AuthorizedRequest(
-      FakeRequest().withFormUrlEncodedBody(("lang" -> lang), ("supplied_stop_words" -> stopWords)),
-      Session(user.id, "127.0.0.1"),
-      user.toUser
-    )
-
-    val result = controller.startClustering(guid)(request)
-  }
-
-  trait NoStartedUpload {
-    def upload: OverviewUpload = null
-  }
-
-  trait StartedUpload {
-    def contentDisposition = "attachment; filename=file.name"
-    def bytesUploaded: Long
-
-    def upload: OverviewUpload = {
-      val u = mock[OverviewUpload]
-      val f = mock[OverviewUploadedFile]
-      u.uploadedFile returns f
-      f.size returns bytesUploaded
-      f.contentDisposition returns contentDisposition
-      u.size returns 1000
+    "return BAD_REQUEST if upload is not complete" in new CreateScope {
+      override val upload = new MockOverviewUpload(100, 1000)
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
     }
   }
 
-  trait CompleteUpload extends StartedUpload {
-    override def bytesUploaded: Long = 1000
-  }
-
-  trait IncompleteUpload extends StartedUpload {
-    override def bytesUploaded: Long = 100
-  }
-
-  "UploadController.create" should {
-    "return OK if upload is complete" in new CreateRequest with CompleteUpload {
-      status(result) must be equalTo (OK)
+  "#startClustering" should {
+    trait StartClusteringScope extends BaseScope {
+      val maybeUpload: Option[OverviewUpload]
+      val formBody: Seq[(String,String)] = Seq("lang" -> "en", "supplied_stop_words" -> "some stop words")
+      lazy val controller = new TestController(maybeUpload)
+      lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
+      lazy val result = controller.startClustering(guid)(request)
     }
 
-    "return BAD_REQUEST if upload is not complete" in new CreateRequest with IncompleteUpload {
-      status(result) must be equalTo (BAD_REQUEST)
-    }
-  }
-
-  "UploadController.startClustering" should {
-
-    "start a DocumentSetCreationJob and delete the upload" in new StartClusteringRequest with CompleteUpload {
-      status(result) must be equalTo(SEE_OTHER)
+    "create a DocumentSetCreationJob and delete the upload" in new StartClusteringScope {
+      override val maybeUpload = Some(new MockOverviewUpload(1000, 1000))
+      h.status(result) must beEqualTo(h.SEE_OTHER)
+      there was one(controller.documentSetBackend).create(
+        beLike[DocumentSet.CreateAttributes] { case attributes =>
+          attributes.title must beEqualTo("foo.csv")
+          attributes.uploadedFileId must beSome(234L)
+        },
+        beLike[String] { case s => s must beEqualTo(request.user.email) }
+      )
       controller.jobStarted must beTrue
-      controller.lang must beSome(lang)
-      controller.stopWords must beSome(stopWords)
-      controller.uploadDeleted must beTrue
+      controller.lang must beSome("en")
+      controller.stopWords must beSome("some stop words")
+      controller.importantWords must beSome("")
     }
 
-    "not start a DocumentSetCreationJob if upload is not complete" in new StartClusteringRequest with IncompleteUpload {
-      status(result) must be equalTo(CONFLICT)
+    "not create a DocumentSetCreationJob if upload is not complete" in new StartClusteringScope {
+      override val maybeUpload = Some(new MockOverviewUpload(100, 1000))
+      h.status(result) must beEqualTo(h.CONFLICT)
+      there was no(controller.documentSetBackend).create(any, any)
       controller.jobStarted must beFalse
     }
-  }
 
-
-  "UploadController.show" should {
-    "return NOT_FOUND if upload does not exist" in new HeadRequest with NoStartedUpload {
-      status(result) must be equalTo (NOT_FOUND)
+    "not create a DocumentSetCreationJob if the form is invalid" in new StartClusteringScope {
+      override val maybeUpload = Some(new MockOverviewUpload(1000, 1000))
+      override val formBody = Seq()
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
+      there was no(controller.documentSetBackend).create(any, any)
     }
 
-    "return OK with upload info in headers if upload is complete" in new HeadRequest with CompleteUpload {
-      status(result) must be equalTo (OK)
-      header(CONTENT_LENGTH, result) must beSome("1000")
-      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
-    }
-
-    "return PARTIAL_CONTENT with upload info in headers if upload is not complete" in new HeadRequest with IncompleteUpload {
-      status(result) must be equalTo (PARTIAL_CONTENT)
-      header(CONTENT_RANGE, result) must beSome("bytes 0-99/1000")
-      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
-    }
-
-    "return NOT_FOUND if upload is empty" in new HeadRequest with NoStartedUpload {
-      status(result) must be equalTo (NOT_FOUND)
+    "not create anything if the upload does not exist" in new StartClusteringScope {
+      override val maybeUpload = None
+      h.status(result) must beEqualTo(h.NOT_FOUND)
+      there was no(controller.documentSetBackend).create(any, any)
     }
   }
 
+  "#show" should {
+    trait ShowScope extends BaseScope {
+      val maybeUpload: Option[OverviewUpload]
+      val request = fakeAuthorizedRequest
+      lazy val controller = new TestController(maybeUpload)
+      lazy val result = controller.show(guid)(request)
+    }
 
-  step(stop)
+    "return NOT_FOUND when Upload does not exist" in new ShowScope {
+      override val maybeUpload = None
+      h.status(result) must beEqualTo(h.NOT_FOUND)
+    }
+
+    "return OK when Upload is complete" in new ShowScope {
+      override val maybeUpload = Some(new MockOverviewUpload(1000, 1000))
+      h.status(result) must beEqualTo(h.OK)
+      h.header(h.CONTENT_LENGTH, result) must beSome("1000")
+      h.header(h.CONTENT_DISPOSITION, result) must beSome("attachment; filename=foo.csv")
+    }
+
+    "return PARTIAL_CONTENT when Upload is incomplete" in new ShowScope {
+      override val maybeUpload = Some(new MockOverviewUpload(100, 1000))
+      h.status(result) must beEqualTo(h.PARTIAL_CONTENT)
+      h.header(h.CONTENT_RANGE, result) must beSome("bytes 0-99/1000")
+      h.header(h.CONTENT_DISPOSITION, result) must beSome("attachment; filename=foo.csv")
+    }
+  }
 }

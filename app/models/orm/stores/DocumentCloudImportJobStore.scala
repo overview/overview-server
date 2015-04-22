@@ -1,28 +1,14 @@
 package models.orm.stores
 
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
-import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import org.overviewproject.tree.orm.DocumentSetUser 
+import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
+import org.overviewproject.tree.DocumentSetCreationJobType
 import models.DocumentCloudImportJob
 
 object DocumentCloudImportJobStore {
-  /** Creates a new DocumentCloudImportJob in the database.
-    *
-    * FIXME this inserts rows in DocumentSet and DocumentSetUser. Both stores
-    * should be left alone. (First we need to make the worker add those rows.)
-    */
-  def insert(job: DocumentCloudImportJob) : DocumentSetCreationJob = {
-    val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
-      title = job.title,
-      query = Some(job.query)
-    ))
-    DocumentSetUserStore.insertOrUpdate(DocumentSetUser(
-      documentSetId = documentSet.id,
-      userEmail = job.ownerEmail,
-      role = Ownership.Owner
-    ))
+  /** Creates a new DocumentCloudImportJob in the database. */
+  def insert(documentSetId: Long, job: DocumentCloudImportJob) : DocumentSetCreationJob = {
     DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-      documentSetId = documentSet.id,
+      documentSetId = documentSetId,
       state = DocumentSetCreationJobState.NotStarted,
       jobType = DocumentSetCreationJobType.DocumentCloud,
       lang = job.lang,

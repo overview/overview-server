@@ -43,32 +43,29 @@ trait ViewBackend {
 }
 
 trait DbViewBackend extends ViewBackend { self: DbBackend =>
+  import org.overviewproject.database.Slick.simple._
+
   override def index(documentSetId: Long) = db { session =>
-    DbViewBackend.byDocumentSetId(documentSetId)(session)
+    byDocumentSetIdCompiled(documentSetId).list(session)
   }
 
   override def show(id: Long) = db { session =>
-    DbViewBackend.byId(id)(session)
+    byId(id)(session)
   }
 
-  override def create(documentSetId: Long, attributes: View.CreateAttributes) = db { implicit session =>
-    val id = DbViewBackend.nextViewId(documentSetId)(session)
-    val view = View.build(id, documentSetId, attributes)
-    DbViewBackend.insert(view)(session)
+  override def create(documentSetId: Long, attributes: View.CreateAttributes) = {
+    val i = inserter
+    db { session => i.insert((documentSetId, attributes))(session) }
   }
 
-  override def update(id: Long, attributes: View.UpdateAttributes) = db { implicit session =>
-    val count = DbViewBackend.update(id, attributes)(session)
-    if (count > 0) DbViewBackend.byId(id)(session) else None
+  override def update(id: Long, attributes: View.UpdateAttributes) = db { session =>
+    val count = attributesByIdCompiled(id).update(attributes.title)(session)
+    if (count > 0) byId(id)(session) else None
   }
 
   override def destroy(id: Long) = db { implicit session =>
-    DbViewBackend.destroy(id)(session)
+    byIdCompiled(id).delete(session)
   }
-}
-
-object DbViewBackend {
-  import org.overviewproject.database.Slick.simple._
 
   private lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Column[Long]) =>
     Views.filter(_.documentSetId === documentSetId)
@@ -78,46 +75,15 @@ object DbViewBackend {
     Views.filter(_.id === id)
   }
 
-  private lazy val previousIdCompiled = Compiled { (min: Column[Long], max: Column[Long]) =>
-    Views
-      .filter(_.id >= min)
-      .filter(_.id < max)
-      .map(_.id)
-      .max
-  }
-
   private lazy val attributesByIdCompiled = Compiled { (id: Column[Long]) =>
     for (v <- Views if v.id === id) yield (v.title)
   }
 
-  def nextViewId(documentSetId: Long)(session: Session): Long = {
-    val minId = documentSetId << 32L
-    val maxId = (documentSetId + 1L) << 32L
-    val previousId = previousIdCompiled(minId, maxId).run(session)
-    previousId.map(_ + 1L).getOrElse(minId)
-  }
-
-  def byDocumentSetId(documentSetId: Long)(session: Session) = {
-    byDocumentSetIdCompiled(documentSetId).list(session)
-  }
-
-  def byId(id: Long)(session: Session) = {
+  private def byId(id: Long)(session: Session) = {
     byIdCompiled(id).firstOption(session)
   }
 
-  lazy val insertView = (Views returning Views).insertInvoker
-
-  def insert(view: View)(session: Session): View = {
-    (insertView += view)(session)
-  }
-
-  def update(id: Long, attributes: View.UpdateAttributes)(session: Session): Int = {
-    attributesByIdCompiled(id).update(attributes.title)(session)
-  }
-
-  def destroy(id: Long)(session: Session): Unit = {
-    byIdCompiled(id).delete(session)
-  }
+  private val inserter = (Views.map((v) => (v.documentSetId, v.createAttributes)) returning Views).insertInvoker
 }
 
 object ViewBackend extends DbViewBackend with DbBackend

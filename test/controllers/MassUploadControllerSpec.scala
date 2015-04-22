@@ -9,15 +9,16 @@ import play.api.test.FakeRequest
 import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedRequest,SessionFactory}
-import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
+import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
 import models.{ Session, User }
-import org.overviewproject.models.{FileGroup,GroupedFileUpload}
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob}
+import org.overviewproject.models.{DocumentSet,FileGroup,GroupedFileUpload}
+import org.overviewproject.tree.orm.{DocumentSet=>DeprecatedDocumentSet,DocumentSetCreationJob}
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 class MassUploadControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
+    val mockDocumentSetBackend = smartMock[DocumentSetBackend]
     val mockFileGroupBackend = smartMock[FileGroupBackend]
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockSessionFactory = smartMock[SessionFactory]
@@ -26,6 +27,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
     val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
 
     val controller = new MassUploadController {
+      override val documentSetBackend = mockDocumentSetBackend
       override val fileGroupBackend = mockFileGroupBackend
       override val groupedFileUploadBackend = mockUploadBackend
       override val storage = mockStorage
@@ -145,11 +147,11 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val fileGroup = factory.fileGroup(id=234L)
       val documentSet = factory.documentSet(id=documentSetId)
 
-      mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
-      mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
-      mockStorage.createDocumentSet(any, any, any) returns documentSet.toDeprecatedDocumentSet
+      mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
+      mockFileGroupBackend.update(any, any) returns Future.successful(fileGroup.copy(completed=true))
+      mockDocumentSetBackend.create(any, any) returns Future.successful(documentSet)
       mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
-      mockMessageQueue.startClustering(any, any) returns Future(())
+      mockMessageQueue.startClustering(any, any) returns Future.successful(())
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
       lazy val result = controller.startClustering()(request)
@@ -161,7 +163,12 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "create a DocumentSetCreationJob" in new StartClusteringScope {
       h.status(result)
-      there was one(mockStorage).createDocumentSet(user.email, fileGroupName, lang)
+      there was one(mockDocumentSetBackend).create(
+        beLike[DocumentSet.CreateAttributes] { case attributes =>
+          attributes.title must beEqualTo(fileGroupName)
+        },
+        beLike[String] { case s => s must beEqualTo(user.email) }
+      )
       there was one(mockStorage).createMassUploadDocumentSetCreationJob(
         documentSetId, 234L, lang, false, stopWords, importantWords, true)
     }
@@ -181,7 +188,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
     "return NotFound if user has no FileGroup in progress" in new StartClusteringScope {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
       h.status(result) must beEqualTo(h.NOT_FOUND)
-      there was no(mockStorage).createDocumentSet(any, any, any)
+      there was no(mockDocumentSetBackend).create(any, any)
     }
   }
 
@@ -224,7 +231,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "create a DocumentSetCreationJob" in new StartClusteringExistingDocumentSetScope {
       h.status(result)
-      there was no(mockStorage).createDocumentSet(any, any, any)
+      there was no(mockDocumentSetBackend).create(any, any)
       there was one(mockStorage).createMassUploadDocumentSetCreationJob(
         documentSetId, 234L, lang, false, stopWords, importantWords, false)
     }

@@ -8,19 +8,20 @@ import scala.concurrent.{Future,blocking}
 
 import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
 import controllers.auth.{AuthorizedAction,SessionFactory}
-import controllers.backend.{ FileGroupBackend, GroupedFileUploadBackend }
+import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
 import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
-import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
+import models.orm.stores.DocumentSetCreationJobStore
 import models.OverviewDatabase
-import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.models.{DocumentSet,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,DocumentSetUser}
+import org.overviewproject.tree.orm.{DocumentSet=>DeprecatedDocumentSet,DocumentSetCreationJob,DocumentSetUser}
 import org.overviewproject.tree.Ownership
 import org.overviewproject.util.ContentDisposition
 
 trait MassUploadController extends Controller {
+  protected val documentSetBackend: DocumentSetBackend
   protected val fileGroupBackend: FileGroupBackend
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
   protected val sessionFactory: SessionFactory
@@ -144,15 +145,12 @@ trait MassUploadController extends Controller {
 
     fileGroupBackend.find(userEmail, None).flatMap(_ match {
       case Some(fileGroup) => {
-        val job: DocumentSetCreationJob = blocking(OverviewDatabase.inTransaction {
-          val documentSet = storage.createDocumentSet(userEmail, name, lang)
-          storage.createMassUploadDocumentSetCreationJob(
-            documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords, true)
-        })
-
-        fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
-          .map(_ => messageQueue.startClustering(job, name))
-          .map(_ => Redirect(routes.DocumentSetController.index()))
+        for {
+          documentSet <- documentSetBackend.create(DocumentSet.CreateAttributes(name), userEmail)
+          job <- Future.successful(storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords, true))
+          _ <- fileGroupBackend.update(fileGroup.id, true)
+          _ <- messageQueue.startClustering(job, name)
+        } yield Redirect(routes.DocumentSetController.index())
       }
       case None => Future.successful(NotFound)
     })
@@ -186,15 +184,13 @@ trait MassUploadController extends Controller {
 object MassUploadController extends MassUploadController {
   override protected val storage = DatabaseStorage
   override protected val messageQueue = ApolloQueue
+  override protected val documentSetBackend = DocumentSetBackend
   override protected val fileGroupBackend = FileGroupBackend
   override protected val sessionFactory = SessionFactory
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
   override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
 
   trait Storage {
-    /** @returns a newly created DocumentSet */
-    def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet
-
     /** @returns a newly created DocumentSetCreationJob */
     def createMassUploadDocumentSetCreationJob(
       documentSetId: Long,
@@ -216,13 +212,6 @@ object MassUploadController extends MassUploadController {
     import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
     import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 
-    override def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet = {
-      val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title = title))
-      DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, userEmail, Ownership.Owner))
-
-      documentSet
-    }
-
     override def createMassUploadDocumentSetCreationJob(
       documentSetId: Long,
       fileGroupId: Long,
@@ -232,19 +221,21 @@ object MassUploadController extends MassUploadController {
       importantWords: String,
       canBeCancelled: Boolean
     ): DocumentSetCreationJob = {
-      DocumentSetCreationJobStore.insertOrUpdate(
-        DocumentSetCreationJob(
-          documentSetId = documentSetId,
-          fileGroupId = Some(fileGroupId),
-          lang = lang,
-          splitDocuments = splitDocuments,
-          suppliedStopWords = suppliedStopWords,
-          importantWords = importantWords,
-          state = FilesUploaded,
-          jobType = FileUpload,
-          canBeCancelled = canBeCancelled
+      OverviewDatabase.inTransaction {
+        DocumentSetCreationJobStore.insertOrUpdate(
+          DocumentSetCreationJob(
+            documentSetId = documentSetId,
+            fileGroupId = Some(fileGroupId),
+            lang = lang,
+            splitDocuments = splitDocuments,
+            suppliedStopWords = suppliedStopWords,
+            importantWords = importantWords,
+            state = FilesUploaded,
+            jobType = FileUpload,
+            canBeCancelled = canBeCancelled
+          )
         )
-      )
+      }
     }
   }
 

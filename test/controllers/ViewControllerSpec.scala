@@ -107,11 +107,14 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         mockApiTokenBackend.create(any[Option[Long]], any[ApiToken.CreateAttributes]) returns Future.successful(factory.apiToken(token="api-token"))
         mockViewBackend.create(any[Long], any[View.CreateAttributes]) returns Future.failed(new Throwable("goto end"))
         h.status(result)
-        there was one(mockViewBackend).create(documentSetId, View.CreateAttributes(
-          url="http://localhost:9001",
-          apiToken="api-token",
-          title="title"
-        ))
+        there was one(mockViewBackend).create(
+          beLike[Long] { case x => x must beEqualTo(documentSetId) },
+          beLike[View.CreateAttributes] { case attributes =>
+            attributes.url must beEqualTo("http://localhost:9001")
+            attributes.apiToken must beEqualTo("api-token")
+            attributes.title must beEqualTo("title")
+          }
+        )
       }
 
       "return the View" in new CreateScope {

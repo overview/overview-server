@@ -7,12 +7,11 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.apiDocumentSetCreator
-import controllers.backend.{ApiTokenBackend,DocumentSetBackend,DocumentSetUserBackend}
+import controllers.backend.{ApiTokenBackend,DocumentSetBackend}
 import org.overviewproject.models.{ApiToken,DocumentSet}
 
 trait DocumentSetController extends ApiController {
   protected val apiTokenBackend: ApiTokenBackend
-  protected val documentSetUserBackend: DocumentSetUserBackend
   protected val backend: DocumentSetBackend
 
   private val CreateForm = Form[DocumentSet.CreateAttributes](
@@ -26,8 +25,7 @@ trait DocumentSetController extends ApiController {
       _ => Future.successful(BadRequest(jsonError("You must pass a JSON object with a 'title' attribute."))),
       attributes => {
         for {
-          documentSet <- backend.create(attributes)
-          _ <- documentSetUserBackend.createOwner(documentSet.id, request.apiToken.createdBy)
+          documentSet <- backend.create(attributes, request.apiToken.createdBy)
           apiToken <- apiTokenBackend.create(Some(documentSet.id), ApiToken.CreateAttributes(request.apiToken.createdBy, "[automatically returned when creating DocumentSet via API]"))
         } yield Created(Json.obj(
           "documentSet" -> Json.obj(
@@ -44,5 +42,4 @@ trait DocumentSetController extends ApiController {
 object DocumentSetController extends DocumentSetController {
   override protected val apiTokenBackend = ApiTokenBackend
   override protected val backend = DocumentSetBackend
-  override protected val documentSetUserBackend = DocumentSetUserBackend
 }

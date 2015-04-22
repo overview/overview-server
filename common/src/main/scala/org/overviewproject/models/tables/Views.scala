@@ -19,7 +19,21 @@ class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
   def title = column[String]("title")
   def createdAt = column[Timestamp]("created_at")
 
-  def * = (id, documentSetId, url, apiToken, title, createdAt) <> ((View.apply _).tupled, View.unapply)
+  def * = (
+    id,
+    documentSetId,
+    url,
+    apiToken,
+    title,
+    createdAt
+  ) <> ((View.apply _).tupled, View.unapply)
+
+  def createAttributes = (
+    url,
+    apiToken,
+    title,
+    createdAt
+  ) <> (View.CreateAttributes.tupled, View.CreateAttributes.unapply)
 }
 
 object Views extends TableQuery(new ViewsImpl(_))

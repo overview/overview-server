@@ -15,9 +15,12 @@ trait SlickClient {
     *
     * The default implementation calls blockingDb(), surrounding it with
     * scala.concurrent.blocking().
+    *
+    * The code will be run in the database's ExecutionContext. (Right now,
+    * that's scala.concurrent.ExecutionContext.global.)
     */
-  def db[A](block: Session => A)(implicit executor: ExecutionContext): Future[A] = {
-    Future(blocking(blockingDb(block)))
+  def db[A](block: Session => A): Future[A] = {
+    Future(blocking(blockingDb(block)))(ExecutionContext.global)
   }
 
   // [Adam, 2015-02-26] I much prefer this call style

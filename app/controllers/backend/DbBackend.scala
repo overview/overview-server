@@ -1,22 +1,12 @@
 package controllers.backend
 
-import scala.concurrent.{Future,blocking}
-import scala.concurrent.ExecutionContext.Implicits._
-import scala.slick.jdbc.JdbcBackend.Session
-import scala.slick.lifted.{Column,Ordered,Query,RunnableCompiled}
+import scala.concurrent.Future
+import scala.slick.lifted.{Column,Query,RunnableCompiled}
 
-import models.OverviewDatabase
 import models.pagination.{Page,PageInfo,PageRequest}
+import org.overviewproject.database.{SlickClient,SlickSessionProvider}
 
-trait DbBackend extends Backend {
-  def db[A](block: Session => A): Future[A] = Future {
-    blocking {
-      OverviewDatabase.withSlickSession { session =>
-        block(session)
-      }
-    }
-  }
-
+trait DbBackend extends SlickClient with SlickSessionProvider {
   def list[T](q: Query[_, T, Seq]): Future[Seq[T]] = db { session =>
     import org.overviewproject.database.Slick.simple._
     q.list(session)
