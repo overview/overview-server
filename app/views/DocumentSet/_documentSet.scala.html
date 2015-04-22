@@ -45,12 +45,7 @@
         })
       </span>
       <span class="document-count">@m("nDocuments", documentSet.documentCount)</span>
-      <span class="view-count" data-n-views="@nViews" data-n-view-jobs="@nJobs">
-        @m("nViews", nViews)
-        @if(nJobs > 0) {
-          @m("nJobs", nJobs, nViews)
-        }
-      </span>
+      <span class="view-count" data-n-views="@{nViews + nJobs}">@m("nViews", nViews + nJobs)</span>
       @if(documentSet.documentProcessingErrorCount > 0) {
         <span class="error-count">
           <a class="error-count" href="@routes.DocumentProcessingErrorController.index(documentSet.id)" data-toggle="modal" data-target="#error-list-modal">
