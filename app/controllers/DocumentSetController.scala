@@ -9,6 +9,7 @@ import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetStore
+import models.OverviewDatabase
 import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.Delete
 import org.overviewproject.tree.DocumentSetCreationJobType
@@ -40,11 +41,10 @@ trait DocumentSetController extends Controller {
     val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
     val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
 
-    val nViews = storage.findNTreesByDocumentSets(documentSets.map(_.id))
-    val nJobs = storage.findNJobsByDocumentSets(documentSets.map(_.id))
+    val nViews: Seq[Long] = storage.findNViewsByDocumentSets(documentSets.map(_.id))
 
     val documentSetsWithCounts = documentSets.zipWithIndex
-      .map((t: Tuple2[DocumentSet,Int]) => (t._1, nViews(t._2), nJobs(t._2)))
+      .map((t: Tuple2[DocumentSet,Int]) => (t._1, nViews(t._2)))
 
     val resultPage = ResultPage(documentSetsWithCounts, documentSetsPage.pageDetails)
 
@@ -81,9 +81,8 @@ trait DocumentSetController extends Controller {
     storage.findDocumentSet(id) match {
       case None => NotFound
       case Some(documentSet) => {
-        val nTrees = storage.findNTreesByDocumentSets(Seq(id)).headOption.getOrElse(0)
-        val nJobs = storage.findNJobsByDocumentSets(Seq(id)).headOption.getOrElse(0)
-        Ok(views.json.DocumentSet.showHtml(request.user, documentSet, nTrees, nJobs))
+        val nViews = storage.findNViewsByDocumentSets(Seq(id)).head
+        Ok(views.json.DocumentSet.showHtml(request.user, documentSet, nViews))
       }
     }
   }
@@ -195,17 +194,12 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     /** Returns a DocumentSet from an ID */
     def findDocumentSet(id: Long): Option[DocumentSet]
 
-    /** Returns a Seq: for each DocumentSet, the number of Trees.
+    /** Returns a Seq: for each DocumentSet, the total number of Views, Trees
+      * and Recluster jobs.
       *
       * The return value comes in the same order as the input parameter.
       */
-    def findNTreesByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
-
-    /** Returns a Seq: for each DocumentSet, the number of Recluster jobs.
-      *
-      * The return value comes in the same order as the input parameter.
-      */
-    def findNJobsByDocumentSets(documentSetIds: Seq[Long]): Seq[Int]
+    def findNViewsByDocumentSets(documentSetIds: Seq[Long]): Seq[Long]
 
     /** Returns a page of DocumentSets */
     def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
@@ -237,34 +231,50 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
   object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
     override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
 
-    override def findNTreesByDocumentSets(documentSetIds: Seq[Long]) = {
-      import org.overviewproject.postgres.SquerylEntrypoint._
+    override def findNViewsByDocumentSets(documentSetIds: Seq[Long]) = {
+      import org.overviewproject.database.Slick.simple._
+      import scala.slick.jdbc.{GetResult,StaticQuery}
 
-      val idToNTrees = from(models.orm.Schema.trees)(t =>
-        where(t.documentSetId in documentSetIds)
-        groupBy(t.documentSetId)
-        compute(count(t.id))
-      )
-        .toSeq
-        .map((g) => (g.key -> g.measures.toInt))
-        .toMap
+      // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries
+      // would make more sense than straight SQL.
 
-      documentSetIds.map((id) => idToNTrees.getOrElse(id, 0))
-    }
+      val q = s"""
+        WITH ids AS (
+          SELECT *
+          FROM (VALUES ${documentSetIds.map("(" + _ + ")").mkString(",")}) AS t(id)
+        ), counts1 AS (
+          SELECT document_set_id, COUNT(*) AS c
+          FROM document_set_creation_job
+          WHERE document_set_id IN (SELECT id FROM ids)
+            AND state <> ${DocumentSetCreationJobState.Cancelled.id}
+          GROUP BY document_set_id
+        ), counts2 AS (
+          SELECT document_set_id, COUNT(*) AS c
+          FROM tree
+          WHERE document_set_id IN (SELECT id FROM ids)
+          GROUP BY document_set_id
+        ), counts3 AS (
+          SELECT document_set_id, COUNT(*) AS c
+          FROM "view"
+          WHERE document_set_id IN (SELECT id FROM ids)
+          GROUP BY document_set_id
+        ), all_counts AS (
+          SELECT * FROM counts1
+          UNION
+          SELECT * FROM counts2
+          UNION
+          SELECT * FROM counts3
+        )
+        SELECT document_set_id, SUM(c)
+        FROM all_counts
+        GROUP BY document_set_id
+      """
 
-    override def findNJobsByDocumentSets(documentSetIds: Seq[Long]) = {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-
-      val idToNTrees = from(models.orm.Schema.documentSetCreationJobs)(j =>
-        where(j.documentSetId in documentSetIds and j.state <> DocumentSetCreationJobState.Cancelled)
-        groupBy(j.documentSetId)
-        compute(count(j.id))
-      )
-        .toSeq
-        .map((g) => (g.key -> g.measures.toInt))
-        .toMap
-
-      documentSetIds.map((id) => idToNTrees.getOrElse(id, 0))
+      val documentSetIdToCount: Map[Long,Long] = OverviewDatabase.withSlickSession { session =>
+        StaticQuery.queryNA[(Long,Long)](q).list(session)
+          .toMap
+      }
+      documentSetIds.map((id) => documentSetIdToCount.getOrElse(id, 0L))
     }
 
     override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {

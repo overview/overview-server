@@ -8,15 +8,10 @@ import models.User
 import org.overviewproject.tree.orm.DocumentSet
 
 object showHtml {
-  def apply(
-      user: User,
-      documentSet: DocumentSet,
-      nTrees: Int,
-      nJobs: Int
-      )(implicit lang: Lang, request: RequestHeader): JsValue = {
+  def apply(user: User,documentSet: DocumentSet, nViews: Long)(implicit lang: Lang, request: RequestHeader): JsValue = {
     Json.obj(
       "id" -> documentSet.id,
-      "html" -> views.html.DocumentSet._documentSet(documentSet, nTrees, nJobs, user).toString
+      "html" -> views.html.DocumentSet._documentSet(documentSet, nViews, user).toString
     )
   }
 }

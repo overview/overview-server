@@ -1,7 +1,6 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
-  nViews: Int,
-  nJobs: Int,
+  nViews: Long,
   viewer: User
 )(implicit lang: play.api.i18n.Lang, request: RequestHeader)
 
@@ -45,7 +44,7 @@
         })
       </span>
       <span class="document-count">@m("nDocuments", documentSet.documentCount)</span>
-      <span class="view-count" data-n-views="@{nViews + nJobs}">@m("nViews", nViews + nJobs)</span>
+      <span class="view-count" data-n-views="@{nViews}">@m("nViews", nViews)</span>
       @if(documentSet.documentProcessingErrorCount > 0) {
         <span class="error-count">
           <a class="error-count" href="@routes.DocumentProcessingErrorController.index(documentSet.id)" data-toggle="modal" data-target="#error-list-modal">

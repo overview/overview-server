@@ -93,15 +93,13 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "return Ok if the document set exists but no trees do" in new ShowHtmlInJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
-        mockStorage.findNTreesByDocumentSets(Seq(documentSetId)) returns Seq(0)
-        mockStorage.findNJobsByDocumentSets(Seq(documentSetId)) returns Seq(0)
+        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Seq(0)
         h.status(result) must beEqualTo(h.OK)
       }
 
       "return Ok if the document set exists with trees" in new ShowHtmlInJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
-        mockStorage.findNTreesByDocumentSets(Seq(documentSetId)) returns Seq(2)
-        mockStorage.findNJobsByDocumentSets(Seq(documentSetId)) returns Seq(1)
+        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Seq(2)
         h.status(result) must beEqualTo(h.OK)
       }
     }
@@ -210,10 +208,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         def fakeDocumentSets: Seq[DocumentSet] = Seq(fakeDocumentSet(1L))
         mockStorage.findDocumentSets(anyString, anyInt, anyInt) answers { (_) => ResultPage(fakeDocumentSets, IndexPageSize, pageNumber) }
-        def fakeNViews: Seq[Int] = Seq(2)
-        mockStorage.findNTreesByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNViews }
-        def fakeNJobs: Seq[Int] = Seq(2)
-        mockStorage.findNJobsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNJobs }
+        def fakeNViews: Seq[Long] = Seq(2)
+        mockStorage.findNViewsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNViews }
         def fakeJobs: Seq[(DocumentSetCreationJob, DocumentSet, Long)] = Seq()
         mockStorage.findDocumentSetCreationJobs(anyString) answers { (_) => fakeJobs }
 
@@ -263,29 +259,26 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "show multiple pages" in new IndexScope {
         override def fakeDocumentSets = (1 until IndexPageSize * 2).map(fakeDocumentSet(_))
-        override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x)
-        override def fakeNJobs = (1 until IndexPageSize * 2).map((x: Int) => x)
+        override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x.toLong)
         h.contentAsString(result) must contain("/documentsets?page=2")
       }
 
       "show multiple document sets per page" in new IndexScope {
         override def fakeDocumentSets = (1 until IndexPageSize).map(fakeDocumentSet(_))
-        override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x)
-        override def fakeNJobs = (1 until IndexPageSize * 2).map((x: Int) => x)
+        override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x.toLong)
 
         h.contentAsString(result) must not contain ("/documentsets?page=2")
       }
 
-      "bind nViews and nJobs to their document sets" in new IndexScope {
+      "bind nViews to their document sets" in new IndexScope {
         override def fakeDocumentSets = Seq(fakeDocumentSet(1L), fakeDocumentSet(2L))
         override def fakeNViews = Seq(4, 5)
-        override def fakeNJobs = Seq(0, 1)
 
         val ds1 = j.$("[data-document-set-id='1']")
         val ds2 = j.$("[data-document-set-id='2']")
 
         ds1.find(".view-count").text() must contain("4 views")
-        ds2.find(".view-count").text() must contain("6 views")
+        ds2.find(".view-count").text() must contain("5 views")
       }
 
       "show jobs" in new IndexScope {

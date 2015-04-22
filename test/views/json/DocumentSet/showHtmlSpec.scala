@@ -20,7 +20,7 @@ class showHtmlSpec extends Specification with JsonMatchers {
       val documentSet = DocumentSet()
       val user = User()
 
-      lazy val documentSetJson = showHtml(user, documentSet, 1, 0).toString
+      lazy val documentSetJson = showHtml(user, documentSet, 1L).toString
     }
 
     "contain id and html" in new DocumentSetContext {

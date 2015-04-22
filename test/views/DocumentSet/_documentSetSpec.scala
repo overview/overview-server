@@ -7,9 +7,8 @@ class _documentSetSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     def documentSet: DocumentSet = DocumentSet(id=1L)
     def nViews: Int = 3
-    def nJobs: Int = 0
 
-    def result = _documentSet(documentSet, nViews, nJobs, fakeUser)
+    def result = _documentSet(documentSet, nViews, fakeUser)
   }
 
   trait DocumentSetWithErrorsContext extends BaseScope {
@@ -36,10 +35,9 @@ class _documentSetSpec extends views.html.ViewSpecification {
       a.get().headOption.map(_.getAttribute("href")) must beSome(s"/documentsets/${documentSet.id}")
     }
 
-    "should show the number of views, including jobs" in new BaseScope {
-      override def nJobs = 1
+    "should show the number of views" in new BaseScope {
       val span = $(".view-count")
-      span.text().trim must beEqualTo("4 views")
+      span.text().trim must beEqualTo("3 views")
     }
 
     "should show a document count" in new BaseScope {
