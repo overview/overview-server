@@ -45,7 +45,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectInitialReadyForTask
     }
 
-    "step from selected process" in new MultistepProcessContext {
+    "step through selected process" in new MultistepProcessContext {
       createJobQueue.handingOutTask(
         CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
 
@@ -67,6 +67,25 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
       jobQueueProbe.expectMsg(ReadyForTask)
 
+      worker ! RequestResponse(documentIds)
+
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
+
+      jobQueueProbe.expectReadyForTask
+    }
+
+    "cancel while waiting for a request response" in new ProcessWithRequestContext {
+      createJobQueue.handingOutTask(
+        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
+
+      createWorker
+
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
+
+      worker ! CancelTask
+      worker ! RequestResponse(documentIds)
+      
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
@@ -303,8 +322,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       class IdRequestingStep extends TaskStep {
         override def execute: Future[TaskStep] = {
-          worker ! RequestResponse(documentIds)
-
           Future.successful(WaitForResponse(finish))
         }
 
