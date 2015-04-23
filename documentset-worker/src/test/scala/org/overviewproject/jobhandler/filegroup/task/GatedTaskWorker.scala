@@ -51,6 +51,7 @@ class GatedTaskWorker(jobQueuePath: String,
     new GatedTask(taskGate.future)
     
   override protected def findUploadedFile(uploadedFileId: Long) = Future.successful(uploadedFile)
+  override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String) = {}
 
   private def manageTaskGate: PartialFunction[Any, Unit] = {
     case CancelYourself => self ! CancelTask

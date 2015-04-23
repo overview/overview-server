@@ -5,6 +5,7 @@ import akka.pattern.pipe
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.Future
+import scala.concurrent.Await
 import org.overviewproject.util.Logger
 import FileGroupTaskWorkerFSM._
 import akka.actor.Status.Failure
@@ -27,7 +28,7 @@ object FileGroupTaskWorkerProtocol {
   case object ReadyForTask
   case object CancelTask
 
- case class RequestResponse(documentIds: Seq[Long])                             
+  case class RequestResponse(documentIds: Seq[Long])
 
   trait TaskWorkerTask {
     val documentSetId: Long
@@ -51,7 +52,6 @@ object FileGroupTaskWorkerFSM {
   case object WaitingForResponse extends State
   case object Cancelled extends State
   case object CancelledWaitingForResponse extends State
-
   sealed trait Data
   case class ExternalActorsFound(jobQueue: Option[ActorRef], progressReporter: Option[ActorRef]) extends Data
   case class ExternalActors(jobQueue: ActorRef, reporter: ActorRef) extends Data
@@ -95,6 +95,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep
 
   protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
+  protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Unit
 
   override def preStart = lookForExternalActors
 
@@ -182,13 +183,26 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(FinalStep, TaskInfo(jobQueue, progressReporter, documentSetId, _, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
-      
+
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(step: TaskStep, _) => {
       step.execute pipeTo self
       stay
     }
+
+    case Event(Failure(e), TaskInfo(jobQueue, progressReporter, documentSetId, _, uploadedFileId)) => {
+      // FIXME: don't load info that should already be available
+      val upload = Await.result(findUploadedFile(uploadedFileId), Duration.Inf)
+
+      writeDocumentProcessingError(documentSetId, upload.get.name, e.getMessage)
+
+      jobQueue ! TaskDone(documentSetId, None)
+      jobQueue ! ReadyForTask
+
+      goto(Ready) using ExternalActors(jobQueue, progressReporter)
+    }
+
     case Event(step: FileGroupTaskStep, _) => {
       executeTaskStep(step)
 
@@ -198,24 +212,24 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(TaskAvailable, _) => stay
   }
 
-  when  (WaitingForResponse) {
+  when(WaitingForResponse) {
     case Event(RequestResponse(ids: Seq[Long]), WaitingTaskInfo(Right(nextStep), taskInfo)) => {
       self ! nextStep(ids)
-      
+
       goto(Working) using taskInfo
     }
     case Event(WaitForResponse(nextStep), WaitingTaskInfo(Left(ids), taskInfo)) => {
       self ! nextStep(ids)
-      
+
       goto(Working) using taskInfo
     }
     case Event(CancelTask, waitingTaskInfo) =>
       goto(CancelledWaitingForResponse) using waitingTaskInfo
   }
-  
+
   when(Cancelled) {
     case Event(RequestResponse(ids), t: TaskInfo) => {
-      goto(CancelledWaitingForResponse) using WaitingTaskInfo(Left(ids), t)      
+      goto(CancelledWaitingForResponse) using WaitingTaskInfo(Left(ids), t)
     }
     case Event(WaitForResponse(nextStep), t: TaskInfo) => {
       goto(CancelledWaitingForResponse) using WaitingTaskInfo(Right(nextStep), t)
@@ -232,22 +246,21 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   when(CancelledWaitingForResponse) {
     case Event(RequestResponse(ids: Seq[Long]),
-        WaitingTaskInfo(Right(nextStep), TaskInfo(jobQueue, progressReporter, documentSetId, _, _))) => {
+      WaitingTaskInfo(Right(nextStep), TaskInfo(jobQueue, progressReporter, documentSetId, _, _))) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
-    case Event(WaitForResponse(nextStep), 
-        WaitingTaskInfo(Left(ids), TaskInfo(jobQueue, progressReporter, documentSetId, _, _))) => {
+    case Event(WaitForResponse(nextStep),
+      WaitingTaskInfo(Left(ids), TaskInfo(jobQueue, progressReporter, documentSetId, _, _))) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
-      
+
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
   }
-  
-  
+
   whenUnhandled {
     case Event(Failure(e), _) => throw e // Escalate unhandled exceptions
     case Event(e, s) =>
@@ -299,8 +312,10 @@ object FileGroupTaskWorker {
       new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
         DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter(), TempFileDeleter())
 
-    protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]] = db { implicit session =>
+    override protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]] = db { implicit session =>
       GroupedFileUploads.filter(_.id === uploadedFileId).firstOption
     }
+
+    override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Unit = ???
   }
 }

@@ -85,13 +85,29 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       worker ! CancelTask
       worker ! RequestResponse(documentIds)
-      
+
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
-
     }
 
+    "write DocumentProcessingError when step fails" in new FailingProcessContext {
+      createJobQueue.handingOutTask(
+        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
+
+      createWorker
+
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
+
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
+
+      jobQueueProbe.expectReadyForTask
+      
+      writeDocumentProcessingErrorWasCalled(documentSetId, filename, message)
+      
+    }
+    
     "step through task until done" in new RunningTaskWorkerContext {
       createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
 
@@ -195,7 +211,8 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       protected val fileGroupId: Long = 2l
       protected val uploadedFileId: Long = 10l
       protected val fileId: Long = 20l
-
+      protected val filename: String = "filename"
+      
       var jobQueue: ActorRef = _
       var jobQueueProbe: JobQueueTestProbe = _
       var progressReporter: ActorRef = _
@@ -259,7 +276,12 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       protected def firstStep: TaskStep = FinalStep
 
-      protected def uploadedFile: Option[GroupedFileUpload] = Some(smartMock[GroupedFileUpload])
+      protected def uploadedFile: Option[GroupedFileUpload] = {
+        val f = smartMock[GroupedFileUpload]
+        f.name returns filename
+        
+        Some(f)
+      }
 
     }
 
@@ -329,6 +351,21 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       }
 
       override def firstStep: TaskStep = new IdRequestingStep
+    }
+
+    trait FailingProcessContext extends MultistepProcessContext {
+      val message = "failure"
+      class FailingStep extends TaskStep {
+        override def execute: Future[TaskStep] = Future {
+          throw new Exception(message)
+        }
+      }
+
+      override def firstStep: TaskStep = new FailingStep
+      
+      def writeDocumentProcessingErrorWasCalled(documentSetId: Long, filename: String, message: String) = 
+        worker.underlyingActor.writeDocumentProcessingErrorFn.wasCalledWith(documentSetId, filename, message)
+
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {
