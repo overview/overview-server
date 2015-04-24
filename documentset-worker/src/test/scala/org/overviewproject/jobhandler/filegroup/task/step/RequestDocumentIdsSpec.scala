@@ -18,7 +18,7 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
     "request a document id" in new RequestingScope {
       requestDocumentIds.execute
 
-      idSupplier.expectMsg(DocumentIdRequest(1, documentSetId, 1))
+      idSupplier.expectMsg(DocumentIdRequest(1, 1))
     }
 
     "wait with WriteDocuments as next step" in new RequestingScope {
