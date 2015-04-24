@@ -5,7 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import org.overviewproject.models.Document
 
-case class DocumentIdRequest(numberOfIds: Long)
+case class DocumentIdRequest(requestId: Long, documentSetId: Long, numberOfIds: Long)
 
 trait RequestDocumentIds extends TaskStep {
   protected val documentIdSupplier: ActorRef
@@ -25,7 +25,7 @@ trait RequestDocumentIds extends TaskStep {
   }
 
   override def execute: Future[TaskStep] = Future {
-    documentIdSupplier ! DocumentIdRequest(1)
+    documentIdSupplier ! DocumentIdRequest(1, documentSetId, 1)
 
     WaitForResponse(nextStepForResponse _)
   }

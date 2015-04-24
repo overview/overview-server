@@ -18,7 +18,7 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
     "request a document id" in new RequestingScope {
       requestDocumentIds.execute
 
-      idSupplier.expectMsg(DocumentIdRequest(1))
+      idSupplier.expectMsg(DocumentIdRequest(1, documentSetId, 1))
     }
 
     "wait with WriteDocuments as next step" in new RequestingScope {
@@ -31,6 +31,7 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
   }
 
   trait RequestingScope extends ActorSystemContext with Before {
+    val documentSetId = 1l
     val next = smartMock[TaskStep]
     var idSupplier: TestProbe = _
 
@@ -38,13 +39,12 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
 
     override def before = {
       idSupplier = TestProbe()
-      requestDocumentIds = new TestRequestDocumentIds(idSupplier.ref, next)
+      requestDocumentIds = new TestRequestDocumentIds(documentSetId, idSupplier.ref, next)
     }
   }
 
-  class TestRequestDocumentIds(override val documentIdSupplier: ActorRef, next: TaskStep) extends RequestDocumentIds {
+  class TestRequestDocumentIds(override val documentSetId: Long, override val documentIdSupplier: ActorRef, next: TaskStep) extends RequestDocumentIds {
     override protected val documentData = Seq(smartMock[PdfFileDocumentData])
-    override protected val documentSetId: Long = 1l
     override protected val nextStep = { d : Seq[Document] => next }
   }
 }

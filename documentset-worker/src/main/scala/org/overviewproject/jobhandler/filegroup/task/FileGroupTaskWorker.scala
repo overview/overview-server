@@ -28,7 +28,7 @@ object FileGroupTaskWorkerProtocol {
   case object ReadyForTask
   case object CancelTask
 
-  case class RequestResponse(documentIds: Seq[Long])
+  case class RequestResponse(requestId: Long, documentIds: Seq[Long])
 
   trait TaskWorkerTask {
     val documentSetId: Long
@@ -177,7 +177,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(WaitForResponse(nextStep), t: TaskInfo) => {
       goto(WaitingForResponse) using WaitingTaskInfo(Right(nextStep), t)
     }
-    case Event(RequestResponse(ids), t: TaskInfo) => {
+    case Event(RequestResponse(requestId, ids), t: TaskInfo) => {
       goto(WaitingForResponse) using WaitingTaskInfo(Left(ids), t)
     }
     case Event(FinalStep, TaskInfo(jobQueue, progressReporter, documentSetId, _, _)) => {
@@ -213,7 +213,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(WaitingForResponse) {
-    case Event(RequestResponse(ids: Seq[Long]), WaitingTaskInfo(Right(nextStep), taskInfo)) => {
+    case Event(RequestResponse(requestId: Long, ids: Seq[Long]), WaitingTaskInfo(Right(nextStep), taskInfo)) => {
       self ! nextStep(ids)
 
       goto(Working) using taskInfo
@@ -228,7 +228,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Cancelled) {
-    case Event(RequestResponse(ids), t: TaskInfo) => {
+    case Event(RequestResponse(requestId, ids), t: TaskInfo) => {
       goto(CancelledWaitingForResponse) using WaitingTaskInfo(Left(ids), t)
     }
     case Event(WaitForResponse(nextStep), t: TaskInfo) => {
@@ -245,7 +245,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(CancelledWaitingForResponse) {
-    case Event(RequestResponse(ids: Seq[Long]),
+    case Event(RequestResponse(requestId: Long, ids: Seq[Long]),
       WaitingTaskInfo(Right(nextStep), TaskInfo(jobQueue, progressReporter, documentSetId, _, _))) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask

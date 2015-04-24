@@ -67,7 +67,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
       jobQueueProbe.expectMsg(ReadyForTask)
 
-      worker ! RequestResponse(documentIds)
+      worker ! RequestResponse(uploadedFileId, documentIds)
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
@@ -84,7 +84,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsg(ReadyForTask)
 
       worker ! CancelTask
-      worker ! RequestResponse(documentIds)
+      worker ! RequestResponse(uploadedFileId, documentIds)
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
