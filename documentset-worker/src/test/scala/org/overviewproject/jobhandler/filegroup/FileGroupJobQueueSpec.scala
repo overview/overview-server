@@ -15,6 +15,7 @@ import akka.actor.Terminated
 import akka.actor.PoisonPill
 import akka.actor.Actor
 import akka.actor.Props
+import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
 class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
@@ -186,7 +187,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         Seq.fill(numberOfWorkers)(new WorkerTestProbe(documentSetId, fileGroupId, system))
 
       protected def submitJob(documentSetId: Long = documentSetId) =
-        fileGroupJobQueue ! SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, false))
+        fileGroupJobQueue ! SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, UploadProcessOptions("en", false)))
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
       protected def expectCancellation(workers: Seq[WorkerTestProbe]) = workers.map { _.expectMsg(CancelTask) }

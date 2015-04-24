@@ -6,18 +6,19 @@ import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.test.ParameterStore
+import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
 trait JobParameters {
   protected val documentSetId = 1l
   protected val fileGroupId = 2l
   protected val title = "title"
   protected val lang = "en"
-  protected val splitDocuments = false
+  protected val options = UploadProcessOptions("en", false)
   protected val importantWords = "important words"
   protected val suppliedStopWords = "stop words"
 
   protected val clusterCommand =
-    ClusterFileGroupCommand(documentSetId, fileGroupId, title, lang, splitDocuments, suppliedStopWords, importantWords)
+    ClusterFileGroupCommand(documentSetId, fileGroupId, title, options.lang, options.splitDocument, suppliedStopWords, importantWords)
   protected val cancelCommand = CancelClusterFileGroupCommand(documentSetId, fileGroupId)
 
 }

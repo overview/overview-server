@@ -9,12 +9,13 @@ import org.overviewproject.util.Logger
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import akka.actor.Terminated
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
 trait FileGroupJob {
   val fileGroupId: Long
 }
 
-case class CreateDocumentsJob(fileGroupId: Long, splitDocuments: Boolean) extends FileGroupJob
+case class CreateDocumentsJob(fileGroupId: Long, options: UploadProcessOptions) extends FileGroupJob
 case class DeleteFileGroupJob(fileGroupId: Long) extends FileGroupJob
 
 object FileGroupJobQueueProtocol {

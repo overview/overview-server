@@ -14,6 +14,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util.Logger
 import org.overviewproject.util.Configuration
+import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -60,11 +61,11 @@ trait FileGroupJobManager extends Actor {
 
   override def receive = {
 
-    case command: ClusterFileGroupCommand => attemptUpdateJobState(command, 0)
+    case command: ClusterFileGroupCommand           => attemptUpdateJobState(command, 0)
 
     case UpdateJobStateRetryAttempt(command, count) => attemptUpdateJobState(command, count)
 
-    case JobCompleted(documentSetId) => handleCompletedJob(documentSetId)
+    case JobCompleted(documentSetId)                => handleCompletedJob(documentSetId)
 
     case CancelClusterFileGroupCommand(documentSetId, fileGroupId) =>
       cancelJob(documentSetId, fileGroupId)
@@ -93,9 +94,9 @@ trait FileGroupJobManager extends Actor {
 
   private def failJob(job: DocumentSetCreationJob): Unit = storage.failJob(job)
 
-
   private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit =
-    submitToFileGroupJobQueue(job.documentSetId, CreateDocumentsJob(job.fileGroupId.get, job.splitDocuments))
+    submitToFileGroupJobQueue(job.documentSetId,
+      CreateDocumentsJob(job.fileGroupId.get, UploadProcessOptions(job.lang, job.splitDocuments)))
 
   private def submitToFileGroupJobQueue(documentSetId: Long, job: FileGroupJob): Unit = {
     runningJobs += (documentSetId -> job)
@@ -104,7 +105,7 @@ trait FileGroupJobManager extends Actor {
 
   private def handleCompletedJob(documentSetId: Long) = runningJobs.get(documentSetId).map {
     case CreateDocumentsJob(fileGroupId, splitDocuments) => submitClusteringJob(documentSetId)
-    case DeleteFileGroupJob(fileGroupId) =>
+    case DeleteFileGroupJob(fileGroupId)                 =>
   } getOrElse deleteCancelledJobFileGroup(documentSetId)
 
   private def submitClusteringJob(documentSetId: Long): Unit =
@@ -124,8 +125,8 @@ trait FileGroupJobManager extends Actor {
 }
 
 class FileGroupJobManagerImpl(
-    override protected val fileGroupJobQueue: ActorRef,
-    override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager {
+  override protected val fileGroupJobQueue: ActorRef,
+  override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager {
 
   class DatabaseStorage extends FileGroupJobManager.Storage {
 

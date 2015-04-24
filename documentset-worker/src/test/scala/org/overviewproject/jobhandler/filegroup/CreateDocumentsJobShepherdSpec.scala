@@ -10,6 +10,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTas
 import org.specs2.mutable.Before
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import org.overviewproject.jobhandler.filegroup.JobDescription._
+import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
 class CreateDocumentsJobShepherdSpec extends Specification {
 
@@ -68,9 +69,9 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val documentSetId = 1l
       val fileGroupId = 1l
       val uploadedFileId = 10l
-      val splitDocuments = true
+      val options = UploadProcessOptions("en", true)
       val task = CreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
-      val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments)
+      val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, options.splitDocument)
       val jobDescription = ProcessUpload
       val stepDescription1 = ExtractText
       val stepDescription2 = CreateDocument
@@ -79,7 +80,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
         jobQueue = TestProbe()
         progressReporter = TestProbe()
 
-        jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, splitDocuments,
+        jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, options,
           jobQueue.ref, progressReporter.ref, Set(uploadedFileId))
       }
     }

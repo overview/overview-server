@@ -2,13 +2,14 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.ActorRef
 import org.specs2.mock.Mockito
+import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
 
 
 class TestCreateDocumentsJobShepherd(
     val documentSetId: Long,
     val fileGroupId: Long, 
-    val splitDocuments: Boolean,
+    val options: UploadProcessOptions,
     val taskQueue: ActorRef,
     val progressReporter: ActorRef,
     uploadedFileIds: Set[Long]) extends CreateDocumentsJobShepherd with Mockito {
