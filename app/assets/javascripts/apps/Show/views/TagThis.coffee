@@ -136,7 +136,7 @@ define [
     # least it doesn't eat the click.
     _muteIframes: ->
       @_unmuteIframes()
-      @_iframesWithPointerEvents = for iframe in $('iframe')
+      @_iframesWithPointerEvents = for iframe in $('iframe, object')
         $iframe = $(iframe)
         value = $iframe.css('pointerEvents')
         $iframe.css(pointerEvents: 'none')
