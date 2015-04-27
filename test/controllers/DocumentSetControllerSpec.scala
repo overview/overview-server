@@ -10,12 +10,13 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
 import scala.concurrent.Future
 
-import controllers.backend.ViewBackend
+import controllers.backend.{DocumentSetBackend,ViewBackend}
 import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
+import org.overviewproject.models.DocumentSet
 import org.overviewproject.test.factories.PodoFactory
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob,Tag,Tree}
+import org.overviewproject.tree.orm.{DocumentSet=>DeprecatedDocumentSet,DocumentSetCreationJob,Tag,Tree}
 import org.overviewproject.tree.orm.DocumentSetCreationJobState
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.ResultPage
@@ -25,27 +26,30 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     val factory = PodoFactory
 
     val IndexPageSize = 10
-    val mockStorage = mock[DocumentSetController.Storage]
-    val mockJobQueue = mock[DocumentSetController.JobMessageQueue]
-    val mockViewBackend = mock[ViewBackend]
+    val mockStorage = smartMock[DocumentSetController.Storage]
+    val mockJobQueue = smartMock[DocumentSetController.JobMessageQueue]
+    val mockViewBackend = smartMock[ViewBackend]
+    val mockBackend = smartMock[DocumentSetBackend]
 
     val controller = new DocumentSetController {
       override val indexPageSize = IndexPageSize
       override val storage = mockStorage
       override val jobQueue = mockJobQueue
       override val viewBackend = mockViewBackend
+      override val backend = mockBackend
     }
 
     def fakeJob(documentSetId: Long, id: Long, fileGroupId: Long,
                 state: DocumentSetCreationJobState = InProgress,
-                jobType: DocumentSetCreationJobType = FileUpload) =
+                jobType: DocumentSetCreationJobType = FileUpload) = {
       DocumentSetCreationJob(
         id = id,
         documentSetId = documentSetId,
         fileGroupId = Some(fileGroupId),
         jobType = jobType,
-        state = state)
-    def fakeDocumentSet(id: Long) = DocumentSet(id = id)
+        state = state
+      )
+    }
   }
 
   "DocumentSetController" should {
@@ -55,26 +59,25 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def formBody: Seq[(String, String)] = Seq("public" -> "false", "title" -> "foo")
         def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
         def result = controller.update(documentSetId)(request)
+
+        mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
       }
 
       "return 204" in new UpdateScope {
-        mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(id = documentSetId))
         h.status(result) must beEqualTo(h.NO_CONTENT)
       }
 
       "update the DocumentSet" in new UpdateScope {
-        mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(id = documentSetId))
         h.status(result) // invoke it
         there was one(mockStorage).insertOrUpdateDocumentSet(any)
       }
 
-      "return NotFound if document set is bad" in new UpdateScope {
-        mockStorage.findDocumentSet(anyLong) returns None
+      "return NotFound if DocumentSet does not exist" in new UpdateScope {
+        mockBackend.show(documentSetId) returns Future.successful(None)
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
       "return BadRequest if form input is bad" in new UpdateScope {
-        mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(id = documentSetId))
         override def formBody = Seq("public" -> "maybe", "title" -> "bar")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
       }
@@ -84,22 +87,21 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       trait ShowHtmlInJsonScope extends BaseScope {
         val documentSetId = 1
         def result = controller.showHtmlInJson(documentSetId)(fakeAuthorizedRequest)
+        mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
+        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Seq(2)
       }
 
-      "return NotFound if document set is not present" in new ShowHtmlInJsonScope {
-        mockStorage.findDocumentSet(documentSetId) returns None
+      "return NotFound if DocumentSet is not present" in new ShowHtmlInJsonScope {
+        mockBackend.show(documentSetId) returns Future.successful(None)
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return Ok if the document set exists but no trees do" in new ShowHtmlInJsonScope {
-        mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
+      "return Ok if the DocumentSet exists but no trees do" in new ShowHtmlInJsonScope {
         mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Seq(0)
         h.status(result) must beEqualTo(h.OK)
       }
 
-      "return Ok if the document set exists with trees" in new ShowHtmlInJsonScope {
-        mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
-        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Seq(2)
+      "return Ok if the DocumentSet exists with trees" in new ShowHtmlInJsonScope {
         h.status(result) must beEqualTo(h.OK)
       }
     }
@@ -132,7 +134,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
           color="FFFFFF"
         )
 
-        mockStorage.findDocumentSet(documentSetId) returns Some(DocumentSet(documentCount=10))
+        mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(documentCount=10)))
         mockStorage.findTrees(documentSetId) returns Seq(sampleTree)
         mockViewBackend.index(documentSetId) returns Future.successful(Seq(sampleView))
         mockStorage.findViewJobs(documentSetId) returns Seq()
@@ -179,25 +181,19 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
     "show" should {
       trait ValidShowScope extends BaseScope {
-        val badDocumentSet = smartMock[DocumentSet]
-        val documentSet = smartMock[org.overviewproject.models.DocumentSet]
-        badDocumentSet.toDocumentSet returns documentSet
-        mockStorage.findDocumentSet(1) returns Some(badDocumentSet)
         val documentSetId = 1L
         def request = fakeAuthorizedRequest
         lazy val result = controller.show(documentSetId)(request)
+        mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
       }
 
       "return NotFound when the DocumentSet is not present" in new ValidShowScope {
-        mockStorage.findDocumentSet(1) returns None
+        mockBackend.show(documentSetId) returns Future.successful(None)
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return Ok when okay" in new ValidShowScope {
+      "return OK when okay" in new ValidShowScope {
         h.status(result) must beEqualTo(h.OK)
-      }
-
-      "return some HTML when okay" in new ValidShowScope {
         h.contentType(result) must beSome("text/html")
       }
     }
@@ -206,11 +202,11 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       trait IndexScope extends BaseScope {
         def pageNumber = 1
 
-        def fakeDocumentSets: Seq[DocumentSet] = Seq(fakeDocumentSet(1L))
-        mockStorage.findDocumentSets(anyString, anyInt, anyInt) answers { (_) => ResultPage(fakeDocumentSets, IndexPageSize, pageNumber) }
+        def fakeDocumentSets: Seq[DocumentSet] = Seq(factory.documentSet(id=1L))
+        mockStorage.findDocumentSets(anyString, anyInt, anyInt) answers { (_) => ResultPage(fakeDocumentSets.map(_.toDeprecatedDocumentSet), IndexPageSize, pageNumber) }
         def fakeNViews: Seq[Long] = Seq(2)
         mockStorage.findNViewsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNViews }
-        def fakeJobs: Seq[(DocumentSetCreationJob, DocumentSet, Long)] = Seq()
+        def fakeJobs: Seq[(DocumentSetCreationJob, DeprecatedDocumentSet, Long)] = Seq()
         mockStorage.findDocumentSetCreationJobs(anyString) answers { (_) => fakeJobs }
 
         def request = fakeAuthorizedRequest
@@ -225,7 +221,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "return Ok if there are only jobs" in new IndexScope {
         override def fakeDocumentSets = Seq()
-        override def fakeJobs = Seq((fakeJob(2, 2, 2), fakeDocumentSet(2), 0))
+        override def fakeJobs = Seq((fakeJob(2, 2, 2), factory.documentSet(id=2L).toDeprecatedDocumentSet, 0))
 
         h.status(result) must beEqualTo(h.OK)
       }
@@ -258,20 +254,20 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "show multiple pages" in new IndexScope {
-        override def fakeDocumentSets = (1 until IndexPageSize * 2).map(fakeDocumentSet(_))
+        override def fakeDocumentSets = (1 until IndexPageSize * 2).map { (id) => factory.documentSet(id=id) }
         override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x.toLong)
         h.contentAsString(result) must contain("/documentsets?page=2")
       }
 
       "show multiple document sets per page" in new IndexScope {
-        override def fakeDocumentSets = (1 until IndexPageSize).map(fakeDocumentSet(_))
+        override def fakeDocumentSets = (1 until IndexPageSize).map { (id) => factory.documentSet(id=id) }
         override def fakeNViews = (1 until IndexPageSize * 2).map((x: Int) => x.toLong)
 
         h.contentAsString(result) must not contain ("/documentsets?page=2")
       }
 
       "bind nViews to their document sets" in new IndexScope {
-        override def fakeDocumentSets = Seq(fakeDocumentSet(1L), fakeDocumentSet(2L))
+        override def fakeDocumentSets = Seq(factory.documentSet(id=1L), factory.documentSet(id=2L))
         override def fakeNViews = Seq(4, 5)
 
         val ds1 = j.$("[data-document-set-id='1']")
@@ -282,7 +278,10 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "show jobs" in new IndexScope {
-        override def fakeJobs = Seq((fakeJob(2, 2, 2), fakeDocumentSet(2), 0), (fakeJob(3, 3, 3), fakeDocumentSet(3), 1))
+        override def fakeJobs = Seq(
+          (fakeJob(2, 2, 2), factory.documentSet(2L).toDeprecatedDocumentSet, 0),
+          (fakeJob(3, 3, 3), factory.documentSet(3L).toDeprecatedDocumentSet, 1)
+        )
 
         j.$("[data-document-set-creation-job-id='2']").length must beEqualTo(1)
         j.$("[data-document-set-creation-job-id='3']").length must beEqualTo(1)
@@ -292,15 +291,15 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     "delete" should {
 
       trait DeleteScope extends BaseScope {
-        val documentSetId = 1l
-        val fileGroupId = 10l
-        val documentSet = fakeDocumentSet(documentSetId)
+        val documentSetId = 1L
+        val fileGroupId = 10L
+        val documentSet = factory.documentSet(id=documentSetId)
 
         def request = fakeAuthorizedRequest
 
         lazy val result = controller.delete(documentSetId)(request)
 
-        mockStorage.findDocumentSet(documentSetId) returns Some(documentSet)
+        mockBackend.show(documentSetId) returns Future.successful(Some(documentSet))
 
         protected def setupJob(jobState: DocumentSetCreationJobState, jobType: DocumentSetCreationJobType = FileUpload): Unit =
           mockStorage.cancelJob(documentSetId) returns Some(fakeJob(documentSetId, 10l, fileGroupId, jobState, jobType))
@@ -311,7 +310,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockStorage).deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
@@ -320,8 +319,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).cancelJob(documentSet)
-        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockStorage).cancelJob(documentSet.id)
+        there was one(mockStorage).deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
@@ -330,8 +329,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).cancelJob(documentSet)
-        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockStorage).cancelJob(documentSet.id)
+        there was one(mockStorage).deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
 
       }
@@ -341,8 +340,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).cancelJob(documentSet)
-        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockStorage).cancelJob(documentSet.id)
+        there was one(mockStorage).deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
@@ -351,8 +350,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).cancelJob(documentSet)
-        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockStorage).cancelJob(documentSet.id)
+        there was one(mockStorage).deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
         there was one(mockJobQueue).send(Delete(documentSetId, waitForJobRemoval = true))
       }
 
@@ -361,7 +360,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockStorage).cancelJob(documentSet.id)
         there was one(mockJobQueue).send(CancelFileUpload(documentSetId, fileGroupId))
       }
 
@@ -370,7 +369,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockStorage).cancelJob(documentSet.id)
         there was one(mockJobQueue).send(CancelFileUpload(documentSetId, fileGroupId))
       }
     }

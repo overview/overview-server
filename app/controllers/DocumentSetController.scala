@@ -4,17 +4,18 @@ import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
 import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.backend.ViewBackend
+import controllers.backend.{DocumentSetBackend,ViewBackend}
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetStore
 import models.OverviewDatabase
+import org.overviewproject.models.DocumentSet
 import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.Delete
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree }
+import org.overviewproject.tree.orm.{ DocumentSet=>DeprecatedDocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.ResultPage
 
@@ -44,7 +45,7 @@ trait DocumentSetController extends Controller {
     val nViews: Seq[Long] = storage.findNViewsByDocumentSets(documentSets.map(_.id))
 
     val documentSetsWithCounts = documentSets.zipWithIndex
-      .map((t: Tuple2[DocumentSet,Int]) => (t._1, nViews(t._2)))
+      .map((t: Tuple2[DeprecatedDocumentSet,Int]) => (t._1, nViews(t._2)))
 
     val resultPage = ResultPage(documentSetsWithCounts, documentSetsPage.pageDetails)
 
@@ -66,31 +67,29 @@ trait DocumentSetController extends Controller {
     *
     * JavaScript will parse the rest of the URL.
     */
-  def show(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)) { implicit request =>
-    storage.findDocumentSet(id) match {
+  def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async { implicit request =>
+    backend.show(id).map(_ match {
       case None => NotFound
-      case Some(documentSet) => {
-        Ok(views.html.DocumentSet.show(request.user, documentSet))
-      }
-    }
+      case Some(documentSet) => Ok(views.html.DocumentSet.show(request.user, documentSet.toDeprecatedDocumentSet))
+    })
   }
 
   def showWithJsParams(id: Long, jsParams: String) = show(id)
 
-  def showHtmlInJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)) { implicit request =>
-    storage.findDocumentSet(id) match {
+  def showHtmlInJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async { implicit request =>
+    backend.show(id).map(_ match {
       case None => NotFound
-      case Some(documentSet) => {
+      case Some(documentSet) => OverviewDatabase.inTransaction {
         val nViews = storage.findNViewsByDocumentSets(Seq(id)).head
-        Ok(views.json.DocumentSet.showHtml(request.user, documentSet, nViews))
+        Ok(views.json.DocumentSet.showHtml(request.user, documentSet.toDeprecatedDocumentSet, nViews))
       }
-    }
+    })
   }
 
   def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)).async {
-    storage.findDocumentSet(id).map(_.copy()) match {
+    backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
-      case Some(documentSet) => {
+      case Some(documentSet) => OverviewDatabase.inTransaction {
         val trees = storage.findTrees(id).map(_.copy()).toArray
         val viewJobs = storage.findViewJobs(id).map(_.copy()).toArray
         val tags = storage.findTags(id).map(_.copy()).toArray
@@ -98,33 +97,33 @@ trait DocumentSetController extends Controller {
         for {
           _views <- viewBackend.index(id)
         } yield Ok(views.json.DocumentSet.show(
-          documentSet,
+          documentSet.toDeprecatedDocumentSet,
           trees,
           _views,
           viewJobs,
           tags
         ))
       }
-    }
+    })
   }
 
-  def delete(id: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(id)) { implicit request =>
+  def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+    backend.show(id).map(_ match {
+      case None => NotFound
+      case Some(documentSet) => _delete(documentSet)
+    })
+  }
+
+  private def _delete(documentSet: DocumentSet) = OverviewDatabase.inTransaction {
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
 
     // FIXME: Move all deletion to worker and remove database access here
     // FIXME: Make client distinguish between deleting document sets and canceling jobs
 
-    val documentSet = storage.findDocumentSet(id)
-    def onDocumentSet(f: DocumentSet => Unit): Unit =
-      documentSet.map(f)
-
     def done(message: String, event: String) = Redirect(routes.DocumentSetController.index()).flashing(
       "success" -> m(message),
-      "event" -> event)
-
-    def doneWithError(message: String, event: String) = Redirect(routes.DocumentSetController.index()).flashing(
-      "warning" -> m(message),
-      "event" -> event)
+      "event" -> event
+    )
 
     // FIXME: If a reclustering job is running, but there are failed jobs, we assume
     // that the delete refers to canceling the running job.
@@ -132,38 +131,41 @@ trait DocumentSetController extends Controller {
     // than trying to guess.
 
     // FIXME: gratuitous use of implicit and big if statement should be refactored into a separate class
-    implicit val cancelledJob = storage.cancelJob(id) 
+    implicit val cancelledJob: Option[DocumentSetCreationJob] = storage.cancelJob(documentSet.id)
 
     if (noJobCancelled) {
-      onDocumentSet(storage.deleteDocumentSet)
-      jobQueue.send(Delete(id))
+      storage.deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
+      jobQueue.send(Delete(documentSet.id))
       
       done("deleteDocumentSet.success", "document-set-delete")
     } else if (runningInWorker) {
-      onDocumentSet(storage.deleteDocumentSet)
-      jobQueue.send(Delete(id, waitForJobRemoval = true)) // wait for worker to stop clustering and remove job
+      storage.deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
+      jobQueue.send(Delete(documentSet.id, waitForJobRemoval = true)) // wait for worker to stop clustering and remove job
       
       done("deleteJob.success", "document-set-delete")
     } else if (notRunning) {
-      onDocumentSet(storage.deleteDocumentSet)
-      jobQueue.send(Delete(id, waitForJobRemoval = false)) // don't wait for worker
+      storage.deleteDocumentSet(documentSet.toDeprecatedDocumentSet)
+      jobQueue.send(Delete(documentSet.id, waitForJobRemoval = false)) // don't wait for worker
       
       done("deleteJob.success", "document-set-delete")
     } else if (runningInTextExtractionWorker && validTextExtractionJob) {
-      jobQueue.send(CancelFileUpload(id, cancelledJob.get.fileGroupId.get))
+      jobQueue.send(CancelFileUpload(documentSet.id, cancelledJob.get.fileGroupId.get))
 
       done("deleteJob.success", "document-set-delete")
     } else BadRequest // all cases should be covered..
   }
 
-  def update(id: Long) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
-    storage.findDocumentSet(id).map { documentSet =>
-      DocumentSetUpdateForm(documentSet).bindFromRequest().fold(
-        f => BadRequest, { updatedDocumentSet =>
-          storage.insertOrUpdateDocumentSet(updatedDocumentSet)
-          NoContent
-        })
-    }.getOrElse(NotFound)
+  def update(id: Long) = AuthorizedAction(adminUser).async { implicit request =>
+    backend.show(id).map(_ match {
+      case None => NotFound
+      case Some(documentSet) => {
+        DocumentSetUpdateForm(documentSet).bindFromRequest().fold(
+          f => BadRequest, OverviewDatabase.inTransaction { updatedDocumentSet =>
+            storage.insertOrUpdateDocumentSet(updatedDocumentSet)
+            NoContent
+          })
+      }
+    })
   }
 
   private def jobTest(test: DocumentSetCreationJob => Boolean)(implicit job: Option[DocumentSetCreationJob]): Boolean = 
@@ -186,14 +188,12 @@ trait DocumentSetController extends Controller {
 
   protected val storage: DocumentSetController.Storage
   protected val jobQueue: DocumentSetController.JobMessageQueue
+  protected val backend: DocumentSetBackend
   protected val viewBackend: ViewBackend
 }
 
 object DocumentSetController extends DocumentSetController with DocumentSetDeletionComponents {
   trait Storage {
-    /** Returns a DocumentSet from an ID */
-    def findDocumentSet(id: Long): Option[DocumentSet]
-
     /** Returns a Seq: for each DocumentSet, the total number of Views, Trees
       * and Recluster jobs.
       *
@@ -202,14 +202,14 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     def findNViewsByDocumentSets(documentSetIds: Seq[Long]): Seq[Long]
 
     /** Returns a page of DocumentSets */
-    def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
+    def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DeprecatedDocumentSet]
 
     /** Returns all active DocumentSetCreationJobs (job, documentSet, queuePosition) */
-    def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)]
+    def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DeprecatedDocumentSet, Long)]
 
-    def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
+    def insertOrUpdateDocumentSet(documentSet: DocumentSet): Unit
 
-    def deleteDocumentSet(documentSet: DocumentSet): Unit
+    def deleteDocumentSet(documentSet: DeprecatedDocumentSet): Unit
 
     def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
 
@@ -229,8 +229,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
   }
 
   object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
-    override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
-
     override def findNViewsByDocumentSets(documentSetIds: Seq[Long]) = {
       if (documentSetIds.isEmpty) {
         Seq()
@@ -281,12 +279,12 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
       }
     }
 
-    override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {
+    override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DeprecatedDocumentSet] = {
       val query = DocumentSetFinder.byOwner(userEmail)
       ResultPage(query, pageSize, page)
     }
 
-    override def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)] = {
+    override def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DeprecatedDocumentSet, Long)] = {
       DocumentSetCreationJobFinder
         .byUser(userEmail)
         .forUpdate // See comment in index(). Should be "forShare" but Squeryl doesn't support that
@@ -295,8 +293,8 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
         .withDocumentSetsAndQueuePositions
     }
 
-    override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {
-      DocumentSetStore.insertOrUpdate(documentSet)
+    override def insertOrUpdateDocumentSet(documentSet: DocumentSet) = {
+      DocumentSetStore.insertOrUpdate(documentSet.toDeprecatedDocumentSet)
     }
 
     override def findTrees(documentSetId: Long) = {
@@ -320,4 +318,5 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
   override val storage = DatabaseStorage
   override val jobQueue = ApolloJobMessageQueue
   override val viewBackend = ViewBackend
+  override val backend = DocumentSetBackend
 }

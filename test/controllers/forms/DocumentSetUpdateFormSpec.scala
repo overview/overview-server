@@ -4,14 +4,16 @@ import org.overviewproject.test.Specification
 import org.specs2.specification.Scope
 import play.api.data.Form
 import org.specs2.execute.Result
-import org.overviewproject.tree.orm.DocumentSet
+
+import org.overviewproject.models.DocumentSet
+import org.overviewproject.test.factories.PodoFactory
 
 class DocumentSetUpdateFormSpec extends Specification {
 
   "DocumentSetUpdateForm" should {
 
     trait UpdateFormContext extends Scope {
-      val documentSet = DocumentSet(1l, title = "title", isPublic = false)
+      val documentSet = PodoFactory.documentSet(1L, title="title", isPublic=false)
       val form = DocumentSetUpdateForm(documentSet)
     }
 
@@ -25,11 +27,12 @@ class DocumentSetUpdateFormSpec extends Specification {
     "accept all parameters" in new UpdateFormContext {
       val data = Map(
         "public" -> "false",
-      "title" -> "new title")
+        "title" -> "new title"
+      )
 
       checkFormValues(form, data) { d => 
         d.id must beEqualTo(documentSet.id)
-        d.isPublic must beFalse
+        d.public must beFalse
         d.title must be equalTo("new title")
       }
     }
@@ -39,7 +42,7 @@ class DocumentSetUpdateFormSpec extends Specification {
 
       checkFormValues(form, data) { d => 
         d.id must beEqualTo(documentSet.id)
-        d.isPublic must beTrue
+        d.public must beTrue
         d.title must be equalTo documentSet.title
       }
     }
