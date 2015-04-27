@@ -232,49 +232,53 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
 
     override def findNViewsByDocumentSets(documentSetIds: Seq[Long]) = {
-      import org.overviewproject.database.Slick.simple._
-      import scala.slick.jdbc.{GetResult,StaticQuery}
+      if (documentSetIds.isEmpty) {
+        Seq()
+      } else {
+        import org.overviewproject.database.Slick.simple._
+        import scala.slick.jdbc.{GetResult,StaticQuery}
 
-      // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries
-      // would make more sense than straight SQL.
+        // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries
+        // would make more sense than straight SQL.
 
-      val q = s"""
-        WITH ids AS (
-          SELECT *
-          FROM (VALUES ${documentSetIds.map("(" + _ + ")").mkString(",")}) AS t(id)
-        ), counts1 AS (
-          SELECT document_set_id, COUNT(*) AS c
-          FROM document_set_creation_job
-          WHERE document_set_id IN (SELECT id FROM ids)
-            AND state <> ${DocumentSetCreationJobState.Cancelled.id}
+        val q = s"""
+          WITH ids AS (
+            SELECT *
+            FROM (VALUES ${documentSetIds.map("(" + _ + ")").mkString(",")}) AS t(id)
+          ), counts1 AS (
+            SELECT document_set_id, COUNT(*) AS c
+            FROM document_set_creation_job
+            WHERE document_set_id IN (SELECT id FROM ids)
+              AND state <> ${DocumentSetCreationJobState.Cancelled.id}
+            GROUP BY document_set_id
+          ), counts2 AS (
+            SELECT document_set_id, COUNT(*) AS c
+            FROM tree
+            WHERE document_set_id IN (SELECT id FROM ids)
+            GROUP BY document_set_id
+          ), counts3 AS (
+            SELECT document_set_id, COUNT(*) AS c
+            FROM "view"
+            WHERE document_set_id IN (SELECT id FROM ids)
+            GROUP BY document_set_id
+          ), all_counts AS (
+            SELECT * FROM counts1
+            UNION
+            SELECT * FROM counts2
+            UNION
+            SELECT * FROM counts3
+          )
+          SELECT document_set_id, SUM(c)
+          FROM all_counts
           GROUP BY document_set_id
-        ), counts2 AS (
-          SELECT document_set_id, COUNT(*) AS c
-          FROM tree
-          WHERE document_set_id IN (SELECT id FROM ids)
-          GROUP BY document_set_id
-        ), counts3 AS (
-          SELECT document_set_id, COUNT(*) AS c
-          FROM "view"
-          WHERE document_set_id IN (SELECT id FROM ids)
-          GROUP BY document_set_id
-        ), all_counts AS (
-          SELECT * FROM counts1
-          UNION
-          SELECT * FROM counts2
-          UNION
-          SELECT * FROM counts3
-        )
-        SELECT document_set_id, SUM(c)
-        FROM all_counts
-        GROUP BY document_set_id
-      """
+        """
 
-      val documentSetIdToCount: Map[Long,Long] = OverviewDatabase.withSlickSession { session =>
-        StaticQuery.queryNA[(Long,Long)](q).list(session)
-          .toMap
+        val documentSetIdToCount: Map[Long,Long] = OverviewDatabase.withSlickSession { session =>
+          StaticQuery.queryNA[(Long,Long)](q).list(session)
+            .toMap
+        }
+        documentSetIds.map((id) => documentSetIdToCount.getOrElse(id, 0L))
       }
-      documentSetIds.map((id) => documentSetIdToCount.getOrElse(id, 0L))
     }
 
     override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {
