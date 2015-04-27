@@ -1,4 +1,6 @@
 @(documentProcessingErrors: Seq[(String, Seq[models.OverviewDocumentProcessingError])])(implicit lang: Lang)
+@import scala.util.Try
+@import java.net.{URL,MalformedURLException}
 
 @defining(scopedMessages("views.DocumentProcessingError.index")) { m =>
   <div class="modal-header">
@@ -11,8 +13,8 @@
       <ul class="list-unstyled error-list">
         @errorGroup._2.map { error =>
           <li>
-            @if(error.url.contains("/")) {
-              <a href=@error.url>@helper.DocumentProcessingErrorDisplay.url(error.url)</a>
+            @if(Try[Unit](new URL(error.url)).isSuccess) {
+              <a href="@error.url">@helper.DocumentProcessingErrorDisplay.url(error.url)</a>
             } else {
               @error.url
             }
