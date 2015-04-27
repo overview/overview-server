@@ -30,13 +30,16 @@ trait DocumentIdSupplier extends Actor {
     }
     
   }
-
-  protected def findMaxDocumentId: Future[Long]
+  
+  // Needs to read db synchronously because we don't want to risk
+  // having to parallel requests reading the same id twice
+  // If the documentSetId does not exist in the db, return 0.
+  protected def findMaxDocumentId: Long
 
   private def getLastId: Long =
     lastId.getOrElse {
       blocking {
-        Await.result(findMaxDocumentId, Duration.Inf)
+        findMaxDocumentId
       }
     }
   
@@ -51,7 +54,7 @@ object DocumentIdSupplier {
     override protected val documentSetId: Long) extends DocumentIdSupplier with SlickSessionProvider {
     import context.dispatcher
 
-    override protected def findMaxDocumentId: Future[Long] = db { implicit session =>
+    override protected def findMaxDocumentId: Long = blockingDb { implicit session =>
       Documents
         .filter(_.documentSetId === documentSetId)
         .map(_.id).max

@@ -54,6 +54,6 @@ class DocumentIdSupplierSpec extends Specification {
   
   class TestDocumentIdSupplier(override protected val documentSetId: Long, maxId: Long) extends DocumentIdSupplier {
     
-    override protected def findMaxDocumentId = Future.successful(maxId)
+    override protected def findMaxDocumentId = maxId
   }
 }
