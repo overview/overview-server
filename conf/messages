@@ -425,6 +425,8 @@ views.DocumentSet.show.apps.Job.heading=Clustering…
 views.DocumentSet.show.apps.Job.heading.error=Clustering failed
 views.DocumentSet.show.apps.Job.description=Overview is creating a visualization. You may read, search and tag your documents in the meantime.
 
+views.DocumentSet.showProgress.introduction=Please wait. Overview is processing your documents.
+
 views.DocumentSetUser.index.add=Add user
 views.DocumentSetUser.index.email_placeholder=user@example.org
 views.DocumentSetUser.index.example_document_set.checkbox_label=Set as example document set

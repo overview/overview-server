@@ -10,7 +10,7 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
 import scala.concurrent.Future
 
-import controllers.backend.{DocumentSetBackend,ViewBackend}
+import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
 import org.overviewproject.models.DocumentSet
 import org.overviewproject.test.factories.PodoFactory
@@ -30,13 +30,15 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     val mockJobQueue = smartMock[DocumentSetController.JobMessageQueue]
     val mockViewBackend = smartMock[ViewBackend]
     val mockBackend = smartMock[DocumentSetBackend]
+    val mockImportJobBackend = smartMock[ImportJobBackend]
 
     val controller = new DocumentSetController {
       override val indexPageSize = IndexPageSize
       override val storage = mockStorage
       override val jobQueue = mockJobQueue
-      override val viewBackend = mockViewBackend
       override val backend = mockBackend
+      override val importJobBackend = mockImportJobBackend
+      override val viewBackend = mockViewBackend
     }
 
     def fakeJob(documentSetId: Long, id: Long, fileGroupId: Long,
@@ -185,6 +187,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def request = fakeAuthorizedRequest
         lazy val result = controller.show(documentSetId)(request)
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
+        mockImportJobBackend.index(documentSetId) returns Future.successful(Seq())
+        mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq())
       }
 
       "return NotFound when the DocumentSet is not present" in new ValidShowScope {
@@ -195,6 +199,24 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       "return OK when okay" in new ValidShowScope {
         h.status(result) must beEqualTo(h.OK)
         h.contentType(result) must beSome("text/html")
+      }
+
+      "show a progressbar if there is an ImportJob" in new ValidShowScope {
+        val job = factory.documentSetCreationJob(fractionComplete=0.4)
+        mockImportJobBackend.index(documentSetId) returns Future.successful(Seq(job))
+        mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq(job.id + 1, job.id + 2, job.id, job.id + 3))
+        h.contentAsString(result) must beMatching("""(?s).*progress.*value="40".*""")
+        h.contentAsString(result) must beMatching("""(?s).*2 jobs.*""")
+      }
+
+      "show 0 jobs ahead in the case of a race" in new ValidShowScope {
+        // More of an integration test than a unit test. Oh well.
+        val job = factory.documentSetCreationJob(fractionComplete=0.4)
+        mockImportJobBackend.index(documentSetId) returns Future.successful(Seq(job))
+        // job disappeared before we tried to find the position in queue
+        mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq())
+        h.contentAsString(result) must beMatching("""(?s).*value="40".*""")
+        h.contentAsString(result) must not(beMatching("""(?s).*-1 jobs.*"""))
       }
     }
 

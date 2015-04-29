@@ -14,6 +14,11 @@ trait ImportJobBackend extends Backend {
   /** Returns a list of ImportJobs for the given user, in processing order.
     */
   def indexWithDocumentSets(userEmail: String): Future[Seq[(DocumentSetCreationJob,DocumentSet)]]
+
+  /** Returns a list of ImportJobs for the given DocumentSet, in processing
+    * order.
+    */
+  def index(documentSetId: Long): Future[Seq[DocumentSetCreationJob]]
 }
 
 trait DbImportJobBackend extends ImportJobBackend with DocumentSetCreationJobMappings { self: DbBackend =>
@@ -43,9 +48,19 @@ trait DbImportJobBackend extends ImportJobBackend with DocumentSetCreationJobMap
     } yield (job, documentSet)
   }
 
+  private lazy val indexCompiled = Compiled { documentSetId: Column[Long] =>
+    DocumentSetCreationJobs
+      .filter(_.documentSetId === documentSetId)
+      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
+      .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
+      .sortBy(_.id)
+  }
+
   override def indexIdsInProcessingOrder = list(processingIdsCompiled)
 
   override def indexWithDocumentSets(userEmail: String) = list(indexWithDocumentSetsCompiled(userEmail))
+
+  override def index(documentSetId: Long) = list(indexCompiled(documentSetId))
 }
 
 object ImportJobBackend extends DbImportJobBackend with DbBackend

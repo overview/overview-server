@@ -4,7 +4,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
 import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.backend.{DocumentSetBackend,ViewBackend}
+import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,TagFinder,TreeFinder}
@@ -68,9 +68,21 @@ trait DocumentSetController extends Controller {
     * JavaScript will parse the rest of the URL.
     */
   def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async { implicit request =>
-    backend.show(id).map(_ match {
-      case None => NotFound
-      case Some(documentSet) => Ok(views.html.DocumentSet.show(request.user, documentSet.toDeprecatedDocumentSet))
+    backend.show(id).flatMap(_ match {
+      case None => Future.successful(NotFound)
+      case Some(documentSet) => {
+        importJobBackend.index(id).flatMap(_.headOption match {
+          case None => Future.successful(Ok(views.html.DocumentSet.show(request.user, documentSet.toDeprecatedDocumentSet)))
+          case Some(job) => {
+            for {
+              idsInProcessingOrder <- importJobBackend.indexIdsInProcessingOrder
+            } yield {
+              val nAheadInQueue = idsInProcessingOrder.indexOf(job.id)
+              Ok(views.html.DocumentSet.showProgress(request.user, documentSet, job, math.max(nAheadInQueue, 0)))
+            }
+          }
+        })
+      }
     })
   }
 
@@ -189,6 +201,7 @@ trait DocumentSetController extends Controller {
   protected val storage: DocumentSetController.Storage
   protected val jobQueue: DocumentSetController.JobMessageQueue
   protected val backend: DocumentSetBackend
+  protected val importJobBackend: ImportJobBackend
   protected val viewBackend: ViewBackend
 }
 
@@ -317,6 +330,7 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
 
   override val storage = DatabaseStorage
   override val jobQueue = ApolloJobMessageQueue
-  override val viewBackend = ViewBackend
   override val backend = DocumentSetBackend
+  override val importJobBackend = ImportJobBackend
+  override val viewBackend = ViewBackend
 }

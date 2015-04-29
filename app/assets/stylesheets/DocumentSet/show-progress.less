@@ -1,0 +1,22 @@
+body.document-set-show-progress {
+  height: 100%;
+  .display-flex();
+  .flex-direction-column();
+
+  &>.container {
+    .flex(1 1 auto);
+    .display-flex();
+    .flex-direction-column();
+    .flex-justify-content(center);
+  }
+
+  ul, li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  form {
+    float: right;
+  }
+}
