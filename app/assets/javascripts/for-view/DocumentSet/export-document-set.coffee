@@ -3,9 +3,14 @@ require [
 ], ($) ->
   $iframe = $('<iframe name="export-document-set" src="about:blank"></iframe>')
 
-  refreshHeight = (e) ->
+  refreshHeight = (requireNonZero) ->
+    requireNonZero = false if $iframe.attr('src') == 'about:blank'
     height = $iframe[0].contentDocument?.body?.offsetHeight || 0
     $iframe.css(height: height)
+
+    # Firefox sometimes has height:0 even after the load event
+    if requireNonZero && height == 0
+      setTimeout(refreshHeight, 100)
 
   $ ->
     $modal = $('#export-modal')
