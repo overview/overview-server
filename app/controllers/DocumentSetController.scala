@@ -172,10 +172,12 @@ trait DocumentSetController extends Controller {
       case None => NotFound
       case Some(documentSet) => {
         DocumentSetUpdateForm(documentSet).bindFromRequest().fold(
-          f => BadRequest, OverviewDatabase.inTransaction { updatedDocumentSet =>
+          f => BadRequest,
+          updatedDocumentSet => OverviewDatabase.inTransaction {
             storage.insertOrUpdateDocumentSet(updatedDocumentSet)
             NoContent
-          })
+          }
+        )
       }
     })
   }
