@@ -1,17 +1,45 @@
-@import "../variables.less";
-@import "../mixins.less";
-
-nav {
-  @maxFontSize: @line-height-base * 1.75;
+nav.navbar {
   @lineHeight: @line-height-base * 2;
 
+  .display-flex();
+  .flex-wrap(wrap);
+  .navbar-inverse();
+  margin: 0;
+  padding: .5em 2em;
+
+  h1 {
+    .flex(0 0 auto);
+    margin: 0;
+    font-size: inherit;
+    line-height: @lineHeight;
+  }
+
+  h2 {
+    .flex(1 0 auto); // when navbar wraps, align right
+    text-align: right;
+    font: inherit;
+    font-size: 1.5em;
+    line-height: @lineHeight / 1.5;
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+
+    a {
+      text-decoration: none;
+    }
+  }
+
+  ul.navbar-nav {
+    .flex(1 0 auto);
+    float: none;
+    margin: 0;
+  }
+
   .styled-a() {
-    display: block;
-    color: @navbar-inverse-color;
-    text-decoration: none;
-    height: @lineHeight;
     line-height: @lineHeight;
     padding: 0 .5em;
+    color: @navbar-inverse-color;
+    text-decoration: none;
 
     &:hover {
       color: @navbar-inverse-color;
@@ -19,73 +47,49 @@ nav {
     }
   }
 
-  background: @navbar-inverse-bg;
-  color: @navbar-inverse-color;
-  margin: 0;
-  padding: .5em 2em;
-  line-height: @lineHeight;
-  .clearfix;
-
-  & > div > ul {
-    display: block;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-    & > li {
-      margin: 0;
-      padding: 0;
-      display: inline-block;
-      height: @lineHeight;
-
-      & > a {
-        .styled-a();
-      }
-    }
+  a.logo {
+    line-height: 1;
+    display: inline-block;
   }
 
-  & > a {
+  ul.nav>li>a {
     .styled-a();
   }
 
-  header {
-    float: left;
-    font-weight: bold;
-
-    a.logo {
-      .styled-a();
-      padding: 0;
-      display: inline-block;
-    }
-
-    div.dropdown {
-      display: inline-block;
-
-      &>a {
-        display: block; // more clickable
-        padding: 0 .5em;
-        font-size: 1.25em;
-        line-height: 2; // found by trial and error
-
-        // Underline shouldn't include space before caret
-        text-decoration: none;
-        &:hover strong { text-decoration: underline; }
-      }
-
-      i.icon {
-        display: inline-block;
-        text-align: center;
-        width: 1.25em;
-      }
-
-      a.delete-document-set {
-        color: @brand-danger;
-      }
-    }
+  .logged-in {
+    .flex(0 0 auto);
   }
 
-  .all {
-    float: left;
+  .navbar-text {
+    padding: 0 1.5em 0 .5em;
+    margin: 0;
+    font: inherit;
+    line-height: @lineHeight;
+  }
+
+  div.dropdown {
+    display: inline-block;
+
+    &>a {
+      display: block; // more clickable
+      padding: 0 .5em;
+      font-size: 1.25em;
+      line-height: 2; // found by trial and error
+
+      // Underline shouldn't include space before caret
+      text-decoration: none;
+      &:hover strong { text-decoration: underline; }
+    }
+
+    i.icon {
+      display: inline-block;
+      text-align: center;
+      width: 1.25em;
+    }
+
+    a.delete-document-set {
+      color: @brand-danger;
+    }
   }
 
   .logged-in {
@@ -94,10 +98,5 @@ nav {
     ul {
       float: left;
     }
-  }
-
-  .navbar-text {
-    float: left;
-    margin: 0 2em;
   }
 }

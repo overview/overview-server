@@ -137,6 +137,7 @@ views.components.importNav.copy.shared=Copy document sets shared with you
 views.components.navbar.add.files=Add documents
 views.components.navbar.export=Export
 views.components.navbar.share=Share
+views.components.navbar.header.documentSet=Document Set
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_admin_plugins=Plugins
 views.components.navbar.link_admin_users=Users
