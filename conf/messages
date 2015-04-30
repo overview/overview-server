@@ -381,6 +381,7 @@ views.DocumentSet.show.TagSelect.all=All documents
 views.DocumentSet.show.TagSelect.untagged=Untagged documents
 views.DocumentSet.show.TagSelect.organize=Organize tags…
 
+views.DocumentSet.show.TagThis.prompt=Tags
 views.DocumentSet.show.TagThis.label=Tag {0,choice,0#no documents|1#this document|1<these {0,number,integer} documents} as
 views.DocumentSet.show.TagThis.placeholder=
 views.DocumentSet.show.TagThis.organize=Organize tags…

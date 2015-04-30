@@ -30,7 +30,7 @@ define [
 
     templates:
       button: _.template('''
-        <button class="prompt btn btn-default"><i class="icon icon-tag"></i> <i class="icon icon-caret-down"></i></button>
+        <button class="prompt btn btn-default"><i class="icon icon-tag"></i> <%- t('prompt') %> <i class="icon icon-caret-down"></i></button>
         <div class="tag-this-main">
         </div>
       ''')
@@ -111,7 +111,7 @@ define [
       super()
 
     render: ->
-      @$el.html(@templates.button())
+      @$el.html(@templates.button(t: t))
 
       @ui =
         button: @$('button')
