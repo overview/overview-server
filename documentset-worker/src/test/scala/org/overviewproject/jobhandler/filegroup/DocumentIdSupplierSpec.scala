@@ -1,59 +1,52 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
-import org.specs2.mutable.Before
-import akka.actor.ActorRef
-import org.overviewproject.jobhandler.filegroup.task.step.DocumentIdRequest
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol.RequestResponse
-import akka.testkit.TestActorRef
-import scala.concurrent.Future
+import scala.slick.jdbc.JdbcBackend.Session
+import org.overviewproject.test.SlickSpecification
+import org.overviewproject.test.SlickClientInSession
 
-
-class DocumentIdSupplierSpec extends Specification {
+class DocumentIdSupplierSpec extends SlickSpecification {
 
   "DocumentIdSupplier" should {
-    
-    "return document ids when no documents exist" in new DocumentSetContext {
-      documentIdSupplier ! DocumentIdRequest(requestId, numberOfIds)
-      
-      expectMsg(RequestResponse(requestId, expectedIds))
-    }
-    
-    
-    "handle multiple requests" in new DocumentSetContext {
-      val firstRequest = numberOfIds - 2
-      val secondRequest = numberOfIds - firstRequest
-      
-      documentIdSupplier ! DocumentIdRequest(requestId, firstRequest)
-      expectMsg(RequestResponse(requestId, expectedIds.take(firstRequest)))
 
-      documentIdSupplier ! DocumentIdRequest(requestId, secondRequest)
-      expectMsg(RequestResponse(requestId, expectedIds.drop(firstRequest)))
-      
-    }
-    
-  }
-  
-  abstract class DocumentSetContext extends ActorSystemContext with Before {
-    val documentSetId: Long = 1l
-    val requestId: Int = 23
-    val numberOfIds: Int = 5
-    val expectedIds = Seq.tabulate(numberOfIds)(n => (documentSetId << 32) | (n + 1))
-    
-    protected def maxId = documentSetId << 32
-    
-    var documentIdSupplier: ActorRef = _
-    
+    "return document ids when no document exists in document set" in new DocumentSetScope {
+      val ids = documentIdSupplier.nextIds(5)
 
-    override def before = {
-      
-      documentIdSupplier = TestActorRef(new TestDocumentIdSupplier(documentSetId, maxId))
+      ids must containTheSameElementsAs(expectedIds.take(5))
     }
+
+    "return document ids when documents exist in document set" in new ExistingDocumentsScope {
+      val ids = documentIdSupplier.nextIds(5)
+
+      ids must containTheSameElementsAs(expectedIds.slice(1, 6))
+    }
+
+    "return valid ids for subsequent requests" in new DocumentSetScope {
+      val firstIds = documentIdSupplier.nextIds(5)
+      val secondIds = documentIdSupplier.nextIds(5)
+
+      secondIds must containTheSameElementsAs(expectedIds.drop(5))
+    }
+
+    "return document ids when document set does not exist" in new DbScope {
+      val documentIdSupplier = new TestDocumentIdSupplier(0)
+      
+      documentIdSupplier.nextIds(5) must haveSize(5)
+    }
+
   }
-  
-  class TestDocumentIdSupplier(override protected val documentSetId: Long, maxId: Long) extends DocumentIdSupplier {
-    
-    override protected def findMaxDocumentId = maxId
+
+  trait DocumentSetScope extends DbScope {
+    val documentSet = factory.documentSet()
+    val expectedIds = Seq.tabulate(10)(n => (documentSet.id << 32 | (n + 1)))
+
+    val documentIdSupplier = new TestDocumentIdSupplier(documentSet.id)
   }
+
+  trait ExistingDocumentsScope extends DocumentSetScope {
+    val document = factory.document(id = (documentSet.id << 32) + 1, documentSetId = documentSet.id)
+  }
+
+  class TestDocumentIdSupplier(override protected val documentSetId: Long)(implicit val session: Session)
+    extends DocumentIdSupplier with SlickClientInSession
+
 }
