@@ -81,6 +81,7 @@ object PostgresCommand {
   def windowsSearchPaths(filesystem: Filesystem) : Iterable[String] = {
     filesystem.programFilesPaths.flatMap({ (s: String) => Seq(
       // EnterpriseDB, according to http://www.enterprisedb.com/resources-community/pginst-guide
+      s"$s\\PostgreSQL\\9.4\\bin",
       s"$s\\PostgreSQL\\9.3\\bin",
       s"$s\\PostgreSQL\\9.2\\bin",
       s"$s\\PostgreSQL\\9.1\\bin",
