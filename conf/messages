@@ -134,7 +134,7 @@ views.components.importNav.copy=Copy a document set:
 views.components.importNav.copy.public=Copy an example document set
 views.components.importNav.copy.shared=Copy document sets shared with you
 
-views.components.navbar.add.files=Add documents (experimental)
+views.components.navbar.add.files=Add documents
 views.components.navbar.export=Export
 views.components.navbar.share=Share
 views.components.navbar.link_admin_jobs=Jobs
@@ -249,7 +249,7 @@ views.DocumentSet._dcimport.explanation=Your password will be sent (securely) to
 views.DocumentSet._dcimport.explanation_no_cors=Your browser will momentarily share these credentials with Overview servers. Overview servers will only use the credentials to show you a list of all your Overview projects and to import your project. Overview servers will not store your credentials any longer than is absolutely necessary.
 views.DocumentSet._dcimport.nFiles={0,choice,0#no files|1#one file|1<{0,number,integer} files}
 
-views.DocumentSet._documentSet.add.files=Add documents (experimental)
+views.DocumentSet._documentSet.add.files=Add documents
 views.DocumentSet._documentSet.menu=Actions...
 views.DocumentSet._documentSet.delete=Delete
 views.DocumentSet._documentSet.delete.confirm=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.
