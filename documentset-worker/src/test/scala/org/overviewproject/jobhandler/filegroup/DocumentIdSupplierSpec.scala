@@ -1,52 +1,81 @@
 package org.overviewproject.jobhandler.filegroup
 
-import scala.slick.jdbc.JdbcBackend.Session
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
+import org.specs2.mutable.Specification
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mutable.Before
+import akka.actor.{ ActorRef, Props }
+import akka.pattern.ask
+import org.overviewproject.jobhandler.filegroup.DocumentIdSupplierProtocol._
+import akka.util.Timeout
+import org.specs2.time.NoTimeConversions
+import scala.concurrent.duration._
+import org.specs2.mock.Mockito
+import akka.testkit.TestProbe
 
-class DocumentIdSupplierSpec extends SlickSpecification {
+class DocumentIdSupplierSpec extends Specification with NoTimeConversions {
 
   "DocumentIdSupplier" should {
 
-    "return document ids when no document exists in document set" in new DocumentSetScope {
-      val ids = documentIdSupplier.nextIds(5)
+    "reply to request for ids" in new DocumentIdSupplierScope {
+      implicit val t = timeout
+    
+      val response = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
 
-      ids must containTheSameElementsAs(expectedIds.take(5))
+      response must be_==(IdRequestResponse(documentIds)).await
     }
 
-    "return document ids when documents exist in document set" in new ExistingDocumentsScope {
-      val ids = documentIdSupplier.nextIds(5)
+    "reply to multiple request for the same documentset" in new DocumentIdSupplierScope {
+      implicit val t = timeout
+          
+      val response = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
+      val nextResponse = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
 
-      ids must containTheSameElementsAs(expectedIds.slice(1, 6))
+      nextResponse must be_==(IdRequestResponse(nextDocumentIds)).await
     }
 
-    "return valid ids for subsequent requests" in new DocumentSetScope {
-      val firstIds = documentIdSupplier.nextIds(5)
-      val secondIds = documentIdSupplier.nextIds(5)
+    "reply to requests for different documentsets" in new DocumentIdSupplierScope {
+      implicit val t = timeout
+    
+      val response = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
+      val responseToo = documentIdSupplier.ask(RequestIds(documentSetIdToo, numberOfIds))
 
-      secondIds must containTheSameElementsAs(expectedIds.drop(5))
+      responseToo must be_==(IdRequestResponse(documentIdsToo)).await
     }
-
-    "return document ids when document set does not exist" in new DbScope {
-      val documentIdSupplier = new TestDocumentIdSupplier(0)
-      
-      documentIdSupplier.nextIds(5) must haveSize(5)
-    }
-
   }
+  
+  abstract class DocumentIdSupplierScope extends ActorSystemContext with Before with Mockito {
+    val timeout = Timeout(1 second)
+    val documentSetId = 1l
+    val numberOfIds = 3
 
-  trait DocumentSetScope extends DbScope {
-    val documentSet = factory.documentSet()
-    val expectedIds = Seq.tabulate(10)(n => (documentSet.id << 32 | (n + 1)))
+    val documentIds = Seq(1l, 2l, 3l)
+    val nextDocumentIds = Seq(4l, 5l, 6l)
 
-    val documentIdSupplier = new TestDocumentIdSupplier(documentSet.id)
+    val documentSetIdToo = 2l
+    val documentIdsToo = Seq(7l, 8l)
+
+    var documentIdSupplier: ActorRef = _
+
+    override def before = {
+      documentIdSupplier = system.actorOf(Props(new TestDocumentIdSupplier))
+    }
+
+    class TestDocumentIdSupplier extends DocumentIdSupplier {
+      override protected def createDocumentIdGenerator(dsId: Long) = {
+        val documentIdGenerator = smartMock[DocumentIdGenerator]
+
+        dsId match {
+          case `documentSetId` =>
+            documentIdGenerator.nextIds(any) returns documentIds thenReturns nextDocumentIds
+          case `documentSetIdToo` =>
+            documentIdGenerator.nextIds(any) returns documentIdsToo
+          case _ =>
+            documentIdGenerator.nextIds(any) throws new RuntimeException("error")
+        }
+        documentIdGenerator
+
+      }
+    }
   }
-
-  trait ExistingDocumentsScope extends DocumentSetScope {
-    val document = factory.document(id = (documentSet.id << 32) + 1, documentSetId = documentSet.id)
-  }
-
-  class TestDocumentIdSupplier(override protected val documentSetId: Long)(implicit val session: Session)
-    extends DocumentIdSupplier with SlickClientInSession
 
 }

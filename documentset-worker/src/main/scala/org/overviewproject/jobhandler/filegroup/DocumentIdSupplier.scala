@@ -1,49 +1,26 @@
 package org.overviewproject.jobhandler.filegroup
 
-import scala.concurrent.blocking
-import org.overviewproject.database.SlickClient
-import org.overviewproject.database.Slick.simple._
+import akka.actor.Actor
 
-import org.overviewproject.models.tables.Documents
-
-trait DocumentIdSupplier extends SlickClient {
-
-  protected val documentSetId: Long
-
-  def nextIds(numberOfIds: Int): Seq[Long] = {
-
-    val ids = generateIds(getLastId, numberOfIds)
-
-    lastId = ids.lastOption
-
-    ids
-  }
-
-  private var lastId: Option[Long] = None
-
-  private def generateIds(lastId: Long, numberOfIds: Int): Seq[Long] =
-    Seq.tabulate(numberOfIds)(_ + lastId + 1)
-
-  private def getLastId: Long =
-    lastId.getOrElse {
-      blocking {
-        findMaxDocumentId
-      }
-    }
-    
-  // Needs to read db synchronously because we don't want to risk
-  // having to parallel requests reading the same id twice
-  // If the documentSetId does not exist in the db, return 0.
-  private def findMaxDocumentId: Long = blockingDb { implicit session =>
-    Documents
-      .filter(_.documentSetId === documentSetId)
-      .map(_.id).max
-      .run.getOrElse(documentSetId << 32)
-  }
-
-
+object DocumentIdSupplierProtocol {
+  case class RequestIds(documentSetId: Long, numberOfIds: Int)
+  case class IdRequestResponse(documentIds: Seq[Long])
 }
 
-object DocumentIdSupplier {
+trait DocumentIdSupplier extends Actor {
+  import DocumentIdSupplierProtocol._
+  
+  def receive =  {
+    case  RequestIds(documentSetId, numberOfIds) => {
+      val documentIdGenerator = generators.getOrElseUpdate(documentSetId, createDocumentIdGenerator(documentSetId))
+      
+      sender() ! IdRequestResponse(documentIdGenerator.nextIds(numberOfIds))
+    }
+  }
+  
+  protected val generators: scala.collection.mutable.Map[Long, DocumentIdGenerator] = 
+    scala.collection.mutable.Map.empty
 
+  
+  protected def createDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator
 }
