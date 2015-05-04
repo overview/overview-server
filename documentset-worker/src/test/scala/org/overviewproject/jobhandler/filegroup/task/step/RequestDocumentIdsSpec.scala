@@ -1,15 +1,17 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
-import org.overviewproject.test.ActorSystemContext
-import akka.testkit.TestProbe
-import akka.actor.ActorRef
-import org.specs2.mutable.Before
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import org.specs2.mock.Mockito
+import org.overviewproject.jobhandler.filegroup.DocumentIdSupplierProtocol._
 import org.overviewproject.models.Document
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Before
+import org.specs2.mutable.Specification
+import akka.actor.ActorRef
+import akka.testkit.TestProbe
+import scala.concurrent.Future
+import akka.testkit.TestActor
 
 class RequestDocumentIdsSpec extends Specification with Mockito {
 
@@ -18,33 +20,54 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
     "request a document id" in new RequestingScope {
       requestDocumentIds.execute
 
-      idSupplier.expectMsg(DocumentIdRequest(1, 1))
+      idSupplier.expectMsg(RequestIds(1, 1))
     }
 
-    "wait with WriteDocuments as next step" in new RequestingScope {
-      val result = Await.result(requestDocumentIds.execute, Duration.Inf)
+    "return next step with document" in new RequestingScope {
+      val NextStep(documents) = Await.result(requestDocumentIds.execute, Duration.Inf)
 
-      result must beLike {
-        case WaitForResponse(nextStep) => ok
-      }
+      documents must be equalTo (Seq(document))
     }
   }
 
   trait RequestingScope extends ActorSystemContext with Before {
     val documentSetId = 1l
-    val next = smartMock[TaskStep]
+    val documentId = 10l
+    val document = smartMock[Document]
+    val inputData = smartMock[PdfFileDocumentData]
+    inputData.toDocument(documentSetId, documentId) returns document
+
     var idSupplier: TestProbe = _
 
     var requestDocumentIds: RequestDocumentIds = _
 
     override def before = {
       idSupplier = TestProbe()
-      requestDocumentIds = new TestRequestDocumentIds(documentSetId, idSupplier.ref, next)
+      idSupplier.setAutoPilot(new SingleIdSupplier)
+      
+      requestDocumentIds = new TestRequestDocumentIds(documentSetId, idSupplier.ref)
+    }
+
+    class TestRequestDocumentIds(override val documentSetId: Long, override val documentIdSupplier: ActorRef) extends RequestDocumentIds {
+      override protected val documentData = Seq(inputData)
+      override protected val nextStep = NextStep 
+    }
+
+    class SingleIdSupplier extends TestActor.AutoPilot {
+      override def run(sender: ActorRef, msg: Any) = 
+        msg match {
+        case RequestIds(`documentSetId`, _) => {
+          sender ! IdRequestResponse(Seq(documentId))
+          TestActor.KeepRunning
+        }
+      }
+        
     }
   }
 
-  class TestRequestDocumentIds(override val documentSetId: Long, override val documentIdSupplier: ActorRef, next: TaskStep) extends RequestDocumentIds {
-    override protected val documentData = Seq(smartMock[PdfFileDocumentData])
-    override protected val nextStep = { d : Seq[Document] => next }
+  case class NextStep(documents: Seq[Document]) extends TaskStep {
+    override def execute = Future.successful(this)
   }
+
+
 }
