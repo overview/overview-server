@@ -49,14 +49,12 @@ object FileGroupTaskWorkerFSM {
   case object LookingForExternalActors extends State
   case object Ready extends State
   case object Working extends State
-  case object WaitingForResponse extends State
   case object Cancelled extends State
-  case object CancelledWaitingForResponse extends State
+
   sealed trait Data
   case class ExternalActorsFound(jobQueue: Option[ActorRef], progressReporter: Option[ActorRef]) extends Data
   case class ExternalActors(jobQueue: ActorRef, reporter: ActorRef) extends Data
   case class TaskInfo(queue: ActorRef, reporter: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
-  case class WaitingTaskInfo(nextStep: Either[Seq[Long], Seq[Long] => TaskStep], taskInfo: TaskInfo) extends Data
 
 }
 
@@ -174,12 +172,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
-    case Event(WaitForResponse(nextStep), t: TaskInfo) => {
-      goto(WaitingForResponse) using WaitingTaskInfo(Right(nextStep), t)
-    }
-    case Event(RequestResponse(requestId, ids), t: TaskInfo) => {
-      goto(WaitingForResponse) using WaitingTaskInfo(Left(ids), t)
-    }
     case Event(FinalStep, TaskInfo(jobQueue, progressReporter, documentSetId, _, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
@@ -212,28 +204,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(TaskAvailable, _) => stay
   }
 
-  when(WaitingForResponse) {
-    case Event(RequestResponse(requestId: Long, ids: Seq[Long]), WaitingTaskInfo(Right(nextStep), taskInfo)) => {
-      self ! nextStep(ids)
-
-      goto(Working) using taskInfo
-    }
-    case Event(WaitForResponse(nextStep), WaitingTaskInfo(Left(ids), taskInfo)) => {
-      self ! nextStep(ids)
-
-      goto(Working) using taskInfo
-    }
-    case Event(CancelTask, waitingTaskInfo) =>
-      goto(CancelledWaitingForResponse) using waitingTaskInfo
-  }
-
+  
   when(Cancelled) {
-    case Event(RequestResponse(requestId, ids), t: TaskInfo) => {
-      goto(CancelledWaitingForResponse) using WaitingTaskInfo(Left(ids), t)
-    }
-    case Event(WaitForResponse(nextStep), t: TaskInfo) => {
-      goto(CancelledWaitingForResponse) using WaitingTaskInfo(Right(nextStep), t)
-    }
     case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)) => {
       step.cancel
       jobQueue ! TaskDone(documentSetId, None)
@@ -242,23 +214,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
     case Event(TaskAvailable, _) => stay
-  }
-
-  when(CancelledWaitingForResponse) {
-    case Event(RequestResponse(requestId: Long, ids: Seq[Long]),
-      WaitingTaskInfo(Right(nextStep), TaskInfo(jobQueue, progressReporter, documentSetId, _, _))) => {
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
-
-      goto(Ready) using ExternalActors(jobQueue, progressReporter)
-    }
-    case Event(WaitForResponse(nextStep),
-      WaitingTaskInfo(Left(ids), TaskInfo(jobQueue, progressReporter, documentSetId, _, _))) => {
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
-
-      goto(Ready) using ExternalActors(jobQueue, progressReporter)
-    }
   }
 
   whenUnhandled {

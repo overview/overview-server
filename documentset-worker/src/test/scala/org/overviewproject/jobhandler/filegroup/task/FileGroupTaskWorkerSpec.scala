@@ -58,38 +58,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectReadyForTask
     }
 
-    "wait for a request response" in new ProcessWithRequestContext {
-      createJobQueue.handingOutTask(
-        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
-
-      createWorker
-
-      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
-      jobQueueProbe.expectMsg(ReadyForTask)
-
-      worker ! RequestResponse(uploadedFileId, documentIds)
-
-      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-
-      jobQueueProbe.expectReadyForTask
-    }
-
-    "cancel while waiting for a request response" in new ProcessWithRequestContext {
-      createJobQueue.handingOutTask(
-        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
-
-      createWorker
-
-      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
-      jobQueueProbe.expectMsg(ReadyForTask)
-
-      worker ! CancelTask
-      worker ! RequestResponse(uploadedFileId, documentIds)
-
-      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-
-      jobQueueProbe.expectReadyForTask
-    }
 
     "write DocumentProcessingError when step fails" in new FailingProcessContext {
       createJobQueue.handingOutTask(
@@ -339,19 +307,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       override def firstStep: TaskStep = new SimpleTaskStep(1)
     }
 
-    trait ProcessWithRequestContext extends MultistepProcessContext {
-      val documentIds = Seq[Long](1, 2, 53)
-
-      class IdRequestingStep extends TaskStep {
-        override def execute: Future[TaskStep] = {
-          Future.successful(WaitForResponse(finish))
-        }
-
-        private def finish(ids: Seq[Long]): TaskStep = FinalStep
-      }
-
-      override def firstStep: TaskStep = new IdRequestingStep
-    }
 
     trait FailingProcessContext extends MultistepProcessContext {
       val message = "failure"
