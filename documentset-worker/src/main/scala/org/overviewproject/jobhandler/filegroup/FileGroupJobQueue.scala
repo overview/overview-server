@@ -39,7 +39,7 @@ object FileGroupJobQueueProtocol {
  *  A CanceFilelUpload message may be received for an unknown job during restart and recovery from an unexpected shutdown. In
  *  this case, the JobQueue responds as if the job has been successfully cancelled.
  *  @todo Rename CancelFileUpload to be more generic and make it sure it works for any jobs.
- * 
+ *
  *
  *  The FileGroupJobQueue waits for workers to register. As tasks become available, workers are notified. Idle workers
  *  respond, and are handed tasks. Workers are notified when they register, and when new tasks are added to the task queue.
@@ -100,7 +100,6 @@ trait FileGroupJobQueue extends Actor {
         notifyRequesterIfJobIsDone
       }
     }
-
 
     case CancelFileUpload(documentSetId, fileGroupId) => {
       Logger.info(s"($documentSetId:$fileGroupId) Cancelling Extract text tasks")
@@ -169,7 +168,8 @@ trait FileGroupJobQueue extends Actor {
 
 }
 
-class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJobQueue {
+class FileGroupJobQueueImpl(progressReporterActor: ActorRef,
+                            documentIdSupplier: ActorRef) extends FileGroupJobQueue {
 
   override protected val progressReporter: ActorRef = progressReporterActor
   override protected val jobShepherdFactory = new FileGroupJobShepherdFactory
@@ -177,5 +177,6 @@ class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJo
 }
 
 object FileGroupJobQueue {
-  def apply(progressReporter: ActorRef): Props = Props(new FileGroupJobQueueImpl(progressReporter))
+  def apply(progressReporter: ActorRef, documentIdSupplier: ActorRef): Props =
+    Props(new FileGroupJobQueueImpl(progressReporter, documentIdSupplier))
 }

@@ -1,6 +1,8 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.Actor
+import akka.actor.Props
+
 
 object DocumentIdSupplierProtocol {
   case class RequestIds(documentSetId: Long, numberOfIds: Int)
@@ -41,4 +43,12 @@ trait DocumentIdSupplier extends Actor {
 
   
   protected def createDocumentIdGenerator(documentSetId: Long): DocumentIdGenerator
+}
+
+object DocumentIdSupplier {
+  def apply(): Props = Props(new DocumentIdSupplierImpl)
+  
+  private class DocumentIdSupplierImpl extends DocumentIdSupplier {
+    override protected def createDocumentIdGenerator(documentSetId: Long) = DocumentIdGenerator(documentSetId)
+  }
 }

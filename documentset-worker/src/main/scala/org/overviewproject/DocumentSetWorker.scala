@@ -85,7 +85,10 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
     createMonitoredActor(DocumentSetJobHandler(fileRemovalQueue.path.toString), s"DocumentSetJobHandler-$n"))
 
   private val progressReporter = createMonitoredActor(ProgressReporter(), "ProgressReporter")
-  private val fileGroupJobQueue = createMonitoredActor(FileGroupJobQueue(progressReporter), fileGroupJobQueueName)
+  private val documentIdSupplier = createMonitoredActor(DocumentIdSupplier(), "DocumentIdSupplier")
+  private val fileGroupJobQueue = createMonitoredActor(FileGroupJobQueue(progressReporter, documentIdSupplier),
+      fileGroupJobQueueName)
+      
   Logger.info(s"Job Queue path ${fileGroupJobQueue.path}")
   private val clusteringJobQueue = 
     createMonitoredActor(ClusteringJobQueue(fileGroupRemovalRequestQueue.path.toString), "ClusteringJobQueue")

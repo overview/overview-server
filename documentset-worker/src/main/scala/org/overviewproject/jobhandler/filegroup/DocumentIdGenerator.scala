@@ -3,8 +3,8 @@ package org.overviewproject.jobhandler.filegroup
 import scala.concurrent.blocking
 import org.overviewproject.database.SlickClient
 import org.overviewproject.database.Slick.simple._
-
 import org.overviewproject.models.tables.Documents
+import org.overviewproject.database.SlickSessionProvider
 
 trait DocumentIdGenerator extends SlickClient {
 
@@ -30,7 +30,7 @@ trait DocumentIdGenerator extends SlickClient {
         findMaxDocumentId
       }
     }
-    
+
   // Needs to read db synchronously because we don't want to risk
   // having to parallel requests reading the same id twice
   // If the documentSetId does not exist in the db, return 0.
@@ -41,9 +41,13 @@ trait DocumentIdGenerator extends SlickClient {
       .run.getOrElse(documentSetId << 32)
   }
 
-
 }
 
 object DocumentIdGenerator {
+
+  def apply(documentSetId: Long): DocumentIdGenerator = new DocumentIdGeneratorImpl(documentSetId)
+
+  private class DocumentIdGeneratorImpl(
+    override protected val documentSetId: Long) extends DocumentIdGenerator with SlickSessionProvider
 
 }
