@@ -308,6 +308,11 @@ define [
         url: "/documentsets/#{@state.documentSetId}/document-nodes/count-by-node"
         data: _.extend({ countNodes: nodeIds.join(','), refresh: forceRefresh }, json) # at the time the transaction was _scheduled_
         debugInfo: 'OnDemandTree._refreshHighlightCounts'
+        error: (xhr, textStatus, errorThrown) ->
+          # This Error can come up when a search is invalid. In that case,
+          # handle the error; otherwise, TransactionQueue will error and the
+          # app will die.
+          console.warn(xhr, textStatus, errorThrown)
         success: (data) =>
           # data is an Object of counts keyed by id
           for id in nodeIds
