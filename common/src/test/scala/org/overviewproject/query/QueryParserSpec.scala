@@ -5,16 +5,16 @@ import org.specs2.mutable.Specification
 class QueryParserSpec extends Specification {
   sequential
 
-  def repr(node: AstNode): String = node match {
-    case PhraseNode(phrase) => s"[$phrase]"
-    case AndNode(node1, node2) => s"AND(${repr(node1)},${repr(node2)})"
-    case OrNode(node1, node2) => s"OR(${repr(node1)},${repr(node2)})"
-    case NotNode(node) => s"NOT(${repr(node)})"
-    case FuzzyTermNode(term, fuzziness) => s"FUZZY([$term],${fuzziness.map(_.toString).getOrElse("AUTO")})"
-    case ProximityNode(phrase, slop) => s"PROXIMITY([$phrase],${slop.toString})"
+  def repr(node: Query): String = node match {
+    case PhraseQuery(phrase) => s"[$phrase]"
+    case AndQuery(node1, node2) => s"AND(${repr(node1)},${repr(node2)})"
+    case OrQuery(node1, node2) => s"OR(${repr(node1)},${repr(node2)})"
+    case NotQuery(node) => s"NOT(${repr(node)})"
+    case FuzzyTermQuery(term, fuzziness) => s"FUZZY([$term],${fuzziness.map(_.toString).getOrElse("AUTO")})"
+    case ProximityQuery(phrase, slop) => s"PROXIMITY([$phrase],${slop.toString})"
   }
 
-  def parse(input: String): Either[SyntaxError,AstNode] = QueryParser.parse(input)
+  def parse(input: String): Either[SyntaxError,Query] = QueryParser.parse(input)
 
   def testGood(input: String, expected: String, description: String) = description in {
     parse(input).right.map(repr) must beEqualTo(Right(expected))

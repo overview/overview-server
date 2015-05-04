@@ -2,11 +2,16 @@ package org.overviewproject.query
 
 import play.api.libs.json.{Json,JsValue,JsString,JsNumber}
 
-sealed trait AstNode {
+/** A way of searching for documents using a search index.
+  *
+  * This is modeled after ElasticSearch's (JSON) Query DSL. See
+  * http://www.elastic.co/guide/en/elasticsearch/reference/1.x/query-dsl.html
+  */
+sealed trait Query {
   def toJson: JsValue
 }
 
-case class PhraseNode(phrase: String) extends AstNode {
+case class PhraseQuery(phrase: String) extends Query {
   def toJson = Json.obj(
     "match_phrase" -> Json.obj(
       "_all" -> phrase
@@ -14,7 +19,7 @@ case class PhraseNode(phrase: String) extends AstNode {
   )
 }
 
-case class AndNode(node1: AstNode, node2: AstNode) extends AstNode {
+case class AndQuery(node1: Query, node2: Query) extends Query {
   def toJson = Json.obj(
     "bool" -> Json.obj(
       "must" -> Json.arr(node1.toJson, node2.toJson)
@@ -22,7 +27,7 @@ case class AndNode(node1: AstNode, node2: AstNode) extends AstNode {
   )
 }
 
-case class OrNode(node1: AstNode, node2: AstNode) extends AstNode {
+case class OrQuery(node1: Query, node2: Query) extends Query {
   def toJson = Json.obj(
     "bool" -> Json.obj(
       "should" -> Json.arr(node1.toJson, node2.toJson)
@@ -30,7 +35,7 @@ case class OrNode(node1: AstNode, node2: AstNode) extends AstNode {
   )
 }
 
-case class NotNode(node: AstNode) extends AstNode {
+case class NotQuery(node: Query) extends Query {
   def toJson = Json.obj(
     "bool" -> Json.obj(
       "must_not" -> node.toJson
@@ -38,7 +43,7 @@ case class NotNode(node: AstNode) extends AstNode {
   )
 }
 
-case class FuzzyTermNode(term: String, fuzziness: Option[Integer] = None) extends AstNode {
+case class FuzzyTermQuery(term: String, fuzziness: Option[Integer] = None) extends Query {
   private def fuzzinessJsValue: JsValue = fuzziness match {
     case Some(value) => JsNumber(scala.math.BigDecimal(value))
     case None => JsString("AUTO")
@@ -54,7 +59,7 @@ case class FuzzyTermNode(term: String, fuzziness: Option[Integer] = None) extend
   )
 }
 
-case class ProximityNode(phrase: String, slop: Integer) extends AstNode {
+case class ProximityQuery(phrase: String, slop: Integer) extends Query {
   def toJson = Json.obj(
     "match_phrase" -> Json.obj(
       "_all" -> Json.obj(

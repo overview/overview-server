@@ -3,7 +3,7 @@ package org.overviewproject.query
 import scala.util.parsing.combinator.RegexParsers
 
 object QueryParser {
-  def parse(input: String): Either[SyntaxError,AstNode] = {
+  def parse(input: String): Either[SyntaxError,Query] = {
     Grammar.parse(Grammar.phrase(Grammar.expression), input) match {
       case Grammar.Success(node, _) => Right(node)
       case Grammar.Failure(msg, next) => Left(SyntaxError(msg, next.offset))
@@ -17,24 +17,24 @@ object QueryParser {
      * be other valid reasons for limiting length, but those aren't considered
      * here.)
      *
-     * If the regexes fail, we fall back to a PhraseNode.
+     * If the regexes fail, we fall back to a PhraseQuery.
      */
     private val FuzzyTermWithFuzz = """([^ ]*)~(\d{1,7})""".r
     private val FuzzyTermWithoutFuzz = """([^ ]*)~""".r
     private val ProximityPhrase = """(.*)~(\d{1,7})""".r // only makes sense after FuzzyTerm* fail
 
     private def removeBackslashes(s: String) = s.replaceAll("\\\\(.)", "$1")
-    private def stringToNode(s: String): AstNode = s match {
-      case FuzzyTermWithFuzz(term, fuzzString) => FuzzyTermNode(term, Some(fuzzString.toInt))
-      case FuzzyTermWithoutFuzz(term) => FuzzyTermNode(term, None)
-      case ProximityPhrase(phrase, slopString) => ProximityNode(phrase, slopString.toInt)
-      case _ => PhraseNode(s)
+    private def stringToNode(s: String): Query = s match {
+      case FuzzyTermWithFuzz(term, fuzzString) => FuzzyTermQuery(term, Some(fuzzString.toInt))
+      case FuzzyTermWithoutFuzz(term) => FuzzyTermQuery(term, None)
+      case ProximityPhrase(phrase, slopString) => ProximityQuery(phrase, slopString.toInt)
+      case _ => PhraseQuery(s)
     }
 
-    def expression: Parser[AstNode] = chainl1(unaryExpression, binaryOperator)
-    def unaryExpression: Parser[AstNode] = parensExpression | notExpression | term
+    def expression: Parser[Query] = chainl1(unaryExpression, binaryOperator)
+    def unaryExpression: Parser[Query] = parensExpression | notExpression | term
 
-    def term: Parser[AstNode] = (quotedString | unquotedString) ^^ stringToNode
+    def term: Parser[Query] = (quotedString | unquotedString) ^^ stringToNode
 
     def quotedString: Parser[String]
       = (singleQuotedString | doubleQuotedString) ~ regex("""~(\d{1,7})""".r).? ^^
@@ -59,9 +59,9 @@ object QueryParser {
     def orOperator = regex("(?i)or".r) ^^^ (())
     def notOperator = regex("(?i)not".r) ^^^ (())
 
-    def parensExpression: Parser[AstNode] = "(" ~> expression <~ ")"
-    def notExpression: Parser[NotNode] = notOperator ~> unaryExpression ^^ NotNode.apply _
-    def binaryOperator: Parser[(AstNode, AstNode) => AstNode]
-      = (andOperator ^^^ AndNode.apply _) | (orOperator ^^^ OrNode.apply _)
+    def parensExpression: Parser[Query] = "(" ~> expression <~ ")"
+    def notExpression: Parser[NotQuery] = notOperator ~> unaryExpression ^^ NotQuery.apply _
+    def binaryOperator: Parser[(Query, Query) => Query]
+      = (andOperator ^^^ AndQuery.apply _) | (orOperator ^^^ OrQuery.apply _)
   }
 }
