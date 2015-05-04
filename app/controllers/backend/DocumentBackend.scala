@@ -4,13 +4,13 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.slick.jdbc.{GetResult,StaticQuery}
 
-import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
-import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
-import org.overviewproject.searchindex.IndexClient
-import org.overviewproject.util.Logger
-
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
+import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
+import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
+import org.overviewproject.query.{Query=>SearchQuery}
+import org.overviewproject.searchindex.IndexClient
+import org.overviewproject.util.Logger
 
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
@@ -22,8 +22,7 @@ trait DocumentBackend {
 
   /** Lists all Document IDs for the given parameters.
     *
-    * May fail with exceptions.SearchParseFailed if selectionRequest contains
-    * `q` and ElasticSearch can't parse the query.
+    * Will only fail is a server is down.
     */
   def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
 
@@ -91,10 +90,9 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   }
 
   /** Returns IDs that match a given search phrase, unsorted. */
-  private def indexByQ(documentSetId: Long, q: String): Future[Set[Long]] = {
-    logger.logExecutionTimeAsync("finding document IDs matching '{}'", q) {
-      indexClient.searchForIds(documentSetId, q)
-        .transform(_.toSet, exceptions.wrapElasticSearchException(_))
+  private def indexByQ(documentSetId: Long, q: SearchQuery): Future[Set[Long]] = {
+    logger.logExecutionTimeAsync("finding document IDs matching '{}'", q.toString) {
+      indexClient.searchForIds(documentSetId, q).map(_.toSet)
     }
   }
 
@@ -103,20 +101,18 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
     */
   private def indexByDB(request: SelectionRequest): Future[Set[Long]] = {
     logger.logExecutionTimeAsync("finding document IDs matching '{}'", request.toString) {
-      list(DbDocumentBackend.idsBySelectionRequest(request))
-        .map(_.toSet)
+      list(DbDocumentBackend.idsBySelectionRequest(request)).map(_.toSet)
     }
   }
 
   /** Returns a subset of the DocumentSet's Document IDs, sorted. */
   private def indexSelectedIds(request: SelectionRequest): Future[Seq[Long]] = {
-    val idsByQFuture: Future[Set[Long]] = if (request.q.isEmpty) {
-      Future.successful(UniversalIdSet)
-    } else {
-      indexByQ(request.documentSetId, request.q)
+    val idsByQFuture = request.q match {
+      case None => Future.successful(UniversalIdSet)
+      case Some(q) => indexByQ(request.documentSetId, q)
     }
 
-    val idsByDBFuture: Future[Set[Long]] = if (request.copy(q="").isAll) {
+    val idsByDBFuture: Future[Set[Long]] = if (request.copy(q=None).isAll) {
       Future.successful(UniversalIdSet)
     } else {
       indexByDB(request)

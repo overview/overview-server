@@ -7,7 +7,6 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
 import controllers.backend.DocumentNodeBackend
-import controllers.backend.exceptions.SearchParseFailed
 
 trait DocumentNodeController extends Controller with SelectionHelpers {
   protected val documentNodeBackend: DocumentNodeBackend
@@ -25,7 +24,6 @@ trait DocumentNodeController extends Controller with SelectionHelpers {
       case Left(result) => Future.successful(result)
       case Right(selection) => {
         documentNodeBackend.countByNode(selection, nodeIds)
-          .recover { case e: SearchParseFailed => Map[Long,Int]() }
           .map(counts => Ok(formatCounts(counts)))
       }
     })

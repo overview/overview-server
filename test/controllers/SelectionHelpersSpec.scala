@@ -4,19 +4,20 @@ import java.util.UUID
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.mvc.Request
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.mvc.{Request,Result}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
 
-import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,Selection,SelectionRequest}
+import org.overviewproject.query.PhraseQuery
 
 class SelectionHelpersSpec extends Specification with Mockito {
   "selectionRequest" should {
     trait SelectionScope extends Scope {
       trait F {
-        def f(documentSetId: Long, request: Request[_]): SelectionRequest
+        def f(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest]
       }
       val controller = new Controller with SelectionHelpers with F {
         override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)
@@ -30,82 +31,89 @@ class SelectionHelpersSpec extends Specification with Mockito {
         controller.f(documentSetId, request)
       }
 
-      def test(queryString: String, expect: SelectionRequest) = {
+      def test(queryString: String, expect: Either[Result,SelectionRequest]) = {
         f(1L, queryString) must beEqualTo(expect)
       }
-      def test(data: Seq[(String,String)], expect: SelectionRequest) = {
+      def test(data: Seq[(String,String)], expect: Either[Result,SelectionRequest]) = {
         f(1L, data: _*) must beEqualTo(expect)
       }
     }
 
     "with GET parameters" should {
       "default to all documents in the document set" in new SelectionScope {
-        test("", SelectionRequest(1L))
+        test("", Right(SelectionRequest(1L)))
       }
 
       "make a SelectionRequest with documents" in new SelectionScope {
-        test("/?documents=1,2,3", SelectionRequest(1L, documentIds=Seq(1L, 2L, 3L)))
+        test("/?documents=1,2,3", Right(SelectionRequest(1L, documentIds=Seq(1L, 2L, 3L))))
       }
 
       "make a SelectionRequest with nodes" in new SelectionScope {
-        test("/?nodes=2,3,4", SelectionRequest(1L, nodeIds=Seq(2L, 3L, 4L)))
+        test("/?nodes=2,3,4", Right(SelectionRequest(1L, nodeIds=Seq(2L, 3L, 4L))))
       }
 
       "make a SelectionRequest with tags" in new SelectionScope {
-        test("/?tags=3,4,5", SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L)))
+        test("/?tags=3,4,5", Right(SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L))))
       }
 
       "make a SelectionRequest with storeObjects" in new SelectionScope {
-        test("/?objects=5,6,7", SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L)))
+        test("/?objects=5,6,7", Right(SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L))))
       }
 
       "make a SelectionRequest with untagged" in new SelectionScope {
-        test("/?tagged=false", SelectionRequest(1L, tagged=Some(false)))
+        test("/?tagged=false", Right(SelectionRequest(1L, tagged=Some(false))))
       }
 
       "make a SelectionRequest with q" in new SelectionScope {
-        test("/?q=foo", SelectionRequest(1L, q="foo"))
+        test("/?q=foo", Right(SelectionRequest(1L, q=Some(PhraseQuery("foo")))))
+      }
+
+      "return a BadRequest on query syntax error" in new SelectionScope {
+        f(1L, "/?q=(foo+AND") must beLeft { (result: Result) =>
+          result.header.status must beEqualTo(400)
+          result.header.headers.get(CONTENT_TYPE) must beSome("application/json")
+        }
       }
     }
 
     "with POST parameters" should {
       "default to all documents in the document set" in new SelectionScope {
-        test(Seq(), SelectionRequest(1L))
+        test(Seq(), Right(SelectionRequest(1L)))
       }
 
       "make a SelectionRequest with documents" in new SelectionScope {
-        test(Seq("documents" -> "1,2,3"), SelectionRequest(1L, documentIds=Seq(1L, 2L, 3L)))
+        test(Seq("documents" -> "1,2,3"), Right(SelectionRequest(1L, documentIds=Seq(1L, 2L, 3L))))
       }
 
       "make a SelectionRequest with nodes" in new SelectionScope {
-        test(Seq("nodes" -> "2,3,4"), SelectionRequest(1L, nodeIds=Seq(2L, 3L, 4L)))
+        test(Seq("nodes" -> "2,3,4"), Right(SelectionRequest(1L, nodeIds=Seq(2L, 3L, 4L))))
       }
 
       "make a SelectionRequest with tags" in new SelectionScope {
-        test(Seq("tags" -> "3,4,5"), SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L)))
+        test(Seq("tags" -> "3,4,5"), Right(SelectionRequest(1L, tagIds=Seq(3L, 4L, 5L))))
       }
 
       "make a SelectionRequest with storeObjects" in new SelectionScope {
-        test(Seq("objects" -> "5,6,7"), SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L)))
+        test(Seq("objects" -> "5,6,7"), Right(SelectionRequest(1L, storeObjectIds=Seq(5L, 6L, 7L))))
       }
 
       "make a SelectionRequest with untagged" in new SelectionScope {
-        test(Seq("tagged" -> "false"), SelectionRequest(1L, tagged=Some(false)))
+        test(Seq("tagged" -> "false"), Right(SelectionRequest(1L, tagged=Some(false))))
       }
 
       "make a SelectionRequest with q" in new SelectionScope {
-        test(Seq("q" -> "foo"), SelectionRequest(1L, q="foo"))
+        test(Seq("q" -> "foo"), Right(SelectionRequest(1L, q=Some(PhraseQuery("foo")))))
       }
     }
 
     "prefer POST parameters over GET parameters" in new SelectionScope {
       val request = FakeRequest("GET", "/?q=foo").withFormUrlEncodedBody("q" -> "bar")
-      controller.f(1L, request) must beEqualTo(SelectionRequest(1L, q="bar"))
+      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, q=Some(PhraseQuery("bar")))))
     }
 
     "allow some GET parameters and other POST parameters" in new SelectionScope {
       val request = FakeRequest("GET", "/?nodes=1").withFormUrlEncodedBody("q" -> "bar")
-      controller.f(1L, request) must beEqualTo(SelectionRequest(1L, nodeIds=Seq(1L), q="bar"))
+      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, nodeIds=Seq(1L), q=Some(PhraseQuery("bar")))))
     }
   }
 
@@ -139,7 +147,7 @@ class SelectionHelpersSpec extends Specification with Mockito {
     }
 
     "uses SelectionBackend#create() if refresh=true" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, "foo")
+      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery("foo")))
       mockSelectionBackend.create(any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
       controller.go(request) must beEqualTo(Right(selection)).await
@@ -147,16 +155,15 @@ class SelectionHelpersSpec extends Specification with Mockito {
     }
 
     "uses SelectionBackend#findOrCreate() as a fallback" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, "foo")
+      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery("foo")))
       mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
       controller.go(request) must beEqualTo(Right(selection)).await
       there was one(mockSelectionBackend).findOrCreate(userEmail, selectionRequest, None)
     }
 
-    "return BadRequest if there is a SearchParseFailed exception" in new RequestToSelectionScope {
-      mockSelectionBackend.findOrCreate(any, any, any) returns Future.failed(new SearchParseFailed("foo", new Throwable()))
-      val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
+    "return BadRequest on invalid search phrase" in new RequestToSelectionScope {
+      val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "(foo AND")
       controller.go(request).map(_.left.map(_.header.status)) must beLeft(400).await
     }
   }

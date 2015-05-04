@@ -1,5 +1,7 @@
 package models
 
+import org.overviewproject.query.Query
+
 /** Identifies a few documents out of an entire document set.
   *
   * The actual <em>Selection</em> is what points to a list of documents. A
@@ -12,7 +14,7 @@ case class SelectionRequest(
   val documentIds: Seq[Long] = Seq(),
   val storeObjectIds: Seq[Long] = Seq(),
   val tagged: Option[Boolean] = None,
-  val q: String = ""
+  val q: Option[Query] = None
 ) {
   lazy val hash = hashCode
 
@@ -26,7 +28,7 @@ case class SelectionRequest(
       && documentIds.isEmpty
       && storeObjectIds.isEmpty
       && tagged.isEmpty
-      && q == ""
+      && q.isEmpty
     )
   }
 }

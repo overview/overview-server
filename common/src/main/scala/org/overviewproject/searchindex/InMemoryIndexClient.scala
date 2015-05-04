@@ -8,8 +8,6 @@ import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.node.{Node,NodeBuilder}
 import scala.concurrent.Future
 
-import org.overviewproject.tree.orm.Document // FIXME should be model
-
 /** A self-contained search index.
   *
   * This is suitable for running tests that rely on ElasticSearch. But it's

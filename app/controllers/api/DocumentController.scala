@@ -8,7 +8,6 @@ import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.PageRequest
 import models.{Selection,SelectionRequest}

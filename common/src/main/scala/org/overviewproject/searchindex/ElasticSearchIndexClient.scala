@@ -5,8 +5,8 @@ import org.elasticsearch.action.{ActionListener,ActionRequest,ActionRequestBuild
 import org.elasticsearch.action.search.{SearchResponse,SearchType}
 import org.elasticsearch.client.Client
 import org.elasticsearch.common.settings.ImmutableSettings
-import org.elasticsearch.common.unit.TimeValue
-import org.elasticsearch.index.query.{FilterBuilders,QueryBuilders}
+import org.elasticsearch.common.unit.{Fuzziness,TimeValue}
+import org.elasticsearch.index.query.{FilterBuilders,QueryBuilder,QueryBuilders}
 import org.elasticsearch.indices.IndexMissingException
 import org.elasticsearch.rest.action.admin.indices.alias.delete.AliasesMissingException
 import play.api.libs.json.Json
@@ -14,6 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
 
 import org.overviewproject.models.Document
+import org.overviewproject.query.Query
 import org.overviewproject.util.Logger
 
 /** ElasticSearch index client.
@@ -256,7 +257,7 @@ trait ElasticSearchIndexClient extends IndexClient {
     }
   }
 
-  private def highlightImpl(client: Client, documentSetId: Long, documentId: Long, q: String): Future[Seq[Highlight]] = {
+  private def highlightImpl(client: Client, documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {
     val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
     val HighlightEnd: Char = '\u0002'
 
@@ -303,7 +304,7 @@ trait ElasticSearchIndexClient extends IndexClient {
       */
     def findHighlights(textWithHighlights: String): Seq[Highlight] = findHighlightsRec(textWithHighlights, 0, 0, Nil)
 
-    val byQ = QueryBuilders.queryString(q)
+    val byQ = QueryBuilders.constantScoreQuery(q.toElasticSearchQuery)
     val byId = QueryBuilders.idsQuery(DocumentTypeName).ids(documentId.toString)
 
     val req = client.prepareSearch(aliasName(documentSetId))
@@ -338,17 +339,41 @@ trait ElasticSearchIndexClient extends IndexClient {
     }
   }
 
-  private def searchForIdsImpl(client: Client, documentSetId: Long, q: String, scrollSize: Int): Future[Seq[Long]] = {
-    val query = QueryBuilders.queryString(q)
+  protected implicit class QueryForElasticSearch(query: Query) {
+    import org.overviewproject.query._
+    def toElasticSearchQuery: QueryBuilder = query match {
+      case PhraseQuery(phrase) => {
+        QueryBuilders.matchPhraseQuery("_all", phrase)
+      }
+      case AndQuery(left, right) => {
+        QueryBuilders.boolQuery
+          .must(left.toElasticSearchQuery)
+          .must(right.toElasticSearchQuery)
+      }
+      case OrQuery(left, right) => {
+        QueryBuilders.boolQuery
+          .should(left.toElasticSearchQuery)
+          .should(right.toElasticSearchQuery)
+      }
+      case NotQuery(inner) => {
+        QueryBuilders.boolQuery
+          .mustNot(inner.toElasticSearchQuery)
+      }
+      case ProximityQuery(phrase, slop) => {
+        QueryBuilders.matchPhraseQuery("_all", phrase).slop(slop)
+      }
+      case FuzzyTermQuery(term, fuzziness) => {
+        QueryBuilders.fuzzyQuery("_all", term).fuzziness(Fuzziness.build(fuzziness.getOrElse("AUTO")))
+      }
+    }
+  }
 
-    // ElasticSearch shouldn't sort results. [refs #83002148]
-    val filter = FilterBuilders.queryFilter(query)
-
+  private def searchForIdsImpl(client: Client, documentSetId: Long, q: Query, scrollSize: Int): Future[Seq[Long]] = {
     val req = client.prepareSearch(aliasName(documentSetId))
       .setSearchType(SearchType.SCAN)
       .setScroll(new TimeValue(ScrollTimeout))
       .setTypes(DocumentTypeName)
-      .setQuery(QueryBuilders.filteredQuery(null, filter))
+      .setQuery(QueryBuilders.constantScoreQuery(q.toElasticSearchQuery))
       .setSize(scrollSize)
       .addField("id") // We started using _id on 2015-01-12 but some end-users
                       // might not have reindexed yet. So we index and store
@@ -416,15 +441,15 @@ trait ElasticSearchIndexClient extends IndexClient {
   override def addDocuments(documents: Iterable[Document]) = clientFuture.flatMap(addDocumentsImpl(_, documents))
   override def refresh = clientFuture.flatMap(refreshImpl(_))
 
-  override def highlight(documentSetId: Long, documentId: Long, q: String) = {
+  override def highlight(documentSetId: Long, documentId: Long, q: Query) = {
     clientFuture.flatMap(highlightImpl(_, documentSetId, documentId, q))
   }
 
-  override def searchForIds(documentSetId: Long, q: String) = {
+  override def searchForIds(documentSetId: Long, q: Query) = {
     clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q, DefaultScrollSize))
   }
 
-  def searchForIds(documentSetId: Long, q: String, scrollSize: Int) = {
+  def searchForIds(documentSetId: Long, q: Query, scrollSize: Int) = {
     clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q, scrollSize))
   }
 }

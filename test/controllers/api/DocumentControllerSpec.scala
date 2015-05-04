@@ -6,7 +6,6 @@ import play.api.test.WithApplication
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedRequest
-import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{InMemorySelection,Selection}

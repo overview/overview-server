@@ -5,7 +5,6 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.exceptions.SearchParseFailed
 import controllers.backend.{DocumentBackend,DocumentNodeBackend,DocumentTagBackend}
 import models.pagination.Page
 import models.{IdList,OverviewDatabase,Selection}
@@ -24,7 +23,7 @@ trait DocumentListController extends Controller with SelectionHelpers {
     requestToSelection(documentSetId, request).flatMap(_ match {
       case Left(result) => Future.successful(result)
       case Right(selection) => {
-        val happyFuture = for {
+        for {
           page <- documentBackend.index(selection, pr, false)
           // In serial so as not to bombard Postgres
           nodeIds <- documentNodeBackend.indexMany(page.items.map(_.id))
@@ -37,11 +36,6 @@ trait DocumentListController extends Controller with SelectionHelpers {
           )}
           Ok(views.json.DocumentList.show(selection.id, pageOfItems))
         }
-
-        // TODO move away from Squeryl and put this .transform() in the backend
-        happyFuture
-          .transform(identity(_), backend.exceptions.wrapElasticSearchException(_))
-          .recover { case spf: SearchParseFailed => BadRequest(jsonError(spf.getMessage)) }
       }
     })
   }

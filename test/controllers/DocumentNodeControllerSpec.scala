@@ -7,7 +7,6 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentNodeBackend,SelectionBackend}
-import controllers.backend.exceptions.SearchParseFailed
 import models.{InMemorySelection,Selection}
 
 class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatchers {

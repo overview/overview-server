@@ -2,6 +2,7 @@ package org.overviewproject.searchindex
 
 import scala.concurrent.Future
 
+import org.overviewproject.query.Query
 import org.overviewproject.models.Document
 
 /** Interacts with a search index.
@@ -53,13 +54,10 @@ trait IndexClient {
 
   /** Returns IDs for matching documents.
     *
-    * The query language is here:
-    * http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
-    *
     * @param documentSetId Document set ID
     * @param q Search string
     */
-  def searchForIds(documentSetId: Long, q: String): Future[Seq[Long]]
+  def searchForIds(documentSetId: Long, q: Query): Future[Seq[Long]]
 
   /** Finds all highlights of a given query in a document.
     *
@@ -67,7 +65,7 @@ trait IndexClient {
     * @param documentId Document ID
     * @param q Search string
     */
-  def highlight(documentSetId: Long, documentId: Long, q: String): Future[Seq[Highlight]]
+  def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]]
 
   /** Guarantees all past added documents are searchable. */
   def refresh(): Future[Unit]

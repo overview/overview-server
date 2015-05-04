@@ -1,28 +1,44 @@
 package controllers
 
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.i18n.Messages
 import play.api.mvc.{Request,Result}
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import controllers.backend.SelectionBackend
-import controllers.backend.exceptions.SearchParseFailed
 import models.{Selection,SelectionRequest}
+import org.overviewproject.query.{Query,QueryParser,SyntaxError}
 
 trait SelectionHelpers { self: Controller =>
   protected val selectionBackend: SelectionBackend = SelectionBackend
   private val selectionIdKey: String = "selectionId" // query string parameter
   private val refreshKey: String = "refresh" // query string parameter
 
-  /** Returns a SelectionRequest, from the query string or form parameters. */
-  protected def selectionRequest(documentSetId: Long, request: Request[_]): SelectionRequest = {
+  /** Returns a Right(SelectionRequest) from the query string or form.
+    *
+    * Returns a Left(Result) if the query string is invalid.
+    */
+  protected def selectionRequest(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest] = {
     val reqData = RequestData(request)
+
+    def syntaxError = {
+      val message = Messages("org.overviewproject.query.SyntaxError")(request2lang(request))
+      BadRequest(jsonError(message))
+        .withHeaders(CONTENT_TYPE -> "application/json")
+    }
 
     val nodeIds = reqData.getLongs("nodes")
     val tagIds = reqData.getLongs("tags")
     val documentIds = reqData.getLongs("documents")
     val storeObjectIds = reqData.getLongs("objects")
-    val q = reqData.getString("q").getOrElse("")
+    val maybeQOrError: Either[Result,Option[Query]] = reqData.getString("q").getOrElse("") match {
+      case "" => Right(None)
+      case s: String => QueryParser.parse(s) match {
+        case Left(_) => Left(syntaxError)
+        case Right(q) => Right(Some(q))
+      }
+    }
 
     val tagged = reqData.getString("tagged") match {
       case Some("true") => Some(true)
@@ -30,15 +46,16 @@ trait SelectionHelpers { self: Controller =>
       case _ => None
     }
 
-    SelectionRequest(
-      documentSetId,
-      nodeIds,
-      tagIds,
-      documentIds,
-      storeObjectIds,
-      tagged,
-      q
-    )
+    maybeQOrError
+      .right.map(SelectionRequest(
+        documentSetId,
+        nodeIds,
+        tagIds,
+        documentIds,
+        storeObjectIds,
+        tagged,
+        _
+      ))
   }
 
   /** Returns a Selection, using selectionRequest() or a selectionId parameter.
@@ -61,14 +78,16 @@ trait SelectionHelpers { self: Controller =>
           .map(_.toRight(NotFound(jsonError("There is no Selection with the given selectionId. Perhaps it has expired."))))
       }
       case None => {
-        val sr = selectionRequest(documentSetId, request)
-        val selectionFuture = rd.getBoolean(refreshKey) match {
-          case Some(true) => selectionBackend.create(userEmail, sr)
-          case _ => selectionBackend.findOrCreate(userEmail, sr, None)
+        selectionRequest(documentSetId, request) match {
+          case Left(error) => Future.successful(Left(error))
+          case Right(sr) => {
+            val selectionFuture = rd.getBoolean(refreshKey) match {
+              case Some(true) => selectionBackend.create(userEmail, sr)
+              case _ => selectionBackend.findOrCreate(userEmail, sr, None)
+            }
+            selectionFuture.map(Right(_))
+          }
         }
-        selectionFuture
-          .map(Right(_))
-          .recover { case spf: SearchParseFailed => Left(BadRequest(jsonError(spf.getMessage))) }
       }
     }
   }

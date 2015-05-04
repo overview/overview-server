@@ -1,11 +1,14 @@
 package controllers
 
+import play.api.i18n.Messages
 import play.api.libs.json.{JsArray,JsNumber,JsValue}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.HighlightBackend
+import org.overviewproject.query.QueryParser
 import org.overviewproject.searchindex.Highlight
 
 trait HighlightController extends Controller {
@@ -16,13 +19,17 @@ trait HighlightController extends Controller {
     * Security consideration: the backend must filter by document set ID,
     * because that's how we authorize this action.
     */
-  def index(documentSetId: Long, documentId: Long, q: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async {
-    highlightBackend.index(documentSetId, documentId, q).map { highlights: Seq[Highlight] => 
-      val json = JsArray(highlights.map { highlight =>
-        JsArray(Seq(JsNumber(highlight.begin), JsNumber(highlight.end)))
-      })
-      Ok(json)
-        .withHeaders(CACHE_CONTROL -> "no-cache")
+  def index(documentSetId: Long, documentId: Long, queryString: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    QueryParser.parse(queryString) match {
+      case Left(_) => Future.successful(BadRequest(jsonError(Messages("org.overviewproject.query.SyntaxError"))))
+      case Right(query) => {
+        highlightBackend.index(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
+          val json = JsArray(highlights.map { highlight =>
+            JsArray(Seq(JsNumber(highlight.begin), JsNumber(highlight.end)))
+          })
+          Ok(json).withHeaders(CACHE_CONTROL -> "no-cache")
+        }
+      }
     }
   }
 }

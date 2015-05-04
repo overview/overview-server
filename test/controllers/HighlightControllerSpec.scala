@@ -4,6 +4,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import controllers.backend.HighlightBackend
+import org.overviewproject.query.{PhraseQuery,Query}
 import org.overviewproject.searchindex.Highlight
 
 class HighlightControllerSpec extends ControllerSpecification {
@@ -16,13 +17,14 @@ class HighlightControllerSpec extends ControllerSpecification {
 
     def foundHighlights: Seq[Highlight] = Seq()
 
-    mockHighlightBackend.index(any[Long], any[Long], any[String]) returns Future { foundHighlights }
+    mockHighlightBackend.index(any[Long], any[Long], any[Query]) returns Future { foundHighlights }
   }
 
   "#index" should {
     trait IndexScope extends HighlightScope {
       val request = fakeAuthorizedRequest
-      lazy val result = controller.index(1L, 2L, "foo")(request)
+      val q = "foo"
+      lazy val result = controller.index(1L, 2L, q)(request)
     }
 
     "return a JSON response with Highlights" in new IndexScope {
@@ -39,7 +41,12 @@ class HighlightControllerSpec extends ControllerSpecification {
 
     "call HighlightBackend.index" in new IndexScope {
       h.status(result)
-      there was one(mockHighlightBackend).index(1L, 2L, "foo")
+      there was one(mockHighlightBackend).index(1L, 2L, PhraseQuery("foo"))
+    }
+
+    "return BadRequest when the query string is bad" in new IndexScope {
+      override val q = "(foo AND"
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
     }
   }
 }

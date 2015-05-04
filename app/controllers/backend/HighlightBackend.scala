@@ -2,6 +2,7 @@ package controllers.backend
 
 import scala.concurrent.Future
 
+import org.overviewproject.query.Query
 import org.overviewproject.searchindex.{Highlight,IndexClient,TransportIndexClient}
 
 /** Finds highlights of a search term in a document.
@@ -13,7 +14,7 @@ trait HighlightBackend extends Backend {
     * @param documentId Document ID
     * @param q Search string
     */
-  def index(documentSetId: Long, documentId: Long, q: String): Future[Seq[Highlight]]
+  def index(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]]
 }
 
 /** ElasticSearch-backed highlight backend.
@@ -21,7 +22,7 @@ trait HighlightBackend extends Backend {
 trait EsHighlightBackend extends HighlightBackend {
   val indexClient: IndexClient
 
-  override def index(documentSetId: Long, documentId: Long, q: String) = {
+  override def index(documentSetId: Long, documentId: Long, q: Query) = {
     indexClient.highlight(documentSetId, documentId, q)
   }
 }
