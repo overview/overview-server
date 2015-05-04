@@ -176,10 +176,13 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       protected var fileGroupJobQueue: ActorRef = _
       protected var worker: WorkerTestProbe = _
       protected var progressReporter: TestProbe = _
+      protected var documentIdSupplier: TestProbe = _
 
       def before = {
         progressReporter = TestProbe()
-        fileGroupJobQueue = system.actorOf(TestFileGroupJobQueue(uploadedFileIds, progressReporter.ref))
+        documentIdSupplier = TestProbe()
+        
+        fileGroupJobQueue = system.actorOf(TestFileGroupJobQueue(uploadedFileIds, progressReporter.ref, documentIdSupplier.ref))
         worker = createNWorkers(1).head
       }
 

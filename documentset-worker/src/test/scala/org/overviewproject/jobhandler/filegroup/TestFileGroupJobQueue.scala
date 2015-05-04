@@ -5,7 +5,8 @@ import akka.actor.ActorRef
 
 class TestFileGroupJobQueue(
     tasks: Seq[Long],
-    override protected val progressReporter: ActorRef) extends FileGroupJobQueue {
+    override protected val progressReporter: ActorRef,
+    override protected val documentIdSupplier: ActorRef) extends FileGroupJobQueue {
 
   override protected val jobShepherdFactory = new TestJobShepherdFactory
   
@@ -20,8 +21,8 @@ class TestFileGroupJobQueue(
 }
 
 object TestFileGroupJobQueue {
-  def apply(tasks: Seq[Long], progressReporter: ActorRef): Props =
-    Props(new TestFileGroupJobQueue(tasks, progressReporter))
+  def apply(tasks: Seq[Long], progressReporter: ActorRef, documentIdSupplier: ActorRef): Props =
+    Props(new TestFileGroupJobQueue(tasks, progressReporter, documentIdSupplier))
 }
 
 

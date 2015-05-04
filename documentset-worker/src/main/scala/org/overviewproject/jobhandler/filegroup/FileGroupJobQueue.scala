@@ -52,6 +52,7 @@ trait FileGroupJobQueue extends Actor {
   type DocumentSetId = Long
 
   protected val progressReporter: ActorRef
+  protected val documentIdSupplier: ActorRef
   protected val jobShepherdFactory: JobShepherdFactory
 
   private case class JobRequest(requester: ActorRef)
@@ -168,15 +169,15 @@ trait FileGroupJobQueue extends Actor {
 
 }
 
-class FileGroupJobQueueImpl(progressReporterActor: ActorRef,
-                            documentIdSupplier: ActorRef) extends FileGroupJobQueue {
-
-  override protected val progressReporter: ActorRef = progressReporterActor
-  override protected val jobShepherdFactory = new FileGroupJobShepherdFactory
-
-}
-
 object FileGroupJobQueue {
   def apply(progressReporter: ActorRef, documentIdSupplier: ActorRef): Props =
     Props(new FileGroupJobQueueImpl(progressReporter, documentIdSupplier))
+
+  private class FileGroupJobQueueImpl(override protected val progressReporter: ActorRef,
+                                      override protected val documentIdSupplier: ActorRef) extends FileGroupJobQueue {
+
+    override protected val jobShepherdFactory = new FileGroupJobShepherdFactory
+
+  }
+
 }
