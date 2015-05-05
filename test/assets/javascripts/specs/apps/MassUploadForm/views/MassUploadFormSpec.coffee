@@ -102,21 +102,7 @@ define [
       it 'shows the minimum-files text', ->
         expect(view.$('.minimum-files').css('display')).not.to.eq('none')
 
-      describe 'with 1 or 2 uploads', ->
-
-        it 'shows a modal with the import options with tooFewDocuments set app', ->
-          @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog')
-          view.$('.choose-options').click()
-          expect(ImportOptionsApp.addHiddenInputsThroughDialog).to.have.been.calledWith(
-            sinon.match.has('childNodes'),
-            onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
-            supportedLanguages: sinon.match.array
-            defaultLanguageCode: 'en'
-            tooFewDocuments: true
-            callback: sinon.match.func
-          )
-        
-      describe 'with 3 or more uploads', ->
+      describe 'with uploads', ->
         beforeEach ->
           model.uploads.add(new MockUpload)
           model.uploads.add(new MockUpload)
@@ -134,7 +120,6 @@ define [
               onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
               supportedLanguages: sinon.match.array
               defaultLanguageCode: 'en'
-              tooFewDocuments: false
               callback: sinon.match.func
             )
 

@@ -161,7 +161,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
       #return false if !has_header()
       records = csv_reader.result.records
       min_length = minimum_row_length()
-      records.filter((r) -> r.length >= min_length).length > 2
+      records.filter((r) -> r.length >= min_length).length > 0
 
     refresh_preview = () ->
       if csv_reader?

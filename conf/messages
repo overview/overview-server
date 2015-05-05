@@ -190,8 +190,8 @@ views.CsvUpload.new.help2=Each row in the CSV file becomes one document in Overv
 views.CsvUpload.new.help.requirements_html=Overview looks for a column named <strong>text</strong> in your CSV file. It can also read <strong>title</strong>, <strong>url</strong>, <strong>id</strong> and <strong>tags</strong> columns (<a href="http://overview.ap.org/blog/2014/05/importing-documents-from-a-csv-file/" target="_blank" title="(opens in new window)">help and example files</a>)
 views.CsvUpload.new.requirements.text=The file must use the UTF-8, ISO-8859-1 or Windows-1252 character set.
 views.CsvUpload.new.requirements.csv=All documents must be in a single CSV file, with columns separated by commas.
-views.CsvUpload.new.requirements.header=The first line of the file must list the column names. The text must be in a column named “text”, “snippet”, or “contents”.
-views.CsvUpload.new.requirements.data=Each row must describe a single document, and there must be at least three.
+views.CsvUpload.new.requirements.header=The first line of the file must list the column names. One column must be named “text”, “snippet”, or “contents”.
+views.CsvUpload.new.requirements.data=There must be one row per document.
 views.CsvUpload.new.error.requirements=Use a spreadsheet program’s “Export to CSV” option to create such a file.
 views.CsvUpload.new.error.SyntaxError=Error on line {0}, column {1}: “{2}” is not allowed here, so this is an invalid CSV file.
 views.CsvUpload.new.progress.header=Uploading…
@@ -234,7 +234,6 @@ views.DocumentCloudProject.index.title=DocumentCloud projects
 views.DocumentCloudProject.index.h1=DocumentCloud projects
 views.DocumentCloudProject.index.loading=Loading… 
 views.DocumentCloudProject.index.help1=Overview can analyze and display your files from DocumentCloud. Import a project from this page.
-views.DocumentCloudProject.index.help2=You must import at least three documents to create a document set. Overview can treat each page from DocumentCloud as a separate document.
 
 views.DocumentProcessingError.index.h4=Documents with errors
 views.DocumentProcessingError.index.failedBecause=Failed with error “{0}”
@@ -296,7 +295,6 @@ views.DocumentSet._massUploadForm.upload_folder_prompt=Add all files in a folder
 views.DocumentSet._massUploadForm.choose_options=Done adding files
 views.DocumentSet._massUploadForm.cancel=Cancel upload
 views.DocumentSet._massUploadForm.drop_target=Select files to upload
-views.DocumentSet._massUploadForm.minimum_files=You must import at least three documents to create a document set. There’s no point asking Overview to sort only one or two documents.
 views.DocumentSet._massUploadForm.wait_for_import=Your files will be imported after all uploads are complete
 views.DocumentSet._massUploadForm.confirm_cancel.title=Confirm Cancel
 views.DocumentSet._massUploadForm.confirm_cancel.prompt=Are you sure you want to cancel this upload and delete these files from the server?
@@ -325,7 +323,6 @@ views.DocumentSet.index.ImportOptions.name.label=Document set name
 views.DocumentSet.index.ImportOptions.split_documents.label_html=What counts as a document (<a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.split_documents.false=Each file is one document
 views.DocumentSet.index.ImportOptions.split_documents.true=Each page is one document
-views.DocumentSet.index.ImportOptions.split_documents.too_few_documents=This project contains fewer than three files, so Overview will split each file into pages. (There’s no point asking Overview to sort only one or two documents.)
 views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate these words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.
 views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html=Words to ignore (optional) (<a href="http://overview.ap.org/blog/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.tag_id.label=Only include documents with tag
@@ -440,7 +437,6 @@ views.DocumentSetUser.index.remove=remove
 views.FileImport.new.title=Upload files
 views.FileImport.new.h1=Upload files
 views.FileImport.new.help1=Overview can read many file formats, including PDF, Word, HTML and text.
-views.FileImport.new.help2=You must import at least three documents.
 
 views.FileImport.edit.title=Add files to document set
 views.FileImport.edit.h1=Add files to document set

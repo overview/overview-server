@@ -74,7 +74,6 @@ define [
               <%- t('split_documents.true') %>
             </label>
           </div>
-          <p class="help-block too-few-documents"><%- t('split_documents.too_few_documents') %></p>
         </div>
       <% } %>
 
@@ -122,7 +121,6 @@ define [
       throw 'Must pass model, an Options model' if !@model
 
       @childViews = []
-      @tooFewDocuments = @options.tooFewDocuments && true || false
       @initialRender()
 
     remove: ->
@@ -130,27 +128,12 @@ define [
         v.remove()
       super()
 
-    setTooFewDocuments: (@tooFewDocuments) ->
-      @_refreshTooFewDocuments()
-
-    _refreshTooFewDocuments: ->
-      if @tooFewDocuments
-        @model.set(split_documents: true)
-        @$('[name="split_documents"][value="true"]').prop('checked', true)
-
-      @$('p.too-few-documents').toggle(@tooFewDocuments)
-      @$('[name="split_documents"][value="false"]').prop('disabled', @tooFewDocuments)
-      @$('[name="split_documents"][value="false"]').closest('label').toggleClass('text-muted', @tooFewDocuments)
-
-      this
-
     initialRender: ->
       html = @template
         t: t
         supportedLanguages: @model.supportedLanguages
         options: @model.attributes
       @$el.html(html)
-      @_refreshTooFewDocuments()
 
       $tagId = @$('.tag-id')
       if $tagId.length

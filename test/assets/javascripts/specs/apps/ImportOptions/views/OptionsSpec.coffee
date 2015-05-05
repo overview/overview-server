@@ -64,13 +64,6 @@ define [
       it 'should start with the radio matching split_documents', ->
         expect(view.$('[name=split_documents]:checked').val()).to.eq(model.get('split_documents') && 'true' || 'false')
 
-      describe 'when there are too few documents', ->
-        beforeEach -> view.setTooFewDocuments(true)
-        it 'should disable split_documents=false', -> expect(view.$('[name="split_documents"][value="false"]')).to.be.disabled
-        it 'should mute the radio for split_documents=false', -> expect(view.$('[name="split_documents"][value="false"]').closest('label')).to.have.class('text-muted')
-        it 'should check split_documents=true', -> expect(view.$('[name=split_documents][value="true"]')).to.be.checked
-        it 'should set split_documents=true on the model', -> expect(model.get('split_documents')).to.eq(true)
-
       it 'should set split_documents to true on the model', ->
         $input = view.$('[name=split_documents]')
         $input.val('true')

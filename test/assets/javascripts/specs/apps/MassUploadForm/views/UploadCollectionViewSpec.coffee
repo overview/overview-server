@@ -21,7 +21,6 @@ define [
       @sandbox = sinon.sandbox.create()
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.drop_target': 'drop_target'
-        'views.DocumentSet._massUploadForm.minimum_files': 'minimum_files'
 
       # sinon.spy() causes a big slowdown here. Emulate it.
       @oldRender = MockUploadView.prototype.render

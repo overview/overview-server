@@ -78,7 +78,6 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
       @view = new OptionsView
         model: @model
         tagListUrl: @options.tagListUrl
-        tooFewDocuments: @options.tooFewDocuments
       @el = @view.el
 
     # Creates a dialog, populating it with the app

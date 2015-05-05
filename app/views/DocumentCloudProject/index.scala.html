@@ -21,7 +21,7 @@
 @defining(scopedMessages("views.DocumentCloudProject.index")) { m =>
   @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="documentcloud-project-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
-    @views.html.components.helpBox(m("help1"), m("help2"))
+    @views.html.components.helpBox(m("help1"))
   } {
     <div class="documentcloud-projects"><!-- JavaScript will replace this --></div>
   }
