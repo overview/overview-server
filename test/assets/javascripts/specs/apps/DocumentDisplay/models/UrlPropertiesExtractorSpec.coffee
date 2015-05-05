@@ -105,6 +105,7 @@ define [
         'a local PDF',
         '/documents/1234.pdf',
           type: 'pdf'
+          id: '1234'
           url: '/documents/1234.pdf'
       )
 
@@ -142,7 +143,6 @@ define [
           type: 'none'
           url: ''
       )
-
 
       describe 'with a custom DocumentCloud URL', ->
         beforeEach ->

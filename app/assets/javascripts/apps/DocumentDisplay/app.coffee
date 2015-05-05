@@ -97,7 +97,7 @@ define [
       @$el.attr(class: 'showing-document')
       @_removeTextViews()
       @textDocument = null
-      @documentView.setUrlProperties(urlProperties)
+      @documentView.setUrlPropertiesAndHighlightSearch(urlProperties, @q)
 
     _renderText: ->
       @$el.attr(class: 'showing-text')

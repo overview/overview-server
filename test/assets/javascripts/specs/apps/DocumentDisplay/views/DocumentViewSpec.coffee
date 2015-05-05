@@ -96,10 +96,14 @@ define [
       beforeEach ->
         @init
           type: 'pdf'
+          id: '1234'
           url: '/documents/1234.pdf'
 
-      it 'should render an object', ->
-        $object = @$('object')
-        expect($object).to.exist
-        expect($object).to.have.attr('data', '/documents/1234.pdf#scrollbar=1&toolbar=1&navpanes=1&view=FitH')
-        expect($object).to.contain('missingPlugin')
+      it 'should render an iframe', ->
+        expect(@$('iframe')).to.have.attr('src', '/documents/1234')
+
+      it 'should add and remove a sidebar', ->
+        @preferences.set(sidebar: true)
+        expect(@$('iframe')).to.have.attr('src', '/documents/1234#pagemode=thumbs')
+        @preferences.set(sidebar: false)
+        expect(@$('iframe')).to.have.attr('src', '/documents/1234')

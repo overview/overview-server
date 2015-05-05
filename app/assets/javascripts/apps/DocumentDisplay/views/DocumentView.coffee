@@ -1,8 +1,9 @@
 define [
   'underscore'
+  'jquery'
   'backbone'
   'i18n'
-], (_, Backbone, i18n) ->
+], (_, $, Backbone, i18n) ->
   t = i18n.namespaced('views.Document.show.DocumentView')
   TWITTER_WIDGETS_URL = '//platform.twitter.com/widgets.js'
 
@@ -21,9 +22,12 @@ define [
     setUrlProperties: (@urlProperties) ->
       @render()
 
+    setUrlPropertiesAndHighlightSearch: (@urlProperties, @highlightSearch) ->
+      @render()
+
     templates:
       documentCloud: _.template("""
-        <iframe src="<%- url.url + '?sidebar=' + (preferences.get('sidebar') && 'true' || 'false') + (url.page || '') %>"></iframe>
+        <iframe src="<%- url.url + '?sidebar=' + (preferences.get('sidebar') ? 'true' : 'false') + (url.page || '') %>"></iframe>
       """)
 
       twitter: _.template("""
@@ -40,12 +44,7 @@ define [
       """)
 
       pdf: _.template("""
-        <object data="<%- url.url + '#scrollbar=1&toolbar=1&navpanes=1&view=FitH' %>" type="application/pdf" width="100%" height="100%">
-          <div class='missing-plugin'>
-            <a href="<%- url.url %>"><i class="icon icon-cloud-download"></i></a>
-            <%= t('missingPlugin') %>
-          </div>
-        </object>
+        <iframe src="/documents/<%- url.id %><%= preferences.get('sidebar') ? '#pagemode=thumbs' : '' %>"></iframe>
       """)
 
     render: ->
@@ -57,7 +56,10 @@ define [
       @$el.html(html)
       @$el.attr('data-document-type', type)
 
-      @_renderTweet() if type == 'twitter'
+      if type == 'twitter'
+        @_renderTweet()
+      else if type == 'pdf'
+        @_renderPdf()
 
       @
 
@@ -92,3 +94,32 @@ define [
           twttr.widgets.createTweet(id, blockquote.parentNode)
             .then(onCreate)
             .catch((err) -> console.log('Error from Twitter', error))
+
+    _renderPdf: ->
+      # After rendering a PDF, search automatically.
+      #
+      # Nothing clever here. If you search for `foo OR bar`, the search phrase
+      # will be "foo OR bar". We can't get clever here without ripping pdf.js
+      # to shreds (or using a whole new viewer strategy).
+      if @highlightSearch
+        iframe = @$('iframe')[0]
+        iWindow = iframe.contentWindow
+        iDocument = iframe.contentDocument
+        $(iWindow).on 'load', =>
+          # Execute the search by firing a 'find' event.
+          event = iDocument.createEvent('CustomEvent')
+          event.initCustomEvent('find', true, true, {
+            query: @highlightSearch
+            caseSensitive: false
+            highlightAll: true
+            findPrevious: false
+          })
+          iWindow.dispatchEvent(event)
+
+          # Now update and display the Find bar, so users understand what's
+          # highlighted.
+          findBar = iWindow.PDFViewerApplication.findBar
+          findBar.caseSensitive.checked = false
+          findBar.highlightAll.checked = true
+          findBar.findField.value = @highlightSearch
+          findBar.open()

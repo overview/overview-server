@@ -30,6 +30,7 @@ DELETE /tour controllers.TourController.delete()
 GET    /documents/:id.json controllers.DocumentController.showJson(id: Long)
 GET    /documents/:id.txt  controllers.DocumentController.showText(id: Long)
 GET    /documents/:id.pdf  controllers.DocumentController.showPdf(id: Long)
+GET    /documents/:id      controllers.DocumentController.show(id: Long)
 
 HEAD   /uploads/:uuid        controllers.UploadController.show(uuid: java.util.UUID)
 POST   /uploads/:uuid        controllers.UploadController.create(uuid: java.util.UUID)

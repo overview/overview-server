@@ -48,6 +48,13 @@ trait DocumentController extends Controller {
     })
   }
 
+  def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+    DocumentBackend.show(documentId).map(_ match {
+      case None => NotFound
+      case Some(document) => Ok(views.html.Document.show(document))
+    })
+  }
+
   private def emptyBodyAndLength: Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
     Future.successful((Enumerator.empty, 0))
   }
