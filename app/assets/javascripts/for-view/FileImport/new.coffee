@@ -7,13 +7,13 @@ define [ 'jquery', 'apps/MassUploadForm/app' ], ($, MassUploadApp) ->
       csrfToken: window.csrfToken
       supportedLanguages: window.supportedLanguages
       defaultLanguageCode: window.defaultLanguageCode
-      onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
+      onlyOptions: [ 'name', 'lang', 'split_documents' ]
 
     # rather than split new.coffee and edit.coffee into separate bundles, we
     # use this simple if-statement.
     isReallyEdit = !/\/finish$/.test($form.attr('action'))
     if isReallyEdit
-      options.onlyOptions = [ 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
+      options.onlyOptions = [ 'lang', 'split_documents' ]
 
     app = new MassUploadApp(options)
     $form.append(app.el)

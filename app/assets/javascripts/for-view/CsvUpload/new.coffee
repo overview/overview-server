@@ -22,7 +22,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
 
   make_csv_upload_form = ($form, $modal) ->
     importOptionsApp = new ImportOptionsApp
-      onlyOptions: [ 'lang', 'important_words', 'supplied_stop_words' ]
+      onlyOptions: [ 'lang' ]
       supportedLanguages: window.supportedLanguages
       defaultLanguageCode: window.defaultLanguageCode
     $form.find('.ok').prepend(importOptionsApp.el)
