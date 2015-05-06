@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import java.io.{BufferedInputStream,InputStream}
+import java.security.{DigestInputStream,MessageDigest}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -25,22 +26,27 @@ trait CreatePdfFile extends TaskStep with SlickClient {
 
   override def execute: Future[TaskStep] = for {
     upload <- findUpload
-    location <- moveLargeObjectToBlobStorage(upload.contentsOid, upload.size)
-    file <- createFile(upload.name, upload.size, location)
+    (location, sha1) <- moveLargeObjectToBlobStorage(upload.contentsOid, upload.size)
+    file <- createFile(upload.name, upload.size, location, sha1)
   } yield nextStep(file)
 
   private def findUpload: Future[GroupedFileUpload] = db { implicit session =>
     GroupedFileUploads.filter(_.id === uploadedFileId).first
   }
 
-  private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[String] = {
+  /** Returns (blobLocation,sha1). */
+  private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[(String,Array[Byte])] = {
     val loStream = largeObjectInputStream(oid)
+    val digest = MessageDigest.getInstance("SHA-1")
+    val digestStream = new DigestInputStream(loStream, digest)
 
-    blobStorage.create(BlobBucketId.FileContents, loStream, size)
+    for {
+      location <- blobStorage.create(BlobBucketId.FileContents, digestStream, size)
+    } yield (location, digest.digest)
   }
 
-  private def createFile(name: String, size: Long, location: String): Future[File] = db { implicit session =>
-    val file = File(0l, 1, name, location, size, location, size)
+  private def createFile(name: String, size: Long, location: String, sha1: Array[Byte]): Future[File] = db { implicit session =>
+    val file = File(0l, 1, name, location, size, Some(sha1), location, size)
     withTransaction(writeFileAndTempDocumentSetFile(file)(_))
   }
 

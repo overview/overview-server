@@ -288,6 +288,7 @@ class DbFactory(connection: Connection) extends Factory {
     name: String,
     contentsLocation: String,
     contentsSize: Long,
+    contentsSha1: Option[Array[Byte]],
     viewLocation: String,
     viewSize: Long
   ) = q.insertFile += podoFactory.file(
@@ -296,6 +297,7 @@ class DbFactory(connection: Connection) extends Factory {
     name,
     contentsLocation,
     contentsSize,
+    contentsSha1,
     viewLocation,
     viewSize
   )

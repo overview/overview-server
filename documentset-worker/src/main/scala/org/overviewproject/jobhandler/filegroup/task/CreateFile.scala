@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task
 
 import java.io.{BufferedInputStream,InputStream}
+import java.security.{DigestInputStream,MessageDigest}
 import java.util.UUID
 import scala.concurrent.{Await,Future,blocking}
 import scala.concurrent.duration.Duration
@@ -48,15 +49,25 @@ trait CreateFile {
   }
 
   private def applyPdf(documentSetId: Long, upload: GroupedFileUpload): File = {
-    var location: String = await(moveLargeObjectToBlobStorage(upload.contentsOid, upload.size))
+    var (location, sha1) = await(moveLargeObjectToBlobStorage(upload.contentsOid, upload.size))
 
-    storage.createFile(documentSetId, upload.name, location, upload.size, location, upload.size)
+    storage.createFile(documentSetId, upload.name, location, upload.size, sha1, location, upload.size)
   }
 
   private def applyNonPdf(documentSetId: Long, upload: GroupedFileUpload): File = {
-    var contentLocationFuture: Future[String] = moveLargeObjectToBlobStorage(upload.contentsOid, upload.size)
+    val contentFuture = moveLargeObjectToBlobStorage(upload.contentsOid, upload.size)
+    val viewFuture = createViewInBlobStorage(upload)
 
-    var viewLocationFuture: Future[(String,Long)] = blocking(withLargeObjectInputStream(upload.contentsOid) { stream =>
+    val future = for {
+      (contentLocation, contentSha1) <- contentFuture
+      (viewLocation, viewSize) <- viewFuture
+    } yield storage.createFile(documentSetId, upload.name, contentLocation, upload.size, contentSha1, viewLocation, viewSize)
+
+    await(future)
+  }
+
+  private def createViewInBlobStorage(upload: GroupedFileUpload): Future[(String, Long)] = {
+    blocking(withLargeObjectInputStream(upload.contentsOid) { stream =>
       logger.logExecutionTime("Converting {} ({}, {}kb) to PDF", upload.name, upload.guid, upload.size / 1024) {
         converter.withStreamAsPdf(upload.guid, upload.name, stream) { (viewStream: InputStream, viewSize: Long) =>
           blobStorage.create(BlobBucketId.FileView, viewStream, viewSize)
@@ -64,11 +75,6 @@ trait CreateFile {
         }
       }
     })
-
-    val contentLocation = await(contentLocationFuture)
-    val (viewLocation, viewSize) = await(viewLocationFuture)
-
-    storage.createFile(documentSetId, upload.name, contentLocation, upload.size, viewLocation, viewSize)
   }
 
   private def peekAtMagicNumber(inputStream: InputStream): Array[Byte] = {
@@ -78,11 +84,14 @@ trait CreateFile {
     magicNumber
   }
 
-  private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[String] = {
+  private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[(String,Array[Byte])] = {
     val lois = storage.getLargeObjectInputStream(oid)
-    val stream = new BufferedInputStream(lois, 5 * 1024 * 1024)
+    val digest = MessageDigest.getInstance("SHA-1")
+    val dis = new DigestInputStream(lois, digest)
+    val stream = new BufferedInputStream(dis, 5 * 1024 * 1024)
 
     blobStorage.create(BlobBucketId.FileContents, stream, size)
+      .map((location) => (location, digest.digest))
       .andThen { case _ => stream.close }
   }
 
@@ -106,7 +115,7 @@ object CreateFile extends CreateFile {
 
   trait Storage {
     def getLargeObjectInputStream(oid: Long): InputStream
-    def createFile(documentSetId: Long, name: String, contentsLocation: String, contentsSize: Long, viewLocation: String, viewSize: Long): File
+    def createFile(documentSetId: Long, name: String, contentsLocation: String, contentsSize: Long, contentsSha1: Array[Byte], viewLocation: String, viewSize: Long): File
   }
 
   object DatabaseStorage extends Storage {
@@ -119,7 +128,7 @@ object CreateFile extends CreateFile {
     private lazy val fileInserter = {
       import org.overviewproject.database.Slick.simple._
       Files
-        .map(f => (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize))
+        .map(f => (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.contentsSha1, f.viewLocation, f.viewSize))
         .returning(Files)
         .insertInvoker
     }
@@ -129,12 +138,13 @@ object CreateFile extends CreateFile {
       name: String,
       contentsLocation: String,
       contentsSize: Long,
+      contentsSha1: Array[Byte],
       viewLocation: String,
       viewSize: Long)
     : File = {
       DB.withTransaction { connection =>
         val session = DB.slickSession(connection)
-        val file = fileInserter.insert(1, name, contentsLocation, contentsSize, viewLocation, viewSize)(session)
+        val file = fileInserter.insert(1, name, contentsLocation, contentsSize, Some(contentsSha1), viewLocation, viewSize)(session)
 
         import org.squeryl.Session
         import org.overviewproject.postgres.{SquerylEntrypoint,SquerylPostgreSqlAdapter}

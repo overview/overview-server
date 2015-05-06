@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import java.io.InputStream
+import java.io.{ByteArrayInputStream,InputStream}
+import org.mockito.Matchers
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
 import scala.slick.jdbc.JdbcBackend.Session
@@ -18,33 +19,42 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
 
     "copy upload contents to BlobStorage" in new UploadScope {
       await(createFile.execute)
-      
-      there was one(blobStorage).create(BlobBucketId.FileContents, loInputStream, uploadSize)
+
+      there was one(blobStorage).create(
+        Matchers.eq(BlobBucketId.FileContents),
+        any[InputStream],
+        Matchers.eq(uploadSize)
+      )
     }
 
     "create a file with PDF content" in new UploadScope {
       await(createFile.execute)
-      
+
       import org.overviewproject.database.Slick.simple._
       val file = Files.firstOption(session)
-      
-      file.map(f => (f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) must 
+
+      file.map(f => (f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) must
         beSome((location, uploadSize, location, uploadSize))
+
+      // We can't check the sha1, because our upload mock doesn't *do* anything
+      // with the input stream. (Our impementation uses a DigestInputStream.)
+      // But we *can* check that *a* sha1 gets passed.
+      file.flatMap(_.contentsSha1) must beSome[Array[Byte]].which(_.length  == 20)
     }
 
     "return the next step" in new UploadScope {
       val r = await(createFile.execute)
-      
+
       r must be equalTo(NextStep)
     }
-    
+
     "return failure on error" in new FailingCreationScope {
       createFile.execute must throwA[Exception].await
     }
-    
+
     "write a tempDocumentSetFile" in new UploadScope {
       await(createFile.execute)
-      
+
       import org.overviewproject.database.Slick.simple._
       TempDocumentSetFiles.firstOption(session) must beSome
     }
@@ -54,19 +64,18 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
       val uploadSize = 1000l
       val upload = factory.groupedFileUpload(fileGroupId = fileGroup.id, size = uploadSize)
       val location = "blob location"
-      
-      val loInputStream = smartMock[InputStream]
+
+      val loInputStream = new ByteArrayInputStream("foo bar baz".getBytes("UTF-8"))
       val blobStorage = smartMock[BlobStorage]
       blobStorage.create(any, any, any) returns createResult
-      
+
       val createFile = new TestCreatePdfFile(upload.id, blobStorage, loInputStream)
-      
+
       def createResult: Future[String] = Future.successful(location)
     }
-    
-    
+
     trait FailingCreationScope extends UploadScope {
-      override def createResult = Future.failed(new Exception) 
+      override def createResult = Future.failed(new Exception)
     }
   }
 

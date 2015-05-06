@@ -9,6 +9,7 @@ class FilesImpl(tag: Tag) extends Table[File](tag, "file") {
   def name = column[String]("name")
   def contentsLocation = column[String]("contents_location")
   def contentsSize = column[Long]("contents_size")
+  def contentsSha1 = column[Option[Array[Byte]]]("contents_sha1")
   def viewLocation = column[String]("view_location")
   def viewSize = column[Long]("view_size")
   
@@ -18,6 +19,7 @@ class FilesImpl(tag: Tag) extends Table[File](tag, "file") {
     name,
     contentsLocation,
     contentsSize,
+    contentsSha1,
     viewLocation,
     viewSize
   ) <> (File.tupled, File.unapply)
