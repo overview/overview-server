@@ -12,6 +12,7 @@ class TestCreateDocumentsJobShepherd(
     val options: UploadProcessOptions,
     val taskQueue: ActorRef,
     val progressReporter: ActorRef,
+    val documentIdSupplier: ActorRef,
     uploadedFileIds: Set[Long]) extends CreateDocumentsJobShepherd with Mockito {
   override protected val storage = smartMock[Storage]
   

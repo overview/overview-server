@@ -16,72 +16,48 @@ class CreateDocumentsJobShepherdSpec extends Specification {
 
   "CreateDocumentsJobShepherd" should {
 
-    "start CreateDocumentsTask when all pages have been created" in new JobShepherdContext {
+    "send CreateDocuments tasks to job queue" in new JobShepherdContext {
       jobShepherd.createTasks
-      jobShepherd.startTask(task)
-      jobShepherd.completeTask(task)
 
       jobQueue.expectMsg(AddTasks(Set(task)))
-      jobQueue.expectMsg(AddTasks(Set(createDocumentsTask)))
     }
 
-    "report all tasks completed when CreateDocumentsTask is complete" in new JobShepherdContext {
-
+    "report progress" in new JobShepherdContext {
       jobShepherd.createTasks
-      jobShepherd.startTask(task)
-      jobShepherd.completeTask(task)
-
-      jobQueue.expectMsg(AddTasks(Set(task)))
-      jobQueue.expectMsg(AddTasks(Set(createDocumentsTask)))
-
-      jobShepherd.allTasksComplete must beFalse
-      jobShepherd.startTask(createDocumentsTask)
-      jobShepherd.completeTask(createDocumentsTask)
-      jobShepherd.allTasksComplete must beTrue
-
-    }
-    
-    
-    "notify progress reporter about job steps" in new JobShepherdContext {
       
-      jobShepherd.createTasks
-      progressReporter.expectMsg(StartJob(documentSetId, 2, jobDescription))
-      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.75, stepDescription1))
-      jobShepherd.startTask(task)
-      jobShepherd.completeTask(task)
+      progressReporter.expectMsg(StartJob(documentSetId, 1, ExtractText))
       
+      jobShepherd.startTask(task)
       progressReporter.expectMsg(StartTask(documentSetId, uploadedFileId))
+      
+      jobShepherd.completeTask(task)
       progressReporter.expectMsg(CompleteTask(documentSetId, uploadedFileId))
-      progressReporter.expectMsg(CompleteJobStep(documentSetId))
       
-      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.25, stepDescription2))
-      
-      jobShepherd.completeTask(createDocumentsTask)
-      
-      progressReporter.expectMsg(CompleteJobStep(documentSetId))
+      progressReporter.expectMsg(CompleteJob(documentSetId))
     }
 
     abstract class JobShepherdContext extends ActorSystemContext with Before {
       var jobQueue: TestProbe = _
       var progressReporter: TestProbe = _
+      var documentIdSupplier: TestProbe = _
+      
       var jobShepherd: TestCreateDocumentsJobShepherd = _
 
       val documentSetId = 1l
       val fileGroupId = 1l
       val uploadedFileId = 10l
       val options = UploadProcessOptions("en", true)
-      val task = CreatePagesTask(documentSetId, fileGroupId, uploadedFileId)
-      val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, options.splitDocument)
-      val jobDescription = ProcessUpload
-      val stepDescription1 = ExtractText
-      val stepDescription2 = CreateDocument
+      var task: CreateDocuments = _
+
       
       override def before = {
         jobQueue = TestProbe()
         progressReporter = TestProbe()
-
+        documentIdSupplier = TestProbe()
+        task = CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref)
+        
         jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, options,
-          jobQueue.ref, progressReporter.ref, Set(uploadedFileId))
+          jobQueue.ref, progressReporter.ref, documentIdSupplier.ref, Set(uploadedFileId))
       }
     }
   }

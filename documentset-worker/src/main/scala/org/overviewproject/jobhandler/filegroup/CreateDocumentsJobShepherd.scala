@@ -15,22 +15,18 @@ import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
  * Creates the tasks for generating `Document`s from uploaded files.
  */
 trait CreateDocumentsJobShepherd extends JobShepherd {
-  val documentSetId: Long
-  val fileGroupId: Long
-  val options: UploadProcessOptions
-  val taskQueue: ActorRef
-  val progressReporter: ActorRef
+  protected val documentSetId: Long
+  protected val fileGroupId: Long
+  protected val options: UploadProcessOptions
+  protected val taskQueue: ActorRef
+  protected val progressReporter: ActorRef
+  protected val documentIdSupplier: ActorRef
 
-  val NumberOfJobSteps = 2
-  val ExtractTextStepSize = 0.75
-  val CreateDocumentsStepSize = 0.25
-
-  
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
-    val tasks = uploadedFilesInFileGroup(fileGroupId).map(CreatePagesTask(documentSetId, fileGroupId, _))
+    val tasks = uploadedFilesInFileGroup(fileGroupId).map(
+      CreateDocuments(documentSetId, fileGroupId, _, options, documentIdSupplier))
 
-    progressReporter ! StartJob(documentSetId, NumberOfJobSteps, ProcessUpload)
-    progressReporter ! StartJobStep(documentSetId, tasks.size, ExtractTextStepSize, ExtractText)
+    progressReporter ! StartJob(documentSetId, tasks.size, ExtractText)
 
     taskQueue ! AddTasks(tasks)
     tasks
@@ -38,35 +34,26 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
 
   // TODO: we need a unified progress reporting mechanism, but for now, do this ugly thing,
   // since progress reporting only applies to these tasks.
-  // Risk the MatchError because this shepherd should only get known tasks
+
   override def startTask(task: TaskWorkerTask): Unit = {
     super.startTask(task)
     task match {
-      case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) =>
+      case CreateDocuments(documentSetId, fileGroupId, uploadedFileId, _, _) =>
         progressReporter ! StartTask(documentSetId, uploadedFileId)
       case _ =>
     }
   }
+
   override def completeTask(task: TaskWorkerTask): Unit = {
     super.completeTask(task)
     task match {
-      case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
+      case CreateDocuments(documentSetId, fileGroupId, uploadedFileId, _, _) => {
         progressReporter ! CompleteTask(documentSetId, uploadedFileId)
-        if (allTasksComplete && !jobCancelled) {
-          progressReporter ! CompleteJobStep(documentSetId)
-          
-          val numberOfFiles = storage.processedFileCount(documentSetId).toInt
-          
-          progressReporter ! StartJobStep(documentSetId, numberOfFiles, CreateDocumentsStepSize, CreateDocument)
-          
-          val createDocumentsTask = CreateDocumentsTask(documentSetId, fileGroupId, options.splitDocument)     
-          taskQueue ! AddTasks(Set(createDocumentsTask))
-          addTask(createDocumentsTask)
-        }
       }
-      case CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments) => 
-        progressReporter ! CompleteJobStep(documentSetId)
+      case _ =>
     }
+    
+    if (allTasksComplete && !jobCancelled) progressReporter ! CompleteJob(documentSetId)
   }
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
@@ -79,19 +66,21 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
 }
 
 object CreateDocumentsJobShepherd {
-  def apply(documentSetId: Long, fileGroupId: Long, options: UploadProcessOptions, taskQueue: ActorRef, progressReporter: ActorRef): CreateDocumentsJobShepherd =
-    new CreateDocumentsJobShepherdImpl(documentSetId, fileGroupId, options, taskQueue, progressReporter)
+  def apply(documentSetId: Long, fileGroupId: Long, options: UploadProcessOptions,
+            taskQueue: ActorRef, progressReporter: ActorRef, documentIdSupplier: ActorRef): CreateDocumentsJobShepherd =
+    new CreateDocumentsJobShepherdImpl(documentSetId, fileGroupId, options,
+      taskQueue, progressReporter, documentIdSupplier)
 
   private class CreateDocumentsJobShepherdImpl(
-      val documentSetId: Long,
-      val fileGroupId: Long,
-      val options: UploadProcessOptions,
-      val taskQueue: ActorRef,
-      val progressReporter: ActorRef) extends CreateDocumentsJobShepherd {
+    override protected val documentSetId: Long,
+    override protected val fileGroupId: Long,
+    override protected val options: UploadProcessOptions,
+    override protected val taskQueue: ActorRef,
+    override protected val progressReporter: ActorRef,
+    override protected val documentIdSupplier: ActorRef) extends CreateDocumentsJobShepherd {
 
     override protected val storage = new DatabaseStorage
-    
-    
+
     protected class DatabaseStorage extends Storage {
       override def uploadedFileIds(fileGroupId: Long): Set[Long] = Database.inTransaction {
         GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toSet
@@ -99,7 +88,7 @@ object CreateDocumentsJobShepherd {
 
       override def processedFileCount(documentSetId: Long): Long = Database.inTransaction {
         FileFinder.byDocumentSet(documentSetId).count
-        
+
       }
     }
   }

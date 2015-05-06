@@ -74,7 +74,7 @@ trait FileGroupJobQueue extends Actor {
 
     case SubmitJob(documentSetId, job) =>
       if (isNewRequest(documentSetId)) {
-        val shepherd = jobShepherdFactory.createShepherd(documentSetId, job, self, progressReporter)
+        val shepherd = jobShepherdFactory.createShepherd(documentSetId, job, self, progressReporter, documentIdSupplier)
         val numberOfTasks = shepherd.createTasks
 
         jobShepherds += (documentSetId -> shepherd)

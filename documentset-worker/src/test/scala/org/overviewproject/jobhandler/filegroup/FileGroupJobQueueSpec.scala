@@ -195,7 +195,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
       protected def expectCancellation(workers: Seq[WorkerTestProbe]) = workers.map { _.expectMsg(CancelTask) }
 
-      protected def mustMatchUploadedFileIds(tasks: Seq[CreatePagesTask], uploadedFileIds: Seq[Long]) =
+      protected def mustMatchUploadedFileIds(tasks: Seq[CreateDocuments], uploadedFileIds: Seq[Long]) =
         tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)
     }
 
@@ -209,7 +209,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectMsg(TaskAvailable)
         reply(ReadyForTask)
 
-        expectMsgClass(classOf[CreatePagesTask])
+        expectMsgClass(classOf[CreateDocuments])
       }
 
       def expectDeleteFileUploadJob = {
@@ -244,6 +244,10 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
             sender.tell(ReadyForTask, worker)
           }
           case CreateDocumentsTask(ds, fg, split) => {
+            sender.tell(TaskDone(ds, None), worker)
+            sender.tell(ReadyForTask, worker)
+          }
+          case CreateDocuments(ds, fg, uf, opt, di) => {
             sender.tell(TaskDone(ds, None), worker)
             sender.tell(ReadyForTask, worker)
           }
