@@ -68,6 +68,8 @@ GET    /documentsets/:id/api-tokens        controllers.ApiTokenController.indexF
 POST   /documentsets/:id/api-tokens        controllers.ApiTokenController.createForDocumentSet(id: Long)
 DELETE /documentsets/:id/api-tokens/:token controllers.ApiTokenController.destroyForDocumentSet(id: Long, token: String)
 
+HEAD   /documentsets/:id/files/$sha1<[0-9a-fA-f]{40}> controllers.DocumentSetFileController.head(id: Long, sha1: Array[Byte])
+
 GET    /documentsets/:id/users        controllers.DocumentSetUserController.index(id: Long)
 PUT    /documentsets/:id/users/:email controllers.DocumentSetUserController.update(id: Long, email: String)
 DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.delete(id: Long, email: String)
