@@ -13,8 +13,7 @@ describe 'PdfUpload', ->
   testMethods.usingPromiseChainMethods
     waitForJobsToComplete: ->
       @
-        .sleep(5000) # async requests can time out; this won't
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('progress').length == 0), 15000)
 
     deleteTopUpload: ->
       @
@@ -25,7 +24,6 @@ describe 'PdfUpload', ->
 
     loadImportedTree: (name) ->
       @
-        .waitForJobsToComplete()
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: name, visible: true).click()
 
@@ -44,8 +42,6 @@ describe 'PdfUpload', ->
         .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true)
         .elementBy(tag: 'input', name: 'name').type('Pdf Upload')
-        .elementBy(tag: 'textarea', name: 'supplied_stop_words').type('moose frog')
-        .elementBy(tag: 'textarea', name: 'important_words').type('couch face')
         .doImport()
         .waitForJobsToComplete()
 
@@ -57,23 +53,18 @@ describe 'PdfUpload', ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy({tag: 'h3', contains: 'Pdf Upload'}, 10000).should.eventually.exist
+        .elementBy(tag: 'a', contains: 'Pdf Upload').click() # go back to where we were
+        .waitForJqueryReady()
 
-    describe 'in the default tree', ->
-      before ->
-        @userBrowser
-          .loadImportedTree('Pdf Upload')
+    shouldBehaveLikeATree
+      documents: [
+        { type: 'pdf', title: 'Cat4.pdf' }
+      ]
+      searches: [
+        { query: 'chase', nResults: 4 }
+      ]
 
-      shouldBehaveLikeATree
-        documents: [
-          { type: 'pdf', title: 'Cat4.pdf' }
-        ]
-        searches: [
-          { query: 'chase', nResults: 4 }
-        ]
-        ignoredWords: [ 'moose', 'frog' ]
-        importantWords: [ 'couch', 'face' ]
-
-  describe 'after uploading one pdf', ->
+  describe 'after uploading one pdf split by page', ->
     before ->
       @userBrowser
         .get('/tour?X-HTTP-Method-Override=DELETE')
@@ -81,22 +72,23 @@ describe 'PdfUpload', ->
         .chooseFile('PdfUpload/Cat1.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
+        .elementBy(tag: 'label', contains: 'Each page is one document').click()
         .doImport()
-        .loadImportedTree('Pdf Upload')
-
-    shouldBehaveLikeATree
-      documents: [
-          { type: 'pdf', title: 'Cat1.pdf – page 1' },
-          { type: 'pdf', title: 'Cat1.pdf – page 2' },
-          { type: 'pdf', title: 'Cat1.pdf – page 3' }
-      ]
-      searches: [
-        { query: 'face', nResults: 3 }
-      ]
+        .waitForJobsToComplete()
 
     after ->
       @userBrowser
         .deleteTopUpload()
+
+    shouldBehaveLikeATree
+      documents: [
+        { type: 'pdf', title: 'Cat1.pdf – page 1' },
+        { type: 'pdf', title: 'Cat1.pdf – page 2' },
+        { type: 'pdf', title: 'Cat1.pdf – page 3' }
+      ]
+      searches: [
+        { query: 'face', nResults: 3 }
+      ]
 
   describe 'after uploading three pdfs', ->
     before ->
@@ -110,18 +102,18 @@ describe 'PdfUpload', ->
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
         .elementBy(tag: 'input', name: 'split_documents', value: true).click()
         .doImport()
-        .loadImportedTree('Pdf Upload')
-
-    shouldBehaveLikeATree
-      documents: [
-          { type: 'pdf', title: 'Cat1.pdf – page 3' }
-          { type: 'pdf', title: 'Cat2.pdf – page 4' },
-          { type: 'pdf', title: 'Cat3.pdf – page 4' }
-      ]
-      searches: [
-        { query: 'burrow', nResults: 9 }
-      ]
+        .waitForJobsToComplete()
 
     after ->
       @userBrowser
         .deleteTopUpload()
+
+    shouldBehaveLikeATree
+      documents: [
+        { type: 'pdf', title: 'Cat1.pdf – page 3' }
+        { type: 'pdf', title: 'Cat2.pdf – page 4' },
+        { type: 'pdf', title: 'Cat3.pdf – page 4' }
+      ]
+      searches: [
+        { query: 'burrow', nResults: 9 }
+      ]

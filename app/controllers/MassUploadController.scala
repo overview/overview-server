@@ -150,7 +150,7 @@ trait MassUploadController extends Controller {
           job <- Future.successful(storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords, true))
           _ <- fileGroupBackend.update(fileGroup.id, true)
           _ <- messageQueue.startClustering(job, name)
-        } yield Redirect(routes.DocumentSetController.index())
+        } yield Redirect(routes.DocumentSetController.show(documentSet.id))
       }
       case None => Future.successful(NotFound)
     })
@@ -174,7 +174,7 @@ trait MassUploadController extends Controller {
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
           .map(_ => messageQueue.startClustering(job, "[add-to-existing-docset]"))
-          .map(_ => Redirect(routes.DocumentSetController.index()))
+          .map(_ => Redirect(routes.DocumentSetController.show(documentSetId)))
       }
     })
   }

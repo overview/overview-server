@@ -5,6 +5,7 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
+  show: /\/documentsets\/(\d+)/
   csvUpload: '/imports/csv'
 
 isSelected = new wd.asserters.Asserter((target, cb) -> target.isSelected(cb))
@@ -28,7 +29,7 @@ describe 'CsvUpload', ->
     doUpload: ->
       @
         .elementBy(tag: 'button', contains: 'Upload').click()
-        .waitForUrl(Url.index, 5000)
+        .waitForUrl(Url.show, 5000)
 
     chooseAndDoUpload: (path) ->
       @
@@ -44,8 +45,7 @@ describe 'CsvUpload', ->
         .elementByCss('.delete-document-set').click()
 
     waitForJobsToComplete: ->
-      @
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 10000)
+      @.waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('progress').length == 0), 10000)
 
   asUser.usingTemporaryUser(title: 'CsvUpload')
 
@@ -94,11 +94,6 @@ describe 'CsvUpload', ->
       @userBrowser
         .loadCsvAndWaitForRequirements('CsvUpload/basic-no-text.csv')
         .elementByCss('.requirements li.header.bad').should.eventually.exist
-
-    it 'should show an error when there are too few documents', ->
-      @userBrowser
-        .loadCsvAndWaitForRequirements('CsvUpload/basic-2docs.csv')
-        .elementByCss('.requirements li.data.bad').should.eventually.exist
 
   describe 'after uploading a document set', ->
     before ->

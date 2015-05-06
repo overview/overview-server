@@ -34,7 +34,7 @@ trait DocumentCloudImportJobController extends Controller {
         for {
           documentSet <- documentSetBackend.create(attributes, request.user.email)
           _ <- storage.insertJob(documentSet.id, job)
-        } yield Redirect(routes.DocumentSetController.index()).flashing("event" -> "document-set-create")
+        } yield Redirect(routes.DocumentSetController.show(documentSet.id)).flashing("event" -> "document-set-create")
       }
     )
   }

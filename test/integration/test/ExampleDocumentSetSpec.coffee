@@ -6,13 +6,13 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
+  show: /\/documentsets\/(\d+)/
   csvUpload: '/imports/csv'
   publicDocumentSets: '/public-document-sets'
 
 userToTrXPath = (email) -> "//tr[contains(td[@class='email'], '#{email}')]"
 
 describe 'ExampleDocumentSets', ->
-
   testMethods.usingPromiseChainMethods
     waitForUserLoaded: (email) ->
       @
@@ -32,13 +32,14 @@ describe 'ExampleDocumentSets', ->
       @
         .waitForJqueryReady()
         .waitForElementBy(tag: 'button', contains: 'Clone').click()
-        .waitForUrl(Url.index)
+        .waitForUrl(Url.show, 10000)
 
     toggleExampleDocumentSet: ->
       checkbox = { tag: 'label', contains: 'Set as example document set', visible: true }
 
       @
-        .elementByCss('.actions .dropdown-toggle').click()
+        .waitForJqueryReady()
+        .elementByCss('nav .dropdown-toggle a').click()
         .elementByCss('.dropdown-menu .show-sharing-settings').click()
         .frame('share-document-set')
         .waitForElementBy(checkbox)
@@ -46,7 +47,7 @@ describe 'ExampleDocumentSets', ->
         .elementBy(checkbox).click()
         .waitForJqueryAjaxComplete()
         .frame(null)
-        .elementBy(tag: 'a', contains: 'Close', visible: true).click()
+        .elementByCss('#sharing-options-modal a[data-dismiss=modal]').click()
 
     waitForRequirements: ->
       @
@@ -55,7 +56,7 @@ describe 'ExampleDocumentSets', ->
     doUpload: ->
       @
         .elementBy(tag: 'button', contains: 'Upload').click()
-        .waitForUrl(Url.index, 10000)
+        .waitForUrl(Url.show, 10000)
 
     chooseAndDoUpload: (path) ->
       @
@@ -71,11 +72,10 @@ describe 'ExampleDocumentSets', ->
         .elementByCss('.dropdown-menu .delete-document-set').click()
 
     waitForJobsToComplete: ->
-      @
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
+      @.waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('progress').length == 0), 15000)
 
   asUser.usingTemporaryUser(title: 'ExampleDocumentSets', adminBrowser: true)
-  
+
   describe 'after being set as an example', ->
     before ->
       @adminBrowser
@@ -90,17 +90,24 @@ describe 'ExampleDocumentSets', ->
 
     after ->
       Q.all([
-        @userBrowser
-          .deleteTopUpload()
-        @adminBrowser
-          .deleteTopUpload()
+        @userBrowser.deleteTopUpload()
+        @adminBrowser.deleteTopUpload()
       ])
 
     it 'should be cloneable',  ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
-        
+
+    it 'should be removed from the example list when unset as an example', ->
+      @adminBrowser.toggleExampleDocumentSet()
+        .then =>
+          @userBrowser
+            .get(Url.publicDocumentSets)
+            .waitForElementBy(tag: 'p', contains: 'There are currently no example document sets.').should.eventually.exist
+        .then =>
+          @adminBrowser.toggleExampleDocumentSet() # return to original state
+
     describe 'the cloned example', ->
       before ->
         @userBrowser
@@ -114,22 +121,6 @@ describe 'ExampleDocumentSets', ->
         searches: [
           { query: 'document', nResults: 4 }
         ]
-
-    describe 'after being removed as an example', ->
-      before ->
-        @adminBrowser
-          .get(Url.index)
-          .toggleExampleDocumentSet()
-
-      after ->
-        @adminBrowser
-          .get(Url.index)
-          .toggleExampleDocumentSet()
-          
-      it 'should not show up in example list', ->
-        @userBrowser
-          .get(Url.publicDocumentSets)
-          .waitForElementBy(tag: 'p', contains: 'There are currently no example document sets.').should.eventually.exist
 
     it 'should keep clone after original is deleted', ->
       @adminBrowser

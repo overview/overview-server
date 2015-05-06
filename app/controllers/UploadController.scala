@@ -61,7 +61,7 @@ trait UploadController extends Controller {
               for {
                 documentSet <- documentSetBackend.create(attributes, request.user.email)
                 _ <- createJobAndDeleteUpload(documentSet, request.user, upload, lang, stopWords, importantWords)
-              } yield Redirect(routes.DocumentSetController.index())
+              } yield Redirect(routes.DocumentSetController.show(documentSet.id))
             }
           }
         }

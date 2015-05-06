@@ -4,6 +4,7 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
+  show: /\/documentsets\/\d+/
   csvUpload: '/imports/csv'
 
 module.exports = (title, csvPath, additionalOptions={}) ->
@@ -16,7 +17,7 @@ module.exports = (title, csvPath, additionalOptions={}) ->
 
     waitForJobsToComplete: ->
       @
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('progress').length == 0), 15000)
 
     wds_openCsvUploadPage: ->
       @
@@ -35,17 +36,13 @@ module.exports = (title, csvPath, additionalOptions={}) ->
     wds_doUpload: ->
       @
         .elementBy(tag: 'button', contains: 'Upload').click()
-        .waitForUrl(Url.index, 10000)
+        .waitForUrl(Url.show, 5000)
 
     wds_chooseAndDoUpload: (path) ->
       @
         .wds_chooseFile(path)
         .wds_waitForRequirements()
         .wds_doUpload()
-
-    wds_waitForJobsToComplete: ->
-      @
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 10000)
 
   options =
     title: title
@@ -54,7 +51,7 @@ module.exports = (title, csvPath, additionalOptions={}) ->
       @userBrowser
         .wds_openCsvUploadPage()
         .wds_chooseAndDoUpload(csvPath)
-        .wds_waitForJobsToComplete()
+        .waitForJobsToComplete()
 
     after: ->
       @userBrowser

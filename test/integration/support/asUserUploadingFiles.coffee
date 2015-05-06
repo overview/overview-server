@@ -6,6 +6,7 @@ wd = require('wd')
 Url =
   index: '/documentsets'
   pdfUpload: '/imports/file'
+  show: /\/documentsets\/(\d+)/
 
 module.exports = (title) ->
   testMethods.usingPromiseChainMethods
@@ -23,7 +24,7 @@ module.exports = (title) ->
     doImport: ->
       @
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForUrl(Url.index, 10000)
+        .waitForUrl(Url.show, 10000)
 
   asUser.usingTemporaryUser
     title: title

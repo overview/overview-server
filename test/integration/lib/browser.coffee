@@ -189,7 +189,10 @@ wd.addAsyncMethod 'waitForElementBy', (args) ->
   @waitForElement.apply(@, newArgs) # finds callback itself
 
 wd.addPromiseChainMethod 'waitForUrl', (expectUrl, args...) ->
-  regex = new RegExp("^https?:\\/\\/[^\\/]+#{escapeRegexp(expectUrl)}$")
+  regex = if expectUrl instanceof RegExp
+    expectUrl
+  else
+    new RegExp("^https?:\\/\\/[^\\/]+#{escapeRegexp(expectUrl)}$")
 
   asserter = new wd.asserters.Asserter (browser) ->
     browser

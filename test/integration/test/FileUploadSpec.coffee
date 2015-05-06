@@ -9,14 +9,13 @@ Url =
   fileUpload: '/imports/file'
 
 describe 'FileUpload', ->
-
   asUserUploadingFiles('FileUpload')
 
   testMethods.usingPromiseChainMethods
-    waitForJobsToComplete: (sleepTime) ->
+    waitForJobsToComplete: (sleepTime = 1) ->
       @
         .sleep(sleepTime) # async requests can time out; this won't
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 19000)
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('Grogress').length == 0), 19000)
 
     deleteTopUpload: ->
       @
@@ -27,7 +26,7 @@ describe 'FileUpload', ->
 
     loadImportedTree: (name) ->
       @
-        .waitForJobsToComplete(5000)
+        .waitForJobsToComplete()
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: name, visible: true).click()
 
@@ -36,9 +35,6 @@ describe 'FileUpload', ->
         ((browserPromise, file) -> browserPromise.chooseFile("ManyFiles/file-#{file}.pdf")),
         @
       )
-
-
-      
 
   describe 'after uploading files', ->
     before ->
@@ -54,28 +50,24 @@ describe 'FileUpload', ->
         .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true)
         .elementBy(tag: 'input', name: 'name').type('File Upload')
-        .elementBy(tag: 'textarea', name: 'supplied_stop_words').type('moose frog')
-        .elementBy(tag: 'textarea', name: 'important_words').type('couch face')
         .doImport()
-        .waitForJobsToComplete(20000)
+        .waitForJobsToComplete(10000)
 
     after ->
       @userBrowser
         .deleteTopUpload()
-    
+
     it 'should show document set', ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy({tag: 'h3', contains: 'File Upload'}, 10000).should.eventually.exist
-        
+
     describe 'in the default tree', ->
       before ->
         @userBrowser
-          .openFileUploadPage()
           .get(Url.index)
           .waitForElementBy(tag: 'a', contains: 'File Upload', visible: true).click()
 
-          
       shouldBehaveLikeATree
         documents: [
           { type: 'pdf', title: 'Cat1.docx' },
@@ -89,8 +81,6 @@ describe 'FileUpload', ->
         searches: [
           { query: 'chase', nResults: 4 }
         ]
-        ignoredWords: [ 'moose', 'frog' ]
-        importantWords: [ 'couch', 'face' ]
 
   describe 'after splitting a file into pages', ->
     before ->
@@ -99,9 +89,10 @@ describe 'FileUpload', ->
         .chooseFile('FileUpload/Cat1.docx')
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('File Upload')
+        .elementBy(tag: 'label', contains: 'Each page is one document').click()
         .doImport()
-        .loadImportedTree('File Upload')
-        
+        .waitForJobsToComplete(1000)
+
     shouldBehaveLikeATree
       documents: [
           { type: 'pdf', title: 'Cat1.docx – page 1' },
@@ -116,22 +107,20 @@ describe 'FileUpload', ->
       @userBrowser
         .deleteTopUpload()
 
-
-  
   describe 'after splitting many files into pages @SauceLabsKiller', ->
     before ->
       @userBrowser
         .openFileUploadPage()
         .chooseManyFiles()
         .elementBy(tag: 'button', contains: 'Done adding files').click()
-        .waitForElementBy(tag: 'label', contains: 'Each page is one document', visible: 'true').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('File Upload')
+        .elementBy(tag: 'label', contains: 'Each page is one document').click()
         .doImport()
+        .waitForJobsToComplete(10000)
 
     it 'should create one document per page', ->
       @userBrowser
-        .waitForJobsToComplete(5000)      
-        .waitForElementBy(class: 'document-count' , contains: '120 documents').should.eventually.exist
+        .waitForElementBy(tag: 'h4', contains: '120 documents').should.eventually.exist
 
     after ->
       @userBrowser
