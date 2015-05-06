@@ -48,9 +48,9 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
     StepInSequence(1, DeleteFileUploadComplete(documentSetId, fileGroupId))
 
   override protected def findUploadedFile(uploadedFileId: Long) = Future.successful(uploadedFile)
-  override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String) = {
-    writeDocumentProcessingErrorFn.store(documentSetId, filename, message)
-  }
+  override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String) =
+    Future.successful(writeDocumentProcessingErrorFn.store(documentSetId, filename, message))
+
 }
 
 object TestFileGroupTaskWorker {

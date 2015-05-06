@@ -17,7 +17,7 @@ import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.specs2.mock.Mockito
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import scala.concurrent.Future
-import org.overviewproject.jobhandler.filegroup.task.step.WaitForResponse
+
 
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential

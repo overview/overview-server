@@ -20,7 +20,8 @@ import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
-import org.overviewproject.jobhandler.filegroup.task.step.WaitForResponse
+import org.overviewproject.models.tables.DocumentProcessingErrors
+import org.overviewproject.models.DocumentProcessingError
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -69,7 +70,8 @@ object FileGroupTaskWorkerFSM {
  *   the worker should wait for its rebirth.
  */
 trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
-  import context._
+  import context.system
+  import context.dispatcher
   import FileGroupTaskWorkerProtocol._
 
   protected val jobQueueSelection: ActorSelection
@@ -93,7 +95,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep
 
   protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
-  protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Unit
+  protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Future[Unit]
 
   override def preStart = lookForExternalActors
 
@@ -185,12 +187,13 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
     case Event(Failure(e), TaskInfo(jobQueue, progressReporter, documentSetId, _, uploadedFileId)) => {
       // FIXME: don't load info that should already be available
-      val upload = Await.result(findUploadedFile(uploadedFileId), Duration.Inf)
-
-      writeDocumentProcessingError(documentSetId, upload.get.name, e.getMessage)
-
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
+      for {
+        upload <- findUploadedFile(uploadedFileId)
+        r <- writeDocumentProcessingError(documentSetId, upload.get.name, e.getMessage)
+      }  {
+        jobQueue ! TaskDone(documentSetId, None)
+        jobQueue ! ReadyForTask
+      }
 
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
@@ -204,7 +207,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(TaskAvailable, _) => stay
   }
 
-  
   when(Cancelled) {
     case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)) => {
       step.cancel
@@ -271,6 +273,12 @@ object FileGroupTaskWorker {
       GroupedFileUploads.filter(_.id === uploadedFileId).firstOption
     }
 
-    override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Unit = ???
+    override protected def writeDocumentProcessingError(documentSetId: Long, filename: String,
+                                                        message: String): Future[Unit] = db { implicit session =>
+      DocumentProcessingErrors
+        .map(dpe => (dpe.documentSetId, dpe.textUrl, dpe.message))
+        .insert((documentSetId, filename, message))
+
+    }
   }
 }
