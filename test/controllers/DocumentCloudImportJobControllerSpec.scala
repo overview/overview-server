@@ -44,7 +44,7 @@ class DocumentCloudImportJobControllerSpec extends ControllerSpecification {
     }
 
     "redirect to /documentsets" in new CreateScope {
-      h.redirectLocation(result) must beSome("/documentsets")
+      h.redirectLocation(result) must beSome("/documentsets/123")
     }
 
     "not submit an invalid job" in new CreateScope {
