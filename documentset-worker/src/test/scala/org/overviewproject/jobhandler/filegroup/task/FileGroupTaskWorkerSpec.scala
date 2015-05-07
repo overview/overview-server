@@ -76,6 +76,23 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       
     }
     
+    "write document set info when completing a document set" in new RunningTaskWorkerContext {
+      createJobQueue.handingOutTask(
+        CompleteDocumentSet(documentSetId, fileGroupId)    
+      )
+      
+      createWorker
+      
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
+
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
+
+      jobQueueProbe.expectReadyForTask
+      
+      updateDocumentSetInfoWasCalled(documentSetId)
+    }
+    
     "step through task until done" in new RunningTaskWorkerContext {
       createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
 
@@ -273,6 +290,9 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) =
         worker.underlyingActor.deleteFileUploadJobFn.wasCalledWith((documentSetId, fileGroupId))
+        
+      protected def updateDocumentSetInfoWasCalled(documentSetId: Long) =
+        worker.underlyingActor.updateDocumentSetInfoFn.wasCalledWith(documentSetId)
 
     }
 

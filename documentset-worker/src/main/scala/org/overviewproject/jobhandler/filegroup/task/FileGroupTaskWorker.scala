@@ -38,6 +38,7 @@ object FileGroupTaskWorkerProtocol {
 
   case class CreateDocuments(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long, options: UploadProcessOptions,
                              documentIdSupplier: ActorRef) extends TaskWorkerTask
+  case class CompleteDocumentSet(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask                             
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
   case class CreateDocumentsTask(documentSetId: Long, fileGroupId: Long, splitDocuments: Boolean) extends TaskWorkerTask
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
@@ -96,7 +97,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
   protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Future[Unit]
-
+  protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit]
+  
   override def preStart = lookForExternalActors
 
   startWith(LookingForExternalActors, ExternalActorsFound(None, None))
@@ -136,6 +138,14 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       } pipeTo self
 
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)
+    }
+    case Event(CompleteDocumentSet(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
+
+      updateDocumentSetInfo(documentSetId).map { _ =>
+        FinalStep
+      } pipeTo self
+      
+      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
     case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), ExternalActors(jobQueue, progressReporter)) => {
       executeTaskStep(startCreatePagesTask(documentSetId, uploadedFileId))
@@ -280,5 +290,7 @@ object FileGroupTaskWorker {
         .insert((documentSetId, filename, message))
 
     }
+    
+    override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] = ??? 
   }
 }

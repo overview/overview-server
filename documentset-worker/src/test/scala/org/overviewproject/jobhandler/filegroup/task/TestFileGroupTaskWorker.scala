@@ -21,6 +21,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
   val deleteFileUploadPromise = Promise[Unit]
 
   val writeDocumentProcessingErrorFn = ParameterStore[(Long, String, String)]
+  val updateDocumentSetInfoFn = ParameterStore[Long]
 
   private case class StepInSequence(n: Int, finalStep: FileGroupTaskStep) extends FileGroupTaskStep {
     def execute: FileGroupTaskStep = {
@@ -51,6 +52,8 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
   override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String) =
     Future.successful(writeDocumentProcessingErrorFn.store(documentSetId, filename, message))
 
+  override protected def updateDocumentSetInfo(documentSetId: Long) =
+    Future.successful(updateDocumentSetInfoFn.store(documentSetId))
 }
 
 object TestFileGroupTaskWorker {

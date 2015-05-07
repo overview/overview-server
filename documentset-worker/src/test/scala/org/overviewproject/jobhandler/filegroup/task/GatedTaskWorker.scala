@@ -54,6 +54,8 @@ class GatedTaskWorker(jobQueuePath: String,
   override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String) = 
     Future.successful(())
     
+  override protected def updateDocumentSetInfo(documentSetId: Long) = Future.successful(())
+    
   private def manageTaskGate: PartialFunction[Any, Unit] = {
     case CancelYourself => self ! CancelTask
     case CompleteTaskStep => taskGate.success(())
