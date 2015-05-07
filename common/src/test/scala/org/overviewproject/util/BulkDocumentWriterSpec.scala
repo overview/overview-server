@@ -123,7 +123,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
 
   "handle non-NULLs when writing" in new BaseScope {
     import org.overviewproject.database.Slick.simple._
-    Files.+=(File(3L, 0, "", "", 0, "", 0))
+    Files.+=(File(3L, 0, "", "", 0, None, "", 0))
     Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None))
     add(factory.document(2L, "").copy(url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))
     await(subject.flush)
