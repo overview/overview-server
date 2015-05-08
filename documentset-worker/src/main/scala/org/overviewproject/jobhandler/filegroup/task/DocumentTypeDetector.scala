@@ -40,6 +40,8 @@ object DocumentTypeDetector extends DocumentTypeDetector {
   // OfficeDocument: got this list by looking at .desktop files
   // for every LibreOffice application on Ubuntu 14.04
   override protected val mimeTypeToDocumentType = Map(
+    "application/pdf" -> PdfDocument,
+    
     "application/clarisworks" -> OfficeDocument,
     "application/excel" -> OfficeDocument,
     "application/macwriteii" -> OfficeDocument,
