@@ -22,7 +22,7 @@ trait RequestDocumentIds extends TaskStep {
   protected val nextStep: Seq[Document] => TaskStep
 
   override def execute: Future[TaskStep] = for {
-    IdRequestResponse(ids) <- documentIdSupplier ? RequestIds(1, 1)
+    IdRequestResponse(ids) <- documentIdSupplier ? RequestIds(documentSetId, documentData.size)
   } yield nextStep(createDocuments(ids))
 
   private def createDocuments(documentSetIds: Seq[Long]): Seq[Document] =

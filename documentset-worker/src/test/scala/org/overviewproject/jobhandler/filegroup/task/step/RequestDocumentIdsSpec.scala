@@ -20,18 +20,18 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
     "request a document id" in new RequestingScope {
       requestDocumentIds.execute
 
-      idSupplier.expectMsg(RequestIds(1, 1))
+      idSupplier.expectMsg(RequestIds(documentSetId, 2))
     }
 
     "return next step with document" in new RequestingScope {
       val NextStep(documents) = Await.result(requestDocumentIds.execute, Duration.Inf)
 
-      documents must be equalTo (Seq(document))
+      documents must be equalTo (Seq(document, document))
     }
   }
 
   trait RequestingScope extends ActorSystemContext with Before {
-    val documentSetId = 1l
+    val documentSetId = 4l
     val documentId = 10l
     val document = smartMock[Document]
     val inputData = smartMock[PdfFileDocumentData]
@@ -49,15 +49,15 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
     }
 
     class TestRequestDocumentIds(override val documentSetId: Long, override val documentIdSupplier: ActorRef) extends RequestDocumentIds {
-      override protected val documentData = Seq(inputData)
+      override protected val documentData = Seq.fill(2)(inputData)
       override protected val nextStep = NextStep 
     }
 
     class SingleIdSupplier extends TestActor.AutoPilot {
       override def run(sender: ActorRef, msg: Any) = 
         msg match {
-        case RequestIds(`documentSetId`, _) => {
-          sender ! IdRequestResponse(Seq(documentId))
+        case RequestIds(`documentSetId`, n) => {
+          sender ! IdRequestResponse(Seq.fill(n)(documentId))
           TestActor.KeepRunning
         }
       }
