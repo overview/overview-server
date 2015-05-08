@@ -27,6 +27,7 @@ trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
   } yield nextStep(file)
 
 
+<<<<<<< HEAD
   /** Returns (blobLocation,sha1). */
   private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[(String,Array[Byte])] = {
     val loStream = largeObjectInputStream(oid)
@@ -41,12 +42,22 @@ trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
   private def createFile(name: String, size: Long, location: String, sha1: Array[Byte]): Future[File] = db { implicit session =>
     val file = File(0l, 1, name, location, size, Some(sha1), location, size)
     withTransaction(writeFileAndTempDocumentSetFile(file)(_))
+=======
+  protected lazy val insertInvoker = (Files.map(f => 
+    (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) returning
+      Files).insertInvoker 
+      
+  private def createFile(name: String, size: Long, location: String): Future[File] = db { implicit session =>
+    
+    withTransaction(writeFileAndTempDocumentSetFile(name, size, location)(_))
+>>>>>>> Auto-generate file ids
   }
 
-  private def writeFileAndTempDocumentSetFile(file: File)(implicit session: Session): File = {
-    val fileId = (Files returning Files.map(_.id)) += file
-    TempDocumentSetFiles += TempDocumentSetFile(documentSetId, fileId)
-    file.copy(id = fileId)
+  private def writeFileAndTempDocumentSetFile(name: String, size: Long, location: String)(implicit session: Session): File = {
+    val file =  insertInvoker.insert(1, name, location, size, location, size)
+
+    TempDocumentSetFiles += TempDocumentSetFile(documentSetId, file.id)
+    file
   }
 }
 
