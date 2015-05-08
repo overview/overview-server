@@ -251,6 +251,10 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
             sender.tell(TaskDone(ds, None), worker)
             sender.tell(ReadyForTask, worker)
           }
+          case CompleteDocumentSet(ds, fg) => {
+            sender.tell(TaskDone(ds, None), worker)
+            sender.tell(ReadyForTask, worker)
+          }
         }
         TestActor.KeepRunning
       }

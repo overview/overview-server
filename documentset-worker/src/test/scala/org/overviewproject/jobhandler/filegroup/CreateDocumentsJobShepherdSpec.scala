@@ -22,16 +22,37 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       jobQueue.expectMsg(AddTasks(Set(task)))
     }
 
+    "complete document set when all documents are created" in new JobShepherdContext {
+      jobShepherd.createTasks
+      
+      jobShepherd.startTask(task)
+      jobShepherd.completeTask(task)
+      
+      jobQueue.expectMsg(AddTasks(Set(task)))
+          
+      jobQueue.expectMsg(AddTasks(Set(completeDocumentSetTask)))
+    }
+    
     "report progress" in new JobShepherdContext {
       jobShepherd.createTasks
       
-      progressReporter.expectMsg(StartJob(documentSetId, 1, ExtractText))
-      
       jobShepherd.startTask(task)
+
+      progressReporter.expectMsg(StartJob(documentSetId, 2, ProcessUpload))
+      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.95, ExtractText))      
       progressReporter.expectMsg(StartTask(documentSetId, uploadedFileId))
       
       jobShepherd.completeTask(task)
       progressReporter.expectMsg(CompleteTask(documentSetId, uploadedFileId))
+      progressReporter.expectMsg(CompleteJobStep(documentSetId))
+      
+      jobShepherd.startTask(completeDocumentSetTask)
+      progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.05, CreateDocument))
+      progressReporter.expectMsg(StartTask(documentSetId, documentSetId))
+      
+      jobShepherd.completeTask(completeDocumentSetTask)
+      progressReporter.expectMsg(CompleteTask(documentSetId, documentSetId))
+      progressReporter.expectMsg(CompleteJobStep(documentSetId))
       
       progressReporter.expectMsg(CompleteJob(documentSetId))
     }
@@ -48,13 +69,14 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val uploadedFileId = 10l
       val options = UploadProcessOptions("en", true)
       var task: CreateDocuments = _
-
+      var completeDocumentSetTask: CompleteDocumentSet = _
       
       override def before = {
         jobQueue = TestProbe()
         progressReporter = TestProbe()
         documentIdSupplier = TestProbe()
         task = CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref)
+        completeDocumentSetTask = CompleteDocumentSet(documentSetId, fileGroupId)
         
         jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, options,
           jobQueue.ref, progressReporter.ref, documentIdSupplier.ref, Set(uploadedFileId))

@@ -291,6 +291,9 @@ object FileGroupTaskWorker {
 
     }
     
-    override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] = ??? 
+    override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] =
+      documentSetInfoUpdater.update(documentSetId)
+    
+    private val documentSetInfoUpdater = DocumentSetInfoUpdater()
   }
 }

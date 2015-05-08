@@ -26,7 +26,8 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
     val tasks = uploadedFilesInFileGroup(fileGroupId).map(
       CreateDocuments(documentSetId, fileGroupId, _, options, documentIdSupplier))
 
-    progressReporter ! StartJob(documentSetId, tasks.size, ExtractText)
+    progressReporter ! StartJob(documentSetId, 2, ProcessUpload)
+    progressReporter ! StartJobStep(documentSetId, tasks.size, 0.95, ExtractText)
 
     taskQueue ! AddTasks(tasks)
     tasks
@@ -40,6 +41,8 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
     task match {
       case CreateDocuments(documentSetId, fileGroupId, uploadedFileId, _, _) =>
         progressReporter ! StartTask(documentSetId, uploadedFileId)
+      case CompleteDocumentSet(documentSetId, _) =>
+        progressReporter ! StartTask(documentSetId, documentSetId)
       case _ =>
     }
   }
@@ -49,11 +52,21 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
     task match {
       case CreateDocuments(documentSetId, fileGroupId, uploadedFileId, _, _) => {
         progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+        if (allTasksComplete && !jobCancelled) {
+          progressReporter ! CompleteJobStep(documentSetId)
+          
+          taskQueue ! AddTasks(Set(CompleteDocumentSet(documentSetId, fileGroupId)))
+          progressReporter ! StartJobStep(documentSetId, 1, 0.05, CreateDocument)
+        }
+      }
+      case CompleteDocumentSet(documentSetId, _) => {
+        progressReporter ! CompleteTask(documentSetId, documentSetId)
+        progressReporter ! CompleteJobStep(documentSetId)
+        if (allTasksComplete && !jobCancelled) progressReporter ! CompleteJob(documentSetId)
       }
       case _ =>
     }
-    
-    if (allTasksComplete && !jobCancelled) progressReporter ! CompleteJob(documentSetId)
+
   }
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
