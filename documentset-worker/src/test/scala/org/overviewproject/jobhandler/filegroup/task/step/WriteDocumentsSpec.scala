@@ -21,7 +21,6 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
       there was one(mockDocumentWriter).addAndFlushIfNeeded(mockDocument)
       there was one(mockDocumentWriter).flush
       
-      there was one(mockSearchIndex).addDocumentSet(documentSetId)
       there was one(mockSearchIndex).addDocuments(Seq(mockDocument))
     }
 
@@ -38,7 +37,6 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
 
   trait DocumentScope extends Scope {
     val fileId = 1l
-    val documentSetId = 10l
     val mockDocumentWriter = smartMock[BulkDocumentWriter]
     val mockDocument = smartMock[Document]
     
@@ -49,12 +47,10 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
     def mockStorage = writeDocuments.mockStorage
     def await[A](f: => Future[A]) = Await.result(f, 100 millis)
 
-    mockDocument.documentSetId returns documentSetId
     mockDocument.fileId returns Some(fileId)
     mockDocumentWriter.addAndFlushIfNeeded(any) returns Future.successful(())
     mockDocumentWriter.flush returns Future.successful(())
     
-    mockSearchIndex.addDocumentSet(documentSetId) returns Future.successful(())
     mockSearchIndex.addDocuments(Seq(mockDocument)) returns Future.successful(())
 
     protected class TestWriteDocuments extends WriteDocuments {

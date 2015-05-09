@@ -39,16 +39,9 @@ trait WriteDocuments extends TaskStep {
       batchFlushed <- bulkDocumentWriter.flush
     } yield {}
 
-  private def indexDocuments: Future[Unit] = 
-    for {
-      docSetIndexCreated <- withDocumentSet(searchIndex.addDocumentSet)
-      docsIndex <- searchIndex.addDocuments(documents)
-    } yield {}
+  private def indexDocuments: Future[Unit] = searchIndex.addDocuments(documents)
 
-  private def withDocumentSet(f: Long => Future[Unit]): Future[Unit] =
-    documents.headOption
-      .map(d => f(d.documentSetId))
-      .getOrElse(Future.successful(()))
+
 }
 
 object WriteDocuments {
