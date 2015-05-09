@@ -6,23 +6,49 @@ import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.models.Document
 import org.overviewproject.models.TempDocumentSetFile
 import org.overviewproject.util.BulkDocumentWriter
+import org.overviewproject.searchindex.ElasticSearchIndexClient
+import org.overviewproject.searchindex.TransportIndexClient
 
 trait WriteDocuments extends TaskStep {
 
   protected val storage: Storage
   protected val bulkDocumentWriter: BulkDocumentWriter
+  protected val searchIndex: ElasticSearchIndexClient
+
   protected val documents: Seq[Document]
 
-  override def execute: Future[TaskStep] = 
+  override def execute: Future[TaskStep] = {
+    val write = writeDocuments
+    val index = indexDocuments
+
     for {
-      docsAdded <- Future.sequence(documents.map(bulkDocumentWriter.addAndFlushIfNeeded)) // FIXME: should be done in serial
-      batchFlushed <- bulkDocumentWriter.flush
+      writeResult <- write
+      indexResult <- index
       deleted <- storage.deleteTempDocumentSetFiles(documents)
     } yield FinalStep
-  
+
+  }
+
   protected trait Storage {
     def deleteTempDocumentSetFiles(documents: Seq[Document]): Future[Int]
   }
+
+  private def writeDocuments: Future[Unit] =
+    for {
+      docsAdded <- Future.sequence(documents.map(bulkDocumentWriter.addAndFlushIfNeeded)) // FIXME: should be done in serial
+      batchFlushed <- bulkDocumentWriter.flush
+    } yield {}
+
+  private def indexDocuments: Future[Unit] = 
+    for {
+      docSetIndexCreated <- withDocumentSet(searchIndex.addDocumentSet)
+      docsIndex <- searchIndex.addDocuments(documents)
+    } yield {}
+
+  private def withDocumentSet(f: Long => Future[Unit]): Future[Unit] =
+    documents.headOption
+      .map(d => f(d.documentSetId))
+      .getOrElse(Future.successful(()))
 }
 
 object WriteDocuments {
@@ -33,6 +59,8 @@ object WriteDocuments {
     override protected val documents: Seq[Document]) extends WriteDocuments {
 
     override protected val bulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex // Thread safe?
+    override protected val searchIndex = TransportIndexClient.singleton
+
     override protected val storage: Storage = new SlickStorage
 
     private class SlickStorage extends Storage with SlickSessionProvider {
