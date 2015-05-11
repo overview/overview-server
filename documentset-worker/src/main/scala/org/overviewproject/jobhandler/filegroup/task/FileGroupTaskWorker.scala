@@ -203,7 +203,13 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       step.execute pipeTo self
       stay
     }
-
+    case Event(Failure(e), TaskInfo(_, _, _, _, 0)) => {
+      // uploadedFileId == 0 if the task is something other than creating a document from an upload
+      // We don't handle errors in this situation so the exception is rethrown in order to kill
+      // the worker and have the job rescheduled.
+      Logger.error(e.getMessage)
+      throw e
+    }
     case Event(Failure(e), TaskInfo(jobQueue, progressReporter, documentSetId, _, uploadedFileId)) => {
       Logger.error(e.getMessage)
       // FIXME: don't load info that should already be available
