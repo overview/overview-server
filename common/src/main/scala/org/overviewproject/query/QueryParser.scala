@@ -37,7 +37,7 @@ object QueryParser {
     def term: Parser[Query] = (quotedString | unquotedString) ^^ stringToNode
 
     def quotedString: Parser[String]
-      = (singleQuotedString | doubleQuotedString) ~ regex("""~(\d{1,7})""".r).? ^^
+      = (singleQuotedString | doubleQuotedString | smartQuotedString) ~ regex("""~(\d{1,7})""".r).? ^^
       { n => n._1 + n._2.getOrElse("") }
 
     def singleQuotedString: Parser[String]
@@ -46,6 +46,10 @@ object QueryParser {
 
     def doubleQuotedString: Parser[String]
       = "\"" ~> regex("""((\\.)|[^"])*""".r) <~ "\"" ^^
+      { s => removeBackslashes(s) }
+
+    def smartQuotedString: Parser[String]
+      = "“" ~> regex("""((\\.)|[^”])*""".r) <~ "”" ^^
       { s => removeBackslashes(s) }
 
     def unquotedString: Parser[String]
