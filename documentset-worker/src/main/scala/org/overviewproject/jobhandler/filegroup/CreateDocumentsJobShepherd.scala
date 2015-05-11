@@ -23,11 +23,10 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   protected val documentIdSupplier: ActorRef
 
   override protected def generateTasks: Iterable[TaskWorkerTask] = {
-    val tasks = uploadedFilesInFileGroup(fileGroupId).map(
-      CreateDocuments(documentSetId, fileGroupId, _, options, documentIdSupplier))
+    val tasks = Set(CreateSearchIndexAlias(documentSetId, fileGroupId))
 
-    progressReporter ! StartJob(documentSetId, 2, ProcessUpload)
-    progressReporter ! StartJobStep(documentSetId, tasks.size, 0.95, ExtractText)
+    progressReporter ! StartJob(documentSetId, 3, ProcessUpload)
+    progressReporter ! StartJobStep(documentSetId, tasks.size, 0.05, ExtractText)
 
     taskQueue ! AddTasks(tasks)
     tasks
@@ -39,9 +38,12 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   override def startTask(task: TaskWorkerTask): Unit = {
     super.startTask(task)
     task match {
-      case CreateDocuments(documentSetId, fileGroupId, uploadedFileId, _, _) =>
+      case CreateSearchIndexAlias(_, _) => {
+        progressReporter ! StartTask(documentSetId, documentSetId)
+      }
+      case CreateDocuments(_, _, uploadedFileId, _, _) =>
         progressReporter ! StartTask(documentSetId, uploadedFileId)
-      case CompleteDocumentSet(documentSetId, _) =>
+      case CompleteDocumentSet(_, _) =>
         progressReporter ! StartTask(documentSetId, documentSetId)
       case _ =>
     }
@@ -50,11 +52,23 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   override def completeTask(task: TaskWorkerTask): Unit = {
     super.completeTask(task)
     task match {
-      case CreateDocuments(documentSetId, fileGroupId, uploadedFileId, _, _) => {
-        progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      case CreateSearchIndexAlias(_, _) => {
+        progressReporter ! CompleteTask(documentSetId, documentSetId)
         if (allTasksComplete && !jobCancelled) {
           progressReporter ! CompleteJobStep(documentSetId)
           
+          val tasks = uploadedFilesInFileGroup(fileGroupId).map(
+            CreateDocuments(documentSetId, fileGroupId, _, options, documentIdSupplier))
+
+          taskQueue ! AddTasks(tasks)
+          progressReporter ! StartJobStep(documentSetId, tasks.size, 0.90, ExtractText)
+        }
+      }
+      case CreateDocuments(_, _, uploadedFileId, _, _) => {
+        progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+        if (allTasksComplete && !jobCancelled) {
+          progressReporter ! CompleteJobStep(documentSetId)
+
           taskQueue ! AddTasks(Set(CompleteDocumentSet(documentSetId, fileGroupId)))
           progressReporter ! StartJobStep(documentSetId, 1, 0.05, CreateDocument)
         }

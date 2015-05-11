@@ -38,7 +38,7 @@ object FileGroupTaskWorkerProtocol {
     val fileGroupId: Long
   }
 
-  case class CreateSearchIndexAlias(documentSetId: Long, fileGroupId: Long)
+  case class CreateSearchIndexAlias(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
   case class CreateDocuments(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long, options: UploadProcessOptions,
                              documentIdSupplier: ActorRef) extends TaskWorkerTask
   case class CompleteDocumentSet(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask                             

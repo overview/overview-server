@@ -30,12 +30,11 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     }
 
     "send available tasks to workers that ask for them" in new JobQueueContext {
-      val workers = createNWorkers(numberOfUploadedFiles)
+      val workers = createNWorkers(1)
       workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
 
       submitJob(documentSetId)
-      val receivedTasks = expectTasks(workers)
-      mustMatchUploadedFileIds(receivedTasks, uploadedFileIds)
+      expectTasks(workers)
     }
 
     "notify worker if tasks are available when it registers" in new JobQueueContext {
@@ -74,7 +73,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
 
     "cancel running tasks" in new JobQueueContext {
-      val workers = createNWorkers(numberOfUploadedFiles / 2)
+      val workers = createNWorkers(1)
       workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
 
       submitJob(documentSetId)
@@ -95,7 +94,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
       
-      worker.completeCancelledTask(task.uploadedFileId)
+      worker.completeCancelledTask
 
       expectMsg(JobCompleted(documentSetId))
     }
@@ -209,7 +208,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectMsg(TaskAvailable)
         reply(ReadyForTask)
 
-        expectMsgClass(classOf[CreateDocuments])
+        expectMsgClass(classOf[TaskWorkerTask])
       }
 
       def expectDeleteFileUploadJob = {
@@ -224,7 +223,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectNoMsg(50 millis)
       }
 
-      def completeCancelledTask(uploadedFileId: Long) = {
+      def completeCancelledTask = {
         expectMsg(CancelTask)
         reply(TaskDone(documentSetId, None))
       }
@@ -244,6 +243,10 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
             sender.tell(ReadyForTask, worker)
           }
           case CreateDocumentsTask(ds, fg, split) => {
+            sender.tell(TaskDone(ds, None), worker)
+            sender.tell(ReadyForTask, worker)
+          }
+          case CreateSearchIndexAlias(ds, fg) => {
             sender.tell(TaskDone(ds, None), worker)
             sender.tell(ReadyForTask, worker)
           }
