@@ -22,6 +22,8 @@ import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.models.tables.DocumentProcessingErrors
 import org.overviewproject.models.DocumentProcessingError
+import org.overviewproject.searchindex.ElasticSearchIndexClient
+import org.overviewproject.searchindex.TransportIndexClient
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -36,6 +38,7 @@ object FileGroupTaskWorkerProtocol {
     val fileGroupId: Long
   }
 
+  case class CreateSearchIndexAlias(documentSetId: Long, fileGroupId: Long)
   case class CreateDocuments(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long, options: UploadProcessOptions,
                              documentIdSupplier: ActorRef) extends TaskWorkerTask
   case class CompleteDocumentSet(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask                             
@@ -81,6 +84,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected val fileGroupRemovalQueue: ActorSelection
 
   protected val uploadedFileProcessSelector: UploadProcessSelector
+  protected val searchIndex: ElasticSearchIndexClient
 
   private val NumberOfExternalActors = 2
   private val JobQueueId: String = "Job Queue"
@@ -127,6 +131,11 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(TaskAvailable, ExternalActors(jobQueue, _)) => {
       jobQueue ! ReadyForTask
       stay
+    }
+    case Event(CreateSearchIndexAlias(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
+      searchIndex.addDocumentSet(documentSetId).map {_ => FinalStep } pipeTo self
+      
+      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)      
     }
     case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier),
       ExternalActors(jobQueue, progressReporter)) => {
@@ -196,6 +205,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
 
     case Event(Failure(e), TaskInfo(jobQueue, progressReporter, documentSetId, _, uploadedFileId)) => {
+      Logger.error(e.getMessage)
       // FIXME: don't load info that should already be available
       for {
         upload <- findUploadedFile(uploadedFileId)
@@ -274,7 +284,8 @@ object FileGroupTaskWorker {
     override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
 
     override protected val uploadedFileProcessSelector = UploadProcessSelector()
-
+    override protected val searchIndex = TransportIndexClient.singleton
+    
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
       new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
         DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter(), TempFileDeleter())

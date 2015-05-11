@@ -7,12 +7,14 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcessCreator
 import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.searchindex.ElasticSearchIndexClient
 
 class TestFileGroupTaskWorker(jobQueuePath: String,
                               progressReporterPath: String,
                               fileRemovalQueuePath: String,
                               fileGroupRemovalQueuePath: String,
-                              processSelector: UploadProcessSelector,
+                              override protected val uploadedFileProcessSelector: UploadProcessSelector,
+                              override protected val searchIndex: ElasticSearchIndexClient,
                               uploadedFile: Option[GroupedFileUpload],
                               outputFileId: Long) extends FileGroupTaskWorker {
 
@@ -36,7 +38,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
 
-  override protected val uploadedFileProcessSelector = processSelector
+
 
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     StepInSequence(1, CreatePagesProcessComplete(documentSetId, uploadedFileId, Some(outputFileId)))
@@ -63,6 +65,7 @@ object TestFileGroupTaskWorker {
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String,
     uploadedFileProcessSelector: UploadProcessSelector,
+    searchIndex: ElasticSearchIndexClient,
     uploadedFile: Option[GroupedFileUpload],
     outputFileId: Long): Props =
     Props(new TestFileGroupTaskWorker(
@@ -70,5 +73,6 @@ object TestFileGroupTaskWorker {
       progressReporterPath,
       fileRemovalQueuePath,
       fileGroupRemovalQueuePath,
-      uploadedFileProcessSelector, uploadedFile, outputFileId))
+      uploadedFileProcessSelector, searchIndex, 
+      uploadedFile, outputFileId))
 }

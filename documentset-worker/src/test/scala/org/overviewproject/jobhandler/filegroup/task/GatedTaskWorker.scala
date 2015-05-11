@@ -6,6 +6,7 @@ import scala.concurrent.duration._
 import org.overviewproject.test.ParameterStore
 import akka.actor.ActorRef
 import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.searchindex.ElasticSearchIndexClient
 
 object GatedTaskWorkerProtocol {
   case object CancelYourself
@@ -16,7 +17,8 @@ class GatedTaskWorker(jobQueuePath: String,
     progressReporterPath: String, 
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String,
-    processSelector: UploadProcessSelector,
+    override protected val uploadedFileProcessSelector: UploadProcessSelector,
+    override protected val searchIndex: ElasticSearchIndexClient,
     uploadedFile: Option[GroupedFileUpload],
     cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
 
@@ -38,8 +40,6 @@ class GatedTaskWorker(jobQueuePath: String,
   override protected val progressReporterSelection = context.actorSelection(progressReporterPath)
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
-  
-  override protected val uploadedFileProcessSelector = processSelector
   
   override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
     new GatedTask(taskGate.future)

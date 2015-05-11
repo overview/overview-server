@@ -17,6 +17,7 @@ import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.specs2.mock.Mockito
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import scala.concurrent.Future
+import org.overviewproject.searchindex.ElasticSearchIndexClient
 
 
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
@@ -91,6 +92,21 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectReadyForTask
       
       updateDocumentSetInfoWasCalled(documentSetId)
+    }
+    
+    "create index for document set" in new WorkingSearchIndexContext {
+      createJobQueue.handingOutTask {
+        CreateSearchIndexAlias(documentSetId, fileGroupId)
+      }
+      
+      createWorker
+      
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
+
+      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
+
+      jobQueueProbe.expectReadyForTask
     }
     
     "step through task until done" in new RunningTaskWorkerContext {
@@ -220,6 +236,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       val FileGroupRemovalQueuePath = s"/user/$FileGroupRemovalQueueName"
 
       val uploadedFileProcessSelector = smartMock[UploadProcessSelector]
+      val searchIndex = smartMock[ElasticSearchIndexClient]
       val documentIdSupplier: TestProbe = new TestProbe(system)
 
       protected def createProgressReporter: TestProbe = {
@@ -282,7 +299,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
         worker = TestActorRef(new TestFileGroupTaskWorker(
           JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
-          uploadedFileProcessSelector, uploadedFile, fileId))
+          uploadedFileProcessSelector, searchIndex, uploadedFile, fileId))
       }
 
       protected def createPagesTaskStepsWereExecuted =
@@ -294,6 +311,10 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       protected def updateDocumentSetInfoWasCalled(documentSetId: Long) =
         worker.underlyingActor.updateDocumentSetInfoFn.wasCalledWith(documentSetId)
 
+    }
+    
+    trait WorkingSearchIndexContext extends RunningTaskWorkerContext {
+      searchIndex.addDocumentSet(documentSetId) returns Future.successful(())
     }
 
     trait GatedTaskWorkerContext extends TaskWorkerContext {
@@ -308,7 +329,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
         worker =
           system.actorOf(Props(new GatedTaskWorker(
             JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
-            uploadedFileProcessSelector, uploadedFile, cancelFn)))
+            uploadedFileProcessSelector, searchIndex, uploadedFile, cancelFn)))
       }
 
       protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)
