@@ -23,8 +23,9 @@ requirejs.config
     'jquery.validate':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
-    underscore: { exports: '_' }
     md5: { exports: 'CryptoJS.MD5' }
+    underscore: { exports: '_' }
+    sha1: { exports: 'CryptoJS.SHA1' }
 
   paths:
     'backbone': 'vendor/backbone'
@@ -36,9 +37,10 @@ requirejs.config
     'bootstrap-transition': 'vendor/bootstrap-transition'
     jquery: 'vendor/jquery-2-1-0'
     'jquery.validate': 'vendor/jquery.validate'
-    md5: 'vendor/md5'
-    underscore: 'vendor/underscore'
     'mass-upload': 'vendor/mass-upload'
+    md5: 'vendor/md5'
+    sha1: 'vendor/sha1'
+    underscore: 'vendor/underscore'
 
 require [
   'for-view/FileImport/new'
