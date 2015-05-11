@@ -25,7 +25,7 @@ define [
     uint8Array = new Uint8Array(buffer)
     "0x" + (i.toString(16) for i in uint8Array).join('')
 
-  describe.only 'util/BlobHasher', ->
+  describe 'util/BlobHasher', ->
     beforeEach ->
       @blob = buildBlob("foobarbaz")
       @hasher = new BlobHasher()
