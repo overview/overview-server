@@ -12,5 +12,5 @@ case class PhraseQuery(phrase: String) extends Query
 case class AndQuery(node1: Query, node2: Query) extends Query
 case class OrQuery(node1: Query, node2: Query) extends Query
 case class NotQuery(node: Query) extends Query
-case class FuzzyTermQuery(term: String, fuzziness: Option[Integer]) extends Query
-case class ProximityQuery(phrase: String, slop: Integer) extends Query
+case class FuzzyTermQuery(term: String, fuzziness: Option[Int]) extends Query
+case class ProximityQuery(phrase: String, slop: Int) extends Query
