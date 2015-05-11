@@ -9,7 +9,7 @@ import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
 import org.overviewproject.models.Document
-import org.overviewproject.query.PhraseQuery
+import org.overviewproject.query.{FuzzyTermQuery,PhraseQuery}
 
 class InMemoryIndexClientSpec extends Specification {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -264,6 +264,15 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.refresh())
         val ids = await(indexClient.searchForIds(234L, PhraseQuery("bar"), scrollSize=1))
 
+        ids must containTheSameElementsAs(Seq(123L, 124L))
+      }
+
+      "handle FuzzyTermQuery" in new BaseScope {
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh())
+
+        val ids = await(indexClient.searchForIds(234L, FuzzyTermQuery("bbb", Some(2)), scrollSize=1))
         ids must containTheSameElementsAs(Seq(123L, 124L))
       }
     }
