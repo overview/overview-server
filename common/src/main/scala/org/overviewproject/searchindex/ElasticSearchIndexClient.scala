@@ -379,6 +379,7 @@ trait ElasticSearchIndexClient extends IndexClient {
         //QueryBuilders.fuzzyQuery("_all", term)
         QueryBuilders.matchQuery("_all", term)
           .fuzziness(Fuzziness.build(fuzziness.getOrElse("AUTO")))
+          .maxExpansions(500) // https://groups.google.com/d/topic/overview-dev/CzPGxoOXdCI/discussion
           .rewrite("constant_score_auto")
       }
     }
