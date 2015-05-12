@@ -2,7 +2,8 @@ define [
   'jquery'
   'backbone'
   'apps/MassUploadForm/views/UploadView'
-], ($, Backbone, UploadView) ->
+  'i18n'
+], ($, Backbone, UploadView, i18n) ->
   describe 'apps/MassUploadForm/views/UploadView', ->
     model = undefined
     view = undefined
@@ -16,6 +17,10 @@ define [
       model = new Model($.extend({ id: 'foo.pdf' }, attrs ? {}))
       view = new UploadView(model: model)
       view.render()
+
+    beforeEach ->
+      i18n.reset_messages_namespaced 'views.DocumentSet._massUploadForm.Upload',
+        skipped: 'skipped'
 
     it 'shows the filename', ->
       init()
@@ -40,3 +45,8 @@ define [
       beforeEach -> init(isFullyUploaded: true)
       it 'has class uploaded', -> expect(view.$el).to.have.class('uploaded')
       it 'has an ok icon', -> expect(view.$el).to.have('i.icon-check')
+
+    describe 'skipped', ->
+      beforeEach -> init(skippedBecauseAlreadyInDocumentSet: true)
+      it 'has class skipped', -> expect(view.$el).to.have.class('skipped')
+      it 'has text', -> expect(view.$('.message')).to.contain('skipped')

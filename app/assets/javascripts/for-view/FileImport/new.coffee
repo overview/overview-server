@@ -14,6 +14,8 @@ define [ 'jquery', 'apps/MassUploadForm/app' ], ($, MassUploadApp) ->
     isReallyEdit = !/\/finish$/.test($form.attr('action'))
     if isReallyEdit
       options.onlyOptions = [ 'lang', 'split_documents' ]
+      documentSetId = $form.attr('action').split('/').pop()
+      options.uniqueCheckUrlPrefix = "/documentsets/#{documentSetId}/files"
 
     app = new MassUploadApp(options)
     $form.append(app.el)

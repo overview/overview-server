@@ -8,8 +8,13 @@ define [
 ], ($, MassUploadForm, MassUploadTransport, UploadCollectionView, RedirectConfirmer, MassUpload) ->
   class App
     constructor: (options) ->
+      throw 'Must pass options.baseUrl, a String like "/files"' if !options.baseUrl?
+      throw 'Must pass options.csrfToken, a String' if !options.csrfToken?
+      # *May* pass options.uniqueCheckUrlPrefix, a String like "/documentsets/2/files"
+
       transport = MassUploadTransport
         url: options.baseUrl
+        uniqueCheckUrlPrefix: options.uniqueCheckUrlPrefix
         csrfToken: options.csrfToken
 
       model = new MassUpload(transport)

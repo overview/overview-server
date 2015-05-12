@@ -30,7 +30,6 @@ requirejs.config
     select2:
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.select2'
-    sha1: { exports: 'CryptoJS.SHA1' }
     spectrum:
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
@@ -59,7 +58,7 @@ requirejs.config
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
     select2: 'vendor/select2'
-    sha1: 'vendor/sha1'
+    sha1: 'vendor/git-sha1'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     typeahead: 'vendor/typeahead.jquery'

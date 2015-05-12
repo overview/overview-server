@@ -15,7 +15,6 @@ require [
         error: (xhr, textStatus, errorThrown) ->
           console.warn("Error loading /imports.json: #{textStatus}: #{errorThrown}")
         success: (data) ->
-          console.log(data.length)
           json = data.filter((x) -> String(x.id) == documentSetId)[0]
           if json?
             # Progress has changed

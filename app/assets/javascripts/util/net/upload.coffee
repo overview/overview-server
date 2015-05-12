@@ -12,6 +12,19 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     FAILED: 5    # Restart isn't possible
   }
 
+  generate_uuid = (filename, file) ->
+    # UUID v3: xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
+    # where x is any hexadecimal digit and y is one of 8, 9, A, or B
+    hash = md5("#{filename}::#{file.lastModifiedDate.toString()}::#{file.size}").toString()
+    parts = []
+    parts.push(hash[0...8])
+    parts.push(hash[8...12])
+    parts.push('3' + hash[13...16])
+    y = (parseInt(hash[16...18], 16) & 0x3f | 0x80).toString(16)
+    parts.push(y + hash[18...20])
+    parts.push(hash[20...32])
+    parts.join('-')
+
   # Converts from 1 to "WAITING", etc.
   state_to_key = (state) ->
     for k, v of states
@@ -107,7 +120,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     #                    an XMLHttpRequest. (Defaults to HTML5-only code.)
     constructor: (@file, url_prefix, options={}) ->
       @filename = @file.webkitRelativePath || @file.name
-      @url = url_prefix + this._generate_uuid()
+      @url = "#{url_prefix}#{generate_uuid(@filename, file)}"
       @url += "?csrfToken=#{encodeURIComponent(options.csrfToken)}" if options.csrfToken?
       @state = states.WAITING
       # uploaded_offset is accurate when leaving STARTING and entering UPLOADING.
@@ -130,19 +143,6 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
         this[f] = @deferred[f].bind(@deferred)
 
       undefined
-
-    _generate_uuid: () ->
-      # UUID v3: xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
-      # where x is any hexadecimal digit and y is one of 8, 9, A, or B
-      hash = md5("#{@filename}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
-      parts = []
-      parts.push(hash[0...8])
-      parts.push(hash[8...12])
-      parts.push('3' + hash[13...16])
-      y = (parseInt(hash[16...18], 16) & 0x3f | 0x80).toString(16)
-      parts.push(y + hash[18...20])
-      parts.push(hash[20...32])
-      parts.join('-')
 
     _set_state: (new_state) ->
       return if new_state == @state

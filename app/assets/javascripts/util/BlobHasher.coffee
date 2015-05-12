@@ -1,46 +1,31 @@
 define [
   'underscore'
   'sha1'
-], (_, Sha1) ->
+], (_, sha1) ->
   DEFAULTS =
     blockSize: 10 * 1024 * 1024
     fileReader: FileReader
 
-  # CryptoJS wants a WordArray, which looks like this:
-  #
-  # wordArray = {
-  #   words: [ /* Array of 32-bit big-Endian words */ ],
-  #   sigBytes: /* number of bytes */
-  # }
-  arrayBufferToWordArray = (arrayBuffer) ->
-    dataView = new DataView(arrayBuffer)
+  CODE_0 = '0'.charCodeAt(0)
+  CODE_9 = '9'.charCodeAt(0)
+  CODE_a = 'a'.charCodeAt(0)
+  CODE_f = 'f'.charCodeAt(0)
+  h2b = (h) ->
+    if CODE_0 <= h <= CODE_9
+      h - CODE_0
+    else if CODE_a <= h <= CODE_f
+      10 + h - CODE_a
+    else
+      throw new Error("Invalid character code: #{h}")
 
-    nCompleteWords = Math.floor(dataView.byteLength / 4)
-
-    # Calculate all complete words. DataView.getUint32() is big-endian.
-    words = (dataView.getUint32(pos * 4) for pos in [ 0 ... nCompleteWords ])
-
-    # Calculate the last word
-    if nCompleteWords * 4 < arrayBuffer.byteLength
-      lastWord = 0x0
-      lastInts = new Uint8Array(arrayBuffer, nCompleteWords * 4)
-      for i in [ 0 ... 4 ]
-        uint8 = if lastInts.length > i then lastInts[i] else 0
-        lastWord = (lastWord << 8) | uint8
-      words.push(lastWord)
-
-    words: words
-    sigBytes: arrayBuffer.byteLength
-
-  # CryptoJS returns a WordArray, but we return an ArrayBuffer
-  wordArrayToArrayBuffer = (wordArray) ->
-    uint32Array = new Uint32Array(wordArray.words.length)
-    dataView = new DataView(uint32Array.buffer) # big-endian
-
-    wordArray.words.forEach (uint32, index) ->
-      dataView.setUint32(index * 4, uint32)
-
-    uint32Array.buffer
+  hexToArrayBuffer = (hex) ->
+    uint8Array = new Uint8Array(hex.length / 2)
+    for i in [ 0 ... hex.length / 2 ]
+      b1 = h2b(hex.charCodeAt(i * 2))
+      b2 = h2b(hex.charCodeAt(i * 2 + 1))
+      b = (b1 << 4) | b2
+      uint8Array[i] = b
+    uint8Array.buffer
 
   # Calculates hashes for Blobs (files) asynchronously.
   #
@@ -74,16 +59,17 @@ define [
         callback = options
         options = {}
 
-      hasher = CryptoJS.algo.SHA1.create()
+      hasher = sha1()
 
       options = _.extend({
         progress: (arrayBuffer) ->
-          wordArray = arrayBufferToWordArray(arrayBuffer)
-          hasher.update(wordArray)
+          uint8Array = new Uint8Array(arrayBuffer)
+          hasher.update(uint8Array)
       }, DEFAULTS, options)
 
       @_step blob, options, (err) ->
         return callback(err) if err?
-        hashWordArray = hasher.finalize()
-        hashBuffer = wordArrayToArrayBuffer(hashWordArray)
+        hashHex = hasher.digest()
+        hashBuffer = hexToArrayBuffer(hashHex)
+        parsedHash = (x.toString(16) for x in new Uint8Array(hashBuffer)).join('')
         callback(null, hashBuffer)

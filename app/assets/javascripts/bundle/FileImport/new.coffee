@@ -25,7 +25,6 @@ requirejs.config
       exports: 'jQuery.fn.validate'
     md5: { exports: 'CryptoJS.MD5' }
     underscore: { exports: '_' }
-    sha1: { exports: 'CryptoJS.SHA1' }
 
   paths:
     'backbone': 'vendor/backbone'
@@ -39,7 +38,7 @@ requirejs.config
     'jquery.validate': 'vendor/jquery.validate'
     'mass-upload': 'vendor/mass-upload'
     md5: 'vendor/md5'
-    sha1: 'vendor/sha1'
+    sha1: 'vendor/git-sha1'
     underscore: 'vendor/underscore'
 
 require [

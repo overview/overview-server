@@ -83,7 +83,6 @@ define [
         uploads: @$('.uploads')
         progressBar: @$('.progress-bar')
 
-
       @_refreshProgressVisibility()
       @_progressView = new UploadProgressView(model: @model, el: @_$els.progressBar)
       @_progressView.render()
@@ -94,7 +93,6 @@ define [
         el: @_$els.uploads
       )
       @_uploadCollectionView.render()
-
 
     remove: ->
       @_progressView?.remove()
@@ -140,7 +138,7 @@ define [
       e.preventDefault()
       ImportOptionsApp.addHiddenInputsThroughDialog(
         @el,
-        onlyOptions: @options.onlyOptions || [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
+        onlyOptions: @options.onlyOptions || [ 'name', 'lang', 'split_documents' ]
         supportedLanguages: @options.supportedLanguages
         defaultLanguageCode: @options.defaultLanguageCode
         callback: => @_optionsSetDone(true)

@@ -115,17 +115,19 @@ body.file-import-new {
     .text-muted;
   }
 
-  .filename {
+  .filename, .message {
     padding-left: 1em;
   }
 
   .uploading {
-    .filename {
-      font-weight: bold;
-    }
+    font-weight: bold;
   }
 
   .uploaded {
     color: @brand-success;
+  }
+
+  .skipped {
+    .text-muted();
   }
 }

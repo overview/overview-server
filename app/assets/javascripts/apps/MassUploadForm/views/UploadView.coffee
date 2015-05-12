@@ -1,16 +1,20 @@
 define [
   'underscore'
   'backbone'
-], (_, Backbone) ->
+  'i18n'
+], (_, Backbone, i18n) ->
+  t = i18n.namespaced('views.DocumentSet._massUploadForm.Upload')
+
   STATUS_ICONS =
     waiting: 'icon icon-clock-o'
     uploading: 'icon icon-spinner icon-spin'
     uploaded: 'icon icon-check'
+    skipped: 'icon icon-check'
 
   Backbone.View.extend
     tagName: 'li'
     template: _.template('''
-      <i class='<%- icon %>'></i><span class='filename'><%- model.id %></span>
+      <i></i><span class='filename'><%- filename %></span><span class="message"></span>
     ''')
 
     initialize: ->
@@ -18,28 +22,31 @@ define [
       @listenTo(@model, 'change', @render)
 
     _initialRender: ->
-      status = @_getStatus()
-      icon = STATUS_ICONS[status]
+      @_lastStatus = null
 
-      @$el.html(@template
-        model: @model
-        icon: icon
-      ).attr(class: status)
+      @$el.html(@template(filename: @model.id))
 
-      @$iconEl = @$('i')
-      @_lastStatus = status
+      @ui =
+        icon: @$('i')
+        message: @$('.message')
+
+      @render()
 
     render: ->
       status = @_getStatus()
       return if status == @_lastStatus
       icon = STATUS_ICONS[status]
 
-      @$iconEl.attr(class: icon)
+      message = if status == 'skipped' then t('skipped') else ''
+      @ui.icon.attr(class: icon)
+      @ui.message.text(message)
       @$el.attr(class: status)
 
     _getStatus: ->
       if @model.get('uploading')
         'uploading'
+      else if @model.get('skippedBecauseAlreadyInDocumentSet')
+        'skipped'
       else if @model.isFullyUploaded()
         'uploaded'
       else

@@ -117,7 +117,7 @@ define [
             view.$('.choose-options').click()
             expect(ImportOptionsApp.addHiddenInputsThroughDialog).to.have.been.calledWith(
               sinon.match.has('childNodes'),
-              onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
+              onlyOptions: [ 'name', 'lang', 'split_documents' ]
               supportedLanguages: sinon.match.array
               defaultLanguageCode: 'en'
               callback: sinon.match.func
