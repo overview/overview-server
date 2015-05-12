@@ -31,9 +31,9 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
 
   override def execute: Future[TaskStep] =
     for {
-      contentsLocation <- moveLargeObjectToBlobStorage(uploadedFile.contentsOid, uploadedFile.size, BlobBucketId.FileContents)
+      (contentsLocation, sha1) <- moveLargeObjectToBlobStorage(uploadedFile.contentsOid, uploadedFile.size, BlobBucketId.FileContents)
       (viewLocation, viewSize) <- createView(uploadedFile)
-      file <- createFile(uploadedFile.name, uploadedFile.size, contentsLocation, viewSize, viewLocation)
+      file <- createFile(uploadedFile.name, uploadedFile.size, contentsLocation, sha1, viewSize, viewLocation)
     } yield nextStep(file)
 
   private def createView(upload: GroupedFileUpload): Future[(String, Long)] = blocking {
@@ -46,21 +46,22 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
   }
 
   protected lazy val insertInvoker = (Files.map(f =>
-    (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) returning
+    (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.contentsSha1, f.viewLocation, f.viewSize)) returning
     Files).insertInvoker
 
   private def createFile(name: String,
-                         contentsSize: Long, contentsLocation: String,
+                         contentsSize: Long, contentsLocation: String, sha1: Array[Byte],
                          viewSize: Long, viewLocation: String): Future[File] = db { implicit session =>
 
-    withTransaction(writeFileAndTempDocumentSetFile(name, contentsSize, contentsLocation,
+    withTransaction(writeFileAndTempDocumentSetFile(name,
+      contentsSize, contentsLocation, sha1,
       viewSize, viewLocation)(_))
   }
 
   private def writeFileAndTempDocumentSetFile(name: String,
-                                              contentsSize: Long, contentsLocation: String,
+                                              contentsSize: Long, contentsLocation: String, sha1: Array[Byte],
                                               viewSize: Long, viewLocation: String)(implicit session: Session): File = {
-    val file = insertInvoker.insert(1, name, contentsLocation, contentsSize, viewLocation, viewSize)
+    val file = insertInvoker.insert(1, name, contentsLocation, contentsSize, Some(sha1), viewLocation, viewSize)
 
     TempDocumentSetFiles += TempDocumentSetFile(documentSetId, file.id)
     file

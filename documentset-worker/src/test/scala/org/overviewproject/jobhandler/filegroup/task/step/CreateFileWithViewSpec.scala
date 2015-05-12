@@ -23,7 +23,9 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       val file = findFile
 
       file.map(f => (f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) must
-        beSome(contentsLocation, contentsSize, viewLocation, viewSize)
+        beSome((contentsLocation, contentsSize, viewLocation, viewSize))
+      
+      file.flatMap(_.contentsSha1) must beSome[Array[Byte]].which(_.length == 20)
     }
 
     "return next step with File" in new ConvertScope {
@@ -31,7 +33,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       
       val savedFile = findFile
       
-      file must beEqualTo (savedFile.get)
+      file.id must beEqualTo (savedFile.get.id)
     }
 
     trait ConvertScope extends DbScope {
