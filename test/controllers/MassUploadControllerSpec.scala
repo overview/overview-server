@@ -241,10 +241,10 @@ class MassUploadControllerSpec extends ControllerSpecification {
       there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, "[add-to-existing-docset]")
     }
 
-    "return NotFound if user has no FileGroup in progress" in new StartClusteringExistingDocumentSetScope {
+    "redirect if user has no FileGroup in progress" in new StartClusteringExistingDocumentSetScope {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
-      h.status(result) must beEqualTo(h.NOT_FOUND)
-      there was no(mockMessageQueue).startClustering(any, any)
+      h.status(result) must beEqualTo(h.SEE_OTHER)
+      there was no(mockDocumentSetBackend).create(any, any)
     }
   }
 

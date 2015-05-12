@@ -164,8 +164,10 @@ trait MassUploadController extends Controller {
   ): Future[Result] = {
     val (lang, splitDocuments, suppliedStopWords, importantWords) = options
 
+    def redirect = Redirect(routes.DocumentSetController.show(documentSetId))
+
     fileGroupBackend.find(userEmail, None).flatMap(_ match {
-      case None => Future.successful(NotFound)
+      case None => Future.successful(redirect)
       case Some(fileGroup) => {
         val job: DocumentSetCreationJob = blocking(OverviewDatabase.inTransaction {
           storage.createMassUploadDocumentSetCreationJob(
@@ -174,7 +176,7 @@ trait MassUploadController extends Controller {
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
           .map(_ => messageQueue.startClustering(job, "[add-to-existing-docset]"))
-          .map(_ => Redirect(routes.DocumentSetController.show(documentSetId)))
+          .map(_ => redirect)
       }
     })
   }
