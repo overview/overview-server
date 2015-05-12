@@ -33,7 +33,7 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
     for {
       contentsLocation <- moveLargeObjectToBlobStorage(uploadedFile.contentsOid, uploadedFile.size, BlobBucketId.FileContents)
       (viewLocation, viewSize) <- createView(uploadedFile)
-      file = File(0l, 11, uploadedFile.name, contentsLocation, uploadedFile.size, viewLocation, viewSize)
+      file = File(0l, 11, uploadedFile.name, contentsLocation, uploadedFile.size, None, viewLocation, viewSize)
       savedFile <- writeFile(file)
     } yield nextStep(savedFile)
 
