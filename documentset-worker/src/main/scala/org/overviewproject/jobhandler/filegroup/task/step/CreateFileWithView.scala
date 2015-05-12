@@ -33,10 +33,8 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
     for {
       contentsLocation <- moveLargeObjectToBlobStorage(uploadedFile.contentsOid, uploadedFile.size, BlobBucketId.FileContents)
       (viewLocation, viewSize) <- createView(uploadedFile)
-      file = File(0l, 11, uploadedFile.name, contentsLocation, uploadedFile.size, None, viewLocation, viewSize)
-      savedFile <- writeFile(file)
-    } yield nextStep(savedFile)
-
+      file <- createFile(uploadedFile.name, uploadedFile.size, contentsLocation, viewSize, viewLocation)
+    } yield nextStep(file)
 
   private def createView(upload: GroupedFileUpload): Future[(String, Long)] = blocking {
     withLargeObjectInputStream(uploadedFile.contentsOid) { stream =>
@@ -47,14 +45,25 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
     }
   }
 
-  private def writeFile(file: File): Future[File] = db { implicit session =>
-    withTransaction(writeFileAndTempDocumentSetFile(file)(_))
+  protected lazy val insertInvoker = (Files.map(f =>
+    (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) returning
+    Files).insertInvoker
+
+  private def createFile(name: String,
+                         contentsSize: Long, contentsLocation: String,
+                         viewSize: Long, viewLocation: String): Future[File] = db { implicit session =>
+
+    withTransaction(writeFileAndTempDocumentSetFile(name, contentsSize, contentsLocation,
+      viewSize, viewLocation)(_))
   }
 
-  private def writeFileAndTempDocumentSetFile(file: File)(implicit session: Session): File = {
-    val fileId = (Files returning Files.map(_.id)) += file
-    TempDocumentSetFiles += TempDocumentSetFile(documentSetId, fileId)
-    file.copy(id = fileId)
+  private def writeFileAndTempDocumentSetFile(name: String,
+                                              contentsSize: Long, contentsLocation: String,
+                                              viewSize: Long, viewLocation: String)(implicit session: Session): File = {
+    val file = insertInvoker.insert(1, name, contentsLocation, contentsSize, viewLocation, viewSize)
+
+    TempDocumentSetFiles += TempDocumentSetFile(documentSetId, file.id)
+    file
   }
 
   private def withLargeObjectInputStream[T](oid: Long)(f: InputStream => T): T = {
@@ -77,8 +86,8 @@ object CreateFileWithView {
 
     override protected val converter = LibreOfficeDocumentConverter
     override protected val blobStorage = BlobStorage
-    
-    override protected def largeObjectInputStream(oid: Long) = 
+
+    override protected def largeObjectInputStream(oid: Long) =
       new LargeObjectInputStream(oid, new SlickSessionProvider {})
   }
 

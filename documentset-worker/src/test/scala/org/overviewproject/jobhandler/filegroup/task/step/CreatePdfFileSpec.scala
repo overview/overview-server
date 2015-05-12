@@ -1,6 +1,6 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import java.io.{ByteArrayInputStream,InputStream}
+import java.io.{ ByteArrayInputStream, InputStream }
 import org.mockito.Matchers
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
@@ -34,9 +34,9 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
         beSome((location, uploadSize, location, uploadSize))
 
       // We can't check the sha1, because our upload mock doesn't *do* anything
-      // with the input stream. (Our impementation uses a DigestInputStream.)
+      // with the input stream. (Our implementation uses a DigestInputStream.)
       // But we *can* check that *a* sha1 gets passed.
-      file.flatMap(_.contentsSha1) must beSome[Array[Byte]].which(_.length  == 20)
+      file.flatMap(_.contentsSha1) must beSome[Array[Byte]].which(_.length == 20)
     }
 
     "return the next step" in new UploadScope {
@@ -84,8 +84,8 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
   }
 
   class TestCreatePdfFile(
-      override protected val uploadedFile: GroupedFileUpload, 
-      override protected val blobStorage: BlobStorage, loInputStream: InputStream)(implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
+    override protected val uploadedFile: GroupedFileUpload,
+    override protected val blobStorage: BlobStorage, loInputStream: InputStream)(implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
     override protected val documentSetId = 1l
     override protected val nextStep = { f: File => NextStep }
 
