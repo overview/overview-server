@@ -38,9 +38,13 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       jobShepherd.startTask(createAliasTask)
       jobShepherd.completeTask(createAliasTask)
 
+      jobShepherd.allTasksComplete must beFalse
+      
       jobShepherd.startTask(task)
       jobShepherd.completeTask(task)
-
+      
+      jobShepherd.allTasksComplete must beFalse
+      
       jobQueue.expectMsg(AddTasks(Set(createAliasTask)))
       jobQueue.expectMsg(AddTasks(Set(task)))
 

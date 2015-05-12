@@ -61,6 +61,9 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
             CreateDocuments(documentSetId, fileGroupId, _, options, documentIdSupplier))
 
           taskQueue ! AddTasks(tasks)
+          
+          tasks.map(addTask)
+          
           progressReporter ! StartJobStep(documentSetId, tasks.size, 0.90, ExtractText)
         }
       }
@@ -69,7 +72,11 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
         if (allTasksComplete && !jobCancelled) {
           progressReporter ! CompleteJobStep(documentSetId)
 
-          taskQueue ! AddTasks(Set(CompleteDocumentSet(documentSetId, fileGroupId)))
+          val tasks = Set(CompleteDocumentSet(documentSetId, fileGroupId))
+          taskQueue ! AddTasks(tasks)
+          
+          tasks.map(addTask)
+          
           progressReporter ! StartJobStep(documentSetId, 1, 0.05, CreateDocument)
         }
       }
