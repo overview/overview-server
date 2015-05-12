@@ -16,59 +16,35 @@ class CreateDocumentsJobShepherdSpec extends Specification {
 
   "CreateDocumentsJobShepherd" should {
 
-    "send CreateSearchIndexAlias task to job queue" in new JobShepherdContext {
+
+    "Step through all sets of tasks" in new JobShepherdContext {
       jobShepherd.createTasks
-
-      jobQueue.expectMsg(AddTasks(Set(createAliasTask)))
-    }
-
-    "send CreateDocuments tasks to job queue" in new JobShepherdContext {
-      jobShepherd.createTasks
-
-      jobShepherd.startTask(createAliasTask)
-      jobShepherd.completeTask(createAliasTask)
-
-      jobQueue.expectMsg(AddTasks(Set(createAliasTask)))
-      jobQueue.expectMsg(AddTasks(Set(task)))
-    }
-
-    "complete document set when all documents are created" in new JobShepherdContext {
-      jobShepherd.createTasks
-
-      jobShepherd.startTask(createAliasTask)
-      jobShepherd.completeTask(createAliasTask)
 
       jobShepherd.allTasksComplete must beFalse
-      
-      jobShepherd.startTask(task)
-      jobShepherd.completeTask(task)
-      
-      jobShepherd.allTasksComplete must beFalse
-      
-      jobQueue.expectMsg(AddTasks(Set(createAliasTask)))
-      jobQueue.expectMsg(AddTasks(Set(task)))
 
-      jobQueue.expectMsg(AddTasks(Set(completeDocumentSetTask)))
+      stepThroughTask(createAliasTask)
+      stepThroughTask(createDocumentsTask)
+      stepThroughTask(completeDocumentSetTask, isFinalStep = true)
     }
 
     "report progress" in new JobShepherdContext {
       jobShepherd.createTasks
-   
+
       jobShepherd.startTask(createAliasTask)
-      progressReporter.expectMsg(StartJob(documentSetId, 3, ProcessUpload))      
+      progressReporter.expectMsg(StartJob(documentSetId, 3, ProcessUpload))
       progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.05, ExtractText))
       progressReporter.expectMsg(StartTask(documentSetId, documentSetId))
-      
+
       jobShepherd.completeTask(createAliasTask)
       progressReporter.expectMsg(CompleteTask(documentSetId, documentSetId))
       progressReporter.expectMsg(CompleteJobStep(documentSetId))
-      
-      jobShepherd.startTask(task)
+
+      jobShepherd.startTask(createDocumentsTask)
 
       progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.90, ExtractText))
       progressReporter.expectMsg(StartTask(documentSetId, uploadedFileId))
 
-      jobShepherd.completeTask(task)
+      jobShepherd.completeTask(createDocumentsTask)
       progressReporter.expectMsg(CompleteTask(documentSetId, uploadedFileId))
       progressReporter.expectMsg(CompleteJobStep(documentSetId))
 
@@ -95,7 +71,7 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       val uploadedFileId = 10l
       val options = UploadProcessOptions("en", true)
       var createAliasTask: CreateSearchIndexAlias = _
-      var task: CreateDocuments = _
+      var createDocumentsTask: CreateDocuments = _
       var completeDocumentSetTask: CompleteDocumentSet = _
 
       override def before = {
@@ -103,12 +79,22 @@ class CreateDocumentsJobShepherdSpec extends Specification {
         progressReporter = TestProbe()
         documentIdSupplier = TestProbe()
         createAliasTask = CreateSearchIndexAlias(documentSetId, fileGroupId)
-        task = CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref)
+        createDocumentsTask = CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref)
         completeDocumentSetTask = CompleteDocumentSet(documentSetId, fileGroupId)
 
         jobShepherd = new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, options,
           jobQueue.ref, progressReporter.ref, documentIdSupplier.ref, Set(uploadedFileId))
       }
+
+      protected def stepThroughTask(task: TaskWorkerTask, isFinalStep: Boolean = false) = {
+        jobShepherd.startTask(task)
+        jobQueue.expectMsg(AddTasks(Set(task)))
+
+        jobShepherd.completeTask(task)
+        jobShepherd.allTasksComplete must be equalTo(isFinalStep)
+
+      }
+
     }
   }
 }
