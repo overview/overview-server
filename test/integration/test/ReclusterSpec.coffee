@@ -26,8 +26,8 @@ describe 'Recluster', ->
         .waitForElementByCss('a[data-plugin-url="about:tree"]').click()
         .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('view1')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .sleep(100) # Overview will select the new Job; wait for that to happen
-        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a View
+        .waitForElementBy(tag: 'a', contains: 'view1').click() # Ensure the current tree is deselected...
+        .waitForElementByCss('#tree-app-tree canvas', 5000)    # ... so that we can wait for the next one
 
     shouldBehaveLikeATree
       documents: [
@@ -79,8 +79,8 @@ describe 'Recluster', ->
         .waitForElementBy(tag: 'option', contains: 'foo').click()
         .elementBy(tag: 'input', name: 'tree_title', visible: true).type('view2')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .sleep(100) # Overview will select the new Job; wait for that to happen
-        .waitForElementByCss('#tree-app-tree canvas', 5000) # the Job will become a View
+        .waitForElementBy(tag: 'a', contains: 'view2').click() # Ensure the current tree is deselected...
+        .waitForElementByCss('#tree-app-tree canvas', 5000)    # ... so that we can wait for the next one
 
     after -> doDelete(@userBrowser, 'view2')
 
