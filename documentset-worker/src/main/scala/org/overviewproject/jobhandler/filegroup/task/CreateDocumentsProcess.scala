@@ -83,10 +83,10 @@ trait CreateDocumentsProcess {
     protected def nextStep: FileGroupTaskStep
 
     private def reportStartTask(file: File): Unit =
-      progressReporter ! StartTask(documentSetId, file.id)
+      progressReporter ! StartTask(documentSetId)
 
     private def reportCompleteTask(file: File): Unit =
-      progressReporter ! CompleteTask(documentSetId, file.id)
+      progressReporter ! CompleteTask(documentSetId)
   }
 
   // Create one Document per File by concatenating the text of all Pages

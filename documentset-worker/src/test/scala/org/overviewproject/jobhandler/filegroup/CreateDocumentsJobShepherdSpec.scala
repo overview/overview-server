@@ -33,27 +33,27 @@ class CreateDocumentsJobShepherdSpec extends Specification {
       jobShepherd.startTask(createAliasTask)
       progressReporter.expectMsg(StartJob(documentSetId, 3, ProcessUpload))
       progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.05, ExtractText))
-      progressReporter.expectMsg(StartTask(documentSetId, documentSetId))
+      progressReporter.expectMsg(StartTask(documentSetId))
 
       jobShepherd.completeTask(createAliasTask)
-      progressReporter.expectMsg(CompleteTask(documentSetId, documentSetId))
+      progressReporter.expectMsg(CompleteTask(documentSetId))
       progressReporter.expectMsg(CompleteJobStep(documentSetId))
 
       jobShepherd.startTask(createDocumentsTask)
 
       progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.90, ExtractText))
-      progressReporter.expectMsg(StartTask(documentSetId, uploadedFileId))
+      progressReporter.expectMsg(StartTask(documentSetId))
 
       jobShepherd.completeTask(createDocumentsTask)
-      progressReporter.expectMsg(CompleteTask(documentSetId, uploadedFileId))
+      progressReporter.expectMsg(CompleteTask(documentSetId))
       progressReporter.expectMsg(CompleteJobStep(documentSetId))
 
       jobShepherd.startTask(completeDocumentSetTask)
       progressReporter.expectMsg(StartJobStep(documentSetId, 1, 0.05, CreateDocument))
-      progressReporter.expectMsg(StartTask(documentSetId, documentSetId))
+      progressReporter.expectMsg(StartTask(documentSetId))
 
       jobShepherd.completeTask(completeDocumentSetTask)
-      progressReporter.expectMsg(CompleteTask(documentSetId, documentSetId))
+      progressReporter.expectMsg(CompleteTask(documentSetId))
       progressReporter.expectMsg(CompleteJobStep(documentSetId))
 
       progressReporter.expectMsg(CompleteJob(documentSetId))

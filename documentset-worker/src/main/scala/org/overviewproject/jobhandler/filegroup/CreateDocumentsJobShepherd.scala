@@ -44,12 +44,12 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
     super.startTask(task)
     task match {
       case CreateSearchIndexAlias(_, _) => {
-        progressReporter ! StartTask(documentSetId, documentSetId)
+        progressReporter ! StartTask(documentSetId)
       }
       case CreateDocuments(_, _, uploadedFileId, _, _) =>
-        progressReporter ! StartTask(documentSetId, uploadedFileId)
+        progressReporter ! StartTask(documentSetId)
       case CompleteDocumentSet(_, _) =>
-        progressReporter ! StartTask(documentSetId, documentSetId)
+        progressReporter ! StartTask(documentSetId)
       case _ =>
     }
   }
@@ -58,7 +58,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
     super.completeTask(task)
     task match {
       case CreateSearchIndexAlias(_, _) => {
-        progressReporter ! CompleteTask(documentSetId, documentSetId)
+        progressReporter ! CompleteTask(documentSetId)
 
         if (jobStepComplete) startNextJobStep(
           createDocumentsTasks,
@@ -66,7 +66,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
           ExtractText)
       }
       case CreateDocuments(_, _, uploadedFileId, _, _) => {
-        progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+        progressReporter ! CompleteTask(documentSetId)
 
         if (jobStepComplete) startNextJobStep(
           completeDocumentSetTasks,
@@ -74,7 +74,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
           CreateDocument)
       }
       case CompleteDocumentSet(documentSetId, _) => {
-        progressReporter ! CompleteTask(documentSetId, documentSetId)
+        progressReporter ! CompleteTask(documentSetId)
 
         if (jobStepComplete) finishJob
       }

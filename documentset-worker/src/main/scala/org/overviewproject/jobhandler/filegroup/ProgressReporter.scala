@@ -74,12 +74,11 @@ object ProgressReporterProtocol {
 
   /** 
    * Report the start of a task.
-   * @taskId a unique id (eg. a file id, if each task corresponds to one file) 
    */
-  case class StartTask(jobId: Long, taskId: Long) 
+  case class StartTask(jobId: Long)
 
   /** Report the completion of a task */  
-  case class CompleteTask(jobId: Long, taskId: Long)
+  case class CompleteTask(jobId: Long)
 }
 
 /** 
@@ -107,8 +106,8 @@ trait ProgressReporter extends Actor {
     } 
     case CompleteJobStep(jobId) => updateTaskForJob(jobId, _.completeJobStep)
 
-    case StartTask(jobId, taskId) => updateTaskForJob(jobId, _.startTask)
-    case CompleteTask(jobId, taskId) => updateTaskForJob(jobId, _.completeTask)
+    case StartTask(jobId) => updateTaskForJob(jobId, _.startTask)
+    case CompleteTask(jobId) => updateTaskForJob(jobId, _.completeTask)
   }
 
   private def description(progress: JobProgress): String =

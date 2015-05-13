@@ -135,8 +135,8 @@ class CreateDocumentsProcessSpec extends Specification with Mockito {
 
     "send notification to progress reporter for each file processed" in new OneResultPageContext {
       val fileIds = documentData.map(_._1)
-      val startTaskMessages = fileIds.map(id => StartTask(documentSetId, id)).toSeq
-      val completeTaskMessages = fileIds.map(id => CompleteTask(documentSetId, id)).toSeq
+      val startTaskMessages = fileIds.map(id => StartTask(documentSetId)).toSeq
+      val completeTaskMessages = fileIds.map(id => CompleteTask(documentSetId)).toSeq
 
       val firstStep = createDocumentsProcess.startCreateDocumentsTask(documentSetId, true, progressReporter.ref)
       firstStep.execute

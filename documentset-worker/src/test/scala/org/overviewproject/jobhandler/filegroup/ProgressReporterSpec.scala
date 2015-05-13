@@ -21,26 +21,26 @@ class ProgressReporterSpec extends Specification {
 
     "update count on task start" in new ProgressReporterContext {
       progressReporter ! StartJob(documentSetId, numberOfTasks, jobDescription)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
 
       lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:1:$numberOfTasks")
     }
 
     "update fraction complete on task done" in new ProgressReporterContext {
       progressReporter ! StartJob(documentSetId, numberOfTasks, jobDescription)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
-      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
+      progressReporter ! CompleteTask(documentSetId)
 
       lastProgressStatusMustBe(documentSetId, progressFraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
 
     "ignore updates after job is complete" in new ProgressReporterContext {
       progressReporter ! StartJob(documentSetId, numberOfTasks, jobDescription)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
-      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
+      progressReporter ! CompleteTask(documentSetId)
 
       progressReporter ! CompleteJob(documentSetId)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
 
       lastProgressStatusMustBe(documentSetId, progressFraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
@@ -51,8 +51,8 @@ class ProgressReporterSpec extends Specification {
 
       progressReporter ! StartJob(documentSetId, numberOfJobSteps, jobDescription)
       progressReporter ! StartJobStep(documentSetId, numberOfTasks, step1Fraction, jobDescription)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
-      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
+      progressReporter ! CompleteTask(documentSetId)
 
       lastProgressStatusMustBe(documentSetId, step1Fraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
@@ -64,15 +64,15 @@ class ProgressReporterSpec extends Specification {
 
       progressReporter ! StartJob(documentSetId, numberOfJobSteps, jobDescription)
       progressReporter ! StartJobStep(documentSetId, 1, step1Fraction, jobDescription)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
-      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
+      progressReporter ! CompleteTask(documentSetId)
       progressReporter ! CompleteJobStep(documentSetId)
 
       lastProgressStatusMustBe(documentSetId, step1Fraction, s"processing_files:1:$numberOfJobSteps")
       
       progressReporter ! StartJobStep(documentSetId, numberOfTasks, step2Fraction, jobDescription)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
-      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
+      progressReporter ! CompleteTask(documentSetId)
 
       lastProgressStatusMustBe(documentSetId, step1Fraction + step2Fraction * 1.0 / numberOfTasks,
         s"processing_files:1:$numberOfTasks")
@@ -84,8 +84,8 @@ class ProgressReporterSpec extends Specification {
       
       lastProgressStatusMustBe(documentSetId, 0.0, s"$jobDescription:0:$numberOfJobSteps")
       progressReporter ! StartJobStep(documentSetId, numberOfTasks, 1.0, jobStepDescription)
-      progressReporter ! StartTask(documentSetId, uploadedFileId)
-      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      progressReporter ! StartTask(documentSetId)
+      progressReporter ! CompleteTask(documentSetId)
       
       lastProgressStatusMustBe(documentSetId, 0.2, s"$jobStepDescription:1:$numberOfTasks")
     }
