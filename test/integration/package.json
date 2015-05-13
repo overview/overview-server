@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "test-xunit": "mocha --grep @SauceLabsKiller --invert --reporter xunit > test-results.xml"
+    "test-xunit": "xvfb-run mocha --reporter xunit > test-results.xml"
   },
   "repository": {
     "type": "git",
