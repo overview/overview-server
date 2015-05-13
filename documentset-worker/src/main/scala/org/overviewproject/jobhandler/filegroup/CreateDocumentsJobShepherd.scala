@@ -42,65 +42,42 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
 
   override def startTask(task: TaskWorkerTask): Unit = {
     super.startTask(task)
-    task match {
-      case CreateSearchIndexAlias(_, _) => {
-        progressReporter ! StartTask(documentSetId)
-      }
-      case CreateDocuments(_, _, uploadedFileId, _, _) =>
-        progressReporter ! StartTask(documentSetId)
-      case CompleteDocumentSet(_, _) =>
-        progressReporter ! StartTask(documentSetId)
-      case _ =>
-    }
+    progressReporter ! StartTask(documentSetId)
   }
 
   override def completeTask(task: TaskWorkerTask): Unit = {
     super.completeTask(task)
-    task match {
-      case CreateSearchIndexAlias(_, _) => {
-        progressReporter ! CompleteTask(documentSetId)
+    progressReporter ! CompleteTask(documentSetId)
 
-        if (jobStepComplete) startNextJobStep(
-          createDocumentsTasks,
-          CreateDocumentsStepSize,
-          ExtractText)
-      }
-      case CreateDocuments(_, _, uploadedFileId, _, _) => {
-        progressReporter ! CompleteTask(documentSetId)
-
-        if (jobStepComplete) startNextJobStep(
-          completeDocumentSetTasks,
-          CompleteDocumentSetStepSize,
-          CreateDocument)
-      }
-      case CompleteDocumentSet(documentSetId, _) => {
-        progressReporter ! CompleteTask(documentSetId)
-
-        if (jobStepComplete) finishJob
-      }
-      case _ =>
+    if (jobStepComplete) {
+      progressReporter ! CompleteJobStep(documentSetId)
+      startNextJobStep(task)
     }
-
   }
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 
   private def jobStepComplete = allTasksComplete && !jobCancelled
 
-  
-  private def startNextJobStep(tasks: Set[TaskWorkerTask], stepSize: Double, description: JobDescription) = {
-    progressReporter ! CompleteJobStep(documentSetId)
+  /** Given the last task of the previous job step, kick off the next job step */
+  private def startNextJobStep(task: TaskWorkerTask) =
+    task match {
+      case _: CreateSearchIndexAlias =>
+        startJobStep(createDocumentsTasks, CreateDocumentsStepSize, ExtractText)
+      case _: CreateDocuments =>
+        startJobStep(completeDocumentSetTasks, CompleteDocumentSetStepSize, CreateDocument)
+      case _: CompleteDocumentSet => finishJob
+    }
 
+  private def startJobStep(tasks: Set[TaskWorkerTask], stepSize: Double, description: JobDescription) = {
     taskQueue ! AddTasks(tasks)
 
     tasks.map(addTask)
 
     progressReporter ! StartJobStep(documentSetId, tasks.size, stepSize, description)
   }
-  
 
   private def finishJob = {
-    progressReporter ! CompleteJobStep(documentSetId)
     progressReporter ! CompleteJob(documentSetId)
   }
 
