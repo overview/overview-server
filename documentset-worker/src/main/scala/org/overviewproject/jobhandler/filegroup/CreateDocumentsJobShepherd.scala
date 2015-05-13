@@ -77,9 +77,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
     progressReporter ! StartJobStep(documentSetId, tasks.size, stepSize, description)
   }
 
-  private def finishJob = {
-    progressReporter ! CompleteJob(documentSetId)
-  }
+  private def finishJob =  progressReporter ! CompleteJob(documentSetId)
 
   private def createDocumentsTasks: Set[TaskWorkerTask] = for {
     uploadedFileId <- uploadedFilesInFileGroup(fileGroupId)
@@ -88,6 +86,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   private def completeDocumentSetTasks: Set[TaskWorkerTask] = Set(CompleteDocumentSet(documentSetId, fileGroupId))
 
   protected val storage: Storage
+  
   protected trait Storage {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
     def processedFileCount(documentSetId: Long): Long
