@@ -234,15 +234,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
-          case CreatePagesTask(ds, fg, uf) => {
-            sender.tell(TaskDone(ds, Some(outputFileId)), worker)
-            sender.tell(ReadyForTask, worker)
-          }
           case DeleteFileUploadJob(ds, fg) => {
-            sender.tell(TaskDone(ds, None), worker)
-            sender.tell(ReadyForTask, worker)
-          }
-          case CreateDocumentsTask(ds, fg, split) => {
             sender.tell(TaskDone(ds, None), worker)
             sender.tell(ReadyForTask, worker)
           }

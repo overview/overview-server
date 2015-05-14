@@ -1,23 +1,31 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import akka.actor._
-import akka.testkit._
-import scala.concurrent.duration._
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+
+import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.actor.Props
+import akka.testkit.TestActor
+import akka.testkit.TestActorRef
+import akka.testkit.TestProbe
+
+import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol.RemoveFiles
+import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol.RemoveFileGroup
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.test.{ ActorSystemContext, ParameterStore, ForwardingActor }
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
+import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.searchindex.ElasticSearchIndexClient
+import org.overviewproject.test.ActorSystemContext
+import org.overviewproject.test.ForwardingActor
+import org.overviewproject.test.ParameterStore
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
-import org.overviewproject.jobhandler.filegroup.task.process.StepGenerator
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
-import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
-import scala.concurrent.Future
-import org.overviewproject.searchindex.ElasticSearchIndexClient
-import scala.concurrent.Promise
+
 
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential
@@ -331,24 +339,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
             new FailingStep
           }
       }
-    }
-
-    trait GatedTaskWorkerContext extends TaskWorkerContext {
-      var worker: ActorRef = _
-      private val cancelFn = ParameterStore[Unit]
-
-      protected def createWorker: Unit = {
-        createFileRemovalQueue
-        createProgressReporter
-        setupProcessSelection
-
-        worker =
-          system.actorOf(Props(new GatedTaskWorker(
-            JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
-            uploadedFileProcessCreator, searchIndex, uploadedFile, cancelFn)))
-      }
-
-      protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {

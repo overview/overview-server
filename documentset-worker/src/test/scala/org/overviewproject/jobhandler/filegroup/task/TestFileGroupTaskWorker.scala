@@ -39,13 +39,6 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
 
 
 
-  override protected def startCreatePagesTask(documentSetId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    StepInSequence(1, CreatePagesProcessComplete(documentSetId, uploadedFileId, Some(outputFileId)))
-
-  override protected def startCreateDocumentsTask(documentSetId: Long, splitDocuments: Boolean,
-                                                  progressReporter: ActorRef): FileGroupTaskStep =
-    StepInSequence(1, CreateDocumentsProcessComplete(documentSetId))
-
   override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
     StepInSequence(1, DeleteFileUploadComplete(documentSetId, fileGroupId))
 
