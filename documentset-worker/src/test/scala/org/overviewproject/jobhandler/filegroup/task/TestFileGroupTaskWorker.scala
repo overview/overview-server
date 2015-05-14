@@ -5,7 +5,6 @@ import org.overviewproject.test.ParameterStore
 import akka.actor.ActorRef
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcessCreator
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 
@@ -13,7 +12,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
                               progressReporterPath: String,
                               fileRemovalQueuePath: String,
                               fileGroupRemovalQueuePath: String,
-                              override protected val uploadedFileProcessSelector: UploadProcessSelector,
+                              override protected val uploadedFileProcessCreator: UploadedFileProcessCreator,
                               override protected val searchIndex: ElasticSearchIndexClient,
                               uploadedFile: Option[GroupedFileUpload],
                               outputFileId: Long) extends FileGroupTaskWorker {
@@ -64,7 +63,7 @@ object TestFileGroupTaskWorker {
     progressReporterPath: String,
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String,
-    uploadedFileProcessSelector: UploadProcessSelector,
+    uploadedFileProcessSelector: UploadedFileProcessCreator,
     searchIndex: ElasticSearchIndexClient,
     uploadedFile: Option[GroupedFileUpload],
     outputFileId: Long): Props =

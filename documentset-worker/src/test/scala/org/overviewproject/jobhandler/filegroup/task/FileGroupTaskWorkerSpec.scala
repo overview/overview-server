@@ -13,7 +13,6 @@ import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.jobhandler.filegroup.task.process.StepGenerator
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcessCreator
 import org.specs2.mock.Mockito
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import scala.concurrent.Future
@@ -235,7 +234,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       val FileGroupRemovalQueueName = "fileGroupRemovalQueue"
       val FileGroupRemovalQueuePath = s"/user/$FileGroupRemovalQueueName"
 
-      val uploadedFileProcessSelector = smartMock[UploadProcessSelector]
+      val uploadedFileProcessCreator = smartMock[UploadedFileProcessCreator]
       val searchIndex = smartMock[ElasticSearchIndexClient]
       val documentIdSupplier: TestProbe = new TestProbe(system)
 
@@ -268,12 +267,11 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       }
 
       protected def setupProcessSelection = {
-        val uploadedFileProcessCreator = smartMock[UploadedFileProcessCreator]
         val uploadedFileProcess = smartMock[UploadedFileProcess]
 
-        uploadedFileProcessSelector.select(any, any) returns uploadedFileProcessCreator
-        uploadedFileProcessCreator.create(any, any) returns uploadedFileProcess
-        uploadedFileProcess.start(any) returns firstStep
+        uploadedFileProcessCreator.select(any, any, any, any) returns uploadedFileProcess
+
+        uploadedFileProcess.start(any) returns firstStep.execute
       }
 
       protected def firstStep: TaskStep = FinalStep
@@ -299,7 +297,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
         worker = TestActorRef(new TestFileGroupTaskWorker(
           JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
-          uploadedFileProcessSelector, searchIndex, uploadedFile, fileId))
+          uploadedFileProcessCreator, searchIndex, uploadedFile, fileId))
       }
 
       protected def createPagesTaskStepsWereExecuted =
@@ -329,7 +327,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
         worker =
           system.actorOf(Props(new GatedTaskWorker(
             JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
-            uploadedFileProcessSelector, searchIndex, uploadedFile, cancelFn)))
+            uploadedFileProcessCreator, searchIndex, uploadedFile, cancelFn)))
       }
 
       protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)

@@ -83,7 +83,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected val fileRemovalQueue: ActorSelection
   protected val fileGroupRemovalQueue: ActorSelection
 
-  protected val uploadedFileProcessSelector: UploadProcessSelector
+  protected val uploadedFileProcessCreator: UploadedFileProcessCreator
   protected val searchIndex: ElasticSearchIndexClient
 
   private val NumberOfExternalActors = 2
@@ -140,10 +140,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier),
       ExternalActors(jobQueue, progressReporter)) => {
       findUploadedFile(uploadedFileId).flatMap { uploadedFile =>
-        val processCreator = uploadedFileProcessSelector.select(uploadedFile.get, options)
-        val process = processCreator.create(documentSetId, documentIdSupplier)
-        val firstStep = process.start(uploadedFile.get)
-        firstStep.execute
+        val process = uploadedFileProcessCreator.select(uploadedFile.get, options, documentSetId, documentIdSupplier)
+        process.start(uploadedFile.get)
       } pipeTo self
 
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)
@@ -289,7 +287,7 @@ object FileGroupTaskWorker {
     override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
     override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
 
-    override protected val uploadedFileProcessSelector = UploadProcessSelector()
+    override protected val uploadedFileProcessCreator = UploadedFileProcessCreator()
     override protected val searchIndex = TransportIndexClient.singleton
     
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =

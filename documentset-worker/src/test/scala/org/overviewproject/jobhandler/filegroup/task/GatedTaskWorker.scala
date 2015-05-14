@@ -17,7 +17,7 @@ class GatedTaskWorker(jobQueuePath: String,
     progressReporterPath: String, 
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String,
-    override protected val uploadedFileProcessSelector: UploadProcessSelector,
+    override protected val uploadedFileProcessCreator: UploadedFileProcessCreator,
     override protected val searchIndex: ElasticSearchIndexClient,
     uploadedFile: Option[GroupedFileUpload],
     cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
