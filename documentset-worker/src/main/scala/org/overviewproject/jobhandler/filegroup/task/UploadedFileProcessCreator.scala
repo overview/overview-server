@@ -15,7 +15,7 @@ import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 trait UploadedFileProcessCreator {
   import DocumentTypeDetector._
 
-  def select(uploadedFile: GroupedFileUpload, options: UploadProcessOptions,
+  def create(uploadedFile: GroupedFileUpload, options: UploadProcessOptions,
       documentSetId: Long, documentIdSupplier: ActorRef): UploadedFileProcess =
     withLargeObjectInputStream(uploadedFile.contentsOid) { stream =>
       documentTypeDetector.detect(uploadedFile.name, stream) match {

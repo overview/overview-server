@@ -140,17 +140,14 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier),
       ExternalActors(jobQueue, progressReporter)) => {
       findUploadedFile(uploadedFileId).flatMap { uploadedFile =>
-        val process = uploadedFileProcessCreator.select(uploadedFile.get, options, documentSetId, documentIdSupplier)
+        val process = uploadedFileProcessCreator.create(uploadedFile.get, options, documentSetId, documentIdSupplier)
         process.start(uploadedFile.get)
       } pipeTo self
 
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)
     }
     case Event(CompleteDocumentSet(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
-
-      updateDocumentSetInfo(documentSetId).map { _ =>
-        FinalStep
-      } pipeTo self
+      updateDocumentSetInfo(documentSetId).map { _ => FinalStep } pipeTo self
       
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }

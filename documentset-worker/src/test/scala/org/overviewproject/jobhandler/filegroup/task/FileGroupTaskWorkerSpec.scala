@@ -269,7 +269,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       protected def setupProcessSelection = {
         val uploadedFileProcess = smartMock[UploadedFileProcess]
 
-        uploadedFileProcessCreator.select(any, any, any, any) returns uploadedFileProcess
+        uploadedFileProcessCreator.create(any, any, any, any) returns uploadedFileProcess
 
         uploadedFileProcess.start(any) returns firstStep.execute
       }
