@@ -17,7 +17,7 @@ import org.specs2.mock.Mockito
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import scala.concurrent.Future
 import org.overviewproject.searchindex.ElasticSearchIndexClient
-
+import scala.concurrent.Promise
 
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential
@@ -58,7 +58,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectReadyForTask
     }
 
-
     "write DocumentProcessingError when step fails" in new FailingProcessContext {
       createJobQueue.handingOutTask(
         CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
@@ -71,35 +70,34 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
-      
+
       writeDocumentProcessingErrorWasCalled(documentSetId, filename, message)
-      
+
     }
-    
+
     "write document set info when completing a document set" in new RunningTaskWorkerContext {
       createJobQueue.handingOutTask(
-        CompleteDocumentSet(documentSetId, fileGroupId)    
-      )
-      
+        CompleteDocumentSet(documentSetId, fileGroupId))
+
       createWorker
-      
+
       jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
       jobQueueProbe.expectMsg(ReadyForTask)
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
-      
+
       updateDocumentSetInfoWasCalled(documentSetId)
     }
-    
+
     "create index for document set" in new WorkingSearchIndexContext {
       createJobQueue.handingOutTask {
         CreateSearchIndexAlias(documentSetId, fileGroupId)
       }
-      
+
       createWorker
-      
+
       jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
       jobQueueProbe.expectMsg(ReadyForTask)
 
@@ -107,59 +105,36 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       jobQueueProbe.expectReadyForTask
     }
-    
-    "step through task until done" in new RunningTaskWorkerContext {
-      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
+
+    "cancel a job" in new CancellableProcessContext {
+      createJobQueue.handingOutTask(
+        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
 
       createWorker
 
-      jobQueueProbe.expectTaskDone(documentSetId, fileGroupId, uploadedFileId, fileId)
-      jobQueueProbe.expectReadyForTask
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
 
-      createPagesTaskStepsWereExecuted
-    }
+      worker ! CancelTask
 
-    "step through CreateDocumentsTask" in new RunningTaskWorkerContext {
-      createWorker
-      createJobQueue.handingOutTask(CreateDocumentsTask(documentSetId, fileGroupId, splitDocuments = true))
-
-      jobQueueProbe.expectInitialReadyForTask
-      jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-
-      jobQueueProbe.expectReadyForTask
-
-      createPagesTaskStepsWereExecuted
-
-    }
-
-    "cancel a job in progress" in new GatedTaskWorkerContext {
-      import GatedTaskWorkerProtocol._
-
-      createWorker
-      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
-
-      jobQueueProbe.expectInitialReadyForTask
-
-      worker ! CancelYourself
-      worker ! CompleteTaskStep
+      step.success(())
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-
-      taskWasCancelled
     }
 
-    "ignore TaskAvailable message when not Ready" in new GatedTaskWorkerContext {
-      import GatedTaskWorkerProtocol._
-
+    "ignore TaskAvailable when not ready" in new CancellableProcessContext {
       createWorker
-      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
 
-      jobQueueProbe.expectInitialReadyForTask
+      createJobQueue.handingOutTask(
+        CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
+
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
 
       worker ! TaskAvailable
-      worker ! CancelYourself
+      worker ! CancelTask
 
-      worker ! CompleteTaskStep
+      step.success(())
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
@@ -212,7 +187,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       protected val uploadedFileId: Long = 10l
       protected val fileId: Long = 20l
       protected val filename: String = "filename"
-      
+
       var jobQueue: ActorRef = _
       var jobQueueProbe: JobQueueTestProbe = _
       var progressReporter: ActorRef = _
@@ -279,7 +254,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       protected def uploadedFile: Option[GroupedFileUpload] = {
         val f = smartMock[GroupedFileUpload]
         f.name returns filename
-        
+
         Some(f)
       }
 
@@ -305,14 +280,57 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) =
         worker.underlyingActor.deleteFileUploadJobFn.wasCalledWith((documentSetId, fileGroupId))
-        
+
       protected def updateDocumentSetInfoWasCalled(documentSetId: Long) =
         worker.underlyingActor.updateDocumentSetInfoFn.wasCalledWith(documentSetId)
 
     }
-    
+
     trait WorkingSearchIndexContext extends RunningTaskWorkerContext {
       searchIndex.addDocumentSet(documentSetId) returns Future.successful(())
+    }
+
+    trait MultistepProcessContext extends RunningTaskWorkerContext {
+      val options = UploadProcessOptions("en", false)
+
+      class SimpleTaskStep(n: Int) extends TaskStep {
+        override def execute: Future[TaskStep] = {
+          val nextStep = if (n == 0) FinalStep else new SimpleTaskStep(n - 1)
+          Future.successful(nextStep)
+        }
+      }
+
+      val message = "failure"
+
+      class FailingStep extends TaskStep {
+        override def execute: Future[TaskStep] = Future {
+          throw new Exception(message)
+        }
+      }
+
+      override def firstStep: TaskStep = new SimpleTaskStep(1)
+    }
+
+    trait FailingProcessContext extends MultistepProcessContext {
+
+      override def firstStep: TaskStep = new FailingStep
+
+      def writeDocumentProcessingErrorWasCalled(documentSetId: Long, filename: String, message: String) =
+        worker.underlyingActor.writeDocumentProcessingErrorFn.wasCalledWith(documentSetId, filename, message)
+
+    }
+
+    trait CancellableProcessContext extends MultistepProcessContext {
+      val step = Promise[Unit]()
+
+      override def firstStep: TaskStep = new WaitingStep
+
+      class WaitingStep extends TaskStep {
+        override def execute: Future[TaskStep] =
+          step.future.map { _ =>
+            new FailingStep
+          }
+      }
     }
 
     trait GatedTaskWorkerContext extends TaskWorkerContext {
@@ -331,35 +349,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       }
 
       protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)
-    }
-
-    trait MultistepProcessContext extends RunningTaskWorkerContext {
-      val options = UploadProcessOptions("en", false)
-
-      class SimpleTaskStep(n: Int) extends TaskStep {
-        override def execute: Future[TaskStep] = {
-          val nextStep = if (n == 0) FinalStep else new SimpleTaskStep(n - 1)
-          Future.successful(nextStep)
-        }
-      }
-
-      override def firstStep: TaskStep = new SimpleTaskStep(1)
-    }
-
-
-    trait FailingProcessContext extends MultistepProcessContext {
-      val message = "failure"
-      class FailingStep extends TaskStep {
-        override def execute: Future[TaskStep] = Future {
-          throw new Exception(message)
-        }
-      }
-
-      override def firstStep: TaskStep = new FailingStep
-      
-      def writeDocumentProcessingErrorWasCalled(documentSetId: Long, filename: String, message: String) = 
-        worker.underlyingActor.writeDocumentProcessingErrorFn.wasCalledWith(documentSetId, filename, message)
-
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {

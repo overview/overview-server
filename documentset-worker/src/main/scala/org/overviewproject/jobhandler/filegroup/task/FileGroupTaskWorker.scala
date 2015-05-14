@@ -41,7 +41,7 @@ object FileGroupTaskWorkerProtocol {
   case class CreateSearchIndexAlias(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
   case class CreateDocuments(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long, options: UploadProcessOptions,
                              documentIdSupplier: ActorRef) extends TaskWorkerTask
-  case class CompleteDocumentSet(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask                             
+  case class CompleteDocumentSet(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
   case class CreateDocumentsTask(documentSetId: Long, fileGroupId: Long, splitDocuments: Boolean) extends TaskWorkerTask
   case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long) extends TaskWorkerTask
@@ -102,7 +102,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
   protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Future[Unit]
   protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit]
-  
+
   override def preStart = lookForExternalActors
 
   startWith(LookingForExternalActors, ExternalActorsFound(None, None))
@@ -133,9 +133,9 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       stay
     }
     case Event(CreateSearchIndexAlias(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
-      searchIndex.addDocumentSet(documentSetId).map {_ => FinalStep } pipeTo self
-      
-      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)      
+      searchIndex.addDocumentSet(documentSetId).map { _ => FinalStep } pipeTo self
+
+      goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
     case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier),
       ExternalActors(jobQueue, progressReporter)) => {
@@ -148,7 +148,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(CompleteDocumentSet(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
       updateDocumentSetInfo(documentSetId).map { _ => FinalStep } pipeTo self
-      
+
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
     case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), ExternalActors(jobQueue, progressReporter)) => {
@@ -211,7 +211,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       for {
         upload <- findUploadedFile(uploadedFileId)
         r <- writeDocumentProcessingError(documentSetId, upload.get.name, e.getMessage)
-      }  {
+      } {
         jobQueue ! TaskDone(documentSetId, None)
         jobQueue ! ReadyForTask
       }
@@ -229,6 +229,13 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Cancelled) {
+    case Event(step: TaskStep, TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)) => {
+      jobQueue ! TaskDone(documentSetId, None)
+      jobQueue ! ReadyForTask
+
+      goto(Ready) using ExternalActors(jobQueue, progressReporter)
+    }
+
     case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)) => {
       step.cancel
       jobQueue ! TaskDone(documentSetId, None)
@@ -286,7 +293,7 @@ object FileGroupTaskWorker {
 
     override protected val uploadedFileProcessCreator = UploadedFileProcessCreator()
     override protected val searchIndex = TransportIndexClient.singleton
-    
+
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
       new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
         DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter(), TempFileDeleter())
@@ -302,10 +309,10 @@ object FileGroupTaskWorker {
         .insert((documentSetId, filename, message))
 
     }
-    
+
     override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] =
       documentSetInfoUpdater.update(documentSetId)
-    
+
     private val documentSetInfoUpdater = DocumentSetInfoUpdater()
   }
 }
