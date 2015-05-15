@@ -11,25 +11,23 @@ object FileGroupTaskWorkerStartup {
 
   def apply(
     fileGroupJobQueuePath: String,
-    progressReporterPath: String,
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String)(implicit context: ActorContext): Props = {
     TempDirectory.create
-    TaskWorkerSupervisor(fileGroupJobQueuePath, progressReporterPath, fileRemovalQueuePath, fileGroupRemovalQueuePath)
+    TaskWorkerSupervisor(fileGroupJobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath)
   }
 
 }
 
 class TaskWorkerSupervisor(
   jobQueuePath: String,
-  progressReporterPath: String,
   fileRemovalQueuePath: String,
   fileGroupRemovalQueuePath: String) extends Actor {
 
   private val NumberOfTaskWorkers = 2
   private val taskWorkers: Seq[ActorRef] = Seq.tabulate(NumberOfTaskWorkers)(n =>
     context.actorOf(
-      FileGroupTaskWorker(jobQueuePath, progressReporterPath, fileRemovalQueuePath, fileGroupRemovalQueuePath),
+      FileGroupTaskWorker(jobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath),
       workerName(n)))
 
   private def workerName(n: Int): String = s"TaskWorker-$n"
@@ -51,9 +49,8 @@ class TaskWorkerSupervisor(
 object TaskWorkerSupervisor {
   def apply(
     jobQueuePath: String,
-    progressReporterPath: String,
     fileRemovalQueuePath: String,
     fileGroupRemovalQueuePath: String): Props =
       
-    Props(new TaskWorkerSupervisor(jobQueuePath, progressReporterPath, fileRemovalQueuePath, fileGroupRemovalQueuePath))
+    Props(new TaskWorkerSupervisor(jobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath))
 }

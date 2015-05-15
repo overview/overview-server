@@ -98,7 +98,6 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
   private val taskWorkerSupervisor = createMonitoredActor(
     FileGroupTaskWorkerStartup(
       fileGroupJobQueue.path.toString,
-      progressReporter.path.toString,
       fileRemovalQueue.path.toString,
       fileGroupRemovalRequestQueue.path.toString), "TaskWorkerSupervisor")
 

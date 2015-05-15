@@ -213,18 +213,15 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
 object FileGroupTaskWorker {
   def apply(jobQueueActorPath: String,
-            progressReporterActorPath: String,
             fileRemovalQueueActorPath: String,
             fileGroupRemovalQueueActorPath: String): Props =
     Props(new FileGroupTaskWorkerImpl(
       jobQueueActorPath,
-      progressReporterActorPath,
       fileRemovalQueueActorPath,
       fileGroupRemovalQueueActorPath))
 
   private class FileGroupTaskWorkerImpl(
     jobQueueActorPath: String,
-    progressReporterActorPath: String,
     fileRemovalQueueActorPath: String,
     fileGroupRemovalQueueActorPath: String) extends FileGroupTaskWorker with SlickSessionProvider {
 
