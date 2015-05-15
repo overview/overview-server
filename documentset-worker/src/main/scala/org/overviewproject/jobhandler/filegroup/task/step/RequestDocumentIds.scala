@@ -21,7 +21,7 @@ trait RequestDocumentIds extends TaskStep {
 
   protected val nextStep: Seq[Document] => TaskStep
 
-  override def execute: Future[TaskStep] = for {
+  override protected def doExecute: Future[TaskStep] = for {
     IdRequestResponse(ids) <- documentIdSupplier ? RequestIds(documentSetId, documentData.size)
   } yield nextStep(createDocuments(ids))
 

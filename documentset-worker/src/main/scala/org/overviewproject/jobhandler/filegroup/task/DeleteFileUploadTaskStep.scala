@@ -27,7 +27,7 @@ trait DeleteFileUploadTaskStep extends TaskStep {
 
   protected def nextStep: TaskStep
   
-  override def execute: Future[TaskStep] =
+  override protected def doExecute: Future[TaskStep] =
     deleteJobThenCleanup.map { _ => nextStep }
 
   private def deleteJobThenCleanup: Future[Unit] =

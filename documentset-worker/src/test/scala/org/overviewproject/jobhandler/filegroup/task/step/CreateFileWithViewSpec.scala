@@ -59,7 +59,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       }
 
       case class NextStep(file: File) extends TaskStep {
-        override def execute = Future.successful(this)
+        override protected def doExecute = Future.successful(this)
       }
       
       

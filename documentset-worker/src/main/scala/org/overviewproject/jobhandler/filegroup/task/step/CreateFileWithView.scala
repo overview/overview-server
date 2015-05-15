@@ -29,7 +29,7 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
 
   protected val nextStep: File => TaskStep
 
-  override def execute: Future[TaskStep] =
+  override protected def doExecute: Future[TaskStep] =
     for {
       (contentsLocation, sha1) <- moveLargeObjectToBlobStorage(uploadedFile.contentsOid, uploadedFile.size, BlobBucketId.FileContents)
       (viewLocation, viewSize) <- createView(uploadedFile)

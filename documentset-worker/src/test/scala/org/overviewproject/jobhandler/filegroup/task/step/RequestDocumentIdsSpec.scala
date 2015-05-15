@@ -66,7 +66,7 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
   }
 
   case class NextStep(documents: Seq[Document]) extends TaskStep {
-    override def execute = Future.successful(this)
+    override protected def doExecute = Future.successful(this)
   }
 
 

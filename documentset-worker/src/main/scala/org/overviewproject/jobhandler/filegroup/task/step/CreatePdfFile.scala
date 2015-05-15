@@ -23,7 +23,7 @@ trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
 
   protected val nextStep: File => TaskStep
 
-  override def execute: Future[TaskStep] = for {
+  override protected def doExecute: Future[TaskStep] = for {
     upload <- findUpload
     (location, sha1) <- moveLargeObjectToBlobStorage(upload.contentsOid, upload.size)
     file <- createFile(upload.name, upload.size, location, sha1)

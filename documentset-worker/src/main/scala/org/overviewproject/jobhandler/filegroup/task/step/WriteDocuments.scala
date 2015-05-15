@@ -17,7 +17,7 @@ trait WriteDocuments extends TaskStep {
 
   protected val documents: Seq[Document]
 
-  override def execute: Future[TaskStep] = {
+  override protected def doExecute: Future[TaskStep] = {
     val write = writeDocuments
     val index = indexDocuments
 

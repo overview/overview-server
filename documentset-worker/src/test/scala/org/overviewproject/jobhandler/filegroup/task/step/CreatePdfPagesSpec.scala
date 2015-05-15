@@ -31,7 +31,7 @@ class CreatePdfPagesSpec extends Specification with Mockito {
   }
 
   case class NextStep(pages: Iterable[PdfPageDocumentData]) extends TaskStep {
-    override def execute = Future.successful(this)
+    override protected def doExecute = Future.successful(this)
   }
 
   trait FileScope extends Scope {

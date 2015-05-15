@@ -283,7 +283,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       val options = UploadProcessOptions("en", false)
 
       class SimpleTaskStep(n: Int) extends TaskStep {
-        override def execute: Future[TaskStep] = {
+        override protected def doExecute: Future[TaskStep] = {
           val nextStep = if (n == 0) FinalStep else new SimpleTaskStep(n - 1)
           Future.successful(nextStep)
         }
@@ -292,7 +292,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       val message = "failure"
 
       class FailingStep extends TaskStep {
-        override def execute: Future[TaskStep] = Future {
+        override protected def doExecute: Future[TaskStep] = Future {
           throw new Exception(message)
         }
       }
@@ -315,7 +315,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       override def firstStep: TaskStep = new WaitingStep
 
       class WaitingStep extends TaskStep {
-        override def execute: Future[TaskStep] =
+        override protected def doExecute: Future[TaskStep] =
           step.future.map { _ =>
             new FailingStep
           }

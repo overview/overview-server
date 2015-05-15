@@ -23,7 +23,7 @@ trait CreatePdfPages extends TaskStep {
     def savePages(fileId: Long, pdfPages: Seq[PdfPage]): Seq[Long]
   }
 
-  override def execute: Future[TaskStep] = for {
+  override protected def doExecute: Future[TaskStep] = for {
     pdfPages <- loadPages(file.viewLocation)
     pageAttributes <- pageSaver.savePages(file.id, pdfPages)
   } yield {

@@ -80,7 +80,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
   }
 
   case object NextStep extends TaskStep {
-    override def execute = Future.successful(this)
+    override protected def doExecute = Future.successful(this)
   }
 
   class TestCreatePdfFile(
