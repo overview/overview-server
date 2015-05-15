@@ -10,9 +10,14 @@ import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.overviewproject.models.File
 
-trait CreatePdfPages extends TaskStep {
+trait CreatePdfPages extends UploadedFileProcessStep {
 
+  
   protected val file: File
+  
+  override protected val documentSetId: Long
+  override protected lazy val filename: String = file.name
+  
   protected val pdfProcessor: PdfProcessor
 
   protected val pageSaver: PageSaver
@@ -47,10 +52,11 @@ trait CreatePdfPages extends TaskStep {
 
 object CreatePdfPages {
 
-  def apply(file: File, nextStep: Seq[PdfPageDocumentData] => TaskStep): CreatePdfPages = 
-    new CreatePdfPagesImpl(file, nextStep)
+  def apply(documentSetId: Long, file: File, nextStep: Seq[PdfPageDocumentData] => TaskStep): CreatePdfPages = 
+    new CreatePdfPagesImpl(documentSetId, file, nextStep)
   
   private class CreatePdfPagesImpl(
+    override protected val documentSetId: Long,
     override protected val file: File,
     override protected val nextStep: Seq[PdfPageDocumentData] => TaskStep) extends CreatePdfPages {
 

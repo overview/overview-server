@@ -18,11 +18,18 @@ trait UploadedFileProcessCreator {
   def create(uploadedFile: GroupedFileUpload, options: UploadProcessOptions,
       documentSetId: Long, documentIdSupplier: ActorRef): UploadedFileProcess =
     withLargeObjectInputStream(uploadedFile.contentsOid) { stream =>
+      
+      val name = uploadedFile.name
+      
       documentTypeDetector.detect(uploadedFile.name, stream) match {
-        case PdfDocument if options.splitDocument => CreateDocumentFromPdfPage(documentSetId, documentIdSupplier)
-        case PdfDocument => CreateDocumentFromPdfFile(documentSetId, documentIdSupplier)
-        case OfficeDocument if options.splitDocument => CreateDocumentsFromConvertedFilePages(documentSetId, documentIdSupplier)
-        case OfficeDocument => CreateDocumentFromConvertedFile(documentSetId, documentIdSupplier)
+        case PdfDocument if options.splitDocument =>
+          CreateDocumentFromPdfPage(documentSetId, name, documentIdSupplier)
+        case PdfDocument => 
+          CreateDocumentFromPdfFile(documentSetId, name, documentIdSupplier)
+        case OfficeDocument if options.splitDocument =>
+          CreateDocumentsFromConvertedFilePages(documentSetId, name, documentIdSupplier)
+        case OfficeDocument => 
+          CreateDocumentFromConvertedFile(documentSetId, name, documentIdSupplier)
       }
     }
 

@@ -35,6 +35,7 @@ class CreatePdfPagesSpec extends Specification with Mockito {
   }
 
   trait FileScope extends Scope {
+    val documentSetId: Long = 10l
     val fileId: Long = 1l
     val fileName: String = "file name"
     val viewLocation: String = "view:location"
@@ -52,11 +53,13 @@ class CreatePdfPagesSpec extends Specification with Mockito {
 
     val pageData = pageAttributes.map { p => PdfPageDocumentData(fileName, fileId, p.pageNumber, p.id, pageText) }
 
-    val createPdfPages = new TestCreatePdfPages(file)
+    val createPdfPages = new TestCreatePdfPages(documentSetId, file)
 
     def pageSaver = createPdfPages.mockPageSaver
     
-  class TestCreatePdfPages(override protected val file: File)
+  class TestCreatePdfPages(
+      override protected val documentSetId: Long, 
+      override protected val file: File)
     extends CreatePdfPages {
     override protected val pdfProcessor = smartMock[PdfProcessor]
     override protected val pageSaver = smartMock[PageSaver]

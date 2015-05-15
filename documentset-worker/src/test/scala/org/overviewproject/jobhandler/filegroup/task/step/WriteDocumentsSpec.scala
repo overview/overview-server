@@ -54,6 +54,8 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
     mockSearchIndex.addDocuments(Seq(mockDocument)) returns Future.successful(())
 
     protected class TestWriteDocuments extends WriteDocuments {
+      override protected val documentSetId = 1l
+      override protected val filename = "filename"
       override protected val documents = Seq(mockDocument)
       override protected val bulkDocumentWriter = mockDocumentWriter
       override protected val searchIndex = mockSearchIndex

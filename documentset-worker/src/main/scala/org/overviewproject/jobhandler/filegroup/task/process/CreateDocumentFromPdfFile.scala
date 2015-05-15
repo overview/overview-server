@@ -6,12 +6,12 @@ import org.overviewproject.models.File
 
 
 object CreateDocumentFromPdfFile {
-  def apply(documentSetId: Long, documentIdSupplier: ActorRef) = new UploadedFileProcess {
+  def apply(documentSetId: Long, filename: String, documentIdSupplier: ActorRef) = new UploadedFileProcess {
     override protected val steps =
-      DoCreatePdfFile(documentSetId).andThen(
+      DoCreatePdfFile(documentSetId, filename: String).andThen(
         DoExtractTextFromPdf(documentSetId).andThen(
-          DoRequestDocumentIds(documentIdSupplier, documentSetId).andThen(
-            DoWriteDocuments())))
+          DoRequestDocumentIds(documentIdSupplier, documentSetId, filename).andThen(
+            DoWriteDocuments(documentSetId, filename))))
 
   }
 }

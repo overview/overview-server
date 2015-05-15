@@ -6,9 +6,9 @@ import org.overviewproject.models.File
 import org.overviewproject.models.GroupedFileUpload
 
 object DoCreatePdfFile {
-   def  apply(documentSetId: Long) = new StepGenerator[GroupedFileUpload, File] {
+   def  apply(documentSetId: Long, name: String) = new StepGenerator[GroupedFileUpload, File] {
      
      override def generate(uploadedFile: GroupedFileUpload): TaskStep = 
-       CreatePdfFile(documentSetId, uploadedFile, nextStepFn)
+       CreatePdfFile(documentSetId, name, uploadedFile, nextStepFn)
    }
 }

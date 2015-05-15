@@ -51,6 +51,7 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
     class TestRequestDocumentIds(override val documentSetId: Long, override val documentIdSupplier: ActorRef) extends RequestDocumentIds {
       override protected val documentData = Seq.fill(2)(inputData)
       override protected val nextStep = NextStep 
+      override protected val filename = "file"
     }
 
     class SingleIdSupplier extends TestActor.AutoPilot {

@@ -14,10 +14,12 @@ import org.overviewproject.models.{ File, GroupedFileUpload, TempDocumentSetFile
 import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.postgres.LargeObjectInputStream
 
-trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
-  protected val documentSetId: Long
+trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with SlickClient {
   protected val uploadedFile: GroupedFileUpload
 
+  override protected val documentSetId: Long
+  override protected val filename: String = uploadedFile.name
+  
   protected val blobStorage: BlobStorage
   protected def largeObjectInputStream(oid: Long): InputStream
 
@@ -64,11 +66,12 @@ trait CreatePdfFile extends TaskStep with LargeObjectMover with SlickClient {
 
 object CreatePdfFile {
 
-  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, next: File => TaskStep): CreatePdfFile =
-    new CreatePdfFileImpl(documentSetId, uploadedFile, next)
+  def apply(documentSetId: Long, filename: String, uploadedFile: GroupedFileUpload, next: File => TaskStep): CreatePdfFile =
+    new CreatePdfFileImpl(documentSetId, filename, uploadedFile, next)
 
   private class CreatePdfFileImpl(
     override protected val documentSetId: Long,
+    override protected val filename: String,
     override protected val uploadedFile: GroupedFileUpload,
     override protected val nextStep: File => TaskStep) extends CreatePdfFile with SlickSessionProvider {
 

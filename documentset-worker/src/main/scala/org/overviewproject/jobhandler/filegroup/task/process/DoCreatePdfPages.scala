@@ -7,10 +7,10 @@ import org.overviewproject.models.File
 
 object DoCreatePdfPages {
 
-  def apply() = new StepGenerator[File, Seq[DocumentData]] {
+  def apply(documentSetId: Long) = new StepGenerator[File, Seq[DocumentData]] {
     
     override def generate(file: File): TaskStep = 
-      CreatePdfPages(file, nextStepFn)
+      CreatePdfPages(documentSetId, file, nextStepFn)
     
   }
 }

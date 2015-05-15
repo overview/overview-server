@@ -9,7 +9,10 @@ import org.overviewproject.util.BulkDocumentWriter
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
 
-trait WriteDocuments extends TaskStep {
+trait WriteDocuments extends UploadedFileProcessStep {
+
+  override protected val documentSetId: Long
+  override protected val filename: String
 
   protected val storage: Storage
   protected val bulkDocumentWriter: BulkDocumentWriter
@@ -41,14 +44,16 @@ trait WriteDocuments extends TaskStep {
 
   private def indexDocuments: Future[Unit] = searchIndex.addDocuments(documents)
 
-
 }
 
 object WriteDocuments {
 
-  def apply(documents: Seq[Document]): WriteDocuments = new WriteDocumentsImpl(documents)
+  def apply(documentSetId: Long, filename: String, documents: Seq[Document]): WriteDocuments =
+    new WriteDocumentsImpl(documentSetId, filename, documents)
 
   private class WriteDocumentsImpl(
+    override protected val documentSetId: Long,
+    override protected val filename: String,
     override protected val documents: Seq[Document]) extends WriteDocuments {
 
     override protected val bulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex // Thread safe?

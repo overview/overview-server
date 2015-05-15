@@ -9,10 +9,13 @@ import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.models.File
 
-trait ExtractTextFromPdf extends TaskStep {
+trait ExtractTextFromPdf extends UploadedFileProcessStep {
 
   protected val file: File
 
+  override protected val documentSetId: Long
+  override protected lazy val filename: String = file.name
+  
   protected val pdfProcessor: PdfProcessor
   protected val nextStep: Seq[PdfFileDocumentData] => TaskStep
 
@@ -45,7 +48,7 @@ object ExtractTextFromPdf {
     new ExtractTextFromPdfImpl(documentSetId, file, next)
 
   private class ExtractTextFromPdfImpl(
-    documentSetId: Long,
+    override protected val documentSetId: Long,
     override protected val file: File,
     override protected val nextStep: Seq[PdfFileDocumentData] => TaskStep) extends ExtractTextFromPdf {
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl

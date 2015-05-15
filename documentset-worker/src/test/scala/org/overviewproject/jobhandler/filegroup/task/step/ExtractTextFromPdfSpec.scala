@@ -56,6 +56,7 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
     }
 
     class TestExtractFromPdf extends ExtractTextFromPdf {
+      override protected val documentSetId = 1l
       override protected val file = documentFile
       override protected val nextStep = { documentData => NextStep(documentData) }
       override protected val pdfProcessor = smartMock[PdfProcessor]

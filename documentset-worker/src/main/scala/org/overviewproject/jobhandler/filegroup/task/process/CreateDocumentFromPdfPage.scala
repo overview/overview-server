@@ -4,12 +4,12 @@ import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 
 object CreateDocumentFromPdfPage {
-  def apply(documentSetId: Long, documentIdSupplier: ActorRef) = new UploadedFileProcess {
+  def apply(documentSetId: Long, filename: String, documentIdSupplier: ActorRef) = new UploadedFileProcess {
     override protected val steps =
-      DoCreatePdfFile(documentSetId).andThen(
-        DoCreatePdfPages().andThen(
-          DoRequestDocumentIds(documentIdSupplier, documentSetId).andThen(
-            DoWriteDocuments())))
+      DoCreatePdfFile(documentSetId, filename).andThen(
+        DoCreatePdfPages(documentSetId).andThen(
+          DoRequestDocumentIds(documentIdSupplier, documentSetId, filename).andThen(
+            DoWriteDocuments(documentSetId, filename))))
 
   }
 }

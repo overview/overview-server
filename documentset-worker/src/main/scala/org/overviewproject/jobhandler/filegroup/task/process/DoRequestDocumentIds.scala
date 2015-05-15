@@ -8,10 +8,10 @@ import org.overviewproject.models.Document
 import akka.actor.ActorRef
 
 object DoRequestDocumentIds {
-  def apply(documentIdSupplier: ActorRef, documentSetId: Long) =
+  def apply(documentIdSupplier: ActorRef, documentSetId: Long, filename: String) =
     new StepGenerator[Seq[DocumentData], Seq[Document]] {
       override def generate(d: Seq[DocumentData]): TaskStep = {
-        RequestDocumentIds(documentIdSupplier, documentSetId, d, nextStepFn)
+        RequestDocumentIds(documentIdSupplier, documentSetId, filename, d, nextStepFn)
       }
     }
 }

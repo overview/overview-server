@@ -6,10 +6,10 @@ import org.overviewproject.models.Document
 
 
 object DoWriteDocuments {
-  def apply() = new StepGenerator[Seq[Document], Unit] {
+  def apply(documentSetId: Long, filename: String) = new StepGenerator[Seq[Document], Unit] {
 
     override def generate(documents: Seq[Document]): TaskStep =
-      WriteDocuments(documents)
+      WriteDocuments(documentSetId, filename, documents)
 
   }
 }
