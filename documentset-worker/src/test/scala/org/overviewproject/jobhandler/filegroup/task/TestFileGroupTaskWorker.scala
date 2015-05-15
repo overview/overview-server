@@ -7,6 +7,8 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.searchindex.ElasticSearchIndexClient
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 
 class TestFileGroupTaskWorker(jobQueuePath: String,
                               progressReporterPath: String,
@@ -39,8 +41,8 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
 
 
 
-  override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
-    StepInSequence(1, DeleteFileUploadComplete(documentSetId, fileGroupId))
+  override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep =
+    FinalStep
 
   override protected def findUploadedFile(uploadedFileId: Long) = Future.successful(uploadedFile)
   override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String) =

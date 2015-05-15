@@ -7,6 +7,8 @@ import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.TempFileDeleter
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 
 case class DeleteFileUploadComplete(documentSetId: Long, fileGroupId: Long) extends FileGroupTaskStep {
   override def execute = this
@@ -17,40 +19,54 @@ case class DeleteFileUploadComplete(documentSetId: Long, fileGroupId: Long) exte
  *
  * FIXME: [[execute]] should return a [[Future]], then we wouldn't have to explicitly block.
  */
-class DeleteFileUploadTaskStep(documentSetId: Long, fileGroupId: Long,
-                               jobDeleter: DocumentSetCreationJobDeleter,
-                               documentSetDeleter: DocumentSetDeleter,
-                               fileGroupDeleter: FileGroupDeleter,
-                               tempFileDeleter: TempFileDeleter)
-  extends FileGroupTaskStep {
+trait DeleteFileUploadTaskStep extends TaskStep {
+  protected val jobDeleter: DocumentSetCreationJobDeleter
+  protected val documentSetDeleter: DocumentSetDeleter
+  protected val fileGroupDeleter: FileGroupDeleter
+  protected val tempFileDeleter: TempFileDeleter
 
-  override def execute: FileGroupTaskStep =
-    Await.result(
-      deleteJobThenCleanup,
-      Duration.Inf)
+  protected val documentSetId: Long
+  protected val fileGroupId: Long
 
-  private def deleteJobThenCleanup: Future[FileGroupTaskStep] =
+  protected def nextStep: TaskStep
+  
+  override def execute: Future[TaskStep] =
+    deleteJobThenCleanup.map { _ => nextStep }
+
+  private def deleteJobThenCleanup: Future[Unit] =
     for {
-      first <- jobDeleter.deleteByDocumentSet(documentSetId)
-      next <- deleteTempFilesThenDeleteUpload
-    } yield next
+      job <- jobDeleter.deleteByDocumentSet(documentSetId)
+      tempFiles <- tempFileDeleter.delete(documentSetId) 
+      upload <- deleteUploadRemains     
+    } yield ()
 
-  private def deleteTempFilesThenDeleteUpload: Future[FileGroupTaskStep] =
-    for {
-      first <- tempFileDeleter.delete(documentSetId)
-      next <- deleteUploadRemains
-    } yield next
-    
-    
-  private def deleteUploadRemains: Future[FileGroupTaskStep] = {
+
+  private def deleteUploadRemains: Future[Unit] = {
     val documentSetDeletion = documentSetDeleter.delete(documentSetId)
     val fileGroupDeletion = fileGroupDeleter.delete(fileGroupId)
 
     for {
-      d <- documentSetDeletion
-      f <- fileGroupDeletion
-    } yield DeleteFileUploadComplete(documentSetId, fileGroupId)
+      documentSet <- documentSetDeletion
+      fileGroup <- fileGroupDeletion
+    } yield ()
 
   }
 
+}
+
+object DeleteFileUploadTaskStep {
+  def apply(documentSetId: Long, fileGroupId: Long, nextStep: TaskStep): DeleteFileUploadTaskStep =
+    new DeleteFileUploadTaskStepImpl(documentSetId, fileGroupId, nextStep)
+
+  private class DeleteFileUploadTaskStepImpl(
+    override protected val documentSetId: Long,
+    override protected val fileGroupId: Long,
+    override protected val nextStep: TaskStep) extends DeleteFileUploadTaskStep {
+
+    override protected val jobDeleter = DocumentSetCreationJobDeleter()
+    override protected val documentSetDeleter = DocumentSetDeleter()
+    override protected val fileGroupDeleter = FileGroupDeleter()
+    override protected val tempFileDeleter = TempFileDeleter()
+
+  }
 }

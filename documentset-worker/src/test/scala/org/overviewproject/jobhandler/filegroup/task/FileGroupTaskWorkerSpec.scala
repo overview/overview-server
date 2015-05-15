@@ -158,25 +158,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
     }
 
-    "notify file removal queue after file upload job is deleted" in new RunningTaskWorkerContext {
-      createWorker
-
-      createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
-
-      jobQueueProbe.expectInitialReadyForTask
-
-      fileRemovalQueueProbe.expectMsg(RemoveFiles)
-    }
-
-    "notify file group removal queue after file upload job is deleted" in new RunningTaskWorkerContext {
-      createWorker
-
-      createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
-
-      jobQueueProbe.expectInitialReadyForTask
-
-      fileGroupRemovalQueueProbe.expectMsg(RemoveFileGroup(fileGroupId))
-    }
 
     "ignore CancelTask message if not working on a task" in new RunningTaskWorkerContext {
       createJobQueue

@@ -14,57 +14,49 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.concurrent.TimeoutException
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.TempFileDeleter
+import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
+import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 
 class DeleteFileUploadTaskStepSpec extends Specification with Mockito with NoTimeConversions {
 
   "DeleteFileUploadTaskStep" should {
 
     "complete when all deleters complete" in new FileUploadScope {
-      val result = Future { step.execute }
+      val result = step.execute
 
       result.isCompleted must beFalse
 
       jobDeleted.success(())
-      documentSetDeleted.success(())
-
-      Await.result(result, 10 millis) must throwA[TimeoutException]
-
-      fileGroupDeleted.success(())
-      Await.result(result, 10 millis) must throwA[TimeoutException]
-      
       tempFileDeleted.success(())
-      
-      Await.result(result, 10 millis)
+      documentSetDeleted.success(())
+      fileGroupDeleted.success(())
 
-      result.isCompleted must beTrue
-
-      result must beEqualTo(DeleteFileUploadComplete(documentSetId, fileGroupId)).await
+      result must beEqualTo(FinalStep).await
     }
-    
+
     "delete job before starting other deleters" in new FileUploadScope {
-      val result = Future { step.execute }
-      
+      val result = step.execute
+
       tempFileDeleted.success(())
       documentSetDeleted.success(())
       fileGroupDeleted.success(())
-      
-      there was no(tempFileDeleter).delete(documentSetId)
-      there was no(documentSetDeleter).delete(documentSetId)
-      there was no(fileGroupDeleter).delete(fileGroupId)
+
+      there was one(mockJobDeleter).deleteByDocumentSet(documentSetId)
+      there was no(mockTempFileDeleter).delete(documentSetId)
+      there was no(mockDocumentSetDeleter).delete(documentSetId)
+      there was no(mockFileGroupDeleter).delete(fileGroupId)
     }
-    
+
     "delete temp files before starting other deleters" in new FileUploadScope {
-      val result = Future { step.execute }
-      
+      val result = step.execute
+
       jobDeleted.success(())
       documentSetDeleted.success(())
       fileGroupDeleted.success(())
-      
-      Await.result(result, 10 millis) must throwA[TimeoutException]
-      
-      there was one(tempFileDeleter).delete(documentSetId)
-      there was no(documentSetDeleter).delete(documentSetId)
-      there was no(fileGroupDeleter).delete(fileGroupId)
+
+      there was one(mockTempFileDeleter).delete(documentSetId)
+      there was no(mockDocumentSetDeleter).delete(documentSetId)
+      there was no(mockFileGroupDeleter).delete(fileGroupId)
     }
   }
 
@@ -75,19 +67,30 @@ class DeleteFileUploadTaskStepSpec extends Specification with Mockito with NoTim
     val documentSetDeleted = Promise[Unit]()
     val fileGroupDeleted = Promise[Unit]()
     val tempFileDeleted = Promise[Unit]()
-    
-    val jobDeleter = smartMock[DocumentSetCreationJobDeleter]
-    val documentSetDeleter = smartMock[DocumentSetDeleter]
-    val fileGroupDeleter = smartMock[FileGroupDeleter]
-    val tempFileDeleter = smartMock[TempFileDeleter]
-    
-    jobDeleter.deleteByDocumentSet(documentSetId) returns jobDeleted.future
-    documentSetDeleter.delete(documentSetId) returns documentSetDeleted.future
-    fileGroupDeleter.delete(fileGroupId) returns fileGroupDeleted.future
-    tempFileDeleter.delete(documentSetId) returns tempFileDeleted.future
 
-    val step = new DeleteFileUploadTaskStep(documentSetId, fileGroupId, 
-        jobDeleter, documentSetDeleter, fileGroupDeleter, tempFileDeleter)
+    val mockJobDeleter = smartMock[DocumentSetCreationJobDeleter]
+    val mockDocumentSetDeleter = smartMock[DocumentSetDeleter]
+    val mockFileGroupDeleter = smartMock[FileGroupDeleter]
+    val mockTempFileDeleter = smartMock[TempFileDeleter]
+
+    mockJobDeleter.deleteByDocumentSet(documentSetId) returns jobDeleted.future
+    mockDocumentSetDeleter.delete(documentSetId) returns documentSetDeleted.future
+    mockFileGroupDeleter.delete(fileGroupId) returns fileGroupDeleted.future
+    mockTempFileDeleter.delete(documentSetId) returns tempFileDeleted.future
+
+    val step = new TestDeleteFileUploadTaskStep(documentSetId, fileGroupId)
+
+    class TestDeleteFileUploadTaskStep(
+      override protected val documentSetId: Long,
+      override protected val fileGroupId: Long) extends DeleteFileUploadTaskStep {
+      override protected def nextStep: TaskStep = FinalStep
+      
+      override protected val jobDeleter = mockJobDeleter
+      override protected val documentSetDeleter = mockDocumentSetDeleter
+      override protected val fileGroupDeleter = mockFileGroupDeleter
+      override protected val tempFileDeleter = mockTempFileDeleter
+
+    }
   }
 
 }

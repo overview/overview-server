@@ -24,6 +24,7 @@ import org.overviewproject.models.tables.DocumentProcessingErrors
 import org.overviewproject.models.DocumentProcessingError
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
+import org.overviewproject.jobhandler.filegroup.task.step.RemoveDeletedObjects
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -92,7 +93,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   private case class DeleteFileUploadJobComplete(documentSetId: Long)
 
-  protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep
+  protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep
 
   protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
   protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Future[Unit]
@@ -147,7 +148,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), ExternalActors(jobQueue, progressReporter)) => {
-      executeTaskStep(startDeleteFileUploadJob(documentSetId, fileGroupId))
+      startDeleteFileUploadJob(documentSetId, fileGroupId).execute pipeTo self
 
       goto(Working) using TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, 0)
     }
@@ -155,14 +156,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Working) {
-    case Event(DeleteFileUploadComplete(documentSetId, fileGroupId), TaskInfo(jobQueue, progressReporter, _, _, _)) => {
-      fileRemovalQueue ! RemoveFiles
-      fileGroupRemovalQueue ! RemoveFileGroup(fileGroupId)
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
-
-      goto(Ready) using ExternalActors(jobQueue, progressReporter)
-    }
     case Event(FinalStep, TaskInfo(jobQueue, progressReporter, documentSetId, _, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
@@ -268,9 +261,9 @@ object FileGroupTaskWorker {
     override protected val uploadedFileProcessCreator = UploadedFileProcessCreator()
     override protected val searchIndex = TransportIndexClient.singleton
 
-    override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): FileGroupTaskStep =
-      new DeleteFileUploadTaskStep(documentSetId, fileGroupId,
-        DocumentSetCreationJobDeleter(), DocumentSetDeleter(), FileGroupDeleter(), TempFileDeleter())
+    override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep =
+      DeleteFileUploadTaskStep(documentSetId, fileGroupId,
+        RemoveDeletedObjects(fileGroupId, fileRemovalQueue, fileGroupRemovalQueue))
 
     override protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]] = db { implicit session =>
       GroupedFileUploads.filter(_.id === uploadedFileId).firstOption
