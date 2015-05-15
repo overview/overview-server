@@ -187,11 +187,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
 
-    case Event(step: FileGroupTaskStep, _) => {
-      executeTaskStep(step)
-
-      stay
-    }
     case Event(CancelTask, _)    => goto(Cancelled)
     case Event(TaskAvailable, _) => stay
   }
@@ -204,13 +199,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Ready) using ExternalActors(jobQueue, progressReporter)
     }
 
-    case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, progressReporter, documentSetId, fileGroupId, uploadedFileId)) => {
-      step.cancel
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
-
-      goto(Ready) using ExternalActors(jobQueue, progressReporter)
-    }
     case Event(TaskAvailable, _) => stay
   }
 
@@ -228,8 +216,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     lookForJobQueue
     lookForProgressReporter
   }
-
-  private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
 
 }
 

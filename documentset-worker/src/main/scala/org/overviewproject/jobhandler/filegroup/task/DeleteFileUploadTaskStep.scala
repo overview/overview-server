@@ -10,9 +10,6 @@ import org.overviewproject.database.TempFileDeleter
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 
-case class DeleteFileUploadComplete(documentSetId: Long, fileGroupId: Long) extends FileGroupTaskStep {
-  override def execute = this
-}
 
 /**
  * Deletes the document set and file group.

@@ -25,15 +25,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
 
   val writeDocumentProcessingErrorFn = ParameterStore[(Long, String, String)]
   val updateDocumentSetInfoFn = ParameterStore[Long]
-
-  private case class StepInSequence(n: Int, finalStep: FileGroupTaskStep) extends FileGroupTaskStep {
-    def execute: FileGroupTaskStep = {
-      executeFn.store(())
-      if (n > 0) StepInSequence(n - 1, finalStep)
-      else finalStep
-    }
-  }
-
+  
   override protected val jobQueueSelection = context.actorSelection(jobQueuePath)
   override protected val progressReporterSelection = context.actorSelection(progressReporterPath)
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
