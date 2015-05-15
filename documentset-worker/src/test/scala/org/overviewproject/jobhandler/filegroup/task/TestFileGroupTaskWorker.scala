@@ -27,7 +27,6 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
   val updateDocumentSetInfoFn = ParameterStore[Long]
   
   override protected val jobQueueSelection = context.actorSelection(jobQueuePath)
-  override protected val progressReporterSelection = context.actorSelection(progressReporterPath)
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
 
