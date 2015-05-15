@@ -32,7 +32,6 @@ object FileGroupTaskWorkerProtocol {
   case object ReadyForTask
   case object CancelTask
 
-  case class RequestResponse(requestId: Long, documentIds: Seq[Long])
 
   trait TaskWorkerTask {
     val documentSetId: Long
@@ -84,12 +83,9 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   protected val uploadedFileProcessCreator: UploadedFileProcessCreator
   protected val searchIndex: ElasticSearchIndexClient
 
-  private val NumberOfExternalActors = 2
   private val JobQueueId: String = "Job Queue"
 
   private val RetryInterval: FiniteDuration = 1 second
-
-  private case class DeleteFileUploadJobComplete(documentSetId: Long)
 
   protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep
 
