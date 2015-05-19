@@ -13,11 +13,12 @@ import org.overviewproject.models.tables.GroupedFileUploads
 trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient {
   override protected val documentSetId: Long
 
-  override protected val filename: String = ""
-
   protected val uploadedFileId: Long
   protected val options: UploadProcessOptions
   protected val documentIdSupplier: ActorRef
+
+  override protected lazy val filename: String = s"Uploaded File id: $uploadedFileId"
+
 
   protected val uploadedFileProcessCreator: UploadedFileProcessCreator
 
