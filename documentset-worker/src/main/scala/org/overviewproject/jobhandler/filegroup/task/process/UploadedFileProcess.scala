@@ -4,7 +4,7 @@ import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.models.GroupedFileUpload
 import scala.concurrent.Future
 
-trait UploadedFileProcess {
+trait UploadedFileProcess { 
 
   def start(uploadedFile: GroupedFileUpload): Future[TaskStep] = steps.generate(uploadedFile).execute
   
