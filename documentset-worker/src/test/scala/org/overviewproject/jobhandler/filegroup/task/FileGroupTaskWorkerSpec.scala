@@ -6,25 +6,20 @@ import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
-import akka.actor.Props
 import akka.testkit.TestActor
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
 
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol.RemoveFiles
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol.RemoveFileGroup
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
-import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.test.ActorSystemContext
 import org.overviewproject.test.ForwardingActor
-import org.overviewproject.test.ParameterStore
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
+
 
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential
@@ -176,35 +171,12 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       var jobQueue: ActorRef = _
       var jobQueueProbe: JobQueueTestProbe = _
-      var progressReporter: ActorRef = _
-      var progressReporterProbe: TestProbe = _
-      var fileRemovalQueue: ActorRef = _
-      var fileRemovalQueueProbe: TestProbe = _
-      var fileGroupRemovalQueue: ActorRef = _
-      var fileGroupRemovalQueueProbe: TestProbe = _
 
       val JobQueueName = "jobQueue"
       val JobQueuePath = s"/user/$JobQueueName"
 
-      val ProgressReporterName = "progressReporter"
-      val ProgressReporterPath = s"/user/$ProgressReporterName"
-
-      val FileRemovalQueueName = "fileRemovalQueue"
-      val FileRemovalQueuePath = s"/user/$FileRemovalQueueName"
-
-      val FileGroupRemovalQueueName = "fileGroupRemovalQueue"
-      val FileGroupRemovalQueuePath = s"/user/$FileGroupRemovalQueueName"
-
-      val uploadedFileProcessCreator = smartMock[UploadedFileProcessCreator]
       val searchIndex = smartMock[ElasticSearchIndexClient]
       val documentIdSupplier: TestProbe = new TestProbe(system)
-
-      protected def createProgressReporter: TestProbe = {
-        progressReporterProbe = new TestProbe(system)
-        progressReporter = system.actorOf(ForwardingActor(progressReporterProbe.ref), ProgressReporterName)
-
-        progressReporterProbe
-      }
 
       protected def createJobQueue: JobQueueTestProbe = {
         jobQueueProbe = new JobQueueTestProbe(system)
@@ -213,36 +185,8 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
         jobQueueProbe
       }
 
-      protected def createFileRemovalQueue: TestProbe = {
-        fileRemovalQueueProbe = new TestProbe(system)
-        fileRemovalQueue = system.actorOf(ForwardingActor(fileRemovalQueueProbe.ref), FileRemovalQueueName)
-
-        fileRemovalQueueProbe
-      }
-
-      protected def createFileGroupRemovalQueue: TestProbe = {
-        fileGroupRemovalQueueProbe = new TestProbe(system)
-        fileGroupRemovalQueue = system.actorOf(ForwardingActor(fileGroupRemovalQueueProbe.ref), FileGroupRemovalQueueName)
-
-        fileGroupRemovalQueueProbe
-      }
-
-      protected def setupProcessSelection = {
-        val uploadedFileProcess = smartMock[UploadedFileProcess]
-
-        uploadedFileProcessCreator.create(any, any, any, any) returns uploadedFileProcess
-
-        uploadedFileProcess.start(any) returns firstStep.execute
-      }
 
       protected def firstStep: TaskStep = FinalStep
-
-      protected def uploadedFile: Option[GroupedFileUpload] = {
-        val f = smartMock[GroupedFileUpload]
-        f.name returns filename
-
-        Some(f)
-      }
 
     }
 
@@ -251,21 +195,9 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       var worker: TestActorRef[TestFileGroupTaskWorker] = _
 
       protected def createWorker: Unit = {
-        createFileGroupRemovalQueue
-        createFileRemovalQueue
-        createProgressReporter
-        setupProcessSelection
-
         worker = TestActorRef(new TestFileGroupTaskWorker(
-          JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
-          uploadedFileProcessCreator, searchIndex, uploadedFile, fileId, firstStep))
+          JobQueuePath, searchIndex, fileId, firstStep))
       }
-
-      protected def createPagesTaskStepsWereExecuted =
-        worker.underlyingActor.executeFn.wasCalledNTimes(2)
-
-      protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) =
-        worker.underlyingActor.deleteFileUploadJobFn.wasCalledWith((documentSetId, fileGroupId))
 
       protected def updateDocumentSetInfoWasCalled(documentSetId: Long) =
         worker.underlyingActor.updateDocumentSetInfoFn.wasCalledWith(documentSetId)

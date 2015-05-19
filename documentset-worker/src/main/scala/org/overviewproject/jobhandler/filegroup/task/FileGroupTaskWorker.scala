@@ -77,10 +77,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   import FileGroupTaskWorkerProtocol._
 
   protected val jobQueueSelection: ActorSelection
-  protected val fileRemovalQueue: ActorSelection
-  protected val fileGroupRemovalQueue: ActorSelection
 
-  protected val uploadedFileProcessCreator: UploadedFileProcessCreator
   protected val searchIndex: ElasticSearchIndexClient
 
   private val JobQueueId: String = "Job Queue"
@@ -89,8 +86,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep
 
-  protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
-  protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Future[Unit]
   protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
                                     options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep
 
@@ -213,37 +208,25 @@ object FileGroupTaskWorker {
   private class FileGroupTaskWorkerImpl(
     jobQueueActorPath: String,
     fileRemovalQueueActorPath: String,
-    fileGroupRemovalQueueActorPath: String) extends FileGroupTaskWorker with SlickSessionProvider {
+    fileGroupRemovalQueueActorPath: String) extends FileGroupTaskWorker {
 
-    import org.overviewproject.database.Slick.simple._
     import context.dispatcher
 
     override protected val jobQueueSelection = context.actorSelection(jobQueueActorPath)
-    override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
-    override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
+    
+    private val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
+    private val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
 
-    override protected val uploadedFileProcessCreator = UploadedFileProcessCreator()
     override protected val searchIndex = TransportIndexClient.singleton
 
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep =
       DeleteFileUploadTaskStep(documentSetId, fileGroupId,
         RemoveDeletedObjects(fileGroupId, fileRemovalQueue, fileGroupRemovalQueue))
 
-    override protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]] = db { implicit session =>
-      GroupedFileUploads.filter(_.id === uploadedFileId).firstOption
-    }
-
-    override protected def writeDocumentProcessingError(documentSetId: Long, filename: String,
-                                                        message: String): Future[Unit] = db { implicit session =>
-      DocumentProcessingErrors
-        .map(dpe => (dpe.documentSetId, dpe.textUrl, dpe.message))
-        .insert((documentSetId, filename, message))
-
-    }
 
     protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
-                                      options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep = 
-                                        CreateUploadedFileProcess(documentSetId, uploadedFileId, options, documentIdSupplier)
+                                      options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep =
+      CreateUploadedFileProcess(documentSetId, uploadedFileId, options, documentIdSupplier)
 
     override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] =
       documentSetInfoUpdater.update(documentSetId)
