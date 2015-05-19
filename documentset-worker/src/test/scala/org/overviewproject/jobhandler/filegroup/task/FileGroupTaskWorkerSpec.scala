@@ -26,7 +26,6 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 
-
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential
 
@@ -64,9 +63,11 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
+
+      processUploadedFileWasCalled(documentSetId, uploadedFileId, options, documentIdSupplier.ref)
     }
 
-    "write DocumentProcessingError when step fails" in new FailingProcessContext {
+    "treat failing step as completed step" in new FailingProcessContext {
       createJobQueue.handingOutTask(
         CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
 
@@ -78,9 +79,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
 
       jobQueueProbe.expectReadyForTask
-
-      writeDocumentProcessingErrorWasCalled(documentSetId, filename, message)
-
     }
 
     "write document set info when completing a document set" in new RunningTaskWorkerContext {
@@ -157,7 +155,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
     }
-
 
     "ignore CancelTask message if not working on a task" in new RunningTaskWorkerContext {
       createJobQueue
@@ -261,7 +258,7 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
         worker = TestActorRef(new TestFileGroupTaskWorker(
           JobQueuePath, ProgressReporterPath, FileRemovalQueuePath, FileGroupRemovalQueuePath,
-          uploadedFileProcessCreator, searchIndex, uploadedFile, fileId))
+          uploadedFileProcessCreator, searchIndex, uploadedFile, fileId, firstStep))
       }
 
       protected def createPagesTaskStepsWereExecuted =
@@ -272,6 +269,11 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
 
       protected def updateDocumentSetInfoWasCalled(documentSetId: Long) =
         worker.underlyingActor.updateDocumentSetInfoFn.wasCalledWith(documentSetId)
+
+      protected def processUploadedFileWasCalled(documentSetId: Long, uploadedFileId: Long,
+                                                 options: UploadProcessOptions, documentIdSupplier: ActorRef) =
+        worker.underlyingActor.processUploadedFileFn
+          .wasCalledWith((documentSetId, uploadedFileId, options, documentIdSupplier))
 
     }
 
@@ -303,9 +305,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
     trait FailingProcessContext extends MultistepProcessContext {
 
       override def firstStep: TaskStep = new FailingStep
-
-      def writeDocumentProcessingErrorWasCalled(documentSetId: Long, filename: String, message: String) =
-        worker.underlyingActor.writeDocumentProcessingErrorFn.wasCalledWith(documentSetId, filename, message)
 
     }
 

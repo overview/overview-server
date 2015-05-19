@@ -9,6 +9,7 @@ import akka.actor.ActorRef
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
+import org.overviewproject.database.SlickSessionProvider
 
 trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient {
   override protected val documentSetId: Long
@@ -18,7 +19,6 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient
   protected val documentIdSupplier: ActorRef
 
   override protected lazy val filename: String = s"Uploaded File id: $uploadedFileId"
-
 
   protected val uploadedFileProcessCreator: UploadedFileProcessCreator
 
@@ -32,4 +32,20 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient
     GroupedFileUploads.filter(_.id === uploadedFileId).first
 
   }
+}
+
+object CreateUploadedFileProcess {
+  def apply(documentSetId: Long, uploadedFileId: Long,
+            options: UploadProcessOptions, documentIdSupplier: ActorRef): CreateUploadedFileProcess =
+    new CreateUploadedFileProcessImpl(documentSetId, uploadedFileId, options, documentIdSupplier)
+
+  private class CreateUploadedFileProcessImpl(
+    override protected val documentSetId: Long,
+    override protected val uploadedFileId: Long,
+    override protected val options: UploadProcessOptions,
+    override protected val documentIdSupplier: ActorRef) extends CreateUploadedFileProcess with SlickSessionProvider {
+    
+    override protected val uploadedFileProcessCreator = UploadedFileProcessCreator()
+  }
+
 }

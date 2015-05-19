@@ -25,13 +25,13 @@ import org.overviewproject.models.DocumentProcessingError
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.jobhandler.filegroup.task.step.RemoveDeletedObjects
+import org.overviewproject.jobhandler.filegroup.task.step.CreateUploadedFileProcess
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
   case object TaskAvailable
   case object ReadyForTask
   case object CancelTask
-
 
   trait TaskWorkerTask {
     val documentSetId: Long
@@ -91,6 +91,9 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   protected def findUploadedFile(uploadedFileId: Long): Future[Option[GroupedFileUpload]]
   protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String): Future[Unit]
+  protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
+                                    options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep
+
   protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit]
 
   override def preStart = lookForExternalActors
@@ -124,10 +127,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier),
       ExternalActors(jobQueue)) => {
-      findUploadedFile(uploadedFileId).flatMap { uploadedFile =>
-        val process = uploadedFileProcessCreator.create(uploadedFile.get, options, documentSetId, documentIdSupplier)
-        process.start(uploadedFile.get)
-      } pipeTo self
+      processUploadedFile(documentSetId, uploadedFileId, options, documentIdSupplier).execute pipeTo self
 
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
     }
@@ -164,14 +164,9 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     }
     case Event(Failure(e), TaskInfo(jobQueue, documentSetId, _, uploadedFileId)) => {
       Logger.error(e.getMessage)
-      // FIXME: don't load info that should already be available
-      for {
-        upload <- findUploadedFile(uploadedFileId)
-        r <- writeDocumentProcessingError(documentSetId, upload.get.name, e.getMessage)
-      } {
-        jobQueue ! TaskDone(documentSetId, None)
-        jobQueue ! ReadyForTask
-      }
+
+      jobQueue ! TaskDone(documentSetId, None)
+      jobQueue ! ReadyForTask
 
       goto(Ready) using ExternalActors(jobQueue)
     }
@@ -199,7 +194,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   private def lookForJobQueue = jobQueueSelection ! Identify(JobQueueId)
-
 
   private def lookForExternalActors = {
     lookForJobQueue
@@ -246,6 +240,10 @@ object FileGroupTaskWorker {
         .insert((documentSetId, filename, message))
 
     }
+
+    protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
+                                      options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep = 
+                                        CreateUploadedFileProcess(documentSetId, uploadedFileId, options, documentIdSupplier)
 
     override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] =
       documentSetInfoUpdater.update(documentSetId)

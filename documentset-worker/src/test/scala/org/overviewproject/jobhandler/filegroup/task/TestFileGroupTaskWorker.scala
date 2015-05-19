@@ -17,7 +17,8 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
                               override protected val uploadedFileProcessCreator: UploadedFileProcessCreator,
                               override protected val searchIndex: ElasticSearchIndexClient,
                               uploadedFile: Option[GroupedFileUpload],
-                              outputFileId: Long) extends FileGroupTaskWorker {
+                              outputFileId: Long,
+                              processStep: TaskStep = FinalStep) extends FileGroupTaskWorker {
 
   val executeFn = ParameterStore[Unit]
   val deleteFileUploadJobFn = ParameterStore[(Long, Long)]
@@ -25,15 +26,21 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
 
   val writeDocumentProcessingErrorFn = ParameterStore[(Long, String, String)]
   val updateDocumentSetInfoFn = ParameterStore[Long]
-  
+  val processUploadedFileFn = ParameterStore[(Long, Long, UploadProcessOptions, ActorRef)]
+
   override protected val jobQueueSelection = context.actorSelection(jobQueuePath)
   override protected val fileRemovalQueue = context.actorSelection(fileRemovalQueuePath)
   override protected val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueuePath)
 
-
-
   override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep =
     FinalStep
+
+  override protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
+                                             options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep = {
+    processUploadedFileFn.store((documentSetId, uploadedFileId, options, documentIdSupplier))
+
+    processStep
+  }
 
   override protected def findUploadedFile(uploadedFileId: Long) = Future.successful(uploadedFile)
   override protected def writeDocumentProcessingError(documentSetId: Long, filename: String, message: String) =
@@ -41,6 +48,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
 
   override protected def updateDocumentSetInfo(documentSetId: Long) =
     Future.successful(updateDocumentSetInfoFn.store(documentSetId))
+
 }
 
 object TestFileGroupTaskWorker {
@@ -58,6 +66,6 @@ object TestFileGroupTaskWorker {
       progressReporterPath,
       fileRemovalQueuePath,
       fileGroupRemovalQueuePath,
-      uploadedFileProcessSelector, searchIndex, 
+      uploadedFileProcessSelector, searchIndex,
       uploadedFile, outputFileId))
 }
