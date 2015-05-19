@@ -20,8 +20,4 @@ trait TaskStep {
   protected def doExecute: Future[TaskStep]
   protected def errorHandler(t: Throwable): Unit = {}
 
-  private def handleAndRethrow(t: Throwable) = {
-    errorHandler(t)
-    throw t
-  }
 }

@@ -57,7 +57,7 @@ object FileGroupTaskWorkerFSM {
   sealed trait Data
   case class ExternalActorsFound(jobQueue: Option[ActorRef]) extends Data
   case class ExternalActors(jobQueue: ActorRef) extends Data
-  case class TaskInfo(queue: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
+  case class TaskInfo(queue: ActorRef, documentSetId: Long, exceptionsHandled: Boolean) extends Data
 
 }
 
@@ -118,29 +118,29 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(CreateSearchIndexAlias(documentSetId, fileGroupId), ExternalActors(jobQueue)) => {
       searchIndex.addDocumentSet(documentSetId).map { _ => FinalStep } pipeTo self
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, 0)
+      goto(Working) using TaskInfo(jobQueue, documentSetId, false)
     }
     case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier),
       ExternalActors(jobQueue)) => {
       processUploadedFile(documentSetId, uploadedFileId, options, documentIdSupplier).execute pipeTo self
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
+      goto(Working) using TaskInfo(jobQueue, documentSetId, true)
     }
     case Event(CompleteDocumentSet(documentSetId, fileGroupId), ExternalActors(jobQueue)) => {
       updateDocumentSetInfo(documentSetId).map { _ => FinalStep } pipeTo self
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, 0)
+      goto(Working) using TaskInfo(jobQueue, documentSetId, false)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), ExternalActors(jobQueue)) => {
       startDeleteFileUploadJob(documentSetId, fileGroupId).execute pipeTo self
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, 0)
+      goto(Working) using TaskInfo(jobQueue, documentSetId, false)
     }
     case Event(CancelTask, _) => stay
   }
 
   when(Working) {
-    case Event(FinalStep, TaskInfo(jobQueue, documentSetId, _, _)) => {
+    case Event(FinalStep, TaskInfo(jobQueue, documentSetId, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
@@ -150,14 +150,13 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       step.execute pipeTo self
       stay
     }
-    case Event(Failure(e), TaskInfo(_, _, _, 0)) => {
-      // uploadedFileId == 0 if the task is something other than creating a document from an upload
-      // We don't handle errors in this situation so the exception is rethrown in order to kill
+    case Event(Failure(e), TaskInfo(_, _, false)) => {
+      // If exceptions are not handled in the task step, the exception is re-thrown in order to kill
       // the worker and have the job rescheduled.
       Logger.error(e.getMessage)
       throw e
     }
-    case Event(Failure(e), TaskInfo(jobQueue, documentSetId, _, uploadedFileId)) => {
+    case Event(Failure(e), TaskInfo(jobQueue, documentSetId, true)) => {
       Logger.error(e.getMessage)
 
       jobQueue ! TaskDone(documentSetId, None)
@@ -171,7 +170,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   }
 
   when(Cancelled) {
-    case Event(step: TaskStep, TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)) => {
+    case Event(step: TaskStep, TaskInfo(jobQueue, documentSetId, _)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
