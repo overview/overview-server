@@ -151,14 +151,14 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       step.execute pipeTo self
       stay
     }
-    case Event(Failure(e), TaskInfo(_, _, false)) => {
+    case Event(Failure(e), TaskInfo(_, documentSetId, false)) => {
       // If exceptions are not handled in the task step, the exception is re-thrown in order to kill
       // the worker and have the job rescheduled.
-      Logger.error(e.getMessage)
+      Logger.error(s"Failed task for document set $documentSetId", e)
       throw e
     }
     case Event(Failure(e), TaskInfo(jobQueue, documentSetId, true)) => {
-      Logger.error(e.getMessage)
+      Logger.error(s"Failed document processing for documentSet $documentSetId", e)
 
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
