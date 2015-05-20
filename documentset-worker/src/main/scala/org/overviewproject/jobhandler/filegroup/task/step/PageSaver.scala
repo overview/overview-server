@@ -60,7 +60,6 @@ trait PageSaver extends SlickClient {
     db { implicit session =>
       val attributeTuples = pageAttributes
         .map(p => (p.fileId, p.pageNumber, Some(p.dataLocation), p.dataSize, Some(p.text)))
-      
 
       session.withTransaction {
         pageInserter.insertAll(attributeTuples: _*)
@@ -69,6 +68,7 @@ trait PageSaver extends SlickClient {
 }
 
 object PageSaver extends PageSaver with SlickSessionProvider {
+  import scala.util.control.Exception.ultimately
 
   override protected val pageBlobSaver: PageBlobSaver = new TempFilePageBlobSaver
 
@@ -81,10 +81,13 @@ object PageSaver extends PageSaver with SlickSessionProvider {
 
     def save(page: PdfPage): Future[String] = {
       val tempfile = new TempFile
-      tempfile.outputStream.write(page.data)
-      tempfile.outputStream.close
-      BlobStorage.create(BlobBucketId.PageData, tempfile.inputStream, page.data.length)
-      // yay, now data won't be in memory any more
+      
+      ultimately(tempfile.inputStream.close) {
+        tempfile.outputStream.write(page.data)
+        tempfile.outputStream.close
+        BlobStorage.create(BlobBucketId.PageData, tempfile.inputStream, page.data.length)
+        // yay, now data won't be in memory any more
+      }
     }
   }
 

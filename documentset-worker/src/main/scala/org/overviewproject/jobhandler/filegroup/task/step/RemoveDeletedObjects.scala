@@ -11,11 +11,11 @@ trait RemoveDeletedObjects extends TaskStep {
   protected val fileRemovalQueue: ActorSelection
   protected val fileGroupRemovalQueue: ActorSelection
   
-  override protected def doExecute: Future[TaskStep] = {
+  override protected def doExecute: Future[TaskStep] = AsFuture {
     fileRemovalQueue ! RemoveFiles
     fileGroupRemovalQueue ! RemoveFileGroup(fileGroupId)
     
-    Future.successful(FinalStep)
+    FinalStep
   }
 }
 

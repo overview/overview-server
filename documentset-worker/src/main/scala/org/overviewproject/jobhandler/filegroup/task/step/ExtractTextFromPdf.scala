@@ -1,9 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
 
 import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
@@ -15,11 +13,13 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
 
   override protected val documentSetId: Long
   override protected lazy val filename: String = file.name
-  
+
   protected val pdfProcessor: PdfProcessor
   protected val nextStep: Seq[PdfFileDocumentData] => TaskStep
 
-  override protected def doExecute: Future[TaskStep] = toFuture(nextStep(getDocumentInfo))
+  override protected def doExecute: Future[TaskStep] = for {
+    documentInfo <- AsFuture(getDocumentInfo)
+  } yield nextStep(documentInfo)
 
   private def getDocumentInfo: Seq[PdfFileDocumentData] = {
     val pdfDocument = pdfProcessor.loadFromBlobStorage(file.viewLocation)
@@ -28,13 +28,6 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
     Seq(PdfFileDocumentData(file.name, file.id, text))
   }
 
-  // FIXME: replace with Future.fromTry in Scala 2.11
-  private def toFuture(f: => TaskStep): Future[TaskStep] =
-    Try(f) match {
-      case Success(v) => Future.successful(v)
-      case Failure(e) => Future.failed(e)
-    }
-
   trait PdfProcessor {
     // should return Future[PdfDocument]
     def loadFromBlobStorage(location: String): PdfDocument
@@ -42,6 +35,7 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
 }
 
 object ExtractTextFromPdf {
+  import scala.concurrent.blocking
   import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 
   def apply(documentSetId: Long, file: File, next: Seq[PdfFileDocumentData] => TaskStep): ExtractTextFromPdf =
@@ -54,7 +48,7 @@ object ExtractTextFromPdf {
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
 
     private class PdfProcessorImpl extends PdfProcessor {
-      override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
+      override def loadFromBlobStorage(location: String): PdfDocument = blocking { new PdfBoxDocument(location) }
     }
 
   }

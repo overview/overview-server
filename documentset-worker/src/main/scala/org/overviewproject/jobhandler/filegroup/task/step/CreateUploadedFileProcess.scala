@@ -29,11 +29,9 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient
     firstStep <- process.start(uploadedFile)
   } yield firstStep
 
-  private def createProcess: Future[UploadedFileProcess] = asFuture {
+  private def createProcess: Future[UploadedFileProcess] = AsFuture {
     uploadedFileProcessCreator.create(uploadedFile, options, documentSetId, documentIdSupplier)
   }
-  
-  private def asFuture[T](f: => T): Future[T] = Future.fromTry(Try(f))
 }
 
 object CreateUploadedFileProcess {

@@ -13,7 +13,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 trait RequestDocumentIds extends UploadedFileProcessStep {
-  protected implicit val timeout = Timeout(5 seconds)
+  protected implicit val timeout = Timeout(5 seconds) // timeout for Ask request
   protected val documentIdSupplier: ActorRef
 
   override protected val documentSetId: Long
