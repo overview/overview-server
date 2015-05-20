@@ -81,13 +81,11 @@ object PageSaver extends PageSaver with SlickSessionProvider {
 
     def save(page: PdfPage): Future[String] = {
       val tempfile = new TempFile
-      
-      ultimately(tempfile.inputStream.close) {
-        tempfile.outputStream.write(page.data)
-        tempfile.outputStream.close
-        BlobStorage.create(BlobBucketId.PageData, tempfile.inputStream, page.data.length)
-        // yay, now data won't be in memory any more
-      }
+
+      tempfile.outputStream.write(page.data)
+      tempfile.outputStream.close
+      BlobStorage.create(BlobBucketId.PageData, tempfile.inputStream, page.data.length)
+      // yay, now data won't be in memory any more
     }
   }
 
