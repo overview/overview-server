@@ -9,6 +9,7 @@ import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.jobhandler.filegroup.task.UploadedFileProcessCreator
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
+import org.overviewproject.models.GroupedFileUpload
 
 import org.specs2.mock.Mockito
 
@@ -35,11 +36,11 @@ class CreateUploadedFileProcessSpec extends SlickSpecification with Mockito {
     
     selectedProcess.start(uploadedFile) returns Future.successful(selectedStep)
     
-    val createUploadedFileProcess = new TestCreateUploadedFileProcess(documentSetId, uploadedFile.id)
+    val createUploadedFileProcess = new TestCreateUploadedFileProcess(documentSetId, uploadedFile)
     
     class TestCreateUploadedFileProcess(
         override protected val documentSetId: Long,
-        override protected val uploadedFileId: Long)(implicit val session: Session) 
+        override protected val uploadedFile: GroupedFileUpload)(implicit val session: Session) 
       extends CreateUploadedFileProcess with SlickClientInSession {
       
       override protected val documentIdSupplier = idSupplier

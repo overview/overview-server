@@ -10,41 +10,43 @@ import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.database.SlickSessionProvider
+import scala.util.Try
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 
 trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient {
   override protected val documentSetId: Long
 
-  protected val uploadedFileId: Long
+  protected val uploadedFile: GroupedFileUpload
   protected val options: UploadProcessOptions
   protected val documentIdSupplier: ActorRef
 
-  override protected lazy val filename: String = s"Uploaded File id: $uploadedFileId"
+  override protected lazy val filename: String = uploadedFile.name
 
   protected val uploadedFileProcessCreator: UploadedFileProcessCreator
 
   override protected def doExecute: Future[TaskStep] = for {
-    uploadedFile <- findUploadedFile
-    process = uploadedFileProcessCreator.create(uploadedFile, options, documentSetId, documentIdSupplier)
+    process <- createProcess
     firstStep <- process.start(uploadedFile)
   } yield firstStep
 
-  private def findUploadedFile: Future[GroupedFileUpload] = db { implicit session =>
-    GroupedFileUploads.filter(_.id === uploadedFileId).first
-
+  private def createProcess: Future[UploadedFileProcess] = asFuture {
+    uploadedFileProcessCreator.create(uploadedFile, options, documentSetId, documentIdSupplier)
   }
+  
+  private def asFuture[T](f: => T): Future[T] = Future.fromTry(Try(f))
 }
 
 object CreateUploadedFileProcess {
-  def apply(documentSetId: Long, uploadedFileId: Long,
+  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload,
             options: UploadProcessOptions, documentIdSupplier: ActorRef): CreateUploadedFileProcess =
-    new CreateUploadedFileProcessImpl(documentSetId, uploadedFileId, options, documentIdSupplier)
+    new CreateUploadedFileProcessImpl(documentSetId, uploadedFile, options, documentIdSupplier)
 
   private class CreateUploadedFileProcessImpl(
     override protected val documentSetId: Long,
-    override protected val uploadedFileId: Long,
+    override protected val uploadedFile: GroupedFileUpload,
     override protected val options: UploadProcessOptions,
     override protected val documentIdSupplier: ActorRef) extends CreateUploadedFileProcess with SlickSessionProvider {
-    
+
     override protected val uploadedFileProcessCreator = UploadedFileProcessCreator()
   }
 

@@ -26,6 +26,7 @@ import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.jobhandler.filegroup.task.step.RemoveDeletedObjects
 import org.overviewproject.jobhandler.filegroup.task.step.CreateUploadedFileProcess
+import org.overviewproject.jobhandler.filegroup.task.step.FindUploadedFile
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -212,7 +213,7 @@ object FileGroupTaskWorker {
     import context.dispatcher
 
     override protected val jobQueueSelection = context.actorSelection(jobQueueActorPath)
-    
+
     private val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
     private val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
 
@@ -222,10 +223,10 @@ object FileGroupTaskWorker {
       DeleteFileUploadTaskStep(documentSetId, fileGroupId,
         RemoveDeletedObjects(fileGroupId, fileRemovalQueue, fileGroupRemovalQueue))
 
-
     protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
                                       options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep =
-      CreateUploadedFileProcess(documentSetId, uploadedFileId, options, documentIdSupplier)
+      FindUploadedFile(documentSetId, uploadedFileId,
+        CreateUploadedFileProcess(documentSetId, _, options, documentIdSupplier))
 
     override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] =
       documentSetInfoUpdater.update(documentSetId)
