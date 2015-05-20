@@ -16,44 +16,44 @@ import org.overviewproject.util.Configuration
 class LibreOfficeDocumentConverterSpec extends Specification with Mockito {
   "LibreOfficeDocumentConverter" should {
     "call conversion command with the correct parameters" in new BaseScope {
-      documentConverter.withStreamAsPdf(guid, filename, inputStream)(doNothing _)
+      documentConverter.withStreamAsPdf(guid, inputStream)(doNothing _)
 
       there was one(documentConverter.runner).run(libreOfficeCommand)
     }
 
     "write the input stream to a temp file which is deleted after conversion" in new BaseScope {
 
-      documentConverter.withStreamAsPdf(guid, filename, inputStream)(doNothing _)
+      documentConverter.withStreamAsPdf(guid, inputStream)(doNothing _)
 
       there was one(documentConverter.fileSystem).saveToFile(inputStream, inputFilePath)
       there was one(documentConverter.fileSystem).deleteFile(inputFile)
     }
 
     "delete output file after conversion is complete" in new BaseScope {
-      documentConverter.withStreamAsPdf(guid, filename, inputStream)(doNothing _)
+      documentConverter.withStreamAsPdf(guid, inputStream)(doNothing _)
 
       there was one(documentConverter.fileSystem).deleteFile(outputFile)
     }
 
     "call processing function with converted output stream" in new BaseScope {
-      val result = documentConverter.withStreamAsPdf(guid, filename, inputStream)(Tuple2.apply)
+      val result = documentConverter.withStreamAsPdf(guid, inputStream)(Tuple2.apply)
 
       result must beEqualTo(documentConverter.convertedStream, documentConverter.convertedSize)
     }
 
     "delete input file if exception is thrown during processing" in new BaseScope {
-      ignoring(classOf[Exception]) { documentConverter.withStreamAsPdf(guid, filename, inputStream)(failingProcessing) }
+      ignoring(classOf[Exception]) { documentConverter.withStreamAsPdf(guid, inputStream)(failingProcessing) }
 
       there was one(documentConverter.fileSystem).deleteFile(inputFile)
     }
 
     "throw a ConverterFailedException if office command returns an error" in new BaseScope {
       val failingConverter = new FailingConverter(inputFile)
-      failingConverter.withStreamAsPdf(guid, filename, inputStream)(doNothing _) must throwA[LibreOfficeConverterFailedException]
+      failingConverter.withStreamAsPdf(guid, inputStream)(doNothing _) must throwA[LibreOfficeConverterFailedException]
     }
 
     "delete output file if exception is thrown during processing" in new BaseScope {
-      ignoring(classOf[Exception]) { documentConverter.withStreamAsPdf(guid, filename, inputStream)(failingProcessing) }
+      ignoring(classOf[Exception]) { documentConverter.withStreamAsPdf(guid, inputStream)(failingProcessing) }
 
       there was one(documentConverter.fileSystem).deleteFile(outputFile)
     }
@@ -61,7 +61,7 @@ class LibreOfficeDocumentConverterSpec extends Specification with Mockito {
     "throw a NoConverterOutput if no output file is found" in new BaseScope {
       val noOutputConverter = new ConverterWithNoOutput(inputFile)
 
-      noOutputConverter.withStreamAsPdf(guid, filename, inputStream)(doNothing _) must throwA[LibreOfficeNoOutputException]
+      noOutputConverter.withStreamAsPdf(guid, inputStream)(doNothing _) must throwA[LibreOfficeNoOutputException]
 
     }
 

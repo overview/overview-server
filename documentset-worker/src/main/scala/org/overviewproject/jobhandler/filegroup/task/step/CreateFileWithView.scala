@@ -38,7 +38,7 @@ trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient
 
   private def createView(upload: GroupedFileUpload): Future[(String, Long)] = blocking {
     withLargeObjectInputStream(uploadedFile.contentsOid) { stream =>
-      converter.withStreamAsPdf(uploadedFile.guid, uploadedFile.name, stream) { (viewStream, viewSize) =>
+      converter.withStreamAsPdf(uploadedFile.guid, stream) { (viewStream, viewSize) =>
         blobStorage.create(BlobBucketId.FileView, viewStream, viewSize)
           .map((_, viewSize))
       }

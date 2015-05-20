@@ -35,7 +35,7 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
   private val LibreOfficeLocation = Configuration.getString("libre_office_path")
   private val OutputFileExtension = "pdf"
 
-  override def withStreamAsPdf[T](guid: UUID, filename: String, inputStream: InputStream)(f: (InputStream, Long) => T): T = {
+  override def withStreamAsPdf[T](guid: UUID, inputStream: InputStream)(f: (InputStream, Long) => T): T = {
     withStreamAsTemporaryFile(guid, inputStream) { tempFile =>
       convertFileToPdf(tempFile) { pdfTempFile =>
         withFileAsStream(pdfTempFile)(f)
