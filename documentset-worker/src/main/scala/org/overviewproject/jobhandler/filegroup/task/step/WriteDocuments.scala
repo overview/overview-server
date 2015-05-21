@@ -9,6 +9,9 @@ import org.overviewproject.util.BulkDocumentWriter
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
 
+/**
+ * Write documents to the database and index them in ElasticSearch.
+ */
 trait WriteDocuments extends UploadedFileProcessStep {
 
   override protected val documentSetId: Long

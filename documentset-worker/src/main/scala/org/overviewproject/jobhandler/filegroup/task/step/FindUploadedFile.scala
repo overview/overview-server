@@ -9,6 +9,10 @@ import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
 
+
+/**
+ * Find the [[GroupedFileUpload]] with the specified id.
+ */
 trait FindUploadedFile extends UploadedFileProcessStep with SlickClient {
 
   override protected val documentSetId: Long

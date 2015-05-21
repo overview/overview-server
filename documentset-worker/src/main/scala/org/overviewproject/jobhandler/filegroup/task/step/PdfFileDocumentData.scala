@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 
 import org.overviewproject.models.Document
 
-
+/** Data needed to create a [[Document]] from a PDF [[File]] */
 case class PdfFileDocumentData(title: String, fileId: Long, text: String) extends DocumentData {
   override def toDocument(documentSetId: Long, documentId: Long) = Document(
     id = documentId,

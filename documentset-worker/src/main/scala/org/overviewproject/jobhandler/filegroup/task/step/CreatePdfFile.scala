@@ -14,6 +14,9 @@ import org.overviewproject.models.{ File, GroupedFileUpload, TempDocumentSetFile
 import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.postgres.LargeObjectInputStream
 
+/**
+ * Create a [[File]] with PDF content
+ */
 trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with SlickClient {
   protected val uploadedFile: GroupedFileUpload
 

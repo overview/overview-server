@@ -5,6 +5,9 @@ import scala.concurrent.Future
 import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
 import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 
+/**
+ * Submit requests to remove [[File]]s and [[FileGroup]]s that have been deleted.
+ */
 trait RemoveDeletedObjects extends TaskStep {
   protected val fileGroupId: Long
   

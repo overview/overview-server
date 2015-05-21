@@ -12,6 +12,11 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 
+/**
+ * Send a request to the documentIdSupplier actor, asking for [[Document]] ids.
+ * 
+ * The documentIdSupplier must respond within the [[timeout]] or the request will fail.
+ */
 trait RequestDocumentIds extends UploadedFileProcessStep {
   protected implicit val timeout = Timeout(5 seconds) // timeout for Ask request
   protected val documentIdSupplier: ActorRef

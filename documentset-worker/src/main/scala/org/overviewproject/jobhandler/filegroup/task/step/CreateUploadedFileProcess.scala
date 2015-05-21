@@ -13,6 +13,9 @@ import org.overviewproject.database.SlickSessionProvider
 import scala.util.Try
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 
+/**
+ * Create a process to convert a [[GroupedFileUpload]] into [[Document]](s).
+ */
 trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient {
   override protected val documentSetId: Long
 

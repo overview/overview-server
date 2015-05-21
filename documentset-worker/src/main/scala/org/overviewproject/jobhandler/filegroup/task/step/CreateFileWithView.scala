@@ -22,6 +22,9 @@ import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.models.tables.TempDocumentSetFiles
 import org.overviewproject.postgres.LargeObjectInputStream
 
+/**
+ * Creates a view by converting the [[GroupedFileUpload] contents to PDF 
+ */
 trait CreateFileWithView extends TaskStep with LargeObjectMover with SlickClient {
   protected val documentSetId: Long
   protected val uploadedFile: GroupedFileUpload

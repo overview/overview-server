@@ -6,6 +6,9 @@ import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.database.SlickSessionProvider
 
+/**
+ * Used by [[DocumentIdSupplier]] to generate ids for [[Document]s
+ */
 trait DocumentIdGenerator extends SlickClient {
 
   protected val documentSetId: Long

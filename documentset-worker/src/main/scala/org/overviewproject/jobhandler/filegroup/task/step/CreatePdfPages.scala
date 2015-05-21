@@ -11,6 +11,9 @@ import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.overviewproject.models.File
 
+/**
+ * Split a [[File]] with a PDF view into [[Page]]s
+ */
 trait CreatePdfPages extends UploadedFileProcessStep {
 
   protected val file: File

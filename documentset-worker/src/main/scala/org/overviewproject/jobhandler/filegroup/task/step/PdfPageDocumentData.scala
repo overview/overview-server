@@ -2,6 +2,8 @@ package org.overviewproject.jobhandler.filegroup.task.step
 
 import org.overviewproject.models.Document
 
+
+/** Data needed to create a [[Document]] from a page */
 case class PdfPageDocumentData(title: String, fileId: Long, pageNumber: Integer, pageId: Long, text: String)
   extends DocumentData {
 
