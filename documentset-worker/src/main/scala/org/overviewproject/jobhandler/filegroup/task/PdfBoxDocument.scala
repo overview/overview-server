@@ -14,10 +14,10 @@ import scala.collection.SeqView
 class PdfBoxDocument(location: String) extends PdfDocument {
 
   private val document: PDDocument = loadFromLocation(location)
-  private val documentPages = splitPages
+
   private val textStripper: PDFTextStripper = new PDFTextStripper
 
-  override def pages: SeqView[PdfPage, Seq[_]] = documentPages.map { p =>
+  override def pages: SeqView[PdfPage, Seq[_]] = splitPages.map { p =>
     val data = getData(p)
     val text = getText(p)
 
@@ -29,7 +29,6 @@ class PdfBoxDocument(location: String) extends PdfDocument {
   override def text: String = textStripper.getText(document)
 
   override def close(): Unit = {
-    documentPages.foreach(_.close())
     document.close()
   }
 
