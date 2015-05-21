@@ -2,6 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.control.Exception.ultimately
 
 import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
@@ -23,9 +24,11 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
 
   private def getDocumentInfo: Seq[PdfFileDocumentData] = {
     val pdfDocument = pdfProcessor.loadFromBlobStorage(file.viewLocation)
-    val text = pdfDocument.text
 
-    Seq(PdfFileDocumentData(file.name, file.id, text))
+    ultimately(pdfDocument.close) {
+      val text = pdfDocument.text
+      Seq(PdfFileDocumentData(file.name, file.id, text))
+    }
   }
 
   trait PdfProcessor {
