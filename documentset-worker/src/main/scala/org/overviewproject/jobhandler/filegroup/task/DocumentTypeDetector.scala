@@ -9,7 +9,7 @@ trait DocumentTypeDetector {
   def detect(filename: String, stream: InputStream): DocumentTypeDetector.DocumentType = {
     val bufferedInputStream = new BufferedInputStream(stream, maximumBytesRead)
     
-    val mimeType = mimeTypeDetector.detectMimeType(filename, stream)
+    val mimeType = mimeTypeDetector.detectMimeType(filename, bufferedInputStream)
 
     mimeTypeToDocumentType.get(mimeType)
       .orElse(mimeTypeToDocumentType.get(parentType(mimeType)))

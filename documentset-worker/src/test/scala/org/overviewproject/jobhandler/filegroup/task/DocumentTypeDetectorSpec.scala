@@ -1,11 +1,13 @@
 package org.overviewproject.jobhandler.filegroup.task
 
+import java.io.BufferedInputStream
+import java.io.InputStream
+
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
+import org.overviewproject.mime_types.MimeTypeDetector
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
-import org.specs2.mock.Mockito
-import org.overviewproject.mime_types.MimeTypeDetector
-import java.io.InputStream
 
 class DocumentTypeDetectorSpec extends Specification with Mockito {
 
@@ -28,6 +30,7 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
 
     val mockMimeTypeDetector = smartMock[MimeTypeDetector]
     val stream = smartMock[InputStream]
+    
     val filename = "file name"
 
     class TestDocumentTypeDetector(mimeType: String) extends DocumentTypeDetector {
@@ -37,7 +40,7 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
 
       override protected val mimeTypeDetector = mockMimeTypeDetector
 
-      mimeTypeDetector.detectMimeType(be(filename), any[InputStream]) returns mimeType
+      mimeTypeDetector.detectMimeType(be(filename), org.mockito.Matchers.isA(classOf[BufferedInputStream])) returns mimeType
       mimeTypeDetector.getMaxGetBytesLength returns 5
     }
   }
