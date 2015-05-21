@@ -1,14 +1,11 @@
-package org.overviewproject.jobhandler.filegroup.task
+package org.overviewproject.jobhandler.filegroup.task.step
 
-import scala.concurrent.{ Await, Future }
-import scala.concurrent.duration.Duration
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
 import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.TempFileDeleter
-import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
-import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 
 
 /**

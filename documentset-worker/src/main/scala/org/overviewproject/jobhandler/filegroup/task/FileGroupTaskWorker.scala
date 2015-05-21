@@ -1,32 +1,25 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import akka.actor._
-import akka.pattern.pipe
-import scala.concurrent.duration._
-import scala.language.postfixOps
 import scala.concurrent.Future
-import scala.concurrent.Await
-import org.overviewproject.util.Logger
-import FileGroupTaskWorkerFSM._
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.language.postfixOps
+
+import akka.actor._
 import akka.actor.Status.Failure
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.database.FileGroupDeleter
-import org.overviewproject.database.DocumentSetCreationJobDeleter
-import org.overviewproject.database.TempFileDeleter
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol.RemoveFileGroup
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.database.SlickSessionProvider
-import org.overviewproject.models.tables.GroupedFileUploads
+import akka.pattern.pipe
+
+import org.overviewproject.jobhandler.filegroup.task.step.CreateUploadedFileProcess
+import org.overviewproject.jobhandler.filegroup.task.step.DeleteFileUploadTaskStep
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
+import org.overviewproject.jobhandler.filegroup.task.step.FindUploadedFile
+import org.overviewproject.jobhandler.filegroup.task.step.RemoveDeletedObjects
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
-import org.overviewproject.models.tables.DocumentProcessingErrors
-import org.overviewproject.models.DocumentProcessingError
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
-import org.overviewproject.jobhandler.filegroup.task.step.RemoveDeletedObjects
-import org.overviewproject.jobhandler.filegroup.task.step.CreateUploadedFileProcess
-import org.overviewproject.jobhandler.filegroup.task.step.FindUploadedFile
+import org.overviewproject.util.Logger
+
+import FileGroupTaskWorkerFSM._
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -66,7 +59,7 @@ object FileGroupTaskWorkerFSM {
  * A worker that registers with the [[FileGroupJobQueue]] and can handle [[CreatePagesTask]]s
  * and [[DeleteFileUploadJob]]s.
  * The worker handles [[Exception]]s during file processing by creating [[DocumentProcessingError]]s for the
- * [[File]] being processed. If an [[Exception]] is thrown during a [[DeleteFileUploadJob]], it's logged and ignored.
+ * [[File]] being processed. 
  *
  * @todo Move to separate JVM and instance
  * @todo Add Death Watch on [[FileGroupJobQueue]]. If the queue dies, the task should be abandoned, and

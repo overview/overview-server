@@ -1,21 +1,16 @@
-package org.overviewproject.jobhandler.filegroup.task
+package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.specs2.mutable.Specification
-import org.specs2.mock.Mockito
 import scala.concurrent.Promise
+
+import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.DocumentSetDeleter
 import org.overviewproject.database.FileGroupDeleter
-import org.specs2.specification.Scope
-import org.specs2.time.NoDurationConversions
-import org.specs2.time.NoTimeConversions
-import scala.concurrent.{ Await, Future }
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-import java.util.concurrent.TimeoutException
-import org.overviewproject.database.DocumentSetCreationJobDeleter
 import org.overviewproject.database.TempFileDeleter
-import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
-import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+import org.specs2.time.NoTimeConversions
+
 
 class DeleteFileUploadTaskStepSpec extends Specification with Mockito with NoTimeConversions {
 
