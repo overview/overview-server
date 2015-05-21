@@ -22,7 +22,7 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
     }
 
     "return UnsupportedDocument if mimetype is not handled" in new UnsupportedScope {
-      documentTypeDetector.detect(filename, stream) must be equalTo UnsupportedDocument
+      documentTypeDetector.detect(filename, stream) must be equalTo UnsupportedDocument(filename, unsupportedMimeType)
     }
   }
 
@@ -54,7 +54,8 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
   }
 
   trait UnsupportedScope extends DetectorScope {
-    val documentTypeDetector = new TestDocumentTypeDetector("image/png")
+    val unsupportedMimeType = "image/png"
+    val documentTypeDetector = new TestDocumentTypeDetector(unsupportedMimeType)
   }
 
 }

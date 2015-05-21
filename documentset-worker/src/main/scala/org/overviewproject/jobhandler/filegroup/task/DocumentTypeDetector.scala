@@ -13,7 +13,7 @@ trait DocumentTypeDetector {
 
     mimeTypeToDocumentType.get(mimeType)
       .orElse(mimeTypeToDocumentType.get(parentType(mimeType)))
-      .getOrElse(DocumentTypeDetector.UnsupportedDocument)
+      .getOrElse(DocumentTypeDetector.UnsupportedDocument(filename, mimeType))
 
   }
 
@@ -32,7 +32,7 @@ object DocumentTypeDetector extends DocumentTypeDetector {
   case object OfficeDocument extends DocumentType
   case object TextDocument extends DocumentType
   case object HtmlDocument extends DocumentType
-  case object UnsupportedDocument extends DocumentType
+  case class UnsupportedDocument(filename: String, mimeType: String) extends DocumentType
 
   override protected val mimeTypeDetector = new MimeTypeDetector
 
