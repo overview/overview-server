@@ -20,13 +20,13 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
   override protected lazy val filename: String = file.name
 
   protected val pdfProcessor: PdfProcessor
-  protected val nextStep: Seq[PdfFileDocumentData] => TaskStep
+  protected val nextStep: Seq[DocumentData] => TaskStep
 
   override protected def doExecute: Future[TaskStep] = for {
     documentInfo <- AsFuture(getDocumentInfo)
   } yield nextStep(documentInfo)
 
-  private def getDocumentInfo: Seq[PdfFileDocumentData] = {
+  private def getDocumentInfo: Seq[DocumentData] = {
     val pdfDocument = pdfProcessor.loadFromBlobStorage(file.viewLocation)
 
     ultimately(pdfDocument.close) {
@@ -45,13 +45,13 @@ object ExtractTextFromPdf {
   import scala.concurrent.blocking
   import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 
-  def apply(documentSetId: Long, file: File, next: Seq[PdfFileDocumentData] => TaskStep): ExtractTextFromPdf =
+  def apply(documentSetId: Long, file: File, next: Seq[DocumentData] => TaskStep): ExtractTextFromPdf =
     new ExtractTextFromPdfImpl(documentSetId, file, next)
 
   private class ExtractTextFromPdfImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: Seq[PdfFileDocumentData] => TaskStep) extends ExtractTextFromPdf {
+    override protected val nextStep: Seq[DocumentData] => TaskStep) extends ExtractTextFromPdf {
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
 
     private class PdfProcessorImpl extends PdfProcessor {

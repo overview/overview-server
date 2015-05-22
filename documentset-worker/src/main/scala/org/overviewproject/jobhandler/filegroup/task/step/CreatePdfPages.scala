@@ -25,7 +25,7 @@ trait CreatePdfPages extends UploadedFileProcessStep {
 
   protected val pageSaver: PageSaver
 
-  protected val nextStep: Seq[PdfPageDocumentData] => TaskStep
+  protected val nextStep: Seq[DocumentData] => TaskStep
 
   protected trait Storage {
     def savePages(fileId: Long, pdfPages: Seq[PdfPage]): Seq[Long]
@@ -60,13 +60,13 @@ trait CreatePdfPages extends UploadedFileProcessStep {
 
 object CreatePdfPages {
 
-  def apply(documentSetId: Long, file: File, nextStep: Seq[PdfPageDocumentData] => TaskStep): CreatePdfPages =
+  def apply(documentSetId: Long, file: File, nextStep: Seq[DocumentData] => TaskStep): CreatePdfPages =
     new CreatePdfPagesImpl(documentSetId, file, nextStep)
 
   private class CreatePdfPagesImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: Seq[PdfPageDocumentData] => TaskStep) extends CreatePdfPages {
+    override protected val nextStep: Seq[DocumentData] => TaskStep) extends CreatePdfPages {
 
     override protected val pageSaver: PageSaver = PageSaver
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl

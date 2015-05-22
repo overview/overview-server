@@ -51,7 +51,7 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
       d.text returns text
     }
 
-    case class NextStep(document: Seq[PdfFileDocumentData]) extends TaskStep {
+    case class NextStep(document: Seq[DocumentData]) extends TaskStep {
       override protected def doExecute = Future.successful(this)
     }
 
