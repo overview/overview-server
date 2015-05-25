@@ -86,6 +86,8 @@ define [
       it 'hides the progress bar when there are no uploads', ->
         expect(view.$('.progress-bar').css('display')).to.eq('none')
 
+      it 'disables the cancel button when there are no uploads', ->
+        expect(view.$('.cancel')).to.be.disabled
 
     describe 'model add event', ->
       beforeEach ->
@@ -95,6 +97,9 @@ define [
 
       it 'enables the submit button', ->
         expect(view.$('.choose-options')).not.to.be.disabled
+
+      it 'enables the cancel button', ->
+        expect(view.$('.cancel')).not.to.be.disabled
 
       it 'shows the progress bar', ->
         expect(view.$('.progress-bar').css('display')).to.eq('block')
@@ -275,10 +280,20 @@ define [
           expect(view.$el.text()).to.match(/cancel/)
 
         it 'triggers "cancel"', ->
+          addSomeFiles()
           spy = sinon.spy()
           view.on('cancel', spy)
           view.$('.cancel').click()
           expect(spy).to.have.been.called
+
+        it 'is disabled with no files selected', ->
+          expect(view.$('.cancel')).to.be.disabled
+
+        it 'is disabled after reset', ->
+          addSomeFiles()
+          model.uploads.reset([])
+
+          expect(view.$('button.cancel')).to.be.disabled
 
     describe 'finishing upload', ->
       beforeEach ->

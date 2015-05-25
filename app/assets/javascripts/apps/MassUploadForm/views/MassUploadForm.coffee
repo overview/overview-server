@@ -14,7 +14,7 @@ define [
         <div class='uploads'></div>
 
         <div class='controls'>
-          <a href="#" class="btn cancel"><%- t('cancel') %></a>
+          <button type="button" class="btn cancel" disabled="disabled"><%- t('cancel') %></button>
 
           <div class='right-controls'>
             <div class="upload-prompt">
@@ -116,11 +116,13 @@ define [
       @finishEnabled = false
       @_optionsSetDone(false)
       @$('button.choose-options').prop('disabled', true)
+      @$('button.cancel').prop('disabled', true)
 
     _onCollectionAddBatch: ->
       if !@finishEnabled && @collection.length > 0
         @finishEnabled = true
         @$('button.choose-options').prop('disabled', false)
+        @$('button.cancel').prop('disabled', false)
 
       @_refreshProgressVisibility()
 
