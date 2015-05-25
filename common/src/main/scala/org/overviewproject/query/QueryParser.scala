@@ -59,9 +59,9 @@ object QueryParser {
       = guard(not(operator)) ~> regex("""[^ ()]+""".r)
 
     def operator = andOperator | orOperator | notOperator
-    def andOperator = regex("(?i)and".r) ^^^ (())
-    def orOperator = regex("(?i)or".r) ^^^ (())
-    def notOperator = regex("(?i)not".r) ^^^ (())
+    def andOperator = regex("(?i)\\band\\b".r) ^^^ (())
+    def orOperator = regex("(?i)\\bor\\b".r) ^^^ (())
+    def notOperator = regex("(?i)\\bnot\\b".r) ^^^ (())
 
     def parensExpression: Parser[Query] = "(" ~> expression <~ ")"
     def notExpression: Parser[NotQuery] = notOperator ~> unaryExpression ^^ NotQuery.apply _

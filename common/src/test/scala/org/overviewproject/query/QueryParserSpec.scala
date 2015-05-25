@@ -25,6 +25,7 @@ class QueryParserSpec extends Specification {
   testGood("foo AND bar", "AND([foo],[bar])", "parse AND as a boolean")
   testGood("foo OR bar", "OR([foo],[bar])", "parse OR as a boolean")
   testGood("NOT foo", "NOT([foo])", "parse NOT as a boolean")
+  testGood("ANDroid ORxata NOThosaurus", "[ANDroid ORxata NOThosaurus]", "parse terms that start with operators")
   testGood("foo AND NOT bar", "AND([foo],NOT([bar]))", "give NOT precedence over AND (right-hand side)")
   testGood("NOT foo AND bar", "AND(NOT([foo]),[bar])", "give NOT precedence over AND (left-hand side)")
   testGood("'foo bar'", "[foo bar]", "parse single quotes")
