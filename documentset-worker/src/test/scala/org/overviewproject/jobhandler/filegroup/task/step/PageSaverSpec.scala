@@ -36,7 +36,7 @@ class PageSaverSpec extends SlickSpecification with Mockito {
     val numberOfPages = 10
     val pages = Seq.tabulate(numberOfPages)(n => PdfPage(Array[Byte](0, 1, 3), s"text-$n"))
 
-    val expectedAttributes = Seq.tabulate(numberOfPages)(n => (file.id, n, pageLocation, 3, s"text-$n"))
+    val expectedAttributes = Seq.tabulate(numberOfPages)(n => (file.id, n + 1, pageLocation, 3, s"text-$n"))
 
     val pageSaver = new TestPageSaver
   }

@@ -30,12 +30,12 @@ trait PageSaver extends SlickClient {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val pageAttributes = for {
-      (p, n) <- pdfPages.zipWithIndex
+      (p, pageNumberZeroBased) <- pdfPages.zipWithIndex
     } yield {
       val size = p.data.length
       val text = p.text
       pageBlobSaver.save(p).map { location =>
-        Page.CreateAttributes(fileId, n, location, size, text)
+        Page.CreateAttributes(fileId, pageNumberZeroBased + 1, location, size, text)
       }
     }
 
