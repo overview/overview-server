@@ -9,4 +9,4 @@
 # but that would take more work.
 
 sleep 30
-(cd "$(dirname "$0")/../test/integration" && npm run-script test-xunit)
+(cd "$(dirname "$0")/../test/integration" && npm run-script test-with-jenkins)

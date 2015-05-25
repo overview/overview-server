@@ -4,8 +4,8 @@
   "description": "Integration-tests an Overview server",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
-    "test-xunit": "xvfb-run mocha --reporter xunit > test-results.xml"
+    "test": "./node_modules/.bin/mocha",
+    "test-with-jenkins": "JUNIT_REPORT_PATH=test-results.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_NAME='Integration tests' xvfb-run ./node_modules/.bin/mocha --reporter mocha-jenkins-reporter || true"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
     "escape-regexp": "0.0.1",
     "faker": "~2.0.0",
     "mocha": "~1.21.4",
+    "mocha-jenkins-reporter": "^0.1.8",
     "q": "~1.0.0",
     "request": "^2.53.0",
     "selenium-server-standalone-jar": "~2.45.0",
