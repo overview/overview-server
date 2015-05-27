@@ -34,7 +34,11 @@
     "q": "~1.0.0",
     "request": "^2.53.0",
     "selenium-server-standalone-jar": "~2.45.0",
+    "selenium-webdriver": "^2.45.1",
     "tough-cookie": "^0.12.1",
     "wd": "~0.3.11"
+  },
+  "dependencies": {
+    "debug": "^2.2.0"
   }
 }

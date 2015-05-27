@@ -12,7 +12,7 @@ waitForConnect = (port, done) ->
 
   socket = new net.Socket()
   socket.on('error', -> setTimeout(retry, 50))
-  socket.on('connect', -> socket.end(); done())
+  socket.on('connect', -> socket.end('Hello there\n'); done())
   socket.connect(port)
   undefined
 

@@ -1,7 +1,14 @@
 wd = require('wd')
 Q = require('q')
 escapeRegexp = require('escape-regexp')
+webdriver = require('selenium-webdriver')
+FileDetector = require('selenium-webdriver/remote').FileDetector
+
+Browser = require('./Browser')
 UserAdminSession = require('./UserAdminSession')
+
+#webdriver.logging.installConsoleHandler()
+#webdriver.logging.getLogger().setLevel(webdriver.logging.Level.ALL)
 
 Constants =
   ajaxTimeout: 10000 # timeout waiting for AJAX requests
@@ -16,10 +23,11 @@ options =
     version: ''
     platform: 'ANY'
     build: process.env.BUILD_TAG
-    'idle-timeout': 600 # @adminBrowser often waits for the duration of a test file
+    handlesAlerts: true
   seleniumLocation:
     host: 'localhost'
     port: 4444
+    url: 'http://localhost:4444/wd/hub'
 
 if 'SAUCE_USER_NAME' of process.env
   x = options.seleniumLocation
@@ -219,7 +227,11 @@ module.exports =
       login: module.exports.adminLogin
 
   # Returns a promise of a browser.
+  #
+  # DEPRECATED: we've moved to createBrowser(), because external libraries are
+  # too complex.
   create: (title) ->
+    console.log('NO NO NO')
     desiredCapabilities = { name: title }
     desiredCapabilities[k] = v for k, v of options.desiredCapabilities
 
@@ -233,3 +245,20 @@ module.exports =
       .setImplicitWaitTimeout(0)   # we only wait explicitly! We don't want to code race conditions
       .setAsyncScriptTimeout(Constants.asyncTimeout) # in case there are HTTP requests
       .setPageLoadTimeout(Constants.pageLoadTimeout) # in case, on a slow computer, something slow happens
+
+  # Returns a Browser.
+  createBrowser: ->
+    driver = new webdriver.Builder()
+      .usingServer(options.seleniumLocation.url)
+      .forBrowser('firefox')
+      .withCapabilities(options.desiredCapabilities)
+      .setLoggingPrefs(driver: 'ALL', server: 'ALL', browser: 'ALL')
+      .build()
+
+    driver.setFileDetector(new FileDetector())
+
+    browser = new Browser(driver, baseUrl: module.exports.baseUrl)
+    browser.loadShortcuts('jquery')
+    browser.loadShortcuts('documentSets')
+
+    browser

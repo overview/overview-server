@@ -1,5 +1,4 @@
 browser = require('../lib/browser')
-faker = require('faker')
 
 Url =
   adminUserIndex: '/admin/users'

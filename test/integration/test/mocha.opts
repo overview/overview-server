@@ -1,5 +1,5 @@
 --compilers coffee:coffee-script/register
---timeout 90s
---slow 2000
+--timeout 60s
+--slow 3s
 --reporter spec
 --require support/testSuite
