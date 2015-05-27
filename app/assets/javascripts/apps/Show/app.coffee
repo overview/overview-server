@@ -153,6 +153,10 @@ define [
 
     _initializeUi: ->
       @state.views.pollUntilStable()
+      # Choose the view that's in the URL
+      if (m = /\/documentsets\/\d+\/([-_a-zA-Z0-9]+)/.exec(window.location.pathname))?
+        if (view = @state.views.get(m[1]))?
+          @state.setView(view)
 
       els = @_buildHtml()
       keyboardController = new KeyboardController(document)
