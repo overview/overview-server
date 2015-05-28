@@ -26,7 +26,8 @@ class PdfBoxDocument(location: String) extends PdfDocument {
     PdfPage(data, text)
   }
 
-  override def text: String = textStripper.getText(document)
+  override def text: String = getText(document)
+    
 
   override def close(): Unit = {
     document.close()
@@ -69,8 +70,8 @@ class PdfBoxDocument(location: String) extends PdfDocument {
     outputStream.toByteArray()
   }
 
-  private def getText(page: PDDocument): String = {
-    val rawText: String = textStripper.getText(page)
+  private def getText(document: PDDocument): String = {
+    val rawText: String = textStripper.getText(document)
 
     Textify(rawText)
   }
