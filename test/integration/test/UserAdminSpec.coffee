@@ -1,4 +1,4 @@
-browser = require('../lib/browser')
+browser = require('../lib/BrowserBuilder')
 faker = require('faker')
 testMethods = require('../support/testMethods')
 

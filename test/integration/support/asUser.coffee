@@ -1,4 +1,4 @@
-browser = require('../lib/browser')
+browser = require('../lib/BrowserBuilder')
 
 Url =
   adminUserIndex: '/admin/users'

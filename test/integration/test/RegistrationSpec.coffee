@@ -1,7 +1,7 @@
 testMethods = require('../support/testMethods')
 Q = require('q')
 faker = require('faker')
-browser = require('../lib/browser')
+browser = require('../lib/BrowserBuilder')
 
 Url =
   login: '/login'
