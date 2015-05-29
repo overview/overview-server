@@ -12,17 +12,18 @@ import org.overviewproject.database.SlickSessionProvider
 import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
+import org.overviewproject.util.BulkDocumentWriter
 
 trait UploadedFileProcessCreator {
 
-  def create(uploadedFile: GroupedFileUpload, options: UploadProcessOptions,
-             documentSetId: Long, documentIdSupplier: ActorRef): UploadedFileProcess =
+  def create(uploadedFile: GroupedFileUpload, options: UploadProcessOptions, documentSetId: Long,
+             documentIdSupplier: ActorRef, bulkDocumentWriter: BulkDocumentWriter): UploadedFileProcess =
     withLargeObjectInputStream(uploadedFile.contentsOid) { stream =>
 
       val name = uploadedFile.name
 
-      val documentType = documentTypeDetector.detect(name, stream) 
-      
+      val documentType = documentTypeDetector.detect(name, stream)
+
       processMap.getProcess(documentType, options, documentSetId, name, documentIdSupplier)
     }
 
@@ -49,15 +50,16 @@ trait UploadedFileProcessCreator {
 
 object UploadedFileProcessCreator {
 
-  def apply(): UploadedFileProcessCreator = new UploadedFileProcessCreatorImpl
+  def apply(bulkDocumentWriter: BulkDocumentWriter): UploadedFileProcessCreator = 
+    new UploadedFileProcessCreatorImpl(bulkDocumentWriter)
 
-  private class UploadedFileProcessCreatorImpl extends UploadedFileProcessCreator {
+  private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter) extends UploadedFileProcessCreator {
     override protected val documentTypeDetector = DocumentTypeDetector
     override protected def largeObjectInputStream(oid: Long) =
       new LargeObjectInputStream(oid, new SlickSessionProvider {})
 
     override protected val processMap: ProcessMap = new UploadedFileProcessMap
-    
+
     private class UploadedFileProcessMap extends ProcessMap {
 
       override def getProcess(documentType: DocumentType, options: UploadProcessOptions,
@@ -65,13 +67,13 @@ object UploadedFileProcessCreator {
                               documentIdSupplier: ActorRef): UploadedFileProcess =
         documentType match {
           case PdfDocument if options.splitDocument =>
-            CreateDocumentFromPdfPage(documentSetId, name, documentIdSupplier)
+            CreateDocumentFromPdfPage(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
           case PdfDocument =>
-            CreateDocumentFromPdfFile(documentSetId, name, documentIdSupplier)
+            CreateDocumentFromPdfFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument if options.splitDocument =>
-            CreateDocumentsFromConvertedFilePages(documentSetId, name, documentIdSupplier)
+            CreateDocumentsFromConvertedFilePages(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument =>
-            CreateDocumentFromConvertedFile(documentSetId, name, documentIdSupplier)
+            CreateDocumentFromConvertedFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
         }
     }
 

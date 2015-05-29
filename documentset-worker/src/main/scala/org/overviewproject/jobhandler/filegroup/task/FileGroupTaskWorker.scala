@@ -4,11 +4,9 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
-
 import akka.actor._
 import akka.actor.Status.Failure
 import akka.pattern.pipe
-
 import org.overviewproject.jobhandler.filegroup.task.step.CreateUploadedFileProcess
 import org.overviewproject.jobhandler.filegroup.task.step.DeleteFileUploadTaskStep
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
@@ -18,8 +16,8 @@ import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.util.Logger
-
 import FileGroupTaskWorkerFSM._
+import org.overviewproject.util.BulkDocumentWriter
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -59,7 +57,7 @@ object FileGroupTaskWorkerFSM {
  * A worker that registers with the [[FileGroupJobQueue]] and can handle [[CreatePagesTask]]s
  * and [[DeleteFileUploadJob]]s.
  * The worker handles [[Exception]]s during file processing by creating [[DocumentProcessingError]]s for the
- * [[File]] being processed. 
+ * [[File]] being processed.
  *
  * @todo Move to separate JVM and instance
  * @todo Add Death Watch on [[FileGroupJobQueue]]. If the queue dies, the task should be abandoned, and
@@ -192,16 +190,19 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 object FileGroupTaskWorker {
   def apply(jobQueueActorPath: String,
             fileRemovalQueueActorPath: String,
-            fileGroupRemovalQueueActorPath: String): Props =
+            fileGroupRemovalQueueActorPath: String,
+            bulkDocumentWriter: BulkDocumentWriter): Props =
     Props(new FileGroupTaskWorkerImpl(
       jobQueueActorPath,
       fileRemovalQueueActorPath,
-      fileGroupRemovalQueueActorPath))
+      fileGroupRemovalQueueActorPath,
+      bulkDocumentWriter))
 
   private class FileGroupTaskWorkerImpl(
     jobQueueActorPath: String,
     fileRemovalQueueActorPath: String,
-    fileGroupRemovalQueueActorPath: String) extends FileGroupTaskWorker {
+    fileGroupRemovalQueueActorPath: String,
+    bulkDocumentWriter: BulkDocumentWriter) extends FileGroupTaskWorker {
 
     import context.dispatcher
 
@@ -219,11 +220,12 @@ object FileGroupTaskWorker {
     protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
                                       options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep =
       FindUploadedFile(documentSetId, uploadedFileId,
-        CreateUploadedFileProcess(documentSetId, _, options, documentIdSupplier))
+        CreateUploadedFileProcess(documentSetId, _, options, documentIdSupplier, bulkDocumentWriter))
 
     override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] =
       documentSetInfoUpdater.update(documentSetId)
 
-    private val documentSetInfoUpdater = DocumentSetInfoUpdater()
+
+    private val documentSetInfoUpdater = DocumentSetInfoUpdater(bulkDocumentWriter)
   }
 }

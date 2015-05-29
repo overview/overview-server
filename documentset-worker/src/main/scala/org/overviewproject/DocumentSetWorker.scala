@@ -13,6 +13,7 @@ import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
 import org.overviewproject.util.Logger
 import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
 import org.overviewproject.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
+import org.overviewproject.util.BulkDocumentWriter
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -95,11 +96,14 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
   private val fileGroupJobQueueManager = createMonitoredActor(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
   private val uploadClusteringCommandBridge = createMonitoredActor(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager), "ClusteringCommandsMessageQueueBridge")
 
+  private val bulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
+  
   private val taskWorkerSupervisor = createMonitoredActor(
     FileGroupTaskWorkerStartup(
       fileGroupJobQueue.path.toString,
       fileRemovalQueue.path.toString,
-      fileGroupRemovalRequestQueue.path.toString), "TaskWorkerSupervisor")
+      fileGroupRemovalRequestQueue.path.toString,
+      bulkDocumentWriter), "TaskWorkerSupervisor")
 
   /**
    *   A more optimistic approach would be to simply restart the actor. At the moment, we don't know

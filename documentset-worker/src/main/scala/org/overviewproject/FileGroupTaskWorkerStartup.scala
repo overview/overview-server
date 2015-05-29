@@ -6,15 +6,18 @@ import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorker
 import org.overviewproject.util.Logger
 import scala.concurrent.duration.Duration
 import org.overviewproject.jobhandler.filegroup.task.TempDirectory
+import org.overviewproject.util.BulkDocumentWriter
 
 object FileGroupTaskWorkerStartup {
 
   def apply(
     fileGroupJobQueuePath: String,
     fileRemovalQueuePath: String,
-    fileGroupRemovalQueuePath: String)(implicit context: ActorContext): Props = {
+    fileGroupRemovalQueuePath: String,
+    bulkDocumentWriter: BulkDocumentWriter)(implicit context: ActorContext): Props = {
     TempDirectory.create
-    TaskWorkerSupervisor(fileGroupJobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath)
+    TaskWorkerSupervisor(fileGroupJobQueuePath, fileRemovalQueuePath,
+        fileGroupRemovalQueuePath, bulkDocumentWriter)
   }
 
 }
@@ -22,12 +25,14 @@ object FileGroupTaskWorkerStartup {
 class TaskWorkerSupervisor(
   jobQueuePath: String,
   fileRemovalQueuePath: String,
-  fileGroupRemovalQueuePath: String) extends Actor {
+  fileGroupRemovalQueuePath: String,
+  bulkDocumentWriter: BulkDocumentWriter) extends Actor {
 
   private val NumberOfTaskWorkers = 2
   private val taskWorkers: Seq[ActorRef] = Seq.tabulate(NumberOfTaskWorkers)(n =>
     context.actorOf(
-      FileGroupTaskWorker(jobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath),
+      FileGroupTaskWorker(jobQueuePath, fileRemovalQueuePath,
+          fileGroupRemovalQueuePath, bulkDocumentWriter),
       workerName(n)))
 
   private def workerName(n: Int): String = s"TaskWorker-$n"
@@ -50,7 +55,9 @@ object TaskWorkerSupervisor {
   def apply(
     jobQueuePath: String,
     fileRemovalQueuePath: String,
-    fileGroupRemovalQueuePath: String): Props =
-      
-    Props(new TaskWorkerSupervisor(jobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath))
+    fileGroupRemovalQueuePath: String,
+    bulkDocumentWriter: BulkDocumentWriter): Props =
+
+    Props(new TaskWorkerSupervisor(jobQueuePath, fileRemovalQueuePath,
+      fileGroupRemovalQueuePath, bulkDocumentWriter))
 }

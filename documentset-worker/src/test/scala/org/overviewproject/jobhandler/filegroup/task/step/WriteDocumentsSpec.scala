@@ -19,7 +19,7 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
       await(writeDocuments.execute)
 
       there was one(mockDocumentWriter).addAndFlushIfNeeded(mockDocument)
-      there was one(mockDocumentWriter).flush
+      there was no(mockDocumentWriter).flush
       
       there was one(mockSearchIndex).addDocuments(Seq(mockDocument))
     }

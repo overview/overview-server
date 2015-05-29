@@ -41,8 +41,7 @@ trait WriteDocuments extends UploadedFileProcessStep {
 
   private def writeDocuments: Future[Unit] =
     for {
-      docsAdded <- Future.sequence(documents.map(bulkDocumentWriter.addAndFlushIfNeeded)) // FIXME: should be done in serial
-      batchFlushed <- bulkDocumentWriter.flush
+      docsAdded <- Future.sequence(documents.map(bulkDocumentWriter.addAndFlushIfNeeded))
     } yield {}
 
   private def indexDocuments: Future[Unit] = searchIndex.addDocuments(documents)
@@ -51,15 +50,16 @@ trait WriteDocuments extends UploadedFileProcessStep {
 
 object WriteDocuments {
 
-  def apply(documentSetId: Long, filename: String, documents: Seq[Document]): WriteDocuments =
-    new WriteDocumentsImpl(documentSetId, filename, documents)
+  def apply(documentSetId: Long, filename: String,
+            documents: Seq[Document], bulkDocumentWriter: BulkDocumentWriter): WriteDocuments =
+    new WriteDocumentsImpl(documentSetId, filename, documents, bulkDocumentWriter)
 
   private class WriteDocumentsImpl(
     override protected val documentSetId: Long,
     override protected val filename: String,
-    override protected val documents: Seq[Document]) extends WriteDocuments {
+    override protected val documents: Seq[Document],
+    override protected val bulkDocumentWriter: BulkDocumentWriter) extends WriteDocuments {
 
-    override protected val bulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex // Thread safe?
     override protected val searchIndex = TransportIndexClient.singleton
 
     override protected val storage: Storage = new SlickStorage

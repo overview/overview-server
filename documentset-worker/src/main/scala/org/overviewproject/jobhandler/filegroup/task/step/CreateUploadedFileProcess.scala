@@ -12,6 +12,7 @@ import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.database.SlickSessionProvider
 import scala.util.Try
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
+import org.overviewproject.util.BulkDocumentWriter
 
 /**
  * Create a process to convert a [[GroupedFileUpload]] into [[Document]](s).
@@ -22,6 +23,7 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient
   protected val uploadedFile: GroupedFileUpload
   protected val options: UploadProcessOptions
   protected val documentIdSupplier: ActorRef
+  protected val bulkDocumentWriter: BulkDocumentWriter
 
   override protected lazy val filename: String = uploadedFile.name
 
@@ -33,22 +35,25 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient
   } yield firstStep
 
   private def createProcess: Future[UploadedFileProcess] = AsFuture {
-    uploadedFileProcessCreator.create(uploadedFile, options, documentSetId, documentIdSupplier)
+    uploadedFileProcessCreator.create(uploadedFile, options, documentSetId,
+      documentIdSupplier, bulkDocumentWriter)
   }
 }
 
 object CreateUploadedFileProcess {
-  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload,
-            options: UploadProcessOptions, documentIdSupplier: ActorRef): CreateUploadedFileProcess =
-    new CreateUploadedFileProcessImpl(documentSetId, uploadedFile, options, documentIdSupplier)
+  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, options: UploadProcessOptions,
+            documentIdSupplier: ActorRef, bulkDocumentWriter: BulkDocumentWriter): CreateUploadedFileProcess =
+    new CreateUploadedFileProcessImpl(documentSetId, uploadedFile, options,
+      documentIdSupplier, bulkDocumentWriter)
 
   private class CreateUploadedFileProcessImpl(
     override protected val documentSetId: Long,
     override protected val uploadedFile: GroupedFileUpload,
     override protected val options: UploadProcessOptions,
-    override protected val documentIdSupplier: ActorRef) extends CreateUploadedFileProcess with SlickSessionProvider {
+    override protected val documentIdSupplier: ActorRef,
+    override protected val bulkDocumentWriter: BulkDocumentWriter) extends CreateUploadedFileProcess with SlickSessionProvider {
 
-    override protected val uploadedFileProcessCreator = UploadedFileProcessCreator()
+    override protected val uploadedFileProcessCreator = UploadedFileProcessCreator(bulkDocumentWriter)
   }
 
 }

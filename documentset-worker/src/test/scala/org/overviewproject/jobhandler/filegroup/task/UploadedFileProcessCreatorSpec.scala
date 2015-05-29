@@ -1,13 +1,17 @@
 package org.overviewproject.jobhandler.filegroup.task
 
+import java.io.InputStream
+
+import akka.actor.ActorRef
+
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
+import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.util.BulkDocumentWriter
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.specs2.mock.Mockito
-import java.io.InputStream
-import org.overviewproject.models.GroupedFileUpload
-import akka.actor.ActorRef
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
+
 
 
 class UploadedFileProcessCreatorSpec extends Specification with Mockito {
@@ -15,7 +19,8 @@ class UploadedFileProcessCreatorSpec extends Specification with Mockito {
   "UploadFileProcessCreator" should {
     
     "create a process based on document type" in new UploadedFileContext {
-      val process = uploadedFileCreator.create(uploadedFile, options, documentSetId, documentIdSupplier)
+      val process = uploadedFileCreator.create(uploadedFile, options, documentSetId, 
+          documentIdSupplier, bulkDocumentWriter)
       
       process must be equalTo(createdProcess)
     }
@@ -30,6 +35,7 @@ class UploadedFileProcessCreatorSpec extends Specification with Mockito {
     val uploadedFile = smartMock[GroupedFileUpload]
     val options = smartMock[UploadProcessOptions]
     val documentIdSupplier = smartMock[ActorRef]
+    val bulkDocumentWriter = smartMock[BulkDocumentWriter]
     
     val mockTypeDetector = smartMock[DocumentTypeDetector]
     val mockStream = smartMock[InputStream]
