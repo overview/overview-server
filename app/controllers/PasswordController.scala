@@ -1,14 +1,16 @@
 package controllers
 
 import java.util.Date
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action,AnyContent,Request,RequestHeader}
+import scala.concurrent.Future
 
 import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser
+import controllers.backend.SessionBackend
 import mailers.Mailer
 import models.{OverviewDatabase,OverviewUser,ResetPasswordRequest,User}
-import models.Session
-import models.orm.stores.{SessionStore,UserStore}
+import models.orm.stores.{UserStore}
 
 /**
  * Handles reset-password.
@@ -75,18 +77,20 @@ trait PasswordController extends Controller {
     )
   }
 
-  def update(token: String) = Action { implicit request =>
+  def update(token: String) = Action.async { implicit request =>
     storage.findUserByResetToken(token) match {
-      case None => showInvalidToken
+      case None => Future.successful(showInvalidToken)
       case Some(user) => {
         editForm.bindFromRequest.fold(
-          formWithErrors => BadRequest(views.html.Password.edit(user, formWithErrors)),
+          formWithErrors => Future.successful(BadRequest(views.html.Password.edit(user, formWithErrors))),
           newPassword => {
-            val session = OverviewDatabase.inTransaction {
+            val savedUser = OverviewDatabase.inTransaction {
               storage.insertOrUpdateUser(user.withNewPassword(newPassword).toUser)
-              storage.insertOrUpdateSession(Session(user.id, request.remoteAddress))
             }
-            AuthResults.loginSucceeded(request, session).flashing(
+
+            for {
+              session <- sessionBackend.create(savedUser.id, request.remoteAddress)
+            } yield AuthResults.loginSucceeded(request, session).flashing(
               "success" -> m("update.success"),
               "event" -> "password-update"
             )
@@ -96,15 +100,17 @@ trait PasswordController extends Controller {
     }
   }
 
-  protected val storage : PasswordController.Storage
-  protected val mail : PasswordController.Mail
+  protected val sessionBackend: SessionBackend
+  protected val storage: PasswordController.Storage
+  protected val mail: PasswordController.Mail
 }
 
 object PasswordController extends PasswordController {
+  override protected val sessionBackend = SessionBackend
+
   trait Storage {
     def findUserByEmail(email: String) : Option[OverviewUser]
     def findUserByResetToken(token: String) : Option[OverviewUser with ResetPasswordRequest]
-    def insertOrUpdateSession(session: Session) : Session
     def insertOrUpdateUser(user: User) : User
   }
 
@@ -127,7 +133,6 @@ object PasswordController extends PasswordController {
       )
     }
 
-    override def insertOrUpdateSession(session: Session) = SessionStore.insertOrUpdate(session)
     override def insertOrUpdateUser(user: User) = UserStore.insertOrUpdate(user)
   }
 

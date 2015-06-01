@@ -17,7 +17,7 @@ trait SessionBackend extends Backend {
   val MaxSessionAgeInMs: Long = 30L * 86400 * 1000 // 30 days
 
   /** Minimum createdAt for a non-expired session (at call time). */
-  protected def minCreatedAt: Timestamp = new Timestamp(new java.util.Date().getTime() - MaxSessionAgeInMs)
+  protected def minCreatedAt: Timestamp = new Timestamp(System.currentTimeMillis - MaxSessionAgeInMs)
 
   /** Finds a Session.
     *
@@ -32,22 +32,48 @@ trait SessionBackend extends Backend {
     * changed and updatedAt has not changed by even 10 minutes.
     */
   def update(id: UUID, attributes: Session.UpdateAttributes): Future[Unit]
+
+  /** Creates a Session in the database. */
+  def create(userId: Long, ip: String): Future[Session]
+
+  /** Destroys a Session from the database.
+    *
+    * This is a no-op if the Session is not already in the database.
+    */
+  def destroy(id: UUID): Future[Unit]
+
+  /** Destroys expired Sessions for the given user.
+    *
+    * We only destroy a single User's Sessions at a time, so we can guarantee
+    * that no one query will take too long.
+    */
+  def destroyExpiredSessionsForUserId(userId: Long): Future[Unit]
 }
 
 trait DbSessionBackend extends SessionBackend { self: DbBackend =>
   import org.overviewproject.database.Slick.simple._
 
-  private lazy val showWithUserCompiled = Compiled { (id: Column[UUID], minCreatedAt: Column[Timestamp]) =>
+  private lazy val byIdCompiled = Compiled { (id: Rep[UUID]) => Sessions.filter(_.id === id) }
+
+  private lazy val byUserIdAndMaxCreatedAtCompiled = Compiled { (userId: Rep[Long], maxCreatedAt: Rep[Timestamp]) =>
+    Sessions
+      .filter(_.userId === userId)
+      .filter(_.createdAt < maxCreatedAt)
+  }
+
+  private lazy val showWithUserCompiled = Compiled { (id: Rep[UUID], minCreatedAt: Rep[Timestamp]) =>
     for {
       s <- Sessions.filter(_.id === id).filter(_.createdAt >= minCreatedAt)
       u <- Users.filter(_.id === s.userId)
     } yield (s, u)
   }
 
-  private lazy val updateCompiled = Compiled { (id: Column[UUID]) =>
+  private lazy val updateCompiled = Compiled { (id: Rep[UUID]) =>
     for { s <- Sessions if s.id === id }
     yield (s.ip, s.updatedAt)
   }
+
+  protected lazy val insertCompiled = (Sessions returning Sessions).insertInvoker
 
   override def showWithUser(id: UUID) = firstOption(showWithUserCompiled(id, minCreatedAt))
 
@@ -56,6 +82,19 @@ trait DbSessionBackend extends SessionBackend { self: DbBackend =>
     val updatedAt = new Timestamp(attributes.updatedAt.getTime())
 
     updateCompiled(id).update((ip, updatedAt))(session)
+  }
+
+  override def create(userId: Long, ip: String) = db { session =>
+    insertCompiled.+=(Session(userId, ip))(session)
+  }
+
+  override def destroy(id: UUID) = db { session =>
+    byIdCompiled(id).delete(session)
+  }
+
+  override def destroyExpiredSessionsForUserId(userId: Long) = db { session =>
+    // Our minCreatedAt becomes maxCreatedAt in this query
+    byUserIdAndMaxCreatedAtCompiled(userId, minCreatedAt).delete(session)
   }
 }
 

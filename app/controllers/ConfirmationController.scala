@@ -1,17 +1,22 @@
 package controllers
 
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
-import play.api.Logger
+import scala.concurrent.Future
 
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
+import controllers.backend.SessionBackend
 import models.OverviewDatabase
 import models.{IntercomConfiguration, MailChimp, OverviewUser}
-import models.Session
-import models.orm.stores.{SessionStore,UserStore}
+import models.orm.stores.UserStore
+import org.overviewproject.util.Logger
 
 object ConfirmationController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
+  private val logger = Logger.forClass(getClass)
+
+  private val sessionBackend = SessionBackend
 
   /** Prompts for a confirmation token.
     */
@@ -23,50 +28,30 @@ object ConfirmationController extends Controller {
     *
     * Normally, there would be a POST update for confirming. However, we want
     * to confirm via email link, so it must be a GET.
-    *
-    * There are two possible outcomes:
-    *
-    * 1) The user is found
     */
-  def show(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def show(token: String) = OptionallyAuthorizedAction(anyUser).async { implicit request =>
     request.user match {
-      case Some(user) => Redirect(routes.WelcomeController.show)
+      case Some(user) => Future.successful(Redirect(routes.WelcomeController.show))
       case None => OverviewUser.findByConfirmationToken(token) match {
+        case None => Future.successful(BadRequest(views.html.Confirmation.show()))
         case Some(u) => {
-          val session = OverviewDatabase.inTransaction {
-            val savedUser = OverviewUser(UserStore.insertOrUpdate(u.confirm.toUser))
-            val ret = Session(savedUser.id, request.remoteAddress)
-            SessionStore.insertOrUpdate(ret)
-            ret
-          }
+          val savedUser = OverviewDatabase.inTransaction { OverviewUser(UserStore.insertOrUpdate(u.confirm.toUser)) }
 
-          if (u.requestedEmailSubscription) {
-            MailChimp.subscribe(u.email).getOrElse(Logger.info(s"Did not attempt requested subscription for ${u.email}"))
-          }
+          for {
+            session <- sessionBackend.create(savedUser.id, request.remoteAddress)
+          } yield {
+            if (u.requestedEmailSubscription) {
+              MailChimp.subscribe(u.email).getOrElse(logger.info(s"Did not attempt requested subscription for ${u.email}"))
+            }
 
-          val result = AuthResults.loginSucceeded(request, session)
-
-          // We have an Intercom welcome message -- see
-          // https://www.pivotaltracker.com/story/show/70209172
-          //
-          // So if we're using Intercom, don't flash a welcome.
-          //
-          // This is untested because the most likely source of user-facing
-          // error is a change to our Intercom settings, which our test suite
-          // can't control.
-          IntercomConfiguration.settingsForUser(u.toUser) match {
-            case Some(_) =>
-              result.flashing(
-                "event" -> "confirmation-update"
-              )
-            case None =>
-              result.flashing(
+            AuthResults
+              .loginSucceeded(request, session)
+              .flashing(
                 "success" -> m("show.success"),
                 "event" -> "confirmation-update"
               )
           }
         }
-        case None => BadRequest(views.html.Confirmation.show())
       }
     }
   }

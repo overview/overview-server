@@ -9,9 +9,8 @@ import controllers.backend.UserBackend
 import controllers.forms.admin.NewUserForm
 import controllers.Controller
 import models.{OverviewDatabase,User}
-import models.orm.finders.{UserFinder, SessionFinder}
-import models.orm.stores.{SessionStore, UserStore}
-import org.overviewproject.tree.Ownership
+import models.orm.finders.{UserFinder}
+import models.orm.stores.{UserStore}
 import org.overviewproject.tree.orm.finders.ResultPage
 
 trait UserController extends Controller {

@@ -3,7 +3,9 @@ package controllers
 import java.util.Date
 import org.specs2.specification.Scope
 import play.api.mvc.RequestHeader
+import scala.concurrent.Future
 
+import controllers.backend.SessionBackend
 import models.{OverviewUser, ResetPasswordRequest, Session, User}
 
 class PasswordControllerSpec extends ControllerSpecification {
@@ -11,28 +13,31 @@ class PasswordControllerSpec extends ControllerSpecification {
     trait UserWithRequest extends OverviewUser with ResetPasswordRequest
 
     // We have a mock "user" and "userWithRequest" and they return each other
-    val user = mock[OverviewUser]
+    val user = smartMock[OverviewUser]
     user.email returns "user@example.org"
     user.passwordMatches("hash") returns true
+    user.toUser returns User(id=123L, email="user@example.org")
 
-    val userWithRequest = mock[UserWithRequest]
+    val userWithRequest = smartMock[UserWithRequest]
     userWithRequest.email returns user.email
     userWithRequest.resetPasswordToken returns "0123456789abcd"
     userWithRequest.withNewPassword(anyString) returns user
 
     user.withResetPasswordRequest returns userWithRequest
 
-    val mockStorage = mock[PasswordController.Storage]
-    val mockMail = mock[PasswordController.Mail]
+    val mockStorage = smartMock[PasswordController.Storage]
+    val mockMail = smartMock[PasswordController.Mail]
+    val mockSessionBackend = smartMock[SessionBackend]
 
     mockStorage.findUserByEmail(any[String]) returns None
     mockStorage.findUserByEmail("user@example.org") returns Some(user)
     mockStorage.findUserByResetToken(any[String]) returns None
     mockStorage.findUserByResetToken("0123456789abcd") returns Some(userWithRequest)
-    mockStorage.insertOrUpdateSession(any[Session]) answers { x => x.asInstanceOf[Session] }
+    mockSessionBackend.create(any[Long], any[String]) returns Future.successful(Session(123L, "127.0.0.1"))
     mockStorage.insertOrUpdateUser(any[User]) answers { x => x.asInstanceOf[User] }
 
     val controller = new PasswordController {
+      override val sessionBackend = mockSessionBackend
       override val storage = mockStorage
       override val mail = mockMail
     }
@@ -174,7 +179,7 @@ class PasswordControllerSpec extends ControllerSpecification {
 
       "log the user in" in new UpdateScope {
         h.session(result).get("AUTH_SESSION_ID") must beSome
-        there was one(mockStorage).insertOrUpdateSession(any[Session])
+        there was one(mockSessionBackend).create(any[Long], any[String])
       }
 
       "redirect" in new UpdateScope {

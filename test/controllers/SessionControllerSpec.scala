@@ -1,17 +1,20 @@
 package controllers
 
 import org.specs2.specification.Scope
-import play.api.mvc.AnyContent
+import scala.concurrent.Future
 
-import controllers.auth.OptionallyAuthorizedRequest
+import controllers.backend.SessionBackend
 import models.{Session,User}
 
 class SessionControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
-    val mockStorage = mock[SessionController.Storage]
+    val mockSessionBackend = smartMock[SessionBackend]
+    mockSessionBackend.create(any, any) returns Future.successful(Session(123L, "127.0.0.1"))
+    mockSessionBackend.destroy(any) returns Future.successful(())
+    mockSessionBackend.destroyExpiredSessionsForUserId(any) returns Future.successful(())
 
     val controller = new SessionController {
-      override val storage = mockStorage
+      override val sessionBackend = mockSessionBackend
     }
   }
 
@@ -57,7 +60,7 @@ class SessionControllerSpec extends ControllerSpecification {
         override def request = requestWithUser.withSession("AUTH_SESSION_ID" -> requestWithUser.userSession.get.id.toString)
         h.status(result) must beEqualTo(h.SEE_OTHER)
         h.session(result).isEmpty must beTrue
-        there was one(mockStorage).deleteSession(any[Session])
+        there was one(mockSessionBackend).destroy(any)
       }
     }
 

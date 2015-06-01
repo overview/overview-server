@@ -1,6 +1,5 @@
 package controllers.auth
 
-import java.util.Date
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{ActionBuilder, RequestHeader, Request, Result}
 import play.api.Play
@@ -8,9 +7,6 @@ import scala.concurrent.Future
 
 import models.OverviewDatabase
 import models.{Session,User}
-import models.orm.stores.{SessionStore, UserStore}
-import models.orm.finders.UserFinder
-import org.overviewproject.models.UserRole
 
 trait AuthorizedAction {
   protected val sessionFactory: SessionFactory

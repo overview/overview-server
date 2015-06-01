@@ -1,27 +1,20 @@
 package controllers
 
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
+import scala.concurrent.Future
 
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
-import models.OverviewDatabase
-import models.Session
-import models.orm.finders.SessionFinder
-import models.orm.stores.SessionStore
+import controllers.backend.SessionBackend
 
 trait SessionController extends Controller {
-  val loginForm = controllers.forms.LoginForm()
-  val registrationForm = controllers.forms.UserForm()
+  private val loginForm = controllers.forms.LoginForm()
+  private val registrationForm = controllers.forms.UserForm()
 
   private val m = views.Magic.scopedMessages("controllers.SessionController")
 
-  trait Storage {
-    def createSession(session: Session) : Unit
-    def deleteSession(session: Session) : Unit
-    def deleteExpiredSessionsForUserId(userId: Long) : Unit
-  }
-
-  protected val storage : SessionController.Storage
+  protected val sessionBackend: SessionBackend
 
   def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
@@ -30,57 +23,35 @@ trait SessionController extends Controller {
     }
   }
 
-  def delete = OptionallyAuthorizedAction(anyUser) { implicit request =>
-    request.userSession.foreach(storage.deleteSession)
-    AuthResults.logoutSucceeded(request).flashing(
+  def delete = OptionallyAuthorizedAction(anyUser).async { implicit request =>
+    val result = AuthResults.logoutSucceeded(request).flashing(
       "success" -> m("delete.success"),
       "event" -> "session-delete"
     )
+
+    request.userSession match {
+      case Some(session) => {
+        for {
+          _ <- sessionBackend.destroy(session.id)
+        } yield result
+      }
+      case None => Future.successful(result)
+    }
   }
 
-  def create = Action { implicit request =>
+  def create = Action.async { implicit request =>
     loginForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
+      formWithErrors => Future.successful(BadRequest(views.html.Session.new_(formWithErrors, registrationForm))),
       user => {
-        val session = Session(user.id, request.remoteAddress)
-        storage.createSession(session)
-        storage.deleteExpiredSessionsForUserId(user.id)
-        AuthResults.loginSucceeded(request, session).flashing(
-          "event" -> "session-create"
-        )
+        for {
+          _ <- sessionBackend.destroyExpiredSessionsForUserId(user.id)
+          session <- sessionBackend.create(user.id, request.remoteAddress)
+        } yield AuthResults.loginSucceeded(request, session).flashing("event" -> "session-create")
       }
     )
   }
 }
 
 object SessionController extends SessionController {
-  object DatabaseStorage extends Storage {
-    override def createSession(session: Session) = {
-      OverviewDatabase.inTransaction {
-        SessionStore.insertOrUpdate(session)
-      }
-    }
-
-    override def deleteSession(session: Session) = {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      import models.orm.Schema._
-
-      OverviewDatabase.inTransaction {
-        SessionStore.delete(session.id)
-      }
-    }
-    override def deleteExpiredSessionsForUserId(userId: Long) = {
-      val expiredSessions = SessionFinder.byUserId(userId).expired
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      import models.orm.Schema._
-      // Squeryl is SO STUPID. This should happen in Postgres: SessionStore.delete(expiredSessions)
-      OverviewDatabase.inTransaction {
-        for (expiredSession <- expiredSessions) {
-          SessionStore.delete(expiredSession.id)
-        }
-      }
-    }
-  }
-
-  override val storage = DatabaseStorage
+  override protected val sessionBackend = SessionBackend
 }

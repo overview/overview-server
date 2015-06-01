@@ -85,4 +85,66 @@ class DbSessionBackendSpec extends DbBackendSpecification {
       s.map(_.updatedAt) must beSome(new Timestamp(1000000005000L))
     }
   }
+
+  "#create" should {
+    trait CreateScope extends BaseScope {
+      val user1 = insertUser(123L, "user@example.org")
+    }
+
+    "create a Session in the database" in new CreateScope {
+      val ret = await(backend.create(user1.id, "127.0.0.1"));
+      val dbRet = findSession(ret.id)
+      dbRet must beSome(ret)
+      ret.userId must beEqualTo(123L)
+    }
+  }
+
+  "#destroy" should {
+    trait DestroyScope extends BaseScope {
+      val updatedAt1 = new java.util.Date(1000000000000L)
+      val user1 = insertUser(123L, "user@example.org")
+      val session1 = insertSession(user1.id, "192.168.0.1", updatedAt1)
+    }
+
+    "destroy a Session" in new DestroyScope {
+      await(backend.destroy(session1.id))
+      findSession(session1.id) must beNone
+    }
+
+    "not destroy other Sessions" in new DestroyScope {
+      val session2 = insertSession(user1.id, "192.168.0.2", updatedAt1)
+      await(backend.destroy(session1.id))
+      findSession(session2.id) must beSome
+    }
+  }
+
+  "#destroyExpiredSessionsForUserId" should {
+    trait DestroyExpiredScope extends BaseScope {
+      val nDays = 50
+      val recentDate = new java.util.Date(1000000000001L)
+      val oldDate = new java.util.Date(999999999999L)
+      val user1 = insertUser(123L, "user@example.org")
+
+      def go = await(backend.destroyExpiredSessionsForUserId(user1.id))
+    }
+
+    "destroy old Sessions" in new DestroyExpiredScope {
+      val oldSession = insertSession(user1.id, "192.168.0.2", oldDate)
+      go
+      findSession(oldSession.id) must beNone
+    }
+
+    "not destroy new Sessions" in new DestroyExpiredScope {
+      val recentSession = insertSession(user1.id, "192.168.0.1", recentDate)
+      go
+      findSession(recentSession.id) must beSome
+    }
+
+    "not destroy other Users' Sessions" in new DestroyExpiredScope {
+      val user2 = insertUser(124L, "user2@example.org")
+      val otherSession = insertSession(user2.id, "192.168.0.3", oldDate)
+      go
+      findSession(otherSession.id) must beSome
+    }
+  }
 }
