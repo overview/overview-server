@@ -16,4 +16,4 @@ module.exports = TIMEOUTS =
   true: 1000      # default
   fast: 1000      # everyday operations (worst case)
   pageLoad: 5000  # not _fast_, but nothing should hold it up
-  slow: 20000     # a progress bar is visible
+  slow: 30000     # a progress bar is visible
