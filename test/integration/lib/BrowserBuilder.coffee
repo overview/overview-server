@@ -231,7 +231,6 @@ module.exports =
   # DEPRECATED: we've moved to createBrowser(), because external libraries are
   # too complex.
   create: (title) ->
-    console.log('NO NO NO')
     desiredCapabilities = { name: title }
     desiredCapabilities[k] = v for k, v of options.desiredCapabilities
 
