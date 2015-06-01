@@ -17,7 +17,7 @@ module.exports = likeATree = (opts) ->
           when 'text'
             => @browser.assertExists(tag: 'pre', contains: document.contains, wait: 'pageLoad')
           when 'pdf'
-            => @browser.assertExists(tag: 'object', type: 'application/pdf', wait: 'pageLoad')
+            => @browser.assertExists(css: '.document[data-document-type=pdf] iframe')
 
         @browser
           .click(tag: 'h3', contains: document.title)

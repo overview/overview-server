@@ -1,127 +1,72 @@
-asUserUploadingFiles = require('../support/asUserUploadingFiles')
-shouldBehaveLikeATree = require('../support/behave/likeATree')
-testMethods = require('../support/testMethods')
-wd = require('wd')
-
-
-Url =
-  index: '/documentsets'
-  fileUpload: '/imports/file'
+asUser = require('../support/asUser-new')
+shouldBehaveLikeATree = require('../support/behave/likeATree-new')
 
 describe 'FileUpload', ->
-  asUserUploadingFiles('FileUpload')
-
-  testMethods.usingPromiseChainMethods
-    waitForJobsToComplete: (sleepTime = 1) ->
-      @
-        .sleep(sleepTime) # async requests can time out; this won't
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('Grogress').length == 0), 19000)
-
-    deleteTopUpload: ->
-      @
-        .get(Url.index)
-        .elementByCss('.actions .dropdown-toggle').click()
-        .acceptingNextAlert()
-        .elementByCss('.delete-document-set').click()
-
-    loadImportedTree: (name) ->
-      @
-        .waitForJobsToComplete()
-        .get(Url.index)
-        .waitForElementBy(tag: 'a', contains: name, visible: true).click()
-
-    chooseManyFiles: ->
-      [1..60].reduce(
-        ((browserPromise, file) -> browserPromise.chooseFile("ManyFiles/file-#{file}.pdf")),
-        @
-      )
-
-  describe 'after uploading files', ->
+  asUser.usingTemporaryUser ->
     before ->
-      @userBrowser
-        .openFileUploadPage()
-        .chooseFile('FileUpload/Cat1.docx')
-        .chooseFile('FileUpload/Cat2.txt')
-        .chooseFile('FileUpload/Cat3.rtf')
-        .chooseFile('FileUpload/Cat4.html')
-        .chooseFile('FileUpload/Jules1.doc')
-        .chooseFile('FileUpload/Jules2.pptx')
-        .chooseFile('FileUpload/Jules3.xlsx')
-        .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
-        .waitForElementBy(tag: 'input', name: 'name', visible: true)
-        .elementBy(tag: 'input', name: 'name').type('File Upload')
-        .doImport()
-        .waitForJobsToComplete(10000)
+      @browser
+        .loadShortcuts('documentSets')
+        .loadShortcuts('importFiles')
 
-    after ->
-      @userBrowser
-        .deleteTopUpload()
-
-    it 'should show document set', ->
-      @userBrowser
-        .get(Url.index)
-        .waitForElementBy({tag: 'h3', contains: 'File Upload'}, 10000).should.eventually.exist
-
-    describe 'in the default tree', ->
+    describe 'after uploading files', ->
       before ->
-        @userBrowser
-          .get(Url.index)
-          .waitForElementBy(tag: 'a', contains: 'File Upload', visible: true).click()
+        @browser
+          .shortcuts.importFiles.open()
+          .shortcuts.importFiles.addFiles([
+            'FileUpload/Cat1.docx'
+            'FileUpload/Cat2.txt'
+            'FileUpload/Cat3.rtf'
+            'FileUpload/Cat4.html'
+            'FileUpload/Jules1.doc'
+            #'FileUpload/Jules2.pptx' # XXX this triggers a Selenium bug: the upload fails
+            'FileUpload/Jules3.xlsx'
+          ])
+          .shortcuts.importFiles.finish(name: 'FileUpload')
+
+      after ->
+        @browser
+          .shortcuts.documentSets.destroy('FileUpload')
 
       shouldBehaveLikeATree
         documents: [
-          { type: 'pdf', title: 'Cat1.docx' },
-          { type: 'pdf', title: 'Cat2.txt' },
-          { type: 'pdf', title: 'Cat3.rtf' },
-          { type: 'pdf', title: 'Cat4.html' },
-          { type: 'pdf', title: 'Jules1.doc' },
-          { type: 'pdf', title: 'Jules2.pptx' },
+          { type: 'pdf', title: 'Cat1.docx' }
+          { type: 'pdf', title: 'Cat2.txt' }
+          { type: 'pdf', title: 'Cat3.rtf' }
+          { type: 'pdf', title: 'Cat4.html' }
+          { type: 'pdf', title: 'Jules1.doc' }
+          #{ type: 'pdf', title: 'Jules2.pptx' }
           { type: 'pdf', title: 'Jules3.xlsx' }
         ]
         searches: [
           { query: 'chase', nResults: 4 }
         ]
 
-  describe 'after splitting a file into pages', ->
-    before ->
-      @userBrowser
-        .openFileUploadPage()
-        .chooseFile('FileUpload/Cat1.docx')
-        .elementBy(tag: 'button', contains: 'Done adding files').click()
-        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('File Upload')
-        .elementBy(tag: 'label', contains: 'Each page is one document').click()
-        .doImport()
-        .waitForJobsToComplete(1000)
+    describe 'after splitting a file into pages', ->
+      before ->
+        @browser
+          .shortcuts.importFiles.open()
+          .shortcuts.importFiles.addFiles([ 'FileUpload/Cat1.docx' ])
+          .shortcuts.importFiles.finish(name: 'Split FileUpload', splitByPage: true)
 
-    shouldBehaveLikeATree
-      documents: [
-          { type: 'pdf', title: 'Cat1.docx – page 1' },
-          { type: 'pdf', title: 'Cat1.docx – page 2' },
-          { type: 'pdf', title: 'Cat1.docx – page 3' }
-      ]
-      searches: [
-        { query: 'face', nResults: 3 }
-      ]
+      after ->
+        @browser
+          .shortcuts.documentSets.destroy('Split FileUpload')
 
-    after ->
-      @userBrowser
-        .deleteTopUpload()
+      shouldBehaveLikeATree
+        documents: [
+            { type: 'pdf', title: 'Cat1.docx – page 1' }
+            { type: 'pdf', title: 'Cat1.docx – page 2' }
+            { type: 'pdf', title: 'Cat1.docx – page 3' }
+        ]
+        searches: [
+          { query: 'face', nResults: 3 }
+        ]
 
-  describe 'after splitting many files into pages @SauceLabsKiller', ->
-    before ->
-      @userBrowser
-        .openFileUploadPage()
-        .chooseManyFiles()
-        .elementBy(tag: 'button', contains: 'Done adding files').click()
-        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('File Upload')
-        .elementBy(tag: 'label', contains: 'Each page is one document').click()
-        .doImport()
-        .waitForJobsToComplete(10000)
-
-    it 'should create one document per page', ->
-      @userBrowser
-        .waitForElementBy(tag: 'h4', contains: '120 documents').should.eventually.exist
-
-    after ->
-      @userBrowser
-        .deleteTopUpload()
+    it 'should allow splitting >50 files', ->
+      # https://www.pivotaltracker.com/story/show/81624750
+      @browser
+        .shortcuts.importFiles.open()
+        .shortcuts.importFiles.addFiles("ManyFiles/file-#{n}.pdf" for n in [1..60])
+        .shortcuts.importFiles.finish(name: 'Many FileUpload', splitByPage: true)
+        .assertExists(tag: 'h4', contains: '120 documents')
+        .shortcuts.documentSets.destroy('Many FileUpload')
