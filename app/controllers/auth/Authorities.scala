@@ -2,12 +2,11 @@ package controllers.auth
 
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.{Future,blocking}
-import scala.slick.jdbc.JdbcBackend.Session
-import scala.slick.lifted.RunnableCompiled
+import slick.jdbc.JdbcBackend.Session
+import slick.lifted.{ConstColumn,Query,RunnableCompiled}
 
-import models.{OverviewDatabase,User,UserRole}
-import org.overviewproject.models.ApiToken
-import org.overviewproject.database.Slick.simple.{Column,Query}
+import models.{OverviewDatabase,User}
+import org.overviewproject.models.{ApiToken,UserRole}
 import org.overviewproject.database.{SlickClient,SlickSessionProvider}
 
 trait Authorities extends SlickClient {
@@ -87,7 +86,7 @@ trait Authorities extends SlickClient {
     override def apply(apiToken: ApiToken) = Future.successful(false)
   }
 
-  private def check(f: RunnableCompiled[Query[Column[Boolean],Boolean,Seq],Seq[Boolean]]): Future[Boolean] = {
+  private def check(f: RunnableCompiled[Query[ConstColumn[Boolean],Boolean,Seq],Seq[Boolean]]): Future[Boolean] = {
     import org.overviewproject.database.Slick.simple._
     db { session => f.firstOption(session).getOrElse(false) }
   }

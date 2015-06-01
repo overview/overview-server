@@ -1,6 +1,5 @@
 package models.tables
 
-import com.github.tminglei.slickpg.InetString
 import java.util.UUID
 import java.sql.Timestamp
 
@@ -9,11 +8,6 @@ import org.overviewproject.database.Slick.simple._
 import org.overviewproject.postgres.InetAddress
 
 class SessionsImpl(tag: Tag) extends Table[Session](tag, "session") {
-  private val ipColumnType = MappedColumnType.base[InetAddress, InetString](
-    (a: InetAddress) => InetString(a.getHostAddress),
-    (s: InetString) => InetAddress.getByName(s.address)
-  )
-
   def id = column[UUID]("id", O.PrimaryKey)
   def userId = column[Long]("user_id")
   def ip = column[InetAddress]("ip")(ipColumnType)

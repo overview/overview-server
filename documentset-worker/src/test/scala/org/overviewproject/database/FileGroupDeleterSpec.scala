@@ -1,6 +1,6 @@
 package org.overviewproject.database
 
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.models.tables.FileGroups
 import org.overviewproject.test.{DbSpecification,SlickClientInSession}

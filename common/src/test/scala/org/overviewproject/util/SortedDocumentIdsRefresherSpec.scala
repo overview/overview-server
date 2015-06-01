@@ -1,6 +1,6 @@
 package org.overviewproject.util
 
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 
@@ -64,7 +64,7 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     import org.overviewproject.database.Slick.simple._
     import org.overviewproject.models.tables.{Documents,DocumentSets}
     import org.overviewproject.models.{Document,DocumentSet}
-    import scala.slick.jdbc.{GetResult,StaticQuery}
+    import slick.jdbc.{GetResult,StaticQuery}
 
     def createDocumentSet(id: Long): DocumentSet = {
       val ret = DocumentSet(id, "", None, false, new java.sql.Timestamp(0L), 0, 0, 0, None, false)
@@ -84,7 +84,7 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     }
 
     def getSortedDocumentIds(documentSetId: Long): Option[Seq[Long]] = {
-      implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextLongArray()))
+      implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextArray[Long]()))
       val q = StaticQuery.query[Long,Seq[Long]]("SELECT sorted_document_ids FROM document_set WHERE id = ?")
       q(documentSetId).firstOption(session)
     }

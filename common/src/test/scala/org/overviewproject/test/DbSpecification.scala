@@ -7,8 +7,8 @@ import org.specs2.specification.{Fragments, Step}
 import org.squeryl.{Session=>SquerylSession}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future}
-import scala.slick.jdbc.UnmanagedSession
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.UnmanagedSession
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.{DB, DataSource, DatabaseConfiguration}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter

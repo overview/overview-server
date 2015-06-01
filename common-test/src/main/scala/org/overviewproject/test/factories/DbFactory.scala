@@ -3,11 +3,11 @@ package org.overviewproject.test.factories
 import java.sql.{Connection,Timestamp}
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
-import scala.slick.jdbc.UnmanagedSession
+import slick.jdbc.UnmanagedSession
 import org.overviewproject.models.tables._
 import org.overviewproject.models._
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
-import scala.slick.lifted.AbstractTable
+import slick.lifted.AbstractTable
 
 
 /** Creates objects in the database while returning them.

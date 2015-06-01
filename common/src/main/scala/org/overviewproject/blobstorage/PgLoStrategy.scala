@@ -7,7 +7,7 @@ import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ Future, blocking }
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.{ LO, LargeObject }
@@ -103,7 +103,7 @@ trait PgLoStrategy extends BlobStorageStrategy {
 
     Future(blocking {
       import org.overviewproject.database.Slick.simple._
-      import scala.slick.jdbc.StaticQuery
+      import slick.jdbc.StaticQuery
 
       def deleteSome(loids: Seq[Long]): Unit = {
         val q = s"""

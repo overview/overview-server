@@ -126,7 +126,7 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
       }
 
       def readBytes: Array[Byte] = {
-        import scala.slick.jdbc.StaticQuery
+        import slick.jdbc.StaticQuery
         val q = StaticQuery.query[Long,String]("SELECT encode(loread(lo_open(?, x'20000'::INT), 200), 'hex')")
         val hex = q(groupedFileUpload.contentsOid).first(session)
         hex.grouped(2).toArray.map(Integer.parseInt(_, 16).toByte)

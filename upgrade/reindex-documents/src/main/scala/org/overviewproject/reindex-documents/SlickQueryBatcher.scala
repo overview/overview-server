@@ -1,9 +1,9 @@
 package org.overviewproject.upgrade.reindex_documents
 
 import scala.language.higherKinds
-import scala.slick.ast.Node
-import scala.slick.driver.JdbcProfile
-import scala.slick.lifted.{Query,RunnableCompiled}
+import slick.ast.Node
+import slick.driver.JdbcProfile
+import slick.lifted.{Query,RunnableCompiled}
 
 /** Provides a "batch" method to call st.setFetchSize().
   *

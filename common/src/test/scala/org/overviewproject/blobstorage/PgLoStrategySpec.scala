@@ -4,7 +4,7 @@ import java.io.{ByteArrayInputStream,IOException,InputStream}
 import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Iteratee
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.LO

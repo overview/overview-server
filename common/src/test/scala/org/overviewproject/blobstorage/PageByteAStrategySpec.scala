@@ -3,7 +3,7 @@ package org.overviewproject.blobstorage
 import java.io.ByteArrayInputStream
 import scala.concurrent.{ExecutionContext,Future}
 import scala.concurrent.ExecutionContext
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.models.{File,Page}
 import org.overviewproject.models.tables.{Files,Pages}

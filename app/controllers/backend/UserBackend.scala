@@ -3,8 +3,9 @@ package controllers.backend
 import java.sql.Timestamp
 import scala.concurrent.Future
 
-import models.{User,UserRole}
+import models.User
 import models.tables.Users
+import org.overviewproject.models.UserRole
 import org.overviewproject.models.tables.DocumentSetUsers
 
 trait UserBackend extends Backend {
@@ -64,7 +65,7 @@ trait DbUserBackend extends UserBackend { self: DbBackend =>
   }
 
   override def destroy(id: Long) = db { session =>
-    import scala.slick.jdbc.StaticQuery
+    import slick.jdbc.StaticQuery
 
     // One Big Query: simulate a transaction and avoid round trips
     val q = s"""

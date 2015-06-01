@@ -18,8 +18,8 @@ trait DocumentFileInfoBackend {
 }
 
 trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBackend =>
-  import scala.slick.jdbc.StaticQuery.interpolation
-  import scala.slick.jdbc.GetResult
+  import slick.jdbc.StaticQuery.interpolation
+  import slick.jdbc.GetResult
   import org.overviewproject.database.Slick.simple._
 
   override def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = db { implicit session =>

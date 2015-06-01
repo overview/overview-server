@@ -12,6 +12,7 @@ import java.sql.Timestamp
 import java.util.Date
 
 import models.orm.finders.UserFinder
+import org.overviewproject.models.UserRole
 
 /**
  * A user that exists in the database

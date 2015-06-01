@@ -2,6 +2,8 @@ package models
 
 import java.sql.Timestamp
 
+import org.overviewproject.models.UserRole
+
 case class User(
   id: Long = 0L,
   email: String = "user@example.org",

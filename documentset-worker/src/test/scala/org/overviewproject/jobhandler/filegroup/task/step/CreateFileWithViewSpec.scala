@@ -7,7 +7,7 @@ import org.overviewproject.models.tables.Files
 import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.blobstorage.BlobStorage
 import java.io.InputStream
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.jobhandler.filegroup.task.DocumentConverter

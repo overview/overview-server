@@ -2,7 +2,7 @@ package controllers.backend
 
 import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
-import scala.slick.jdbc.StaticQuery
+import slick.jdbc.StaticQuery
 
 import models.Selection
 import org.overviewproject.models.DocumentStoreObject
@@ -123,8 +123,8 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend { self: Db
     }
   }
 
-  implicit lazy val getDsoResult = new scala.slick.jdbc.GetResult[DocumentStoreObject] {
-    override def apply(v1: scala.slick.jdbc.PositionedResult): DocumentStoreObject = {
+  implicit lazy val getDsoResult = new slick.jdbc.GetResult[DocumentStoreObject] {
+    override def apply(v1: slick.jdbc.PositionedResult): DocumentStoreObject = {
       DocumentStoreObject(
         v1.nextLong,
         v1.nextLong,

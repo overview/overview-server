@@ -37,7 +37,7 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
       Future.successful(Map())
     } else {
       // Slick is slow at compiling queries. We need this query _fast_
-      import scala.slick.jdbc.{GetResult, StaticQuery => Q}
+      import slick.jdbc.{GetResult, StaticQuery => Q}
       val query = Q.queryNA[(Long,Int)](s"""
         SELECT node_id, COUNT(*)
         FROM node_document
@@ -55,8 +55,8 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
       Future.successful(Map())
     } else {
       import org.overviewproject.database.Slick.Implicit.PgArrayPositionedResult
-      import scala.slick.jdbc.{GetResult, StaticQuery => Q}
-      implicit val rconv = GetResult(r => (r.nextLong() -> r.nextLongArray()))
+      import slick.jdbc.{GetResult, StaticQuery => Q}
+      implicit val rconv = GetResult(r => (r.nextLong() -> r.nextArray[Long]()))
       val query = Q.queryNA[(Long,Seq[Long])](s"""
         SELECT document_id, ARRAY_AGG(node_id)
         FROM node_document

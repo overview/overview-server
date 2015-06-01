@@ -3,8 +3,9 @@ package controllers.backend
 import java.util.{Date,UUID}
 import java.sql.{SQLException,Timestamp}
 
-import models.{User,UserRole}
+import models.User
 import models.tables.Users
+import org.overviewproject.models.UserRole
 
 class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

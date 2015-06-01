@@ -28,7 +28,7 @@ trait ProjectSettings {
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "1.4.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
   val guavaDep = "com.google.guava" % "guava" % "16.0"
-  val hikariCpDep = "com.zaxxer" % "HikariCP" % "2.3.2"
+  val hikariCpDep = "com.zaxxer" % "HikariCP" % "2.3.8"
   val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
   val junitDep = "junit" % "junit-dep" % "4.11"
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
@@ -38,10 +38,10 @@ trait ProjectSettings {
   val playHikariCpDep = "com.edulify" %% "play-hikaricp" % "2.0.0"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
   val postgresqlDep = "org.postgresql" % "postgresql" % "9.3-1103-jdbc41"
-  val pgSlickDep = "com.github.tminglei" %% "slick-pg" % "0.8.1"
+  val pgSlickDep = "com.github.tminglei" %% "slick-pg" % "0.9.0"
   val redisDep = "net.debasishg" %% "redisreact" % "0.6"
   val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.4"
-  val slickDep = "com.typesafe.slick" %% "slick" % "2.1.0"
+  val slickDep = "com.typesafe.slick" %% "slick" % "3.0.0"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.13"
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC3"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"

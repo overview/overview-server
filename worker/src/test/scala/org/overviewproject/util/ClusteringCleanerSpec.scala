@@ -1,6 +1,6 @@
 package org.overviewproject.util
 
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.test.{ DbSpecification, SlickClientInSession }
 import org.overviewproject.models.DocumentSetCreationJobState._

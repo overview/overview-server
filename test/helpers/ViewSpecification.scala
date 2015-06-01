@@ -11,7 +11,8 @@ import play.api.mvc.Flash
 import play.twirl.api.Html
 import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 
-import models.{User=>UserModel,UserRole}
+import models.{User=>UserModel}
+import org.overviewproject.models.UserRole
 
 class ViewSpecification extends Specification with Mockito with JsonMatchers {
   // Need fake application, because some views show CSRF tokens

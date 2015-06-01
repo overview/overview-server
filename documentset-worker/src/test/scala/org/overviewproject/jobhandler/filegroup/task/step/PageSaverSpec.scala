@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import org.overviewproject.models.Page
 import org.overviewproject.models.tables.Pages
 import org.overviewproject.test.SlickClientInSession
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 class PageSaverSpec extends SlickSpecification with Mockito {
 

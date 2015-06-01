@@ -4,7 +4,7 @@ import java.io.{ ByteArrayInputStream, InputStream }
 import org.mockito.Matchers
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.File

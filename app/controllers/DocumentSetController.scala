@@ -249,7 +249,7 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
         Seq()
       } else {
         import org.overviewproject.database.Slick.simple._
-        import scala.slick.jdbc.{GetResult,StaticQuery}
+        import slick.jdbc.{GetResult,StaticQuery}
 
         // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries
         // would make more sense than straight SQL.

@@ -1,7 +1,11 @@
 package org.overviewproject.database
 
 import com.github.tminglei.slickpg._
-import scala.slick.driver.PostgresDriver
+import play.api.libs.json.{JsObject,Json}
+import slick.driver.PostgresDriver
+
+import org.overviewproject.postgres.InetAddress
+import org.overviewproject.models.UserRole
 
 trait MyPostgresDriver extends PostgresDriver
   with PgArraySupport
@@ -13,7 +17,25 @@ trait MyPostgresDriver extends PostgresDriver
   trait ImplicitsPlus extends Implicits
     with ArrayImplicits
     with NetImplicits
-    with SimpleArrayPlainImplicits
+    with SimpleArrayPlainImplicits {
+
+    implicit val jsonTextColumnType = MappedColumnType.base[JsObject, String](
+      Json.stringify,
+      Json.parse(_).as[JsObject]
+    )
+
+    implicit val jsonTextOptionColumnType = jsonTextColumnType.optionType
+
+    implicit val ipColumnType = MappedColumnType.base[InetAddress, InetString](
+      (a: InetAddress) => InetString(a.getHostAddress),
+      (s: InetString) => InetAddress.getByName(s.address)
+    )
+
+    implicit val userRoleColumnType = MappedColumnType.base[UserRole.UserRole, Int](
+      _.id,
+      UserRole(_)
+    )
+  }
 
   trait SimpleQLPlus extends SimpleQL with ImplicitsPlus
 }

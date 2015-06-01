@@ -10,8 +10,8 @@ package org.overviewproject.database
 import java.sql.Connection
 import javax.sql.{ DataSource => JDataSource }
 import org.postgresql.PGConnection
-import scala.slick.jdbc.JdbcBackend.Session
-import scala.slick.jdbc.UnmanagedSession
+import slick.jdbc.JdbcBackend.Session
+import slick.jdbc.UnmanagedSession
 
 /**
  * Convenience object for database access. Call DB.connect(datasSource) once at the start

@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task
 
 import java.util.Date
-import scala.slick.jdbc.JdbcBackend.{ Session => JSession }
+import slick.jdbc.JdbcBackend.{ Session => JSession }
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.models.Document

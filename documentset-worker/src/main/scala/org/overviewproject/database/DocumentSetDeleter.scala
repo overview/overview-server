@@ -2,8 +2,8 @@ package org.overviewproject.database
 
 import scala.concurrent.Future 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.slick.lifted.AbstractTable
-import scala.slick.jdbc.StaticQuery.interpolation
+import slick.lifted.AbstractTable
+import slick.jdbc.StaticQuery.interpolation
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.tables._
 

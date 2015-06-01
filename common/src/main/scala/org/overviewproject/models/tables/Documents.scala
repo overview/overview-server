@@ -6,12 +6,12 @@ import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.Document
 
 class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
-  private val keywordColumnType = MappedColumnType.base[Seq[String], String](
+  implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](
     _.mkString(" "),
     _.split(" ").toSeq
   )
 
-  private val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
+  implicit val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
     d => new java.sql.Timestamp(d.getTime),
     d => new Date(d.getTime)
   )

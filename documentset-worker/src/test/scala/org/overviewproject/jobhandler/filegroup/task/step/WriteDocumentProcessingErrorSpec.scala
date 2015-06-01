@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import org.overviewproject.database.Slick.simple._
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.models.tables.DocumentProcessingErrors

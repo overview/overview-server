@@ -1,9 +1,9 @@
 package controllers.auth
 
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
-import models.{User,UserRole}
-import org.overviewproject.models.DocumentSetUser
+import models.User
+import org.overviewproject.models.{DocumentSetUser,UserRole}
 import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 
 /** Tests authorities.

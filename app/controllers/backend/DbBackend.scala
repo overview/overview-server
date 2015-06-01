@@ -1,7 +1,7 @@
 package controllers.backend
 
 import scala.concurrent.Future
-import scala.slick.lifted.{Column,Query,RunnableCompiled}
+import slick.lifted.{Query,Rep,RunnableCompiled}
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import org.overviewproject.database.{SlickClient,SlickSessionProvider}
@@ -32,7 +32,7 @@ trait DbBackend extends SlickClient with SlickSessionProvider {
     * This is the only way to handle `WHERE ... IN (...)` queries. It takes
     * more CPU than `RunnableCompiled` queries.
     */
-  def page[T](itemsQ: Query[_, T, Seq], countQ: Column[Int], pageRequest: PageRequest): Future[Page[T]] = db { implicit session =>
+  def page[T](itemsQ: Query[_, T, Seq], countQ: Rep[Int], pageRequest: PageRequest): Future[Page[T]] = db { implicit session =>
     import org.overviewproject.database.Slick.simple._
 
     // Sequential, so Postgres can benefit from a hot cache on the second query

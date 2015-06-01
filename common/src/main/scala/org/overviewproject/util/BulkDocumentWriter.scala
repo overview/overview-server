@@ -6,7 +6,7 @@ import org.postgresql.copy.CopyManager
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.models.Document

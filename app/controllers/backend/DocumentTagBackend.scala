@@ -21,8 +21,8 @@ trait DbDocumentTagBackend extends DocumentTagBackend { self: DbBackend =>
       Future.successful(Map())
     } else {
       import org.overviewproject.database.Slick.Implicit.PgArrayPositionedResult
-      import scala.slick.jdbc.{GetResult, StaticQuery => Q}
-      implicit val rconv = GetResult(r => (r.nextLong() -> r.nextLongArray()))
+      import slick.jdbc.{GetResult, StaticQuery => Q}
+      implicit val rconv = GetResult(r => (r.nextLong() -> r.nextArray[Long]()))
       val query = Q.queryNA[(Long,Seq[Long])](s"""
         SELECT document_id, ARRAY_AGG(tag_id)
         FROM document_tag

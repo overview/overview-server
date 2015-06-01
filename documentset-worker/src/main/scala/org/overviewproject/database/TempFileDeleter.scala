@@ -2,7 +2,7 @@ package org.overviewproject.database
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.slick.jdbc.StaticQuery.interpolation
+import slick.jdbc.StaticQuery.interpolation
 import org.overviewproject.models.tables.TempDocumentSetFiles
 import org.overviewproject.database.Slick.simple._
 

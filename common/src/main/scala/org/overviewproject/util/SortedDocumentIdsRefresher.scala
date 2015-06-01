@@ -2,7 +2,7 @@ package org.overviewproject.util
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.slick.jdbc.StaticQuery
+import slick.jdbc.StaticQuery
 
 import org.overviewproject.database.{SlickClient,SlickSessionProvider}
 

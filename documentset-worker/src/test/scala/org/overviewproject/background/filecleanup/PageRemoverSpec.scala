@@ -4,7 +4,7 @@ import scala.concurrent.{ Await, Future, Promise, TimeoutException }
 import scala.concurrent.duration._
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.Pages

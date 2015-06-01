@@ -4,7 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.database.SlickClient
-import scala.slick.jdbc.StaticQuery.interpolation
+import slick.jdbc.StaticQuery.interpolation
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentSetCreationJobState
 import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobNodes, NodeDocuments, Nodes, Trees }

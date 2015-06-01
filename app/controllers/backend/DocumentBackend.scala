@@ -2,7 +2,7 @@ package controllers.backend
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
-import scala.slick.jdbc.{GetResult,StaticQuery}
+import slick.jdbc.{GetResult,StaticQuery}
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
@@ -153,7 +153,7 @@ object DbDocumentBackend {
   import scala.language.implicitConversions
 
   def sortedIds(documentSetId: Long) = {
-    implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextLongArray()))
+    implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextArray[Long]()))
 
     // The ORM is unaware of DocumentSet.sortedDocumentIds
     val q = "SELECT sorted_document_ids FROM document_set WHERE id = ?"

@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import scala.collection.mutable.Buffer
 import scala.concurrent.Future
-import scala.slick.jdbc.StaticQuery
+import slick.jdbc.StaticQuery
 
 import org.overviewproject.models.tables.{DocumentSets,Documents,Files,Pages}
 import org.overviewproject.models.{Document,DocumentSet,File,Page}

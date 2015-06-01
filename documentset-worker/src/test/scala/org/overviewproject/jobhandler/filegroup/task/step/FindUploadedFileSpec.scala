@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 
 
 import scala.concurrent.Future
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.models.GroupedFileUpload

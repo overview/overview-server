@@ -3,7 +3,7 @@ package controllers.backend
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}

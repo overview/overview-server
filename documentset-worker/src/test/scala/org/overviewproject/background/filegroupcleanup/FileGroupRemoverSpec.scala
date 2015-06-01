@@ -2,7 +2,7 @@ package org.overviewproject.background.filegroupcleanup
 
 import org.specs2.mock.Mockito
 import scala.concurrent.Promise
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.FileGroups

@@ -1,7 +1,7 @@
 package controllers.backend
 
 import scala.concurrent.Future
-import scala.slick.jdbc.StaticQuery
+import slick.jdbc.StaticQuery
 
 import org.overviewproject.models.Tag
 import org.overviewproject.models.tables.Tags

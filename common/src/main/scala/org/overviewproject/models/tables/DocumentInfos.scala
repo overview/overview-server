@@ -10,12 +10,12 @@ import org.overviewproject.models.DocumentInfo
   * TODO: figure out how to use a Slick TableQuery.map() instead.
   */
 class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
-  private val keywordColumnType = MappedColumnType.base[Seq[String], String](
+  implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](
     _.mkString(" "),
     _.split(",?\\s+").toSeq
   )
 
-  private val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
+  implicit val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
     d => new java.sql.Timestamp(d.getTime),
     d => new Date(d.getTime)
   )

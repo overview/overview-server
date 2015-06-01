@@ -1,7 +1,7 @@
 package org.overviewproject.upgrade.reindex_documents
 
-import scala.slick.driver.PostgresDriver.simple._
-import scala.slick.jdbc.{GetResult,StaticQuery => Q}
+import slick.driver.PostgresDriver.simple._
+import slick.jdbc.{GetResult,StaticQuery => Q}
 
 class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def id = column[Long]("id", O.PrimaryKey)

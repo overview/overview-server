@@ -1,4 +1,4 @@
-package models
+package org.overviewproject.models
 
 object UserRole extends Enumeration {
   type UserRole = Value

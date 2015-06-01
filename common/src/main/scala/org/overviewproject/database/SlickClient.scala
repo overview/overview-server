@@ -1,7 +1,7 @@
 package org.overviewproject.database
 
 import scala.concurrent.{ ExecutionContext, Future, blocking }
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 trait SlickClient {
   /** Runs stuff with a Slick Session, blocking.

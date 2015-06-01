@@ -2,35 +2,10 @@
   user: User
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
-@import models.UserRole
-
 @javascripts = {
   @requireJsBundle("admin/User/index")
 }
-@jsMessageKeys = @{Seq(
-  "views.admin.User.index.h1",
-  "views.admin.User.index.th.email",
-  "views.admin.User.index.th.admin",
-  "views.admin.User.index.th.confirmed_at",
-  "views.admin.User.index.th.last_activity_at",
-  "views.admin.User.index.th.actions",
-  "views.admin.User.index.td.is_admin.true",
-  "views.admin.User.index.td.is_admin.false",
-  "views.admin.User.index.td.confirmed_at",
-  "views.admin.User.index.td.last_activity_at",
-  "views.admin.User.index.action.promote",
-  "views.admin.User.index.action.demote",
-  "views.admin.User.index.action.delete",
-  "views.admin.User.index.action.changePassword",
-  "views.admin.User.index.changePassword.label",
-  "views.admin.User.index.changePassword.submit",
-  "views.admin.User.index.changePassword.reset",
-  "views.admin.User.index.confirm.delete",
-  "views.admin.User.index.new.title",
-  "views.admin.User.index.new.email",
-  "views.admin.User.index.new.password",
-  "views.admin.User.index.new.submit"
-)}
+@jsMessageKeys = @{Seq("views.admin.User.index")}
 
 @defining(scopedMessages("views.admin.User.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="admin-user-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {

@@ -140,7 +140,7 @@ trait DbStoreObjectBackend extends StoreObjectBackend { self: DbBackend =>
 
   override def destroy(id: Long) = db { session =>
     exceptions.wrap {
-      import scala.slick.jdbc.StaticQuery.interpolation
+      import slick.jdbc.StaticQuery.interpolation
 
       /*
        * We run two DELETEs in a single query, to simulate a transaction and
@@ -182,7 +182,7 @@ trait DbStoreObjectBackend extends StoreObjectBackend { self: DbBackend =>
           AND (SELECT COUNT(*) FROM subdelete) IS NOT NULL
       """
 
-      import scala.slick.jdbc.StaticQuery
+      import slick.jdbc.StaticQuery
       StaticQuery.update[Long](q).apply(storeId).execute(session)
     }
   }

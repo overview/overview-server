@@ -7,7 +7,8 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 
 import controllers.backend.UserBackend
-import models.{User,UserRole}
+import models.User
+import org.overviewproject.models.UserRole
 import org.overviewproject.tree.orm.finders.ResultPage
 
 class UserControllerSpec extends controllers.ControllerSpecification with JsonMatchers {

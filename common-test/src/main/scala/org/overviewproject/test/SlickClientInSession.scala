@@ -1,6 +1,6 @@
 package org.overviewproject.test
 
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.SlickClient
 

@@ -2,16 +2,15 @@ package models.tables
 
 import java.sql.Timestamp
 
-import models.{User,UserRole}
+import models.User
+import org.overviewproject.models.UserRole
 import org.overviewproject.database.Slick.simple._
 
 class UsersImpl(tag: Tag) extends Table[User](tag, "user") {
-  private val roleColumnType = MappedColumnType.base[UserRole.UserRole, Int](_.id, UserRole(_))
-
   def id = column[Long]("id", O.PrimaryKey)
   def email = column[String]("email")
   def passwordHash = column[String]("password_hash")
-  def role = column[UserRole.UserRole]("role")(roleColumnType)
+  def role = column[UserRole.UserRole]("role")(userRoleColumnType)
   def confirmationToken = column[Option[String]]("confirmation_token")
   def confirmationSentAt = column[Option[Timestamp]]("confirmation_sent_at")
   def confirmedAt = column[Option[Timestamp]]("confirmed_at")

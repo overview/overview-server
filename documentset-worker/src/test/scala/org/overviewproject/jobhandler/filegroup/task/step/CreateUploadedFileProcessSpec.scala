@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import scala.concurrent.Future
-import scala.slick.jdbc.JdbcBackend.Session
+import slick.jdbc.JdbcBackend.Session
 import akka.actor.ActorRef
 
 import org.overviewproject.test.SlickSpecification

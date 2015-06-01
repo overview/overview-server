@@ -3,7 +3,7 @@ package models
 import java.sql.Connection
 import play.api.Play.current
 import play.api.db.DB
-import scala.slick.jdbc.JdbcBackend.{Database,Session=>JSession}
+import slick.jdbc.JdbcBackend.{Database,Session=>JSession}
 
 import org.overviewproject.database.TransactionProvider
 

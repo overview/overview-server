@@ -33,7 +33,7 @@ trait DbTreeBackend extends TreeBackend { self: DbBackend =>
   }
 
   override def destroy(id: Long) = db { session =>
-    import scala.slick.jdbc.StaticQuery.interpolation
+    import slick.jdbc.StaticQuery.interpolation
 
     /*
      * We run three DELETEs in a single query, to simulate a transaction and
