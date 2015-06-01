@@ -128,7 +128,7 @@ trait ProjectSettings {
     akkaAgentDep,
     logbackDep,
     javaxMailDep,
-    "org.overviewproject" % "mime-types" % "0.0.1",
+    "org.overviewproject" % "mime-types" % "0.0.2",
     "org.apache.pdfbox" % "pdfbox" % "1.8.9",
     "org.bouncycastle" % "bcprov-jdk15" % "1.44",
     "org.bouncycastle" % "bcmail-jdk15" % "1.44"
