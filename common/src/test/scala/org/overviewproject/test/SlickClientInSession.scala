@@ -2,14 +2,6 @@ package org.overviewproject.test
 
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.SlickClient
+import org.overviewproject.database.SlickSessionProvider
 
-trait SlickClientInSession extends SlickClient {
-  implicit val session: Session
-
-  override def blockingDb[A](block: Session => A): A = block(session)
-}
-
-object SlickClientInSession {
-  def apply(aSession: Session) = new SlickClientInSession { override val session = aSession }
-}
+trait SlickClientInSession extends SlickSessionProvider

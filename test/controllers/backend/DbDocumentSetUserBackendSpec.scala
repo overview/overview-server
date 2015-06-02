@@ -6,7 +6,7 @@ import org.overviewproject.models.tables.DocumentSetUsers
 
 class DbDocumentSetUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbDocumentSetUserBackend
+    val backend = new DbBackend with DbDocumentSetUserBackend
 
     def find(documentSetId: Long, userEmail: String): Option[DocumentSetUser] = {
       import org.overviewproject.database.Slick.simple._

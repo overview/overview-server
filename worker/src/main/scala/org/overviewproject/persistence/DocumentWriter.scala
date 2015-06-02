@@ -14,13 +14,7 @@ import org.overviewproject.tree.orm.Document
 /**
  * Writes out document information associated with the documentSetId
  */
-
 object DocumentWriter {
-
-  def write(document: Document) {
-    documents.insert(document)
-  }
-
   def updateDescription(documentId: Long, description: String) {
     update(documents)(d =>
       where(d.id === documentId)

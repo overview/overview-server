@@ -7,26 +7,26 @@ import org.overviewproject.models.tables.{DocumentStoreObjects,StoreObjects,Stor
 
 class DbStoreBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbStoreBackend
+    val backend = new DbBackend with DbStoreBackend
 
-    def findStore(apiToken: String) = {
-      import org.overviewproject.database.Slick.simple._
-      Stores.filter(_.apiToken === apiToken).firstOption(session)
+    def findStore(apiToken: String) = await {
+      import org.overviewproject.database.Slick.api._
+      slickDb.run(Stores.filter(_.apiToken === apiToken).result.headOption)
     }
 
-    def findStore(id: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      Stores.filter(_.id === id).firstOption(session)
+    def findStore(id: Long) = await {
+      import org.overviewproject.database.Slick.api._
+      slickDb.run(Stores.filter(_.id === id).result.headOption)
     }
 
-    def findStoreObject(id: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      StoreObjects.filter(_.id === id).firstOption(session)
+    def findStoreObject(id: Long) = await {
+      import org.overviewproject.database.Slick.api._
+      slickDb.run(StoreObjects.filter(_.id === id).result.headOption)
     }
 
-    def findDocumentStoreObjects(storeObjectId: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentStoreObjects.filter(_.storeObjectId === storeObjectId).firstOption(session)
+    def findDocumentStoreObjects(storeObjectId: Long) = await {
+      import org.overviewproject.database.Slick.api._
+      slickDb.run(DocumentStoreObjects.filter(_.storeObjectId === storeObjectId).result)
     }
   }
 

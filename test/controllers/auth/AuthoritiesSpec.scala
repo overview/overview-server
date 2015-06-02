@@ -16,10 +16,10 @@ import org.overviewproject.test.{DbSpecification,SlickClientInSession}
   * the Authorities.
   */
 class AuthoritiesSpec extends DbSpecification {
-  class TestAuthorities(override val session: Session) extends Authorities with SlickClientInSession
+  class TestAuthorities extends Authorities with SlickClientInSession
 
   trait BaseScope extends DbScope {
-    lazy val auth = new TestAuthorities(session)
+    val auth = new TestAuthorities
   }
 
   "with a User" should {

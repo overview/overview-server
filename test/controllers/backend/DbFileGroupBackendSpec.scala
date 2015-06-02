@@ -5,15 +5,17 @@ import org.overviewproject.models.tables.FileGroups
 
 class DbFileGroupBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbFileGroupBackend
+    val backend = new DbBackend with DbFileGroupBackend
 
     def findFileGroups(userEmail: String, apiToken: Option[String], completed: Boolean): Seq[FileGroup] = {
-      import org.overviewproject.database.Slick.simple._
-      FileGroups
-        .filter(_.userEmail === userEmail)
-        .filter(fg => (fg.apiToken.isEmpty && apiToken.isEmpty) || (fg.apiToken.isDefined && fg.apiToken === apiToken))
-        .filter(_.completed === completed)
-        .list(session)
+      import org.overviewproject.database.Slick.api._
+      await(slickDb.run(
+        FileGroups
+          .filter(_.userEmail === userEmail)
+          .filter(g => (g.apiToken.isEmpty && apiToken.isEmpty) || (g.apiToken.isDefined && g.apiToken === apiToken))
+          .filter(_.completed === completed)
+          .result
+      ))
     }
   }
 
@@ -127,46 +129,48 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
 
   "#update" should {
     trait UpdateScope extends BaseScope {
-      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false)
       def update(id: Long, completed: Boolean): Unit = await(backend.update(id, completed))
     }
 
     "update a FileGroup" in new UpdateScope {
-      update(fileGroup.id, true) must beEqualTo(())
+      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false)
+      update(fileGroup.id, true)
       findFileGroups("user@example.org", None, true).headOption must beSome(fileGroup.copy(completed=true))
     }
 
     "skip a missing FileGroup" in new UpdateScope {
-      update(fileGroup.id + 1, true) must beEqualTo(())
+      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false)
+      update(fileGroup.id + 1, true)
       findFileGroups("user@example.org", None, false).headOption must beSome(fileGroup)
     }
 
     "skip a deleted FileGroup" in new UpdateScope {
-      override val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false, deleted=true)
-      update(fileGroup.id, true) must beEqualTo(())
+      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false, deleted=true)
+      update(fileGroup.id, true)
       findFileGroups("user@example.org", None, false).headOption must beSome(fileGroup)
     }
   }
 
   "#destroy" should {
     trait DestroyScope extends BaseScope {
-      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false, deleted=false)
       def destroy(id: Long): Unit = await(backend.destroy(id))
     }
 
     "destroy a FileGroup" in new DestroyScope {
-      destroy(fileGroup.id) must beEqualTo(())
+      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false, deleted=false)
+      destroy(fileGroup.id)
       findFileGroups("user@example.org", None, false).headOption must beSome(fileGroup.copy(deleted=true))
     }
 
     "skip a missing FileGroup" in new DestroyScope {
-      destroy(fileGroup.id + 1) must beEqualTo(())
+      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false, deleted=false)
+      destroy(fileGroup.id + 1)
       findFileGroups("user@example.org", None, false).headOption must beSome(fileGroup)
     }
 
     "skip a deleted FileGroup" in new DestroyScope {
-      override val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false, deleted=true)
-      destroy(fileGroup.id) must beEqualTo(())
+      val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, completed=false, deleted=true)
+      destroy(fileGroup.id)
       findFileGroups("user@example.org", None, false).headOption must beSome(fileGroup)
     }
   }

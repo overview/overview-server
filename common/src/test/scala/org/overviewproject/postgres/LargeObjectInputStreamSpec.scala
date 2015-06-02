@@ -7,25 +7,21 @@ import org.overviewproject.test.{DbSpecification,SlickClientInSession}
 
 class LargeObjectInputStreamSpec extends DbSpecification {
   trait BaseScope extends DbScope {
-    val data: Array[Byte] = "some contents".getBytes("ascii")
-    val buffer = new Array[Byte](100)
+    connection.setAutoCommit(false)
+    val loApi = pgConnection.getLargeObjectAPI()
 
-    lazy val pgConnection = session.conn.unwrap(classOf[PGConnection])
-    lazy val loApi = pgConnection.getLargeObjectAPI()
-
-    lazy val loid = {
-      val ret = loApi.createLO(LargeObjectManager.READ | LargeObjectManager.WRITE)
-      val lo = loApi.open(ret, LargeObjectManager.WRITE)
-      lo.write(data)
+    def lo(loData: Array[Byte]): LargeObjectInputStream = {
+      val loid = loApi.createLO(LargeObjectManager.READ | LargeObjectManager.WRITE)
+      val lo = loApi.open(loid, LargeObjectManager.WRITE)
+      lo.write(loData)
       lo.close
-      ret
+      connection.commit() // FIXME leak -- we should clear LargeObjects on test suite start
+      new LargeObjectInputStream(loid, new SlickClientInSession {})
     }
-
-    lazy val subject = new LargeObjectInputStream(loid, SlickClientInSession(session))
   }
 
   "read one byte at a time" in new BaseScope {
-    override val data = "foo".getBytes("ascii")
+    val subject = lo("foo".getBytes("ascii"))
     subject.read must beEqualTo("f".charAt(0))
     subject.read must beEqualTo("o".charAt(0))
     subject.read must beEqualTo("o".charAt(0))
@@ -33,7 +29,8 @@ class LargeObjectInputStreamSpec extends DbSpecification {
   }
 
   "read multiple bytes" in new BaseScope {
-    override val data = "foo".getBytes("ascii")
+    val subject = lo("foo".getBytes("ascii"))
+    val buffer = new Array[Byte](100)
     subject.read(buffer, 0, 2) must beEqualTo(2) // plus side-effect
     buffer(0) must beEqualTo("f".charAt(0))
     buffer(1) must beEqualTo("o".charAt(0))
@@ -43,8 +40,10 @@ class LargeObjectInputStreamSpec extends DbSpecification {
   }
 
   "throw IOException if the object disappears" in new BaseScope {
-    subject // initialize lazy variables
-    loApi.delete(loid)
+    val subject = lo("some contents".getBytes("ascii"))
+    val buffer = new Array[Byte](100)
+    loApi.delete(subject.oid)
+    connection.commit()
     subject.read must throwA[java.io.IOException]
     subject.read(buffer, 0, 1) must throwA[java.io.IOException]
   }

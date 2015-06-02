@@ -18,10 +18,12 @@ class OverviewUploadSpec extends DbSpecification {
       val chunk: Array[Byte] = Array(0x12, 0x13, 0x14)
       var userId = 1l
 
-      implicit var pgConnection: PGConnection = _
-      override def setupWithDb = {
-        pgConnection = connection.unwrap(classOf[PGConnection])
-      }
+      connection.setAutoCommit(false) // for LO
+      implicit val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
+      sql("""
+        INSERT INTO "user" (id, email, role, password_hash, confirmed_at, email_subscriber, tree_tooltips_enabled)
+        VALUES (1, 'admin@overview-project.org', 2, '$2a$07$ZNI3MdA1MK7Td2w1EKpl5u38nll/MvlaRfZn0S8HLerNuP2hoD5JW', TIMESTAMP '1970-01-01 00:00:00', FALSE, FALSE);
+      """)
     }
 
     "create uploadedFile" in new UploadContext {

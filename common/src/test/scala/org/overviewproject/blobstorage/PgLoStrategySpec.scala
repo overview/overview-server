@@ -12,54 +12,40 @@ import org.overviewproject.test.SlickSpecification
 
 class PgLoStrategySpec extends SlickSpecification with StrategySpecification {
   trait PgLoBaseScope extends DbScope with BaseScope {
-    def _withPgConnection[A](f: PGConnection => A) = {
-      val pgConnection = DB.pgConnection(connection)
-      f(pgConnection)
-    }
-
-    def _withSlickSession[A](f: Session => A) = {
-      val session = DB.slickSession(connection)
-      f(session)
-    }
+    connection.setAutoCommit(false) // so LO stuff works
 
     // Each test runs in a transaction. Make sure the _code_ uses the same
     // connection, even though it's in a Future.
     object TestStrategy extends PgLoStrategy {
       override protected val BufferSize = 10 // to prove we paginate
       override protected val DeleteManyChunkSize = 2
-      override protected def withPgConnection[A](f: PGConnection => A) = _withPgConnection(f)
-      override protected def withSlickSession[A](f: Session => A) = _withSlickSession(f)
+      override protected def withPgConnection[A](f: PGConnection => A) = f(pgConnection)
+      override protected def withSlickSession[A](f: Session => A) = f(session)
     }
 
     def createLargeObject(data: Array[Byte]): Long = {
-      _withPgConnection { pgConnection =>
-        LO.withLargeObject({ lo =>
-          lo.add(data)
-          lo.oid // return loid
-        })(pgConnection)
-      }
+      LO.withLargeObject({ lo =>
+        lo.add(data)
+        lo.oid // return loid
+      })(pgConnection)
     }
 
     def readLargeObject(loid: Long): Array[Byte] = {
-      _withPgConnection { pgConnection =>
-        LO.withLargeObject(loid)({ lo =>
-          val buffer = new Array[Byte](1000)
-          val size = lo.read(buffer, 0, buffer.length)
-          buffer.take(size)
-        })(pgConnection)
-      }
+      LO.withLargeObject(loid)({ lo =>
+        val buffer = new Array[Byte](1000)
+        val size = lo.read(buffer, 0, buffer.length)
+        buffer.take(size)
+      })(pgConnection)
     }
 
     def largeObjectExists(loid: Long): Boolean = {
       // XXX this will break if called twice!
       val SqlStateUndefinedObject = "42704" // http://www.postgresql.org/docs/9.3/static/errcodes-appendix.html
-      _withPgConnection { pgConnection =>
-        try {
-          LO.withLargeObject(loid)({ lo => ()})(pgConnection)
-          true
-        } catch {
-          case e: PSQLException if (e.getSQLState() == SqlStateUndefinedObject) => false
-        }
+      try {
+        LO.withLargeObject(loid)({ lo => ()})(pgConnection)
+        true
+      } catch {
+        case e: PSQLException if (e.getSQLState() == SqlStateUndefinedObject) => false
       }
     }
   }

@@ -18,14 +18,16 @@ import org.overviewproject.postgres.{SquerylEntrypoint,SquerylPostgreSqlAdapter}
  */
 abstract class TransactionProvider {
   /**
-   * Executes the block with a thread-local Session.
-   *
-   * If the block succeeds, this method will end with a database COMMIT.
-   * Otherwise, it will ROLLBACK.
-   *
-   * If this method is nested, the inner call will not COMMIT.
-   */
-  
+    * Executes the block with a thread-local Session.
+    *
+    * If the block succeeds, this method will end with a database COMMIT.
+    * Otherwise, it will ROLLBACK.
+    *
+    * If this method is nested, the inner call will not COMMIT.
+    *
+    * This sets a thread-local variable, and it's only useful for Squeryl.
+    * DO NOT USE.
+    */
   def inTransaction[A](block: => A): A = {
     if (isInTransaction) {
       block

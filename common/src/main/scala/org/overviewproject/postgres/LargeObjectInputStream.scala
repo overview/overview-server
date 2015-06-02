@@ -13,7 +13,7 @@ import org.overviewproject.database.SlickClient
   * Each call to read() opens a database connection. You should definitely wrap
   * this with a BufferedInputStream to make reads less costly.
   */
-class LargeObjectInputStream(oid: Long, slickClient: SlickClient) extends InputStream {
+class LargeObjectInputStream(val oid: Long, slickClient: SlickClient) extends InputStream {
   private var position: Long = 0L
 
   override def read: Int = {

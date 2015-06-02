@@ -9,7 +9,7 @@ import org.overviewproject.models.UserRole
 
 class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbUserBackend
+    val backend = new DbBackend with DbUserBackend
 
     def insertUser(id: Long, email: String, passwordHash: String = "", role: UserRole.Value = UserRole.NormalUser): User = {
       import org.overviewproject.database.Slick.simple._
@@ -89,10 +89,12 @@ class DbUserBackendSpec extends DbBackendSpecification {
       import org.overviewproject.database.Slick.simple._
       import org.overviewproject.models.tables.{UploadedFiles,Uploads}
 
+      connection.setAutoCommit(false)
       val loManager = pgConnection.getLargeObjectAPI
       val oid = loManager.createLO
       val uploadedFile = factory.uploadedFile()
       val upload = factory.upload(userId=user.id, uploadedFileId=uploadedFile.id, contentsOid=oid)
+      connection.commit()
       await(backend.destroy(user.id))
       Uploads.filter(_.id === upload.id).length.run(session) must beEqualTo(0)
       UploadedFiles.filter(_.id === uploadedFile.id).length.run(session) must beEqualTo(1)

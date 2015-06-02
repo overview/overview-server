@@ -69,6 +69,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
   trait DocumentSetContext extends DbTestContext {
     var documentSetId: Long = _
+    connection.setAutoCommit(false)
     
     override def setupWithDb = {
       documentSetId = Schema.documentSets.insert(DocumentSet(title = "PersistentDocumentSetCreationJobSpec")).id

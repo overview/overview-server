@@ -7,7 +7,7 @@ import org.overviewproject.models.tables.ApiTokens
 
 class DbApiTokenBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbApiTokenBackend
+    val backend = new DbBackend with DbApiTokenBackend
 
     def findApiToken(token: String) = {
       import org.overviewproject.database.Slick.simple._

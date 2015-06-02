@@ -5,7 +5,7 @@ import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbDocumentSetBackend
+    val backend = new DbBackend with DbDocumentSetBackend
 
     def findDocumentSet(id: Long): Option[DocumentSet] = {
       import org.overviewproject.database.Slick.simple._

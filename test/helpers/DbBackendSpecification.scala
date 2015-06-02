@@ -14,7 +14,7 @@ import org.overviewproject.test.DbSpecification
   * class MyDbBackendSpec extends DbBackendSpecification {
   *   "MyDbBackend" should {
   *     "find a DocumentSet" in new DbScope {
-  *       val backend = new TestDbBackend(session) with MyDbBackend
+  *       val backend = new DbBackend with MyDbBackend
   *
   *       val documentSet = factory.documentSet()
   *       val foundDocumentSet = backend.findDocumentSet(documentSet.id).headOption
@@ -23,12 +23,4 @@ import org.overviewproject.test.DbSpecification
   *   }
   * }
   */
-trait DbBackendSpecification
-  extends DbSpecification
-{
-  class TestDbBackend(val session: Session) extends DbBackend {
-    override def db[A](block: Session => A): Future[A] = Future {
-      block(session)
-    }
-  }
-}
+trait DbBackendSpecification extends DbSpecification

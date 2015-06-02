@@ -1,14 +1,12 @@
 package org.overviewproject.test.factories
 
-import java.sql.{Connection,Timestamp}
+import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
-import slick.jdbc.UnmanagedSession
+
 import org.overviewproject.models.tables._
 import org.overviewproject.models._
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
-import slick.lifted.AbstractTable
-
+import org.overviewproject.test.SlickClientInSession
 
 /** Creates objects in the database while returning them.
   *
@@ -17,10 +15,14 @@ import slick.lifted.AbstractTable
   *
   * @see Factory
   */
-class DbFactory(connection: Connection) extends Factory {
-  private implicit val session = new UnmanagedSession(connection)
+object DbFactory extends Factory with SlickClientInSession {
+  import org.overviewproject.database.Slick.api._
+
   private val podoFactory = PodoFactory
-  val q = DbFactory.queries
+
+  private def await[T](f: => scala.concurrent.Future[T]): T = scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
+
+  private def run[T](f: DBIO[T]): T = await(slickDb.run(f))
 
   override def apiToken(
     token: String,
@@ -28,13 +30,13 @@ class DbFactory(connection: Connection) extends Factory {
     createdBy: String,
     description: String,
     documentSetId: Option[Long]
-  ) = q.insertApiToken += podoFactory.apiToken(
+  ) = run(q.insertApiToken += podoFactory.apiToken(
     token,
     createdAt,
     createdBy,
     description,
     documentSetId
-  )
+  ))
 
   override def document(
     id: Long = 0L,
@@ -48,7 +50,7 @@ class DbFactory(connection: Connection) extends Factory {
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     text: String = ""
-  ) = q.insertDocument += podoFactory.document(
+  ) = run(q.insertDocument += podoFactory.document(
     id,
     documentSetId,
     url,
@@ -60,7 +62,7 @@ class DbFactory(connection: Connection) extends Factory {
     fileId,
     pageId,
     text
-  )
+  ))
 
   override def deprecatedDocument(
     id: Long = 0L,
@@ -75,7 +77,7 @@ class DbFactory(connection: Connection) extends Factory {
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     pageNumber: Option[Int] = None
-  ) = (q.insertDocument += podoFactory.deprecatedDocument(
+  ) = run(q.insertDocument += podoFactory.deprecatedDocument(
     id,
     documentSetId,
     description,
@@ -101,7 +103,7 @@ class DbFactory(connection: Connection) extends Factory {
     importOverflowCount: Int = 2,
     uploadedFileId: Option[Long] = None,
     deleted: Boolean = false
-  ) = q.insertDocumentSet += podoFactory.documentSet(
+  ) = run(q.insertDocumentSet += podoFactory.documentSet(
     id,
     title,
     query,
@@ -112,27 +114,27 @@ class DbFactory(connection: Connection) extends Factory {
     importOverflowCount,
     uploadedFileId,
     deleted
-  )
+  ))
 
   override def documentSetUser(
     documentSetId: Long,
     userEmail: String,
     role: DocumentSetUser.Role
-  ) = q.insertDocumentSetUser += podoFactory.documentSetUser(documentSetId, userEmail, role)
+  ) = run(q.insertDocumentSetUser += podoFactory.documentSetUser(documentSetId, userEmail, role))
   
   override def documentTag(documentId: Long, tagId: Long) = {
-    q.insertDocumentTag += podoFactory.documentTag(documentId, tagId)
+    run(q.insertDocumentTag += podoFactory.documentTag(documentId, tagId))
   }
 
   override def documentStoreObject(
     documentId: Long = 0L,
     storeObjectId: Long = 0L,
     json: Option[JsObject] = None
-  ) = q.insertDocumentStoreObject += podoFactory.documentStoreObject(
+  ) = run(q.insertDocumentStoreObject += podoFactory.documentStoreObject(
     documentId,
     storeObjectId,
     json
-  )
+  ))
 
   override def fileGroup(
     id: Long,
@@ -140,7 +142,7 @@ class DbFactory(connection: Connection) extends Factory {
     apiToken: Option[String],
     completed: Boolean,
     deleted: Boolean
-  ) = q.insertFileGroup += podoFactory.fileGroup(id, userEmail, apiToken, completed, deleted)
+  ) = run(q.insertFileGroup += podoFactory.fileGroup(id, userEmail, apiToken, completed, deleted))
 
   override def groupedFileUpload(
     id: Long,
@@ -151,7 +153,7 @@ class DbFactory(connection: Connection) extends Factory {
     size: Long,
     uploadedSize: Long,
     contentsOid: Long
-  ) = q.insertGroupedFileUpload += podoFactory.groupedFileUpload(
+  ) = run(q.insertGroupedFileUpload += podoFactory.groupedFileUpload(
     id,
     fileGroupId,
     guid,
@@ -160,7 +162,7 @@ class DbFactory(connection: Connection) extends Factory {
     size,
     uploadedSize,
     contentsOid
-  )
+  ))
 
   override def node(
     id: Long = 0L,
@@ -169,17 +171,17 @@ class DbFactory(connection: Connection) extends Factory {
     description: String = "",
     cachedSize: Int = 0,
     isLeaf: Boolean = true
-  ) = q.insertNode += podoFactory.node(
+  ) = run(q.insertNode += podoFactory.node(
     id,
     rootId,
     parentId,
     description,
     cachedSize,
     isLeaf
-  )
+  ))
 
   override def nodeDocument(nodeId: Long, documentId: Long) = {
-    q.insertNodeDocument += podoFactory.nodeDocument(nodeId, documentId)
+    run(q.insertNodeDocument += podoFactory.nodeDocument(nodeId, documentId))
   }
 
   override def plugin(
@@ -189,7 +191,7 @@ class DbFactory(connection: Connection) extends Factory {
     url: String,
     autocreate: Boolean,
     autocreateOrder: Int
-  ) = q.insertPlugin += podoFactory.plugin(id, name, description, url, autocreate, autocreateOrder)
+  ) = run(q.insertPlugin += podoFactory.plugin(id, name, description, url, autocreate, autocreateOrder))
 
   override def tree(
     id: Long = 0L,
@@ -203,7 +205,7 @@ class DbFactory(connection: Connection) extends Factory {
     suppliedStopWords: String = "supplied stop words",
     importantWords: String = "important words",
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ) = q.insertTree += podoFactory.tree(
+  ) = run(q.insertTree += podoFactory.tree(
     id,
     documentSetId,
     rootNodeId,
@@ -215,13 +217,13 @@ class DbFactory(connection: Connection) extends Factory {
     suppliedStopWords,
     importantWords,
     createdAt
-  )
+  ))
 
   override def store(
     id: Long = 0L,
     apiToken: String = "token",
     json: JsObject = JsObject(Seq())
-  ) = q.insertStore += podoFactory.store(id, apiToken, json)
+  ) = run(q.insertStore += podoFactory.store(id, apiToken, json))
 
   override def storeObject(
     id: Long = 0L,
@@ -229,20 +231,20 @@ class DbFactory(connection: Connection) extends Factory {
     indexedLong: Option[Long] = None,
     indexedString: Option[String] = None,
     json: JsObject = JsObject(Seq())
-  ) = q.insertStoreObject += podoFactory.storeObject(
+  ) = run(q.insertStoreObject += podoFactory.storeObject(
     id,
     storeId,
     indexedLong,
     indexedString,
     json
-  )
+  ))
 
   override def tag(
     id: Long = 0L,
     documentSetId: Long = 0L,
     name: String = "a tag",
     color: String = "abcdef"
-  ) = q.insertTag += podoFactory.tag(id, documentSetId, name, color)
+  ) = run(q.insertTag += podoFactory.tag(id, documentSetId, name, color))
 
   override def view(
     id: Long = 0L,
@@ -251,15 +253,15 @@ class DbFactory(connection: Connection) extends Factory {
     apiToken: String = "api-token",
     title: String = "title",
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
-  ) = q.insertView += podoFactory.view(
+  ) = run(q.insertView += podoFactory.view(
     id,
     documentSetId,
     url,
     apiToken,
     title,
     createdAt
-  )
-  
+  ))
+
   override def page(
     id: Long,
     fileId: Long,
@@ -270,7 +272,7 @@ class DbFactory(connection: Connection) extends Factory {
     text: Option[String],
     dataErrorMessage: Option[String],
     textErrorMessage: Option[String]
-  ) = q.insertPage += podoFactory.page(
+  ) = run(q.insertPage += podoFactory.page(
     id, 
     fileId,
     pageNumber,
@@ -280,8 +282,8 @@ class DbFactory(connection: Connection) extends Factory {
     text,
     dataErrorMessage,
     textErrorMessage
-  )  
-  
+  ))
+
   override def file(
     id: Long,
     referenceCount: Int,
@@ -291,7 +293,7 @@ class DbFactory(connection: Connection) extends Factory {
     contentsSha1: Option[Array[Byte]],
     viewLocation: String,
     viewSize: Long
-  ) = q.insertFile += podoFactory.file(
+  ) = run(q.insertFile += podoFactory.file(
     id,
     referenceCount,
     name,
@@ -300,15 +302,15 @@ class DbFactory(connection: Connection) extends Factory {
     contentsSha1,
     viewLocation,
     viewSize
-  )
-  
+  ))
+
   override def uploadedFile(
     id: Long,
     contentDisposition: String,
     contentType: String,
     size: Long,
     uploadedAt: Timestamp 
-  ) = q.insertUploadedFile += podoFactory.uploadedFile(id, contentDisposition, contentType, size, uploadedAt)
+  ) = run(q.insertUploadedFile += podoFactory.uploadedFile(id, contentDisposition, contentType, size, uploadedAt))
 
   override def upload(
     id: Long,
@@ -318,7 +320,7 @@ class DbFactory(connection: Connection) extends Factory {
     uploadedFileId: Long,
     lastActivity: Timestamp,
     totalSize: Long
-  ) = q.insertUpload += podoFactory.upload(
+  ) = run(q.insertUpload += podoFactory.upload(
     id,
     userId,
     guid,
@@ -326,8 +328,8 @@ class DbFactory(connection: Connection) extends Factory {
     uploadedFileId,
     lastActivity,
     totalSize
-  )
-  
+  ))
+
   override def documentProcessingError(
     id: Long,
     documentSetId: Long,
@@ -335,8 +337,14 @@ class DbFactory(connection: Connection) extends Factory {
     message: String,
     statusCode: Option[Int],
     headers: Option[String]
-  ) = q.insertDocumentProcessingError += podoFactory.documentProcessingError(id, documentSetId, textUrl, message, statusCode, headers)
-  
+  ) = run(q.insertDocumentProcessingError += podoFactory.documentProcessingError(
+    id,
+    documentSetId,
+    textUrl,
+    message,
+    statusCode,
+    headers
+  ))
 
   override def documentSetCreationJob(
     id: Long,
@@ -359,53 +367,50 @@ class DbFactory(connection: Connection) extends Factory {
     fractionComplete: Double,
     statusDescription: String,
     canBeCancelled: Boolean
-  ) = q.insertDocumentSetCreationJob += podoFactory.documentSetCreationJob(
+  ) = run(q.insertDocumentSetCreationJob += podoFactory.documentSetCreationJob(
     id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
     documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId,  sourceDocumentSetId,
     treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled
-  )
+  ))
 
   override def documentSetCreationJobNode(
     documentSetCreationJobId: Long,
     nodeId: Long
-  ) = q.insertDocumentSetCreationJobNode += podoFactory.documentSetCreationJobNode(documentSetCreationJobId, nodeId)
-  
-  
+  ) = run(q.insertDocumentSetCreationJobNode += podoFactory.documentSetCreationJobNode(
+    documentSetCreationJobId,
+    nodeId
+  ))
+
   override def tempDocumentSetFile(
      documentSetId: Long,
      fileId: Long
-  ) = q.insertTempDocumentSetFile += podoFactory.tempDocumentSetFile(documentSetId, fileId)
-    
-}
+  ) = run(q.insertTempDocumentSetFile += podoFactory.tempDocumentSetFile(documentSetId, fileId))
 
-object DbFactory {
-  object queries {
-    import org.overviewproject.database.Slick.simple._
-
+  object q {
     // Compile queries once, instead of once per test
-    val insertApiToken = (ApiTokens returning ApiTokens).insertInvoker
-    val insertDocument = (Documents returning Documents).insertInvoker
-    val insertDocumentSet = (DocumentSets returning DocumentSets).insertInvoker
-    val insertDocumentTag = (DocumentTags returning DocumentTags).insertInvoker
-    val insertDocumentSetUser = (DocumentSetUsers returning DocumentSetUsers).insertInvoker
-    val insertDocumentStoreObject = (DocumentStoreObjects returning DocumentStoreObjects).insertInvoker
-    val insertNode = (Nodes returning Nodes).insertInvoker
-    val insertNodeDocument = (NodeDocuments returning NodeDocuments).insertInvoker
-    val insertPlugin = (Plugins returning Plugins).insertInvoker
-    val insertStore = (Stores returning Stores).insertInvoker
-    val insertStoreObject = (StoreObjects returning StoreObjects).insertInvoker
-    val insertTree = (Trees returning Trees).insertInvoker
-    val insertTag = (Tags returning Tags).insertInvoker
-    val insertView = (Views returning Views).insertInvoker
-    val insertPage = (Pages returning Pages).insertInvoker
-    val insertFile = (Files returning Files).insertInvoker
-    val insertFileGroup = (FileGroups returning FileGroups).insertInvoker
-    val insertGroupedFileUpload = (GroupedFileUploads returning GroupedFileUploads).insertInvoker
-    val insertUpload = (Uploads returning Uploads).insertInvoker
-    val insertUploadedFile = (UploadedFiles returning UploadedFiles).insertInvoker
-    val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors).insertInvoker
-    val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs).insertInvoker
-    val insertDocumentSetCreationJobNode = (DocumentSetCreationJobNodes returning DocumentSetCreationJobNodes).insertInvoker
-    val insertTempDocumentSetFile = (TempDocumentSetFiles returning TempDocumentSetFiles).insertInvoker
+    val insertApiToken = (ApiTokens returning ApiTokens)
+    val insertDocument = (Documents returning Documents)
+    val insertDocumentSet = (DocumentSets returning DocumentSets)
+    val insertDocumentTag = (DocumentTags returning DocumentTags)
+    val insertDocumentSetUser = (DocumentSetUsers returning DocumentSetUsers)
+    val insertDocumentStoreObject = (DocumentStoreObjects returning DocumentStoreObjects)
+    val insertNode = (Nodes returning Nodes)
+    val insertNodeDocument = (NodeDocuments returning NodeDocuments)
+    val insertPlugin = (Plugins returning Plugins)
+    val insertStore = (Stores returning Stores)
+    val insertStoreObject = (StoreObjects returning StoreObjects)
+    val insertTree = (Trees returning Trees)
+    val insertTag = (Tags returning Tags)
+    val insertView = (Views returning Views)
+    val insertPage = (Pages returning Pages)
+    val insertFile = (Files returning Files)
+    val insertFileGroup = (FileGroups returning FileGroups)
+    val insertGroupedFileUpload = (GroupedFileUploads returning GroupedFileUploads)
+    val insertUpload = (Uploads returning Uploads)
+    val insertUploadedFile = (UploadedFiles returning UploadedFiles)
+    val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors)
+    val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs)
+    val insertDocumentSetCreationJobNode = (DocumentSetCreationJobNodes returning DocumentSetCreationJobNodes)
+    val insertTempDocumentSetFile = (TempDocumentSetFiles returning TempDocumentSetFiles)
   }
 }

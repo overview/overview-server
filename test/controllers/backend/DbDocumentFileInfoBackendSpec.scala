@@ -75,7 +75,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification with Mockito 
       text = text)
   }
 
-  class TestDbDocumentFileInfoBackend(session: Session) extends TestDbBackend(session) with DbDocumentFileInfoBackend {
+  class TestDbDocumentFileInfoBackend(session: Session) extends DbBackend with DbDocumentFileInfoBackend {
     override val documentViewInfoFactory = smartMock[DocumentViewInfoFactory]
     val mockFactory = documentViewInfoFactory
     mockFactory.fromPage(any) returns smartMock[DocumentViewInfo]

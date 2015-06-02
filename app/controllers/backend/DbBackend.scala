@@ -1,30 +1,31 @@
 package controllers.backend
 
+import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
-import slick.lifted.{Query,Rep,RunnableCompiled}
+import slick.lifted.{Query,QueryBase,Rep,RunnableCompiled}
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import org.overviewproject.database.{SlickClient,SlickSessionProvider}
 
 trait DbBackend extends SlickClient with SlickSessionProvider {
-  def list[T](q: Query[_, T, Seq]): Future[Seq[T]] = db { session =>
-    import org.overviewproject.database.Slick.simple._
-    q.list(session)
+  import org.overviewproject.database.Slick.api.repQueryActionExtensionMethods
+  import org.overviewproject.database.Slick.api.runnableCompiledQueryActionExtensionMethods
+
+  def list[T](q: Rep[Seq[T]]): Future[Seq[T]] = {
+    slickDb.run(q.result)
   }
 
-  def list[T](q: RunnableCompiled[_ <: Query[_, _, Seq], Seq[T]]): Future[Seq[T]] = db { session =>
-    import org.overviewproject.database.Slick.simple._
-    q.list(session)
+  def list[T](q: RunnableCompiled[_, Seq[T]]): Future[Seq[T]] = {
+    slickDb.run(q.result)
   }
 
-  def firstOption[T](q: Query[_, T, Seq]): Future[Option[T]] = db { session =>
-    import org.overviewproject.database.Slick.simple._
-    q.firstOption(session)
+  def firstOption[T](q: Query[_, T, Seq]): Future[Option[T]] = {
+    // Slight optimization: take(1) makes the SQL "LIMIT 1"
+    slickDb.run(q.take(1).result).map(_.headOption)
   }
 
-  def firstOption[T](q: RunnableCompiled[_ <: Query[_, _, Seq], Seq[T]]): Future[Option[T]] = db { session =>
-    import org.overviewproject.database.Slick.simple._
-    q.firstOption(session)
+  def firstOption[T](q: RunnableCompiled[_, Seq[T]]): Future[Option[T]] = {
+    slickDb.run(q.result).map(_.headOption)
   }
 
   /** Returns a Page[T] based on an item query, uncompiled.
@@ -32,13 +33,14 @@ trait DbBackend extends SlickClient with SlickSessionProvider {
     * This is the only way to handle `WHERE ... IN (...)` queries. It takes
     * more CPU than `RunnableCompiled` queries.
     */
-  def page[T](itemsQ: Query[_, T, Seq], countQ: Rep[Int], pageRequest: PageRequest): Future[Page[T]] = db { implicit session =>
-    import org.overviewproject.database.Slick.simple._
-
+  def page[T](itemsQ: Rep[Seq[T]], countQ: Rep[Int], pageRequest: PageRequest): Future[Page[T]] = {
     // Sequential, so Postgres can benefit from a hot cache on the second query
-    val items: Seq[T] = itemsQ.list(session)
-    val count: Int = countQ.run
-    Page(items, PageInfo(pageRequest, count))
+    val action = for {
+      items <- itemsQ.result
+      count <- countQ.result
+    } yield Page(items, PageInfo(pageRequest, count))
+
+    slickDb.run(action)
   }
 
   /** Returns a Page[T] based on item and count queries.
@@ -47,12 +49,14 @@ trait DbBackend extends SlickClient with SlickSessionProvider {
     * `.drop(offset).take(limit)`. That makes `pageRequest` seems a redundant,
     * but let's not lose sleep over it.
     */
-  def page[T](itemsQ: RunnableCompiled[_ <: Query[_, _, Seq], Seq[T]], countQ: RunnableCompiled[_, Int], pageRequest: PageRequest): Future[Page[T]] = db { implicit session =>
-    import org.overviewproject.database.Slick.simple._
+  def page[T](itemsQ: RunnableCompiled[_, Seq[T]], countQ: RunnableCompiled[_, Int], pageRequest: PageRequest): Future[Page[T]] = {
     // Sequential, so Postgres can benefit from a hot cache on the second query
-    val items: Seq[T] = itemsQ.list
-    val count: Int = countQ.run
-    Page(items, PageInfo(pageRequest, count))
+    val action = for {
+      items <- itemsQ.result
+      count <- countQ.result
+    } yield Page(items, PageInfo(pageRequest, count))
+
+    slickDb.run(action)
   }
 
   def emptyPage[T](pageRequest: PageRequest) = Future.successful(Page(Seq[T](), PageInfo(pageRequest, 0)))

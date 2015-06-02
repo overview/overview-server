@@ -14,6 +14,7 @@ class OverviewUploadedFileSpec extends DbSpecification {
       var overviewUploadedFile: OverviewUploadedFile = _
 
       override def setupWithDb = {
+        connection.setAutoCommit(false)
         implicit val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
         overviewUploadedFile = LO.withLargeObject { lo =>
           OverviewUploadedFile(lo.oid, "attachment; filename=name", "content-type")

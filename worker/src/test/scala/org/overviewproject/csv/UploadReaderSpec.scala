@@ -5,8 +5,8 @@ import java.nio.charset.Charset
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.LargeObjectManager
 
-import org.overviewproject.database.SlickClient
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.test.DbSpecification
 
 class UploadReaderSpec extends DbSpecification {
   trait BaseScope extends DbScope {
@@ -17,14 +17,17 @@ class UploadReaderSpec extends DbSpecification {
     lazy val loApi = pgConnection.getLargeObjectAPI()
 
     lazy val loid = {
+      connection.setAutoCommit(false)
       val ret = loApi.createLO(LargeObjectManager.READ | LargeObjectManager.WRITE)
       val lo = loApi.open(ret, LargeObjectManager.WRITE)
       lo.write(data)
       lo.close
+      connection.commit()
+      connection.setAutoCommit(true)
       ret
     }
 
-    lazy val uploadReader = new UploadReader(loid, encodingStringOption, SlickClientInSession(session))
+    lazy val uploadReader = new UploadReader(loid, encodingStringOption, new SlickSessionProvider {})
     lazy val reader = uploadReader.reader
   }
 

@@ -7,9 +7,7 @@ import org.overviewproject.models.tables.Plugins
 
 class DbPluginBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    sql("TRUNCATE plugin")
-
-    val backend = new TestDbBackend(session) with DbPluginBackend
+    val backend = new DbBackend with DbPluginBackend
 
     def findPlugin(id: UUID) = {
       import org.overviewproject.database.Slick.simple._

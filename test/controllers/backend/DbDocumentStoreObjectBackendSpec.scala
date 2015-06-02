@@ -8,14 +8,17 @@ import org.overviewproject.models.tables.DocumentStoreObjects
 
 class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new TestDbBackend(session) with DbDocumentStoreObjectBackend
+    val backend = new DbBackend with DbDocumentStoreObjectBackend
 
-    def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentStoreObjects
-        .filter(_.documentId === documentId)
-        .filter(_.storeObjectId === storeObjectId)
-        .firstOption(session)
+    def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = await {
+      import org.overviewproject.database.Slick.api._
+
+      slickDb.run(
+        DocumentStoreObjects
+          .filter(_.documentId === documentId)
+          .filter(_.storeObjectId === storeObjectId)
+          .result.headOption
+      )
     }
   }
 
