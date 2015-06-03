@@ -2,10 +2,9 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.ActorRef
 import scala.collection.mutable
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
+
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 
 /**

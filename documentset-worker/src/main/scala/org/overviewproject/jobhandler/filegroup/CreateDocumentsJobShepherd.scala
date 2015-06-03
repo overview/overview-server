@@ -1,14 +1,13 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.ActorRef
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import scala.concurrent.Future
+
+import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
-import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
-import org.overviewproject.database.orm.finders.FileFinder
 import org.overviewproject.jobhandler.filegroup.JobDescription._
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
 /**
@@ -89,7 +88,6 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   
   protected trait Storage {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
-    def processedFileCount(documentSetId: Long): Long
   }
 }
 
@@ -109,14 +107,16 @@ object CreateDocumentsJobShepherd {
 
     override protected val storage = new DatabaseStorage
 
-    protected class DatabaseStorage extends Storage {
-      override def uploadedFileIds(fileGroupId: Long): Set[Long] = Database.inTransaction {
-        GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toSet
+    protected class DatabaseStorage extends Storage with SlickSessionProvider {
+      import org.overviewproject.database.Slick.api._
+      import org.overviewproject.models.tables.GroupedFileUploads
+
+      private def await[T](f: => Future[T]): T = scala.concurrent.blocking {
+        scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
       }
 
-      override def processedFileCount(documentSetId: Long): Long = Database.inTransaction {
-        FileFinder.byDocumentSet(documentSetId).count
-
+      override def uploadedFileIds(fileGroupId: Long): Set[Long] = {
+        await(slickDb.run(GroupedFileUploads.filter(_.fileGroupId === fileGroupId).map(_.id).result)).toSet
       }
     }
   }

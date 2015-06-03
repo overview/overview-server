@@ -4,8 +4,6 @@ import akka.actor.ActorRef
 import org.specs2.mock.Mockito
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 
-
-
 class TestCreateDocumentsJobShepherd(
     val documentSetId: Long,
     val fileGroupId: Long, 
@@ -17,5 +15,4 @@ class TestCreateDocumentsJobShepherd(
   override protected val storage = smartMock[Storage]
   
   storage.uploadedFileIds(fileGroupId) returns uploadedFileIds.toSet
-  storage.processedFileCount(documentSetId) returns uploadedFileIds.size
 }
