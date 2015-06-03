@@ -25,13 +25,10 @@ object DocumentSetCreationJobState extends Enumeration {
   val TextExtractionInProgress = Value(5)
 }
 
-import DocumentSetCreationJobType._
-import DocumentSetCreationJobState._
-
 case class DocumentSetCreationJob( 
   id: Long,
   documentSetId: Long,
-  jobType: DocumentSetCreationJobType,
+  jobType: DocumentSetCreationJobType.Value,
   retryAttempts: Int,
   lang: String,
   suppliedStopWords: String,
@@ -45,7 +42,7 @@ case class DocumentSetCreationJob(
   treeTitle: Option[String],
   treeDescription: Option[String],
   tagId: Option[Long],
-  state: DocumentSetCreationJobState,
+  state: DocumentSetCreationJobState.Value,
   fractionComplete: Double,
   statusDescription: String,
   canBeCancelled: Boolean
@@ -71,5 +68,29 @@ case class DocumentSetCreationJob(
     treeDescription,
     retryAttempts,
     canBeCancelled
+  )
+}
+
+object DocumentSetCreationJob {
+  case class CreateAttributes(
+    documentSetId: Long,
+    jobType: DocumentSetCreationJobType.Value,
+    retryAttempts: Int,
+    lang: String,
+    suppliedStopWords: String,
+    importantWords: String,
+    splitDocuments: Boolean,
+    documentcloudUsername: Option[String],
+    documentcloudPassword: Option[String],
+    contentsOid: Option[Long],
+    fileGroupId: Option[Long],
+    sourceDocumentSetId: Option[Long],
+    treeTitle: Option[String],
+    treeDescription: Option[String],
+    tagId: Option[Long],
+    state: DocumentSetCreationJobState.Value,
+    fractionComplete: Double,
+    statusDescription: String,
+    canBeCancelled: Boolean
   )
 }

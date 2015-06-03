@@ -2,7 +2,6 @@ package org.overviewproject.util
 
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
-import org.overviewproject.models.tables.DocumentSetCreationJobMappings
 import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.searchindex.TransportIndexClient
 
@@ -31,7 +30,7 @@ trait JobRestarter {
   }
 }
 
-object JobRestarter extends DocumentSetCreationJobMappings with SlickSessionProvider {
+object JobRestarter extends SlickSessionProvider {
   import scala.concurrent.Await
   import scala.concurrent.duration.Duration
   import scala.concurrent.ExecutionContext.Implicits.global

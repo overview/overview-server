@@ -5,7 +5,7 @@ import play.api.libs.json.{JsObject,Json}
 import slick.driver.PostgresDriver
 
 import org.overviewproject.postgres.InetAddress
-import org.overviewproject.models.UserRole
+import org.overviewproject.models.{DocumentSetCreationJobState,DocumentSetCreationJobType,UserRole}
 
 trait MyPostgresDriver extends PostgresDriver
   with PgArraySupport
@@ -31,9 +31,16 @@ trait MyPostgresDriver extends PostgresDriver
       (s: InetString) => InetAddress.getByName(s.address)
     )
 
-    implicit val userRoleColumnType = MappedColumnType.base[UserRole.UserRole, Int](
+    implicit val userRoleColumnType = MappedColumnType.base[UserRole.UserRole, Int](_.id, UserRole(_))
+
+    implicit val jobTypeColumnType = MappedColumnType.base[DocumentSetCreationJobType.Value, Int](
       _.id,
-      UserRole(_)
+      DocumentSetCreationJobType.apply
+    )
+
+    implicit val stateColumnType = MappedColumnType.base[DocumentSetCreationJobState.Value, Int](
+      _.id,
+      DocumentSetCreationJobState.apply
     )
   }
 

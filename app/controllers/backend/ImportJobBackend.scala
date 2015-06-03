@@ -2,7 +2,7 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.tables.{DocumentSetCreationJobMappings,DocumentSetCreationJobs,DocumentSetUsers,DocumentSets}
+import org.overviewproject.models.tables.{DocumentSetCreationJobs,DocumentSetUsers,DocumentSets}
 import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
 
 trait ImportJobBackend extends Backend {
@@ -21,7 +21,7 @@ trait ImportJobBackend extends Backend {
   def index(documentSetId: Long): Future[Seq[DocumentSetCreationJob]]
 }
 
-trait DbImportJobBackend extends ImportJobBackend with DocumentSetCreationJobMappings { self: DbBackend =>
+trait DbImportJobBackend extends ImportJobBackend { self: DbBackend =>
   import org.overviewproject.database.Slick.simple._
 
   private lazy val processingIdsCompiled = Compiled {
