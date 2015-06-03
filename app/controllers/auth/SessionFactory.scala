@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 import controllers.backend.{SessionBackend,UserBackend}
 import models.{Session,User}
-import models.orm.finders.UserFinder
+import org.overviewproject.models.UserRole
 
 /** Restores and authorizes sessions.
   *
@@ -115,7 +115,7 @@ object SingleUserSessionFactory extends SessionFactory {
 
   override def loadAuthorizedSession(request: RequestHeader, authority: Authority) = {
     val session = Session(1L, request.remoteAddress)
-    val user = UserFinder.byId(1L).head
+    val user = User(1L, "admin@overviewproject.org", role=UserRole.Administrator, treeTooltipsEnabled=false)
     Future.successful(Right((session, user)))
   }
 }
