@@ -8,7 +8,7 @@ import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.DocumentSetCreationJobType._
-import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobMappings }
+import org.overviewproject.models.tables.DocumentSetCreationJobs
 import org.overviewproject.test.SlickSpecification
 import org.overviewproject.test.SlickClientInSession
 
@@ -58,7 +58,7 @@ class DocumentSetCreationJobDeleterSpec extends SlickSpecification with Mockito 
       factory.documentSetCreationJob(documentSetId = documentSet.id, jobType = CsvUpload, contentsOid = Some(oid))
   }
 
-  trait CancelledJobScope extends JobScope with DocumentSetCreationJobMappings {
+  trait CancelledJobScope extends JobScope {
     val cancelledJob = factory.documentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster, treeTitle = Some("cancelled"),
       state = Cancelled)
 
