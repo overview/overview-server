@@ -31,8 +31,6 @@ object Schema extends org.squeryl.Schema {
   val nodeDocuments = table[NodeDocument]
   val nodes = table[Node]
   val tags = table[Tag]
-  val uploadedFiles = table[UploadedFile]
-  val uploads = table[Upload]
   val users = table[User]
   val files = table[File]
   val trees = table[Tree]

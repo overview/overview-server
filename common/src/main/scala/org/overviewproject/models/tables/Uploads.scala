@@ -17,6 +17,12 @@ class UploadsImpl(tag: Tag) extends Table[Upload](tag, "upload") {
 
   def * = (id, userId, guid, contentsOid, uploadedFileId, lastActivity, totalSize) <>
     ((Upload.apply _).tupled, Upload.unapply)
+
+  def createAttributes = (userId, guid, contentsOid, uploadedFileId, lastActivity, totalSize) <>
+    (Upload.CreateAttributes.tupled, Upload.CreateAttributes.unapply)
+
+  def updateAttributes = (lastActivity, totalSize) <>
+    (Upload.UpdateAttributes.tupled, Upload.UpdateAttributes.unapply)
 }
 
 object Uploads extends TableQuery(new UploadsImpl(_))

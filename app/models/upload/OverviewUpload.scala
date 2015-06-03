@@ -2,8 +2,10 @@ package models.upload
 
 import java.sql.Timestamp
 import java.util.UUID
-import models.orm.Upload
-import org.overviewproject.tree.orm.UploadedFile
+
+import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.models.{Upload,UploadedFile}
+import org.overviewproject.models.tables.{UploadedFiles,Uploads}
 
 /**
  * Wrapper around models.orm.Upload hiding details of storage and managing
@@ -32,23 +34,36 @@ trait OverviewUpload {
   def delete
 }
 
-object OverviewUpload {
+object OverviewUpload extends SlickSessionProvider {
+  import org.overviewproject.database.Slick.api._
+
+  lazy val inserter = (Uploads.map(_.createAttributes) returning Uploads)
+  lazy val updater = Compiled { (id: Rep[Long]) => Uploads.map(_.updateAttributes) }
 
   /** Create a new instance */
   def apply(userId: Long, guid: UUID, contentDisposition: String, contentType: String, totalSize: Long, oid: Long): OverviewUpload = {
     val uploadedFile = OverviewUploadedFile(oid, contentDisposition, contentType).save
-    val upload =
-      Upload(userId = userId, guid = guid, contentsOid = oid, uploadedFileId = uploadedFile.id, lastActivity = now, totalSize = totalSize)
-
+    val attributes = Upload.CreateAttributes(
+      userId,
+      guid,
+      oid,
+      uploadedFileId=uploadedFile.id,
+      lastActivity=now,
+      totalSize=totalSize
+    )
+    val upload = runBlocking(inserter.+=(attributes))
     new OverviewUploadImpl(upload, uploadedFile)
   }
 
   /** Find currently existing instance */
-  def find(userId: Long, guid: UUID): Option[OverviewUpload] =
-    Upload.findUserUpload(userId, guid).flatMap { u =>
-      val uploadedFile = OverviewUploadedFile.findById(u.uploadedFileId)
-      uploadedFile.map(new OverviewUploadImpl(u, _))
-    }
+  def find(userId: Long, guid: UUID): Option[OverviewUpload] = {
+    val q = for {
+      upload <- Uploads.filter(_.userId === userId).filter(_.guid === guid)
+      uploadedFile <- UploadedFiles.filter(_.id === upload.uploadedFileId)
+    } yield (upload, uploadedFile)
+    runBlocking(q.result.headOption)
+      .map({ t: (Upload,UploadedFile) => new OverviewUploadImpl(t._1, OverviewUploadedFile(t._2)) })
+  }
 
   private class OverviewUploadImpl(upload: Upload, val uploadedFile: OverviewUploadedFile) extends OverviewUpload {
     val userId = upload.userId
@@ -61,14 +76,16 @@ object OverviewUpload {
 
     def save: OverviewUpload = {
       uploadedFile.save
-      upload.save
+      val q = updater(upload.id).update(Upload.UpdateAttributes(now, size))
+      runBlocking(q)
       this
     }
 
     def truncate: OverviewUpload = new OverviewUploadImpl(upload.copy(lastActivity = now), uploadedFile.withSize(0l))
 
     def delete {
-      upload.delete
+      val q = Uploads.filter(_.id === upload.id).delete
+      runBlocking(q)
     }
   }
 

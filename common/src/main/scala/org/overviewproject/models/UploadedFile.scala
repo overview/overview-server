@@ -24,4 +24,9 @@ object UploadedFile {
     size: Long,
     uploadedAt: Timestamp
   )
+
+  case class UpdateAttributes(
+    size: Long,
+    uploadedAt: Timestamp
+  )
 }

@@ -17,6 +17,9 @@ class UploadedFilesImpl(tag: Tag) extends Table[UploadedFile](tag, "uploaded_fil
 
   def createAttributes = (contentDisposition, contentType, size, uploadedAt) <>
     (UploadedFile.CreateAttributes.tupled, UploadedFile.CreateAttributes.unapply)
+
+  def updateAttributes = (size, uploadedAt) <>
+    (UploadedFile.UpdateAttributes.tupled, UploadedFile.UpdateAttributes.unapply)
 }
 
 object UploadedFiles extends TableQuery(new UploadedFilesImpl(_))

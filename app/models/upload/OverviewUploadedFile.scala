@@ -3,7 +3,10 @@ package models.upload
 import java.net.URLDecoder
 import java.sql.Timestamp
 import scala.util.control.Exception._
-import org.overviewproject.tree.orm.UploadedFile
+
+import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.models.UploadedFile
+import org.overviewproject.models.tables.UploadedFiles
 import org.overviewproject.util.ContentDisposition
 
 trait OverviewUploadedFile {
@@ -23,21 +26,34 @@ trait OverviewUploadedFile {
   def delete
 }
 
-object OverviewUploadedFile {
-  import models.orm.Schema.uploadedFiles
-  import org.overviewproject.postgres.SquerylEntrypoint._
+object OverviewUploadedFile extends SlickSessionProvider {
+  import org.overviewproject.database.Slick.api._
+
+  lazy val updater = Compiled { (id: Rep[Long]) =>
+    UploadedFiles.filter(_.id === id).map(_.updateAttributes)
+  }
 
   def apply(uploadedFile: UploadedFile): OverviewUploadedFile = {
     new OverviewUploadedFileImpl(uploadedFile)
   }
 
   def apply(oid: Long, contentDisposition: String, contentType: String): OverviewUploadedFile = {
-    val uploadedFile = UploadedFile(uploadedAt = now, contentDisposition = contentDisposition, contentType = contentType, size = 0)
-    apply(uploadedFile)
+    // FIXME nix `oid`. (Better yet, store the contents somewhere.)
+    val attributes = UploadedFile.CreateAttributes(
+      uploadedAt=now,
+      contentDisposition=contentDisposition,
+      contentType=contentType,
+      size=0
+    )
+    val q = (UploadedFiles.map(_.createAttributes) returning UploadedFiles).+=(attributes)
+    val uploadedFile = runBlocking(q)
+    new OverviewUploadedFileImpl(uploadedFile)
   }
 
   def findById(id: Long): Option[OverviewUploadedFile] = {
-    uploadedFiles.lookup(id).map(new OverviewUploadedFileImpl(_))
+    val q = UploadedFiles.filter(_.id === id)
+    runBlocking(q.result.headOption) // Option[UploadedFile]
+      .map(new OverviewUploadedFileImpl(_))
   }
 
   private def now: Timestamp = new Timestamp(System.currentTimeMillis())
@@ -55,12 +71,14 @@ object OverviewUploadedFile {
       new OverviewUploadedFileImpl(uploadedFile.copy(contentDisposition = contentDisposition, contentType = contentType))
 
     def save: OverviewUploadedFile = {
-      uploadedFiles.insertOrUpdate(uploadedFile)
-      new OverviewUploadedFileImpl(uploadedFile)
+      val q = updater(id).update(UploadedFile.UpdateAttributes(size, uploadedAt))
+      runBlocking(q)
+      this
     }
 
     def delete {
-      uploadedFiles.deleteWhere(u => u.id === id)
+      val q = UploadedFiles.filter(_.id === id).delete
+      runBlocking(q)
     }
   }
 }
