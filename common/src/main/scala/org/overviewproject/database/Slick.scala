@@ -2,7 +2,7 @@ package org.overviewproject.database
 
 import com.github.tminglei.slickpg._
 import play.api.libs.json.{JsObject,Json}
-import slick.driver.PostgresDriver
+import slick.driver.{JdbcTypesComponent,PostgresDriver}
 
 import org.overviewproject.postgres.InetAddress
 import org.overviewproject.models.{DocumentSetCreationJobState,DocumentSetCreationJobType,UserRole}
@@ -11,14 +11,17 @@ trait MyPostgresDriver extends PostgresDriver
   with PgArraySupport
   with PgNetSupport
 {
-  override lazy val Implicit = new ImplicitsPlus {}
   override val simple = new SimpleQLPlus {}
+  override val api = new APIPlus {}
 
-  trait ImplicitsPlus extends Implicits
+  trait OverviewColumnTypeImplicits extends JdbcTypesComponent { driver: PostgresDriver =>
+  }
+
+  trait CommonImplicitsPlus extends CommonImplicits
     with ArrayImplicits
     with NetImplicits
-    with SimpleArrayPlainImplicits {
-
+    with SimpleArrayPlainImplicits
+  {
     implicit val jsonTextColumnType = MappedColumnType.base[JsObject, String](
       Json.stringify,
       Json.parse(_).as[JsObject]
@@ -31,7 +34,7 @@ trait MyPostgresDriver extends PostgresDriver
       (s: InetString) => InetAddress.getByName(s.address)
     )
 
-    implicit val userRoleColumnType = MappedColumnType.base[UserRole.UserRole, Int](_.id, UserRole(_))
+    implicit val userRoleColumnType = MappedColumnType.base[UserRole.Value, Int](_.id, UserRole(_))
 
     implicit val jobTypeColumnType = MappedColumnType.base[DocumentSetCreationJobType.Value, Int](
       _.id,
@@ -44,7 +47,8 @@ trait MyPostgresDriver extends PostgresDriver
     )
   }
 
-  trait SimpleQLPlus extends SimpleQL with ImplicitsPlus
+  trait APIPlus extends API with CommonImplicitsPlus
+  trait SimpleQLPlus extends SimpleQL with CommonImplicitsPlus
 }
 
 /** Our database driver.

@@ -75,6 +75,30 @@ class DbUserBackendSpec extends DbBackendSpecification {
     }
   }
 
+  "#create" should {
+    trait CreateScope extends BaseScope {
+      val attributes = User.CreateAttributes("user-123@example.org", "password-hash")
+    }
+
+    "return a User" in new CreateScope {
+      backend.create(attributes) must beLike[User] { case user =>
+        user.email must beEqualTo("user-123@example.org")
+        user.passwordHash must beMatching("""^password-hash\s+""".r)
+      }.await
+    }
+
+    "write the User to the database" in new CreateScope {
+      val returnedUser = await(backend.create(attributes))
+      val dbUser = findUser(returnedUser.id)
+      dbUser must beSome(returnedUser)
+    }
+
+    "throw Conflict when the user already exists" in new CreateScope {
+      await(backend.create(attributes)) // create it once
+      await(backend.create(attributes)) must throwA[exceptions.Conflict]
+    }
+  }
+
   "#destroy" should {
     trait DestroyScope extends BaseScope {
       val user = insertUser(123L, "user-123@example.org")

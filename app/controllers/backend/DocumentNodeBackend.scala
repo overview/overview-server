@@ -54,7 +54,7 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
     if (documentIds.isEmpty) {
       Future.successful(Map())
     } else {
-      import org.overviewproject.database.Slick.Implicit.PgArrayPositionedResult
+      import org.overviewproject.database.Slick.simple.PgArrayPositionedResult
       import slick.jdbc.{GetResult, StaticQuery => Q}
       implicit val rconv = GetResult(r => (r.nextLong() -> r.nextArray[Long]()))
       val query = Q.queryNA[(Long,Seq[Long])](s"""

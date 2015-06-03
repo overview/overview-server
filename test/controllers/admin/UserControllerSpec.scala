@@ -7,13 +7,14 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 
 import controllers.backend.UserBackend
+import controllers.backend.exceptions.Conflict
 import models.User
+import models.pagination.{Page,PageInfo,PageRequest}
 import org.overviewproject.models.UserRole
 import org.overviewproject.tree.orm.finders.ResultPage
 
 class UserControllerSpec extends controllers.ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
-    val mockStorage = smartMock[UserController.Storage]
     val mockBackend = smartMock[UserBackend]
 
     mockBackend.updateIsAdmin(any, any) returns Future.successful(())
@@ -21,7 +22,6 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
     mockBackend.destroy(any) returns Future.successful(())
 
     val controller = new UserController {
-      override val storage = mockStorage
       override val backend = mockBackend
     }
 
@@ -49,7 +49,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       trait IndexJsonScope extends BaseScope {
         val page = 1
         def users : Seq[User]
-        mockStorage.findUsers(any[Int]) answers((_) => ResultPage(users, controller.PageSize, page))
+        mockBackend.indexPage(any[PageRequest]) answers((_) => Future(Page(users, PageInfo(PageRequest(0, 50), 100))))
         override def result = controller.indexJson(page)(fakeAuthorizedRequest)
       }
 
@@ -215,9 +215,8 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       }
 
       "return BadRequest when the user already exists" in new CreateScope {
-        mockStorage.findUser("user2@example.org") returns Some(User())
+        mockBackend.create(any) returns Future.failed(new Conflict(new Throwable()))
         h.status(result) must beEqualTo(h.BAD_REQUEST)
-        there was no(mockStorage).storeUser(any)
       }
 
       "return BadRequest when the form is not entered properly" in new CreateScope {
@@ -227,9 +226,12 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
 
       "when successful" should {
         trait CreatedScope extends CreateScope {
-          var user : Option[User] = None
-          mockStorage.findUser(any) returns None
-          mockStorage.storeUser(any[User]) answers { x => val u = x.asInstanceOf[User]; user = Some(u); u }
+          var stored: Option[User.CreateAttributes] = _
+          mockBackend.create(any[User.CreateAttributes]) answers { x =>
+            val attrs = x.asInstanceOf[User.CreateAttributes]
+            stored = Some(attrs)
+            Future.successful(User(email=attrs.email))
+          }
           h.status(result) // store the user
         }
 
@@ -238,20 +240,21 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
         }
 
         "store the user" in new CreatedScope {
-          user must beSome((u: User) => u.email must beEqualTo("user2@example.org"))
+          stored must beSome
+          stored.map(_.email) must beSome("user2@example.org")
         }
 
         "store a valid password" in new CreatedScope {
-          val hash = user.map(_.passwordHash).getOrElse("")
+          val hash = stored.map(_.passwordHash).getOrElse("")
           ";lasd#@sdf3F".isBcrypted(hash) must beTrue
         }
 
         "set confirmedAt" in new CreatedScope {
-          user.map(_.confirmedAt) must beSome
+          stored.map(_.confirmedAt) must beSome
         }
 
         "set treeTooltipsEnabled=true" in new CreatedScope {
-          user.map(_.treeTooltipsEnabled) must beSome(true)
+          stored.map(_.treeTooltipsEnabled) must beSome(true)
         }
 
         "return the user" in new CreatedScope {

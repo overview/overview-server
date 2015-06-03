@@ -9,15 +9,15 @@ import models.OverviewUser
 import models.User
 
 object NewUserForm {
-  def apply() : Form[User] = Form(
+  def apply() : Form[User.CreateAttributes] = Form(
     Forms.mapping(
       "email" -> Forms.email,
       "password" -> Forms.text
-    )((email: String, password: String) => User(
+    )((email: String, password: String) => User.CreateAttributes(
       email=email,
       passwordHash=password.bcrypt(OverviewUser.BcryptRounds),
       confirmedAt=Some(new Timestamp(new Date().getTime()))
     )
-    )(user => Some(user.email, ""))
+    )(attrs => Some(attrs.email, ""))
   )
 }

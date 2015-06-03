@@ -11,7 +11,8 @@ import com.github.t3hnar.bcrypt._
 import java.sql.Timestamp
 import java.util.Date
 
-import models.orm.finders.UserFinder
+import models.tables.Users
+import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.models.UserRole
 
 /**
@@ -144,29 +145,38 @@ object PotentialNewUser {
 /**
  * Helpers to get new or existing OverviewUsers
  */
-object OverviewUser {
+object OverviewUser extends SlickSessionProvider {
+  import org.overviewproject.database.Slick.api._
+
   private val TokenLength = 26
   val BcryptRounds = 7
 
   private def generateToken = scala.util.Random.alphanumeric.take(TokenLength).mkString
   private def generateTimestamp = new Timestamp(new Date().getTime())
 
-  def findByEmail(email: String) : Option[OverviewUser] = OverviewDatabase.inTransaction {
-    UserFinder.byEmail(email).headOption.map(OverviewUser.apply)
+  def findByEmail(email: String) : Option[OverviewUser] = {
+    runBlocking(
+      Users
+        .filter(_.email === email)
+        .result.headOption
+    ).map(OverviewUser.apply)
   }
 
   def findByResetPasswordTokenAndMinDate(token: String, minDate: Date): Option[OverviewUser with ResetPasswordRequest] = {
-    OverviewDatabase.inTransaction {
-      val user = UserFinder.byResetPasswordTokenAndMinDate(token, minDate).headOption
-      user.map(new UserWithResetPasswordRequest(_))
-    }
+    runBlocking(
+      Users
+        .filter(_.resetPasswordToken === token)
+        .filter(_.resetPasswordSentAt >= new java.sql.Timestamp(minDate.getTime))
+        .result.headOption
+    ).map(new UserWithResetPasswordRequest(_))
   }
 
   def findByConfirmationToken(token: String): Option[OverviewUser with ConfirmationRequest] = {
-    OverviewDatabase.inTransaction {
-      val user = UserFinder.byConfirmationToken(token).headOption
-      user.map(new UnconfirmedUser(_))
-    }
+    runBlocking(
+      Users
+        .filter(_.confirmationToken === token)
+        .result.headOption
+    ).map(new UnconfirmedUser(_))
   }
 
   def prepareNewRegistration(email: String, password: String, emailSubscriber: Boolean): OverviewUser with ConfirmationRequest = {

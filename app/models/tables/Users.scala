@@ -10,7 +10,7 @@ class UsersImpl(tag: Tag) extends Table[User](tag, "user") {
   def id = column[Long]("id", O.PrimaryKey)
   def email = column[String]("email")
   def passwordHash = column[String]("password_hash")
-  def role = column[UserRole.UserRole]("role")(userRoleColumnType)
+  def role = column[UserRole.Value]("role")(userRoleColumnType)
   def confirmationToken = column[Option[String]]("confirmation_token")
   def confirmationSentAt = column[Option[Timestamp]]("confirmation_sent_at")
   def confirmedAt = column[Option[Timestamp]]("confirmed_at")
@@ -36,6 +36,21 @@ class UsersImpl(tag: Tag) extends Table[User](tag, "user") {
     emailSubscriber,
     treeTooltipsEnabled
   ) <> ((User.apply _).tupled, User.unapply)
+
+  def createAttributes = (
+    email,
+    passwordHash,
+    role,
+    confirmationToken,
+    confirmationSentAt,
+    confirmedAt,
+    resetPasswordToken,
+    resetPasswordSentAt,
+    lastActivityAt,
+    lastActivityIp,
+    emailSubscriber,
+    treeTooltipsEnabled
+  ) <> (User.CreateAttributes.tupled, User.CreateAttributes.unapply)
 }
 
 object Users extends TableQuery(new UsersImpl(_))

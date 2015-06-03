@@ -1,16 +1,26 @@
 package controllers.backend
 
 import java.sql.Timestamp
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
 import models.User
 import models.tables.Users
+import models.pagination.{Page,PageRequest}
 import org.overviewproject.models.UserRole
-import org.overviewproject.models.tables.DocumentSetUsers
 
 trait UserBackend extends Backend {
+  /** Returns a page of Users. */
+  def indexPage(pageRequest: PageRequest): Future[Page[User]]
+
   /** Returns a User, if that User exists. */
   def showByEmail(email: String): Future[Option[User]]
+
+  /** Creates a User from the given attributes.
+    *
+    * Throws Conflict if a user with this email address already exists.
+    */
+  def create(attributes: User.CreateAttributes): Future[User]
 
   /** Modifies a User, or does nothing if the User does not exist. */
   def updateIsAdmin(id: Long, isAdmin: Boolean): Future[Unit]
@@ -26,49 +36,55 @@ trait UserBackend extends Backend {
 }
 
 trait DbUserBackend extends UserBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+  import org.overviewproject.database.Slick.api._
 
-  private lazy val byEmail = Compiled { (email: Column[String]) =>
+  private lazy val byEmail = Compiled { (email: Rep[String]) =>
     Users.filter(_.email === email)
   }
 
-  private lazy val byId = Compiled { (id: Column[Long]) =>
+  private lazy val byId = Compiled { (id: Rep[Long]) =>
     Users.filter(_.id === id)
   }
 
-  private lazy val updateRoleCompiled = Compiled { (id: Column[Long]) =>
+  private lazy val updateRoleCompiled = Compiled { (id: Rep[Long]) =>
     Users.filter(_.id === id).map(_.role)
   }
 
-  private lazy val updatePasswordHashCompiled = Compiled { (id: Column[Long]) =>
+  private lazy val updatePasswordHashCompiled = Compiled { (id: Rep[Long]) =>
     Users.filter(_.id === id).map(_.passwordHash)
   }
 
-  private lazy val updateLastActivityCompiled = Compiled { (id: Column[Long]) =>
+  private lazy val updateLastActivityCompiled = Compiled { (id: Rep[Long]) =>
     for { user <- Users.filter(_.id === id) }
     yield (user.lastActivityIp, user.lastActivityAt)
   }
 
+
+  override def indexPage(pageRequest: PageRequest) = page(Users, Users.length, pageRequest)
+
   override def showByEmail(email: String) = firstOption(byEmail(email))
 
-  override def updateIsAdmin(id: Long, isAdmin: Boolean) = db { session =>
+  override def create(attributes: User.CreateAttributes) = {
+    val userInserter = (Users.map(_.createAttributes) returning Users)
+    run(userInserter.+=(attributes))
+  }
+
+  override def updateIsAdmin(id: Long, isAdmin: Boolean) = {
     val role = if (isAdmin) UserRole.Administrator else UserRole.NormalUser
-    updateRoleCompiled(id).update(role)(session)
+    runUnit(updateRoleCompiled(id).update(role))
   }
 
-  override def updatePasswordHash(id: Long, passwordHash: String) = db { session =>
-    updatePasswordHashCompiled(id).update(passwordHash)(session)
+  override def updatePasswordHash(id: Long, passwordHash: String) = {
+    runUnit(updatePasswordHashCompiled(id).update(passwordHash))
   }
 
-  override def updateLastActivity(id: Long, ip: String, at: Timestamp) = db { session =>
-    updateLastActivityCompiled(id).update((Some(ip), Some(at)))(session)
+  override def updateLastActivity(id: Long, ip: String, at: Timestamp) = {
+    runUnit(updateLastActivityCompiled(id).update((Some(ip), Some(at))))
   }
 
-  override def destroy(id: Long) = db { session =>
-    import slick.jdbc.StaticQuery
-
+  override def destroy(id: Long) = {
     // One Big Query: simulate a transaction and avoid round trips
-    val q = s"""
+    runUnit(sqlu"""
       DO $$$$
       DECLARE
         loids BIGINT[];
@@ -76,14 +92,14 @@ trait DbUserBackend extends UserBackend { self: DbBackend =>
       BEGIN
         WITH x AS (
           DELETE FROM upload
-          WHERE user_id = $id
+          WHERE user_id = #$id
           RETURNING contents_oid
         ), subdelete2 AS (
           DELETE FROM session
-          WHERE user_id = $id
+          WHERE user_id = #$id
         ), subdelete3 AS (
           DELETE FROM "user"
-          WHERE id = $id
+          WHERE id = #$id
         )
         SELECT COALESCE(ARRAY_AGG(contents_oid), ARRAY[]::BIGINT[])
         INTO loids
@@ -93,8 +109,7 @@ trait DbUserBackend extends UserBackend { self: DbBackend =>
           PERFORM lo_unlink(loid);
         END LOOP;
       END$$$$ LANGUAGE plpgsql;
-    """
-    StaticQuery.updateNA(q).apply(()).execute(session)
+    """)
   }
 }
 

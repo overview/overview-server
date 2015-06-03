@@ -6,45 +6,37 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.backend.UserBackend
+import controllers.backend.exceptions.Conflict
 import controllers.forms.admin.NewUserForm
 import controllers.Controller
-import models.{OverviewDatabase,User}
-import models.orm.finders.{UserFinder}
-import models.orm.stores.{UserStore}
-import org.overviewproject.tree.orm.finders.ResultPage
+import models.User
+import models.tables.Users
+import models.pagination.Page
+import org.overviewproject.database.SlickSessionProvider
 
 trait UserController extends Controller {
   protected val backend: UserBackend
 
-  trait Storage {
-    def findUser(email: String) : Option[User]
-    def findUsers(page: Int) : ResultPage[User]
-    def storeUser(user: User) : User // FIXME differentiate between INSERT and UPDATE
-  }
-
   private[admin] val PageSize = 50
   private val m = views.Magic.scopedMessages("controllers.admin.UserController")
 
-  def index() = AuthorizedAction.inTransaction(adminUser) { implicit request =>
+  def index() = AuthorizedAction(adminUser) { implicit request =>
     Ok(views.html.admin.User.index(request.user))
   }
 
-  def indexJson(page: Int) = AuthorizedAction.inTransaction(adminUser) { implicit request =>
-    val users = storage.findUsers(page)
-    Ok(views.json.admin.User.index(users))
+  def indexJson(page: Int) = AuthorizedAction(adminUser).async { implicit request =>
+    for {
+      page <- backend.indexPage(pageRequest(request, PageSize))
+    } yield Ok(views.json.admin.User.index(page))
   }
 
-  def create() = AuthorizedAction.inTransaction(adminUser) { implicit request =>
+  def create() = AuthorizedAction(adminUser).async { implicit request =>
     NewUserForm().bindFromRequest().fold(
-      formWithErrors => BadRequest,
-      newUser => {
-        storage.findUser(newUser.email) match {
-          case Some(_) => BadRequest
-          case None => {
-            val storedUser = storage.storeUser(newUser)
-            Ok(views.json.admin.User.show(storedUser))
-          }
-        }
+      formWithErrors => Future.successful(BadRequest),
+      attributes => {
+        backend.create(attributes)
+          .map { user: User => Ok(views.json.admin.User.show(user)) }
+          .recover { case e: Conflict => BadRequest("conflict") }
       }
     )
   }
@@ -100,17 +92,8 @@ trait UserController extends Controller {
       })
     }
   }
-
-  val storage : UserController.Storage
 }
 
 object UserController extends UserController {
-  object DatabaseStorage extends Storage {
-    override def findUser(email: String) = OverviewDatabase.inTransaction { UserFinder.byEmail(email).headOption }
-    override def findUsers(page: Int) = OverviewDatabase.inTransaction { ResultPage(UserFinder.all, PageSize, page) }
-    override def storeUser(user: User) = OverviewDatabase.inTransaction { UserStore.insertOrUpdate(user) }
-  }
-
   override protected val backend = UserBackend
-  override val storage = DatabaseStorage
 }
