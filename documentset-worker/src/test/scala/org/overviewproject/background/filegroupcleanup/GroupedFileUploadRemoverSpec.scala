@@ -18,7 +18,9 @@ class GroupedFileUploadRemoverSpec extends SlickSpecification with Mockito with 
       deleteMany.success(())
       await(remover.removeFileGroupUploads(fileGroup.id))
 
-      there was one(mockBlobStorage).deleteMany(contentLocations)
+      there was one(mockBlobStorage).deleteMany(argThat(beLike[Seq[String]] { case (actual: Seq[String]) =>
+        actual must containTheSameElementsAs(contentLocations)
+      }))
     }
 
     "complete when content deletion completes" in new GroupedFileUploadScope {
