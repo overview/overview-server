@@ -11,14 +11,14 @@
       <a class="logo" href="@routes.WelcomeController.show()"><img class="logo" src="@routes.Assets.at("images/logo-small.png")" alt="@Messages("brand.name")" /></a>
     </h1>
     <ul class="nav navbar-nav">
-      <li><a href="http://overview.ap.org/help" target="_blank">@m("link_help")</a></li>
+      <li><a href="https://blog.overviewdocs.com/help" target="_blank">@m("link_help")</a></li>
       <li class="contact-link">
       @optionalUser.flatMap(IntercomConfiguration.settingsForUser) match {
         case Some(intercom) => {
           <a id="Intercom" href="mailto:@(intercom.appId)@@incoming.intercom.io">@m("link_intercom")</a>
         }
         case None => {
-          <a href="http://overview.ap.org/contact/" target="_blank">@m("link_contact")</a>
+          <a href="https://blog.overviewdocs.com/contact/" target="_blank">@m("link_contact")</a>
         }
       }
       </li>

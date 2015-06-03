@@ -8,7 +8,7 @@ The Overview Project is an open source visual document mining system. It was ori
 ## Using Overview
 
 - Try Overview on [the public Overview website](https://overviewproject.org)
-- Follow the [project blog](http://overview.ap.org)
+- Follow the [project blog](http://blog.overviewdocs.com)
 - Install Overview [on your own computer](https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview)
 - [News stories](https://github.com/overview/overview-server/wiki/News-stories) completed with Overview
 
@@ -27,4 +27,4 @@ The Overview Project is an open source visual document mining system. It was ori
 - Or post in the [user forum](https://groups.google.com/forum/?fromgroups=#!forum/overview-users)
 
 This software is Copyright 2011-2014 The Associated Press, and distributed under the
-terms of the GNU Affero General Public License. See the LICENSE file for details. 
+terms of the GNU Affero General Public License. See the LICENSE file for details.
