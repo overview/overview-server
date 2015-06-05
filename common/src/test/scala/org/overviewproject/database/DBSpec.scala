@@ -54,7 +54,7 @@ class DBSpec extends DbSpecification {
         val id = SQL("SELECT id FROM document_set").as(long("id") singleOpt)
         id must beNone
       }
-    }
+    }.pendingUntilFixed
 
     "provide PGConnection" in {
       DB.withConnection { implicit connection =>
