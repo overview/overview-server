@@ -7,6 +7,7 @@
 package org.overviewproject.csv
 
 import org.overviewproject.models.Document
+import org.overviewproject.models.DocumentDisplayMethod
 
 /** Document generated from a CsvImport. suppliedId is present if an "id" column exists in the source */
 class CsvImportDocument(
@@ -16,6 +17,8 @@ class CsvImportDocument(
   val title: Option[String] = None,
   val tags: Set[String] = Set()
 ) {
+  
+  
   def toDocument(id: Long, documentSetId: Long): Document = Document(
     id,
     documentSetId,
@@ -27,7 +30,7 @@ class CsvImportDocument(
     new java.util.Date(),
     None,
     None,
-    None,
+    Some(DocumentDisplayMethod.auto),
     text
   )
 }

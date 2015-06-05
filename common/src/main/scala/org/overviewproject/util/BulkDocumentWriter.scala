@@ -7,11 +7,11 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
-
 import org.overviewproject.database.SlickSessionProvider
 import org.overviewproject.models.Document
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.searchindex.TransportIndexClient
+
 
 /** Writes documents to the database and/or search index in bulk.
   *
@@ -115,12 +115,12 @@ trait BulkDocumentWriter {
       case None => dataOut.writeInt(-1)
     }
     def writeTimestamp(d: java.util.Date) = writeLong((d.getTime() - Millennium) * 1000L)
-
+    
     // Tuples
     // Tracks models/tables/Documents.scala and models/Document.scala
     documents.foreach { document =>
       // Number of fields
-      dataOut.writeShort(11)
+      dataOut.writeShort(12)
 
       writeLong(document.id)
       writeLong(document.documentSetId)
@@ -133,6 +133,8 @@ trait BulkDocumentWriter {
       writeLongOption(document.fileId)
       writeLongOption(document.pageId)
       writeString(document.text)
+      writeStringOption(document.displayMethod.map(_.toString))
+
     }
 
     // File trailer
@@ -156,7 +158,8 @@ trait BulkDocumentWriter {
         created_at,
         file_id,
         page_id,
-        text
+        text,
+        display_method
       )
       FROM STDIN
       BINARY

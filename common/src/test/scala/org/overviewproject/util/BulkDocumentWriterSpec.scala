@@ -5,10 +5,10 @@ import org.specs2.specification.Scope
 import scala.collection.mutable.Buffer
 import scala.concurrent.Future
 import slick.jdbc.StaticQuery
-
 import org.overviewproject.models.tables.{DocumentSets,Documents,Files,Pages}
 import org.overviewproject.models.{Document,DocumentSet,File,Page}
 import org.overviewproject.test.DbSpecification
+import org.overviewproject.models.DocumentDisplayMethod
 
 class BulkDocumentWriterSpec extends DbSpecification {
   sequential
@@ -149,6 +149,14 @@ class BulkDocumentWriterSpec extends DbSpecification {
     fetchDocuments(0).keywords must beEqualTo(keywords)
   }
 
+  "handle displayMethod" in new BaseScope {
+    val displayMethod = DocumentDisplayMethod.auto  
+    add(factory.document(1L, "").copy(displayMethod = Some(displayMethod)))
+    await(subject.flush)
+    
+    fetchDocuments(0).displayMethod must beSome(displayMethod)
+  }
+  
   "handle the other fields" in new BaseScope {
     add(factory.document(2L, "").copy(documentSetId=1L, suppliedId="suppl", title="title"))
     await(subject.flush)
