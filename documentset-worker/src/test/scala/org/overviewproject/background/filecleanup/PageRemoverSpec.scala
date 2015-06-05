@@ -39,7 +39,7 @@ class PageRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
   }
 
   trait PageScope extends DbScope {
-    val numberOfPages = 10
+    val numberOfPages = 1
     val file = factory.file(referenceCount = 0)
     val pages = Seq.tabulate(numberOfPages)(n =>
       factory.page(fileId = file.id, pageNumber = n + 1, dataLocation = s"test:$n"))
