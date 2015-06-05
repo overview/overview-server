@@ -11,6 +11,7 @@ case class PdfPageDocumentData(title: String, fileId: Long, pageNumber: Integer,
     id = documentId,
     documentSetId = documentSetId, title = title, text = text,
     fileId = Some(fileId), pageId = Some(pageId), pageNumber = Some(pageNumber),
+    displayMethod = None,
     createdAt = new java.util.Date(),
     url = None, suppliedId = "", keywords = Seq.empty)
 }

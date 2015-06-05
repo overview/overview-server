@@ -45,6 +45,7 @@ case class Document(
     createdAt=createdAt,
     fileId=fileId,
     pageId=pageId,
+    displayMethod=None,
     text=text.getOrElse("")
   )
 }

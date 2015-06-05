@@ -27,6 +27,7 @@ class CsvImportDocument(
     new java.util.Date(),
     None,
     None,
+    None,
     text
   )
 }

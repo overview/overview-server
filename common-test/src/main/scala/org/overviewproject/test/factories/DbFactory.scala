@@ -3,10 +3,12 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
-
 import org.overviewproject.models.tables._
 import org.overviewproject.models._
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 import org.overviewproject.test.SlickClientInSession
+
+
 
 /** Creates objects in the database while returning them.
   *
@@ -49,6 +51,7 @@ object DbFactory extends Factory with SlickClientInSession {
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
+    displayMethod: Option[DocumentDisplayMethod] = None,
     text: String = ""
   ) = run(q.insertDocument += podoFactory.document(
     id,
@@ -61,6 +64,7 @@ object DbFactory extends Factory with SlickClientInSession {
     pageNumber,
     fileId,
     pageId,
+    displayMethod,
     text
   ))
 

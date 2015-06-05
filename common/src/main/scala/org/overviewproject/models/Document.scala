@@ -1,8 +1,9 @@
 package org.overviewproject.models
 
-import java.util.Date // should be java.time.LocalDateTime
-
+import java.util.Date
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
+
 
 /** A complete Document.
   *
@@ -20,6 +21,7 @@ case class Document(
   override val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
+  val displayMethod: Option[DocumentDisplayMethod],
   override val text: String
 ) extends DocumentHeader {
   def toDeprecatedDocument: DeprecatedDocument = DeprecatedDocument(

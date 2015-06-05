@@ -14,6 +14,7 @@ class DocumentSpec extends Specification {
     new java.util.Date(0L),
     fileId,
     None,
+    None,
     ""
   )
 

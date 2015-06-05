@@ -5,7 +5,9 @@ import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import scala.util.Random
 import org.overviewproject.models._
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
+
 
 /** Plain Old Data Object factory.
   *
@@ -71,6 +73,7 @@ object PodoFactory extends Factory {
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
+    displayMethod: Option[DocumentDisplayMethod] = None,
     text: String = ""
   ) = Document(
     getId(id),
@@ -83,6 +86,7 @@ object PodoFactory extends Factory {
     createdAt,
     fileId,
     pageId,
+    displayMethod,
     text
   )
 

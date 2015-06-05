@@ -70,6 +70,7 @@ class InMemoryIndexClientSpec extends Specification {
       createdAt=new java.util.Date(),
       fileId=None,
       pageId=None,
+      displayMethod=None,
       text=s"foo$id bar baz"
     )
 
@@ -141,6 +142,7 @@ class InMemoryIndexClientSpec extends Specification {
             None,
             Seq(),
             new java.util.Date(),
+            None,
             None,
             None,
             text

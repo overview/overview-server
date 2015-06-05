@@ -1,9 +1,9 @@
 package org.overviewproject.models.tables
 
-import java.util.Date // should be java.time.LocalDateTime
-
+import java.util.Date
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.Document
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](
@@ -28,7 +28,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def fileId = column[Option[Long]]("file_id")
   def pageId = column[Option[Long]]("page_id")
   def pageNumber = column[Option[Int]]("page_number")
-
+  def displayMethod = column[Option[DocumentDisplayMethod]]("display_method")
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
    * can only handle this with a column[Option[_]] -- no type mappers allowed.
@@ -46,9 +46,10 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     createdAt,
     fileId,
     pageId,
+    displayMethod,
     text
-  ).<>[Document,Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[String]]](
-    (t: Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[String]]) => Document.apply(
+  ).<>[Document,Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod],Option[String]]](
+    (t: Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod],Option[String]]) => Document.apply(
       t._1,
       t._2,
       t._3,
@@ -59,7 +60,8 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       t._9,
       t._10,
       t._11,
-      t._12.getOrElse("")              // text
+      t._12,
+      t._13.getOrElse("")              // text
     ),
     { d: Document => Some(
       d.id,
@@ -73,6 +75,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       d.createdAt,
       d.fileId,
       d.pageId,
+      d.displayMethod,
       Some(d.text)
     )}
   )

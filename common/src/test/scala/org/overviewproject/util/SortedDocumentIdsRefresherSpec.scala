@@ -73,7 +73,8 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     }
 
     def createDocument(documentSetId: Long, id: Long, title: String, suppliedId: String, pageNumber: Option[Int]): Document = {
-      val ret = Document(id, documentSetId, None, suppliedId, title, pageNumber, Seq(), new java.sql.Timestamp(0L), None, None, "")
+      val ret = Document(id, documentSetId, None, suppliedId, title, pageNumber, Seq(), new java.sql.Timestamp(0L), 
+          None, None, None, "")
       Documents.+=(ret)(session)
       ret
     }

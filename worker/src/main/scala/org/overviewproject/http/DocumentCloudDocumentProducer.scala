@@ -82,6 +82,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         new java.util.Date(),
         None,
         None,
+        None,
         text
       )
       blocking(await(bulkWriter.addAndFlushIfNeeded(document)))

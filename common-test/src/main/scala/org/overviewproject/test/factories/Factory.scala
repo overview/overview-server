@@ -4,7 +4,9 @@ import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import org.overviewproject.models._
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 import org.overviewproject.tree.orm.{ Document => DeprecatedDocument }
+
 
 /**
  * Creates models simply.
@@ -42,6 +44,7 @@ trait Factory {
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
+    displayMethod: Option[DocumentDisplayMethod] = None,
     text: String = ""): Document
 
   /** Creates a new DeprecatedDocument with the given parameters. */

@@ -50,6 +50,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
         new java.util.Date(documentSet.createdAt.getTime()),
         None,
         None,
+        None,
         text
       )
     }
