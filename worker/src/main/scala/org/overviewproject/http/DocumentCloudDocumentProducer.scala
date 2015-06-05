@@ -13,14 +13,16 @@ import akka.actor._
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.{Document => RetrievedDocument, _ }
 import org.overviewproject.documentcloud.ImporterProtocol._
-import org.overviewproject.persistence._
 import org.overviewproject.models.Document
+import org.overviewproject.models.DocumentDisplayMethod
+import org.overviewproject.persistence._
 import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
 import org.overviewproject.util.{BulkDocumentWriter,Configuration,DocumentProducer,Logger,WorkerActorSystem}
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
 import java.util.concurrent.TimeoutException
+
 
 
 /** Feeds the documents from sourceDocList to the consumer */
@@ -82,7 +84,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         new java.util.Date(),
         None,
         None,
-        None,
+        Some(DocumentDisplayMethod.auto),
         text
       )
       blocking(await(bulkWriter.addAndFlushIfNeeded(document)))
