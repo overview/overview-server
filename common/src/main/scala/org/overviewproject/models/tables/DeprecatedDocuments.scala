@@ -2,6 +2,7 @@ package org.overviewproject.models.tables
 
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 class DeprecatedDocumentsImpl(tag: Tag) extends Table[DeprecatedDocument](tag, "document") {
   def id = column[Long]("id", O.PrimaryKey)
@@ -16,7 +17,7 @@ class DeprecatedDocumentsImpl(tag: Tag) extends Table[DeprecatedDocument](tag, "
   def fileId = column[Option[Long]]("file_id")
   def pageId = column[Option[Long]]("page_id")
   def pageNumber = column[Option[Int]]("page_number")
-
+    
   def * = (
     documentSetId,
     description,

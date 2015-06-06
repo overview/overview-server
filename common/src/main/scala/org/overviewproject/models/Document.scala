@@ -21,7 +21,7 @@ case class Document(
   override val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
-  val displayMethod: Option[DocumentDisplayMethod],
+  override val displayMethod: Option[DocumentDisplayMethod],
   override val text: String
 ) extends DocumentHeader {
   def toDeprecatedDocument: DeprecatedDocument = DeprecatedDocument(
@@ -48,6 +48,7 @@ case class Document(
     pageNumber,
     keywords,
     createdAt,
+    displayMethod,
     fileId.isDefined
   )
 

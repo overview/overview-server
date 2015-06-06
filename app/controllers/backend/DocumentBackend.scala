@@ -44,6 +44,7 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
     override val pageNumber = None
     override val keywords = Seq()
     override val createdAt = new java.util.Date(0L)
+    override val displayMethod = None
     override val text = ""
   }
 

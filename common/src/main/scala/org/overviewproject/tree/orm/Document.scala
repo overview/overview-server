@@ -2,8 +2,8 @@ package org.overviewproject.tree.orm
 
 import java.sql.Timestamp
 import org.squeryl.KeyedEntity
-
 import org.overviewproject.models.{DocumentInfo,Document => BetterDocument}
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 case class Document(
   val documentSetId: Long = 0L,
@@ -31,6 +31,7 @@ case class Document(
     pageNumber=pageNumber,
     keywords=description.split(" "),
     createdAt=createdAt,
+    displayMethod=None,
     fileId.isDefined
   )
 

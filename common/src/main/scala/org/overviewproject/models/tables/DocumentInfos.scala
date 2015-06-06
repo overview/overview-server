@@ -1,9 +1,9 @@
 package org.overviewproject.models.tables
 
-import java.util.Date // should be java.time.LocalDateTime
-
+import java.util.Date
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.DocumentInfo
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 /** READ-ONLY!
   *
@@ -30,7 +30,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   def title = column[Option[String]]("title")
   def pageNumber = column[Option[Int]]("page_number")
   def fileId = column[Option[Long]]("file_id")
-
+  def displayMethod = column[Option[DocumentDisplayMethod]]("display_method")
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
    * can only handle this with a column[Option[_]] -- no type mappers allowed.
@@ -46,9 +46,11 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     pageNumber,
     keywords,
     createdAt,
-    fileId
-  ).<>[DocumentInfo,Tuple10[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long]]](
-    (t: Tuple10[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long]]) => DocumentInfo.apply(
+    fileId,
+    displayMethod
+  ).<>[DocumentInfo,
+    Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod]]](
+    (t: Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod]]) => DocumentInfo.apply(
       t._1,
       t._2,
       t._3,
@@ -57,6 +59,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       t._7,
       t._8,
       t._9,
+      t._11,
       t._10.isDefined
     ),
     { d: DocumentInfo => Some(
@@ -69,7 +72,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       d.pageNumber,
       d.keywords,
       d.createdAt,
-      None
+      None,
+      d.displayMethod
     )}
   )
 }
