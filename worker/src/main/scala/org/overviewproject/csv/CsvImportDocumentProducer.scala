@@ -10,7 +10,7 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.{Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.database.{Database,SlickSessionProvider}
+import org.overviewproject.database.{DeprecatedDatabase,SlickSessionProvider}
 import org.overviewproject.models.{Document,DocumentTag,Tag}
 import org.overviewproject.models.tables.{Documents,DocumentTags,Tags}
 import org.overviewproject.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
@@ -49,8 +49,8 @@ class CsvImportDocumentProducer(
   
   /** Start parsing the CSV upload and feeding the result to the consumer */
   override def produce(): Int = {
-    val uploadedFile = Database.inTransaction {
-      EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
+    val uploadedFile = DeprecatedDatabase.inTransaction {
+      EncodedUploadFile.load(uploadedFileId)(DeprecatedDatabase.currentConnection)
     }
     val uploadReader = new UploadReader(contentsOid, uploadedFile.encoding, this)
     val reader = uploadReader.reader

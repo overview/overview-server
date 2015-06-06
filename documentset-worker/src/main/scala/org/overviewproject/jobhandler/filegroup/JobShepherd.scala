@@ -3,7 +3,6 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor.ActorRef
 import scala.collection.mutable
 
-import org.overviewproject.database.Database
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 

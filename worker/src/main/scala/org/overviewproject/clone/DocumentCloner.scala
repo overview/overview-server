@@ -1,10 +1,11 @@
 package org.overviewproject.clone
 
-import scala.language.postfixOps
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
-import org.overviewproject.database.Database
+import scala.language.postfixOps
+
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.util.Logger
 
 object DocumentCloner extends InDatabaseCloner {
@@ -33,7 +34,7 @@ object DocumentCloner extends InDatabaseCloner {
         """)
 
   private def updateFileRefCounts(cloneDocumentSetId: Long): Unit = {
-    implicit val c: Connection = Database.currentConnection
+    implicit val c: Connection = DeprecatedDatabase.currentConnection
 
     SQL("""
       WITH file_ids AS (

@@ -6,7 +6,7 @@
  */
 package org.overviewproject.persistence
 
-import org.overviewproject.database.Database
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.postgres.SquerylEntrypoint._
 
@@ -16,7 +16,7 @@ class DocumentWriterSpec extends DbSpecification {
       val documentSet = factory.documentSet()
       val document = factory.document(documentSetId=documentSet.id, keywords=Seq("foo", "bar"))
 
-      Database.inTransaction {
+      DeprecatedDatabase.inTransaction {
         DocumentWriter.updateDescription(document.id, "bar baz")
       }
 

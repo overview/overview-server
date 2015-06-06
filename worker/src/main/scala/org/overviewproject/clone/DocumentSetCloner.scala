@@ -4,7 +4,7 @@ import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.database.Database
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.persistence.PersistentDocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util.{ DocumentSetCreationJobStateDescription, Logger, SortedDocumentIdsRefresher }
@@ -39,7 +39,7 @@ trait Procedure {
   }
 
   def stepInTransaction[T](fraction: Double, state: DocumentSetCreationJobStateDescription)(block: => T): Either[T, Boolean] =
-    Database.inTransaction(step(fraction, state)(block))
+    DeprecatedDatabase.inTransaction(step(fraction, state)(block))
 
   /**
    * Set observers to be notified at the completion of each step.
@@ -80,7 +80,7 @@ class JobProgressReporter(job: PersistentDocumentSetCreationJob) {
     // Can't handle nested transactions yet, so assume we are always in a transaction
     job.update
     // Eventually we can do:
-    // Database.inTransaction(job.update)
+    // DeprecatedDatabase.inTransaction(job.update)
   }
 }
 

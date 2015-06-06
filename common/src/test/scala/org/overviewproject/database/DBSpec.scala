@@ -40,22 +40,6 @@ class DBSpec extends DbSpecification {
       }
     }
 
-    "rollback transaction on exception" in {
-      val exceptionMessage = "trigger rollback"
-
-      def throwInsideTransaction: Unit = DB.withTransaction { implicit connection =>
-        insertFileGroup
-        throw new Exception(exceptionMessage)
-      }
-
-      throwInsideTransaction must throwA[Exception](message = exceptionMessage)
-
-      DB.withConnection { implicit connection =>
-        val id = SQL("SELECT id FROM document_set").as(long("id") singleOpt)
-        id must beNone
-      }
-    }.pendingUntilFixed
-
     "provide PGConnection" in {
       DB.withConnection { implicit connection =>
         DB.pgConnection.getLargeObjectAPI() must not(throwA[SQLException])

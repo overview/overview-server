@@ -3,11 +3,11 @@ package org.overviewproject.jobhandler.filegroup
 import scala.collection.mutable
 import akka.actor.Actor
 import akka.actor.ActorRef
-import org.overviewproject.database.Database
 import akka.actor.Props
+import akka.actor.Terminated
+
 import org.overviewproject.util.Logger
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
-import akka.actor.Terminated
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 

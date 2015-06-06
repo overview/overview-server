@@ -34,7 +34,6 @@ object JobRestarter extends SlickSessionProvider {
   import scala.concurrent.Await
   import scala.concurrent.duration.Duration
   import scala.concurrent.ExecutionContext.Implicits.global
-  import org.overviewproject.database.Database
   import org.overviewproject.database.Slick.simple._
   import org.overviewproject.models.tables.DocumentSetCreationJobsImpl
   import org.overviewproject.models.DocumentSetCreationJobType._

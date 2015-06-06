@@ -3,7 +3,6 @@ package org.overviewproject.blobstorage
 import java.io.InputStream
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{ Future, blocking }
-import org.overviewproject.database.Database
 import org.overviewproject.models.tables.Pages
 import org.overviewproject.database.Slick.simple._
 import org.overviewproject.database.{ SlickClient, SlickSessionProvider }

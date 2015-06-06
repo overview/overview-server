@@ -13,7 +13,7 @@ package org.overviewproject.clustering
 import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
-import org.overviewproject.database.{ Database, DB }
+import org.overviewproject.database.{ DeprecatedDatabase, DB }
 import org.overviewproject.persistence.{ DocumentWriter, NodeWriter }
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.util.{ DocumentConsumer, Logger }
@@ -80,7 +80,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, options: DocumentSetIndexerOpti
   }
 
   private def addDocumentDescriptions(docVecs: DocumentSetVectors)(implicit c: Connection) {
-    Database.inTransaction {
+    DeprecatedDatabase.inTransaction {
       for ((docId, vec) <- docVecs) {
         DocumentWriter.updateDescription(docId, SuggestedTags.suggestedTagsForDocument(vec, docVecs))
       }
@@ -112,8 +112,8 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, options: DocumentSetIndexerOpti
         val t2 = System.nanoTime()
 
         DB.withConnection { implicit connection => addDocumentDescriptions(docVecs) }
-        Database.inTransaction {
-          implicit val connection = Database.currentConnection
+        DeprecatedDatabase.inTransaction {
+          implicit val connection = DeprecatedDatabase.currentConnection
           nodeWriter.write(docTree)
         }
 

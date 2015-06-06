@@ -6,7 +6,7 @@ import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
 import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
-import org.overviewproject.database.{DB,DataSource,Database,DatabaseConfiguration}
+import org.overviewproject.database.{DB,DataSource,DeprecatedDatabase,DatabaseConfiguration}
 import org.overviewproject.models.tables.Pages
 
 /** Move page.data to wherever it is configured to go in application.conf.
@@ -97,7 +97,7 @@ object Main {
   private def updatePage(pageId: Long, location: String): Unit = {
     System.out.println(s"Updating page ${pageId} to have location ${location} and data NULL...")
 
-    Database.withSlickSession { session =>
+    DeprecatedDatabase.withSlickSession { session =>
       import org.overviewproject.database.Slick.simple._
       Pages
         .filter(_.id === pageId)
@@ -110,7 +110,7 @@ object Main {
   private def findSomePageIds(limit: Int): Seq[Long] = {
     System.out.println(s"Finding <= ${limit} pages to transfer...")
 
-    Database.withSlickSession { session =>
+    DeprecatedDatabase.withSlickSession { session =>
       import org.overviewproject.database.Slick.simple._
       Pages
         .filter(_.data.isDefined)

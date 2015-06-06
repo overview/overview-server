@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 import akka.actor.Actor
 import akka.actor.Props
 
-import org.overviewproject.database.Database
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
@@ -133,14 +133,14 @@ trait ProgressReporter extends Actor {
 
 class ProgressReporterImpl extends ProgressReporter {
   class DatabaseStorage extends Storage {
-    override def updateProgress(jobId: Long, fraction: Double, description: String): Unit = Database.inTransaction {
+    override def updateProgress(jobId: Long, fraction: Double, description: String): Unit = DeprecatedDatabase.inTransaction {
       DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(jobId, TextExtractionInProgress).headOption.map { job =>
         val update = job.copy(fractionComplete = fraction, statusDescription = description)
         DocumentSetCreationJobStore.insertOrUpdate(update)
       }
     }
 
-    override def updateJobState(jobId: Long, state: DocumentSetCreationJobState): Unit = Database.inTransaction {
+    override def updateJobState(jobId: Long, state: DocumentSetCreationJobState): Unit = DeprecatedDatabase.inTransaction {
       DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(jobId, TextExtractionInProgress).headOption.map { job =>
         val update = job.copy(state = state)
         DocumentSetCreationJobStore.insertOrUpdate(update)

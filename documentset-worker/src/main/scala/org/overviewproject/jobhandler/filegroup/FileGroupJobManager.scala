@@ -5,7 +5,7 @@ import scala.collection.mutable
 import scala.language.postfixOps
 import akka.actor.{ Actor, ActorRef }
 import akka.actor.Props
-import org.overviewproject.database.Database
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
@@ -130,29 +130,29 @@ class FileGroupJobManagerImpl(
 
   class DatabaseStorage extends FileGroupJobManager.Storage {
 
-    override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = Database.inTransaction {
+    override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
       val jobs = DocumentSetCreationJobFinder.byState(TextExtractionInProgress)
 
       jobs.filter(_.fileGroupId.isDefined)
     }
 
-    override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = Database.inTransaction {
+    override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
       val cancelledUploadJobs = DocumentSetCreationJobFinder.byStateAndType(Cancelled, FileUpload)
 
       cancelledUploadJobs.filter(_.fileGroupId.isDefined)
     }
 
-    override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = Database.inTransaction {
+    override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
       DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(documentSetId, FilesUploaded).headOption.map { job =>
         DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
       }
     }
 
-    override def failJob(job: DocumentSetCreationJob): Unit = Database.inTransaction {
+    override def failJob(job: DocumentSetCreationJob): Unit = DeprecatedDatabase.inTransaction {
       DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = Error, statusDescription = "max_retry_attempts"))
     }
 
-    override def increaseRetryAttempts(job: DocumentSetCreationJob): Unit = Database.inTransaction {
+    override def increaseRetryAttempts(job: DocumentSetCreationJob): Unit = DeprecatedDatabase.inTransaction {
       DocumentSetCreationJobStore.insertOrUpdate(job.copy(retryAttempts = job.retryAttempts + 1))
     }
   }

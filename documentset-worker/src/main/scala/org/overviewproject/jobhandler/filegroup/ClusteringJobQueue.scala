@@ -7,7 +7,7 @@ import akka.actor.Props
 import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.database.Database
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.database.orm.Schema.{ documentSets, fileGroups }
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
@@ -57,7 +57,7 @@ object ClusteringJobQueue {
        *
        * FIXME: All of it. Mainly we should not communicate via DocumentSetCreationJobs in the database
        */
-      override def transitionToClusteringJob(documentSetId: Long): Option[Long] = Database.inTransaction {
+      override def transitionToClusteringJob(documentSetId: Long): Option[Long] = DeprecatedDatabase.inTransaction {
         val documentSetFinder = new FinderById(documentSets)
 
         for {

@@ -1,6 +1,6 @@
 package org.overviewproject.persistence
 
-import org.overviewproject.database.Database
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.persistence.orm.Schema.documentSets
 import org.overviewproject.util.SortedDocumentIdsRefresher
@@ -8,7 +8,7 @@ import org.overviewproject.util.SortedDocumentIdsRefresher
 trait PersistentDocumentSet {
   def updateDocumentSetCounts(documentSetId: Long, documentCount: Int, overflowCount: Int): Unit = {
 
-    Database.inTransaction {
+    DeprecatedDatabase.inTransaction {
       update(documentSets)(ds =>
         where(ds.id === documentSetId)
           set (ds.importOverflowCount := overflowCount,

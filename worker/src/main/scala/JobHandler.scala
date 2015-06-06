@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
-import org.overviewproject.database.{ DatabaseConfiguration, Database, DataSource, DB }
+import org.overviewproject.database.{ DatabaseConfiguration, DeprecatedDatabase, DataSource, DB }
 import org.overviewproject.persistence.{ NodeWriter, PersistentDocumentSetCreationJob }
 import org.overviewproject.persistence.orm.finders.DocumentSetFinder
 import org.overviewproject.persistence.orm.stores._
@@ -63,7 +63,7 @@ object JobHandler {
   // Run each job currently listed in the database
   private def scanForJobs: Unit = {
 
-    val firstSubmittedJob: Option[PersistentDocumentSetCreationJob] = Database.inTransaction {
+    val firstSubmittedJob: Option[PersistentDocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
       PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
     }
 
@@ -78,12 +78,12 @@ object JobHandler {
   private def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
     // Helper functions used to track progress and monitor/update job state
 
-    def checkCancellation(progress: Progress): Unit = Database.inTransaction(j.checkForCancellation)
+    def checkCancellation(progress: Progress): Unit = DeprecatedDatabase.inTransaction(j.checkForCancellation)
 
     def updateJobState(progress: Progress): Unit = {
       j.fractionComplete = progress.fraction
       j.statusDescription = Some(progress.status.toString)
-      Database.inTransaction { j.update }
+      DeprecatedDatabase.inTransaction { j.update }
     }
 
     def logProgress(progress: Progress): Unit = {
@@ -101,7 +101,7 @@ object JobHandler {
 
     try {
       j.state = InProgress
-      Database.inTransaction { j.update }
+      DeprecatedDatabase.inTransaction { j.update }
       j.observeCancellation(deleteCancelledJob)
 
       j.jobType match {
@@ -110,7 +110,7 @@ object JobHandler {
       }
 
       logger.info(s"Cleaning up job ${j.documentSetId}")
-      Database.inTransaction {
+      DeprecatedDatabase.inTransaction {
         deleteJobCleanupData(j)
         j.delete
       }
@@ -182,7 +182,7 @@ object JobHandler {
   // we can't guarantee that all data was cloned.
   // If the source has been deleted, we throw an exception, which ends up as an error
   // that the user can see, explaining why the cloning failed.
-  private def verifySourceStillExists(sourceDocumentSetId: Long): DocumentSet = Database.inTransaction {
+  private def verifySourceStillExists(sourceDocumentSetId: Long): DocumentSet = DeprecatedDatabase.inTransaction {
     val validSourceDocumentSet = for {
       ds <- DocumentSetFinder.byId(sourceDocumentSetId).headOption if !ds.deleted
     } yield ds
@@ -200,8 +200,8 @@ object JobHandler {
     import org.overviewproject.postgres.SquerylEntrypoint._
 
     logger.info(s"[${job.documentSetId}] Deleting cancelled job")
-    Database.inTransaction {
-      implicit val connection = Database.currentConnection
+    DeprecatedDatabase.inTransaction {
+      implicit val connection = DeprecatedDatabase.currentConnection
 
       val id = job.documentSetId
       SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
@@ -222,7 +222,7 @@ object JobHandler {
 
     job.state = Error
     job.statusDescription = Some(ExceptionStatusMessage(t))
-    Database.inTransaction {
+    DeprecatedDatabase.inTransaction {
       job.update
       if (job.state == Cancelled) job.delete
     }
@@ -235,7 +235,7 @@ object JobHandler {
     Schema.documentSetCreationJobNodes.deleteWhere(_.documentSetCreationJobId === job.id)
   }
 
-  private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = Database.inTransaction {
+  private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = DeprecatedDatabase.inTransaction {
     import org.overviewproject.postgres.SquerylEntrypoint._
     import org.overviewproject.persistence.orm.Schema.documentSets
 
@@ -246,7 +246,7 @@ object JobHandler {
 
   private def createTree(treeId: Long, rootNodeId: Long, documentSet: DocumentSet,
                          numberOfDocuments: Int, job: PersistentDocumentSetCreationJob) =
-    Database.inTransaction {
+    DeprecatedDatabase.inTransaction {
       TreeStore.insert(Tree(
         id = treeId,
         documentSetId = documentSet.id,
@@ -261,7 +261,7 @@ object JobHandler {
     }
 
   // FIXME: Submitting jobs, along with creating documents should move into documentset-worker 
-  private def submitClusteringJob(documentSetId: Long): Unit = Database.inTransaction {
+  private def submitClusteringJob(documentSetId: Long): Unit = DeprecatedDatabase.inTransaction {
     import org.overviewproject.postgres.SquerylEntrypoint._
     import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
     import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder

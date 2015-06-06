@@ -1,7 +1,7 @@
 package org.overviewproject.reclustering
 
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.database.Database
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.persistence.orm.finders.DocumentFinder
 import org.overviewproject.tree.orm.finders.ResultPage
 import org.overviewproject.util.Logger
@@ -20,13 +20,13 @@ object PagedDocumentFinder {
       }
       .getOrElse { DocumentFinder.byDocumentSet(documentSetId).orderedById }
 
-      override def findDocuments(page: Int): Seq[Document] = Database.inTransaction {
+      override def findDocuments(page: Int): Seq[Document] = DeprecatedDatabase.inTransaction {
         val d = ResultPage(query, pageSize, page).toSeq
         d.size
         d
       }
 
-      override def numberOfDocuments: Long = Database.inTransaction {
+      override def numberOfDocuments: Long = DeprecatedDatabase.inTransaction {
        query.count
       }
 
