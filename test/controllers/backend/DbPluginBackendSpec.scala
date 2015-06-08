@@ -7,7 +7,7 @@ import org.overviewproject.models.tables.Plugins
 
 class DbPluginBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbPluginBackend
+    val backend = new DbPluginBackend with org.overviewproject.database.DatabaseProvider
 
     def findPlugin(id: UUID) = {
       import org.overviewproject.database.Slick.simple._

@@ -21,8 +21,8 @@ trait ImportJobBackend extends Backend {
   def index(documentSetId: Long): Future[Seq[DocumentSetCreationJob]]
 }
 
-trait DbImportJobBackend extends ImportJobBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbImportJobBackend extends ImportJobBackend with DbBackend {
+  import databaseApi._
 
   private lazy val processingIdsCompiled = Compiled {
     DocumentSetCreationJobs
@@ -33,7 +33,7 @@ trait DbImportJobBackend extends ImportJobBackend { self: DbBackend =>
       .map(_.id)
   }
 
-  private lazy val indexWithDocumentSetsCompiled = Compiled { userEmail: Column[String] =>
+  private lazy val indexWithDocumentSetsCompiled = Compiled { userEmail: Rep[String] =>
     val allowedDocumentSetIds = DocumentSetUsers
       .filter(_.userEmail === userEmail)
       .map(_.documentSetId)
@@ -48,7 +48,7 @@ trait DbImportJobBackend extends ImportJobBackend { self: DbBackend =>
     } yield (job, documentSet)
   }
 
-  private lazy val indexCompiled = Compiled { documentSetId: Column[Long] =>
+  private lazy val indexCompiled = Compiled { documentSetId: Rep[Long] =>
     DocumentSetCreationJobs
       .filter(_.documentSetId === documentSetId)
       .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
@@ -56,11 +56,11 @@ trait DbImportJobBackend extends ImportJobBackend { self: DbBackend =>
       .sortBy(_.id)
   }
 
-  override def indexIdsInProcessingOrder = list(processingIdsCompiled)
+  override def indexIdsInProcessingOrder = database.seq(processingIdsCompiled)
 
-  override def indexWithDocumentSets(userEmail: String) = list(indexWithDocumentSetsCompiled(userEmail))
+  override def indexWithDocumentSets(userEmail: String) = database.seq(indexWithDocumentSetsCompiled(userEmail))
 
-  override def index(documentSetId: Long) = list(indexCompiled(documentSetId))
+  override def index(documentSetId: Long) = database.seq(indexCompiled(documentSetId))
 }
 
-object ImportJobBackend extends DbImportJobBackend with DbBackend
+object ImportJobBackend extends DbImportJobBackend with org.overviewproject.database.DatabaseProvider

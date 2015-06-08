@@ -22,14 +22,14 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   }
 
   trait BaseScopeNoIndex extends BaseScope {
-    val backend = new DbBackend with DbDocumentBackend {
+    val backend = new DbDocumentBackend with org.overviewproject.database.DatabaseProvider {
       override val indexClient = mock[IndexClient]
     }
   }
 
   trait BaseScopeWithIndex extends BaseScope {
     val testIndexClient: InMemoryIndexClient = new InMemoryIndexClient()
-    val backend = new DbBackend with DbDocumentBackend {
+    val backend = new DbDocumentBackend with org.overviewproject.database.DatabaseProvider {
       override val indexClient: IndexClient = testIndexClient
     }
 

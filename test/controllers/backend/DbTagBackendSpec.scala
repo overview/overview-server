@@ -5,7 +5,7 @@ import org.overviewproject.models.tables.{DocumentTags,Tags}
 
 class DbTagBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbTagBackend
+    val backend = new DbTagBackend with org.overviewproject.database.DatabaseProvider
 
     def findTag(id: Long) = {
       import org.overviewproject.database.Slick.simple._

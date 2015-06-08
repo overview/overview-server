@@ -1,8 +1,8 @@
 package controllers.backend
 
 import scala.concurrent.Future
-import scala.util.control.Exception.catching
 
+import org.overviewproject.database.exceptions.Conflict
 import org.overviewproject.models.DocumentSetUser
 import org.overviewproject.models.DocumentSetUser.Role
 import org.overviewproject.models.tables.DocumentSetUsers
@@ -31,44 +31,45 @@ trait DocumentSetUserBackend {
   def destroy(documentSetId: Long, userEmail: String): Future[Unit]
 }
 
-trait DbDocumentSetUserBackend extends DocumentSetUserBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
-  import DocumentSetUsers.roleColumnType
+trait DbDocumentSetUserBackend extends DocumentSetUserBackend with DbBackend {
+  import databaseApi._
+  import DocumentSetUsers.roleColumnType // XXX clean this up
 
-  private val byDocumentSetId = Compiled { (documentSetId: Column[Long]) =>
+  private val byDocumentSetId = Compiled { (documentSetId: Rep[Long]) =>
     DocumentSetUsers
       .filter(_.documentSetId === documentSetId)
       .filter(_.role === Role(false))
       .sortBy(_.userEmail)
   }
 
-  private val byAll = Compiled { (documentSetId: Column[Long], userEmail: Column[String]) =>
+  private val byAll = Compiled { (documentSetId: Rep[Long], userEmail: Rep[String]) =>
     DocumentSetUsers
       .filter(_.documentSetId === documentSetId)
       .filter(_.userEmail === userEmail)
       .filter(_.role === Role(false))
   }
 
-  override def index(documentSetId: Long) = list(byDocumentSetId(documentSetId))
+  protected val inserter = (DocumentSetUsers returning DocumentSetUsers)
 
-  override def createOwner(documentSetId: Long, userEmail: String) = db { session =>
-    val row = DocumentSetUser(documentSetId, userEmail, Role(true))
-    exceptions.wrap {
-      (DocumentSetUsers returning DocumentSetUsers).+=(row)(session)
-    }
+  override def index(documentSetId: Long) = database.seq(byDocumentSetId(documentSetId))
+
+  override def createOwner(documentSetId: Long, userEmail: String) = {
+    database.run(inserter.+=(DocumentSetUser(documentSetId, userEmail, Role(true))))
   }
 
-  override def update(documentSetId: Long, userEmail: String) = db { session =>
-    val row = DocumentSetUser(documentSetId, userEmail, Role(false))
-    catching(classOf[exceptions.Conflict]).opt(exceptions.wrap {
-      (DocumentSetUsers returning DocumentSetUsers).+=(row)(session)
-    })
+  override def update(documentSetId: Long, userEmail: String) = {
+    implicit val ec = database.executionContext
+
+    database.run(inserter.+=(DocumentSetUser(documentSetId, userEmail, Role(false))))
+      .map(Some(_))
+      .recover({ case e: Conflict => None })
   }
 
-  override def destroy(documentSetId: Long, userEmail: String) = db { session =>
-    byAll(documentSetId, userEmail)
-      .delete(session)
+  override def destroy(documentSetId: Long, userEmail: String) = {
+    database.delete(byAll(documentSetId, userEmail))
   }
 }
 
-object DocumentSetUserBackend extends DbDocumentSetUserBackend with DbBackend
+object DocumentSetUserBackend
+  extends DbDocumentSetUserBackend
+  with org.overviewproject.database.DatabaseProvider

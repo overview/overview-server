@@ -5,7 +5,7 @@ import org.overviewproject.models.tables.FileGroups
 
 class DbFileGroupBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbFileGroupBackend
+    val backend = new DbFileGroupBackend with org.overviewproject.database.DatabaseProvider
 
     def findFileGroups(userEmail: String, apiToken: Option[String], completed: Boolean): Seq[FileGroup] = {
       import org.overviewproject.database.Slick.api._

@@ -26,9 +26,9 @@ trait DocumentNodeBackend extends Backend {
   def countByNode(selection: Selection, nodeIds: Seq[Long]): Future[Map[Long,Int]]
 }
 
-trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
-  import scala.concurrent.ExecutionContext.Implicits._
+trait DbDocumentNodeBackend extends DocumentNodeBackend with DbBackend {
+  import databaseApi._
+  private implicit val ec = database.executionContext
 
   private def countByDocumentsAndNodes(documentIds: Seq[Long], nodeIds: Seq[Long]): Future[Map[Long,Int]] = {
     if (documentIds.isEmpty) {
@@ -37,16 +37,14 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
       Future.successful(Map())
     } else {
       // Slick is slow at compiling queries. We need this query _fast_
-      import slick.jdbc.{GetResult, StaticQuery => Q}
-      val query = Q.queryNA[(Long,Int)](s"""
+      database.run(sql"""
         SELECT node_id, COUNT(*)
         FROM node_document
-        WHERE node_id IN (${nodeIds.mkString(",")})
-          AND document_id IN (${documentIds.mkString(",")})
+        WHERE node_id IN (#${nodeIds.mkString(",")})
+          AND document_id IN (#${documentIds.mkString(",")})
         GROUP BY node_id
-      """)
-
-      db { session => query.list(session).toMap }
+      """.as[(Long,Int)])
+        .map(_.toMap)
     }
   }
 
@@ -54,17 +52,15 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
     if (documentIds.isEmpty) {
       Future.successful(Map())
     } else {
-      import org.overviewproject.database.Slick.simple.PgArrayPositionedResult
-      import slick.jdbc.{GetResult, StaticQuery => Q}
+      import slick.jdbc.GetResult
       implicit val rconv = GetResult(r => (r.nextLong() -> r.nextArray[Long]()))
-      val query = Q.queryNA[(Long,Seq[Long])](s"""
+      database.run(sql"""
         SELECT document_id, ARRAY_AGG(node_id)
         FROM node_document
-        WHERE document_id IN (${documentIds.mkString(",")})
+        WHERE document_id IN (#${documentIds.mkString(",")})
         GROUP BY document_id
-      """)
-
-      db { session => query.list(session).toMap }
+      """.as[(Long,Seq[Long])])
+        .map(_.toMap)
     }
   }
 
@@ -76,4 +72,4 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend { self: DbBackend =>
   }
 }
 
-object DocumentNodeBackend extends DbDocumentNodeBackend with DbBackend
+object DocumentNodeBackend extends DbDocumentNodeBackend with org.overviewproject.database.DatabaseProvider

@@ -60,39 +60,39 @@ trait StoreObjectBackend {
   def destroyMany(storeId: Long, ids: Seq[Long]): Future[Unit]
 }
 
-trait DbStoreObjectBackend extends StoreObjectBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbStoreObjectBackend extends StoreObjectBackend with DbBackend {
+  import databaseApi._
 
-  private lazy val byIdCompiled = Compiled { (id: Column[Long]) =>
+  private lazy val byIdCompiled = Compiled { (id: Rep[Long]) =>
     StoreObjects.filter(_.id === id)
   }
 
-  private lazy val byStoreIdCompiled = Compiled { (storeId: Column[Long]) =>
+  private lazy val byStoreIdCompiled = Compiled { (storeId: Rep[Long]) =>
     StoreObjects
       .filter(_.storeId === storeId)
   }
 
-  private lazy val byStoreIdAndIndexedLongCompiled = Compiled { (storeId: Column[Long], indexedLong: Column[Long]) =>
+  private lazy val byStoreIdAndIndexedLongCompiled = Compiled { (storeId: Rep[Long], indexedLong: Rep[Long]) =>
     StoreObjects
       .filter(_.storeId === storeId)
       .filter(_.indexedLong === indexedLong)
   }
 
-  private lazy val byStoreIdAndIndexedStringCompiled = Compiled { (storeId: Column[Long], indexedString: Column[String]) =>
+  private lazy val byStoreIdAndIndexedStringCompiled = Compiled { (storeId: Rep[Long], indexedString: Rep[String]) =>
     StoreObjects
       .filter(_.storeId === storeId)
       .filter(_.indexedString === indexedString)
   }
 
-  private lazy val byStoreIdAndIndexedLongAndIndexedStringCompiled = Compiled { (storeId: Column[Long], indexedLong: Column[Long], indexedString: Column[String]) =>
+  private lazy val byStoreIdAndIndexedLongAndIndexedStringCompiled = Compiled { (storeId: Rep[Long], indexedLong: Rep[Long], indexedString: Rep[String]) =>
     StoreObjects
       .filter(_.storeId === storeId)
       .filter(_.indexedLong === indexedLong)
       .filter(_.indexedString === indexedString)
   }
 
-  private def byStoreIdAndIndexes(storeId: Long, indexedLong: Option[Long], indexedString: Option[String])(session: Session) = {
-    val query = indexedLong match {
+  private def byStoreIdAndIndexes(storeId: Long, indexedLong: Option[Long], indexedString: Option[String]) = {
+    indexedLong match {
       case None => indexedString match {
         case None => byStoreIdCompiled(storeId)
         case Some(s) => byStoreIdAndIndexedStringCompiled(storeId, s)
@@ -102,90 +102,77 @@ trait DbStoreObjectBackend extends StoreObjectBackend { self: DbBackend =>
         case Some(s) => byStoreIdAndIndexedLongAndIndexedStringCompiled(storeId, i, s)
       }
     }
-    query.list(session)
   }
 
-  override def index(storeId: Long, indexedLong: Option[Long]=None, indexedString: Option[String]=None) = db { session =>
-    byStoreIdAndIndexes(storeId, indexedLong, indexedString)(session)
+  override def index(storeId: Long, indexedLong: Option[Long]=None, indexedString: Option[String]=None) = {
+    database.seq(byStoreIdAndIndexes(storeId, indexedLong, indexedString))
   }
 
-  override def show(id: Long) = db { session =>
-    byIdCompiled(id).firstOption(session)
-  }
+  override def show(id: Long) = database.option(byIdCompiled(id))
 
-  lazy val storeObjectsForInsert = {
+  private lazy val storeObjectsForInsert = {
     for { o <- StoreObjects } yield (o.storeId, o.indexedLong, o.indexedString, o.json)
   }
-  lazy val inserter = (storeObjectsForInsert returning StoreObjects).insertInvoker
+  protected lazy val inserter = (storeObjectsForInsert returning StoreObjects)
 
-  override def create(storeId: Long, attributes: StoreObject.CreateAttributes) = db { session =>
-    inserter.insert(storeId, attributes.indexedLong, attributes.indexedString, attributes.json)(session)
+  override def create(storeId: Long, attributes: StoreObject.CreateAttributes) = {
+    database.run(inserter.+=(storeId, attributes.indexedLong, attributes.indexedString, attributes.json))
   }
 
-  override def createMany(storeId: Long, attributesSeq: Seq[StoreObject.CreateAttributes]) = db { session =>
+  override def createMany(storeId: Long, attributesSeq: Seq[StoreObject.CreateAttributes]) = {
     val tuples = for {
       a <- attributesSeq
     } yield (storeId, a.indexedLong, a.indexedString, a.json)
-    inserter.insertAll(tuples: _*)(session)
+
+    database.run(inserter.++=(tuples))
   }
 
-  private lazy val updateQuery = Compiled { (id: Column[Long]) =>
+  private lazy val updateQuery = Compiled { (id: Rep[Long]) =>
     for (v <- StoreObjects if v.id === id) yield (v.indexedLong, v.indexedString, v.json)
   }
-  private def updateInvoker(id: Long) = updateQuery(id).updateInvoker
-  override def update(id: Long, attributes: StoreObject.UpdateAttributes) = db { session =>
-    val count = updateInvoker(id).update(attributes.indexedLong, attributes.indexedString, attributes.json)(session)
-    if (count > 0) byIdCompiled(id).firstOption(session) else None
+  override def update(id: Long, attributes: StoreObject.UpdateAttributes) = {
+    val q = updateQuery(id).update(attributes.indexedLong, attributes.indexedString, attributes.json)
+      .andThen(byIdCompiled(id).result.headOption)
+    database.run(q)
   }
 
-  override def destroy(id: Long) = db { session =>
-    exceptions.wrap {
-      import slick.jdbc.StaticQuery.interpolation
-
-      /*
-       * We run two DELETEs in a single query, to simulate a transaction and
-       * avoid a round trip.
-       */
-      val q = sqlu"""
-        WITH subdelete AS (
-          DELETE FROM document_store_object
-          WHERE store_object_id = $id
-          RETURNING 1
-        )
-        DELETE FROM store_object
-        WHERE id = $id
-      """
-
-      q.execute(session)
-    }
+  override def destroy(id: Long) = {
+    /*
+     * We run two DELETEs in a single query, to simulate a transaction and
+     * avoid a round trip.
+     */
+    database.runUnit(sqlu"""
+      WITH subdelete AS (
+        DELETE FROM document_store_object
+        WHERE store_object_id = $id
+        RETURNING 1
+      )
+      DELETE FROM store_object
+      WHERE id = $id
+    """)
   }
 
-  override def destroyMany(storeId: Long, ids: Seq[Long]) = db { session =>
-    exceptions.wrap {
-      /*
-       * We run two DELETEs in a single query, to simulate a transaction and
-       * avoid a round trip.
-       */
-      val q = s"""
-        WITH ids AS (
-          SELECT *
-          FROM (VALUES ${ids.map("(" + _ + ")").mkString(",")}) AS t(id)
-          WHERE id IN (SELECT id FROM store_object WHERE store_id = ?)
-        ),
-        subdelete AS (
-          DELETE FROM document_store_object
-          WHERE store_object_id IN (SELECT id FROM ids)
-          RETURNING 1
-        )
-        DELETE FROM store_object
-        WHERE id IN (SELECT id FROM ids)
-          AND (SELECT COUNT(*) FROM subdelete) IS NOT NULL
-      """
-
-      import slick.jdbc.StaticQuery
-      StaticQuery.update[Long](q).apply(storeId).execute(session)
-    }
+  override def destroyMany(storeId: Long, ids: Seq[Long]) = {
+    /*
+     * We run two DELETEs in a single query, to simulate a transaction and
+     * avoid a round trip.
+     */
+    database.runUnit(sqlu"""
+      WITH ids AS (
+        SELECT *
+        FROM (VALUES #${ids.map("(" + _ + ")").mkString(",")}) AS t(id)
+        WHERE id IN (SELECT id FROM store_object WHERE store_id = $storeId)
+      ),
+      subdelete AS (
+        DELETE FROM document_store_object
+        WHERE store_object_id IN (SELECT id FROM ids)
+        RETURNING 1
+      )
+      DELETE FROM store_object
+      WHERE id IN (SELECT id FROM ids)
+        AND (SELECT COUNT(*) FROM subdelete) IS NOT NULL
+    """)
   }
 }
 
-object StoreObjectBackend extends DbStoreObjectBackend with DbBackend
+object StoreObjectBackend extends DbStoreObjectBackend with org.overviewproject.database.DatabaseProvider

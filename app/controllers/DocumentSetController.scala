@@ -243,26 +243,25 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     def send(cancelFileUploadCommand: CancelFileUpload): Unit
   }
 
-  object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
+  object DatabaseStorage extends Storage with DocumentSetDeletionStorage with org.overviewproject.database.BlockingDatabaseProvider {
     override def findNViewsByDocumentSets(documentSetIds: Seq[Long]) = {
       if (documentSetIds.isEmpty) {
         Seq()
       } else {
-        import org.overviewproject.database.Slick.simple._
-        import slick.jdbc.{GetResult,StaticQuery}
+        import blockingDatabaseApi._
+        import slick.jdbc.GetResult
 
         // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries
         // would make more sense than straight SQL.
-
-        val q = s"""
+        val documentSetIdToCount: Map[Long,Long] = blockingDatabase.run(sql"""
           WITH ids AS (
             SELECT *
-            FROM (VALUES ${documentSetIds.map("(" + _ + ")").mkString(",")}) AS t(id)
+            FROM (VALUES #${documentSetIds.map("(" + _ + ")").mkString(",")}) AS t(id)
           ), counts1 AS (
             SELECT document_set_id, COUNT(*) AS c
             FROM document_set_creation_job
             WHERE document_set_id IN (SELECT id FROM ids)
-              AND state <> ${DocumentSetCreationJobState.Cancelled.id}
+              AND state <> #${DocumentSetCreationJobState.Cancelled.id}
             GROUP BY document_set_id
           ), counts2 AS (
             SELECT document_set_id, COUNT(*) AS c
@@ -284,12 +283,9 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
           SELECT document_set_id, SUM(c)
           FROM all_counts
           GROUP BY document_set_id
-        """
+        """.as[(Long,Long)])
+          .toMap
 
-        val documentSetIdToCount: Map[Long,Long] = OverviewDatabase.withSlickSession { session =>
-          StaticQuery.queryNA[(Long,Long)](q).list(session)
-            .toMap
-        }
         documentSetIds.map((id) => documentSetIdToCount.getOrElse(id, 0L))
       }
     }

@@ -62,23 +62,23 @@ trait DocumentStoreObjectBackend extends Backend {
   def destroyMany(storeId: Long, entries: Seq[(Long,Long)]): Future[Unit]
 }
 
-trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend with DbBackend {
+  import databaseApi._
 
-  lazy val byIdsCompiled = Compiled { (documentId: Column[Long], storeObjectId: Column[Long]) =>
+  private lazy val byIdsCompiled = Compiled { (documentId: Rep[Long], storeObjectId: Rep[Long]) =>
     DocumentStoreObjects
       .filter(_.documentId === documentId)
       .filter(_.storeObjectId === storeObjectId)
   }
 
-  lazy val attributesByIdsCompiled = Compiled { (documentId: Column[Long], storeObjectId: Column[Long]) =>
+  private lazy val attributesByIdsCompiled = Compiled { (documentId: Rep[Long], storeObjectId: Rep[Long]) =>
     DocumentStoreObjects
       .filter(_.documentId === documentId)
       .filter(_.storeObjectId === storeObjectId)
       .map(_.json)
   }
 
-  private lazy val countByObjectCompiled = Compiled { (storeId: Column[Long]) =>
+  private lazy val countByObjectCompiled = Compiled { (storeId: Rep[Long]) =>
     val storeObjectIds = StoreObjects
       .filter(_.storeId === storeId)
       .map(_.id)
@@ -101,26 +101,20 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend { self: Db
       .map { case (storeObjectId, group) => (storeObjectId, group.length) }
   }
 
-  lazy val insertInvoker = (DocumentStoreObjects returning DocumentStoreObjects).insertInvoker
+  lazy val inserter = (DocumentStoreObjects returning DocumentStoreObjects)
 
-  override def show(documentId: Long, storeObjectId: Long) = db { session =>
-    byIdsCompiled(documentId, storeObjectId).firstOption(session)
+  override def show(documentId: Long, storeObjectId: Long) = {
+    database.option(byIdsCompiled(documentId, storeObjectId))
   }
 
   override def countByObject(storeId: Long, selection: Selection) = {
-    import scala.concurrent.ExecutionContext.Implicits._
-    selection.getAllDocumentIds.flatMap { documentIds: Seq[Long] =>
-      // this val query is of different type than the other
-      val query = countByObjectAndDocumentIds(storeId, documentIds)
-      db { session => query.list(session).toMap }
-    }
+    selection.getAllDocumentIds
+      .flatMap(ids => database.seq(countByObjectAndDocumentIds(storeId, ids)))(database.executionContext)
+      .map(_.toMap)(database.executionContext)
   }
 
-  override def create(documentId: Long, storeObjectId: Long, json: Option[JsObject]) = db { session =>
-    val dso = DocumentStoreObject(documentId, storeObjectId, json)
-    exceptions.wrap {
-      insertInvoker.insert(dso)(session)
-    }
+  override def create(documentId: Long, storeObjectId: Long, json: Option[JsObject]) = {
+    database.run(inserter.+=(DocumentStoreObject(documentId, storeObjectId, json)))
   }
 
   implicit lazy val getDsoResult = new slick.jdbc.GetResult[DocumentStoreObject] {
@@ -133,73 +127,71 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend { self: Db
     }
   }
 
-  override def createMany(storeId: Long, entries: Seq[DocumentStoreObject]) = db { session =>
-    exceptions.wrap {
-      /*
-       * We run both DELETE and INSERT in one query, to save bandwidth and let
-       * Postgres handle atomicity. (This doesn't avoid the race between DELETE
-       * and INSERT, but it does make Postgres roll back on error.)
-       *
-       * Do not omit `WHERE (SELECT COUNT(*) FROM deleted) IS NOT NULL`: that
-       * actually executes the DELETE.
-       */
-      def jsonToSql(json: JsObject) = s"'${json.toString.replaceAll("'", "''")}'"
-      val dsosAsSqlTuples: Seq[String] = entries
-        .map((dso: DocumentStoreObject) => "(" + dso.documentId + "," + dso.storeObjectId + "," + dso.json.map(jsonToSql _).getOrElse("NULL") + ")")
+  override def createMany(storeId: Long, entries: Seq[DocumentStoreObject]) = {
+    /*
+     * We run both DELETE and INSERT in one query, to save bandwidth and let
+     * Postgres handle atomicity. (This doesn't avoid the race between DELETE
+     * and INSERT, but it does make Postgres roll back on error.)
+     *
+     * Do not omit `WHERE (SELECT COUNT(*) FROM deleted) IS NOT NULL`: that
+     * actually executes the DELETE.
+     */
+    def jsonToSql(json: JsObject) = s"'${json.toString.replaceAll("'", "''")}'"
+    val dsosAsSqlTuples: Seq[String] = entries
+      .map((dso: DocumentStoreObject) => "(" + dso.documentId + "," + dso.storeObjectId + "," + dso.json.map(jsonToSql _).getOrElse("NULL") + ")")
 
-      val q = s"""
-        WITH request AS (
-          SELECT *
-          FROM (VALUES ${dsosAsSqlTuples.mkString(",")})
-            AS t(document_id, store_object_id, json_text)
-          WHERE document_id IN (
-              SELECT id
-              FROM document
-              WHERE document_set_id IN (
-                SELECT document_set_id
-                FROM api_token
-                WHERE token IN (SELECT api_token FROM store WHERE id = ?)
-              )
+    database.run(sql"""
+      WITH request AS (
+        SELECT *
+        FROM (VALUES #${dsosAsSqlTuples.mkString(",")})
+          AS t(document_id, store_object_id, json_text)
+        WHERE document_id IN (
+            SELECT id
+            FROM document
+            WHERE document_set_id IN (
+              SELECT document_set_id
+              FROM api_token
+              WHERE token IN (SELECT api_token FROM store WHERE id = $storeId)
             )
-            AND store_object_id IN (SELECT id FROM store_object WHERE store_id = ?)
-        ),
-        deleted AS (
-          DELETE FROM document_store_object
-          WHERE (document_id, store_object_id) IN (SELECT document_id, store_object_id FROM request)
-          RETURNING 1
-        )
-        INSERT INTO document_store_object (document_id, store_object_id, json_text)
-        SELECT document_id, store_object_id, json_text FROM request
-        WHERE (SELECT COUNT(*) FROM deleted) IS NOT NULL
-        RETURNING document_id, store_object_id, json_text
-      """
-
-      val sq = StaticQuery.query[Tuple2[Long,Long],DocumentStoreObject](q)
-      sq.apply(Tuple2(storeId, storeId)).list(session)
-    }
+          )
+          AND store_object_id IN (SELECT id FROM store_object WHERE store_id = $storeId)
+      ),
+      deleted AS (
+        DELETE FROM document_store_object
+        WHERE (document_id, store_object_id) IN (SELECT document_id, store_object_id FROM request)
+        RETURNING 1
+      )
+      INSERT INTO document_store_object (document_id, store_object_id, json_text)
+      SELECT document_id, store_object_id, json_text FROM request
+      WHERE (SELECT COUNT(*) FROM deleted) IS NOT NULL
+      RETURNING document_id, store_object_id, json_text
+    """.as[DocumentStoreObject])
   }
 
-  override def update(documentId: Long, storeObjectId: Long, json: Option[JsObject]) = db { session =>
-    val count = attributesByIdsCompiled(documentId, storeObjectId).update(json)(session)
-    if (count > 0) Some(DocumentStoreObject(documentId, storeObjectId, json)) else None
+  override def update(documentId: Long, storeObjectId: Long, json: Option[JsObject]) = {
+    database.run(attributesByIdsCompiled(documentId, storeObjectId).update(json))
+      .map(_ match {
+        case 0 => None
+        case _ => Some(DocumentStoreObject(documentId, storeObjectId, json))
+      })(database.executionContext)
   }
 
-  override def destroy(documentId: Long, storeObjectId: Long) = db { session =>
-    byIdsCompiled(documentId, storeObjectId).delete(session)
+  override def destroy(documentId: Long, storeObjectId: Long) = {
+    database.delete(byIdsCompiled(documentId, storeObjectId))
   }
 
-  override def destroyMany(storeId: Long, entries: Seq[(Long,Long)]) = db { session =>
+  override def destroyMany(storeId: Long, entries: Seq[(Long,Long)]) = {
     val tuplesAsSql: Seq[String] = entries
       .map((t: Tuple2[Long,Long]) => "(" + t._1 + "," + t._2 + ")")
 
-    val q = s"""
+    database.runUnit(sqlu"""
       DELETE FROM document_store_object
-      WHERE (document_id, store_object_id) IN (VALUES ${tuplesAsSql.mkString(",")})
-        AND store_object_id IN (SELECT id FROM store_object WHERE store_id = ?)
-    """
-
-    StaticQuery.update[Long](q).apply(storeId).execute(session)
+      WHERE (document_id, store_object_id) IN (VALUES #${tuplesAsSql.mkString(",")})
+        AND store_object_id IN (SELECT id FROM store_object WHERE store_id = $storeId)
+    """)
   }
 }
 
-object DocumentStoreObjectBackend extends DbDocumentStoreObjectBackend with DbBackend
+object DocumentStoreObjectBackend
+  extends DbDocumentStoreObjectBackend
+  with org.overviewproject.database.DatabaseProvider

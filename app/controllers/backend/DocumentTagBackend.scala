@@ -12,9 +12,8 @@ trait DocumentTagBackend extends Backend {
   def indexMany(documentIds: Seq[Long]): Future[Map[Long,Seq[Long]]]
 }
 
-trait DbDocumentTagBackend extends DocumentTagBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
-  import scala.concurrent.ExecutionContext.Implicits._
+trait DbDocumentTagBackend extends DocumentTagBackend with DbBackend {
+  import databaseApi._
 
   override def indexMany(documentIds: Seq[Long]) = {
     if (documentIds.isEmpty) {
@@ -22,16 +21,15 @@ trait DbDocumentTagBackend extends DocumentTagBackend { self: DbBackend =>
     } else {
       import slick.jdbc.{GetResult, StaticQuery => Q}
       implicit val rconv = GetResult(r => (r.nextLong() -> r.nextArray[Long]()))
-      val query = Q.queryNA[(Long,Seq[Long])](s"""
+      database.run(sql"""
         SELECT document_id, ARRAY_AGG(tag_id)
         FROM document_tag
-        WHERE document_id IN (${documentIds.mkString(",")})
+        WHERE document_id IN (#${documentIds.mkString(",")})
         GROUP BY document_id
-      """)
-
-      db { session => query.list(session).toMap }
+      """.as[(Long,Seq[Long])])
+        .map(_.toMap)(database.executionContext)
     }
   }
 }
 
-object DocumentTagBackend extends DbDocumentTagBackend with DbBackend
+object DocumentTagBackend extends DbDocumentTagBackend with org.overviewproject.database.DatabaseProvider

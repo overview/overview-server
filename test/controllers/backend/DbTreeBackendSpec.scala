@@ -5,7 +5,7 @@ import org.overviewproject.models.tables.{Nodes,NodeDocuments,Trees}
 
 class DbTreeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbTreeBackend
+    val backend = new DbTreeBackend with org.overviewproject.database.DatabaseProvider
 
     def findTree(id: Long) = {
       import org.overviewproject.database.Slick.simple._

@@ -5,25 +5,25 @@ import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbDocumentSetBackend
+    val backend = new DbDocumentSetBackend with org.overviewproject.database.DatabaseProvider
 
     def findDocumentSet(id: Long): Option[DocumentSet] = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentSets.filter(_.id === id).firstOption(session)
+      import blockingDatabaseApi._
+      blockingDatabase.option(DocumentSets.filter(_.id === id))
     }
 
     def findDocumentSetUser(documentSetId: Long): Option[DocumentSetUser] = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentSetUsers.filter(_.documentSetId === documentSetId).firstOption(session)
+      import blockingDatabaseApi._
+      blockingDatabase.option(DocumentSetUsers.filter(_.documentSetId === documentSetId))
     }
 
     def findApiTokensAndViews(documentSetId: Long): Seq[(ApiToken,View)] = {
-      import org.overviewproject.database.Slick.simple._
+      import blockingDatabaseApi._
       val q = for {
         apiToken <- ApiTokens if apiToken.documentSetId === documentSetId
         view <- Views.sortBy(_.id) if view.apiToken === apiToken.token
       } yield (apiToken, view)
-      q.list(session)
+      blockingDatabase.seq(q)
     }
   }
 

@@ -6,13 +6,12 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.backend.UserBackend
-import controllers.backend.exceptions.Conflict
 import controllers.forms.admin.NewUserForm
 import controllers.Controller
 import models.User
 import models.tables.Users
 import models.pagination.Page
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.exceptions.Conflict
 
 trait UserController extends Controller {
   protected val backend: UserBackend

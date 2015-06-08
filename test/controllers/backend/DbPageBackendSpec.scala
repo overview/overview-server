@@ -4,7 +4,7 @@ import org.overviewproject.models.Page
 
 class DbPageBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbPageBackend
+    val backend = new DbPageBackend with org.overviewproject.database.DatabaseProvider
   }
 
   "#show" should {

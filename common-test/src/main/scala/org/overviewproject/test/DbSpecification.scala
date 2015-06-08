@@ -11,7 +11,7 @@ import scala.concurrent.{Await,Future}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.{DB, DataSource, DatabaseConfiguration, SlickSessionProvider}
+import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider, SlickSessionProvider}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
 import org.overviewproject.test.factories.DbFactory
@@ -59,21 +59,29 @@ class DbSpecification extends Specification {
 
   /** Context for test accessing the database.
     *
-    * Provides these variables:
+    * Provides these <em>deprecated</em> variables:
     *
     * <ul>
     *   <li><em>connection</em> (lazy): a Connection
     *   <li><em>session</em> (lazy): a Slick Session</li>
+    * </ul>
+    *
+    * Provides these <em>non-deprecated</em> variables:
+    *
+    * <ul>
+    *   <li><em>database</em>: the Database</li>
+    *   <li><em>databaseApi</em>: so you can call <tt>import databaseApi._</tt>
+    *   <li><em>blockingDatabase</em>: the BlockingDatabase</li>
+    *   <li><em>sql</em>: runs arbitrary SQL, returning nothing</li>
     *   <li><em>factory</em>: a DbFactory for constructing objects</li>
     *   <li><em>await</em>: awaits a Future</li>
-    *   <li><em>sql</em>: runs arbitrary SQL, returning nothing</li>
     * </ul>
     *
     * Whatever code you test with <em>must not commit or start a
     * transaction</em>. When you first use the connection, a transaction will
     * begin; when your test finishes, the transaction will be rolled back.
     */
-  trait DbScope extends After {
+  trait DbScope extends After with DatabaseProvider with BlockingDatabaseProvider {
     val connection: Connection = DB.getConnection()
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
     val factory = DbFactory

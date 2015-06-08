@@ -6,11 +6,20 @@ import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
 
 abstract class FileViewInfo(
-  documentTitle: String,
-  location: String,
+  val documentTitle: String,
+  val location: String,
   override val size: Long
 ) extends DocumentViewInfo {
   override def name = asPdf(removePdf(documentTitle))
+
+  override def equals(o: Any) = o match {
+    case rhs: FileViewInfo => (
+      documentTitle == rhs.documentTitle
+      && location == rhs.location
+      && size == rhs.size
+    )
+    case _ => false
+  }
 }
 
 object FileViewInfo {

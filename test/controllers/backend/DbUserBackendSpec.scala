@@ -5,11 +5,12 @@ import java.sql.{SQLException,Timestamp}
 
 import models.User
 import models.tables.Users
+import org.overviewproject.database.exceptions
 import org.overviewproject.models.UserRole
 
 class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbUserBackend
+    val backend = new DbUserBackend with org.overviewproject.database.DatabaseProvider
 
     def insertUser(id: Long, email: String, passwordHash: String = "", role: UserRole.Value = UserRole.NormalUser): User = {
       import org.overviewproject.database.Slick.simple._

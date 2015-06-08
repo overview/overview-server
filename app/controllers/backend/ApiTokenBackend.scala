@@ -2,6 +2,7 @@ package controllers.backend
 
 import scala.concurrent.Future
 
+import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.ApiToken
 import org.overviewproject.models.tables.ApiTokens
 
@@ -30,39 +31,33 @@ trait ApiTokenBackend {
   def destroy(token: String): Future[Unit]
 }
 
-trait DbApiTokenBackend extends ApiTokenBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbApiTokenBackend extends ApiTokenBackend with DbBackend {
+  import databaseApi._
 
-  lazy val byCreatedByAndDocumentSetIdCompiled = Compiled { (createdBy: Column[String], documentSetId: Column[Option[Long]]) =>
+  lazy val byCreatedByAndDocumentSetIdCompiled = Compiled { (createdBy: Rep[String], documentSetId: Rep[Option[Long]]) =>
     ApiTokens
       .filter(row => row.documentSetId === documentSetId || (row.documentSetId.isEmpty && documentSetId.isEmpty))
       .filter(_.createdBy === createdBy)
   }
 
-  lazy val byTokenCompiled = Compiled { token: Column[String] =>
+  lazy val byTokenCompiled = Compiled { token: Rep[String] =>
     ApiTokens.filter(_.token === token)
   }
 
-  lazy val insertInvoker = (ApiTokens returning ApiTokens).insertInvoker
+  lazy val inserter = (ApiTokens returning ApiTokens)
 
   override def index(createdBy: String, documentSetId: Option[Long]) = {
-    list(byCreatedByAndDocumentSetIdCompiled(createdBy, documentSetId))
+    database.seq(byCreatedByAndDocumentSetIdCompiled(createdBy, documentSetId))
   }
 
-  override def show(token: String) = firstOption(byTokenCompiled(token))
+  override def show(token: String) = database.option(byTokenCompiled(token))
 
-  override def create(documentSetId: Option[Long], attributes: ApiToken.CreateAttributes) = db { session =>
+  override def create(documentSetId: Option[Long], attributes: ApiToken.CreateAttributes) = database.run {
     val apiToken = ApiToken.build(documentSetId, attributes)
-    exceptions.wrap {
-      insertInvoker.insert(apiToken)(session)
-    }
+    inserter.+=(apiToken)
   }
 
-  override def destroy(token: String) = db { session =>
-    exceptions.wrap {
-      byTokenCompiled(token).delete(session)
-    }
-  }
+  override def destroy(token: String) = database.delete(byTokenCompiled(token))
 }
 
-object ApiTokenBackend extends DbApiTokenBackend with DbBackend
+object ApiTokenBackend extends DbApiTokenBackend with DatabaseProvider

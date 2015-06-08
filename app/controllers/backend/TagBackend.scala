@@ -27,61 +27,56 @@ trait TagBackend {
   def destroy(documentSetId: Long, id: Long): Future[Unit]
 }
 
-trait DbTagBackend extends TagBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbTagBackend extends TagBackend with DbBackend {
+  import databaseApi._
 
-  lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Column[Long]) =>
+  lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Rep[Long]) =>
     Tags
       .filter(_.documentSetId === documentSetId)
   }
 
-  lazy val byIdsCompiled = Compiled { (documentSetId: Column[Long], id: Column[Long]) =>
+  lazy val byIdsCompiled = Compiled { (documentSetId: Rep[Long], id: Rep[Long]) =>
     Tags
       .filter(_.documentSetId === documentSetId)
       .filter(_.id === id)
   }
 
-  lazy val attributesByIdsCompiled = Compiled { (documentSetId: Column[Long], id: Column[Long]) =>
+  lazy val attributesByIdsCompiled = Compiled { (documentSetId: Rep[Long], id: Rep[Long]) =>
     Tags
       .filter(_.documentSetId === documentSetId)
       .filter(_.id === id)
       .map(t => (t.name, t.color))
   }
 
-  lazy val insertInvoker = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags).insertInvoker
+  lazy val inserter = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags)
 
-  override def index(documentSetId: Long) = db { session =>
-    byDocumentSetIdCompiled(documentSetId).list(session)
+  override def index(documentSetId: Long) = database.seq(byDocumentSetIdCompiled(documentSetId))
+
+  override def show(documentSetId: Long, id: Long) = database.option(byIdsCompiled(documentSetId, id))
+
+  override def create(documentSetId: Long, attributes: Tag.CreateAttributes) = database.run {
+    inserter.+=((documentSetId, attributes.name, attributes.color))
   }
 
-  override def show(documentSetId: Long, id: Long) = db { session =>
-    byIdsCompiled(documentSetId, id).firstOption(session)
+  override def update(documentSetId: Long, id: Long, attributes: Tag.UpdateAttributes) = {
+    database.run(attributesByIdsCompiled(documentSetId, id).update((attributes.name, attributes.color)))
+      .map(_ match {
+        case 0 => None
+        case _ => Some(Tag(id, documentSetId, attributes.name, attributes.color))
+      })(database.executionContext)
   }
 
-  override def create(documentSetId: Long, attributes: Tag.CreateAttributes) = db { session =>
-    insertInvoker.insert((documentSetId, attributes.name, attributes.color))(session)
-  }
-
-  override def update(documentSetId: Long, id: Long, attributes: Tag.UpdateAttributes) = db { session =>
-    attributesByIdsCompiled(documentSetId, id).update((attributes.name, attributes.color))(session) match {
-      case 0 => None
-      case _ => Some(Tag(id, documentSetId, attributes.name, attributes.color))
-    }
-  }
-
-  override def destroy(documentSetId: Long, id: Long) = db { session =>
-    val q = s"""
+  override def destroy(documentSetId: Long, id: Long) = {
+    database.runUnit(sqlu"""
       WITH valid_id AS (
-        SELECT id FROM tag WHERE document_set_id = ? AND id = ?
+        SELECT id FROM tag WHERE document_set_id = $documentSetId AND id = $id
       )
       , delete_document_tags AS (
         DELETE FROM document_tag WHERE tag_id IN (SELECT id FROM valid_id)
       )
       DELETE FROM tag WHERE id IN (SELECT id FROM valid_id)
-    """
-    val sq = StaticQuery.update[Tuple2[Long,Long]](q)
-    sq.apply(Tuple2(documentSetId, id)).execute(session)
+    """)
   }
 }
 
-object TagBackend extends DbTagBackend with DbBackend
+object TagBackend extends DbTagBackend with org.overviewproject.database.DatabaseProvider

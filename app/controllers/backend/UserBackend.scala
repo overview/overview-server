@@ -35,8 +35,8 @@ trait UserBackend extends Backend {
   def destroy(id: Long): Future[Unit]
 }
 
-trait DbUserBackend extends UserBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.api._
+trait DbUserBackend extends UserBackend with DbBackend {
+  import databaseApi._
 
   private lazy val byEmail = Compiled { (email: Rep[String]) =>
     Users.filter(_.email === email)
@@ -59,32 +59,30 @@ trait DbUserBackend extends UserBackend { self: DbBackend =>
     yield (user.lastActivityIp, user.lastActivityAt)
   }
 
+  protected lazy val userInserter = (Users.map(_.createAttributes) returning Users)
 
   override def indexPage(pageRequest: PageRequest) = page(Users, Users.length, pageRequest)
 
-  override def showByEmail(email: String) = firstOption(byEmail(email))
+  override def showByEmail(email: String) = database.option(byEmail(email))
 
-  override def create(attributes: User.CreateAttributes) = {
-    val userInserter = (Users.map(_.createAttributes) returning Users)
-    run(userInserter.+=(attributes))
-  }
+  override def create(attributes: User.CreateAttributes) = database.run(userInserter.+=(attributes))
 
   override def updateIsAdmin(id: Long, isAdmin: Boolean) = {
     val role = if (isAdmin) UserRole.Administrator else UserRole.NormalUser
-    runUnit(updateRoleCompiled(id).update(role))
+    database.runUnit(updateRoleCompiled(id).update(role))
   }
 
   override def updatePasswordHash(id: Long, passwordHash: String) = {
-    runUnit(updatePasswordHashCompiled(id).update(passwordHash))
+    database.runUnit(updatePasswordHashCompiled(id).update(passwordHash))
   }
 
   override def updateLastActivity(id: Long, ip: String, at: Timestamp) = {
-    runUnit(updateLastActivityCompiled(id).update((Some(ip), Some(at))))
+    database.runUnit(updateLastActivityCompiled(id).update((Some(ip), Some(at))))
   }
 
   override def destroy(id: Long) = {
     // One Big Query: simulate a transaction and avoid round trips
-    runUnit(sqlu"""
+    database.runUnit(sqlu"""
       DO $$$$
       DECLARE
         loids BIGINT[];
@@ -113,4 +111,4 @@ trait DbUserBackend extends UserBackend { self: DbBackend =>
   }
 }
 
-object UserBackend extends DbUserBackend with DbBackend
+object UserBackend extends DbUserBackend with org.overviewproject.database.DatabaseProvider

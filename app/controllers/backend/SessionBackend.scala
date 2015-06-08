@@ -50,8 +50,8 @@ trait SessionBackend extends Backend {
   def destroyExpiredSessionsForUserId(userId: Long): Future[Unit]
 }
 
-trait DbSessionBackend extends SessionBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbSessionBackend extends SessionBackend with DbBackend {
+  import databaseApi._
 
   private lazy val byIdCompiled = Compiled { (id: Rep[UUID]) => Sessions.filter(_.id === id) }
 
@@ -73,29 +73,27 @@ trait DbSessionBackend extends SessionBackend { self: DbBackend =>
     yield (s.ip, s.updatedAt)
   }
 
-  protected lazy val insertCompiled = (Sessions returning Sessions).insertInvoker
+  protected lazy val inserter = (Sessions returning Sessions)
 
-  override def showWithUser(id: UUID) = firstOption(showWithUserCompiled(id, minCreatedAt))
+  override def showWithUser(id: UUID) = database.option(showWithUserCompiled(id, minCreatedAt))
 
-  override def update(id: UUID, attributes: Session.UpdateAttributes) = db { session =>
+  override def update(id: UUID, attributes: Session.UpdateAttributes) = {
     val ip = InetAddress.getByName(attributes.ip)
     val updatedAt = new Timestamp(attributes.updatedAt.getTime())
 
-    updateCompiled(id).update((ip, updatedAt))(session)
+    database.runUnit(updateCompiled(id).update((ip, updatedAt)))
   }
 
-  override def create(userId: Long, ip: String) = db { session =>
-    insertCompiled.+=(Session(userId, ip))(session)
+  override def create(userId: Long, ip: String) = {
+    database.run(inserter.+=(Session(userId, ip)))
   }
 
-  override def destroy(id: UUID) = db { session =>
-    byIdCompiled(id).delete(session)
-  }
+  override def destroy(id: UUID) = database.delete(byIdCompiled(id))
 
-  override def destroyExpiredSessionsForUserId(userId: Long) = db { session =>
+  override def destroyExpiredSessionsForUserId(userId: Long) = {
     // Our minCreatedAt becomes maxCreatedAt in this query
-    byUserIdAndMaxCreatedAtCompiled(userId, minCreatedAt).delete(session)
+    database.delete(byUserIdAndMaxCreatedAtCompiled(userId, minCreatedAt))
   }
 }
 
-object SessionBackend extends DbSessionBackend with DbBackend
+object SessionBackend extends DbSessionBackend with org.overviewproject.database.DatabaseProvider

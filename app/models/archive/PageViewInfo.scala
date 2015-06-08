@@ -6,15 +6,24 @@ import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
 
 abstract class PageViewInfo(
-  documentTitle: String,
-  pageNumber: Int,
-  dataLocation: String,
+  val documentTitle: String,
+  val pageNumber: Int,
+  val dataLocation: String,
   override val size: Long
 ) extends DocumentViewInfo {
   override def name = fileNameWithPage(removePdf(documentTitle), pageNumber)
 
   private def fileNameWithPage(fileName: String, pageNumber: Int): String =
     asPdf(addPageNumber(fileName, pageNumber))
+
+  override def equals(o: Any) = o match {
+    case rhs: PageViewInfo => (
+      documentTitle == rhs.documentTitle
+      && pageNumber == rhs.pageNumber
+      && dataLocation == rhs.dataLocation
+      && size == rhs.size
+    )
+  }
 }
 
 object PageViewInfo {

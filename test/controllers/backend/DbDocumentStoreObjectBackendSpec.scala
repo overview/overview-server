@@ -3,12 +3,13 @@ package controllers.backend
 import play.api.libs.json.{JsObject,Json}
 
 import models.{InMemorySelection,Selection,SelectionRequest}
+import org.overviewproject.database.exceptions
 import org.overviewproject.models.DocumentStoreObject
 import org.overviewproject.models.tables.DocumentStoreObjects
 
 class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbDocumentStoreObjectBackend
+    val backend = new DbDocumentStoreObjectBackend with org.overviewproject.database.DatabaseProvider
 
     def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = await {
       import org.overviewproject.database.Slick.api._

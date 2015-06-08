@@ -2,6 +2,7 @@ package controllers.backend
 
 import scala.concurrent.Future
 
+import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 import org.overviewproject.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
 
@@ -19,64 +20,56 @@ trait DocumentSetBackend {
   def countByUserEmail(userEmail: String): Future[Int]
 }
 
-trait DbDocumentSetBackend extends DocumentSetBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
+  import databaseApi._
+  private implicit val ec = database.executionContext
 
   override def create(attributes: DocumentSet.CreateAttributes, userEmail: String) = {
-    val dsi = documentSetInserter
-    val dsui = documentSetUserInserter
-    val ai = apiTokenInserter
-    val vi = viewInserter
+    database.seq(autocreatePlugins).flatMap { plugins =>
+      val queries = for {
+        documentSet <- documentSetInserter.+=(attributes)
 
-    db(session => withTransaction(session) {
-      val documentSet = dsi.insert(attributes)(session)
+        _ <- documentSetUserInserter.+=(DocumentSetUser(documentSet.id, userEmail, DocumentSetUser.Role(true)))
 
-      dsui.insert(DocumentSetUser(documentSet.id, userEmail, DocumentSetUser.Role(true)))(session)
+        apiTokens <- apiTokenInserter.++=(plugins.map { plugin =>
+          ApiToken.generate(userEmail, Some(documentSet.id), "[plugin-autocreate] " + plugin.name)
+        })
 
-      for (plugin <- autocreatePlugins.list(session)) {
-        val apiToken = ApiToken.generate(userEmail, Some(documentSet.id), "[plugin-autocreate] " + plugin.name)
+        _ <- viewInserter.++=(plugins.zip(apiTokens).map { case (plugin, apiToken) =>
+          (documentSet.id, View.CreateAttributes(plugin.url, apiToken.token, plugin.name))
+        })
+      } yield documentSet
 
-        ai.insert(apiToken)(session)
-
-        val viewAttributes = View.CreateAttributes(
-          plugin.url,
-          apiToken.token,
-          plugin.name
-        )
-        vi.insert((documentSet.id, viewAttributes))(session)
-      }
-
-      documentSet
-    })
+      database.run(queries.transactionally)
+    }
   }
 
-  override def show(documentSetId: Long) = firstOption(byIdCompiled(documentSetId))
+  override def show(documentSetId: Long) = database.option(byIdCompiled(documentSetId))
 
-  override def countByUserEmail(userEmail: String) = db { session =>
-    import org.overviewproject.database.Slick.simple._
-    countByUserEmailCompiled(userEmail).run(session)
+  override def countByUserEmail(userEmail: String) = {
+    database.run(countByUserEmailCompiled(userEmail).result)
   }
 
-  private lazy val apiTokenInserter = ApiTokens.insertInvoker
-  private lazy val documentSetInserter = (DocumentSets.map(_.createAttributes) returning DocumentSets).insertInvoker
-  private lazy val documentSetUserInserter = DocumentSetUsers.insertInvoker
-  private lazy val viewInserter = (Views.map((v) => (v.documentSetId, v.createAttributes)) returning Views).insertInvoker
+  protected lazy val apiTokenInserter = (ApiTokens returning ApiTokens)
+  protected lazy val documentSetInserter = (DocumentSets.map(_.createAttributes) returning DocumentSets)
+  protected lazy val documentSetUserInserter = DocumentSetUsers
+  protected lazy val viewInserter = (Views.map((v) => (v.documentSetId, v.createAttributes)) returning Views)
 
-  private lazy val autocreatePlugins = {
+  private lazy val autocreatePlugins = Compiled {
     Plugins
       .filter(_.autocreate === true)
       .sortBy((p) => (p.autocreateOrder, p.id))
   }
 
-  private lazy val byIdCompiled = Compiled { (documentSetId: Column[Long]) =>
+  private lazy val byIdCompiled = Compiled { (documentSetId: Rep[Long]) =>
     DocumentSets.filter(_.id === documentSetId)
   }
 
-  private lazy val countByUserEmailCompiled = Compiled { (userEmail: Column[String]) =>
+  private lazy val countByUserEmailCompiled = Compiled { (userEmail: Rep[String]) =>
     DocumentSetUsers
       .filter(_.userEmail === userEmail)
       .length
   }
 }
 
-object DocumentSetBackend extends DbDocumentSetBackend with DbBackend
+object DocumentSetBackend extends DbDocumentSetBackend with DatabaseProvider

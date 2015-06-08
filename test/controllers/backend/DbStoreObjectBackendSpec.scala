@@ -7,7 +7,7 @@ import org.overviewproject.models.tables.StoreObjects
 
 class DbStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbStoreObjectBackend
+    val backend = new DbStoreObjectBackend with org.overviewproject.database.DatabaseProvider
 
     def findStoreObject(id: Long) = {
       import org.overviewproject.database.Slick.simple._

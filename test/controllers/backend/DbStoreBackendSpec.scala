@@ -2,31 +2,32 @@ package controllers.backend
 
 import play.api.libs.json.Json
 
+import org.overviewproject.database.exceptions
 import org.overviewproject.models.Store
 import org.overviewproject.models.tables.{DocumentStoreObjects,StoreObjects,Stores}
 
 class DbStoreBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbStoreBackend
+    val backend = new DbStoreBackend with org.overviewproject.database.DatabaseProvider
 
-    def findStore(apiToken: String) = await {
-      import org.overviewproject.database.Slick.api._
-      slickDb.run(Stores.filter(_.apiToken === apiToken).result.headOption)
+    def findStore(apiToken: String) = {
+      import databaseApi._
+      blockingDatabase.option(Stores.filter(_.apiToken === apiToken))
     }
 
-    def findStore(id: Long) = await {
-      import org.overviewproject.database.Slick.api._
-      slickDb.run(Stores.filter(_.id === id).result.headOption)
+    def findStore(id: Long) = {
+      import databaseApi._
+      blockingDatabase.option(Stores.filter(_.id === id))
     }
 
-    def findStoreObject(id: Long) = await {
-      import org.overviewproject.database.Slick.api._
-      slickDb.run(StoreObjects.filter(_.id === id).result.headOption)
+    def findStoreObject(id: Long) = {
+      import databaseApi._
+      blockingDatabase.option(StoreObjects.filter(_.id === id))
     }
 
-    def findDocumentStoreObjects(storeObjectId: Long) = await {
-      import org.overviewproject.database.Slick.api._
-      slickDb.run(DocumentStoreObjects.filter(_.storeObjectId === storeObjectId).result)
+    def findDocumentStoreObjects(storeObjectId: Long) = {
+      import databaseApi._
+      blockingDatabase.seq(DocumentStoreObjects.filter(_.storeObjectId === storeObjectId))
     }
   }
 

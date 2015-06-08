@@ -2,12 +2,13 @@ package controllers.backend
 
 import play.api.libs.json.Json
 
+import org.overviewproject.database.exceptions
 import org.overviewproject.models.ApiToken
 import org.overviewproject.models.tables.ApiTokens
 
 class DbApiTokenBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbApiTokenBackend
+    val backend = new DbApiTokenBackend with org.overviewproject.database.DatabaseProvider
 
     def findApiToken(token: String) = {
       import org.overviewproject.database.Slick.simple._

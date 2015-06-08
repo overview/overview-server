@@ -6,21 +6,22 @@ import org.overviewproject.models.tables.DocumentSetUsers
 
 class DbDocumentSetUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbDocumentSetUserBackend
+    val backend = new DbDocumentSetUserBackend with org.overviewproject.database.DatabaseProvider
 
     def find(documentSetId: Long, userEmail: String): Option[DocumentSetUser] = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentSetUsers
-        .filter(_.documentSetId === documentSetId)
-        .filter(_.userEmail === userEmail)
-        .firstOption(session)
+      import blockingDatabaseApi._
+      blockingDatabase.option(
+        DocumentSetUsers
+          .filter(_.documentSetId === documentSetId)
+          .filter(_.userEmail === userEmail)
+      )
     }
 
     def findAll(documentSetId: Long): Seq[DocumentSetUser] = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentSetUsers
-        .filter(_.documentSetId === documentSetId)
-        .list(session)
+      import blockingDatabaseApi._
+      blockingDatabase.seq(
+        DocumentSetUsers.filter(_.documentSetId === documentSetId)
+      )
     }
   }
 

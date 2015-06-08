@@ -6,6 +6,7 @@ import slick.jdbc.{GetResult,StaticQuery}
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
+import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
 import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
 import org.overviewproject.query.{Query=>SearchQuery}
@@ -32,7 +33,9 @@ trait DocumentBackend {
   def show(documentId: Long): Future[Option[Document]]
 }
 
-trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
+trait DbDocumentBackend extends DocumentBackend with DbBackend {
+  import databaseApi._
+
   protected lazy val logger = Logger.forClass(getClass)
 
   private val NullDocumentHeader = new DocumentHeader {
@@ -64,8 +67,8 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
           emptyPage[DocumentHeader](pageRequest)
         } else {
           val documentsFuture: Future[Seq[DocumentHeader]] = includeText match {
-            case false => list(DbDocumentBackend.InfosByIds.page(page.items))
-            case true => list(DbDocumentBackend.DocumentsByIds.page(page.items))
+            case false => database.seq(InfosByIds.page(page.items))
+            case true => database.seq(DocumentsByIds.page(page.items))
           }
 
           documentsFuture.map { documents: Seq[DocumentHeader] =>
@@ -82,11 +85,7 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   /** Returns all a DocumentSet's Document IDs, sorted. */
   private def indexAllIds(documentSetId: Long): Future[Seq[Long]] = {
     logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}]", documentSetId) {
-      db { session =>
-        DbDocumentBackend.sortedIds(documentSetId)
-          .firstOption(session)
-          .getOrElse(Seq())
-      }
+      database.option(sortedIds(documentSetId)).map(_.getOrElse(Seq()))
     }
   }
 
@@ -102,7 +101,7 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
     */
   private def indexByDB(request: SelectionRequest): Future[Set[Long]] = {
     logger.logExecutionTimeAsync("finding document IDs matching '{}'", request.toString) {
-      list(DbDocumentBackend.idsBySelectionRequest(request)).map(_.toSet)
+      database.seq(idsBySelectionRequest(request)).map(_.toSet)
     }
   }
 
@@ -141,25 +140,18 @@ trait DbDocumentBackend extends DocumentBackend { self: DbBackend =>
   }
 
   override def show(documentSetId: Long, documentId: Long) = {
-    firstOption(DbDocumentBackend.byDocumentSetIdAndId(documentSetId, documentId))
+    database.option(byDocumentSetIdAndId(documentSetId, documentId))
   }
 
   override def show(documentId: Long) = {
-    firstOption(DbDocumentBackend.byId(documentId))
+    database.option(byId(documentId))
   }
-}
 
-object DbDocumentBackend {
-  import org.overviewproject.database.Slick.simple._
-  import scala.language.implicitConversions
-
-  def sortedIds(documentSetId: Long) = {
+  def sortedIds(documentSetId: Long): DBIO[Seq[Seq[Long]]] = {
+    // The ORM is unaware of DocumentSet.sortedDocumentIds
     implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextArray[Long]()))
 
-    // The ORM is unaware of DocumentSet.sortedDocumentIds
-    val q = "SELECT sorted_document_ids FROM document_set WHERE id = ?"
-    val sq = StaticQuery.query[Long,Seq[Long]](q)
-    sq.apply(documentSetId)
+    sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
   }
 
   def idsBySelectionRequest(request: SelectionRequest): Query[_,Long,Seq] = {
@@ -233,17 +225,17 @@ object DbDocumentBackend {
     }
   }
 
-  lazy val byDocumentSetIdAndId = Compiled { (documentSetId: Column[Long], documentId: Column[Long]) =>
+  lazy val byDocumentSetIdAndId = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>
     Documents
       .filter(_.documentSetId === documentSetId)
       .filter(_.id === documentId)
   }
 
-  lazy val byId = Compiled { (documentId: Column[Long]) =>
+  lazy val byId = Compiled { (documentId: Rep[Long]) =>
     Documents.filter(_.id === documentId)
   }
 }
 
-object DocumentBackend extends DbDocumentBackend with DbBackend {
+object DocumentBackend extends DbDocumentBackend with DatabaseProvider {
   override protected val indexClient = org.overviewproject.searchindex.TransportIndexClient.singleton
 }

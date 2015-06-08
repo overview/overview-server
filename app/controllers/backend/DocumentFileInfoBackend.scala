@@ -1,33 +1,29 @@
 package controllers.backend
 
+import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
-import models.DocumentFileInfo
+
+import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.models.tables.Files
-import models.archive.PageViewInfo
-import models.archive.FileViewInfo
-import models.archive.DocumentViewInfo
-import models.archive.PageViewInfo
-import models.archive.FileViewInfo
-import models.archive.TextViewInfo
+import models.archive.{DocumentViewInfo,FileViewInfo,PageViewInfo,TextViewInfo}
 
-trait DocumentFileInfoBackend {
-
+trait DocumentFileInfoBackend extends Backend {
   def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]]
-  
 }
 
-trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBackend =>
-  import slick.jdbc.StaticQuery.interpolation
-  import slick.jdbc.GetResult
-  import org.overviewproject.database.Slick.simple._
+trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
+  import databaseApi._
 
-  override def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = db { implicit session =>
-    pageViewInfos(documentSetId) ++ fileViewInfos(documentSetId) ++ textViewInfos(documentSetId)
+  override def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
+    for {
+      infos1 <- pageViewInfos(documentSetId)
+      infos2 <- fileViewInfos(documentSetId)
+      infos3 <- textViewInfos(documentSetId)
+    } yield infos1 ++ infos2 ++ infos3
   }
-  
-    
-  private def pageViewInfos(documentSetId: Long)(implicit session: Session) = {
+
+  private def pageViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
   	val q = sql"""
       SELECT
         d.title,
@@ -39,50 +35,34 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend { self: DbBacken
       WHERE d.document_set_id = $documentSetId
     """.as[(String, Int, String, Long)]
 
-    q.list.map(documentViewInfoFactory.fromPage)
+    database.run(q).map { seq =>
+      seq.map((PageViewInfo.apply _).tupled)
+    }
   }
-  
-  private def fileViewInfos(documentSetId: Long)(implicit session: Session) = {
+
+  private def fileViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
     val q = for {
-        d <- Documents if (d.documentSetId === documentSetId) && d.pageId.isEmpty
-        f <- Files if d.fileId === f.id
-      } yield (d.title, f.viewLocation, f.viewSize)
+      d <- Documents if (d.documentSetId === documentSetId) && d.pageId.isEmpty
+      f <- Files if d.fileId === f.id
+    } yield (d.title, f.viewLocation, f.viewSize)
 
-    val fileInfo = q.list.map(f => (f._1.getOrElse(""), f._2, f._3))
-    fileInfo.map(documentViewInfoFactory.fromFile)
+    database.seq(q).map { seq =>
+      seq.map(f => FileViewInfo(f._1.getOrElse(""), f._2, f._3))
+    }
   }
   
   
-  private def textViewInfos(documentSetId: Long)(implicit session: Session) = {
-
+  private def textViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
     val q = sql"""
       SELECT title, supplied_id, id, page_number, octet_length(text) FROM document
       WHERE ((document_set_id = $documentSetId) AND
              (file_id IS NULL) AND
              (text IS NOT NULL))""".as[(Option[String], Option[String], Long, Option[Int], Long)]
     
-    q.list.map { info =>
-      val infoWithValues = (info._1.getOrElse(""), info._2.getOrElse(""), info._3, info._4, info._5)
-      documentViewInfoFactory.fromText(infoWithValues)
+    database.run(q).map { seq =>
+      seq.map(f => TextViewInfo(f._1.getOrElse(""), f._2.getOrElse(""), f._3, f._4, f._5))
     }
   }
-  
-  protected val documentViewInfoFactory: DocumentViewInfoFactory
-  
-  protected trait DocumentViewInfoFactory {
-    def fromPage(info: (String, Int, String, Long)): DocumentViewInfo
-    def fromFile(info: (String, String, Long)): DocumentViewInfo
-    def fromText(info: (String, String, Long, Option[Int], Long)): DocumentViewInfo
-    
-  }
 }
 
-
-object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DbBackend {
-  override protected val documentViewInfoFactory = new DocumentViewInfoFactory {
-    def fromPage(info: (String, Int, String, Long)): DocumentViewInfo = (PageViewInfo.apply _).tupled(info)
-    def fromFile(info: (String, String, Long)): DocumentViewInfo = (FileViewInfo.apply _).tupled(info)
-    def fromText(info: (String, String, Long, Option[Int], Long)): DocumentViewInfo = (TextViewInfo.apply _).tupled(info)
-  } 
-}
-
+object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DatabaseProvider

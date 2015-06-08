@@ -43,10 +43,10 @@ trait FileGroupBackend extends Backend {
   def destroy(id: Long): Future[Unit]
 }
 
-trait DbFileGroupBackend extends FileGroupBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
+  import databaseApi._
 
-  lazy val incompleteByAttributesCompiled = Compiled { (userEmail: Column[String], apiToken: Column[Option[String]]) =>
+  lazy val incompleteByAttributesCompiled = Compiled { (userEmail: Rep[String], apiToken: Rep[Option[String]]) =>
     // Option[String] equality is weird because (None === None) is false.
     // https://github.com/slick/slick/issues/947
     FileGroups
@@ -56,40 +56,43 @@ trait DbFileGroupBackend extends FileGroupBackend { self: DbBackend =>
       .filter(_.deleted === false)
   }
 
-  lazy val insertInvoker = (FileGroups.map(fg => (fg.userEmail, fg.apiToken, fg.completed, fg.deleted)) returning FileGroups).insertInvoker
+  lazy val inserter = (FileGroups.map(g => (g.userEmail, g.apiToken, g.completed, g.deleted)) returning FileGroups)
 
-  lazy val updateCompletedByIdCompiled = Compiled { (id: Column[Long]) =>
+  lazy val updateCompletedByIdCompiled = Compiled { (id: Rep[Long]) =>
     FileGroups
       .filter(_.id === id)
       .filter(_.deleted === false)
       .map(_.completed)
   }
 
-  lazy val updateDeletedByIdCompiled = Compiled { (id: Column[Long]) =>
+  lazy val updateDeletedByIdCompiled = Compiled { (id: Rep[Long]) =>
     FileGroups
       .filter(_.id === id)
       .filter(_.deleted === false)
       .map(_.deleted)
   }
 
-  override def findOrCreate(attributes: FileGroup.CreateAttributes) = db { session =>
-    exceptions.wrap {
-      incompleteByAttributesCompiled(attributes.userEmail, attributes.apiToken).firstOption(session)
-        .getOrElse(insertInvoker.insert((attributes.userEmail, attributes.apiToken, false, false))(session))
+  override def findOrCreate(attributes: FileGroup.CreateAttributes) = {
+    database.run {
+      incompleteByAttributesCompiled(attributes.userEmail, attributes.apiToken).result.headOption
+        .flatMap(_ match {
+          case None => inserter.+=((attributes.userEmail, attributes.apiToken, false, false))
+          case Some(fileGroup) => DBIO.successful(fileGroup)
+        })(database.executionContext)
     }
   }
 
-  override def find(userEmail: String, apiToken: Option[String]) = db { session =>
-    incompleteByAttributesCompiled(userEmail, apiToken).firstOption(session)
+  override def find(userEmail: String, apiToken: Option[String]) = {
+    database.option(incompleteByAttributesCompiled(userEmail, apiToken))
   }
 
-  override def update(id: Long, completed: Boolean) = db { session =>
-    updateCompletedByIdCompiled(id).update(completed)(session)
+  override def update(id: Long, completed: Boolean) = {
+    database.runUnit(updateCompletedByIdCompiled(id).update(completed))
   }
 
-  override def destroy(id: Long) = db { session =>
-    updateDeletedByIdCompiled(id).update(true)(session)
+  override def destroy(id: Long) = {
+    database.runUnit(updateDeletedByIdCompiled(id).update(true))
   }
 }
 
-object FileGroupBackend extends DbFileGroupBackend with DbBackend
+object FileGroupBackend extends DbFileGroupBackend with org.overviewproject.database.DatabaseProvider

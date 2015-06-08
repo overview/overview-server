@@ -5,7 +5,7 @@ import org.overviewproject.models.tables.Views
 
 class DbViewBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbBackend with DbViewBackend
+    val backend = new DbViewBackend with org.overviewproject.database.DatabaseProvider
 
     def findView(id: Long) = {
       import org.overviewproject.database.Slick.simple._

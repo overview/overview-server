@@ -20,26 +20,27 @@ trait TreeBackend extends Backend {
   def destroy(id: Long): Future[Unit]
 }
 
-trait DbTreeBackend extends TreeBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbTreeBackend extends TreeBackend with DbBackend {
+  import databaseApi._
 
-  lazy val byIdCompiled = Compiled { (id: Column[Long]) => Trees.filter(_.id === id) }
-  lazy val attributesByIdCompiled = Compiled { (id: Column[Long]) =>
+  lazy val byIdCompiled = Compiled { (id: Rep[Long]) => Trees.filter(_.id === id) }
+  lazy val attributesByIdCompiled = Compiled { (id: Rep[Long]) =>
     for (t <- Trees if t.id === id) yield (t.title)
   }
-  override def update(id: Long, attributes: Tree.UpdateAttributes) = db { session =>
-    val count = attributesByIdCompiled(id).update(attributes.title)(session)
-    if (count > 0) byIdCompiled(id).firstOption(session) else None
+
+  override def update(id: Long, attributes: Tree.UpdateAttributes) = {
+    database.run {
+      attributesByIdCompiled(id).update(attributes.title)
+        .andThen(byIdCompiled(id).result.headOption)
+    }
   }
 
-  override def destroy(id: Long) = db { session =>
-    import slick.jdbc.StaticQuery.interpolation
-
+  override def destroy(id: Long) = {
     /*
      * We run three DELETEs in a single query, to simulate a transaction and
      * avoid round trips.
      */
-    val q = sqlu"""
+    database.runUnit(sqlu"""
       WITH root_node_ids AS (
         SELECT root_node_id AS id
         FROM tree
@@ -58,9 +59,8 @@ trait DbTreeBackend extends TreeBackend { self: DbBackend =>
       DELETE
       FROM tree
       WHERE id = $id
-    """
-    q.execute(session)
+    """)
   }
 }
 
-object TreeBackend extends DbTreeBackend with DbBackend
+object TreeBackend extends DbTreeBackend with org.overviewproject.database.DatabaseProvider

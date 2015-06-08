@@ -2,7 +2,9 @@ package controllers.backend
 
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
+import scala.util.{Failure,Success}
 
+import org.overviewproject.database.exceptions
 import org.overviewproject.models.tables.Stores
 import org.overviewproject.models.Store
 
@@ -22,65 +24,68 @@ trait StoreBackend {
   def destroy(apiToken: String): Future[Unit]
 }
 
-trait DbStoreBackend extends StoreBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbStoreBackend extends StoreBackend with DbBackend {
+  import databaseApi._
 
-  lazy val tokenToStore = Compiled { (token: Column[String]) =>
+  lazy val tokenToStore = Compiled { (token: Rep[String]) =>
     Stores.filter(_.apiToken === token)
   }
 
-  lazy val tokenToStoreJson = Compiled { (token: Column[String]) =>
+  lazy val tokenToStoreJson = Compiled { (token: Rep[String]) =>
     Stores.filter(_.apiToken === token).map(_.json)
   }
 
-  private lazy val inserter = {
-    val q = for { stores <- Stores } yield (stores.apiToken, stores.json)
-    q.insertInvoker
+  private lazy val inserter = (Stores.map(s => (s.apiToken, s.json)))
+
+  private def insertIgnoringDuplicate(token: String, json: JsObject): DBIO[_] = {
+    // Handle races in case two users try to INSERT at the same time. In the
+    // event of a race, both INSERTs must succeed: that means we ignore the
+    // value from RETURNING and absorb any error.
+    inserter.+=(token, json)
+      .asTry
+      .map(_ match {
+        case Success(v) => v
+        case Failure(t) => {
+          database.wrapException(t) match {
+            case _: exceptions.Conflict => () // make the failed INSERT succeed
+            case _ => throw t // it's a real problem.
+          }
+        }
+      })(database.executionContext)
   }
 
-  private def insertSync(token: String, json: JsObject)(session: Session): Unit = {
-    inserter.insert((token, json))(session)
+  private def lookup(token: String): DBIO[Store] = {
+    // Throws an error if the row is not there.
+    tokenToStore(token).result.head
   }
 
-  private def updateSync(token: String, json: JsObject)(session: Session): Int = {
-    tokenToStoreJson(token).update(json)(session)
-  }
-
-  override def showOrCreate(token: String) = db { session =>
-    val maybeExistingStore = tokenToStore(token).firstOption(session)
-    maybeExistingStore match {
-      case None => {
-        // Insert without RETURNING, so a race won't be a big deal
-        exceptions.wrap { insertSync(token, JsObject(Seq()))(session) }
-        // Now there _must_ be an object...
-        tokenToStore(token).first(session)
-      }
-      case Some(existingStore) => existingStore
+  override def showOrCreate(token: String) = {
+    database.run {
+      tokenToStore(token).result.headOption
+        .flatMap(_ match {
+          case None => insertIgnoringDuplicate(token, JsObject(Seq())).andThen(lookup(token))
+          case Some(existingStore) => DBIO.successful(existingStore)
+        })(database.executionContext)
     }
   }
 
-  override def upsert(token: String, json: JsObject) = db { session =>
+  override def upsert(token: String, json: JsObject) = {
     // There is no UPDATE RETURNING
-    val nUpdated = updateSync(token, json)(session)
-    nUpdated match {
-      case 0 => {
-        // Insert without RETURNING, so a race won't be a big deal
-        exceptions.wrap { insertSync(token, json)(session) }
-        // Now there _must_ be an object...
-        tokenToStore(token).first(session)
-      }
-      case _ => tokenToStore(token).first(session)
+    database.run {
+      tokenToStoreJson(token).update(json)
+        .flatMap(_ match {
+          case 0 => insertIgnoringDuplicate(token, json).andThen(lookup(token))
+          case _ => lookup(token)
+        })(database.executionContext)
     }
   }
 
-  override def destroy(token: String) = db { session =>
-    import slick.jdbc.StaticQuery.interpolation
-
+  override def destroy(token: String) = {
     /*
      * We run three DELETEs in a single query, to simulate a transaction and
      * avoid round trips.
      */
-    val q = sqlu"""
+    database.runUnit(sqlu"""
       WITH store_ids AS (
         SELECT id
         FROM store
@@ -100,9 +105,8 @@ trait DbStoreBackend extends StoreBackend { self: DbBackend =>
       )
       DELETE FROM store
       WHERE id IN (SELECT id FROM store_ids)
-    """
-    q.execute(session)
+    """)
   }
 }
 
-object StoreBackend extends DbStoreBackend with DbBackend
+object StoreBackend extends DbStoreBackend with org.overviewproject.database.DatabaseProvider

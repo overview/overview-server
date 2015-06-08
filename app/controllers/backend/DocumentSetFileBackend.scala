@@ -1,6 +1,5 @@
 package controllers.backend
 
-import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
 import org.overviewproject.models.tables.{Documents,Files}
@@ -10,10 +9,10 @@ trait DocumentSetFileBackend extends Backend {
   def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]): Future[Boolean]
 }
 
-trait DbDocumentSetFileBackend extends DocumentSetFileBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbDocumentSetFileBackend extends DocumentSetFileBackend with DbBackend {
+  import databaseApi._
 
-  lazy val byIdAndSha1 = Compiled { (documentSetId: Column[Long], sha1: Column[Array[Byte]]) =>
+  lazy val byIdAndSha1 = Compiled { (documentSetId: Rep[Long], sha1: Rep[Array[Byte]]) =>
     for {
       file <- Files.filter(_.contentsSha1 === sha1)
       documents <- Documents.filter(_.fileId === file.id).filter(_.documentSetId === documentSetId)
@@ -21,9 +20,11 @@ trait DbDocumentSetFileBackend extends DocumentSetFileBackend { self: DbBackend 
   }
 
   override def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]) = {
-    firstOption(byIdAndSha1(documentSetId, sha1))
-      .map(_.isDefined)
+    database.option(byIdAndSha1(documentSetId, sha1))
+      .map(_.isDefined)(database.executionContext)
   }
 }
 
-object DocumentSetFileBackend extends DbDocumentSetFileBackend with DbBackend
+object DocumentSetFileBackend
+  extends DbDocumentSetFileBackend
+  with org.overviewproject.database.DatabaseProvider

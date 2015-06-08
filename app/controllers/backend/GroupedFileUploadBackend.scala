@@ -4,9 +4,9 @@ import java.util.UUID
 import org.postgresql.PGConnection
 import scala.concurrent.Future
 
+import org.overviewproject.database.LargeObject
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
-import org.overviewproject.postgres.LO
 
 trait GroupedFileUploadBackend extends Backend {
   /** Lists GroupedFileUploads in a FileGroup.
@@ -42,20 +42,22 @@ trait GroupedFileUploadBackend extends Backend {
   def writeBytes(id: Long, position: Long, bytes: Array[Byte]): Future[Unit]
 }
 
-trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend with DbBackend {
+  import databaseApi._
 
-  lazy val byFileGroupId = Compiled { (fileGroupId: Column[Long]) =>
+  private implicit val ec = database.executionContext
+
+  lazy val byFileGroupId = Compiled { (fileGroupId: Rep[Long]) =>
     GroupedFileUploads.filter(_.fileGroupId === fileGroupId)
   }
 
-  lazy val byFileGroupAndGuidCompiled = Compiled { (fileGroupId: Column[Long], guid: Column[UUID]) =>
+  lazy val byFileGroupAndGuidCompiled = Compiled { (fileGroupId: Rep[Long], guid: Rep[UUID]) =>
     GroupedFileUploads
       .filter(_.fileGroupId === fileGroupId)
       .filter(_.guid === guid)
   }
 
-  lazy val insertInvoker = (GroupedFileUploads.map(gfu => (
+  lazy val inserter = (GroupedFileUploads.map(gfu => (
     gfu.fileGroupId,
     gfu.guid,
     gfu.contentType,
@@ -63,76 +65,60 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend { self: DbBack
     gfu.size,
     gfu.uploadedSize,
     gfu.contentsOid
-  )) returning GroupedFileUploads).insertInvoker
+  )) returning GroupedFileUploads)
 
-  lazy val updateUploadedSizeByIdCompiled = Compiled { (id: Column[Long]) =>
+  lazy val updateUploadedSizeByIdCompiled = Compiled { (id: Rep[Long]) =>
     GroupedFileUploads.filter(_.id === id).map(_.uploadedSize)
   }
 
-  lazy val loidByIdCompiled = Compiled { (id: Column[Long]) =>
+  lazy val loidByIdCompiled = Compiled { (id: Rep[Long]) =>
     GroupedFileUploads.filter(_.id === id).map(_.contentsOid)
   }
 
-  def index(fileGroupId: Long) = db { session =>
-    byFileGroupId(fileGroupId).list(session)
+  override def index(fileGroupId: Long) = database.seq(byFileGroupId(fileGroupId))
+
+  override def find(fileGroupId: Long, guid: UUID) = {
+    database.option(byFileGroupAndGuidCompiled(fileGroupId, guid))
   }
 
-  def find(fileGroupId: Long, guid: UUID) = db { session =>
-    byFileGroupAndGuidCompiled(fileGroupId, guid).firstOption(session)
+  private def create(attributes: GroupedFileUpload.CreateAttributes): Future[GroupedFileUpload] = {
+    val action = for {
+      oid <- database.largeObjectManager.create
+      groupedFileUpload <- inserter.+=(
+        attributes.fileGroupId,
+        attributes.guid,
+        attributes.contentType,
+        attributes.name,
+        attributes.size,
+        0L,
+        oid
+      )
+    } yield groupedFileUpload
+
+    database.run(action.transactionally)
   }
 
-  private def withPgConnection[A](session: Session)(block: PGConnection => A) = {
-    // Large Object stuff _must_ be done within a transaction, or Postgres
-    // won't do it.
-    //
-    // TODO think through transactions a bit more
-    import org.overviewproject.database.DB
-
-    val wasAutoCommit = session.conn.getAutoCommit
-
-    try {
-      session.conn.setAutoCommit(false)
-      val pgConnection = DB.pgConnection(session.conn)
-      block(pgConnection)
-    } finally {
-      session.conn.setAutoCommit(wasAutoCommit)
-    }
+  override def findOrCreate(attributes: GroupedFileUpload.CreateAttributes) = {
+    find(attributes.fileGroupId, attributes.guid)
+      .flatMap(_ match {
+        case Some(fileGroup) => Future.successful(fileGroup)
+        case None => create(attributes)
+      })
   }
 
-  private def create(attributes: GroupedFileUpload.CreateAttributes, session: Session) = {
-    withPgConnection(session) { pgConnection =>
-      LO.withLargeObject({ largeObject =>
-        insertInvoker.insert(
-          attributes.fileGroupId,
-          attributes.guid,
-          attributes.contentType,
-          attributes.name,
-          attributes.size,
-          0L,
-          largeObject.oid
-        )(session)
-      })(pgConnection)
-    }
-  }
+  def writeBytes(id: Long, position: Long, bytes: Array[Byte]) = {
+    val action = for {
+      oid <- loidByIdCompiled(id).result.head
+      largeObject <- database.largeObjectManager.open(oid, LargeObject.Mode.Write)
+      _ <- largeObject.seek(position)
+      _ <- largeObject.write(bytes)
+      _ <- updateUploadedSizeByIdCompiled(id).update(position + bytes.length)
+    } yield ()
 
-  def findOrCreate(attributes: GroupedFileUpload.CreateAttributes) = db { session =>
-    byFileGroupAndGuidCompiled(attributes.fileGroupId, attributes.guid).firstOption(session)
-      .getOrElse(create(attributes, session))
-  }
-
-  def writeBytes(id: Long, position: Long, bytes: Array[Byte]) = db { session =>
-    loidByIdCompiled(id).firstOption(session) match {
-      case Some(loid) => {
-        withPgConnection(session) { pgConnection =>
-          LO.withLargeObject(loid)({ largeObject =>
-            largeObject.insert(bytes, position.toInt)
-          })(pgConnection)
-          updateUploadedSizeByIdCompiled(id).update(position + bytes.length)(session)
-        }
-      }
-      case None =>
-    }
+    database.run(action.transactionally)
   }
 }
 
-object GroupedFileUploadBackend extends DbGroupedFileUploadBackend with DbBackend
+object GroupedFileUploadBackend
+  extends DbGroupedFileUploadBackend
+  with org.overviewproject.database.DatabaseProvider

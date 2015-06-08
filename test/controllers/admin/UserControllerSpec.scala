@@ -7,9 +7,9 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 
 import controllers.backend.UserBackend
-import controllers.backend.exceptions.Conflict
 import models.User
 import models.pagination.{Page,PageInfo,PageRequest}
+import org.overviewproject.database.exceptions.Conflict
 import org.overviewproject.models.UserRole
 import org.overviewproject.tree.orm.finders.ResultPage
 

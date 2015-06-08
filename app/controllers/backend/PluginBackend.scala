@@ -27,52 +27,44 @@ trait PluginBackend {
   def destroy(id: UUID): Future[Unit]
 }
 
-trait DbPluginBackend extends PluginBackend { self: DbBackend =>
-  import org.overviewproject.database.Slick.simple._
+trait DbPluginBackend extends PluginBackend with DbBackend {
+  import databaseApi._
 
-  private lazy val selectPlugin = Compiled { (id: Column[UUID]) =>
+  override def index = database.seq(indexCompiled)
+
+  override def create(attributes: Plugin.CreateAttributes) = database.run(inserter.+=(Plugin.build(attributes)))
+
+  override def update(id: UUID, attributes: Plugin.UpdateAttributes) = {
+    val row = (
+      attributes.name,
+      attributes.description,
+      attributes.url,
+      attributes.autocreate,
+      attributes.autocreateOrder
+    )
+
+    database.run {
+      updatePluginAttributes(id).update(row)
+        .flatMap(_ match {
+          case 0 => DBIO.successful(None)
+          case _ => byIdCompiled(id).result.headOption
+        })(database.executionContext)
+    }
+  }
+
+  override def destroy(id: UUID) = database.delete(byIdCompiled(id))
+
+  private lazy val byIdCompiled = Compiled { (id: Rep[UUID]) =>
     Plugins.filter(_.id === id)
   }
 
-  override def index = db { session =>
-    Plugins
-      .sortBy(_.name)
-      .list(session)
-  }
+  private lazy val indexCompiled = Compiled { Plugins.sortBy(_.name) }
 
-  private lazy val insertPlugin = (Plugins returning Plugins).insertInvoker
-  override def create(attributes: Plugin.CreateAttributes) = {
-    val q = insertPlugin // avoid escaping defining scope
-    db { session =>
-      q.insert(Plugin.build(attributes))(session)
-    }
-  }
+  protected lazy val inserter = (Plugins returning Plugins)
 
-  private lazy val updatePluginAttributes = Compiled { (id: Column[UUID]) =>
+  private lazy val updatePluginAttributes = Compiled { (id: Rep[UUID]) =>
     for (p <- Plugins if p.id === id) yield (p.name, p.description, p.url, p.autocreate, p.autocreateOrder)
-  }
-  override def update(id: UUID, attributes: Plugin.UpdateAttributes) = {
-    val s = selectPlugin(id) // avoid escaping defining scope
-    val u = updatePluginAttributes(id) // avoid escaping defining scope
-    db { session =>
-      val row = (
-        attributes.name,
-        attributes.description,
-        attributes.url,
-        attributes.autocreate,
-        attributes.autocreateOrder
-      )
-      val count = u.update(row)(session)
-      if (count > 0) s.firstOption(session) else None
-    }
-  }
-
-  override def destroy(id: UUID) = {
-    val q = selectPlugin(id)
-    db { session =>
-      q.delete(session)
-    }
   }
 }
 
-object PluginBackend extends DbPluginBackend with DbBackend
+object PluginBackend extends DbPluginBackend with org.overviewproject.database.DatabaseProvider

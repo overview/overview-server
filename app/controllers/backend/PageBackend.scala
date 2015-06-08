@@ -10,16 +10,12 @@ trait PageBackend {
   def show(id: Long): Future[Option[Page]]
 }
 
-trait DbPageBackend extends PageBackend { self: DbBackend =>
-  override def show(id: Long) = db { session => DbPageBackend.show(session, id) }
+trait DbPageBackend extends PageBackend with DbBackend {
+  import databaseApi._
+
+  override def show(id: Long) = database.option(byId(id))
+
+  private lazy val byId = Compiled { (id: Rep[Long]) => Pages.filter(_.id === id) }
 }
 
-object DbPageBackend {
-  import org.overviewproject.database.Slick.simple._
-
-  private lazy val byId = Compiled { (id: Column[Long]) => Pages.filter(_.id === id) }
-
-  private def show(session: Session, id: Long): Option[Page] = byId(id).firstOption(session)
-}
-
-object PageBackend extends DbPageBackend with DbBackend
+object PageBackend extends DbPageBackend with org.overviewproject.database.DatabaseProvider
