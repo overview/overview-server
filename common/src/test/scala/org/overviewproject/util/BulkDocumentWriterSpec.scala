@@ -14,16 +14,25 @@ class BulkDocumentWriterSpec extends DbSpecification {
   sequential
 
   trait BaseScope extends DbScope {
-    import org.overviewproject.database.Slick.simple._
+    import databaseApi._
 
     val documentSet: DocumentSet = {
-      val ret = DocumentSet(1L, "", None, false, new java.sql.Timestamp(1424898930910L), 0, 0, 0, None, false)
-      DocumentSets.+=(ret)(session)
-      ret
+      blockingDatabase.run((DocumentSets returning DocumentSets).+=(DocumentSet(
+        1L,
+        "",
+        None,
+        false,
+        new java.sql.Timestamp(1424898930910L),
+        0,
+        0,
+        0,
+        None,
+        false
+      )))
     }
 
     def fetchDocuments: Seq[Document] = {
-      Documents.filter(_.documentSetId === documentSet.id).list(session)
+      blockingDatabase.seq(Documents.filter(_.documentSetId === documentSet.id))
     }
 
     var nFlushes = 0

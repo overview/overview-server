@@ -7,11 +7,13 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.database.DB
 
 class LargeObjectSpec extends DbSpecification {
-  "LargeObject" should {
+  "postgres.LargeObject (deprecated)" should {
 
     trait LoContext extends DbTestContext {
       var oid: Long = _
       implicit var pgConnection: PGConnection = _
+
+      connection.setAutoCommit(false)
 
       override def setupWithDb = {
         pgConnection = DB.pgConnection

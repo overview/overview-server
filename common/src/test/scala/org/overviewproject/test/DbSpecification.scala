@@ -11,7 +11,7 @@ import scala.concurrent.{Await,Future}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.{DB, DataSource, DatabaseConfiguration, SlickSessionProvider}
+import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider, SlickSessionProvider}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
 
@@ -36,13 +36,14 @@ class DbSpecification extends Specification {
   //@deprecated("Use DbScope instead: it supports Slick and only connects on-demand", "2015-02-24")
   trait DbTestContext extends Around {
     lazy implicit val connection = DB.getConnection()
+    clearDb(connection) // Before around() call
 
     /** setup method called after database connection is established */
     def setupWithDb {}
+    def sql(q: String): Unit = runQuery(q, connection)
 
     def around[T : AsResult](test: => T) = {
       try {
-        connection.setAutoCommit(false)
         val adapter = new SquerylPostgreSqlAdapter()
         val session = new SquerylSession(connection, adapter)
         using(session) { // sets thread-local variable
@@ -50,7 +51,6 @@ class DbSpecification extends Specification {
           AsResult(test)
         }
       } finally {
-        connection.rollback()
         connection.close()
       }
     }
@@ -58,20 +58,28 @@ class DbSpecification extends Specification {
 
   /** Context for test accessing the database.
     *
-    * Provides these variables:
+    * Provides these <em>deprecated</em> variables:
     *
     * <ul>
     *   <li><em>connection</em> (lazy): a Connection
     *   <li><em>session</em> (lazy): a Slick Session</li>
-    *   <li><em>await</em>: awaits a Future</li>
+    * </ul>
+    *
+    * Provides these <em>non-deprecated</em> variables:
+    *
+    * <ul>
+    *   <li><em>database</em>: the Database</li>
+    *   <li><em>databaseApi</em>: so you can call <tt>import databaseApi._</tt>
+    *   <li><em>blockingDatabase</em>: the BlockingDatabase</li>
     *   <li><em>sql</em>: runs arbitrary SQL, returning nothing</li>
+    *   <li><em>await</em>: awaits a Future</li>
     * </ul>
     *
     * Whatever code you test with <em>must not commit or start a
     * transaction</em>. When you first use the connection, a transaction will
     * begin; when your test finishes, the transaction will be rolled back.
     */
-  trait DbScope extends After {
+  trait DbScope extends After with DatabaseProvider with BlockingDatabaseProvider {
     val connection: Connection = DB.getConnection()
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
     lazy implicit val session: Session = new UnmanagedSession(connection)
@@ -129,6 +137,7 @@ class DbSpecification extends Specification {
   }
 
   def setupDb() {
+    System.setProperty(DatabaseProperty, TestDatabase)
     val dataSource = DataSource(DatabaseConfiguration.fromConfig)
     DB.connect(dataSource)
   }
