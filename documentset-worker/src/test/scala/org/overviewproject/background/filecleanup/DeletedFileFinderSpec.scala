@@ -1,15 +1,12 @@
 package org.overviewproject.background.filecleanup
 
-import slick.jdbc.JdbcBackend.Session
-
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
+import org.overviewproject.test.DbSpecification
+import org.overviewproject.database.DatabaseProvider
 
 /** Find [[File]] ids where `referenceCount == 0` */
-class DeletedFileFinderSpec extends SlickSpecification {
+class DeletedFileFinderSpec extends DbSpecification {
 
   "DeletedFileFinder" should {
-    
     "find deleted files" in new DeletedFilesScope {
       val fileIds = await(deletedFileFinder.deletedFileIds)
       
@@ -18,14 +15,12 @@ class DeletedFileFinderSpec extends SlickSpecification {
   }
 
   trait DeletedFilesScope extends DbScope {
-    val numberOfDeletedFiles = 10
+    val numberOfDeletedFiles = 2
     val deletedFiles = Seq.fill(numberOfDeletedFiles)(factory.file(referenceCount = 0))
     
-    val numberOfFiles = 10
+    val numberOfFiles = 2
     val existingFiles = Seq.fill(numberOfFiles)(factory.file(referenceCount = 1))
     
-    val deletedFileFinder = new TestDeletedFileFinder
+    val deletedFileFinder = new DeletedFileFinder with DatabaseProvider
   }
-  
-  class TestDeletedFileFinder(implicit val session: Session) extends DeletedFileFinder with SlickClientInSession
 }
