@@ -120,7 +120,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     #                    an XMLHttpRequest. (Defaults to HTML5-only code.)
     constructor: (@file, url_prefix, options={}) ->
       @filename = @file.webkitRelativePath || @file.name
-      @url = "#{url_prefix}#{generate_uuid(@filename, file)}"
+      @url = "#{url_prefix}#{generate_uuid(@filename, @file)}"
       @url += "?csrfToken=#{encodeURIComponent(options.csrfToken)}" if options.csrfToken?
       @state = states.WAITING
       # uploaded_offset is accurate when leaving STARTING and entering UPLOADING.
