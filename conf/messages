@@ -232,7 +232,7 @@ views.DocumentCloudImportJob.new.submit_credentials.label=Verify DocumentCloud e
 
 views.DocumentCloudProject.index.title=DocumentCloud projects
 views.DocumentCloudProject.index.h1=DocumentCloud projects
-views.DocumentCloudProject.index.loading=Loading… 
+views.DocumentCloudProject.index.loading=Loading…
 views.DocumentCloudProject.index.help1=Overview can analyze and display your files from DocumentCloud. Import a project from this page.
 
 views.DocumentProcessingError.index.h4=Documents with errors
@@ -611,6 +611,6 @@ views.User.new.h1=Register
 
 views.Welcome.show.title=The Overview Project — Visualize your documents
 views.Welcome.show.h1=
-views.Welcome.show.p1=Read and analyze thousands of documents super quickly. Full text search, topic modeling, coding and tagging, visualizations and more. All in an easy-to use, visual workflow.
+views.Welcome.show.p1=Search, visualize, and review your documents. Up to hundreds of thousands of them, in any format.
 views.Welcome.show.learn=Learn more
 views.Welcome.show.warning_32bit_html=You are running Overview with 32-bit Java. This Java version prevents Overview from handling large document sets. Please read about <a href="https://github.com/overview/overview-server/wiki/Handling-huge-document-sets">handling large document sets</a>.
