@@ -6,10 +6,10 @@ import slick.jdbc.JdbcBackend.Session
 import slick.lifted.{ConstColumn,Query,RunnableCompiled}
 
 import models.{OverviewDatabase,User}
+import org.overviewproject.database.{Database,DatabaseProvider,HasDatabase}
 import org.overviewproject.models.{ApiToken,UserRole}
-import org.overviewproject.database.{SlickClient,SlickSessionProvider}
 
-trait Authorities extends SlickClient {
+trait Authorities extends HasDatabase {
   private val q = Authorities.queries
 
   /** Allows any user. */
@@ -87,88 +87,88 @@ trait Authorities extends SlickClient {
   }
 
   private def check(f: RunnableCompiled[Query[ConstColumn[Boolean],Boolean,Seq],Seq[Boolean]]): Future[Boolean] = {
-    import org.overviewproject.database.Slick.simple._
-    db { session => f.firstOption(session).getOrElse(false) }
+    database.option(f)
+      .map(_.getOrElse(false))(database.executionContext)
   }
 }
 
-object Authorities extends Authorities with SlickSessionProvider {
+object Authorities extends Authorities with DatabaseProvider {
   /** A bunch of queries that return true if successful and no rows otherwise. */
   private object queries {
-    import org.overviewproject.database.Slick.simple._
+    import databaseApi._
     import org.overviewproject.models.tables._
 
-    lazy val userDocumentSetTag = Compiled { (email: Column[String], documentSetId: Column[Long], tagId: Column[Long]) =>
+    lazy val userDocumentSetTag = Compiled { (email: Rep[String], documentSetId: Rep[Long], tagId: Rep[Long]) =>
       for {
         tag <- Tags if tag.id === tagId && tag.documentSetId === documentSetId
         dsu <- DocumentSetUsers if dsu.documentSetId === tag.documentSetId && dsu.userEmail === email
       } yield (true)
     }
 
-    lazy val documentSetTag = Compiled { (documentSetId: Column[Long], tagId: Column[Long]) =>
+    lazy val documentSetTag = Compiled { (documentSetId: Rep[Long], tagId: Rep[Long]) =>
       Tags
         .filter(_.id === tagId)
         .filter(_.documentSetId === documentSetId)
         .map(_ => (true))
     }
 
-    lazy val userTree = Compiled { (email: Column[String], treeId: Column[Long]) =>
+    lazy val userTree = Compiled { (email: Rep[String], treeId: Rep[Long]) =>
       for {
         dsu <- DocumentSetUsers if dsu.userEmail === email
         tree <- Trees if tree.id === treeId && tree.documentSetId === dsu.documentSetId
       } yield (true)
     }
 
-    lazy val userView = Compiled { (email: Column[String], viewId: Column[Long]) =>
+    lazy val userView = Compiled { (email: Rep[String], viewId: Rep[Long]) =>
       for {
         view <- Views if view.id === viewId
         dsu <- DocumentSetUsers if dsu.documentSetId === view.documentSetId && dsu.userEmail === email
       } yield (true)
     }
 
-    lazy val apiTokenView = Compiled { (apiToken: Column[String], viewId: Column[Long]) =>
+    lazy val apiTokenView = Compiled { (apiToken: Rep[String], viewId: Rep[Long]) =>
       Views
         .filter(_.id === viewId)
         .filter(_.apiToken === apiToken)
         .map(_ => (true))
     }
 
-    lazy val apiTokenStoreObject = Compiled { (token: Column[String], objectId: Column[Long]) =>
+    lazy val apiTokenStoreObject = Compiled { (token: Rep[String], objectId: Rep[Long]) =>
       for {
         obj <- StoreObjects if obj.id === objectId
         store <- Stores if store.id === obj.storeId && store.apiToken === token
       } yield (true)
     }
 
-    lazy val userDocument = Compiled { (email: Column[String], documentId: Column[Long]) =>
+    lazy val userDocument = Compiled { (email: Rep[String], documentId: Rep[Long]) =>
       for {
         document <- Documents if document.id === documentId
         dsu <- DocumentSetUsers if dsu.documentSetId === document.documentSetId && dsu.userEmail === email
       } yield (true)
     }
 
-    lazy val userDocumentSet = Compiled { (email: Column[String], documentSetId: Column[Long]) =>
+    lazy val userDocumentSet = Compiled { (email: Rep[String], documentSetId: Rep[Long]) =>
       DocumentSetUsers
         .filter(_.userEmail === email)
         .filter(_.documentSetId === documentSetId)
         .map(_ => (true))
     }
 
-    lazy val documentSetPublic = Compiled { (documentSetId: Column[Long]) =>
+    lazy val documentSetPublic = Compiled { (documentSetId: Rep[Long]) =>
       DocumentSets
         .filter(_.id === documentSetId)
         .filter(_.isPublic === true)
         .map(_ => (true))
     }
 
-    lazy val maybeDocumentSetDocument = Compiled { (maybeDocumentSetId: Column[Option[Long]], documentId: Column[Long]) =>
+    lazy val maybeDocumentSetDocument = Compiled { (maybeDocumentSetId: Rep[Option[Long]], documentId: Rep[Long]) =>
       Documents
         .filter(_.id === documentId)
         .filter(_.documentSetId === maybeDocumentSetId)
         .map(_ => (true))
     }
 
-    lazy val userJob = Compiled { (email: Column[String], jobId: Column[Long]) =>
+    lazy val userJob = Compiled { (email: Rep[String], jobId: Rep[Long]) =>
       for {
         job <- DocumentSetCreationJobs if job.id === jobId
         dsu <- DocumentSetUsers if dsu.documentSetId === job.documentSetId && dsu.userEmail === email

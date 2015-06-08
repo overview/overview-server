@@ -16,10 +16,8 @@ import org.overviewproject.test.{DbSpecification,SlickClientInSession}
   * the Authorities.
   */
 class AuthoritiesSpec extends DbSpecification {
-  class TestAuthorities extends Authorities with SlickClientInSession
-
   trait BaseScope extends DbScope {
-    val auth = new TestAuthorities
+    val auth = Authorities
   }
 
   "with a User" should {
