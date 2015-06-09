@@ -1,51 +1,46 @@
 package org.overviewproject.blobstorage
 
 import java.io.{ByteArrayInputStream,IOException,InputStream}
-import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Iteratee
-import slick.jdbc.JdbcBackend.Session
+import scala.util.{Failure,Success}
 
-import org.overviewproject.database.DB
-import org.overviewproject.postgres.LO
+import org.overviewproject.database.{DatabaseProvider,LargeObject}
 import org.overviewproject.test.DbSpecification
 
 class PgLoStrategySpec extends DbSpecification with StrategySpecification {
   trait PgLoBaseScope extends DbScope {
-    connection.setAutoCommit(false) // so LO stuff works
+    import databaseApi._
+
+    val loManager = database.largeObjectManager
 
     // Each test runs in a transaction. Make sure the _code_ uses the same
     // connection, even though it's in a Future.
-    object TestStrategy extends PgLoStrategy {
+    object TestStrategy extends PgLoStrategy with DatabaseProvider {
       override protected val BufferSize = 10 // to prove we paginate
       override protected val DeleteManyChunkSize = 2
-      override protected def withPgConnection[A](f: PGConnection => A) = f(pgConnection)
-      override protected def withSlickSession[A](f: Session => A) = f(session)
     }
 
-    def createLargeObject(data: Array[Byte]): Long = {
-      LO.withLargeObject({ lo =>
-        lo.add(data)
-        lo.oid // return loid
-      })(pgConnection)
-    }
+    def createLargeObject(data: Array[Byte]): Long = blockingDatabase.run((for {
+      oid <- loManager.create
+      lo <- loManager.open(oid, LargeObject.Mode.Write)
+      _ <- lo.write(data)
+    } yield oid).transactionally)
 
-    def readLargeObject(loid: Long): Array[Byte] = {
-      LO.withLargeObject(loid)({ lo =>
-        val buffer = new Array[Byte](1000)
-        val size = lo.read(buffer, 0, buffer.length)
-        buffer.take(size)
-      })(pgConnection)
-    }
+    def readLargeObject(loid: Long): Array[Byte] = blockingDatabase.run((for {
+      lo <- loManager.open(loid, LargeObject.Mode.Read)
+      bytes <- lo.read(9999)
+    } yield bytes).transactionally)
 
     def largeObjectExists(loid: Long): Boolean = {
-      // XXX this will break if called twice!
       val SqlStateUndefinedObject = "42704" // http://www.postgresql.org/docs/9.3/static/errcodes-appendix.html
-      try {
-        LO.withLargeObject(loid)({ lo => ()})(pgConnection)
-        true
-      } catch {
-        case e: PSQLException if (e.getSQLState() == SqlStateUndefinedObject) => false
+      val result = blockingDatabase.run((for {
+        lo <- loManager.open(loid, LargeObject.Mode.Read)
+      } yield ()).transactionally.asTry)
+      result match {
+        case Success(()) => true
+        case Failure(e: PSQLException) if (e.getSQLState() == SqlStateUndefinedObject) => false
+        case Failure(t) => throw t
       }
     }
   }
