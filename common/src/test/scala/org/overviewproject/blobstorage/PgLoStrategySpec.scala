@@ -8,10 +8,10 @@ import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.LO
-import org.overviewproject.test.SlickSpecification
+import org.overviewproject.test.DbSpecification
 
-class PgLoStrategySpec extends SlickSpecification with StrategySpecification {
-  trait PgLoBaseScope extends DbScope with BaseScope {
+class PgLoStrategySpec extends DbSpecification with StrategySpecification {
+  trait PgLoBaseScope extends DbScope {
     connection.setAutoCommit(false) // so LO stuff works
 
     // Each test runs in a transaction. Make sure the _code_ uses the same

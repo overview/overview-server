@@ -1,20 +1,18 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
+import akka.actor.ActorRef
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
-import akka.actor.ActorRef
+import org.specs2.mock.Mockito
 
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.jobhandler.filegroup.task.UploadedFileProcessCreator
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.util.BulkDocumentWriter
 
-import org.specs2.mock.Mockito
-
-class CreateUploadedFileProcessSpec extends SlickSpecification with Mockito {
+class CreateUploadedFileProcessSpec extends DbSpecification with Mockito {
 
   "CreateUploadedFileProcess" should {
 
@@ -42,8 +40,8 @@ class CreateUploadedFileProcessSpec extends SlickSpecification with Mockito {
 
     class TestCreateUploadedFileProcess(
       override protected val documentSetId: Long,
-      override protected val uploadedFile: GroupedFileUpload)(implicit val session: Session)
-      extends CreateUploadedFileProcess with SlickClientInSession {
+      override protected val uploadedFile: GroupedFileUpload
+    ) extends CreateUploadedFileProcess { //with org.overviewproject.database.DatabaseProvider {
 
       override protected val documentIdSupplier = idSupplier
       override protected val options = mockOptions
