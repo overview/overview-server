@@ -1,65 +1,47 @@
 package org.overviewproject.postgres
 
 import java.io.{IOException,InputStream}
-import org.postgresql.largeobject.{LargeObject=>PGLargeObject,LargeObjectManager}
-import org.postgresql.util.PSQLException
-import org.postgresql.PGConnection
-import scala.concurrent.blocking
+import java.sql.SQLException
+import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.database.SlickClient
+import org.overviewproject.database.{BlockingDatabase,LargeObject=>GoodLargeObject,LargeObjectManager}
 
 /** Reads data from a database LargeObject.
   *
   * Each call to read() opens a database connection. You should definitely wrap
   * this with a BufferedInputStream to make reads less costly.
   */
-class LargeObjectInputStream(val oid: Long, slickClient: SlickClient) extends InputStream {
+class LargeObjectInputStream(val oid: Long, blockingDatabase: BlockingDatabase) extends InputStream {
   private var position: Long = 0L
+  private val loManager = blockingDatabase.largeObjectManager
 
   override def read: Int = {
-    val bytes: Array[Byte] = try {
-      withLO { lo =>
-        lo.seek(position.toInt)
-        //lo.seek64(position)
-        lo.read(1)
-      }
-    } catch {
-      case e: PSQLException => throw new IOException(e.getMessage, e)
-    }
-    if (bytes.length == 1) {
-      position += 1
-      bytes(0)
-    } else {
-      -1
-    }
+    val bytes = readByteArrayAndIncrementPosition(1)
+    bytes.headOption.map(_.toInt).getOrElse(-1)
   }
 
   override def read(b: Array[Byte], off: Int, len: Int): Int = {
-    val n = try {
-      withLO { lo =>
-        lo.seek(position.toInt)
-        //lo.seek64(position)
-        lo.read(b, off, len)
-      }
-    } catch {
-      case e: PSQLException => throw new IOException(e.getMessage, e)
-    }
-    if (n == 0) {
+    val bytes = readByteArrayAndIncrementPosition(len)
+    if (bytes.length == 0 && len > 0) {
       -1
     } else {
-      position += n
-      n
+      Array.copy(bytes, 0, b, off, bytes.length)
+      bytes.length
     }
   }
 
-  private def withLO[A](block: PGLargeObject => A): A = blocking {
-    slickClient.blockingDb { session =>
-      slickClient.withTransaction(session) {
-        val pgConnection = session.conn.unwrap(classOf[PGConnection])
-        val loManager = pgConnection.getLargeObjectAPI()
-        val lo = loManager.open(oid, LargeObjectManager.READ)
-        block(lo)
-      }
+  private def readByteArrayAndIncrementPosition(length: Int) = {
+    import org.overviewproject.database.Slick.api._
+    val bytes = try {
+      blockingDatabase.run((for {
+        lo <- loManager.open(oid, GoodLargeObject.Mode.Read)
+        _ <- lo.seek(position)
+        bytes <- lo.read(length)
+      } yield bytes).transactionally)
+    } catch {
+      case e: SQLException => throw new IOException(e.getMessage, e)
     }
+    position += bytes.length
+    bytes
   }
 }

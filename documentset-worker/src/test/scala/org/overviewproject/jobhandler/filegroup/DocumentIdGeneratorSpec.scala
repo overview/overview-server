@@ -1,13 +1,11 @@
 package org.overviewproject.jobhandler.filegroup
 
 import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
+import org.overviewproject.test.DbSpecification
 
-class DocumentIdGeneratorSpec extends SlickSpecification {
+class DocumentIdGeneratorSpec extends DbSpecification {
 
   "DocumentIdGenerator" should {
-
     "return document ids when no document exists in document set" in new DocumentSetScope {
       val ids = documentIdGenerator.nextIds(5)
 
@@ -46,7 +44,7 @@ class DocumentIdGeneratorSpec extends SlickSpecification {
     val document = factory.document(id = (documentSet.id << 32) + 1, documentSetId = documentSet.id)
   }
 
-  class TestDocumentIdGenerator(override protected val documentSetId: Long)(implicit val session: Session)
-    extends DocumentIdGenerator with SlickClientInSession
+  class TestDocumentIdGenerator(override protected val documentSetId: Long)
+    extends DocumentIdGenerator with org.overviewproject.database.BlockingDatabaseProvider
 
 }

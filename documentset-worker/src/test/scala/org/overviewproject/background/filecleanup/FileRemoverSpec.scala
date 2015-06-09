@@ -4,15 +4,13 @@ import java.util.concurrent.TimeoutException
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
 import scala.concurrent.{ Await, Future, Promise }
-import slick.jdbc.JdbcBackend.Session
 import scala.concurrent.duration._
 
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.Files
+import org.overviewproject.test.DbSpecification
 
-class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConversions {
+class FileRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
 
   "FileRemover" should {
 
@@ -37,10 +35,9 @@ class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
     "delete file" in new FileScope {
       deleteFile
 
-      import org.overviewproject.database.Slick.simple._
-      Files.filter(_.id === file.id).firstOption must beNone
+      import databaseApi._
+      blockingDatabase.option(Files.filter(_.id === file.id)) must beNone
     }
-
   }
 
   trait FileScope extends DbScope {
@@ -84,6 +81,6 @@ class FileRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
 
   }
 
-  class TestFileRemover(val blobStorage: BlobStorage, val pageRemover: PageRemover)(implicit val session: Session)
-    extends FileRemover with SlickClientInSession
+  class TestFileRemover(val blobStorage: BlobStorage, val pageRemover: PageRemover)
+    extends FileRemover with org.overviewproject.database.DatabaseProvider
 }

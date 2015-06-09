@@ -4,13 +4,12 @@ import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
 import scala.concurrent.{ Await, Promise, TimeoutException }
 import scala.concurrent.duration._
-import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.GroupedFileUploads
-import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
+import org.overviewproject.test.DbSpecification
 
-class GroupedFileUploadRemoverSpec extends SlickSpecification with Mockito with NoTimeConversions {
+class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
 
   "GroupedFileUploadRemover" should {
 
@@ -39,9 +38,8 @@ class GroupedFileUploadRemoverSpec extends SlickSpecification with Mockito with 
       deleteMany.success(())
       await(remover.removeFileGroupUploads(fileGroup.id))
       
-      import org.overviewproject.database.Slick.simple._
-
-      GroupedFileUploads.firstOption(session) must beNone
+      import databaseApi._
+      blockingDatabase.length(GroupedFileUploads) must beEqualTo(0)
     }
   }
 
@@ -59,11 +57,11 @@ class GroupedFileUploadRemoverSpec extends SlickSpecification with Mockito with 
     val mockBlobStorage = smartMock[BlobStorage]
     mockBlobStorage.deleteMany(any) returns deleteMany.future
     
-    val remover = new TestGroupedFileUploadRemover(mockBlobStorage)(session)
+    val remover = new TestGroupedFileUploadRemover(mockBlobStorage)
   }
 
-  class TestGroupedFileUploadRemover(storage: BlobStorage)(implicit val session: Session)
-    extends GroupedFileUploadRemover with SlickClientInSession {
+  class TestGroupedFileUploadRemover(storage: BlobStorage)
+    extends GroupedFileUploadRemover with org.overviewproject.database.DatabaseProvider {
     override protected val blobStorage = storage
   }
 

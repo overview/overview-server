@@ -17,6 +17,8 @@ class BlockingDatabase(val database: Database) {
     scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
   }
 
+  val largeObjectManager = database.largeObjectManager
+
   def run[T](action: DBIO[T]) = await(database.run(action))
   def runUnit[T](action: DBIO[T]) = await(database.runUnit(action))
   def seq[T](query: Rep[Seq[T]]) = await(database.seq(query))

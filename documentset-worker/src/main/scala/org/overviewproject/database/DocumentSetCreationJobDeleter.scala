@@ -2,47 +2,40 @@ package org.overviewproject.database
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.models.DocumentSetCreationJobState
+import org.overviewproject.models.{DocumentSetCreationJob,DocumentSetCreationJobState}
 import org.overviewproject.models.tables.DocumentSetCreationJobs
 
+trait DocumentSetCreationJobDeleter extends HasDatabase {
+  import databaseApi._
 
-trait DocumentSetCreationJobDeleter extends SlickClient {
-
-  def deleteByDocumentSet(documentSetId: Long): Future[Unit] = db { implicit session =>
-    val documentSetCreationJob = DocumentSetCreationJobs.filter(_.documentSetId === documentSetId)
-
-    val uploadedCsvOids = documentSetCreationJob.map(_.contentsOid).list.flatten
-
-    uploadedCsvOids.map(deleteContent)
-
-    documentSetCreationJob.delete
+  def deleteByDocumentSet(documentSetId: Long): Future[Unit] = {
+    deleteJobs(DocumentSetCreationJobs.filter(_.documentSetId === documentSetId))
   }
 
-  def delete(id: Long): Future[Unit] =
-    db { implicit session =>
-      val documentSetCreationJob = DocumentSetCreationJobs.filter(_.id === id)
+  def delete(id: Long): Future[Unit] = {
+    deleteJobs(DocumentSetCreationJobs.filter(_.id === id))
+  }
 
-      val uploadedCsvOids = documentSetCreationJob.map(_.contentsOid).list.flatten
+  private def deleteJobs(query: Rep[Seq[DocumentSetCreationJob]]) = {
+    database.runUnit(for {
+      jobs <- query.result
+      _ <- DBIO.from(deleteContent(jobs.map(_.contentsOid).flatten))
+      _ <- DocumentSetCreationJobs.filter(_.id inSet jobs.map(_.id)).delete
+    } yield ())
+  }
 
-      uploadedCsvOids.map(deleteContent)
-
-      documentSetCreationJob.delete
-
-    }
-
-  private def deleteContent(oid: Long) = {
-    val csvUploadLocation = s"pglo:$oid"
-
-    blobStorage.delete(csvUploadLocation)
+  private def deleteContent(oids: Seq[Long]) = {
+    val locations = oids.map(oid => s"pglo:$oid")
+    blobStorage.deleteMany(locations)
   }
 
   protected val blobStorage: BlobStorage
 }
 
 object DocumentSetCreationJobDeleter {
-  def apply(): DocumentSetCreationJobDeleter = new DocumentSetCreationJobDeleter with SlickSessionProvider {
+  def apply(): DocumentSetCreationJobDeleter = new DocumentSetCreationJobDeleter with DatabaseProvider {
     override protected val blobStorage = BlobStorage
   }
 }

@@ -1,12 +1,11 @@
 package org.overviewproject.background.filegroupcleanup
 
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.database.{ SlickClient, SlickSessionProvider }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import org.overviewproject.database.{HasDatabase,DatabaseProvider}
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.FileGroups
-
 
 /**
  * Delete [[FileGroup]]s and associated [[GroupedFileUpload]].
@@ -14,16 +13,18 @@ import org.overviewproject.models.tables.FileGroups
  * Ignores `deleted` flag and assumes caller wants to delete [[FileGroup]] no
  * matter what.
  */
-trait FileGroupRemover extends SlickClient {
+trait FileGroupRemover extends HasDatabase {
+  import databaseApi._
 
-  def remove(fileGroupId: Long): Future[Unit] =
+  def remove(fileGroupId: Long): Future[Unit] = {
     for {
       g <- groupedFileUploadRemover.removeFileGroupUploads(fileGroupId)
       f <- deleteFileGroup(fileGroupId)
     } yield ()
+  }
 
-  private def deleteFileGroup(fileGroupId: Long): Future[Unit] = db { implicit session =>
-    FileGroups.filter(_.id === fileGroupId).delete
+  private def deleteFileGroup(fileGroupId: Long): Future[Unit] = {
+    database.delete(FileGroups.filter(_.id === fileGroupId))
   }
 
   protected val groupedFileUploadRemover: GroupedFileUploadRemover
@@ -33,7 +34,7 @@ trait FileGroupRemover extends SlickClient {
 object FileGroupRemover {
   def apply(): FileGroupRemover = new FileGroupRemoverImpl
   
-  private class FileGroupRemoverImpl extends FileGroupRemover with SlickSessionProvider {
+  private class FileGroupRemoverImpl extends FileGroupRemover with DatabaseProvider {
     override protected val groupedFileUploadRemover = GroupedFileUploadRemover()
     override protected val blobStorage = BlobStorage
   }

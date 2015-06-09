@@ -1,29 +1,19 @@
 package org.overviewproject.database
 
-import slick.jdbc.JdbcBackend.Session
-
 import org.overviewproject.models.tables.FileGroups
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.test.DbSpecification
 
 class FileGroupDeleterSpec extends DbSpecification {
 
   "FileGroupDeleter" should {
 
-    "mark file_group deleted" in new FileGroupScope {
+    "mark file_group deleted" in new DbScope {
+      val fileGroup = factory.fileGroup()
+      val deleter = new FileGroupDeleter with DatabaseProvider
       await(deleter.delete(fileGroup.id))
 
-      import org.overviewproject.database.Slick.simple._
-      FileGroups.filter(_.id === fileGroup.id).firstOption(session) must beSome.like {
-        case f => f.deleted must beTrue
-      }
+      import databaseApi._
+      blockingDatabase.option(FileGroups.filter(_.id === fileGroup.id).map(_.deleted)) must beSome(true)
     }
   }
-
-  trait FileGroupScope extends DbScope {
-    val fileGroup = factory.fileGroup()
-
-    val deleter = new TestFileGroupDeleter(session)
-  }
-
-  class TestFileGroupDeleter(val session: Session) extends FileGroupDeleter with SlickClientInSession
 }

@@ -10,7 +10,7 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.{Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.database.{DeprecatedDatabase,SlickSessionProvider}
+import org.overviewproject.database.{DeprecatedDatabase,BlockingDatabaseProvider}
 import org.overviewproject.models.{Document,DocumentTag,Tag}
 import org.overviewproject.models.tables.{Documents,DocumentTags,Tags}
 import org.overviewproject.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
@@ -31,7 +31,7 @@ class CsvImportDocumentProducer(
 )
   extends DocumentProducer
   with PersistentDocumentSet
-  with SlickSessionProvider
+  with BlockingDatabaseProvider
 {
   private val FetchingFraction = 1.0
   private var bytesRead = 0l
@@ -52,7 +52,7 @@ class CsvImportDocumentProducer(
     val uploadedFile = DeprecatedDatabase.inTransaction {
       EncodedUploadFile.load(uploadedFileId)(DeprecatedDatabase.currentConnection)
     }
-    val uploadReader = new UploadReader(contentsOid, uploadedFile.encoding, this)
+    val uploadReader = new UploadReader(contentsOid, uploadedFile.encoding, blockingDatabase)
     val reader = uploadReader.reader
     val documentSource = new CsvImportSource(org.overviewproject.util.Textify.apply, reader)
 
@@ -89,20 +89,19 @@ class CsvImportDocumentProducer(
     math.min(maxDocuments, nDocuments)
   }
 
-  private def flushTagDocumentIds: Unit = db { session =>
-    import org.overviewproject.database.Slick.simple._
+  private def flushTagDocumentIds: Unit = {
+    import blockingDatabaseApi._
 
-    val tagInserter = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags).insertInvoker
+    val tagInserter = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags)
     val tagsToInsert: Iterable[(Long,String,String)] = tagDocumentIds.keys
       .map { name => (documentSetId, name, TagColorList.forString(name)) }
-    val tags = tagInserter.++=(tagsToInsert)(session)
 
-    val dtInserter = DocumentTags.insertInvoker
+    val tags = blockingDatabase.run(tagInserter.++=(tagsToInsert))
 
     tags.foreach { tag =>
       val documentIds = tagDocumentIds(tag.name)
       val documentTags = documentIds.map(DocumentTag(_, tag.id))
-      dtInserter.++=(documentTags)(session)
+      blockingDatabase.run(DocumentTags.++=(documentTags))
     }
   }
 

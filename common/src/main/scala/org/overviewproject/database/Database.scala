@@ -29,7 +29,7 @@ import org.overviewproject.database.Slick.api._
 class Database(val dataSource: JDataSource) {
   /** Exposes the Slick Database. */
   val slickDatabase = DatabaseFactory.forDataSource(dataSource)
-  val executionContext = slickDatabase.ioExecutionContext
+  val executionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   /** Provides access to large objects.
     *

@@ -13,36 +13,31 @@ class ClusteringCleanerSpec extends DbSpecification {
       cleaner.treeExists(job.id) must beTrue.await
       cleaner.treeExists(-1) must beFalse.await
     }
-    
+
     "delete nodes" in new BaseScope {
       await(cleaner.deleteNodes(job.id))
 
-      nodeExists(rootNode.id) must beFalse.await
+      nodeExists(rootNode.id) must beFalse
     }
-    
-    
+
     "delete job" in new BaseScope {
       factory.tree(documentSetId = documentSet.id, jobId = job.id, rootNodeId = rootNode.id)
       await(cleaner.deleteJob(job.id))
-      
-      import org.overviewproject.database.Slick.simple._
-      val updatedJob = DocumentSetCreationJobs.filter(_.id  === job.id).firstOption(session)
-      
-      updatedJob must beNone
+
+      import databaseApi._
+      blockingDatabase.length(DocumentSetCreationJobs.filter(_.id === job.id)) must beEqualTo(0)
     }
   }
 
   trait BaseScope extends DbScope {
     val cleaner = new TestClusteringCleaner
     val documentSet = factory.documentSet()
-    val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = jobState)
+    val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = InProgress)
 
-    def nodeExists(id: Long): Future[Boolean] = {
-      import org.overviewproject.database.Slick.api._
-      slickDb.run(Nodes.filter(_.id === id).length.result).map(_ > 0)
+    def nodeExists(id: Long): Boolean = {
+      import databaseApi._
+      blockingDatabase.length(Nodes.filter(_.id === id)) > 0
     }
-
-    def jobState = InProgress
 
     val document = factory.document(documentSetId = documentSet.id)
     val rootNode = factory.node(id = 1l, rootId = 1l)
@@ -50,5 +45,5 @@ class ClusteringCleanerSpec extends DbSpecification {
     factory.documentSetCreationJobNode(job.id, rootNode.id)
   }
 
-  class TestClusteringCleaner extends ClusteringCleaner with SlickClientInSession
+  class TestClusteringCleaner extends ClusteringCleaner
 }

@@ -1,17 +1,18 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.test.DbSpecification
+import java.io.InputStream
+import java.util.UUID
 import org.specs2.mock.Mockito
+import scala.concurrent.Future
+import slick.jdbc.JdbcBackend.Session
+
+import org.overviewproject.blobstorage.BlobBucketId
+import org.overviewproject.blobstorage.BlobStorage
+import org.overviewproject.database.DatabaseProvider
+import org.overviewproject.jobhandler.filegroup.task.DocumentConverter
 import org.overviewproject.models.File
 import org.overviewproject.models.tables.Files
-import org.overviewproject.test.SlickClientInSession
-import org.overviewproject.blobstorage.BlobStorage
-import java.io.InputStream
-import slick.jdbc.JdbcBackend.Session
-import scala.concurrent.Future
-import org.overviewproject.blobstorage.BlobBucketId
-import org.overviewproject.jobhandler.filegroup.task.DocumentConverter
-import java.util.UUID
+import org.overviewproject.test.DbSpecification
 
 class CreateFileWithViewSpec extends DbSpecification with Mockito {
 
@@ -63,7 +64,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       }
       
       
-      class TestCreateFileWithView(implicit val session: Session) extends CreateFileWithView with SlickClientInSession {
+      class TestCreateFileWithView(implicit val session: Session) extends CreateFileWithView with DatabaseProvider {
         override protected val documentSetId = 1l
         override protected val uploadedFile = upload
         override protected val nextStep = { f: File => NextStep(f) }

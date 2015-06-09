@@ -1,18 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import java.io.{ ByteArrayInputStream, InputStream }
+import java.io.InputStream
 import org.mockito.Matchers
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
-import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.blobstorage.BlobBucketId
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.File
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.models.tables.Files
-import org.overviewproject.models.tables.TempDocumentSetFiles
-import org.overviewproject.test.{ DbSpecification, SlickClientInSession }
-import java.io.BufferedInputStream
+
+import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
+import org.overviewproject.models.{File,GroupedFileUpload}
+import org.overviewproject.models.tables.{Files,TempDocumentSetFiles}
+import org.overviewproject.test.DbSpecification
 
 class CreatePdfFileSpec extends DbSpecification with Mockito {
 
@@ -27,8 +23,8 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     "create a file with PDF content" in new UploadScope {
       await(createFile.execute)
 
-      import org.overviewproject.database.Slick.simple._
-      val file = Files.firstOption(session)
+      import databaseApi._
+      val file = blockingDatabase.option(Files)
 
       file.map(f => (f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) must
         beSome((location, uploadSize, location, uploadSize))
@@ -52,8 +48,8 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     "write a tempDocumentSetFile" in new UploadScope {
       await(createFile.execute)
 
-      import org.overviewproject.database.Slick.simple._
-      TempDocumentSetFiles.firstOption(session) must beSome
+      import databaseApi._
+      blockingDatabase.option(TempDocumentSetFiles) must beSome
     }
 
     trait UploadScope extends DbScope {
@@ -67,7 +63,8 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
       blobStorage.create(
         be(BlobBucketId.FileContents),
         any,
-        be_===(uploadSize)) returns createResult
+        be_===(uploadSize)
+      ) returns createResult
 
       val createFile = new TestCreatePdfFile(upload, blobStorage, loInputStream)
 
@@ -85,10 +82,11 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
 
   class TestCreatePdfFile(
     override protected val uploadedFile: GroupedFileUpload,
-    override protected val blobStorage: BlobStorage, loInputStream: InputStream)(implicit val session: Session) extends CreatePdfFile with SlickClientInSession {
+    override protected val blobStorage: BlobStorage,
+    loInputStream: InputStream
+  ) extends CreatePdfFile with org.overviewproject.database.DatabaseProvider {
     override protected val documentSetId = 1l
     override protected val nextStep = { f: File => NextStep }
-
     override protected def largeObjectInputStream(oid: Long) = loInputStream
   }
 }

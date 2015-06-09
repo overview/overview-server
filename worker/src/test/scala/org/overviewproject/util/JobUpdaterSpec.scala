@@ -1,12 +1,10 @@
 package org.overviewproject.util
 
-import slick.jdbc.JdbcBackend.Session
-
-import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.tables.DocumentSetCreationJobs
 
-class JobUpdaterSpec extends SlickSpecification {
+class JobUpdaterSpec extends DbSpecification {
 
   "JobUpdater" should {
     "update job retry parameters" in new JobScope {
@@ -43,7 +41,7 @@ class JobUpdaterSpec extends SlickSpecification {
   }
 
   trait JobScope extends DbScope {
-    val updater = new TestJobUpdater(session)
+    val updater = new JobUpdater with org.overviewproject.database.DatabaseProvider {}
     val documentSet = factory.documentSet()
     val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = jobState)
 
@@ -59,6 +57,4 @@ class JobUpdaterSpec extends SlickSpecification {
     val documentSet2 = factory.documentSet()
     val job2 = factory.documentSetCreationJob(documentSetId = documentSet2.id, treeTitle = Some("another job"), state = InProgress)
   }
-  
-  class TestJobUpdater(val session: Session) extends JobUpdater with SlickClientInSession
 }

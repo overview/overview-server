@@ -1,22 +1,36 @@
 package org.overviewproject.postgres
 
-import org.postgresql.largeobject.LargeObjectManager
-import org.postgresql.PGConnection
-
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.database.{LargeObject=>GoodLargeObject}
+import org.overviewproject.test.DbSpecification
 
 class LargeObjectInputStreamSpec extends DbSpecification {
   trait BaseScope extends DbScope {
-    connection.setAutoCommit(false)
-    val loApi = pgConnection.getLargeObjectAPI()
+    import databaseApi._
+
+    val loManager = blockingDatabase.largeObjectManager
+
+    val oidsToDelete = scala.collection.mutable.Set.empty[Long]
 
     def lo(loData: Array[Byte]): LargeObjectInputStream = {
-      val loid = loApi.createLO(LargeObjectManager.READ | LargeObjectManager.WRITE)
-      val lo = loApi.open(loid, LargeObjectManager.WRITE)
-      lo.write(loData)
-      lo.close
-      connection.commit() // FIXME leak -- we should clear LargeObjects on test suite start
-      new LargeObjectInputStream(loid, new SlickClientInSession {})
+      // FIXME this large object will leak, as we don't clear large objects
+      // on test-suite start
+      val lois = blockingDatabase.run((for {
+        oid <- loManager.create
+        lo <- loManager.open(oid, GoodLargeObject.Mode.Write)
+        _ <- lo.write(loData)
+      } yield new LargeObjectInputStream(oid, blockingDatabase)).transactionally)
+      oidsToDelete.add(lois.oid)
+      lois
+    }
+
+    def unlink(oid: Long): Unit = {
+      blockingDatabase.run(loManager.unlink(oid).transactionally)
+      oidsToDelete.remove(oid)
+    }
+
+    override def after: Unit = {
+      oidsToDelete.toSeq.foreach(unlink _)
+      super.after
     }
   }
 
@@ -42,8 +56,7 @@ class LargeObjectInputStreamSpec extends DbSpecification {
   "throw IOException if the object disappears" in new BaseScope {
     val subject = lo("some contents".getBytes("ascii"))
     val buffer = new Array[Byte](100)
-    loApi.delete(subject.oid)
-    connection.commit()
+    unlink(subject.oid)
     subject.read must throwA[java.io.IOException]
     subject.read(buffer, 0, 1) must throwA[java.io.IOException]
   }

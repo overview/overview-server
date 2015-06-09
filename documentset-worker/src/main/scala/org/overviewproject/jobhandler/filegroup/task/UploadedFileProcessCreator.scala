@@ -1,17 +1,18 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import scala.util.control.Exception.ultimately
+import akka.actor.ActorRef
 import java.io.InputStream
-import org.overviewproject.models.GroupedFileUpload
+import scala.util.control.Exception.ultimately
+
+import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
+import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfPage
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentsFromConvertedFilePages
-import org.overviewproject.postgres.LargeObjectInputStream
-import org.overviewproject.database.SlickSessionProvider
-import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
+import org.overviewproject.models.GroupedFileUpload
+import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.util.BulkDocumentWriter
 
 trait UploadedFileProcessCreator {
@@ -48,15 +49,14 @@ trait UploadedFileProcessCreator {
 
 }
 
-object UploadedFileProcessCreator {
+object UploadedFileProcessCreator extends BlockingDatabaseProvider {
 
   def apply(bulkDocumentWriter: BulkDocumentWriter): UploadedFileProcessCreator = 
     new UploadedFileProcessCreatorImpl(bulkDocumentWriter)
 
   private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter) extends UploadedFileProcessCreator {
     override protected val documentTypeDetector = DocumentTypeDetector
-    override protected def largeObjectInputStream(oid: Long) =
-      new LargeObjectInputStream(oid, new SlickSessionProvider {})
+    override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
 
     override protected val processMap: ProcessMap = new UploadedFileProcessMap
 

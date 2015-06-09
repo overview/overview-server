@@ -7,29 +7,26 @@ import slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
+import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.Document
 import org.overviewproject.query.{PhraseQuery,Query}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
-import org.overviewproject.test.SlickClientInSession
 import org.overviewproject.util.SortedDocumentIdsRefresher
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
-  class InSessionSortedDocumentIdsRefresher(val session: Session)
-    extends SortedDocumentIdsRefresher with SlickClientInSession
-
   trait BaseScope extends DbScope {
-    val refresher = new InSessionSortedDocumentIdsRefresher(session)
+    val refresher = new SortedDocumentIdsRefresher with DatabaseProvider
   }
 
   trait BaseScopeNoIndex extends BaseScope {
-    val backend = new DbDocumentBackend with org.overviewproject.database.DatabaseProvider {
+    val backend = new DbDocumentBackend with DatabaseProvider {
       override val indexClient = mock[IndexClient]
     }
   }
 
   trait BaseScopeWithIndex extends BaseScope {
     val testIndexClient: InMemoryIndexClient = new InMemoryIndexClient()
-    val backend = new DbDocumentBackend with org.overviewproject.database.DatabaseProvider {
+    val backend = new DbDocumentBackend with DatabaseProvider {
       override val indexClient: IndexClient = testIndexClient
     }
 

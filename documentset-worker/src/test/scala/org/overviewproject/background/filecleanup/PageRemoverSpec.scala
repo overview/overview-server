@@ -4,13 +4,12 @@ import scala.concurrent.{ Await, Future, Promise, TimeoutException }
 import scala.concurrent.duration._
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
-import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.Pages
-import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
+import org.overviewproject.test.DbSpecification
 
-class PageRemoverSpec extends SlickSpecification with Mockito with NoTimeConversions {
+class PageRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
 
   "PageRemover" should {
 
@@ -52,7 +51,9 @@ class PageRemoverSpec extends SlickSpecification with Mockito with NoTimeConvers
     val remover = new TestPageRemover(mockBlobStorage)
   }
 
-  class TestPageRemover(bs: BlobStorage)(implicit val session: Session) extends PageRemover with SlickClientInSession {
+  class TestPageRemover(bs: BlobStorage)
+      extends PageRemover
+      with org.overviewproject.database.DatabaseProvider {
     override protected val blobStorage = bs
   }
 }

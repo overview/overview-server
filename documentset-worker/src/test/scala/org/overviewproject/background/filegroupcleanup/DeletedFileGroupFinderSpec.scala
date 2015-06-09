@@ -1,10 +1,8 @@
 package org.overviewproject.background.filegroupcleanup
 
-import slick.jdbc.JdbcBackend.Session
+import org.overviewproject.test.DbSpecification
 
-import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
-
-class DeletedFileGroupFinderSpec extends SlickSpecification {
+class DeletedFileGroupFinderSpec extends DbSpecification {
   
   "DeletedFileGroupFinder" should {
     
@@ -16,12 +14,11 @@ class DeletedFileGroupFinderSpec extends SlickSpecification {
   
   trait DeletedFileGroupScope extends DbScope {
     
-    val deletedFileGroups = Seq.fill(10)(factory.fileGroup(deleted = true))
-    val otherFileGroups = Seq.fill(10)(factory.fileGroup(deleted = false))
+    val deletedFileGroups = Seq.fill(2)(factory.fileGroup(deleted = true))
+    val otherFileGroups = Seq.fill(2)(factory.fileGroup(deleted = false))
     
     val deletedFileGroupFinder = new TestDeletedFileGroupFinder
   }
 
-  class TestDeletedFileGroupFinder(implicit val session: Session) 
-    extends DeletedFileGroupFinder with SlickClientInSession
+  class TestDeletedFileGroupFinder extends DeletedFileGroupFinder with org.overviewproject.database.DatabaseProvider
 }

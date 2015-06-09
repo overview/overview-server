@@ -1,14 +1,14 @@
 package org.overviewproject.util
 
-import slick.jdbc.JdbcBackend.Session
+import org.overviewproject.test.DbSpecification
 
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.database.{BlockingDatabaseProvider,DatabaseProvider}
 
 class SortedDocumentIdsRefresherSpec extends DbSpecification {
   "#refreshDocumentSet" should {
     trait RefreshScope extends DbScope {
-      val refresher = new TestRefresher(session)
-      val db = new DbMethods(session)
+      val refresher = new SortedDocumentIdsRefresher with DatabaseProvider
+      val db = new DbMethods
 
       def refresh(documentSetId: Long): Unit = await(refresher.refreshDocumentSet(documentSetId))
     }
@@ -58,36 +58,33 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     }
   }
 
-  class TestRefresher(val session: Session) extends SortedDocumentIdsRefresher with SlickClientInSession
-
-  class DbMethods(val session: Session) {
-    import org.overviewproject.database.Slick.simple._
+  class DbMethods extends BlockingDatabaseProvider {
+    import blockingDatabaseApi._
     import org.overviewproject.models.tables.{Documents,DocumentSets}
     import org.overviewproject.models.{Document,DocumentSet}
-    import slick.jdbc.{GetResult,StaticQuery}
+    import slick.jdbc.GetResult
 
     def createDocumentSet(id: Long): DocumentSet = {
       val ret = DocumentSet(id, "", None, false, new java.sql.Timestamp(0L), 0, 0, 0, None, false)
-      DocumentSets.+=(ret)(session)
-      ret
+      blockingDatabase.run((DocumentSets returning DocumentSets).+=(ret))
     }
 
     def createDocument(documentSetId: Long, id: Long, title: String, suppliedId: String, pageNumber: Option[Int]): Document = {
-      val ret = Document(id, documentSetId, None, suppliedId, title, pageNumber, Seq(), new java.sql.Timestamp(0L), 
-          None, None, None, "")
-      Documents.+=(ret)(session)
-      ret
+      val ret = Document(id, documentSetId, None, suppliedId, title, pageNumber, Seq(), new java.sql.Timestamp(0L), None, None, None, "")
+      blockingDatabase.run((Documents returning Documents).+=(ret))
     }
 
     def setSortedDocumentIds(documentSetId: Long, ids: Seq[Long]): Unit = {
-      val q = StaticQuery.update[(Seq[Long],Long)]("UPDATE document_set SET sorted_document_ids = ? WHERE id = ?")
-      q(ids, documentSetId).execute(session)
+      blockingDatabase.run(sqlu"""UPDATE document_set SET sorted_document_ids = $ids WHERE id = $documentSetId""")
     }
 
     def getSortedDocumentIds(documentSetId: Long): Option[Seq[Long]] = {
       implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextArray[Long]()))
-      val q = StaticQuery.query[Long,Seq[Long]]("SELECT sorted_document_ids FROM document_set WHERE id = ?")
-      q(documentSetId).firstOption(session)
+      blockingDatabase.option(sql"""
+        SELECT sorted_document_ids
+        FROM document_set
+        WHERE id = $documentSetId
+      """.as[Seq[Long]])
     }
   }
 }

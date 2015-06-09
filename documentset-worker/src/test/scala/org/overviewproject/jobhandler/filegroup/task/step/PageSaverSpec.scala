@@ -1,31 +1,30 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.specs2.mutable.Specification
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
 import scala.concurrent.Future
+
+import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.overviewproject.models.Page
 import org.overviewproject.models.tables.Pages
-import org.overviewproject.test.SlickClientInSession
-import slick.jdbc.JdbcBackend.Session
+import org.overviewproject.test.DbSpecification
 
-class PageSaverSpec extends SlickSpecification with Mockito {
+class PageSaverSpec extends DbSpecification with Mockito {
 
   "PageSaver" should {
 
     "save pages" in new PageContext {
-      import org.overviewproject.database.Slick.simple._
+      import databaseApi._
 
       val foundPages = for {
         attributes <- pageSaver.savePages(file.id, pages.view)
         ids = attributes.map(_.id)
-      } yield Pages.filter(_.id inSet ids).list
+      } yield blockingDatabase.seq(Pages.filter(_.id inSet ids))
 
       val attributes = await(foundPages).map(p =>
           (p.fileId, p.pageNumber, p.dataLocation, p.dataSize, p.text.getOrElse("")))
 
-     attributes must containTheSameElementsAs(expectedAttributes)
+      attributes must containTheSameElementsAs(expectedAttributes)
     }
   }
 
@@ -41,7 +40,7 @@ class PageSaverSpec extends SlickSpecification with Mockito {
     val pageSaver = new TestPageSaver
   }
 
-  protected class TestPageSaver(implicit val session: Session) extends PageSaver with SlickClientInSession {
+  protected class TestPageSaver extends PageSaver with org.overviewproject.database.DatabaseProvider {
     override protected val pageBlobSaver = smartMock[PageBlobSaver]
 
     pageBlobSaver.save(any) returns Future.successful("page:location")

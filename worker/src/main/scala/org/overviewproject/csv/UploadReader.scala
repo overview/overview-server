@@ -12,14 +12,14 @@ import java.sql.Connection
 import scala.util.control.Exception.allCatch
 
 import org.overviewproject.backports.sun.nio.cs.UTF_8
-import org.overviewproject.database.SlickClient
+import org.overviewproject.database.BlockingDatabase
 import org.overviewproject.postgres.LargeObjectInputStream
 
 /**
  * Provides a context for reading an uploaded file from the database. The
  * reader uses the CharsetDecoder specified by the uploaded file's encoding.
  */
-class UploadReader(oid: Long, encodingStringOption: Option[String], slickClient: SlickClient) {
+class UploadReader(oid: Long, encodingStringOption: Option[String], blockingDatabase: BlockingDatabase) {
   // Make buffer small enough that progress moves swiftly but large enough
   // that we're not constantly opening connections to the database
   private val LargeObjectBufferSize = 5 * 1024 * 1024 // 5MB
@@ -31,7 +31,7 @@ class UploadReader(oid: Long, encodingStringOption: Option[String], slickClient:
     .onUnmappableCharacter(CodingErrorAction.REPLACE)
 
   // Raw input
-  private val largeObjectInputStream = new LargeObjectInputStream(oid, slickClient)
+  private val largeObjectInputStream = new LargeObjectInputStream(oid, blockingDatabase)
 
   // Provide a means of reporting progress
   private val countingInputStream = new CountingInputStream(largeObjectInputStream)

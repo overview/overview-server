@@ -2,10 +2,8 @@ package org.overviewproject.csv
 
 import java.io.Reader
 import java.nio.charset.Charset
-import org.postgresql.PGConnection
-import org.postgresql.largeobject.LargeObjectManager
 
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.LargeObject
 import org.overviewproject.test.DbSpecification
 
 class UploadReaderSpec extends DbSpecification {
@@ -14,20 +12,17 @@ class UploadReaderSpec extends DbSpecification {
     val encodingStringOption: Option[String] = None
     val buffer = new Array[Char](1024)
 
-    lazy val loApi = pgConnection.getLargeObjectAPI()
+    val loManager = blockingDatabase.largeObjectManager
 
-    lazy val loid = {
-      connection.setAutoCommit(false)
-      val ret = loApi.createLO(LargeObjectManager.READ | LargeObjectManager.WRITE)
-      val lo = loApi.open(ret, LargeObjectManager.WRITE)
-      lo.write(data)
-      lo.close
-      connection.commit()
-      connection.setAutoCommit(true)
-      ret
-    }
+    import databaseApi._
 
-    lazy val uploadReader = new UploadReader(loid, encodingStringOption, new SlickSessionProvider {})
+    lazy val loid = blockingDatabase.run((for {
+      oid <- loManager.create
+      lo <- loManager.open(oid, LargeObject.Mode.Write)
+      _ <- lo.write(data)
+    } yield oid).transactionally)
+
+    lazy val uploadReader = new UploadReader(loid, encodingStringOption, blockingDatabase)
     lazy val reader = uploadReader.reader
   }
 

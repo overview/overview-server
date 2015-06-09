@@ -1,19 +1,18 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.database.Slick.simple._
-import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
+import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.tables.DocumentProcessingErrors
+import org.overviewproject.test.DbSpecification
 
-class WriteDocumentProcessingErrorSpec extends SlickSpecification {
+class WriteDocumentProcessingErrorSpec extends DbSpecification {
 
   "WriteDocumentProcessingError" should {
 
     "write a DocumentProcessingError with name and message" in new DocumentSetContext {
       await(errorWriter.write(documentSet.id, filename, message))
       
-      val savedValues = DocumentProcessingErrors.map(d => (d.documentSetId, d.textUrl, d.message)).firstOption
+      val savedValues = blockingDatabase.option(DocumentProcessingErrors)
+        .map(d => (d.documentSetId, d.textUrl, d.message))
       savedValues must beSome(documentSet.id, filename, message)
     }
   }
@@ -26,8 +25,8 @@ class WriteDocumentProcessingErrorSpec extends SlickSpecification {
 
     val errorWriter = new TestWriteDocumentProcessingError
 
-    class TestWriteDocumentProcessingError(implicit val session: Session)
-      extends WriteDocumentProcessingError with SlickClientInSession
+    class TestWriteDocumentProcessingError
+      extends WriteDocumentProcessingError with DatabaseProvider
 
   }
 }

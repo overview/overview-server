@@ -2,7 +2,7 @@ package org.overviewproject.util
 
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.searchindex.TransportIndexClient
 
 trait JobRestarter {
@@ -30,15 +30,12 @@ trait JobRestarter {
   }
 }
 
-object JobRestarter extends SlickSessionProvider {
-  import scala.concurrent.Await
-  import scala.concurrent.duration.Duration
+object JobRestarter extends BlockingDatabaseProvider {
   import scala.concurrent.ExecutionContext.Implicits.global
-  import org.overviewproject.database.Slick.simple._
-  import org.overviewproject.models.tables.DocumentSetCreationJobsImpl
   import org.overviewproject.models.DocumentSetCreationJobType._
-  import org.overviewproject.models.DocumentSetCreationJobState._
   import org.overviewproject.models.tables.DocumentSetCreationJobs
+
+  import blockingDatabaseApi._
 
   def restartInterruptedJobs: Unit = {
     interruptedJobs.flatMap(createRestarter).map(_.restart)
@@ -46,10 +43,7 @@ object JobRestarter extends SlickSessionProvider {
 
   // FIXME: make async
   private def interruptedJobs: Seq[DocumentSetCreationJob] = {
-    val jobList = db { implicit session =>
-      DocumentSetCreationJobs.filter(_.state === InProgress).list
-    }
-    Await.result(jobList, Duration.Inf)
+    blockingDatabase.seq(DocumentSetCreationJobs.filter(_.state === InProgress))
   }
 
   private def createRestarter(job: DocumentSetCreationJob): Option[JobRestarter] = job.jobType match {

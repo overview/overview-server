@@ -4,12 +4,11 @@ import scala.collection.SeqView
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
+import scala.util.control.Exception.ultimately
 
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.database.SlickClient
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.{HasDatabase,DatabaseProvider}
 import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.overviewproject.models.Page
 import org.overviewproject.models.tables.Pages
@@ -18,7 +17,9 @@ import org.overviewproject.util.TempFile
 /**
  * Store the page data with `BlobStorage`, then store `Page` attributes in the database.
  */
-trait PageSaver extends SlickClient {
+trait PageSaver extends HasDatabase {
+  import databaseApi._
+  import scala.language.postfixOps
 
   protected val pageBlobSaver: PageBlobSaver
 
@@ -27,8 +28,6 @@ trait PageSaver extends SlickClient {
   }
 
   def savePages(fileId: Long, pdfPages: SeqView[PdfPage, Seq[_]]): Future[Seq[Page.ReferenceAttributes]] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
     val pageAttributes = for {
       (p, pageNumberZeroBased) <- pdfPages.zipWithIndex
     } yield {
@@ -49,27 +48,20 @@ trait PageSaver extends SlickClient {
     }
   }
 
-  import scala.language.postfixOps
-
   private lazy val pageInserter = {
     val q = Pages.map { p => (p.fileId, p.pageNumber, p.dataLocation, p.dataSize, p.text) }
-    (q returning Pages.map(_.id)).insertInvoker
+    (q returning Pages.map(_.id))
   }
 
-  private def writeToDatabase(pageAttributes: Seq[Page.CreateAttributes]): Future[Seq[Long]] =
-    db { implicit session =>
-      val attributeTuples = pageAttributes
-        .map(p => (p.fileId, p.pageNumber, Some(p.dataLocation), p.dataSize, Some(p.text)))
+  private def writeToDatabase(pageAttributes: Seq[Page.CreateAttributes]): Future[Seq[Long]] = {
+    val attributeTuples = pageAttributes
+      .map(p => (p.fileId, p.pageNumber, Some(p.dataLocation), p.dataSize, Some(p.text)))
 
-      session.withTransaction {
-        pageInserter.insertAll(attributeTuples: _*)
-      }
-    }
+    database.run(pageInserter.++=(attributeTuples))
+  }
 }
 
-object PageSaver extends PageSaver with SlickSessionProvider {
-  import scala.util.control.Exception.ultimately
-
+object PageSaver extends PageSaver with DatabaseProvider {
   override protected val pageBlobSaver: PageBlobSaver = new TempFilePageBlobSaver
 
   private class TempFilePageBlobSaver extends PageBlobSaver {

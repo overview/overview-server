@@ -1,8 +1,6 @@
 package org.overviewproject.database
 
-import slick.jdbc.JdbcBackend.Session
-
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.models.{ Document, DocumentSet, UploadedFile }
 import org.overviewproject.models.tables.{ Documents, DocumentSets, Files, Pages, UploadedFiles }
 
@@ -61,9 +59,9 @@ class DocumentSetDeleterSpec extends DbSpecification {
   }
 
   trait BasicDocumentSetScope extends DbScope {
-    def numberOfDocuments = 10
+    def numberOfDocuments = 3
 
-    val deleter = new TestDocumentSetDeleter(session)
+    val deleter = new TestDocumentSetDeleter
     val documentSet = createDocumentSet
 
     val documents = createDocuments
@@ -74,14 +72,13 @@ class DocumentSetDeleterSpec extends DbSpecification {
     def deleteDocumentSet = await { deleter.delete(documentSet.id) } must not(throwA[Exception])
 
     def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
-      import org.overviewproject.database.Slick.simple._
-      val q = DocumentSets.filter(_.id === documentSetId)
-      q.firstOption(session)
+      import databaseApi._
+      blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
     }
 
     def fileReferenceCount: Option[Int] = {
-      import org.overviewproject.database.Slick.simple._
-      Files.map(_.referenceCount).firstOption(session)
+      import databaseApi._
+      blockingDatabase.option(Files.map(_.referenceCount))
     }
 
     def createDocumentSet: DocumentSet = factory.documentSet()
@@ -120,8 +117,8 @@ class DocumentSetDeleterSpec extends DbSpecification {
     }
 
     def findUploadedFile: Option[UploadedFile] = {
-      import org.overviewproject.database.Slick.simple._
-      UploadedFiles.firstOption(session)
+      import databaseApi._
+      blockingDatabase.option(UploadedFiles)
     }
 
   }
@@ -150,5 +147,5 @@ class DocumentSetDeleterSpec extends DbSpecification {
     override def refCount = 0
   }
   
-  class TestDocumentSetDeleter(val session: Session) extends DocumentSetDeleter with SlickClientInSession 
+  class TestDocumentSetDeleter extends DocumentSetDeleter with DatabaseProvider
 }

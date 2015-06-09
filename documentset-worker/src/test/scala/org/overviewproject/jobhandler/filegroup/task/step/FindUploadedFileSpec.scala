@@ -3,11 +3,10 @@ package org.overviewproject.jobhandler.filegroup.task.step
 
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.models.GroupedFileUpload
 
-class FindUploadedFileSpec extends SlickSpecification {
+class FindUploadedFileSpec extends DbSpecification {
 
   "FindUploadedFile" should {
 
@@ -38,10 +37,9 @@ class FindUploadedFileSpec extends SlickSpecification {
 
     def uploadedFileId = uploadedFile.id
     
-    class TestFindUploadedFile(override protected val uploadedFileId: Long)(implicit val session: Session) 
-    extends FindUploadedFile with SlickClientInSession {
+    class TestFindUploadedFile(override protected val uploadedFileId: Long)
+    extends FindUploadedFile with org.overviewproject.database.DatabaseProvider {
       override protected val documentSetId = 1l
-      
       override protected val nextStep = NextStep
     }
   }

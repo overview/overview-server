@@ -1,23 +1,21 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
+import akka.actor.ActorRef
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import org.overviewproject.database.SlickClient
+import scala.util.Try
+
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.jobhandler.filegroup.task.UploadedFileProcessCreator
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
-import akka.actor.ActorRef
-import org.overviewproject.database.Slick.simple._
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
-import org.overviewproject.database.SlickSessionProvider
-import scala.util.Try
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.util.BulkDocumentWriter
 
 /**
  * Create a process to convert a [[GroupedFileUpload]] into [[Document]](s).
  */
-trait CreateUploadedFileProcess extends UploadedFileProcessStep with SlickClient {
+trait CreateUploadedFileProcess extends UploadedFileProcessStep {
   override protected val documentSetId: Long
 
   protected val uploadedFile: GroupedFileUpload
@@ -51,8 +49,8 @@ object CreateUploadedFileProcess {
     override protected val uploadedFile: GroupedFileUpload,
     override protected val options: UploadProcessOptions,
     override protected val documentIdSupplier: ActorRef,
-    override protected val bulkDocumentWriter: BulkDocumentWriter) extends CreateUploadedFileProcess with SlickSessionProvider {
-
+    override protected val bulkDocumentWriter: BulkDocumentWriter
+  ) extends CreateUploadedFileProcess {
     override protected val uploadedFileProcessCreator = UploadedFileProcessCreator(bulkDocumentWriter)
   }
 

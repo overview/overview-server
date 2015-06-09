@@ -1,27 +1,28 @@
 package org.overviewproject.jobhandler.filegroup.task
 
 import java.util.Date
-import slick.jdbc.JdbcBackend.{ Session => JSession }
-import org.overviewproject.test.SlickSpecification
-import org.overviewproject.test.SlickClientInSession
+import org.specs2.mock.Mockito
+import scala.concurrent.Future
+
+import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.Document
 import org.overviewproject.models.tables.DocumentSets
-import org.overviewproject.database.Slick.simple._
-import org.specs2.mock.Mockito
-import org.overviewproject.util.SortedDocumentIdsRefresher
-import scala.concurrent.Future
-import org.overviewproject.util.BulkDocumentWriter
+import org.overviewproject.test.DbSpecification
+import org.overviewproject.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
 
-class DocumentSetInfoUpdaterSpec extends SlickSpecification with Mockito {
+class DocumentSetInfoUpdaterSpec extends DbSpecification with Mockito {
 
   "DocumentSetInfoUpdater" should {
 
     "update document counts" in new DocumentSetScope {
       await(documentSetInfoUpdater.update(documentSet.id))
 
-      val info = DocumentSets
-        .filter(_.id === documentSet.id)
-        .map(ds => (ds.documentCount, ds.documentProcessingErrorCount)).firstOption
+      import databaseApi._
+      val info = blockingDatabase.option(
+        DocumentSets
+          .filter(_.id === documentSet.id)
+          .map(ds => (ds.documentCount, ds.documentProcessingErrorCount))
+      )
 
       info must beSome((numberOfDocuments, numberOfDocumentProcessingErrors))
     }
@@ -45,7 +46,7 @@ class DocumentSetInfoUpdaterSpec extends SlickSpecification with Mockito {
       documents.map(bulkWriter.addAndFlushIfNeeded)
     }
 
-    class TestDocumentSetInfoUpdater(implicit val session: JSession) extends DocumentSetInfoUpdater with SlickClientInSession {
+    class TestDocumentSetInfoUpdater extends DocumentSetInfoUpdater with DatabaseProvider {
       override protected val bulkDocumentWriter = smartMock[BulkDocumentWriter]
       bulkDocumentWriter.flush returns Future.successful(())
 

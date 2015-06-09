@@ -2,14 +2,12 @@ package org.overviewproject.background.filegroupcleanup
 
 import org.specs2.mock.Mockito
 import scala.concurrent.Promise
-import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.FileGroups
-import org.overviewproject.test.{ SlickClientInSession, SlickSpecification }
+import org.overviewproject.test.DbSpecification
 
-class FileGroupRemoverSpec extends SlickSpecification with Mockito {
-
+class FileGroupRemoverSpec extends DbSpecification with Mockito {
   "FileGroupRemover" should {
 
     "delete GroupedFileUploads" in new FileGroupScope {
@@ -22,16 +20,14 @@ class FileGroupRemoverSpec extends SlickSpecification with Mockito {
     "delete FileGroup after uploads are deleted" in new FileGroupScope {
       val r = fileGroupRemover.remove(fileGroup.id)
 
-      import org.overviewproject.database.Slick.simple._
-      
-      FileGroups.firstOption(session) must beSome
-      
+      import databaseApi._
+      blockingDatabase.length(FileGroups) must beEqualTo(1)
+
       uploadsRemoved.success(())
       await(r)
-      
-      FileGroups.firstOption(session) must beNone
-    }
 
+      blockingDatabase.length(FileGroups) must beEqualTo(0)
+    }
   }
 
   trait FileGroupScope extends DbScope {
@@ -40,13 +36,15 @@ class FileGroupRemoverSpec extends SlickSpecification with Mockito {
     val groupedFileUploadRemover = smartMock[GroupedFileUploadRemover]
     val mockBlobStorage = smartMock[BlobStorage]
     
-    val fileGroupRemover = new TestFileGroupRemover(groupedFileUploadRemover, mockBlobStorage)(session)
+    val fileGroupRemover = new TestFileGroupRemover(groupedFileUploadRemover, mockBlobStorage)
     
     val uploadsRemoved = Promise[Unit]()
     groupedFileUploadRemover.removeFileGroupUploads(any) returns uploadsRemoved.future
   }
 
-  class TestFileGroupRemover(remover: GroupedFileUploadRemover, storage: BlobStorage)(implicit val session: Session) extends FileGroupRemover with SlickClientInSession {
+  class TestFileGroupRemover(remover: GroupedFileUploadRemover, storage: BlobStorage)
+      extends FileGroupRemover
+      with org.overviewproject.database.DatabaseProvider {
     override protected val groupedFileUploadRemover = remover
     override protected val blobStorage = storage
   }
