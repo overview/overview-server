@@ -4,7 +4,7 @@ import slick.jdbc.JdbcBackend.Session
 
 import models.User
 import org.overviewproject.models.{DocumentSetUser,UserRole}
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.test.DbSpecification
 
 /** Tests authorities.
   *

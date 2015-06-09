@@ -3,24 +3,24 @@ package controllers.backend
 import play.api.libs.json.Json
 
 import org.overviewproject.models.StoreObject
-import org.overviewproject.models.tables.StoreObjects
+import org.overviewproject.models.tables.{StoreObjects,DocumentStoreObjects}
 
 class DbStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
+    import databaseApi._
+
     val backend = new DbStoreObjectBackend with org.overviewproject.database.DatabaseProvider
 
     def findStoreObject(id: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      StoreObjects.filter(_.id === id).firstOption(session)
+      blockingDatabase.option(StoreObjects.filter(_.id === id))
     }
 
     def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      import org.overviewproject.models.tables.DocumentStoreObjects
-      DocumentStoreObjects
-        .filter(_.documentId === documentId)
-        .filter(_.storeObjectId === storeObjectId)
-        .firstOption(session)
+      blockingDatabase.option(
+        DocumentStoreObjects
+          .filter(_.documentId === documentId)
+          .filter(_.storeObjectId === storeObjectId)
+      )
     }
   }
 

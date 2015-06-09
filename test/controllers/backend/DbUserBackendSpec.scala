@@ -5,22 +5,23 @@ import java.sql.{SQLException,Timestamp}
 
 import models.User
 import models.tables.Users
+import org.overviewproject.database.LargeObject
 import org.overviewproject.database.exceptions
 import org.overviewproject.models.UserRole
 
 class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
+    import databaseApi._
+
     val backend = new DbUserBackend with org.overviewproject.database.DatabaseProvider
 
     def insertUser(id: Long, email: String, passwordHash: String = "", role: UserRole.Value = UserRole.NormalUser): User = {
-      import org.overviewproject.database.Slick.simple._
       val user = User(id=id, email=email, passwordHash=passwordHash, role=role)
-      (Users returning Users).+=(user)(session)
+      blockingDatabase.run((Users returning Users).+=(user))
     }
 
     def findUser(id: Long): Option[User] = {
-      import org.overviewproject.database.Slick.simple._
-      Users.filter(_.id === id).firstOption(session)
+      blockingDatabase.option(Users.filter(_.id === id))
     }
   }
 
@@ -111,29 +112,30 @@ class DbUserBackendSpec extends DbBackendSpecification {
     }
 
     "destroy a user's uploads" in new DestroyScope {
-      import org.overviewproject.database.Slick.simple._
+      import databaseApi._
       import org.overviewproject.models.tables.{UploadedFiles,Uploads}
 
-      connection.setAutoCommit(false)
-      val loManager = pgConnection.getLargeObjectAPI
-      val oid = loManager.createLO
+      val loManager = blockingDatabase.largeObjectManager
+
+      val oid = blockingDatabase.run(database.largeObjectManager.create.transactionally)
       val uploadedFile = factory.uploadedFile()
       val upload = factory.upload(userId=user.id, uploadedFileId=uploadedFile.id, contentsOid=oid)
-      connection.commit()
+
       await(backend.destroy(user.id))
-      Uploads.filter(_.id === upload.id).length.run(session) must beEqualTo(0)
-      UploadedFiles.filter(_.id === uploadedFile.id).length.run(session) must beEqualTo(1)
-      loManager.open(oid) must throwA[SQLException]
+
+      blockingDatabase.length(Uploads.filter(_.id === upload.id)) must beEqualTo(0)
+      blockingDatabase.length(UploadedFiles.filter(_.id === uploadedFile.id)) must beEqualTo(1)
+      blockingDatabase.run(database.largeObjectManager.open(oid, LargeObject.Mode.Read)) must throwA[SQLException]
     }
 
     "destroy a user's sessions" in new DestroyScope {
-      import org.overviewproject.database.Slick.simple._
+      import databaseApi._
       import models.tables.Sessions
       import models.Session
 
-      Sessions.+=(Session(user.id, "127.0.0.1"))(session)
+      blockingDatabase.runUnit(Sessions.+=(Session(user.id, "127.0.0.1")))
       await(backend.destroy(user.id))
-      Sessions.filter(_.userId === user.id).length.run(session) must beEqualTo(0)
+      blockingDatabase.length(Sessions.filter(_.userId === user.id)) must beEqualTo(0)
     }
 
     "not destroy a nonexistent user" in new DestroyScope {

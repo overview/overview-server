@@ -4,12 +4,12 @@ import java.io.InputStream
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{ Future, blocking }
 import org.overviewproject.models.tables.Pages
-import org.overviewproject.database.Slick.simple._
-import org.overviewproject.database.{ SlickClient, SlickSessionProvider }
+import org.overviewproject.database.{HasDatabase,DatabaseProvider}
 import java.io.ByteArrayInputStream
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait PageByteAStrategy extends BlobStorageStrategy with SlickClient {
+trait PageByteAStrategy extends BlobStorageStrategy with HasDatabase {
+  import databaseApi._
 
   private val LocationRegex = """^pagebytea:(\d+)$""".r
   private case class Location(pageId: Long)
@@ -22,16 +22,13 @@ trait PageByteAStrategy extends BlobStorageStrategy with SlickClient {
   override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
     val location = stringToLocation(locationString)
 
-    db { session =>
-
-      val q = Pages.filter(_.id === location.pageId)
-
-      val page = q.first(session) // or exception
-      val data = page.data.get // or exception
-      val dataStream = new ByteArrayInputStream(data)
-
-      Enumerator.fromStream(dataStream)
-    }
+    database.option(Pages.filter(_.id === location.pageId))
+      .map { maybePage =>
+        maybePage
+          .get // Page or exception
+          .data.get // Array[Byte] or exception
+      }
+      .map(bytes => Enumerator.fromStream(new ByteArrayInputStream(bytes)))
   }
 
   /** A noop since we never write data */
@@ -45,4 +42,4 @@ trait PageByteAStrategy extends BlobStorageStrategy with SlickClient {
 
 }
 
-object PageByteAStrategy extends PageByteAStrategy with SlickSessionProvider 
+object PageByteAStrategy extends PageByteAStrategy with DatabaseProvider

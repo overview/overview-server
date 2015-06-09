@@ -11,7 +11,7 @@ import scala.concurrent.{Await,Future}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider, SlickSessionProvider}
+import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
 import org.overviewproject.test.factories.DbFactory
@@ -63,7 +63,6 @@ class DbSpecification extends Specification {
     *
     * <ul>
     *   <li><em>connection</em> (lazy): a Connection
-    *   <li><em>session</em> (lazy): a Slick Session</li>
     * </ul>
     *
     * Provides these <em>non-deprecated</em> variables:
@@ -85,12 +84,10 @@ class DbSpecification extends Specification {
     val connection: Connection = DB.getConnection()
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
     val factory = DbFactory
-    lazy implicit val session: Session = new UnmanagedSession(connection)
 
     def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
 
     System.setProperty(DatabaseProperty, TestDatabase) // just in case
-    val slickDb = SlickSessionProvider.slickDbSingleton
     clearDb(connection) // *not* in a before block: that's too late
     override def after = connection.close()
 

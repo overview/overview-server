@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor.ActorRef
 import scala.concurrent.Future
 
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.JobDescription._
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
@@ -107,16 +107,12 @@ object CreateDocumentsJobShepherd {
 
     override protected val storage = new DatabaseStorage
 
-    protected class DatabaseStorage extends Storage with SlickSessionProvider {
-      import org.overviewproject.database.Slick.api._
+    protected class DatabaseStorage extends Storage with BlockingDatabaseProvider {
+      import blockingDatabaseApi._
       import org.overviewproject.models.tables.GroupedFileUploads
 
-      private def await[T](f: => Future[T]): T = scala.concurrent.blocking {
-        scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
-      }
-
       override def uploadedFileIds(fileGroupId: Long): Set[Long] = {
-        await(slickDb.run(GroupedFileUploads.filter(_.fileGroupId === fileGroupId).map(_.id).result)).toSet
+        blockingDatabase.seq(GroupedFileUploads.filter(_.fileGroupId === fileGroupId).map(_.id)).toSet
       }
     }
   }

@@ -9,33 +9,32 @@ import org.overviewproject.postgres.InetAddress
 
 class DbSessionBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
+    import databaseApi._
+
     val backend = new DbSessionBackend with org.overviewproject.database.DatabaseProvider {
       override val MaxSessionAgeInMs = 1000L
       override protected def minCreatedAt = new Timestamp(1000000000000L)
     }
 
     def insertUser(id: Long, email: String): User = {
-      import org.overviewproject.database.Slick.simple._
       val ret = User(id=id, email=email)
-      Users.insertInvoker.insert(ret)(session)
+      blockingDatabase.runUnit(Users.+=(ret))
       ret
     }
 
     def insertSession(userId: Long, ip: String, createdAt: Date): OSession = {
-      import org.overviewproject.database.Slick.simple._
       val ret = OSession(UUID.randomUUID,
         userId,
         InetAddress.getByName(ip),
         new Timestamp(createdAt.getTime),
         new Timestamp(createdAt.getTime)
       )
-      Sessions.insertInvoker.insert(ret)(session)
+      blockingDatabase.runUnit(Sessions.+=(ret))
       ret
     }
 
     def findSession(id: UUID): Option[OSession] = {
-      import org.overviewproject.database.Slick.simple._
-      Sessions.filter(_.id === id).firstOption(session)
+      blockingDatabase.option(Sessions.filter(_.id === id))
     }
   }
 

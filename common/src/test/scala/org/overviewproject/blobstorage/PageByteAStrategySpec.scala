@@ -1,19 +1,16 @@
 package org.overviewproject.blobstorage
 
 import java.io.ByteArrayInputStream
-import scala.concurrent.{ExecutionContext,Future}
-import scala.concurrent.ExecutionContext
-import slick.jdbc.JdbcBackend.Session
+import scala.concurrent.Future
 
+import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.models.{File,Page}
 import org.overviewproject.models.tables.{Files,Pages}
-import org.overviewproject.test.{DbSpecification,SlickClientInSession}
+import org.overviewproject.test.DbSpecification
 
 class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
   trait BaseScope extends DbScope {
-    class TestPageByteAStrategy(val session: Session) extends PageByteAStrategy with SlickClientInSession
-
-    val strategy = new TestPageByteAStrategy(session)
+    val strategy = PageByteAStrategy
   }
 
   "#get" should {
@@ -61,29 +58,29 @@ class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
     }
   }
 
-  object Db {
-    import org.overviewproject.database.Slick.simple.{Session=>XXX,_}
+  object Db extends BlockingDatabaseProvider {
+    import blockingDatabaseApi._
 
-    private val insertFileInvoker = {
+    private val fileInserter = {
       val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)
-      (q returning Files).insertInvoker
+      (q returning Files)
     }
 
-    private val insertPageInvoker = {
+    private val pageInserter = {
       val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.data, p.dataSize)
-      (q returning Pages).insertInvoker
+      (q returning Pages)
     }
 
-    def insertFile(implicit session: Session): File = {
-      insertFileInvoker.insert(1, "name", "location", 10L, "location", 10L)(session)
+    def insertFile: File = {
+      blockingDatabase.run(fileInserter.+=(1, "name", "location", 10L, "location", 10L))
     }
 
-    def insertPage(fileId: Long, data: Option[Array[Byte]], length: Long)(implicit session: Session): Page = {
-      insertPageInvoker.insert(fileId, 1, data, length)(session)
+    def insertPage(fileId: Long, data: Option[Array[Byte]], length: Long): Page = {
+      blockingDatabase.run(pageInserter.+=(fileId, 1, data, length))
     }
 
-    def getPage(id: Long)(implicit session: Session): Option[Page] = {
-      Pages.filter(_.id === id).firstOption(session)
+    def getPage(id: Long): Option[Page] = {
+      blockingDatabase.option(Pages.filter(_.id === id))
     }
   }
 }

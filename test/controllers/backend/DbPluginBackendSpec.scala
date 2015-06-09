@@ -10,8 +10,8 @@ class DbPluginBackendSpec extends DbBackendSpecification {
     val backend = new DbPluginBackend with org.overviewproject.database.DatabaseProvider
 
     def findPlugin(id: UUID) = {
-      import org.overviewproject.database.Slick.simple._
-      Plugins.filter(_.id === id).firstOption(session)
+      import databaseApi._
+      blockingDatabase.option(Plugins.filter(_.id === id))
     }
   }
 

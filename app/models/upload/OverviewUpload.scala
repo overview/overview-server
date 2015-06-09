@@ -3,7 +3,7 @@ package models.upload
 import java.sql.Timestamp
 import java.util.UUID
 
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.models.{Upload,UploadedFile}
 import org.overviewproject.models.tables.{UploadedFiles,Uploads}
 
@@ -34,8 +34,8 @@ trait OverviewUpload {
   def delete
 }
 
-object OverviewUpload extends SlickSessionProvider {
-  import org.overviewproject.database.Slick.api._
+object OverviewUpload extends BlockingDatabaseProvider {
+  import blockingDatabaseApi._
 
   lazy val inserter = (Uploads.map(_.createAttributes) returning Uploads)
   lazy val updater = Compiled { (id: Rep[Long]) => Uploads.map(_.updateAttributes) }
@@ -51,7 +51,7 @@ object OverviewUpload extends SlickSessionProvider {
       lastActivity=now,
       totalSize=totalSize
     )
-    val upload = runBlocking(inserter.+=(attributes))
+    val upload = blockingDatabase.run(inserter.+=(attributes))
     new OverviewUploadImpl(upload, uploadedFile)
   }
 
@@ -61,7 +61,7 @@ object OverviewUpload extends SlickSessionProvider {
       upload <- Uploads.filter(_.userId === userId).filter(_.guid === guid)
       uploadedFile <- UploadedFiles.filter(_.id === upload.uploadedFileId)
     } yield (upload, uploadedFile)
-    runBlocking(q.result.headOption)
+    blockingDatabase.option(q)
       .map({ t: (Upload,UploadedFile) => new OverviewUploadImpl(t._1, OverviewUploadedFile(t._2)) })
   }
 
@@ -77,16 +77,13 @@ object OverviewUpload extends SlickSessionProvider {
     def save: OverviewUpload = {
       uploadedFile.save
       val q = updater(upload.id).update(Upload.UpdateAttributes(now, size))
-      runBlocking(q)
+      blockingDatabase.runUnit(q)
       this
     }
 
     def truncate: OverviewUpload = new OverviewUploadImpl(upload.copy(lastActivity = now), uploadedFile.withSize(0l))
 
-    def delete {
-      val q = Uploads.filter(_.id === upload.id).delete
-      runBlocking(q)
-    }
+    def delete { blockingDatabase.delete(Uploads.filter(_.id === upload.id)) }
   }
 
   private def now: Timestamp = new Timestamp(System.currentTimeMillis)

@@ -3,10 +3,11 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
+
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
+import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.models.tables._
 import org.overviewproject.models._
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
-import org.overviewproject.test.SlickClientInSession
 
 
 
@@ -17,14 +18,12 @@ import org.overviewproject.test.SlickClientInSession
   *
   * @see Factory
   */
-object DbFactory extends Factory with SlickClientInSession {
-  import org.overviewproject.database.Slick.api._
+object DbFactory extends Factory with BlockingDatabaseProvider {
+  import blockingDatabaseApi._
 
   private val podoFactory = PodoFactory
 
-  private def await[T](f: => scala.concurrent.Future[T]): T = scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
-
-  private def run[T](f: DBIO[T]): T = await(slickDb.run(f))
+  private def run[T](f: DBIO[T]): T = blockingDatabase.run(f)
 
   override def apiToken(
     token: String,

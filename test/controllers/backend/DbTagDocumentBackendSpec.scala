@@ -8,8 +8,12 @@ class DbTagDocumentBackendSpec extends DbBackendSpecification {
     val backend = new DbTagDocumentBackend with org.overviewproject.database.DatabaseProvider
 
     def findDocumentTag(documentId: Long, tagId: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentTags.filter(_.documentId === documentId).filter(_.tagId === tagId).firstOption(session)
+      import databaseApi._
+      blockingDatabase.option(
+        DocumentTags
+          .filter(_.documentId === documentId)
+          .filter(_.tagId === tagId)
+      )
     }
   }
 

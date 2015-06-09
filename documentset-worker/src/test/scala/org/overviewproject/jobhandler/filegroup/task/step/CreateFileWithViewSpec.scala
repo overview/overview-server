@@ -4,7 +4,6 @@ import java.io.InputStream
 import java.util.UUID
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
-import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
@@ -50,8 +49,8 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       val createFileWithView = new TestCreateFileWithView
 
       def findFile: Option[File] = {
-        import org.overviewproject.database.Slick.simple._
-        Files.firstOption(session)
+        import databaseApi._
+        blockingDatabase.option(Files)
       }
 
       class NullConverter extends DocumentConverter {
@@ -64,7 +63,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       }
       
       
-      class TestCreateFileWithView(implicit val session: Session) extends CreateFileWithView with DatabaseProvider {
+      class TestCreateFileWithView extends CreateFileWithView with DatabaseProvider {
         override protected val documentSetId = 1l
         override protected val uploadedFile = upload
         override protected val nextStep = { f: File => NextStep(f) }

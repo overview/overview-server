@@ -12,7 +12,7 @@ import java.sql.Timestamp
 import java.util.Date
 
 import models.tables.Users
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.models.UserRole
 
 /**
@@ -145,8 +145,8 @@ object PotentialNewUser {
 /**
  * Helpers to get new or existing OverviewUsers
  */
-object OverviewUser extends SlickSessionProvider {
-  import org.overviewproject.database.Slick.api._
+object OverviewUser extends BlockingDatabaseProvider {
+  import blockingDatabaseApi._
 
   private val TokenLength = 26
   val BcryptRounds = 7
@@ -155,27 +155,21 @@ object OverviewUser extends SlickSessionProvider {
   private def generateTimestamp = new Timestamp(new Date().getTime())
 
   def findByEmail(email: String) : Option[OverviewUser] = {
-    runBlocking(
-      Users
-        .filter(_.email === email)
-        .result.headOption
-    ).map(OverviewUser.apply)
+    blockingDatabase.option(Users.filter(_.email === email)).map(OverviewUser.apply)
   }
 
   def findByResetPasswordTokenAndMinDate(token: String, minDate: Date): Option[OverviewUser with ResetPasswordRequest] = {
-    runBlocking(
+    blockingDatabase.option(
       Users
         .filter(_.resetPasswordToken === token)
         .filter(_.resetPasswordSentAt >= new java.sql.Timestamp(minDate.getTime))
-        .result.headOption
     ).map(new UserWithResetPasswordRequest(_))
   }
 
   def findByConfirmationToken(token: String): Option[OverviewUser with ConfirmationRequest] = {
-    runBlocking(
+    blockingDatabase.option(
       Users
         .filter(_.confirmationToken === token)
-        .result.headOption
     ).map(new UnconfirmedUser(_))
   }
 

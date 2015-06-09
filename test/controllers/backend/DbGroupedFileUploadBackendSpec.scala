@@ -2,6 +2,7 @@ package controllers.backend
 
 import java.util.UUID
 
+import org.overviewproject.database.LargeObject
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
 
@@ -126,10 +127,11 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
       }
 
       def readBytes: Array[Byte] = {
-        import slick.jdbc.StaticQuery
-        val q = StaticQuery.query[Long,String]("SELECT encode(loread(lo_open(?, x'20000'::INT), 200), 'hex')")
-        val hex = q(groupedFileUpload.contentsOid).first(session)
-        hex.grouped(2).toArray.map(Integer.parseInt(_, 16).toByte)
+        import databaseApi._
+        blockingDatabase.run((for {
+          lo <- blockingDatabase.largeObjectManager.open(groupedFileUpload.contentsOid, LargeObject.Mode.Read)
+          bytes <- lo.read(9999)
+        } yield bytes).transactionally)
       }
     }
 

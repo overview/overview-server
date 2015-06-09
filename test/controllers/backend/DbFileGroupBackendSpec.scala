@@ -8,14 +8,13 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     val backend = new DbFileGroupBackend with org.overviewproject.database.DatabaseProvider
 
     def findFileGroups(userEmail: String, apiToken: Option[String], completed: Boolean): Seq[FileGroup] = {
-      import org.overviewproject.database.Slick.api._
-      await(slickDb.run(
+      import databaseApi._
+      blockingDatabase.seq(
         FileGroups
           .filter(_.userEmail === userEmail)
           .filter(g => (g.apiToken.isEmpty && apiToken.isEmpty) || (g.apiToken.isDefined && g.apiToken === apiToken))
           .filter(_.completed === completed)
-          .result
-      ))
+      )
     }
   }
 

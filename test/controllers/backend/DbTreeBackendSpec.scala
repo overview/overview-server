@@ -5,24 +5,24 @@ import org.overviewproject.models.tables.{Nodes,NodeDocuments,Trees}
 
 class DbTreeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
+    import databaseApi._
+
     val backend = new DbTreeBackend with org.overviewproject.database.DatabaseProvider
 
     def findTree(id: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      Trees.filter(_.id === id).firstOption(session)
+      blockingDatabase.option(Trees.filter(_.id === id))
     }
 
     def findNode(id: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      Nodes.filter(_.id === id).firstOption(session)
+      blockingDatabase.option(Nodes.filter(_.id === id))
     }
 
     def findNodeDocument(nodeId: Long, documentId: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      NodeDocuments
-        .filter(_.nodeId === nodeId)
-        .filter(_.documentId === documentId)
-        .firstOption(session)
+      blockingDatabase.option(
+        NodeDocuments
+          .filter(_.nodeId === nodeId)
+          .filter(_.documentId === documentId)
+      )
     }
   }
 

@@ -5,19 +5,20 @@ import org.overviewproject.models.tables.{DocumentTags,Tags}
 
 class DbTagBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
+    import databaseApi._
+
     val backend = new DbTagBackend with org.overviewproject.database.DatabaseProvider
 
     def findTag(id: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      Tags.filter(_.id === id).firstOption(session)
+      blockingDatabase.option(Tags.filter(_.id === id))
     }
 
     def findDocumentTag(documentId: Long, tagId: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      DocumentTags
-        .filter(_.documentId === documentId)
-        .filter(_.tagId === tagId)
-        .firstOption(session)
+      blockingDatabase.option(
+        DocumentTags
+          .filter(_.documentId === documentId)
+          .filter(_.tagId === tagId)
+      )
     }
   }
 

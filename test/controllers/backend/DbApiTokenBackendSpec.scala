@@ -11,8 +11,8 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
     val backend = new DbApiTokenBackend with org.overviewproject.database.DatabaseProvider
 
     def findApiToken(token: String) = {
-      import org.overviewproject.database.Slick.simple._
-      ApiTokens.filter(_.token === token).firstOption(session)
+      import databaseApi._
+      blockingDatabase.option(ApiTokens.filter(_.token === token))
     }
   }
 

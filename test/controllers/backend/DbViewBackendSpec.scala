@@ -8,8 +8,8 @@ class DbViewBackendSpec extends DbBackendSpecification {
     val backend = new DbViewBackend with org.overviewproject.database.DatabaseProvider
 
     def findView(id: Long) = {
-      import org.overviewproject.database.Slick.simple._
-      Views.filter(_.id === id).firstOption(session)
+      import databaseApi._
+      blockingDatabase.option(Views.filter(_.id === id))
     }
   }
 

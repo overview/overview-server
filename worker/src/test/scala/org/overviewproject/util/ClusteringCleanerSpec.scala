@@ -2,7 +2,7 @@ package org.overviewproject.util
 
 import scala.concurrent.Future
 
-import org.overviewproject.test.{ DbSpecification, SlickClientInSession }
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.models.DocumentSetCreationJobState._
 import org.overviewproject.models.tables.{ DocumentSetCreationJobs, Nodes }
 
@@ -30,7 +30,7 @@ class ClusteringCleanerSpec extends DbSpecification {
   }
 
   trait BaseScope extends DbScope {
-    val cleaner = new TestClusteringCleaner
+    val cleaner = new ClusteringCleaner with org.overviewproject.database.DatabaseProvider
     val documentSet = factory.documentSet()
     val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = InProgress)
 
@@ -44,6 +44,4 @@ class ClusteringCleanerSpec extends DbSpecification {
     factory.nodeDocument(rootNode.id, document.id)
     factory.documentSetCreationJobNode(job.id, rootNode.id)
   }
-
-  class TestClusteringCleaner extends ClusteringCleaner
 }

@@ -11,14 +11,13 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
     val backend = new DbDocumentStoreObjectBackend with org.overviewproject.database.DatabaseProvider
 
-    def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = await {
-      import org.overviewproject.database.Slick.api._
+    def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = {
+      import databaseApi._
 
-      slickDb.run(
+      blockingDatabase.option(
         DocumentStoreObjects
           .filter(_.documentId === documentId)
           .filter(_.storeObjectId === storeObjectId)
-          .result.headOption
       )
     }
   }

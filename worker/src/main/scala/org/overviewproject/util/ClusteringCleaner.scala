@@ -3,7 +3,7 @@ package org.overviewproject.util
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.DatabaseProvider
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState
 import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetCreationJobNodes, NodeDocuments, Nodes, Trees }
@@ -11,7 +11,7 @@ import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetC
 /**
  * Provides methods to cleanup an interrupted clustering, prior to restart.
  */
-trait ClusteringCleaner extends JobUpdater with DatabaseProvider {
+trait ClusteringCleaner extends JobUpdater with HasDatabase {
   import databaseApi._
   
   def treeExists(jobId: Long): Future[Boolean] = {

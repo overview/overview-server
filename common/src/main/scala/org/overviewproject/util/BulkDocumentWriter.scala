@@ -7,7 +7,8 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.database.SlickSessionProvider
+
+import org.overviewproject.database.{Database,DatabaseProvider}
 import org.overviewproject.models.Document
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.searchindex.TransportIndexClient
@@ -76,8 +77,13 @@ trait BulkDocumentWriter {
     }
   }
 
-  protected def flushDocumentsToDatabase(session: Session, documents: Iterable[Document]): Unit = {
-    // Blocking method. It's in the trait because we test it.
+  protected def flushDocumentsToDatabase(database: Database, documents: Iterable[Document]): Future[Unit] = {
+    import org.overviewproject.database.Slick.api._
+    import slick.dbio.SynchronousDatabaseAction
+    import slick.jdbc.JdbcBackend
+    import slick.util.DumpInfo
+
+    // This method is in the trait (not companion object) because we test it.
     val out = new ByteArrayOutputStream
     val dataOut = new DataOutputStream(out)
     val charset = "utf-8"
@@ -134,43 +140,50 @@ trait BulkDocumentWriter {
       writeLongOption(document.pageId)
       writeString(document.text)
       writeStringOption(document.displayMethod.map(_.toString))
-
     }
 
     // File trailer
     dataOut.writeShort(-1)
 
     dataOut.flush()
-    val bytesAsInputStream = new ByteArrayInputStream(out.toByteArray)
+    val bytes = out.toByteArray
+    val bytesAsInputStream = new ByteArrayInputStream(bytes)
 
-    val pgConnection = session.conn.unwrap(classOf[PGConnection])
-    val copyManager = pgConnection.getCopyAPI
+    database.run(new SynchronousDatabaseAction[Unit,NoStream,JdbcBackend,Effect.Write] {
+      override def getDumpInfo = DumpInfo("COPY document", s"${bytes.length} bytes")
+      override def run(context: JdbcBackend#Context): Unit = {
+        val pgConnection: PGConnection = context.connection.unwrap(classOf[PGConnection])
+        val copyManager = pgConnection.getCopyAPI
 
-    copyManager.copyIn("""
-      COPY document (
-        id,
-        document_set_id,
-        url,
-        supplied_id,
-        title,
-        page_number,
-        description,
-        created_at,
-        file_id,
-        page_id,
-        text,
-        display_method
-      )
-      FROM STDIN
-      BINARY
-    """, bytesAsInputStream)
+        copyManager.copyIn("""
+          COPY document (
+            id,
+            document_set_id,
+            url,
+            supplied_id,
+            title,
+            page_number,
+            description,
+            created_at,
+            file_id,
+            page_id,
+            text,
+            display_method
+          )
+          FROM STDIN
+          BINARY
+        """, bytesAsInputStream)
+      }
+    })
   }
 }
 
-object BulkDocumentWriter extends SlickSessionProvider {
+object BulkDocumentWriter extends DatabaseProvider {
+  import databaseApi._
+
   def forDatabaseAndSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {
     override def flushImpl(documents: Iterable[Document]) = {
-      val dbFuture = db { session => flushDocumentsToDatabase(session, documents) }
+      val dbFuture = flushDocumentsToDatabase(database, documents)
       val siFuture = flushDocumentsToSearchIndex(documents)
 
       for {

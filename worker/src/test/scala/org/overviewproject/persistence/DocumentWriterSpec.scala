@@ -8,7 +8,6 @@ package org.overviewproject.persistence
 
 import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.postgres.SquerylEntrypoint._
 
 class DocumentWriterSpec extends DbSpecification {
   "DocumentWriter" should {
@@ -20,10 +19,9 @@ class DocumentWriterSpec extends DbSpecification {
         DocumentWriter.updateDescription(document.id, "bar baz")
       }
 
-      import org.overviewproject.database.Slick.api._
+      import databaseApi._
       import org.overviewproject.models.tables.Documents
-      slickDb.run(Documents.filter(_.id === document.id).result.head)
-        .map(_.keywords) must beEqualTo(Seq("bar", "baz")).await
+      blockingDatabase.option(Documents.filter(_.id === document.id)).map(_.keywords) must beSome(Seq("bar", "baz"))
     }
   }
 }

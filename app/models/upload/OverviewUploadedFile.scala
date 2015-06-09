@@ -4,7 +4,7 @@ import java.net.URLDecoder
 import java.sql.Timestamp
 import scala.util.control.Exception._
 
-import org.overviewproject.database.SlickSessionProvider
+import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.models.UploadedFile
 import org.overviewproject.models.tables.UploadedFiles
 import org.overviewproject.util.ContentDisposition
@@ -26,7 +26,7 @@ trait OverviewUploadedFile {
   def delete
 }
 
-object OverviewUploadedFile extends SlickSessionProvider {
+object OverviewUploadedFile extends BlockingDatabaseProvider {
   import org.overviewproject.database.Slick.api._
 
   lazy val updater = Compiled { (id: Rep[Long]) =>
@@ -46,13 +46,12 @@ object OverviewUploadedFile extends SlickSessionProvider {
       size=0
     )
     val q = (UploadedFiles.map(_.createAttributes) returning UploadedFiles).+=(attributes)
-    val uploadedFile = runBlocking(q)
+    val uploadedFile = blockingDatabase.run(q)
     new OverviewUploadedFileImpl(uploadedFile)
   }
 
   def findById(id: Long): Option[OverviewUploadedFile] = {
-    val q = UploadedFiles.filter(_.id === id)
-    runBlocking(q.result.headOption) // Option[UploadedFile]
+    blockingDatabase.option(UploadedFiles.filter(_.id === id))
       .map(new OverviewUploadedFileImpl(_))
   }
 
@@ -72,13 +71,13 @@ object OverviewUploadedFile extends SlickSessionProvider {
 
     def save: OverviewUploadedFile = {
       val q = updater(id).update(UploadedFile.UpdateAttributes(size, uploadedAt))
-      runBlocking(q)
+      blockingDatabase.run(q)
       this
     }
 
     def delete {
       val q = UploadedFiles.filter(_.id === id).delete
-      runBlocking(q)
+      blockingDatabase.run(q)
     }
   }
 }

@@ -6,12 +6,10 @@ import org.specs2.execute.AsResult
 import org.specs2.mutable.{After,Around}
 import org.specs2.specification.{Fragments, Step}
 import org.squeryl.{Session=>SquerylSession}
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future}
-import slick.jdbc.UnmanagedSession
-import slick.jdbc.JdbcBackend.Session
+import scala.concurrent.duration.Duration
 
-import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider, SlickSessionProvider}
+import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
 
@@ -62,7 +60,6 @@ class DbSpecification extends Specification {
     *
     * <ul>
     *   <li><em>connection</em> (lazy): a Connection
-    *   <li><em>session</em> (lazy): a Slick Session</li>
     * </ul>
     *
     * Provides these <em>non-deprecated</em> variables:
@@ -82,12 +79,10 @@ class DbSpecification extends Specification {
   trait DbScope extends After with DatabaseProvider with BlockingDatabaseProvider {
     val connection: Connection = DB.getConnection()
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
-    lazy implicit val session: Session = new UnmanagedSession(connection)
 
     def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
 
     System.setProperty(DatabaseProperty, TestDatabase) // just in case
-    val slickDb = SlickSessionProvider.slickDbSingleton
     clearDb(connection) // *not* in a before block: that's too late
     override def after = connection.close()
 

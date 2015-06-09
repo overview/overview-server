@@ -30,10 +30,12 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification {
         )
       )
 
-      backend.indexDocumentViewInfos(documentSet.id) must beEqualTo(Seq(
-        PageViewInfo(filename, 1, "loca:tion:0", 123),
-        PageViewInfo(filename, 2, "loca:tion:1", 246)
-      )).await
+      backend.indexDocumentViewInfos(documentSet.id)
+        .map(_.asInstanceOf[Traversable[PageViewInfo]])
+        .must(containTheSameElementsAs(Seq(
+          PageViewInfo(filename, 1, "loca:tion:0", 123),
+          PageViewInfo(filename, 2, "loca:tion:1", 246)
+        )).await)
     }
 
     "find info for files" in new BaseScope {

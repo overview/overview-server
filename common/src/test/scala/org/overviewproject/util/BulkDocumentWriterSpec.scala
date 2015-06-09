@@ -1,10 +1,5 @@
 package org.overviewproject.util
 
-import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
-import scala.collection.mutable.Buffer
-import scala.concurrent.Future
-import slick.jdbc.StaticQuery
 import org.overviewproject.models.tables.{DocumentSets,Documents,Files,Pages}
 import org.overviewproject.models.{Document,DocumentSet,File,Page}
 import org.overviewproject.test.DbSpecification
@@ -43,7 +38,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
 
       override def flushImpl(documents: Iterable[Document]) = {
         nFlushes += 1
-        Future.successful(flushDocumentsToDatabase(session, documents))
+        flushDocumentsToDatabase(database, documents)
       }
     }
 
@@ -132,9 +127,9 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "handle non-NULLs when writing" in new BaseScope {
-    import org.overviewproject.database.Slick.simple._
-    Files.+=(File(3L, 0, "", "", 0, None, "", 0))
-    Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None))
+    import databaseApi._
+    blockingDatabase.runUnit(Files.+=(File(3L, 0, "", "", 0, None, "", 0)))
+    blockingDatabase.runUnit(Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None)))
     add(factory.document(2L, "").copy(url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))
     await(subject.flush)
     val doc = fetchDocuments(0)
