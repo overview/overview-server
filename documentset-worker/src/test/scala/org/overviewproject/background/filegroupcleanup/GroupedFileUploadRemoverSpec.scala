@@ -44,7 +44,7 @@ class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with NoT
   }
 
   trait GroupedFileUploadScope extends DbScope {
-    val numberOfUploads = 10
+    val numberOfUploads = 3
     val contentOids: Seq[Long] = Seq.range(1, numberOfUploads)
     val contentLocations = contentOids.map(coid => s"pglo:$coid")
 
