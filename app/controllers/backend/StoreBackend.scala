@@ -25,7 +25,8 @@ trait StoreBackend {
 }
 
 trait DbStoreBackend extends StoreBackend with DbBackend {
-  import databaseApi._
+  import database.api._
+  import database.executionContext
 
   lazy val tokenToStore = Compiled { (token: Rep[String]) =>
     Stores.filter(_.apiToken === token)
@@ -51,7 +52,7 @@ trait DbStoreBackend extends StoreBackend with DbBackend {
             case _ => throw t // it's a real problem.
           }
         }
-      })(database.executionContext)
+      })
   }
 
   private def lookup(token: String): DBIO[Store] = {
@@ -65,7 +66,7 @@ trait DbStoreBackend extends StoreBackend with DbBackend {
         .flatMap(_ match {
           case None => insertIgnoringDuplicate(token, JsObject(Seq())).andThen(lookup(token))
           case Some(existingStore) => DBIO.successful(existingStore)
-        })(database.executionContext)
+        })
     }
   }
 
@@ -76,7 +77,7 @@ trait DbStoreBackend extends StoreBackend with DbBackend {
         .flatMap(_ match {
           case 0 => insertIgnoringDuplicate(token, json).andThen(lookup(token))
           case _ => lookup(token)
-        })(database.executionContext)
+        })
     }
   }
 

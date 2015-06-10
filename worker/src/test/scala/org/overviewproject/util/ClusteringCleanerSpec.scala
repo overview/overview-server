@@ -24,7 +24,7 @@ class ClusteringCleanerSpec extends DbSpecification {
       factory.tree(documentSetId = documentSet.id, jobId = job.id, rootNodeId = rootNode.id)
       await(cleaner.deleteJob(job.id))
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.length(DocumentSetCreationJobs.filter(_.id === job.id)) must beEqualTo(0)
     }
   }
@@ -35,7 +35,7 @@ class ClusteringCleanerSpec extends DbSpecification {
     val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = InProgress)
 
     def nodeExists(id: Long): Boolean = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.length(Nodes.filter(_.id === id)) > 0
     }
 

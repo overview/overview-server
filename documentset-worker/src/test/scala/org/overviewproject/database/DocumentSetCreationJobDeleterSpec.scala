@@ -24,7 +24,7 @@ class DocumentSetCreationJobDeleterSpec extends DbSpecification with Mockito {
 
       await { deleter.deleteByDocumentSet(documentSet.id) }
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.length(DocumentSetCreationJobs.filter(_.documentSetId === documentSet.id)) must beEqualTo(0)
       blockingDatabase.length(DocumentSetCreationJobs.filter(_.documentSetId === otherDocumentSet.id)) must beEqualTo(1)
     }
@@ -36,7 +36,7 @@ class DocumentSetCreationJobDeleterSpec extends DbSpecification with Mockito {
 
       await { deleter.delete(cancelledJob.id) }
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === cancelledJob.id)) must beNone
       blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === openJob.id)) must beSome(openJob)
     }
@@ -47,7 +47,7 @@ class DocumentSetCreationJobDeleterSpec extends DbSpecification with Mockito {
 
       await { deleter.deleteByDocumentSet(documentSet.id) }
 
-      import databaseApi._
+      import database.api._
       there was one(mockBlobStorage).deleteMany(Seq(s"pglo:1234"))
     }
   }

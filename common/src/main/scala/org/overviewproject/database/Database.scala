@@ -18,8 +18,8 @@ import org.overviewproject.database.Slick.api._
   * Use it like this:
   *
   * ```
-  * import org.overviewproject.database.Slick.api._
   * val db = new Database(dataSource)
+  * import db.api._
   * db.seq(Documents.filter(_.documentSetId === documentSetId))
   * ```
   *
@@ -29,7 +29,30 @@ import org.overviewproject.database.Slick.api._
 class Database(val dataSource: JDataSource) {
   /** Exposes the Slick Database. */
   val slickDatabase = DatabaseFactory.forDataSource(dataSource)
-  val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+  /** Exposes the Slick Database API.
+    *
+    * This saves typing over "org.overviewproject.database.Slick.api".
+    */
+  val api = org.overviewproject.database.Slick.api
+
+  /** Exposes a "standard" execution context for flatMap operations.
+    *
+    * Again, this is to save typing. You'll need an execution context when
+    * running code like this:
+    *
+    * ```
+    * import database.executionContext
+    * val x = database.run(for {
+    *   foo &lt;- dbio1
+    *   bar &lt;- dbio2
+    * } yield bar)
+    * ```
+    *
+    * The database operations occur in Slick's execution context. The flatMap
+    * logic occurs in this one.
+    */
+  implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   /** Provides access to large objects.
     *

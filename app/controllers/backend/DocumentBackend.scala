@@ -33,7 +33,7 @@ trait DocumentBackend {
 }
 
 trait DbDocumentBackend extends DocumentBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   protected lazy val logger = Logger.forClass(getClass)
 

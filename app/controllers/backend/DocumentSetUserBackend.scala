@@ -32,8 +32,8 @@ trait DocumentSetUserBackend {
 }
 
 trait DbDocumentSetUserBackend extends DocumentSetUserBackend with DbBackend {
-  import databaseApi._
-  import DocumentSetUsers.roleColumnType // XXX clean this up
+  import database.api._
+  import database.executionContext
 
   private val byDocumentSetId = Compiled { (documentSetId: Rep[Long]) =>
     DocumentSetUsers
@@ -58,8 +58,6 @@ trait DbDocumentSetUserBackend extends DocumentSetUserBackend with DbBackend {
   }
 
   override def update(documentSetId: Long, userEmail: String) = {
-    implicit val ec = database.executionContext
-
     database.run(inserter.+=(DocumentSetUser(documentSetId, userEmail, Role(false))))
       .map(Some(_))
       .recover({ case e: Conflict => None })

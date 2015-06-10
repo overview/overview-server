@@ -9,7 +9,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
   sequential
 
   trait BaseScope extends DbScope {
-    import databaseApi._
+    import database.api._
 
     val documentSet: DocumentSet = {
       blockingDatabase.run((DocumentSets returning DocumentSets).+=(DocumentSet(
@@ -127,7 +127,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "handle non-NULLs when writing" in new BaseScope {
-    import databaseApi._
+    import database.api._
     blockingDatabase.runUnit(Files.+=(File(3L, 0, "", "", 0, None, "", 0)))
     blockingDatabase.runUnit(Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None)))
     add(factory.document(2L, "").copy(url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))

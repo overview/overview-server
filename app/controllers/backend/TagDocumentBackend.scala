@@ -36,7 +36,9 @@ trait TagDocumentBackend extends Backend {
 }
 
 trait DbTagDocumentBackend extends TagDocumentBackend with DbBackend {
-  import databaseApi._
+  import database.api._
+  import database.executionContext
+
   import org.overviewproject.database.Slick.SimpleArrayJdbcType
   implicit val longSeqMapper = new SimpleArrayJdbcType[Long]("int8")
 
@@ -52,7 +54,7 @@ trait DbTagDocumentBackend extends TagDocumentBackend with DbBackend {
         INNER JOIN d ON dt.document_id = d.id
         GROUP BY dt.tag_id
       """.as[(Long,Int)])
-        .map(_.toMap)(database.executionContext)
+        .map(_.toMap)
     } else {
       Future.successful(Map())
     }

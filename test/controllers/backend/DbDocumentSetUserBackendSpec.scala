@@ -9,7 +9,7 @@ class DbDocumentSetUserBackendSpec extends DbBackendSpecification {
     val backend = new DbDocumentSetUserBackend {}
 
     def find(documentSetId: Long, userEmail: String): Option[DocumentSetUser] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(
         DocumentSetUsers
           .filter(_.documentSetId === documentSetId)
@@ -18,7 +18,7 @@ class DbDocumentSetUserBackendSpec extends DbBackendSpecification {
     }
 
     def findAll(documentSetId: Long): Seq[DocumentSetUser] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.seq(
         DocumentSetUsers.filter(_.documentSetId === documentSetId)
       )

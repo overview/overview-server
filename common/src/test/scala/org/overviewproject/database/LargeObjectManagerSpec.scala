@@ -17,7 +17,7 @@ class LargeObjectManagerSpec extends DbSpecification {
       }
 
       def run[T](action: DBIO[T]): T = {
-        import databaseApi._
+        import database.api._
         blockingDatabase.run(action.transactionally)
       }
     }

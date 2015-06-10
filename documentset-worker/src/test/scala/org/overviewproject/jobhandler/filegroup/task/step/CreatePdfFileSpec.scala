@@ -23,7 +23,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     "create a file with PDF content" in new UploadScope {
       await(createFile.execute)
 
-      import databaseApi._
+      import database.api._
       val file = blockingDatabase.option(Files)
 
       file.map(f => (f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) must
@@ -48,7 +48,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     "write a tempDocumentSetFile" in new UploadScope {
       await(createFile.execute)
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(TempDocumentSetFiles) must beSome
     }
 

@@ -12,7 +12,7 @@ class FileGroupDeleterSpec extends DbSpecification {
       val deleter = FileGroupDeleter
       await(deleter.delete(fileGroup.id))
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(FileGroups.filter(_.id === fileGroup.id).map(_.deleted)) must beSome(true)
     }
   }

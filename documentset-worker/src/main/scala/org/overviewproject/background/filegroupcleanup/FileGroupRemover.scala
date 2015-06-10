@@ -14,7 +14,7 @@ import org.overviewproject.models.tables.FileGroups
  * matter what.
  */
 trait FileGroupRemover extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def remove(fileGroupId: Long): Future[Unit] = {
     for {

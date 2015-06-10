@@ -3,8 +3,9 @@ package org.overviewproject.database
 import com.github.tminglei.slickpg._
 import play.api.libs.json.{ JsObject, Json }
 import slick.driver.{ JdbcTypesComponent, PostgresDriver }
+
 import org.overviewproject.postgres.InetAddress
-import org.overviewproject.models.{ DocumentSetCreationJobState, DocumentSetCreationJobType, UserRole }
+import org.overviewproject.models.{DocumentSetCreationJobState, DocumentSetCreationJobType, DocumentSetUser, UserRole}
 import org.overviewproject.models.DocumentDisplayMethod
 
 trait MyPostgresDriver extends PostgresDriver
@@ -13,9 +14,6 @@ trait MyPostgresDriver extends PostgresDriver
   with PgEnumSupport {
   override val simple = new SimpleQLPlus {}
   override val api = new APIPlus {}
-
-  trait OverviewColumnTypeImplicits extends JdbcTypesComponent { driver: PostgresDriver =>
-  }
 
   trait CommonImplicitsPlus extends CommonImplicits
     with ArrayImplicits
@@ -32,6 +30,11 @@ trait MyPostgresDriver extends PostgresDriver
       (s: InetString) => InetAddress.getByName(s.address))
 
     implicit val userRoleColumnType = MappedColumnType.base[UserRole.Value, Int](_.id, UserRole(_))
+
+    implicit val documentSetUserRoleColumnType = MappedColumnType.base[DocumentSetUser.Role, Int](
+      _.isOwner match { case true => 1; case false => 2 },
+      DocumentSetUser.Role.apply
+    )
 
     implicit val jobTypeColumnType = MappedColumnType.base[DocumentSetCreationJobType.Value, Int](
       _.id,

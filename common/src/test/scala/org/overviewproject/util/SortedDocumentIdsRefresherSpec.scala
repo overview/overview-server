@@ -59,7 +59,7 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
   }
 
   class DbMethods extends HasBlockingDatabase {
-    import databaseApi._
+    import database.api._
     import org.overviewproject.models.tables.{Documents,DocumentSets}
     import org.overviewproject.models.{Document,DocumentSet}
     import slick.jdbc.GetResult

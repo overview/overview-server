@@ -20,8 +20,8 @@ trait DocumentSetBackend {
 }
 
 trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
-  import databaseApi._
-  private implicit val ec = database.executionContext
+  import database.api._
+  import database.executionContext
 
   override def create(attributes: DocumentSet.CreateAttributes, userEmail: String) = {
     database.seq(autocreatePlugins).flatMap { plugins =>

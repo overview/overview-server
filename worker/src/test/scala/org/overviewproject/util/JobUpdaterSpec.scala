@@ -37,7 +37,7 @@ class JobUpdaterSpec extends DbSpecification {
     lazy val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = jobState)
 
     def findJob(id: Long): Option[DocumentSetCreationJob] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(DocumentSetCreationJobs.filter(_.id  === id))
     }
   }

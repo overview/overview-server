@@ -17,7 +17,7 @@ class DocumentSetInfoUpdaterSpec extends DbSpecification with Mockito {
     "update document counts" in new DocumentSetScope {
       await(documentSetInfoUpdater.update(documentSet.id))
 
-      import databaseApi._
+      import database.api._
       val info = blockingDatabase.option(
         DocumentSets
           .filter(_.id === documentSet.id)

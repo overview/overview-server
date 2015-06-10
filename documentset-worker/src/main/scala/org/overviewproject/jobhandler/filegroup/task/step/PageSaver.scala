@@ -18,7 +18,7 @@ import org.overviewproject.util.TempFile
  * Store the page data with `BlobStorage`, then store `Page` attributes in the database.
  */
 trait PageSaver extends HasDatabase {
-  import databaseApi._
+  import database.api._
   import scala.language.postfixOps
 
   protected val pageBlobSaver: PageBlobSaver

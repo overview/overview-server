@@ -63,7 +63,8 @@ trait DocumentStoreObjectBackend extends Backend {
 }
 
 trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend with DbBackend {
-  import databaseApi._
+  import database.api._
+  import database.executionContext
 
   private lazy val byIdsCompiled = Compiled { (documentId: Rep[Long], storeObjectId: Rep[Long]) =>
     DocumentStoreObjects
@@ -109,8 +110,8 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend with DbBac
 
   override def countByObject(storeId: Long, selection: Selection) = {
     selection.getAllDocumentIds
-      .flatMap(ids => database.seq(countByObjectAndDocumentIds(storeId, ids)))(database.executionContext)
-      .map(_.toMap)(database.executionContext)
+      .flatMap(ids => database.seq(countByObjectAndDocumentIds(storeId, ids)))
+      .map(_.toMap)
   }
 
   override def create(documentId: Long, storeObjectId: Long, json: Option[JsObject]) = {
@@ -173,7 +174,7 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend with DbBac
       .map(_ match {
         case 0 => None
         case _ => Some(DocumentStoreObject(documentId, storeObjectId, json))
-      })(database.executionContext)
+      })
   }
 
   override def destroy(documentId: Long, storeObjectId: Long) = {

@@ -35,7 +35,7 @@ trait OverviewUpload {
 }
 
 object OverviewUpload extends HasBlockingDatabase {
-  import databaseApi._
+  import database.api._
 
   lazy val inserter = (Uploads.map(_.createAttributes) returning Uploads)
   lazy val updater = Compiled { (id: Rep[Long]) => Uploads.map(_.updateAttributes) }

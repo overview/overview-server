@@ -33,7 +33,7 @@ trait DocumentIdGenerator extends HasBlockingDatabase {
   // The assumption, by the way, is that there is only one DocumentIdGenerator
   // anywhere.
   private def findMaxDocumentId: Long = blockingDatabase.run {
-    import databaseApi._
+    import database.api._
     Documents
       .filter(_.documentSetId === documentSetId)
       .map(_.id).max

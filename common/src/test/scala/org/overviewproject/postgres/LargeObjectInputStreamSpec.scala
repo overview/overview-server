@@ -5,7 +5,7 @@ import org.overviewproject.test.DbSpecification
 
 class LargeObjectInputStreamSpec extends DbSpecification {
   trait BaseScope extends DbScope {
-    import databaseApi._
+    import database.api._
 
     val loManager = blockingDatabase.largeObjectManager
 

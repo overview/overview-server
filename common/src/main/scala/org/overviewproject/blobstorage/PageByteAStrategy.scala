@@ -9,7 +9,7 @@ import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.tables.Pages
 
 trait PageByteAStrategy extends BlobStorageStrategy with HasDatabase {
-  import databaseApi._
+  import database.api._
 
   private val LocationRegex = """^pagebytea:(\d+)$""".r
   private case class Location(pageId: Long)

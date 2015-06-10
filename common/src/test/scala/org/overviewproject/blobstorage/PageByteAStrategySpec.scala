@@ -12,7 +12,7 @@ class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
     val strategy = PageByteAStrategy
 
     object Db {
-      import databaseApi._
+      import database.api._
 
       private val fileInserter = {
         val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)

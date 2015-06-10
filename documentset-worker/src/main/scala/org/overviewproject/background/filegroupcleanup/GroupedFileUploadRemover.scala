@@ -12,7 +12,7 @@ import org.overviewproject.models.tables.GroupedFileUploads
  * Delete [[GroupedFileUpload]]s and their contents.
  */
 trait GroupedFileUploadRemover extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def removeFileGroupUploads(fileGroupId: Long): Future[Unit] = {
     for {

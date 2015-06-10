@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.overviewproject.models.tables._
 
 trait DocumentSetDeleter extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def delete(documentSetId: Long): Future[Unit] = {
     database.run(for {

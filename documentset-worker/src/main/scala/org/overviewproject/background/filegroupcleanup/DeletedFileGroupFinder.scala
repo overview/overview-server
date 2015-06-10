@@ -10,7 +10,7 @@ import org.overviewproject.models.tables.FileGroups
  *  Find ids of deleted [[FileGroup]]s
  */
 trait DeletedFileGroupFinder extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def deletedFileGroupIds: Future[Iterable[Long]] = {
     database.seq(FileGroups.filter(_.deleted).map(_.id))

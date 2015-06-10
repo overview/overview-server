@@ -14,7 +14,7 @@ class UploadReaderSpec extends DbSpecification {
 
     val loManager = blockingDatabase.largeObjectManager
 
-    import databaseApi._
+    import database.api._
 
     lazy val loid = blockingDatabase.run((for {
       oid <- loManager.create

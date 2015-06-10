@@ -12,7 +12,7 @@ import org.overviewproject.models.tables.TempDocumentSetFiles
  * to cleanup a cancelled or interrupted upload processing job.
  */
 trait TempFileDeleter extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def delete(documentSetId: Long): Future[Unit] = {
     database.run(for {

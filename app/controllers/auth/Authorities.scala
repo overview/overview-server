@@ -95,7 +95,7 @@ trait Authorities extends HasDatabase {
 object Authorities extends Authorities {
   /** A bunch of queries that return true if successful and no rows otherwise. */
   private object queries {
-    import databaseApi._
+    import database.api._
     import org.overviewproject.models.tables._
 
     lazy val userDocumentSetTag = Compiled { (email: Rep[String], documentSetId: Rep[Long], tagId: Rep[Long]) =>

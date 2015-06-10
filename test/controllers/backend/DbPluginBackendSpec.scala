@@ -10,7 +10,7 @@ class DbPluginBackendSpec extends DbBackendSpecification {
     val backend = new DbPluginBackend {}
 
     def findPlugin(id: UUID) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(Plugins.filter(_.id === id))
     }
   }

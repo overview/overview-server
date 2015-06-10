@@ -21,7 +21,7 @@ trait TreeBackend extends Backend {
 }
 
 trait DbTreeBackend extends TreeBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   lazy val byIdCompiled = Compiled { (id: Rep[Long]) => Trees.filter(_.id === id) }
   lazy val attributesByIdCompiled = Compiled { (id: Rep[Long]) =>

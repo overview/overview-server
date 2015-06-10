@@ -17,7 +17,7 @@ import org.overviewproject.models._
   * @see Factory
   */
 object DbFactory extends Factory with HasBlockingDatabase {
-  import databaseApi._
+  import database.api._
 
   private val podoFactory = PodoFactory
 

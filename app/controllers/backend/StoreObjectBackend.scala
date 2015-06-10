@@ -61,7 +61,7 @@ trait StoreObjectBackend {
 }
 
 trait DbStoreObjectBackend extends StoreObjectBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   private lazy val byIdCompiled = Compiled { (id: Rep[Long]) =>
     StoreObjects.filter(_.id === id)

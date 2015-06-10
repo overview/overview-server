@@ -12,7 +12,7 @@ trait DocumentFileInfoBackend extends Backend {
 }
 
 trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   override def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
     for {

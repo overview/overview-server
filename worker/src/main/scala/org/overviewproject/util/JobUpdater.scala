@@ -7,7 +7,7 @@ import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState
 
 trait JobUpdater extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def updateValidJob(job: DocumentSetCreationJob): Future[Unit] = {
     database.runUnit(sqlu"""

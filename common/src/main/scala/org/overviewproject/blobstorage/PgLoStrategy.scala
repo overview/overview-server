@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import org.overviewproject.database.{HasDatabase,LargeObject}
 
 trait PgLoStrategy extends BlobStorageStrategy with HasDatabase {
-  import databaseApi._
+  import database.api._
 
   /**
    * Size of each Array[Byte] we push.

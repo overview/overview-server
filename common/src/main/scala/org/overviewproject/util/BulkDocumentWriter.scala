@@ -176,7 +176,7 @@ trait BulkDocumentWriter {
 }
 
 object BulkDocumentWriter extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def forDatabaseAndSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {
     override def flushImpl(documents: Iterable[Document]) = {

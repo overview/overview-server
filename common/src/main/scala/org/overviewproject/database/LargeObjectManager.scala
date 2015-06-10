@@ -33,6 +33,8 @@ import slick.util.DumpInfo
   * ```
   */
 class LargeObjectManager(database: Database) {
+  import database.executionContext
+
   /** Creates a large object on the database and returns its OID.
     *
     * Usually you'll want to open right after create. You can do that with
@@ -53,7 +55,7 @@ class LargeObjectManager(database: Database) {
   /** Runs create, then opens the resulting large object.
     */
   def createAndOpen(mode: LargeObject.Mode) = {
-    create.flatMap(open(_, mode))(database.executionContext)
+    create.flatMap(open(_, mode))
   }
 
   /** Deletes an existing large object.

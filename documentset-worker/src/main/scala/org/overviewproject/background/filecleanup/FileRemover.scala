@@ -11,7 +11,7 @@ import org.overviewproject.database.HasDatabase
  * Delete the file, associated data, including pages.
  */
 trait FileRemover extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def deleteFile(fileId: Long): Future[Unit] = {
     val pageRemoval = pageRemover.removeFilePages(fileId)

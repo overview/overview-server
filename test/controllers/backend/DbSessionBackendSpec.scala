@@ -9,7 +9,7 @@ import org.overviewproject.postgres.InetAddress
 
 class DbSessionBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    import databaseApi._
+    import database.api._
 
     val backend = new DbSessionBackend {
       override val MaxSessionAgeInMs = 1000L

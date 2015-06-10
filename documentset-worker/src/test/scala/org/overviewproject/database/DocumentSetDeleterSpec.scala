@@ -72,12 +72,12 @@ class DocumentSetDeleterSpec extends DbSpecification {
     def deleteDocumentSet = await { deleter.delete(documentSet.id) } must not(throwA[Exception])
 
     def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
     }
 
     def fileReferenceCount: Option[Int] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(Files.map(_.referenceCount))
     }
 
@@ -117,7 +117,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     }
 
     def findUploadedFile: Option[UploadedFile] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(UploadedFiles)
     }
 

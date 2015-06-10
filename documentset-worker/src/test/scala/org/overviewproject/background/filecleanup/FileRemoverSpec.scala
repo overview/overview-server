@@ -35,7 +35,7 @@ class FileRemoverSpec extends DbSpecification with Mockito with NoTimeConversion
     "delete file" in new FileScope {
       deleteFile
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(Files.filter(_.id === file.id)) must beNone
     }
   }

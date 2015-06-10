@@ -20,7 +20,7 @@ class FileGroupRemoverSpec extends DbSpecification with Mockito {
     "delete FileGroup after uploads are deleted" in new FileGroupScope {
       val r = fileGroupRemover.remove(fileGroup.id)
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.length(FileGroups) must beEqualTo(1)
 
       uploadsRemoved.success(())

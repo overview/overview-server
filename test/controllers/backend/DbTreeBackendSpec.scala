@@ -5,7 +5,7 @@ import org.overviewproject.models.tables.{Nodes,NodeDocuments,Trees}
 
 class DbTreeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    import databaseApi._
+    import database.api._
 
     val backend = new DbTreeBackend {}
 

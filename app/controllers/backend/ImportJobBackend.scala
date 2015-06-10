@@ -22,7 +22,7 @@ trait ImportJobBackend extends Backend {
 }
 
 trait DbImportJobBackend extends ImportJobBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   private lazy val processingIdsCompiled = Compiled {
     DocumentSetCreationJobs

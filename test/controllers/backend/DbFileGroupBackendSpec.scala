@@ -8,7 +8,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     val backend = new DbFileGroupBackend {}
 
     def findFileGroups(userEmail: String, apiToken: Option[String], completed: Boolean): Seq[FileGroup] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.seq(
         FileGroups
           .filter(_.userEmail === userEmail)

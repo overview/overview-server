@@ -90,7 +90,7 @@ class CsvImportDocumentProducer(
   }
 
   private def flushTagDocumentIds: Unit = {
-    import databaseApi._
+    import database.api._
 
     val tagInserter = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags)
     val tagsToInsert: Iterable[(Long,String,String)] = tagDocumentIds.keys

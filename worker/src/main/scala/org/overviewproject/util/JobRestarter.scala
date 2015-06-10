@@ -35,7 +35,7 @@ object JobRestarter extends HasBlockingDatabase {
   import org.overviewproject.models.DocumentSetCreationJobType._
   import org.overviewproject.models.tables.DocumentSetCreationJobs
 
-  import databaseApi._
+  import database.api._
 
   def restartInterruptedJobs: Unit = {
     interruptedJobs.flatMap(createRestarter).map(_.restart)

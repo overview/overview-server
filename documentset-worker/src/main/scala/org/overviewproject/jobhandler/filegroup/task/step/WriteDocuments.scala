@@ -66,7 +66,7 @@ object WriteDocuments {
     override protected val storage: Storage = new SlickStorage
 
     private class SlickStorage extends Storage with HasDatabase {
-      import databaseApi._
+      import database.api._
       import org.overviewproject.models.tables.TempDocumentSetFiles
 
       override def deleteTempDocumentSetFiles(documents: Seq[Document]): Future[Int] = {

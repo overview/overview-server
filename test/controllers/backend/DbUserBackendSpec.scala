@@ -11,7 +11,7 @@ import org.overviewproject.models.UserRole
 
 class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    import databaseApi._
+    import database.api._
 
     val backend = new DbUserBackend {}
 
@@ -112,7 +112,7 @@ class DbUserBackendSpec extends DbBackendSpecification {
     }
 
     "destroy a user's uploads" in new DestroyScope {
-      import databaseApi._
+      import database.api._
       import org.overviewproject.models.tables.{UploadedFiles,Uploads}
 
       val loManager = blockingDatabase.largeObjectManager
@@ -129,7 +129,7 @@ class DbUserBackendSpec extends DbBackendSpecification {
     }
 
     "destroy a user's sessions" in new DestroyScope {
-      import databaseApi._
+      import database.api._
       import models.tables.Sessions
       import models.Session
 

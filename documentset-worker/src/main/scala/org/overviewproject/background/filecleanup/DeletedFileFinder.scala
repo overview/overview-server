@@ -9,7 +9,7 @@ import org.overviewproject.database.HasDatabase
  * Looks for [[File]]s with `referenceCount == 0`
  */
 trait DeletedFileFinder extends HasDatabase {
-  import databaseApi._
+  import database.api._
   
   def deletedFileIds: Future[Iterable[Long]] = database.seq(Files.filter(_.referenceCount === 0).map(_.id))
 }

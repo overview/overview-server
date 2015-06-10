@@ -7,7 +7,7 @@ import org.overviewproject.models.tables.{StoreObjects,DocumentStoreObjects}
 
 class DbStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    import databaseApi._
+    import database.api._
 
     val backend = new DbStoreObjectBackend {}
 

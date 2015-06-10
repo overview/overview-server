@@ -9,7 +9,7 @@ import org.overviewproject.models.tables.FileGroups
  * does the actual cleanup, including deleting associated [[GroupedFileUpload]]s
  */
 trait FileGroupDeleter extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def delete(fileGroupId: Long): Future[Unit] = {
     database.runUnit {

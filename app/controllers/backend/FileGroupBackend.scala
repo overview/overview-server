@@ -44,7 +44,8 @@ trait FileGroupBackend extends Backend {
 }
 
 trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
-  import databaseApi._
+  import database.api._
+  import database.executionContext
 
   lazy val incompleteByAttributesCompiled = Compiled { (userEmail: Rep[String], apiToken: Rep[Option[String]]) =>
     // Option[String] equality is weird because (None === None) is false.
@@ -78,7 +79,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
         .flatMap(_ match {
           case None => inserter.+=((attributes.userEmail, attributes.apiToken, false, false))
           case Some(fileGroup) => DBIO.successful(fileGroup)
-        })(database.executionContext)
+        })
     }
   }
 

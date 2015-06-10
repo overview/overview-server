@@ -11,22 +11,22 @@ class DbStoreBackendSpec extends DbBackendSpecification {
     val backend = new DbStoreBackend {}
 
     def findStore(apiToken: String) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(Stores.filter(_.apiToken === apiToken))
     }
 
     def findStore(id: Long) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(Stores.filter(_.id === id))
     }
 
     def findStoreObject(id: Long) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(StoreObjects.filter(_.id === id))
     }
 
     def findDocumentStoreObjects(storeObjectId: Long) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.seq(DocumentStoreObjects.filter(_.storeObjectId === storeObjectId))
     }
   }

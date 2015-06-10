@@ -27,8 +27,8 @@ trait DocumentNodeBackend extends Backend {
 }
 
 trait DbDocumentNodeBackend extends DocumentNodeBackend with DbBackend {
-  import databaseApi._
-  private implicit val ec = database.executionContext
+  import database.api._
+  import database.executionContext
 
   private def countByDocumentsAndNodes(documentIds: Seq[Long], nodeIds: Seq[Long]): Future[Map[Long,Int]] = {
     if (documentIds.isEmpty) {

@@ -28,7 +28,7 @@ class PageRemoverSpec extends DbSpecification with Mockito with NoTimeConversion
 
       Await.result(r, 10 millis) must throwA[TimeoutException]
 
-      import databaseApi._
+      import database.api._
 
       blockingDatabase.length(Pages.filter(_.fileId === file.id)) must beEqualTo(numberOfPages)
 

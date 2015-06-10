@@ -43,9 +43,8 @@ trait GroupedFileUploadBackend extends Backend {
 }
 
 trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend with DbBackend {
-  import databaseApi._
-
-  private implicit val ec = database.executionContext
+  import database.api._
+  import database.executionContext
 
   lazy val byFileGroupId = Compiled { (fileGroupId: Rep[Long]) =>
     GroupedFileUploads.filter(_.fileGroupId === fileGroupId)

@@ -10,7 +10,8 @@ trait DocumentSetFileBackend extends Backend {
 }
 
 trait DbDocumentSetFileBackend extends DocumentSetFileBackend with DbBackend {
-  import databaseApi._
+  import database.api._
+  import database.executionContext
 
   lazy val byIdAndSha1 = Compiled { (documentSetId: Rep[Long], sha1: Rep[Array[Byte]]) =>
     for {
@@ -20,8 +21,7 @@ trait DbDocumentSetFileBackend extends DocumentSetFileBackend with DbBackend {
   }
 
   override def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]) = {
-    database.option(byIdAndSha1(documentSetId, sha1))
-      .map(_.isDefined)(database.executionContext)
+    database.option(byIdAndSha1(documentSetId, sha1)).map(_.isDefined)
   }
 }
 

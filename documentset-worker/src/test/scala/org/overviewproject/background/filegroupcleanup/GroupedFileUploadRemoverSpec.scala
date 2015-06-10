@@ -38,7 +38,7 @@ class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with NoT
       deleteMany.success(())
       await(remover.removeFileGroupUploads(fileGroup.id))
       
-      import databaseApi._
+      import database.api._
       blockingDatabase.length(GroupedFileUploads) must beEqualTo(0)
     }
   }

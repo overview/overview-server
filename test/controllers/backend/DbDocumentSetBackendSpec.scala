@@ -8,17 +8,17 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     val backend = new DbDocumentSetBackend {}
 
     def findDocumentSet(id: Long): Option[DocumentSet] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(DocumentSets.filter(_.id === id))
     }
 
     def findDocumentSetUser(documentSetId: Long): Option[DocumentSetUser] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(DocumentSetUsers.filter(_.documentSetId === documentSetId))
     }
 
     def findApiTokensAndViews(documentSetId: Long): Seq[(ApiToken,View)] = {
-      import databaseApi._
+      import database.api._
       val q = for {
         apiToken <- ApiTokens if apiToken.documentSetId === documentSetId
         view <- Views.sortBy(_.id) if view.apiToken === apiToken.token

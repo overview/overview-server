@@ -8,7 +8,7 @@ import models.pagination.{Page,PageInfo,PageRequest}
 import org.overviewproject.database.HasDatabase
 
 trait DbBackend extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   /** Returns a Page[T] based on an item query, uncompiled.
     *

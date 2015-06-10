@@ -16,7 +16,7 @@ import org.overviewproject.postgres.LargeObjectInputStream
  * Create a [[File]] with PDF content
  */
 trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with HasBlockingDatabase {
-  import databaseApi._
+  import database.api._
 
   protected val uploadedFile: GroupedFileUpload
 

@@ -6,7 +6,7 @@ package org.overviewproject.database
   *
   * ```
   * object ThingLister extends HasDatabase {
-  *   import databaseApi._
+  *   import database.api._
   *   import org.overviewproject.models.Thing
   *   import org.overviewproject.models.tables.Things
   *

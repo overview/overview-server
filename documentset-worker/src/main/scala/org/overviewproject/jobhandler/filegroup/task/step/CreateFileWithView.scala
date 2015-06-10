@@ -24,7 +24,7 @@ import org.overviewproject.postgres.LargeObjectInputStream
  * Creates a view by converting the [[GroupedFileUpload] contents to PDF
  */
 trait CreateFileWithView extends UploadedFileProcessStep with LargeObjectMover with HasBlockingDatabase {
-  import databaseApi._
+  import database.api._
 
   protected val documentSetId: Long
   protected val uploadedFile: GroupedFileUpload

@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import org.overviewproject.database.HasDatabase
 
 trait SortedDocumentIdsRefresher extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def refreshDocumentSet(documentSetId: Long): Future[Unit] = database.runUnit(sqlu"""
     UPDATE document_set

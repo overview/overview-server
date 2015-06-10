@@ -36,7 +36,7 @@ trait UserBackend extends Backend {
 }
 
 trait DbUserBackend extends UserBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   private lazy val byEmail = Compiled { (email: Rep[String]) =>
     Users.filter(_.email === email)

@@ -19,7 +19,7 @@ class DocumentWriterSpec extends DbSpecification {
         DocumentWriter.updateDescription(document.id, "bar baz")
       }
 
-      import databaseApi._
+      import database.api._
       import org.overviewproject.models.tables.Documents
       blockingDatabase.option(Documents.filter(_.id === document.id)).map(_.keywords) must beSome(Seq("bar", "baz"))
     }

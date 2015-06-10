@@ -8,7 +8,7 @@ class DbViewBackendSpec extends DbBackendSpecification {
     val backend = new DbViewBackend {}
 
     def findView(id: Long) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(Views.filter(_.id === id))
     }
   }

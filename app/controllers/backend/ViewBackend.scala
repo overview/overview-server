@@ -43,7 +43,7 @@ trait ViewBackend {
 }
 
 trait DbViewBackend extends ViewBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   override def index(documentSetId: Long) = database.seq(byDocumentSetIdCompiled(documentSetId))
 

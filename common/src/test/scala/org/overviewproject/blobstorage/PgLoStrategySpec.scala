@@ -10,7 +10,7 @@ import org.overviewproject.test.DbSpecification
 
 class PgLoStrategySpec extends DbSpecification with StrategySpecification {
   trait PgLoBaseScope extends DbScope {
-    import databaseApi._
+    import database.api._
 
     val loManager = database.largeObjectManager
 

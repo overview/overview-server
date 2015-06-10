@@ -28,7 +28,8 @@ trait TagBackend {
 }
 
 trait DbTagBackend extends TagBackend with DbBackend {
-  import databaseApi._
+  import database.api._
+  import database.executionContext
 
   lazy val byDocumentSetIdCompiled = Compiled { (documentSetId: Rep[Long]) =>
     Tags
@@ -63,7 +64,7 @@ trait DbTagBackend extends TagBackend with DbBackend {
       .map(_ match {
         case 0 => None
         case _ => Some(Tag(id, documentSetId, attributes.name, attributes.color))
-      })(database.executionContext)
+      })
   }
 
   override def destroy(documentSetId: Long, id: Long) = {

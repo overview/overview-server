@@ -31,7 +31,7 @@ trait ApiTokenBackend {
 }
 
 trait DbApiTokenBackend extends ApiTokenBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   lazy val byCreatedByAndDocumentSetIdCompiled = Compiled { (createdBy: Rep[String], documentSetId: Rep[Option[Long]]) =>
     ApiTokens

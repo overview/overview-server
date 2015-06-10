@@ -27,7 +27,7 @@ trait CloneImportJobController extends Controller {
 }
 
 object CloneImportJobController extends CloneImportJobController with HasDatabase {
-  import databaseApi._
+  import database.api._
 
   override protected val documentSetBackend = DocumentSetBackend
 

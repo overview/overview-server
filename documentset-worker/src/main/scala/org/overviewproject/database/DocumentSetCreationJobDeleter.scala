@@ -8,7 +8,7 @@ import org.overviewproject.models.{DocumentSetCreationJob,DocumentSetCreationJob
 import org.overviewproject.models.tables.DocumentSetCreationJobs
 
 trait DocumentSetCreationJobDeleter extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def deleteByDocumentSet(documentSetId: Long): Future[Unit] = {
     deleteJobs(DocumentSetCreationJobs.filter(_.documentSetId === documentSetId))

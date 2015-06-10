@@ -11,7 +11,7 @@ import org.overviewproject.database.HasDatabase
  *  Delete pages and the data they refer to
  */
 trait PageRemover extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def removeFilePages(fileId: Long): Future[Unit] = 
     for {

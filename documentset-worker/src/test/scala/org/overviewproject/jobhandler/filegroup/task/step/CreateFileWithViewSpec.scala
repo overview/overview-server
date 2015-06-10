@@ -48,7 +48,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       val createFileWithView = new TestCreateFileWithView
 
       def findFile: Option[File] = {
-        import databaseApi._
+        import database.api._
         blockingDatabase.option(Files)
       }
 

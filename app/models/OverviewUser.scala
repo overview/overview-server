@@ -146,7 +146,7 @@ object PotentialNewUser {
  * Helpers to get new or existing OverviewUsers
  */
 object OverviewUser extends HasBlockingDatabase {
-  import databaseApi._
+  import database.api._
 
   private val TokenLength = 26
   val BcryptRounds = 7

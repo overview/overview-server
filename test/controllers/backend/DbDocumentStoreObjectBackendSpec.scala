@@ -12,7 +12,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
     val backend = new DbDocumentStoreObjectBackend {}
 
     def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = {
-      import databaseApi._
+      import database.api._
 
       blockingDatabase.option(
         DocumentStoreObjects

@@ -11,7 +11,7 @@ trait FileBackend {
 }
 
 trait DbFileBackend extends FileBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   override def show(id: Long) = database.option(byId(id))
 

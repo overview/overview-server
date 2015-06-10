@@ -10,7 +10,7 @@ class DocumentSetCleanerSpec extends DbSpecification {
     "delete documents" in new DocumentSetScope {
       await(cleaner.deleteDocuments(documentSet.id))
 
-      import databaseApi._
+      import database.api._
       blockingDatabase.length(Documents.filter(_.documentSetId === documentSet.id)) must beEqualTo(0)
     }
   }

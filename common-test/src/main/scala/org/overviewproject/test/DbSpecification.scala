@@ -69,7 +69,7 @@ class DbSpecification extends Specification {
     *
     * <ul>
     *   <li><em>database</em>: the Database</li>
-    *   <li><em>databaseApi</em>: so you can call <tt>import databaseApi._</tt>
+    *   <li><em>databaseApi</em>: so you can call <tt>import database.api._</tt>
     *   <li><em>blockingDatabase</em>: the BlockingDatabase</li>
     *   <li><em>sql</em>: runs arbitrary SQL, returning nothing</li>
     *   <li><em>factory</em>: a DbFactory for constructing objects</li>

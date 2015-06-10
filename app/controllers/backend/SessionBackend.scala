@@ -51,7 +51,7 @@ trait SessionBackend extends Backend {
 }
 
 trait DbSessionBackend extends SessionBackend with DbBackend {
-  import databaseApi._
+  import database.api._
 
   private lazy val byIdCompiled = Compiled { (id: Rep[UUID]) => Sessions.filter(_.id === id) }
 

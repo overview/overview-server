@@ -249,7 +249,7 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
       if (documentSetIds.isEmpty) {
         Seq()
       } else {
-        import databaseApi._
+        import database.api._
         import slick.jdbc.GetResult
 
         // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries

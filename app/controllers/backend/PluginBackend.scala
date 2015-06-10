@@ -28,7 +28,8 @@ trait PluginBackend {
 }
 
 trait DbPluginBackend extends PluginBackend with DbBackend {
-  import databaseApi._
+  import database.api._
+  import database.executionContext
 
   override def index = database.seq(indexCompiled)
 
@@ -48,7 +49,7 @@ trait DbPluginBackend extends PluginBackend with DbBackend {
         .flatMap(_ match {
           case 0 => DBIO.successful(None)
           case _ => byIdCompiled(id).result.headOption
-        })(database.executionContext)
+        })
     }
   }
 

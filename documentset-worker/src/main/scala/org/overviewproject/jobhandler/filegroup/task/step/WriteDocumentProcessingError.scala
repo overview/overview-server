@@ -6,7 +6,7 @@ import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.tables.DocumentProcessingErrors
 
 trait WriteDocumentProcessingError extends HasDatabase {
-  import databaseApi._
+  import database.api._
 
   def write(documentSetId: Long, filename: String, message: String): Future[Unit] = {
     database.runUnit(

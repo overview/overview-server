@@ -8,7 +8,7 @@ class DbTagDocumentBackendSpec extends DbBackendSpecification {
     val backend = new DbTagDocumentBackend {}
 
     def findDocumentTag(documentId: Long, tagId: Long) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(
         DocumentTags
           .filter(_.documentId === documentId)

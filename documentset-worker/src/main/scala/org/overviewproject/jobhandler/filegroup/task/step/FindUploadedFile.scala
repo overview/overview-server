@@ -12,7 +12,7 @@ import org.overviewproject.models.tables.GroupedFileUploads
  * Find the [[GroupedFileUpload]] with the specified id.
  */
 trait FindUploadedFile extends UploadedFileProcessStep with HasDatabase {
-  import databaseApi._
+  import database.api._
 
   override protected val documentSetId: Long
   override protected lazy val filename: String = s"Uploaded file id: $uploadedFileId"

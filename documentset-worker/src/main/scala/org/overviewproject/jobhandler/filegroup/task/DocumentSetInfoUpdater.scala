@@ -9,7 +9,7 @@ import org.overviewproject.models.tables.DocumentSets
 import org.overviewproject.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
 
 trait DocumentSetInfoUpdater extends SortedDocumentIdsRefresher with HasDatabase {
-  import databaseApi._
+  import database.api._
 
   protected val bulkDocumentWriter: BulkDocumentWriter
 

@@ -11,7 +11,7 @@ class DbApiTokenBackendSpec extends DbBackendSpecification {
     val backend = new DbApiTokenBackend {}
 
     def findApiToken(token: String) = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(ApiTokens.filter(_.token === token))
     }
   }

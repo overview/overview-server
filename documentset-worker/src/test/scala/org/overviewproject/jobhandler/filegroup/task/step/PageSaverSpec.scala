@@ -14,7 +14,7 @@ class PageSaverSpec extends DbSpecification with Mockito {
   "PageSaver" should {
 
     "save pages" in new PageContext {
-      import databaseApi._
+      import database.api._
 
       val foundPages = for {
         attributes <- pageSaver.savePages(file.id, pages.view)

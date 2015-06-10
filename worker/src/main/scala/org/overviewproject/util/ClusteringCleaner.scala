@@ -12,7 +12,7 @@ import org.overviewproject.models.tables.{ DocumentSetCreationJobs, DocumentSetC
  * Provides methods to cleanup an interrupted clustering, prior to restart.
  */
 trait ClusteringCleaner extends JobUpdater with HasDatabase {
-  import databaseApi._
+  import database.api._
   
   def treeExists(jobId: Long): Future[Boolean] = {
     database.option(Trees.filter(_.jobId === jobId)).map(_.isDefined)

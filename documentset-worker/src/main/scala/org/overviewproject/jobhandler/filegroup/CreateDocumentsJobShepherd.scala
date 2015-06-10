@@ -108,7 +108,7 @@ object CreateDocumentsJobShepherd {
     override protected val storage = new DatabaseStorage
 
     protected class DatabaseStorage extends Storage with HasBlockingDatabase {
-      import databaseApi._
+      import database.api._
       import org.overviewproject.models.tables.GroupedFileUploads
 
       override def uploadedFileIds(fileGroupId: Long): Set[Long] = {

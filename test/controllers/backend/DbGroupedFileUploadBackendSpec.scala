@@ -11,7 +11,7 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
     val backend = new DbGroupedFileUploadBackend {}
 
     def findGroupedFileUpload(id: Long): Option[GroupedFileUpload] = {
-      import databaseApi._
+      import database.api._
       blockingDatabase.option(GroupedFileUploads.filter(_.id === id))
     }
   }
@@ -127,7 +127,7 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
       }
 
       def readBytes: Array[Byte] = {
-        import databaseApi._
+        import database.api._
         blockingDatabase.run((for {
           lo <- blockingDatabase.largeObjectManager.open(groupedFileUpload.contentsOid, LargeObject.Mode.Read)
           bytes <- lo.read(9999)
