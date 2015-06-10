@@ -3,7 +3,6 @@ package controllers.backend
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
-import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.models.tables.Files
 import models.archive.{DocumentViewInfo,FileViewInfo,PageViewInfo,TextViewInfo}
@@ -65,4 +64,4 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
   }
 }
 
-object DocumentFileInfoBackend extends DbDocumentFileInfoBackend with DatabaseProvider
+object DocumentFileInfoBackend extends DbDocumentFileInfoBackend

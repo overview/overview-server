@@ -175,4 +175,4 @@ trait DbStoreObjectBackend extends StoreObjectBackend with DbBackend {
   }
 }
 
-object StoreObjectBackend extends DbStoreObjectBackend with org.overviewproject.database.DatabaseProvider
+object StoreObjectBackend extends DbStoreObjectBackend

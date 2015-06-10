@@ -44,7 +44,5 @@ class DocumentIdGeneratorSpec extends DbSpecification {
     val document = factory.document(id = (documentSet.id << 32) + 1, documentSetId = documentSet.id)
   }
 
-  class TestDocumentIdGenerator(override protected val documentSetId: Long)
-    extends DocumentIdGenerator with org.overviewproject.database.BlockingDatabaseProvider
-
+  class TestDocumentIdGenerator(override protected val documentSetId: Long) extends DocumentIdGenerator
 }

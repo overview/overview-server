@@ -5,7 +5,7 @@ import scala.concurrent.Future
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.Pages
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 
 /**
  *  Delete pages and the data they refer to

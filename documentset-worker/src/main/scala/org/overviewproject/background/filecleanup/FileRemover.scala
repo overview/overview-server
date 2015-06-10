@@ -5,7 +5,7 @@ import scala.concurrent.Future
 
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.Files
-import org.overviewproject.database.{HasDatabase, DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 
 /**
  * Delete the file, associated data, including pages.
@@ -52,11 +52,11 @@ trait FileRemover extends HasDatabase {
 object FileRemover {
   def apply(): FileRemover = new FileRemoverImpl
   
-  private class PageRemoverImpl extends PageRemover with DatabaseProvider {
+  private class PageRemoverImpl extends PageRemover {
     override protected val blobStorage = BlobStorage
   }
   
-  private class FileRemoverImpl extends FileRemover with DatabaseProvider {
+  private class FileRemoverImpl extends FileRemover {
     override protected val blobStorage = BlobStorage
     override protected val pageRemover = new PageRemoverImpl
   }

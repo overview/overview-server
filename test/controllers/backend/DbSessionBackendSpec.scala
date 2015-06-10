@@ -11,7 +11,7 @@ class DbSessionBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
     import databaseApi._
 
-    val backend = new DbSessionBackend with org.overviewproject.database.DatabaseProvider {
+    val backend = new DbSessionBackend {
       override val MaxSessionAgeInMs = 1000L
       override protected def minCreatedAt = new Timestamp(1000000000000L)
     }

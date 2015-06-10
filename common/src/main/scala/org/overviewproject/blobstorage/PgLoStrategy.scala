@@ -5,7 +5,7 @@ import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.{HasDatabase,DatabaseProvider,LargeObject}
+import org.overviewproject.database.{HasDatabase,LargeObject}
 
 trait PgLoStrategy extends BlobStorageStrategy with HasDatabase {
   import databaseApi._
@@ -142,4 +142,4 @@ trait PgLoStrategy extends BlobStorageStrategy with HasDatabase {
   }
 }
 
-object PgLoStrategy extends PgLoStrategy with DatabaseProvider
+object PgLoStrategy extends PgLoStrategy

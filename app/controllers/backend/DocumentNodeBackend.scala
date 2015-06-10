@@ -72,4 +72,4 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend with DbBackend {
   }
 }
 
-object DocumentNodeBackend extends DbDocumentNodeBackend with org.overviewproject.database.DatabaseProvider
+object DocumentNodeBackend extends DbDocumentNodeBackend

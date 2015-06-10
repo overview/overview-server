@@ -119,6 +119,4 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend with DbBackend
   }
 }
 
-object GroupedFileUploadBackend
-  extends DbGroupedFileUploadBackend
-  with org.overviewproject.database.DatabaseProvider
+object GroupedFileUploadBackend extends DbGroupedFileUploadBackend

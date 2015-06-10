@@ -2,12 +2,12 @@ package org.overviewproject.util
 
 import org.overviewproject.test.DbSpecification
 
-import org.overviewproject.database.{BlockingDatabaseProvider,DatabaseProvider}
+import org.overviewproject.database.HasBlockingDatabase
 
 class SortedDocumentIdsRefresherSpec extends DbSpecification {
   "#refreshDocumentSet" should {
     trait RefreshScope extends DbScope {
-      val refresher = new SortedDocumentIdsRefresher with DatabaseProvider
+      val refresher = SortedDocumentIdsRefresher
       val db = new DbMethods
 
       def refresh(documentSetId: Long): Unit = await(refresher.refreshDocumentSet(documentSetId))
@@ -58,8 +58,8 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     }
   }
 
-  class DbMethods extends BlockingDatabaseProvider {
-    import blockingDatabaseApi._
+  class DbMethods extends HasBlockingDatabase {
+    import databaseApi._
     import org.overviewproject.models.tables.{Documents,DocumentSets}
     import org.overviewproject.models.{Document,DocumentSet}
     import slick.jdbc.GetResult

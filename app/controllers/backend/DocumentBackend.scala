@@ -6,7 +6,6 @@ import slick.jdbc.{GetResult,StaticQuery}
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
-import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
 import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
 import org.overviewproject.query.{Query=>SearchQuery}
@@ -236,6 +235,6 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
   }
 }
 
-object DocumentBackend extends DbDocumentBackend with DatabaseProvider {
+object DocumentBackend extends DbDocumentBackend {
   override protected val indexClient = org.overviewproject.searchindex.TransportIndexClient.singleton
 }

@@ -3,7 +3,7 @@ package org.overviewproject.background.filegroupcleanup
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.tables.FileGroups
 
 /** 
@@ -20,5 +20,5 @@ trait DeletedFileGroupFinder extends HasDatabase {
 object DeletedFileGroupFinder {
   def apply(): DeletedFileGroupFinder = new DeletedFileGroupFinderImpl
   
-  private class DeletedFileGroupFinderImpl extends DeletedFileGroupFinder with DatabaseProvider
+  private class DeletedFileGroupFinderImpl extends DeletedFileGroupFinder
 }

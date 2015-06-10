@@ -2,7 +2,7 @@ package org.overviewproject.util
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 
 trait SortedDocumentIdsRefresher extends HasDatabase {
   import databaseApi._
@@ -18,4 +18,4 @@ trait SortedDocumentIdsRefresher extends HasDatabase {
   """)
 }
 
-object SortedDocumentIdsRefresher extends SortedDocumentIdsRefresher with DatabaseProvider
+object SortedDocumentIdsRefresher extends SortedDocumentIdsRefresher

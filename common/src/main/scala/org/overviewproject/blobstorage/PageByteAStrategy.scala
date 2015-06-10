@@ -1,12 +1,12 @@
 package org.overviewproject.blobstorage
 
-import java.io.InputStream
+import java.io.{ByteArrayInputStream,InputStream}
 import play.api.libs.iteratee.Enumerator
-import scala.concurrent.{ Future, blocking }
-import org.overviewproject.models.tables.Pages
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
-import java.io.ByteArrayInputStream
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
+import org.overviewproject.database.HasDatabase
+import org.overviewproject.models.tables.Pages
 
 trait PageByteAStrategy extends BlobStorageStrategy with HasDatabase {
   import databaseApi._
@@ -42,4 +42,4 @@ trait PageByteAStrategy extends BlobStorageStrategy with HasDatabase {
 
 }
 
-object PageByteAStrategy extends PageByteAStrategy with DatabaseProvider
+object PageByteAStrategy extends PageByteAStrategy

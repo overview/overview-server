@@ -5,11 +5,9 @@ import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
-import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.tables._
 import org.overviewproject.models._
-
-
 
 /** Creates objects in the database while returning them.
   *
@@ -18,8 +16,8 @@ import org.overviewproject.models._
   *
   * @see Factory
   */
-object DbFactory extends Factory with BlockingDatabaseProvider {
-  import blockingDatabaseApi._
+object DbFactory extends Factory with HasBlockingDatabase {
+  import databaseApi._
 
   private val podoFactory = PodoFactory
 

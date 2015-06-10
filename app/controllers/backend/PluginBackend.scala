@@ -67,4 +67,4 @@ trait DbPluginBackend extends PluginBackend with DbBackend {
   }
 }
 
-object PluginBackend extends DbPluginBackend with org.overviewproject.database.DatabaseProvider
+object PluginBackend extends DbPluginBackend

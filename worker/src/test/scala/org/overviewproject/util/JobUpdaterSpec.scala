@@ -30,7 +30,7 @@ class JobUpdaterSpec extends DbSpecification {
   }
 
   trait JobScope extends DbScope {
-    val updater = new JobUpdater with org.overviewproject.database.DatabaseProvider {}
+    val updater = JobUpdater
 
     val documentSet = factory.documentSet()
     def jobState = InProgress

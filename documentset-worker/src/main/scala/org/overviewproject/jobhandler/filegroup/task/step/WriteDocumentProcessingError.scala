@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.tables.DocumentProcessingErrors
 
 trait WriteDocumentProcessingError extends HasDatabase {
@@ -17,10 +17,4 @@ trait WriteDocumentProcessingError extends HasDatabase {
   }
 }
 
-object WriteDocumentProcessingError {
-  private val writer: WriteDocumentProcessingError = new WriteDocumentProcessingError with DatabaseProvider
-  
-  def apply(documentSetId: Long, filename: String, message: String): Future[Unit] = {
-    writer.write(documentSetId, filename, message)
-  }
-}
+object WriteDocumentProcessingError extends WriteDocumentProcessingError

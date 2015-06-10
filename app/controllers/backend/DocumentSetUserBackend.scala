@@ -70,6 +70,4 @@ trait DbDocumentSetUserBackend extends DocumentSetUserBackend with DbBackend {
   }
 }
 
-object DocumentSetUserBackend
-  extends DbDocumentSetUserBackend
-  with org.overviewproject.database.DatabaseProvider
+object DocumentSetUserBackend extends DbDocumentSetUserBackend

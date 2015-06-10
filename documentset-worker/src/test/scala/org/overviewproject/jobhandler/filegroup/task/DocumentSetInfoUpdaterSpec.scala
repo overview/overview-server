@@ -4,7 +4,7 @@ import java.util.Date
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
 
-import org.overviewproject.database.DatabaseProvider
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.Document
 import org.overviewproject.models.tables.DocumentSets
 import org.overviewproject.test.DbSpecification
@@ -46,7 +46,7 @@ class DocumentSetInfoUpdaterSpec extends DbSpecification with Mockito {
       documents.map(bulkWriter.addAndFlushIfNeeded)
     }
 
-    class TestDocumentSetInfoUpdater extends DocumentSetInfoUpdater with DatabaseProvider {
+    class TestDocumentSetInfoUpdater extends DocumentSetInfoUpdater with HasDatabase {
       override protected val bulkDocumentWriter = smartMock[BulkDocumentWriter]
       bulkDocumentWriter.flush returns Future.successful(())
 

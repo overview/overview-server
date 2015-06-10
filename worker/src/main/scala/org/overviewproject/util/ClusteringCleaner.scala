@@ -44,3 +44,5 @@ trait ClusteringCleaner extends JobUpdater with HasDatabase {
     } yield ())
   }
 }
+
+object ClusteringCleaner extends ClusteringCleaner

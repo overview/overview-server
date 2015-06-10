@@ -34,8 +34,6 @@ trait DocumentSetCreationJobDeleter extends HasDatabase {
   protected val blobStorage: BlobStorage
 }
 
-object DocumentSetCreationJobDeleter {
-  def apply(): DocumentSetCreationJobDeleter = new DocumentSetCreationJobDeleter with DatabaseProvider {
-    override protected val blobStorage = BlobStorage
-  }
+object DocumentSetCreationJobDeleter extends DocumentSetCreationJobDeleter {
+  override protected val blobStorage = BlobStorage
 }

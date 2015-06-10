@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.{HasDatabase,BlockingDatabase,DatabaseProvider}
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.{ File, GroupedFileUpload, TempDocumentSetFile }
 import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.postgres.LargeObjectInputStream
@@ -15,7 +15,7 @@ import org.overviewproject.postgres.LargeObjectInputStream
 /**
  * Create a [[File]] with PDF content
  */
-trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with HasDatabase {
+trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with HasBlockingDatabase {
   import databaseApi._
 
   protected val uploadedFile: GroupedFileUpload
@@ -71,9 +71,8 @@ object CreatePdfFile {
     override protected val filename: String,
     override protected val uploadedFile: GroupedFileUpload,
     override protected val nextStep: File => TaskStep
-  ) extends CreatePdfFile with DatabaseProvider {
+  ) extends CreatePdfFile {
     override protected val blobStorage = BlobStorage
-    override protected def largeObjectInputStream(oid: Long) =
-      new LargeObjectInputStream(oid, new BlockingDatabase(database))
+    override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
   }
 }

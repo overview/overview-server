@@ -4,7 +4,7 @@ import models.archive.{FileViewInfo,PageViewInfo,TextViewInfo}
 
 class DbDocumentFileInfoBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbDocumentFileInfoBackend with org.overviewproject.database.DatabaseProvider
+    val backend = new DbDocumentFileInfoBackend {}
     val filename = "filename"
     val documentSet = factory.documentSet()
   }

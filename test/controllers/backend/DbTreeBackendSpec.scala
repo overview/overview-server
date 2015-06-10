@@ -7,7 +7,7 @@ class DbTreeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
     import databaseApi._
 
-    val backend = new DbTreeBackend with org.overviewproject.database.DatabaseProvider
+    val backend = new DbTreeBackend {}
 
     def findTree(id: Long) = {
       blockingDatabase.option(Trees.filter(_.id === id))

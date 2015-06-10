@@ -79,4 +79,4 @@ trait DbTagBackend extends TagBackend with DbBackend {
   }
 }
 
-object TagBackend extends DbTagBackend with org.overviewproject.database.DatabaseProvider
+object TagBackend extends DbTagBackend

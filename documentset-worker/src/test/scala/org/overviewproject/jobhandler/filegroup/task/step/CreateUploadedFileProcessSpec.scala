@@ -41,8 +41,7 @@ class CreateUploadedFileProcessSpec extends DbSpecification with Mockito {
     class TestCreateUploadedFileProcess(
       override protected val documentSetId: Long,
       override protected val uploadedFile: GroupedFileUpload
-    ) extends CreateUploadedFileProcess { //with org.overviewproject.database.DatabaseProvider {
-
+    ) extends CreateUploadedFileProcess {
       override protected val documentIdSupplier = idSupplier
       override protected val options = mockOptions
       override protected val uploadedFileProcessCreator = processCreator

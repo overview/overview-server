@@ -8,7 +8,7 @@ import org.overviewproject.models.tables.ApiTokens
 
 class DbApiTokenBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbApiTokenBackend with org.overviewproject.database.DatabaseProvider
+    val backend = new DbApiTokenBackend {}
 
     def findApiToken(token: String) = {
       import databaseApi._

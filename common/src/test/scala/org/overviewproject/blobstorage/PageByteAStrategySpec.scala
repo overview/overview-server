@@ -3,7 +3,6 @@ package org.overviewproject.blobstorage
 import java.io.ByteArrayInputStream
 import scala.concurrent.Future
 
-import org.overviewproject.database.BlockingDatabaseProvider
 import org.overviewproject.models.{File,Page}
 import org.overviewproject.models.tables.{Files,Pages}
 import org.overviewproject.test.DbSpecification
@@ -11,6 +10,32 @@ import org.overviewproject.test.DbSpecification
 class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
   trait BaseScope extends DbScope {
     val strategy = PageByteAStrategy
+
+    object Db {
+      import databaseApi._
+
+      private val fileInserter = {
+        val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)
+        (q returning Files)
+      }
+
+      private val pageInserter = {
+        val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.data, p.dataSize)
+        (q returning Pages)
+      }
+
+      def insertFile: File = {
+        blockingDatabase.run(fileInserter.+=(1, "name", "location", 10L, "location", 10L))
+      }
+
+      def insertPage(fileId: Long, data: Option[Array[Byte]], length: Long): Page = {
+        blockingDatabase.run(pageInserter.+=(fileId, 1, data, length))
+      }
+
+      def getPage(id: Long): Option[Page] = {
+        blockingDatabase.option(Pages.filter(_.id === id))
+      }
+    }
   }
 
   "#get" should {
@@ -55,32 +80,6 @@ class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
     "throw NotImplementedError" in new BaseScope { 
       val contentStream = new ByteArrayInputStream("blah".getBytes("utf-8"))
       strategy.create("pagebytea", contentStream, 4) must throwA[NotImplementedError]
-    }
-  }
-
-  object Db extends BlockingDatabaseProvider {
-    import blockingDatabaseApi._
-
-    private val fileInserter = {
-      val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)
-      (q returning Files)
-    }
-
-    private val pageInserter = {
-      val q = for (p <- Pages) yield (p.fileId, p.pageNumber, p.data, p.dataSize)
-      (q returning Pages)
-    }
-
-    def insertFile: File = {
-      blockingDatabase.run(fileInserter.+=(1, "name", "location", 10L, "location", 10L))
-    }
-
-    def insertPage(fileId: Long, data: Option[Array[Byte]], length: Long): Page = {
-      blockingDatabase.run(pageInserter.+=(fileId, 1, data, length))
-    }
-
-    def getPage(id: Long): Option[Page] = {
-      blockingDatabase.option(Pages.filter(_.id === id))
     }
   }
 }

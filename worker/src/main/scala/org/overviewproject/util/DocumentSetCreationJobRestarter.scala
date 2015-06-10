@@ -31,7 +31,6 @@ object DocumentSetCreationJobRestarter {
 
     import scala.concurrent.{ Await, Future }
     import scala.concurrent.duration.Duration
-    import org.overviewproject.database.DatabaseProvider
 
     override protected val storage = new DbSyncedStorage
 
@@ -39,7 +38,7 @@ object DocumentSetCreationJobRestarter {
       private def await[A](block: => Future[A]): A =
         Await.result(block, Duration.Inf)
 
-      private val cleaner = new DocumentSetCleaner with DatabaseProvider
+      private val cleaner = DocumentSetCleaner
 
       override def updateValidJob(job: DocumentSetCreationJob): Unit =
         await(cleaner.updateValidJob(job))

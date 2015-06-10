@@ -4,7 +4,7 @@ import org.overviewproject.models.File
 
 class DbFileBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbFileBackend with org.overviewproject.database.DatabaseProvider
+    val backend = new DbFileBackend {}
   }
 
   "#show" should {

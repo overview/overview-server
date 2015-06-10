@@ -1,6 +1,5 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.tables.DocumentProcessingErrors
 import org.overviewproject.test.DbSpecification
 
@@ -23,10 +22,6 @@ class WriteDocumentProcessingErrorSpec extends DbSpecification {
 
     val documentSet = factory.documentSet()
 
-    val errorWriter = new TestWriteDocumentProcessingError
-
-    class TestWriteDocumentProcessingError
-      extends WriteDocumentProcessingError with DatabaseProvider
-
+    val errorWriter = new WriteDocumentProcessingError {}
   }
 }

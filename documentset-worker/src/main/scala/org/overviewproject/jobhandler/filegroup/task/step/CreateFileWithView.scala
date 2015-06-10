@@ -9,7 +9,7 @@ import scala.util.control.Exception.ultimately
 
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.{HasDatabase,BlockingDatabase,DatabaseProvider}
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.jobhandler.filegroup.task.DocumentConverter
 import org.overviewproject.jobhandler.filegroup.task.LibreOfficeDocumentConverter
 import org.overviewproject.models.File
@@ -23,7 +23,7 @@ import org.overviewproject.postgres.LargeObjectInputStream
 /**
  * Creates a view by converting the [[GroupedFileUpload] contents to PDF
  */
-trait CreateFileWithView extends UploadedFileProcessStep with LargeObjectMover with HasDatabase {
+trait CreateFileWithView extends UploadedFileProcessStep with LargeObjectMover with HasBlockingDatabase {
   import databaseApi._
 
   protected val documentSetId: Long
@@ -82,12 +82,10 @@ object CreateFileWithView {
     override protected val documentSetId: Long,
     override protected val uploadedFile: GroupedFileUpload,
     override protected val nextStep: File => TaskStep
-  ) extends CreateFileWithView with DatabaseProvider {
+  ) extends CreateFileWithView {
     override protected val converter = LibreOfficeDocumentConverter
     override protected val blobStorage = BlobStorage
 
-    override protected def largeObjectInputStream(oid: Long) =
-      new LargeObjectInputStream(oid, new BlockingDatabase(database))
+    override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
   }
-
 }

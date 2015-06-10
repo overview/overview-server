@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.tables.{Documents,DocumentProcessingErrors}
 import org.overviewproject.models.tables.DocumentSets
 import org.overviewproject.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
@@ -49,5 +49,5 @@ object DocumentSetInfoUpdater {
     new DocumentSetInfoUpdaterImpl(bulkDocumentWriter)
 
   private class DocumentSetInfoUpdaterImpl(override protected val bulkDocumentWriter: BulkDocumentWriter)
-    extends DocumentSetInfoUpdater with DatabaseProvider
+    extends DocumentSetInfoUpdater
 }

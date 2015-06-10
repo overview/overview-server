@@ -8,7 +8,7 @@ import scala.util.control.Exception.ultimately
 
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.overviewproject.models.Page
 import org.overviewproject.models.tables.Pages
@@ -61,7 +61,7 @@ trait PageSaver extends HasDatabase {
   }
 }
 
-object PageSaver extends PageSaver with DatabaseProvider {
+object PageSaver extends PageSaver {
   override protected val pageBlobSaver: PageBlobSaver = new TempFilePageBlobSaver
 
   private class TempFilePageBlobSaver extends PageBlobSaver {

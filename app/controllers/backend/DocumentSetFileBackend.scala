@@ -25,6 +25,4 @@ trait DbDocumentSetFileBackend extends DocumentSetFileBackend with DbBackend {
   }
 }
 
-object DocumentSetFileBackend
-  extends DbDocumentSetFileBackend
-  with org.overviewproject.database.DatabaseProvider
+object DocumentSetFileBackend extends DbDocumentSetFileBackend

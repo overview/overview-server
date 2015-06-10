@@ -45,8 +45,8 @@ class TempFileDeleterSpec extends DbSpecification {
 
     files.foreach(f => factory.tempDocumentSetFile(documentSetId, f.id))
     factory.tempDocumentSetFile(otherDocumentSetId, 234l)
-    
-    val tempFileDeleter = new TempFileDeleter with DatabaseProvider
+
+    val tempFileDeleter = TempFileDeleter
   }
   
   trait InterruptedDeletionScope extends TempFileScope {

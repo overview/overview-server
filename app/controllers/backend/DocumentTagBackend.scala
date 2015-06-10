@@ -32,4 +32,4 @@ trait DbDocumentTagBackend extends DocumentTagBackend with DbBackend {
   }
 }
 
-object DocumentTagBackend extends DbDocumentTagBackend with org.overviewproject.database.DatabaseProvider
+object DocumentTagBackend extends DbDocumentTagBackend

@@ -10,7 +10,7 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.{Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.database.{DeprecatedDatabase,BlockingDatabaseProvider}
+import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
 import org.overviewproject.models.{Document,DocumentTag,Tag}
 import org.overviewproject.models.tables.{Documents,DocumentTags,Tags}
 import org.overviewproject.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
@@ -31,7 +31,7 @@ class CsvImportDocumentProducer(
 )
   extends DocumentProducer
   with PersistentDocumentSet
-  with BlockingDatabaseProvider
+  with HasBlockingDatabase
 {
   private val FetchingFraction = 1.0
   private var bytesRead = 0l
@@ -90,7 +90,7 @@ class CsvImportDocumentProducer(
   }
 
   private def flushTagDocumentIds: Unit = {
-    import blockingDatabaseApi._
+    import databaseApi._
 
     val tagInserter = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags)
     val tagsToInsert: Iterable[(Long,String,String)] = tagDocumentIds.keys

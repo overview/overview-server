@@ -1,7 +1,6 @@
 package org.overviewproject.background.filecleanup
 
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.database.DatabaseProvider
 
 /** Find [[File]] ids where `referenceCount == 0` */
 class DeletedFileFinderSpec extends DbSpecification {
@@ -21,6 +20,6 @@ class DeletedFileFinderSpec extends DbSpecification {
     val numberOfFiles = 2
     val existingFiles = Seq.fill(numberOfFiles)(factory.file(referenceCount = 1))
     
-    val deletedFileFinder = new DeletedFileFinder with DatabaseProvider
+    val deletedFileFinder = DeletedFileFinder
   }
 }

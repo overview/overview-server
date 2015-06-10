@@ -76,4 +76,4 @@ trait DbViewBackend extends ViewBackend with DbBackend {
   protected val inserter = (Views.map((v) => (v.documentSetId, v.createAttributes)) returning Views)
 }
 
-object ViewBackend extends DbViewBackend with org.overviewproject.database.DatabaseProvider
+object ViewBackend extends DbViewBackend

@@ -10,6 +10,7 @@ import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetStore
 import models.OverviewDatabase
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.DocumentSet
 import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.Delete
@@ -243,12 +244,12 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     def send(cancelFileUploadCommand: CancelFileUpload): Unit
   }
 
-  object DatabaseStorage extends Storage with DocumentSetDeletionStorage with org.overviewproject.database.BlockingDatabaseProvider {
+  object DatabaseStorage extends Storage with DocumentSetDeletionStorage with HasBlockingDatabase {
     override def findNViewsByDocumentSets(documentSetIds: Seq[Long]) = {
       if (documentSetIds.isEmpty) {
         Seq()
       } else {
-        import blockingDatabaseApi._
+        import databaseApi._
         import slick.jdbc.GetResult
 
         // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries

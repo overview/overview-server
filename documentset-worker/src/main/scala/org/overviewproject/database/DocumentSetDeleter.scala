@@ -110,6 +110,4 @@ trait DocumentSetDeleter extends HasDatabase {
   }
 }
 
-object DocumentSetDeleter {
-  def apply(): DocumentSetDeleter = new DocumentSetDeleter with DatabaseProvider 
-}
+object DocumentSetDeleter extends DocumentSetDeleter

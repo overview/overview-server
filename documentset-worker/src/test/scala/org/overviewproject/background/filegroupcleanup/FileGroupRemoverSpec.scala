@@ -43,8 +43,7 @@ class FileGroupRemoverSpec extends DbSpecification with Mockito {
   }
 
   class TestFileGroupRemover(remover: GroupedFileUploadRemover, storage: BlobStorage)
-      extends FileGroupRemover
-      with org.overviewproject.database.DatabaseProvider {
+      extends FileGroupRemover {
     override protected val groupedFileUploadRemover = remover
     override protected val blobStorage = storage
   }

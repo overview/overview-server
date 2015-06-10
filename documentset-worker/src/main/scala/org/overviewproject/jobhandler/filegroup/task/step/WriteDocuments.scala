@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.DatabaseProvider
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.Document
 import org.overviewproject.models.TempDocumentSetFile
 import org.overviewproject.util.BulkDocumentWriter
@@ -65,7 +65,7 @@ object WriteDocuments {
 
     override protected val storage: Storage = new SlickStorage
 
-    private class SlickStorage extends Storage with DatabaseProvider {
+    private class SlickStorage extends Storage with HasDatabase {
       import databaseApi._
       import org.overviewproject.models.tables.TempDocumentSetFiles
 

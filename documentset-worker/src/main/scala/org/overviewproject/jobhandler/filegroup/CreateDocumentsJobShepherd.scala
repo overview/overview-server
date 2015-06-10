@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor.ActorRef
 import scala.concurrent.Future
 
-import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.JobDescription._
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
@@ -107,8 +107,8 @@ object CreateDocumentsJobShepherd {
 
     override protected val storage = new DatabaseStorage
 
-    protected class DatabaseStorage extends Storage with BlockingDatabaseProvider {
-      import blockingDatabaseApi._
+    protected class DatabaseStorage extends Storage with HasBlockingDatabase {
+      import databaseApi._
       import org.overviewproject.models.tables.GroupedFileUploads
 
       override def uploadedFileIds(fileGroupId: Long): Set[Long] = {

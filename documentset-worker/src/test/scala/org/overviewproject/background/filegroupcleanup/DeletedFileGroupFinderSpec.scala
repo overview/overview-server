@@ -17,8 +17,6 @@ class DeletedFileGroupFinderSpec extends DbSpecification {
     val deletedFileGroups = Seq.fill(2)(factory.fileGroup(deleted = true))
     val otherFileGroups = Seq.fill(2)(factory.fileGroup(deleted = false))
     
-    val deletedFileGroupFinder = new TestDeletedFileGroupFinder
+    val deletedFileGroupFinder = DeletedFileGroupFinder()
   }
-
-  class TestDeletedFileGroupFinder extends DeletedFileGroupFinder with org.overviewproject.database.DatabaseProvider
 }

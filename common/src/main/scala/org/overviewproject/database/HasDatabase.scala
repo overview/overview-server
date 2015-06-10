@@ -5,20 +5,18 @@ package org.overviewproject.database
   * Users can use dependency injection like this:
   *
   * ```
-  * trait ThingLister extends HasDatabase {
+  * object ThingLister extends HasDatabase {
   *   import databaseApi._
   *   import org.overviewproject.models.Thing
   *   import org.overviewproject.models.tables.Things
   *
   *   def things: Future[Seq[Thing]] = database.seq(Things)
   * }
-  *
-  * object ThingLister extends ThingLister with DatabaseProvider
   * ```
   */
 trait HasDatabase {
   /** The database. */
-  protected val database: Database
+  protected lazy val database: Database = new Database(DB.getDataSource)
 
   /** Exposes the Slick Database API. */
   protected val databaseApi = org.overviewproject.database.Slick.api

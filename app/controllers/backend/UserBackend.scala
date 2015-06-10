@@ -111,4 +111,4 @@ trait DbUserBackend extends UserBackend with DbBackend {
   }
 }
 
-object UserBackend extends DbUserBackend with org.overviewproject.database.DatabaseProvider
+object UserBackend extends DbUserBackend

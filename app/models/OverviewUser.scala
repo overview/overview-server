@@ -12,7 +12,7 @@ import java.sql.Timestamp
 import java.util.Date
 
 import models.tables.Users
-import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.UserRole
 
 /**
@@ -145,8 +145,8 @@ object PotentialNewUser {
 /**
  * Helpers to get new or existing OverviewUsers
  */
-object OverviewUser extends BlockingDatabaseProvider {
-  import blockingDatabaseApi._
+object OverviewUser extends HasBlockingDatabase {
+  import databaseApi._
 
   private val TokenLength = 26
   val BcryptRounds = 7

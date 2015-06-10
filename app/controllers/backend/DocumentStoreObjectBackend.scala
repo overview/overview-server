@@ -192,6 +192,4 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend with DbBac
   }
 }
 
-object DocumentStoreObjectBackend
-  extends DbDocumentStoreObjectBackend
-  with org.overviewproject.database.DatabaseProvider
+object DocumentStoreObjectBackend extends DbDocumentStoreObjectBackend

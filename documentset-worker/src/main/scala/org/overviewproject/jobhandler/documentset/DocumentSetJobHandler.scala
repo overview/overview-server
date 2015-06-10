@@ -117,8 +117,8 @@ trait SearchComponentImpl extends SearchComponent {
   class ActorCreatorImpl extends ActorCreator {
     override def produceDeleteHandler(pathToFileRemovalQueue: String): Actor = new DeleteHandler {
       override val searchIndexClient = ElasticSearchClient.client
-      override val documentSetDeleter = DocumentSetDeleter()
-      override val jobDeleter = DocumentSetCreationJobDeleter()
+      override val documentSetDeleter = DocumentSetDeleter
+      override val jobDeleter = DocumentSetCreationJobDeleter
       override val jobStatusChecker = JobStatusChecker()
       
       override protected val fileRemovalQueuePath: String = pathToFileRemovalQueue

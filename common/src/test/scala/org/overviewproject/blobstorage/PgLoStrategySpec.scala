@@ -5,7 +5,7 @@ import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Iteratee
 import scala.util.{Failure,Success}
 
-import org.overviewproject.database.{DatabaseProvider,LargeObject}
+import org.overviewproject.database.{LargeObject}
 import org.overviewproject.test.DbSpecification
 
 class PgLoStrategySpec extends DbSpecification with StrategySpecification {
@@ -16,7 +16,7 @@ class PgLoStrategySpec extends DbSpecification with StrategySpecification {
 
     // Each test runs in a transaction. Make sure the _code_ uses the same
     // connection, even though it's in a Future.
-    object TestStrategy extends PgLoStrategy with DatabaseProvider {
+    object TestStrategy extends PgLoStrategy {
       override protected val BufferSize = 10 // to prove we paginate
       override protected val DeleteManyChunkSize = 2
     }

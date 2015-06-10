@@ -23,3 +23,5 @@ trait JobUpdater extends HasDatabase {
     """)
   }
 }
+
+object JobUpdater extends JobUpdater

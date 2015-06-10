@@ -57,10 +57,10 @@ object DeleteFileUploadTaskStep {
     override protected val fileGroupId: Long,
     override protected val nextStep: TaskStep) extends DeleteFileUploadTaskStep {
 
-    override protected val jobDeleter = DocumentSetCreationJobDeleter()
-    override protected val documentSetDeleter = DocumentSetDeleter()
-    override protected val fileGroupDeleter = FileGroupDeleter()
-    override protected val tempFileDeleter = TempFileDeleter()
+    override protected val jobDeleter = DocumentSetCreationJobDeleter
+    override protected val documentSetDeleter = DocumentSetDeleter
+    override protected val fileGroupDeleter = FileGroupDeleter
+    override protected val tempFileDeleter = TempFileDeleter
 
   }
 }

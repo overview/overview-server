@@ -3,7 +3,7 @@ package org.overviewproject.background.filegroupcleanup
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.tables.GroupedFileUploads
 
@@ -44,7 +44,7 @@ trait GroupedFileUploadRemover extends HasDatabase {
 object GroupedFileUploadRemover {
   def apply(): GroupedFileUploadRemover = new GroupedFileUploadRemoverImpl
 
-  private class GroupedFileUploadRemoverImpl extends GroupedFileUploadRemover with DatabaseProvider {
+  private class GroupedFileUploadRemoverImpl extends GroupedFileUploadRemover {
     override protected val blobStorage = BlobStorage
   }
 }

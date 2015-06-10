@@ -11,7 +11,7 @@ import scala.concurrent.{Await,Future}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider}
+import org.overviewproject.database.{DB,DataSource,DatabaseConfiguration,HasBlockingDatabase}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
 import org.overviewproject.test.factories.DbFactory
@@ -80,14 +80,13 @@ class DbSpecification extends Specification {
     * transaction</em>. When you first use the connection, a transaction will
     * begin; when your test finishes, the transaction will be rolled back.
     */
-  trait DbScope extends After with DatabaseProvider with BlockingDatabaseProvider {
+  trait DbScope extends After with HasBlockingDatabase {
     val connection: Connection = DB.getConnection()
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
     val factory = DbFactory
 
     def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
 
-    System.setProperty(DatabaseProperty, TestDatabase) // just in case
     clearDb(connection) // *not* in a before block: that's too late
     override def after = connection.close()
 
@@ -136,14 +135,12 @@ class DbSpecification extends Specification {
     """, connection)
   }
 
-  def setupDb() {
+  private lazy val ensureConnected = {
     System.setProperty(DatabaseProperty, TestDatabase)
     val dataSource = DataSource(DatabaseConfiguration.fromConfig)
     DB.connect(dataSource)
   }
 
-  def shutdownDb() {
-    DB.close()
-  }
-
+  def setupDb() { ensureConnected }
+  def shutdownDb() { /* nothing -- we want to reuse the same connection */ }
 }

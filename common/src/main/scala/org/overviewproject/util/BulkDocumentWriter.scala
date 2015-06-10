@@ -2,17 +2,14 @@ package org.overviewproject.util
 
 import java.io.{ByteArrayInputStream,ByteArrayOutputStream,DataOutputStream}
 import org.postgresql.PGConnection
-import org.postgresql.copy.CopyManager
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.{Database,DatabaseProvider}
+import org.overviewproject.database.{Database,HasDatabase}
 import org.overviewproject.models.Document
 import org.overviewproject.models.tables.Documents
 import org.overviewproject.searchindex.TransportIndexClient
-
 
 /** Writes documents to the database and/or search index in bulk.
   *
@@ -178,7 +175,7 @@ trait BulkDocumentWriter {
   }
 }
 
-object BulkDocumentWriter extends DatabaseProvider {
+object BulkDocumentWriter extends HasDatabase {
   import databaseApi._
 
   def forDatabaseAndSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {

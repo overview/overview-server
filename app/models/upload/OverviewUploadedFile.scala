@@ -4,7 +4,7 @@ import java.net.URLDecoder
 import java.sql.Timestamp
 import scala.util.control.Exception._
 
-import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.UploadedFile
 import org.overviewproject.models.tables.UploadedFiles
 import org.overviewproject.util.ContentDisposition
@@ -26,7 +26,7 @@ trait OverviewUploadedFile {
   def delete
 }
 
-object OverviewUploadedFile extends BlockingDatabaseProvider {
+object OverviewUploadedFile extends HasBlockingDatabase {
   import org.overviewproject.database.Slick.api._
 
   lazy val updater = Compiled { (id: Rep[Long]) =>

@@ -8,10 +8,10 @@ import org.overviewproject.models.tables.GroupedFileUploads
 
 class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbGroupedFileUploadBackend with org.overviewproject.database.DatabaseProvider
+    val backend = new DbGroupedFileUploadBackend {}
 
     def findGroupedFileUpload(id: Long): Option[GroupedFileUpload] = {
-      import blockingDatabaseApi._
+      import databaseApi._
       blockingDatabase.option(GroupedFileUploads.filter(_.id === id))
     }
   }

@@ -41,6 +41,4 @@ trait TempFileDeleter extends HasDatabase {
   }
 }
 
-object TempFileDeleter {
-  def apply(): TempFileDeleter = new TempFileDeleter with DatabaseProvider
-}
+object TempFileDeleter extends TempFileDeleter

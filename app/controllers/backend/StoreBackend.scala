@@ -109,4 +109,4 @@ trait DbStoreBackend extends StoreBackend with DbBackend {
   }
 }
 
-object StoreBackend extends DbStoreBackend with org.overviewproject.database.DatabaseProvider
+object StoreBackend extends DbStoreBackend

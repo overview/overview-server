@@ -2,7 +2,6 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.ApiToken
 import org.overviewproject.models.tables.ApiTokens
 
@@ -60,4 +59,4 @@ trait DbApiTokenBackend extends ApiTokenBackend with DbBackend {
   override def destroy(token: String) = database.delete(byTokenCompiled(token))
 }
 
-object ApiTokenBackend extends DbApiTokenBackend with DatabaseProvider
+object ApiTokenBackend extends DbApiTokenBackend

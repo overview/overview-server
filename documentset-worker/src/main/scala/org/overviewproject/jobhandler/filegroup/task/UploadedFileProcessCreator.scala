@@ -4,7 +4,7 @@ import akka.actor.ActorRef
 import java.io.InputStream
 import scala.util.control.Exception.ultimately
 
-import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
@@ -49,7 +49,7 @@ trait UploadedFileProcessCreator {
 
 }
 
-object UploadedFileProcessCreator extends BlockingDatabaseProvider {
+object UploadedFileProcessCreator extends HasBlockingDatabase {
 
   def apply(bulkDocumentWriter: BulkDocumentWriter): UploadedFileProcessCreator = 
     new UploadedFileProcessCreatorImpl(bulkDocumentWriter)

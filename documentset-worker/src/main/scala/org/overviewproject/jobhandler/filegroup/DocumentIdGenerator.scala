@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.database.{HasBlockingDatabase,BlockingDatabaseProvider}
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.tables.Documents
 
 /**
@@ -33,7 +33,7 @@ trait DocumentIdGenerator extends HasBlockingDatabase {
   // The assumption, by the way, is that there is only one DocumentIdGenerator
   // anywhere.
   private def findMaxDocumentId: Long = blockingDatabase.run {
-    import blockingDatabaseApi._
+    import databaseApi._
     Documents
       .filter(_.documentSetId === documentSetId)
       .map(_.id).max
@@ -45,6 +45,5 @@ trait DocumentIdGenerator extends HasBlockingDatabase {
 object DocumentIdGenerator {
   def apply(documentSetId: Long): DocumentIdGenerator = new DocumentIdGeneratorImpl(documentSetId)
 
-  private class DocumentIdGeneratorImpl(override protected val documentSetId: Long)
-    extends DocumentIdGenerator with BlockingDatabaseProvider
+  private class DocumentIdGeneratorImpl(override protected val documentSetId: Long) extends DocumentIdGenerator
 }

@@ -4,7 +4,7 @@ import models.{InMemorySelection,Selection,SelectionRequest}
 
 class DbDocumentNodeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbDocumentNodeBackend with org.overviewproject.database.DatabaseProvider
+    val backend = new DbDocumentNodeBackend {}
   }
 
   "DbDocumentNodeBackend" should {

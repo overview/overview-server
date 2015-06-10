@@ -81,6 +81,5 @@ class FileRemoverSpec extends DbSpecification with Mockito with NoTimeConversion
 
   }
 
-  class TestFileRemover(val blobStorage: BlobStorage, val pageRemover: PageRemover)
-    extends FileRemover with org.overviewproject.database.DatabaseProvider
+  class TestFileRemover(val blobStorage: BlobStorage, val pageRemover: PageRemover) extends FileRemover
 }

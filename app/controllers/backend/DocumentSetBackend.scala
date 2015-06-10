@@ -2,7 +2,6 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 import org.overviewproject.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
 
@@ -72,4 +71,4 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
   }
 }
 
-object DocumentSetBackend extends DbDocumentSetBackend with DatabaseProvider
+object DocumentSetBackend extends DbDocumentSetBackend

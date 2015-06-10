@@ -2,7 +2,7 @@ package org.overviewproject.util
 
 import org.overviewproject.models.DocumentSetCreationJob
 import org.overviewproject.models.DocumentSetCreationJobState._
-import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.searchindex.TransportIndexClient
 
 trait JobRestarter {
@@ -30,12 +30,12 @@ trait JobRestarter {
   }
 }
 
-object JobRestarter extends BlockingDatabaseProvider {
+object JobRestarter extends HasBlockingDatabase {
   import scala.concurrent.ExecutionContext.Implicits.global
   import org.overviewproject.models.DocumentSetCreationJobType._
   import org.overviewproject.models.tables.DocumentSetCreationJobs
 
-  import blockingDatabaseApi._
+  import databaseApi._
 
   def restartInterruptedJobs: Unit = {
     interruptedJobs.flatMap(createRestarter).map(_.restart)

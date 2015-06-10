@@ -6,7 +6,7 @@ import slick.jdbc.JdbcBackend.Session
 import slick.lifted.{ConstColumn,Query,RunnableCompiled}
 
 import models.{OverviewDatabase,User}
-import org.overviewproject.database.{Database,DatabaseProvider,HasDatabase}
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.{ApiToken,UserRole}
 
 trait Authorities extends HasDatabase {
@@ -92,7 +92,7 @@ trait Authorities extends HasDatabase {
   }
 }
 
-object Authorities extends Authorities with DatabaseProvider {
+object Authorities extends Authorities {
   /** A bunch of queries that return true if successful and no rows otherwise. */
   private object queries {
     import databaseApi._

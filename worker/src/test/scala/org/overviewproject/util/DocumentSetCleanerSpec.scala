@@ -16,7 +16,7 @@ class DocumentSetCleanerSpec extends DbSpecification {
   }
 
   trait DocumentSetScope extends DbScope {
-    val cleaner = new DocumentSetCleaner with org.overviewproject.database.DatabaseProvider {}
+    val cleaner = DocumentSetCleaner
     val documentSet = factory.documentSet()
     val document = factory.document(documentSetId = documentSet.id)
   }

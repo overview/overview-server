@@ -63,4 +63,4 @@ trait DbTreeBackend extends TreeBackend with DbBackend {
   }
 }
 
-object TreeBackend extends DbTreeBackend with org.overviewproject.database.DatabaseProvider
+object TreeBackend extends DbTreeBackend

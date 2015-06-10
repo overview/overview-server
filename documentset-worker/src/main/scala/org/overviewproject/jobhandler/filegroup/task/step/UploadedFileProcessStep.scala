@@ -8,5 +8,5 @@ trait UploadedFileProcessStep extends TaskStep {
   protected val filename: String
   
   override protected def errorHandler(t: Throwable): Unit = 
-    WriteDocumentProcessingError(documentSetId, filename, t.getMessage)
+    WriteDocumentProcessingError.write(documentSetId, filename, t.getMessage)
 }

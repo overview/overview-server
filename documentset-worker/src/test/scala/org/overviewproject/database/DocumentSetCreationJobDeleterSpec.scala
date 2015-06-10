@@ -58,6 +58,5 @@ class DocumentSetCreationJobDeleterSpec extends DbSpecification with Mockito {
     val deleter = new TestDocumentSetDeleter(mockBlobStorage)
   }
 
-  class TestDocumentSetDeleter(override protected val blobStorage: BlobStorage)
-    extends DocumentSetCreationJobDeleter with DatabaseProvider
+  class TestDocumentSetDeleter(override protected val blobStorage: BlobStorage) extends DocumentSetCreationJobDeleter
 }

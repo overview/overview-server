@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.{HasDatabase,DatabaseProvider}
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
 
@@ -40,5 +40,5 @@ object FindUploadedFile {
     override protected val documentSetId: Long,
     override protected val uploadedFileId: Long,
     override protected val nextStep: GroupedFileUpload => TaskStep
-  ) extends FindUploadedFile with DatabaseProvider
+  ) extends FindUploadedFile
 }

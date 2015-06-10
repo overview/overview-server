@@ -84,7 +84,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     override protected val uploadedFile: GroupedFileUpload,
     override protected val blobStorage: BlobStorage,
     loInputStream: InputStream
-  ) extends CreatePdfFile with org.overviewproject.database.DatabaseProvider {
+  ) extends CreatePdfFile {
     override protected val documentSetId = 1l
     override protected val nextStep = { f: File => NextStep }
     override protected def largeObjectInputStream(oid: Long) = loInputStream

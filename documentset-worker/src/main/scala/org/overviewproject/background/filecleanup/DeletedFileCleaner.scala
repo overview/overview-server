@@ -105,7 +105,6 @@ object DeletedFileCleaner {
   def apply(fileCleaner: ActorRef) = Props(new DeletedFileCleanerImpl(fileCleaner))
   
   class DeletedFileCleanerImpl(val fileCleaner: ActorRef) extends DeletedFileCleaner {
-    override protected val deletedFileFinder = DeletedFileFinder()
+    override protected val deletedFileFinder = DeletedFileFinder
   }
-  
 }

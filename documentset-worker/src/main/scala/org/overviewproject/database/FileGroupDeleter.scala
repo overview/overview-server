@@ -21,6 +21,4 @@ trait FileGroupDeleter extends HasDatabase {
   }
 }
 
-object FileGroupDeleter {
-  def apply(): FileGroupDeleter = new FileGroupDeleter with DatabaseProvider
-}
+object FileGroupDeleter extends FileGroupDeleter

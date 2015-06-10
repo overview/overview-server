@@ -9,7 +9,7 @@ import org.squeryl.{Session=>SquerylSession}
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.database.{BlockingDatabaseProvider, DB, DataSource, DatabaseConfiguration, DatabaseProvider}
+import org.overviewproject.database.{DB,DataSource,DatabaseConfiguration,HasBlockingDatabase}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
 
@@ -76,7 +76,7 @@ class DbSpecification extends Specification {
     * transaction</em>. When you first use the connection, a transaction will
     * begin; when your test finishes, the transaction will be rolled back.
     */
-  trait DbScope extends After with DatabaseProvider with BlockingDatabaseProvider {
+  trait DbScope extends After with HasBlockingDatabase {
     val connection: Connection = DB.getConnection()
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
 
@@ -131,14 +131,12 @@ class DbSpecification extends Specification {
     """, connection)
   }
 
-  def setupDb() {
+  private lazy val ensureConnected = {
     System.setProperty(DatabaseProperty, TestDatabase)
     val dataSource = DataSource(DatabaseConfiguration.fromConfig)
     DB.connect(dataSource)
   }
 
-  def shutdownDb() {
-    DB.close()
-  }
-
+  def setupDb() { ensureConnected }
+  def shutdownDb() { /* nothing -- we want to reuse the same connection */ }
 }

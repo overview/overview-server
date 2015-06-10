@@ -63,4 +63,4 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   override def index(documentSetId: Long) = database.seq(indexCompiled(documentSetId))
 }
 
-object ImportJobBackend extends DbImportJobBackend with org.overviewproject.database.DatabaseProvider
+object ImportJobBackend extends DbImportJobBackend

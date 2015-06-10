@@ -40,7 +40,7 @@ class PageSaverSpec extends DbSpecification with Mockito {
     val pageSaver = new TestPageSaver
   }
 
-  protected class TestPageSaver extends PageSaver with org.overviewproject.database.DatabaseProvider {
+  protected class TestPageSaver extends PageSaver {
     override protected val pageBlobSaver = smartMock[PageBlobSaver]
 
     pageBlobSaver.save(any) returns Future.successful("page:location")

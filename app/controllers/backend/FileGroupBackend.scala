@@ -95,4 +95,4 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
   }
 }
 
-object FileGroupBackend extends DbFileGroupBackend with org.overviewproject.database.DatabaseProvider
+object FileGroupBackend extends DbFileGroupBackend

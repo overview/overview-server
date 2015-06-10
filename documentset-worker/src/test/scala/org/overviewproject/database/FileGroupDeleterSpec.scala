@@ -9,7 +9,7 @@ class FileGroupDeleterSpec extends DbSpecification {
 
     "mark file_group deleted" in new DbScope {
       val fileGroup = factory.fileGroup()
-      val deleter = new FileGroupDeleter with DatabaseProvider
+      val deleter = FileGroupDeleter
       await(deleter.delete(fileGroup.id))
 
       import databaseApi._

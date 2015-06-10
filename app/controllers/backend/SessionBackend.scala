@@ -96,4 +96,4 @@ trait DbSessionBackend extends SessionBackend with DbBackend {
   }
 }
 
-object SessionBackend extends DbSessionBackend with org.overviewproject.database.DatabaseProvider
+object SessionBackend extends DbSessionBackend

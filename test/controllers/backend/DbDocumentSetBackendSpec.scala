@@ -5,20 +5,20 @@ import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
-    val backend = new DbDocumentSetBackend with org.overviewproject.database.DatabaseProvider
+    val backend = new DbDocumentSetBackend {}
 
     def findDocumentSet(id: Long): Option[DocumentSet] = {
-      import blockingDatabaseApi._
+      import databaseApi._
       blockingDatabase.option(DocumentSets.filter(_.id === id))
     }
 
     def findDocumentSetUser(documentSetId: Long): Option[DocumentSetUser] = {
-      import blockingDatabaseApi._
+      import databaseApi._
       blockingDatabase.option(DocumentSetUsers.filter(_.documentSetId === documentSetId))
     }
 
     def findApiTokensAndViews(documentSetId: Long): Seq[(ApiToken,View)] = {
-      import blockingDatabaseApi._
+      import databaseApi._
       val q = for {
         apiToken <- ApiTokens if apiToken.documentSetId === documentSetId
         view <- Views.sortBy(_.id) if view.apiToken === apiToken.token

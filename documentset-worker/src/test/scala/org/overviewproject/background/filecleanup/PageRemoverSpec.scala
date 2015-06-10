@@ -53,9 +53,7 @@ class PageRemoverSpec extends DbSpecification with Mockito with NoTimeConversion
     val remover = new TestPageRemover(mockBlobStorage)
   }
 
-  class TestPageRemover(bs: BlobStorage)
-      extends PageRemover
-      with org.overviewproject.database.DatabaseProvider {
+  class TestPageRemover(bs: BlobStorage) extends PageRemover {
     override protected val blobStorage = bs
   }
 }

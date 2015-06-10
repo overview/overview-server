@@ -18,4 +18,4 @@ trait DbFileBackend extends FileBackend with DbBackend {
   private lazy val byId = Compiled { (id: Rep[Long]) => Files.filter(_.id === id) }
 }
 
-object FileBackend extends DbFileBackend with org.overviewproject.database.DatabaseProvider
+object FileBackend extends DbFileBackend

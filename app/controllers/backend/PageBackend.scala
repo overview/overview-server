@@ -18,4 +18,4 @@ trait DbPageBackend extends PageBackend with DbBackend {
   private lazy val byId = Compiled { (id: Rep[Long]) => Pages.filter(_.id === id) }
 }
 
-object PageBackend extends DbPageBackend with org.overviewproject.database.DatabaseProvider
+object PageBackend extends DbPageBackend

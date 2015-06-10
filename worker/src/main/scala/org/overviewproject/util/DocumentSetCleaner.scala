@@ -11,3 +11,5 @@ trait DocumentSetCleaner extends JobUpdater {
     database.delete(Documents.filter(_.documentSetId === documentSetId))
   } 
 }
+
+object DocumentSetCleaner extends DocumentSetCleaner

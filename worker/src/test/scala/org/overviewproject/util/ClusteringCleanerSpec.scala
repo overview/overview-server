@@ -30,7 +30,7 @@ class ClusteringCleanerSpec extends DbSpecification {
   }
 
   trait BaseScope extends DbScope {
-    val cleaner = new ClusteringCleaner with org.overviewproject.database.DatabaseProvider
+    val cleaner = ClusteringCleaner
     val documentSet = factory.documentSet()
     val job = factory.documentSetCreationJob(documentSetId = documentSet.id, treeTitle = Some("recluster"), state = InProgress)
 

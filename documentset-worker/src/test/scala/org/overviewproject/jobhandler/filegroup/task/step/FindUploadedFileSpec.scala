@@ -37,8 +37,7 @@ class FindUploadedFileSpec extends DbSpecification {
 
     def uploadedFileId = uploadedFile.id
     
-    class TestFindUploadedFile(override protected val uploadedFileId: Long)
-    extends FindUploadedFile with org.overviewproject.database.DatabaseProvider {
+    class TestFindUploadedFile(override protected val uploadedFileId: Long) extends FindUploadedFile {
       override protected val documentSetId = 1l
       override protected val nextStep = NextStep
     }

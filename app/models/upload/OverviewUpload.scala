@@ -3,7 +3,7 @@ package models.upload
 import java.sql.Timestamp
 import java.util.UUID
 
-import org.overviewproject.database.BlockingDatabaseProvider
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.{Upload,UploadedFile}
 import org.overviewproject.models.tables.{UploadedFiles,Uploads}
 
@@ -34,8 +34,8 @@ trait OverviewUpload {
   def delete
 }
 
-object OverviewUpload extends BlockingDatabaseProvider {
-  import blockingDatabaseApi._
+object OverviewUpload extends HasBlockingDatabase {
+  import databaseApi._
 
   lazy val inserter = (Uploads.map(_.createAttributes) returning Uploads)
   lazy val updater = Compiled { (id: Rep[Long]) => Uploads.map(_.updateAttributes) }

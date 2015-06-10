@@ -7,7 +7,6 @@ import scala.concurrent.Future
 
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.DatabaseProvider
 import org.overviewproject.jobhandler.filegroup.task.DocumentConverter
 import org.overviewproject.models.File
 import org.overviewproject.models.tables.Files
@@ -61,9 +60,8 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       case class NextStep(file: File) extends TaskStep {
         override protected def doExecute = Future.successful(this)
       }
-      
-      
-      class TestCreateFileWithView extends CreateFileWithView with DatabaseProvider {
+
+      class TestCreateFileWithView extends CreateFileWithView {
         override protected val documentSetId = 1l
         override protected val uploadedFile = upload
         override protected val nextStep = { f: File => NextStep(f) }

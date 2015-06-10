@@ -108,4 +108,4 @@ trait DbTagDocumentBackend extends TagDocumentBackend with DbBackend {
   }
 }
 
-object TagDocumentBackend extends DbTagDocumentBackend with org.overviewproject.database.DatabaseProvider
+object TagDocumentBackend extends DbTagDocumentBackend

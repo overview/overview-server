@@ -61,7 +61,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
   trait BasicDocumentSetScope extends DbScope {
     def numberOfDocuments = 3
 
-    val deleter = new TestDocumentSetDeleter
+    val deleter = DocumentSetDeleter
     val documentSet = createDocumentSet
 
     val documents = createDocuments
@@ -146,6 +146,4 @@ class DocumentSetDeleterSpec extends DbSpecification {
   trait InterruptedDeleteScope extends FileUploadScope {
     override def refCount = 0
   }
-  
-  class TestDocumentSetDeleter extends DocumentSetDeleter with DatabaseProvider
 }
