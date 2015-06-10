@@ -17,13 +17,10 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       blockingDatabase.option(DocumentSetUsers.filter(_.documentSetId === documentSetId))
     }
 
-    def findApiTokensAndViews(documentSetId: Long): Seq[(ApiToken,View)] = {
+    def findViews(documentSetId: Long): Seq[View] = {
       import database.api._
-      val q = for {
-        apiToken <- ApiTokens if apiToken.documentSetId === documentSetId
-        view <- Views.sortBy(_.id) if view.apiToken === apiToken.token
-      } yield (apiToken, view)
-      blockingDatabase.seq(q)
+      val tokens = ApiTokens.filter(_.documentSetId === documentSetId).map(_.token)
+      blockingDatabase.seq(Views.filter(_.apiToken in tokens).sortBy(_.id))
     }
   }
 
@@ -46,10 +43,9 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     "create an ApiToken and View when a Plugin is autocreate" in new CreateScope {
       factory.plugin(name="plugin name", url="http://plugin.url", autocreate=true)
       val documentSet = await(backend.create(DocumentSet.CreateAttributes("title"), "foo@bar.com"))
-      val ret = findApiTokensAndViews(documentSet.id)
+      val ret = findViews(documentSet.id)
       ret.length must beEqualTo(1)
-      ret.headOption must beSome.like { case (apiToken, view) =>
-        apiToken.documentSetId must beSome(documentSet.id)
+      ret.headOption must beSome { view: View =>
         view.documentSetId must beEqualTo(documentSet.id)
         view.title must beEqualTo("plugin name")
         view.url must beEqualTo("http://plugin.url")
@@ -59,14 +55,14 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     "not create an ApiToken and View when a Plugin is not autocreate" in new CreateScope {
       factory.plugin(name="plugin name", url="http://plugin.url", autocreate=false)
       val documentSet = await(backend.create(DocumentSet.CreateAttributes("title"), "foo@bar.com"))
-      findApiTokensAndViews(documentSet.id).length must beEqualTo(0)
+      findViews(documentSet.id).length must beEqualTo(0)
     }
 
     "create Views according to autocreateOrder" in new CreateScope {
       factory.plugin(name="plugin1", url="http://plugin1.url", autocreate=true, autocreateOrder=2)
       factory.plugin(name="plugin2", url="http://plugin2.url", autocreate=true, autocreateOrder=1)
       val documentSet = await(backend.create(DocumentSet.CreateAttributes("title"), "foo@bar.com"))
-      findApiTokensAndViews(documentSet.id).map(_._2.title) must beEqualTo(Seq("plugin2", "plugin1"))
+      findViews(documentSet.id).map(_.title) must beEqualTo(Seq("plugin2", "plugin1"))
     }
   }
 
