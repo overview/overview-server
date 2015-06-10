@@ -23,7 +23,6 @@ requirejs.config
     'jquery.validate':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
-    underscore: { exports: '_' }
 
   paths:
     'backbone': 'vendor/backbone'

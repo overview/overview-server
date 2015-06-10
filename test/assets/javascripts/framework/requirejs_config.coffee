@@ -25,7 +25,6 @@ requirejs.config
     'bootstrap-tooltip':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tooltip'
-    underscore: { exports: '_' }
     md5: { exports: 'CryptoJS.MD5' }
     select2:
       deps: [ 'jquery' ]

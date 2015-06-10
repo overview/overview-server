@@ -196,11 +196,11 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
           $pre.show()
 
     refresh_preview_table = ($table, csv, error) ->
-      thead_template = '<% _.each(data.header, function(col) { %><th><%- col %></th><% }); %>'
-      tbody_template = '<% _.each(data.records, function(record) { %><tr><% _.each(record, function(value) { %><td><div><%- value %></td><% }); %></div></tr><% }); %>'
+      thead_template = '<% _.each(header, function(col) { %><th><%- col %></th><% }); %>'
+      tbody_template = '<% _.each(records, function(record) { %><tr><% _.each(record, function(value) { %><td><div><%- value %></td><% }); %></div></tr><% }); %>'
 
       # You can't set innerHTML on a <table> or <thead> or <tbody> in IE
-      table_template = "<table><thead>#{thead_template}</thead><tbody>#{tbody_template}</tbody></table>"
+      table_template = _.template("<table><thead>#{thead_template}</thead><tbody>#{tbody_template}</tbody></table>")
 
       records = csv.records
       if records.length > 2
@@ -210,19 +210,15 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
         # at least *some* data to be shown.)
         records = records.slice(0, -1)
 
-      table_html = _.template(
-        table_template,
-        { header: csv.header, records: records },
-        { variable: 'data' }
-      )
+      table_html = table_template(header: csv.header, records: records)
 
       $table.replaceWith(table_html)
 
     refresh_preview_pre = ($pre, text, error) ->
       lines = text.split(/\r\n|\r|\n/g)
 
-      pre_template = '<ol><% _.each(data.lines, function(line) { %><li><%- line %></li><% }); %></ol>'
-      pre_html = _.template(pre_template, { lines: lines }, { variable: 'data' })
+      pre_template = _.template('<ol><% _.each(lines, function(line) { %><li><%- line %></li><% }); %></ol>')
+      pre_html = pre_template(lines: lines)
 
       $pre[0].innerHTML = pre_html
 

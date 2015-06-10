@@ -74,7 +74,7 @@ define [
             </div>
           </div>
         </form>
-      """, t: t, url: @url)
+      """)(t: t, url: @url)
       @$el = $(html)
       @$container.append(@$el)
 

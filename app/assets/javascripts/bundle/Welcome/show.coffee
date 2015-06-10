@@ -3,7 +3,6 @@ requirejs.config
 
   shim:
     'bootstrap-alert': { deps: [ 'jquery' ] }
-    underscore: { exports: '_' }
 
   paths:
     'bootstrap-alert': 'vendor/bootstrap-alert'

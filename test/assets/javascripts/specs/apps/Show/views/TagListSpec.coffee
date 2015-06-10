@@ -6,7 +6,7 @@ define [
   'i18n'
 ], ($, _, Backbone, TagList, i18n) ->
   makeModel = (name="name", options={}) ->
-    new Backbone.Model(_.extend({ name: name }, options))
+    new Backbone.Model(_.extend({ id: name, name: name }, options))
 
   describe 'apps/Show/views/TagList', ->
     collection = undefined
@@ -29,7 +29,6 @@ define [
         'views.Tree.show.tag_list.th.count': 'th.count'
         'views.Tree.show.tag_list.th.name': 'th.name'
         'views.Tree.show.tag_list.n_documents': 'n_documents,{0}'
-        'views.Tree.show.tag_list.loading_n_documents': 'loading_n_documents'
 
     afterEach ->
       view?.remove()
@@ -148,28 +147,31 @@ define [
         expect($tr.find('input[name=name]').val()).to.eq('tag11')
         expect($tr.find('input[name=color]').val()).to.eq('#111111')
 
-      it 'should render a tag without size as loading_n_documents', ->
+      it 'should assume size=0 and sizeInTree=0 in new tags', ->
+        # We don't kick off a whole new refresh; we just assume 0.
+        #
+        # Part of the workaround for
+        # https://www.pivotaltracker.com/story/show/95450308; read
+        # TagList.coffee for details.
+        collection.add(makeModel('tag30'))
+        expect(view.$('tbody tr:eq(2) .count')).to.contain('0')
+        expect(view.$('tbody tr:eq(2) .tree-count')).to.contain('0')
+
+      it 'should not automatically set size=0 in existing tags on load', ->
         # https://github.com/overview/overview-server/issues/568
-        collection.first().set(size: null, sizeInTree: null)
-        view.render()
-        expect(view.$('tbody tr:eq(0) td.count')).to.contain('loading_n_documents')
+        expect(view.$('tbody tr:eq(0) td.count')).not.to.contain('0')
 
-      it 'should render a tag without tree-size as loading_n_documents', ->
-        collection.first().set(size: 20, sizeInTree: null)
-        view.render()
-        expect(view.$('tbody tr:eq(0) td.tree-count')).to.contain('loading_n_documents')
+      it 'should render a separate tree-count when all counts are the same', ->
+        counts = {}
+        counts[collection.first().id] = { size: 10, sizeInTree: 5 }
+        view.renderCounts(counts)
+        expect(view.$('table')).to.have.class('has-tree-counts')
 
-      it 'should not render a separate count for just the tree', ->
-        expect(view.$('th.tree-count').length).to.eq(0)
-        expect(view.$('th.count').text()).to.eq('th.count')
-        expect(view.$('td.tree-count').length).to.eq(0)
-
-      it 'should render a separate tree-count when at least one tag has a different value', ->
-        collection.first().set(size: 10, sizeInTree: 5)
-        view.render()
-        expect(view.$('th.tree-count').text()).to.eq('th.count_in_tree')
-        expect(view.$('th.count').text()).to.eq('th.count_in_docset')
-        expect(view.$('td.tree-count').length).to.eq(2)
+      it 'should not render a separate count when it is the same', ->
+        counts = {}
+        counts[collection.first().id] = { size: 10, sizeInTree: 10 }
+        view.renderCounts(counts)
+        expect(view.$('table')).not.to.have.class('has-tree-counts')
 
       it 'should not change a tag when interacting', ->
         collection.first().set(

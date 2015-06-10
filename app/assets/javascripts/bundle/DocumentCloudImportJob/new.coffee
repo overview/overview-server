@@ -36,7 +36,6 @@ requirejs.config({
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
     }
-    underscore: { exports: '_' }
     spectrum: {
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.spectrum'

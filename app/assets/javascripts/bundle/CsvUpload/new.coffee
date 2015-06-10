@@ -23,7 +23,6 @@ requirejs.config
     'jquery.validate':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
-    underscore: { exports: '_' }
     md5: { exports: 'CryptoJS.MD5' }
 
   paths:

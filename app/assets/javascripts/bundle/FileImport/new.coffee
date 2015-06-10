@@ -24,7 +24,6 @@ requirejs.config
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
     md5: { exports: 'CryptoJS.MD5' }
-    underscore: { exports: '_' }
 
   paths:
     'backbone': 'vendor/backbone'

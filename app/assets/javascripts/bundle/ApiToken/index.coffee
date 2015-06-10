@@ -19,7 +19,6 @@ requirejs.config
       exports: 'jQuery.fn.modal'
     'bootstrap-transition':
       deps: [ 'jquery' ]
-    underscore: { exports: '_' }
 
   paths:
     'backbone': 'vendor/backbone'

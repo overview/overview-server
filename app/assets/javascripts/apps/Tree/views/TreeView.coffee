@@ -81,7 +81,7 @@ define [
           <button type="button" title="<%- t('refresh') %>" class="refresh"><i class="icon icon-level-up"/></button>
           <button type="button" title="<%- t('zoomIn') %>" class="zoom-in"><i class="icon icon-search-plus"/></button>
           <button type="button" title="<%- t('zoomOut') %>" class="zoom-out" disabled><i class="icon icon-search-minus"/></button>
-        </div>''', t: t))
+        </div>''')(t: t))
       $div.append($zoom_buttons)
       [ @refreshButton, @zoomInButton, @zoomOutButton ] = $zoom_buttons.children()
 

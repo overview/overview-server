@@ -88,14 +88,15 @@ define [
           @stopListening()
 
       # Refresh tag counts
-      url = if (view = @state.get('view'))?
+      url = if (view = @state.get('view'))? && view.get('type') == 'tree'
         @tags.url.replace(/\/tags$/, "/trees/#{view.get('id')}/tags")
       else
         @tags.url
 
-      @tags.fetch
+      Backbone.ajax
         url: url
-        success: =>
-          @listView.render() # tag counts have changed; render that
+        success: (tags) =>
+          counts = _.indexBy(tags, 'id')
+          @listView.renderCounts(counts)
 
     _.extend(@::, Backbone.Events)

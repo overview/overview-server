@@ -63,6 +63,16 @@
     .table();
     .table-condensed();
     width: 100%;
+
+    // Bootstrap will give the second thead a top border by default. Nix it.
+    thead th { border-top: 0 !important; }
+
+    .tree-count { display: none; }
+    &.has-tree-counts {
+      .no-tree-count { display: none; }
+      thead.tree-count { display: table-header-group; }
+      td.tree-count, th.tree-count { display: table-cell; }
+    }
   }
 
   form {

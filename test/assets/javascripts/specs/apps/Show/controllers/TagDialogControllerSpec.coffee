@@ -26,6 +26,7 @@ define [
     beforeEach ->
       @sandbox = sinon.sandbox.create()
       @sandbox.stub($.fn, 'modal', -> this)
+      @sandbox.stub(Backbone, 'ajax')
       @sandbox.stub(Backbone, 'sync') # just in case
 
       i18n.reset_messages
@@ -48,13 +49,13 @@ define [
         $dialog.remove()
       @sandbox.restore()
 
-    it 'should sync from the server', ->
-      expect(@tags.fetch).to.have.been.calledWithMatch(url: '/path/to/tags')
+    it 'should fetch counts from the server', ->
+      expect(Backbone.ajax).to.have.been.calledWithMatch(url: '/path/to/tags')
 
-    it 'should sync a view-specific URL if there is a view', ->
-      @state.set(view: new Backbone.Model(id: 1234))
+    it 'should sync a view-specific URL if there is a tree', ->
+      @state.set(view: new Backbone.Model(id: 1234, type: 'tree'))
       new TagDialogController(view: @view, tags: @tags, state: @state)
-      expect(@tags.fetch).to.have.been.calledWithMatch(url: '/path/to/trees/1234/tags')
+      expect(Backbone.ajax).to.have.been.calledWithMatch(url: '/path/to/trees/1234/tags')
 
     describe 'on view:remove', ->
       beforeEach ->

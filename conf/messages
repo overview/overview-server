@@ -488,7 +488,6 @@ views.Tree.show.helpers.DocumentHelper.title.page={0} – page {1,number,integer
 
 views.Tree.show.tag_list.header=Tags
 views.Tree.show.tag_list.n_documents={0,number,integer}
-views.Tree.show.tag_list.loading_n_documents=⋯
 views.Tree.show.tag_list.th.count=documents
 views.Tree.show.tag_list.th.count_in_tree=in tree
 views.Tree.show.tag_list.th.count_in_docset=total

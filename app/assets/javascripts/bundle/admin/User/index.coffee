@@ -22,8 +22,6 @@ requirejs.config({
       exports: 'jQuery.fn.tab'
     'bootstrap-transition':
       deps: [ 'jquery' ]
-    jquery: { exports: '$' }
-    underscore: { exports: '_' }
 
   paths:
     'backbone': 'vendor/backbone'

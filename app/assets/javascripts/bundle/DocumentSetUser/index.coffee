@@ -7,7 +7,6 @@ requirejs.config
     backbone:
       deps: [ 'jquery', 'underscore' ]
       exports: 'Backbone'
-    underscore: { exports: '_' }
 
   paths:
     backbone: 'vendor/backbone'

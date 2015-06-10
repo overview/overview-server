@@ -60,7 +60,6 @@ requirejs.config
     typeahead:
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.typeahead'
-    underscore: { exports: '_' }
 
   paths:
     'backbone': 'vendor/backbone'

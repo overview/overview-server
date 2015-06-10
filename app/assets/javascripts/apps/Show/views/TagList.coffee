@@ -57,22 +57,8 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
             </div>
           </form>
         </td>
-        <% if (hasSeparateTreeCount) { %>
-          <td class="tree-count">
-            <% if (_.isNumber(tag.get('sizeInTree'))) { %>
-              <%- t('n_documents', tag.get('sizeInTree')) %>
-            <% } else { %>
-              <%- t('loading_n_documents') %>
-            <% } %>
-          </td>
-        <% } %>
-        <td class="count">
-          <% if (_.isNumber(tag.get('size'))) { %>
-            <%- t('n_documents', tag.get('size')) %>
-          <% } else { %>
-            <%- t('loading_n_documents') %>
-          <% } %>
-        </td>
+        <td class="tree-count">⋯</td>
+        <td class="count">⋯</td>
         <td class="actions"><a class="remove" href="#"><%- t('remove') %></a></td>
       </tr>
     """)
@@ -85,31 +71,30 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         <% } %>
       </p>
       <table>
-        <thead>
-          <% if (hasSeparateTreeCount) { %>
-            <tr>
-              <th rowspan="2" class="name"><%- t('th.name') %></th>
-              <th colspan="2" class="count-top"><%- t('th.count') %></th>
-              <th rowspan="2"/>
-            </tr>
-            <tr>
-              <th class="tree-count"><%- t('th.count_in_tree') %></th>
-              <th class="count"><%- t('th.count_in_docset') %></th>
-            </tr>
-          <% } else { %>
-            <tr>
-              <th class="name"><%- t('th.name') %></th>
-              <th class="count"><%- t('th.count') %></th>
-              <th/>
-            </tr>
-          <% } %>
+        <thead class="tree-count">
+          <tr>
+            <th rowspan="2" class="name"><%- t('th.name') %></th>
+            <th colspan="2" class="count-top"><%- t('th.count') %></th>
+            <th rowspan="2"/>
+          </tr>
+          <tr>
+            <th class="tree-count"><%- t('th.count_in_tree') %></th>
+            <th class="count"><%- t('th.count_in_docset') %></th>
+          </tr>
+        </thead>
+        <thead class="no-tree-count">
+          <tr>
+            <th class="name"><%- t('th.name') %></th>
+            <th class="count-top"><%- t('th.count') %></th>
+            <th/>
+          </tr>
         </thead>
         <tbody>
           <%= tags.map(renderTag).join('') %>
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="<%- hasSeparateTreeCount ? 4 : 3 %>">
+            <td colspan="4">
               <form method="post" action="#" role="form">
                 <div class="input-group">
                   <input type="text" class="form-control input-sm" name="name" required="required" placeholder="<%- t('tag_name.placeholder') %>" />
@@ -130,64 +115,130 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       @listenTo(@collection, 'add', @_addTag)
       @listenTo(@collection, 'remove', @_removeTag)
       @listenTo(@collection, 'change', @_changeTag)
-      @listenTo(@collection, 'reset', @render)
-      @render()
+      @listenTo(@collection, 'reset', @_resetTags)
 
-    _shouldHaveSeparateTreeCount: ->
-      @collection.find((t) -> t.get('sizeInTree') != t.get('size'))?
+      # Hash of tag CID => { $tr, $id, $color, $name, $count, $treeCount, count, treeCount }
+      #
+      # Invariant: after any method, @tags reflects what's in the DOM.
+      @tags = {}
+
+      @render()
 
     render: ->
       removeSpectrum(@$('input[type=color]'))
-      @hasSeparateTreeCount = @_shouldHaveSeparateTreeCount()
       html = @template
         t: t
         tags: @collection
         exportUrl: @options.exportUrl
-        hasSeparateTreeCount: @hasSeparateTreeCount
         renderTag: (tag) => @tagTemplate
           tag: tag
           t: t
-          hasSeparateTreeCount: @hasSeparateTreeCount
       @$el.html(html)
-      addSpectrum(@$('input[type=color]'))
+
+      @_addTrToTags(tr) for tr in @$('tr[data-cid]')
+
+      addSpectrum(tag.$color) for _, tag of @tags
+
       this
+
+    _addTrToTags: (tr) ->
+      $tr = $(tr)
+      @tags[$tr.attr('data-cid')] =
+        $tr: $tr
+        $id: $tr.find('input[name=id]')
+        $name: $tr.find('input[name=name]')
+        $color: $tr.find('input[type=color]')
+        $count: $tr.find('.count')
+        $treeCount: $tr.find('.tree-count')
+        count: null
+        treeCount: null
+
+    # Fills in tree counts for each tag.
+    renderCounts: (counts) ->
+      for tagId, values of counts
+        if (cid = @collection.get(tagId)?.cid)?
+          data = @tags[cid]
+          data.count = values.size           # null means unknown; 0 means 0
+          data.treeCount = values.sizeInTree # null means unknown; 0 means 0
+          data.$count.text(t('n_documents', data.count ? 0))
+          data.$treeCount.text(t('n_documents', data.treeCount ? data.count ? 0))
+      undefined
+
+      @_refreshHasTreeCounts()
+
+    # Toggles the 'has-tree-counts' class on the table.
+    #
+    # After calling this method, the class will be set iff there is a tag that
+    # has a different count in the tree than in the document set.
+    _refreshHasTreeCounts: ->
+      needed = false
+      for _, data of @tags
+        if data.treeCount? && data.count != data.treeCount
+          needed = true
+          break
+
+      @$('table').toggleClass('has-tree-counts', needed)
 
     remove: ->
       removeSpectrum(@$('input[type=color]'))
       Backbone.View.prototype.remove.call(this)
 
-    _$trForTag: (tag) ->
-      @$("[data-cid=#{tag.cid}]")
-
     _addTag: (tag) ->
       html = @tagTemplate
         t: t
         tag: tag
-        hasSeparateTreeCount: @hasSeparateTreeCount
+      $tr = $(html)
 
       index = @collection.indexOf(tag)
       if index == 0
-        @$('tbody').prepend(html)
+        @$('tbody').prepend($tr)
       else
-        @$("tbody tr:eq(#{index - 1})").after(html)
-      addSpectrum(@$('input[type=color]'))
+        @$("tbody tr:eq(#{index - 1})").after($tr)
+
+      tagData = @_addTrToTags($tr)
+      addSpectrum(tagData.$color)
+
+      # Show counts as 0 by default.
+      #
+      # This is a workaround for a race:
+      #
+      # 1. Open new-tag dialog, spinning off "count" HTTP request
+      # 2. Create a tag, spinning off a "create" HTTP request, which waits
+      # 3. Receive HTTP response for "count"
+      # ...
+      #
+      # The "count" response won't include the new tag. We used to actually
+      # fetch the collection and then re-render, which hid the new tag (that's
+      # https://www.pivotaltracker.com/story/show/95450308). The workaround:
+      # just assume the counts are 0.
+      #
+      # It's not like our users expect the view to update as HTTP requests
+      # complete, right?
+      tagData.$count.text(t('n_documents', 0))
+      tagData.$treeCount.text(t('n_documents', 0))
+
+      @_refreshHasTreeCounts()
 
     _removeTag: (tag) ->
-      $tr = @_$trForTag(tag)
-      removeSpectrum($tr.find('input[type=color]'))
-      $tr.remove()
+      tagData = @tags[tag.cid]
+      removeSpectrum(tagData.$color)
+      tagData.$tr.remove()
+      delete @tags[tag.cid]
 
     _changeTag: (tag, options) ->
-      $tr = @_$trForTag(tag)
-      $tr.find('input[name=id]').val(tag.id)
-      $tr.find('.count').html(t('n_documents', tag.get('size') || 0))
-      $tr.find('.tree-count').html(t('n_documents', tag.get('sizeInTree') || 0))
+      tagData = @tags[tag.cid]
+      return if !tagData
 
-      if !options? || !options.interacting
-        $tr.find('input[name=name]').val(tag.get('name'))
-        $color = $tr.find('input[name=color]')
-        $color.val(tag.get('color'))
-        updateSpectrum($color)
+      tagData.$id.val(tag.id)
+
+      if !options?.interacting
+        tagData.$name.val(tag.get('name'))
+        tagData.$color.val(tag.get('color'))
+        updateSpectrum(tagData.$color)
+
+    _resetTags: ->
+      @tags = {}
+      @render()
 
     _onClickRemove: (e) ->
       e.preventDefault()
