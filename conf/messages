@@ -174,7 +174,7 @@ views.Confirmation.index.body_html=<p>Thank you for registering. You’re almost
 
 views.Confirmation.show.title=Broken confirmation link
 views.Confirmation.show.h1=Broken confirmation link
-views.Confirmation.show.body_html=<p>You clicked a confirmation link and <strong>nothing happened</strong>. Sorry about this.</p><p>Here are a few things to try:</p><ul><li>Did you already click this link? If so, you’re already confirmed. <a href="@login_url">Log in</a> or <a href="@reset_password_url">reset your password</a>.</li><li>Otherwise, please <a href="http://overview.ap.org/contact">contact us</a> so we can help you out.</li></ul><p><small>Sorry: to protect our users’ privacy (and yours), we can’t get any more precise than this.</small></p>
+views.Confirmation.show.body_html=<p>You clicked a confirmation link and <strong>nothing happened</strong>. Sorry about this.</p><p>Here are a few things to try:</p><ul><li>Did you already click this link? If so, you’re already confirmed. <a href="@login_url">Log in</a> or <a href="@reset_password_url">reset your password</a>.</li><li>Otherwise, please <a href="https://blog.overviewdocs.com/contact">contact us</a> so we can help you out.</li></ul><p><small>Sorry: to protect our users’ privacy (and yours), we can’t get any more precise than this.</small></p>
 
 views.CsvUpload.new.title=Upload a CSV file
 views.CsvUpload.new.h1=Upload a CSV file
@@ -187,7 +187,7 @@ views.CsvUpload.new.charset.utf8=Unicode (UTF-8)
 views.CsvUpload.new.charset.windows1252=Western (Windows-1252, ISO-8859-1)
 views.CsvUpload.new.help1=Many programs can write CSV files; Overview can read those files.
 views.CsvUpload.new.help2=Each row in the CSV file becomes one document in Overview.
-views.CsvUpload.new.help.requirements_html=Overview looks for a column named <strong>text</strong> in your CSV file. It can also read <strong>title</strong>, <strong>url</strong>, <strong>id</strong> and <strong>tags</strong> columns (<a href="http://overview.ap.org/blog/2014/05/importing-documents-from-a-csv-file/" target="_blank" title="(opens in new window)">help and example files</a>)
+views.CsvUpload.new.help.requirements_html=Overview looks for a column named <strong>text</strong> in your CSV file. It can also read <strong>title</strong>, <strong>url</strong>, <strong>id</strong> and <strong>tags</strong> columns (<a href="https://blog.overviewdocs.com/2014/05/importing-documents-from-a-csv-file/" target="_blank" title="(opens in new window)">help and example files</a>)
 views.CsvUpload.new.requirements.text=The file must use the UTF-8, ISO-8859-1 or Windows-1252 character set.
 views.CsvUpload.new.requirements.csv=All documents must be in a single CSV file, with columns separated by commas.
 views.CsvUpload.new.requirements.header=The first line of the file must list the column names. One column must be named “text”, “snippet”, or “contents”.
@@ -318,14 +318,14 @@ views.DocumentSet.index.ImportOptions.dialog.cancel=Cancel
 views.DocumentSet.index.ImportOptions.dialog.submit=Import documents
 views.DocumentSet.index.ImportOptions.dialog.title=Import options
 views.DocumentSet.index.ImportOptions.important_words.help=Use these words to organize the documents. Case sensitive regular expressions, separated by spaces.
-views.DocumentSet.index.ImportOptions.important_words.label_html=Important words (optional) (<a href="http://overview.ap.org/blog/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
+views.DocumentSet.index.ImportOptions.important_words.label_html=Important words (optional) (<a href="https://blog.overviewdocs.com/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.lang.label=Language of documents
 views.DocumentSet.index.ImportOptions.name.label=Document set name
-views.DocumentSet.index.ImportOptions.split_documents.label_html=What counts as a document (<a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
+views.DocumentSet.index.ImportOptions.split_documents.label_html=What counts as a document (<a href="https://blog.overviewdocs.com/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.split_documents.false=Each file is one document
 views.DocumentSet.index.ImportOptions.split_documents.true=Each page is one document
 views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate these words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.
-views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html=Words to ignore (optional) (<a href="http://overview.ap.org/blog/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
+views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html=Words to ignore (optional) (<a href="https://blog.overviewdocs.com/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.tag_id.label=Only include documents with tag
 views.DocumentSet.index.ImportOptions.tag.loading=Loading tags…
 views.DocumentSet.index.ImportOptions.tag.error=Error loading tags
