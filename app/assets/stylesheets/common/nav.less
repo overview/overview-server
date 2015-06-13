@@ -11,7 +11,6 @@ nav.navbar {
     .flex(0 0 auto);
     margin: 0;
     font-size: inherit;
-    line-height: @lineHeight;
   }
 
   h2 {
@@ -48,8 +47,21 @@ nav.navbar {
   }
 
   a.logo {
-    line-height: 1;
     display: inline-block;
+    text-indent: -1000em;
+    height: 40px;
+    width: 136px;
+    background-size: contain;
+    background-image: url("/assets/images/logo-small.png");
+    background-repeat: no-repeat;
+    position: relative;
+    top: 1px;
+  }
+
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx), (min-resolution: 192dpi)  {
+    a.logo {
+      background-image:  url("/assets/images/logo-small-retina.png");
+    }
   }
 
   ul.nav>li>a {
