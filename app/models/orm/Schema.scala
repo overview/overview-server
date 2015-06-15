@@ -32,7 +32,6 @@ object Schema extends org.squeryl.Schema {
   val nodes = table[Node]
   val tags = table[Tag]
   val users = table[User]
-  val files = table[File]
   val trees = table[Tree]
  
   on(documents)(d => declare(d.id is (primaryKey)))
