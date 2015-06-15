@@ -185,7 +185,7 @@ trait Factory {
     name: String = "filename",
     contentsLocation: String = "contents:location",
     contentsSize: Long = 2L,
-    contentsSha1: Option[Array[Byte]] = Some(Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19).map(_.toByte)),
+    contentsSha1: Array[Byte] = Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19).map(_.toByte),
     viewLocation: String = "view:location",
     viewSize: Long = 3L
   ): File

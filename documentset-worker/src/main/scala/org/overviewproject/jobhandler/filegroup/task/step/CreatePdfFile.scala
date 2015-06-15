@@ -55,7 +55,7 @@ trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with H
       
   private def writeFileAndTempDocumentSetFile(name: String, size: Long, location: String, sha1: Array[Byte]): DBIO[File] = {
     (for {
-      file <- fileInserter.+=(1, name, location, size, Some(sha1), location, size)
+      file <- fileInserter.+=(1, name, location, size, sha1, location, size)
       _ <- TempDocumentSetFiles.+=(TempDocumentSetFile(documentSetId, file.id))
     } yield file).transactionally
   }

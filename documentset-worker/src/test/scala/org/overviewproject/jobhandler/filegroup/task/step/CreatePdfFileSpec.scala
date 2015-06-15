@@ -32,7 +32,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
       // We can't check the sha1, because our upload mock doesn't *do* anything
       // with the input stream. (Our implementation uses a DigestInputStream.)
       // But we *can* check that *a* sha1 gets passed.
-      file.flatMap(_.contentsSha1) must beSome[Array[Byte]].which(_.length == 20)
+      file.map(_.contentsSha1.length) must beSome(20)
     }
 
     "return the next step" in new UploadScope {

@@ -24,7 +24,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
       file.map(f => (f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)) must
         beSome((contentsLocation, contentsSize, viewLocation, viewSize))
       
-      file.flatMap(_.contentsSha1) must beSome[Array[Byte]].which(_.length == 20)
+      file.map(_.contentsSha1.length) must beSome(20)
     }
 
     "return next step with File" in new ConvertScope {

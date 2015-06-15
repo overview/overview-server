@@ -333,7 +333,7 @@ object PodoFactory extends Factory {
     name: String,
     contentsLocation: String,
     contentsSize: Long,
-    contentsSha1: Option[Array[Byte]],
+    contentsSha1: Array[Byte],
     viewLocation: String,
     viewSize: Long
   ) = File(

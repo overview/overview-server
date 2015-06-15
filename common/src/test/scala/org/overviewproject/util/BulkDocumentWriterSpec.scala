@@ -11,6 +11,8 @@ class BulkDocumentWriterSpec extends DbSpecification {
   trait BaseScope extends DbScope {
     import database.api._
 
+    protected val emptySha1 = Array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0).map(_.toByte)
+
     val documentSet: DocumentSet = {
       blockingDatabase.run((DocumentSets returning DocumentSets).+=(DocumentSet(
         1L,
@@ -128,7 +130,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
 
   "handle non-NULLs when writing" in new BaseScope {
     import database.api._
-    blockingDatabase.runUnit(Files.+=(File(3L, 0, "", "", 0, None, "", 0)))
+    blockingDatabase.runUnit(Files.+=(File(3L, 0, "", "", 0, emptySha1, "", 0)))
     blockingDatabase.runUnit(Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None)))
     add(factory.document(2L, "").copy(url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))
     await(subject.flush)

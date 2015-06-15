@@ -60,7 +60,7 @@ trait CreateFileWithView extends UploadedFileProcessStep with LargeObjectMover w
                          contentsSize: Long, contentsLocation: String, sha1: Array[Byte],
                          viewSize: Long, viewLocation: String): Future[File] = {
     database.run((for {
-      file <- fileInserter.+=(1, name, contentsLocation, contentsSize, Some(sha1), viewLocation, viewSize)
+      file <- fileInserter.+=(1, name, contentsLocation, contentsSize, sha1, viewLocation, viewSize)
       _ <- TempDocumentSetFiles.+=(TempDocumentSetFile(documentSetId, file.id))
     } yield file).transactionally)
   }

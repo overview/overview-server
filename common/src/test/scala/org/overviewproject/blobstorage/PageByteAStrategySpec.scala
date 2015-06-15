@@ -14,8 +14,10 @@ class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
     object Db {
       import database.api._
 
+      private val emptySha1 = Array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0).map(_.toByte)
+
       private val fileInserter = {
-        val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize)
+        val q = for (f <- Files) yield (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.viewLocation, f.viewSize, f.contentsSha1)
         (q returning Files)
       }
 
@@ -25,7 +27,7 @@ class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
       }
 
       def insertFile: File = {
-        blockingDatabase.run(fileInserter.+=(1, "name", "location", 10L, "location", 10L))
+        blockingDatabase.run(fileInserter.+=(1, "name", "location", 10L, "location", 10L, emptySha1))
       }
 
       def insertPage(fileId: Long, data: Option[Array[Byte]], length: Long): Page = {
