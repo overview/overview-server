@@ -1,154 +1,112 @@
 package org.overviewproject.clone
 
+import org.squeryl.{Session=>SquerylSession}
+
 import org.overviewproject.persistence.DocumentSetIdGenerator
-import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylEntrypoint.using
+import org.overviewproject.models.{Document,DocumentSet,File}
+import org.overviewproject.models.tables.{Documents,Files}
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ Document, DocumentSet, File, Page, UploadedFile }
 
 class DocumentClonerSpec extends DbSpecification {
   "DocumentCloner" should {
 
-    trait CloneContext extends DbTestContext {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      var documentSetId: Long = _
-      var documentSetCloneId: Long = _
-      var expectedCloneData: Seq[(Long, String)] = _
-      var documentIdMapping: Map[Long, Long] = _
-      var sourceDocuments: Seq[Document] = _
-      var clonedDocuments: Seq[Document] = _
-      var ids: DocumentSetIdGenerator = _
+    trait BaseScope extends DbScope {
+      import database.api._
 
-      def createCsvImportDocumentSet: Long = {
-        val uploadedFile = Schema.uploadedFiles.insert(UploadedFile("content-disposition", "content-type", 100))
-        val documentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentClonerSpec", uploadedFileId = Some(uploadedFile.id)))
+      val originalDocumentSet: DocumentSet = factory.documentSet(id=1L)
+      val cloneDocumentSet: DocumentSet = factory.documentSet(id=2L)
 
-        documentSet.id
+      def go: Unit = {
+        val adapter = new SquerylPostgreSqlAdapter()
+        val session = new SquerylSession(connection, adapter)
+        using(session) { // sets thread-local variable
+          DocumentCloner.clone(originalDocumentSet.id, cloneDocumentSet.id)
+        }
       }
 
-      def documents: Seq[Document] = Seq.tabulate(10) { i => Document(
-        documentSetId,
-        text = Some("text-" + i),
-        id = ids.next,
-        createdAt = new java.sql.Timestamp(1234L)
-      )}
+      def findDocuments(documentSetId: Long): Seq[Document] = blockingDatabase.seq {
+        Documents
+          .filter(_.documentSetId === documentSetId)
+          .sortBy(_.id)
+      }
 
-      override def setupWithDb = {
-        documentSetId = createCsvImportDocumentSet
-        documentSetCloneId = createCsvImportDocumentSet
-        ids = new DocumentSetIdGenerator(documentSetId)
+      def findAllFiles: Seq[File] = blockingDatabase.seq(Files.sortBy(_.id))
+    }
 
-        Schema.documents.insert(documents)
-        sourceDocuments = Schema.documents.where(d => d.documentSetId === documentSetId).toSeq
+    "with CSV-uploaded Documents" should {
+      trait CsvUploadScope extends BaseScope {
+        val originalDocuments: Seq[Document] = Seq(
+          factory.document(id=(0x1L << 32) | 1L, documentSetId=originalDocumentSet.id, text="foo"),
+          factory.document(id=(0x1L << 32) | 2L, documentSetId=originalDocumentSet.id, text="bar")
+        )
+      }
 
-        expectedCloneData = sourceDocuments.map(d => (documentSetCloneId, d.text.get))
+      "clone documents" in new CsvUploadScope {
+        go
+        findDocuments(cloneDocumentSet.id).map(_.text) must beEqualTo(originalDocuments.map(_.text))
+      }
 
-        DocumentCloner.clone(documentSetId, documentSetCloneId)
-        clonedDocuments = Schema.documents.where(d => d.documentSetId === documentSetCloneId).toSeq
+      "match clone document IDs to original document IDs" in new CsvUploadScope {
+        go
+        findDocuments(cloneDocumentSet.id).map(_.id & 0xffffffffL) must beEqualTo(originalDocuments.map(_.id & 0xffffffffL))
+      }
 
+      "encode the clone document set ID in the document IDs" in new CsvUploadScope {
+        go
+        findDocuments(cloneDocumentSet.id).map(_.id >> 32) must beEqualTo(Seq(cloneDocumentSet.id, cloneDocumentSet.id))
       }
     }
 
-    trait DocumentsWithLargeIds extends CloneContext {
-      override def documents: Seq[Document] = Seq(Document(documentSetId, text = Some("text"), id = ids.next + 0xFFFFFFFAl))
-    }
+    "with uploaded-file Documents" should {
+      trait UploadedFileScope extends BaseScope {
+        val file1 = factory.file(id=1L) // split into pages
+        val file2 = factory.file(id=2L) // whole
+        val page11 = factory.page(fileId=file1.id, pageNumber=1)
+        val page12 = factory.page(fileId=file1.id, pageNumber=2)
 
-    trait PdfUploadContext extends DbTestContext {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      var documentSetId: Long = _
-      var documentSetCloneId: Long = _
-
-      override def setupWithDb = {
-        val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "PDF upload"))
-        val documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "Clone"))
-
-        val ids = new DocumentSetIdGenerator(documentSet.id)
-        val file = Schema.files.insertOrUpdate(File(1, "name", "location", 100L, "location", 100L))
-        Schema.documents.insert(
-          Document(
-            documentSet.id,
-            text = Some("text"),
-            fileId = Some(file.id),
-            pageId = documentPage(file.id),
-            createdAt = new java.sql.Timestamp(1234L),
-            id = ids.next
-          ))
-
-        documentSetId = documentSet.id
-        documentSetCloneId = documentSetClone.id
+        val originalDocuments: Seq[Document] = Seq(
+          factory.document(
+            id=(0x1L << 32) | 1L,
+            documentSetId=originalDocumentSet.id,
+            text="foo",
+            fileId=Some(file1.id),
+            pageId=Some(page11.id),
+            pageNumber=Some(1)
+          ),
+          factory.document(
+            id=(0x1L << 32) | 2L,
+            documentSetId=originalDocumentSet.id,
+            text="bar",
+            fileId=Some(file1.id),
+            pageId=Some(page12.id),
+            pageNumber=Some(2)
+          ),
+          factory.document(
+            id=(0x1L << 32) | 3L,
+            documentSetId=originalDocumentSet.id,
+            text="baz",
+            fileId=Some(file2.id)
+          )
+        )
       }
 
-      protected def documentPage(fileId: Long): Option[Long] = {
-        createPage(fileId)
-        None
+      "refer to the same Files" in new UploadedFileScope {
+        go
+        findDocuments(cloneDocumentSet.id).map(_.fileId) must beEqualTo(originalDocuments.map(_.fileId))
       }
 
-      protected def findFiles: Iterable[File] = {
-        from(Schema.files)(f =>
-          where(f.id in
-            from(Schema.documents)(d =>
-              where(d.documentSetId === documentSetCloneId)
-                select (d.fileId)))
-            select (f))
+      "refer to the same Pages" in new UploadedFileScope {
+        go
+        findDocuments(cloneDocumentSet.id).map(_.pageId) must beEqualTo(originalDocuments.map(_.pageId))
       }
 
-      protected def findClonedDocuments: Iterable[Document] =
-        from(Schema.documents)(d =>
-          where(d.documentSetId === documentSetCloneId)
-            select (d))
-
-      protected def findPages: Iterable[Page] =
-        from(Schema.pages)(p =>
-          where(p.fileId in
-            from(Schema.documents)(d =>
-              where(d.documentSetId === documentSetCloneId)
-                select (d.fileId)))
-            select (p))
-
-      protected def createPage(fileId: Long): Long = {
-        val pageData = Array.fill[Byte](128)(0xFF.toByte)
-        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, None, pageData.length, Some(pageData), Some("Text")))
-        page.id
+      "increment File refcounts" in new UploadedFileScope {
+        val otherFile = factory.file(id=3L) // this one should *not* be incremented
+        go
+        findAllFiles.map(_.referenceCount) must beEqualTo(Seq(2, 2, 1))
       }
-
-    }
-
-    trait SplitPdfUploadContext extends PdfUploadContext {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      
-      override protected def documentPage(fileId: Long): Option[Long] = Some(createPage(fileId))
-
-    }
-
-    "Create document clones" in new CloneContext {
-      val clonedData = clonedDocuments.map(d => (d.documentSetId, d.text.get))
-      clonedData must containTheSameElementsAs(expectedCloneData)
-    }
-
-    "Create clones with ids matching source ids" in new CloneContext {
-      val sourceIndeces = sourceDocuments.map(d => (d.id << 32) >> 32)
-      val cloneIndeces = clonedDocuments.map(d => (d.id << 32) >> 32)
-
-      sourceIndeces must containTheSameElementsAs(cloneIndeces)
-    }
-
-    "create clones with documentSetId encoded in id" in new DocumentsWithLargeIds {
-      val highOrderBits = clonedDocuments.map(_.id >> 32)
-
-      highOrderBits.distinct must beEqualTo(Seq(documentSetCloneId))
-    }
-
-    "increase refcount on files" in new PdfUploadContext {
-      DocumentCloner.clone(documentSetId, documentSetCloneId)
-
-      val file = findFiles.headOption
-
-      file must beSome.like {
-        case f => f.referenceCount must be equalTo (2)
-      }
-
-      val document = findClonedDocuments.headOption
-
-      document must beSome
     }
   }
 }
