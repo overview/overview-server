@@ -47,11 +47,11 @@ object Main {
     * table.
     */
   private def deleteSomeUnusedPages: Int = {
-    System.out.println("Finding up to $s{BiggerBatchSize} pages to delete...")
+    System.out.println(s"Finding up to $BiggerBatchSize pages to delete...")
     val pages: Seq[(Long,String)] = await(database.run(sql"""
       SELECT id, data_location
       FROM page
-      WHERE NOT EXISTS (SELECT true FROM document WHERE id = page.id)
+      WHERE NOT EXISTS (SELECT true FROM document WHERE page_id = page.id)
       LIMIT #$BiggerBatchSize
     """.as[(Long,String)]))
 
