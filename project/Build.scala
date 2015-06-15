@@ -143,6 +143,16 @@ object ApplicationBuild extends Build with ProjectSettings {
     )
     .dependsOn(common)
 
+  val upgrade20150615NixUnusedPages = Project("upgrade-2015-06-15-nix-unused-pages", file("upgrade/2015-06-15-nix-unused-pages"))
+    .settings(Defaults.coreDefaultSettings: _*)
+    .settings(packageArchetype.java_application: _*)
+    .settings(
+      scalacOptions ++= ourScalacOptions,
+      resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
+      includeFilter in (Compile, resourceDirectory) := "application.conf"
+    )
+    .dependsOn(common)
+
   val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
     .settings(Defaults.coreDefaultSettings: _*)
     .settings(packageArchetype.java_application: _*)
