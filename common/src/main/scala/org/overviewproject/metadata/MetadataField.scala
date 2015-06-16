@@ -2,6 +2,10 @@ package org.overviewproject.metadata
 
 sealed trait MetadataFieldType
 object MetadataFieldType {
+  /** String value.
+    *
+    * The default value is "".
+    */
   case object String extends MetadataFieldType
 }
 

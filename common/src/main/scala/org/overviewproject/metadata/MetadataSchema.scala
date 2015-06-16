@@ -4,7 +4,7 @@ import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString,JsValue,Json}
 
 /** Schema that describes a Document's metadata.
   *
-  * Document metadata is encoded as JSON. The 
+  * Document metadata is encoded as JSON. See Metadata for more details.
   */
 case class MetadataSchema(version: Int, fields: Seq[MetadataField]) {
   def toJson: JsValue = JsObject(Seq(
