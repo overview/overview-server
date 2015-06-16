@@ -7,7 +7,6 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import models.OverviewDocument
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.{Document,File,Page}
 
