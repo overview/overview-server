@@ -11,14 +11,13 @@ import scala.concurrent.Future
 import controllers.auth.Authorities.userOwningDocument
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import models.OverviewDocument
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.{Document,File,Page}
 
 trait DocumentController extends Controller {
   def showJson(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
-      case Some(document) => Ok(views.json.Document.show(OverviewDocument(document.toDeprecatedDocument)))
+      case Some(document) => Ok(views.json.Document.show(document))
       case None => NotFound
     })
   }
