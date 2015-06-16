@@ -4,14 +4,16 @@ import com.github.tminglei.slickpg._
 import play.api.libs.json.{ JsObject, Json }
 import slick.driver.{ JdbcTypesComponent, PostgresDriver }
 
-import org.overviewproject.postgres.InetAddress
+import org.overviewproject.metadata.MetadataSchema
 import org.overviewproject.models.{DocumentSetCreationJobState, DocumentSetCreationJobType, DocumentSetUser, UserRole}
 import org.overviewproject.models.DocumentDisplayMethod
+import org.overviewproject.postgres.InetAddress
 
 trait MyPostgresDriver extends PostgresDriver
   with PgArraySupport
   with PgNetSupport
-  with PgEnumSupport {
+  with PgEnumSupport
+{
   override val simple = new SimpleQLPlus {}
   override val api = new APIPlus {}
 
@@ -19,6 +21,7 @@ trait MyPostgresDriver extends PostgresDriver
     with ArrayImplicits
     with NetImplicits
     with SimpleArrayPlainImplicits {
+
     implicit val jsonTextColumnType = MappedColumnType.base[JsObject, String](
       Json.stringify,
       Json.parse(_).as[JsObject])
@@ -44,6 +47,11 @@ trait MyPostgresDriver extends PostgresDriver
       _.id,
       DocumentSetCreationJobState.apply)
 
+    implicit val metadataSchemaTypeMapper = MappedColumnType.base[MetadataSchema, String](
+      ms => ms.toJson.toString,
+      s => MetadataSchema.fromJson(Json.parse(s))
+    )
+
     implicit val documentDisplayMethodTypeMapper =
       createEnumJdbcType("DocumentDisplayMethod", DocumentDisplayMethod)
 
@@ -55,7 +63,6 @@ trait MyPostgresDriver extends PostgresDriver
 
     implicit val documentDisplayMethodOptionColumnExtensionMethodsBuilder =
       createEnumOptionColumnExtensionMethodsBuilder(DocumentDisplayMethod)
-
   }
 
   trait APIPlus extends API with CommonImplicitsPlus
@@ -67,7 +74,7 @@ trait MyPostgresDriver extends PostgresDriver
  *
  * Usage:
  *
- *   import org.overviewproject.database.Slick.simple._
- *   ... do stuff like at http://slick.typesafe.com/doc/2.0.2
+ *   import org.overviewproject.database.Slick.api._
+ *   ... do stuff like at http://slick.typesafe.com/doc/3.0.0
  */
 object Slick extends MyPostgresDriver
