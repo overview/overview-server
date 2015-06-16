@@ -32,6 +32,7 @@ define [
 
       id: json.id
       title: json.title
+      title_proper: if json.title then json.title.slice(json.title.lastIndexOf("/") + 1) else json.title
       description: json.description
       pageNumber: json.page_number || null
       url: json.url || null
