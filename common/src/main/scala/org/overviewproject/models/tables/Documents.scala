@@ -1,7 +1,7 @@
 package org.overviewproject.models.tables
 
 import java.util.Date
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 

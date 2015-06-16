@@ -4,7 +4,7 @@ import java.util.UUID
 import java.sql.Timestamp
 
 import models.Session
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.postgres.InetAddress
 
 class SessionsImpl(tag: Tag) extends Table[Session](tag, "session") {

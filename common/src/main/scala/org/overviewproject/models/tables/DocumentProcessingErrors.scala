@@ -1,6 +1,6 @@
 package org.overviewproject.models.tables
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.DocumentProcessingError
 
 class DocumentProcessingErrorsImpl(tag: Tag) extends Table[DocumentProcessingError](tag, "document_processing_error") {

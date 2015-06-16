@@ -3,7 +3,7 @@ package org.overviewproject.models.tables
 import java.sql.Timestamp
 import java.util.UUID
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.Upload
 
 class UploadsImpl(tag: Tag) extends Table[Upload](tag, "upload") {

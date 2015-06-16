@@ -3,7 +3,7 @@ package org.overviewproject.models.tables
 import java.sql.Timestamp
 import play.api.libs.json.{Json,JsObject}
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.View
 
 class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {

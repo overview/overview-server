@@ -4,6 +4,8 @@ import java.nio.charset.StandardCharsets
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{Future,blocking}
 
+import org.overviewproject.database.HasDatabase
+
 abstract class TextViewInfo(
   val suppliedId: String,
   val title: String,
@@ -45,21 +47,18 @@ object TextViewInfo {
     new DbTextViewInfo(suppliedId, title, documentId, pageNumber, size)
 
   private class DbTextViewInfo(suppliedId: String, title: String, documentId: Long, pageNumber: Option[Int], size: Long)
-      extends TextViewInfo(suppliedId, title, documentId, pageNumber, size) {
+      extends TextViewInfo(suppliedId, title, documentId, pageNumber, size)
+      with HasDatabase
+  {
 
     override def stream = {
-      import models.OverviewDatabase
+      import database.api._
+      import database.executionContext
       import org.overviewproject.models.tables.Documents
-      import org.overviewproject.database.Slick.simple._
-      import play.api.libs.iteratee.Execution.Implicits.defaultExecutionContext
 
-      Future { blocking {
-        OverviewDatabase.withSlickSession { implicit session =>
-          val q = Documents.filter(_.id === documentId).map(_.text)
-          val text = q.firstOption.flatten.getOrElse("")
-          Enumerator(text.getBytes(StandardCharsets.UTF_8))
-        }
-      } }
+      for {
+        maybeString: Option[String] <- database.option(Documents.filter(_.id === documentId).map(_.text.getOrElse("")))
+      } yield Enumerator(maybeString.getOrElse("").getBytes(StandardCharsets.UTF_8))
     }
   }
 }

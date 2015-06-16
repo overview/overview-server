@@ -1,6 +1,6 @@
 package org.overviewproject.models.tables
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.DocumentSetCreationJobNode
 
 class DocumentSetCreationJobNodesImpl(tag: Tag) extends Table[DocumentSetCreationJobNode](tag, "document_set_creation_job_node") {

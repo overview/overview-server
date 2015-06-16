@@ -2,7 +2,7 @@ package org.overviewproject.models.tables
 
 import java.sql.Timestamp
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.Tree
 
 class TreesImpl(tag: Tag) extends Table[Tree](tag, "tree") {

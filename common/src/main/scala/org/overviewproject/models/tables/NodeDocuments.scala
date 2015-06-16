@@ -1,6 +1,6 @@
 package org.overviewproject.models.tables
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.NodeDocument
 
 class NodeDocumentsImpl(tag: Tag) extends Table[NodeDocument](tag, "node_document") {

@@ -1,6 +1,6 @@
 package org.overviewproject.models.tables
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.FileGroup
 
 class FileGroupsImpl(tag: Tag) extends Table[FileGroup](tag, "file_group") {

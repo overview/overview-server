@@ -2,7 +2,7 @@ package org.overviewproject.models.tables
 
 import java.sql.Timestamp
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.DocumentSet
 
 class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set") {

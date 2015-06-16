@@ -4,7 +4,7 @@ import java.sql.Timestamp
 
 import models.User
 import org.overviewproject.models.UserRole
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 
 class UsersImpl(tag: Tag) extends Table[User](tag, "user") {
   def id = column[Long]("id", O.PrimaryKey)

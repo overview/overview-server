@@ -1,6 +1,6 @@
 package org.overviewproject.models.tables
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 

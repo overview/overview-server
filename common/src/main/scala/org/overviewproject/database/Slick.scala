@@ -14,7 +14,6 @@ trait MyPostgresDriver extends PostgresDriver
   with PgNetSupport
   with PgEnumSupport
 {
-  override val simple = new SimpleQLPlus {}
   override val api = new APIPlus {}
 
   trait CommonImplicitsPlus extends CommonImplicits
@@ -66,7 +65,6 @@ trait MyPostgresDriver extends PostgresDriver
   }
 
   trait APIPlus extends API with CommonImplicitsPlus
-  trait SimpleQLPlus extends SimpleQL with CommonImplicitsPlus
 }
 
 /**

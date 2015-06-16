@@ -2,7 +2,7 @@ package org.overviewproject.models.tables
 
 import java.util.UUID
 
-import org.overviewproject.database.Slick.simple._
+import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.Plugin
 
 class PluginsImpl(tag: Tag) extends Table[Plugin](tag, "plugin") {
