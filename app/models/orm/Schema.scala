@@ -26,7 +26,6 @@ object Schema extends org.squeryl.Schema {
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSets = table[DocumentSet]
   val documentSetUsers = table[DocumentSetUser]
-  val documents = table[Document]
   val documentTags = table[DocumentTag]
   val nodeDocuments = table[NodeDocument]
   val nodes = table[Node]
@@ -34,7 +33,6 @@ object Schema extends org.squeryl.Schema {
   val users = table[User]
   val trees = table[Tree]
  
-  on(documents)(d => declare(d.id is (primaryKey)))
   on(nodes)(n => declare(n.id is (primaryKey)))
   on(trees)(t => declare(t.id is (primaryKey)))
 }

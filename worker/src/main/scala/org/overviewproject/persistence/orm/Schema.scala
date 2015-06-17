@@ -12,7 +12,6 @@ object Schema extends org.squeryl.Schema {
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSetCreationJobNodes = table[DocumentSetCreationJobNode]
   val documentSets = table[DocumentSet]
-  val documents = table[Document]
   val documentTags = table[DocumentTag]
   val groupedFileUploads = table[GroupedFileUpload]
   val groupedProcessedFiles = table[GroupedProcessedFile]
@@ -24,7 +23,6 @@ object Schema extends org.squeryl.Schema {
   val trees = table[Tree]
   val uploadedFiles = table[UploadedFile]
   
-  on(documents)(d => declare(d.id is(primaryKey)))
   on(nodes)(n => declare(n.id is(primaryKey)))
   on(trees)(t => declare(t.id is(primaryKey)))
 }

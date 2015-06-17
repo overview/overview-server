@@ -17,7 +17,6 @@ object Schema extends org.squeryl.Schema {
   }
 
   val apiTokens = table[ApiToken]
-  val documents = table[Document]
   val documentSets = table[DocumentSet]
   val groupedProcessedFiles = table[GroupedProcessedFile]
   val fileGroups = table[FileGroup]
@@ -36,7 +35,6 @@ object Schema extends org.squeryl.Schema {
   val tempDocumentSetFiles = table[TempDocumentSetFile]
   
   on(apiTokens)(t => declare(t.token is (primaryKey)))
-  on(documents)(d => declare(d.id is(primaryKey)))  
   on(nodes)(n => declare(n.id is(primaryKey)))
   on(trees)(t => declare(t.id is(primaryKey)))
 }
