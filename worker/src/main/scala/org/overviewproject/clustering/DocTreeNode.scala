@@ -15,7 +15,7 @@ import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
 
 // Document tree node. Contains items, children, and a description which lists top terms in all docs of this node
 class DocTreeNode(val docs: Set[DocumentID]) {
-  var description = ""
+  var description: String = ""
   var children: Set[DocTreeNode] = Set[DocTreeNode]()
   
   var components = Set[DocumentComponent]() // used during clustering by KMeansComponentDocTreeBuilder, cleared after

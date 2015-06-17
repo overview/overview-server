@@ -4,10 +4,9 @@ import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import scala.util.Random
+
 import org.overviewproject.models._
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
-import org.overviewproject.tree.orm.{Document => DeprecatedDocument}
-
 
 /** Plain Old Data Object factory.
   *
@@ -88,34 +87,6 @@ object PodoFactory extends Factory {
     pageId,
     displayMethod,
     text
-  )
-
-  override def deprecatedDocument(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    description: String = "",
-    title: Option[String] = None,
-    suppliedId: Option[String] = None,
-    text: Option[String] = None,
-    url: Option[String] = None,
-    documentcloudId: Option[String] = None,
-    createdAt: Timestamp = new Timestamp(1234L),
-    fileId: Option[Long] = None,
-    pageId: Option[Long] = None,
-    pageNumber: Option[Int] = None
-  ) = DeprecatedDocument(
-    getId(documentSetId),
-    description,
-    title,
-    suppliedId,
-    text,
-    url,
-    documentcloudId,
-    createdAt,
-    fileId,
-    pageId,
-    pageNumber,
-    getId(id)
   )
 
   override def documentSet(

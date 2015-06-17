@@ -41,10 +41,10 @@ object SuggestedTags {
     
   // Return suggested tags for a single document
   // Just a fixed number of the top terms, by TF-IDF weights
-  def suggestedTagsForDocument(vec:DocumentVector, docVecs:DocumentSetVectors) : String = {
+  def suggestedTagsForDocument(vec:DocumentVector, docVecs:DocumentSetVectors): String = {
     val numSuggestedTagsForDoc = 7
     val terms = vec.toList.sortWith(_._2 > _._2).take(numSuggestedTagsForDoc).map(_._1).map(docVecs.stringTable.idToString(_))
-    val filtered = removeUnigramsThatAppearInBigrams(terms)
+    var filtered = removeUnigramsThatAppearInBigrams(terms)
     filtered.mkString(", ")
   }
     

@@ -65,34 +65,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     text
   ))
 
-  override def deprecatedDocument(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    description: String = "",
-    title: Option[String] = None,
-    suppliedId: Option[String] = None,
-    text: Option[String] = None,
-    url: Option[String] = None,
-    documentcloudId: Option[String] = None,
-    createdAt: Timestamp = new Timestamp(1234L),
-    fileId: Option[Long] = None,
-    pageId: Option[Long] = None,
-    pageNumber: Option[Int] = None
-  ) = run(q.insertDocument += podoFactory.deprecatedDocument(
-    id,
-    documentSetId,
-    description,
-    title,
-    suppliedId,
-    text,
-    url,
-    documentcloudId,
-    createdAt,
-    fileId,
-    pageId,
-    pageNumber
-  ).toDocument).toDeprecatedDocument
-
   override def documentSet(
     id: Long = 0L,
     title: String = "",

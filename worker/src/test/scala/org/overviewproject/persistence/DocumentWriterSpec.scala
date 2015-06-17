@@ -15,9 +15,7 @@ class DocumentWriterSpec extends DbSpecification {
       val documentSet = factory.documentSet()
       val document = factory.document(documentSetId=documentSet.id, keywords=Seq("foo", "bar"))
 
-      DeprecatedDatabase.inTransaction {
-        DocumentWriter.updateDescription(document.id, "bar baz")
-      }
+      DocumentWriter.updateDescription(document.id, "bar baz")
 
       import database.api._
       import org.overviewproject.models.tables.Documents

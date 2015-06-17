@@ -3,10 +3,9 @@ package org.overviewproject.test.factories
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
+
 import org.overviewproject.models._
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
-import org.overviewproject.tree.orm.{ Document => DeprecatedDocument }
-
 
 /**
  * Creates models simply.
@@ -46,21 +45,6 @@ trait Factory {
     pageId: Option[Long] = None,
     displayMethod: Option[DocumentDisplayMethod] = None,
     text: String = ""): Document
-
-  /** Creates a new DeprecatedDocument with the given parameters. */
-  def deprecatedDocument(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    description: String = "",
-    title: Option[String] = None,
-    suppliedId: Option[String] = None,
-    text: Option[String] = None,
-    url: Option[String] = None,
-    documentcloudId: Option[String] = None,
-    createdAt: Timestamp = new Timestamp(1234L),
-    fileId: Option[Long] = None,
-    pageId: Option[Long] = None,
-    pageNumber: Option[Int] = None): DeprecatedDocument
 
   /** Creates a new DocumentSet with the given parameters. */
   def documentSet(

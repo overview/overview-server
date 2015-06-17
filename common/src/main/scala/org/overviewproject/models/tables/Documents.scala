@@ -5,7 +5,7 @@ import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
-class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
+object DocumentsImpl {
   implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](
     _.mkString(" "),
     _.split(" ").toSeq
@@ -15,6 +15,10 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     d => new java.sql.Timestamp(d.getTime),
     d => new Date(d.getTime)
   )
+}
+
+class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
+  import DocumentsImpl._
 
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
