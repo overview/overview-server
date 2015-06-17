@@ -10,13 +10,18 @@ import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.util.Textify
 import scala.collection.IterableView
 import scala.collection.SeqView
+import org.apache.pdfbox.io.RandomAccessFile
+import java.io.File
+import scala.util.control.Exception.ultimately
 
 class PdfBoxDocument(location: String) extends PdfDocument {
-
+  private val TempFilePrefix = "overview-pdfbox-"
+  private val TempFileExtension = ".tmp"
+  
   private val document: PDDocument = loadFromLocation(location)
 
   private val textStripper: PDFTextStripper = new PDFTextStripper
-
+  
   override def pages: SeqView[PdfPage, Seq[_]] = splitPages.map { p =>
     val data = getData(p)
     val text = getText(p)
@@ -27,11 +32,9 @@ class PdfBoxDocument(location: String) extends PdfDocument {
   }
 
   override def text: String = getText(document)
-    
 
-  override def close(): Unit = {
-    document.close()
-  }
+  override def close(): Unit = document.close()
+  
 
   // Use a view to prevent all page data from being loaded into memory at once
   private def splitPages: SeqView[PDDocument, Seq[_]] =
@@ -58,10 +61,19 @@ class PdfBoxDocument(location: String) extends PdfDocument {
 
   private def loadFromLocation(location: String): PDDocument = {
     scala.concurrent.Await.result(
-      BlobStorage.withBlobInTempFile(location)(file => Future.successful(PDDocument.load(file))),
+      BlobStorage.withBlobInTempFile(location)(loadFromFile),
       scala.concurrent.duration.Duration.Inf)
   }
 
+  private def loadFromFile(file: File): Future[PDDocument] = Future.successful {
+    val tempFile = File.createTempFile(TempFilePrefix, TempFileExtension)
+    val scratchFile = new RandomAccessFile(tempFile, "rw")
+    
+    ultimately(tempFile.delete) {
+      PDDocument.loadNonSeq(file, scratchFile)
+    }
+  }
+  
   private def getData(page: PDDocument): Array[Byte] = {
     val outputStream = new ByteArrayOutputStream()
     page.save(outputStream)
