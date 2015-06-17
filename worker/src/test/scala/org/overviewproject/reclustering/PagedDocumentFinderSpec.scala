@@ -3,73 +3,46 @@ package org.overviewproject.reclustering
 import org.overviewproject.persistence.orm.Schema._
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ Document, DocumentSet, DocumentTag, Tag }
 
 class PagedDocumentFinderSpec extends DbSpecification {
   "PagedDocumentFinder" should {
 
-    trait DocumentContext extends DbTestContext {
-      val documentIds = Seq(4l, 6l, 2l, 1l, 7l, 9l, 3l, 5l, 8l)
-      val pageSize = 3
+    trait DocumentContext extends DbScope {
+      val documentIds = Seq(4l, 6l, 2l, 1l, 7l)
+      val pageSize = 2
 
-      var documentSet: DocumentSet = _
-      var pagedDocumentFinder: PagedDocumentFinder = _
-
-      override def setupWithDb = {
-        documentSet = documentSets.insertOrUpdate(DocumentSet(title = "PagedDocumentFinderSpec"))
-        val docs = documentIds.map(n => Document(documentSet.id, id = n))
-        documents.insert(docs)
-
-        pagedDocumentFinder = PagedDocumentFinder(documentSet.id, tagId, pageSize)
-      }
+      val documentSet = factory.documentSet()
+      documentIds.foreach(id => factory.document(documentSetId=documentSet.id, id=id))
 
       protected def tagId: Option[Long] = None
+      lazy val subject = PagedDocumentFinder(documentSet.id, tagId, pageSize)
     }
 
     trait TaggedDocumentContext extends DocumentContext {
-      var tag: Tag = _
+      val tag = factory.tag(documentSetId=documentSet.id)
 
-      override def setupWithDb = {
-        super.setupWithDb
-
-        documentIds.take(5).foreach { id =>
-          documentTags.insert(DocumentTag(id, tag.id))
-        }
-      }
-
-      override protected def tagId: Option[Long] = {
-        tag = tags.insert(Tag(documentSet.id, "tag", "ababab"))
-
-        Some(tag.id)
-      }
+      documentIds.drop(1).take(3).foreach(docId => factory.documentTag(docId, tag.id))
+      override def tagId = Some(tag.id)
     }
 
     "return documents by page" in new DocumentContext {
-      val pagedDocumentIds = documentIds.sorted.grouped(pageSize).toSeq
-
-      for (p <- 1 to 3) yield {
-        val page = pagedDocumentFinder.findDocuments(p)
-        page.map(_.id) must be equalTo (pagedDocumentIds(p - 1))
-      }
+      subject.findDocuments(1).map(_.id) must beEqualTo(Seq(1L, 2L))
+      subject.findDocuments(2).map(_.id) must beEqualTo(Seq(4L, 6L))
+      subject.findDocuments(3).map(_.id) must beEqualTo(Seq(7L))
+      subject.findDocuments(4).map(_.id) must beEqualTo(Seq())
     }
 
     "return total count" in new DocumentContext {
-      pagedDocumentFinder.numberOfDocuments must be equalTo (documentIds.size)
+      subject.numberOfDocuments must beEqualTo(5)
     }
 
     "return only tagged documents when given tag" in new TaggedDocumentContext {
-      def getResults(page: Int): Seq[Document] = {
-        val pageDocs: Seq[Document] = pagedDocumentFinder.findDocuments(page)
-
-        if (pageDocs.isEmpty) Seq.empty
-        else pageDocs ++ getResults(page + 1)
-      }
-
-      getResults(1).map(_.id) must containTheSameElementsAs(documentIds.take(5))
+      subject.findDocuments(1).map(_.id) must beEqualTo(Seq(1L, 2L))
+      subject.findDocuments(2).map(_.id) must beEqualTo(Seq(6L))
     }
     
     "count only tagged documents when given tag" in new TaggedDocumentContext {
-      pagedDocumentFinder.numberOfDocuments must be equalTo(5)
+      subject.numberOfDocuments must beEqualTo(3)
     }
   }
 }

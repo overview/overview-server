@@ -1,6 +1,6 @@
 package org.overviewproject.reclustering
 
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.models.Document
 import org.overviewproject.util.DocumentConsumer
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.specs2.mock.Mockito
@@ -20,30 +20,27 @@ class ReclusteringDocumentProducerSpec extends Specification with Mockito {
 
     trait ReclusteringContext extends Before {
       val documentSetId = 1l
-      val documentFinder = smartMock[PagedDocumentFinder]
       val consumer = smartMock[DocumentConsumer]
       val progAbort = mock[ProgressAbortFn] // smartMock triggers bug https://code.google.com/p/mockito/issues/detail?id=107
       val numberOfDocuments = 5
+      val factory = org.overviewproject.test.factories.PodoFactory
+
+      val documentFinder = smartMock[PagedDocumentFinder]
+      documentFinder.numberOfDocuments returns numberOfDocuments
+      documentFinder.findDocuments(1) returns Seq.tabulate(numberOfDocuments) { n =>
+        // Gotta give id=n+1, because id=0 will auto-assign an ID
+        factory.document(id=n+1, text=s"text-$n")
+      }
+      documentFinder.findDocuments(2) returns Seq.empty
 
       val documentProducer = new TestReclusteringDocumentProducer(documentFinder, consumer, progAbort)
 
-      override def before = {
-        documentFinder.numberOfDocuments returns numberOfDocuments
-        documentFinder.findDocuments(1) returns createMockDocuments
-        documentFinder.findDocuments(2) returns Seq.empty
-
-        setupProgAbort
-      }
+      override def before = setupProgAbort
 
       protected def setupProgAbort: Unit = progAbort.apply(any) returns false
 
       private def createMockDocuments: Seq[Document] = {
-        Seq.tabulate(numberOfDocuments) { n =>
-          val doc = smartMock[Document]
-          doc.id returns n
-          doc.text returns Some(s"text-$n")
-          doc
-        }
+        Seq.tabulate(numberOfDocuments) { n => factory.document(id=n, text=s"text-$n") }
       }
     }
 
@@ -65,7 +62,7 @@ class ReclusteringDocumentProducerSpec extends Specification with Mockito {
       documentProducer.produce
 
       for { n <- 0 until numberOfDocuments } yield {
-        there was one(consumer).processDocument(n, s"text-$n")
+        there was one(consumer).processDocument(n+1, s"text-$n")
       }
     }
 
@@ -92,10 +89,10 @@ class ReclusteringDocumentProducerSpec extends Specification with Mockito {
     "stop processing when cancelled" in new CancelledClustering {
       documentProducer.produce
 
-      there was one(consumer).processDocument(0, "text-0") andThen
-        one(consumer).processDocument(1, "text-1")
+      there was one(consumer).processDocument(1, "text-0") andThen
+        one(consumer).processDocument(2, "text-1")
       for { n <- 2 until numberOfDocuments } yield {
-        there was no(consumer).processDocument(n, s"text-$n")
+        there was no(consumer).processDocument(n+1, s"text-$n")
       }
     }
 

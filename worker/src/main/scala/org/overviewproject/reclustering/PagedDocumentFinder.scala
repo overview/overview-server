@@ -1,10 +1,8 @@
 package org.overviewproject.reclustering
 
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.persistence.orm.finders.DocumentFinder
-import org.overviewproject.tree.orm.finders.ResultPage
-import org.overviewproject.util.Logger
+import org.overviewproject.database.HasBlockingDatabase
+import org.overviewproject.models.Document
+import org.overviewproject.models.tables.{DocumentTags,Documents}
 
 trait PagedDocumentFinder {
   def findDocuments(page: Int): Seq[Document]
@@ -12,23 +10,32 @@ trait PagedDocumentFinder {
 }
 
 object PagedDocumentFinder {
-  def apply(documentSetId: Long, tagId: Option[Long], pageSize: Int): PagedDocumentFinder =
-    new PagedDocumentFinder {
+  def apply(documentSetId: Long, maybeTagId: Option[Long], pageSize: Int): PagedDocumentFinder = {
+    new PagedDocumentFinder with HasBlockingDatabase {
+      import database.api._
 
-      private val query = tagId.map {
-        t => DocumentFinder.byDocumentSetAndTag(documentSetId, t).orderedById
-      }
-      .getOrElse { DocumentFinder.byDocumentSet(documentSetId).orderedById }
+      val baseQuery = Documents.filter(_.documentSetId === documentSetId)
 
-      override def findDocuments(page: Int): Seq[Document] = DeprecatedDatabase.inTransaction {
-        val d = ResultPage(query, pageSize, page).toSeq
-        d.size
-        d
-      }
-
-      override def numberOfDocuments: Long = DeprecatedDatabase.inTransaction {
-       query.count
+      // TODO: use DocumentBackend for this. Sorting is evil, and we need to do it.
+      val query = maybeTagId match {
+        case None => baseQuery.sortBy(_.id)
+        case Some(tagId) => {
+          baseQuery
+            .filter(_.id in DocumentTags.filter(_.tagId === tagId).map(_.documentId))
+            .sortBy(_.id)
+        }
       }
 
+      override def findDocuments(page: Int): Seq[Document] = {
+        val pageQuery = query
+          .drop(pageSize * (page - 1))
+          .take(pageSize)
+        blockingDatabase.seq(pageQuery)
+      }
+
+      override def numberOfDocuments: Long = {
+        blockingDatabase.length(query)
+      }
     }
+  }
 }

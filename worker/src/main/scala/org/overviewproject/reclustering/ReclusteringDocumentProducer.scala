@@ -1,13 +1,13 @@
 package org.overviewproject.reclustering
 
-import org.overviewproject.util.DocumentProducer
-import org.overviewproject.util.DocumentConsumer
-import org.overviewproject.util.Progress._
-import org.overviewproject.persistence.orm.finders.DocumentFinder
-import org.overviewproject.tree.orm.Document
 import scala.annotation.tailrec
+
+import org.overviewproject.persistence.orm.finders.DocumentFinder
+import org.overviewproject.models.Document
+import org.overviewproject.util.DocumentConsumer
+import org.overviewproject.util.DocumentProducer
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
-import org.overviewproject.util.Logger
+import org.overviewproject.util.Progress._
 
 trait ReclusteringDocumentProducer extends DocumentProducer {
   protected val FetchingFraction: Double = 0.5
@@ -39,11 +39,12 @@ trait ReclusteringDocumentProducer extends DocumentProducer {
 
   private def processDocuments(documents: Iterable[Document], numberOfDocumentsProcessed: Int): ProductionState = {
     documents.foldLeft(ProductionState(numberOfDocumentsProcessed, false)) { (s, document) =>
-      if (!s.cancelled) document.text.map { text =>
-        consumer.processDocument(document.id, text)
+      if (!s.cancelled) {
+        consumer.processDocument(document.id, document.text)
         ProductionState(s.numberOfDocuments + 1, reportProgress(s.numberOfDocuments + 1))
-      }.getOrElse(ProductionState(s.numberOfDocuments, reportProgress(s.numberOfDocuments)))
-      else s
+      } else {
+        s
+      }
     }
   }
 
