@@ -4,8 +4,8 @@ package org.overviewproject.jobhandler
 /**
  * Contains classes that process files that have been uploaded to a 
  * [[FileGroup]]. Uploads are split into pages with their text extracted, 
- * then converted to [[org.overviewproject.tree.orm.Document]]s, which are clustered into trees by the
- * [[JobHandler]] process.
+ * then converted to [[org.overviewproject.model.Document]]s, which are
+ * clustered into trees by the [[JobHandler]] process.
  * 
  * When all files in a [[FileGroup]] have been uploaded, the `Overview server` 
  * sends a message to the [[FileGroupJobManager]]. The [[FileGroupJobManager]] splits the processing, first 
