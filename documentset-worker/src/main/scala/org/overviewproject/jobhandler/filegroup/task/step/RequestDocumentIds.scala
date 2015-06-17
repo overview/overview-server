@@ -1,16 +1,15 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-
 import org.overviewproject.jobhandler.filegroup.DocumentIdSupplierProtocol._
 import org.overviewproject.models.Document
-
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
+
 
 /**
  * Send a request to the documentIdSupplier actor, asking for [[Document]] ids.
@@ -41,7 +40,7 @@ trait RequestDocumentIds extends UploadedFileProcessStep {
 
 object RequestDocumentIds {
   def apply(documentIdSupplier: ActorRef, documentSetId: Long, filename: String, documentData: Seq[DocumentData],
-            nextStep: Seq[Document] => TaskStep): RequestDocumentIds = 
+            nextStep: Seq[Document] => TaskStep)(implicit executor: ExecutionContext): RequestDocumentIds = 
               new RequestDocumentIdsImpl(documentIdSupplier, documentSetId, filename, documentData, nextStep)
 
   private class RequestDocumentIdsImpl(
@@ -49,6 +48,7 @@ object RequestDocumentIds {
     override protected val documentSetId: Long,
     override protected val filename: String,
     override protected val documentData: Seq[DocumentData],
-    override protected val nextStep: Seq[Document] => TaskStep) extends RequestDocumentIds
+    override protected val nextStep: Seq[Document] => TaskStep)
+   (override implicit protected val executor: ExecutionContext) extends RequestDocumentIds
 
 }

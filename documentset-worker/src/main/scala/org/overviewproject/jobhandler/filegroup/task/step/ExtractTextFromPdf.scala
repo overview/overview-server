@@ -1,13 +1,12 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.Exception.ultimately
 
 import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.models.File
-
 
 /**
  * Extract the text from a [[File]]'s PDF view.
@@ -45,13 +44,15 @@ object ExtractTextFromPdf {
   import scala.concurrent.blocking
   import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 
-  def apply(documentSetId: Long, file: File, next: Seq[DocumentData] => TaskStep): ExtractTextFromPdf =
+  def apply(documentSetId: Long, file: File,
+            next: Seq[DocumentData] => TaskStep)(implicit executor: ExecutionContext): ExtractTextFromPdf =
     new ExtractTextFromPdfImpl(documentSetId, file, next)
 
   private class ExtractTextFromPdfImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: Seq[DocumentData] => TaskStep) extends ExtractTextFromPdf {
+    override protected val nextStep: Seq[DocumentData] => TaskStep
+  )(override implicit protected val executor: ExecutionContext) extends ExtractTextFromPdf {
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
 
     private class PdfProcessorImpl extends PdfProcessor {

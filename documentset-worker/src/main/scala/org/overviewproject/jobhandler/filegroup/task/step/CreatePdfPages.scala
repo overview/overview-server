@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import scala.collection.SeqView
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.blocking
 import scala.util.control.Exception.ultimately
@@ -33,7 +33,7 @@ trait CreatePdfPages extends UploadedFileProcessStep {
 
   override protected def doExecute: Future[TaskStep] =
     loadDocument(file.viewLocation).flatMap { pdfDocument =>
-      ultimately(pdfDocument.close) { 
+      ultimately(pdfDocument.close) {
         nextStepWithPages(pdfDocument)
       }
     }
@@ -51,7 +51,7 @@ trait CreatePdfPages extends UploadedFileProcessStep {
     pageAttributes <- pageSaver.savePages(file.id, getPages(pdfDocument))
     pageDocumentData = pageAttributes.map(p =>
       PdfPageDocumentData(file.name, file.id, p.pageNumber, p.id, p.text))
-  } yield nextStep(pageDocumentData) 
+  } yield nextStep(pageDocumentData)
 
   trait PdfProcessor {
     def loadFromBlobStorage(location: String): PdfDocument
@@ -60,13 +60,16 @@ trait CreatePdfPages extends UploadedFileProcessStep {
 
 object CreatePdfPages {
 
-  def apply(documentSetId: Long, file: File, nextStep: Seq[DocumentData] => TaskStep): CreatePdfPages =
+  def apply(documentSetId: Long, file: File,
+            nextStep: Seq[DocumentData] => TaskStep)(implicit executor: ExecutionContext): CreatePdfPages =
     new CreatePdfPagesImpl(documentSetId, file, nextStep)
 
   private class CreatePdfPagesImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: Seq[DocumentData] => TaskStep) extends CreatePdfPages {
+    override protected val nextStep: Seq[DocumentData] => TaskStep)
+   (override implicit protected val executor: ExecutionContext)
+    extends CreatePdfPages {
 
     override protected val pageSaver: PageSaver = PageSaver
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl

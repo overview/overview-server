@@ -1,6 +1,6 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import org.overviewproject.database.HasDatabase
@@ -51,15 +51,16 @@ trait WriteDocuments extends UploadedFileProcessStep {
 
 object WriteDocuments {
 
-  def apply(documentSetId: Long, filename: String,
-            documents: Seq[Document], bulkDocumentWriter: BulkDocumentWriter): WriteDocuments =
+  def apply(documentSetId: Long, filename: String, documents: Seq[Document],
+            bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): WriteDocuments =
     new WriteDocumentsImpl(documentSetId, filename, documents, bulkDocumentWriter)
 
   private class WriteDocumentsImpl(
     override protected val documentSetId: Long,
     override protected val filename: String,
     override protected val documents: Seq[Document],
-    override protected val bulkDocumentWriter: BulkDocumentWriter) extends WriteDocuments {
+    override protected val bulkDocumentWriter: BulkDocumentWriter)
+   (override implicit protected val executor: ExecutionContext) extends WriteDocuments {
 
     override protected val searchIndex = TransportIndexClient.singleton
 

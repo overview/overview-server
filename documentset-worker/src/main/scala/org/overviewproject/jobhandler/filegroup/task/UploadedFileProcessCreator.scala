@@ -1,11 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import akka.actor.ActorRef
 import java.io.InputStream
+
+import scala.concurrent.ExecutionContext
 import scala.util.control.Exception.ultimately
 
 import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.DocumentType
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.OfficeDocument
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfPage
@@ -14,6 +17,8 @@ import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.util.BulkDocumentWriter
+
+import akka.actor.ActorRef
 
 trait UploadedFileProcessCreator {
 
@@ -51,10 +56,11 @@ trait UploadedFileProcessCreator {
 
 object UploadedFileProcessCreator extends HasBlockingDatabase {
 
-  def apply(bulkDocumentWriter: BulkDocumentWriter): UploadedFileProcessCreator = 
+  def apply(bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): UploadedFileProcessCreator = 
     new UploadedFileProcessCreatorImpl(bulkDocumentWriter)
 
-  private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter) extends UploadedFileProcessCreator {
+  private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter)
+    (implicit executor: ExecutionContext) extends UploadedFileProcessCreator {
     override protected val documentTypeDetector = DocumentTypeDetector
     override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
 

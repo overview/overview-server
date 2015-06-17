@@ -3,6 +3,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 import java.io.InputStream
 import org.mockito.Matchers
 import org.specs2.mock.Mockito
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
@@ -77,7 +78,7 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
   }
 
   case object NextStep extends TaskStep {
-    override protected def doExecute = Future.successful(this)
+    override def execute = Future.successful(this)
   }
 
   class TestCreatePdfFile(
@@ -85,6 +86,8 @@ class CreatePdfFileSpec extends DbSpecification with Mockito {
     override protected val blobStorage: BlobStorage,
     loInputStream: InputStream
   ) extends CreatePdfFile {
+    override protected val executor: ExecutionContext = implicitly
+    
     override protected val documentSetId = 1l
     override protected val nextStep = { f: File => NextStep }
     override protected def largeObjectInputStream(oid: Long) = loInputStream

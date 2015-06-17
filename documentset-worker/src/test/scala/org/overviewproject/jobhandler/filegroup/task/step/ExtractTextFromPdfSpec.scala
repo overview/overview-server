@@ -8,6 +8,7 @@ import org.specs2.mock.Mockito
 import org.overviewproject.models.File
 import scala.concurrent.Future
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
+import scala.concurrent.ExecutionContext
 
 class ExtractTextFromPdfSpec extends Specification with Mockito {
 
@@ -52,10 +53,11 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
     }
 
     case class NextStep(document: Seq[DocumentData]) extends TaskStep {
-      override protected def doExecute = Future.successful(this)
+      override def execute = Future.successful(this)
     }
 
     class TestExtractFromPdf extends ExtractTextFromPdf {
+      override protected val executor: ExecutionContext = implicitly
       override protected val documentSetId = 1l
       override protected val file = documentFile
       override protected val nextStep = { documentData => NextStep(documentData) }

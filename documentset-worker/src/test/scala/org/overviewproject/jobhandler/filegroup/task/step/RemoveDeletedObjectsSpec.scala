@@ -10,6 +10,7 @@ import org.specs2.mutable.Before
 import akka.actor.ActorRef
 import org.overviewproject.test.ForwardingActor
 import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import scala.concurrent.ExecutionContext
 
 class RemoveDeletedObjectsSpec extends Specification {
 
@@ -26,10 +27,10 @@ class RemoveDeletedObjectsSpec extends Specification {
 
       fileGroupRemoval.expectMsg(RemoveFileGroup(fileGroupId))
     }
-    
+
     "return FinalStep" in new RemovalContext {
       val next = removeDeletedObjects.execute
-      
+
       next must beEqualTo(FinalStep).await
     }
   }

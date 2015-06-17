@@ -1,16 +1,16 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import java.io.{BufferedInputStream,InputStream}
-import java.security.{DigestInputStream,MessageDigest}
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.io.{ BufferedInputStream, InputStream }
+import java.security.{ DigestInputStream, MessageDigest }
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.models.{ File, GroupedFileUpload, TempDocumentSetFile }
 import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
 import org.overviewproject.postgres.LargeObjectInputStream
+
 
 /**
  * Create a [[File]] with PDF content
@@ -22,7 +22,7 @@ trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with H
 
   override protected val documentSetId: Long
   override protected val filename: String = uploadedFile.name
-  
+
   protected val blobStorage: BlobStorage
   protected def largeObjectInputStream(oid: Long): InputStream
 
@@ -34,10 +34,11 @@ trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with H
       (location, sha1) <- DBIO.from(moveLargeObjectToBlobStorage(upload.contentsOid, upload.size))
       file <- writeFileAndTempDocumentSetFile(upload.name, upload.size, location, sha1)
     } yield nextStep(file))
+    
   }
 
   /** Returns (blobLocation,sha1). */
-  private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[(String,Array[Byte])] = {
+  private def moveLargeObjectToBlobStorage(oid: Long, size: Long): Future[(String, Array[Byte])] = {
     val loStream = largeObjectInputStream(oid)
     val digest = MessageDigest.getInstance("SHA-1")
     val digestStream = new DigestInputStream(loStream, digest)
@@ -46,13 +47,11 @@ trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with H
       location <- blobStorage.create(BlobBucketId.FileContents, digestStream, size)
     } yield (location, digest.digest)
   }
-  
+
   private lazy val fileInserter = (
     Files.map(f => (
-      f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.contentsSha1, f.viewLocation, f.viewSize
-    )) returning Files
-  )
-      
+      f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.contentsSha1, f.viewLocation, f.viewSize)) returning Files)
+
   private def writeFileAndTempDocumentSetFile(name: String, size: Long, location: String, sha1: Array[Byte]): DBIO[File] = {
     (for {
       file <- fileInserter.+=(1, name, location, size, sha1, location, size)
@@ -63,15 +62,16 @@ trait CreatePdfFile extends UploadedFileProcessStep with LargeObjectMover with H
 
 object CreatePdfFile {
 
-  def apply(documentSetId: Long, filename: String, uploadedFile: GroupedFileUpload, next: File => TaskStep): CreatePdfFile =
+  def apply(documentSetId: Long, filename: String, uploadedFile: GroupedFileUpload, next: File => TaskStep)
+    (implicit executor: ExecutionContext): CreatePdfFile =
     new CreatePdfFileImpl(documentSetId, filename, uploadedFile, next)
 
   private class CreatePdfFileImpl(
     override protected val documentSetId: Long,
     override protected val filename: String,
     override protected val uploadedFile: GroupedFileUpload,
-    override protected val nextStep: File => TaskStep
-  ) extends CreatePdfFile {
+    override protected val nextStep: File => TaskStep)(override implicit protected val executor: ExecutionContext)
+    extends CreatePdfFile {
     override protected val blobStorage = BlobStorage
     override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
   }

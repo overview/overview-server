@@ -10,7 +10,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import org.specs2.time.NoTimeConversions
 import scala.concurrent.Future
-
+import scala.concurrent.ExecutionContext
 
 class DeleteFileUploadTaskStepSpec extends Specification with Mockito with NoTimeConversions {
 
@@ -24,18 +24,17 @@ class DeleteFileUploadTaskStepSpec extends Specification with Mockito with NoTim
 
     "delete job before starting other deleters" in new FileUploadScope {
       implicit val order = inOrder(
-          mockJobDeleter,
-          mockTempFileDeleter,
-          mockDocumentSetDeleter,
-          mockFileGroupDeleter)
-          
+        mockJobDeleter,
+        mockTempFileDeleter,
+        mockDocumentSetDeleter,
+        mockFileGroupDeleter)
+
       val result = step.execute
 
-
       there was one(mockJobDeleter).deleteByDocumentSet(documentSetId) andThen
-      one(mockTempFileDeleter).delete(documentSetId) andThen
-      one(mockDocumentSetDeleter).delete(documentSetId) andThen
-      one(mockFileGroupDeleter).delete(fileGroupId)
+        one(mockTempFileDeleter).delete(documentSetId) andThen
+        one(mockDocumentSetDeleter).delete(documentSetId) andThen
+        one(mockFileGroupDeleter).delete(fileGroupId)
     }
 
   }
@@ -50,7 +49,7 @@ class DeleteFileUploadTaskStepSpec extends Specification with Mockito with NoTim
     val mockTempFileDeleter = smartMock[TempFileDeleter]
 
     def success = Future.successful(())
-    
+
     mockJobDeleter.deleteByDocumentSet(documentSetId) returns success
     mockDocumentSetDeleter.delete(documentSetId) returns success
     mockFileGroupDeleter.delete(fileGroupId) returns success
@@ -61,8 +60,9 @@ class DeleteFileUploadTaskStepSpec extends Specification with Mockito with NoTim
     class TestDeleteFileUploadTaskStep(
       override protected val documentSetId: Long,
       override protected val fileGroupId: Long) extends DeleteFileUploadTaskStep {
+      override protected val executor: ExecutionContext = implicitly
       override protected def nextStep: TaskStep = FinalStep
-      
+
       override protected val jobDeleter = mockJobDeleter
       override protected val documentSetDeleter = mockDocumentSetDeleter
       override protected val fileGroupDeleter = mockFileGroupDeleter

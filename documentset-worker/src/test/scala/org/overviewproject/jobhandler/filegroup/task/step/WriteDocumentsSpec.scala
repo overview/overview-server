@@ -10,6 +10,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.specs2.time.NoTimeConversions
 import org.overviewproject.searchindex.ElasticSearchIndexClient
+import scala.concurrent.ExecutionContext
 
 class WriteDocumentsSpec extends Specification with NoTimeConversions with Mockito {
 
@@ -20,7 +21,7 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
 
       there was one(mockDocumentWriter).addAndFlushIfNeeded(mockDocument)
       there was no(mockDocumentWriter).flush
-      
+
       there was one(mockSearchIndex).addDocuments(Seq(mockDocument))
     }
 
@@ -39,9 +40,9 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
     val fileId = 1l
     val mockDocumentWriter = smartMock[BulkDocumentWriter]
     val mockDocument = smartMock[Document]
-    
+
     val mockSearchIndex = smartMock[ElasticSearchIndexClient]
-    
+
     val writeDocuments = new TestWriteDocuments
 
     def mockStorage = writeDocuments.mockStorage
@@ -50,10 +51,11 @@ class WriteDocumentsSpec extends Specification with NoTimeConversions with Mocki
     mockDocument.fileId returns Some(fileId)
     mockDocumentWriter.addAndFlushIfNeeded(any) returns Future.successful(())
     mockDocumentWriter.flush returns Future.successful(())
-    
+
     mockSearchIndex.addDocuments(Seq(mockDocument)) returns Future.successful(())
 
     protected class TestWriteDocuments extends WriteDocuments {
+      override protected val executor: ExecutionContext = implicitly
       override protected val documentSetId = 1l
       override protected val filename = "filename"
       override protected val documents = Seq(mockDocument)

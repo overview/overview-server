@@ -1,6 +1,8 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import org.specs2.mutable.Specification
+import scala.concurrent.ExecutionContext
+
 
 class FinalStepSpec extends Specification {
   

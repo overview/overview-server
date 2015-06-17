@@ -1,16 +1,15 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import akka.actor.ActorRef
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Try
-
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
-import org.overviewproject.jobhandler.filegroup.task.UploadedFileProcessCreator
+import akka.actor.ActorRef
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import org.overviewproject.jobhandler.filegroup.task.UploadedFileProcessCreator
+import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.util.BulkDocumentWriter
+
+
 
 /**
  * Create a process to convert a [[GroupedFileUpload]] into [[Document]](s).
@@ -40,7 +39,8 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep {
 
 object CreateUploadedFileProcess {
   def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, options: UploadProcessOptions,
-            documentIdSupplier: ActorRef, bulkDocumentWriter: BulkDocumentWriter): CreateUploadedFileProcess =
+            documentIdSupplier: ActorRef,
+            bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): CreateUploadedFileProcess =
     new CreateUploadedFileProcessImpl(documentSetId, uploadedFile, options,
       documentIdSupplier, bulkDocumentWriter)
 
@@ -50,7 +50,7 @@ object CreateUploadedFileProcess {
     override protected val options: UploadProcessOptions,
     override protected val documentIdSupplier: ActorRef,
     override protected val bulkDocumentWriter: BulkDocumentWriter
-  ) extends CreateUploadedFileProcess {
+  )(override implicit protected val executor: ExecutionContext) extends CreateUploadedFileProcess {
     override protected val uploadedFileProcessCreator = UploadedFileProcessCreator(bulkDocumentWriter)
   }
 

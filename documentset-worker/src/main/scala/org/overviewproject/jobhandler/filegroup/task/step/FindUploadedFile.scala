@@ -1,8 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.models.tables.GroupedFileUploads
@@ -33,12 +32,13 @@ trait FindUploadedFile extends UploadedFileProcessStep with HasDatabase {
 
 object FindUploadedFile {
 
-  def apply(documentSetId: Long, uploadedFileId: Long, nextStep: GroupedFileUpload => TaskStep): FindUploadedFile =
+  def apply(documentSetId: Long, uploadedFileId: Long,
+            nextStep: GroupedFileUpload => TaskStep)(implicit executor: ExecutionContext): FindUploadedFile =
     new FindUploadedFileImpl(documentSetId, uploadedFileId, nextStep)
 
   private class FindUploadedFileImpl(
     override protected val documentSetId: Long,
     override protected val uploadedFileId: Long,
-    override protected val nextStep: GroupedFileUpload => TaskStep
-  ) extends FindUploadedFile
+    override protected val nextStep: GroupedFileUpload => TaskStep)
+   (override implicit protected val executor: ExecutionContext) extends FindUploadedFile
 }

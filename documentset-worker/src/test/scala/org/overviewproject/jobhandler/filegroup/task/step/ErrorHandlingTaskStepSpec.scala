@@ -5,10 +5,11 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.control.NonFatal
+import scala.concurrent.ExecutionContext
 
-class TaskStepSpec extends Specification {
+class ErrorHandlingTaskStepSpec extends Specification {
 
-  "TaskStep" should {
+  "ErrorHandlingTaskStep" should {
 
     "call doExecute" in new TaskContext {
       val r = step.execute
@@ -18,10 +19,10 @@ class TaskStepSpec extends Specification {
 
     "call error handler on exception" in new FailingTaskContext {
       val r = step.execute
-      
+
       r.isCompleted must beTrue
       r.failed must beEqualTo(error).await
-      
+
       errorHandlerWasCalled must beTrue
     }
   }
@@ -31,7 +32,8 @@ class TaskStepSpec extends Specification {
 
     def createTaskStep: TaskStep = new TestTaskStep
 
-    class TestTaskStep extends TaskStep {
+    class TestTaskStep extends ErrorHandlingTaskStep {
+      override protected val executor: ExecutionContext = implicitly
       override protected def doExecute = Future.successful(FinalStep)
     }
   }
@@ -42,7 +44,8 @@ class TaskStepSpec extends Specification {
     val error = new Exception("failure")
     var errorHandlerWasCalled = false
 
-    class FailingTaskStep extends TaskStep {
+    class FailingTaskStep extends ErrorHandlingTaskStep {
+      override protected val executor: ExecutionContext = implicitly
       override protected def doExecute = Future.failed(error)
 
       override protected def errorHandler(e: Throwable) = errorHandlerWasCalled = true

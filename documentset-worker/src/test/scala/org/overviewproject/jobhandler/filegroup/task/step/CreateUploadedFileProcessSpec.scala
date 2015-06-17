@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import akka.actor.ActorRef
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
 import org.specs2.mock.Mockito
@@ -42,6 +43,7 @@ class CreateUploadedFileProcessSpec extends DbSpecification with Mockito {
       override protected val documentSetId: Long,
       override protected val uploadedFile: GroupedFileUpload
     ) extends CreateUploadedFileProcess {
+      override protected val executor: ExecutionContext = implicitly
       override protected val documentIdSupplier = idSupplier
       override protected val options = mockOptions
       override protected val uploadedFileProcessCreator = processCreator

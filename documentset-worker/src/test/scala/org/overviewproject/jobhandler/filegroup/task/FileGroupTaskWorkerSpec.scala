@@ -3,13 +3,11 @@ package org.overviewproject.jobhandler.filegroup.task
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
-
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.testkit.TestActor
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
-
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
 import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
@@ -19,7 +17,7 @@ import org.overviewproject.test.ForwardingActor
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
-
+import scala.concurrent.ExecutionContext
 
 class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
   sequential
@@ -185,7 +183,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
         jobQueueProbe
       }
 
-
       protected def firstStep: TaskStep = FinalStep
 
     }
@@ -216,22 +213,24 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
     trait MultistepProcessContext extends RunningTaskWorkerContext {
       val options = UploadProcessOptions("en", false)
 
+      override def firstStep: TaskStep = new SimpleTaskStep(1)
+      
       class SimpleTaskStep(n: Int) extends TaskStep {
-        override protected def doExecute: Future[TaskStep] = {
+
+        override def execute: Future[TaskStep] = {
           val nextStep = if (n == 0) FinalStep else new SimpleTaskStep(n - 1)
           Future.successful(nextStep)
         }
       }
 
-      val message = "failure"
-
       class FailingStep extends TaskStep {
-        override protected def doExecute: Future[TaskStep] = Future {
+        val message = "failure"
+
+        override def execute: Future[TaskStep] = Future {
           throw new Exception(message)
         }
       }
-
-      override def firstStep: TaskStep = new SimpleTaskStep(1)
+      
     }
 
     trait FailingProcessContext extends MultistepProcessContext {
@@ -246,11 +245,13 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       override def firstStep: TaskStep = new WaitingStep
 
       class WaitingStep extends TaskStep {
-        override protected def doExecute: Future[TaskStep] =
+        override def execute: Future[TaskStep] =
           step.future.map { _ =>
             new FailingStep
           }
       }
+
+
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {
@@ -318,3 +319,5 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
     }
   }
 }
+
+

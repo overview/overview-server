@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup.task.step
 
 import java.io.InputStream
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.blocking
 import scala.util.control.Exception.ultimately
@@ -75,14 +75,15 @@ trait CreateFileWithView extends UploadedFileProcessStep with LargeObjectMover w
 }
 
 object CreateFileWithView {
-  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, next: File => TaskStep): CreateFileWithView =
+  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, next: File => TaskStep)
+    (implicit executor: ExecutionContext): CreateFileWithView =
     new CreateFileWithViewImpl(documentSetId, uploadedFile, next)
 
   private class CreateFileWithViewImpl(
     override protected val documentSetId: Long,
     override protected val uploadedFile: GroupedFileUpload,
     override protected val nextStep: File => TaskStep
-  ) extends CreateFileWithView {
+  )(override protected implicit val executor: ExecutionContext) extends CreateFileWithView {
     override protected val converter = LibreOfficeDocumentConverter
     override protected val blobStorage = BlobStorage
 

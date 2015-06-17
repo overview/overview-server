@@ -1,13 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import org.overviewproject.blobstorage.BlobStorage
 import java.io.InputStream
-import scala.concurrent.Future
-import java.io.BufferedInputStream
-import org.overviewproject.blobstorage.BlobBucketId
-import java.security.MessageDigest
 import java.security.DigestInputStream
+import java.security.MessageDigest
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import org.overviewproject.blobstorage.BlobBucketId
+import org.overviewproject.blobstorage.BlobStorage
 
 /**
  * Helper methods for classes that need to transfer large object data from
@@ -24,7 +25,8 @@ trait LargeObjectMover {
    * Moves the data to [[BlobStorage]].
    * @returns the location and sha1 of the data.
    */
-  protected def moveLargeObjectToBlobStorage(oid: Long, size: Long, bucket: BlobBucketId): Future[(String, Array[Byte])] = {
+  protected def moveLargeObjectToBlobStorage(oid: Long, size: Long, bucket: BlobBucketId)
+  (implicit executor: ExecutionContext): Future[(String, Array[Byte])] = {
 
     for {
       (digestStream, digest) <- sha1Digest(oid)
