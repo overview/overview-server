@@ -2,7 +2,6 @@ package org.overviewproject.reclustering
 
 import scala.annotation.tailrec
 
-import org.overviewproject.persistence.orm.finders.DocumentFinder
 import org.overviewproject.models.Document
 import org.overviewproject.util.DocumentConsumer
 import org.overviewproject.util.DocumentProducer
