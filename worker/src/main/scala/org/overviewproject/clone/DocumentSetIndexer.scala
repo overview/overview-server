@@ -1,25 +1,33 @@
 package org.overviewproject.clone
 
+import play.api.libs.iteratee.{Enumerator,Iteratee}
 import scala.concurrent.Future
 
-import org.overviewproject.persistence.orm.finders.DocumentFinder
+import org.overviewproject.database.HasDatabase
 import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.util.BulkDocumentWriter
+import org.overviewproject.models.Document
+import org.overviewproject.models.tables.Documents
+import play_backports.api.libs.streams.impl.PublisherEnumerator
 
-object DocumentSetIndexer {
-  private def await[A](f: Future[A]): A = {
-    scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
-  }
+object DocumentSetIndexer extends HasDatabase {
+  import database.api._
+  import database.executionContext
 
   def indexDocuments(documentSetId: Long): Future[Unit] = {
     val bulkWriter = BulkDocumentWriter.forSearchIndex
 
-    // XXX We use await() so we can stick with the same DB cursor
-    await(TransportIndexClient.singleton.addDocumentSet(documentSetId))
-    DocumentFinder
-      .byDocumentSet(documentSetId)
-      .foreach { document => await(bulkWriter.addAndFlushIfNeeded(document.toDocument)) }
+    for {
+      _ <- TransportIndexClient.singleton.addDocumentSet(documentSetId)
+      _ <- indexEachDocument(documentSetId, bulkWriter)
+      _ <- bulkWriter.flush
+    } yield ()
+  }
 
-    bulkWriter.flush
+  private def indexEachDocument(documentSetId: Long, bulkWriter: BulkDocumentWriter): Future[Unit] = {
+    val publisher = database.slickDatabase.stream(Documents.filter(_.documentSetId === documentSetId).result)
+    val enumerator = new PublisherEnumerator(publisher)
+    val iteratee = Iteratee.foldM(()) { (s: Unit, document: Document) => bulkWriter.addAndFlushIfNeeded(document) }
+    enumerator.run(iteratee)
   }
 }
