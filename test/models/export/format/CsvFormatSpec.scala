@@ -4,37 +4,40 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.{ByteArrayOutputStream,StringReader}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.libs.iteratee.Enumerator
+import play.api.test.{FutureAwaits,DefaultAwaitTimeout}
 
 import models.export.rows.Rows
 
-class CsvFormatSpec extends Specification {
+class CsvFormatSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
   trait BaseScope extends Scope {
-    val vHeaders : Iterable[String]
-    val vRows: Iterable[Iterable[Any]]
+    val headers : Array[String] = Array("header 1", "header 2", "header 3")
+    val rows : Enumerator[Array[String]] = Enumerator(
+      Array("one", "two", "three"),
+      Array("four", "five", "six")
+    )
 
-    def rows = new Rows {
-      override def headers = vHeaders
-      override def rows = vRows
-    }
-
-    lazy val exportBytes : Array[Byte] = {
-      val stream = new ByteArrayOutputStream
-      CsvFormat.writeContentsToOutputStream(rows, stream)
-      stream.toByteArray
+    lazy val bytes = {
+      val outputStream = new ByteArrayOutputStream
+      await(CsvFormat.writeContentsToOutputStream(Rows(headers, rows), outputStream))
+      outputStream.toByteArray
     }
 
     lazy val parsedCsv : Seq[Array[String]] = {
       import scala.collection.JavaConverters.asScalaBufferConverter
       // Drop the UTF-8 BOM when reading, so we can do string comparisons
-      val csv = new CSVReader(new StringReader(new String(exportBytes.drop(3), "utf-8")))
+      val csv = new CSVReader(new StringReader(new String(bytes.drop(3), "utf-8")))
       val rowsList = csv.readAll
       asScalaBufferConverter(rowsList).asScala
     }
   }
 
   trait StringScope extends BaseScope {
-    override val vHeaders = Seq("col1", "col2", "col3")
-    override val vRows : Iterable[Iterable[Any]] = Seq(Seq("val1", "val2", "val3"), Seq("val4", "val5", "val6"))
+    override val headers = Array("col1", "col2", "col3")
+    override val rows : Enumerator[Array[String]] = Enumerator(
+      Array("val1", "val2", "val3"),
+      Array("val4", "val5", "val6")
+    )
   }
 
   "CsvFormat" should {
@@ -43,9 +46,7 @@ class CsvFormatSpec extends Specification {
     }
 
     "export a UTF-8 byte-order marker, to help MS Excel on Windows" in new StringScope {
-      exportBytes(0) must beEqualTo(0xef.toByte)
-      exportBytes(1) must beEqualTo(0xbb.toByte)
-      exportBytes(2) must beEqualTo(0xbf.toByte)
+      bytes.slice(0, 3) must beEqualTo(Array(0xef, 0xbb, 0xbf).map(_.toByte))
     }
 
     "export headers" in new StringScope {
@@ -56,11 +57,6 @@ class CsvFormatSpec extends Specification {
       parsedCsv(1) must beEqualTo(Array("val1", "val2", "val3"))
       parsedCsv(2) must beEqualTo(Array("val4", "val5", "val6"))
       parsedCsv.length must beEqualTo(3)
-    }
-
-    "export integers as strings" in new StringScope {
-      override val vRows = Seq(Seq("val1", "val2", 3))
-      parsedCsv(1)(2) must beEqualTo("3")
     }
   }
 }

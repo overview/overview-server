@@ -1,23 +1,25 @@
 package models.export.rows
 
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.finders.FinderResult
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-import models.OverviewDocument
+import org.overviewproject.models.Tag
 
-class DocumentsWithStringTags(finderResult: FinderResult[(Document,Option[String])]) extends Rows {
-  override def headers : Iterable[String] = Seq("id", "title", "text", "url", "tags")
+object DocumentsWithStringTags {
+  def apply(result: Enumerator[DocumentForCsvExport], tags: Seq[Tag]): Rows = {
+    val headers: Array[String] = Array("id", "title", "text", "url", "tags")
 
-  override def rows : Iterable[Iterable[Any]] = {
-    finderResult.view.map { case (ormDocument, tags) =>
-      val document = OverviewDocument(ormDocument)
-      Array[Any](
-        document.suppliedId.getOrElse(""),
-        document.title.getOrElse(""),
-        document.text.getOrElse(""),
-        document.url.getOrElse(""),
-        tags.getOrElse("")
-      ).toIndexedSeq
+    val rows: Enumerator[Array[String]] = result.map { document: DocumentForCsvExport =>
+      val tagIds = document.tagIds.toSet // admittedly, a pretty slow approach; array merge would be faster :)
+      Array(
+        document.suppliedId,
+        document.title,
+        document.text,
+        document.url,
+        tags.collect{ case tag if tagIds(tag.id) => tag.name }.mkString(",")
+      )
     }
+
+    Rows(headers, rows)
   }
 }

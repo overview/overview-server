@@ -1,6 +1,7 @@
 package models.export
 
 import java.io.FileInputStream
+import scala.concurrent.Future
 
 import models.export.rows.Rows
 import models.export.format.Format
@@ -11,12 +12,12 @@ class Export(rows: Rows, format: Format) {
     *
     * For instance: text/csv; charset="utf-8"
     */
-  def contentType : String = format.contentType
+  def contentType: String = format.contentType
 
   /** FileInputStream that we wish to transfer.
     *
     * This method must be called within an OverviewDatabase.inTransaction
     * block: it may require database access.
     */
-  def asFileInputStream : FileInputStream = format.getContentsAsInputStream(rows)
+  def futureFileInputStream: Future[FileInputStream] = format.getContentsAsInputStream(rows)
 }

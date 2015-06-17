@@ -5,114 +5,109 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
-import org.overviewproject.tree.orm.{Document,DocumentSet,Tag}
-import org.overviewproject.tree.orm.finders.FinderResult
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.userViewingDocumentSet
+import controllers.backend.{DocumentSetBackend,TagBackend}
+import org.overviewproject.database.HasDatabase
+import org.overviewproject.models.Tag
 import org.overviewproject.util.ContentDisposition
-
-import controllers.auth.{ AuthorizedAction, Authorities }
-import models.OverviewDatabase
 import models.export.Export
 import models.export.rows._
 import models.export.format.Format
-import models.orm.finders.{ DocumentFinder, DocumentSetFinder, TagFinder }
-
+import play_backports.api.libs.streams.impl.PublisherEnumerator
 
 trait DocumentSetExportController extends Controller {
-  import Authorities._
-
-  trait Storage {
-    def findDocumentSet(id: Long): Option[DocumentSet]
-    def loadDocumentsWithStringTags(documentSetId: Long): FinderResult[(Document,Option[String])]
-    def loadTags(documentSetId: Long): FinderResult[Tag]
-    def loadDocumentsWithTagIds(documentSetId: Long): FinderResult[(Document,Option[String])]
-  }
-
-  trait RowsCreator {
-    def documentsWithStringTags(documents: FinderResult[(Document,Option[String])]) : Rows
-    def documentsWithColumnTags(documents: FinderResult[(Document,Option[String])], tags: FinderResult[Tag]) : Rows
-  }
-
-  private[controllers] def createExport(rows: Rows, format: Format) = {
-    new Export(rows, format)
-  }
-
-  def index(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)) { implicit request =>
-    storage.findDocumentSet(documentSetId) match {
+  def index(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+    documentSetBackend.show(documentSetId).map(_ match {
       case Some(documentSet) => Ok(views.html.DocumentSetExport.index(documentSet))
       case None => NotFound
-    }
+    })
   }
 
-  private def serveExport(export: Export, filename: String) : Result = {
-    val inputStream = OverviewDatabase.inTransaction {
-      export.asFileInputStream
-    }
-
+  private def serveExport(
+    format: Format,
+    filename: String,
+    documentSetId: Long,
+    createRows: (Enumerator[DocumentForCsvExport],Seq[Tag]) => Rows)
+  : Future[Result] = {
     val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
-  
-    Ok.feed(Enumerator.fromStream(inputStream))
-      .withHeaders(
-        CONTENT_TYPE -> export.contentType,
-        CONTENT_LENGTH -> inputStream.getChannel.size.toString, // The InputStream.available API makes no guarantee
-        CACHE_CONTROL -> "max-age=0",
-        CONTENT_DISPOSITION -> contentDisposition
-      )
+    val documents: Enumerator[DocumentForCsvExport] = storage.streamDocumentsWithTagIds(documentSetId)
+
+    tagBackend.index(documentSetId).flatMap { tags =>
+      val rows = createRows(documents, tags)
+      val export = new Export(rows, format)
+
+      export.futureFileInputStream.map { fileInputStream =>
+        Ok.feed(Enumerator.fromStream(fileInputStream))
+          .withHeaders(
+            CONTENT_TYPE -> export.contentType,
+            CONTENT_LENGTH -> fileInputStream.getChannel.size.toString, // InputStream.available makes no guarantee
+            CACHE_CONTROL -> "max-age=0",
+            CONTENT_DISPOSITION -> contentDisposition
+          )
+      }
+    }
   }
 
-  def documentsWithStringTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
-    Future(OverviewDatabase.inTransaction {
-      val documents = storage.loadDocumentsWithStringTags(documentSetId)
-      val rows = rowsCreator.documentsWithStringTags(documents)
-      val export = createExport(rows, format)
-
-      serveExport(export, filename)
-    })
+  def documentsWithStringTags(
+    format: Format,
+    filename: String,
+    documentSetId: Long
+  ) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+    serveExport(format, filename, documentSetId, DocumentsWithStringTags.apply)
   }
 
-  def documentsWithColumnTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async { implicit request =>
-    Future(OverviewDatabase.inTransaction {
-      val tags = storage.loadTags(documentSetId)
-      val documents = storage.loadDocumentsWithTagIds(documentSetId)
-      val rows = rowsCreator.documentsWithColumnTags(documents, tags)
-      val export = createExport(rows, format)
-
-      serveExport(export, filename)
-    })
+  def documentsWithColumnTags(
+    format: Format,
+    filename: String,
+    documentSetId: Long
+  ) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+    serveExport(format, filename, documentSetId, DocumentsWithColumnTags.apply)
   }
 
+  protected val documentSetBackend: DocumentSetBackend
+  protected val tagBackend: TagBackend
   protected val storage: DocumentSetExportController.Storage
-  protected val rowsCreator : DocumentSetExportController.RowsCreator
 }
 
 object DocumentSetExportController extends DocumentSetExportController {
-  object DatabaseStorage extends Storage {
-    override def findDocumentSet(id: Long): Option[DocumentSet] = {
-      DocumentSetFinder.byDocumentSet(id).headOption
-    }
+  trait Storage {
+    def streamDocumentsWithTagIds(documentSetId: Long): Enumerator[DocumentForCsvExport]
+  }
 
-    override def loadDocumentsWithStringTags(documentSetId: Long) = {
-      DocumentFinder.byDocumentSet(documentSetId).withTagsAsStrings
-    }
+  object DatabaseStorage extends Storage with HasDatabase {
+    override def streamDocumentsWithTagIds(documentSetId: Long): Enumerator[DocumentForCsvExport] = {
+      import database.api._
+      import slick.backend.DatabasePublisher
+      import slick.jdbc.GetResult
 
-    override def loadTags(documentSetId: Long) = {
-      TagFinder.byDocumentSet(documentSetId)
-    }
+      val query = sql"""
+        SELECT
+          d.supplied_id,
+          d.title,
+          d.text,
+          COALESCE(d.url, '') AS url,
+          COALESCE(ARRAY_AGG(dt.tag_id), '{}'::BIGINT[]) AS tag_ids
+        FROM document d
+        LEFT JOIN document_tag dt ON d.id = dt.document_id
+        WHERE d.document_set_id = $documentSetId
+        GROUP BY d.supplied_id, d.title, d.text, d.url
+      """.as[(String,String,String,String,Seq[Long])](GetResult(r => (
+        r.nextString(),
+        r.nextString(),
+        r.nextString(),
+        r.nextString(),
+        r.nextArray[Long]()
+      )))
 
-    override def loadDocumentsWithTagIds(documentSetId: Long) = {
-      DocumentFinder.byDocumentSet(documentSetId).withTagsAsLongStrings
+      val publisher: DatabasePublisher[(String,String,String,String,Seq[Long])] = database.slickDatabase.stream(query)
+
+      new PublisherEnumerator(publisher)
+        .map(DocumentForCsvExport.tupled)
     }
   }
 
-  object ExportRowsCreator extends RowsCreator {
-    override def documentsWithStringTags(documents : FinderResult[(Document,Option[String])]) = {
-      new DocumentsWithStringTags(documents)
-    }
-
-    override def documentsWithColumnTags(documents: FinderResult[(Document,Option[String])], tags: FinderResult[Tag]) = {
-      new DocumentsWithColumnTags(documents, tags)
-    }
-  }
-
+  override protected val documentSetBackend = DocumentSetBackend
+  override protected val tagBackend = TagBackend
   override protected val storage = DatabaseStorage
-  override protected val rowsCreator = ExportRowsCreator
 }

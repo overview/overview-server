@@ -1,42 +1,31 @@
 package models.export.format
 
-import java.io.{ByteArrayOutputStream,StringReader}
+import java.io.ByteArrayOutputStream
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.libs.iteratee.Enumerator
+import play.api.test.{FutureAwaits,DefaultAwaitTimeout}
 
 import models.export.rows.Rows
 
-class OdsFormatSpec extends Specification {
+class OdsFormatSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
   trait BaseScope extends Scope {
-    val vHeaders : Iterable[String]
-    val vRows: Iterable[Iterable[Any]]
+    val rows = new Rows(Array(), Enumerator())
 
-    def rows = new Rows {
-      override def headers = vHeaders
-      override def rows = vRows
-    }
-
-    lazy val exportBytes : Array[Byte] = {
+    lazy val bytes: Array[Byte] = {
       val stream = new ByteArrayOutputStream
-      OdsFormat.writeContentsToOutputStream(rows, stream)
+      await(OdsFormat.writeContentsToOutputStream(rows, stream))
       stream.toByteArray
     }
   }
 
-  trait StringScope extends BaseScope {
-    override val vHeaders = Seq("col1", "col2", "col3")
-    override val vRows : Iterable[Iterable[Any]] = Seq(Seq("val1", "val2", "val3"), Seq("val4", "val5", "val6"))
-  }
-
   "OdsFormat" should {
-    "have the correct content-type" in new StringScope {
+    "have the correct content-type" in new BaseScope {
       OdsFormat.contentType must beEqualTo("""application/vnd.oasis.opendocument.spreadsheet""")
     }
 
-    "have the correct magic number" in new StringScope {
-      // Check for "PK"
-      exportBytes(0) must beEqualTo(0x50.toByte)
-      exportBytes(1) must beEqualTo(0x4b.toByte)
+    "have the correct magic number" in new BaseScope {
+      bytes.slice(0, 2) must beEqualTo("PK".getBytes)
     }
   }
 }

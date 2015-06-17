@@ -1,9 +1,51 @@
-@(spreadsheet: models.export.rows.Rows
-)<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+package views.ooxml
+
+import play.api.libs.iteratee.Iteratee
+import scala.concurrent.{ExecutionContext,Future}
+
+import models.export.rows.Rows
+
+object XlsxSpreadsheetContent {
+  def apply(rows: Rows, write: (String => Future[Unit]))(implicit executionContext: ExecutionContext): Future[Unit] = {
+    for {
+      _ <- write(header)
+      _ <- write(row(rows.headers))
+      _ <- rows.rows.run(Iteratee.foreach[Array[String]](values => write(row(values))))
+      _ <- write(footer)
+    } yield ()
+  }
+
+  private val header: String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet
     xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
     xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  @ST_XstringEscape(text: String) = @{
+
+  <sheetData>"""
+
+  private val footer: String = """
+  </sheetData>
+</worksheet>"""
+
+  private def row(values: Array[String]): String = {
+    s"""<row>${values.map(cell).mkString("")}</row>"""
+  }
+
+  private def cell(value: String): String = {
+    if (value.isEmpty) {
+      """<c t="inlineStr"/>"""
+    } else {
+      s"""<c t="inlineStr"><is><t>${escape(value)}</t></is></c>"""
+    }
+  }
+
+  /** "XML"-escapes the given text
+    *
+    * Excel's "XML" is invalid XML. DO NOT use normal XML-escaped strings in
+    * Excel spreadsheets. Escape them with this method instead.
+    *
+    * Search for ST_XstringEscape for an explanation of Microsoft's decisions.
+    */
+  private def escape(text: String): String = {
     // Excel translates "_x0001_" to a control character. Then it crashes when
     // it tries to _open_ a file with a control character. So let's avoid its
     // stupid escaping mechanism.
@@ -28,28 +70,4 @@
     val truncatedXmlEntityAtEnd = """&[#ltgampquosx0-9]{0,8}$""".r
     truncatedXmlEntityAtEnd.replaceFirstIn(truncated, "")
   }
-
-  <sheetData>
-    <row>
-      @for(heading: String <- spreadsheet.headers) {
-        @if(heading.isEmpty) {
-          <c t="inlineStr"/>
-        } else {
-          <c t="inlineStr"><is><t>@Xml(ST_XstringEscape(heading).toString)</t></is></c>
-        }
-      }
-    </row>
-    @for(row: Iterable[Any] <- spreadsheet.rows) {
-      <row>
-        @for(value: Any <- row; str: String = value.toString) {
-          @{val str = value.toString}
-          @if(str.isEmpty) {
-            <c t="inlineStr"/>
-          } else {
-            <c t="inlineStr"><is><t>@Xml(ST_XstringEscape(str))</t></is></c>
-          }
-        }
-      </row>
-    }
-  </sheetData>
-</worksheet>
+}

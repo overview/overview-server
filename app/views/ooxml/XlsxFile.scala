@@ -1,24 +1,31 @@
 package views.ooxml
 
-import java.io.OutputStream
+import java.io.{BufferedOutputStream,OutputStream}
 import java.util.zip.{ZipEntry,ZipOutputStream}
+import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import models.export.rows.Rows
-import views.xml.ooxml.XlsxSpreadsheetContent
 
-case class XlsxFile(spreadsheet: Rows) {
+case class XlsxFile(rows: Rows) {
   // http://blogs.msdn.com/b/brian_jones/archive/2006/11/02/simple-spreadsheetml-file-part-1-of-3.aspx
 
-  def writeTo(out: OutputStream) : Unit = {
-    val zipStream = new ZipOutputStream(out)
+  def writeTo(out: OutputStream)(implicit executionContext: ExecutionContext): Future[Unit] = {
+    val zipStream = new ZipOutputStream(new BufferedOutputStream(out))
 
-    writeRelsTo(zipStream)
-    writeContentTypesTo(zipStream)
-    writeXlRelTo(zipStream)
-    writeWorkbookTo(zipStream)
-    writeWorksheetTo(zipStream)
+    blocking {
+      writeRelsTo(zipStream)
+      writeContentTypesTo(zipStream)
+      writeXlRelTo(zipStream)
+      writeWorkbookTo(zipStream)
+    }
 
-    zipStream.finish()
+    writeWorksheetTo(rows, zipStream)
+      .map { _ =>
+        blocking {
+          zipStream.finish
+          zipStream.close // flush BufferedOutputStream
+        }
+      }
   }
 
   private def writeStringContent(filename: String, zipStream: ZipOutputStream, content: String) : Unit = {
@@ -64,8 +71,16 @@ case class XlsxFile(spreadsheet: Rows) {
       |</workbook>""".stripMargin)
   }
 
-  private def writeWorksheetTo(zipStream: ZipOutputStream) : Unit = {
-    val xml = XlsxSpreadsheetContent(spreadsheet)
-    writeStringContent("xl/worksheets/sheet1.xml", zipStream, xml.toString)
+  private def writeWorksheetTo(rows: Rows, zipStream: ZipOutputStream)(implicit executionContext: ExecutionContext)
+  : Future[Unit] = {
+    blocking(zipStream.putNextEntry(new ZipEntry("xl/worksheets/sheet1.xml")))
+
+    def write(s: String): Future[Unit] = Future(blocking(zipStream.write(s.getBytes("utf-8"))))
+
+    XlsxSpreadsheetContent(rows, write)
+      .map { _ =>
+        zipStream.closeEntry()
+        ()
+      }
   }
 }

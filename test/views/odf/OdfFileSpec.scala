@@ -1,30 +1,37 @@
 package views.odf
 
-import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
 import java.io.{ByteArrayInputStream,ByteArrayOutputStream}
 import java.util.zip.{ZipEntry,ZipInputStream}
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+import play.api.libs.iteratee.Enumerator
+import play.api.test.{DefaultAwaitTimeout,FutureAwaits}
 
-class OdfFileSpec extends Specification {
+import models.export.rows.Rows
+
+class OdfFileSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
   trait SpreadsheetScope extends Scope {
-    val headers : Iterable[String] = Seq("header 1", "header 2", "header 3")
-    val rows : Iterable[Iterable[Any]] = Seq(
-      Seq("one", "two", "three"),
-      Seq("four", "five", "six")
+    val rows = Rows(
+      Array("header 1", "header 2", "header 3"),
+      Enumerator(
+        Array("one", "two", "three"),
+        Array("four", "five", "six")
+      )
     )
 
-    def spreadsheet = models.odf.OdsSpreadsheet(headers, rows)
-    def manifest = models.odf.OdfManifest(Seq(spreadsheet))
-    def bytes = {
+    lazy val zipStream: ZipInputStream = {
       val outputStream = new ByteArrayOutputStream()
-      OdfFile(manifest).writeTo(outputStream)
-      outputStream.toByteArray()
+      await(for {
+        _ <- OdfFile(rows).writeTo(outputStream)
+      } yield {
+        outputStream.close
+        val bytes = outputStream.toByteArray
+        val inputStream = new ByteArrayInputStream(bytes)
+        new ZipInputStream(inputStream)
+      })
     }
-    lazy val zipStream = {
-      val inputStream = new ByteArrayInputStream(bytes)
-      new ZipInputStream(inputStream)
-    }
-    def currentEntryContents(zipStream: ZipInputStream, len: Int) : Array[Byte] = {
+
+    def currentEntryContents(len: Int) : Array[Byte] = {
       val bytes = new Array[Byte](len)
       zipStream.read(bytes, 0, len)
       bytes
@@ -36,7 +43,7 @@ class OdfFileSpec extends Specification {
       val goodMimeType = "application/vnd.oasis.opendocument.spreadsheet"
       val entry1 = Option(zipStream.getNextEntry())
       entry1 must beSome[ZipEntry].which(_.getName() == "mimetype")
-      val contents = currentEntryContents(zipStream, goodMimeType.getBytes().length)
+      val contents = currentEntryContents(goodMimeType.getBytes().length)
       new String(contents) must beEqualTo(goodMimeType)
     }
 
@@ -44,7 +51,7 @@ class OdfFileSpec extends Specification {
       zipStream.getNextEntry() // skip mimetype
       val entry2 = Option(zipStream.getNextEntry())
       entry2 must beSome[ZipEntry].which(_.getName() == "META-INF/manifest.xml")
-      val contents = currentEntryContents(zipStream, 5)
+      val contents = currentEntryContents(5)
       new String(contents) must beEqualTo("<?xml")
     }
 
@@ -53,7 +60,7 @@ class OdfFileSpec extends Specification {
       zipStream.getNextEntry() // skip manifest
       val entry3 = Option(zipStream.getNextEntry())
       entry3 must beSome[ZipEntry].which(_.getName() == "content.xml")
-      val contents = currentEntryContents(zipStream, 5)
+      val contents = currentEntryContents(5)
       new String(contents) must beEqualTo("<?xml")
     }
   }

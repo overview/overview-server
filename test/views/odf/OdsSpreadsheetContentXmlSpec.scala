@@ -1,40 +1,39 @@
-package views.xml.odf
+package views.odf
 
+import java.lang.StringBuilder
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.libs.iteratee.Enumerator
+import scala.concurrent.Future
+
+import models.export.rows.Rows
 
 class OdsSpreadsheetContentXmlSpec extends Specification {
   trait SpreadsheetScope extends Scope {
-    val headers : Iterable[String] = Seq("header 1", "header 2", "header 3")
-    val rows : Iterable[Iterable[Any]] = Seq(
-      Seq("one", "two", "three"),
-      Seq("four", "five", "six")
+    val headers : Array[String] = Array("header 1", "header 2", "header 3")
+    val rows : Enumerator[Array[String]] = Enumerator(
+      Array("one", "two", "three"),
+      Array("four", "five", "six")
     )
 
-    def spreadsheet = models.odf.OdsSpreadsheet(headers, rows)
-    def xml = OdsSpreadsheetContentXml(spreadsheet)
-    def text = xml.toString
+    val outputBuffer = new StringBuilder()
+    def write(s: String): Future[Unit] = { outputBuffer.append(s); Future.successful(()) }
+
+    lazy val text: Future[String] = OdsSpreadsheetContentXml(Rows(headers, rows), write _)
+      .map(_ => outputBuffer.toString)
   }
 
   "OdsSpreadsheetContentXml" should {
     "have an office:mimetype of application/vnd.oasis.opendocument.spreadsheet" in new SpreadsheetScope {
-      text must contain("""office:mimetype="application/vnd.oasis.opendocument.spreadsheet"""")
+      text must contain("""office:mimetype="application/vnd.oasis.opendocument.spreadsheet"""").await
     }
 
     "put headers in a <text:p>" in new SpreadsheetScope {
-      text must contain("<text:p>header 1</text:p>")
+      text must contain("<text:p>header 1</text:p>").await
     }
 
     "put contents in a <text:p>" in new SpreadsheetScope {
-      text must contain("<text:p>five</text:p>")
-    }
-
-    "convert anything into a string" in new SpreadsheetScope {
-      trait X extends Any
-      trait Y extends Any
-      override val rows = Seq(Seq(new X { override def toString = "foo" }), Seq(new Y { override def toString = "bar" }))
-      text must contain("foo")
-      text must contain("bar")
+      text must contain("<text:p>five</text:p>").await
     }
   }
 }
