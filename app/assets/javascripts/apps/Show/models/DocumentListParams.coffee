@@ -27,7 +27,6 @@ define [ 'underscore', 'i18n' ], (_, i18n) ->
 
   Attributes =
     q: string
-    nodes: intArray
     tagged: boolean
     objects: intArray
     nodes: intArray
