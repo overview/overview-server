@@ -21,7 +21,7 @@ object PodoFactory extends Factory {
   /** Generate a non-conflicting ID, if the passed parameter is 0L. */
   private def getId(idOr0: Long): Long = {
     if (idOr0 == 0L) {
-      random.nextLong
+      math.abs(random.nextLong)
     } else {
       idOr0
     }
