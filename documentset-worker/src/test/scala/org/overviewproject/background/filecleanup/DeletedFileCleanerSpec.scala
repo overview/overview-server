@@ -71,7 +71,7 @@ class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConve
   }
 
   abstract class DeletedFileScope extends ActorSystemContext with Before {
-    def fileIds = Seq(0L, 1L)
+    def fileIds = Vector(0L, 1L)
     var deletedFileCleaner: ActorRef = _
     var cleaner: TestProbe = _
     
@@ -82,7 +82,7 @@ class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConve
   }
   
   abstract class NoDeletedFileScope extends DeletedFileScope {
-    override def fileIds = Seq.empty
+    override def fileIds = Vector.empty
   }
   
   abstract class CompletingCleanerScope extends DeletedFileScope {
