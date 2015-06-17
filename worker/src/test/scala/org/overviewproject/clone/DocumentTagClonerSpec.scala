@@ -1,77 +1,69 @@
 package org.overviewproject.clone
 
-import org.squeryl.KeyedEntity
-
-import org.overviewproject.persistence.DocumentSetIdGenerator
-import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ Document, DocumentSet, DocumentTag, Tag }
+import org.overviewproject.models.{Document,DocumentTag}
+import org.overviewproject.models.tables.DocumentTags
 
 class DocumentTagClonerSpec extends DbSpecification {
-  implicit object DocumentTagOrdering extends math.Ordering[DocumentTag] {
-    override def compare(a: DocumentTag, b: DocumentTag) = {
-      val c1 = a.documentId compare b.documentId
-      if (c1 == 0) a.tagId compare b.tagId else c1
-    }
-  }
-
   "DocumentTagCloner" should {
 
-    trait DocumentTagContext extends DbTestContext {
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      var sourceDocumentSet: DocumentSet = _
-      var cloneDocumentSet: DocumentSet = _
-      var sourceDocumentTags: Seq[DocumentTag] = _
-      var cloneDocumentTags: Seq[DocumentTag] = _
-      
-      var tagMapping: Map[Long, Long] = _
+    trait DocumentTagContext extends DbScope {
+      import database.api._
 
-      def createDocumentTags(documents: Seq[Document], tags: Seq[Tag]): Seq[DocumentTag] = {
-        documents.zip(tags).map { dt =>
-          Schema.documents.insert(dt._1)
-          Schema.tags.insert(dt._2)
+      val sourceDocumentSet = factory.documentSet(id=123L)
+      val cloneDocumentSet = factory.documentSet(id=124L)
 
-          DocumentTag(dt._1.id, dt._2.id)
-        }
+      val sourceTags = Seq.tabulate(3) { _ => factory.tag(documentSetId=sourceDocumentSet.id) }
+      val cloneTags = Seq.tabulate(3) { _ => factory.tag(documentSetId=cloneDocumentSet.id) }
+
+      val sourceDocuments: Seq[Document] = Seq.tabulate(3) { n =>
+        factory.document(documentSetId=123L, id=((123L << 32) | n))
       }
 
-      def createMapping(source: Seq[KeyedEntity[Long]], clone: Seq[KeyedEntity[Long]]): Map[Long, Long] =
-        source.map(_.id).zip(clone.map(_.id)).toMap
-
-      override def setupWithDb = {
-        sourceDocumentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentTagClonerSpec"))
-        cloneDocumentSet= Schema.documentSets.insert(DocumentSet(title = "CloneDocumentTagClonerSpec"))
-        val sourceIds = new DocumentSetIdGenerator(sourceDocumentSet.id)
-        val cloneIds = new DocumentSetIdGenerator(cloneDocumentSet.id)
-        
-        val sourceDocuments = Seq.tabulate(10)(i => Document(sourceDocumentSet.id, text = Some("text-" + i), id = sourceIds.next))
-        val sourceTags = Seq.tabulate(10)(i => Tag(sourceDocumentSet.id, "tag-i", "000000"))
-        val cloneDocuments = sourceDocuments.map(_.copy(documentSetId = cloneDocumentSet.id, id = cloneIds.next))
-        val cloneTags = sourceTags.map(_.copy(documentSetId = cloneDocumentSet.id))
-
-        sourceDocumentTags = createDocumentTags(sourceDocuments, sourceTags)
-        cloneDocumentTags = createDocumentTags(cloneDocuments, cloneTags)
-
-        tagMapping = createMapping(sourceTags, cloneTags)
-        
-        Schema.documentTags.insert(sourceDocumentTags)
+      val cloneDocuments: Seq[Document] = Seq.tabulate(3) { n =>
+        factory.document(documentSetId=124L, id=((124L << 32) | n))
       }
 
+      val tagMapping: Map[Long, Long] = sourceTags.map(_.id).zip(cloneTags.map(_.id)).toMap
+
+      def go = DeprecatedDatabase.inTransaction {
+        DocumentTagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id, tagMapping)
+      }
+
+      def results: Seq[DocumentTag] = blockingDatabase.seq {
+        DocumentTags
+          .filter(_.tagId inSet cloneTags.map(_.id))
+          .sortBy(dt => (dt.documentId, dt.tagId))
+      }
     }
 
     "clone DocumentTags" in new DocumentTagContext {
-      DocumentTagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id, tagMapping)
+      factory.documentTag(sourceDocuments(0).id, sourceTags(0).id)
+      factory.documentTag(sourceDocuments(0).id, sourceTags(1).id)
+      factory.documentTag(sourceDocuments(1).id, sourceTags(0).id)
+      factory.documentTag(sourceDocuments(1).id, sourceTags(1).id)
+      factory.documentTag(sourceDocuments(2).id, sourceTags(0).id)
 
-      import org.overviewproject.postgres.SquerylEntrypoint._
-      val documentTags = Schema.documentTags.allRows.toSeq
+      go
 
-      documentTags.sorted must beEqualTo((sourceDocumentTags ++ cloneDocumentTags).sorted)
+      results must beEqualTo(Seq(
+        DocumentTag(cloneDocuments(0).id, cloneTags(0).id),
+        DocumentTag(cloneDocuments(0).id, cloneTags(1).id),
+        DocumentTag(cloneDocuments(1).id, cloneTags(0).id),
+        DocumentTag(cloneDocuments(1).id, cloneTags(1).id),
+        DocumentTag(cloneDocuments(2).id, cloneTags(0).id)
+      ))
     }
     
     "don't try to clone if there are no tags" in new DocumentTagContext {
-      DocumentTagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id, Map()) must not(throwA[Exception])
-      
+      go
+      results must beEqualTo(Seq())
     }
-    
+
+    "don't error if there is no mapping" in new DocumentTagContext {
+      override val tagMapping = Map[Long,Long]()
+      go must not(throwA[Exception])
+    }
   }
 }

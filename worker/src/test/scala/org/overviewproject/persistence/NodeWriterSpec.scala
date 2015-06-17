@@ -7,15 +7,15 @@
 
 package org.overviewproject.persistence
 
-import org.specs2.execute.PendingUntilFixed
 import scala.collection.mutable.Set
 
 import org.overviewproject.clustering.DocTreeNode
+import org.overviewproject.models.Document
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.IdGenerator
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.{Document, DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Node, NodeDocument}
+import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Node, NodeDocument}
 
 class NodeWriterSpec extends DbSpecification {
   private def addChildren(parent: DocTreeNode, description: String): Seq[DocTreeNode] = {
@@ -77,9 +77,10 @@ class NodeWriterSpec extends DbSpecification {
         node
       }
 
-      protected def insertDocument(documentSetId: Long): Document =
-        Schema.documents.insert(Document(documentSetId = documentSetId, title = Some("title"),
-          documentcloudId = Some("documentCloud ID"), id = IdGenerator.nextDocumentId(documentSetId)))
+      protected def insertDocument(documentSetId: Long): Document = {
+        val factory = org.overviewproject.test.factories.DbFactory
+        factory.document(id=IdGenerator.nextDocumentId(documentSetId), documentSetId=documentSet.id)
+      }
     }
 
     trait MultipleTreeContext extends NodeWriterContext {

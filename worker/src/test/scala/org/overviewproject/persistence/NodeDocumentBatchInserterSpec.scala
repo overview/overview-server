@@ -6,96 +6,95 @@
  */
 package org.overviewproject.persistence
 
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.IdGenerator
-import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument }
+import org.overviewproject.models.{Document,NodeDocument}
+import org.overviewproject.models.tables.NodeDocuments
+import org.overviewproject.tree.orm.{NodeDocument=>DeprecatedNodeDocument}
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
-  trait DocumentsSetup extends DbTestContext {
-    import org.overviewproject.postgres.SquerylEntrypoint._
-    var documentSet: DocumentSet = _
-    var node: Node = _
+  trait BaseScope extends DbScope {
+    import database.api._
 
-    val threshold = 5
-    val inserter = new BatchInserter[NodeDocument](threshold, Schema.nodeDocuments)
+    val documentSet = factory.documentSet(id=123L)
+    val documents: Seq[Document] = Seq.fill(5) { factory.document(documentSetId=documentSet.id) }
+    val documentIds: Seq[Long] = documents.map(_.id)
+    val rootNodeId = 123L << 32
+    val nodeIds = Seq(
+      factory.node(id=rootNodeId, rootId=rootNodeId, parentId=None),
+      factory.node(id=rootNodeId + 1, rootId=rootNodeId, parentId=Some(rootNodeId)),
+      factory.node(id=rootNodeId + 2, rootId=rootNodeId, parentId=Some(rootNodeId))
+    ).map(_.id)
 
-    def insertDocumentIds(documentIds: Iterable[Long]): Unit =
-      documentIds.foreach(docId => inserter.insert(NodeDocument(node.id, docId)))
-
-    override def setupWithDb = {
-      documentSet = Schema.documentSets.insert(DocumentSet(title = "NodeDocumentBatchInserterSpec"))
-      val nodeId = IdGenerator.nextNodeId(documentSet.id)
-      node = Schema.nodes.insert(Node(nodeId, nodeId, None, "description", 1, true))
+    def results: Seq[NodeDocument] = blockingDatabase.seq {
+      NodeDocuments
+        .filter(_.documentId inSet documentIds)
+        .sortBy(nd => (nd.nodeId, nd.documentId))
     }
 
-    protected def findNodeDocumentIds: Seq[(Long, Long)] =
-      from(Schema.nodeDocuments)(select(_)).iterator.map(nd => (nd.nodeId, nd.documentId)).toSeq
+    val inserter = new BatchInserter[DeprecatedNodeDocument](3, Schema.nodeDocuments)
 
-    protected def insertDocuments(documentSetId: Long, numDocuments: Int): Seq[Long] = {
-      val ids = Seq.fill(numDocuments)(IdGenerator.nextDocumentId(documentSetId))
-
-      val docs = ids.map { id => Document(id = id, documentSetId = documentSetId) }
-      Schema.documents.insert(docs)
-
-      ids
+    def insert(nodeId: Long, documentId: Long): Unit = DeprecatedDatabase.inTransaction {
+      inserter.insert(DeprecatedNodeDocument(nodeId, documentId))
     }
 
+    def flush = DeprecatedDatabase.inTransaction { inserter.flush }
   }
 
   "NodeDocumentBatchInserter" should {
-    "insert data after threshold is reached" in new DocumentsSetup {
-      val documentIds = insertDocuments(documentSet.id, 5)
-
-      insertDocumentIds(documentIds.take(threshold - 1))
-
-      val beforeThresholdReached = findNodeDocumentIds
-      beforeThresholdReached must be empty
-
-      insertDocumentIds(documentIds.slice(threshold - 1, threshold))
-
-      val afterThreshold = findNodeDocumentIds
-      val expectedNodeDocuments = documentIds.map((node.id, _))
-
-      afterThreshold must containTheSameElementsAs(expectedNodeDocuments)
+    "wait to insert before the threshold is reached" in new BaseScope {
+      insert(nodeIds(0), documentIds(0))
+      insert(nodeIds(1), documentIds(0))
+      results must beEmpty
     }
 
-    "reset count after inserting data" in new DocumentsSetup {
-      val documentIds = insertDocuments(documentSet.id, 10)
-      val firstBatch = documentIds.take(5)
-      val secondBatch = documentIds.drop(5)
+    "flush when the threshold is reached" in new BaseScope {
+      insert(nodeIds(0), documentIds(0))
+      insert(nodeIds(1), documentIds(0))
+      insert(nodeIds(2), documentIds(0))
 
-      insertDocumentIds(firstBatch)
-      insertDocumentIds(secondBatch.take(2))
-
-      val firstBatchInserted = findNodeDocumentIds
-      firstBatchInserted must have size (threshold)
-
-      insertDocumentIds(secondBatch.drop(2))
-
-      val allInserted = findNodeDocumentIds
-      val expectedNodeDocuments = documentIds.map((node.id, _))
-
-      allInserted must containTheSameElementsAs(expectedNodeDocuments)
-
+      results must beEqualTo(Seq(
+        NodeDocument(nodeIds(0), documentIds(0)),
+        NodeDocument(nodeIds(1), documentIds(0)),
+        NodeDocument(nodeIds(2), documentIds(0))
+      ))
     }
 
-    "flush remaining data when instructed to" in new DocumentsSetup {
-      val documentIds = insertDocuments(documentSet.id, 4)
+    "reset count after inserting data" in new BaseScope {
+      insert(nodeIds(0), documentIds(0))
+      insert(nodeIds(0), documentIds(1))
+      insert(nodeIds(1), documentIds(0))
+      insert(nodeIds(1), documentIds(1))
+      insert(nodeIds(2), documentIds(0))
+      insert(nodeIds(2), documentIds(1))
+      insert(nodeIds(0), documentIds(2))
 
-      insertDocumentIds(documentIds)
-      inserter.flush
-
-      val flushedDocuments = findNodeDocumentIds
-      val expectedNodeDocuments = documentIds.map((node.id, _))
-
-      flushedDocuments must containTheSameElementsAs(expectedNodeDocuments)
+      results must beEqualTo(Seq(
+        NodeDocument(nodeIds(0), documentIds(0)),
+        NodeDocument(nodeIds(0), documentIds(1)),
+        NodeDocument(nodeIds(1), documentIds(0)),
+        NodeDocument(nodeIds(1), documentIds(1)),
+        NodeDocument(nodeIds(2), documentIds(0)),
+        NodeDocument(nodeIds(2), documentIds(1))
+      ))
     }
 
-    "flush with no queued inserts doesn't fail" in new DocumentsSetup {
+    "flush remaining data when instructed" in new BaseScope {
+      insert(nodeIds(0), documentIds(0))
+      insert(nodeIds(1), documentIds(0))
+      flush
 
-      inserter.flush
-      "did not crash" must be equalTo ("did not crash")
+      results must beEqualTo(Seq(
+        NodeDocument(nodeIds(0), documentIds(0)),
+        NodeDocument(nodeIds(1), documentIds(0))
+      ))
+    }
+
+    "flush when empty" in new BaseScope {
+      flush
+      results must beEmpty
     }
   }
 }
