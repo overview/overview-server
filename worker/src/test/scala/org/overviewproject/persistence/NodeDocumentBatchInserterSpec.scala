@@ -20,7 +20,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
 
     val documentSet = factory.documentSet(id=123L)
     val documents: Seq[Document] = Seq.fill(5) { factory.document(documentSetId=documentSet.id) }
-    val documentIds: Seq[Long] = documents.map(_.id)
+    val documentIds: Seq[Long] = documents.map(_.id).sorted
     val rootNodeId = 123L << 32
     val nodeIds = Seq(
       factory.node(id=rootNodeId, rootId=rootNodeId, parentId=None),

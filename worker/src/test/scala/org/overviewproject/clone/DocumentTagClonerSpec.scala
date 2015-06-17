@@ -14,8 +14,8 @@ class DocumentTagClonerSpec extends DbSpecification {
       val sourceDocumentSet = factory.documentSet(id=123L)
       val cloneDocumentSet = factory.documentSet(id=124L)
 
-      val sourceTags = Seq.tabulate(3) { _ => factory.tag(documentSetId=sourceDocumentSet.id) }
-      val cloneTags = Seq.tabulate(3) { _ => factory.tag(documentSetId=cloneDocumentSet.id) }
+      val sourceTags = Seq.fill(3) { factory.tag(documentSetId=sourceDocumentSet.id) }.sortBy(_.id)
+      val cloneTags = Seq.fill(3) { factory.tag(documentSetId=cloneDocumentSet.id) }.sortBy(_.id)
 
       val sourceDocuments: Seq[Document] = Seq.tabulate(3) { n =>
         factory.document(documentSetId=123L, id=((123L << 32) | n))
