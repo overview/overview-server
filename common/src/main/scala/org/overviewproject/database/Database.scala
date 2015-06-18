@@ -192,3 +192,10 @@ class Database(val dataSource: JDataSource) {
     future.transform(identity, wrapException)(slickDatabase.ioExecutionContext)
   }
 }
+
+
+object Database {
+  private lazy val database = new Database(DB.getDataSource)
+  
+  def apply(): Database = database
+}

@@ -16,7 +16,7 @@ package org.overviewproject.database
   */
 trait HasDatabase {
   /** The database. */
-  protected lazy val database: Database = new Database(DB.getDataSource)
+  protected lazy val database: Database = Database()
 
   /** Exposes the Slick Database API. */
   protected val databaseApi = org.overviewproject.database.Slick.api
