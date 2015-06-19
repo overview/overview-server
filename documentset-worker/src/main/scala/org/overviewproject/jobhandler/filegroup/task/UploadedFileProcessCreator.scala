@@ -6,9 +6,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.control.Exception.ultimately
 
 import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.DocumentType
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.OfficeDocument
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfPage
@@ -56,11 +54,13 @@ trait UploadedFileProcessCreator {
 
 object UploadedFileProcessCreator extends HasBlockingDatabase {
 
-  def apply(bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): UploadedFileProcessCreator = 
+  class UnsupportedDocumentTypeException(t: UnsupportedDocument)
+    extends Exception(s"Unsupported Document type ${t.filename}: ${t.mimeType}")
+
+  def apply(bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): UploadedFileProcessCreator =
     new UploadedFileProcessCreatorImpl(bulkDocumentWriter)
 
-  private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter)
-    (implicit executor: ExecutionContext) extends UploadedFileProcessCreator {
+  private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext) extends UploadedFileProcessCreator {
     override protected val documentTypeDetector = DocumentTypeDetector
     override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
 
@@ -80,6 +80,7 @@ object UploadedFileProcessCreator extends HasBlockingDatabase {
             CreateDocumentsFromConvertedFilePages(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument =>
             CreateDocumentFromConvertedFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
+          case t: UnsupportedDocument => throw new UnsupportedDocumentTypeException(t)
         }
     }
 

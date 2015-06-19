@@ -149,14 +149,14 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       throw e
     }
     case Event(Failure(e), TaskInfo(jobQueue, documentSetId, true)) => {
-      Logger.error(s"Failed document processing for documentSet $documentSetId", e)
+      logDocumentProcessingError(documentSetId, e)
 
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
       goto(Ready) using ExternalActors(jobQueue)
     }
-
+    
     case Event(CancelTask, _)    => goto(Cancelled)
     case Event(TaskAvailable, _) => stay
   }
@@ -185,6 +185,13 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     lookForJobQueue
   }
 
+  // Don't generate errors for expected exceptions
+  private def logDocumentProcessingError(documentSetId: Long, t: Throwable) = t match {
+    case e: UploadedFileProcessCreator.UnsupportedDocumentTypeException =>
+      Logger.info(e.getMessage)
+    case e =>
+      Logger.error(s"Failed document processing for documentSet $documentSetId", e)      
+  }
 }
 
 object FileGroupTaskWorker {
