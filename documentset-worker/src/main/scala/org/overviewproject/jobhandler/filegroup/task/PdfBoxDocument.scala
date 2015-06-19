@@ -19,7 +19,7 @@ class PdfBoxDocument(file: File) extends PdfDocument {
   private val TempFilePrefix = "overview-pdfbox-"
   private val TempFileExtension = ".tmp"
 
-  private val textStripper: PDFTextStripper = new PDFTextStripper
+  private val textStripper = new FontDetectingTextStripper
   private val document: PDDocument = init(file)
 
   override def pages: SeqView[PdfPage, Seq[_]] = splitPages.map { p =>
@@ -33,6 +33,15 @@ class PdfBoxDocument(file: File) extends PdfDocument {
 
   override def text: String = getText(document)
 
+  /**
+   * Text extraction and font detection is combined in one call 
+   * to avoid having to read the file twice. 
+   */
+  def textWithFonts: Either[String, String] = {
+    val t = getText(document)
+    Either.cond(textStripper.foundFonts, t, t)
+  }
+  
   override def close(): Unit = document.close()
 
   private def init(file: File): PDDocument = {
@@ -80,6 +89,26 @@ class PdfBoxDocument(file: File) extends PdfDocument {
 
     Textify(rawText)
   }
+  
+  private class FontDetectingTextStripper extends PDFTextStripper {
+    import org.apache.pdfbox.util.TextPosition
+    
+    private var detectedFont: Boolean = false
+   
+    def foundFonts: Boolean = detectedFont
+    
+    override protected def writeString(text: String, textPositions: java.util.List[TextPosition]): Unit = {
+      super.writeString(text, textPositions)
+
+      if (!detectedFont) {
+        val fontNames = textPositions.asScala.map(_.getFont().getBaseFont())
+        if (fontNames.nonEmpty) detectedFont = true
+      }
+
+    }
+
+  }
+  
 }
 
 object PdfBoxDocument {
