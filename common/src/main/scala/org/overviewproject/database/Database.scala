@@ -25,8 +25,10 @@ import org.overviewproject.database.Slick.api._
   *
   * Most of the time, you'll want to extend the HasDatabase trait instead of
   * invoking this class directly.
+  * The constructor is private to force use of the singleton object returned by
+  * `Database()`.
   */
-class Database(val dataSource: JDataSource) {
+class Database private (val dataSource: JDataSource) {
   /** Exposes the Slick Database. */
   val slickDatabase = DatabaseFactory.forDataSource(dataSource)
 
