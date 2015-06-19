@@ -70,7 +70,7 @@ class CreatePdfPagesSpec extends Specification with Mockito {
       override protected val nextStep = { pageData => NextStep(pageData) }
       private val pdfDocument = smartMock[PdfDocument]
 
-      pdfProcessor.loadFromBlobStorage(viewLocation) returns pdfDocument
+      pdfProcessor.loadFromBlobStorage(viewLocation) returns Future.successful(pdfDocument)
       pdfDocument.pages returns pages.view
 
       pageSaver.savePages(be_===(fileId), any) returns Future.successful(pageAttributes)

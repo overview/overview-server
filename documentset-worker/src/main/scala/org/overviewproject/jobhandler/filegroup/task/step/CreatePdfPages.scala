@@ -38,9 +38,8 @@ trait CreatePdfPages extends UploadedFileProcessStep {
       }
     }
 
-  private def loadDocument(location: String): Future[PdfDocument] = AsFuture {
+  private def loadDocument(location: String): Future[PdfDocument] =
     pdfProcessor.loadFromBlobStorage(location)
-  }
 
   private def getPages(pdfDocument: PdfDocument): SeqView[PdfPage, Seq[_]] =
     blocking {
@@ -54,7 +53,7 @@ trait CreatePdfPages extends UploadedFileProcessStep {
   } yield nextStep(pageDocumentData)
 
   trait PdfProcessor {
-    def loadFromBlobStorage(location: String): PdfDocument
+    def loadFromBlobStorage(location: String): Future[PdfDocument]
   }
 }
 
@@ -67,15 +66,15 @@ object CreatePdfPages {
   private class CreatePdfPagesImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: Seq[DocumentData] => TaskStep)
-   (override implicit protected val executor: ExecutionContext)
+    override protected val nextStep: Seq[DocumentData] => TaskStep)(override implicit protected val executor: ExecutionContext)
     extends CreatePdfPages {
 
     override protected val pageSaver: PageSaver = PageSaver
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
 
     private class PdfProcessorImpl extends PdfProcessor {
-      override def loadFromBlobStorage(location: String): PdfDocument = new PdfBoxDocument(location)
+      override def loadFromBlobStorage(location: String): Future[PdfDocument] =
+        PdfBoxDocument.loadFromLocation(location)
     }
 
   }

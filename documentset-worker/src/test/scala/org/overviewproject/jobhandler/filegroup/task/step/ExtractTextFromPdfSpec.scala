@@ -25,8 +25,8 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
 
     "return failure on error" in new FailingTextExtractionScope {
       val r = extractTextFromPdf.execute
-
-      r.value must beSome(beFailedTry[TaskStep])
+      
+      r must throwA[Exception].await
     }
   }
 
@@ -42,11 +42,11 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
     documentFile.viewLocation returns viewLocation
 
     val text = "file text"
-    val pdfDocument = setupPdfDocument
+    val pdfDocument: PdfDocument = setupPdfDocument
 
     val extractTextFromPdf = new TestExtractFromPdf
 
-    def setupPdfDocument = {
+    def setupPdfDocument: PdfDocument = {
       val d = smartMock[PdfDocument]
 
       d.text returns text
@@ -62,8 +62,9 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
       override protected val file = documentFile
       override protected val nextStep = { documentData => NextStep(documentData) }
       override protected val pdfProcessor = smartMock[PdfProcessor]
-
-      pdfProcessor.loadFromBlobStorage(viewLocation) returns pdfDocument
+      override protected def errorHandler(t: Throwable): Unit = {}
+      
+      pdfProcessor.loadFromBlobStorage(viewLocation) returns Future.successful(pdfDocument)
 
     }
 
@@ -71,7 +72,7 @@ class ExtractTextFromPdfSpec extends Specification with Mockito {
 
   trait FailingTextExtractionScope extends PdfFileScope {
 
-    override def setupPdfDocument = {
+    override def setupPdfDocument: PdfDocument = {
       val d = smartMock[PdfDocument]
 
       d.text throws new RuntimeException("failed")

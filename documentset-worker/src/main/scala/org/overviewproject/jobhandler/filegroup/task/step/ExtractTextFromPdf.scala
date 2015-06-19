@@ -22,21 +22,18 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
   protected val nextStep: Seq[DocumentData] => TaskStep
 
   override protected def doExecute: Future[TaskStep] = for {
-    documentInfo <- AsFuture(getDocumentInfo)
+    documentInfo <- getDocumentInfo
   } yield nextStep(documentInfo)
 
-  private def getDocumentInfo: Seq[DocumentData] = {
-    val pdfDocument = pdfProcessor.loadFromBlobStorage(file.viewLocation)
-
-    ultimately(pdfDocument.close) {
-      val text = pdfDocument.text
-      Seq(PdfFileDocumentData(file.name, file.id, text))
-    }
+  private def getDocumentInfo: Future[Seq[DocumentData]] = for {
+    pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
+  } yield ultimately(pdfDocument.close) {
+    Seq(PdfFileDocumentData(file.name, file.id, pdfDocument.text))
   }
 
   trait PdfProcessor {
     // should return Future[PdfDocument]
-    def loadFromBlobStorage(location: String): PdfDocument
+    def loadFromBlobStorage(location: String): Future[PdfDocument]
   }
 }
 
@@ -51,12 +48,12 @@ object ExtractTextFromPdf {
   private class ExtractTextFromPdfImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: Seq[DocumentData] => TaskStep
-  )(override implicit protected val executor: ExecutionContext) extends ExtractTextFromPdf {
+    override protected val nextStep: Seq[DocumentData] => TaskStep)(override implicit protected val executor: ExecutionContext) extends ExtractTextFromPdf {
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
 
     private class PdfProcessorImpl extends PdfProcessor {
-      override def loadFromBlobStorage(location: String): PdfDocument = blocking { new PdfBoxDocument(location) }
+      override def loadFromBlobStorage(location: String): Future[PdfDocument] =
+        PdfBoxDocument.loadFromLocation(location)
     }
 
   }
