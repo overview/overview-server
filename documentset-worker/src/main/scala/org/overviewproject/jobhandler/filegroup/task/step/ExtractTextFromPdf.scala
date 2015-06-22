@@ -32,7 +32,6 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
   }
 
   trait PdfProcessor {
-    // should return Future[PdfDocument]
     def loadFromBlobStorage(location: String): Future[PdfDocument]
   }
 }
