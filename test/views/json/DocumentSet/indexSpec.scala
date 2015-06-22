@@ -1,13 +1,13 @@
 package views.html.DocumentSet
 
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob}
-import org.overviewproject.tree.orm.finders.ResultPage
+import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
+import models.pagination.Page
 
 class indexSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
-    def jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
-    def documentSets: Seq[(DocumentSet,Long)] = Seq()
-    def documentSetsPage = ResultPage(documentSets, 10, 1)
+    def jobs : Seq[(DocumentSetCreationJob,DocumentSet,Int)] = Seq()
+    def documentSets: Seq[(DocumentSet,Int)] = Seq()
+    def documentSetsPage = Page(documentSets)
 
     def result = index(fakeUser, documentSetsPage, jobs)
   }
@@ -18,7 +18,7 @@ class indexSpec extends views.html.ViewSpecification {
     }
 
     "show DocumentSets if there are some" in new BaseScope {
-      override def documentSets = Seq((DocumentSet(), 1))
+      override def documentSets = Seq((factory.documentSet(), 1))
       $(".document-sets").length must beEqualTo(1)
     }
 
@@ -28,8 +28,8 @@ class indexSpec extends views.html.ViewSpecification {
 
     "render DocumentSets if there are some" in new BaseScope {
       override def documentSets = Seq(
-        (DocumentSet(id=1, title="title1", query=Some("query1")), 1),
-        (DocumentSet(id=2, title="title2", query=Some("query2")), 1)
+        (factory.documentSet(id=1, title="title1", query=Some("query1")), 1),
+        (factory.documentSet(id=2, title="title2", query=Some("query2")), 1)
       )
       $(".document-sets").length must equalTo(1)
       $(".document-sets li[data-document-set-id='1']").length must beEqualTo(1)
@@ -38,8 +38,8 @@ class indexSpec extends views.html.ViewSpecification {
     
     "define error-list popup if there are DocumentSets" in new BaseScope {
       override def documentSets = Seq(
-        (DocumentSet(id=1, title="title1", query=Some("query1")), 1),
-        (DocumentSet(id=2, title="title2", query=Some("query2")), 1)
+        (factory.documentSet(id=1, title="title1", query=Some("query1")), 1),
+        (factory.documentSet(id=2, title="title2", query=Some("query2")), 1)
       )
       $("#error-list-modal").length must beEqualTo(1)
     }

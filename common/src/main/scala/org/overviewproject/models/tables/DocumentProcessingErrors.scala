@@ -13,6 +13,17 @@ class DocumentProcessingErrorsImpl(tag: Tag) extends Table[DocumentProcessingErr
 
   def * = (id, documentSetId, textUrl, message, statusCode, headers) <>
     ((DocumentProcessingError.apply _).tupled, DocumentProcessingError.unapply)
+
+  def createAttributes = (
+    documentSetId,
+    textUrl,
+    message,
+    statusCode,
+    headers
+  ) <> (
+    DocumentProcessingError.CreateAttributes.tupled,
+    DocumentProcessingError.CreateAttributes.unapply
+  )
 }
 
 object DocumentProcessingErrors extends TableQuery(new DocumentProcessingErrorsImpl(_))

@@ -1,19 +1,13 @@
 package views.html.DocumentSet
 
-import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree}
-import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.models.DocumentSet
 
 class _documentSetSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
-    def documentSet: DocumentSet = DocumentSet(id=1L)
-    def nViews: Int = 3
+    val documentSet: DocumentSet = factory.documentSet(id=1L)
+    val nViews: Int = 3
 
     def result = _documentSet(documentSet, nViews, fakeUser)
-  }
-
-  trait DocumentSetWithErrorsContext extends BaseScope {
-    val numberOfErrors = 10
-    override def documentSet = DocumentSet(1L, documentProcessingErrorCount = numberOfErrors)
   }
 
   "DocumentSet._documentSet" should {
@@ -36,19 +30,23 @@ class _documentSetSpec extends views.html.ViewSpecification {
     }
 
     "should show the number of views" in new BaseScope {
+      override val nViews = 3
       val span = $(".view-count")
       span.text().trim must beEqualTo("3 views")
     }
 
     "should show a document count" in new BaseScope {
-      $("span.document-count").text() must equalTo("no documents")
+      override val documentSet = factory.documentSet(id=1L, documentCount=18)
+      $("span.document-count").text() must equalTo("18 documents")
     }
 
     "should not show error count if none exist" in new BaseScope {
+      override val documentSet = factory.documentSet(id=1L, documentProcessingErrorCount=0)
       $(".error-count").length must be_==(0)
     }
 
-    "should show error count popup if there are errors" in new DocumentSetWithErrorsContext {
+    "should show error count popup if there are errors" in new BaseScope {
+      override val documentSet = factory.documentSet(id=1L, documentProcessingErrorCount=10)
       $("a.error-count").text.trim must equalTo("10 documents could not be loaded")
       $("a.error-count").attr("href") must be equalTo("/documentsets/1/error-list")
       $("a.error-count").attr("data-target") must be equalTo("#error-list-modal")

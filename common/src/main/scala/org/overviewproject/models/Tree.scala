@@ -1,6 +1,7 @@
 package org.overviewproject.models
 
 import java.sql.Timestamp
+import org.overviewproject.tree.orm.{Tree=>DeprecatedTree}
 
 case class Tree(
   val id: Long,
@@ -16,6 +17,20 @@ case class Tree(
   val createdAt: Timestamp
 ) {
   def update(attributes: Tree.UpdateAttributes) = copy(title=attributes.title)
+
+  def toDeprecatedTree: DeprecatedTree = DeprecatedTree(
+    id,
+    documentSetId,
+    rootNodeId,
+    jobId,
+    title,
+    documentCount,
+    lang,
+    description,
+    suppliedStopWords,
+    importantWords,
+    createdAt
+  )
 }
 
 object Tree {

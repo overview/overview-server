@@ -1,6 +1,10 @@
 @(
   user: User,
-  jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,User)]
+  jobs: Iterable[(
+    org.overviewproject.models.DocumentSetCreationJob,
+    org.overviewproject.models.DocumentSet,
+    Option[String]
+  )]
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
@@ -25,14 +29,14 @@
         </tr>
       </thead>
       <tbody>
-        @jobs.map { case (job, documentSet, owner) =>
+        @jobs.map { case (job, documentSet, ownerEmail) =>
           <tr>
             <td class="id">@job.id</td>
             <td class="date-started">@m("td.created_at", documentSet.createdAt)</td>
-            <td class="state">@t("models.DocumentSetCreationJob.state." + job.toDocumentSetCreationJob.state.toString)</td>
+            <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
             <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete"></progress>@((job.fractionComplete * 100).toInt)%</td>
             <td class="state-description">@job.statusDescription</td>
-            <td class="email">@owner.email</td>
+            <td class="email">@ownerEmail.getOrElse("?")</td>
             <td class="title">@documentSet.title</td>
             <td class="query">@documentSet.query.getOrElse("")</td>
             <td class="actions">

@@ -1,39 +1,46 @@
 package controllers
 
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.tree.orm.finders.FinderResult.finderResultToIterable
+import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.Future
+
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
-import models.User
-import models.orm.finders.DocumentSetFinder
+import org.overviewproject.database.HasDatabase
+import org.overviewproject.models.{DocumentSet,DocumentSetUser}
+import org.overviewproject.models.tables.{DocumentSetUsers,DocumentSets}
 
 trait SharedDocumentSetController extends Controller {
-  trait Storage {
-    def findDocumentSets(userEmail: String) : Iterable[(DocumentSet,User)]
-    def countUserOwnedDocumentSets(user: String) : Long
-  }
-
-  def index = AuthorizedAction.inTransaction(anyUser) { implicit request =>
-    val sharedDocumentSets = storage.findDocumentSets(request.user.email).toSeq
-    val count = storage.countUserOwnedDocumentSets(request.user.email)
-
-    Ok(views.html.SharedDocumentSet.index(request.user, count, sharedDocumentSets))
+  def index = AuthorizedAction(anyUser).async { implicit request =>
+    for {
+      count <- storage.countUserOwnedDocumentSets(request.user.email)
+      documentSets <- storage.findDocumentSets(request.user.email)
+    } yield Ok(views.html.PublicDocumentSet.index(request.user, count, documentSets))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  val storage : Storage
+  protected val storage: SharedDocumentSetController.Storage
 }
 
 object SharedDocumentSetController extends SharedDocumentSetController {
-  object DatabaseStorage extends SharedDocumentSetController.Storage {
-    override def findDocumentSets(userEmail: String) = {
-      DocumentSetFinder.byViewer(userEmail).withOwners
+  trait Storage {
+    def findDocumentSets(userEmail: String): Future[Seq[(DocumentSet,String)]]
+    def countUserOwnedDocumentSets(user: String): Future[Int]
+  }
+
+  object DatabaseStorage extends Storage with HasDatabase {
+    import database.api._
+
+    override def findDocumentSets(userEmail: String) = database.seq {
+      DocumentSetUsers
+        .filter(dsu => dsu.userEmail === userEmail && dsu.role === DocumentSetUser.Role(false))
+        .join(DocumentSets).on(_.documentSetId === _.id)
+        .map { case (dsu, ds) => (ds, dsu.userEmail) }
     }
 
-    override def countUserOwnedDocumentSets(owner: String) = {
-      DocumentSetFinder.byOwner(owner).count
+    override def countUserOwnedDocumentSets(owner: String) = database.length {
+      DocumentSetUsers.filter(dsu => dsu.userEmail === owner && dsu.role === DocumentSetUser.Role(true))
     }
   }
 
-  override val storage = DatabaseStorage
+  override protected val storage = DatabaseStorage
 }

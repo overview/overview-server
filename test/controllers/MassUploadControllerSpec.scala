@@ -12,9 +12,8 @@ import controllers.auth.{AuthorizedRequest,SessionFactory}
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
 import models.{ Session, User }
 import org.overviewproject.models.{DocumentSet,FileGroup,GroupedFileUpload}
-import org.overviewproject.tree.orm.{DocumentSet=>DeprecatedDocumentSet,DocumentSetCreationJob}
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.models.DocumentSetCreationJobType._
+import org.overviewproject.models.DocumentSetCreationJobState._
 
 class MassUploadControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {

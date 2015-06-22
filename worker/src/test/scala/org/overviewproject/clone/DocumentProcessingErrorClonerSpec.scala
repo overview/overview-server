@@ -1,20 +1,26 @@
 package org.overviewproject.clone
 
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.database.DeprecatedDatabase
+import org.overviewproject.models.tables.DocumentProcessingErrors
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.DocumentSet
 
 class DocumentProcessingErrorClonerSpec extends DbSpecification {
   "DocumentProcessingErrorCloner" should {
     
-    "clone DocumentProcessingErrors" in new DbTestContext {
-      val sourceDocumentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentProcessingErrorSpec"))
-      val cloneDocumentSet = Schema.documentSets.insert(DocumentSet(title = "CloneDocumentProcessingErrorSpec"))
-      
-      DocumentProcessingErrorCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
-      
-      val clonedErrors = Schema.documentProcessingErrors.where(dpe => dpe.documentSetId === cloneDocumentSet.id)
+    "clone DocumentProcessingErrors" in new DbScope {
+      import database.api._
+
+      val sourceDocumentSet = factory.documentSet()
+      factory.documentProcessingError(documentSetId=sourceDocumentSet.id)
+      factory.documentProcessingError(documentSetId=sourceDocumentSet.id)
+
+      val cloneDocumentSet = factory.documentSet()
+
+      DeprecatedDatabase.inTransaction {
+        DocumentProcessingErrorCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
+      }
+
+      blockingDatabase.length(DocumentProcessingErrors.filter(_.documentSetId === cloneDocumentSet.id)) must beEqualTo(2)
     }
   }
 }

@@ -13,19 +13,18 @@ import scala.util.control.NonFatal
 
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
-import org.overviewproject.database.{ DatabaseConfiguration, DeprecatedDatabase, DataSource, DB }
+import org.overviewproject.database.{ DatabaseConfiguration, DeprecatedDatabase, DataSource, DB, HasBlockingDatabase }
 import org.overviewproject.persistence.{ NodeWriter, PersistentDocumentSetCreationJob }
-import org.overviewproject.persistence.orm.finders.DocumentSetFinder
-import org.overviewproject.persistence.orm.stores._
 import org.overviewproject.persistence.TreeIdGenerator
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.{ DocumentSet, Tree }
+import org.overviewproject.tree.orm.DocumentSetCreationJobState
 import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.models.{ DocumentSet, Tree }
+import org.overviewproject.models.tables.{DocumentSets,Trees}
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
 
-object JobHandler {
+object JobHandler extends HasBlockingDatabase {
   val logger = Logger.forClass(getClass)
 
   def main(args: Array[String]) {
@@ -64,7 +63,7 @@ object JobHandler {
   private def scanForJobs: Unit = {
 
     val firstSubmittedJob: Option[PersistentDocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
-      PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
+      PersistentDocumentSetCreationJob.findFirstJobWithState(DocumentSetCreationJobState.NotStarted)
     }
 
     firstSubmittedJob.map { j =>
@@ -87,7 +86,7 @@ object JobHandler {
     }
 
     def logProgress(progress: Progress): Unit = {
-      val logLabel = if (j.state == Cancelled) "CANCELLED"
+      val logLabel = if (j.state == DocumentSetCreationJobState.Cancelled) "CANCELLED"
       else "PROGRESS"
 
       logger.info(s"[${j.documentSetId}] $logLabel: ${progress.fraction * 100}% done. ${progress.status}, ${if (progress.hasError) "ERROR" else "OK"}")
@@ -96,11 +95,11 @@ object JobHandler {
     val progressReporter = new ThrottledProgressReporter(stateChange = Seq(updateJobState, logProgress), interval = Seq(checkCancellation))
     def progFn(progress: Progress): Boolean = {
       progressReporter.update(progress)
-      j.state == Cancelled
+      j.state == DocumentSetCreationJobState.Cancelled
     }
 
     try {
-      j.state = InProgress
+      j.state = DocumentSetCreationJobState.InProgress
       DeprecatedDatabase.inTransaction { j.update }
       j.observeCancellation(deleteCancelledJob)
 
@@ -152,7 +151,7 @@ object JobHandler {
 
       val numberOfDocuments = producer.produce()
 
-      if (job.state != Cancelled) {
+      if (job.state != DocumentSetCreationJobState.Cancelled) {
         if (job.jobType == DocumentSetCreationJobType.Recluster)
           createTree(treeId, nodeWriter.rootNodeId, ds, numberOfDocuments, job)
         else submitClusteringJob(ds.id)
@@ -163,7 +162,7 @@ object JobHandler {
     }
   }
 
-  private def handleCloneJob(job: PersistentDocumentSetCreationJob) {
+  private def handleCloneJob(job: PersistentDocumentSetCreationJob): Unit = {
     import org.overviewproject.clone.{ JobProgressLogger, JobProgressReporter }
 
     val jobProgressReporter = new JobProgressReporter(job)
@@ -182,12 +181,16 @@ object JobHandler {
   // we can't guarantee that all data was cloned.
   // If the source has been deleted, we throw an exception, which ends up as an error
   // that the user can see, explaining why the cloning failed.
-  private def verifySourceStillExists(sourceDocumentSetId: Long): DocumentSet = DeprecatedDatabase.inTransaction {
-    val validSourceDocumentSet = for {
-      ds <- DocumentSetFinder.byId(sourceDocumentSetId).headOption if !ds.deleted
-    } yield ds
+  private def verifySourceStillExists(sourceDocumentSetId: Long): Unit = {
+    import database.api._
 
-    validSourceDocumentSet.getOrElse { throw new DisplayedError("source_documentset_deleted") }
+    val count = blockingDatabase.length(
+      DocumentSets.filter(ds => ds.id === sourceDocumentSetId && ds.deleted === false)
+    )
+
+    if (count == 0) {
+      throw new DisplayedError("source_documentset_deleted")
+    }
   }
 
   private def restartInterruptedJobs: Unit = JobRestarter.restartInterruptedJobs
@@ -220,11 +223,11 @@ object JobHandler {
       }
     }
 
-    job.state = Error
+    job.state = DocumentSetCreationJobState.Error
     job.statusDescription = Some(ExceptionStatusMessage(t))
     DeprecatedDatabase.inTransaction {
       job.update
-      if (job.state == Cancelled) job.delete
+      if (job.state == DocumentSetCreationJobState.Cancelled) job.delete
     }
   }
 
@@ -235,57 +238,55 @@ object JobHandler {
     Schema.documentSetCreationJobNodes.deleteWhere(_.documentSetCreationJobId === job.id)
   }
 
-  private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = DeprecatedDatabase.inTransaction {
-    import org.overviewproject.postgres.SquerylEntrypoint._
-    import org.overviewproject.persistence.orm.Schema.documentSets
-
-    from(documentSets)(ds =>
-      where(ds.id === documentSetId)
-        select (ds)).headOption
+  private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
+    import database.api._
+    blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
   }
 
   private def createTree(treeId: Long, rootNodeId: Long, documentSet: DocumentSet,
-                         numberOfDocuments: Int, job: PersistentDocumentSetCreationJob) =
-    DeprecatedDatabase.inTransaction {
-      TreeStore.insert(Tree(
-        id = treeId,
-        documentSetId = documentSet.id,
-        rootNodeId = rootNodeId,
-        jobId = job.id,
-        title = job.treeTitle.getOrElse("Tree"), // FIXME: Translate by making treeTitle a String instead of Option[String]
-        documentCount = numberOfDocuments,
-        lang = job.lang,
-        description = job.treeDescription.getOrElse(""),
-        suppliedStopWords = job.suppliedStopWords.getOrElse(""),
-        importantWords = job.importantWords.getOrElse("")))
-    }
+                         numberOfDocuments: Int, job: PersistentDocumentSetCreationJob): Unit = {
+    import database.api._
+
+    blockingDatabase.runUnit(Trees.+=(Tree(
+      id = treeId,
+      documentSetId = documentSet.id,
+      rootNodeId = rootNodeId,
+      jobId = job.id,
+      title = job.treeTitle.getOrElse("Tree"), // FIXME: Translate by making treeTitle a String instead of Option[String]
+      documentCount = numberOfDocuments,
+      lang = job.lang,
+      description = job.treeDescription.getOrElse(""),
+      suppliedStopWords = job.suppliedStopWords.getOrElse(""),
+      importantWords = job.importantWords.getOrElse(""),
+      createdAt = new java.sql.Timestamp(System.currentTimeMillis)
+    )))
+  }
 
   // FIXME: Submitting jobs, along with creating documents should move into documentset-worker 
   private def submitClusteringJob(documentSetId: Long): Unit = DeprecatedDatabase.inTransaction {
+    import database.api._
     import org.overviewproject.postgres.SquerylEntrypoint._
     import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
     import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
     import org.overviewproject.tree.orm.DocumentSetCreationJob
-    import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-    import org.overviewproject.tree.DocumentSetCreationJobType._
 
     val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
     val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)
 
     for {
-      documentSet <- DocumentSetFinder.byId(documentSetId).headOption
-      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).forUpdate.headOption if (job.state != Cancelled)
+      documentSet <- blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
+      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).forUpdate.headOption if (job.state != DocumentSetCreationJobState.Cancelled)
     } {
       val clusteringJob = DocumentSetCreationJob(
         documentSetId = documentSet.id,
         treeTitle = Some("Tree"), // FIXME: Translate by making treeTitle come from a job
-        jobType = Recluster,
+        jobType = DocumentSetCreationJobType.Recluster,
         lang = job.lang,
         suppliedStopWords = job.suppliedStopWords,
         importantWords = job.importantWords,
         contentsOid = job.contentsOid, // FIXME: should be deleted when we delete original job 
         splitDocuments = job.splitDocuments,
-        state = NotStarted)
+        state = DocumentSetCreationJobState.NotStarted)
 
       documentSetCreationJobStore.insertOrUpdate(clusteringJob)
       documentSetCreationJobStore.delete(job.id)

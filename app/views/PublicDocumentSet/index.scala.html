@@ -1,7 +1,7 @@
 @(
   user: User,
   nOwnedDocumentSets: Long,
-  documentSets: Iterable[(org.overviewproject.tree.orm.DocumentSet,models.User)]
+  documentSets: Seq[(org.overviewproject.models.DocumentSet,String)]
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {

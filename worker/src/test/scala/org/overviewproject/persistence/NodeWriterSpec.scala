@@ -10,12 +10,11 @@ package org.overviewproject.persistence
 import scala.collection.mutable.Set
 
 import org.overviewproject.clustering.DocTreeNode
-import org.overviewproject.models.Document
-import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.IdGenerator
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Node, NodeDocument}
+import org.overviewproject.models.{Document,DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Node,NodeDocument}
+import org.overviewproject.models.tables.{NodeDocuments,Nodes}
 
 class NodeWriterSpec extends DbSpecification {
   private def addChildren(parent: DocTreeNode, description: String): Seq[DocTreeNode] = {
@@ -28,12 +27,17 @@ class NodeWriterSpec extends DbSpecification {
 
   "NodeWriter" should {
 
-    trait NodeWriterContext extends DbTestContext {
-      import org.overviewproject.postgres.SquerylEntrypoint._
+    trait NodeWriterContext extends DbScope {
+      import database.api._
 
-      var documentSet: DocumentSet = _
-      var job: DocumentSetCreationJob = _
-      var writer: NodeWriter = _
+      val documentSet = factory.documentSet()
+      val job = factory.documentSetCreationJob(
+        documentSetId=documentSet.id,
+        jobType=DocumentSetCreationJobType.Recluster,
+        state=DocumentSetCreationJobState.InProgress,
+        treeTitle=Some("title")
+      )
+      val writer = new NodeWriter(job.id, IdGenerator.nextTreeId(documentSet.id))
 
       implicit object NodeDocumentOrdering extends math.Ordering[NodeDocument] {
         override def compare(a: NodeDocument, b: NodeDocument) = {
@@ -42,33 +46,19 @@ class NodeWriterSpec extends DbSpecification {
         }
       }
 
-      override def setupWithDb = {
-        documentSet = Schema.documentSets.insert(DocumentSet(title = "NodeWriterSpec"))
-        job = Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(
-          documentSetId=documentSet.id,
-          jobType=DocumentSetCreationJobType.Recluster,
-          state=DocumentSetCreationJobState.InProgress,
-          treeTitle=Some("title")
-        ))
-        writer = new NodeWriter(job.id, IdGenerator.nextTreeId(documentSet.id))
-      }
-
-      protected def findAllRootNodes: Iterable[Node] =
-        from(Schema.nodes)(n =>
-          where(n.parentId isNull)
-            select (n))
+      protected def findAllRootNodes: Seq[Node] = blockingDatabase.seq(Nodes.filter(!_.parentId.isDefined))
 
       protected def findRootNode: Option[Node] = findAllRootNodes.headOption
 
-      protected def findChildNodes(parentIds: Iterable[Long]): Seq[Node] =
-        from(Schema.nodes)(n =>
-          where(n.parentId in parentIds)
-            select (n)).toSeq
+      protected def findChildNodes(parentIds: Seq[Long]): Seq[Node] = blockingDatabase.seq {
+        Nodes.filter(_.parentId inSet parentIds)
+      }
 
-      protected def findNodeDocuments(nodeId: Long): Seq[NodeDocument] =
-        from(Schema.nodeDocuments)(nd =>
-          where(nd.nodeId === nodeId)
-            select (nd)).toSeq
+      protected def findNodeDocuments(nodeId: Long): Seq[NodeDocument] = blockingDatabase.seq {
+        NodeDocuments
+          .filter(_.nodeId === nodeId)
+          .sortBy(nd => (nd.documentId, nd.nodeId))
+      }
 
       protected def createNode(idSet: Set[Long] = Set(), description: String = "root"): DocTreeNode = {
         val node = new DocTreeNode(idSet)
@@ -78,23 +68,26 @@ class NodeWriterSpec extends DbSpecification {
       }
 
       protected def insertDocument(documentSetId: Long): Document = {
-        val factory = org.overviewproject.test.factories.DbFactory
         factory.document(id=IdGenerator.nextDocumentId(documentSetId), documentSetId=documentSet.id)
+      }
+
+      def write(dtn: DocTreeNode) = DeprecatedDatabase.inTransaction {
+        writer.write(dtn)(DeprecatedDatabase.currentConnection)
       }
     }
 
     trait MultipleTreeContext extends NodeWriterContext {
-      var writer2: NodeWriter = _
+      val job2 = factory.documentSetCreationJob(
+        documentSetId=documentSet.id,
+        jobType=DocumentSetCreationJobType.Recluster,
+        state=DocumentSetCreationJobState.InProgress,
+        treeTitle=Some("title")
+      )
 
-      override def setupWithDb = {
-        super.setupWithDb
-        val job2 = Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(
-          documentSetId=documentSet.id,
-          jobType=DocumentSetCreationJobType.Recluster,
-          state=DocumentSetCreationJobState.InProgress,
-          treeTitle=Some("title")
-        ))
-        writer2 = new NodeWriter(job2.id, IdGenerator.nextTreeId(documentSet.id))
+      val writer2 = new NodeWriter(job2.id, IdGenerator.nextTreeId(documentSet.id))
+
+      def write2(dtn: DocTreeNode) = DeprecatedDatabase.inTransaction {
+        writer2.write(dtn)(DeprecatedDatabase.currentConnection)
       }
     }
 
@@ -102,13 +95,12 @@ class NodeWriterSpec extends DbSpecification {
       val description = "root"
       val root = createNode(description = description)
 
-      writer.write(root)
+      write(root)
 
       val node = findRootNode
-      node must beSome.like {
-        case n =>
-          n.description must be equalTo (description)
-          n.parentId must beNone
+      node must beSome.like { case n =>
+        n.description must be equalTo (description)
+        n.parentId must beNone
       }
     }
 
@@ -117,7 +109,7 @@ class NodeWriterSpec extends DbSpecification {
       val childNodes = addChildren(root, "child")
       val grandChildNodes = childNodes.map(n => (n, addChildren(n, "grandchild")))
 
-      writer.write(root)
+      write(root)
 
       val savedRoot = findRootNode
       savedRoot must beSome
@@ -138,7 +130,7 @@ class NodeWriterSpec extends DbSpecification {
 
       val node = createNode(idSet)
 
-      writer.write(node)
+      write(node)
 
       val savedNode = findRootNode
 
@@ -154,7 +146,7 @@ class NodeWriterSpec extends DbSpecification {
 
     "write nodes with ids generated from documentSetId" in new NodeWriterContext {
       val node = createNode()
-      writer.write(node)
+      write(node)
       val savedNode = findRootNode
 
       savedNode must beSome.like {
@@ -164,7 +156,7 @@ class NodeWriterSpec extends DbSpecification {
 
     "return a rootNodeId" in new NodeWriterContext {
       val node = createNode()
-      writer.write(node)
+      write(node)
       val savedNode = findRootNode
 
       Some(writer.rootNodeId) must beEqualTo(savedNode.map(_.id))
@@ -172,12 +164,12 @@ class NodeWriterSpec extends DbSpecification {
 
     "write nodes into second tree for the same document set" in new MultipleTreeContext {
       val root1 = createNode()
-      writer.write(root1)
+      write(root1)
 
       val root2 = createNode()
-      writer2.write(root2)
+      write2(root2)
 
-      findAllRootNodes must haveSize(2)
+      findAllRootNodes.length must beEqualTo(2)
     }
   }
 }

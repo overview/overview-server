@@ -1,21 +1,30 @@
 package org.overviewproject.persistence
 
+import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.documentcloud.DocumentRetrievalError
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.DocumentProcessingError
+import org.overviewproject.models.DocumentProcessingError
+import org.overviewproject.models.tables.DocumentProcessingErrors
 
-
-object DocRetrievalErrorWriter {
+object DocRetrievalErrorWriter extends HasBlockingDatabase {
   def write(documentSetId: Long, errors: Seq[DocumentRetrievalError]) {
-    val documentProcessingErrors = 
-      errors.map(e => DocumentProcessingError(documentSetId, e.url, e.message, e.statusCode, e.headers))
-    
-    Schema.documentProcessingErrors.insert(documentProcessingErrors)
+    import database.api._
 
-    update(Schema.documentSets)(ds =>
-      where(ds.id === documentSetId)
-      set (ds.documentProcessingErrorCount := ds.documentProcessingErrorCount.~ + documentProcessingErrors.length)
-    )
+    val toInsert = errors.map(e => DocumentProcessingError.CreateAttributes(
+      documentSetId,
+      e.url,
+      e.message,
+      e.statusCode,
+      e.headers
+    ))
+
+    blockingDatabase.runUnit(DocumentProcessingErrors.map(_.createAttributes).++=(toInsert))
+
+    blockingDatabase.run(sqlu"""
+      UPDATE document_set
+      SET document_processing_error_count = (
+        SELECT COUNT(*) FROM document_processing_error WHERE document_set_id = document_set.id
+      )
+      WHERE id = $documentSetId
+    """)
   }
 }

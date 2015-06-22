@@ -7,7 +7,6 @@ import play.api.Play.{start, stop}
 import play.api.libs.json.Json.toJson
 import play.api.test.{FakeApplication,FakeRequest}
 
-import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.test.Specification
 import models.User
 
@@ -16,11 +15,12 @@ class showHtmlSpec extends Specification with JsonMatchers {
 
   "DocumentSet view generated Json" should {
     trait DocumentSetContext extends Scope with Mockito {
+      val factory = org.overviewproject.test.factories.PodoFactory
       implicit val request = FakeRequest()
-      val documentSet = DocumentSet()
+      val documentSet = factory.documentSet()
       val user = User()
 
-      lazy val documentSetJson = showHtml(user, documentSet, 1L).toString
+      lazy val documentSetJson = showHtml(user, documentSet, 1).toString
     }
 
     "contain id and html" in new DocumentSetContext {

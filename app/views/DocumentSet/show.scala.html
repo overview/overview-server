@@ -1,6 +1,6 @@
 @(
   user: User,
-  documentSet: org.overviewproject.tree.orm.DocumentSet
+  documentSet: org.overviewproject.models.DocumentSet
 )(
   implicit lang: Lang,
   flash: Flash,
@@ -24,6 +24,6 @@
   "views.Document.show",
   "views.InlineTagList"
 )}
-@main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys, optionalDocumentSet=Some(documentSet.toDocumentSet)) {
+@main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys, optionalDocumentSet=Some(documentSet)) {
   <div id="main" data-tooltips-enabled="@user.treeTooltipsEnabled"></div>
 }

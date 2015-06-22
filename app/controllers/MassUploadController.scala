@@ -16,7 +16,7 @@ import models.orm.stores.DocumentSetCreationJobStore
 import models.OverviewDatabase
 import org.overviewproject.models.{DocumentSet,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
-import org.overviewproject.tree.orm.{DocumentSet=>DeprecatedDocumentSet,DocumentSetCreationJob,DocumentSetUser}
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.Ownership
 import org.overviewproject.util.ContentDisposition
 
