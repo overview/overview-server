@@ -6,10 +6,9 @@
  */
 package org.overviewproject.csv
 
-import java.io.Reader
-import scala.annotation.tailrec
-import scala.collection.Iterable
 import au.com.bytecode.opencsv.CSVReader
+import java.io.Reader
+import scala.collection.Iterable
 
 /**
   * Takes a Reader attached to a stream representing CSV data and provides
@@ -58,7 +57,7 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
 
       readRow match {
         case null => null
-        case c => new CsvImportDocument(text(c), suppliedId(c), url(c), title(c), tags(c).toSet)
+        case c => CsvImportDocument(text(c), suppliedId(c), url(c), title(c), tags(c), metadata(c))
       }
     }
 
@@ -69,29 +68,28 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
       else ""
     }
 
-    // Return user supplied id value if found.
-    private def suppliedId(row: Array[String]): Option[String] = getOptColumn(row, SuppliedIdColumn)
+    // Return user supplied id or ""
+    private def suppliedId(row: Array[String]): String = getOptColumn(row, SuppliedIdColumn).getOrElse("")
 
     // return the url if url column exists
     private def url(row: Array[String]): Option[String] = getOptColumn(row, UrlColumn)
 
-    // return the title if title column exists
-    private def title(row: Array[String]): Option[String] = getOptColumn(row, TitleColumn)
+    // return the title or ""
+    private def title(row: Array[String]): String = getOptColumn(row, TitleColumn).getOrElse("")
     
     // return a list of tag names
-    private def tags(row: Array[String]): Iterable[String] =  getOptColumn(row, "tags") match {
-      case Some(tags) => tags.split(",").map(_.trim).filterNot(_.isEmpty)
-      case None => Array.empty[String]
+    private def tags(row: Array[String]): Set[String] =  getOptColumn(row, "tags") match {
+      case Some(tags) => tags.split(",").map(_.trim).filterNot(_.isEmpty).toSet
+      case None => Set.empty
     }
-    
-    
-      
-    
+
     // if the columnName was defined in the header row, @return the value in the column, else None
     private def getOptColumn(row: Array[String], columnName: String): Option[String] =
       columns.get(columnName).flatMap(c =>
         if (row.size > c && !row(c).isEmpty) Some(row(c))
         else None)
+
+    private def metadata(row: Array[String]): Map[String,String] = Map.empty
 
     // Read ahead and return current row
     private def readRow: Array[String] = {
@@ -109,5 +107,4 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
       headerRow.map(_.trim.toLowerCase).zipWithIndex.toMap
     }
   }
-
 }
