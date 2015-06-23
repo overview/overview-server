@@ -1,7 +1,7 @@
 /*
  * CsvImportDocumentProducer.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, November 2012
  */
 package org.overviewproject.csv
@@ -37,7 +37,7 @@ class CsvImportDocumentProducer(
   private var bytesRead = 0l
   private var lastUpdateTime = 0l
   private var jobCancelled: Boolean = false
-  private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
+  private val UpdateInterval = 1000l // only update state every second to reduce locked database access
   private val ids = new DocumentSetIdGenerator(documentSetId)
   // XXX tagDocumentIds could cause OutOfMemoryError given a malicious document
   private val tagDocumentIds: collection.mutable.Map[String,Buffer[Long]] = collection.mutable.Map()
@@ -46,7 +46,7 @@ class CsvImportDocumentProducer(
   private def await[A](f: Future[A]): A = {
     scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
   }
-  
+
   /** Start parsing the CSV upload and feeding the result to the consumer */
   override def produce(): Int = {
     val uploadedFile = DeprecatedDatabase.inTransaction {

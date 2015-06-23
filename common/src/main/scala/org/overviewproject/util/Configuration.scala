@@ -8,7 +8,7 @@
  *   - access is type-checked versus type of default value
  *   - supports paths, e.g. foo.bar.key = blah
  *
- * Overview Project, created October 2013
+ * Overview, created October 2013
  *
  * @author Jonathan Stray
  *

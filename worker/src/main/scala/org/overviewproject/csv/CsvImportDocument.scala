@@ -1,7 +1,7 @@
 /*
  * CsvImportDocument.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, November 2012
  */
 package org.overviewproject.csv
@@ -17,8 +17,8 @@ class CsvImportDocument(
   val title: Option[String] = None,
   val tags: Set[String] = Set()
 ) {
-  
-  
+
+
   def toDocument(id: Long, documentSetId: Long): Document = Document(
     id,
     documentSetId,

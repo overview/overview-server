@@ -3,7 +3,7 @@ overview-server
 
 [![Build Status](http://jenkins-ci.overviewdocs.com/job/overview-server/badge/icon)](http://jenkins-ci.overviewdocs.com/job/overview-server/)
 
-The Overview Project is an open source visual document mining system. It was originally designed for investigative journalists, but is now also used for qualitative research, e-discovery, digital humanities, etc.
+Overview is an open source visual document mining system. It was originally designed for investigative journalists, but is now also used for qualitative research, e-discovery, digital humanities, etc.
 
 ## Using Overview
 

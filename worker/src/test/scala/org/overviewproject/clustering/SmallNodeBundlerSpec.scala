@@ -1,9 +1,9 @@
 /**
  * SmallNodeBundlerSpec.scala
- * 
- * Overview Project, created November 2012
+ *
+ * Overview, created November 2012
  * @author Jonathan Stray
- * 
+ *
  */
 
 package org.overviewproject.clustering
@@ -16,11 +16,11 @@ import org.specs2.specification._
 class SmallNodeBundlerSpec extends Specification {
 
   "SmallNodeBundler" should {
-        
+
     def makeNodeWithKids(totalDocs:Int, docsPerKid:Int) : DocTreeNode = {
       var allDocs = Set[DocumentID](1.asInstanceOf[DocumentID] until totalDocs.asInstanceOf[DocumentID]: _*)
       val root = new DocTreeNode(allDocs)
-      
+
       while (!allDocs.isEmpty) {
         root.children += new DocTreeNode(allDocs.take(docsPerKid))
         allDocs = allDocs.drop(docsPerKid)
@@ -28,18 +28,18 @@ class SmallNodeBundlerSpec extends Specification {
 
       root
     }
-    
+
     "bundle a node" in {
       var n = makeNodeWithKids(100, 10)   // ten children, each with 10 nodes
-      
+
       val bundler = new SmallNodeBundler(5)
-      bundler.cleanTree(n)  
+      bundler.cleanTree(n)
       n.children.size must beEqualTo(5)
       (n.children find { _.description == "(other)" }).isDefined must beTrue // we must have made an "other" node
     }
-    
+
     /* disable because we do not recursively bunder "(other)" nodes right now
-    
+
     def maxTreeArity(n:DocTreeNode) : Int  = {
       n.children.foldLeft (n.children.size) { (maxSoFar,child) => math.max(maxSoFar, maxTreeArity(child)) }
     }
@@ -47,18 +47,18 @@ class SmallNodeBundlerSpec extends Specification {
     "bundle a tree" in {
       // Make a tree three levels deep, where each node has 20 children of 10 docs each -- 8000 nodes total
       // (it's not a valid document tree, because children don't have strict subsets of parent docs, but that does not matter here)
-      var root = makeNodeWithKids(200, 10)  
-      root.children foreach { child => 
+      var root = makeNodeWithKids(200, 10)
+      root.children foreach { child =>
         child.children = makeNodeWithKids(200,10).children
-        child.children foreach { child2 => 
+        child.children foreach { child2 =>
           child2.children = makeNodeWithKids(200,10).children
         }
       }
 
       // If we force no more than 5 children of each node, then the top level "other" nodes will need to be split
       SmallNodeBundler.limitTreeMaxChildren(root, 5)
-      
+
       maxTreeArity(root) must beEqualTo(5)
     } */
-  } 
+  }
 }

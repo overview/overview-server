@@ -1,9 +1,9 @@
 /**
  * KMeansDocumentComponentsSpec.scala
- * 
- * Overview Project, created March 2013
+ *
+ * Overview, created March 2013
  * @author Jonathan Stray
- * 
+ *
  */
 
 package org.overviewproject.nlp
@@ -13,7 +13,7 @@ import org.specs2.mutable.Specification
 import org.overviewproject.clustering.DocumentComponent
 
 class KMeansDocumentComponentsSpec extends Specification {
-  
+
   // Document set we use for all tests
   val vectorGen = new UnigramDocumentVectorGenerator
   vectorGen.addDocument(1, Seq("word1","word2"))
@@ -25,18 +25,18 @@ class KMeansDocumentComponentsSpec extends Specification {
   val strs = docVecs.stringTable
 
   "DocumentComponent" should {
-    
+
     "fail when given empty documents" in {
       new DocumentComponent(Set[DocumentID](), docVecs) should throwA[java.lang.IllegalArgumentException]
     }
-    
+
     "construct from a set of documents" in {
       val docs = Set[DocumentID](1, 2, 3)
       val component = new DocumentComponent(docs, docVecs)
-      
+
       component.nDocs should beEqualTo(3)
       docs should containTheSameElementsAs(component.docs)
-      
+
       // The centroid should be equal to (word1->1, word2->2, word3->2, word4->1) normalized, so divided by sqrt(10)
       val id1 = strs.stringToId("word1")
       val id2 = strs.stringToId("word2")
@@ -51,4 +51,4 @@ class KMeansDocumentComponentsSpec extends Specification {
 
   // TODO: add tests based on actual clustering... though the base IterativeKMeans is extensively tested already
 }
-   
+

@@ -1,7 +1,7 @@
 /*
  * DBSpec.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
 

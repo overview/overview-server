@@ -1,8 +1,8 @@
 /**
  * ConnectedComponents.scala
- * Generic connected components finding algorithm. 
- * 
- * Overview Project, created November 2012
+ * Generic connected components finding algorithm.
+ *
+ * Overview, created November 2012
  *
  * @author Jonathan Stray
  *
@@ -37,7 +37,7 @@ object ConnectedComponents {
     (component, remaining)
   }
 
-  // Find all connected componetns and do something with each 
+  // Find all connected componetns and do something with each
   def foreachComponent[T](allNodes: Iterable[T], edgeEnumerator: EdgeEnumerationFn[T])(fn: Set[T]=>Unit): Unit = {
     var remaining = Set[T]() ++ allNodes  // really just allNodes.toSet, but toSet does not create a mutable set, can't use it here
 
@@ -51,7 +51,7 @@ object ConnectedComponents {
   // Produce all connected components, as a set of sets
   def allComponents[T](allNodes: Iterable[T], edgeEnumerator: EdgeEnumerationFn[T]): Set[Set[T]] = {
     var components = Set[Set[T]]()
-    foreachComponent(allNodes, edgeEnumerator) { 
+    foreachComponent(allNodes, edgeEnumerator) {
       components += _
     }
     components

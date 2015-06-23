@@ -1,7 +1,7 @@
 /*
  * DocumentCloudDocumentProducer.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, November 2012
  */
 package org.overviewproject.http
@@ -49,7 +49,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private def await[A](f: Future[A]): A = {
     scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
   }
-  
+
   override def produce() = {
     val t0 = System.nanoTime()
 
@@ -64,8 +64,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     //   to a DocumentReceiver that processes each document with a callback function.
     // requestQueue - an actor that manages the incoming requests
     // asyncHttpClient - A wrapper around AsyncHttpClient
-    // retrieverGenerator - A factory for actors that will retrieve documents. One actor is 
-    //   responsible for one document only. DocumentRetrievers simply retrieve the document. 
+    // retrieverGenerator - A factory for actors that will retrieve documents. One actor is
+    //   responsible for one document only. DocumentRetrievers simply retrieve the document.
     //   A different retriever could be used to request the document text page-by-page.
     val bulkWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
     blocking(await(TransportIndexClient.singleton.addDocumentSet(documentSetId)))
@@ -93,7 +93,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
       if (job.state == Cancelled) shutdownActors
     }
-    
+
     WorkerActorSystem.withActorSystem { implicit context =>
 
       val importResult = Promise[RetrievalResult]
@@ -116,7 +116,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         val retrieverFactory = new RetrieverFactory {
           def produce(document: RetrievedDocument, receiver: ActorRef): Actor = retrieverCreator(document, receiver)
         }
-        
+
         new DocumentRetrieverGenerator(retrieverFactory, maxDocuments)
       }
 
@@ -147,7 +147,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     val overflowCount = result.totalDocumentsInQuery - result.numberOfDocumentsRetrieved
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
     refreshSortedDocumentIds(documentSetId)
-    
+
     numDocs
   }
 

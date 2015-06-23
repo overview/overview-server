@@ -219,7 +219,7 @@ $(MACHINE_NAME).ova: $(MACHINE_NAME).copy-files.done
 		--vsys 0 \
 		--product "Overview Personal virtual server" \
 		--producturl "http://www.overviewdocs.com" \
-		--vendor "The Overview Project" \
+		--vendor "Overview" \
 		--vendorurl "http://www.overviewdocs.com" \
 		--version "$(MACHINE_NAME)"
 	# Rename

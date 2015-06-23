@@ -1,7 +1,7 @@
 /*
- * DbTestContext.scala 
- * 
- * Overview Project
+ * DbTestContext.scala
+ *
+ *Overview
  * Created by Jonas Karlsson, July 2012
  */
 
@@ -22,14 +22,14 @@ import models.OverviewDatabase
 /**
  * A helper class for tests that access the test-database. Wraps the test in a
  * transaction.
- * The database connection is available as an implicit parameter. 
+ * The database connection is available as an implicit parameter.
  */
 trait DbTestContext extends Around {
   lazy implicit val connection = Session.currentSession.connection
 
   def setupWithDb = {}
   def sql(q: String) = runQuery(q, connection)
-  
+
   def around[T : AsResult](test: => T) = {
     OverviewDatabase.inTransaction {
       clearDb(connection)

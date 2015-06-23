@@ -1,7 +1,7 @@
 /*
  * LargeObject.scala
  *
- * Overview Project
+ * Overview
  * Created by Jonas Karlsson, Oct 2012
  */
 
@@ -24,7 +24,7 @@ trait LargeObject {
 
   /** Insert data at the specified start position. @return total size of the object */
   def insert(data: Array[Byte], start: Int): Long
-  
+
   /** @return an InputStream for reading the stored data */
   def inputStream: java.io.InputStream
 
@@ -94,7 +94,7 @@ object LO {
       pgLo.write(data, 0, data.size)
       pgLo.tell
     }
-    
+
     def insert(data: Array[Byte], start: Int): Long = {
       pgLo.seek(start, SEEK_SET)
       pgLo.write(data, 0, data.size)

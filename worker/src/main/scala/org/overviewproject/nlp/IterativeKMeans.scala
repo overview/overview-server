@@ -2,9 +2,9 @@
  * ItarativeKMeans.scala
  * Iterative K-means clustering. Starts with K=1 and adds one centroid at a time.
  * Advantage is greater stability wrt local minima, starting conditions, also potential to find optimum number of clusters
- * See Pham, Divmov, Nguyen, "An Incremental K-means algorithm", Journal of Mechanical Engineering Science, 2004   
- * 
- * Overview Project, created February 2013
+ * See Pham, Divmov, Nguyen, "An Incremental K-means algorithm", Journal of Mechanical Engineering Science, 2004
+ *
+ * Overview, created February 2013
  *
  * @author Jonathan Stray
  *
@@ -17,21 +17,21 @@ import scala.reflect.ClassTag
 import scala.util.Random
 
 // T is element type, C is centroid type
-abstract class IterativeKMeans[T : ClassTag, C : ClassTag] 
+abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   extends KMeansBase[T,C] {
 
   // Current centroids, cluster assignments, distortion per cluster. This state makes each instance non-reentrant
-  private var centroids = Seq[C]() 
+  private var centroids = Seq[C]()
   private var clusters = Array[Int]()
   private var distortions  = Array[Double]()
 
   private var bestClusters = Array[Int]()
-  private var bestFit = Double.MaxValue 
+  private var bestFit = Double.MaxValue
   private var bestFitK = 0
-    
+
   // track total distortion for each K tried
   private var totalDistortionPerK = Array[Double](0.0)     // meaningless initial value for K=0
-  
+
   def currentK = centroids.size
 
   // parameters. public for the moment for easy control
@@ -39,33 +39,33 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   var maxIterationsKis2 = 15      // special case as we have rapid convergence here
 
   var minDistortion = 0.00001     // stop iterating if we hit this distortion
-  var minChangePerIter = 0.001    // distortion must change at least this fraction or we stop iterating 
-  
+  var minChangePerIter = 0.001    // distortion must change at least this fraction or we stop iterating
+
   var newCentroidSkip = 11        // subsample existing cluster by this factor...
   var newCentroidN    = 5         // ...to draw this many elements, take avg for new centroid
-  
+
   // Debug info?
   var debugInfo = false
-  
-  // How many samples should we take? Not less than 1 or more than 25% of docset. 
+
+  // How many samples should we take? Not less than 1 or more than 25% of docset.
   // Otherwise take square root of docset size. Why? Intuition that we don't need to scale linearly,
   // and that ~10 works for ~100 while ~1000 should work for ~1M
-  def numSamples(elements:IndexedSeq[T]) = 
+  def numSamples(elements:IndexedSeq[T]) =
     Math.max(1.0, Math.min(Math.sqrt(elements.size).toInt, elements.size/4.0)).toInt
-  
+
   // Select n samples from a seq, at regular intervals. Set skip to a prime to prevent repetition when we wrap past the end of input.
   def subSampleIndexed(elements:IndexedSeq[T], start:Int, skip:Int, n:Int) : Seq[T] = {
-    val samples = new ArrayBuffer[T](n) 
+    val samples = new ArrayBuffer[T](n)
     var i = start
     var left = n
     while (left > 0) {
       samples += elements(i % elements.size)  // wrap around end
       i += skip
       left -= 1
-    }  
+    }
     samples
   }
-  
+
   // when the seq is not indexed, use this
   def subSampleSeq(elements:Seq[T], start:Int, skip:Int, n:Int) : Seq[T] = {
     val samples = new ArrayBuffer[T](n)
@@ -79,7 +79,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
     }
     samples
   }
-  
+
   // Reassign elements after a new centroid is created. This is classic k-means core loop
   def iterateAssignments(elements:IndexedSeq[T], maxIter:Int) : Unit = {
     distortions = assignClusters(elements, clusters, centroids)
@@ -94,7 +94,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
       centroids = refineCentroids(elements, clusters, centroids)
       val distortions2 = assignClusters(elements, clusters, centroids)
-      
+
       // If the distortions changed less then percentage threshold, break
       val dis = distortions.sum
       val dis2 = distortions2.sum
@@ -107,16 +107,16 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
       if (debugInfo)
         Logger.debug("-- -- iteration " + iter + " changed distortion by " + disChange)
-        
+
     }
   }
-  
+
   // Create clustering for k=1 by taking centroid of all elements, and naturally all elements in this one cluster
   // Must compute the initial distortion too, we do this as we create the initial assignments array
   def InitializeCentroid(elements:IndexedSeq[T]) : Unit = {
     centroids = Seq(mean(elements))
     clusters = Array.fill(elements.size)(0)
-    
+
     var distortion = 0.0          // yeah, could do functional magic, but need performance here (lack of temps, function calls)
     elements.foreach { el =>
       val d = distance(el, centroids(0))
@@ -124,7 +124,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
     }
     distortions = Array(distortion)
   }
-  
+
 /*
   // Split one cluster into two. Take a random element for initial new centroid
   def SplitCentroid(elements:IndexedSeq[T]) : Unit = {
@@ -136,9 +136,9 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 */
 
   // Generalized centroid addition, bumps K up one
-  // Choose a number of points randomly, weighted by distance to nearest cluster center 
-  // (farther distance makes a point more likely to be chosen) Then take the mean. 
-  // This is akin to the k-means++ algorithm but we take the mean of multiple points to 
+  // Choose a number of points randomly, weighted by distance to nearest cluster center
+  // (farther distance makes a point more likely to be chosen) Then take the mean.
+  // This is akin to the k-means++ algorithm but we take the mean of multiple points to
   // make it more robust to the many, many ouliers in the data set. In particular, if we
   // picked only one point which had few or no words in common with all other docs, it might
   // never be the closest center to any other document and so would remain an outlier forever.
@@ -146,8 +146,8 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   def AddCentroid(elements:IndexedSeq[T], k:Int) : Unit = {
     if (debugInfo)
       Logger.debug("-- -- distortions: " + distortions.mkString(","))
-      
-    val totalDistSquared = distortions.sum  
+
+    val totalDistSquared = distortions.sum
     val elementsToPick = numSamples(elements)
 
     // Loop over all elements. Add each to list with probability proportional to squared distance
@@ -171,13 +171,13 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
     centroids = centroids :+ mean(samples)
   }
-    
+
   // Compute goodness of fit for K clusters, by technique of Pham, Divmov, Nguyen, "Selection of K in K-means clustering"
-  // Becuase dimension is very high their formula is particularly simple, 
+  // Becuase dimension is very high their formula is particularly simple,
   // just the ratio of distortion of this iteration versus the last
   // Lower means better fit
   def goodnessOfFit(k:Int) : Double = {
-    require(k < totalDistortionPerK.size) 
+    require(k < totalDistortionPerK.size)
     k match {
       case 1 => 1.0
       case _ => totalDistortionPerK(k) / totalDistortionPerK(k-1)
@@ -189,26 +189,26 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
     totalDistortionPerK(k) = distortions.sum
     val fit = goodnessOfFit(k)
     if (fit < bestFit) {
-      if (k < maxK) 
+      if (k < maxK)
         bestClusters = clusters.clone() // save copy of cluster assignments, as clusters will be over-written
       else
         bestClusters = clusters // suppress copy if this is the last iteration
       bestFit = fit
       bestFitK = k
-    }    
+    }
   }
-  
+
   // Add one cluster to the current clustering, up to K
   def cluster(elements:IndexedSeq[T], k:Int, maxK:Int) : Unit = {
-    
+
     if (debugInfo)
       Logger.debug("-- Adding centroid " + k)
-      
+
     if (k==1) {
       InitializeCentroid(elements)
     } else {
-      AddCentroid(elements, k) 
-      iterateAssignments(elements, maxIterationsPerK)    
+      AddCentroid(elements, k)
+      iterateAssignments(elements, maxIterationsPerK)
     }
 
     if (debugInfo) {
@@ -218,13 +218,13 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
     saveBestFit(k, maxK)
   }
-  
+
   // Not reentrant, because of all the internal state.
   def apply(elements:IndexedSeq[T], maxClusters:Int) : Array[Int] = {
 
     if (debugInfo)
       Logger.info("---- Starting KMI with " + elements.size + " elements ----")
-      
+
     require(maxClusters > 0)
     require(elements.size > 0)
 
@@ -233,7 +233,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       return new Array[Int](elements.size) // assign all elements to cluster 0
     }
     if (elements.size == 1) {
-      return Array(0)  
+      return Array(0)
     } else if (elements.size == 2) {
       // maxClusters>1 here so two elements always go into two different clusters
       // (but for three or more elements we always need clustering, even if maxClusters >= 3)
@@ -245,15 +245,15 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
     // reset best fit trackers
     totalDistortionPerK = Array.fill(maxK+1)(0.0)
-    bestFit = Double.MaxValue 
-    
+    bestFit = Double.MaxValue
+
     for (i <- 1 to maxK) {
       cluster(elements, i, maxK)
     }
 
     if (debugInfo)
       Logger.info(s"---- Finished KMI, $bestFitK clusters, goodness of fits: ${(1 to maxK).map(goodnessOfFit).mkString(",")}")
-    
+
     require(bestClusters.size == elements.size) // minor sanity check
     bestClusters
   }

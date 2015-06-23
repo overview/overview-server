@@ -3,7 +3,7 @@
  * Simple English language tokenization
  * Break on spaces, remove most punctuation, other characters. Filter stopwords. Optionally parse bigrams from a provided set.
  *
- * Overview Project
+ * Overview
  *
  * Created by Jonathan Stray, June 2012
  *

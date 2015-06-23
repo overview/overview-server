@@ -2,7 +2,7 @@
  * DocumentSetIndexer.scala
  * Given a list of DoucmentAtURL obejcts, retrieve the text of each, index, build tree, add to the DB
  *
- * Overview Project, created August 2012
+ * Overview, created August 2012
  *
  * @author Jonathan Stray
  *
@@ -24,7 +24,7 @@ import org.overviewproject.nlp.BigramDocumentVectorGenerator
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.nlp.StopWordSet
 
-// Home for all indexing and clustering options. 
+// Home for all indexing and clustering options.
 // Instantiate this to pass down call chain, plus it contains our defaults
 // Ignore suppliedStopWords
 // multiply weight of any word matching emphasizedWordsRegex

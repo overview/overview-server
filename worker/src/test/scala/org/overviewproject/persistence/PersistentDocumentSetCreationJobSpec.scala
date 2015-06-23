@@ -1,7 +1,7 @@
 /*
  * PersistentDocumentSetCreationJobSpec.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
 package org.overviewproject.persistence
@@ -11,7 +11,7 @@ import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._ 
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
@@ -61,7 +61,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   def insertJobsWithState(documentSetId: Long, states: Seq[DocumentSetCreationJobState]) {
     states.foreach(s => insertDocumentSetCreationJob(documentSetId, s))
   }
-  
+
   def updateJobState(jobId: Long, state: DocumentSetCreationJobState) {
     import org.overviewproject.postgres.SquerylEntrypoint._
     update(Schema.documentSetCreationJobs)(j => where(j.id === jobId) set(j.state := state))
@@ -70,7 +70,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   trait DocumentSetContext extends DbTestContext {
     var documentSetId: Long = _
     connection.setAutoCommit(false)
-    
+
     override def setupWithDb = {
       documentSetId = Schema.documentSets.insert(DocumentSet(title = "PersistentDocumentSetCreationJobSpec")).id
     }
@@ -227,7 +227,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     "have splitDocuments set" in new DocumentCloudJobSetup {
       dcJob.splitDocuments must beFalse
     }
-    
+
     "have contentsOid if available" in new CsvImportJobSetup {
       csvImportJob.contentsOid must beSome
       csvImportJob.contentsOid.get must be equalTo (contentsOid)
@@ -237,26 +237,26 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       cloneJob.sourceDocumentSetId must beSome
       cloneJob.sourceDocumentSetId.get must be equalTo (sourceDocumentSetId)
     }
-    
+
     "find first job with a state, ordered by id" in new DocumentSetContext {
       val documentSetId2 = Schema.documentSets.insert(DocumentSet(title = "DocumentSet2")).id
       val jobIds = Seq(documentSetId2, documentSetId).map(insertDocumentSetCreationJob(_, NotStarted))
-     
+
       val firstNotStartedJob = PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
-     
+
       firstNotStartedJob must beSome
       // test documentSetId since we can't get at job.id directly
       firstNotStartedJob.get.documentSetId must be equalTo(documentSetId2)
     }
-    
+
     "have a type" in new CsvImportJobSetup {
       csvImportJob.jobType must be equalTo(DocumentSetCreationJobType.CsvUpload)
     }
-    
+
     "refresh job state" in new JobSetup {
        updateJobState(jobId, Cancelled)
        notStartedJob.checkForCancellation
-       
+
        notStartedJob.state must be equalTo(Cancelled)
     }
   }

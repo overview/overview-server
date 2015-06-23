@@ -1,9 +1,9 @@
 /**
  * TempFileSpec.scala
- * 
- * Overview Project, created March 2013
+ *
+ * Overview, created March 2013
  * @author Jonathan Stray
- * 
+ *
  */
 
 package org.overviewproject.util

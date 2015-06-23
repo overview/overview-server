@@ -2,7 +2,7 @@
  *
  * JobHandler.scala
  *
- * Overview Project,June 2012
+ * Overview,June 2012
  * @author Jonas Karlsson
  */
 
@@ -260,7 +260,7 @@ object JobHandler {
         importantWords = job.importantWords.getOrElse("")))
     }
 
-  // FIXME: Submitting jobs, along with creating documents should move into documentset-worker 
+  // FIXME: Submitting jobs, along with creating documents should move into documentset-worker
   private def submitClusteringJob(documentSetId: Long): Unit = DeprecatedDatabase.inTransaction {
     import org.overviewproject.postgres.SquerylEntrypoint._
     import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
@@ -283,7 +283,7 @@ object JobHandler {
         lang = job.lang,
         suppliedStopWords = job.suppliedStopWords,
         importantWords = job.importantWords,
-        contentsOid = job.contentsOid, // FIXME: should be deleted when we delete original job 
+        contentsOid = job.contentsOid, // FIXME: should be deleted when we delete original job
         splitDocuments = job.splitDocuments,
         state = NotStarted)
 

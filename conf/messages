@@ -33,27 +33,27 @@ forms.validation.unsupportedLanguage=The requested languages is not supported
 forms.validation.blankText=The field must contain non-whitespace characters
 
 mailers.User.create.subject=Overview Project new account confirmation
-mailers.User.create.body1=You just registered to use the Overview Project. To start using Overview, click the following link:
+mailers.User.create.body1=You just registered to use Overview. To start using Overview, click the following link:
 mailers.User.create.body2_html=If you have problems, please <a href="{0}">contact us</a>.
 mailers.User.create.signoff=See you soon,
 mailers.User.create.signature=The Overview team
 
 mailers.User.createErrorUserAlreadyExists.subject=Overview Project re-registration attempt
-mailers.User.createErrorUserAlreadyExists.intro=Somebody with this email address has tried to register to use the Overview Project. You already have an account, so your password has not changed.
+mailers.User.createErrorUserAlreadyExists.intro=Somebody with this email address has tried to register to use Overview. You already have an account, so your password has not changed.
 mailers.User.createErrorUserAlreadyExists.case1=If you did not recently try to register, please ignore this email.
 mailers.User.createErrorUserAlreadyExists.case2=If you did, please rack your brain to remember your password, and log in here:
 mailers.User.createErrorUserAlreadyExists.signoff=Happy analyzing,
 mailers.User.createErrorUserAlreadyExists.signature=The Overview team
 
 mailers.Password.create.subject=Overview Project password reset
-mailers.Password.create.body=You (or somebody else) entered your email address in the password-reset form for the Overview Project.
+mailers.Password.create.body=You (or somebody else) entered your email address in the password-reset form for Overview.
 mailers.Password.create.case1=If you do not want to reset your password, please ignore this email.
 mailers.Password.create.case2=If you do, please follow this link to finish resetting your password and log in:
 mailers.Password.create.signoff=Happy analyzing,
 mailers.Password.create.signature=The Overview team
 
 mailers.Password.createErrorUserDoesNotExist.subject=Overview Project password reset attempted
-mailers.Password.createErrorUserDoesNotExist.intro=You (or somebody else) entered your email address in the password-reset form on the Overview Project website.
+mailers.Password.createErrorUserDoesNotExist.intro=You (or somebody else) entered your email address in the password-reset form on the Overview website.
 mailers.Password.createErrorUserDoesNotExist.body=However, you do not have an account, so we cannot help you reset your password.
 mailers.Password.createErrorUserDoesNotExist.case1=If you are not an Overview user, please ignore this email.
 mailers.Password.createErrorUserDoesNotExist.case2=If you are an Overview user and you were expecting this email, please enter a different email in the password-reset form to try again:
@@ -608,7 +608,7 @@ views.User._form.help.subscribe=We will never share your email address
 views.User.new.title=Register
 views.User.new.h1=Register
 
-views.Welcome.show.title=The Overview Project — Visualize your documents
+views.Welcome.show.title=Overview — Visualize your documents
 views.Welcome.show.h1=
 views.Welcome.show.p1=Search, visualize, and review your documents. Up to hundreds of thousands of them, in any format.
 views.Welcome.show.learn=Learn more

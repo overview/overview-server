@@ -1,7 +1,7 @@
 /*
  * DocumentWriterSpec.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
 package org.overviewproject.persistence

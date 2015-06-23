@@ -1,7 +1,7 @@
 /*
  * CsvImportSource.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, November 2012
  */
 package org.overviewproject.csv
@@ -42,10 +42,10 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
 
     // Column headers with index
     private val columns: Map[String, Int] = readHeaders
-    private def findTextColumn: Option[Int] = 
+    private def findTextColumn: Option[Int] =
       Seq(TextColumn, "contents", "snippet").flatMap(columns.get(_)).headOption
-      
-      
+
+
     def hasNext: Boolean = nextLine != null
 
     /**
@@ -77,16 +77,16 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
 
     // return the title if title column exists
     private def title(row: Array[String]): Option[String] = getOptColumn(row, TitleColumn)
-    
+
     // return a list of tag names
     private def tags(row: Array[String]): Iterable[String] =  getOptColumn(row, "tags") match {
       case Some(tags) => tags.split(",").map(_.trim).filterNot(_.isEmpty)
       case None => Array.empty[String]
     }
-    
-    
-      
-    
+
+
+
+
     // if the columnName was defined in the header row, @return the value in the column, else None
     private def getOptColumn(row: Array[String], columnName: String): Option[String] =
       columns.get(columnName).flatMap(c =>

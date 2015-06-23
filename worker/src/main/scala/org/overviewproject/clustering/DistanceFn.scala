@@ -1,8 +1,8 @@
 /**
  * DistanceFn.scala
  * Cosine Distance implementation
- * 
- * Overview Project, created January 2013
+ *
+ * Overview, created January 2013
  *
  * @author Jonathan Stray
  *
@@ -45,12 +45,12 @@ object DistanceFn {
   def CosineDistance(a: DocumentVector, b: DocumentVector) = {
     1.0 - SparseDot(a, b)
   }
-  
-  
+
+
   // Same function for DocumentVectorBuilder. Conceptually identical, actually less efficient due to heavier data structures
   private def SparseDotCore(a:DocumentVectorBuilder, b:DocumentVectorBuilder) : Double = {
     var dot = 0.0
-    a foreach { case (termId, aWeight) => 
+    a foreach { case (termId, aWeight) =>
       val bWeight = b.get(termId)
       if (bWeight.isDefined)
         dot += aWeight.toDouble*bWeight.get.toDouble
@@ -65,7 +65,7 @@ object DistanceFn {
     else
       SparseDotCore(b,a)
   }
-  
+
   def CosineDistance(a:DocumentVectorBuilder, b:DocumentVectorBuilder) : Double = {
      1.0 - SparseDot(a, b)
   }

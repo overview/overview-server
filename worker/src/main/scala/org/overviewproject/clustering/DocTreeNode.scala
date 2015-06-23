@@ -1,8 +1,8 @@
 /**
  * DocTreeNode.scala
  * In-memory representation for document tree during tree generation.
- * 
- * Overview Project, created November 2012
+ *
+ * Overview, created November 2012
  *
  * @author Jonathan Stray
  *
@@ -17,9 +17,9 @@ import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
 class DocTreeNode(val docs: Set[DocumentID]) {
   var description: String = ""
   var children: Set[DocTreeNode] = Set[DocTreeNode]()
-  
+
   var components = Set[DocumentComponent]() // used during clustering by KMeansComponentDocTreeBuilder, cleared after
-  
+
   // return children in predictable order. Sort descending by size, then ascending by document IDs
   def orderedChildren: List[DocTreeNode] = {
     children.toList.sortWith((a, b) => (a.docs.size > b.docs.size) || (a.docs.size == b.docs.size && a.docs.min < b.docs.min))

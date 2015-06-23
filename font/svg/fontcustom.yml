@@ -1,6 +1,6 @@
 output: font
 templates: [ bootstrap, preview ]
-font_name: Overview Project Icons
+font_name:Overview Icons
 file_hash: false
 css_prefix: overview-icon-
 #font_face_path: assets/fonts/fontcustom

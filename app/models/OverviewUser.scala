@@ -1,7 +1,7 @@
 /*
  * OverviewUser.scala
  *
- * Overview Project
+ * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
 
@@ -38,7 +38,7 @@ trait OverviewUser {
 
   /** @return The same user, with a different email */
   def withEmail(email: String): OverviewUser
-  
+
   /** @return True if the user has permission to administer the website */
   def isAdministrator: Boolean
 

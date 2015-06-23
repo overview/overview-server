@@ -1,7 +1,7 @@
 /*
  * nodewriter.scala
  *
- * overview project
+ * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
 

@@ -1,10 +1,10 @@
 /**
  * KMeansDocumentsSpec.scala
  * Tests both iterative (variable k) and non-iterative (fixed k) algorithms
- * 
- * Overview Project, created January 2013
+ *
+ * Overview, created January 2013
  * @author Jonathan Stray
- * 
+ *
  */
 
 package org.overviewproject.nlp
@@ -25,31 +25,31 @@ class KMeansDocumentsSpec extends Specification {
       vectorGen.addDocument(filename.hashCode, Lexer.makeTerms(io.Source.fromFile(filename).mkString, StopWordSet("en", None)))
     }
     vectorGen.documentVectors()
-  } 
-  
+  }
+
   "kMeansDocuments" should {
     "find three clusters" in {
       val docVecs = getSampleDocumentVectors
       val km = new KMeansDocuments(docVecs)
       km.seedClusterSize = 1
       km.seedClusterSkip = 3
-      
+
       val clusters = km(docVecs.keys.toArray, 3)
       val clusterSizes = (0 until 3).map(i => clusters.count(_ == i))
       //println("cluster sizes: " + clusterSizes)
       //println("clusters: " + clusters)
       clusterSizes should containTheSameElementsAs (Seq(4,2,3))
     }
-  
+
     // This is a randomized algorithm, and we don't do restarts so we often end local minima
-    // In practice this is not too bad, but it makes testing hard, so we reset the random seed 
-    // here to get consistent results. 
+    // In practice this is not too bad, but it makes testing hard, so we reset the random seed
+    // here to get consistent results.
     "find clusters using iterative algorithm" in {
       Random.setSeed(1) // always start form the same place
 
       val docVecs = getSampleDocumentVectors
       val km = new IterativeKMeansDocuments(docVecs)
-      
+
       val clusters = km(docVecs.keys.toArray, 3)
       val clusterSizes = (0 until 3).map(i => clusters.count(_ == i))
       clusterSizes should containTheSameElementsAs (Seq(4,3,2))

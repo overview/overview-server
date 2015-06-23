@@ -3,7 +3,7 @@
  * Given a set of document vectors, return a tree hierarchical tree of clusters
  * Mostly just setup and call into a DocTreeBuilder
  *
- * Overview Project, created July 2012
+ * Overview, created July 2012
  *
  * @author Jonathan Stray
  *

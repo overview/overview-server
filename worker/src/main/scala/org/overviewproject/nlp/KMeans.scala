@@ -2,7 +2,7 @@
  * KMeans.scala
  * Generic K-means clustering. Standard iterative algorithm (Lloyd's algorithm).
  *
- * Overview Project, created January 2013
+ * Overview, created January 2013
  *
  * @author Jonathan Stray
  *

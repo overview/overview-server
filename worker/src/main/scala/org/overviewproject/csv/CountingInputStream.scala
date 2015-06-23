@@ -1,7 +1,7 @@
 /*
  * CountingInputStream.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, November 2012
  */
 package org.overviewproject.csv

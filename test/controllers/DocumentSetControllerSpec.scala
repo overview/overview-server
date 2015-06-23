@@ -1,7 +1,7 @@
 /*
  * DocumentSetControllerSpec.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, June 2012
  */
 package controllers
