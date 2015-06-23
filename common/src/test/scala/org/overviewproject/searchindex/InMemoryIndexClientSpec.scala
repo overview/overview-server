@@ -5,6 +5,7 @@ import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.indices.IndexMissingException
 import org.specs2.mutable.{After,Specification}
+import play.api.libs.json.JsObject
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
@@ -71,6 +72,7 @@ class InMemoryIndexClientSpec extends Specification {
       fileId=None,
       pageId=None,
       displayMethod=None,
+      metadataJson=JsObject(Seq()),
       text=s"foo$id bar baz"
     )
 
@@ -145,6 +147,7 @@ class InMemoryIndexClientSpec extends Specification {
             None,
             None,
             None,
+            JsObject(Seq()),
             text
           )
         }

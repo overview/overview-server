@@ -1,5 +1,6 @@
 package controllers.backend
 
+import play.api.libs.json.JsObject
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import slick.jdbc.{GetResult,StaticQuery}
@@ -47,6 +48,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     override val keywords = Seq()
     override val createdAt = new java.util.Date(0L)
     override val displayMethod = None
+    override val metadataJson = JsObject(Seq())
     override val text = ""
   }
 

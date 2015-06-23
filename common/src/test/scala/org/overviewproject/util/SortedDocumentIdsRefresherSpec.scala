@@ -1,8 +1,10 @@
 package org.overviewproject.util
 
-import org.overviewproject.test.DbSpecification
+import play.api.libs.json.JsObject
 
 import org.overviewproject.database.HasBlockingDatabase
+import org.overviewproject.metadata.MetadataSchema
+import org.overviewproject.test.DbSpecification
 
 class SortedDocumentIdsRefresherSpec extends DbSpecification {
   "#refreshDocumentSet" should {
@@ -65,12 +67,12 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     import slick.jdbc.GetResult
 
     def createDocumentSet(id: Long): DocumentSet = {
-      val ret = DocumentSet(id, "", None, false, new java.sql.Timestamp(0L), 0, 0, 0, None, false)
+      val ret = DocumentSet(id, "", None, false, new java.sql.Timestamp(0L), 0, 0, 0, None, MetadataSchema.empty, false)
       blockingDatabase.run((DocumentSets returning DocumentSets).+=(ret))
     }
 
     def createDocument(documentSetId: Long, id: Long, title: String, suppliedId: String, pageNumber: Option[Int]): Document = {
-      val ret = Document(id, documentSetId, None, suppliedId, title, pageNumber, Seq(), new java.sql.Timestamp(0L), None, None, None, "")
+      val ret = Document(id, documentSetId, None, suppliedId, title, pageNumber, Seq(), new java.sql.Timestamp(0L), None, None, None, JsObject(Seq()), "")
       blockingDatabase.run((Documents returning Documents).+=(ret))
     }
 

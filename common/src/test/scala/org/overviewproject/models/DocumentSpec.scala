@@ -1,6 +1,7 @@
 package org.overviewproject.models
 
 import org.specs2.mutable.Specification
+import play.api.libs.json.JsObject
 
 class DocumentSpec extends Specification {
   def buildDocument(id: Long, url: Option[String], fileId: Option[Long]): Document = Document(
@@ -15,6 +16,7 @@ class DocumentSpec extends Specification {
     fileId,
     None,
     None,
+    JsObject(Seq()),
     ""
   )
 

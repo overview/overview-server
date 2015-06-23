@@ -2,6 +2,8 @@ package org.overviewproject.models
 
 import java.sql.Timestamp
 
+import org.overviewproject.metadata.MetadataSchema
+
 case class DocumentSet(
   id: Long,
   title: String,
@@ -12,6 +14,7 @@ case class DocumentSet(
   documentProcessingErrorCount: Int,
   importOverflowCount: Int,
   uploadedFileId: Option[Long],
+  metadataSchema: MetadataSchema,
   deleted: Boolean
 )
 
@@ -26,6 +29,7 @@ object DocumentSet {
     documentProcessingErrorCount: Int = 0,
     importOverflowCount: Int = 0,
     uploadedFileId: Option[Long] = None,
+    metadataSchema: MetadataSchema = MetadataSchema.empty,
     deleted: Boolean = false
   )
 }

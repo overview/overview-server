@@ -1,13 +1,15 @@
 package org.overviewproject.models
 
 import java.util.Date // should be java.time.LocalDateTime
+import play.api.libs.json.JsObject
+
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 /** A DocumentHeader that's as lightweight as possible.
   *
-  * The main difference between this and a full-fledged Document: its "text" is
-  * _always_ the empty String. That makes a DocumentInfo quite small, while a
-  * Document is quite large.
+  * The main difference between this and a full-fledged Document: its "text"
+  * and "metadata" are _always_ empty. That makes DocumentInfo take ~100bytes,
+  * while Document is often &gt;5kb.
   */
 case class DocumentInfo(
   override val id: Long,
@@ -21,6 +23,7 @@ case class DocumentInfo(
   override val displayMethod: Option[DocumentDisplayMethod],
   val hasFileView: Boolean
 ) extends DocumentHeader {
+  override val metadataJson = JsObject(Seq())
   override val text = ""
 
   override def viewUrl: Option[String] = {

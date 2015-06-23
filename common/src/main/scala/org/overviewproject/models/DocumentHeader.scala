@@ -1,8 +1,9 @@
 package org.overviewproject.models
 
 import java.util.Date // should be java.time.LocalDateTime
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
+import play.api.libs.json.JsObject
 
+import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 
 /** Metadata about a Document.
@@ -17,6 +18,7 @@ trait DocumentHeader {
   val keywords: Seq[String]
   val createdAt: Date
   val displayMethod: Option[DocumentDisplayMethod]
+  val metadataJson: JsObject
   val text: String
 
   def viewUrl: Option[String] = url

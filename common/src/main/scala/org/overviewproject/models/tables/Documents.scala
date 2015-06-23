@@ -1,6 +1,8 @@
 package org.overviewproject.models.tables
 
 import java.util.Date
+import play.api.libs.json.JsObject
+
 import org.overviewproject.database.Slick.api._
 import org.overviewproject.models.Document
 import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
@@ -33,6 +35,8 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def pageId = column[Option[Long]]("page_id")
   def pageNumber = column[Option[Int]]("page_number")
   def displayMethod = column[Option[DocumentDisplayMethod]]("display_method")
+  def metadataJson = column[Option[JsObject]]("metadata_json_text") // add DocumentSet.metadataSchema to make a Metadata
+
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
    * can only handle this with a column[Option[_]] -- no type mappers allowed.
@@ -51,9 +55,10 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     fileId,
     pageId,
     displayMethod,
+    metadataJson,
     text
-  ).<>[Document,Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod],Option[String]]](
-    (t: Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod],Option[String]]) => Document.apply(
+  ).<>[Document,Tuple14[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod],Option[JsObject],Option[String]]](
+    (t: Tuple14[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod],Option[JsObject],Option[String]]) => Document.apply(
       t._1,
       t._2,
       t._3,
@@ -65,7 +70,8 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       t._10,
       t._11,
       t._12,
-      t._13.getOrElse("")              // text
+      t._13.getOrElse(JsObject(Seq())),
+      t._14.getOrElse("")              // text
     ),
     { d: Document => Some(
       d.id,
@@ -80,6 +86,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       d.fileId,
       d.pageId,
       d.displayMethod,
+      Some(d.metadataJson),
       Some(d.text)
     )}
   )

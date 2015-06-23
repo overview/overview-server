@@ -31,6 +31,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   def pageNumber = column[Option[Int]]("page_number")
   def fileId = column[Option[Long]]("file_id")
   def displayMethod = column[Option[DocumentDisplayMethod]]("display_method")
+
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
    * can only handle this with a column[Option[_]] -- no type mappers allowed.

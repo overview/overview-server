@@ -1,5 +1,8 @@
 package org.overviewproject.util
 
+import play.api.libs.json.{Json,JsObject}
+
+import org.overviewproject.metadata.MetadataSchema
 import org.overviewproject.models.tables.{DocumentSets,Documents,Files,Pages}
 import org.overviewproject.models.{Document,DocumentSet,File,Page}
 import org.overviewproject.test.DbSpecification
@@ -24,6 +27,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
         0,
         0,
         None,
+        MetadataSchema.empty,
         false
       )))
     }
@@ -57,6 +61,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
         None,
         None,
         None,
+        JsObject(Seq()),
         text
       )
     }
@@ -161,6 +166,14 @@ class BulkDocumentWriterSpec extends DbSpecification {
     await(subject.flush)
     
     fetchDocuments(0).displayMethod must beSome(displayMethod)
+  }
+
+  "handle metadataJson" in new BaseScope {
+    val metadataJson = Json.obj("foo" -> "bar")
+    add(factory.document(1L, "").copy(metadataJson = metadataJson))
+    await(subject.flush)
+
+    fetchDocuments(0).metadataJson must beEqualTo(metadataJson)
   }
   
   "handle the other fields" in new BaseScope {

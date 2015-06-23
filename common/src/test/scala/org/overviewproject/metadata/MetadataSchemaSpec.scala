@@ -60,4 +60,18 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
       from("""{"version":1,"fields":[{"name":"foo","type":"string"}]}""") must throwA[IllegalArgumentException]
     }
   }
+
+  "::empty" should {
+    trait EmptyScope extends BaseScope {
+      val subject = MetadataSchema.empty
+    }
+
+    "use version 1" in new EmptyScope {
+      subject.version must beEqualTo(1)
+    }
+
+    "not have any fields" in new EmptyScope {
+      subject.fields must beEqualTo(Seq())
+    }
+  }
 }
