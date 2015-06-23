@@ -115,7 +115,7 @@ object SingleUserSessionFactory extends SessionFactory {
 
   override def loadAuthorizedSession(request: RequestHeader, authority: Authority) = {
     val session = Session(1L, request.remoteAddress)
-    val user = User(1L, "admin@overviewproject.org", role=UserRole.Administrator, treeTooltipsEnabled=false)
+    val user = User(1L, "admin@overviewdocs.com", role=UserRole.Administrator, treeTooltipsEnabled=false)
     Future.successful(Right((session, user)))
   }
 }

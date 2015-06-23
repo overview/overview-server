@@ -1,10 +1,10 @@
 FORMAT: 1A
-HOST: https://www.overviewproject.org/api/v1
+HOST: https://www.overviewdocs.com/api/v1
 
 # The Overview Project
 
 The Overview Project API lets you manipulate document sets and related objects from
-https://www.overviewproject.org.
+https://www.overviewdocs.com.
 
 ## Authentication
 
@@ -28,18 +28,18 @@ While we work out the kinks, Overview's API is **experimental**. You'll have to 
 ### Generating an API token for a Document Set
 
 1. Browse to a Document Set.
-2. Add "/api-tokens" to the URL. The URL should look like `http://www.overviewproject.org/documentsets/123/api-tokens`.
+2. Add "/api-tokens" to the URL. The URL should look like `http://www.overviewdocs.com/documentsets/123/api-tokens`.
 3. Type in your app name and generate a token.
 
 Now you can test your token. On a command-line:
 
-`curl -u 'MYTOKEN:x-auth-token' http://www.overviewproject.org/api/v1/document-sets/123/tags`
+`curl -u 'MYTOKEN:x-auth-token' http://www.overviewdocs.com/api/v1/document-sets/123/tags`
 
 This API endpoint will list all the tags on the Document Set.
 
 ### Generating an API token that can create new Document Sets
 
-1. Browse to http://www.overviewproject.org/api-tokens.
+1. Browse to http://www.overviewdocs.com/api-tokens.
 2. Type in your app name and generate a token.
 
 You can use this token to create new document sets for yourself. See the section on [Files](#reference/files) for details.
@@ -110,7 +110,7 @@ The method will return the `documentSet` properties along with an `apiToken` you
                 "token": "a-fresh-token-for-docset-123"
             }
         }
-    
+
 # Group Files
 
 A **File** is something you upload to Overview. It will generate one or many *Documents*.
@@ -132,7 +132,7 @@ A File is an in-progress or completed file upload. It lasts until the file colle
 
 + Parameters
     + guid (required, uuid, `bb7b0620-2e9c-4bf3-b283-45387e7b3d72`) ... The *File* GUID. The client must generate this: for a given file group, each File must have a unique GUID. These IDs help the client and server synchronize.
-    
+
 + Model (application/json)
 
         {
@@ -194,7 +194,7 @@ This shows in-progress and completed File uploads.
                 "loaded": 91000
             }
         ]
-        
+
 ### Delete files [DELETE]
 This deletes all uploaded files. After this, you can upload new files from scratch.
 
@@ -204,7 +204,7 @@ This deletes all uploaded files. After this, you can upload new files from scrat
 
 + Parameters
     + documentSetId (number,optional,`1`) ... The DocumentSet ID.
-    
+
 ### Add files to document set [POST]
 
 HACK: For no good reason, the `documentSetId` is part of the URL and the rest of the form parameters are passed as JSON.
@@ -226,7 +226,7 @@ Some of the request parameters are weird; here's a run-down:
             "supplied_stop_words": "",
             "important_words": ""
         }
-        
+
 + Response 201
 
 # Group Tags
@@ -236,7 +236,7 @@ A **Tag** is a label that can apply to documents.
 
 + Parameters
     + documentSetId (number,required,`1`) ... The DocumentSet ID.
-        
+
 ### List all Tags [GET]
 + Response 200 (application/json)
 
@@ -267,7 +267,7 @@ The Document resource has the following attributes:
 + Parameters
     + documentSetId (required, number, `1`) ... The Document Set ID.
     + id (required, number, `2`) ... The Document ID.
-    
+
 + Model (application/json)
 
         {
@@ -278,7 +278,7 @@ The Document resource has the following attributes:
             "keywords": [ "foo", "bar" ],
             "text": "foo. bar. foo foo bar bar...."
         }
-        
+
 ### Retrieve a Document [GET]
 + Response 200
 
@@ -471,7 +471,7 @@ them. You can pass an `indexedLong` and/or `indexedString` property to help.
 + Response 200
 
     [StoreObject][]
-    
+
 ### Delete StoreObjects [DELETE]
 
 This method lets you delete several StoreObjects with a single request.
@@ -481,7 +481,7 @@ You must pass the StoreObjects as an Array of IDs. Invalid IDs will be ignored.
 + Request (application/json)
 
         [ 123, 234, 345 ]
-        
+
 + Response 204
 
 # Group DocumentStoreObjects
@@ -502,7 +502,7 @@ You can only create and destroy DocumentStoreObjects in bulk. These parameters a
 + Parameters
     + documentId (required, number, `1`) ... The Document being associated
     + objectId (required, number, `2`) ... The StoreObject being associated
-    
+
 + Model (application/json)
 
         {
