@@ -4,15 +4,17 @@ import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.ActorSelection
 import akka.actor.Props
+
 import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
-import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.database.orm.Schema.{ documentSets, fileGroups }
-import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.database.orm.Schema.fileGroups 
+import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
+import org.overviewproject.models.tables.DocumentSets
 import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.FinderById
 import org.overviewproject.tree.orm.stores.BaseStore
 
@@ -43,7 +45,7 @@ object ClusteringJobQueue {
     override protected val fileGroupRemovalRequestQueue = context.actorSelection(fileGroupRemovalRequestQueuePath)
     override protected val storage: Storage = new DatabaseStorage
 
-    protected class DatabaseStorage extends Storage {
+    protected class DatabaseStorage extends Storage with HasBlockingDatabase {
 
       /**
        * Creates a new clustering job and deletes the old document creation job.
@@ -58,12 +60,11 @@ object ClusteringJobQueue {
        * FIXME: All of it. Mainly we should not communicate via DocumentSetCreationJobs in the database
        */
       override def transitionToClusteringJob(documentSetId: Long): Option[Long] = DeprecatedDatabase.inTransaction {
-        val documentSetFinder = new FinderById(documentSets)
+        import database.api._
 
         for {
-          createDocumentsJob <- DocumentSetCreationJobFinder.byDocumentSetAndTypeForUpdate(documentSetId, FileUpload).headOption
-          if createDocumentsJob.state != Cancelled
-          documentSet <- documentSetFinder.byId(documentSetId).headOption
+          createDocumentsJob <- DocumentSetCreationJobFinder.byDocumentSetAndTypeForUpdate(documentSetId, FileUpload).headOption if createDocumentsJob.state != Cancelled
+          documentSet <- blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
         } yield {
 
           val fileGroupId = createDocumentsJob.fileGroupId.get
@@ -76,7 +77,8 @@ object ClusteringJobQueue {
             suppliedStopWords = createDocumentsJob.suppliedStopWords,
             importantWords = createDocumentsJob.importantWords,
             splitDocuments = createDocumentsJob.splitDocuments,
-            state = NotStarted)
+            state = NotStarted
+          )
           DocumentSetCreationJobStore.insertOrUpdate(clusteringJob)
 
           deleteFileGroup(createDocumentsJob)

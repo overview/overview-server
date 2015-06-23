@@ -24,7 +24,6 @@ object Schema extends org.squeryl.Schema {
 
   val documentProcessingErrors = table[DocumentProcessingError]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
-  val documentSets = table[DocumentSet]
   val documentSetUsers = table[DocumentSetUser]
   val documentTags = table[DocumentTag]
   val nodeDocuments = table[NodeDocument]

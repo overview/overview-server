@@ -8,7 +8,7 @@ import models.orm.Schema
 import models.User
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.{DocumentSetCreationJobType, Ownership}
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
+import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState}
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 
 object DocumentSetCreationJobFinder extends Finder {
@@ -41,46 +41,6 @@ object DocumentSetCreationJobFinder extends Finder {
         where (dscj.state <> DocumentSetCreationJobState.Cancelled)
         select(dscj)
       )
-    }
-
-    def withDocumentSets: FinderResult[(DocumentSetCreationJob, DocumentSet)] = {
-      join(toQuery, Schema.documentSets)((dscj, ds) =>
-        select(dscj, ds)
-          on (dscj.documentSetId === ds.id))
-    }
-
-    def withDocumentSetsAndQueuePositions: FinderResult[(DocumentSetCreationJob, DocumentSet, Long)] = {
-      val jobsInQueue = from(Schema.documentSetCreationJobs)(dscj =>
-        where(dscj.state === DocumentSetCreationJobState.NotStarted or
-          dscj.state === DocumentSetCreationJobState.InProgress or
-          dscj.state === DocumentSetCreationJobState.FilesUploaded or
-          dscj.state === DocumentSetCreationJobState.TextExtractionInProgress)
-          select (dscj))
-
-      // XXX this is O(N^2), unless Postgres has some trick for optimizing it.
-      // Use a window function instead?
-      val queuePositions = join(toQuery, jobsInQueue.leftOuter)((job, jobsAhead) =>
-        groupBy(job.id)
-          compute (countDistinct(jobsAhead.map(_.id)))
-          on (jobsAhead.map(_.id) lt job.id))
-
-      join(toQuery, Schema.documentSets, queuePositions)((dscj, ds, qp) =>
-        where(ds.deleted === false)
-          select (dscj, ds, qp.measures)
-          orderBy (dscj.id desc)
-          on (
-            dscj.documentSetId === ds.id,
-            qp.key === dscj.id))
-    }
-
-    def withDocumentSetsAndOwners: FinderResult[(DocumentSetCreationJob, DocumentSet, User)] = {
-      join(toQuery, Schema.documentSets, Schema.documentSetUsers, Schema.users)((dscj, ds, dsu, u) =>
-        select(dscj, ds, u)
-        orderBy (dscj.id desc)
-        on (
-          dscj.documentSetId === ds.id,
-          ds.id === dsu.documentSetId and dsu.role === Ownership.Owner,
-          dsu.userEmail === u.email))
     }
   }
 

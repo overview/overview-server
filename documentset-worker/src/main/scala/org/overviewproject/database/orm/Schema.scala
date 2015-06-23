@@ -17,7 +17,6 @@ object Schema extends org.squeryl.Schema {
   }
 
   val apiTokens = table[ApiToken]
-  val documentSets = table[DocumentSet]
   val groupedProcessedFiles = table[GroupedProcessedFile]
   val fileGroups = table[FileGroup]
   val fileTexts = table[FileText]
