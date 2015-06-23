@@ -19,6 +19,21 @@ class CsvImportSourceSpec extends Specification {
       documents.map(_.text) must beEqualTo(Seq("line0", "line1", "line2"))
     }
 
+    "handle a zero-doc CSV file" in new BaseScope {
+      override val input="text"
+      documents.length must beEqualTo(0)
+    }
+
+    "fail with an empty CSV file" in new BaseScope {
+      override val input=""
+      documents.length must throwA[RuntimeException]
+    }
+
+    "handle a just-newlines CSV file" in new BaseScope {
+      override val input="\n\n"
+      documents.length must throwA[RuntimeException]
+    }
+
     "find a suppliedId column named `id`" in new BaseScope {
       override val input = "text,id\nline0,id0\nline1,id1"
       documents.map(_.suppliedId) must beEqualTo(Seq("id0", "id1"))
@@ -35,7 +50,7 @@ class CsvImportSourceSpec extends Specification {
     }
 
     "find a column named `tags`" in new BaseScope {
-      override val input="""|text,tags
+      override val input = """|text,tags
                             |line0,"foo,bar"
                             |line1,"bar,baz"""".stripMargin
       documents.map(_.tags) must beEqualTo(Seq(Set("foo", "bar"), Set("bar", "baz")))
@@ -56,22 +71,22 @@ class CsvImportSourceSpec extends Specification {
     }
 
     "fail if there is no `text` on the first line" in new BaseScope {
-      override val input="foo\nbar"
+      override val input = "foo\nbar"
       documents.head must throwA[Exception]
     }
 
     "leave suppliedId empty when header has no `id`" in new BaseScope {
-      override val input="text\nfoo"
+      override val input = "text\nfoo"
       documents.head.suppliedId must beEqualTo("")
     }
 
     "leave url None when header has no `url`" in new BaseScope {
-      override val input="text\nfoo"
+      override val input = "text\nfoo"
       documents.head.url must beNone
     }
 
     "leave title empty when header has no `title`" in new BaseScope {
-      override val input="text\nfoo"
+      override val input = "text\nfoo"
       documents.head.title must beEqualTo("")
     }
 
@@ -89,31 +104,54 @@ class CsvImportSourceSpec extends Specification {
     }
 
     "make `contents` an alias for `text`" in new BaseScope {
-      override val input="contents\nfoobar"
+      override val input = "contents\nfoobar"
       documents.head.text must beEqualTo("foobar")
     }
 
     "make `snippet` an alias for `text`" in new BaseScope {
-      override val input="snippet\nfoobar"
+      override val input = "snippet\nfoobar"
       documents.head.text must beEqualTo("foobar")
     }
 
     "make `text` override `contents` and `snippet`" in new BaseScope {
-      override val input="snippet,contents,text\nsnippet0,contents0,text0"
-      documents.head.text must beEqualTo("text0")
+      override val input = "snippet,contents,text\nsnippet0,contents0,text0"
+      documents.head.text  must beEqualTo("text0")
     }
 
     "ignore repeated tags" in new BaseScope {
-      override val input="""|text,tags
-                            |text0,"foo,bar,foo"""".stripMargin
+      override val input = """|text,tags
+                              |text0,"foo,bar,foo"""".stripMargin
       documents.head.tags must beEqualTo(Set("foo", "bar"))
     }
 
     "ignore empty tags" in new BaseScope {
-      override val input="""|text,tags
-                            |text0,"foo,,bar"
-                            |text1,","""".stripMargin
+      override val input = """|text,tags
+                              |text0,"foo,,bar"
+                              |text1,","""".stripMargin
       documents.map(_.tags) must beEqualTo(Seq(Set("foo", "bar"), Set.empty))
+    }
+
+    "treat non-id/text/url/title/tags as metadata" in new BaseScope {
+      override val input = """|foo,bar,id,text,url,title,tags
+                              |foo0,bar0
+                              |foo1,bar1""".stripMargin
+      csvImportSource.metadataColumnNames must beEqualTo(Seq("foo", "bar"))
+      documents.map(_.metadata) must beEqualTo(Seq(
+        Map("foo" -> "foo0", "bar" -> "bar0"),
+        Map("foo" -> "foo1", "bar" -> "bar1")
+      ))
+    }
+
+    "treat contents/snippet as metadata when there is `text`" in new BaseScope {
+      override val input = "contents,snippet,text\nfoo,bar"
+      csvImportSource.metadataColumnNames must beEqualTo(Seq("contents", "snippet"))
+      documents.head.metadata must beEqualTo(Map("contents" -> "foo", "snippet" -> "bar"))
+    }
+
+    "treat empty metadata as empty string" in new BaseScope {
+      override val input = "text,foo,bar\ntext0,"
+      csvImportSource.metadataColumnNames must beEqualTo(Seq("foo", "bar"))
+      documents.head.metadata must beEqualTo(Map("foo" -> "", "bar" -> ""))
     }
   }
 }

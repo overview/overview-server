@@ -6,8 +6,9 @@
  */
 package org.overviewproject.csv
 
-import au.com.bytecode.opencsv.CSVReader
+import com.opencsv.CSVReader
 import java.io.Reader
+import java.util.{Iterator=>JIterator}
 import scala.collection.Iterable
 
 /**
@@ -22,89 +23,71 @@ import scala.collection.Iterable
   * * reader: a Reader
   */
 class CsvImportSource(textify: (String) => String, reader: Reader) extends Iterable[CsvImportDocument] {
-  private val TextColumn: String = "text"
-  private val SuppliedIdColumn: String = "id"
-  private val UrlColumn: String = "url"
-  private val TitleColumn: String = "title"
+  class CsvHeader(columnNames: Array[String]) {
+    private val asMap = columnNames.map(_.toLowerCase).zipWithIndex.toMap
 
-  /**
-   * An iterator that returns CsvImportDocuments, based on the header information
-   * in the first row of the input.
-   */
-  val iterator = new Iterator[CsvImportDocument] {
-    private val Separator = ','
-    private val Quote = '\"'
-    private val NoEscape = '\u0000' // Setting escape char to \0 disables escaping
+    val textIndex: Option[Int] = asMap.get("text").orElse(asMap.get("contents")).orElse(asMap.get("snippet"))
+    val idIndex: Option[Int] = asMap.get("id")
+    val urlIndex: Option[Int] = asMap.get("url")
+    val titleIndex: Option[Int] = asMap.get("title")
+    val tagsIndex: Option[Int] = asMap.get("tags")
 
-    private val csvParser = new CSVReader(reader, Separator, Quote, NoEscape)
-    private var nextLine = csvParser.readNext() // read ahead to be able to evaluate hasNext
+    private val nonMetadataIndices: Seq[Int] = Seq(textIndex, idIndex, urlIndex, titleIndex, tagsIndex).flatten
 
-    // Column headers with index
-    private val columns: Map[String, Int] = readHeaders
-    private def findTextColumn: Option[Int] = 
-      Seq(TextColumn, "contents", "snippet").flatMap(columns.get(_)).headOption
-      
-      
-    def hasNext: Boolean = nextLine != null
+    val metadataIndices: Array[Int] = (columnNames.indices.toSet -- nonMetadataIndices).toArray.sorted
+    val metadataColumnNames = metadataIndices.map(columnNames)
 
-    /**
-     *  @return the next valid CsvImportDocument. Throws and exception if
-     *  no column has the text header. Rows with not enough columns to have
-     *  a text column are ignored.
-     */
-    def next(): CsvImportDocument = {
-      require(findTextColumn.isDefined)
+    private def fetch(array: Array[String], maybeIndex: Option[Int]): Option[String] = {
+      maybeIndex.flatMap(index => if (array.length > index) Some(array(index)) else None)
+    }
 
-      readRow match {
-        case null => null
-        case c => CsvImportDocument(text(c), suppliedId(c), url(c), title(c), tags(c), metadata(c))
+    def createDocumentFromRow(row: Array[String]): CsvImportDocument = CsvImportDocument(
+      fetch(row, textIndex).getOrElse(""),
+      fetch(row, idIndex).getOrElse(""),
+      fetch(row, urlIndex),
+      fetch(row, titleIndex).getOrElse(""),
+      fetch(row, tagsIndex).getOrElse("").split(",").map(_.trim).filterNot(_.isEmpty).toSet,
+      metadataIndices.map(index => columnNames(index) -> fetch(row, Some(index)).getOrElse("")).toMap
+    )
+  }
+
+  class CsvImportDocumentIterator(header: CsvHeader, rowIterator: JIterator[Array[String]])
+    extends Iterator[CsvImportDocument]
+  {
+    override def hasNext = {
+      if (header.textIndex.isDefined) {
+        csvIterator.hasNext
+      } else {
+        throw new RuntimeException("CSV file is missing a `text` header")
       }
     }
-
-    // Return text if the column exists, "" otherwise.
-    private def text(row: Array[String]): String = {
-      val textIndex = findTextColumn.get
-      if (row.length > textIndex) row(textIndex)
-      else ""
-    }
-
-    // Return user supplied id or ""
-    private def suppliedId(row: Array[String]): String = getOptColumn(row, SuppliedIdColumn).getOrElse("")
-
-    // return the url if url column exists
-    private def url(row: Array[String]): Option[String] = getOptColumn(row, UrlColumn)
-
-    // return the title or ""
-    private def title(row: Array[String]): String = getOptColumn(row, TitleColumn).getOrElse("")
-    
-    // return a list of tag names
-    private def tags(row: Array[String]): Set[String] =  getOptColumn(row, "tags") match {
-      case Some(tags) => tags.split(",").map(_.trim).filterNot(_.isEmpty).toSet
-      case None => Set.empty
-    }
-
-    // if the columnName was defined in the header row, @return the value in the column, else None
-    private def getOptColumn(row: Array[String], columnName: String): Option[String] =
-      columns.get(columnName).flatMap(c =>
-        if (row.size > c && !row(c).isEmpty) Some(row(c))
-        else None)
-
-    private def metadata(row: Array[String]): Map[String,String] = Map.empty
-
-    // Read ahead and return current row
-    private def readRow: Array[String] = {
-      val row = nextLine
-      Option(row).map(_.transform(textify))
-
-      nextLine = csvParser.readNext()
-
-      row
-    }
-
-    // Convert a row to a map of header -> columnIndex
-    private def readHeaders: Map[String, Int] = {
-      val headerRow = readRow
-      headerRow.map(_.trim.toLowerCase).zipWithIndex.toMap
+    override def next = {
+      if (header.textIndex.isDefined) {
+        header.createDocumentFromRow(rowIterator.next)
+      } else {
+        throw new RuntimeException("CSV file is missing a `text` header")
+      }
     }
   }
+
+  private class TextifiedArrayIterator(rowIterator: JIterator[Array[String]]) extends JIterator[Array[String]] {
+    // If we need to optimize this, put textification on the other side of the
+    // BufferedReader. (The Reader passed to CsvImportSource is a
+    // BufferedReader.)
+    override def hasNext = rowIterator.hasNext
+    override def next = rowIterator.next.map(textify)
+  }
+
+  private val csvReader = new CSVReader(reader, ',', '\"', '\u0000') // Setting escape to \0 disables escaping
+  private val csvIterator: JIterator[Array[String]] = csvReader.iterator
+  private val textifiedRowIterator: JIterator[Array[String]] = new TextifiedArrayIterator(csvIterator)
+
+  private val header: CsvHeader = if (textifiedRowIterator.hasNext) {
+    new CsvHeader(textifiedRowIterator.next)
+  } else {
+    new CsvHeader(Array.empty)
+  }
+
+  val metadataColumnNames: Seq[String] = header.metadataColumnNames
+  override val iterator: Iterator[CsvImportDocument] = new CsvImportDocumentIterator(header, textifiedRowIterator)
 }
