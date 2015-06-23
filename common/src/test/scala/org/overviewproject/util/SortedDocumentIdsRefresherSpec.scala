@@ -4,6 +4,7 @@ import play.api.libs.json.JsObject
 
 import org.overviewproject.database.HasBlockingDatabase
 import org.overviewproject.metadata.MetadataSchema
+import org.overviewproject.models.DocumentDisplayMethod
 import org.overviewproject.test.DbSpecification
 
 class SortedDocumentIdsRefresherSpec extends DbSpecification {
@@ -72,7 +73,21 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     }
 
     def createDocument(documentSetId: Long, id: Long, title: String, suppliedId: String, pageNumber: Option[Int]): Document = {
-      val ret = Document(id, documentSetId, None, suppliedId, title, pageNumber, Seq(), new java.sql.Timestamp(0L), None, None, None, JsObject(Seq()), "")
+      val ret = Document(
+        id,
+        documentSetId,
+        None,
+        suppliedId,
+        title,
+        pageNumber,
+        Seq(),
+        new java.sql.Timestamp(0L),
+        None,
+        None,
+        DocumentDisplayMethod.auto,
+        JsObject(Seq()),
+        ""
+      )
       blockingDatabase.run((Documents returning Documents).+=(ret))
     }
 

@@ -6,10 +6,13 @@
  */
 package org.overviewproject.http
 
+import akka.actor._
+import java.util.concurrent.TimeoutException
+import play.api.libs.json.JsObject
 import scala.language.postfixOps
 import scala.concurrent.{Await,Future,Promise,blocking}
 import scala.concurrent.duration._
-import akka.actor._
+
 import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.documentcloud.{Document => RetrievedDocument, _ }
 import org.overviewproject.documentcloud.ImporterProtocol._
@@ -21,9 +24,6 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
 import org.overviewproject.util.{BulkDocumentWriter,Configuration,DocumentProducer,Logger,WorkerActorSystem}
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
-import java.util.concurrent.TimeoutException
-
-
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int,
@@ -84,7 +84,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         new java.util.Date(),
         None,
         None,
-        Some(DocumentDisplayMethod.auto),
+        DocumentDisplayMethod.auto,
+        JsObject(Seq()),
         text
       )
       blocking(await(bulkWriter.addAndFlushIfNeeded(document)))

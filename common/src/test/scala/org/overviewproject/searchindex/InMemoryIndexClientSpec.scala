@@ -9,7 +9,7 @@ import play.api.libs.json.JsObject
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.models.Document
+import org.overviewproject.models.{Document,DocumentDisplayMethod}
 import org.overviewproject.query.{FuzzyTermQuery,PhraseQuery}
 
 class InMemoryIndexClientSpec extends Specification {
@@ -71,7 +71,7 @@ class InMemoryIndexClientSpec extends Specification {
       createdAt=new java.util.Date(),
       fileId=None,
       pageId=None,
-      displayMethod=None,
+      displayMethod=DocumentDisplayMethod.auto,
       metadataJson=JsObject(Seq()),
       text=s"foo$id bar baz"
     )
@@ -146,7 +146,7 @@ class InMemoryIndexClientSpec extends Specification {
             new java.util.Date(),
             None,
             None,
-            None,
+            DocumentDisplayMethod.auto,
             JsObject(Seq()),
             text
           )

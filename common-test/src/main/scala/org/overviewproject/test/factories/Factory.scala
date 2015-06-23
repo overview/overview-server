@@ -43,7 +43,7 @@ trait Factory {
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
-    displayMethod: Option[DocumentDisplayMethod.Value] = None,
+    displayMethod: DocumentDisplayMethod.Value = DocumentDisplayMethod.auto,
     metadataJson: JsObject = JsObject(Seq()),
     text: String = ""): Document
 

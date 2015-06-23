@@ -3,8 +3,6 @@ package org.overviewproject.models
 import java.util.Date
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
-
 /** A complete Document.
   *
   * The `text` field can make this rather large. If you don't need the `text`
@@ -21,7 +19,7 @@ case class Document(
   override val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
-  override val displayMethod: Option[DocumentDisplayMethod],
+  override val displayMethod: DocumentDisplayMethod.Value,
   override val metadataJson: JsObject,
   override val text: String
 ) extends DocumentHeader {

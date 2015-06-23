@@ -17,7 +17,7 @@ trait DocumentHeader {
   val pageNumber: Option[Int]
   val keywords: Seq[String]
   val createdAt: Date
-  val displayMethod: Option[DocumentDisplayMethod]
+  val displayMethod: DocumentDisplayMethod
   val metadataJson: JsObject
   val text: String
 

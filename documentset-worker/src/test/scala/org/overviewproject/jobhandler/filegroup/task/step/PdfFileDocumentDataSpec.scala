@@ -1,8 +1,9 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
+import play.api.libs.json.JsObject
+
 import org.specs2.mutable.Specification
-import org.overviewproject.models.Document
-import org.overviewproject.models.DocumentDisplayMethod
+import org.overviewproject.models.{Document,DocumentDisplayMethod}
 
 class PdfFileDocumentDataSpec extends Specification {
 
@@ -18,8 +19,8 @@ class PdfFileDocumentDataSpec extends Specification {
 
       val document = PdfFileDocumentData(title, fileId, text).toDocument(documentSetId, documentId)
 
-      requiredData(document) must be equalTo(documentSetId, documentId, title, Some(fileId), Some(displayAsPdf), text)
-      unsetData(document) must be equalTo (None, "", None, Seq.empty, None)
+      requiredData(document) must beEqualTo(documentSetId, documentId, title, Some(fileId), displayAsPdf, text)
+      unsetData(document) must beEqualTo(None, "", None, Seq.empty, None, JsObject(Seq()))
     }
 
     def requiredData(document: Document) =
@@ -35,7 +36,8 @@ class PdfFileDocumentDataSpec extends Specification {
         document.suppliedId,
         document.pageNumber,
         document.keywords,
-        document.pageId)
+        document.pageId,
+        document.metadataJson)
 
   }
 }

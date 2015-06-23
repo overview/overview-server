@@ -137,7 +137,7 @@ trait BulkDocumentWriter {
       writeLongOption(document.pageId)
       writeString(document.metadataJson.toString)
       writeString(document.text)
-      writeStringOption(document.displayMethod.map(_.toString))
+      writeString(document.displayMethod.toString)
     }
 
     // File trailer

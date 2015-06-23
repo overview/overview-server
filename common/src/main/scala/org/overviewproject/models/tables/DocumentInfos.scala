@@ -2,8 +2,7 @@ package org.overviewproject.models.tables
 
 import java.util.Date
 import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.DocumentInfo
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
+import org.overviewproject.models.{DocumentDisplayMethod,DocumentInfo}
 
 /** READ-ONLY!
   *
@@ -30,7 +29,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   def title = column[Option[String]]("title")
   def pageNumber = column[Option[Int]]("page_number")
   def fileId = column[Option[Long]]("file_id")
-  def displayMethod = column[Option[DocumentDisplayMethod]]("display_method")
+  def displayMethod = column[Option[DocumentDisplayMethod.Value]]("display_method")
 
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
@@ -50,8 +49,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     fileId,
     displayMethod
   ).<>[DocumentInfo,
-    Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod]]](
-    (t: Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod]]) => DocumentInfo.apply(
+    Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value]]](
+    (t: Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value]]) => DocumentInfo.apply(
       t._1,
       t._2,
       t._3,
@@ -60,7 +59,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       t._7,
       t._8,
       t._9,
-      t._11,
+      t._11.getOrElse(DocumentDisplayMethod.auto),
       t._10.isDefined
     ),
     { d: DocumentInfo => Some(
@@ -74,7 +73,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       d.keywords,
       d.createdAt,
       None,
-      d.displayMethod
+      Some(d.displayMethod)
     )}
   )
 }

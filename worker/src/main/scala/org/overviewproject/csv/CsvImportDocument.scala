@@ -6,8 +6,9 @@
  */
 package org.overviewproject.csv
 
-import org.overviewproject.models.Document
-import org.overviewproject.models.DocumentDisplayMethod
+import play.api.libs.json.JsObject
+
+import org.overviewproject.models.{Document,DocumentDisplayMethod}
 
 /** Document generated from a CsvImport. suppliedId is present if an "id" column exists in the source */
 class CsvImportDocument(
@@ -30,7 +31,8 @@ class CsvImportDocument(
     new java.util.Date(),
     None,
     None,
-    Some(DocumentDisplayMethod.auto),
+    DocumentDisplayMethod.auto,
+    JsObject(Seq()),
     text
   )
 }

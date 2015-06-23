@@ -60,7 +60,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
         new java.util.Date(documentSet.createdAt.getTime()),
         None,
         None,
-        None,
+        DocumentDisplayMethod.auto,
         JsObject(Seq()),
         text
       )
@@ -161,11 +161,10 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "handle displayMethod" in new BaseScope {
-    val displayMethod = DocumentDisplayMethod.auto  
-    add(factory.document(1L, "").copy(displayMethod = Some(displayMethod)))
+    add(factory.document(1L, "").copy(displayMethod = DocumentDisplayMethod.auto))
     await(subject.flush)
     
-    fetchDocuments(0).displayMethod must beSome(displayMethod)
+    fetchDocuments(0).displayMethod must beEqualTo(DocumentDisplayMethod.auto)
   }
 
   "handle metadataJson" in new BaseScope {

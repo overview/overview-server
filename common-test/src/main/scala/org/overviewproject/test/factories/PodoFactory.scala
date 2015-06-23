@@ -72,7 +72,7 @@ object PodoFactory extends Factory {
     pageNumber: Option[Int],
     fileId: Option[Long],
     pageId: Option[Long],
-    displayMethod: Option[DocumentDisplayMethod.Value],
+    displayMethod: DocumentDisplayMethod.Value,
     metadataJson: JsObject,
     text: String
   ) = Document(

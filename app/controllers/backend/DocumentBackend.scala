@@ -7,7 +7,7 @@ import slick.jdbc.{GetResult,StaticQuery}
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
-import org.overviewproject.models.{Document,DocumentHeader,DocumentInfo}
+import org.overviewproject.models.{Document,DocumentDisplayMethod,DocumentHeader,DocumentInfo}
 import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
 import org.overviewproject.query.{Query=>SearchQuery}
 import org.overviewproject.searchindex.IndexClient
@@ -47,7 +47,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     override val pageNumber = None
     override val keywords = Seq()
     override val createdAt = new java.util.Date(0L)
-    override val displayMethod = None
+    override val displayMethod = DocumentDisplayMethod.auto
     override val metadataJson = JsObject(Seq())
     override val text = ""
   }
