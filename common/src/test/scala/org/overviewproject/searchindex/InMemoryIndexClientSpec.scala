@@ -10,7 +10,7 @@ import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
 import org.overviewproject.models.{Document,DocumentDisplayMethod}
-import org.overviewproject.query.{Field,FuzzyTermQuery,PhraseQuery}
+import org.overviewproject.query.{Field,FuzzyTermQuery,PhraseQuery,PrefixQuery}
 
 class InMemoryIndexClientSpec extends Specification {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -291,6 +291,21 @@ class InMemoryIndexClientSpec extends Specification {
 
         val ids2 = await(indexClient.searchForIds(234L, PhraseQuery(Field.Title, "moo123"), scrollSize=1))
         ids2 must beEqualTo(Seq(123L))
+      }
+
+      "handle prefix query on title" in new BaseScope {
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(
+          buildDocument(123L, 234L).copy(title="foo/bar/baz.txt"),
+          buildDocument(124L, 234L).copy(title="foo/baz.txt")
+        )))
+        await(indexClient.refresh())
+
+        val ids1 = await(indexClient.searchForIds(234L, PrefixQuery(Field.Title, "foo/bar/"), scrollSize=1))
+        ids1 must beEqualTo(Seq(123L))
+
+        val ids2 = await(indexClient.searchForIds(234L, PhraseQuery(Field.Title, "foo/"), scrollSize=1))
+        ids2.length must beEqualTo(2)
       }
     }
   }

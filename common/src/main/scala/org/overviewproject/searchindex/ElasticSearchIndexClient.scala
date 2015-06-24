@@ -372,8 +372,14 @@ trait ElasticSearchIndexClient extends IndexClient {
           .matchPhraseQuery(repr(field), phrase)
           .rewrite("constant_score_auto")
       }
+      case PrefixQuery(field, prefix) => {
+        QueryBuilders
+          .matchPhrasePrefixQuery(repr(field), prefix)
+          .rewrite("constant_score_auto")
+      }
       case ProximityQuery(field, phrase, slop) => {
-        QueryBuilders.matchPhraseQuery(repr(field), phrase)
+        QueryBuilders
+          .matchPhraseQuery(repr(field), phrase)
           .slop(slop)
           .rewrite("constant_score_auto")
       }

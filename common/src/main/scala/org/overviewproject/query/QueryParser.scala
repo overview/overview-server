@@ -22,12 +22,14 @@ object QueryParser {
     private val FuzzyTermWithFuzz = """([^ ]*)~(\d{1,7})""".r
     private val FuzzyTermWithoutFuzz = """([^ ]*)~""".r
     private val ProximityPhrase = """(.*)~(\d{1,7})""".r // only makes sense after FuzzyTerm* fail
+    private val Prefix = """(..+)\*""".r
 
     private def removeBackslashes(s: String) = s.replaceAll("\\\\(.)", "$1")
     private def stringToNode(field: Field, s: String): Query = s match {
       case FuzzyTermWithFuzz(term, fuzzString) => FuzzyTermQuery(field, term, Some(fuzzString.toInt))
       case FuzzyTermWithoutFuzz(term) => FuzzyTermQuery(field, term, None)
       case ProximityPhrase(phrase, slopString) => ProximityQuery(field, phrase, slopString.toInt)
+      case Prefix(prefix) => PrefixQuery(field, prefix)
       case _ => PhraseQuery(field, s)
     }
 
