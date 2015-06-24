@@ -346,11 +346,6 @@ trait ElasticSearchIndexClient extends IndexClient {
      * constant-score query throws off the highlighter.
      */
     def toElasticSearchQuery: QueryBuilder = query match {
-      case PhraseQuery(phrase) => {
-        QueryBuilders
-          .matchPhraseQuery("_all", phrase)
-          .rewrite("constant_score_auto")
-      }
       case AndQuery(left, right) => {
         QueryBuilders.boolQuery
           .must(left.toElasticSearchQuery)
@@ -365,12 +360,17 @@ trait ElasticSearchIndexClient extends IndexClient {
         QueryBuilders.boolQuery
           .mustNot(inner.toElasticSearchQuery)
       }
-      case ProximityQuery(phrase, slop) => {
+      case PhraseQuery(field, phrase) => {
+        QueryBuilders
+          .matchPhraseQuery("_all", phrase)
+          .rewrite("constant_score_auto")
+      }
+      case ProximityQuery(field, phrase, slop) => {
         QueryBuilders.matchPhraseQuery("_all", phrase)
           .slop(slop)
           .rewrite("constant_score_auto")
       }
-      case FuzzyTermQuery(term, fuzziness) => {
+      case FuzzyTermQuery(field, term, fuzziness) => {
         /*
          * ElasticSearch's FuzzyQueryBuilder does not support a `rewrite`
          * parameter, even though it's a MultiTermQueryBuilder. That's

@@ -25,10 +25,10 @@ object QueryParser {
 
     private def removeBackslashes(s: String) = s.replaceAll("\\\\(.)", "$1")
     private def stringToNode(s: String): Query = s match {
-      case FuzzyTermWithFuzz(term, fuzzString) => FuzzyTermQuery(term, Some(fuzzString.toInt))
-      case FuzzyTermWithoutFuzz(term) => FuzzyTermQuery(term, None)
-      case ProximityPhrase(phrase, slopString) => ProximityQuery(phrase, slopString.toInt)
-      case _ => PhraseQuery(s)
+      case FuzzyTermWithFuzz(term, fuzzString) => FuzzyTermQuery(Field.All, term, Some(fuzzString.toInt))
+      case FuzzyTermWithoutFuzz(term) => FuzzyTermQuery(Field.All, term, None)
+      case ProximityPhrase(phrase, slopString) => ProximityQuery(Field.All, phrase, slopString.toInt)
+      case _ => PhraseQuery(Field.All, s)
     }
 
     def expression: Parser[Query] = chainl1(unaryExpression, binaryOperator)

@@ -4,7 +4,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import controllers.backend.HighlightBackend
-import org.overviewproject.query.{PhraseQuery,Query}
+import org.overviewproject.query.{Field,PhraseQuery,Query}
 import org.overviewproject.searchindex.Highlight
 
 class HighlightControllerSpec extends ControllerSpecification {
@@ -41,7 +41,7 @@ class HighlightControllerSpec extends ControllerSpecification {
 
     "call HighlightBackend.index" in new IndexScope {
       h.status(result)
-      there was one(mockHighlightBackend).index(1L, 2L, PhraseQuery("foo"))
+      there was one(mockHighlightBackend).index(1L, 2L, PhraseQuery(Field.All, "foo"))
     }
 
     "return BadRequest when the query string is bad" in new IndexScope {

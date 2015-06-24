@@ -10,7 +10,7 @@ import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
 import org.overviewproject.models.{Document,DocumentDisplayMethod}
-import org.overviewproject.query.{FuzzyTermQuery,PhraseQuery}
+import org.overviewproject.query.{Field,FuzzyTermQuery,PhraseQuery}
 
 class InMemoryIndexClientSpec extends Specification {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -157,25 +157,25 @@ class InMemoryIndexClientSpec extends Specification {
       }
 
       "return an empty list when there is no document" in new HighlightScope {
-        await(indexClient.highlight(1L, 2L, PhraseQuery("foo"))) must beEqualTo(Seq())
+        await(indexClient.highlight(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq())
       }
 
       "return an empty list when the term is not in the document" in new HighlightScope {
         await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="bar boo baz"))))
         await(indexClient.refresh)
-        await(indexClient.highlight(1L, 2L, PhraseQuery("foo"))) must beEqualTo(Seq())
+        await(indexClient.highlight(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq())
       }
 
       "return a highlight" in new HighlightScope {
         await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar"))))
         await(indexClient.refresh)
-        await(indexClient.highlight(1L, 2L, PhraseQuery("foo"))) must beEqualTo(Seq(Highlight(4, 7)))
+        await(indexClient.highlight(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq(Highlight(4, 7)))
       }
 
       "return multiple highlights" in new HighlightScope {
         await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar foo"))))
         await(indexClient.refresh)
-        await(indexClient.highlight(1L, 2L, PhraseQuery("foo"))) must beEqualTo(Seq(
+        await(indexClient.highlight(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq(
           Highlight(4, 7),
           Highlight(12, 15)
         ))
@@ -230,7 +230,7 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
         await(indexClient.refresh())
-        val ids = await(indexClient.searchForIds(234L, PhraseQuery("foo123")))
+        val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "foo123")))
 
         ids must beEqualTo(Seq(123L))
       }
@@ -240,7 +240,7 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.addDocumentSet(235L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
         await(indexClient.refresh())
-        val ids = await(indexClient.searchForIds(235L, PhraseQuery("foo123")))
+        val ids = await(indexClient.searchForIds(235L, PhraseQuery(Field.All, "foo123")))
 
         ids must beEqualTo(Seq())
       }
@@ -249,7 +249,7 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
         await(indexClient.refresh())
-        val ids = await(indexClient.searchForIds(234L, PhraseQuery("foo124")))
+        val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "foo124")))
 
         ids must beEqualTo(Seq())
       }
@@ -258,7 +258,7 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
         await(indexClient.refresh())
-        val ids = await(indexClient.searchForIds(234L, PhraseQuery("bar")))
+        val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "bar")))
 
         ids must containTheSameElementsAs(Seq(123L, 124L))
       }
@@ -267,7 +267,7 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
         await(indexClient.refresh())
-        val ids = await(indexClient.searchForIds(234L, PhraseQuery("bar"), scrollSize=1))
+        val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "bar"), scrollSize=1))
 
         ids must containTheSameElementsAs(Seq(123L, 124L))
       }
@@ -277,7 +277,7 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
         await(indexClient.refresh())
 
-        val ids = await(indexClient.searchForIds(234L, FuzzyTermQuery("bbb", Some(2)), scrollSize=1))
+        val ids = await(indexClient.searchForIds(234L, FuzzyTermQuery(Field.All, "bbb", Some(2)), scrollSize=1))
         ids must containTheSameElementsAs(Seq(123L, 124L))
       }
     }

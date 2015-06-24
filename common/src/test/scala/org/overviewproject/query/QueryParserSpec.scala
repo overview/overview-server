@@ -5,13 +5,22 @@ import org.specs2.mutable.Specification
 class QueryParserSpec extends Specification {
   sequential
 
-  def repr(node: Query): String = node match {
-    case PhraseQuery(phrase) => s"[$phrase]"
-    case AndQuery(node1, node2) => s"AND(${repr(node1)},${repr(node2)})"
-    case OrQuery(node1, node2) => s"OR(${repr(node1)},${repr(node2)})"
-    case NotQuery(node) => s"NOT(${repr(node)})"
-    case FuzzyTermQuery(term, fuzziness) => s"FUZZY([$term],${fuzziness.map(_.toString).getOrElse("AUTO")})"
-    case ProximityQuery(phrase, slop) => s"PROXIMITY([$phrase],${slop.toString})"
+  protected implicit class FieldRepr(field: Field) {
+    def repr: String = field match {
+      case Field.All => ""
+      case Field.Title => "title:"
+    }
+  }
+
+  def repr(node: Query): String = {
+    node match {
+      case AndQuery(node1, node2) => s"AND(${repr(node1)},${repr(node2)})"
+      case OrQuery(node1, node2) => s"OR(${repr(node1)},${repr(node2)})"
+      case NotQuery(node) => s"NOT(${repr(node)})"
+      case PhraseQuery(field, phrase) => s"[${field.repr}$phrase]"
+      case FuzzyTermQuery(field, term, fuzziness) => s"FUZZY([${field.repr}$term],${fuzziness.fold("AUTO")(_.toString)})"
+      case ProximityQuery(field, phrase, slop) => s"PROXIMITY([${field.repr}$phrase],${slop.toString})"
+    }
   }
 
   def parse(input: String): Either[SyntaxError,Query] = QueryParser.parse(input)

@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,Selection,SelectionRequest}
-import org.overviewproject.query.PhraseQuery
+import org.overviewproject.query.{Field,PhraseQuery}
 
 class SelectionHelpersSpec extends Specification with Mockito {
   "selectionRequest" should {
@@ -65,7 +65,7 @@ class SelectionHelpersSpec extends Specification with Mockito {
       }
 
       "make a SelectionRequest with q" in new SelectionScope {
-        test("/?q=foo", Right(SelectionRequest(1L, q=Some(PhraseQuery("foo")))))
+        test("/?q=foo", Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
       }
 
       "return a BadRequest on query syntax error" in new SelectionScope {
@@ -102,18 +102,18 @@ class SelectionHelpersSpec extends Specification with Mockito {
       }
 
       "make a SelectionRequest with q" in new SelectionScope {
-        test(Seq("q" -> "foo"), Right(SelectionRequest(1L, q=Some(PhraseQuery("foo")))))
+        test(Seq("q" -> "foo"), Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
       }
     }
 
     "prefer POST parameters over GET parameters" in new SelectionScope {
       val request = FakeRequest("GET", "/?q=foo").withFormUrlEncodedBody("q" -> "bar")
-      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, q=Some(PhraseQuery("bar")))))
+      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "bar")))))
     }
 
     "allow some GET parameters and other POST parameters" in new SelectionScope {
       val request = FakeRequest("GET", "/?nodes=1").withFormUrlEncodedBody("q" -> "bar")
-      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, nodeIds=Seq(1L), q=Some(PhraseQuery("bar")))))
+      controller.f(1L, request) must beEqualTo(Right(SelectionRequest(1L, nodeIds=Seq(1L), q=Some(PhraseQuery(Field.All, "bar")))))
     }
   }
 
@@ -147,7 +147,7 @@ class SelectionHelpersSpec extends Specification with Mockito {
     }
 
     "uses SelectionBackend#create() if refresh=true" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery("foo")))
+      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.create(any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
       controller.go(request) must beEqualTo(Right(selection)).await
@@ -155,7 +155,7 @@ class SelectionHelpersSpec extends Specification with Mockito {
     }
 
     "uses SelectionBackend#findOrCreate() as a fallback" in new RequestToSelectionScope {
-      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery("foo")))
+      val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
       controller.go(request) must beEqualTo(Right(selection)).await
