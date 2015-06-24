@@ -36,7 +36,8 @@ object QueryParser {
 
     def term: Parser[Query] = fieldOrAll ~ (quotedString | unquotedString) ^^ { t => stringToNode(t._1, t._2) }
 
-    def fieldOrAll: Parser[Field] = ("title:" ^^^ Field.Title) | ("" ^^^ Field.All)
+    def fieldOrAll: Parser[Field]
+      = ("title:" ^^^ Field.Title) | ("text:" ^^^ Field.Text) | ("" ^^^ Field.All)
 
     def quotedString: Parser[String]
       = (singleQuotedString | doubleQuotedString | smartQuotedString) ~ regex("""~(\d{1,7})""".r).? ^^

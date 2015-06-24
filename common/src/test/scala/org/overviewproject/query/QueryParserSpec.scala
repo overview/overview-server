@@ -59,6 +59,7 @@ class QueryParserSpec extends Specification {
   testGood("NOT foo~2", "NOT(FUZZY([foo],2))", "give ~ (fuzzy) higher precedence than NOT")
   testGood("NOT 'foo bar'~2", "NOT(PROXIMITY([foo bar],2))", "give ~ (proximity) higher precedence than NOT")
   testGood("title:foo bar", "title:[foo bar]", "specify the title field")
+  testGood("text:foo bar", "text:[foo bar]", "specify the text field")
   testGood("NOT title:foo bar AND bar", "AND(NOT(title:[foo bar]),[bar])", "give field higher precedence than NOT")
   testGood("title:foo~", "title:FUZZY([foo],AUTO)", "allow field on fuzzy query")
   testGood("title:foo bar~2", "title:PROXIMITY([foo bar],2)", "allow field on proximity query")
