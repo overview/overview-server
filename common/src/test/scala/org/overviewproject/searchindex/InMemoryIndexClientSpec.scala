@@ -280,6 +280,18 @@ class InMemoryIndexClientSpec extends Specification {
         val ids = await(indexClient.searchForIds(234L, FuzzyTermQuery(Field.All, "bbb", Some(2)), scrollSize=1))
         ids must containTheSameElementsAs(Seq(123L, 124L))
       }
+
+      "handle field query" in new BaseScope {
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh())
+
+        val ids1 = await(indexClient.searchForIds(234L, PhraseQuery(Field.Text, "moo123"), scrollSize=1))
+        ids1 must beEmpty
+
+        val ids2 = await(indexClient.searchForIds(234L, PhraseQuery(Field.Title, "moo123"), scrollSize=1))
+        ids2 must beEqualTo(Seq(123L))
+      }
     }
   }
 }

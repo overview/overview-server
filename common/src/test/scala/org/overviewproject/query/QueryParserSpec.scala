@@ -9,6 +9,7 @@ class QueryParserSpec extends Specification {
     def repr: String = field match {
       case Field.All => ""
       case Field.Title => "title:"
+      case Field.Text => "text:"
     }
   }
 

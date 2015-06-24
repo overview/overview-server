@@ -341,6 +341,13 @@ trait ElasticSearchIndexClient extends IndexClient {
 
   protected implicit class QueryForElasticSearch(query: Query) {
     import org.overviewproject.query._
+
+    private def repr(field: Field): String = field match {
+      case Field.All => "_all"
+      case Field.Title => "title"
+      case Field.Text => "text"
+    }
+
     /*
      * This ought to be toElasticSearch*Filter*, not *Query*, but a
      * constant-score query throws off the highlighter.
@@ -362,11 +369,11 @@ trait ElasticSearchIndexClient extends IndexClient {
       }
       case PhraseQuery(field, phrase) => {
         QueryBuilders
-          .matchPhraseQuery("_all", phrase)
+          .matchPhraseQuery(repr(field), phrase)
           .rewrite("constant_score_auto")
       }
       case ProximityQuery(field, phrase, slop) => {
-        QueryBuilders.matchPhraseQuery("_all", phrase)
+        QueryBuilders.matchPhraseQuery(repr(field), phrase)
           .slop(slop)
           .rewrite("constant_score_auto")
       }
@@ -376,8 +383,8 @@ trait ElasticSearchIndexClient extends IndexClient {
          * parameter, even though it's a MultiTermQueryBuilder. That's
          * https://github.com/elastic/elasticsearch/issues/11130
          */
-        //QueryBuilders.fuzzyQuery("_all", term)
-        QueryBuilders.matchQuery("_all", term)
+        //QueryBuilders.fuzzyQuery(repr(field), term)
+        QueryBuilders.matchQuery(repr(field), term)
           .fuzziness(Fuzziness.build(fuzziness.getOrElse("AUTO")))
           .maxExpansions(500) // https://groups.google.com/d/topic/overview-dev/CzPGxoOXdCI/discussion
           .rewrite("constant_score_auto")
