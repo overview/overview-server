@@ -17,9 +17,9 @@ class QueryParserSpec extends Specification {
       case AndQuery(node1, node2) => s"AND(${repr(node1)},${repr(node2)})"
       case OrQuery(node1, node2) => s"OR(${repr(node1)},${repr(node2)})"
       case NotQuery(node) => s"NOT(${repr(node)})"
-      case PhraseQuery(field, phrase) => s"[${field.repr}$phrase]"
-      case FuzzyTermQuery(field, term, fuzziness) => s"FUZZY([${field.repr}$term],${fuzziness.fold("AUTO")(_.toString)})"
-      case ProximityQuery(field, phrase, slop) => s"PROXIMITY([${field.repr}$phrase],${slop.toString})"
+      case PhraseQuery(field, phrase) => s"${field.repr}[$phrase]"
+      case FuzzyTermQuery(field, term, fuzziness) => s"${field.repr}FUZZY([$term],${fuzziness.fold("AUTO")(_.toString)})"
+      case ProximityQuery(field, phrase, slop) => s"${field.repr}PROXIMITY([$phrase],${slop.toString})"
     }
   }
 
@@ -57,4 +57,8 @@ class QueryParserSpec extends Specification {
   testGood("'foo bar'~3", "PROXIMITY([foo bar],3)", "handle proximity on quoted strings")
   testGood("NOT foo~2", "NOT(FUZZY([foo],2))", "give ~ (fuzzy) higher precedence than NOT")
   testGood("NOT 'foo bar'~2", "NOT(PROXIMITY([foo bar],2))", "give ~ (proximity) higher precedence than NOT")
+  testGood("title:foo bar", "title:[foo bar]", "specify the title field")
+  testGood("NOT title:foo bar AND bar", "AND(NOT(title:[foo bar]),[bar])", "give field higher precedence than NOT")
+  testGood("title:foo~", "title:FUZZY([foo],AUTO)", "allow field on fuzzy query")
+  testGood("title:foo bar~2", "title:PROXIMITY([foo bar],2)", "allow field on proximity query")
 }
