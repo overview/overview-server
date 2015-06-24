@@ -217,8 +217,8 @@ wd.addPromiseChainMethod 'waitForUrl', (expectUrl, args...) ->
 module.exports =
   baseUrl: 'http://localhost:9000'
   adminLogin:
-    email: 'admin@overviewproject.org'
-    password: 'admin@overviewproject.org'
+    email: 'admin@overviewdocs.com'
+    password: 'admin@overviewdocs.com'
 
   createUserAdminSession: (title) ->
     new UserAdminSession
