@@ -22,7 +22,7 @@ trait DocumentSetController extends ApiController {
 
   def create = ApiAuthorizedAction(apiDocumentSetCreator).async { request =>
     CreateForm.bindFromRequest()(request).fold(
-      _ => Future.successful(BadRequest(jsonError("You must pass a JSON object with a 'title' attribute."))),
+      _ => Future.successful(BadRequest(jsonError("illegal-arguments", "You must pass a JSON object with a 'title' attribute."))),
       attributes => {
         for {
           documentSet <- backend.create(attributes, request.apiToken.createdBy)

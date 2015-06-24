@@ -10,7 +10,7 @@ import models.OverviewDatabase
 trait OptionallyAuthorizedAction {
   protected val sessionFactory: SessionFactory
 
-  def apply(authority: Authority) : ActionBuilder[OptionallyAuthorizedRequest] = {
+  def apply(authority: Authority): ActionBuilder[OptionallyAuthorizedRequest] = {
     new ActionBuilder[OptionallyAuthorizedRequest] {
       override def invokeBlock[A](request: Request[A], block: (OptionallyAuthorizedRequest[A]) => Future[Result]) : Future[Result] = {
         /*
@@ -33,7 +33,7 @@ trait OptionallyAuthorizedAction {
     }
   }
 
-  def inTransaction(authority: Authority) : ActionBuilder[OptionallyAuthorizedRequest] = {
+  def inTransaction(authority: Authority): ActionBuilder[OptionallyAuthorizedRequest] = {
     new ActionBuilder[OptionallyAuthorizedRequest] {
       override def invokeBlock[A](request: Request[A], block: (OptionallyAuthorizedRequest[A]) => Future[Result]) : Future[Result] = {
         /*

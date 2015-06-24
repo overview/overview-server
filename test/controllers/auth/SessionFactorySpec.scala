@@ -2,17 +2,18 @@ package controllers.auth
 
 import java.util.UUID
 import play.api.mvc.{Result, RequestHeader}
-import play.api.test.{FakeApplication, FakeRequest}
+import play.api.test.{FakeApplication, FakeRequest, DefaultAwaitTimeout}
 import play.api.Play.{start,stop}
 import scala.concurrent.Future
 
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import controllers.backend.{SessionBackend,UserBackend}
 import models.{Session, User}
 
-class SessionFactorySpec extends Specification with Mockito {
+class SessionFactorySpec extends Specification with Mockito with JsonMatchers with DefaultAwaitTimeout {
   step(start(FakeApplication())) // to load application.secret
 
   val h = play.api.test.Helpers
@@ -53,9 +54,18 @@ class SessionFactorySpec extends Specification with Mockito {
   }
 
   "SessionFactory" should {
-    "redirect when session is empty" in new BaseScope {
+    "redirect when session is empty and request is not xhr" in new BaseScope {
       override def sessionData = Seq()
       result must beLeft.like({ case r: Result => r.header.status must beEqualTo(h.SEE_OTHER) })
+    }
+    
+    "return 400 on xhr when session is empty" in new BaseScope {
+      override def request = FakeRequest().withHeaders("X-Requested-With" -> "Adam")
+      result must beLeft.like({ case r: Result =>
+        r.header.status must beEqualTo(h.BAD_REQUEST)
+        val json = h.contentAsString(Future.successful(r))
+        json must /("code" -> "unauthenticated")
+      })
     }
 
     "redirect when session ID is not a UUID" in new BaseScope {

@@ -17,7 +17,7 @@ trait DocumentStoreObjectController extends ApiController with ApiSelectionHelpe
     val body: JsValue = request.body.asJson.getOrElse(JsNull)
 
     body.asOpt(DocumentStoreObjectController.createArgsReader) match {
-      case None => Future.successful(BadRequest(jsonError(
+      case None => Future.successful(BadRequest(jsonError("illegal-arguments",
         """You must POST a JSON Array of Array elements. Each element should look like [documentId,objectId] or [documentId,objectId,null...] or [documentId,objectId,{"arbitrary":"json object"}]."""
       )))
       case Some(args) => {
@@ -33,7 +33,7 @@ trait DocumentStoreObjectController extends ApiController with ApiSelectionHelpe
     val body: JsValue = request.body.asJson.getOrElse(JsNull)
 
     body.asOpt(DocumentStoreObjectController.destroyArgsReader) match {
-      case None => Future.successful(BadRequest(jsonError(
+      case None => Future.successful(BadRequest(jsonError("illegal-arguments",
         """You must POST a JSON Array of Array elements. Each element should look like [documentId,objectId]."""
       )))
       case Some(args) => {

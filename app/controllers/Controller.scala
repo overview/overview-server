@@ -109,5 +109,5 @@ trait Controller extends PlayController {
     PageRequest(offset, limit)
   }
 
-  protected def jsonError(message: String) = views.json.api.error(message)
+  protected def jsonError(code: String, message: String) = views.json.api.error(code, message)
 }

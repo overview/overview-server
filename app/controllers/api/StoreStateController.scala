@@ -26,7 +26,7 @@ trait StoreStateController extends ApiController {
           store <- backend.upsert(request.apiToken.token, json)
         } yield Ok(store.json)
       }
-      case None => Future.successful(BadRequest(jsonError("""You must POST a JSON Object.""")))
+      case None => Future.successful(BadRequest(jsonError("illegal-arguments", "You must POST a JSON Object.")))
     }
   }
 }

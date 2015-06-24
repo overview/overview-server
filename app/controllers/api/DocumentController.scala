@@ -107,7 +107,7 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
   def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
     documentBackend.show(documentSetId, documentId).map(_ match {
       case Some(document) => Ok(Field.formatDocument(document, Field.all))
-      case None => NotFound(jsonError(s"Document $documentId not found in document set $documentSetId"))
+      case None => NotFound(jsonError("not-found", s"Document $documentId not found in document set $documentSetId"))
     })
   }
 }

@@ -52,7 +52,7 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
 
     private def badRequest(message: String): Iteratee[Array[Byte],Result] = {
       val result: Result = wantJsonResponse match {
-        case true => BadRequest(jsonError(message))
+        case true => BadRequest(jsonError("illegal-arguments", message))
         case false => BadRequest(message)
       }
       Iteratee.ignore.map(_ => result)
