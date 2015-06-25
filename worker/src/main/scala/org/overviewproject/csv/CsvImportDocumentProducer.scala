@@ -11,8 +11,9 @@ import scala.concurrent.{Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
+import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import org.overviewproject.models.{Document,DocumentTag,Tag}
-import org.overviewproject.models.tables.{Documents,DocumentTags,Tags}
+import org.overviewproject.models.tables.{Documents,DocumentSets,DocumentTags,Tags}
 import org.overviewproject.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
 import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.util.{BulkDocumentWriter,DocumentProducer,Logger,TagColorList}
@@ -56,6 +57,8 @@ class CsvImportDocumentProducer(
     val reader = uploadReader.reader
     val documentSource = new CsvImportSource(org.overviewproject.util.Textify.apply, reader)
 
+    writeMetadataSchema(documentSource.metadataColumnNames)
+
     await(TransportIndexClient.singleton.addDocumentSet(documentSetId))
     val bulkWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
 
@@ -87,6 +90,19 @@ class CsvImportDocumentProducer(
     refreshSortedDocumentIds(documentSetId)
 
     math.min(maxDocuments, nDocuments)
+  }
+
+  /** Writes the DocumentSet's metadataSchema. */
+  private def writeMetadataSchema(fieldNames: Seq[String]): Unit = {
+    val schema = MetadataSchema(1, fieldNames.map(name => MetadataField(name, MetadataFieldType.String)))
+    blockingDatabase.runUnit {
+      import database.api._
+
+      DocumentSets
+        .filter(_.id === documentSetId)
+        .map(_.metadataSchema)
+        .update(schema)
+    }
   }
 
   private def flushTagDocumentIds: Unit = {

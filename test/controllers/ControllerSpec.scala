@@ -15,12 +15,13 @@ class ControllerSpec extends Specification with JsonMatchers {
       trait MyTest {
         self: Controller =>
 
-        val err = jsonError("foo")
+        val err = jsonError("aaa", "foo")
       }
 
       val controller = new Controller with MyTest
 
       Json.stringify(controller.err) must /("message" -> "foo")
+      Json.stringify(controller.err) must /("code" -> "aaa")
     }
   }
 

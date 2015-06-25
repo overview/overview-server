@@ -34,7 +34,7 @@ trait ProjectSettings {
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
   val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
-  val openCsvDep = "net.sf.opencsv" % "opencsv" % "2.3"
+  val openCsvDep = "com.opencsv" % "opencsv" % "3.4"
   val playHikariCpDep = "com.edulify" %% "play-hikaricp" % "2.0.0"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
   val postgresqlDep = "org.postgresql" % "postgresql" % "9.3-1103-jdbc41"

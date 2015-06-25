@@ -1,5 +1,8 @@
 package org.overviewproject.util
 
+import play.api.libs.json.{Json,JsObject}
+
+import org.overviewproject.metadata.MetadataSchema
 import org.overviewproject.models.tables.{DocumentSets,Documents,Files,Pages}
 import org.overviewproject.models.{Document,DocumentSet,File,Page}
 import org.overviewproject.test.DbSpecification
@@ -24,6 +27,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
         0,
         0,
         None,
+        MetadataSchema.empty,
         false
       )))
     }
@@ -56,7 +60,8 @@ class BulkDocumentWriterSpec extends DbSpecification {
         new java.util.Date(documentSet.createdAt.getTime()),
         None,
         None,
-        None,
+        DocumentDisplayMethod.auto,
+        JsObject(Seq()),
         text
       )
     }
@@ -156,11 +161,18 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "handle displayMethod" in new BaseScope {
-    val displayMethod = DocumentDisplayMethod.auto  
-    add(factory.document(1L, "").copy(displayMethod = Some(displayMethod)))
+    add(factory.document(1L, "").copy(displayMethod = DocumentDisplayMethod.auto))
     await(subject.flush)
     
-    fetchDocuments(0).displayMethod must beSome(displayMethod)
+    fetchDocuments(0).displayMethod must beEqualTo(DocumentDisplayMethod.auto)
+  }
+
+  "handle metadataJson" in new BaseScope {
+    val metadataJson = Json.obj("foo" -> "bar")
+    add(factory.document(1L, "").copy(metadataJson = metadataJson))
+    await(subject.flush)
+
+    fetchDocuments(0).metadataJson must beEqualTo(metadataJson)
   }
   
   "handle the other fields" in new BaseScope {

@@ -3,6 +3,7 @@ package controllers.util
 import java.util.UUID
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.test.FakeRequest
+import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -11,7 +12,7 @@ import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.test.factories.PodoFactory
 
-class MassUploadControllerMethodsSpec extends controllers.ControllerSpecification {
+class MassUploadControllerMethodsSpec extends controllers.ControllerSpecification with JsonMatchers {
   "Create" should {
     trait CreateScope extends Scope {
       val factory = PodoFactory
@@ -60,7 +61,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
       override val headers = Seq()
       override val wantJsonResponse = true
       h.status(result) must beEqualTo(h.BAD_REQUEST)
-      h.contentAsString(result) must beEqualTo("""{"message":"Request must have Content-Range or Content-Length header"}""")
+      h.contentAsString(result) must /("code" -> "illegal-arguments")
     }
 
     "create a GroupedFileUpload using Content-Length, Content-Type and Content-Disposition" in new CreateScope {

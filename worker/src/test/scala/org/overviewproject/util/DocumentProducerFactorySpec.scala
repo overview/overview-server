@@ -2,45 +2,28 @@ package org.overviewproject.util
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Before
+import org.specs2.specification.Scope
+
 import org.overviewproject.http.DocumentCloudDocumentProducer
-import org.overviewproject.persistence.PersistentDocumentSetCreationJob 
+import org.overviewproject.persistence.PersistentDocumentSetCreationJob
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.DocumentSet
 
 class DocumentProducerFactorySpec extends Specification with Mockito {
-
   "DocumentProducerFactory" should {
+    trait BaseScope extends Scope {
+      val factory = org.overviewproject.test.factories.PodoFactory
 
-    trait DocumentSetCreationJobContext extends Before {
-      val consumer = mock[DocumentConsumer]
-      val documentSetCreationJob = mock[PersistentDocumentSetCreationJob]
-
-      def before() = {
-        documentSetCreationJob.documentCloudUsername returns None
-        documentSetCreationJob.documentCloudPassword returns None
-      }
+      val consumer = smartMock[DocumentConsumer]
+      val documentSetCreationJob = smartMock[PersistentDocumentSetCreationJob]
+      documentSetCreationJob.documentCloudUsername returns None
+      documentSetCreationJob.documentCloudPassword returns None
     }
-    
-    trait DocumentCloudJobContext extends DocumentSetCreationJobContext {
+
+    "create a DocumentCloudDocumentProducer" in new BaseScope {
       documentSetCreationJob.jobType returns DocumentSetCreationJobType.DocumentCloud
-      override def before() = {
-        documentSetCreationJob.contentsOid returns None
-        super.before
-      }
-    }
-    
-    trait CsvImportJobContext extends DocumentSetCreationJobContext {
-      documentSetCreationJob.jobType returns DocumentSetCreationJobType.CsvUpload
-      override def before() = {
-        documentSetCreationJob.contentsOid returns Some(0l)
-        super.before
-      }
-    }
-
-    "create a DocumentCloudDocumentProducer" in new DocumentCloudJobContext {
-      val documentSet = DocumentSet(title="title", query=Some("query"))
+      documentSetCreationJob.contentsOid returns None
+      val documentSet = factory.documentSet(title="title", query=Some("query"))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, { _ => true })
 
       producer match {
@@ -49,8 +32,10 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
       }
     }
 
-    "create a CsvImportDocumentProducer" in new CsvImportJobContext {
-      val documentSet = DocumentSet(title="title", uploadedFileId = Some(100l))
+    "create a CsvImportDocumentProducer" in new BaseScope {
+      documentSetCreationJob.jobType returns DocumentSetCreationJobType.CsvUpload
+      documentSetCreationJob.contentsOid returns Some(0l)
+      val documentSet = factory.documentSet(title="title", uploadedFileId = Some(100L))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, {_ => true })
 
       producer match {

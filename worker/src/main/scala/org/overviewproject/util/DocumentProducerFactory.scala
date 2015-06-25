@@ -6,14 +6,13 @@
  */
 package org.overviewproject.util
 
-import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
+import org.overviewproject.models.DocumentSet
+import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.persistence.PersistentDocumentSetCreationJob
-import org.overviewproject.util.Progress.ProgressAbortFn
-import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.reclustering.ReclusteringDocumentProducer
-
+import org.overviewproject.util.Progress.ProgressAbortFn
 
 /** Common functionality for DocumentProducers */
 trait DocumentProducer {
@@ -50,16 +49,16 @@ object DocumentProducerFactory {
     progAbort: ProgressAbortFn): DocumentProducer = {
 
     documentSetCreationJob.jobType match {
-      case DocumentCloud =>
+      case DocumentSetCreationJobType.DocumentCloud =>
         val credentials = for {
           username <- documentSetCreationJob.documentCloudUsername
           password <- documentSetCreationJob.documentCloudPassword
         } yield Credentials(username, password)
 
         new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, progAbort)
-      case CsvUpload =>
+      case DocumentSetCreationJobType.CsvUpload =>
         new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, MaxDocuments, progAbort)
-      case Recluster =>
+      case DocumentSetCreationJobType.Recluster =>
         ReclusteringDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.tagId, consumer, progAbort)
     }
   }

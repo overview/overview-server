@@ -3,7 +3,7 @@ package controllers.backend
 import scala.concurrent.Future
 
 import org.overviewproject.models.tables.{DocumentSetCreationJobs,DocumentSetUsers,DocumentSets}
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
+import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetUser}
 
 trait ImportJobBackend extends Backend {
   /** Returns a list of ImportJob IDs, from currently processing to last in the
@@ -14,6 +14,10 @@ trait ImportJobBackend extends Backend {
   /** Returns a list of ImportJobs for the given user, in processing order.
     */
   def indexWithDocumentSets(userEmail: String): Future[Seq[(DocumentSetCreationJob,DocumentSet)]]
+
+  /** Returns a list of all ImportJobs, in processing order.
+    */
+  def indexWithDocumentSetsAndUsers: Future[Seq[(DocumentSetCreationJob,DocumentSet,Option[String])]]
 
   /** Returns a list of ImportJobs for the given DocumentSet, in processing
     * order.
@@ -48,6 +52,16 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
     } yield (job, documentSet)
   }
 
+  private lazy val indexWithDocumentSetsAndUsersCompiled = Compiled {
+    DocumentSetCreationJobs
+      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
+      .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
+      .join(DocumentSets).on(_.documentSetId === _.id)
+      .joinLeft(DocumentSetUsers).on { case (dcsjDs,dsu) => dcsjDs._2.id === dsu.documentSetId && dsu.role === DocumentSetUser.Role(true) }
+      .sortBy(_._1._1.id.desc)
+      .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
+  }
+
   private lazy val indexCompiled = Compiled { documentSetId: Rep[Long] =>
     DocumentSetCreationJobs
       .filter(_.documentSetId === documentSetId)
@@ -59,6 +73,8 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   override def indexIdsInProcessingOrder = database.seq(processingIdsCompiled)
 
   override def indexWithDocumentSets(userEmail: String) = database.seq(indexWithDocumentSetsCompiled(userEmail))
+
+  override def indexWithDocumentSetsAndUsers = database.seq(indexWithDocumentSetsAndUsersCompiled)
 
   override def index(documentSetId: Long) = database.seq(indexCompiled(documentSetId))
 }

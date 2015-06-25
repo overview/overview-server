@@ -21,7 +21,7 @@ trait HighlightController extends Controller {
     */
   def index(documentSetId: Long, documentId: Long, queryString: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     QueryParser.parse(queryString) match {
-      case Left(_) => Future.successful(BadRequest(jsonError(Messages("org.overviewproject.query.SyntaxError"))))
+      case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("org.overviewproject.query.SyntaxError"))))
       case Right(query) => {
         highlightBackend.index(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
           val json = JsArray(highlights.map { highlight =>

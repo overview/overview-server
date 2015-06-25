@@ -8,7 +8,7 @@ import slick.jdbc.JdbcBackend.Session
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
 import org.overviewproject.models.Document
-import org.overviewproject.query.{PhraseQuery,Query}
+import org.overviewproject.query.{Field,PhraseQuery,Query}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
 import org.overviewproject.util.SortedDocumentIdsRefresher
 
@@ -121,7 +121,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "search by q" in new IndexIdsScope {
-        override val q = Some(PhraseQuery("moo"))
+        override val q = Some(PhraseQuery(Field.All, "moo"))
         ret must beEqualTo(Seq(doc2.id))
       }
 
@@ -150,7 +150,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         val dt2 = factory.documentTag(doc2.id, tag.id)
 
         override val tagIds = Seq(tag.id)
-        override val q = Some(PhraseQuery("oneandthree"))
+        override val q = Some(PhraseQuery(Field.All, "oneandthree"))
         ret must beEqualTo(Seq(doc1.id))
       }
 

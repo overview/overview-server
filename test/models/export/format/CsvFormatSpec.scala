@@ -1,6 +1,6 @@
 package models.export.format
 
-import au.com.bytecode.opencsv.CSVReader
+import com.opencsv.CSVReader
 import java.io.{ByteArrayOutputStream,StringReader}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

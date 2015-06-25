@@ -1,6 +1,6 @@
 @(
-  documentSet: org.overviewproject.tree.orm.DocumentSet,
-  owner: models.User
+  documentSet: org.overviewproject.models.DocumentSet,
+  ownerEmail: String
 )(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages("views.DocumentSet._smallDocumentSet")) { m =>
@@ -11,7 +11,7 @@
     <h3>@documentSet.title</h3>
     <h4>
       <span class="document-count">@m("nDocuments", documentSet.documentCount)</span>
-      <span class="shared-by">@m("shared_by", owner.email)</span>
+      <span class="shared-by">@m("shared_by", ownerEmail)</span>
     </h4>
   </li>
 }

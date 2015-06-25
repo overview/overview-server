@@ -1,6 +1,6 @@
 package controllers
 
-import au.com.bytecode.opencsv.CSVWriter
+import com.opencsv.CSVWriter
 import play.api.libs.concurrent.Execution.Implicits._
 import java.io.StringWriter
 import scala.concurrent.Future

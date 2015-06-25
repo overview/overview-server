@@ -2,7 +2,7 @@ package org.overviewproject.models
 
 import java.sql.Timestamp
 
-import org.overviewproject.tree.orm.{DocumentSet => DeprecatedDocumentSet}
+import org.overviewproject.metadata.MetadataSchema
 
 case class DocumentSet(
   id: Long,
@@ -14,21 +14,9 @@ case class DocumentSet(
   documentProcessingErrorCount: Int,
   importOverflowCount: Int,
   uploadedFileId: Option[Long],
+  metadataSchema: MetadataSchema,
   deleted: Boolean
-) {
-  def toDeprecatedDocumentSet = DeprecatedDocumentSet(
-    id,
-    title,
-    query,
-    public,
-    createdAt,
-    documentCount,
-    documentProcessingErrorCount,
-    importOverflowCount,
-    uploadedFileId,
-    deleted
-  )
-}
+)
 
 object DocumentSet {
   case class CreateAttributes(
@@ -41,6 +29,7 @@ object DocumentSet {
     documentProcessingErrorCount: Int = 0,
     importOverflowCount: Int = 0,
     uploadedFileId: Option[Long] = None,
+    metadataSchema: MetadataSchema = MetadataSchema.empty,
     deleted: Boolean = false
   )
 }

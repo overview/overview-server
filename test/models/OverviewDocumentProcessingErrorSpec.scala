@@ -1,64 +1,57 @@
 package models
 
-import helpers.DbTestContext
-import models.orm.Schema
-import org.overviewproject.test.DbSetup.insertDocumentSet
-import org.overviewproject.test.Specification
-import play.api.Play.{ start, stop }
-import play.api.test.FakeApplication
+import org.overviewproject.database.DeprecatedDatabase
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.DocumentProcessingError
 
-class OverviewDocumentProcessingErrorSpec extends Specification {
-
-  step(start(FakeApplication()))
-
+class OverviewDocumentProcessingErrorSpec extends DbSpecification {
   "OverviewDocumentProcessingError" should {
+    trait BaseScope extends DbScope {
+      val documentSetId = factory.documentSet().id
 
-    trait HttpErrors extends DbTestContext {
-      var documentSetId: Long = _
-      val statusCodes = Seq(400, 302, 400, 500, 403, 999)
-      def errors = statusCodes.map(c => DocumentProcessingError(documentSetId, "url-" + c, "message", Some(c), Some("header")))
-      var errorGroups: Seq[(String, Seq[OverviewDocumentProcessingError])] = _
-
-      override def setupWithDb = {
-        documentSetId = insertDocumentSet("OverviewDocumentProcessingErrorSpec")
-        Schema.documentProcessingErrors.insert(errors)
-        errorGroups = OverviewDocumentProcessingError.sortedByStatus(documentSetId)
+      lazy val errorGroups: Seq[(String, Seq[OverviewDocumentProcessingError])] = DeprecatedDatabase.inTransaction {
+        OverviewDocumentProcessingError.sortedByStatus(documentSetId)
       }
     }
 
-    trait InternalErrors extends HttpErrors {
-      override def errors = DocumentProcessingError(documentSetId, "url", "exception thrown", None, None) +: super.errors
+    "with HTTP errors" should {
+      trait HttpErrorsScope extends BaseScope {
+        val statusCodes = Seq(400, 302, 400, 500, 403, 999)
+        statusCodes.foreach(c => factory.documentProcessingError(
+          documentSetId=documentSetId,
+          statusCode=Some(c)
+        ))
+      }
+
+      "return errors and reasons sorted by status code" in new HttpErrorsScope {
+        errorGroups.length must beEqualTo(5)
+        errorGroups.map(e => e._2.head.statusCode) must beSorted
+        errorGroups.map(e => e._2.head.url) must beSorted
+      }
+
+      "map message for http status codes" in new HttpErrorsScope {
+        errorGroups.map(_._1) must beEqualTo(Seq(
+          "302 Found",
+          "400 Bad Request",
+          "403 Forbidden",
+          "500 Internal Server Error",
+          "999 Unknown Status"
+        ))
+      }
     }
 
-    "return errors and reasons sorted by status code" in new HttpErrors {
-      errorGroups must have size (statusCodes.groupBy(identity).size)
-      errorGroups.map(e => e._2.head.statusCode) must beSorted
-      errorGroups.map(e => e._2.head.url) must beSorted
-    }
-
-    "return internal errors first in list" in new InternalErrors {
+    "return internal errors first in list" in new BaseScope {
+      factory.documentProcessingError(documentSetId=documentSetId, statusCode=None)
+      factory.documentProcessingError(documentSetId=documentSetId, statusCode=Some(400))
       val internalErrors = errorGroups.head
-      internalErrors._2 must have size (1)
+      internalErrors._2.length must beEqualTo(1)
       internalErrors._2.head.statusCode must beNone
     }
 
-    "map message for internal errors" in new InternalErrors {
+    "map message for internal errors" in new BaseScope {
+      factory.documentProcessingError(documentSetId=documentSetId)
       val internalErrors = errorGroups.head
       internalErrors._1 must be equalTo ("Unable to process file")
     }
-
-    "map message for http status codes" in new HttpErrors {
-      val expectedMessages = Seq(
-        "302 Found",
-        "400 Bad Request",
-        "403 Forbidden",
-        "500 Internal Server Error",
-        "999 Unknown Status")
-
-      errorGroups.map(_._1) must be equalTo (expectedMessages)
-    }
   }
-
-  step(stop)
 }

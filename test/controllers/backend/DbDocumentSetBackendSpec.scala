@@ -1,24 +1,24 @@
 package controllers.backend
 
+import models.pagination.PageRequest
 import org.overviewproject.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Views}
 import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
+    import database.api._
+
     val backend = new DbDocumentSetBackend {}
 
     def findDocumentSet(id: Long): Option[DocumentSet] = {
-      import database.api._
       blockingDatabase.option(DocumentSets.filter(_.id === id))
     }
 
     def findDocumentSetUser(documentSetId: Long): Option[DocumentSetUser] = {
-      import database.api._
       blockingDatabase.option(DocumentSetUsers.filter(_.documentSetId === documentSetId))
     }
 
     def findViews(documentSetId: Long): Seq[View] = {
-      import database.api._
       val tokens = ApiTokens.filter(_.documentSetId === documentSetId).map(_.token)
       blockingDatabase.seq(Views.filter(_.apiToken in tokens).sortBy(_.id))
     }
@@ -84,6 +84,90 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     "not show a DocumentSet that does not exist" in new ShowScope {
       override val documentSetId = documentSet.id + 1L
       ret must beNone
+    }
+  }
+
+  "#indexPageByUser" should {
+    trait IndexPageByUserScope extends BaseScope {
+      val pageRequest = PageRequest(1, 2)
+      val email = "user@example.org"
+    }
+
+    "not find another User's DocumentSets" in new IndexPageByUserScope {
+      val badDocumentSet = factory.documentSet()
+      factory.documentSetUser(badDocumentSet.id, "bad@example.org")
+      await(backend.indexPageByUser(email, pageRequest)).pageInfo.total must beEqualTo(0)
+    }
+
+    "not find a DocumentSet for a non-Owner" in new IndexPageByUserScope {
+      val badDocumentSet = factory.documentSet()
+      factory.documentSetUser(badDocumentSet.id, "bad@example.org", DocumentSetUser.Role(false))
+      await(backend.indexPageByUser(email, pageRequest)).pageInfo.total must beEqualTo(0)
+    }
+
+    "sort DocumentSets by createdAt" in new IndexPageByUserScope {
+      val dsu1 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(4000)).id, email)
+      val dsu2 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(1000)).id, email)
+      val dsu3 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(2000)).id, email)
+      val dsu4 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(3000)).id, email)
+      val result = await(backend.indexPageByUser(email, pageRequest))
+
+      result.pageInfo.total must beEqualTo(4)
+      result.items.map(_.id) must beEqualTo(Seq(dsu4.documentSetId, dsu3.documentSetId))
+    }
+  }
+
+  "#updatePublic" should {
+    trait UpdatePublicScope extends BaseScope
+
+    "set public to true" in new UpdatePublicScope {
+      val documentSet = factory.documentSet(isPublic=false)
+      await(backend.updatePublic(documentSet.id, true))
+      findDocumentSet(documentSet.id).map(_.public) must beSome(true)
+    }
+
+    "set public to false" in new UpdatePublicScope {
+      val documentSet = factory.documentSet(isPublic=true)
+      await(backend.updatePublic(documentSet.id, false))
+      findDocumentSet(documentSet.id).map(_.public) must beSome(false)
+    }
+
+    "not update another DocumentSet" in new UpdatePublicScope {
+      val documentSet = factory.documentSet()
+      val otherDocumentSet = factory.documentSet(isPublic=false)
+      await(backend.updatePublic(documentSet.id, true))
+      findDocumentSet(otherDocumentSet.id).map(_.public) must beSome(false)
+    }
+
+    "ignore a missing DocumentSet" in new UpdatePublicScope {
+      await(backend.updatePublic(123L, false)) must not(throwA[Exception])
+    }
+  }
+
+  "#updateDeleted" should {
+    trait UpdateDeletedScope extends BaseScope
+
+    "set deleted to true" in new UpdateDeletedScope {
+      val documentSet = factory.documentSet(deleted=false)
+      await(backend.updateDeleted(documentSet.id, true))
+      findDocumentSet(documentSet.id).map(_.deleted) must beSome(true)
+    }
+
+    "set deleted to false" in new UpdateDeletedScope {
+      val documentSet = factory.documentSet(deleted=true)
+      await(backend.updateDeleted(documentSet.id, false))
+      findDocumentSet(documentSet.id).map(_.deleted) must beSome(false)
+    }
+
+    "not update another DocumentSet" in new UpdateDeletedScope {
+      val documentSet = factory.documentSet()
+      val otherDocumentSet = factory.documentSet(deleted=false)
+      await(backend.updateDeleted(documentSet.id, true))
+      findDocumentSet(otherDocumentSet.id).map(_.deleted) must beSome(false)
+    }
+
+    "ignore a missing DocumentSet" in new UpdateDeletedScope {
+      await(backend.updateDeleted(123L, false)) must not(throwA[Exception])
     }
   }
 

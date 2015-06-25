@@ -23,6 +23,7 @@ class ViewSpecification extends Specification with Mockito with JsonMatchers {
   def fakeUser: UserModel = UserModel(email="user@example.org", role=UserRole.NormalUser)
 
   trait ViewSpecificationScope[Result] extends Scope {
+    val factory = org.overviewproject.test.factories.PodoFactory
     implicit def request = FakeRequest()
     implicit def flash = Flash()
     implicit def lang = Lang("en")

@@ -41,7 +41,7 @@ class DocumentSetControllerSpec extends ApiControllerSpecification {
     "return BadRequest on invalid input" in new CreateScope {
       override lazy val req = fakeJsonRequest(Json.obj("title" -> Json.obj("x" -> "y")))
       status(result) must beEqualTo(BAD_REQUEST)
-      contentAsString(result) must beEqualTo("""{"message":"You must pass a JSON object with a 'title' attribute."}""")
+      contentAsString(result) must /("code" -> "illegal-arguments")
       there was no(mockBackend).create(any, any)
     }
 

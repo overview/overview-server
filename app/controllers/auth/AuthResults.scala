@@ -16,7 +16,15 @@ object AuthResults {
     * We redirect to the login page in this case.
     */
   def authenticationFailed(request: RequestHeader): Result = {
-    Results.Redirect(controllers.routes.SessionController.new_).withSession(RequestedUriKey -> request.uri)
+    request.headers.get("X-Requested-With") match {
+      case Some(_) => {
+        Results.BadRequest(views.json.api.error("unauthenticated", "You must be logged in to view this page."))
+      }
+      case None => {
+        Results.Redirect(controllers.routes.SessionController.new_)
+          .withSession(RequestedUriKey -> request.uri) 
+      }
+    }
   }
 
   /** Returns a user-not-allowed-this-resource result.

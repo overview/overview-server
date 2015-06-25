@@ -23,6 +23,8 @@ case class MetadataSchema(version: Int, fields: Seq[MetadataField]) {
 object MetadataSchema {
   def fromJson(json: JsValue): MetadataSchema = JsonReader.read(json)
 
+  def empty: MetadataSchema = MetadataSchema(1, Seq())
+
   private object JsonReader {
     import play.api.data.validation.ValidationError
     import play.api.libs.json.{JsPath,JsResultException}

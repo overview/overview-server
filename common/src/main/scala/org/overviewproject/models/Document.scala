@@ -1,7 +1,7 @@
 package org.overviewproject.models
 
 import java.util.Date
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
+import play.api.libs.json.JsObject
 
 /** A complete Document.
   *
@@ -19,7 +19,8 @@ case class Document(
   override val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
-  override val displayMethod: Option[DocumentDisplayMethod],
+  override val displayMethod: DocumentDisplayMethod.Value,
+  override val metadataJson: JsObject,
   override val text: String
 ) extends DocumentHeader {
   def toDocumentInfo: DocumentInfo = DocumentInfo(

@@ -24,7 +24,7 @@ trait SelectionHelpers { self: Controller =>
 
     def syntaxError = {
       val message = Messages("org.overviewproject.query.SyntaxError")(request2lang(request))
-      BadRequest(jsonError(message))
+      BadRequest(jsonError("illegal-arguments", message))
         .withHeaders(CONTENT_TYPE -> "application/json")
     }
 
@@ -75,7 +75,7 @@ trait SelectionHelpers { self: Controller =>
     rd.getUUID(selectionIdKey) match {
       case Some(selectionId) => {
         selectionBackend.find(documentSetId, selectionId)
-          .map(_.toRight(NotFound(jsonError("There is no Selection with the given selectionId. Perhaps it has expired."))))
+          .map(_.toRight(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired."))))
       }
       case None => {
         selectionRequest(documentSetId, request) match {

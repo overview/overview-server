@@ -7,7 +7,7 @@ import org.specs2.mutable.{After,Around}
 import org.specs2.specification.{Fragments, Step}
 import org.squeryl.{Session=>SquerylSession}
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await,Future}
+import scala.concurrent.{Await,Future,blocking}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
@@ -85,7 +85,7 @@ class DbSpecification extends Specification {
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
     val factory = DbFactory
 
-    def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
+    def await[A](f: Future[A]) = blocking(Await.result(f, Duration.Inf))
 
     clearDb(connection) // *not* in a before block: that's too late
     override def after = connection.close()

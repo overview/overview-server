@@ -11,10 +11,9 @@ import scala.concurrent.Future
 
 import controllers.auth.{ApiAuthorizedRequest,ApiTokenFactory}
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
-import org.overviewproject.models.{ApiToken,FileGroup,GroupedFileUpload}
-import org.overviewproject.tree.orm.{DocumentSet,DocumentSetCreationJob}
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.models.{ApiToken,DocumentSet,FileGroup,GroupedFileUpload}
+import org.overviewproject.models.DocumentSetCreationJobType._
+import org.overviewproject.models.DocumentSetCreationJobState._
 
 class MassUploadControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends Scope {

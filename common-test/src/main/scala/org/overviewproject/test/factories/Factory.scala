@@ -4,8 +4,8 @@ import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 
+import org.overviewproject.metadata.MetadataSchema
 import org.overviewproject.models._
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 /**
  * Creates models simply.
@@ -43,7 +43,8 @@ trait Factory {
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
-    displayMethod: Option[DocumentDisplayMethod] = None,
+    displayMethod: DocumentDisplayMethod.Value = DocumentDisplayMethod.auto,
+    metadataJson: JsObject = JsObject(Seq()),
     text: String = ""): Document
 
   /** Creates a new DocumentSet with the given parameters. */
@@ -57,6 +58,7 @@ trait Factory {
     documentProcessingErrorCount: Int = 3,
     importOverflowCount: Int = 2,
     uploadedFileId: Option[Long] = None,
+    metadataSchema: MetadataSchema = MetadataSchema.empty,
     deleted: Boolean = false): DocumentSet
 
   def documentSetUser(

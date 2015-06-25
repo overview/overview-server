@@ -1,33 +1,29 @@
 package org.overviewproject.clone
 
-import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.database.DeprecatedDatabase
+import org.overviewproject.models.tables.Tags
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ DocumentSet, Tag }
 
 class TagClonerSpec extends DbSpecification {
   "TagCloner" should {
 
-    trait TagContext extends DbTestContext {
-      import org.overviewproject.postgres.SquerylEntrypoint._
+    trait TagContext extends DbScope {
+      import database.api._
 
-      var sourceDocumentSetId: Long = _
-      var cloneDocumentSetId: Long = _
-      var sourceTags: Seq[Tag] = _
-      var cloneTags: Seq[Tag] = _
-      var tagIdMapping: Map[Long, Long] = _
-      
-      override def setupWithDb = {
-        sourceDocumentSetId = Schema.documentSets.insert(DocumentSet(title = "TagClonerSpec"))
-        cloneDocumentSetId = Schema.documentSets.insert(DocumentSet(title = "CloneTagClonerSpec"))
+      val sourceDocumentSet = factory.documentSet()
+      val cloneDocumentSet = factory.documentSet()
 
-        val tags = Seq.tabulate(10)(i => Tag(sourceDocumentSetId, "tag-" + i, "ffffff"))
-        Schema.tags.insert(tags)
-        tagIdMapping = TagCloner.clone(sourceDocumentSetId, cloneDocumentSetId)
+      val sourceTags = Seq.tabulate(2)(i => factory.tag(documentSetId=sourceDocumentSet.id, name="tag-" + i))
 
-        sourceTags = Schema.tags.where(t => t.documentSetId === sourceDocumentSetId).toSeq
-        cloneTags = Schema.tags.where(t => t.documentSetId === cloneDocumentSetId).toSeq
-
+      val tagIdMapping = DeprecatedDatabase.inTransaction {
+        TagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
       }
+
+      val cloneTags = blockingDatabase.seq(
+        Tags
+          .filter(_.documentSetId === cloneDocumentSet.id)
+          .sortBy(_.name)
+      )
     }
 
     "clone tags" in new TagContext {
@@ -39,7 +35,7 @@ class TagClonerSpec extends DbSpecification {
 
     "map source tag ids to clone tag ids" in new TagContext {
       val mappedIds = sourceTags.flatMap(t => tagIdMapping.get(t.id))
-      
+
       mappedIds must containTheSameElementsAs(cloneTags.map(_.id))
     }
   }

@@ -52,10 +52,10 @@ trait MyPostgresDriver extends PostgresDriver
     )
 
     implicit val documentDisplayMethodTypeMapper =
-      createEnumJdbcType("DocumentDisplayMethod", DocumentDisplayMethod)
+      createEnumJdbcType("document_display_method", DocumentDisplayMethod)
 
     implicit val documentDisplayMethodListTypeMapper =
-      createEnumListJdbcType("documentDisplayMethod", DocumentDisplayMethod)
+      createEnumListJdbcType("document_display_method", DocumentDisplayMethod)
 
     implicit val documentDisplayMethodColumnExtensionMethodsBuilder =
       createEnumColumnExtensionMethodsBuilder(DocumentDisplayMethod)

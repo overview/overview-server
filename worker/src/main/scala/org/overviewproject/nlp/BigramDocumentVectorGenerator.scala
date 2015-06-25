@@ -13,7 +13,7 @@
 
 package org.overviewproject.nlp
 
-import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
+import com.opencsv.{CSVReader, CSVWriter}
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
 import scala.collection.mutable.{Map, IndexedSeq, ArrayBuffer}
 import org.overviewproject.nlp.DocumentVectorTypes._

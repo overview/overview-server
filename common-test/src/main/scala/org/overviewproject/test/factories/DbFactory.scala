@@ -4,10 +4,10 @@ import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
 import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.tables._
+import org.overviewproject.metadata.MetadataSchema
 import org.overviewproject.models._
+import org.overviewproject.models.tables._
 
 /** Creates objects in the database while returning them.
   *
@@ -38,18 +38,19 @@ object DbFactory extends Factory with HasBlockingDatabase {
   ))
 
   override def document(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    url: Option[String] = None,
-    suppliedId: String = "",
-    title: String = "",
-    keywords: Seq[String] = Seq(),
-    createdAt: Date = new Date(1234L),
-    pageNumber: Option[Int] = None,
-    fileId: Option[Long] = None,
-    pageId: Option[Long] = None,
-    displayMethod: Option[DocumentDisplayMethod] = None,
-    text: String = ""
+    id: Long,
+    documentSetId: Long,
+    url: Option[String],
+    suppliedId: String,
+    title: String,
+    keywords: Seq[String],
+    createdAt: Date,
+    pageNumber: Option[Int],
+    fileId: Option[Long],
+    pageId: Option[Long],
+    displayMethod: DocumentDisplayMethod.Value,
+    metadataJson: JsObject,
+    text: String
   ) = run(q.insertDocument += podoFactory.document(
     id,
     documentSetId,
@@ -62,20 +63,22 @@ object DbFactory extends Factory with HasBlockingDatabase {
     fileId,
     pageId,
     displayMethod,
+    metadataJson,
     text
   ))
 
   override def documentSet(
-    id: Long = 0L,
-    title: String = "",
-    query: Option[String] = None,
-    isPublic: Boolean = false,
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
-    documentCount: Int = 4,
-    documentProcessingErrorCount: Int = 3,
-    importOverflowCount: Int = 2,
-    uploadedFileId: Option[Long] = None,
-    deleted: Boolean = false
+    id: Long,
+    title: String,
+    query: Option[String],
+    isPublic: Boolean,
+    createdAt: Timestamp,
+    documentCount: Int,
+    documentProcessingErrorCount: Int,
+    importOverflowCount: Int,
+    uploadedFileId: Option[Long],
+    metadataSchema: MetadataSchema,
+    deleted: Boolean
   ) = run(q.insertDocumentSet += podoFactory.documentSet(
     id,
     title,
@@ -86,6 +89,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentProcessingErrorCount,
     importOverflowCount,
     uploadedFileId,
+    metadataSchema,
     deleted
   ))
 

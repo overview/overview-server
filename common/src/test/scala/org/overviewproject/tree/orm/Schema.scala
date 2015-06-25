@@ -7,7 +7,6 @@ object Schema extends org.squeryl.Schema {
 
   override def tableNameFromClassName(className: String) = NamingConventionTransforms.snakify(className)
 
-  val documentSets = table[DocumentSet]
   val nodes = table[Node]
   val documentProcessingErrors = table[DocumentProcessingError]
   val documentSetCreationJobs = table[DocumentSetCreationJob]

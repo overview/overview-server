@@ -22,19 +22,24 @@ object QueryParser {
     private val FuzzyTermWithFuzz = """([^ ]*)~(\d{1,7})""".r
     private val FuzzyTermWithoutFuzz = """([^ ]*)~""".r
     private val ProximityPhrase = """(.*)~(\d{1,7})""".r // only makes sense after FuzzyTerm* fail
+    private val Prefix = """(..+)\*""".r
 
     private def removeBackslashes(s: String) = s.replaceAll("\\\\(.)", "$1")
-    private def stringToNode(s: String): Query = s match {
-      case FuzzyTermWithFuzz(term, fuzzString) => FuzzyTermQuery(term, Some(fuzzString.toInt))
-      case FuzzyTermWithoutFuzz(term) => FuzzyTermQuery(term, None)
-      case ProximityPhrase(phrase, slopString) => ProximityQuery(phrase, slopString.toInt)
-      case _ => PhraseQuery(s)
+    private def stringToNode(field: Field, s: String): Query = s match {
+      case FuzzyTermWithFuzz(term, fuzzString) => FuzzyTermQuery(field, term, Some(fuzzString.toInt))
+      case FuzzyTermWithoutFuzz(term) => FuzzyTermQuery(field, term, None)
+      case ProximityPhrase(phrase, slopString) => ProximityQuery(field, phrase, slopString.toInt)
+      case Prefix(prefix) => PrefixQuery(field, prefix)
+      case _ => PhraseQuery(field, s)
     }
 
     def expression: Parser[Query] = chainl1(unaryExpression, binaryOperator)
     def unaryExpression: Parser[Query] = parensExpression | notExpression | term
 
-    def term: Parser[Query] = (quotedString | unquotedString) ^^ stringToNode
+    def term: Parser[Query] = fieldOrAll ~ (quotedString | unquotedString) ^^ { t => stringToNode(t._1, t._2) }
+
+    def fieldOrAll: Parser[Field]
+      = ("title:" ^^^ Field.Title) | ("text:" ^^^ Field.Text) | ("" ^^^ Field.All)
 
     def quotedString: Parser[String]
       = (singleQuotedString | doubleQuotedString | smartQuotedString) ~ regex("""~(\d{1,7})""".r).? ^^

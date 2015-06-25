@@ -83,6 +83,14 @@ trait Controller extends PlayController {
         .flatMap((s) => catching(classOf[IllegalArgumentException]).opt(UUID.fromString(s)))
     }
 
+    /** Returns an Int if it exists and is valid; None otherwise.
+      */
+    def getInt(key: String): Option[Int] = {
+      data.get(key)
+        .flatMap(_.headOption)
+        .flatMap((s) => catching(classOf[IllegalArgumentException]).opt(s.toInt))
+    }
+
     /** Returns a Seq[Long] if key is set to something like "1,2,3"; returns
       * an empty Seq otherwise.
       */
@@ -101,5 +109,5 @@ trait Controller extends PlayController {
     PageRequest(offset, limit)
   }
 
-  protected def jsonError(message: String) = views.json.api.error(message)
+  protected def jsonError(code: String, message: String) = views.json.api.error(code, message)
 }

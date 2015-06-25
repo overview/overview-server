@@ -65,6 +65,13 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
       }
 
+      "set page limit to 20 when requesting metadata" in new IndexScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
+        override val fields = "id,metadata"
+        status(result)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
+      }
+
       "return an Array of IDs when fields=id" in new IndexScope {
         override val fields = "id"
         override val selection = InMemorySelection(Seq(1L, 2L, 3L))
@@ -85,6 +92,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
             keywords=Seq("foo", "bar"),
             suppliedId="supplied 1",
             text="text",
+            metadataJson=Json.obj("foo" -> "bar"),
             url=Some("http://example.org"),
             pageNumber=Some(1)
           ),
@@ -108,6 +116,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("items") /#(0) /("pageNumber" -> 1)
         // specs2 foils me on this one:
         // json must not /("items") /#(0) /("text")
+        // json must not /("items") /#(0) /("metadata")
 
         json must /("items") /#(1) /("id" -> documents(1).id)
         json must /("items") /#(1) /("title" -> "")
@@ -116,6 +125,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         // json must not /("items") /#(1) /("suppliedId")
         // json must not /("items") /#(1) /("url")
         // json must not /("items") /#(1) /("text")
+        // json must not /("items") /#(1) /("metadata")
       }
 
       "return specified fields (1/2)" in new IndexFieldsScope {
@@ -157,6 +167,14 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
       }
 
+      "query for metadata when fields includes metadata" in new IndexFieldsScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
+        override val fields = "id,metadata"
+
+        status(result) must beEqualTo(OK)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
+      }
+
       "include text in JSON response" in new IndexFieldsScope {
         override val fields = "id,text"
 
@@ -164,6 +182,15 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val json = contentAsString(result)
 
         json must /("items") /#(0) /("text" -> "text")
+      }
+
+      "include metadata in JSON response" in new IndexFieldsScope {
+        override val fields = "id,metadata"
+
+        status(result) must beEqualTo(OK)
+        val json = contentAsString(result)
+
+        json must /("items") /#(0) /("metadata") /("foo" -> "bar")
       }
 
       "always return id, even if it is not in the fields" in new IndexFieldsScope {
@@ -228,7 +255,8 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           url=Some("http://example.org"),
           text="text",
           title="title",
-          suppliedId="suppliedId"
+          suppliedId="suppliedId",
+          metadataJson=Json.obj("foo" -> "bar")
         )))
 
         status(result) must beEqualTo(OK)
@@ -243,6 +271,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("url" -> "http://example.org")
         json must /("title" -> "title")
         json must /("text" -> "text")
+        json must /("metadata") /("foo" -> "bar")
         json must /("suppliedId" -> "suppliedId")
       }
     }

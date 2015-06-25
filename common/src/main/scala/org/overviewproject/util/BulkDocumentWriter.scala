@@ -1,6 +1,7 @@
 package org.overviewproject.util
 
 import java.io.{ByteArrayInputStream,ByteArrayOutputStream,DataOutputStream}
+import java.nio.charset.Charset
 import org.postgresql.PGConnection
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -83,7 +84,7 @@ trait BulkDocumentWriter {
     // This method is in the trait (not companion object) because we test it.
     val out = new ByteArrayOutputStream
     val dataOut = new DataOutputStream(out)
-    val charset = "utf-8"
+    val charset = Charset.forName("utf-8")
 
     // Binary COPY format: http://www.postgresql.org/docs/9.4/static/sql-copy.html
     // Header: "PGCOPY\n\0xff\r\n\0"
@@ -122,8 +123,7 @@ trait BulkDocumentWriter {
     // Tuples
     // Tracks models/tables/Documents.scala and models/Document.scala
     documents.foreach { document =>
-      // Number of fields
-      dataOut.writeShort(12)
+      dataOut.writeShort(13) // Number of fields
 
       writeLong(document.id)
       writeLong(document.documentSetId)
@@ -135,8 +135,9 @@ trait BulkDocumentWriter {
       writeTimestamp(document.createdAt)
       writeLongOption(document.fileId)
       writeLongOption(document.pageId)
+      writeString(document.metadataJson.toString)
       writeString(document.text)
-      writeStringOption(document.displayMethod.map(_.toString))
+      writeString(document.displayMethod.toString)
     }
 
     // File trailer
@@ -164,6 +165,7 @@ trait BulkDocumentWriter {
             created_at,
             file_id,
             page_id,
+            metadata_json_text,
             text,
             display_method
           )

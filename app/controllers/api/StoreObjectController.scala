@@ -39,7 +39,7 @@ trait StoreObjectController extends ApiController {
               storeObjects <- storeObjectBackend.createMany(store.id, attributesArray.toSeq)
             } yield Ok(views.json.api.StoreObject.index(storeObjects))
           }
-          case None => Future.successful(BadRequest(jsonError(
+          case None => Future.successful(BadRequest(jsonError("illegal-arguments",
             """You must POST a JSON object with "indexedLong" (Number or null), "indexedString" (String or null) and "json" (possibly-empty Object). You may post an Array of such objects to create many objects with one request."""
           )))
         }
@@ -61,10 +61,10 @@ trait StoreObjectController extends ApiController {
       case Some(attributes) => {
         storeObjectBackend.update(id, attributes).map(_ match {
           case Some(storeObject) => Ok(views.json.api.StoreObject.show(storeObject))
-          case None => NotFound(jsonError("This StoreObject does not exist."))
+          case None => NotFound(jsonError("not-found", "This StoreObject does not exist."))
         })
       }
-      case None => Future(BadRequest(jsonError(
+      case None => Future(BadRequest(jsonError("illegal-arguments",
         """You must POST a JSON object with "indexedLong" (Number or null), "indexedString" (String or null) and "json" (possibly-empty Object)"""
       )))
     }
@@ -84,7 +84,7 @@ trait StoreObjectController extends ApiController {
           unit <- storeObjectBackend.destroyMany(store.id, ids.toSeq)
         } yield NoContent
       }
-      case None => Future.successful(BadRequest(jsonError("You must POST a JSON Array of IDs.")))
+      case None => Future.successful(BadRequest(jsonError("illegal-arguments", "You must POST a JSON Array of IDs.")))
     }
   }
 }
