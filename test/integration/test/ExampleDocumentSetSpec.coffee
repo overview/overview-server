@@ -111,6 +111,7 @@ describe 'ExampleDocumentSets', ->
     describe 'the cloned example', ->
       before ->
         @userBrowser
+          .get(Url.index)
           .waitForElementBy(tag: 'a', contains: 'basic.csv').click()
           .waitForElementBy(tag: 'canvas')
 
