@@ -4,10 +4,10 @@
  * Basic algorithm is same as Lexer: nreak on spaces, remove most punctuation, lowercase.
  * But we also match against supplied list of regexes. If any found:
  *  - don't lowercase or remove punct
- *  - output user-defined weight 
- * Regexs matches override stopwords. If more than one regex matched, multiply weights. 
+ *  - output user-defined weight
+ * Regexs matches override stopwords. If more than one regex matched, multiply weights.
  *
- * Overview Project
+ * Overview
  *
  * Created by Jonathan Stray, October 2013
  *
@@ -55,10 +55,10 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
     def isPunct(c:Char) = c.toString.matches("\\p{Punct}")
     val strippedTerm = rawTerm.dropWhile(isPunct(_)).reverse.dropWhile(isPunct(_)).reverse
 
-    weightedTerms foreach { case (pattern,patternWeight) => 
+    weightedTerms foreach { case (pattern,patternWeight) =>
       if (validPatternMatch(strippedTerm, pattern)) {
         weight *= patternWeight
-        matched = true 
+        matched = true
       }
     }
 
@@ -77,10 +77,10 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
 
   // Clips term to maximum length (avoids pathalogical cases)
   // also copies it with new (avoids substring references created by .split chewing up all our memory)
-  def limitTermLength(wt:WeightedTermString) = 
+  def limitTermLength(wt:WeightedTermString) =
     WeightedTermString(new String(wt.term.take(maxTokenLength)), wt.weight)
 
-  // Given a string and a list of stop words, returns a list of weighted terms. 
+  // Given a string and a list of stop words, returns a list of weighted terms.
   def makeTerms(textIn: String): Seq[WeightedTermString] = {
     if (textIn.length == 0) Seq()
 
@@ -90,15 +90,15 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
     // split on (condensed) spaces and weight each term
     text.split(' ').flatMap(ProcessTerm).map(limitTermLength)
   }
-  
-  private def validPatternMatch(term: String, pattern: String): Boolean = 
+
+  private def validPatternMatch(term: String, pattern: String): Boolean =
     catching(classOf[java.util.regex.PatternSyntaxException])
       .withApply(e => throw new DisplayedError("bad_important_words_pattern")) {
     term.matches(pattern)
-  } 
-    
-    
-    
-  
+  }
+
+
+
+
 }
 

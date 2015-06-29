@@ -8,7 +8,7 @@ uniqueNumberCounter = 0
 # A request API
 module.exports = class Client
   constructor: (options) ->
-    throw 'Must pass baseUrl, a String like "https://www.overviewproject.org"' if !options.baseUrl?
+    throw 'Must pass baseUrl, a String like "https://www.overviewdocs.com"' if !options.baseUrl?
     throw 'Must pass title, a name to identify this client' if !options.title
     @debug = debug(options.title)
     @title = options.title

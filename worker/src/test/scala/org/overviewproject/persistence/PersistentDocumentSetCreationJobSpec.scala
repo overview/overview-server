@@ -1,7 +1,7 @@
 /*
  * PersistentDocumentSetCreationJobSpec.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
 package org.overviewproject.persistence
@@ -78,7 +78,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
         notStartedJob.documentCloudUsername must beNone
         notStartedJob.documentCloudPassword must beNone
       }
-      
+
       "refresh job state" in new JobSetup {
         import database.api._
         blockingDatabase.runUnit {
@@ -172,7 +172,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       "have a type" in new CsvImportJobSetup {
         csvImportJob.jobType must beEqualTo(DeprecatedType.CsvUpload)
       }
-      
+
       "have contentsOid if available" in new CsvImportJobSetup {
         csvImportJob.contentsOid must beSome
         csvImportJob.contentsOid.get must beEqualTo(contentsOid)

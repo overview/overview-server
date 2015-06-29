@@ -218,9 +218,9 @@ $(MACHINE_NAME).ova: $(MACHINE_NAME).copy-files.done
 		--manifest \
 		--vsys 0 \
 		--product "Overview Personal virtual server" \
-		--producturl "http://www.overviewproject.org" \
-		--vendor "The Overview Project" \
-		--vendorurl "http://www.overviewproject.org" \
+		--producturl "http://www.overviewdocs.com" \
+		--vendor "Overview" \
+		--vendorurl "http://www.overviewdocs.com" \
 		--version "$(MACHINE_NAME)"
 	# Rename
 	mv $(MACHINE_NAME)-incomplete.ova $(MACHINE_NAME).ova

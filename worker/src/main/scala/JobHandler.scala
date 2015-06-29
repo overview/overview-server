@@ -2,7 +2,7 @@
  *
  * JobHandler.scala
  *
- * Overview Project,June 2012
+ * Overview,June 2012
  * @author Jonas Karlsson
  */
 
@@ -262,7 +262,7 @@ object JobHandler extends HasBlockingDatabase {
     )))
   }
 
-  // FIXME: Submitting jobs, along with creating documents should move into documentset-worker 
+  // FIXME: Submitting jobs, along with creating documents should move into documentset-worker
   private def submitClusteringJob(documentSetId: Long): Unit = DeprecatedDatabase.inTransaction {
     import database.api._
     import org.overviewproject.postgres.SquerylEntrypoint._
@@ -284,7 +284,7 @@ object JobHandler extends HasBlockingDatabase {
         lang = job.lang,
         suppliedStopWords = job.suppliedStopWords,
         importantWords = job.importantWords,
-        contentsOid = job.contentsOid, // FIXME: should be deleted when we delete original job 
+        contentsOid = job.contentsOid, // FIXME: should be deleted when we delete original job
         splitDocuments = job.splitDocuments,
         state = DocumentSetCreationJobState.NotStarted)
 

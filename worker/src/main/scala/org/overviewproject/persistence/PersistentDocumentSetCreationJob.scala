@@ -2,8 +2,8 @@
  * PersistentDocumentSetCreationJob.scala
  *
  * FIXME: replace this with a DocumentSetCreationJobStore
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
 
@@ -42,14 +42,14 @@ trait PersistentDocumentSetCreationJob {
 
   // Only FileUpload jobs require fileGroupId
   val fileGroupId: Option[Long]
-  
+
   // Only Recluster jobs require tree_title, tree_description or tag_id
   val treeTitle: Option[String]
   val treeDescription: Option[String]
   val tagId: Option[Long]
-  
-  var retryAttempts: Int 
-  
+
+  var retryAttempts: Int
+
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
   var statusDescription: Option[String]
@@ -73,7 +73,7 @@ object PersistentDocumentSetCreationJob {
   import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
   import org.overviewproject.postgres.SquerylEntrypoint._
   import org.overviewproject.tree.orm.DocumentSetCreationJob
-  
+
   /** Find all jobs in the specified state */
   def findJobsWithState(state: DocumentSetCreationJobState): List[PersistentDocumentSetCreationJob] = {
     DeprecatedDatabase.inTransaction {

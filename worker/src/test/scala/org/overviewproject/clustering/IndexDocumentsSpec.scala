@@ -3,7 +3,7 @@
  *
  * Unit tests for document set indexing: lexing and TF-IDF vector generation
  *
- * Overview Project, created August 2012
+ * Overview, created August 2012
  * @author Jonathan Stray
  *
  */
@@ -58,7 +58,7 @@ class IndexDocumentsSpec extends Specification {
       // check IDF
       val idf = vectorGen.Idf()
 
-      // idf words must be drawn from total document vocabulary         
+      // idf words must be drawn from total document vocabulary
       val vocab = docterms.map(_._2).reduceLeft(_ ++ _).toSet
       val idfVocab = idf.keys.map(vectorGen.idfIdToString(_)).toSet
       idfVocab.subsetOf(vocab) must beTrue
@@ -74,7 +74,7 @@ class IndexDocumentsSpec extends Specification {
 
       // check document vectors
       val vecs = vectorGen.documentVectors()
-      vecs.size must beEqualTo(docterms.size) // must not have dropped any documents 
+      vecs.size must beEqualTo(docterms.size) // must not have dropped any documents
 
       // each document vector must contain only terms in IDF and the source document, and be normalized
       for ((filename, terms) <- docterms) {

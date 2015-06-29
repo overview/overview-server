@@ -1,7 +1,7 @@
 /*
  * DocumentProducerFactory.scala
- * 
- * Overview Project
+ *
+ * Overview
  * Created by Jonas Karlsson, November 2012
  */
 package org.overviewproject.util
@@ -20,7 +20,7 @@ trait DocumentProducer {
    * Produce the documents. There should probably be some restrictions
    * here to indicate that we're producing documents and feeding them
    * to DocumentConsumers.
-   * 
+   *
    * @return the number of documents produced.
    */
   def produce(): Int
@@ -43,7 +43,7 @@ trait DocumentConsumer {
 object DocumentProducerFactory {
   /** The maximum number of documents processed for a document set */
   private val MaxDocuments = Configuration.getInt("max_documents")
-  
+
   /** Return a DocumentProducer based on the DocumentSet type */
   def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
     progAbort: ProgressAbortFn): DocumentProducer = {
@@ -54,7 +54,7 @@ object DocumentProducerFactory {
           username <- documentSetCreationJob.documentCloudUsername
           password <- documentSetCreationJob.documentCloudPassword
         } yield Credentials(username, password)
-        
+
         new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, progAbort)
       case DocumentSetCreationJobType.CsvUpload =>
         new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, MaxDocuments, progAbort)

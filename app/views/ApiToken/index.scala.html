@@ -31,7 +31,7 @@ var documentSetId = @documentSetId;
 var authHeader = "Basic " + btoa(token + ":x-auth-token");
 $.ajax({
   type: 'GET',
-  url: "https://www.overviewproject.org/api/v1/document-sets/" + documentSetId + "/tags",
+  url: "https://www.overviewdocs.com/api/v1/document-sets/" + documentSetId + "/tags",
   headers: { 'Authorization': authHeader },
   success: console.log
 });</pre>
@@ -42,7 +42,7 @@ $.ajax({
 var authHeader = "Basic " + btoa(token + ":x-auth-token");
 $.ajax({
   type: 'POST',
-  url: 'https://www.overviewproject.org/api/v1/document-sets',
+  url: 'https://www.overviewdocs.com/api/v1/document-sets',
   headers: { 'Authorization': authHeader },
   data: { 'title': 'Some title' },
   success: console.log

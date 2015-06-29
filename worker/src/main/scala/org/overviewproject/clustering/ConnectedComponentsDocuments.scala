@@ -1,8 +1,8 @@
 /**
  * ConnectedComponentsDocuments.scala
  * Break document set into connected components, possibly using O(N) edge sampling algorithm
- * 
- * Overview Project, created March 2013
+ *
+ * Overview, created March 2013
  *
  * @author Jonathan Stray
  *
@@ -19,7 +19,7 @@ class ConnectedComponentsDocuments(protected val docVecs: DocumentSetVectors) {
 
   private val distanceFn = (a:DocumentVector,b:DocumentVector) => DistanceFn.CosineDistance(a,b) // can't use CosineDistance because of method overloading :(
   private var sampledEdges:SampledEdges = null
-  private var sampledThresh = 0.0 
+  private var sampledThresh = 0.0
 
   // Produces all docs reachable from a given start doc, given thresh
   // Unoptimized implementation, scans through all possible edges (N^2 total)
@@ -54,16 +54,16 @@ class ConnectedComponentsDocuments(protected val docVecs: DocumentSetVectors) {
 
   // ---- MAIN ----
   // NB: these methods compute from scratch each time, no caching
-  
+
   def foreachComponent(docs:Iterable[DocumentID],thresh:Double)(fn:Set[DocumentID] => Unit) : Unit = {
-    ConnectedComponents.foreachComponent[DocumentID](docs, createEdgeEnumerator(thresh)) { fn }    
+    ConnectedComponents.foreachComponent[DocumentID](docs, createEdgeEnumerator(thresh)) { fn }
   }
-  
+
   // or just return all components at once, in a set
   def allComponents(docs:Iterable[DocumentID],thresh:Double) : Set[Set[DocumentID]] = {
-    ConnectedComponents.allComponents[DocumentID](docs, createEdgeEnumerator(thresh))    
+    ConnectedComponents.allComponents[DocumentID](docs, createEdgeEnumerator(thresh))
   }
-  
+
   // Call this first if you want to use an edge sampler (lots of memory, and approximate, but O(N^2) -> ON(N) win)
   def sampleCloseEdges(numEdgesPerDoc: Int, maxDist:Double): Unit = {
     sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc, maxDist)
