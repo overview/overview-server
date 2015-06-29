@@ -42,5 +42,6 @@ require [
   'for-view/DocumentSet/index',
   'elements/form-submit-with-feedback',
   'elements/form-with-confirm',
-  'elements/twitter-bootstrap'
+  'elements/twitter-bootstrap',
+  'elements/logged-out-modal'
 ], ->

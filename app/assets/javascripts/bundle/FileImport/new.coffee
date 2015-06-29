@@ -42,5 +42,6 @@ requirejs.config
 
 require [
   'for-view/FileImport/new'
+  'elements/logged-out-modal'
   'elements/twitter-bootstrap'
 ], ->

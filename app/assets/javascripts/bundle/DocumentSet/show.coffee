@@ -74,5 +74,6 @@ require [
   'for-view/DocumentSet/delete-document-set',
   'for-view/DocumentSet/export-document-set',
   'for-view/DocumentSet/share-document-set'
-  'for-view/DocumentSet/show'
+  'for-view/DocumentSet/show',
+  'elements/logged-out-modal'
 ], ->

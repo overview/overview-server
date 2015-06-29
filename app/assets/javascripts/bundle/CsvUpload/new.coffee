@@ -40,5 +40,6 @@ requirejs.config
 
 require [
   'for-view/CsvUpload/new'
+  'elements/logged-out-modal'
   'elements/twitter-bootstrap'
 ], ->

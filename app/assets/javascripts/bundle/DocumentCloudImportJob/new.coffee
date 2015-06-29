@@ -63,4 +63,5 @@ requirejs.config({
 
 require [
   'for-view/DocumentCloudImportJob/new'
+  'elements/logged-out-modal'
 ], ->

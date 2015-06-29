@@ -1,6 +1,10 @@
 brand.name=Overview
 
-password.secure=Please use a password at least seven characters long.
+authentication.LoggedOutModal.title=Login Required
+authentication.LoggedOutModal.body=You have been logged out, either from another tab/window or because your session expired. You must log in again to continue using Overview.
+authentication.LoggedOutModal.button=Log back in
+authentication.password.secure=Please use a password at least seven characters long.
+
 
 controllers.admin.UserController.delete.failure=Document sets owned by {0} must be removed before the user can be deleted.
 

@@ -22,7 +22,8 @@
   "views.Tag._form",
   "views.Node._form",
   "views.Document.show",
-  "views.InlineTagList"
+  "views.InlineTagList",
+  "authentication.LoggedOutModal"
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys, optionalDocumentSet=Some(documentSet)) {
   <div id="main" data-tooltips-enabled="@user.treeTooltipsEnabled"></div>
