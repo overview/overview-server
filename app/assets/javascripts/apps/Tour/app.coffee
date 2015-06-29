@@ -39,7 +39,10 @@ define [
     template: _.template("""
       <div class="popover fade in <%- placement %>">
         <div class="arrow"></div>
-        <div class="popover-title"><%- title %></div>
+        <div class="popover-title">
+          <%- title %>
+          <a class="skip" href="#" title="<%- t('skip') %>">&times;</a>
+        </div>
         <div class="popover-content">
           <div class="content"><%= html %></div>
           <div class="actions">
@@ -51,7 +54,6 @@ define [
               <a class="done" href="#"><%- t('done') %></a>
             <% } else { %>
               <a class="next" href="#"><%- t('next') %> <i class="icon overview-icon-chevron-right"></i></a>
-              <a class="skip" href="#"><%- t('skip') %></a>
             <% } %>
           </div>
         </div>
@@ -171,7 +173,7 @@ define [
       @$container
         .on('click.tour', '.popover a.next', ((e) => e.preventDefault(); @next()))
         .on('click.tour', '.popover a.previous', ((e) => e.preventDefault(); @previous()))
-        .on('click.tour', '.popover a.done, .popover a.skip', ((e) => e.preventDefault(); @done()))
+        .on('click.tour', '.popover a.done, .popover-title a.skip', ((e) => e.preventDefault(); @done()))
 
     remove: ->
       @$popover?.remove()

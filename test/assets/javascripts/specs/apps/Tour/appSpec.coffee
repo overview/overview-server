@@ -116,10 +116,10 @@ define [
         it 'should switch to the third tooltip', ->
           expect(@$html.find('.popover.in .popover-title')).to.contain('title3')
 
-        it 'should hage previous and done buttons', ->
+        it 'should have previous and done buttons', ->
           expect(@$html.find('.popover.in .tip-number')).to.contain('tipNumber,3,3')
           expect(@$html.find('.popover.in a.next')).not.to.exist
-          expect(@$html.find('.popover.in a.skip')).not.to.exist
+          expect(@$html.find('.popover.in a.skip')).to.exist
           expect(@$html.find('.popover.in a.previous')).to.exist
           expect(@$html.find('.popover.in a.done')).to.exist
 
