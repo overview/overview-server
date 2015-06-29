@@ -10,7 +10,7 @@ import controllers.forms.admin.NewUserForm
 import controllers.Controller
 import models.User
 import models.tables.Users
-import models.pagination.Page
+import models.pagination.PageRequest
 import org.overviewproject.database.exceptions.Conflict
 
 trait UserController extends Controller {
@@ -24,8 +24,9 @@ trait UserController extends Controller {
   }
 
   def indexJson(page: Int) = AuthorizedAction(adminUser).async { implicit request =>
+    val pr = PageRequest((RequestData(request).getRequestedPageBase1 - 1) * PageSize, PageSize)
     for {
-      page <- backend.indexPage(pageRequest(request, PageSize))
+      page <- backend.indexPage(pr)
     } yield Ok(views.json.admin.User.index(page))
   }
 

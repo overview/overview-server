@@ -91,6 +91,14 @@ trait Controller extends PlayController {
         .flatMap((s) => catching(classOf[IllegalArgumentException]).opt(s.toInt))
     }
 
+    /** Returns an Int if it exists and is &gt;0, 1 otherwise.
+      */
+    def getRequestedPageBase1: Int = {
+      getInt("page")
+        .map { i => if (i <= 0) 1 else i }
+        .getOrElse(1)
+    }
+
     /** Returns a Seq[Long] if key is set to something like "1,2,3"; returns
       * an empty Seq otherwise.
       */

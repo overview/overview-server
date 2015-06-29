@@ -4,6 +4,7 @@ import java.util.{Date,UUID}
 import java.sql.{SQLException,Timestamp}
 
 import models.User
+import models.pagination.PageRequest
 import models.tables.Users
 import org.overviewproject.database.LargeObject
 import org.overviewproject.database.exceptions
@@ -16,12 +17,35 @@ class DbUserBackendSpec extends DbBackendSpecification {
     val backend = new DbUserBackend {}
 
     def insertUser(id: Long, email: String, passwordHash: String = "", role: UserRole.Value = UserRole.NormalUser): User = {
-      val user = User(id=id, email=email, passwordHash=passwordHash, role=role)
-      blockingDatabase.run((Users returning Users).+=(user))
+      insertUser(User(id=id, email=email, passwordHash=passwordHash, role=role))
     }
+
+    def insertUser(user: User): User = blockingDatabase.run((Users returning Users).+=(user))
 
     def findUser(id: Long): Option[User] = {
       blockingDatabase.option(Users.filter(_.id === id))
+    }
+  }
+
+  "#indexPage" should {
+    trait IndexPageScope extends BaseScope
+
+    "order Users by lastActivityAt, NULL last" in new IndexPageScope {
+      insertUser(User(1L, "user1@example.org", lastActivityAt=Some(new Timestamp(1000L))))
+      insertUser(User(2L, "user2@example.org", lastActivityAt=Some(new Timestamp(3000L))))
+      insertUser(User(3L, "user3@example.org", lastActivityAt=None))
+      insertUser(User(4L, "user4@example.org", lastActivityAt=Some(new Timestamp(2000L))))
+
+      backend.indexPage(PageRequest(0, 4)).map(_.items.map(_.id)) must beEqualTo(Seq(2L, 4L, 1L, 3L)).await
+    }
+
+    "return just a page" in new IndexPageScope {
+      insertUser(User(1L, "user1@example.org"))
+      insertUser(User(2L, "user2@example.org"))
+      insertUser(User(3L, "user3@example.org"))
+
+      backend.indexPage(PageRequest(0, 2)).map(_.items.map(_.id)) must beEqualTo(Seq(1L, 2L)).await
+      backend.indexPage(PageRequest(2, 2)).map(_.items.map(_.id)) must beEqualTo(Seq(3L)).await
     }
   }
 

@@ -36,48 +36,30 @@ trait UserBackend extends Backend {
 }
 
 trait DbUserBackend extends UserBackend with DbBackend {
+  import DbUserBackend.q
   import database.api._
 
-  private lazy val byEmail = Compiled { (email: Rep[String]) =>
-    Users.filter(_.email === email)
-  }
+  override def indexPage(pageRequest: PageRequest) = page(
+    q.indexPageCompiled(pageRequest.offset, pageRequest.limit),
+    q.indexLengthCompiled,
+    pageRequest
+  )
 
-  private lazy val byId = Compiled { (id: Rep[Long]) =>
-    Users.filter(_.id === id)
-  }
+  override def showByEmail(email: String) = database.option(q.byEmail(email))
 
-  private lazy val updateRoleCompiled = Compiled { (id: Rep[Long]) =>
-    Users.filter(_.id === id).map(_.role)
-  }
-
-  private lazy val updatePasswordHashCompiled = Compiled { (id: Rep[Long]) =>
-    Users.filter(_.id === id).map(_.passwordHash)
-  }
-
-  private lazy val updateLastActivityCompiled = Compiled { (id: Rep[Long]) =>
-    for { user <- Users.filter(_.id === id) }
-    yield (user.lastActivityIp, user.lastActivityAt)
-  }
-
-  protected lazy val userInserter = (Users.map(_.createAttributes) returning Users)
-
-  override def indexPage(pageRequest: PageRequest) = page(Users, Users.length, pageRequest)
-
-  override def showByEmail(email: String) = database.option(byEmail(email))
-
-  override def create(attributes: User.CreateAttributes) = database.run(userInserter.+=(attributes))
+  override def create(attributes: User.CreateAttributes) = database.run(q.userInserter.+=(attributes))
 
   override def updateIsAdmin(id: Long, isAdmin: Boolean) = {
     val role = if (isAdmin) UserRole.Administrator else UserRole.NormalUser
-    database.runUnit(updateRoleCompiled(id).update(role))
+    database.runUnit(q.updateRoleCompiled(id).update(role))
   }
 
   override def updatePasswordHash(id: Long, passwordHash: String) = {
-    database.runUnit(updatePasswordHashCompiled(id).update(passwordHash))
+    database.runUnit(q.updatePasswordHashCompiled(id).update(passwordHash))
   }
 
   override def updateLastActivity(id: Long, ip: String, at: Timestamp) = {
-    database.runUnit(updateLastActivityCompiled(id).update((Some(ip), Some(at))))
+    database.runUnit(q.updateLastActivityCompiled(id).update((Some(ip), Some(at))))
   }
 
   override def destroy(id: Long) = {
@@ -108,6 +90,44 @@ trait DbUserBackend extends UserBackend with DbBackend {
         END LOOP;
       END$$$$ LANGUAGE plpgsql;
     """)
+  }
+}
+
+object DbUserBackend {
+  protected object q {
+    import org.overviewproject.database.Slick.api._
+
+    lazy val byEmail = Compiled { (email: Rep[String]) =>
+      Users.filter(_.email === email)
+    }
+
+    lazy val byId = Compiled { (id: Rep[Long]) =>
+      Users.filter(_.id === id)
+    }
+
+    lazy val updateRoleCompiled = Compiled { (id: Rep[Long]) =>
+      Users.filter(_.id === id).map(_.role)
+    }
+
+    lazy val updatePasswordHashCompiled = Compiled { (id: Rep[Long]) =>
+      Users.filter(_.id === id).map(_.passwordHash)
+    }
+
+    lazy val updateLastActivityCompiled = Compiled { (id: Rep[Long]) =>
+      for { user <- Users.filter(_.id === id) }
+      yield (user.lastActivityIp, user.lastActivityAt)
+    }
+
+    lazy val userInserter = (Users.map(_.createAttributes) returning Users)
+
+    lazy val indexPageCompiled = Compiled { (offset: ConstColumn[Long], limit: ConstColumn[Long]) =>
+      Users
+        .sortBy(u => (u.lastActivityAt.isDefined.desc, u.lastActivityAt.desc))
+        .drop(offset)
+        .take(limit)
+    }
+
+    lazy val indexLengthCompiled = Compiled { Users.length }
   }
 }
 
