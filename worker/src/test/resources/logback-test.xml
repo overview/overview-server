@@ -9,8 +9,8 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <!-- turn off Ning HTTP output -->
-    <logger name="com.ning.http.client" level="WARN"/>
+    <logger name="com.ning.http.client" level="WARN"/><!-- turn off Ning HTTP output -->
+    <logger name="org.overviewproject.documentcloud.DocumentRetriever" level="OFF"/><!-- we expect errors -->
 
     <!-- try to be silent during tests -->
     <logger name="WORKER" level="OFF"/>

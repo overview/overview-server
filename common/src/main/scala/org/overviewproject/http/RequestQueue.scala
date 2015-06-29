@@ -26,13 +26,29 @@ object RequestQueueProtocol {
  */
 class AsyncHttpClientResponse(response: Response) extends SimpleResponse {
   override def status: Int = response.getStatusCode
-  override def body: String = response.getResponseBody
+
+  /** Returns response body as bytes.
+    *
+    * We don't provide it as a String because in our case, that value is always
+    * wrong. At time of writing, we only request from DocumentCloud, and it
+    * returns the wrong encoding. See:
+    *
+    * * https://www.pivotaltracker.com/story/show/85536256
+    * * https://github.com/documentcloud/documentcloud/pull/143
+    * * https://github.com/documentcloud/documentcloud/issues/221
+    *
+    * Once DocumentCloud fixes this, we can change `bodyAsBytes` to `body`, a
+    * String. But it might be a long time.
+    */
+  override def bodyAsBytes: Array[Byte] = response.getResponseBodyAsBytes
 
   /** @param name will match case-insensitively */
   override def headers(name: String): Seq[String] = response.getHeaders(name).asScala.toSeq
-  override def headersToString: String =
-    response.getHeaders.iterator.asScala.map { h => s"${h.getKey}:${h.getValue.asScala.mkString(",")}" }.mkString("\r\n")
-
+  override def headersToString: String = {
+    response.getHeaders.iterator.asScala
+      .map { h => s"${h.getKey}:${h.getValue.asScala.mkString(",")}" }
+      .mkString("\r\n")
+  }
 }
 
 /**

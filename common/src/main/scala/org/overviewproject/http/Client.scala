@@ -10,7 +10,21 @@ case class Credentials(username: String, password: String)
 /** The information we need from an http request */
 trait SimpleResponse {
   def status: Int
-  def body: String
+
+  /** Returns response body as bytes.
+    *
+    * We don't provide it as a String because in our case, that value is always
+    * wrong. At time of writing, we only request from DocumentCloud, and it
+    * returns the wrong encoding. See:
+    *
+    * * https://www.pivotaltracker.com/story/show/85536256
+    * * https://github.com/documentcloud/documentcloud/pull/143
+    * * https://github.com/documentcloud/documentcloud/issues/221
+    *
+    * Once DocumentCloud fixes this, we can change `bodyAsBytes` to `body`, a
+    * String. But it might be a long time.
+    */
+  def bodyAsBytes: Array[Byte]
   
   /** Apparently, headers can have multiple value for a given key */
   def headers(name: String): Seq[String]

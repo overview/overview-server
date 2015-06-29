@@ -44,19 +44,27 @@ object DocumentRetrieverProtocol {
  * @param credentials will be used to authenticate the request, if present
  * @param requestRetryTimes Determines retry behavior
  */
-class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: ActorRef, credentials: Option[Credentials], retryTimes: RequestRetryTimes) extends Actor {
+class DocumentRetriever(
+  document: Document,
+  recipient: ActorRef,
+  requestQueue: ActorRef,
+  credentials: Option[Credentials],
+  retryTimes: RequestRetryTimes
+) extends Actor {
+  private val logger = Logger.forClass(getClass)
+
   import DocumentRetrieverProtocol._
 
   private val PublicAccess: String = "public"
   private val LocationHeader: String = "Location"
   private val OkStatus: Int = 200
-  private val RedirectStatus: Int = 302 // FIXME: Should we check other redirect response codes?
+  private val RedirectStatus: Int = 302
 
   private var retryAttempt: Int = 0
 
   def receive = {
     case Start() => requestDocument
-    case Result(r) if isOk(r) => forwardResult(r.body)
+    case Result(r) if isOk(r) => forwardResult(new String(r.bodyAsBytes, "utf-8")) // force encoding: #85536256
     case Result(r) if isRedirect(r) => redirectRequest(r)
     case Result(r) => retryOr(failRequest(r))
     case Failure(t: Exception) => retryOr(convertToFailure(t))
@@ -77,12 +85,24 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def forwardResult(rawText: String): Unit = completeRetrieval(GetTextSucceeded(document, rawText))
 
   private def failRequest(r: SimpleResponse): Unit = {
-    Logger.warn(s"Unable to retrieve document from ${document.url} ) access: ${document.access} status: ${r.status}\n${r.headersToString}\n${r.body}")
-    completeRetrieval(GetTextFailed(document.url, r.body, Some(r.status), Some(r.headersToString)))
+    logger.warn(
+      "Unable to retrieve document from {}. access: {}, status: {}, headers: {}, body: {}",
+      document.url,
+      document.access,
+      r.status,
+      r.headersToString,
+      new String(r.bodyAsBytes, "utf-8")
+    )
+    completeRetrieval(GetTextFailed(
+      document.url,
+      new String(r.bodyAsBytes, "utf-8"),
+      Some(r.status),
+      Some(r.headersToString)
+    ))
   }
 
   private def forwardError(t: Throwable): Unit = {
-    Logger.error(s"Unable to process ${document.url}: ${t.getMessage()}")
+    logger.warn("Unable to process document {}: {}", document.url, t.getMessage)
     completeRetrieval(GetTextError(t))
   }
 
@@ -118,7 +138,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def retryOr(giveUp: => Unit): Unit = {
     retryTimes(retryAttempt) match {
       case Some(delay) => {
-        Logger.warn(s"Scheduling retry attempt $retryAttempt for ${document.url} access: ${document.access}")
+        logger.info("Scheduling retry attempt {} for {}. access: {}", retryAttempt, document.url, document.access)
         import context.dispatcher
         context.system.scheduler.scheduleOnce(delay, self, Start())
         retryAttempt += 1

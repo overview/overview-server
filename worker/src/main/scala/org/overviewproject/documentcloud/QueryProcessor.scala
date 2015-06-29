@@ -60,7 +60,7 @@ class QueryProcessor(
   }
 
   private def processResponse(response: SimpleResponse): Unit = {
-    val result = ConvertSearchResult(response.body)
+    val result = ConvertSearchResult(new String(response.bodyAsBytes, "utf-8")) // always utf-8: #85536256
 
     context.parent ! result
   }
