@@ -2,8 +2,6 @@ package models.orm.stores
 
 import org.squeryl.{ KeyedEntityDef, Query }
 
-import org.overviewproject.database.DB
-import org.overviewproject.postgres.LO
 import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.DocumentSetCreationJobType.Recluster
