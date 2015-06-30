@@ -49,6 +49,12 @@ object CorsFilter extends EssentialFilter {
 object Global extends WithFilters(LoggingFilter, CorsFilter, CSRFFilter()) with GlobalSettings {
   private val HttpOverrideKey = "X-HTTP-Method-Override"
 
+  private lazy val connectToDatabaseOnce = {
+    val config = DatabaseConfiguration.fromConfig
+    val dataSource = DataSource(config)
+    DB.connect(dataSource)
+  }
+
   private val CorsOptionsHeaders = Seq(
     "Access-Control-Allow-Origin" -> "*",
     "Access-Control-Allow-Methods" -> "DELETE, PUT, POST, GET, OPTIONS", // laziness
@@ -65,11 +71,7 @@ object Global extends WithFilters(LoggingFilter, CorsFilter, CSRFFilter()) with 
     }
   }
 
-  override def onStart(app: play.api.Application) = {
-    val config = DatabaseConfiguration.fromConfig
-    val dataSource = DataSource(config)
-    DB.connect(dataSource)
-  }
+  override def onStart(app: play.api.Application) = connectToDatabaseOnce
 
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {
     // Handle OPTIONS requests.
