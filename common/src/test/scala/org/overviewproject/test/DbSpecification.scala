@@ -132,9 +132,11 @@ class DbSpecification extends Specification {
   }
 
   private lazy val ensureConnected = {
-    System.setProperty(DatabaseProperty, TestDatabase)
-    val dataSource = DataSource(DatabaseConfiguration.fromConfig)
-    DB.connect(dataSource)
+    if (!DB.connected) {
+      System.setProperty(DatabaseProperty, TestDatabase)
+      val dataSource = DataSource(DatabaseConfiguration.fromConfig)
+      DB.connect(dataSource)
+    }
   }
 
   def setupDb() { ensureConnected }

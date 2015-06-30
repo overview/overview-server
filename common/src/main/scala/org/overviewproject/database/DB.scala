@@ -18,15 +18,18 @@ import slick.jdbc.UnmanagedSession
  * of the application, and DB.close() at the end.
  */
 object DB {
-
+  var connected: Boolean = false
   private var dataSource: DataSource = _
 
-  def connect(source: DataSource) {
+  def connect(source: DataSource): Unit = {
+    if (connected) throw new RuntimeException("You tried to connect to the database twice")
     dataSource = source
+    connected = true
   }
 
-  def close() {
+  def close(): Unit = {
     dataSource.shutdown
+    connected = false
   }
 
   /**
