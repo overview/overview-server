@@ -2,7 +2,7 @@
   loginForm: Form[OverviewUser],
   userForm: Form[PotentialNewUser],
   is32BitJava: Boolean
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @requireJsBundle("Welcome/show")
@@ -19,7 +19,7 @@
         <div class="row">
           <div class="col-md-6">
             <div class="splash">
-              <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
+              <img class="big-logo" src="@routes.Assets.versioned("images/logo-large.png")" alt="@m("title")" />
               <p class="text">@m("p1")</p>
               <p class="learn"><a href="/help">@m("learn")</a></p>
             </div>

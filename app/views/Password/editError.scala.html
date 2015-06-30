@@ -1,8 +1,8 @@
-@()(implicit lang: Lang, flash: Flash, request: RequestHeader)
+@()(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @defining(scopedMessages("views.Password.editError")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="password-edit-error", h1=m("h1")) {
     <p>@m("p")</p>
-    <p>@Html(m("link_html", routes.PasswordController.new_()))</p>
+    <p>@Html(m("link_html", routes.PasswordController._new()))</p>
   }
 }

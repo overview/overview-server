@@ -9,20 +9,20 @@
 )(
   content: Html
 )(
-  implicit lang: Lang,
+  implicit messages: Messages,
   flash: Flash,
   request: RequestHeader
 )
 @import play.api.Play
 @import play.api.Play.current
 <!DOCTYPE html>
-<html lang="@lang.code">
+<html lang="@messages.lang.code">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <title>@title</title>
-    <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")" />
-    <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
-    @defining(play.filters.csrf.CSRF.TokenName) { csrfTokenName =>
+    <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.versioned("images/favicon.ico")" />
+    <link rel="stylesheet" type="text/css" href="@routes.Assets.versioned("stylesheets/main.css")" />
+    @defining(play.filters.csrf.CSRFConfig.global.tokenName) { csrfTokenName =>
       @for(csrfToken <- play.filters.csrf.CSRF.getToken(request).map(_.value)) {
         <script>
           window.csrfTokenName = "@csrfTokenName";
@@ -98,7 +98,7 @@
             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
           })();
         </script>
-        <script src="@routes.Assets.at("javascripts/tracking.js").url"></script>
+        <script src="@routes.Assets.versioned("javascripts/tracking.js").url"></script>
       }
     }
 
@@ -118,7 +118,7 @@
       </script>
       <script>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://static.intercomcdn.com/intercom.v1.js';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
       @if(Play.application.configuration.getString("analytics.ga_tracking_id").getOrElse("").length == 0) {
-        <script src="@routes.Assets.at("javascripts/tracking.js").url"></script>
+        <script src="@routes.Assets.versioned("javascripts/tracking.js").url"></script>
       }
     }
   </body>

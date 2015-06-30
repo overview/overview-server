@@ -2,7 +2,7 @@
   user: User,
   documentSets: models.pagination.Page[(org.overviewproject.models.DocumentSet, Int)],
   jobs: Seq[(org.overviewproject.models.DocumentSetCreationJob,org.overviewproject.models.DocumentSet,Int)]
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @requireJsBundle("DocumentSet/index")

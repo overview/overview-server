@@ -1,4 +1,4 @@
-@(hasDocuments: Boolean)(implicit lang: Lang)
+@(hasDocuments: Boolean)(implicit messages: Messages)
 @defining(scopedMessages("views.DocumentSet._importPublic")) { m =>
   @_importPane(h1 = m("h1")) {
     <div id="import-public-document-sets" data-source-url="@routes.PublicDocumentSetController.index">

@@ -1,12 +1,12 @@
 package mailers.Password
 
-import play.api.i18n.Lang
+import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 
 import mailers.Mailer
 import models.{OverviewUser,ResetPasswordRequest}
 
-case class create(val user: OverviewUser with ResetPasswordRequest)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
+case class create(val user: OverviewUser with ResetPasswordRequest)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.Password.create")
 
   private val url = controllers.routes.PasswordController.edit(user.resetPasswordToken).absoluteURL() 
@@ -20,7 +20,7 @@ case class create(val user: OverviewUser with ResetPasswordRequest)(implicit val
   override val subject = m("subject")
   override val text = Seq(body, case1, case2, url, signoff + "\n" + signature).mkString("\n\n")
   override val html =
-    <html lang={lang.code}>
+    <html lang={messages.lang.code}>
       <head>
         <title>{subject}</title>
       </head>

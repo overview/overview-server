@@ -1,21 +1,17 @@
 package controllers.auth
 
 import java.util.UUID
-import play.api.mvc.{Result, RequestHeader}
-import play.api.test.{FakeApplication, FakeRequest, DefaultAwaitTimeout}
-import play.api.Play.{start,stop}
-import scala.concurrent.Future
-
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.mvc.{Result, RequestHeader}
+import play.api.test.{FakeRequest, DefaultAwaitTimeout}
+import scala.concurrent.Future
+
 import controllers.backend.{SessionBackend,UserBackend}
 import models.{Session, User}
 
-class SessionFactorySpec extends Specification with Mockito with JsonMatchers with DefaultAwaitTimeout {
-  step(start(FakeApplication())) // to load application.secret
-
+class SessionFactorySpec extends test.helpers.InAppSpecification with Mockito with JsonMatchers with DefaultAwaitTimeout {
   val h = play.api.test.Helpers
 
   trait BaseScope extends Scope {
@@ -90,6 +86,4 @@ class SessionFactorySpec extends Specification with Mockito with JsonMatchers wi
       there was one(authority).apply(authorizedSession.user.get)
     }
   }
-
-  step(stop)
 }

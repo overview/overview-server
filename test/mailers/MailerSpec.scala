@@ -6,7 +6,9 @@ import play.api.Play.{start,stop}
 import play.api.test.{FakeApplication,FakeRequest}
 
 class MailerSpec extends Specification {
-  step(start(FakeApplication()))
+  private val application = FakeApplication()
+
+  step(start(application))
 
   trait OurContext extends Scope {
     var mailerSubject = "Subject"
@@ -42,5 +44,5 @@ class MailerSpec extends Specification {
     }
   }
 
-  step(stop)
+  step(stop(application))
 }

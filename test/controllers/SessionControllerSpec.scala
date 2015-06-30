@@ -19,11 +19,11 @@ class SessionControllerSpec extends ControllerSpecification {
   }
 
   "SessionController" should {
-    "new_" should {
+    "_new" should {
       trait NewScope extends BaseScope {
         def maybeUser : Option[User] = Some(fakeUser)
         def request = fakeOptionallyAuthorizedRequest(maybeUser)
-        lazy val result = controller.new_()(request)
+        lazy val result = controller._new()(request)
       }
 
       "redirect when user is already logged in" in new NewScope {

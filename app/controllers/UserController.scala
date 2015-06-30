@@ -14,11 +14,11 @@ trait UserController extends Controller {
 
   private val m = views.Magic.scopedMessages("controllers.UserController")
 
-  def new_ = SessionController.new_
+  def _new = SessionController._new
 
   def create = TransactionAction { implicit request =>
     userForm.bindFromRequest().fold(
-      formWithErrors => BadRequest(views.html.Session.new_(loginForm, formWithErrors)),
+      formWithErrors => BadRequest(views.html.Session._new(loginForm, formWithErrors)),
       registration => {
         registration.withRegisteredEmail match {
           case Some(u) => handleExistingUser(u)

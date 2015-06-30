@@ -1,13 +1,20 @@
 package controllers
 
 import java.util.UUID
+import play.api.i18n.{I18nSupport,MessagesApi}
 import play.api.mvc.{AnyContent,Controller => PlayController,Request,RequestHeader}
 import scala.util.control.Exception.catching
 
 import models.pagination.PageRequest
 import models.{IdList,SelectionRequest}
 
-trait Controller extends PlayController {
+trait Controller extends PlayController with I18nSupport {
+  override def messagesApi: MessagesApi = {
+    import play.api.Play.current
+    import play.api.i18n.Messages.Implicits.applicationMessagesApi
+    applicationMessagesApi(current)
+  }
+
   private def queryStringParamToUnsignedInt(request: RequestHeader, param: String): Option[Int] = {
     request.queryString
       .getOrElse(param, Seq())

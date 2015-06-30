@@ -21,7 +21,7 @@ object AuthResults {
         Results.BadRequest(views.json.api.error("unauthenticated", "You must be logged in to view this page."))
       }
       case None => {
-        Results.Redirect(controllers.routes.SessionController.new_)
+        Results.Redirect(controllers.routes.SessionController._new)
           .withSession(RequestedUriKey -> request.uri) 
       }
     }

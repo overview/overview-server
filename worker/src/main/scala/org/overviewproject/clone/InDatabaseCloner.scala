@@ -1,22 +1,11 @@
 package org.overviewproject.clone
 
-import anorm._
-import java.sql.Connection
+import org.overviewproject.database.HasBlockingDatabase
+import org.overviewproject.util.Logger
 
-import org.overviewproject.database.DeprecatedDatabase
+trait InDatabaseCloner extends HasBlockingDatabase {
+  protected val logger: Logger = Logger.forClass(getClass)
+  protected val DocumentSetIdMask: Long = 0x00000000FFFFFFFFL
 
-trait InDatabaseCloner {
-  val DocumentSetIdMask: Long = 0x00000000FFFFFFFFl
-
-  def cloneQuery: SqlQuery
-
-  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Boolean = {
-    implicit val c: Connection = DeprecatedDatabase.currentConnection
-
-    cloneQuery.on(
-      "cloneDocumentSetId" -> cloneDocumentSetId,
-      "sourceDocumentSetId" -> sourceDocumentSetId,
-      "documentSetIdMask" -> DocumentSetIdMask).execute
-  }
-
+  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Unit
 }

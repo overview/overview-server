@@ -5,6 +5,8 @@ import play.api.mvc._
 import play.filters.csrf.CSRFFilter
 import scala.concurrent.Future
 
+import org.overviewproject.database.{DatabaseConfiguration,DataSource,DB}
+
 object LoggingFilter extends EssentialFilter {
   // Copy/paste of http://www.playframework.com/documentation/2.2.1/ScalaHttpFilters
   def apply(nextFilter: EssentialAction) = new EssentialAction {
@@ -64,9 +66,9 @@ object Global extends WithFilters(LoggingFilter, CorsFilter, CSRFFilter()) with 
   }
 
   override def onStart(app: play.api.Application) = {
-    import org.overviewproject.database.{DB => ODB, DataSource => ODataSource}
-    import play.api.db.{DB => PDB}
-    ODB.connect(ODataSource(PDB.getDataSource()(app)))
+    val config = DatabaseConfiguration.fromConfig
+    val dataSource = DataSource(config)
+    DB.connect(dataSource)
   }
 
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {

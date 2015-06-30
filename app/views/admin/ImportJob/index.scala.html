@@ -5,7 +5,7 @@
     org.overviewproject.models.DocumentSet,
     Option[String]
   )]
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @requireJsBundle("admin/ImportJob/index")

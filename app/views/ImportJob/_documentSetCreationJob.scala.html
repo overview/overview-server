@@ -2,7 +2,7 @@
   job: org.overviewproject.models.DocumentSetCreationJob,
   documentSet: org.overviewproject.models.DocumentSet,
   nAheadInQueue: Int
-)(implicit lang: Lang, request: RequestHeader)
+)(implicit messages: Messages, request: RequestHeader)
 @import views.helper.DocumentSetHelper
 @defining(scopedMessages("views.ImportJob._documentSetCreationJob")) { m =>
   <li data-document-set-creation-job-id="@job.id" data-document-set-id="@documentSet.id">

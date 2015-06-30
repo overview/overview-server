@@ -3,6 +3,7 @@ package views.json.DocumentSet
 import java.util.Date
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTimeZone
+import play.api.i18n.Messages
 import play.api.libs.json.{Json, JsValue}
 
 import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tag,Tree}
@@ -29,7 +30,7 @@ object show {
     _views: Iterable[View],
     viewJobs: Iterable[DocumentSetCreationJob],
     tags: Iterable[Tag]
-  ) : JsValue = Json.obj(
+  )(implicit messages: Messages): JsValue = Json.obj(
     "nDocuments" -> documentSet.documentCount,
     "views" -> views.json.View.index(trees, _views, viewJobs),
     "tags" -> tags.map(writeTag)

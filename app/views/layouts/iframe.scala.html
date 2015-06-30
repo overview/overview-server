@@ -5,12 +5,12 @@
 )(
   content: Html
 )(
-  implicit lang: Lang
+  implicit messages: Messages
 )
 <!DOCTYPE html>
-<html lang="@lang.code">
+<html lang="@messages.lang.code">
   <head>
-    <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
+    <link rel="stylesheet" type="text/css" href="@routes.Assets.versioned("stylesheets/main.css")" />
   </head>
 
   <body class="@bodyClass">

@@ -9,7 +9,7 @@ import scala.concurrent.{Await,Future}
 
 import models.{Session, User}
 
-class OptionallyAuthorizedActionSpec extends test.InAppSpecification with Mockito {
+class OptionallyAuthorizedActionSpec extends test.helpers.InAppSpecification with Mockito {
   trait BaseScope extends Scope {
     val mockSessionFactory = mock[SessionFactory]
     val authority = mock[Authority]

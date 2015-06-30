@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.overviewproject.models.ApiToken
 
-class ApiAuthorizedActionSpec extends test.InAppSpecification with Mockito {
+class ApiAuthorizedActionSpec extends test.helpers.InAppSpecification with Mockito {
   trait BaseScope extends Scope {
     val mockApiTokenFactory = mock[ApiTokenFactory]
     val authority = mock[Authority]

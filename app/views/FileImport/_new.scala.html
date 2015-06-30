@@ -1,7 +1,7 @@
 @(
   user: User,
   nOwnedDocumentSets: Int
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @requireJsBundle("FileImport/new")

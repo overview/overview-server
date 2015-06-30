@@ -25,7 +25,8 @@ import org.overviewproject.util._
 import org.overviewproject.util.Progress._
 
 object JobHandler extends HasBlockingDatabase {
-  val logger = Logger.forClass(getClass)
+  import database.api._
+  private val logger = Logger.forClass(getClass)
 
   def main(args: Array[String]) {
     // Make sure java.sql.Timestamp values are correct
@@ -109,11 +110,13 @@ object JobHandler extends HasBlockingDatabase {
       }
 
       logger.info(s"Cleaning up job ${j.documentSetId}")
-      DeprecatedDatabase.inTransaction {
-        deleteJobCleanupData(j)
-        j.delete
-      }
-
+      blockingDatabase.runUnit(sqlu"""
+        WITH a AS (
+          DELETE FROM document_set_creation_job_node
+          WHERE document_set_creation_job_id = ${j.id}
+        )
+        DELETE FROM document_set_creation_job WHERE id = ${j.id}
+      """)
     } catch {
       case e: Exception => reportError(j, e)
       case t: Throwable => { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
@@ -196,22 +199,23 @@ object JobHandler extends HasBlockingDatabase {
   private def restartInterruptedJobs: Unit = JobRestarter.restartInterruptedJobs
 
   private def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
-    import scala.language.postfixOps
-    import anorm._
-    import anorm.SqlParser._
-    import org.overviewproject.persistence.orm.Schema._
-    import org.overviewproject.postgres.SquerylEntrypoint._
+    import database.api._
+    import database.executionContext
 
-    logger.info(s"[${job.documentSetId}] Deleting cancelled job")
-    DeprecatedDatabase.inTransaction {
-      implicit val connection = DeprecatedDatabase.currentConnection
+    logger.info("Deleting cancelled job {} for DocumentSet {}", job.id, job.documentSetId)
 
-      val id = job.documentSetId
-      SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
-      SQL("DELETE FROM document_set_creation_job WHERE id = {jobId}").on('jobId -> job.id).executeUpdate()
-
-      deleteJobCleanupData(job)
-    }
+    blockingDatabase.runUnit(sqlu"""
+      WITH a AS (
+        SELECT lo_unlink(contents_oid)
+        FROM document_set_creation_job
+        WHERE document_set_id = ${job.documentSetId}
+          AND contents_oid IS NOT NULL
+      ), b AS (
+        DELETE FROM document_set_creation_job_node
+        WHERE document_set_creation_job_id = ${job.id}
+      )
+      DELETE FROM document_set_creation_job WHERE id = ${job.id}
+    """)
   }
 
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
@@ -231,22 +235,12 @@ object JobHandler extends HasBlockingDatabase {
     }
   }
 
-  private def deleteJobCleanupData(job: PersistentDocumentSetCreationJob): Unit = {
-    import org.overviewproject.persistence.orm.Schema
-    import org.overviewproject.postgres.SquerylEntrypoint._
-
-    Schema.documentSetCreationJobNodes.deleteWhere(_.documentSetCreationJobId === job.id)
-  }
-
   private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
-    import database.api._
     blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
   }
 
   private def createTree(treeId: Long, rootNodeId: Long, documentSet: DocumentSet,
                          numberOfDocuments: Int, job: PersistentDocumentSetCreationJob): Unit = {
-    import database.api._
-
     blockingDatabase.runUnit(Trees.+=(Tree(
       id = treeId,
       documentSetId = documentSet.id,

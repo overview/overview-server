@@ -1,7 +1,7 @@
 @(
   user: User,
   query: String
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @requireJsBundle("DocumentCloudImportJob/new")

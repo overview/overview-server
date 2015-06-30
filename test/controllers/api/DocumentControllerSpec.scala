@@ -2,7 +2,6 @@ package controllers.api
 
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.test.WithApplication
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedRequest
@@ -215,7 +214,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must not(beMatching("bleep".r))
       }
 
-      "stream content" in new WithApplication with IndexFieldsScope {
+      "stream content" in new IndexFieldsScope {
         override lazy val request = fakeRequest("GET", "/?stream=true")
 
         status(result) must beEqualTo(OK)
@@ -223,9 +222,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         header("Transfer-Encoding", result) must beSome("chunked")
         header("Content-Type", result) must beSome("application/json")
 
-        import play.api.libs.iteratee.{Enumerator,Iteratee}
-        import play.api.mvc.Results
-        val json = new String(await(Enumerator(contentAsBytes(result)).through(Results.dechunk).run(Iteratee.consume())), "utf-8")
+        val json = contentAsString(result)
         json must /("pagination") /("total" -> 2)
         json must /("items") /#(0) /("id" -> documents(0).id)
       }

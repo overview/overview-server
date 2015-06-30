@@ -1,6 +1,6 @@
 @(
   form: Form[String]
-)(implicit lang: Lang, request: RequestHeader)
+)(implicit messages: Messages, request: RequestHeader)
 
 @defining(scopedMessages("views.Password._newForm")) { m =>
   <form method="post" action="@routes.PasswordController.create()" class="well form-horizontal" autocomplete="off">

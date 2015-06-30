@@ -3,7 +3,7 @@
   documentSetId: Long,
   emails: Seq[String],
   isPublic: Boolean
-)(implicit lang: Lang, request: RequestHeader)
+)(implicit messages: Messages, request: RequestHeader)
 
 @defining(scopedMessages("views.DocumentSetUser.index")) { m =>
   @views.html.layouts.iframe(bodyClass="document-set-user-index", javascripts=Html(requireJsBundle("DocumentSetUser/index").toString), jsMessageKeys=Seq("views.DocumentSetUser.index")) {

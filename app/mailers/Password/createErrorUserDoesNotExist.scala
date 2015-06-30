@@ -1,14 +1,14 @@
 package mailers.Password
 
-import play.api.i18n.Lang
+import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 
 import mailers.Mailer
 
-case class createErrorUserDoesNotExist(val email: String)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
+case class createErrorUserDoesNotExist(val email: String)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.Password.createErrorUserDoesNotExist")
 
-  private val url = controllers.routes.PasswordController.new_().absoluteURL()
+  private val url = controllers.routes.PasswordController._new().absoluteURL()
   private val intro = m("intro")
   private val body = m("body")
   private val case1 = m("case1")
@@ -20,7 +20,7 @@ case class createErrorUserDoesNotExist(val email: String)(implicit val lang: Lan
   override val subject = m("subject")
   override val text = Seq(intro, body, case1, case2, url, signoff + "\n" + signature).mkString("\n\n")
   override val html =
-    <html lang={lang.code}>
+    <html lang={messages.lang.code}>
       <head>
         <title>{subject}</title>
       </head>

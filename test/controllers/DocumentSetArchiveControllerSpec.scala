@@ -2,56 +2,49 @@ package controllers
 
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.i18n.Messages
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
 import controllers.backend.DocumentFileInfoBackend
-import models.archive.Archive
-import models.archive.ArchiveEntry
-import models.archive.DocumentViewInfo
-import models.archive.FileViewInfo
-import models.archive.PageViewInfo
-import models.DocumentFileInfo
+import models.archive.{Archive,ArchiveEntry,DocumentViewInfo}
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
-
   "DocumentSetArchiveController" should {
 
-    "set content-type" in new DocumentSetArchiveContext {
+    "set content-type" in new BaseScope {
       header(h.CONTENT_TYPE) must beSome(contentType)
     }
 
-    "set content-length to archive size" in new DocumentSetArchiveContext {
+    "set content-length to archive size" in new BaseScope {
       header(h.CONTENT_LENGTH) must beSome(s"$archiveSize")
     }
 
-    "set content-disposition to some cool name" in new DocumentSetArchiveContext {
+    "set content-disposition to some cool name" in new BaseScope {
       header(h.CONTENT_DISPOSITION) must beSome(s"""attachment; filename="$fileName"""")
     }
 
-    "send archive as content" in new DocumentSetArchiveContext {
+    "send archive as content" in new BaseScope {
       h.contentAsBytes(result) must be equalTo archiveData
     }
 
-    "redirect if archiving is not supported" in new UnsupportedDocumentSetContext {
+    "redirect if archiving is not supported" in new BaseScope {
+      override def numberOfDocuments = 0
       h.status(result) must beEqualTo(h.SEE_OTHER)
+      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.unsupported")
     }
 
-    "flash warning if archiving is not supported" in new UnsupportedDocumentSetContext {
-      h.flash(result).data must be equalTo warning
+    "flash warning if there are too many documents" in new BaseScope {
+      override def numberOfDocuments = 11
+      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.tooManyEntries")
     }
 
-    "flash warning if there are too many documents" in new TooManyDocumentsContext {
-      h.flash(result).data must be equalTo warning
-    }
-
-    "flash warning if archive is too large" in new ArchiveTooLargeContext {
-      h.flash(result).data must be equalTo warning
+    "flash warning if archive is too large" in new BaseScope {
+      override def controller = new TooLargeArchiveController(viewInfos)
+      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.archiveTooLarge")
     }
   }
 
-  trait DocumentSetArchiveContext extends Scope {
+  trait BaseScope extends Scope {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val documentSetId = 23
@@ -77,33 +70,14 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
     def header(key: String): Option[String] = h.header(key, result)
   }
-  
-  trait WarningMessenger {
-    def warning: Map[String, String] = Map("warning" -> Messages("controllers.DocumentSetArchiveController." + message))
-    
-    protected def message: String
-  }
-  
-  trait UnsupportedDocumentSetContext extends DocumentSetArchiveContext with WarningMessenger {
-    override def numberOfDocuments = 0
-    override def message = "unsupported"
-  }
-
-  trait TooManyDocumentsContext extends DocumentSetArchiveContext with WarningMessenger {
-    override def numberOfDocuments = 11
-    override def message = "tooManyEntries"
-  }
-
-  trait ArchiveTooLargeContext extends DocumentSetArchiveContext with WarningMessenger {
-    override def controller = new TooLargeArchiveController(viewInfos)
-    override def message = "archiveTooLarge"
-  }
 
   class TestDocumentSetArchiveController(
       documentSetId: Long,
       archiveData: Array[Byte],
       documentViewInfos: Seq[DocumentViewInfo]) extends DocumentSetArchiveController {
     import scala.concurrent.ExecutionContext.Implicits.global
+
+    override def messagesApi = new test.helpers.MockMessagesApi
 
     override val MaxNumberOfEntries = 10
 
@@ -121,6 +95,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
 
   class TooLargeArchiveController(documentViewInfos: Seq[DocumentViewInfo]) extends DocumentSetArchiveController {
     import scala.concurrent.ExecutionContext.Implicits.global
+
+    override def messagesApi = new test.helpers.MockMessagesApi
     
     val archiver = smartMock[Archiver]
     val archive = smartMock[Archive]

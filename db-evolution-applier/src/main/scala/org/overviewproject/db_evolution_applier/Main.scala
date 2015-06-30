@@ -1,8 +1,12 @@
 package org.overviewproject.db_evolution_applier
 
-import com.typesafe.config.ConfigFactory
-import java.io.File
-import play.api.{Configuration,DefaultApplication,Mode,Plugin,Play}
+import com.typesafe.config.{Config,ConfigFactory}
+import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
+import java.sql.Connection
+import java.util.Properties
+import play.api.db.{DBApi,Database}
+import play.api.db.evolutions.{DefaultEvolutionsApi,EvolutionsApi,ThisClassLoaderEvolutionsReader}
+import scala.collection.JavaConversions.asScalaSet
 
 /** Simple program to run Play evolutions.
   *
@@ -13,9 +17,10 @@ import play.api.{Configuration,DefaultApplication,Mode,Plugin,Play}
   */
 object Main {
   def main(args: Array[String]) : Unit = {
-    val config = ConfigFactory.parseString("""
-      |applyEvolutions.default=true
-      |applyDownEvolutions.default=true
+    val DatabaseName: String = "default"
+
+    val config: Config = ConfigFactory.parseString("""
+      |# We keep 'db.default' so caller can override via Java system properties
       |db {
       |  default {
       |    dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
@@ -39,21 +44,48 @@ object Main {
       |}
       |""".stripMargin).resolve()
 
-    val application = new DefaultApplication(
-      new java.io.File("."),
-      getClass.getClassLoader,
-      None,
-      Mode.Prod
-    ) {
-      override lazy val configuration = Configuration(config)
+    val hikariConfig: HikariConfig = configToHikariConfig(config, DatabaseName)
+    val hikariDataSource: HikariDataSource = new HikariDataSource(hikariConfig)
+    val database: Database = new HikariDatabase(DatabaseName, hikariDataSource)
+    val dbApi: DBApi = new SingleDatabaseDBApi(database)
+    val evolutionsApi: EvolutionsApi = new DefaultEvolutionsApi(dbApi)
 
-      override lazy val plugins : Seq[play.api.Plugin] = Seq(
-        new com.edulify.play.hikaricp.HikariCPPlugin(this),
-        new play.api.db.evolutions.EvolutionsPlugin(this)
-      )
-    }
-
-    Play.start(application)
-    Play.stop()
+    val scripts = evolutionsApi.scripts(DatabaseName, ThisClassLoaderEvolutionsReader)
+    evolutionsApi.evolve(DatabaseName, scripts, true)
   }
+
+  private def configToHikariConfig(rootConfig: Config, databaseName: String): HikariConfig = {
+    val config = rootConfig.getConfig("db").getConfig(databaseName)
+    val props = new Properties()
+    val entrySet = asScalaSet(config.entrySet)
+    entrySet.foreach { entry => props.setProperty(entry.getKey, entry.getValue.unwrapped.toString) }
+    new HikariConfig(props)
+  }
+}
+
+class HikariDatabase(override val name: String, override val dataSource: HikariDataSource) extends Database {
+  override def url = "[you-do-not-need-this]"
+  override def getConnection = getConnection(false)
+  override def getConnection(autocommit: Boolean) = {
+    val ret = dataSource.getConnection
+    if (!autocommit) ret.setAutoCommit(false)
+    ret
+  }
+  override def withConnection[A](autocommit: Boolean)(block: Connection => A) = {
+    val connection = getConnection(autocommit)
+    try {
+      block(connection)
+    } finally {
+      connection.close
+    }
+  }
+  override def withConnection[A](block: Connection => A) = withConnection(true)(block)
+  override def withTransaction[A](block: Connection => A) = withConnection(false)(block)
+  override def shutdown = dataSource.shutdown
+}
+
+class SingleDatabaseDBApi(database: Database) extends DBApi {
+  override def databases = Seq(database)
+  override def database(name: String) = database
+  override def shutdown = database.shutdown
 }

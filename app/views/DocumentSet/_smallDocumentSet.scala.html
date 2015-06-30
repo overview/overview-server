@@ -1,7 +1,7 @@
 @(
   documentSet: org.overviewproject.models.DocumentSet,
   ownerEmail: String
-)(implicit lang: Lang, request: RequestHeader)
+)(implicit messages: Messages, request: RequestHeader)
 
 @defining(scopedMessages("views.DocumentSet._smallDocumentSet")) { m =>
   <li class="document-set">

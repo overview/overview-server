@@ -5,19 +5,15 @@ import java.sql.SQLException
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import org.squeryl.SquerylSQLException
-import play.api.Play.{start,stop}
 import play.api.data.Form
 import play.api.mvc.{AnyContent,Request,RequestHeader}
-import play.api.test.{FakeApplication,FakeRequest}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.{SEE_OTHER, status}
-import org.overviewproject.test.Specification
 import controllers.forms.UserForm
 import mailers.Mailer
 import models.{PotentialNewUser, OverviewUser, ConfirmationRequest}
 
-class UserControllerSpec extends Specification {
-  step(start(FakeApplication()))
-
+class UserControllerSpec extends test.helpers.InAppSpecification {
   implicit val timeout : Timeout = Timeout(999999, scala.concurrent.duration.MILLISECONDS)
 
   trait OurScope extends Scope with Mockito {
@@ -157,6 +153,4 @@ class UserControllerSpec extends Specification {
       status(result) must equalTo(SEE_OTHER)
     }
   }
-
-  step(stop)
 }

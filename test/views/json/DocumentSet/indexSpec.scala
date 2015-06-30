@@ -3,7 +3,7 @@ package views.html.DocumentSet
 import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
 import models.pagination.Page
 
-class indexSpec extends views.html.ViewSpecification {
+class indexSpec extends views.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     def jobs : Seq[(DocumentSetCreationJob,DocumentSet,Int)] = Seq()
     def documentSets: Seq[(DocumentSet,Int)] = Seq()

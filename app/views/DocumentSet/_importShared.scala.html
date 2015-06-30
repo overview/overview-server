@@ -1,4 +1,4 @@
-@(hasDocuments: Boolean)(implicit lang: Lang)
+@(hasDocuments: Boolean)(implicit messages: Messages)
 @defining(scopedMessages("views.DocumentSet._importShared")) { m =>
   @_importPane(m("h1")) {
     <div id="import-shared-document-sets" data-source-url="@routes.SharedDocumentSetController.index">

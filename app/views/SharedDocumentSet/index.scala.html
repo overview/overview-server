@@ -2,7 +2,7 @@
   user: User,
   nOwnedDocumentSets: Long,
   documentSets: Iterable[(org.overviewproject.models.DocumentSet,String)]
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @requireJsBundle("SharedDocumentSet/index")

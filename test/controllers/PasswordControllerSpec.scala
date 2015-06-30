@@ -44,10 +44,10 @@ class PasswordControllerSpec extends ControllerSpecification {
   }
 
   "PasswordController" should {
-    "new_()" should {
+    "_new()" should {
       trait NewScope extends OurScope {
         def request = fakeOptionallyAuthorizedRequest(None)
-        lazy val result = controller.new_()(request)
+        lazy val result = controller._new()(request)
       }
 
       "redirect when the user is logged in" in new NewScope {

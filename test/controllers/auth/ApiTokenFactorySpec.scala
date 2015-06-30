@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import controllers.backend.ApiTokenBackend
 import org.overviewproject.models.ApiToken
 
-class ApiTokenFactorySpec extends test.InAppSpecification with Mockito with JsonMatchers {
+class ApiTokenFactorySpec extends test.helpers.InAppSpecification with Mockito with JsonMatchers {
   val h = play.api.test.Helpers
 
   trait BaseScope extends Scope {

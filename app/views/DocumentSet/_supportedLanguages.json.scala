@@ -1,7 +1,7 @@
 package views.DocumentSet
 
 import java.util.Locale
-import play.api.i18n.Lang
+import play.api.i18n.Messages
 import play.api.libs.json.{Json,JsValue}
 
 import org.overviewproject.util.{SupportedLanguages,SupportedLanguage}
@@ -18,8 +18,8 @@ object _supportedLanguages {
     )
   }
 
-  def apply()(implicit lang: Lang) : JsValue = {
-    val locale = lang.toLocale
+  def apply()(implicit messages: Messages) : JsValue = {
+    val locale = messages.lang.toLocale
     val languages = SupportedLanguages.languagesSortedInCallerLocale(locale)
       .map(supportedLanguageToJson(_, locale))
     Json.toJson(languages)

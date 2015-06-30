@@ -28,9 +28,9 @@ trait PasswordController extends Controller {
   private lazy val editForm = controllers.forms.EditPasswordForm()
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
 
-  def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def _new() = OptionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
-      case None => Ok(views.html.Password.new_(newForm))
+      case None => Ok(views.html.Password._new(newForm))
       case Some(_) => doRedirect
     }
   }
@@ -52,7 +52,7 @@ trait PasswordController extends Controller {
 
   def create() = Action { implicit request =>
     newForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(views.html.Password.new_(formWithErrors)), // no email address given
+      formWithErrors => BadRequest(views.html.Password._new(formWithErrors)), // no email address given
       email => {
         // We got a valid email address, but that doesn't mean this is a real
         // user. We need to send an email to the address either way.

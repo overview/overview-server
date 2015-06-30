@@ -1,6 +1,6 @@
 package mailers.User
 
-import play.api.i18n.Lang
+import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 import play.api.Play
 import play.api.Play.current
@@ -8,7 +8,7 @@ import mailers.Mailer
 import models.{ConfirmationRequest, OverviewUser}
 import scala.xml.Unparsed
 
-case class create(val user: OverviewUser with ConfirmationRequest)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
+case class create(val user: OverviewUser with ConfirmationRequest)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.User.create")
 
   private val url = controllers.routes.ConfirmationController.show(user.confirmationToken).absoluteURL() 
@@ -23,7 +23,7 @@ case class create(val user: OverviewUser with ConfirmationRequest)(implicit val 
   override val subject = m("subject")
   override val text = body1 + "\n\n" + url + "\n\n" + body2 + "\n\n" + signoff + "\n" + signature
   override val html =
-    <html lang={lang.code}>
+    <html lang={messages.lang.code}>
       <head>
         <title>{subject}</title>
       </head>

@@ -1,12 +1,12 @@
 @(
   name: String,
   selectedLanguageCode: Option[String] = None
-)(implicit lang: Lang)
+)(implicit messages: Messages)
 
 @import org.overviewproject.util.SupportedLanguages
 
 <select name="@name">
-  @defining(lang.toLocale) { locale =>
+  @defining(messages.lang.toLocale) { locale =>
     @defining(SupportedLanguages.defaultLanguage.languageCode) { defaultLanguageCode =>
       @for(supportedLanguage <- SupportedLanguages.languagesSortedInCallerLocale(locale)) {
         <option

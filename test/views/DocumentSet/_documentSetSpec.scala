@@ -2,7 +2,7 @@ package views.html.DocumentSet
 
 import org.overviewproject.models.DocumentSet
 
-class _documentSetSpec extends views.html.ViewSpecification {
+class _documentSetSpec extends views.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     val documentSet: DocumentSet = factory.documentSet(id=1L)
     val nViews: Int = 3
@@ -32,12 +32,12 @@ class _documentSetSpec extends views.html.ViewSpecification {
     "should show the number of views" in new BaseScope {
       override val nViews = 3
       val span = $(".view-count")
-      span.text().trim must beEqualTo("3 views")
+      span.text().trim must beEqualTo("views.DocumentSet._documentSet.nViews,3")
     }
 
     "should show a document count" in new BaseScope {
       override val documentSet = factory.documentSet(id=1L, documentCount=18)
-      $("span.document-count").text() must equalTo("18 documents")
+      $("span.document-count").text() must equalTo("views.DocumentSet._documentSet.nDocuments,18")
     }
 
     "should not show error count if none exist" in new BaseScope {
@@ -47,7 +47,7 @@ class _documentSetSpec extends views.html.ViewSpecification {
 
     "should show error count popup if there are errors" in new BaseScope {
       override val documentSet = factory.documentSet(id=1L, documentProcessingErrorCount=10)
-      $("a.error-count").text.trim must equalTo("10 documents could not be loaded")
+      $("a.error-count").text.trim must equalTo("views.DocumentSet._documentSet.nErrors,10")
       $("a.error-count").attr("href") must be equalTo("/documentsets/1/error-list")
       $("a.error-count").attr("data-target") must be equalTo("#error-list-modal")
     }

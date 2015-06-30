@@ -107,14 +107,14 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
   type NodeIdMap = Map[Long, Long]
   type TagIdMap = Map[Long, Long]
 
-  val cloneDocuments: (Long, Long) => Boolean
-  val cloneNodes: (Long, Long) => Boolean
+  val cloneDocuments: (Long, Long) => Unit
+  val cloneNodes: (Long, Long) => Unit
   val cloneTags: (Long, Long) => TagIdMap
 
   val cloneDocumentProcessingErrors: (Long, Long) => Unit
 
-  val cloneTrees: (Long, Long) => Boolean
-  val cloneNodeDocuments: (Long, Long) => Boolean
+  val cloneTrees: (Long, Long) => Unit
+  val cloneNodeDocuments: (Long, Long) => Unit
   val cloneDocumentTags: (Long, Long, TagIdMap) => Unit
   val refreshSortedDocumentIds: (Long) => Unit
 

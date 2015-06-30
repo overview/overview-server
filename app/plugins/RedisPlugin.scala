@@ -4,32 +4,32 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.redis.RedisClient
 import play.api.{Application,Plugin}
+import play.api.Play
 
-case class RedisConfiguration(host: String, port: Int)
-
-object RedisConfiguration {
-  def apply(application: Application): RedisConfiguration = {
-    def getString(key: String): String =
-      application.configuration
-        .getString(key)
-        .getOrElse(throw new Exception(s"Missing configuration value $key"))
-
-    def getInt(key: String): Int =
-      application.configuration
-        .getInt(key)
-        .getOrElse(throw new Exception(s"Missing configuration value $key"))
-
-    val host = getString("redis.host")
-    val port = getInt("redis.port")
-
-    RedisConfiguration(host, port)
-  }
+trait RedisConfiguration {
+  val host: String
+  val port: Int
 }
 
-class RedisPlugin(application: Application) extends Plugin {
+object RedisConfiguration extends RedisConfiguration {
+  private def getString(key: String): String =
+    Play.current.configuration
+      .getString(key)
+      .getOrElse(throw new Exception(s"Missing configuration value $key"))
+
+  private def getInt(key: String): Int =
+    Play.current.configuration
+      .getInt(key)
+      .getOrElse(throw new Exception(s"Missing configuration value $key"))
+
+  val host: String = getString("redis.host")
+  val port: Int = getInt("redis.port")
+}
+
+class RedisPlugin extends Plugin {
   @volatile var loaded = false
 
-  lazy val config: RedisConfiguration = RedisConfiguration(application)
+  lazy val config: RedisConfiguration = RedisConfiguration
 
   lazy val system: ActorSystem = {
     loaded = true

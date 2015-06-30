@@ -1,4 +1,4 @@
-@(documentProcessingErrors: Seq[(String, Seq[models.OverviewDocumentProcessingError])])(implicit lang: Lang)
+@(documentProcessingErrors: Seq[(String, Seq[models.OverviewDocumentProcessingError])])(implicit messages: Messages)
 @import scala.util.Try
 @import java.net.{URL,MalformedURLException}
 

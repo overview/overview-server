@@ -12,6 +12,7 @@ import scala.concurrent.Future
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,Selection,SelectionRequest}
 import org.overviewproject.query.{Field,PhraseQuery}
+import test.helpers.MockMessagesApi
 
 class SelectionHelpersSpec extends Specification with Mockito {
   "selectionRequest" should {
@@ -20,6 +21,7 @@ class SelectionHelpersSpec extends Specification with Mockito {
         def f(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest]
       }
       val controller = new Controller with SelectionHelpers with F {
+        override def messagesApi = new MockMessagesApi()
         override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)
       }
       def f(documentSetId: Long, path: String) = {
@@ -127,6 +129,7 @@ class SelectionHelpersSpec extends Specification with Mockito {
       val mockSelectionBackend = smartMock[SelectionBackend]
 
       class TestController extends Controller with SelectionHelpers {
+        override def messagesApi = new MockMessagesApi()
         override val selectionBackend = mockSelectionBackend
         def go(request: Request[_]) = requestToSelection(documentSetId, userEmail, request)
       }

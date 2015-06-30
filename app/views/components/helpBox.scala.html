@@ -1,4 +1,4 @@
-@(paragraphs: String*)(implicit lang: Lang)
+@(paragraphs: String*)(implicit messages: Messages)
 @defining(scopedMessages("views.components.helpBox")) { m =>
   <div class="help-box">
     @for(paragraph <- paragraphs) {

@@ -2,7 +2,7 @@ package views
 
 import play.api.Play.current
 import play.api.libs.json.{JsObject,JsString}
-import play.api.i18n.{Lang,Messages}
+import play.api.i18n.Messages
 import scala.annotation.tailrec
 
 /** Embeds translated messages in a JsObject.
@@ -67,11 +67,11 @@ object JsMessages {
     * Not that this is a bottleneck, but it really ought to be memoized
     * somehow.
     */
-  def apply(keys: Seq[String])(implicit lang: Lang): String = {
+  def apply(keys: Seq[String])(implicit messages: Messages): String = {
     val keySet = keys.toSet
 
-    val m = Messages.messages
-    val allMessages = m.get("default").getOrElse(Map.empty) ++ m.get(lang.code).getOrElse(Map.empty)
+    val m = messages.messages.messages // Messages -> MessagesApi -> Map. Fun!
+    val allMessages = m.get("default").getOrElse(Map.empty) ++ m.get(messages.lang.code).getOrElse(Map.empty)
 
     val jsMessages: Seq[(String,JsString)] = allMessages
       .filterKeys(weWantKey(keySet, _))

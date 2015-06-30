@@ -36,7 +36,7 @@ object MessageQueueConfiguration {
  * Set `message_queue.mock=true` in application.conf to mock out
  * the connection.
  */
-class StompPlugin(application: Application) extends Plugin {
+class StompPlugin extends Plugin {
   private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
   private lazy val client: MessageQueueClient = {
     if (useMock) {

@@ -3,25 +3,17 @@ package controllers
 import akka.util.Timeout
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import org.specs2.specification.{Fragments, Step}
 import play.api.libs.json.JsValue
 import play.api.mvc.{AnyContent, AnyContentAsFormUrlEncoded, AnyContentAsJson, Headers, Request}
-import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
-import play.api.Play.{start,stop}
+import play.api.test.{FakeHeaders, FakeRequest}
 
 import controllers.auth.{AuthorizedRequest, OptionallyAuthorizedRequest}
 import models.{Session, User}
 
 /** A test environment for controllers.
   */
-trait ControllerSpecification extends Specification with Mockito {
-  sequential
-
+trait ControllerSpecification extends test.helpers.InAppSpecification with Mockito {
   protected implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
-
-  override def map(fs: => Fragments) = {
-    Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
-  }
 
   class AugmentedRequest[T, A <: Request[T], AWithJsonBody <: Request[AnyContentAsJson], AWithFormBody <: Request[AnyContentAsFormUrlEncoded]](
     request: A,
@@ -31,7 +23,7 @@ trait ControllerSpecification extends Specification with Mockito {
   ) {
 
     implicit def headersToFakeHeaders(headers: Headers): FakeHeaders = {
-      FakeHeaders(headers.toMap.toSeq)
+      FakeHeaders(headers.toMap.mapValues(_.head).toSeq)
     }
 
     def toFakeRequest: FakeRequest[T] = FakeRequest(

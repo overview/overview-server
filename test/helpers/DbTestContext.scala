@@ -12,7 +12,6 @@ import org.specs2.execute.AsResult
 import org.specs2.mutable.Around
 import org.squeryl.Session
 import org.squeryl.PrimitiveTypeMode.using
-import play.api.db.DB
 import play.api.Play.current
 import play.api.test._
 import play.api.test.Helpers._

@@ -1,18 +1,19 @@
-import sbt._
-import sbt.Keys._
-import play.Play.autoImport._
-import com.typesafe.sbt.rjs.SbtRjs.autoImport._
-import com.typesafe.sbt.digest.SbtDigest.autoImport._
-import com.typesafe.sbt.gzip.SbtGzip.autoImport._
 import com.typesafe.sbt.coffeescript.SbtCoffeeScript.autoImport._
+import com.typesafe.sbt.digest.SbtDigest.autoImport._
+import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
+import com.typesafe.sbt.gzip.SbtGzip.autoImport._
 import com.typesafe.sbt.jse.SbtJsEngine.autoImport._
 import com.typesafe.sbt.less.SbtLess.autoImport._
-import com.typesafe.sbt.web.SbtWeb.autoImport._
-import com.typesafe.sbt.web.SbtWeb
-import PlayKeys._
+import com.typesafe.sbt.rjs.SbtRjs.autoImport._
 import com.typesafe.sbt.SbtNativePackager.packageArchetype
-import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
+import com.typesafe.sbt.web.SbtWeb
+import com.typesafe.sbt.web.SbtWeb.autoImport._
+import play.Play.autoImport._
+import play.sbt.PlayImport._
+import play.sbt.routes.RoutesKeys
 import play.twirl.sbt.Import._
+import sbt._
+import sbt.Keys._
 
 object ApplicationBuild extends Build with ProjectSettings {
   override def settings = super.settings ++ Seq(
@@ -196,14 +197,14 @@ object ApplicationBuild extends Build with ProjectSettings {
     Project(appName, file("."))
       .enablePlugins(play.PlayScala)
       .enablePlugins(SbtWeb)
-      .settings(resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/")
+      //.settings(resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/")
       .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
       .settings(
         version := appVersion,
         libraryDependencies ++= serverProjectDependencies,
         scalacOptions ++= ourScalacOptions,
         TwirlKeys.templateImports += "views.Magic._",
-        routesImport += "extensions.Binders._",
+        RoutesKeys.routesImport += "extensions.Binders._",
         RjsKeys.modules := Seq(
           WebJs.JS.Object("name" -> "bundle/admin/ImportJob/index"),
           WebJs.JS.Object("name" -> "bundle/admin/Plugin/index"),
@@ -251,5 +252,6 @@ object ApplicationBuild extends Build with ProjectSettings {
         dependsOn (test in Test in worker)
         dependsOn (test in Test in documentSetWorker)
         dependsOn (test in Test in common)
+        dependsOn (run in Compile in dbEvolutionApplier).toTask("")
     )
 }

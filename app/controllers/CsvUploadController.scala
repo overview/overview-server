@@ -9,10 +9,10 @@ import controllers.backend.DocumentSetBackend
 trait CsvUploadController extends Controller {
   protected val documentSetBackend: DocumentSetBackend
 
-  def new_() = AuthorizedAction(anyUser).async { implicit request =>
+  def _new() = AuthorizedAction(anyUser).async { implicit request =>
     for {
       count <- documentSetBackend.countByUserEmail(request.user.email)
-    } yield Ok(views.html.CsvUpload.new_(request.user, count))
+    } yield Ok(views.html.CsvUpload._new(request.user, count))
   }
 }
 

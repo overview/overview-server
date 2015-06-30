@@ -8,7 +8,7 @@
   sidebar: Html
 )(
   content: Html
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @main(optionalUser=Some(user), title=title, bodyClass=bodyClass, javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
   <div class="row">
     <div id="sidebar" class="col-sm-3">

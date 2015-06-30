@@ -3,6 +3,7 @@ package views.json.View
 import java.util.Date
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTimeZone
+import play.api.i18n.Messages
 import play.api.libs.json.{Json,JsValue,JsArray}
 import scala.collection.mutable.ArrayBuffer
 
@@ -14,7 +15,7 @@ object index {
   private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)
   private def dateToISO8601(time: Date) : String = iso8601Format.print(time.getTime())
 
-  private[View] def jobToJson(job: DocumentSetCreationJob) : JsValue = {
+  private[View] def jobToJson(job: DocumentSetCreationJob)(implicit messages: Messages): JsValue = {
     val creationData = new ArrayBuffer[Seq[String]]
     creationData += Seq("lang", job.lang)
 
@@ -36,7 +37,7 @@ object index {
     )
   }
 
-  def apply(trees: Iterable[Tree], _views: Iterable[View], jobs: Iterable[DocumentSetCreationJob]): JsValue = {
+  def apply(trees: Iterable[Tree], _views: Iterable[View], jobs: Iterable[DocumentSetCreationJob])(implicit messages: Messages): JsValue = {
     val values = trees.map(views.json.Tree.show.apply) ++ _views.map(show.apply) ++ jobs.map(jobToJson)
     JsArray(values.toSeq)
   }

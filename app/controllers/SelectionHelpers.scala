@@ -23,7 +23,7 @@ trait SelectionHelpers { self: Controller =>
     val reqData = RequestData(request)
 
     def syntaxError = {
-      val message = Messages("org.overviewproject.query.SyntaxError")(request2lang(request))
+      val message = self.messagesApi.preferred(request)("org.overviewproject.query.SyntaxError")
       BadRequest(jsonError("illegal-arguments", message))
         .withHeaders(CONTENT_TYPE -> "application/json")
     }

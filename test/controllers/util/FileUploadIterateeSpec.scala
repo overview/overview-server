@@ -3,26 +3,19 @@ package controllers.util
 import java.io.ByteArrayInputStream
 import java.sql.{SQLException, Timestamp}
 import java.util.UUID
-import org.junit.runner.RunWith
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
-import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.{RequestHeader, Result}
-import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
+import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.test.Helpers._
-import play.api.Play.{ start, stop }
 import scala.concurrent.Await
 import scala.util.Random
 
 import models.upload.{OverviewUpload, OverviewUploadedFile}
 
-@RunWith(classOf[JUnitRunner])
-class FileUploadIterateeSpec extends Specification with Mockito {
-  step(start(FakeApplication()))
-  
+class FileUploadIterateeSpec extends test.helpers.InAppSpecification with Mockito {
   "FileUploadIteratee" should {
 
     /** OverviewUpload implementation that stores data in an attribute */
@@ -143,7 +136,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       val contentDisposition = "attachment; filename=foo.bar"
       val contentType = "text/html; charset=ISO-8859-4"
         
-      def headers: Seq[(String, Seq[String])]
+      def headers: Seq[(String, String)]
       def request: RequestHeader = {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(headers)
@@ -154,22 +147,23 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
     trait GoodHeader extends UploadHeader {
       def headers = Seq(
-        (CONTENT_RANGE, Seq("0-999/1000")),
-        (CONTENT_DISPOSITION, Seq(contentDisposition)),
-        (CONTENT_LENGTH, Seq("100")),
-        (CONTENT_TYPE, Seq(contentType))  
+        (CONTENT_RANGE, "0-999/1000"),
+        (CONTENT_DISPOSITION, contentDisposition),
+        (CONTENT_LENGTH, "100"),
+        (CONTENT_TYPE, contentType)  
       )
     }
 
     trait NoOptionalContentHeader extends UploadHeader {
-      def headers = Seq(("Content-Range", Seq("0-999/1000")))
+      def headers = Seq(("Content-Range", "0-999/1000"))
     }
 
     trait ShortUploadHeader extends UploadHeader {
       def headers = Seq(
-        ("Content-Range", Seq("0-29/50")),
-        (CONTENT_DISPOSITION, Seq(contentDisposition)),
-        (CONTENT_LENGTH, Seq("100")))
+        ("Content-Range", "0-29/50"),
+        (CONTENT_DISPOSITION, contentDisposition),
+        (CONTENT_LENGTH, "100")
+      )
     }
 
     trait BadHeader {
@@ -178,15 +172,17 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
     trait InProgressHeader extends UploadHeader {
       def headers = Seq(
-        (CONTENT_DISPOSITION, Seq(contentDisposition)),
-        (CONTENT_LENGTH, Seq("100")),
-        (CONTENT_RANGE, Seq("100-199/1000")))
+        (CONTENT_DISPOSITION, contentDisposition),
+        (CONTENT_LENGTH, "100"),
+        (CONTENT_RANGE, "100-199/1000")
+        )
     }
 
     trait MalformedHeader extends UploadHeader {
       def headers = Seq(
-        (CONTENT_DISPOSITION, Seq(contentDisposition)),
-        (CONTENT_RANGE, Seq("Bad Field")))
+        (CONTENT_DISPOSITION, contentDisposition),
+        (CONTENT_RANGE, "Bad Field")
+      )
     }
 
     // Enumerators
@@ -279,6 +275,4 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
     }
   }
-  
-  step(stop)
 }

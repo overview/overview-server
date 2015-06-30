@@ -1,6 +1,6 @@
 @(
   form: Form[PotentialNewUser]
-)(implicit lang: Lang, request: RequestHeader)
+)(implicit messages: Messages, request: RequestHeader)
 
 @defining(scopedMessages("views.User._form")) { m =>
   <form method="post" action="@routes.UserController.create()" class="user-form form-horizontal" autocomplete="off">

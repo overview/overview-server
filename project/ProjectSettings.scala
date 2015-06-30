@@ -1,20 +1,21 @@
 import sbt._
 import play.Play.autoImport._
-import PlayKeys._
+import play.sbt.PlayImport._
 
 trait ProjectSettings {
   val appName     = "overview-server"
   val appVersion    = "1.0-SNAPSHOT"
 
   val ourScalaVersion = "2.11.6"
-  val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.7", "-encoding", "UTF8")
+  val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8")
 
   val ourResolvers = Seq(
     Resolver.url("Edulify repository", url("http://edulify.github.io/modules/releases/"))(Resolver.ivyStylePatterns),
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
     "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
-    "More FuseSource" at "http://repo.fusesource.com/maven2/"
+    "More FuseSource" at "http://repo.fusesource.com/maven2/",
+    "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
   )
     
   // shared dependencies
@@ -29,13 +30,12 @@ trait ProjectSettings {
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
   val guavaDep = "com.google.guava" % "guava" % "16.0"
   val hikariCpDep = "com.zaxxer" % "HikariCP" % "2.3.8"
-  val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
+  val javaxMailDep = "javax.mail" % "mail" % "1.4.7"
   val junitDep = "junit" % "junit-dep" % "4.11"
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
   val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val openCsvDep = "com.opencsv" % "opencsv" % "3.4"
-  val playHikariCpDep = "com.edulify" %% "play-hikaricp" % "2.0.0"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
   val postgresqlDep = "org.postgresql" % "postgresql" % "9.3-1103-jdbc41"
   val pgSlickDep = "com.github.tminglei" %% "slick-pg" % "0.9.0"
@@ -56,14 +56,12 @@ trait ProjectSettings {
 
   // Project dependencies
   val serverProjectDependencies = Seq(guavaDep) ++ (Seq(
-    jdbc,
     ws,
     filters,
     openCsvDep,
     slickDep,
-    playHikariCpDep,
     "com.typesafe.play.plugins" %% "play-plugins-util" % "2.3.0",
-    "com.typesafe.play" %% "play-mailer" % "2.4.0",
+    "com.typesafe.play" %% "play-mailer" % "3.0.1",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.4",
     "org.owasp.encoder" % "encoder" % "1.1",
     "org.jodd" % "jodd-wot" % "3.3.8" % "test",
@@ -72,8 +70,8 @@ trait ProjectSettings {
 
   val dbEvolutionApplierDependencies = Seq(guavaDep) ++ (Seq(
     jdbc,
+    evolutions,
     hikariCpDep,
-    playHikariCpDep,
     postgresqlDep
   )).map(_.exclude("com.google.guava", "guava"))
 
@@ -94,7 +92,6 @@ trait ProjectSettings {
     squerylDep,
     stompDep,
     slickDep,
-    anorm % "test",
     specs2Dep % "test",
     junitInterfaceDep % "test",
     akkaTestkit % "test",
@@ -110,7 +107,6 @@ trait ProjectSettings {
   val commonTestProjectDependencies = Seq(guavaDep) ++ (Seq(
     akkaDep,
     akkaTestkit,
-    anorm,
     logbackDep,
     specs2Dep,
     junitInterfaceDep,
@@ -120,8 +116,7 @@ trait ProjectSettings {
 
   val workerProjectDependencies = Seq(guavaDep) ++ (Seq(
     javaxMailDep, 
-    openCsvDep,
-    anorm
+    openCsvDep
   )).map(_.exclude("com.google.guava", "guava"))
   
   val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(

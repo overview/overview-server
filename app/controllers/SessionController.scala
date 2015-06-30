@@ -16,10 +16,10 @@ trait SessionController extends Controller {
 
   protected val sessionBackend: SessionBackend
 
-  def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def _new() = OptionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
-      case _ => Ok(views.html.Session.new_(loginForm, registrationForm))
+      case _ => Ok(views.html.Session._new(loginForm, registrationForm))
     }
   }
 
@@ -41,7 +41,7 @@ trait SessionController extends Controller {
 
   def create = Action.async { implicit request =>
     loginForm.bindFromRequest.fold(
-      formWithErrors => Future.successful(BadRequest(views.html.Session.new_(formWithErrors, registrationForm))),
+      formWithErrors => Future.successful(BadRequest(views.html.Session._new(formWithErrors, registrationForm))),
       user => {
         for {
           _ <- sessionBackend.destroyExpiredSessionsForUserId(user.id)

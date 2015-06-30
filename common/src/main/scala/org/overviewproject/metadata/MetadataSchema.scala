@@ -32,7 +32,7 @@ object MetadataSchema {
     import play.api.libs.json.Reads._
     import play.api.libs.functional.syntax._
 
-    private val badTypeError = new ValidationError("Invalid \"type\" value")
+    private val badTypeError = ValidationError("Invalid \"type\" value")
 
     private implicit val metadataFieldTypeReads: Reads[MetadataFieldType] = StringReads.collect(badTypeError) {
       case "String" => MetadataFieldType.String

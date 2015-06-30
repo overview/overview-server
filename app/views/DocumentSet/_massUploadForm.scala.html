@@ -1,4 +1,4 @@
-@(hasDocuments: Boolean)(implicit lang: Lang, request: RequestHeader)
+@(hasDocuments: Boolean)(implicit messages: Messages, request: RequestHeader)
 @defining(scopedMessages("views.DocumentSet._massUploadForm")) { m =>
   @_importPane(h1 = m("h1")) {
     <div class="row">

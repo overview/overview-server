@@ -1,9 +1,7 @@
 package views
 
 import java.util.Locale
-import play.api.i18n.{Lang,Messages}
-import play.api.Play
-import play.api.Play.current
+import play.api.i18n.Messages
 
 /**
  * A convenience class on top of Messages.
@@ -21,7 +19,7 @@ case class ScopedMessages(scope: String) {
   /**
    * @return a translated message for the given sub-key
    */
-  def apply(key: String, args: Any*)(implicit lang: Lang) : String = {
+  def apply(key: String, args: Any*)(implicit messages: Messages) : String = {
     Messages(scope + "." + key, args : _*)
   }
 
@@ -29,7 +27,7 @@ case class ScopedMessages(scope: String) {
    * @return a translated message for the given sub-key, or None if the
    *         key isn't translated.
    */
-  def optional(key: String, args: Any*)(implicit lang: Lang) : Option[String] = {
+  def optional(key: String, args: Any*)(implicit messages: Messages) : Option[String] = {
     val ret = apply(key, args)
     if (ret == scope + "." + key) {
       None
@@ -66,9 +64,9 @@ object Magic {
   }
 
   /** Returns "French" when code is "fr", for instance. */
-  def displayLanguageCode(code: String)(implicit lang: Lang) = {
+  def displayLanguageCode(code: String)(implicit messages: Messages) = {
     val locale = Locale.forLanguageTag(code)
-    locale.getDisplayLanguage(lang.toLocale)
+    locale.getDisplayLanguage(messages.lang.toLocale)
   }
 
   /** Returns a &lt;script&gt; tag for a RequireJS bundle.
@@ -78,8 +76,8 @@ object Magic {
     */
   def requireJsBundle(module: String) = {
     <script
-      src={controllers.routes.Assets.at("javascripts/require.js").url}
-      data-main={controllers.routes.Assets.at(s"javascripts/bundle/${module}.js").url}
+      src={controllers.routes.Assets.versioned("javascripts/vendor/require.js").url}
+      data-main={controllers.routes.Assets.versioned(s"javascripts/bundle/${module}.js").url}
       ></script>
   }
 }

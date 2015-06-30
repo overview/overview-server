@@ -5,32 +5,38 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.models.View
-import org.overviewproject.models.{DocumentSetCreationJobState, DocumentSetCreationJobType, Tag}
+import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tag,Tree}
 import org.overviewproject.test.factories.{PodoFactory=>factory}
 
-class showSpec extends Specification with JsonMatchers {
-  "Tree view generated Json" should {
-    "contain tags" in {
-      val baseTag = factory.tag(id=5L, name="tag1", documentSetId=1L, color="ffffff")
+class showSpec extends views.ViewSpecification {
+  trait BaseScope extends JsonViewSpecificationScope {
+    val documentSet: DocumentSet = factory.documentSet()
+    val trees: Iterable[Tree] = Seq()
+    val views: Iterable[View] = Seq()
+    val viewJobs: Iterable[DocumentSetCreationJob] = Seq()
+    val tags: Iterable[Tag] = Seq()
+    override def result = show(documentSet, trees.map(_.toDeprecatedTree), views, viewJobs.map(_.toDeprecatedDocumentSetCreationJob), tags.map(_.toDeprecatedTag))
+  }
 
-      val tags = Seq[Tag](
-        baseTag.copy(id=5L, name="tag1"),
-        baseTag.copy(id=15L, name="tag2")
+  "Tree view generated Json" should {
+    "contain tags" in new BaseScope {
+      override val tags = Seq(
+        factory.tag(id=5L, name="tag1"),
+        factory.tag(id=15L, name="tag2")
       )
-      val treeJson = show(factory.documentSet(documentCount=10), Seq(), Seq(), Seq(), tags.map(_.toDeprecatedTag)).toString
-      
-      treeJson must /("tags") */("id" -> 5L)
-      treeJson must /("tags") */("name" -> "tag1")
-      treeJson must /("tags") */("id" -> 15L)
+
+      json must /("tags") */("id" -> 5L)
+      json must /("tags") */("name" -> "tag1")
+      json must /("tags") */("id" -> 15L)
     }
 
-    "show nDocuments" in {
-      val json = show(factory.documentSet(documentCount=10), Seq(), Seq(), Seq(), Seq()).toString
+    "show nDocuments" in new BaseScope {
+      override val documentSet = factory.documentSet(documentCount=10)
       json must /("nDocuments" -> 10L)
     }
 
-    "contain trees" in {
-      val tree = factory.tree(
+    "contain trees" in new BaseScope {
+      override val trees = Seq(factory.tree(
         documentSetId=10L,
         id=2L,
         rootNodeId=3L,
@@ -39,9 +45,7 @@ class showSpec extends Specification with JsonMatchers {
         documentCount=100,
         createdAt=new java.sql.Timestamp(1000),
         lang="en"
-      )
-
-      val json = show(factory.documentSet(documentCount=10), Seq(tree.toDeprecatedTree), Seq(), Seq(), Seq()).toString
+      ))
 
       json must /("views") */("type" -> "tree")
       json must /("views") */("id" -> 2L)
@@ -53,16 +57,14 @@ class showSpec extends Specification with JsonMatchers {
       json must /("views") */("nDocuments" -> 100)
     }
 
-    "contain views" in {
-      val view = factory.view(
+    "contain views" in new BaseScope {
+      override val views = Seq(factory.view(
         id=1L,
         title="foo",
         createdAt=new java.sql.Timestamp(1000),
         url="http://localhost:9001",
         apiToken="api-token"
-      )
-
-      val json: String = show(factory.documentSet(documentCount=10), Seq(), Seq(view), Seq(), Seq()).toString
+      ))
 
       json must /("views") */("type" -> "view")
       json must /("views") */("id" -> 1L)
@@ -72,16 +74,14 @@ class showSpec extends Specification with JsonMatchers {
       json must /("views") */("apiToken" -> "api-token")
     }
 
-    "contain view jobs" in {
-      val viewJob = factory.documentSetCreationJob(
+    "contain view jobs" in new BaseScope {
+      override val viewJobs = Seq(factory.documentSetCreationJob(
         id=2L,
         documentSetId=1L,
         treeTitle=Some("tree job"),
         jobType=DocumentSetCreationJobType.Recluster,
         state=DocumentSetCreationJobState.InProgress
-      )
-
-      val json = show(factory.documentSet(documentCount=10), Seq(), Seq(), Seq(viewJob.toDeprecatedDocumentSetCreationJob), Seq()).toString
+      ))
 
       json must /("views") /#(0) /("id" -> 2.0)
       json must /("views") /#(0) /("type" -> "job")

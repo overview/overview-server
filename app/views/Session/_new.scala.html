@@ -1,7 +1,7 @@
 @(
   loginForm: Form[OverviewUser],
   registrationForm: Form[PotentialNewUser]
-)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @requireJsBundle("Welcome/show")

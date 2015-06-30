@@ -2,7 +2,7 @@ package views.html.helper
 
 import play.api.data.{ Field, FormError }
 import play.twirl.api.Html
-import play.api.i18n.{ Lang, Messages }
+import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 import scala.xml.{ UnprefixedAttribute, MetaData }
 
@@ -19,7 +19,7 @@ object Form {
   }
   private implicit def fieldToRichField(field: Field) = RichField(field)
 
-  def errors(errors: Seq[FormError])(implicit lang: Lang): Html = {
+  def errors(errors: Seq[FormError])(implicit messages: Messages): Html = {
     if (errors.length > 0) {
       Html(
         <div class="control-group error">
@@ -36,7 +36,7 @@ object Form {
     }
   }
 
-  def input(field: Field, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
+  def input(field: Field, options: Map[Symbol, String] = Map())(implicit messages: Messages): Html = {
     val fieldsetClassName = "control-group" + field.error.map({ (e: FormError) => " error" }).getOrElse("")
     val id = options.get('prefix).map(_.toString + "-").getOrElse("") + field.id
     val name = field.id
@@ -67,11 +67,11 @@ object Form {
          </fieldset>.buildString(false))
   }
 
-  def translatedInput(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html =  {
+  def translatedInput(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit messages: Messages): Html =  {
     input(field, options ++ descriptionOptions(field, m))
   }
 
-  def checkbox(field: Field, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
+  def checkbox(field: Field, options: Map[Symbol, String] = Map())(implicit messages: Messages): Html = {
     val fieldsetClassName = "control-group" + field.error.map({ (e: FormError) => " error" }).getOrElse("")
     val id = options.get('prefix).map(_.toString + "-").getOrElse("") + field.id
     val name = field.id
@@ -101,7 +101,7 @@ object Form {
          </fieldset>.buildString(false))
   }
 
-  def translatedCheckbox(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
+  def translatedCheckbox(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit messages: Messages): Html = {
     checkbox(field, options ++ descriptionOptions(field, m))
   }
 
@@ -110,7 +110,7 @@ object Form {
     * For requests without CSRF tokens (test requests), returns nothing.
     */
   def csrfToken()(implicit request: RequestHeader) : Html = {
-    val name = play.filters.csrf.CSRF.TokenName
+    val name = play.filters.csrf.CSRFConfig.global.tokenName
     val maybeToken = play.filters.csrf.CSRF.getToken(request)
 
     Html(
@@ -120,7 +120,7 @@ object Form {
     )
   }
 
-  private def descriptionOptions(field: Field, m: views.ScopedMessages): Map[Symbol, String] = 
+  private def descriptionOptions(field: Field, m: views.ScopedMessages)(implicit messages: Messages): Map[Symbol, String] = 
      Map('label -> "label", 'placeholder -> "placeholder", 'helpText -> "help").flatMap { 
       case (sym, prefix) =>  m.optional(prefix + "." + field.name).map(sym -> _) 
   }
@@ -129,7 +129,7 @@ object Form {
     in.foldLeft[MetaData](scala.xml.Null)((next, keyval) => new UnprefixedAttribute(keyval._1.name, keyval._2, next))
   }
 
-  def translatedSubmit(m: views.ScopedMessages, attributes: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
+  def translatedSubmit(m: views.ScopedMessages, attributes: Map[Symbol, String] = Map())(implicit messages: Messages): Html = {
     Html(
       <fieldset class="form-actions">
         <div>

@@ -9,10 +9,10 @@ import controllers.backend.DocumentSetBackend
 trait FileImportController extends Controller {
   val documentSetBackend: DocumentSetBackend
 
-  def new_ = AuthorizedAction(anyUser).async { implicit request =>
+  def _new = AuthorizedAction(anyUser).async { implicit request =>
     for {
       count <- documentSetBackend.countByUserEmail(request.user.email)
-    } yield Ok(views.html.FileImport.new_(request.user, count))
+    } yield Ok(views.html.FileImport._new(request.user, count))
   }
 
   def edit(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
