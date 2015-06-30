@@ -1,6 +1,7 @@
 package org.overviewproject.clone
 
 import play.api.libs.iteratee.{Enumerator,Iteratee}
+import play.api.libs.streams.Streams
 import scala.concurrent.Future
 
 import org.overviewproject.database.HasDatabase
@@ -8,7 +9,6 @@ import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.util.BulkDocumentWriter
 import org.overviewproject.models.Document
 import org.overviewproject.models.tables.Documents
-import play_backports.api.libs.streams.impl.PublisherEnumerator
 
 object DocumentSetIndexer extends HasDatabase {
   import database.api._
@@ -26,7 +26,7 @@ object DocumentSetIndexer extends HasDatabase {
 
   private def indexEachDocument(documentSetId: Long, bulkWriter: BulkDocumentWriter): Future[Unit] = {
     val publisher = database.slickDatabase.stream(Documents.filter(_.documentSetId === documentSetId).result)
-    val enumerator = new PublisherEnumerator(publisher)
+    val enumerator = Streams.publisherToEnumerator(publisher)
     val iteratee = Iteratee.foldM(()) { (s: Unit, document: Document) => bulkWriter.addAndFlushIfNeeded(document) }
     enumerator.run(iteratee)
   }

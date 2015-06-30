@@ -37,6 +37,7 @@ trait ProjectSettings {
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val openCsvDep = "com.opencsv" % "opencsv" % "3.4"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
+  val playStreamsDep = "com.typesafe.play" %% "play-streams-experimental" % play.core.PlayVersion.current
   val postgresqlDep = "org.postgresql" % "postgresql" % "9.3-1103-jdbc41"
   val pgSlickDep = "com.github.tminglei" %% "slick-pg" % "0.9.0"
   val redisDep = "net.debasishg" %% "redisreact" % "0.6"
@@ -60,6 +61,7 @@ trait ProjectSettings {
     filters,
     openCsvDep,
     slickDep,
+    playStreamsDep,
     "com.typesafe.play.plugins" %% "play-plugins-util" % "2.3.0",
     "com.typesafe.play" %% "play-mailer" % "3.0.1",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.4",
@@ -116,7 +118,8 @@ trait ProjectSettings {
 
   val workerProjectDependencies = Seq(guavaDep) ++ (Seq(
     javaxMailDep, 
-    openCsvDep
+    openCsvDep,
+    playStreamsDep
   )).map(_.exclude("com.google.guava", "guava"))
   
   val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(

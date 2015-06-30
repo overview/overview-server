@@ -3,6 +3,7 @@ package controllers
 import play.api.mvc.Result
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.streams.Streams
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
@@ -14,7 +15,6 @@ import org.overviewproject.util.ContentDisposition
 import models.export.Export
 import models.export.rows._
 import models.export.format.Format
-import play_backports.api.libs.streams.impl.PublisherEnumerator
 
 trait DocumentSetExportController extends Controller {
   def index(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
@@ -102,7 +102,7 @@ object DocumentSetExportController extends DocumentSetExportController {
 
       val publisher: DatabasePublisher[(String,String,String,String,Seq[Long])] = database.slickDatabase.stream(query)
 
-      new PublisherEnumerator(publisher)
+      Streams.publisherToEnumerator(publisher)
         .map(DocumentForCsvExport.tupled)
     }
   }
