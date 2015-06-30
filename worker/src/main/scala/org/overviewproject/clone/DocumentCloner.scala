@@ -6,7 +6,7 @@ object DocumentCloner extends InDatabaseCloner {
   import database.api._
   import database.executionContext
 
-  override def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) = {
+  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) = {
     logger.debug("Cloning documents from {} to {} and updating file refcounts", sourceDocumentSetId, cloneDocumentSetId)
 
     blockingDatabase.runUnit((for {

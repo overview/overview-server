@@ -1,10 +1,6 @@
 package org.overviewproject.clone
 
-import org.squeryl.{Session=>SquerylSession}
-
 import org.overviewproject.persistence.DocumentSetIdGenerator
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import org.overviewproject.postgres.SquerylEntrypoint.using
 import org.overviewproject.models.{Document,DocumentSet,File}
 import org.overviewproject.models.tables.{Documents,Files}
 import org.overviewproject.test.DbSpecification
@@ -18,13 +14,7 @@ class DocumentClonerSpec extends DbSpecification {
       val originalDocumentSet: DocumentSet = factory.documentSet(id=1L)
       val cloneDocumentSet: DocumentSet = factory.documentSet(id=2L)
 
-      def go: Unit = {
-        val adapter = new SquerylPostgreSqlAdapter()
-        val session = new SquerylSession(connection, adapter)
-        using(session) { // sets thread-local variable
-          DocumentCloner.clone(originalDocumentSet.id, cloneDocumentSet.id)
-        }
-      }
+      def go = DocumentCloner.clone(originalDocumentSet.id, cloneDocumentSet.id)
 
       def findDocuments(documentSetId: Long): Seq[Document] = blockingDatabase.seq {
         Documents

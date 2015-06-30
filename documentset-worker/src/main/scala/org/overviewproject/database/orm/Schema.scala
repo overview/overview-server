@@ -23,7 +23,6 @@ object Schema extends org.squeryl.Schema {
   val groupedFileUploads = table[GroupedFileUpload]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSetUsers = table[DocumentSetUser]
-  val documentTags = table[DocumentTag]
   val tags = table[Tag]
   val nodeDocuments = table[NodeDocument]
   val nodes = table[Node]

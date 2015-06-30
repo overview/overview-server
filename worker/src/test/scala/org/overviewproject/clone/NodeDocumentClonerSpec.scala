@@ -1,6 +1,5 @@
 package org.overviewproject.clone
 
-import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.models.{NodeDocument,Document}
 import org.overviewproject.models.tables.NodeDocuments
@@ -44,9 +43,7 @@ class NodeDocumentClonerSpec extends DbSpecification {
       factory.nodeDocument(sourceNodes(1).id, sourceDocuments(1).id)
       factory.nodeDocument(sourceNodes(1).id, sourceDocuments(2).id)
 
-      DeprecatedDatabase.inTransaction {
-        NodeDocumentCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
-      }
+      NodeDocumentCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
 
       val results = blockingDatabase.seq {
         NodeDocuments

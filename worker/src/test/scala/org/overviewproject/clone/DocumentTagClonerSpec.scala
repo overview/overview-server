@@ -1,6 +1,5 @@
 package org.overviewproject.clone
 
-import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.models.{Document,DocumentTag}
 import org.overviewproject.models.tables.DocumentTags
@@ -27,9 +26,7 @@ class DocumentTagClonerSpec extends DbSpecification {
 
       val tagMapping: Map[Long, Long] = sourceTags.map(_.id).zip(cloneTags.map(_.id)).toMap
 
-      def go = DeprecatedDatabase.inTransaction {
-        DocumentTagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id, tagMapping)
-      }
+      def go = DocumentTagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id, tagMapping)
 
       def results: Seq[DocumentTag] = blockingDatabase.seq {
         DocumentTags
@@ -56,12 +53,12 @@ class DocumentTagClonerSpec extends DbSpecification {
       ))
     }
     
-    "don't try to clone if there are no tags" in new DocumentTagContext {
+    "not try to clone if there are no tags" in new DocumentTagContext {
       go
       results must beEqualTo(Seq())
     }
 
-    "don't error if there is no mapping" in new DocumentTagContext {
+    "not error if there is no mapping" in new DocumentTagContext {
       override val tagMapping = Map[Long,Long]()
       go must not(throwA[Exception])
     }

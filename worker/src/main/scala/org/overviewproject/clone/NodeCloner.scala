@@ -3,7 +3,7 @@ package org.overviewproject.clone
 object NodeCloner extends InDatabaseCloner {
   import database.api._
 
-  override def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) = {
+  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) = {
     logger.debug("Cloning Nodes from {} to {}", sourceDocumentSetId, cloneDocumentSetId)
 
     blockingDatabase.runUnit(sqlu"""

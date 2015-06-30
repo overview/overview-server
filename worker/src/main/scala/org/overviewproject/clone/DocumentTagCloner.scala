@@ -1,30 +1,30 @@
 package org.overviewproject.clone
 
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.DocumentTag
-
-object DocumentTagCloner {
-  private val DocumentSetIdMask: Long = 0x00000000FFFFFFFFl
+object DocumentTagCloner extends InDatabaseCloner {
+  import database.api._
 
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long, tagMapping: Map[Long, Long]): Unit = {
-    val sourceTags = tagMapping.keys
+    logger.debug("Cloning DocumentTags from {} to {}", sourceDocumentSetId, cloneDocumentSetId)
 
-    if (!sourceTags.isEmpty) {
-      val sourceDocumentTags =
-        from(Schema.documentTags)(dt => where(dt.tagId in sourceTags) select dt).toSeq
+    if (tagMapping.nonEmpty) {
+      val values: String = tagMapping // Map[Long,Long]
+        .toSeq // Seq[(Long,Long)]
+        .map(t => "(" + t._1 + "," + t._2 + ")")
+        .mkString(",")
 
-      val cloneDocumentTags: Seq[DocumentTag] =
-        for {
-          dt <- sourceDocumentTags
-          tagId <- tagMapping.get(dt.tagId)
-        } yield {
-          val cloneDocumentId = (cloneDocumentSetId << 32) | (DocumentSetIdMask & dt.documentId)
-          DocumentTag(cloneDocumentId, tagId)
-        }
-
-      Schema.documentTags.insert(cloneDocumentTags)
-    } 
+      blockingDatabase.runUnit(sqlu"""
+        WITH tag_pairs AS (
+          SELECT *
+          FROM (VALUES #$values) AS t(source_tag_id, clone_tag_id)
+        )
+        INSERT INTO document_tag (document_id, tag_id)
+        SELECT
+          ($cloneDocumentSetId << 32) | (document_id & $DocumentSetIdMask),
+          (SELECT clone_tag_id FROM tag_pairs WHERE source_tag_id = tag_id)
+        FROM document_tag
+        WHERE document_id >= ($sourceDocumentSetId << 32)
+          AND document_id < (($sourceDocumentSetId + 1) << 32)
+      """)
+    }
   }
-
 }
