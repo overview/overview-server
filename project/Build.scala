@@ -81,7 +81,9 @@ object ApplicationBuild extends Build {
     )
   )
 
-  lazy val messageBroker = Project("message-broker", file("message-broker"))
+  def project(name: String) = Project(name, file(name)).settings(ourGlobalSettings: _*)
+
+  lazy val messageBroker = project("message-broker")
     .settings(ourGlobalSettings: _*)
     .settings(
       baseDirectory in (Compile,run) := file("message-broker"),
@@ -89,8 +91,7 @@ object ApplicationBuild extends Build {
       libraryDependencies ++= Dependencies.messageBrokerDependencies
     )
 
-  lazy val searchIndex = Project("search-index", file("search-index"))
-    .settings(ourGlobalSettings: _*)
+  lazy val searchIndex = project("search-index")
     .settings(
       libraryDependencies ++= Dependencies.searchIndexDependencies,
       javaOptions in run <++= (baseDirectory) map { (d) =>
@@ -106,8 +107,7 @@ object ApplicationBuild extends Build {
       }
     )
 
-  lazy val runner = Project("runner", file("runner"))
-    .settings(ourGlobalSettings: _*)
+  lazy val runner = project("runner")
     .settings(libraryDependencies ++= Dependencies.runnerDependencies)
 
   def dbEvolutionApplierProject(name: String) = Project(name, file("db-evolution-applier"))
@@ -129,18 +129,12 @@ object ApplicationBuild extends Build {
   lazy val testDbEvolutionApplier = dbEvolutionApplierProject("test-db-evolution-applier")
     .settings(javaOptions ++= testJavaOpts)
 
-  // Create a subProject with our common settings
-  object OverviewProject {
-    def apply(name: String, dependencies: Seq[ModuleID]) = Project(name, file(name))
-      .settings(ourGlobalSettings: _*)
-      .settings(
-        unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
-        libraryDependencies ++= dependencies
-      )
-  }
-
   // Project definitions
-  lazy val common = OverviewProject("common", Dependencies.commonDependencies)
+  lazy val common = project("common")
+    .settings(
+      unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" }, // TODO remove
+      libraryDependencies ++= Dependencies.commonDependencies
+    )
 
   lazy val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
     .settings(ourGlobalSettings: _*)
@@ -171,10 +165,18 @@ object ApplicationBuild extends Build {
     .settings(libraryDependencies += "com.github.scopt" %% "scopt" % "3.3.0")
     .dependsOn(common % "test->test;compile->compile")
 
-  lazy val documentSetWorker = OverviewProject("documentset-worker", Dependencies.documentSetWorkerDependencies)
+  lazy val documentSetWorker = project("documentset-worker")
+    .settings(
+      unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
+      libraryDependencies ++= Dependencies.documentSetWorkerDependencies
+    )
     .dependsOn(common % "test->test;compile->compile")
 
-  lazy val worker = OverviewProject("worker", Dependencies.workerDependencies)
+  lazy val worker = project("worker")
+    .settings(
+      unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
+      libraryDependencies ++= Dependencies.workerDependencies
+    )
     .dependsOn(common % "test->test;compile->compile")
 
   lazy val main = Project(appName, file("."))
