@@ -139,8 +139,7 @@ object Dependencies {
   )
 
   val searchIndexDependencies = Seq(
-    deps.elasticSearch,
-    deps.logback
+    deps.elasticSearch
   )
 
   val runnerDependencies = Seq(

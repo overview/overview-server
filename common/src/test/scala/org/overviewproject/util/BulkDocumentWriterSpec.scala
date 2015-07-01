@@ -16,21 +16,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
 
     protected val emptySha1 = Array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0).map(_.toByte)
 
-    val documentSet: DocumentSet = {
-      blockingDatabase.run((DocumentSets returning DocumentSets).+=(DocumentSet(
-        1L,
-        "",
-        None,
-        false,
-        new java.sql.Timestamp(1424898930910L),
-        0,
-        0,
-        0,
-        None,
-        MetadataSchema.empty,
-        false
-      )))
-    }
+    val documentSet = factory.documentSet()
 
     def fetchDocuments: Seq[Document] = {
       blockingDatabase.seq(Documents.filter(_.documentSetId === documentSet.id))
@@ -48,31 +34,13 @@ class BulkDocumentWriterSpec extends DbSpecification {
       }
     }
 
-    object factory {
-      def document(id: Long, text: String) = Document(
-        id,
-        documentSet.id,
-        Some("http://18-byte-url"),
-        "18-char-suppliedId",
-        "13-char-title",
-        None,
-        Seq(),
-        new java.util.Date(documentSet.createdAt.getTime()),
-        None,
-        None,
-        DocumentDisplayMethod.auto,
-        JsObject(Seq()),
-        text
-      )
-    }
-
     def add(document: Document): Document = {
       await(subject.addAndFlushIfNeeded(document))
       document
     }
 
     // Convenience method. Adds and returns a Document with text
-    def addText(id: Long, text: String): Document = add(factory.document(id, text))
+    def addText(text: String): Document = add(podoFactory.document(documentSetId=documentSet.id, text=text))
   }
 
   "should not flush when empty" in new BaseScope {
@@ -82,7 +50,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "should flush when non-empty" in new BaseScope {
-    val doc1 = addText(1L, "foobar")
+    val doc1 = addText("foobar")
     fetchDocuments.length must beEqualTo(0)
     await(subject.flush)
     nFlushes must beEqualTo(1)
@@ -90,7 +58,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "should empty when flushing" in new BaseScope {
-    addText(1L, "foobar")
+    addText("foobar")
     await(subject.flush)
     await(subject.flush)
     nFlushes must beEqualTo(1)
@@ -98,17 +66,17 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "flush on add when adding more than N documents" in new BaseScope {
-    addText(1L, "doc1")
-    addText(2L, "doc2")
+    addText("doc1")
+    addText("doc2")
     fetchDocuments.length must beEqualTo(0)
-    addText(3L, "doc3")
+    addText("doc3")
     fetchDocuments.length must beEqualTo(3)
   }
 
   "flush on add when adding more than N bytes" in new BaseScope {
-    addText(1L, "doc1")
+    addText("doc1")
     fetchDocuments.length must beEqualTo(0)
-    addText(2L, """
+    addText("""
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
       mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
@@ -124,7 +92,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
   }
 
   "handle NULLs when writing" in new BaseScope {
-    add(factory.document(1L, "").copy(url=None, pageNumber=None, fileId=None, pageId=None))
+    add(podoFactory.document(documentSetId=documentSet.id, text="", url=None, pageNumber=None, fileId=None, pageId=None))
     await(subject.flush)
     val doc = fetchDocuments(0)
     doc.url must beNone
@@ -137,7 +105,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
     import database.api._
     blockingDatabase.runUnit(Files.+=(File(3L, 0, "", "", 0, emptySha1, "", 0)))
     blockingDatabase.runUnit(Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None)))
-    add(factory.document(2L, "").copy(url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))
+    add(podoFactory.document(documentSetId=documentSet.id, url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))
     await(subject.flush)
     val doc = fetchDocuments(0)
     doc.url must beSome("http://example.org")
@@ -148,20 +116,20 @@ class BulkDocumentWriterSpec extends DbSpecification {
 
   "handle utf-8 text when writing" in new BaseScope {
     val text = "ᚠᛇᚻ᛫ᛒᛦᚦ᛫ᚠᚱᚩᚠᚢᚱ᛫ᚠᛁᚱᚪ᛫ᚷᛖᚻᚹᛦᛚᚳᚢᛗ\nLaȝamon\nΤη γλώσσα μου έδωσαν ελληνική\nನಿತ್ಯವೂ ಅವತರಿಪ ಸತ್ಯಾವ"
-    add(factory.document(2L, text))
+    add(podoFactory.document(documentSetId=documentSet.id, text=text))
     await(subject.flush)
     fetchDocuments(0).text must beEqualTo(text)
   }
 
   "handle keywords" in new BaseScope {
     val keywords = Seq("foo", "bar", "baz")
-    add(factory.document(1L, "").copy(keywords=keywords))
+    add(podoFactory.document(documentSetId=documentSet.id, keywords=keywords))
     await(subject.flush)
     fetchDocuments(0).keywords must beEqualTo(keywords)
   }
 
   "handle displayMethod" in new BaseScope {
-    add(factory.document(1L, "").copy(displayMethod = DocumentDisplayMethod.auto))
+    add(podoFactory.document(documentSetId=documentSet.id, displayMethod = DocumentDisplayMethod.auto))
     await(subject.flush)
     
     fetchDocuments(0).displayMethod must beEqualTo(DocumentDisplayMethod.auto)
@@ -169,17 +137,17 @@ class BulkDocumentWriterSpec extends DbSpecification {
 
   "handle metadataJson" in new BaseScope {
     val metadataJson = Json.obj("foo" -> "bar")
-    add(factory.document(1L, "").copy(metadataJson = metadataJson))
+    add(podoFactory.document(documentSetId=documentSet.id, metadataJson = metadataJson))
     await(subject.flush)
 
     fetchDocuments(0).metadataJson must beEqualTo(metadataJson)
   }
   
   "handle the other fields" in new BaseScope {
-    add(factory.document(2L, "").copy(documentSetId=1L, suppliedId="suppl", title="title"))
+    add(podoFactory.document(documentSetId=documentSet.id, suppliedId="suppl", title="title"))
     await(subject.flush)
     val doc = fetchDocuments(0)
-    doc.documentSetId must beEqualTo(1L)
+    doc.documentSetId must beEqualTo(documentSet.id)
     doc.suppliedId must beEqualTo("suppl")
     doc.title must beEqualTo("title")
   }

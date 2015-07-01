@@ -6,12 +6,15 @@ import org.specs2.execute.AsResult
 import org.specs2.mutable.{After,Around}
 import org.specs2.specification.{Fragments, Step}
 import org.squeryl.{Session=>SquerylSession}
-import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await,Future,blocking}
+import slick.jdbc.UnmanagedSession
+import slick.jdbc.JdbcBackend.Session
 
 import org.overviewproject.database.{DB,DataSource,DatabaseConfiguration,HasBlockingDatabase}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
+import org.overviewproject.test.factories.{DbFactory,PodoFactory}
 
 /**
  * Tests that access the database should extend DbSpecification.
@@ -69,6 +72,8 @@ class DbSpecification extends Specification {
     *   <li><em>databaseApi</em>: so you can call <tt>import database.api._</tt>
     *   <li><em>blockingDatabase</em>: the BlockingDatabase</li>
     *   <li><em>sql</em>: runs arbitrary SQL, returning nothing</li>
+    *   <li><em>factory</em>: a DbFactory for constructing objects</li>
+    *   <li><em>podoFactory</em>: a PodoFactory for constructing objects</li>
     *   <li><em>await</em>: awaits a Future</li>
     * </ul>
     *
@@ -79,10 +84,11 @@ class DbSpecification extends Specification {
   trait DbScope extends After with HasBlockingDatabase {
     val connection: Connection = DB.getConnection()
     val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
+    val factory = DbFactory
+    val podoFactory = PodoFactory
 
-    def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
+    def await[A](f: Future[A]) = blocking(Await.result(f, Duration.Inf))
 
-    System.setProperty(DatabaseProperty, TestDatabase) // just in case
     clearDb(connection) // *not* in a before block: that's too late
     override def after = connection.close()
 

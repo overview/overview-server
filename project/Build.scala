@@ -40,6 +40,11 @@ object ApplicationBuild extends Build {
     "-Duser.timezone=UTC"
   )
 
+  val devJavaOpts = Seq(
+    "-Ddb.default.dataSource.databaseName=overview-dev",
+    "-Ddb.default.dataSource.portNumber=9010"
+  )
+
   val testJavaOpts = Seq(
     "-Ddb.default.dataSource.databaseName=overview-test",
     "-Ddb.default.dataSource.portNumber=9010",
@@ -68,9 +73,10 @@ object ApplicationBuild extends Build {
     ++ Seq(
       logBuffered := false, // so Runner gets data sooner
       scalacOptions ++= ourScalacOptions,
-      javaOptions ++= allJavaOpts,
+      javaOptions ++= allJavaOpts ++ devJavaOpts,
       javaOptions in Test ++= testJavaOpts,
       fork := true, // so javaOptions gets set
+      baseDirectory in (Compile,run) := file("."),
       parallelExecution in Test := false,
       aggregate in Test := false,
       testOptions in Test ++= ourTestOptions,
@@ -82,6 +88,7 @@ object ApplicationBuild extends Build {
   lazy val messageBroker = Project("message-broker", file("message-broker"))
     .settings(ourGlobalSettings: _*)
     .settings(
+      baseDirectory in (Compile,run) := file("message-broker"),
       scalaVersion := "2.10.5",
       libraryDependencies ++= Dependencies.messageBrokerDependencies
     )
@@ -145,7 +152,7 @@ object ApplicationBuild extends Build {
       resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
       includeFilter in (Compile, resourceDirectory) := "application.conf"
     )
-    .dependsOn(common)
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val upgrade20150119MoveFiles = Project("upgrade-2015-01-19-move-files", file("upgrade/2015-01-19-move-files"))
     .settings(ourGlobalSettings: _*)
@@ -153,7 +160,7 @@ object ApplicationBuild extends Build {
       resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
       includeFilter in (Compile, resourceDirectory) := "application.conf"
     )
-    .dependsOn(common)
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val upgrade20150615NixUnusedPages = Project("upgrade-2015-06-15-nix-unused-pages", file("upgrade/2015-06-15-nix-unused-pages"))
     .settings(ourGlobalSettings: _*)
@@ -161,32 +168,20 @@ object ApplicationBuild extends Build {
       resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
       includeFilter in (Compile, resourceDirectory) := "application.conf"
     )
-    .dependsOn(common)
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
     .settings(ourGlobalSettings: _*)
     .settings(libraryDependencies += "com.github.scopt" %% "scopt" % "3.3.0")
-    .dependsOn(common)
-
-  /*
-   * Ideally, common would depend on commonTest, which would mock out the
-   * database.
-   *
-   * Reality is the other way around. The test suite relies on the database,
-   * which common provides.
-   */
-  lazy val commonTest = OverviewProject("common-test", Dependencies.commonTestDependencies)
-    .dependsOn(common)
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val documentSetWorker = OverviewProject("documentset-worker", Dependencies.documentSetWorkerDependencies)
     .settings(javaOptions in run ++= workerJavaOpts)
-    .dependsOn(common)
-    .dependsOn(commonTest % "test")
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val worker = OverviewProject("worker", Dependencies.workerDependencies)
     .settings(javaOptions in run ++= workerJavaOpts)
-    .dependsOn(common)
-    .dependsOn(commonTest % "test")
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val main = Project(appName, file("."))
     .enablePlugins(play.PlayScala)
@@ -223,8 +218,7 @@ object ApplicationBuild extends Build {
       includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
       pipelineStages := Seq(rjs, digest, gzip)
     )
-    .dependsOn(common)
-    .dependsOn(commonTest % "test")
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val all = Project("all", file("all"))
     .aggregate(main, worker, documentSetWorker, common)
