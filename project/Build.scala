@@ -15,7 +15,21 @@ import play.twirl.sbt.Import._
 import sbt._
 import sbt.Keys._
 
-object ApplicationBuild extends Build with ProjectSettings {
+object ApplicationBuild extends Build {
+  val appName     = "overview-server"
+  val appVersion    = "1.0-SNAPSHOT"
+
+  val ourScalaVersion = "2.11.6"
+  val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8")
+
+  val ourResolvers = Seq(
+    "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
+    "Oracle Released Java Packages" at "http://download.oracle.com/maven",
+    "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
+    "More FuseSource" at "http://repo.fusesource.com/maven2/",
+    "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
+  )
+
   override def settings = super.settings ++ Seq(
     EclipseKeys.skipParents in ThisBuild := false,
     scalaVersion := ourScalaVersion,
@@ -53,7 +67,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
-      libraryDependencies ++= messageBrokerDependencies,
+      libraryDependencies ++= Dependencies.messageBrokerDependencies,
       printClasspath
     )
 
@@ -62,7 +76,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
-      libraryDependencies ++= searchIndexDependencies,
+      libraryDependencies ++= Dependencies.searchIndexDependencies,
       Keys.fork := true,
       javaOptions in run <++= (baseDirectory) map { (d) =>
         Seq(
@@ -81,7 +95,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     .settings(Defaults.coreDefaultSettings: _*)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
-    .settings(libraryDependencies ++= runnerDependencies)
+    .settings(libraryDependencies ++= Dependencies.runnerDependencies)
     .settings(scalacOptions ++= ourScalacOptions)
     .settings(parallelExecution in Test := false) // Scallop has icky races. There may be occasional errors with this option, but far fewer than without
 
@@ -90,7 +104,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
-      libraryDependencies ++= dbEvolutionApplierDependencies,
+      libraryDependencies ++= Dependencies.dbEvolutionApplierDependencies,
       javaOptions ++= allJavaOpts ++ devJavaOpts,
       scalacOptions ++= ourScalacOptions,
       mappings in (Compile, packageBin) <++= baseDirectory map { base =>
@@ -122,7 +136,7 @@ object ApplicationBuild extends Build with ProjectSettings {
   }
 
   // Project definitions
-  val common = OverviewProject("common", commonProjectDependencies)
+  val common = OverviewProject("common", Dependencies.commonDependencies)
 
   val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
     .settings(Defaults.coreDefaultSettings: _*)
@@ -168,10 +182,10 @@ object ApplicationBuild extends Build with ProjectSettings {
    * Reality is the other way around. The test suite relies on the database,
    * which common provides.
    */
-  val commonTest = OverviewProject("common-test", commonTestProjectDependencies)
+  val commonTest = OverviewProject("common-test", Dependencies.commonTestDependencies)
     .dependsOn(common)
 
-  val documentSetWorker = OverviewProject("documentset-worker", documentSetWorkerProjectDependencies)
+  val documentSetWorker = OverviewProject("documentset-worker", Dependencies.documentSetWorkerDependencies)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
@@ -182,7 +196,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     .dependsOn(common)
     .dependsOn(commonTest % "test")
 
-  val worker = OverviewProject("worker", workerProjectDependencies)
+  val worker = OverviewProject("worker", Dependencies.workerDependencies)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
@@ -201,7 +215,7 @@ object ApplicationBuild extends Build with ProjectSettings {
       .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
       .settings(
         version := appVersion,
-        libraryDependencies ++= serverProjectDependencies,
+        libraryDependencies ++= Dependencies.serverDependencies,
         scalacOptions ++= ourScalacOptions,
         TwirlKeys.templateImports += "views.Magic._",
         RoutesKeys.routesImport += "extensions.Binders._",
