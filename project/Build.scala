@@ -36,11 +36,8 @@ object ApplicationBuild extends Build {
     resolvers ++= ourResolvers
   )
 
-  val allJavaOpts = Seq("-Duser.timezone=UTC")
-
-  val devJavaOpts = Seq(
-    "-Ddb.default.dataSource.databaseName=overview-dev",
-    "-Ddb.default.dataSource.portNumber=9010"
+  val allJavaOpts = Seq(
+    "-Duser.timezone=UTC"
   )
 
   val testJavaOpts = Seq(
