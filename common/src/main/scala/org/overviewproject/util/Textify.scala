@@ -1,6 +1,5 @@
 package org.overviewproject.util
 
-import com.google.common.base.Charsets
 import com.google.common.escape.UnicodeEscaper
 import com.google.common.base.CharMatcher
 import java.nio.charset.Charset
@@ -51,39 +50,6 @@ object Textify {
     newlineRegex.replaceAllIn(text, "\n")
   }
 
-  /** Parses UTF-8 as Java 8 would.
-    *
-    * TL;DR: use this when your input might be invalid. If you use
-    * `new String(bytes, "utf-8")`, your program can crash on invalid input.
-    *
-    * Java 7'd utf-8 decoder allows CESU-8 encoding. This is error-prone: it
-    * can decode unpaired surrogates, which in turn break the assumptions in
-    * Java's String class.
-    *
-    * See https://bugs.openjdk.java.net/browse/JDK-7096080
-    *
-    * Since Unicode surrogate characters aren't utf-8 anyway, we should inject
-    * their replacement characters.
-    * See http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
-    *
-    * Here's an example: U+D800 U+DC00:
-    * 
-    *     val bytes = Array[Int](0xed, 0xa0, 0x80, 0xed, 0xb0, 0x80).map(_.toByte)
-    *     new String(bytes, Charsets.UTF_8) // => U+10000
-    *     Textify.parseUtf8(bytes) // => U+FFFD U+FFFD U+FFFD U+FFFD U+FFFD U+FFFD
-    *
-    *     // Why would it be harmless to parse the array as U+10000?
-    *     // because:
-    *     val broken = new String(bytes.take(3), Charsets.UTF_8) // => U+D8000
-    *     val notBroken = Textify.parseUtf8(bytes.take(3)) // U+FFFD U+FFFD U+FFFD
-    *     broken.codePointAt(0) // => java.lang.StringIndexOutOfBoundsException
-    *     notBroken.codePointAt(0) // => 0xfffd
-    */
-  private def parseUtf8(rawBytes: Array[Byte]) : String = {
-    val broken = new String(rawBytes, Charsets.UTF_8)
-    surrogateCharRegex.replaceAllIn(broken, "\ufffd\ufffd\ufffd")
-  }
-
   /** Returns text from a given Unicode string.
     *
     * Unicode strings can contain non-text characters: control characters, null
@@ -112,18 +78,12 @@ object Textify {
     *
     * * Decodes from the given charset (to a Java String).
     * * Replaces invalid input characters with U+FFFD (so it will not crash).
-    * * Replaces unpaired surrogates with U+FFFD U+FFFD U+FFFD (again, so it
-    *   will not crash -- Java's decoder does not do this, and Strings crash as
-    *   a result).
+    * * Replaces unpaired surrogates with U+FFFD U+FFFD U+FFFD (this makes
+    *   String methods like .length not crash).
     * * Replaces control characters (except for \t) with spaces (so word
     *   boundaries won't change).
     * * Deletes noncharacters (so U+FFFE, the byte-order marker, disappears).
     * * Unifies newlines: \r, \r\n and \u0085 become \n.
     */
-  def apply(rawBytes: Array[Byte], charset: Charset) : String = {
-    charset match {
-      case Charsets.UTF_8 => apply(parseUtf8(rawBytes))
-      case _ => apply(new String(rawBytes, charset))
-    }
-  }
+  def apply(rawBytes: Array[Byte], charset: Charset) : String = apply(new String(rawBytes, charset))
 }

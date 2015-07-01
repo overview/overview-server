@@ -7,11 +7,10 @@
 package org.overviewproject.csv
 
 import java.io.{BufferedInputStream,BufferedReader,InputStreamReader,Reader}
-import java.nio.charset.{Charset,CharsetDecoder,CodingErrorAction}
+import java.nio.charset.{Charset,CharsetDecoder,CodingErrorAction,StandardCharsets}
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
 
-import org.overviewproject.backports.sun.nio.cs.UTF_8
 import org.overviewproject.database.BlockingDatabase
 import org.overviewproject.postgres.LargeObjectInputStream
 
@@ -58,7 +57,7 @@ class UploadReader(oid: Long, encodingStringOption: Option[String], blockingData
 }
 
 object UploadReader {
-  private val Utf8 = new UTF_8()
+  private val Utf8 = StandardCharsets.UTF_8
 
   /** The Charset defined by encoding, if present and valid.
     *
@@ -68,10 +67,9 @@ object UploadReader {
     *
     * See https://bugs.openjdk.java.net/browse/JDK-7096080
     */
-  private def getCharset(encodingStringOption: Option[String]): Charset = {
-    (encodingStringOption match {
-      case Some("utf-8") | Some("UTF-8") | None => None // default
-      case Some(name) => allCatch.opt(Charset.forName(name))
-    }).getOrElse(Utf8)
+  private def getCharset(encodingStringOption: Option[String]): Charset = encodingStringOption match {
+    case Some("utf-8") | Some("UTF-8") | None => Utf8 // default
+    case Some(name) => allCatch.opt(Charset.forName(name)).getOrElse(Utf8)
+    case None => Utf8
   }
 }

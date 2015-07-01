@@ -51,7 +51,7 @@ class UploadReaderSpec extends DbSpecification {
   "default to UTF-8 if specified encoding is not valid" in new BaseScope {
     override val data = "ἀπὸ τὸ Ἄξιον ἐστί".getBytes("utf-8")
     override val encodingStringOption = Some("some-nonexistent-encoding")
-    uploadReader.charset.name must beEqualTo("UTF-8-backport") // should be "utf-8"
+    uploadReader.charset.name must beEqualTo("UTF-8")
     reader.read(buffer)
     buffer.take(17) must beEqualTo("ἀπὸ τὸ Ἄξιον ἐστί".toCharArray)
   }
