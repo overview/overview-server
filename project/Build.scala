@@ -51,10 +51,6 @@ object ApplicationBuild extends Build {
     "-Dlogback.configurationFile=logback-test.xml"
   )
 
-  val workerJavaOpts = Seq(
-    "-Dlogback.configurationFile=workerdevlog.xml"
-  )
-
   val ourTestOptions = Seq(
     Tests.Argument(TestFrameworks.Specs2, "xonly"),
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
@@ -176,11 +172,9 @@ object ApplicationBuild extends Build {
     .dependsOn(common % "test->test;compile->compile")
 
   lazy val documentSetWorker = OverviewProject("documentset-worker", Dependencies.documentSetWorkerDependencies)
-    .settings(javaOptions in run ++= workerJavaOpts)
     .dependsOn(common % "test->test;compile->compile")
 
   lazy val worker = OverviewProject("worker", Dependencies.workerDependencies)
-    .settings(javaOptions in run ++= workerJavaOpts)
     .dependsOn(common % "test->test;compile->compile")
 
   lazy val main = Project(appName, file("."))
