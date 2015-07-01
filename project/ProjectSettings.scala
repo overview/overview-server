@@ -28,7 +28,7 @@ trait ProjectSettings {
   val commonsIoDep = "commons-io" % "commons-io" % "2.4"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "1.4.2"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
-  val guavaDep = "com.google.guava" % "guava" % "16.0"
+  val guavaDep = "com.google.guava" % "guava" % "18.0"
   val hikariCpDep = "com.zaxxer" % "HikariCP" % "2.3.8"
   val javaxMailDep = "javax.mail" % "mail" % "1.4.7"
   val junitDep = "junit" % "junit-dep" % "4.11"
@@ -47,16 +47,8 @@ trait ProjectSettings {
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC3"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
 
-  // WHY doesn't this work? I can't seem to refer to sbt.ModuleId here.
-  // 
-  // And come to that, WHY doesn't Ivy work?
-  // http://stackoverflow.com/questions/6158192/apache-ivy-error-message-impossible-to-get-artifacts-when-data-has-not-been-l
-  //def guavaSafeDependencies(dependencies: Seq[sbt.ModuleId]) = {
-  //  Seq(guavaDep) ++ dependencies.map(_.exclude("com.google.guava", "guava"))
-  //}
-
   // Project dependencies
-  val serverProjectDependencies = Seq(guavaDep) ++ (Seq(
+  val serverProjectDependencies = Seq(
     ws,
     filters,
     openCsvDep,
@@ -68,32 +60,33 @@ trait ProjectSettings {
     "org.owasp.encoder" % "encoder" % "1.1",
     "org.jodd" % "jodd-wot" % "3.3.8" % "test",
     "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current % "test"
-  )).map(_.exclude("com.google.guava", "guava"))
+  )
 
-  val dbEvolutionApplierDependencies = Seq(guavaDep) ++ (Seq(
+  val dbEvolutionApplierDependencies = Seq(
     jdbc,
     evolutions,
     hikariCpDep,
     postgresqlDep
-  )).map(_.exclude("com.google.guava", "guava"))
+  )
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
-  val commonProjectDependencies = Seq(guavaDep) ++ (Seq(
+  val commonProjectDependencies = Seq(
     akkaDep,
     asyncHttpClientDep,
     awsS3Dep,
-    hikariCpDep,
-    redisDep,
     commonsIoDep,
     elasticSearchDep,
     geronimoJmsDep,
+    guavaDep, // Textify
+    hikariCpDep,
     logbackDep,
+    pgSlickDep,
     playJsonDep,
     postgresqlDep,
-    pgSlickDep,
+    redisDep,
+    slickDep,
     squerylDep,
     stompDep,
-    slickDep,
     specs2Dep % "test",
     junitInterfaceDep % "test",
     akkaTestkit % "test",
@@ -104,9 +97,9 @@ trait ProjectSettings {
     // instead of one. Require the latest version, so that the jars aren't
     // duplicated.
     "org.scala-lang" % "scala-compiler" % ourScalaVersion
-  )).map(_.exclude("com.google.guava", "guava"))
+  )
 
-  val commonTestProjectDependencies = Seq(guavaDep) ++ (Seq(
+  val commonTestProjectDependencies = Seq(
     akkaDep,
     akkaTestkit,
     logbackDep,
@@ -114,15 +107,15 @@ trait ProjectSettings {
     junitInterfaceDep,
     junitDep,
     mockitoDep
-  )).map(_.exclude("com.google.guava", "guava"))
+  )
 
-  val workerProjectDependencies = Seq(guavaDep) ++ (Seq(
+  val workerProjectDependencies = Seq(
     javaxMailDep, 
     openCsvDep,
     playStreamsDep
-  )).map(_.exclude("com.google.guava", "guava"))
+  )
   
-  val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(
+  val documentSetWorkerProjectDependencies = Seq(
     akkaAgentDep,
     logbackDep,
     javaxMailDep,
@@ -130,7 +123,7 @@ trait ProjectSettings {
     "org.apache.pdfbox" % "pdfbox" % "1.8.9",
     "org.bouncycastle" % "bcprov-jdk15" % "1.44",
     "org.bouncycastle" % "bcmail-jdk15" % "1.44"
-  )).map(_.exclude("com.google.guava", "guava"))
+  )
   
   val messageBrokerDependencies = Seq(
     // [adam] I tried excluding things while upgrading to Scala 2.11. It turns
@@ -145,7 +138,7 @@ trait ProjectSettings {
   )
 
   val searchIndexDependencies = Seq(
-    "log4j" % "log4j" % "1.2.17",
+    logbackDep,
     elasticSearchDep
   )
 
