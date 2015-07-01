@@ -45,8 +45,6 @@ object Main {
         |}
         |""".stripMargin)).resolve()
 
-    System.out.println(sys.props.toString)
-
     val hikariConfig: HikariConfig = configToHikariConfig(config, DatabaseName)
     val hikariDataSource: HikariDataSource = new HikariDataSource(hikariConfig)
     val database: Database = new HikariDatabase(DatabaseName, hikariDataSource)
