@@ -45,10 +45,13 @@ object ApplicationBuild extends Build {
 
   val testJavaOpts = Seq(
     "-Ddb.default.dataSource.databaseName=overview-test",
-    "-Ddb.default.dataSource.portNumber=9010"
+    "-Ddb.default.dataSource.portNumber=9010",
+    "-Dlogback.configurationFile=logback-test.xml"
   )
 
-  val workerJavaOpts = Seq("-Dlogback.configurationFile=workerdevlog.xml")
+  val workerJavaOpts = Seq(
+    "-Dlogback.configurationFile=workerdevlog.xml"
+  )
 
   val ourTestOptions = Seq(
     Tests.Argument(TestFrameworks.Specs2, "xonly"),
@@ -61,117 +64,110 @@ object ApplicationBuild extends Build {
     println(classpath.map(_.data).mkString(":"))
   }
 
-  val messageBroker = Project("message-broker", file("message-broker"))
-    .settings(scalaVersion := "2.10.5")
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  val ourGlobalSettings: Seq[Setting[_]] = (
+    Defaults.coreDefaultSettings
+    ++ net.virtualvoid.sbt.graph.Plugin.graphSettings
+    ++ packageArchetype.java_application
+    ++ Seq(
+      logBuffered := false, // so Runner gets data sooner
+      scalacOptions ++= ourScalacOptions,
+      javaOptions ++= allJavaOpts,
+      javaOptions in Test ++= testJavaOpts,
+      fork := true, // so javaOptions gets set
+      parallelExecution in Test := false,
+      aggregate in Test := false,
+      testOptions in Test ++= ourTestOptions,
+      printClasspath,
+      sources in doc in Compile := List()
+    )
+  )
+
+  lazy val messageBroker = Project("message-broker", file("message-broker"))
+    .settings(ourGlobalSettings: _*)
     .settings(
-      libraryDependencies ++= Dependencies.messageBrokerDependencies,
-      printClasspath
+      scalaVersion := "2.10.5",
+      libraryDependencies ++= Dependencies.messageBrokerDependencies
     )
 
-  val searchIndex = Project("search-index", file("search-index"))
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  lazy val searchIndex = Project("search-index", file("search-index"))
+    .settings(ourGlobalSettings: _*)
     .settings(
       libraryDependencies ++= Dependencies.searchIndexDependencies,
-      Keys.fork := true,
       javaOptions in run <++= (baseDirectory) map { (d) =>
         Seq(
           "-Des.path.home=" + d,
           "-Xms1g", "-Xmx1g", "-Xss256k",
-          "-XX:+UseParNewGC",  "-XX:+UseConcMarkSweepGC", "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly",
+          "-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC",
+          "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly",
           "-Djava.awt.headless=true",
           "-Delasticsearch",
           "-Des.foreground=yes"
         )
-      },
-      printClasspath
+      }
     )
 
-  val runner = Project("runner", file("runner"))
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  lazy val runner = Project("runner", file("runner"))
+    .settings(ourGlobalSettings: _*)
     .settings(libraryDependencies ++= Dependencies.runnerDependencies)
-    .settings(scalacOptions ++= ourScalacOptions)
-    .settings(parallelExecution in Test := false) // Scallop has icky races. There may be occasional errors with this option, but far fewer than without
 
-  val dbEvolutionApplier = Project("db-evolution-applier", file("db-evolution-applier"))
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  def dbEvolutionApplierProject(name: String) = Project(name, file("db-evolution-applier"))
+    .settings(ourGlobalSettings: _*)
     .settings(
+      target := baseDirectory.value / "target" / name, // [error] Overlapping output directories
       libraryDependencies ++= Dependencies.dbEvolutionApplierDependencies,
-      javaOptions ++= allJavaOpts ++ devJavaOpts,
-      scalacOptions ++= ourScalacOptions,
       mappings in (Compile, packageBin) <++= baseDirectory map { base =>
         val evolutions = ((base / ".." / "conf" / "evolutions") ** "*").get
         evolutions pair relativeTo(base / ".." / "conf")
       }
     )
 
+  lazy val dbEvolutionApplier = dbEvolutionApplierProject("db-evolution-applier")
+
+  // [adamhooper, 2015-07-01] I had a hell of a time convincing
+  // db-evolution-applier to run on the test database in one sbt command and on
+  // the dev database in another. This is my ugly hack.
+  lazy val testDbEvolutionApplier = dbEvolutionApplierProject("test-db-evolution-applier")
+    .settings(javaOptions ++= testJavaOpts)
+
   // Create a subProject with our common settings
   object OverviewProject {
-    def apply(name: String, dependencies: Seq[ModuleID]) = {
-      Project(name, file(name))
-        .settings(Defaults.coreDefaultSettings: _*)
-        .settings(
-          unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
-          libraryDependencies ++= dependencies,
-          javaOptions in run ++= allJavaOpts ++ devJavaOpts,
-          javaOptions in Test ++= allJavaOpts ++ testJavaOpts,
-
-          fork := true, // to set javaOptions
-          testOptions in Test ++= ourTestOptions,
-          scalacOptions ++= ourScalacOptions,
-          logBuffered := false,
-          parallelExecution in Test := false,
-          sources in doc in Compile := List(),
-          printClasspath
-        )
-    }
+    def apply(name: String, dependencies: Seq[ModuleID]) = Project(name, file(name))
+      .settings(ourGlobalSettings: _*)
+      .settings(
+        unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
+        libraryDependencies ++= dependencies
+      )
   }
 
   // Project definitions
-  val common = OverviewProject("common", Dependencies.commonDependencies)
+  lazy val common = OverviewProject("common", Dependencies.commonDependencies)
 
-  val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  lazy val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
+    .settings(ourGlobalSettings: _*)
     .settings(
-      scalacOptions ++= ourScalacOptions,
       resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
       includeFilter in (Compile, resourceDirectory) := "application.conf"
     )
     .dependsOn(common)
 
-  val upgrade20150119MoveFiles = Project("upgrade-2015-01-19-move-files", file("upgrade/2015-01-19-move-files"))
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  lazy val upgrade20150119MoveFiles = Project("upgrade-2015-01-19-move-files", file("upgrade/2015-01-19-move-files"))
+    .settings(ourGlobalSettings: _*)
     .settings(
-      scalacOptions ++= ourScalacOptions,
       resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
       includeFilter in (Compile, resourceDirectory) := "application.conf"
     )
     .dependsOn(common)
 
-  val upgrade20150615NixUnusedPages = Project("upgrade-2015-06-15-nix-unused-pages", file("upgrade/2015-06-15-nix-unused-pages"))
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  lazy val upgrade20150615NixUnusedPages = Project("upgrade-2015-06-15-nix-unused-pages", file("upgrade/2015-06-15-nix-unused-pages"))
+    .settings(ourGlobalSettings: _*)
     .settings(
-      scalacOptions ++= ourScalacOptions,
       resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
       includeFilter in (Compile, resourceDirectory) := "application.conf"
     )
     .dependsOn(common)
 
-  val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
-    .settings(Defaults.coreDefaultSettings: _*)
-    .settings(packageArchetype.java_application: _*)
-    .settings(scalacOptions ++= ourScalacOptions)
+  lazy val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
+    .settings(ourGlobalSettings: _*)
     .settings(libraryDependencies += "com.github.scopt" %% "scopt" % "3.3.0")
     .dependsOn(common)
 
@@ -182,83 +178,58 @@ object ApplicationBuild extends Build {
    * Reality is the other way around. The test suite relies on the database,
    * which common provides.
    */
-  val commonTest = OverviewProject("common-test", Dependencies.commonTestDependencies)
+  lazy val commonTest = OverviewProject("common-test", Dependencies.commonTestDependencies)
     .dependsOn(common)
 
-  val documentSetWorker = OverviewProject("documentset-worker", Dependencies.documentSetWorkerDependencies)
-    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
-    .settings(packageArchetype.java_application: _*)
+  lazy val documentSetWorker = OverviewProject("documentset-worker", Dependencies.documentSetWorkerDependencies)
+    .settings(javaOptions in run ++= workerJavaOpts)
+    .dependsOn(common)
+    .dependsOn(commonTest % "test")
+
+  lazy val worker = OverviewProject("worker", Dependencies.workerDependencies)
+    .settings(javaOptions in run ++= workerJavaOpts)
+    .dependsOn(common)
+    .dependsOn(commonTest % "test")
+
+  lazy val main = Project(appName, file("."))
+    .enablePlugins(play.PlayScala)
+    .enablePlugins(SbtWeb)
+    .settings(ourGlobalSettings: _*)
     .settings(
-      Keys.fork := true,
-      javaOptions in run ++= workerJavaOpts,
-      javaOptions in Test ++= Seq("-Dlogback.configurationFile=logback-test.xml")
+      version := appVersion,
+      libraryDependencies ++= Dependencies.serverDependencies,
+      TwirlKeys.templateImports += "views.Magic._",
+      RoutesKeys.routesImport += "extensions.Binders._",
+      RjsKeys.modules := Seq(
+        WebJs.JS.Object("name" -> "bundle/admin/ImportJob/index"),
+        WebJs.JS.Object("name" -> "bundle/admin/Plugin/index"),
+        WebJs.JS.Object("name" -> "bundle/admin/User/index"),
+        WebJs.JS.Object("name" -> "bundle/ApiToken/index"),
+        WebJs.JS.Object("name" -> "bundle/CsvUpload/new"),
+        WebJs.JS.Object("name" -> "bundle/DocumentCloudImportJob/new"),
+        WebJs.JS.Object("name" -> "bundle/DocumentCloudProject/index"),
+        WebJs.JS.Object("name" -> "bundle/DocumentSet/index"),
+        WebJs.JS.Object("name" -> "bundle/DocumentSet/show"),
+        WebJs.JS.Object("name" -> "bundle/DocumentSet/show-progress"),
+        WebJs.JS.Object("name" -> "bundle/DocumentSetUser/index"),
+        WebJs.JS.Object("name" -> "bundle/FileImport/new"),
+        WebJs.JS.Object("name" -> "bundle/PublicDocumentSet/index"),
+        WebJs.JS.Object("name" -> "bundle/SharedDocumentSet/index"),
+        WebJs.JS.Object("name" -> "bundle/Welcome/show")
+      ),
+      javaOptions in Test ++= Seq(
+        "-Dconfig.file=conf/application-test.conf",
+        "-Dlogger.resource=logback-test.xml"
+      ),
+      sources in doc in Compile := List(),
+      includeFilter in (Assets, LessKeys.less) := "main.less",
+      includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
+      pipelineStages := Seq(rjs, digest, gzip)
     )
     .dependsOn(common)
     .dependsOn(commonTest % "test")
 
-  val worker = OverviewProject("worker", Dependencies.workerDependencies)
-    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
-    .settings(packageArchetype.java_application: _*)
-    .settings(
-      Keys.fork := true,
-      javaOptions in run ++= workerJavaOpts,
-      javaOptions in Test ++= Seq("-Dlogback.configurationFile=logback-test.xml")
-    )
-    .dependsOn(common)
-    .dependsOn(commonTest % "test")
-
-  val main = (
-    Project(appName, file("."))
-      .enablePlugins(play.PlayScala)
-      .enablePlugins(SbtWeb)
-      //.settings(resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/")
-      .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
-      .settings(
-        version := appVersion,
-        libraryDependencies ++= Dependencies.serverDependencies,
-        scalacOptions ++= ourScalacOptions,
-        TwirlKeys.templateImports += "views.Magic._",
-        RoutesKeys.routesImport += "extensions.Binders._",
-        RjsKeys.modules := Seq(
-          WebJs.JS.Object("name" -> "bundle/admin/ImportJob/index"),
-          WebJs.JS.Object("name" -> "bundle/admin/Plugin/index"),
-          WebJs.JS.Object("name" -> "bundle/admin/User/index"),
-          WebJs.JS.Object("name" -> "bundle/ApiToken/index"),
-          WebJs.JS.Object("name" -> "bundle/CsvUpload/new"),
-          WebJs.JS.Object("name" -> "bundle/DocumentCloudImportJob/new"),
-          WebJs.JS.Object("name" -> "bundle/DocumentCloudProject/index"),
-          WebJs.JS.Object("name" -> "bundle/DocumentSet/index"),
-          WebJs.JS.Object("name" -> "bundle/DocumentSet/show"),
-          WebJs.JS.Object("name" -> "bundle/DocumentSet/show-progress"),
-          WebJs.JS.Object("name" -> "bundle/DocumentSetUser/index"),
-          WebJs.JS.Object("name" -> "bundle/FileImport/new"),
-          WebJs.JS.Object("name" -> "bundle/PublicDocumentSet/index"),
-          WebJs.JS.Object("name" -> "bundle/SharedDocumentSet/index"),
-          WebJs.JS.Object("name" -> "bundle/Welcome/show")
-        ),
-        aggregate in Compile := true,
-        parallelExecution in IntegrationTest := false,
-        javaOptions ++= allJavaOpts ++ devJavaOpts,
-        fork := true, // so javaOptions get set
-        javaOptions in Test ++= allJavaOpts ++ testJavaOpts ++ Seq(
-          "-Dconfig.file=conf/application-test.conf",
-          "-Dlogger.resource=logback-test.xml"
-        ),
-        aggregate in Test := false,
-        testOptions in Test ++= ourTestOptions,
-        logBuffered := false,
-        sources in doc in Compile := List(),
-        printClasspath,
-        aggregate in printClasspathTask := false,
-        includeFilter in (Assets, LessKeys.less) := "main.less",
-        includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
-        pipelineStages := Seq(rjs, digest, gzip)
-      )
-      .dependsOn(common)
-      .dependsOn(commonTest % "test")
-    )
-
-  val all = Project("all", file("all"))
+  lazy val all = Project("all", file("all"))
     .aggregate(main, worker, documentSetWorker, common)
     .settings(
       aggregate in Test := false,
@@ -266,6 +237,6 @@ object ApplicationBuild extends Build {
         dependsOn (test in Test in worker)
         dependsOn (test in Test in documentSetWorker)
         dependsOn (test in Test in common)
-        dependsOn (run in Compile in dbEvolutionApplier).toTask("")
+        dependsOn (run in Runtime in testDbEvolutionApplier).toTask("")
     )
 }
