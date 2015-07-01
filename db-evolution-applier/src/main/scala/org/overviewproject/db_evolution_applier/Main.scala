@@ -19,30 +19,33 @@ object Main {
   def main(args: Array[String]) : Unit = {
     val DatabaseName: String = "default"
 
-    val config: Config = ConfigFactory.parseString("""
-      |# We keep 'db.default' so caller can override via Java system properties
-      |db {
-      |  default {
-      |    dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
-      |    maximumPoolSize=2
-      |    dataSource {
-      |      serverName="localhost"
-      |      portNumber="9010" # overridden in production.conf
-      |      databaseName="overview-dev"
-      |      user="overview"
-      |      password="overview"
-      |      serverName=${?DATABASE_SERVER_NAME}
-      |      portNumber=${?DATABASE_PORT}
-      |      databaseName=${?DATABASE_NAME}
-      |      user=${?DATABASE_USERNAME}
-      |      password=${?DATABASE_PASSWORD}
-      |      tcpKeepAlive=true
-      |      ssl=${?DATABASE_SSL}
-      |      sslfactory=${?DATABASE_SSL_FACTORY}
-      |    }
-      |  }
-      |}
-      |""".stripMargin).resolve()
+    val config: Config = ConfigFactory.systemProperties
+      .withFallback(ConfigFactory.parseString("""
+        |# We keep 'db.default' so caller can override via Java system properties
+        |db {
+        |  default {
+        |    dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
+        |    maximumPoolSize=2
+        |    dataSource {
+        |      serverName="localhost"
+        |      portNumber="9010" # overridden in production.conf
+        |      databaseName="overview-dev"
+        |      user="overview"
+        |      password="overview"
+        |      serverName=${?DATABASE_SERVER_NAME}
+        |      portNumber=${?DATABASE_PORT}
+        |      databaseName=${?DATABASE_NAME}
+        |      user=${?DATABASE_USERNAME}
+        |      password=${?DATABASE_PASSWORD}
+        |      tcpKeepAlive=true
+        |      ssl=${?DATABASE_SSL}
+        |      sslfactory=${?DATABASE_SSL_FACTORY}
+        |    }
+        |  }
+        |}
+        |""".stripMargin)).resolve()
+
+    System.out.println(sys.props.toString)
 
     val hikariConfig: HikariConfig = configToHikariConfig(config, DatabaseName)
     val hikariDataSource: HikariDataSource = new HikariDataSource(hikariConfig)
