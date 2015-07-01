@@ -15,7 +15,7 @@ deps/redis/build.sh
 # works or it doesn't; all errors are the same to us.
 #
 # test:update downloads test deps, which are always a superset of deps
-./sbt '; set every logLevel := Level.Warn; common/test:update; common-test/update; overview-server/test:update; documentset-worker/test:update; worker/test:update; runner/test:update; db-evolution-applier/update; search-index/update; message-broker/update'
+./sbt '; set every logLevel := Level.Warn; common/test:update; overview-server/test:update; documentset-worker/test:update; worker/test:update; runner/test:update; db-evolution-applier/update; search-index/update; message-broker/update'
 
 # Check for compiler errors
 ./sbt '; overview-server/test:compile; common/test:compile; worker/test:compile; documentset-worker/test:compile; runner/test:compile' # with no "|| true"
