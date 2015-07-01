@@ -25,8 +25,7 @@ deps/redis/build.sh
 
 # Unit tests next.
 # We need the database to run for the duration of the test commands; --only-servers redis is close enough because it starts fast.
-# We test overview-server/test first to run migrations in the test database.
-./dev --only-servers redis --sbt '; overview-server/test; common/test; worker/test; documentset-worker/test; runner/test' || true # Jenkins will pick up test-result XML
+./dev --only-servers redis --sbt all/test || true # Jenkins will pick up test-result XML
 
 # The build must succeed
 SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" ./build overview-server.zip
