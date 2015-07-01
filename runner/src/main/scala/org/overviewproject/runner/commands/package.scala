@@ -68,7 +68,7 @@ package object commands {
 
     override def documentSetWorker = new JvmCommandWithAppendableClasspath(
       Flags.DatabaseEnv,
-      Seq("-Dlogback.configurationFile=workerdevlog.xml"),
+      Seq(),
       Seq("org.overviewproject.DocumentSetWorker")
     )
 
@@ -76,7 +76,7 @@ package object commands {
 
     override def worker = new JvmCommandWithAppendableClasspath(
       Flags.DatabaseEnv,
-      Seq("-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
+      Seq("-Xmx2g"),
       Seq("JobHandler")
     ).with32BitSafe
 
@@ -131,7 +131,7 @@ package object commands {
     override def documentSetWorker = cmd(
       "documentset-worker",
       Flags.DatabaseEnv,
-      Seq("-Dlogback.configurationFile=workerdevlog.xml"),
+      Seq(),
       Seq("org.overviewproject.DocumentSetWorker")
     )
 
@@ -171,28 +171,21 @@ package object commands {
 
     override def redis = new ShCommand(Seq(), Seq("./deps/redis/dev.sh"))
 
-    override def webServer = {
-      cmd(
-        // In distribution mode, the web server is in the "frontend/" folder
-        "frontend",
-        Flags.DatabaseEnv,
-        Seq(
-          "-Duser.timezone=UTC",
-          "-Dpidfile.enabled=false"
-        ),
-        Seq(
-          "play.core.server.NettyServer"
-        )
-      )
-    }
+    override def webServer = cmd(
+      // In distribution mode, the web server is in the "frontend/" folder
+      "frontend",
+      Flags.DatabaseEnv,
+      Seq(
+        "-Duser.timezone=UTC",
+        "-Dpidfile.enabled=false"
+      ),
+      Seq("play.core.server.NettyServer")
+    )
 
     override def worker = cmd(
       "worker",
       Flags.DatabaseEnv,
-      Seq(
-        "-Dlogback.configurationFile=workerdevlog.xml",
-        "-Xmx2g"
-      ),
+      Seq("-Xmx2g"),
       Seq("JobHandler")
     ).with32BitSafe
 

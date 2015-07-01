@@ -6,9 +6,7 @@ import scala.math.ScalaNumber
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait Logger {
-  protected val jLogger : JLogger
-
+class Logger(private val jLogger: JLogger) {
   /** Copied from Scala's StringLike.scala */
   private def unwrapArg(arg: Any): AnyRef = arg match {
     case x: ScalaNumber => x.underlying
@@ -52,32 +50,31 @@ trait Logger {
   }
 }
 
-class SLogger(override protected val jLogger: JLogger) extends Logger
-
 /** Logging interface, relying on Logback.
   *
-  * There are places for you to call methods:
+  * Call it like this:
   *
-  * `Logger.info("message {} {}", arg1, arg2)` will use a singleton object and
-  * prefix messages with "WORKER".
+  *   class Foo {
+  *     val logger = Logger.forClass(getClass)
+  *     def doSomething: Unit = {
+  *       logger.info("Doing something")
+  *     }
+  *   }
   *
-  * `val logger = Logger.forClass[MyClass]; logger.info("message {} {}", arg1, arg2)`
-  * will prefix messages with the fully-qualified name of MyClass.
+  * All messages will be prefixed with the class name. Use Logger configuration
+  * to determine what to do with the log messages.
   */
-object Logger extends Logger {
+object Logger {
   /*
    * We create loggers in "synchronized" blocks so that we don't create two at
    * once. If we did, SLF4J would output a cryptic error message and ignore
    * everything we tried to log.
    *
-   * This bug has been around for four years.
-   *
-   * http://bugzilla.slf4j.org/show_bug.cgi?id=176
+   * This is an ancient, silly bug: http://jira.qos.ch/browse/SLF4J-167
    */
 
-  /** Used internally for a static Logger interface. */
-  override protected lazy val jLogger = synchronized { LoggerFactory.getLogger("WORKER") }
-
   /** Use this to create a more useful Logger. */
-  def forClass(clazz: Class[_]): Logger = synchronized { new SLogger(LoggerFactory.getLogger(clazz)) }
+  def forClass(clazz: Class[_]): Logger = synchronized { new Logger(LoggerFactory.getLogger(clazz)) }
+
+  def forClassName(name: String): Logger = synchronized { new Logger(LoggerFactory.getLogger(name)) }
 }

@@ -9,10 +9,11 @@
  */
 
 package org.overviewproject.nlp
+
 import scala.collection.mutable.Set
-import org.overviewproject.util.{Logger, LoopedIterator }
-import org.overviewproject.util.Logger.logExecutionTime
 import scala.reflect.ClassTag
+
+import org.overviewproject.util.{Logger, LoopedIterator }
 
 // Defines interface and most basic operations for k-means clustering variants
 // T is element type, C is centroid type
@@ -99,8 +100,8 @@ abstract class KMeansBase[T : ClassTag, C : ClassTag] {
 //  - Centroid initializion by taking mean of quasi-randomly selected elements
 //  - Reset empty centroids by picking random element
 //  - subclasses must supply distance() and mean() for complete implementation
-abstract class KMeans[T : ClassTag, C : ClassTag]
-  extends KMeansBase[T,C] {
+abstract class KMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,C] {
+  private val logger = Logger.forClass(getClass)
 
   // -- Algorithm parameters --
   // Public for now, for easy control
@@ -156,11 +157,11 @@ abstract class KMeans[T : ClassTag, C : ClassTag]
 
       val logThis = elements.size > 10000
       def logIfBig(message: String, args: Any*): Unit = {
-        if (logThis) Logger.info(message, args: _*)
+        if (logThis) logger.info(message, args: _*)
       }
       def logExecutionTimeIfBig[T](message: String, args: Any*)(fn: => T): T = {
         if (logThis) {
-          Logger.logExecutionTime(message, args: _*)(fn)
+          logger.logExecutionTime(message, args: _*)(fn)
         }
         else {
           fn

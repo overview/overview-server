@@ -54,7 +54,7 @@ trait UploadedFileProcessCreator {
 
 object UploadedFileProcessCreator extends HasBlockingDatabase {
 
-  class UnsupportedDocumentTypeException(t: UnsupportedDocument)
+  case class UnsupportedDocumentTypeException(t: UnsupportedDocument) // FIXME: should not be an exception
     extends Exception(s"Unsupported Document type ${t.filename}: ${t.mimeType}")
 
   def apply(bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): UploadedFileProcessCreator =

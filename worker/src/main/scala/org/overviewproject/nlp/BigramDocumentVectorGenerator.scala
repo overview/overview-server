@@ -16,6 +16,7 @@ package org.overviewproject.nlp
 import com.opencsv.{CSVReader, CSVWriter}
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
 import scala.collection.mutable.{Map, IndexedSeq, ArrayBuffer}
+
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
 
@@ -91,6 +92,8 @@ object FlatBigrams {
 class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
   type WeightedBigramKey = (BigramKey,TermWeight)
+
+  private val logger = Logger.forClass(getClass)
 
   // --- Config ---
   var minBigramOccurrences:Int   = 5                // throw out bigram if it has less than this many occurrences
@@ -354,7 +357,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
     }
 
     // Replace our string table with the new, reduced table. NB: invalidates idf, so we clear it to prevent misunderstandings
-    Logger.info(s"Input vocabulary size ${inStrings.size}, output vocabulary size ${outStrings.size}")
+    logger.info("Input vocabulary size {}, output vocabulary size {}", inStrings.size, outStrings.size)
 
     // Done with all of this; only docVecs remain (and references outStrings)
     inStrings = null

@@ -11,14 +11,16 @@
  */
 
 package org.overviewproject.nlp
-import org.overviewproject.util.{Logger, LoopedIterator, Ranges}
+
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
 
+import org.overviewproject.util.{Logger, LoopedIterator, Ranges}
+
 // T is element type, C is centroid type
-abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
-  extends KMeansBase[T,C] {
+abstract class IterativeKMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,C] {
+  private val logger = Logger.forClass(getClass)
 
   // Current centroids, cluster assignments, distortion per cluster. This state makes each instance non-reentrant
   private var centroids = Seq[C]()
@@ -43,9 +45,6 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
   var newCentroidSkip = 11        // subsample existing cluster by this factor...
   var newCentroidN    = 5         // ...to draw this many elements, take avg for new centroid
-
-  // Debug info?
-  var debugInfo = false
 
   // How many samples should we take? Not less than 1 or more than 25% of docset.
   // Otherwise take square root of docset size. Why? Intuition that we don't need to scale linearly,
@@ -86,11 +85,8 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
     var stopNow = false
     var iter=1
     while (iter < maxIter && !stopNow) {
-
-      if (debugInfo) {
-        val clusterSizes = (0 until totalDistortionPerK.size).map(i => clusters.count(_ == i))
-        Logger.debug("-- -- after iteration " + iter + " sizes: " + clusterSizes)
-      }
+      val clusterSizes = (0 until totalDistortionPerK.size).map(i => clusters.count(_ == i))
+      logger.trace("-- -- after iteration {}, sizes: {}", iter, clusterSizes)
 
       centroids = refineCentroids(elements, clusters, centroids)
       val distortions2 = assignClusters(elements, clusters, centroids)
@@ -105,9 +101,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       distortions = distortions2
       iter+=1
 
-      if (debugInfo)
-        Logger.debug("-- -- iteration " + iter + " changed distortion by " + disChange)
-
+      logger.trace("-- -- iteration {} changed distortion by {}", iter, disChange)
     }
   }
 
@@ -144,8 +138,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   // never be the closest center to any other document and so would remain an outlier forever.
   // This is a particular problem of the very high-dimensional spaces we work in.
   def AddCentroid(elements:IndexedSeq[T], k:Int) : Unit = {
-    if (debugInfo)
-      Logger.debug("-- -- distortions: " + distortions.mkString(","))
+    logger.trace("-- -- distortions: {}", distortions.mkString(","))
 
     val totalDistSquared = distortions.sum
     val elementsToPick = numSamples(elements)
@@ -162,8 +155,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       i += 1
     }
 
-    if (debugInfo)
-      Logger.debug(s"-- -- chose ${samples.size} samples for new centroid, wanted $elementsToPick")
+    logger.trace("-- -- chose {} samples for new centroid, wanted {}", samples.size, elementsToPick)
 
     // If we ended up with too few samples (perhaps none) add random elements
     while (samples.size < elementsToPick)
@@ -200,9 +192,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
   // Add one cluster to the current clustering, up to K
   def cluster(elements:IndexedSeq[T], k:Int, maxK:Int) : Unit = {
-
-    if (debugInfo)
-      Logger.debug("-- Adding centroid " + k)
+    logger.trace("-- Adding centroid {}", k)
 
     if (k==1) {
       InitializeCentroid(elements)
@@ -211,10 +201,8 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       iterateAssignments(elements, maxIterationsPerK)
     }
 
-    if (debugInfo) {
-      val clusterSizes = (0 until k).map(i => clusters.count(_ == i))
-      Logger.debug("-- cluster sizes: " + clusterSizes)
-    }
+    val clusterSizes = (0 until k).map(i => clusters.count(_ == i))
+    logger.trace("-- cluster sizes: {}", clusterSizes)
 
     saveBestFit(k, maxK)
   }
@@ -222,8 +210,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   // Not reentrant, because of all the internal state.
   def apply(elements:IndexedSeq[T], maxClusters:Int) : Array[Int] = {
 
-    if (debugInfo)
-      Logger.info("---- Starting KMI with " + elements.size + " elements ----")
+    logger.trace("---- Starting KMI with {} elements ----", elements.size)
 
     require(maxClusters > 0)
     require(elements.size > 0)
@@ -251,8 +238,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       cluster(elements, i, maxK)
     }
 
-    if (debugInfo)
-      Logger.info(s"---- Finished KMI, $bestFitK clusters, goodness of fits: ${(1 to maxK).map(goodnessOfFit).mkString(",")}")
+    logger.trace("---- Finished KMI, {} clusters, goodness of fits: {} ----", bestFitK, (1 to maxK).map(goodnessOfFit).mkString(","))
 
     require(bestClusters.size == elements.size) // minor sanity check
     bestClusters

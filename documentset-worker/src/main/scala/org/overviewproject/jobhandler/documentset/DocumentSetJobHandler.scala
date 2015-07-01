@@ -1,22 +1,21 @@
 package org.overviewproject.jobhandler.documentset
 
-import scala.concurrent.duration._
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
-import org.overviewproject.messagequeue.{ AcknowledgingMessageReceiver, MessageService }
-import org.overviewproject.messagequeue.MessageHandlerProtocol._
-import org.overviewproject.messagequeue.apollo.ApolloMessageService
-import org.overviewproject.searchindex.ElasticSearchClient
-import org.overviewproject.util.Configuration
-import org.overviewproject.util.Logger
 import javax.jms._
-import DocumentSetJobHandlerFSM._
+import scala.concurrent.duration._
+
 import org.overviewproject.database.DocumentSetCreationJobDeleter
+import org.overviewproject.database.DocumentSetDeleter
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
+import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.messagequeue.{ AcknowledgingMessageReceiver, MessageService }
+import org.overviewproject.messagequeue.apollo.ApolloMessageService
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
+import org.overviewproject.searchindex.ElasticSearchClient
+import org.overviewproject.util.{Configuration,Logger}
 
-
+import DocumentSetJobHandlerFSM._
 
 trait Command
 
@@ -68,6 +67,8 @@ class DocumentSetMessageHandler(fileRemovalQueuePath: String) extends Actor with
 
   import DocumentSetJobHandlerProtocol._
 
+  private val logger = Logger.forClass(getClass)
+
   override val supervisorStrategy =
     OneForOneStrategy(0, Duration.Inf) {
       case _: Exception => Stop
@@ -78,7 +79,7 @@ class DocumentSetMessageHandler(fileRemovalQueuePath: String) extends Actor with
 
   when(Ready) {
     case Event(DeleteCommand(documentSetId, waitForJobRemoval), _) => {
-      Logger.info(s"Received Delete($documentSetId)")
+      logger.info("Received Delete(documentSetId={})", documentSetId)
       val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler(fileRemovalQueuePath)))
       context.watch(deleteHandler)
 
@@ -86,7 +87,7 @@ class DocumentSetMessageHandler(fileRemovalQueuePath: String) extends Actor with
       goto(WaitingForCompletion)
     }
     case Event(DeleteTreeJobCommand(jobId), _) => {
-      Logger.info(s"Received DeleteTreeJob($jobId)")
+      logger.info("Received DeleteTreeJob(jobId={})", jobId)
       val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler(fileRemovalQueuePath)))
       context.watch(deleteHandler)
       
@@ -97,13 +98,13 @@ class DocumentSetMessageHandler(fileRemovalQueuePath: String) extends Actor with
 
   when(WaitingForCompletion) {
     case Event(JobDone(documentSetId), _) => {
-      Logger.info(s"DocumentSetJobHandler completed job $documentSetId")
+      logger.info("Completed job, documentSetId={}", documentSetId)
       context.unwatch(sender)
       context.parent ! MessageHandled
       goto(Ready)
     }
     case Event(Terminated(a), _) => {
-      Logger.info(s"DocumentSetJobHandler handler terminated")
+      logger.info("Handler terminated")
       context.parent ! MessageHandled
       goto(Ready)
     }

@@ -209,10 +209,7 @@ object ApplicationBuild extends Build {
         WebJs.JS.Object("name" -> "bundle/SharedDocumentSet/index"),
         WebJs.JS.Object("name" -> "bundle/Welcome/show")
       ),
-      javaOptions in Test ++= Seq(
-        "-Dconfig.file=conf/application-test.conf",
-        "-Dlogger.resource=logback-test.xml"
-      ),
+      javaOptions in Test ++= Seq("-Dconfig.file=conf/application-test.conf"),
       sources in doc in Compile := List(),
       includeFilter in (Assets, LessKeys.less) := "main.less",
       includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",

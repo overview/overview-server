@@ -122,7 +122,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     "notify parent when deletion fails" in new DeleteContext {
-      val error = new Exception
+      val error = new Exception("foo")
 
       deleteHandler ! DeleteDocumentSet(documentSetId, false)
       

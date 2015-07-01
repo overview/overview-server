@@ -2,8 +2,8 @@ package org.overviewproject.background.filecleanup
 
 import akka.actor.{ Actor, ActorRef, Props}
 import akka.pattern.pipe
-import org.overviewproject.util.Logger
 
+import org.overviewproject.util.Logger
 
 object FileCleanerProtocol {
   case class Clean(fileId: Long)
@@ -24,6 +24,7 @@ trait FileCleaner extends Actor {
   import context._
   import FileCleanerProtocol._
 
+  protected val logger = Logger.forClass(getClass)
   protected val fileRemover: FileRemover
 
   /**
@@ -35,15 +36,15 @@ trait FileCleaner extends Actor {
     case Clean(fileId) => attemptDeleteFile(fileId) pipeTo sender
   }
 
-  private def attemptDeleteFile(fileId: Long) =
+  private def attemptDeleteFile(fileId: Long) = {
     fileRemover.deleteFile(fileId)
       .map(_ => CleanComplete(fileId))
       .recover {
         case t: Throwable => 
-          Logger.error(s"File deletion failed for file $fileId", t)
+          logger.error("File deletion failed for file {}", fileId, t)
           CleanComplete(fileId)
       }
-
+  }
 }
 
 object FileCleaner {

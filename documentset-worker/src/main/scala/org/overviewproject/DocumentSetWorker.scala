@@ -1,19 +1,20 @@
 package org.overviewproject
 
-import scala.language.postfixOps
-import scala.concurrent.duration._
 import akka.actor._
 import akka.actor.SupervisorStrategy._
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
+import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
+import org.overviewproject.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
 import org.overviewproject.database.{ DataSource, DB, DatabaseConfiguration }
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.filegroup._
 import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
-import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
-import org.overviewproject.util.Logger
-import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
-import org.overviewproject.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
+import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.util.BulkDocumentWriter
+import org.overviewproject.util.Logger
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -65,6 +66,8 @@ object DocumentSetWorker extends App {
 class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fileRemovalQueueName: String) extends Actor {
   import ActorCareTakerProtocol._
 
+  private val logger = Logger.forClass(getClass)
+
   // FileGroup removal background worker
   private val fileGroupCleaner = createMonitoredActor(FileGroupCleaner(), "FileGroupCleaner")
   private val fileGroupRemovalRequestQueue = createMonitoredActor(FileGroupRemovalRequestQueue(fileGroupCleaner),
@@ -90,7 +93,7 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
   private val fileGroupJobQueue = createMonitoredActor(FileGroupJobQueue(progressReporter, documentIdSupplier),
       fileGroupJobQueueName)
       
-  Logger.info(s"Job Queue path ${fileGroupJobQueue.path}")
+  logger.info("Job queue path {}", fileGroupJobQueue.path)
   private val clusteringJobQueue = 
     createMonitoredActor(ClusteringJobQueue(fileGroupRemovalRequestQueue.path.toString), "ClusteringJobQueue")
   private val fileGroupJobQueueManager = createMonitoredActor(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
@@ -122,7 +125,7 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String, fi
       connectionMonitor ! StartConnection
     }
     case Terminated(a) => {
-      Logger.error("Unexpected shutdown")
+      logger.error("Unexpected shutdown")
       context.system.shutdown
       System.exit(-1)
     }

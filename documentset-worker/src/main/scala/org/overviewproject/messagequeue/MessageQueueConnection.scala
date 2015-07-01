@@ -1,12 +1,12 @@
 package org.overviewproject.messagequeue
 
+import akka.actor._
+import javax.jms.{ Connection, ExceptionListener, JMSException }
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
-import akka.actor._
-import org.overviewproject.util.{ Configuration, Logger }
-import javax.jms.{ Connection, ExceptionListener, JMSException }
 
+import org.overviewproject.util.{ Configuration, Logger }
 
 /**
  * An actor managing the connection that hosts all message queues. Message queue clients
@@ -57,6 +57,8 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
   import MessageQueueConnectionProtocol._
   import ConnectionMonitorProtocol._
 
+  protected val logger = Logger.forClass(getClass)
+
   private val BrokerUri: String = Configuration.messageQueue.getString("broker_uri")
   private val Username: String = Configuration.messageQueue.getString("username")
   private val Password: String = Configuration.messageQueue.getString("password")
@@ -71,7 +73,10 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
   }
 
   when(Connected) {
-    case Event(ConnectionFailure(e), QueueConnection(connection, clients)) => restartConnection(e, clients)
+    case Event(ConnectionFailure(e), QueueConnection(connection, clients)) => {
+      logger.info("Connection to message broker failed:", e)
+      restartConnection(e, clients)
+    }
     case Event(RegisterClient, QueueConnection(connection, clients)) => {
       sender ! ConnectedTo(connection)
       stay using QueueConnection(connection, sender +: clients)
@@ -93,7 +98,7 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
         goto(Connected) using QueueConnection(connection, clients)
       }
       case Failure(e) => {
-        Logger.info(s"Connection to Message Broker Failed: ${e.getMessage}", e)
+        logger.info("Failed to connect to message broker. Will retry.", e)
         setTimer("retry", StartConnection, ReconnectionInterval, repeat = false)
         stay
       }
@@ -101,12 +106,9 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
   }
 
   private def restartConnection(e: Throwable, clients: Seq[ActorRef]) = {
-    Logger.info(s"Connection to Message Broker Failed: ${e.getMessage}", e)
     clients.foreach { _ ! ConnectionFailed }
 
     self ! StartConnection
     goto(NotConnected) using NoConnection(clients)
   }
 }
-
-

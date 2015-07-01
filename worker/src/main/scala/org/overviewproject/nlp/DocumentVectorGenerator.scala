@@ -11,10 +11,11 @@
 
 package org.overviewproject.nlp
 
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.util.{Logger, DisplayedError}
 import scala.collection.mutable.{Map, HashMap}
 import scala.math.Numeric
+
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.util.{Logger, DisplayedError}
 
 // Error object
 case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer)
@@ -92,6 +93,7 @@ class Vocabulary[F] extends HashMap[F,VocabRecord] {
 
 // "Classic" document vector generator -- one pass, all in memory, unigram parsing
 class UnigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
+  private val logger = Logger.forClass(getClass)
 
   // --- Data ---
 
@@ -213,7 +215,7 @@ class UnigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
     }
 
     // Replace our string table with the new, reduced table. NB: invalidates idf, so we clear it to prevent misunderstandings
-    Logger.info(s"Input vocabulary size ${inStrings.size}, output vocabulary size ${outStrings.size}")
+    logger.info("Input vocabulary size {}, output vocabulary size {}", inStrings.size, outStrings.size)
 
     // Done with all of this; only docVecs remain (and references outStrings)
     inStrings = null

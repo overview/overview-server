@@ -1,12 +1,12 @@
 package org.overviewproject.messagequeue
 
 
-import scala.concurrent.duration._
-import javax.jms.Connection
 import akka.actor._
+import javax.jms.Connection
+import scala.concurrent.duration._
+
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.util.Logger
-
 
 object AcknowledgingMessageReceiverFSM {
   sealed trait State
@@ -51,6 +51,8 @@ abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) e
   import AcknowledgingMessageReceiverProtocol._
   import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 
+  private val logger = Logger.forClass(getClass)
+
   // FIXME: instead of queuing messages that come in while the handler is busy,
   // ensure that only one message is received at a time.
   val queuedMessages = new scala.collection.mutable.Queue[MessageContainer]()
@@ -79,11 +81,11 @@ abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) e
   when(MessageHandlerIsBusy) {
     case Event(MessageHandled, Task(messageHandler, message)) => {
       messageService.acknowledge(message)
-      
-     if (!queuedMessages.isEmpty) {
-       val m = queuedMessages.dequeue
-       self ! m
-     }
+
+      if (!queuedMessages.isEmpty) {
+        val m = queuedMessages.dequeue
+        self ! m
+      }
 
       goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
     }
@@ -117,7 +119,7 @@ abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) e
   initialize
 
   private def deliverMessage(message: MessageContainer): Unit = {
-    Logger.info(s"Received message from Queue: $message")
+    logger.info("Received message from Queue: {}", message)
     self ! message
   }
 }

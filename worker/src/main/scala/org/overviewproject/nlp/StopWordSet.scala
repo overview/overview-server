@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream
 import org.overviewproject.util.Logger
 
 object StopWordSet {
+  private val logger = Logger.forClass(getClass)
   private val DefaultStopWordsFile: String = "/stopwords-en.csv"
   private val EmptyStopWordsStream: InputStream = new ByteArrayInputStream(Array.empty)
 
@@ -20,7 +21,7 @@ object StopWordSet {
     val possibleStopWordStreams: Seq[InputStream] = Seq(filename, DefaultStopWordsFile).map(fileAsStream)
 
     possibleStopWordStreams.find(_ != null).getOrElse {
-      Logger.error("No stopwords file found")
+      logger.error("No stopwords file found")
       EmptyStopWordsStream
     }
   }

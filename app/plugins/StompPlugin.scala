@@ -9,11 +9,13 @@ import org.fusesource.stomp.codec.StompFrame
 import org.fusesource.stomp.client.{Callback,CallbackConnection,Stomp}
 import org.fusesource.stomp.client.Constants.{CONTENT_TYPE,DESTINATION,SEND,TRANSFORMATION}
 
-import play.api.{ Application, Logger, Play }
+import play.api.{ Application, Play }
 import play.api.Play.current
 import play.api.Plugin
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
+import org.overviewproject.util.Logger
 
 /** Message queue config values set in application.conf */
 object MessageQueueConfiguration {
@@ -74,6 +76,8 @@ trait MessageQueueClient {
 }
 
 class StompMessageQueueClient extends MessageQueueClient {
+  private val logger = Logger.forClass(getClass)
+
   private val ReconnectDelay = Duration(1, "second")
   private val CloseTimeout = Duration(100, "ms")
 
@@ -90,11 +94,11 @@ class StompMessageQueueClient extends MessageQueueClient {
 
       stomp.connectCallback(new Callback[CallbackConnection] {
         override def onFailure(e: Throwable) = {
-          Logger.warn(s"Failed to connect to message broker at ${uri} (will retry): ${e.getMessage()}") // Don't log to error to avoid generating error emails during startup
+          logger.warn(s"Failed to connect to message broker at ${uri} (will retry): ${e.getMessage()}") // Don't log to error to avoid generating error emails during startup
           Akka.system.scheduler.scheduleOnce(ReconnectDelay) { tryConnect }
         }
         override def onSuccess(v: CallbackConnection) = {
-          Logger.info(s"Connected to message broker at ${uri}")
+          logger.info(s"Connected to message broker at ${uri}")
           promise.trySuccess(v) // Our Stomp client sometimes calls its callbacks multiple times
         }
       })
@@ -126,7 +130,7 @@ class StompMessageQueueClient extends MessageQueueClient {
     def trySend(nRetries: Int): Unit = {
       connection.map(_.send(frame, new Callback[Void] {
         override def onFailure(e: Throwable) = {
-          Logger.warn(s"[$queueName] failed to send message. ${nRetries} retries left: ${e.getMessage()}", e)
+          logger.warn(s"[$queueName] failed to send message. ${nRetries} retries left: ${e.getMessage()}", e)
           if (nRetries > 1) {
             reconnect.onSuccess { case _ => trySend(nRetries - 1) }
           } else {

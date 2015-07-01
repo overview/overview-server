@@ -16,9 +16,9 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.{HashMap, Map, PriorityQueue}
+
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.util.{CompactPairArray, Logger}
-
 
 // It's like a global typedef, but wordier :P
 object DocumentDistanceFn {
@@ -78,6 +78,8 @@ class SampledEdges extends HashMap[ DocumentID, CompactPairArray[DocumentID, Flo
 
 class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanceFn) {
 
+  private val logger = Logger.forClass(getClass)
+
   // Store all edges that the "short edge" sampling has produced, map from doc to (doc,weight)
   private var mySampledEdges = new SampledEdges
 
@@ -93,26 +95,19 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   // Generate a table of lists indexed by term. Each list has all docs containing that term, sorted in decreasing weight.
   // This is something like the transpose of the document vector set, and it's important to be memory efficient here,
   // hence CompactPairArray
-  private def createTermTable() = {
-    val t0 = System.nanoTime()
-    var totalTerms = 0
-
+  private def createTermTable() = logger.logExecutionTime("Generated term/dimension array") {
     // term -> array of (doc, weight)
-    var termTable = Map[TermID, CompactPairArray[DocumentID,TermWeight]]()
+    val ret = Map[TermID, CompactPairArray[DocumentID,TermWeight]]()
 
     // First construct d: for each term, a list of containing docs, sorted by weight
     docVecs.foreach { case (id,vec) =>
       vec.foreach { case (term, weight) =>
-        termTable.getOrElseUpdate(term, new CompactPairArray[DocumentID, TermWeight]) += Tuple2(id, weight)
-        totalTerms += 1
+        ret.getOrElseUpdate(term, new CompactPairArray[DocumentID, TermWeight]) += Tuple2(id, weight)
       }
     }
-    termTable.transform({ case (key, value) => value.sortBy(-_._2).result } ) // sort each dim by decreasing weight. result call also resizes to save space
 
-    Logger.logElapsedTime("generated term/dimension array.", t0)
-    Logger.info("Average terms per doc = " + totalTerms / docVecs.size)
-
-    termTable
+    // sort each dim by decreasing weight. result call also resizes to save space
+    ret.transform({ case (key, value) => value.sortBy(-_._2).result })
   }
 
   // Generate a fixed number of "short" edges connecting each document.
@@ -122,43 +117,41 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   // replace the item with a new product with the highest term weight among remaining docs.
   // Effectively, this samples edges in order of the largest term in their dot-product.
   private def createSampledEdges(termTable:Map[TermID, CompactPairArray[DocumentID, TermWeight]], numEdgesPerDoc:Int, maxDist:Double) : Unit = {
-    val t1 = System.nanoTime()
+    logger.logExecutionTime("Generated sampled edges") {
+      docVecs.foreach { case (id,vec) =>
 
-    docVecs.foreach { case (id,vec) =>
-
-      // pq stores one entry for each term in the doc,
-      // sorted by product of term weight times largest weight on that term in all docs
-      var pq = PriorityQueue[TermProduct]()
-      vec.foreach { case (term,weight) =>
-        pq += TermProduct(term, weight, 0, weight* termTable(term)(0)._2)  // add term to this doc's queue
-      }
-
-      // Now we just pop edges out of the queue on by one
-      var numEdgesLeft = numEdgesPerDoc
-      while (numEdgesLeft>0 && !pq.isEmpty) {
-
-        // Generate edge from this doc to the doc with the highest term product
-        val termProduct = pq.dequeue
-        val otherId = termTable(termProduct.term)(termProduct.docIdx)._1
-        val distance = distanceFn(docVecs(id), docVecs(otherId)).toFloat
-        if (distance <= maxDist)
-          mySampledEdges.addEdge(id, otherId, distance)
-
-        // Put this term back in the queue, with a new product entry
-        // We multiply this term's weight by weight on the document with the next highest weight on this term
-        val newDocIdx = termProduct.docIdx + 1
-        if (newDocIdx < termTable(termProduct.term).size) {
-          pq += TermProduct(termProduct.term,
-                            termProduct.weight,
-                            newDocIdx,
-                            termProduct.weight * termTable(termProduct.term)(newDocIdx)._2)
+        // pq stores one entry for each term in the doc,
+        // sorted by product of term weight times largest weight on that term in all docs
+        var pq = PriorityQueue[TermProduct]()
+        vec.foreach { case (term,weight) =>
+          pq += TermProduct(term, weight, 0, weight* termTable(term)(0)._2)  // add term to this doc's queue
         }
 
-        numEdgesLeft -= 1
+        // Now we just pop edges out of the queue on by one
+        var numEdgesLeft = numEdgesPerDoc
+        while (numEdgesLeft>0 && !pq.isEmpty) {
+
+          // Generate edge from this doc to the doc with the highest term product
+          val termProduct = pq.dequeue
+          val otherId = termTable(termProduct.term)(termProduct.docIdx)._1
+          val distance = distanceFn(docVecs(id), docVecs(otherId)).toFloat
+          if (distance <= maxDist)
+            mySampledEdges.addEdge(id, otherId, distance)
+
+          // Put this term back in the queue, with a new product entry
+          // We multiply this term's weight by weight on the document with the next highest weight on this term
+          val newDocIdx = termProduct.docIdx + 1
+          if (newDocIdx < termTable(termProduct.term).size) {
+            pq += TermProduct(termProduct.term,
+                              termProduct.weight,
+                              newDocIdx,
+                              termProduct.weight * termTable(termProduct.term)(newDocIdx)._2)
+          }
+
+          numEdgesLeft -= 1
+        }
       }
     }
-
-    Logger.logElapsedTime("generated sampled edges.", t1)
   }
 
   // Generate the numEdgesPerDoc shortest edges going out from each document (approximately)

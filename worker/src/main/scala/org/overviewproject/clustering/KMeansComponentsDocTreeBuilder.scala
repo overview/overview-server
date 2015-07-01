@@ -10,16 +10,19 @@
  */
 
 package org.overviewproject.clustering
+
 import scala.collection.mutable.{Set, ArrayBuffer}
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
-import org.overviewproject.util.ToMutableSet._
-import org.overviewproject.util.Logger
+
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.nlp.IterativeKMeansDocuments
+import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
+import org.overviewproject.util.Logger
+import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
+import org.overviewproject.util.ToMutableSet._
 
 
 class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
+  private val logger = Logger.forClass(getClass)
   private val kmComponents = new IterativeKMeansDocumentComponents(docVecs)
   private val kmDocs = new IterativeKMeansDocuments(docVecs)
 
@@ -142,7 +145,7 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
       components += new DocumentComponent(_, docVecs)
     }
 
-    Logger.info("Found " +  components.size + " connected components at threshold " + threshold)
+    logger.info("Found {} connected components at threshold {}", components.size, threshold)
     components
   }
 
@@ -151,12 +154,12 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
   def BuildTree(root:DocTreeNode, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
 
     progAbort(Progress(0, ClusteringLevel(1)))
-    Logger.logExecutionTime("Found connected components") {
+    logger.logExecutionTime("Found connected components") {
       root.components = makeComponents(root.docs)
     }
 
     if (!progAbort(Progress(0.2, ClusteringLevel(2)))) { // if we haven't been cancelled...
-      Logger.logExecutionTime("Clustered components") {
+      logger.logExecutionTime("Clustered components") {
         splitNode(root, 1, makeNestedProgress(progAbort, 0.2, 1.0))   // root is level 0, so first split is level 1
       }
     }

@@ -3,26 +3,19 @@ package views
 import jodd.lagarto.dom.jerry.Jerry.jerry
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
-import org.specs2.specification.{Fragments, Scope, Step}
-import play.api.Play.{start,stop}
+import org.specs2.specification.Scope
 import play.api.i18n.{Lang,Messages}
 import play.api.libs.json.JsValue
 import play.api.mvc.{Flash,RequestHeader}
 import play.twirl.api.Html
-import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
+import play.api.test.FakeRequest
 
 import models.{User=>UserModel}
 import org.overviewproject.models.UserRole
 import test.helpers.MockMessagesApi
 
-class ViewSpecification extends Specification with Mockito with JsonMatchers {
+class ViewSpecification extends test.helpers.InAppSpecification with Mockito with JsonMatchers {
   // Need fake application, because some views show CSRF tokens
-  override def map(fs: => Fragments) = {
-    val app = FakeApplication()
-    Step(start(app)) ^ super.map(fs) ^ Step(stop(app))
-  }
-
   def fakeUser: UserModel = UserModel(email="user@example.org", role=UserRole.NormalUser)
 
   trait ViewSpecificationScope[Result] extends Scope {

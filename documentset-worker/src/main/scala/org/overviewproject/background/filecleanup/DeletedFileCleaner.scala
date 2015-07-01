@@ -5,10 +5,10 @@ import akka.pattern.pipe
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.collection.immutable.Queue
-import org.overviewproject.util.Logger
 import DeletedFileCleanerFSM._
 import akka.actor.Props
 
+import org.overviewproject.util.Logger
 
 object DeletedFileCleanerProtocol {
   case object RemoveDeletedFiles
@@ -38,6 +38,7 @@ trait DeletedFileCleaner extends Actor with FSM[State, Data] {
   import DeletedFileCleanerProtocol._
   import FileCleanerProtocol._
 
+  protected val logger = Logger.forClass(getClass)
   protected val deletedFileFinder: DeletedFileFinder
   protected val fileCleaner: ActorRef
 
@@ -80,16 +81,16 @@ trait DeletedFileCleaner extends Actor with FSM[State, Data] {
   
   whenUnhandled {
     case Event(t, _) => {
-      Logger.error("[FileRemover] Unexpected event while removing files", t)
+      logger.error("Unexpected event while removing files", t)
       goto(Idle) using NoRequest
     }
   }
   
   onTransition {
-    case Idle -> Scanning => Logger.info("[FileRemover] Scanning for deleted files")
-    case Scanning -> Idle => Logger.info("[FileRemover] No deleted files found")
-    case Scanning -> Working => Logger.info("[FileRemover] Starting removal of deleted files")
-    case Working -> Idle => Logger.info("[FileRemover] Completed removal of deleted files")
+    case Idle -> Scanning => logger.info("Scanning for deleted files")
+    case Scanning -> Idle => logger.info("No deleted files found")
+    case Scanning -> Working => logger.info("Starting removal of deleted files")
+    case Working -> Idle => logger.info("Completed removal of deleted files")
   }
   
   private def removeDeletedFiles: Future[Unit] =

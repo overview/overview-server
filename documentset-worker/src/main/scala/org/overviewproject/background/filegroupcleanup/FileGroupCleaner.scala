@@ -15,7 +15,9 @@ object FileGroupCleanerProtocol {
 trait FileGroupCleaner extends Actor {
   import context._
   import FileGroupCleanerProtocol._
-  
+
+  protected val logger = Logger.forClass(getClass)
+
   override def receive = {
     case Clean(fileGroupId) => attemptFileGroupRemoval(fileGroupId) pipeTo sender
   }
@@ -25,7 +27,7 @@ trait FileGroupCleaner extends Actor {
       .map(_ => CleanComplete(fileGroupId))
       .recover {
     case t: Throwable =>
-      Logger.error(s"FileGroup removal failed for FileGroup $fileGroupId", t)
+      logger.error("Removal failed for FileGroup {}", fileGroupId, t)
       CleanComplete(fileGroupId)
   }
   

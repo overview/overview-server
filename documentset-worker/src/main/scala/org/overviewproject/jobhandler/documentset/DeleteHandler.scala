@@ -64,6 +64,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] {
   import DeleteHandlerProtocol._
   import context.dispatcher
 
+  protected val logger = Logger.forClass(getClass)
+
   val searchIndexClient: IndexClient
   val documentSetDeleter: DocumentSetDeleter
   val jobDeleter: DocumentSetCreationJobDeleter
@@ -127,12 +129,12 @@ trait DeleteHandler extends Actor with FSM[State, Data] {
       stop
     }
     case Event(Message.DeleteFailed(t), DeleteTarget(documentSetId)) => {
-      Logger.error(s"Deleting indexed documents failed for $documentSetId", t)
+      logger.warn("Deleting indexed documents failed for DocumentSet {}", documentSetId, t)
       context.parent ! JobDone(documentSetId)
       stop
     }
     case Event(Message.JobDeletionTimedOut(documentSetId), _) => {
-      Logger.error(s"Delete timed out waiting for job to cancel $documentSetId")
+      logger.warn("Job deletion timed out for DocumentSet {}", documentSetId)
       context.parent ! JobDone(documentSetId)
       stop
     }

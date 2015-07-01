@@ -6,10 +6,10 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.Terminated
 
-import org.overviewproject.util.Logger
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import org.overviewproject.util.Logger
 
 trait FileGroupJob {
   val fileGroupId: Long
@@ -51,6 +51,8 @@ trait FileGroupJobQueue extends Actor {
 
   type DocumentSetId = Long
 
+  protected val logger = Logger.forClass(getClass)
+
   protected val progressReporter: ActorRef
   protected val documentIdSupplier: ActorRef
   protected val jobShepherdFactory: JobShepherdFactory
@@ -65,7 +67,7 @@ trait FileGroupJobQueue extends Actor {
 
   def receive = {
     case RegisterWorker(worker) => {
-      Logger.info(s"Registering worker ${worker.path.toString}")
+      logger.info("Registering worker {}", worker.path.toString)
       context.watch(worker)
       workerPool += worker
       if (!taskQueue.isEmpty) worker ! TaskAvailable
@@ -85,7 +87,7 @@ trait FileGroupJobQueue extends Actor {
     case ReadyForTask => {
       if (workerIsFree(sender) && !taskQueue.isEmpty) {
         val task = taskQueue.dequeue
-        Logger.info(s"(${task.documentSetId}:${task.fileGroupId}) Sending task $task to ${sender.path.toString}")
+        logger.info("Sending task(documentSetId={},fileGroupId={},task={}) to {}", task.documentSetId, task.fileGroupId, task.toString, sender.path.toString)
         jobShepherds.get(task.documentSetId).map(_.startTask(task))
 
         sender ! task
@@ -95,7 +97,7 @@ trait FileGroupJobQueue extends Actor {
 
     case TaskDone(documentSetId, outputFileId) => {
       val task = busyWorkers.remove(sender)
-      Logger.info(s"($documentSetId) Task ${task.getOrElse("Not Found")}  Done")
+      logger.info("Task (documentSetId={},task={}) done", documentSetId, task.map(_.toString).getOrElse("[not found]"))
 
       whenTaskIsComplete(documentSetId, task) {
         notifyRequesterIfJobIsDone
@@ -103,7 +105,7 @@ trait FileGroupJobQueue extends Actor {
     }
 
     case CancelFileUpload(documentSetId, fileGroupId) => {
-      Logger.info(s"($documentSetId:$fileGroupId) Cancelling Extract text tasks")
+      logger.info("Cancelling extract text tasks (documentSetId={},fileGroupId={})", documentSetId, fileGroupId)
       jobRequests.get(documentSetId).fold {
         sender ! JobCompleted(documentSetId)
       } { r =>
@@ -123,7 +125,7 @@ trait FileGroupJobQueue extends Actor {
     }
 
     case Terminated(worker) => {
-      Logger.info(s"Removing ${worker.path.toString} from worker pool")
+      logger.info("Removing worker {} from worker pool", worker.path.toString)
       workerPool -= worker
       busyWorkers.get(worker).map { task =>
         busyWorkers -= worker

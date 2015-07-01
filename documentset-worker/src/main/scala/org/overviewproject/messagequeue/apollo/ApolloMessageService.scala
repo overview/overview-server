@@ -1,10 +1,11 @@
 package org.overviewproject.messagequeue.apollo
 
 import javax.jms._
-import scala.concurrent.duration._
 import org.fusesource.stomp.jms.StompJmsDestination
-import org.overviewproject.util.Logger
+import scala.concurrent.duration._
+
 import org.overviewproject.messagequeue.{ MessageService, MessageContainer }
+import org.overviewproject.util.Logger
 
 /**
  * ApolloMessageService manages communication with the specified message queue.
@@ -12,7 +13,7 @@ import org.overviewproject.messagequeue.{ MessageService, MessageContainer }
  * messages are forwarded to the specified `messageDelivery` function
  */
 class ApolloMessageService(queueName: String, acknowledgeMode: Int = Session.AUTO_ACKNOWLEDGE) extends MessageService {
-
+  private val logger: Logger = Logger.forClass(getClass)
   private var session: Option[Session] = None
   private var consumer: Option[MessageConsumer] = None
   
@@ -21,7 +22,7 @@ class ApolloMessageService(queueName: String, acknowledgeMode: Int = Session.AUT
     consumer = Some(createConsumer(connection))
     consumer.map(_.setMessageListener(messageHandler))
 
-    Logger.info(s"Listening to message broker: $queueName")    
+    logger.info("Listening to message broker, queue={}", queueName)
   }
 
   /** Explicit message acknowledge is only needed if acknowledgeMode is set CLIENT_ACKNOWLEDGE */

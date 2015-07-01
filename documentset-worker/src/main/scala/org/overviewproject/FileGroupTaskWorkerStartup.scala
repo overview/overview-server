@@ -2,11 +2,11 @@ package org.overviewproject
 
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorker
-import org.overviewproject.util.Logger
 import scala.concurrent.duration.Duration
+
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorker
 import org.overviewproject.jobhandler.filegroup.task.TempDirectory
-import org.overviewproject.util.BulkDocumentWriter
+import org.overviewproject.util.{BulkDocumentWriter,Logger}
 
 object FileGroupTaskWorkerStartup {
 
@@ -28,6 +28,8 @@ class TaskWorkerSupervisor(
   fileGroupRemovalQueuePath: String,
   bulkDocumentWriter: BulkDocumentWriter) extends Actor {
 
+  private val logger = Logger.forClass(getClass)
+
   private val NumberOfTaskWorkers = 2
   private val taskWorkers: Seq[ActorRef] = Seq.tabulate(NumberOfTaskWorkers)(n =>
     context.actorOf(
@@ -46,8 +48,7 @@ class TaskWorkerSupervisor(
   }
 
   def receive = {
-    case Terminated(a) =>
-      Logger.error(s"Task Worker ${a.path} died unexpectedly.")
+    case Terminated(a) => logger.error("Task worker at path {} died unexpectedly", a.path)
   }
 }
 

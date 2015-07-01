@@ -1,12 +1,13 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
-import scala.language.postfixOps
 import akka.actor._
 import akka.actor.Status.Failure
 import akka.pattern.pipe
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.Future
+import scala.language.postfixOps
+
 import org.overviewproject.jobhandler.filegroup.task.step.CreateUploadedFileProcess
 import org.overviewproject.jobhandler.filegroup.task.step.DeleteFileUploadTaskStep
 import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
@@ -16,8 +17,9 @@ import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
 import org.overviewproject.searchindex.ElasticSearchIndexClient
 import org.overviewproject.searchindex.TransportIndexClient
 import org.overviewproject.util.Logger
-import FileGroupTaskWorkerFSM._
 import org.overviewproject.util.BulkDocumentWriter
+
+import FileGroupTaskWorkerFSM._
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -68,6 +70,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   import context.dispatcher
   import FileGroupTaskWorkerProtocol._
 
+  protected val logger = Logger.forClass(getClass)
+
   protected val jobQueueSelection: ActorSelection
 
   protected val searchIndex: ElasticSearchIndexClient
@@ -89,13 +93,13 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   when(LookingForExternalActors) {
     case Event(ActorIdentity(JobQueueId, Some(jq)), ExternalActorsFound(_)) => {
-      Logger.info(s"[${self.path}] Found Job Queue at ${jq.path}")
+      logger.info("[{}] Found job queue, path={}", self.path, jq.path)
       jq ! RegisterWorker(self)
 
       goto(Ready) using ExternalActors(jq)
     }
     case Event(ActorIdentity(JobQueueId, None), _) => {
-      Logger.info(s"[${self.path}] Looking for Job Queue at ${jobQueueSelection.pathString}")
+      logger.info("[{}] Looking for job queue at {}", self.path, jobQueueSelection.pathString)
       system.scheduler.scheduleOnce(RetryInterval) { lookForJobQueue }
 
       stay
@@ -145,7 +149,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(Failure(e), TaskInfo(_, documentSetId, false)) => {
       // If exceptions are not handled in the task step, the exception is re-thrown in order to kill
       // the worker and have the job rescheduled.
-      Logger.error(s"Failed task for document set $documentSetId", e)
+      logger.error("Failed task, documentSetId={}", documentSetId, e)
       throw e
     }
     case Event(Failure(e), TaskInfo(jobQueue, documentSetId, true)) => {
@@ -187,10 +191,10 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   // Don't generate errors for expected exceptions
   private def logDocumentProcessingError(documentSetId: Long, t: Throwable) = t match {
-    case e: UploadedFileProcessCreator.UnsupportedDocumentTypeException =>
-      Logger.info(e.getMessage)
+    case UploadedFileProcessCreator.UnsupportedDocumentTypeException(ud) =>
+      logger.info("Skipped unsupported file (filename={}, mimeType={})", ud.filename, ud.mimeType)
     case e =>
-      Logger.error(s"Failed document processing for documentSet $documentSetId", e)      
+      logger.info("Exception processing file in DocumentSet {}:", documentSetId, e)
   }
 }
 

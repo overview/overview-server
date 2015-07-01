@@ -2,6 +2,7 @@ package org.overviewproject.documentcloud
 
 import akka.actor._
 import java.net.URLEncoder
+
 import org.overviewproject.http._
 import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.util.{Configuration,Logger}
@@ -30,6 +31,7 @@ class QueryProcessor(
 
   import QueryProcessorProtocol._
 
+  private val logger = Logger.forClass(getClass)
   private val DocumentCloudUrl = configuration.getString("documentcloud_url")
 
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
@@ -47,7 +49,7 @@ class QueryProcessor(
   }
 
   private def requestPage(pageNum: Int): Unit = {
-    Logger.debug(s"Retrieving DocumentCloud results for query $query, page $pageNum")
+    logger.debug("Retrieving page {} of DocumentCloud results for query {}", pageNum, query)
     val encodedQuery = URLEncoder.encode(query, Encoding)
     val searchUrl = createQueryUrlForPage(encodedQuery, pageNum)
 

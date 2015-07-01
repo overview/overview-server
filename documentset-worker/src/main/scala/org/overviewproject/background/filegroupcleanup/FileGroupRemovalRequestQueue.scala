@@ -1,6 +1,7 @@
 package org.overviewproject.background.filegroupcleanup
 
 import akka.actor.{ Actor, ActorRef, Props }
+
 import org.overviewproject.util.Logger
 
 object FileGroupRemovalRequestQueueProtocol {
@@ -14,6 +15,8 @@ object FileGroupRemovalRequestQueueProtocol {
  * No checks for duplicate requests are made
  */
 trait FileGroupRemovalRequestQueue extends Actor {
+  protected val logger = Logger.forClass(getClass)
+
   import FileGroupRemovalRequestQueueProtocol._
   import FileGroupCleanerProtocol._
 
@@ -29,14 +32,14 @@ trait FileGroupRemovalRequestQueue extends Actor {
     case CleanComplete(fileGroupId) => {
       requests.dequeue
 
-      Logger.info(s"[FileGroupRemovalRequestQueue] ($fileGroupId) Removal complete. Queue size ${requests.size}")
+      logger.info("Finished removing FileGroup {}. Queue size: {}", fileGroupId, requests.size)
       submitNextRequest
     }
   }
 
   private def readyToSubmitRequest: Boolean = requests.size == 1
   private def submitNextRequest: Unit = requests.headOption.map{ fileGroupId =>
-    Logger.info(s"[FileGroupRemovalRequestQueue] ($fileGroupId) Removing file group")
+    logger.info("Removing FileGroup {}", fileGroupId)
     fileGroupCleaner ! Clean(fileGroupId)
   }
   

@@ -11,11 +11,9 @@
 package org.overviewproject.clustering
 
 import java.sql.Connection
-import org.squeryl.PrimitiveTypeMode.using
-import org.squeryl.Session
+
 import org.overviewproject.database.{ DeprecatedDatabase, DB }
 import org.overviewproject.persistence.{ DocumentWriter, NodeWriter }
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.util.{ DocumentConsumer, Logger }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
@@ -61,10 +59,13 @@ object DocumentSetIndexerOptions {
   }
 }
 
-class DocumentSetIndexer(nodeWriter: NodeWriter, options: DocumentSetIndexerOptions, progAbort: ProgressAbortFn) extends DocumentConsumer {
-
-  // --- private ---
-  val t0 = System.nanoTime()
+class DocumentSetIndexer(
+  nodeWriter: NodeWriter,
+  options: DocumentSetIndexerOptions,
+  progAbort: ProgressAbortFn
+) extends DocumentConsumer {
+  private val logger = Logger.forClass(getClass)
+  private val t0 = System.nanoTime()
   private var fractionFetched = 0
   private val fetchingFraction = 0.5 // what percent done do we say when we're all done fetching docs?
   private val savingFraction = 0.98
@@ -88,36 +89,32 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, options: DocumentSetIndexerOpti
   }
 
   def productionComplete() {
-    Logger.logElapsedTime("Retrieved " + vectorGen.numDocs, t0)
+    logger.logElapsedTime("Retrieved {} documents", t0, vectorGen.numDocs)
 
     if (!progAbort(Progress(fetchingFraction, Clustering))) {
-      val t1 = System.nanoTime()
+      val (docVecs, docTree) = logger.logExecutionTime("Clustered documents") {
+        // keep more of the terms in the tail if the docset is small
+        if (vectorGen.numDocs < options.smallDocsetSize) {
+          vectorGen.minDocsToKeepTerm = options.minDocsToKeepTermSmall
+          vectorGen.minBigramOccurrences = options.minBigramOccurrencesSmall
+        } else {
+          vectorGen.minDocsToKeepTerm = options.minDocsToKeepTerm
+          vectorGen.minBigramOccurrences = options.minBigramOccurrences
+        }
 
-      // keep more of the terms in the tail if the docset is small
-      if (vectorGen.numDocs < options.smallDocsetSize) {
-        vectorGen.minDocsToKeepTerm = options.minDocsToKeepTermSmall
-        vectorGen.minBigramOccurrences = options.minBigramOccurrencesSmall
-      } else {
-        vectorGen.minDocsToKeepTerm = options.minDocsToKeepTerm
-        vectorGen.minBigramOccurrences = options.minBigramOccurrences
+        val docVecs = vectorGen.documentVectors()
+        (docVecs, BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction)))
       }
-
-      val docVecs = vectorGen.documentVectors()
-      val docTree = BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction))
-
-      Logger.logElapsedTime("Clustered documents", t1)
 
       // Save tree to database
       if (!progAbort(Progress(savingFraction, Saving))) {
-        val t2 = System.nanoTime()
-
-        DB.withConnection { implicit connection => addDocumentDescriptions(docVecs) }
-        DeprecatedDatabase.inTransaction {
-          implicit val connection = DeprecatedDatabase.currentConnection
-          nodeWriter.write(docTree)
+        logger.logExecutionTime("Saved DocumentSet to database") {
+          DB.withConnection { implicit connection => addDocumentDescriptions(docVecs) }
+          DeprecatedDatabase.inTransaction {
+            implicit val connection = DeprecatedDatabase.currentConnection
+            nodeWriter.write(docTree)
+          }
         }
-
-        Logger.logElapsedTime("Saved DocumentSet to DB", t2)
         progAbort(Progress(1, Done))
       }
     }
