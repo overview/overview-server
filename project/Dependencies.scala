@@ -115,7 +115,8 @@ object Dependencies {
   val workerDependencies = Seq(
     deps.javaxMail,
     deps.openCsv,
-    deps.playStreams
+    deps.playStreams,
+    deps.janino % "test" // See logback-test.xml
   )
   
   val documentSetWorkerDependencies = Seq(
@@ -125,7 +126,8 @@ object Dependencies {
     deps.javaxMail,
     deps.logback,
     deps.mimeTypes,
-    deps.pdfbox
+    deps.pdfbox,
+    deps.janino % "test" // See logback-test.xml
   )
   
   val messageBrokerDependencies = Seq(
