@@ -14,9 +14,9 @@ import controllers.backend.DocumentSetBackend
 import controllers.forms.UploadControllerForm
 import controllers.util.FileUploadIteratee
 import models.orm.stores.DocumentSetCreationJobStore
-import models.OverviewDatabase
 import models.upload.OverviewUpload
 import models.User
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.models.DocumentSet
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
@@ -118,7 +118,7 @@ object UploadController extends UploadController {
   override protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader)
 
-  override protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewDatabase.inTransaction {
+  override protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = DeprecatedDatabase.inTransaction {
     OverviewUpload.find(userId, guid)
   }
 
@@ -129,7 +129,7 @@ object UploadController extends UploadController {
     lang: String,
     suppliedStopWords: String,
     importantWords: String
-  ) = Future(OverviewDatabase.inTransaction {
+  ) = Future(DeprecatedDatabase.inTransaction {
     DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
       documentSetId=documentSet.id,
       lang=lang,

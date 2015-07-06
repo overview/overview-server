@@ -11,7 +11,7 @@ import scala.concurrent.{Await,Future,blocking}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.{DB,DataSource,DatabaseConfiguration,HasBlockingDatabase}
+import org.overviewproject.database.{DB,HasBlockingDatabase}
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.postgres.SquerylEntrypoint.using
 import org.overviewproject.test.factories.{DbFactory,PodoFactory}
@@ -21,10 +21,6 @@ import org.overviewproject.test.factories.{DbFactory,PodoFactory}
  */
 class DbSpecification extends Specification {
   sequential
-
-  override def map(fs: => Fragments) = {
-    Step(setupDb) ^ super.map(fs) ^ Step(shutdownDb)
-  }
 
   private val DatabaseProperty = "datasource.default.url"
   private val TestDatabase = "postgres://overview:overview@localhost:9010/overview-test"
@@ -136,15 +132,4 @@ class DbSpecification extends Specification {
       SELECT 1;
     """, connection)
   }
-
-  private lazy val ensureConnected = {
-    if (!DB.connected) {
-      System.setProperty(DatabaseProperty, TestDatabase)
-      val dataSource = DataSource(DatabaseConfiguration.fromConfig)
-      DB.connect(dataSource)
-    }
-  }
-
-  def setupDb() { ensureConnected }
-  def shutdownDb() { /* nothing -- we want to reuse the same connection */ }
 }

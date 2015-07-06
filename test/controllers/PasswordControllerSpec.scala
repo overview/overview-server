@@ -36,7 +36,7 @@ class PasswordControllerSpec extends ControllerSpecification {
     mockSessionBackend.create(any[Long], any[String]) returns Future.successful(Session(123L, "127.0.0.1"))
     mockStorage.insertOrUpdateUser(any[User]) answers { x => x.asInstanceOf[User] }
 
-    val controller = new PasswordController {
+    val controller = new PasswordController with TestController {
       override val sessionBackend = mockSessionBackend
       override val storage = mockStorage
       override val mail = mockMail
@@ -111,7 +111,7 @@ class PasswordControllerSpec extends ControllerSpecification {
         }
 
         "flash a message" in new CreateScopeUserNotFound {
-          h.flash(result).get("success") must beSome("We have sent an email to invalid@example.org with instructions.")
+          h.flash(result).get("success") must beSome("controllers.PasswordController.create.success,invalid@example.org")
         }
 
         "not change the database" in new CreateScopeUserNotFound {
@@ -134,7 +134,7 @@ class PasswordControllerSpec extends ControllerSpecification {
         }
 
         "flash a message" in new CreateScopeUserFound {
-          h.flash(result).get("success") must beSome("We have sent an email to user@example.org with instructions.")
+          h.flash(result).get("success") must beSome("controllers.PasswordController.create.success,user@example.org")
         }
 
         "change the database" in new CreateScopeUserFound {
@@ -187,7 +187,7 @@ class PasswordControllerSpec extends ControllerSpecification {
       }
 
       "flash that the password was changed" in new UpdateScope {
-        h.flash(result).get("success") must beSome("You have updated your password, and you are now logged in.")
+        h.flash(result).get("success") must beSome("controllers.PasswordController.update.success")
       }
     }
   }

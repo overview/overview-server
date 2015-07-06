@@ -14,7 +14,7 @@ class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatche
     val selection = InMemorySelection(Seq(2L, 3L, 4L)) // override for a different Selection
     def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
     val mockDocumentNodeBackend = smartMock[DocumentNodeBackend]
-    val controller = new DocumentNodeController {
+    val controller = new DocumentNodeController with TestController {
       override val documentNodeBackend = mockDocumentNodeBackend
       override def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]) = buildSelection
     }

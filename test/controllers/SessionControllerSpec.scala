@@ -13,7 +13,7 @@ class SessionControllerSpec extends ControllerSpecification {
     mockSessionBackend.destroy(any) returns Future.successful(())
     mockSessionBackend.destroyExpiredSessionsForUserId(any) returns Future.successful(())
 
-    val controller = new SessionController {
+    val controller = new SessionController with TestController {
       override val sessionBackend = mockSessionBackend
     }
   }

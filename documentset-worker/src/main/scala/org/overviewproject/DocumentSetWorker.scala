@@ -7,7 +7,7 @@ import scala.language.postfixOps
 
 import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
 import org.overviewproject.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
-import org.overviewproject.database.{ DataSource, DB, DatabaseConfiguration }
+import org.overviewproject.database.DB
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.filegroup._
 import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
@@ -42,10 +42,8 @@ object DocumentSetWorker extends App {
 
   private val NumberOfJobHandlers = 8
 
-  val config = DatabaseConfiguration.fromConfig
-  val dataSource = DataSource(config)
-
-  DB.connect(dataSource)
+  // Connect to the database
+  DB.dataSource
 
   implicit val system = ActorSystem(WorkerActorSystemName)
   val actorCareTaker = system.actorOf(

@@ -13,7 +13,7 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   class BaseScope extends Scope {
     val mockStorage = mock[TagController.Storage]
     val mockTagBackend = mock[TagBackend]
-    val controller = new TagController {
+    val controller = new TagController with TestController {
       override val storage = mockStorage
       override val tagBackend = mockTagBackend
     }

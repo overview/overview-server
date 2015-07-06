@@ -7,9 +7,9 @@ import scala.concurrent.Future
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
 import controllers.backend.SessionBackend
-import models.OverviewDatabase
 import models.{IntercomConfiguration, MailChimp, OverviewUser}
 import models.orm.stores.UserStore
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.util.Logger
 
 object ConfirmationController extends Controller {
@@ -35,7 +35,7 @@ object ConfirmationController extends Controller {
       case None => OverviewUser.findByConfirmationToken(token) match {
         case None => Future.successful(BadRequest(views.html.Confirmation.show()))
         case Some(u) => {
-          val savedUser = OverviewDatabase.inTransaction { OverviewUser(UserStore.insertOrUpdate(u.confirm.toUser)) }
+          val savedUser = DeprecatedDatabase.inTransaction { OverviewUser(UserStore.insertOrUpdate(u.confirm.toUser)) }
 
           for {
             session <- sessionBackend.create(savedUser.id, request.remoteAddress)

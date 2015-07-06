@@ -1,7 +1,7 @@
 package org.overviewproject.database
 
 import java.sql.SQLException
-import javax.sql.{DataSource=>JDataSource}
+import javax.sql.DataSource
 import scala.concurrent.Future
 import scala.language.higherKinds
 import slick.dbio.DBIO
@@ -28,7 +28,7 @@ import org.overviewproject.database.Slick.api._
   * The constructor is private to force use of the singleton object returned by
   * `Database()`.
   */
-class Database private (val dataSource: JDataSource) {
+class Database(val dataSource: DataSource) {
   /** Exposes the Slick Database. */
   val slickDatabase = DatabaseFactory.forDataSource(dataSource)
 
@@ -197,7 +197,7 @@ class Database private (val dataSource: JDataSource) {
 
 
 object Database {
-  private lazy val database = new Database(DB.getDataSource)
+  private lazy val database = new Database(DB.dataSource)
   
   def apply(): Database = database
 }

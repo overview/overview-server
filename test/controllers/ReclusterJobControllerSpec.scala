@@ -8,7 +8,7 @@ class ReclusterJobControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockStorage = mock[ReclusterJobController.Storage]
     val mockJobQueue = mock[ReclusterJobController.JobQueue]
-    val controller = new ReclusterJobController {
+    val controller = new ReclusterJobController with TestController {
       override val storage = mockStorage
       override val jobQueue = mockJobQueue
     }

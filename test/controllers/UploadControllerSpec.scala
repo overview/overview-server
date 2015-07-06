@@ -45,7 +45,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
     override def delete = ()
   }
 
-  class TestController(upload: Option[OverviewUpload] = None) extends UploadController {
+  class AController(upload: Option[OverviewUpload] = None) extends UploadController with TestController {
     override val documentSetBackend = smartMock[DocumentSetBackend]
     documentSetBackend.create(any, any) returns Future.successful(factory.documentSet(id=456L))
 
@@ -81,7 +81,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
 
   "#create" should {
     trait CreateScope extends BaseScope {
-      val controller = new TestController()
+      val controller = new AController()
       val upload: OverviewUpload
       lazy val request = FakeRequest[OverviewUpload]("POST", "/upload", FakeHeaders(), upload, "controllers.UploadController.create")
       lazy val result = controller.create(guid)(request)
@@ -102,7 +102,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
     trait StartClusteringScope extends BaseScope {
       val maybeUpload: Option[OverviewUpload]
       val formBody: Seq[(String,String)] = Seq("lang" -> "en", "supplied_stop_words" -> "some stop words")
-      lazy val controller = new TestController(maybeUpload)
+      lazy val controller = new AController(maybeUpload)
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.startClustering(guid)(request)
     }
@@ -148,7 +148,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
     trait ShowScope extends BaseScope {
       val maybeUpload: Option[OverviewUpload]
       val request = fakeAuthorizedRequest
-      lazy val controller = new TestController(maybeUpload)
+      lazy val controller = new AController(maybeUpload)
       lazy val result = controller.show(guid)(request)
     }
 

@@ -13,7 +13,7 @@ class DocumentCloudImportJobControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
     val mockStorage = smartMock[DocumentCloudImportJobController.Storage]
-    val controller = new DocumentCloudImportJobController {
+    val controller = new DocumentCloudImportJobController with TestController {
       override val documentSetBackend = mockDocumentSetBackend
       override val storage = mockStorage
     }

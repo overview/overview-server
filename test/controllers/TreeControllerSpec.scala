@@ -14,7 +14,7 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
     val mockBackend = mock[TreeBackend]
     val mockStorage = mock[TreeController.Storage]
 
-    val controller = new TreeController {
+    val controller = new TreeController with TestController {
       override val backend = mockBackend
       override val storage = mockStorage
     }
@@ -64,7 +64,7 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
       val mockTag = mock[Tag]
       mockTag.name returns "tag name"
       mockStorage.findTag(documentSetId, 102L) returns Some(mockTag)
-      testTree(Some((102L, "documents with tag “tag name”")))
+      testTree(Some((102L, "controllers.TreeController.treeDescription.fromTag,tag name")))
     }
 
     "return NotFound when the tag is not in the document set" in new CreateScopeWithTag {

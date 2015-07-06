@@ -7,8 +7,9 @@ import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
 import controllers.backend.DocumentSetBackend
 import controllers.forms.DocumentCloudImportJobForm
-import models.{DocumentCloudImportJob,OverviewDatabase}
+import models.DocumentCloudImportJob
 import models.orm.stores.DocumentCloudImportJobStore
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.models.DocumentSet
 
 trait DocumentCloudImportJobController extends Controller {
@@ -46,7 +47,7 @@ object DocumentCloudImportJobController extends DocumentCloudImportJobController
   override protected val documentSetBackend = DocumentSetBackend
 
   object DatabaseStorage extends Storage {
-    override def insertJob(documentSetId: Long, job: DocumentCloudImportJob) = Future(OverviewDatabase.inTransaction {
+    override def insertJob(documentSetId: Long, job: DocumentCloudImportJob) = Future(DeprecatedDatabase.inTransaction {
       DocumentCloudImportJobStore.insert(documentSetId, job)
     })
   }

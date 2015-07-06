@@ -1,7 +1,5 @@
 package controllers.auth
 
-import play.api.Play
-import play.api.Play.current
 import play.api.mvc.{RequestHeader,Result,Results}
 import scala.util.control.Exception.catching
 

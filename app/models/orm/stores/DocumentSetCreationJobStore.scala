@@ -6,7 +6,6 @@ import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreatio
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.DocumentSetCreationJobType.Recluster
 import org.overviewproject.tree.orm.stores.BaseStore
-import models.OverviewDatabase
 import models.orm.Schema
 
 object DocumentSetCreationJobStore extends BaseStore(models.orm.Schema.documentSetCreationJobs) {

@@ -6,6 +6,7 @@ import org.specs2.matcher.JsonMatchers
 import play.api.mvc.Result
 import scala.concurrent.Future
 
+import controllers.TestController
 import controllers.backend.UserBackend
 import models.User
 import models.pagination.{Page,PageInfo,PageRequest}
@@ -20,7 +21,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
     mockBackend.updatePasswordHash(any, any) returns Future.successful(())
     mockBackend.destroy(any) returns Future.successful(())
 
-    val controller = new UserController {
+    val controller = new UserController with TestController {
       override val backend = mockBackend
     }
 

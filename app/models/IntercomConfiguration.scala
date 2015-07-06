@@ -1,7 +1,6 @@
 package models
 
 import play.api.Play
-import play.api.Play.current
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter
@@ -63,5 +62,5 @@ trait IntercomConfiguration {
   * analytics.intercom.secret_key, settings will be None.
   */
 object IntercomConfiguration extends IntercomConfiguration {
-  override def getConfigString(key: String) = Play.application.configuration.getString(key)
+  override def getConfigString(key: String) = Play.maybeApplication.flatMap(_.configuration.getString(key))
 }

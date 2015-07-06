@@ -21,7 +21,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
     val mockStoreBackend = mock[StoreBackend]
     val mockViewBackend = mock[ViewBackend]
 
-    val controller = new ViewController {
+    val controller = new ViewController with TestController {
       override protected val storage = mockStorage
       override protected val appUrlChecker = mockAppUrlChecker
       override protected val apiTokenBackend = mockApiTokenBackend

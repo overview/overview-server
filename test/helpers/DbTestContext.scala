@@ -16,7 +16,7 @@ import play.api.Play.current
 import play.api.test._
 import play.api.test.Helpers._
 
-import models.OverviewDatabase
+import org.overviewproject.database.DeprecatedDatabase
 
 /**
  * A helper class for tests that access the test-database. Wraps the test in a
@@ -30,7 +30,7 @@ trait DbTestContext extends Around {
   def sql(q: String) = runQuery(q, connection)
 
   def around[T : AsResult](test: => T) = {
-    OverviewDatabase.inTransaction {
+    DeprecatedDatabase.inTransaction {
       clearDb(connection)
       setupWithDb
       AsResult(test)

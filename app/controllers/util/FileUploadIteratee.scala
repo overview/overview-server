@@ -9,8 +9,8 @@ import play.api.libs.iteratee.{ Done, Input, Iteratee }
 import play.api.mvc.{ RequestHeader, Result }
 import play.api.mvc.Results.BadRequest
 
-import models.OverviewDatabase
 import models.upload.OverviewUpload
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.postgres.LO
 
 /**
@@ -127,13 +127,13 @@ trait FileUploadIteratee {
 /** Implementation that writes to database */
 object FileUploadIteratee extends FileUploadIteratee {
   
-  def findUpload(userId: Long, guid: UUID) = OverviewDatabase.inTransaction {
+  def findUpload(userId: Long, guid: UUID) = DeprecatedDatabase.inTransaction {
     OverviewUpload.find(userId, guid)
   }
 
   def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload = {
-    OverviewDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+    DeprecatedDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
       LO.withLargeObject { lo =>
         OverviewUpload(userId, guid, contentDisposition, contentType, contentLength, lo.oid).save
       }
@@ -141,15 +141,15 @@ object FileUploadIteratee extends FileUploadIteratee {
   }
 
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = {
-    OverviewDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+    DeprecatedDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
       LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
     }
   }
 
   def truncateUpload(upload: OverviewUpload): OverviewUpload = {
-    OverviewDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+    DeprecatedDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
       LO.withLargeObject(upload.contentsOid) { lo =>
         lo.truncate
         upload.truncate.save
@@ -158,8 +158,8 @@ object FileUploadIteratee extends FileUploadIteratee {
   }
 
   def cancelUpload(upload: OverviewUpload) = {
-    OverviewDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = OverviewDatabase.currentConnection.unwrap(classOf[PGConnection])
+    DeprecatedDatabase.inTransaction {
+      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
       LO.delete(upload.contentsOid)
       upload.uploadedFile.delete
       upload.delete

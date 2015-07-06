@@ -18,7 +18,7 @@ class ControllerSpec extends Specification with JsonMatchers {
         val err = jsonError("aaa", "foo")
       }
 
-      val controller = new Controller with MyTest
+      val controller = new Controller with TestController with MyTest
 
       Json.stringify(controller.err) must /("message" -> "foo")
       Json.stringify(controller.err) must /("code" -> "aaa")
@@ -30,7 +30,7 @@ class ControllerSpec extends Specification with JsonMatchers {
       trait F {
         def f(request: RequestHeader, maxLimit: Int): PageRequest
       }
-      val controller = new Controller with F {
+      val controller = new Controller with TestController with F {
         // Make it public
         override def f(request: RequestHeader, maxLimit: Int) = pageRequest(request, maxLimit)
       }

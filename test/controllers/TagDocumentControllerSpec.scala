@@ -14,7 +14,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
     val selection = InMemorySelection(Seq(2L, 3L, 4L)) // override for a different Selection
     def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
     val mockTagDocumentBackend = smartMock[TagDocumentBackend]
-    val controller = new TagDocumentController {
+    val controller = new TagDocumentController with TestController {
       override val tagDocumentBackend = mockTagDocumentBackend
       override def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]) = buildSelection
     }

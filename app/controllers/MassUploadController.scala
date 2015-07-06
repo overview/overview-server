@@ -13,7 +13,7 @@ import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 import models.orm.stores.DocumentSetCreationJobStore
-import models.OverviewDatabase
+import org.overviewproject.database.DeprecatedDatabase
 import org.overviewproject.models.{DocumentSet,GroupedFileUpload}
 import org.overviewproject.jobs.models.ClusterFileGroup
 import org.overviewproject.tree.orm.DocumentSetCreationJob
@@ -169,7 +169,7 @@ trait MassUploadController extends Controller {
     fileGroupBackend.find(userEmail, None).flatMap(_ match {
       case None => Future.successful(redirect)
       case Some(fileGroup) => {
-        val job: DocumentSetCreationJob = blocking(OverviewDatabase.inTransaction {
+        val job: DocumentSetCreationJob = blocking(DeprecatedDatabase.inTransaction {
           storage.createMassUploadDocumentSetCreationJob(
             documentSetId, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords, false)
         })
@@ -223,7 +223,7 @@ object MassUploadController extends MassUploadController {
       importantWords: String,
       canBeCancelled: Boolean
     ): DocumentSetCreationJob = {
-      OverviewDatabase.inTransaction {
+      DeprecatedDatabase.inTransaction {
         DocumentSetCreationJobStore.insertOrUpdate(
           DocumentSetCreationJob(
             documentSetId = documentSetId,

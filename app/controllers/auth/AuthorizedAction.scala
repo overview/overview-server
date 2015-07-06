@@ -2,10 +2,9 @@ package controllers.auth
 
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{ActionBuilder, RequestHeader, Request, Result}
-import play.api.Play
 import scala.concurrent.Future
 
-import models.OverviewDatabase
+import org.overviewproject.database.DeprecatedDatabase
 import models.{Session,User}
 
 trait AuthorizedAction {
@@ -48,7 +47,7 @@ trait AuthorizedAction {
         } else {
           sessionFactory.loadAuthorizedSession(request, authority).flatMap(_ match {
             case Left(plainResult) => Future.successful(plainResult)
-            case Right((session,user)) => OverviewDatabase.inTransaction {
+            case Right((session,user)) => DeprecatedDatabase.inTransaction {
               block(new AuthorizedRequest(request, session, user))
             }
           })
@@ -59,10 +58,8 @@ trait AuthorizedAction {
 }
 
 object AuthorizedAction extends AuthorizedAction {
-  private val isMultiUser = Play.current.configuration.getBoolean("overview.multi_user").getOrElse(true)
-
   override val sessionFactory = {
-    if (isMultiUser) {
+    if (AuthConfig.isMultiUser) {
       SessionFactory
     } else {
       SingleUserSessionFactory

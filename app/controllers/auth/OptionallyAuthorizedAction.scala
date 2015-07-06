@@ -2,10 +2,9 @@ package controllers.auth
 
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{ ActionBuilder, Request, Result }
-import play.api.Play
 import scala.concurrent.Future
 
-import models.OverviewDatabase
+import org.overviewproject.database.DeprecatedDatabase
 
 trait OptionallyAuthorizedAction {
   protected val sessionFactory: SessionFactory
@@ -50,7 +49,7 @@ trait OptionallyAuthorizedAction {
             .loadAuthorizedSession(request, authority) // Future[Either[Result,(Session,User)]]
             .map(_.right.toOption) // Future[Option[(Session,User)]]
             .map(new OptionallyAuthorizedRequest(request, _)) // Future[RequestHeader]
-            .flatMap(request => OverviewDatabase.inTransaction(block(request))) // Future[Result]
+            .flatMap(request => DeprecatedDatabase.inTransaction(block(request))) // Future[Result]
         }
       }
     }
@@ -58,10 +57,8 @@ trait OptionallyAuthorizedAction {
 }
 
 object OptionallyAuthorizedAction extends OptionallyAuthorizedAction {
-  private val isMultiUser = Play.current.configuration.getBoolean("overview.multi_user").getOrElse(true)
-
   override val sessionFactory = {
-    if (isMultiUser) {
+    if (AuthConfig.isMultiUser) {
       SessionFactory
     } else {
       SingleUserSessionFactory

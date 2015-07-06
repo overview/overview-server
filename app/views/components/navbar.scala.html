@@ -62,7 +62,7 @@
         </div>
       }
       case None => {
-        @if(Play.current.configuration.getBoolean("overview.multi_user").getOrElse(true)) {
+        @if(Play.maybeApplication.flatMap(_.configuration.getBoolean("overview.multi_user")).getOrElse(true)) {
           @optionalUser.map { user =>
             <div class="logged-in">
               <div class="navbar-text">@(Html(HtmlFormat.escape(m("logged_in", "EMAIL")).toString.replace("EMAIL", "<strong>" + HtmlFormat.escape(user.email).toString + "</strong>")))</div>

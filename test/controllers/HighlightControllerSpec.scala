@@ -11,7 +11,7 @@ class HighlightControllerSpec extends ControllerSpecification {
   trait HighlightScope extends Scope {
     val mockHighlightBackend = mock[HighlightBackend]
 
-    val controller = new HighlightController {
+    val controller = new HighlightController with TestController {
       override val highlightBackend = mockHighlightBackend
     }
 

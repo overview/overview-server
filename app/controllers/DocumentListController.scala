@@ -6,9 +6,6 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend,DocumentNodeBackend,DocumentTagBackend}
-import models.pagination.Page
-import models.{IdList,OverviewDatabase,Selection}
-import org.overviewproject.models.DocumentHeader
 
 trait DocumentListController extends Controller with SelectionHelpers {
   protected val documentBackend: DocumentBackend

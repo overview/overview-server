@@ -8,9 +8,8 @@ import controllers.auth.AuthorizedAction
 import controllers.backend.ImportJobBackend
 import controllers.util.DocumentSetDeletionComponents
 import controllers.Controller
-import models.{OverviewDatabase,User}
 import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.database.HasBlockingDatabase
+import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
 import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
 import org.overviewproject.models.tables.{DocumentSetCreationJobs,DocumentSets}
 import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
@@ -115,7 +114,7 @@ object ImportJobController extends ImportJobController with DocumentSetDeletionC
     import database.api._
 
     override def cancelJob(documentSetId: Long): Option[DeprecatedDocumentSetCreationJob] = {
-      OverviewDatabase.inTransaction {
+      DeprecatedDatabase.inTransaction {
         DocumentSetCreationJobStore.findCancellableJobByDocumentSetAndCancel(documentSetId)
       }
     }

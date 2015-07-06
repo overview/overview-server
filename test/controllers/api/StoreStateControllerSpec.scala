@@ -10,7 +10,7 @@ import org.overviewproject.models.Store
 class StoreStateControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
     val mockBackend = mock[StoreBackend]
-    val controller = new StoreStateController {
+    val controller = new StoreStateController with TestController {
       override val backend = mockBackend
     }
   }

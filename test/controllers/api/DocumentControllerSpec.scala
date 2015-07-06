@@ -15,7 +15,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
     val selection = InMemorySelection(Seq()) // override for a different Selection
     def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
     val mockDocumentBackend = mock[DocumentBackend]
-    val controller = new DocumentController {
+    val controller = new DocumentController with TestController {
       override val documentBackend = mockDocumentBackend
       override def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]) = buildSelection
     }

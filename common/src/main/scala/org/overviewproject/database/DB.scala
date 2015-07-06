@@ -7,29 +7,20 @@
 
 package org.overviewproject.database
 
+import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
 import java.sql.Connection
-import javax.sql.{ DataSource => JDataSource }
+import javax.sql.DataSource
 import org.postgresql.PGConnection
-import slick.jdbc.JdbcBackend.Session
-import slick.jdbc.UnmanagedSession
 
 /**
- * Convenience object for database access. Call DB.connect(datasSource) once at the start
- * of the application, and DB.close() at the end.
+ * Convenience object for database access.
+ *
+ * Reads Hikari connection configuration from Typesafe Config, in `db.default`.
  */
 object DB {
-  var connected: Boolean = false
-  private var dataSource: DataSource = _
-
-  def connect(source: DataSource): Unit = {
-    if (connected) throw new RuntimeException("You tried to connect to the database twice")
-    dataSource = source
-    connected = true
-  }
-
-  def close(): Unit = {
-    dataSource.shutdown
-    connected = false
+  lazy val dataSource: DataSource = {
+    val hikariConfig = DatabaseConfiguration.fromConfig
+    new HikariDataSource(hikariConfig)
   }
 
   /**
@@ -76,13 +67,5 @@ object DB {
 
   /** Extracts the internal PGConnection. */
   def pgConnection(implicit connection: Connection): PGConnection = connection.unwrap(classOf[PGConnection])
-
-  /** Transforms a JDBC Connection into a Slick Session. */
-  def slickSession(connection: Connection): Session = new UnmanagedSession(connection)
-
-  /**
-   * @return the current underlying data source
-   */
-  def getDataSource(): JDataSource = dataSource.getDataSource
 }
 

@@ -12,7 +12,7 @@ import models.User
 class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait TestScope extends Scope {
     val mockStorage = mock[NodeController.Storage]
-    val controller = new NodeController {
+    val controller = new NodeController with TestController {
       override val storage = mockStorage
     }
     def postRequest = fakeAuthorizedRequest.withFormUrlEncodedBody("description" -> "new description")

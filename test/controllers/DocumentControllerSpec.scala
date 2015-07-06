@@ -17,7 +17,7 @@ class DocumentControllerSpec extends ControllerSpecification {
     val mockPageBackend = mock[PageBackend]
     val mockBlobStorage = mock[BlobStorage]
 
-    val controller = new DocumentController {
+    val controller = new DocumentController with TestController {
       override val blobStorage = mockBlobStorage
       override val documentBackend = mockDocumentBackend
       override val fileBackend = mockFileBackend

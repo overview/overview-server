@@ -24,6 +24,10 @@ trait ApiControllerSpecification
   with ResultExtractors
   with FutureAwaits
 {
+  trait TestController { self: ApiController =>
+    override def messagesApi = new test.helpers.MockMessagesApi()
+  }
+
   trait ApiControllerScope extends Scope {
     implicit protected val executionContext = scala.concurrent.ExecutionContext.Implicits.global
 

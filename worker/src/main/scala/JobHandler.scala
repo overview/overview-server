@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
-import org.overviewproject.database.{ DatabaseConfiguration, DeprecatedDatabase, DataSource, DB, HasBlockingDatabase }
+import org.overviewproject.database.{ DeprecatedDatabase, DB, HasBlockingDatabase }
 import org.overviewproject.persistence.{ NodeWriter, PersistentDocumentSetCreationJob }
 import org.overviewproject.persistence.TreeIdGenerator
 import org.overviewproject.tree.DocumentSetCreationJobType
@@ -32,10 +32,8 @@ object JobHandler extends HasBlockingDatabase {
     // Make sure java.sql.Timestamp values are correct
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
-    val config = DatabaseConfiguration.fromConfig
-    val dataSource = DataSource(config)
-
-    DB.connect(dataSource)
+    // Connect to the database
+    DB.dataSource
 
     logger.info("Starting to scan for jobs")
     startHandlingJobs
@@ -121,7 +119,6 @@ object JobHandler extends HasBlockingDatabase {
       case e: Exception => reportError(j, e)
       case t: Throwable => { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
         reportError(j, t)
-        DB.close()
         throw (t)
       }
     }

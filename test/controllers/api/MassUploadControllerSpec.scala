@@ -24,7 +24,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     val mockMessageQueue = smartMock[MassUploadController.MessageQueue]
     val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
 
-    lazy val controller = new MassUploadController {
+    lazy val controller = new MassUploadController with TestController {
       override val fileGroupBackend = mockFileGroupBackend
       override val groupedFileUploadBackend = mockUploadBackend
       override val apiTokenFactory = mockApiTokenFactory

@@ -74,10 +74,9 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
   class TestDocumentSetArchiveController(
       documentSetId: Long,
       archiveData: Array[Byte],
-      documentViewInfos: Seq[DocumentViewInfo]) extends DocumentSetArchiveController {
+      documentViewInfos: Seq[DocumentViewInfo]
+  ) extends DocumentSetArchiveController with TestController {
     import scala.concurrent.ExecutionContext.Implicits.global
-
-    override def messagesApi = new test.helpers.MockMessagesApi
 
     override val MaxNumberOfEntries = 10
 
@@ -93,11 +92,10 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     archiver.createArchive(any) returns archive
   }
 
-  class TooLargeArchiveController(documentViewInfos: Seq[DocumentViewInfo]) extends DocumentSetArchiveController {
+  class TooLargeArchiveController(documentViewInfos: Seq[DocumentViewInfo])
+  extends DocumentSetArchiveController with TestController {
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    override def messagesApi = new test.helpers.MockMessagesApi
-    
     val archiver = smartMock[Archiver]
     val archive = smartMock[Archive]
 

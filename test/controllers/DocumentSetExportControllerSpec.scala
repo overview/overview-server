@@ -24,7 +24,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
     val mockTagBackend = smartMock[TagBackend]
 
-    val controller = new DocumentSetExportController {
+    val controller = new DocumentSetExportController with TestController {
       override val documentSetBackend = mockDocumentSetBackend
       override val tagBackend = mockTagBackend
       override val storage = mockStorage

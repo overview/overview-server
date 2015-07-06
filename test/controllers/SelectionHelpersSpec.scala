@@ -20,7 +20,7 @@ class SelectionHelpersSpec extends Specification with Mockito {
       trait F {
         def f(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest]
       }
-      val controller = new Controller with SelectionHelpers with F {
+      val controller = new Controller with SelectionHelpers with F with TestController {
         override def messagesApi = new MockMessagesApi()
         override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)
       }
@@ -128,12 +128,11 @@ class SelectionHelpersSpec extends Specification with Mockito {
       val selectionId = "9cf4d95a-39bd-4463-85a3-cac272a20bc2"
       val mockSelectionBackend = smartMock[SelectionBackend]
 
-      class TestController extends Controller with SelectionHelpers {
-        override def messagesApi = new MockMessagesApi()
+      class AController extends Controller with TestController with SelectionHelpers {
         override val selectionBackend = mockSelectionBackend
         def go(request: Request[_]) = requestToSelection(documentSetId, userEmail, request)
       }
-      val controller = new TestController()
+      val controller = new AController()
     }
 
     "use SelectionBackend#find() if selectionId is set" in new RequestToSelectionScope {

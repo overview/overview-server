@@ -16,8 +16,8 @@ class Export(rows: Rows, format: Format) {
 
   /** FileInputStream that we wish to transfer.
     *
-    * This method must be called within an OverviewDatabase.inTransaction
-    * block: it may require database access.
+    * This method must be called within an DeprecatedDatabase.inTransaction
+    * block: it may require database access. FIXME: remove this oddity.
     */
   def futureFileInputStream: Future[FileInputStream] = format.getContentsAsInputStream(rows)
 }

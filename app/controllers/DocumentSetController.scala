@@ -10,8 +10,7 @@ import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetCreationJobStore
 import models.pagination.{Page,PageRequest}
-import models.OverviewDatabase
-import org.overviewproject.database.HasBlockingDatabase
+import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
 import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
 import org.overviewproject.models.tables.DocumentSets
 import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
@@ -101,7 +100,7 @@ trait DocumentSetController extends Controller {
   def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)).async {
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
-      case Some(documentSet) => OverviewDatabase.inTransaction {
+      case Some(documentSet) => DeprecatedDatabase.inTransaction {
         val trees = storage.findTrees(id).map(_.copy()).toArray
         val viewJobs = storage.findViewJobs(id).map(_.copy()).toArray
         val tags = storage.findTags(id).map(_.copy()).toArray
@@ -231,7 +230,7 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     import database.api._
 
     override def cancelJob(documentSetId: Long): Option[DeprecatedDocumentSetCreationJob] = {
-      OverviewDatabase.inTransaction {
+      DeprecatedDatabase.inTransaction {
         DocumentSetCreationJobStore.findCancellableJobByDocumentSetAndCancel(documentSetId)
       }
     }

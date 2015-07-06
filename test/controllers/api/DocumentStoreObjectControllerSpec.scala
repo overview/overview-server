@@ -13,7 +13,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
     val selection = smartMock[Selection]
     val mockStoreBackend = smartMock[StoreBackend]
     val mockObjectBackend = smartMock[DocumentStoreObjectBackend]
-    val controller = new DocumentStoreObjectController {
+    val controller = new DocumentStoreObjectController with TestController {
       override val storeBackend = mockStoreBackend
       override val documentStoreObjectBackend = mockObjectBackend
       override def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]) = Future.successful(Right(selection))

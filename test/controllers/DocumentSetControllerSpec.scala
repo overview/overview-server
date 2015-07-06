@@ -22,7 +22,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     val mockBackend = smartMock[DocumentSetBackend]
     val mockImportJobBackend = smartMock[ImportJobBackend]
 
-    val controller = new DocumentSetController {
+    val controller = new DocumentSetController with TestController {
       override val indexPageSize = IndexPageSize
       override val storage = mockStorage
       override val jobQueue = mockJobQueue
@@ -200,7 +200,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         mockImportJobBackend.index(documentSetId) returns Future.successful(Seq(job))
         mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq(job.id + 1, job.id + 2, job.id, job.id + 3))
         h.contentAsString(result) must beMatching("""(?s).*progress.*value="40".*""")
-        h.contentAsString(result) must beMatching("""(?s).*2 jobs.*""")
+        h.contentAsString(result) must beMatching("""(?s).*views.ImportJob._documentSetCreationJob.jobs_to_process,2.*""")
       }
 
       "show 0 jobs ahead in the case of a race" in new ValidShowScope {
@@ -210,7 +210,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         // job disappeared before we tried to find the position in queue
         mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq())
         h.contentAsString(result) must beMatching("""(?s).*value="40".*""")
-        h.contentAsString(result) must not(beMatching("""(?s).*-1 jobs.*"""))
+        h.contentAsString(result) must not(beMatching("""(?s).*-1.*"""))
       }
     }
 
@@ -289,8 +289,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val ds1 = j.$("[data-document-set-id='1']")
         val ds2 = j.$("[data-document-set-id='2']")
 
-        ds1.find(".view-count").text() must contain("4 views")
-        ds2.find(".view-count").text() must contain("5 views")
+        ds1.find(".view-count").text() must contain("views.DocumentSet._documentSet.nViews,4")
+        ds2.find(".view-count").text() must contain("views.DocumentSet._documentSet.nViews,5")
       }
 
       "show jobs" in new IndexScope {

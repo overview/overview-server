@@ -9,8 +9,9 @@ import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser
 import controllers.backend.SessionBackend
 import mailers.Mailer
-import models.{OverviewDatabase,OverviewUser,ResetPasswordRequest,User}
+import models.{OverviewUser,ResetPasswordRequest,User}
 import models.orm.stores.{UserStore}
+import org.overviewproject.database.DeprecatedDatabase
 
 /**
  * Handles reset-password.
@@ -61,7 +62,7 @@ trait PasswordController extends Controller {
           case Some(user) => {
             // Success: generate a token and send an email
             val userWithRequest = user.withResetPasswordRequest
-            OverviewDatabase.inTransaction {
+            DeprecatedDatabase.inTransaction {
               storage.insertOrUpdateUser(userWithRequest.toUser)
             }
             mail.sendCreated(userWithRequest)
@@ -84,7 +85,7 @@ trait PasswordController extends Controller {
         editForm.bindFromRequest.fold(
           formWithErrors => Future.successful(BadRequest(views.html.Password.edit(user, formWithErrors))),
           newPassword => {
-            val savedUser = OverviewDatabase.inTransaction {
+            val savedUser = DeprecatedDatabase.inTransaction {
               storage.insertOrUpdateUser(user.withNewPassword(newPassword).toUser)
             }
 

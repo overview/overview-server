@@ -5,7 +5,7 @@ import play.api.mvc._
 import play.filters.csrf.CSRFFilter
 import scala.concurrent.Future
 
-import org.overviewproject.database.{DatabaseConfiguration,DataSource,DB}
+import org.overviewproject.database.DB
 
 object LoggingFilter extends EssentialFilter {
   // Copy/paste of http://www.playframework.com/documentation/2.2.1/ScalaHttpFilters
@@ -49,11 +49,7 @@ object CorsFilter extends EssentialFilter {
 object Global extends WithFilters(LoggingFilter, CorsFilter, CSRFFilter()) with GlobalSettings {
   private val HttpOverrideKey = "X-HTTP-Method-Override"
 
-  private lazy val connectToDatabaseOnce = {
-    val config = DatabaseConfiguration.fromConfig
-    val dataSource = DataSource(config)
-    DB.connect(dataSource)
-  }
+  private def connectToDatabaseOnce = DB.dataSource
 
   private val CorsOptionsHeaders = Seq(
     "Access-Control-Allow-Origin" -> "*",

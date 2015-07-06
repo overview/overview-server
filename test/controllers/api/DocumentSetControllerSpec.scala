@@ -10,7 +10,7 @@ class DocumentSetControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
     val mockBackend = mock[DocumentSetBackend]
     val mockApiTokenBackend = mock[ApiTokenBackend]
-    val controller = new DocumentSetController {
+    val controller = new DocumentSetController with TestController {
       override val backend = mockBackend
       override val apiTokenBackend = mockApiTokenBackend
     }

@@ -10,9 +10,16 @@ import play.api.test.{FakeHeaders, FakeRequest}
 import controllers.auth.{AuthorizedRequest, OptionallyAuthorizedRequest}
 import models.{Session, User}
 
+trait TestController { self: Controller =>
+  override def messagesApi = new test.helpers.MockMessagesApi()
+}
+
 /** A test environment for controllers.
   */
 trait ControllerSpecification extends test.helpers.InAppSpecification with Mockito {
+  // InAppSpecification because controllers sometimes set session variables,
+  // which require the global crypto config
+
   protected implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
 
   class AugmentedRequest[T, A <: Request[T], AWithJsonBody <: Request[AnyContentAsJson], AWithFormBody <: Request[AnyContentAsFormUrlEncoded]](

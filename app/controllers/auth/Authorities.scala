@@ -5,7 +5,7 @@ import scala.concurrent.{Future,blocking}
 import slick.jdbc.JdbcBackend.Session
 import slick.lifted.{ConstColumn,Query,RunnableCompiled}
 
-import models.{OverviewDatabase,User}
+import models.User
 import org.overviewproject.database.HasDatabase
 import org.overviewproject.models.{ApiToken,UserRole}
 
