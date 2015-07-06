@@ -56,7 +56,7 @@ object Main {
     val evolutions = dbEvolutions.scripts(new HackyClassLoaderEvolutionsReader)
 
     if (evolutions.length > 0) {
-      System.out.println("Applying ${evolutions.length} database evolutions...")
+      System.out.println(s"Applying ${evolutions.length} database evolutions...")
     } else {
       System.out.println("Database schema is fresh: no new evolutions to apply")
     }
