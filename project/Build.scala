@@ -8,6 +8,7 @@ import com.typesafe.sbt.rjs.SbtRjs.autoImport._
 import com.typesafe.sbt.SbtNativePackager.packageArchetype
 import com.typesafe.sbt.web.SbtWeb
 import com.typesafe.sbt.web.SbtWeb.autoImport._
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import play.Play.autoImport._
 import play.sbt.PlayImport._
 import play.sbt.routes.RoutesKeys
@@ -64,8 +65,6 @@ object ApplicationBuild extends Build {
 
   val ourGlobalSettings: Seq[Setting[_]] = (
     Defaults.coreDefaultSettings
-    ++ net.virtualvoid.sbt.graph.Plugin.graphSettings
-    ++ packageArchetype.java_application
     ++ Seq(
       logBuffered := false, // so Runner gets data sooner
       scalacOptions ++= ourScalacOptions,
@@ -81,7 +80,9 @@ object ApplicationBuild extends Build {
     )
   )
 
-  def project(name: String) = Project(name, file(name)).settings(ourGlobalSettings: _*)
+  def project(name: String) = Project(name, file(name))
+    .settings(ourGlobalSettings: _*)
+    .enablePlugins(JavaAppPackaging)
 
   lazy val messageBroker = project("message-broker")
     .settings(ourGlobalSettings: _*)
@@ -112,6 +113,7 @@ object ApplicationBuild extends Build {
 
   def dbEvolutionApplierProject(name: String) = Project(name, file("db-evolution-applier"))
     .settings(ourGlobalSettings: _*)
+    .enablePlugins(JavaAppPackaging)
     .settings(
       target := baseDirectory.value / "target" / name, // [error] Overlapping output directories
       libraryDependencies ++= Dependencies.dbEvolutionApplierDependencies,
@@ -177,7 +179,7 @@ object ApplicationBuild extends Build {
     .dependsOn(common % "test->test;compile->compile")
 
   lazy val main = Project(appName, file("."))
-    .enablePlugins(play.PlayScala)
+    .enablePlugins(play.sbt.PlayScala)
     .enablePlugins(SbtWeb)
     .settings(ourGlobalSettings: _*)
     .settings(
