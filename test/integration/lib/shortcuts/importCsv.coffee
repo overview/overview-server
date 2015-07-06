@@ -22,6 +22,29 @@ module.exports = importCsv = (browser) ->
       .shortcuts.jquery.waitUntilReady()
       .waitUntilBlockReturnsTrue('page loads file input', true, -> $('input[type=file]').length)
 
+  # Chooses a CSV file.
+  #
+  # Assumptions: you previously called open().
+  chooseFile: (csvFilename) ->
+    debug_("scheduling startUpload(#{csvFilename})")
+    debug("startUpload(#{csvFilename})")
+    fullPath = "#{__dirname}/../../files/#{csvFilename}"
+    browser
+      .sendKeys(fullPath, css: 'input[type=file]')
+      .waitUntilBlockReturnsTrue 'our JavaScript processed the selected file', 'fast', ->
+        $('div.requirements li.ok').length == 4 || $('div.requirements li.bad').length == 1
+
+  # Chooses a CSV file.
+  #
+  # When this method returns, the "requirements" list items will be set
+  # appropriately.
+  openAndChooseFile: (csvFilename) ->
+    debug_("scheduling startUpload(#{csvFilename})")
+    debug("startUpload(#{csvFilename})")
+    browser
+      .shortcuts.importCsv.open()
+      .shortcuts.importCsv.chooseFile(csvFilename)
+
   # Chooses a CSV file and clicks the Upload button.
   #
   # When this method returns, an upload progress bar will be visible. (Or it
@@ -29,10 +52,9 @@ module.exports = importCsv = (browser) ->
   startUpload: (csvFilename) ->
     debug_("scheduling startUpload(#{csvFilename})")
     debug("startUpload(#{csvFilename})")
-    fullPath = "#{__dirname}/../../files/#{csvFilename}"
     browser
-      .sendKeys(fullPath, css: 'input[type=file]')
-      .click(button: 'Upload', enabled: true, wait: true) # Wait for client to verify the file is okay
+      .shortcuts.importCsv.openAndChooseFile(csvFilename)
+      .click(button: 'Upload')
 
   # Waits until the user is redirected to a document set.
   waitUntilRedirectToDocumentSet: (filename) ->

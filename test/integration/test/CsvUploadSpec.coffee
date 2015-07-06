@@ -1,119 +1,55 @@
-asUser = require('../support/asUser')
-shouldBehaveLikeATree = require('../support/behave/likeATree')
-testMethods = require('../support/testMethods')
-wd = require('wd')
-
-Url =
-  index: '/documentsets'
-  show: /\/documentsets\/(\d+)/
-  csvUpload: '/imports/csv'
-
-isSelected = new wd.asserters.Asserter((target, cb) -> target.isSelected(cb))
+asUser = require('../support/asUser-new')
+shouldBehaveLikeATree = require('../support/behave/likeATree-new')
 
 describe 'CsvUpload', ->
-  testMethods.usingPromiseChainMethods
-    openCsvUploadPage: ->
-      @
-        .get(Url.csvUpload)
-        .waitForJqueryReady()
-
-    chooseFile: (path) ->
-      fullPath = "#{__dirname}/../files/#{path}"
-      @
-        .elementByCss('input[type=file]').sendKeys(fullPath)
-
-    waitForRequirements: ->
-      @
-        .waitForFunctionToReturnTrueInBrowser(-> $('.requirements li.ok').length == 4 || $('.requirements li.bad').length > 0)
-
-    doUpload: ->
-      @
-        .elementBy(tag: 'button', contains: 'Upload').click()
-        .waitForUrl(Url.show, 5000)
-
-    chooseAndDoUpload: (path) ->
-      @
-        .chooseFile(path)
-        .waitForRequirements()
-        .doUpload()
-
-    deleteTopUpload: ->
-      @
-        .get(Url.index)
-        .elementByCss('.actions .dropdown-toggle').click()
-        .acceptingNextAlert()
-        .elementByCss('.delete-document-set').click()
-
-    waitForJobsToComplete: ->
-      @.waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('progress').length == 0), 10000)
-
-  asUser.usingTemporaryUser(title: 'CsvUpload')
-
-  describe 'finding a character set', ->
-    testMethods.usingPromiseChainMethods
-      loadCsvAndWaitForRequirements: (path) ->
-        @
-          .openCsvUploadPage()
-          .chooseFile(path)
-          .waitForRequirements()
-
-      shouldHaveLoadedCsvWithText: (text) ->
-        @
-          .elementByCss('.requirements li.text.ok').should.eventually.exist
-          .elementByCss('.requirements li.csv.ok').should.eventually.exist
-          .elementByCss('.requirements li.header.ok').should.eventually.exist
-          .elementByCss('.requirements li.data.ok').should.eventually.exist
-          .elementByCss('.preview table').text().should.eventually.contain(text)
-
-    it 'should load UTF-8', ->
-      @userBrowser
-        .loadCsvAndWaitForRequirements('CsvUpload/basic-utf8.csv')
-        .elementByCss('select[name=charset] option', isSelected).text().should.eventually.equal('Unicode (UTF-8)')
-        .shouldHaveLoadedCsvWithText('achète avec des €')
-
-    it 'should load Windows-1252', ->
-      @userBrowser
-        .loadCsvAndWaitForRequirements('CsvUpload/basic-windows-1252.csv')
-        .elementByCss('select[name=charset] option', isSelected).text().should.eventually.equal('Unicode (UTF-8)')
-        .elementByCss('.requirements li.text.bad').should.eventually.exist
-        .elementByCss('.preview table').text().should.eventually.contain('ach�te avec des �')
-        .elementByCss('select[name=charset] option[value=windows-1252]').click()
-        .shouldHaveLoadedCsvWithText('achète avec des €')
-
-    it 'should reset the form, including encoding', ->
-      @userBrowser
-        .loadCsvAndWaitForRequirements('CsvUpload/basic-windows-1252.csv')
-        .elementByCss('select[name=charset] option[value=windows-1252]').click()
-        .elementBy(tag: 'button', contains: 'Reset').click()
-        .chooseFile('CsvUpload/basic-utf8.csv')
-        .waitForRequirements()
-        .elementByCss('select[name=charset] option', isSelected).text().should.eventually.equal('Unicode (UTF-8)')
-        .shouldHaveLoadedCsvWithText('achète avec des €')
-
-    it 'should show an error when there is no text column', ->
-      @userBrowser
-        .loadCsvAndWaitForRequirements('CsvUpload/basic-no-text.csv')
-        .elementByCss('.requirements li.header.bad').should.eventually.exist
-
-  describe 'after uploading a document set', ->
+  asUser.usingTemporaryUser ->
     before ->
-      @userBrowser
-        .openCsvUploadPage()
-        .chooseAndDoUpload('CsvUpload/basic.csv')
-        .waitForJobsToComplete()
-    after ->
-      @userBrowser.deleteTopUpload()
+      @browser
+        .loadShortcuts('importCsv')
+        .loadShortcuts('documentSet')
+        .loadShortcuts('documentSets')
 
-    it 'should show the document set', ->
-      @userBrowser
-        .get(Url.index)
-        .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
+    describe 'finding a character set', ->
+      it 'should load UTF-8', ->
+        @browser
+          .shortcuts.importCsv.openAndChooseFile('CsvUpload/basic-utf8.csv')
+          .getText(css: '.preview table').then((text) -> expect(text).to.contain('achète avec des €'))
 
-    describe 'in the default tree', ->
+      it 'should load Windows-1252', ->
+        @browser
+          .shortcuts.importCsv.openAndChooseFile('CsvUpload/basic-windows-1252.csv')
+          .assertExists(css: '.requirements li.text.bad')
+          .getText(css: '.preview table').then((text) -> expect(text).to.contain('ach�te avec des �'))
+
+        @browser
+          .click(css: 'select[name=charset] option[value=windows-1252]')
+          .getText(css: '.preview table').then((text) -> expect(text).to.contain('achète avec des €'))
+
+      it 'should reset the form, including encoding', ->
+        @browser
+          .shortcuts.importCsv.openAndChooseFile('CsvUpload/basic-windows-1252.csv')
+          .click(css: 'select[name=charset] option[value=windows-1252]')
+          .click(button: 'Reset')
+          .shortcuts.importCsv.chooseFile('CsvUpload/basic-utf8.csv')
+          .getText(css: '.preview table').then((text) -> expect(text).to.contain('achète avec des €'))
+
+      it 'should show an error when there is no text column', ->
+        @browser
+          .shortcuts.importCsv.openAndChooseFile('CsvUpload/basic-no-text.csv')
+          .assertExists(css: '.requirements li.header.bad')
+
+    describe 'after uploading a document set', ->
       before ->
-        @userBrowser
-          .get(Url.index)
-          .waitForElementBy(tag: 'a', contains: 'basic.csv', visible: true).click()
+        @browser
+          .shortcuts.importCsv.startUpload('CsvUpload/basic.csv')
+          .shortcuts.importCsv.waitUntilRedirectToDocumentSet('CsvUpload/basic.csv')
+          .shortcuts.documentSet.waitUntilStable()
+
+      after ->
+        @browser.shortcuts.documentSets.destroy('basic.csv')
+
+      it 'should show the document set', ->
+        @browser.assertExists(tag: 'h2', contains: 'basic.csv')
 
       shouldBehaveLikeATree
         documents: [
