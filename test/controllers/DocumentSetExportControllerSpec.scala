@@ -3,6 +3,7 @@ package controllers
 import java.io.FileInputStream
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.{DocumentSetBackend,TagBackend}
@@ -74,9 +75,12 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
     }
 
     trait ExportScope extends BaseScope {
-      val doc1 = DocumentForCsvExport("1", "2", "3", "4", Seq(5L, 6L))
-      val doc2 = DocumentForCsvExport("7", "8", "9", "0", Seq())
+      val documentSet = factory.documentSet()
+
+      val doc1 = DocumentForCsvExport("1", "2", "3", "4", Json.obj(), Seq(5L, 6L))
+      val doc2 = DocumentForCsvExport("7", "8", "9", "0", Json.obj(), Seq())
       val documents = Enumerator(doc1, doc2)
+
       val tags = Seq(
         factory.tag(id=5L, name="tag five"),
         factory.tag(id=6L, name="tag six"),
@@ -87,6 +91,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       val filename = "foobar.csv"
       val fileInputStream = makeFileInputStream(contents)
 
+      mockDocumentSetBackend.show(45L) returns Future.successful(Some(documentSet))
       mockTagBackend.index(45L) returns Future.successful(tags)
       mockStorage.streamDocumentsWithTagIds(45L) returns documents
 

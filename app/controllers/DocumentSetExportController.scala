@@ -3,6 +3,7 @@ package controllers
 import play.api.mvc.Result
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.{Json,JsObject}
 import play.api.libs.streams.Streams
 import scala.concurrent.Future
 
@@ -10,7 +11,8 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
 import controllers.backend.{DocumentSetBackend,TagBackend}
 import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.Tag
+import org.overviewproject.metadata.MetadataSchema
+import org.overviewproject.models.{DocumentSet,Tag}
 import org.overviewproject.util.ContentDisposition
 import models.export.Export
 import models.export.rows._
@@ -28,25 +30,30 @@ trait DocumentSetExportController extends Controller {
     format: Format,
     filename: String,
     documentSetId: Long,
-    createRows: (Enumerator[DocumentForCsvExport],Seq[Tag]) => Rows)
+    createRows: (MetadataSchema,Enumerator[DocumentForCsvExport],Seq[Tag]) => Rows)
   : Future[Result] = {
-    val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
-    val documents: Enumerator[DocumentForCsvExport] = storage.streamDocumentsWithTagIds(documentSetId)
+    documentSetBackend.show(documentSetId).flatMap(_ match {
+      case None => Future.successful(NotFound)
+      case Some(documentSet) => {
+        val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
+        val documents: Enumerator[DocumentForCsvExport] = storage.streamDocumentsWithTagIds(documentSetId)
 
-    tagBackend.index(documentSetId).flatMap { tags =>
-      val rows = createRows(documents, tags)
-      val export = new Export(rows, format)
+        tagBackend.index(documentSetId).flatMap { tags =>
+          val rows = createRows(documentSet.metadataSchema, documents, tags)
+          val export = new Export(rows, format)
 
-      export.futureFileInputStream.map { fileInputStream =>
-        Ok.feed(Enumerator.fromStream(fileInputStream))
-          .withHeaders(
-            CONTENT_TYPE -> export.contentType,
-            CONTENT_LENGTH -> fileInputStream.getChannel.size.toString, // InputStream.available makes no guarantee
-            CACHE_CONTROL -> "max-age=0",
-            CONTENT_DISPOSITION -> contentDisposition
-          )
+          export.futureFileInputStream.map { fileInputStream =>
+            Ok.feed(Enumerator.fromStream(fileInputStream))
+              .withHeaders(
+                CONTENT_TYPE -> export.contentType,
+                CONTENT_LENGTH -> fileInputStream.getChannel.size.toString, // InputStream.available makes no guarantee
+                CACHE_CONTROL -> "max-age=0",
+                CONTENT_DISPOSITION -> contentDisposition
+              )
+          }
+        }
       }
-    }
+    })
   }
 
   def documentsWithStringTags(
@@ -87,23 +94,22 @@ object DocumentSetExportController extends DocumentSetExportController {
           d.title,
           d.text,
           COALESCE(d.url, '') AS url,
+          COALESCE(d.metadata_json_text, '{}') AS metadata_json,
           COALESCE(ARRAY_AGG(dt.tag_id), '{}'::BIGINT[]) AS tag_ids
         FROM document d
         LEFT JOIN document_tag dt ON d.id = dt.document_id
-        WHERE d.document_set_id = $documentSetId
-        GROUP BY d.supplied_id, d.title, d.text, d.url
-      """.as[(String,String,String,String,Seq[Long])](GetResult(r => (
+        WHERE d.document_set_id = ${documentSetId}
+        GROUP BY d.supplied_id, d.title, d.text, d.url, d.metadata_json_text
+      """.as[DocumentForCsvExport](GetResult(r => DocumentForCsvExport(
         r.nextString(),
         r.nextString(),
         r.nextString(),
         r.nextString(),
+        Json.parse(r.nextString()).as[JsObject],
         r.nextArray[Long]()
       )))
 
-      val publisher: DatabasePublisher[(String,String,String,String,Seq[Long])] = database.slickDatabase.stream(query)
-
-      Streams.publisherToEnumerator(publisher)
-        .map(DocumentForCsvExport.tupled)
+      Streams.publisherToEnumerator(database.slickDatabase.stream(query))
     }
   }
 
