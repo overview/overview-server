@@ -1,7 +1,5 @@
 import com.typesafe.sbt.coffeescript.SbtCoffeeScript.autoImport._
-import com.typesafe.sbt.digest.SbtDigest.autoImport._
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
-import com.typesafe.sbt.gzip.SbtGzip.autoImport._
 import com.typesafe.sbt.jse.SbtJsEngine.autoImport._
 import com.typesafe.sbt.less.SbtLess.autoImport._
 import com.typesafe.sbt.rjs.SbtRjs.autoImport._
@@ -211,7 +209,14 @@ object ApplicationBuild extends Build {
       sources in doc in Compile := List(),
       includeFilter in (Assets, LessKeys.less) := "main.less",
       includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
-      pipelineStages := Seq(rjs, digest, gzip)
+      // RJS seems to kill the rest of sbt-web for us. TODO figure this out, so
+      // we can use versioned assets. See
+      // https://groups.google.com/d/topic/play-framework/3DiknO8OGK4/discussion
+      //
+      // ... the difference between us and Play's docs: *we* use RjsKeys.modules
+      // (The Play docs call for Seq(rjs, digest, gzip), which is exactly what
+      // we want.)
+      pipelineStages := Seq(rjs)
     )
     .dependsOn(common % "test->test;compile->compile")
 

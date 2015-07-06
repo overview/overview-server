@@ -76,8 +76,8 @@ object Magic {
     */
   def requireJsBundle(module: String) = {
     <script
-      src={controllers.routes.Assets.versioned("javascripts/vendor/require.js").url}
-      data-main={controllers.routes.Assets.versioned(s"javascripts/bundle/${module}.js").url}
+      src={controllers.routes.Assets.at("javascripts/vendor/require.js").url}
+      data-main={controllers.routes.Assets.at(s"javascripts/bundle/${module}.js").url}
       ></script>
   }
 }
