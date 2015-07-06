@@ -72,7 +72,7 @@ object ApplicationBuild extends Build {
       javaOptions ++= allJavaOpts ++ devJavaOpts,
       javaOptions in Test ++= testJavaOpts,
       fork := true, // so javaOptions gets set
-      baseDirectory in (Compile,run) := file("."),
+      baseDirectory in (Compile, run) := file("."),
       parallelExecution in Test := false,
       aggregate in Test := false,
       testOptions in Test ++= ourTestOptions,
@@ -86,7 +86,7 @@ object ApplicationBuild extends Build {
   lazy val messageBroker = project("message-broker")
     .settings(ourGlobalSettings: _*)
     .settings(
-      baseDirectory in (Compile,run) := file("message-broker"),
+      baseDirectory in (Compile, run) := file("message-broker"),
       scalaVersion := "2.10.5",
       libraryDependencies ++= Dependencies.messageBrokerDependencies
     )
@@ -115,10 +115,7 @@ object ApplicationBuild extends Build {
     .settings(
       target := baseDirectory.value / "target" / name, // [error] Overlapping output directories
       libraryDependencies ++= Dependencies.dbEvolutionApplierDependencies,
-      mappings in (Compile, packageBin) <++= baseDirectory map { base =>
-        val evolutions = ((base / ".." / "conf" / "evolutions") ** "*").get
-        evolutions pair relativeTo(base / ".." / "conf")
-      }
+      unmanagedResourceDirectories in Compile += baseDirectory.value / ".." / "conf" / "evolutions"
     )
 
   lazy val dbEvolutionApplier = dbEvolutionApplierProject("db-evolution-applier")

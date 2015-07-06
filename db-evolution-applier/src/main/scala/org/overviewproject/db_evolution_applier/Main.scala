@@ -2,10 +2,11 @@ package org.overviewproject.db_evolution_applier
 
 import com.typesafe.config.{Config,ConfigFactory}
 import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
+import java.io.InputStream
 import java.sql.Connection
 import java.util.Properties
 import play.api.db.{DBApi,Database}
-import play.api.db.evolutions.{DefaultEvolutionsApi,EvolutionsApi,ThisClassLoaderEvolutionsReader}
+import play.api.db.evolutions.{DatabaseEvolutions,DefaultEvolutionsApi,EvolutionsApi,ClassLoaderEvolutionsReader}
 import scala.collection.JavaConversions.asScalaSet
 
 /** Simple program to run Play evolutions.
@@ -51,8 +52,16 @@ object Main {
     val dbApi: DBApi = new SingleDatabaseDBApi(database)
     val evolutionsApi: EvolutionsApi = new DefaultEvolutionsApi(dbApi)
 
-    val scripts = evolutionsApi.scripts(DatabaseName, ThisClassLoaderEvolutionsReader)
-    evolutionsApi.evolve(DatabaseName, scripts, true)
+    val dbEvolutions = new DatabaseEvolutions(database)
+    val evolutions = dbEvolutions.scripts(new HackyClassLoaderEvolutionsReader)
+
+    if (evolutions.length > 0) {
+      System.out.println("Applying ${evolutions.length} database evolutions...")
+    } else {
+      System.out.println("Database schema is fresh: no new evolutions to apply")
+    }
+
+    dbEvolutions.evolve(evolutions, true)
   }
 
   private def configToHikariConfig(rootConfig: Config, databaseName: String): HikariConfig = {
@@ -89,4 +98,11 @@ class SingleDatabaseDBApi(database: Database) extends DBApi {
   override def databases = Seq(database)
   override def database(name: String) = database
   override def shutdown = database.shutdown
+}
+
+class HackyClassLoaderEvolutionsReader extends ClassLoaderEvolutionsReader {
+  override def loadResource(db: String, revision: Int): Option[InputStream] = {
+    val path = s"/${db}/${revision}.sql"
+    Option(getClass.getResourceAsStream(path))
+  }
 }
