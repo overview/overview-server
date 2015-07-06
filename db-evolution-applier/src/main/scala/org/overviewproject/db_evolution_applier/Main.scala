@@ -57,11 +57,10 @@ object Main {
 
     if (evolutions.length > 0) {
       System.out.println(s"Applying ${evolutions.length} database evolutions...")
-    } else {
-      System.out.println("Database schema is fresh: no new evolutions to apply")
+      dbEvolutions.evolve(evolutions, true)
     }
 
-    dbEvolutions.evolve(evolutions, true)
+    System.out.println("Database schema is fresh: there are no more evolutions to apply")
   }
 
   private def configToHikariConfig(rootConfig: Config, databaseName: String): HikariConfig = {
