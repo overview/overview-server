@@ -3,10 +3,10 @@ import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 import com.typesafe.sbt.jse.SbtJsEngine.autoImport._
 import com.typesafe.sbt.less.SbtLess.autoImport._
 import com.typesafe.sbt.rjs.SbtRjs.autoImport._
-import com.typesafe.sbt.SbtNativePackager.packageArchetype
+import com.typesafe.sbt.SbtNativePackager.autoImport._
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.web.SbtWeb
 import com.typesafe.sbt.web.SbtWeb.autoImport._
-import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import play.Play.autoImport._
 import play.sbt.PlayImport._
 import play.sbt.routes.RoutesKeys
@@ -179,9 +179,11 @@ object ApplicationBuild extends Build {
   lazy val main = Project(appName, file("."))
     .enablePlugins(play.sbt.PlayScala)
     .enablePlugins(SbtWeb)
+    .enablePlugins(JavaAppPackaging)
     .settings(ourGlobalSettings: _*)
     .settings(
       version := appVersion,
+      PlayKeys.externalizeResources := false, // so `stage` doesn't nix all assets
       libraryDependencies ++= Dependencies.serverDependencies,
       TwirlKeys.templateImports += "views.Magic._",
       RoutesKeys.routesImport += "extensions.Binders._",
