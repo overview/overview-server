@@ -20,8 +20,7 @@
 
 @jsMessageKeys = @{Seq(
   "time_display.datetime.medium",
-  "views.DocumentSet._documentSet.nViews",
-  "views.DocumentSet._documentSet.nJobs",
+  "views.DocumentSet._documentSet",
   "views.DocumentSet._share",
   "authentication.LoggedOutModal"
 )}
@@ -39,38 +38,37 @@
   @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=documentSets.pageInfo.total)
   } {
-      @if(noDocuments) {
-        <p class="preamble">@m("no_document_sets_or_jobs")</p>
-      }
+    @if(noDocuments) {
+      <p class="preamble">@m("no_document_sets_or_jobs")</p>
+    }
 
-      @if(jobs) {
-        <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showHtmlInJson(0).url">
-          <h2>@m("subtitle_jobs")</h2>
-          <p class="description">@m("description_jobs")</p>
-          <ul class="list-unstyled">
-            @for(job <- jobs) {
-              @views.html.ImportJob._documentSetCreationJob(job._1, job._2, job._3.toInt)
-            }
-          </ul>
-        </div>
-      }
-
-      @if(documentSets.items || jobs) {
-        <div class="document-sets">
-          <ul class="list-unstyled">
-            @documentSets.items.map(displayDocumentSet(_))
-          </ul>
-          @if(documentSets.items) {
-            @helper.Pagination.links(documentSets.pageInfo, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
-          } else {
-            <p class="no-document-sets">@m("no_document_sets")</p>
+    @if(jobs) {
+      <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showHtmlInJson(0).url">
+        <h2>@m("subtitle_jobs")</h2>
+        <p class="description">@m("description_jobs")</p>
+        <ul class="list-unstyled">
+          @for(job <- jobs) {
+            @views.html.ImportJob._documentSetCreationJob(job._1, job._2, job._3.toInt)
           }
-        </div>
+        </ul>
+      </div>
+    }
 
-        @views.html.DocumentSet._errorList()
-        @views.html.DocumentSet._sharingOptions()
-        @views.html.DocumentSet._exportOptions()
-      }
-    </div>
+    @if(documentSets.items || jobs) {
+      <div class="document-sets">
+        <ul class="list-unstyled">
+          @documentSets.items.map(displayDocumentSet(_))
+        </ul>
+        @if(documentSets.items) {
+          @helper.Pagination.links(documentSets.pageInfo, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
+        } else {
+          <p class="no-document-sets">@m("no_document_sets")</p>
+        }
+      </div>
+
+      @views.html.DocumentSet._errorList()
+      @views.html.DocumentSet._sharingOptions()
+      @views.html.DocumentSet._exportOptions()
+    }
   }
 }
