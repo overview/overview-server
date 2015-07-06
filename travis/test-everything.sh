@@ -24,7 +24,7 @@ deps/redis/build.sh
 ./auto/test-coffee-once.sh || true # Jenkins will pick up test-result XML
 
 # Unit tests next.
-# We need the database to run for the duration of the test commands; --only-servers redis is close enough because it starts fast.
+# We need Postgres and Redis to run for the duration of the test commands
 ./dev --only-servers redis --sbt all/test || true # Jenkins will pick up test-result XML
 
 # The build must succeed
