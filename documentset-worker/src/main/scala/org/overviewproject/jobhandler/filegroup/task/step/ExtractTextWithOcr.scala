@@ -1,10 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.models.File
+import scala.collection.SeqView
 import scala.concurrent.Future
 import scala.util.control.Exception.ultimately
+import org.overviewproject.models.File
 
+import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
+
+
 
 trait ExtractTextWithOcr extends UploadedFileProcessStep {
 
@@ -12,7 +16,7 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
   override protected lazy val filename = file.name
 
   protected val nextStep: Seq[DocumentData] => TaskStep
-  protected def startOcr(file: File, document: PdfDocument): TaskStep
+  protected def startOcr(file: File, pages: SeqView[PdfPage, Seq[_]]): TaskStep
 
   protected val pdfProcessor: PdfProcessor
 
@@ -24,7 +28,7 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
     pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
   } yield ultimately(pdfDocument.close) {
     pdfDocument.textWithFonts.fold(
-        _ => startOcr(file, pdfDocument),
+        _ => startOcr(file, pdfDocument.pages),
         startNextStep)
     
   }
