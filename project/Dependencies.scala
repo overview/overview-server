@@ -18,7 +18,7 @@ object Dependencies {
     val geronimoJms = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
-    val janino = "janino" % "janino" % "2.5.10" // Runtime Java compiler, for Logback -- see logback-test.xml
+    val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val javaxMail = "javax.mail" % "mail" % "1.4.7"
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
