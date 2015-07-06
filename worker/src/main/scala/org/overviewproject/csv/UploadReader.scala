@@ -70,6 +70,5 @@ object UploadReader {
   private def getCharset(encodingStringOption: Option[String]): Charset = encodingStringOption match {
     case Some("utf-8") | Some("UTF-8") | None => Utf8 // default
     case Some(name) => allCatch.opt(Charset.forName(name)).getOrElse(Utf8)
-    case None => Utf8
   }
 }
