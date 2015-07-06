@@ -3,6 +3,16 @@
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>INFO</level>
     </filter>
+    <!-- Play 2.4.1 bug: during startup, Play _always_ (even in test) resets
+         logger configuration. But it shows a warning if we try to specify
+         a log file. https://github.com/playframework/playframework/issues/4574
+    -->
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+      <evaluator>
+        <expression>event.getMessage().contains("Logger configuration in conf files is deprecated and has no effect.")</expression>
+      </evaluator>
+      <onMatch>DENY</onMatch>
+    </filter>
     <encoder>
       <pattern>[%level] %logger{100} - %message%n%xException{10}</pattern>
     </encoder>
@@ -21,6 +31,7 @@
   <logger name="jodd.lagarto" level="INFO" />
   <logger name="net.sf.ehcache" level="INFO" />
   <logger name="com.zaxxer.hikari" level="WARN"/><!-- Skip messages about pools starting/stopping -->
+  <logger name="play.api.libs.concurrent.ActorSystemProvider" level="WARN"/><!-- Skip Akka starting/stopping -->
 
   <!-- Turn off our own log messages, when they're a normal part of unit tests -->
   <logger name="controllers.backend" level="ERROR"/>
