@@ -28,26 +28,30 @@ trait DocumentSetBackend {
   /** Finds a Page of DocumentSets for a User.
     *
     * The DocumentSets will be sorted by createdAt, newest to oldest.
+    *
+    * DocumentSets for which the User is a Viewer will not be returned.
     */
-  def indexPageByUser(email: String, pageRequest: PageRequest): Future[Page[DocumentSet]]
+  def indexPageByOwner(email: String, pageRequest: PageRequest): Future[Page[DocumentSet]]
 
   /** Returns a single DocumentSet. */
   def show(documentSetId: Long): Future[Option[DocumentSet]]
 
-  /** Returns the number of document sets owned or viewed by the given user. */
-  def countByUserEmail(userEmail: String): Future[Int]
+  /** Returns the number of document sets owned (not viewed) by the given user. */
+  def countByOwnerEmail(userEmail: String): Future[Int]
 }
 
 trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
   import database.api._
   import database.executionContext
 
+  private val Owner = DocumentSetUser.Role(true)
+
   override def create(attributes: DocumentSet.CreateAttributes, userEmail: String) = {
     database.seq(autocreatePlugins).flatMap { plugins =>
       val queries = for {
         documentSet <- documentSetInserter.+=(attributes)
 
-        _ <- documentSetUserInserter.+=(DocumentSetUser(documentSet.id, userEmail, DocumentSetUser.Role(true)))
+        _ <- documentSetUserInserter.+=(DocumentSetUser(documentSet.id, userEmail, Owner))
 
         apiTokens <- apiTokenInserter.++=(plugins.map { plugin =>
           ApiToken.generate(userEmail, Some(documentSet.id), "[plugin-autocreate] " + plugin.name)
@@ -64,10 +68,10 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
 
   override def show(documentSetId: Long) = database.option(byIdCompiled(documentSetId))
 
-  override def indexPageByUser(email: String, pageRequest: PageRequest) = {
+  override def indexPageByOwner(email: String, pageRequest: PageRequest) = {
     page(
-      pageByUserCompiled(email, pageRequest.offset, pageRequest.limit),
-      countByUserCompiled(email),
+      pageByOwnerCompiled(email, pageRequest.offset, pageRequest.limit),
+      countByOwnerCompiled(email),
       pageRequest
     )
   }
@@ -80,8 +84,8 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
     database.runUnit(updateDeletedCompiled(documentSetId).update(deleted))
   }
 
-  override def countByUserEmail(userEmail: String) = {
-    database.run(countByUserEmailCompiled(userEmail).result)
+  override def countByOwnerEmail(userEmail: String) = {
+    database.run(countByOwnerEmailCompiled(userEmail).result)
   }
 
   protected lazy val apiTokenInserter = (ApiTokens returning ApiTokens)
@@ -99,9 +103,9 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
     DocumentSets.filter(_.id === documentSetId)
   }
 
-  private lazy val countByUserEmailCompiled = Compiled { (userEmail: Rep[String]) =>
+  private lazy val countByOwnerEmailCompiled = Compiled { (userEmail: Rep[String]) =>
     DocumentSetUsers
-      .filter(_.userEmail === userEmail)
+      .filter(dsu => dsu.userEmail === userEmail && dsu.role === Owner)
       .length
   }
 
@@ -113,16 +117,18 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
     DocumentSets.filter(_.id === documentSetId).map(_.deleted)
   }
 
-  private lazy val pageByUserCompiled = Compiled { (email: Rep[String], offset: ConstColumn[Long], limit: ConstColumn[Long]) =>
+  private lazy val pageByOwnerCompiled = Compiled { (email: Rep[String], offset: ConstColumn[Long], limit: ConstColumn[Long]) =>
     DocumentSets
-      .filter(_.id in DocumentSetUsers.filter(_.userEmail === email)
+      .filter(_.id in DocumentSetUsers.filter(dsu => dsu.userEmail === email && dsu.role === Owner)
       .map(_.documentSetId))
       .sortBy(_.createdAt.desc)
       .drop(offset).take(limit)
   }
 
-  private lazy val countByUserCompiled = Compiled { email: Rep[String] =>
-    DocumentSetUsers.filter(_.userEmail === email).length
+  private lazy val countByOwnerCompiled = Compiled { email: Rep[String] =>
+    DocumentSetUsers
+      .filter(dsu => dsu.userEmail === email && dsu.role === Owner)
+      .length
   }
 }
 

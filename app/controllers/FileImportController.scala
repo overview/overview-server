@@ -11,7 +11,7 @@ trait FileImportController extends Controller {
 
   def _new = AuthorizedAction(anyUser).async { implicit request =>
     for {
-      count <- documentSetBackend.countByUserEmail(request.user.email)
+      count <- documentSetBackend.countByOwnerEmail(request.user.email)
     } yield Ok(views.html.FileImport._new(request.user, count))
   }
 
@@ -21,7 +21,7 @@ trait FileImportController extends Controller {
 
     for {
       documentSet <- documentSetFuture
-      count <- documentSetBackend.countByUserEmail(request.user.email)
+      count <- documentSetBackend.countByOwnerEmail(request.user.email)
     } yield Ok(views.html.FileImport.edit(request.user, documentSet, count))
   }
 }

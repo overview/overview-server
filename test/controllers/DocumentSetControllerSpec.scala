@@ -219,7 +219,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def pageNumber = 1
 
         def fakeDocumentSets: Seq[DocumentSet] = Seq(factory.documentSet(id=1L))
-        mockBackend.indexPageByUser(any, any) answers { _ => Future.successful(Page(fakeDocumentSets)) }
+        mockBackend.indexPageByOwner(any, any) answers { _ => Future.successful(Page(fakeDocumentSets)) }
         def fakeNViews: Map[Long,Int] = Map(1L -> 2)
         mockStorage.findNViewsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNViews }
         def fakeJobs: Seq[(DocumentSetCreationJob, DocumentSet)] = Seq()
@@ -268,12 +268,12 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       "show page 1 if the page number is too low" in new IndexScope {
         override def pageNumber = 0
         h.status(result) must beEqualTo(h.OK) // load page
-        there was one(mockBackend).indexPageByUser(org.mockito.Matchers.eq(request.user.email), any)
+        there was one(mockBackend).indexPageByOwner(org.mockito.Matchers.eq(request.user.email), any)
       }
 
       "show multiple pages" in new IndexScope {
         val ds = Seq.fill(IndexPageSize) { factory.documentSet() }
-        mockBackend.indexPageByUser(any, any) returns Future.successful(Page(ds, PageInfo(PageRequest(0, IndexPageSize), IndexPageSize + 1)))
+        mockBackend.indexPageByOwner(any, any) returns Future.successful(Page(ds, PageInfo(PageRequest(0, IndexPageSize), IndexPageSize + 1)))
         override def fakeNViews = ds.map{ ds => ds.id -> 3 }.toMap
         h.contentAsString(result) must contain("/documentsets?page=2")
       }

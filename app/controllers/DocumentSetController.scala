@@ -39,7 +39,7 @@ trait DocumentSetController extends Controller {
     for {
       userJobs: Seq[(DocumentSetCreationJob,DocumentSet)] <- importJobBackend.indexWithDocumentSets(request.user.email)
       jobIdsInProcessingOrder: Seq[Long] <- importJobBackend.indexIdsInProcessingOrder
-      documentSets: Page[DocumentSet] <- backend.indexPageByUser(request.user.email, pageRequest)
+      documentSets: Page[DocumentSet] <- backend.indexPageByOwner(request.user.email, pageRequest)
     } yield {
       if (documentSets.pageInfo.total == 0 && userJobs.length == 0) {
         Redirect(routes.PublicDocumentSetController.index).flashing(request.flash)

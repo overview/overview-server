@@ -11,7 +11,7 @@ trait DocumentCloudProjectController extends Controller {
 
   def index = AuthorizedAction(anyUser).async { implicit request =>
     for {
-      count <- documentSetBackend.countByUserEmail(request.user.email)
+      count <- documentSetBackend.countByOwnerEmail(request.user.email)
     } yield Ok(views.html.DocumentCloudProject.index(request.user, count))
   }
 }

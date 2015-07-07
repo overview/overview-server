@@ -11,7 +11,7 @@ trait CsvUploadController extends Controller {
 
   def _new() = AuthorizedAction(anyUser).async { implicit request =>
     for {
-      count <- documentSetBackend.countByUserEmail(request.user.email)
+      count <- documentSetBackend.countByOwnerEmail(request.user.email)
     } yield Ok(views.html.CsvUpload._new(request.user, count))
   }
 }

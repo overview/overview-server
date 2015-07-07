@@ -87,30 +87,30 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     }
   }
 
-  "#indexPageByUser" should {
-    trait IndexPageByUserScope extends BaseScope {
+  "#indexPageByOwner" should {
+    trait IndexPageByOwnerScope extends BaseScope {
       val pageRequest = PageRequest(1, 2)
       val email = "user@example.org"
     }
 
-    "not find another User's DocumentSets" in new IndexPageByUserScope {
+    "not find another User's DocumentSets" in new IndexPageByOwnerScope {
       val badDocumentSet = factory.documentSet()
       factory.documentSetUser(badDocumentSet.id, "bad@example.org")
-      await(backend.indexPageByUser(email, pageRequest)).pageInfo.total must beEqualTo(0)
+      await(backend.indexPageByOwner(email, pageRequest)).pageInfo.total must beEqualTo(0)
     }
 
-    "not find a DocumentSet for a non-Owner" in new IndexPageByUserScope {
+    "not find a DocumentSet for a viewer" in new IndexPageByOwnerScope {
       val badDocumentSet = factory.documentSet()
-      factory.documentSetUser(badDocumentSet.id, "bad@example.org", DocumentSetUser.Role(false))
-      await(backend.indexPageByUser(email, pageRequest)).pageInfo.total must beEqualTo(0)
+      factory.documentSetUser(badDocumentSet.id, email, DocumentSetUser.Role(false))
+      await(backend.indexPageByOwner(email, pageRequest)).pageInfo.total must beEqualTo(0)
     }
 
-    "sort DocumentSets by createdAt" in new IndexPageByUserScope {
+    "sort DocumentSets by createdAt" in new IndexPageByOwnerScope {
       val dsu1 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(4000)).id, email)
       val dsu2 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(1000)).id, email)
       val dsu3 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(2000)).id, email)
       val dsu4 = factory.documentSetUser(factory.documentSet(createdAt=new java.sql.Timestamp(3000)).id, email)
-      val result = await(backend.indexPageByUser(email, pageRequest))
+      val result = await(backend.indexPageByOwner(email, pageRequest))
 
       result.pageInfo.total must beEqualTo(4)
       result.items.map(_.id) must beEqualTo(Seq(dsu4.documentSetId, dsu3.documentSetId))
@@ -171,24 +171,32 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     }
   }
 
-  "#countByUserEmail" should {
-    trait CountByUserEmailScope extends BaseScope {
+  "#countByOwnerEmail" should {
+    trait CountByOwnerEmailScope extends BaseScope {
       val userEmail = "user1@example.org"
-      lazy val ret = await(backend.countByUserEmail(userEmail))
+      lazy val ret = await(backend.countByOwnerEmail(userEmail))
     }
 
-    "not count other users' DocumentSets" in new CountByUserEmailScope {
+    "not count other users' DocumentSets" in new CountByOwnerEmailScope {
       val documentSet = factory.documentSet()
       factory.documentSetUser(documentSet.id, "user2@example.org")
       ret must beEqualTo(0)
     }
 
-    "count the user's DocumentSets" in new CountByUserEmailScope {
+    "count the user's DocumentSets" in new CountByOwnerEmailScope {
       val documentSet1 = factory.documentSet()
       val documentSet2 = factory.documentSet()
       factory.documentSetUser(documentSet1.id, userEmail)
       factory.documentSetUser(documentSet2.id, userEmail)
       ret must beEqualTo(2)
+    }
+
+    "not count viewed DocumentSets" in new CountByOwnerEmailScope {
+      val documentSet1 = factory.documentSet()
+      val documentSet2 = factory.documentSet()
+      factory.documentSetUser(documentSet1.id, userEmail, DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet2.id, userEmail, DocumentSetUser.Role(true))
+      ret must beEqualTo(1)
     }
   }
 }
