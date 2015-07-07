@@ -184,11 +184,10 @@ define [
         expect(spy).to.have.been.calledWith(url: 'http://example.org', title: 'plugin2')
 
       it 'should emit click-new-view with no args about:custom', ->
-        spy = sinon.spy()
-        @view.on('click-new-view', spy)
+        @view.on('click-new-view', spy = sinon.spy())
         @view.$('a[data-toggle=dropdown]').click()
         @view.$('a[data-plugin-url="about:custom"]').click()
-        expect(spy).to.have.been.calledWith(undefined)
+        expect(spy).to.have.been.called
 
       it 'should destroy a view when it is removed', ->
         @viewList.remove(@view1)

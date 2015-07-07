@@ -28,7 +28,7 @@ define [
 
     it 'should show a form', ->
       $el = @subject.$el
-      expect($el).to.be('form')
+      expect($el).to.match('form')
       expect($el.find('h3')).to.contain('heading')
       expect($el.find(':submit')).to.contain('submit.label')
       expect($el.find('label[for=api-token-description]')).to.contain('description.label')

@@ -29,22 +29,22 @@ define [
     describe 'waiting', ->
       beforeEach -> init()
       it 'has class waiting', -> expect(view.$el).to.have.class('waiting')
-      it 'has a wait icon', -> expect(view.$el).to.have('i.icon-clock-o')
+      it 'has a wait icon', -> expect(view.$('i.icon-clock-o')).to.exist
 
       describe 'transitioning to uploading', ->
         beforeEach -> model.set(uploading: true)
         it 'has class uploading', -> expect(view.$el).to.have.class('uploading')
-        it 'has a spinner', -> expect(view.$el).to.have('i.icon-spin.icon-spinner')
+        it 'has a spinner', -> expect(view.$('i.icon-spin.icon-spinner')).to.exist
 
     describe 'uploading', ->
       beforeEach -> init(uploading: true)
       it 'has class uploading', -> expect(view.$el).to.have.class('uploading')
-      it 'has a spinner', -> expect(view.$el).to.have('i.icon-spin.icon-spinner')
+      it 'has a spinner', -> expect(view.$('i.icon-spin.icon-spinner')).to.exist
 
     describe 'fully uploaded', ->
       beforeEach -> init(isFullyUploaded: true)
       it 'has class uploaded', -> expect(view.$el).to.have.class('uploaded')
-      it 'has an ok icon', -> expect(view.$el).to.have('i.icon-check')
+      it 'has an ok icon', -> expect(view.$('i.icon-check')).to.exist
 
     describe 'skipped', ->
       beforeEach -> init(skippedBecauseAlreadyInDocumentSet: true)

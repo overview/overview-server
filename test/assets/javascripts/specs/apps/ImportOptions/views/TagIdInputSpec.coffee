@@ -36,7 +36,7 @@ define [
     it 'should request the tags', -> expect($.ajax).to.have.been.called
 
     describe 'after loading fails', ->
-      beforeEach -> deferred.reject()
+      beforeEach -> deferred.reject(); undefined
 
       it 'should have class=error', -> expect(view.$el).to.have.class('error')
       it 'should show error', -> expect(view.$('option:disabled').text()).to.eq('tag.error')
