@@ -115,6 +115,12 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       result.pageInfo.total must beEqualTo(4)
       result.items.map(_.id) must beEqualTo(Seq(dsu4.documentSetId, dsu3.documentSetId))
     }
+
+    "ignore a deleted DocumentSet" in new IndexPageByOwnerScope {
+      val documentSet = factory.documentSet(deleted=true)
+      factory.documentSetUser(documentSet.id, email)
+      await(backend.indexPageByOwner(email, pageRequest)).pageInfo.total must beEqualTo(0)
+    }
   }
 
   "#updatePublic" should {
@@ -197,6 +203,12 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
       factory.documentSetUser(documentSet1.id, userEmail, DocumentSetUser.Role(false))
       factory.documentSetUser(documentSet2.id, userEmail, DocumentSetUser.Role(true))
       ret must beEqualTo(1)
+    }
+
+    "ignore a deleted DocumentSet" in new CountByOwnerEmailScope {
+      val documentSet = factory.documentSet(deleted=true)
+      factory.documentSetUser(documentSet.id, userEmail)
+      ret must beEqualTo(0)
     }
   }
 }

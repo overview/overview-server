@@ -85,7 +85,7 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
   }
 
   override def countByOwnerEmail(userEmail: String) = {
-    database.run(countByOwnerEmailCompiled(userEmail).result)
+    database.run(countByOwnerCompiled(userEmail).result)
   }
 
   protected lazy val apiTokenInserter = (ApiTokens returning ApiTokens)
@@ -103,12 +103,6 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
     DocumentSets.filter(_.id === documentSetId)
   }
 
-  private lazy val countByOwnerEmailCompiled = Compiled { (userEmail: Rep[String]) =>
-    DocumentSetUsers
-      .filter(dsu => dsu.userEmail === userEmail && dsu.role === Owner)
-      .length
-  }
-
   private lazy val updatePublicCompiled = Compiled { (documentSetId: Rep[Long]) =>
     DocumentSets.filter(_.id === documentSetId).map(_.isPublic)
   }
@@ -117,17 +111,25 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
     DocumentSets.filter(_.id === documentSetId).map(_.deleted)
   }
 
+  private def documentSetIdsByOwner(email: Rep[String]) = {
+    DocumentSetUsers
+      .filter(_.userEmail === email)
+      .filter(_.role === Owner)
+      .map(_.documentSetId)
+  }
+
   private lazy val pageByOwnerCompiled = Compiled { (email: Rep[String], offset: ConstColumn[Long], limit: ConstColumn[Long]) =>
     DocumentSets
-      .filter(_.id in DocumentSetUsers.filter(dsu => dsu.userEmail === email && dsu.role === Owner)
-      .map(_.documentSetId))
+      .filter(!_.deleted)
+      .filter(_.id in documentSetIdsByOwner(email))
       .sortBy(_.createdAt.desc)
       .drop(offset).take(limit)
   }
 
   private lazy val countByOwnerCompiled = Compiled { email: Rep[String] =>
-    DocumentSetUsers
-      .filter(dsu => dsu.userEmail === email && dsu.role === Owner)
+    DocumentSets
+      .filter(!_.deleted)
+      .filter(_.id in documentSetIdsByOwner(email))
       .length
   }
 }
