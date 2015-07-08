@@ -4,13 +4,15 @@ import java.util.Date
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
+import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import org.overviewproject.models.View
 import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tag,Tree}
 import org.overviewproject.test.factories.{PodoFactory=>factory}
 
 class showSpec extends views.ViewSpecification {
   trait BaseScope extends JsonViewSpecificationScope {
-    val documentSet: DocumentSet = factory.documentSet()
+    val metadataSchema = MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+    val documentSet: DocumentSet = factory.documentSet(metadataSchema=metadataSchema)
     val trees: Iterable[Tree] = Seq()
     val views: Iterable[View] = Seq()
     val viewJobs: Iterable[DocumentSetCreationJob] = Seq()
@@ -86,6 +88,12 @@ class showSpec extends views.ViewSpecification {
       json must /("views") /#(0) /("id" -> 2.0)
       json must /("views") /#(0) /("type" -> "job")
       // For the rest, we assume the call to views.json.Views.index() is successful.
+    }
+
+    "contain metadataSchema" in new BaseScope {
+      json must /("metadataSchema") /("version" -> 1)
+      json must /("metadataSchema") /("fields") /#(0) /("name" -> "foo")
+      json must /("metadataSchema") /("fields") /#(0) /("type" -> "String")
     }
   }
 }

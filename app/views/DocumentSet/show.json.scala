@@ -32,6 +32,7 @@ object show {
     tags: Iterable[Tag]
   )(implicit messages: Messages): JsValue = Json.obj(
     "nDocuments" -> documentSet.documentCount,
+    "metadataSchema" -> documentSet.metadataSchema.toJson,
     "views" -> views.json.View.index(trees, _views, viewJobs),
     "tags" -> tags.map(writeTag)
   )
