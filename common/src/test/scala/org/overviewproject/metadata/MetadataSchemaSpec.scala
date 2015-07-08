@@ -62,7 +62,7 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
 
     "provide an implicit Reads for parsing" in {
       import MetadataSchema.Json.reads
-      val result = Json.parse("""{"version":1,"fields":[{"name":"foo","type":"string"}]}""").as[MetadataSchema]
+      val result = Json.parse("""{"version":1,"fields":[{"name":"foo","type":"String"}]}""").as[MetadataSchema]
       result must beEqualTo(MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String))))
     }
   }
