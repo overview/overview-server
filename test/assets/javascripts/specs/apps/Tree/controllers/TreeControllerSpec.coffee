@@ -4,6 +4,8 @@ define [
   'apps/Tree/controllers/TreeController'
 ], (_, Backbone, TreeController) ->
   describe 'apps/Tree/controllers/TreeController', ->
+    defer = (fn) -> window.setTimeout(fn, 0) # _.defer takes 1ms -- too slow
+
     class MockState extends Backbone.Model
       defaults:
         document: null
@@ -52,25 +54,25 @@ define [
           focus: @focus
           tree: @tree
           view: @view
-          requestAnimationFrame: _.defer
-        _.defer(done)
+          requestAnimationFrame: defer
+        defer(done)
 
       it 'should update', ->
         expect(@view.update).to.have.been.called
 
       it 'should keep updating until needsUpdate is false', (done) ->
-        _.defer =>
+        defer =>
           expect(@view.update).to.have.been.calledTwice
           @view.needsUpdate.returns(false)
-          _.defer =>
+          defer =>
             expect(@view.update).not.to.have.been.calledThrice
             done()
 
       it 'should not double-animate if the view triggers needs-update', (done) ->
-        _.defer =>
+        defer =>
           expect(@view.update).to.have.been.calledTwice
           @view.trigger('needs-update')
-          _.defer =>
+          defer =>
             expect(@view.update).to.have.callCount(3)
             @view.needsUpdate.returns(false) # avoid leaking
             done()
@@ -82,22 +84,22 @@ define [
           focus: @focus
           tree: @tree
           view: @view
-          requestAnimationFrame: (f) -> window.setTimeout(f, 1)
+          requestAnimationFrame: defer
 
       it 'should not update when it does not need an update on init', (done) ->
-        _.defer =>
+        defer =>
           expect(@view.update).not.to.have.been.called
           done()
 
       it 'should animate from when the tree triggers needs-update until needsUpdate returns false', (done) ->
         @view.needsUpdate.returns(true)
         @view.trigger('needs-update')
-        _.defer =>
+        defer =>
           expect(@view.update).to.have.been.called
-          _.defer =>
+          defer =>
             expect(@view.update).to.have.been.calledTwice
             @view.needsUpdate.returns(false)
-            _.defer =>
+            defer =>
               expect(@view.update).not.to.have.been.calledThrice
               done()
 
