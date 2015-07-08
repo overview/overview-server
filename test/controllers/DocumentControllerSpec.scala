@@ -1,7 +1,9 @@
 package controllers
 
+import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.{JsValue,Json}
 import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
@@ -10,7 +12,7 @@ import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.{Document,File,Page}
 
-class DocumentControllerSpec extends ControllerSpecification {
+class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait DocumentScope extends Scope {
     val mockDocumentBackend = mock[DocumentBackend]
     val mockFileBackend = mock[FileBackend]
@@ -95,6 +97,48 @@ class DocumentControllerSpec extends ControllerSpecification {
         h.status(result) must beEqualTo(h.OK)
         h.header("Content-Length", result) must beSome("9")
         h.contentAsString(result) must beEqualTo("page data")
+      }
+    }
+
+    "update()" should {
+      trait UpdateScope extends DocumentScope {
+        val documentSetId = 123L
+        val documentId = 124L
+
+        mockDocumentBackend.updateMetadataJson(any, any, any) returns Future.successful(())
+
+        def input: JsValue = Json.obj()
+        lazy val result = controller.update(documentSetId, documentId)(fakeAuthorizedRequest.withJsonBody(input))
+      }
+
+      "set new metadataJson in the backend" in new UpdateScope {
+        override def input = Json.obj("metadata" -> Json.obj("foo" -> "bar"))
+        h.status(result) must beEqualTo(h.NO_CONTENT)
+        there was one(mockDocumentBackend).updateMetadataJson(documentSetId, documentId, Json.obj("foo" -> "bar"))
+      }
+
+      "throw a 400 when the input is not JSON" in new UpdateScope {
+        override lazy val result = controller.update(documentSetId, documentId)(fakeAuthorizedRequest)
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        there was no(mockDocumentBackend).updateMetadataJson(any, any, any)
+      }
+
+      "throw a 400 when the JSON is not an Object" in new UpdateScope {
+        override def input = Json.arr("foo", "bar")
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        h.contentAsString(result) must /("code" -> "illegal-arguments")
+        h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property")
+        there was no(mockDocumentBackend).updateMetadataJson(any, any, any)
+      }
+
+      "throw a 400 when the input does not contain metadata" in new UpdateScope {
+        // when update() allows both "title" and "metadata", this will test what
+        // happens when neither is specified
+        override def input = Json.obj("metadatblah" -> Json.obj("foo" -> "bar"))
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        h.contentAsString(result) must /("code" -> "illegal-arguments")
+        h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property")
+        there was no(mockDocumentBackend).updateMetadataJson(any, any, any)
       }
     }
   }

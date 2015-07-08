@@ -4,11 +4,12 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.JsObject
 import play.api.mvc.ResponseHeader
 import play.api.mvc.Result
 import scala.concurrent.Future
 
-import controllers.auth.Authorities.userOwningDocument
+import controllers.auth.Authorities.{userOwningDocument,userOwningDocumentSet}
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import org.overviewproject.blobstorage.BlobStorage
@@ -52,6 +53,22 @@ trait DocumentController extends Controller {
       case None => NotFound
       case Some(document) => Ok(views.html.Document.show(document))
     })
+  }
+
+  def update(documentSetId: Long, documentId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+    val maybeMetadataJson: Option[JsObject] = for {
+      jsonBody <- request.body.asJson
+      jsonBodyAsObject <- jsonBody.asOpt[JsObject]
+      metadataJson <- jsonBodyAsObject.value.get("metadata")
+      metadataJsonAsObject <- metadataJson.asOpt[JsObject]
+    } yield metadataJsonAsObject
+
+    maybeMetadataJson match {
+      case None => Future.successful(BadRequest(jsonError("illegal-arguments", "You must pass a JSON Object with a \"metadata\" property")))
+      case Some(metadataJson) => {
+        documentBackend.updateMetadataJson(documentSetId, documentId, metadataJson).map(_ => NoContent)
+      }
+    }
   }
 
   private def emptyBodyAndLength: Future[Tuple2[Enumerator[Array[Byte]], Long]] = {

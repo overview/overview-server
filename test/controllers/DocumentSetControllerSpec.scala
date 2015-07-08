@@ -125,7 +125,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "throw a 400 when the input does not contain a metadataSchema key" in new UpdateJsonScope {
         // when updateJson() allows both "name" and "metadataSchema", this will
-        // test see what happens when neither is specified
+        // test what happens when neither is specified
         override def input = Json.obj("metadataBlah" -> Json.arr("foo"))
         h.status(result) must beEqualTo(h.BAD_REQUEST)
         h.contentAsString(result) must /("code" -> "illegal-arguments")

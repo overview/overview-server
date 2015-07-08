@@ -197,7 +197,11 @@ trait DocumentSetController extends Controller {
   }
 
   def updateJson(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
-    // One error if metadataSchema is not *set*; another error if it is not *valid*.
+    // The interface is complicated enough that we should create error messages
+    // ourselves.
+    //
+    // One error if metadataSchema is not *set*; another error if it is not
+    // *valid*.
     val maybeMetadataSchema: Option[JsResult[MetadataSchema]] = for {
       jsonBody <- request.body.asJson
       jsonBodyAsObject <- jsonBody.asOpt[JsObject]

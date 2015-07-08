@@ -27,10 +27,26 @@ trait DocumentBackend {
     */
   def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
 
-  /** Returns a single Document. */
+  /** Returns a single Document.
+    *
+    * Will not find the document if it is in a different document set than the
+    * one specified. (This is useful both for security and for scaling.)
+    */
   def show(documentSetId: Long, documentId: Long): Future[Option[Document]]
 
+  /** Returns a single Document.
+    *
+    * Avoid this method in favor of show(Long,Long). The extra parameter will
+    * help us scale.
+    */
   def show(documentId: Long): Future[Option[Document]]
+
+  /** Updates a Document's metadata.
+    *
+    * Is a no-op if the Document does not exist or if it exists in a different
+    * DocumentSet.
+    */
+  def updateMetadataJson(documentSetId: Long, documentId: Long, metadataJson: JsObject): Future[Unit]
 }
 
 trait DbDocumentBackend extends DocumentBackend with DbBackend {
@@ -148,14 +164,18 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     database.option(byId(documentId))
   }
 
-  def sortedIds(documentSetId: Long): DBIO[Seq[Seq[Long]]] = {
+  override def updateMetadataJson(documentSetId: Long, documentId: Long, metadataJson: JsObject) = {
+    database.runUnit(updateMetadataJsonCompiled(documentSetId, documentId).update(Some(metadataJson)))
+  }
+
+  protected def sortedIds(documentSetId: Long): DBIO[Seq[Seq[Long]]] = {
     // The ORM is unaware of DocumentSet.sortedDocumentIds
     implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextArray[Long]()))
 
     sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
   }
 
-  def idsBySelectionRequest(request: SelectionRequest): Query[_,Long,Seq] = {
+  protected def idsBySelectionRequest(request: SelectionRequest): Query[_,Long,Seq] = {
     var sql = DocumentInfos
       .filter(_.documentSetId === request.documentSetId)
       .map(_.id)
@@ -204,7 +224,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     sql
   }
 
-  object InfosByIds {
+  protected object InfosByIds {
     private def q(ids: Seq[Long]) = DocumentInfos.filter(_.id inSet ids)
 
     def ids(ids: Seq[Long]) = q(ids).map(_.id)
@@ -216,7 +236,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     }
   }
 
-  object DocumentsByIds {
+  protected object DocumentsByIds {
     private def q(ids: Seq[Long]) = Documents.filter(_.id inSet ids)
 
     def page(ids: Seq[Long]) = {
@@ -226,13 +246,20 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     }
   }
 
-  lazy val byDocumentSetIdAndId = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>
+  private lazy val byDocumentSetIdAndId = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>
     Documents
       .filter(_.documentSetId === documentSetId)
       .filter(_.id === documentId)
   }
 
-  lazy val byId = Compiled { (documentId: Rep[Long]) =>
+  private lazy val updateMetadataJsonCompiled = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>
+    Documents
+      .filter(_.documentSetId === documentSetId)
+      .filter(_.id === documentId)
+      .map(_.metadataJson)
+  }
+
+  private lazy val byId = Compiled { (documentId: Rep[Long]) =>
     Documents.filter(_.id === documentId)
   }
 }

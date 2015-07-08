@@ -1,6 +1,7 @@
 package controllers.backend
 
 import org.specs2.mock.Mockito
+import play.api.libs.json.{JsObject,Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
@@ -8,6 +9,7 @@ import slick.jdbc.JdbcBackend.Session
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
 import org.overviewproject.models.Document
+import org.overviewproject.models.tables.Documents
 import org.overviewproject.query.{Field,PhraseQuery,Query}
 import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
 import org.overviewproject.util.SortedDocumentIdsRefresher
@@ -18,9 +20,13 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   }
 
   trait BaseScopeNoIndex extends BaseScope {
+    import database.api._
+
     val backend = new DbDocumentBackend {
       override val indexClient = mock[IndexClient]
     }
+
+    def findDocument(id: Long): Option[Document] = blockingDatabase.option(Documents.filter(_.id === id))
   }
 
   trait BaseScopeWithIndex extends BaseScope {
@@ -249,6 +255,23 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       "not show a document with the wrong ID" in new ShowScope {
         override val documentId = document.id + 1L
         ret must beNone
+      }
+    }
+
+    "#updateMetadataJson" should {
+      trait UpdateMetadataJsonScope extends BaseScopeNoIndex {
+        val documentSet = factory.documentSet()
+        val document = factory.document(documentSetId=documentSet.id, metadataJson=Json.obj("foo" -> "bar"))
+      }
+
+      "update metadataJson" in new UpdateMetadataJsonScope {
+        await(backend.updateMetadataJson(documentSet.id, document.id, Json.obj("foo" -> "baz")))
+        findDocument(document.id).map(_.metadataJson) must beSome(Json.obj("foo" -> "baz"))
+      }
+
+      "not update metadataJson with the wrong document set ID" in new UpdateMetadataJsonScope {
+        await(backend.updateMetadataJson(documentSet.id + 1L, document.id, Json.obj("foo" -> "baz")))
+        findDocument(document.id).map(_.metadataJson) must beSome(Json.obj("foo" -> "bar"))
       }
     }
   }
