@@ -8,8 +8,8 @@ define [
   # Tracks global state.
   #
   # * Provides `documentSetId` and `transactionQueue`: constants.
-  # * Loads `tags`, `views` and `nDocuments`: constants, once set. (Set them
-  #   via init() and wait for `sync`.)
+  # * Proxies DocumentSet's `tags`, `views` and `nDocuments`: constants set
+  #   during construction. (TODO: remove these)
   # * Gives access to `view`, `documentList`, `document` and
   #   `highlightedDocumentListParams`: global state as Backbone.Model
   #   attributes.
@@ -52,30 +52,19 @@ define [
     initialize: (attributes, options={}) ->
       super()
 
-      throw 'Must pass options.documentSetId, a String' if !options.documentSetId
+      throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue
 
-      @documentSetId = options.documentSetId
+      @documentSet = options.documentSet
+      @documentSetId = @documentSet.id
       @transactionQueue = options.transactionQueue
-      @tags = new Tags([], url: "/documentsets/#{@documentSetId}/tags")
-      @views = new Views([], url: "/documentsets/#{@documentSetId}/views")
+      @tags = @documentSet.tags
+      @views = @documentSet.views
 
-    # Loads `tags`, `views` and `nDocuments` from the server.
-    init: ->
-      @transactionQueue.ajax
-        debugInfo: 'State.init'
-        url: "/documentsets/#{@documentSetId}.json"
-        success: (json) =>
-          @tags.reset(json.tags)
-          @views.reset(json.views)
-          @nDocuments = json.nDocuments
-
-          view = @views.at(0)
-          attributes = @_createSetDocumentListParamsOptions(new DocumentListParams(@, view))
-          attributes.view = view
-          @set(attributes)
-
-          @trigger('sync')
+      view = @views.at(0)
+      attributes = @_createSetDocumentListParamsOptions(new DocumentListParams(@, view))
+      attributes.view = view
+      @set(attributes)
 
     # Sets new documentList params and unsets document.
     #

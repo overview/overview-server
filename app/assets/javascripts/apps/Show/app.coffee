@@ -2,6 +2,7 @@ define [
   'underscore'
   'jquery'
   'backbone'
+  './models/DocumentSet'
   './models/TransactionQueue'
   './models/State'
   './controllers/KeyboardController'
@@ -17,7 +18,7 @@ define [
   '../View/app'
   '../Job/app'
 ], (_, $, Backbone, \
-    TransactionQueue, State, \
+    DocumentSet, TransactionQueue, State, \
     KeyboardController, \
     ViewsController, tag_list_controller, document_list_controller, \
     ViewAppController, \
@@ -37,9 +38,11 @@ define [
 
       @transactionQueue = @_initializeTransactionQueue()
       documentSetId = window.location.pathname.split('/')[2]
-      @state = new State({}, documentSetId: documentSetId, transactionQueue: @transactionQueue)
-      @state.once('sync', => @_initializeUi())
-      @state.init()
+      @documentSet = new DocumentSet(id: documentSetId)
+      @documentSet.fetch()
+      @documentSet.once 'sync', =>
+        @state = new State({}, documentSet: @documentSet, transactionQueue: @transactionQueue)
+        @_initializeUi()
 
     _listenForRefocus: ->
       refocus = ->
