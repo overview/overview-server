@@ -2,11 +2,15 @@ package controllers
 
 import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
+import play.api.libs.json.{JsValue,Json}
+import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
+import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
 import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
+import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
 import org.overviewproject.test.factories.PodoFactory
 import org.overviewproject.tree.orm.{Tag,Tree}
@@ -73,6 +77,60 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       "return BadRequest if form input is bad" in new UpdateScope {
         override def formBody = Seq("public" -> "maybe", "title" -> "bar")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+    }
+
+    "updateJson" should {
+      trait UpdateJsonScope extends BaseScope {
+        val documentSetId = 123L
+
+        mockBackend.updateMetadataSchema(any, any) returns Future.successful(())
+
+        def input: JsValue = Json.obj()
+        lazy val request = fakeAuthorizedRequest.withJsonBody(input)
+        lazy val result = controller.updateJson(documentSetId)(request)
+      }
+
+      "set a new Schema in the backend" in new UpdateJsonScope {
+        override def input = Json.obj("metadataSchema" -> Json.obj(
+            "version" -> 1,
+            "fields" -> Json.arr(
+              Json.obj("name" -> "foo", "type" -> "String"),
+              Json.obj("name" -> "bar", "type" -> "String")
+            )
+          )
+        )
+        val expectSchema = MetadataSchema(1, Seq(
+          MetadataField("foo", MetadataFieldType.String),
+          MetadataField("bar", MetadataFieldType.String)
+        ))
+        System.out.println(h.contentAsString(result))
+        h.status(result) must beEqualTo(h.NO_CONTENT)
+        there was one(mockBackend).updateMetadataSchema(documentSetId, expectSchema)
+      }
+
+      "throw a 400 when the Schema is invalid JSON" in new UpdateJsonScope {
+        override def input = Json.obj("metadataSchema" -> Json.arr("foo")) // completely wrong
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        h.contentAsString(result) must /("code" -> "illegal-arguments")
+        h.contentAsString(result) must contain("metadataSchema should look like")
+        there was no(mockBackend).updateMetadataSchema(any, any)
+      }
+
+      "throw a 400 when the input is not JSON" in new UpdateJsonScope {
+        override lazy val result = controller.updateJson(documentSetId)(fakeAuthorizedRequest)
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        there was no(mockBackend).updateMetadataSchema(any, any)
+      }
+
+      "throw a 400 when the input does not contain a metadataSchema key" in new UpdateJsonScope {
+        // when updateJson() allows both "name" and "metadataSchema", this will
+        // test see what happens when neither is specified
+        override def input = Json.obj("metadataBlah" -> Json.arr("foo"))
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        h.contentAsString(result) must /("code" -> "illegal-arguments")
+        h.contentAsString(result) must contain("You must specify")
+        there was no(mockBackend).updateMetadataSchema(any, any)
       }
     }
 

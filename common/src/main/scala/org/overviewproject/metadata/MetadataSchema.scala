@@ -5,6 +5,8 @@ import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString,JsValue,Json}
 /** Schema that describes a Document's metadata.
   *
   * Document metadata is encoded as JSON. See Metadata for more details.
+  *
+  * The `version` must always be 1: anything else is an error.
   */
 case class MetadataSchema(version: Int, fields: Seq[MetadataField]) {
   def toJson: JsValue = JsObject(Seq(
@@ -21,11 +23,11 @@ case class MetadataSchema(version: Int, fields: Seq[MetadataField]) {
 }
 
 object MetadataSchema {
-  def fromJson(json: JsValue): MetadataSchema = JsonReader.read(json)
+  def fromJson(json: JsValue): MetadataSchema = MetadataSchema.Json.parse(json)
 
   def empty: MetadataSchema = MetadataSchema(1, Seq())
 
-  private object JsonReader {
+  object Json {
     import play.api.data.validation.ValidationError
     import play.api.libs.json.{JsPath,JsResultException}
     import play.api.libs.json.Reads
@@ -43,12 +45,12 @@ object MetadataSchema {
       (JsPath \ "type").read[MetadataFieldType]
     )(MetadataField.apply _)
 
-    private implicit val metadataSchemaReads: Reads[MetadataSchema] = (
+    implicit val reads: Reads[MetadataSchema] = (
       (JsPath \ "version").read[Int](min(1) keepAnd max(1)) and
       (JsPath \ "fields").read[Seq[MetadataField]]
     )(MetadataSchema.apply _)
 
-    def read(json: JsValue): MetadataSchema = try {
+    def parse(json: JsValue): MetadataSchema = try {
       json.as[MetadataSchema]
     } catch {
       case e: JsResultException => throw new IllegalArgumentException(e)

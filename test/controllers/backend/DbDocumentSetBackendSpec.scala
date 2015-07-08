@@ -1,6 +1,7 @@
 package controllers.backend
 
 import models.pagination.PageRequest
+import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import org.overviewproject.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Views}
 import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
@@ -174,6 +175,21 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
 
     "ignore a missing DocumentSet" in new UpdateDeletedScope {
       await(backend.updateDeleted(123L, false)) must not(throwA[Exception])
+    }
+  }
+
+  "#updateMetadataSchema" should {
+    trait UpdateMetadataSchemaScope extends BaseScope {
+      val sampleMetadataSchema = MetadataSchema(1, Seq(
+        MetadataField("foo", MetadataFieldType.String),
+        MetadataField("bar", MetadataFieldType.String)
+      ))
+    }
+
+    "set the metadata schema" in new UpdateMetadataSchemaScope {
+      val documentSet = factory.documentSet()
+      await(backend.updateMetadataSchema(documentSet.id, sampleMetadataSchema))
+      findDocumentSet(documentSet.id).map(_.metadataSchema) must beSome(sampleMetadataSchema)
     }
   }
 

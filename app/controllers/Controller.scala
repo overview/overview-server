@@ -2,6 +2,7 @@ package controllers
 
 import java.util.UUID
 import play.api.i18n.{I18nSupport,MessagesApi}
+import play.api.libs.json.JsValue
 import play.api.mvc.{AnyContent,Controller => PlayController,Request,RequestHeader}
 import scala.util.control.Exception.catching
 
@@ -115,7 +116,7 @@ trait Controller extends PlayController with I18nSupport {
     }
   }
 
-  protected def pageRequest(request: RequestHeader, maxLimit: Int) = {
+  protected def pageRequest(request: RequestHeader, maxLimit: Int): PageRequest = {
     val requestOffset = queryStringParamToUnsignedInt(request, "offset")
     val requestLimit = queryStringParamToUnsignedInt(request, "limit")
 
@@ -124,5 +125,5 @@ trait Controller extends PlayController with I18nSupport {
     PageRequest(offset, limit)
   }
 
-  protected def jsonError(code: String, message: String) = views.json.api.error(code, message)
+  protected def jsonError(code: String, message: String): JsValue = views.json.api.error(code, message)
 }

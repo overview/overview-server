@@ -1,6 +1,8 @@
 package controllers
 
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.{JsError,JsObject,JsResult,JsSuccess}
+import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedAction,Authorities}
@@ -11,6 +13,7 @@ import models.orm.finders.{DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetCreationJobStore
 import models.pagination.{Page,PageRequest}
 import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
+import org.overviewproject.metadata.MetadataSchema
 import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
 import org.overviewproject.models.tables.DocumentSets
 import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
@@ -163,7 +166,7 @@ trait DocumentSetController extends Controller {
     if (cancelledJob.doesNotExist) {
       storage.deleteDocumentSet(documentSetId)
       jobQueue.send(Delete(documentSetId))
-      
+
       done("deleteDocumentSet.success")
     } else if (cancelledJob.wasRunningInWorker) {
       storage.deleteDocumentSet(documentSetId)
@@ -191,6 +194,26 @@ trait DocumentSetController extends Controller {
         )
       }
     })
+  }
+
+  def updateJson(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+    // One error if metadataSchema is not *set*; another error if it is not *valid*.
+    val maybeMetadataSchema: Option[JsResult[MetadataSchema]] = for {
+      jsonBody <- request.body.asJson
+      jsonBodyAsObject <- jsonBody.asOpt[JsObject]
+      metadataSchemaJson <- jsonBodyAsObject.value.get("metadataSchema")
+    } yield metadataSchemaJson.validate[MetadataSchema](MetadataSchema.Json.reads)
+
+    def err(code: String, message: String) = Future.successful(BadRequest(jsonError(code, message)))
+
+    maybeMetadataSchema match {
+      case None => err("illegal-arguments", "You must specify a metadataSchema property in the JSON body")
+      case Some(JsError(_)) => err(
+        "illegal-arguments",
+        """metadataSchema should look like { "version": 1, "fields": [ { "name": "foo", "type": "String" } ] }"""
+      )
+      case Some(JsSuccess(metadataSchema, _)) => backend.updateMetadataSchema(id, metadataSchema).map(_ => NoContent)
+    }
   }
 
   protected val storage: DocumentSetController.Storage

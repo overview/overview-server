@@ -3,6 +3,7 @@ package controllers.backend
 import scala.concurrent.Future
 
 import models.pagination.{Page,PageRequest}
+import org.overviewproject.metadata.MetadataSchema
 import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 import org.overviewproject.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
 
@@ -24,6 +25,12 @@ trait DocumentSetBackend {
     * Ignores a missing DocumentSet.
     */
   def updateDeleted(documentSetId: Long, deleted: Boolean): Future[Unit]
+
+  /** Sets a new MetadataSchema on a DocumentSet.
+    *
+    * Ignores a missing DocumentSet.
+    */
+  def updateMetadataSchema(documentSetId: Long, schema: MetadataSchema): Future[Unit]
 
   /** Finds a Page of DocumentSets for a User.
     *
@@ -84,6 +91,10 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
     database.runUnit(updateDeletedCompiled(documentSetId).update(deleted))
   }
 
+  override def updateMetadataSchema(documentSetId: Long, metadataSchema: MetadataSchema) = {
+    database.runUnit(updateMetadataSchemaCompiled(documentSetId).update(metadataSchema))
+  }
+
   override def countByOwnerEmail(userEmail: String) = {
     database.run(countByOwnerCompiled(userEmail).result)
   }
@@ -109,6 +120,10 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
 
   private lazy val updateDeletedCompiled = Compiled { (documentSetId: Rep[Long]) =>
     DocumentSets.filter(_.id === documentSetId).map(_.deleted)
+  }
+
+  private lazy val updateMetadataSchemaCompiled = Compiled { (documentSetId: Rep[Long]) =>
+    DocumentSets.filter(_.id === documentSetId).map(_.metadataSchema)
   }
 
   private def documentSetIdsByOwner(email: Rep[String]) = {

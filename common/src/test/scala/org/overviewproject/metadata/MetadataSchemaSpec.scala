@@ -59,6 +59,12 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     "not parse an invalid type" in new FromJsonScope {
       from("""{"version":1,"fields":[{"name":"foo","type":"string"}]}""") must throwA[IllegalArgumentException]
     }
+
+    "provide an implicit Reads for parsing" in {
+      import MetadataSchema.Json.reads
+      val result = Json.parse("""{"version":1,"fields":[{"name":"foo","type":"string"}]}""").as[MetadataSchema]
+      result must beEqualTo(MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String))))
+    }
   }
 
   "::empty" should {
