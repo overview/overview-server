@@ -221,7 +221,7 @@ object FileGroupTaskWorker {
 
     private val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
     private val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
-
+    private val timeoutGenerator = new TimeoutGenerator(context.system.scheduler, context.dispatcher)
     override protected val searchIndex = TransportIndexClient.singleton
 
     override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep =
@@ -231,7 +231,8 @@ object FileGroupTaskWorker {
     protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
                                       options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep =
       FindUploadedFile(documentSetId, uploadedFileId,
-        CreateUploadedFileProcess(documentSetId, _, options, documentIdSupplier, bulkDocumentWriter))
+        CreateUploadedFileProcess(documentSetId, _, options, timeoutGenerator, 
+            documentIdSupplier, bulkDocumentWriter))
 
     override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] =
       documentSetInfoUpdater.update(documentSetId)

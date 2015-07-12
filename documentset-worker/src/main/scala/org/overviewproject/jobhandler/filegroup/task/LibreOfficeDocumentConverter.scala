@@ -1,6 +1,6 @@
 package org.overviewproject.jobhandler.filegroup.task
 
-import java.io.{BufferedInputStream,File,FileInputStream,FileNotFoundException,InputStream}
+import java.io.{ BufferedInputStream, File, FileInputStream, FileNotFoundException, InputStream }
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption._
@@ -9,33 +9,44 @@ import scala.util.control.Exception._
 import org.overviewproject.util.Configuration
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
-/** Converts an [[InputStream]] to a PDF using LibreOffice.
-  *
-  * The location of `LibreOffice` must be specified by the `LIBRE_OFFICE_PATH`
-  * environment variable, or directly in the worker configuration file. Files
-  * created during the conversion are written to a temp directory and are
-  * deleted when the conversion is complete.
-  *
-  * If another instance of `LibreOffice` (including quick-starter) is running
-  * on the same system, the conversion will fail.
-  */
+/**
+ * Converts an [[InputStream]] to a PDF using LibreOffice.
+ *
+ * The location of `LibreOffice` must be specified by the `LIBRE_OFFICE_PATH`
+ * environment variable, or directly in the worker configuration file. Files
+ * created during the conversion are written to a temp directory and are
+ * deleted when the conversion is complete.
+ *
+ * If another instance of `LibreOffice` (including quick-starter) is running
+ * on the same system, the conversion will fail.
+ */
 trait LibreOfficeDocumentConverter extends DocumentConverter {
-  /** The call to `LibreOffice` resulted in an error code (including if no
-    * `soffice` binary is found).
-    */
-  case class LibreOfficeConverterFailedException(reason: String) extends Exception(reason)
+  implicit protected val executionContext: ExecutionContext
+  protected val conversionTimeout: FiniteDuration
+  protected val runner: ShellRunner
+  protected val fileSystem: FileSystem
 
-  /** Conversion succeeded, but no output file was found.
-    *
-    * The most likely reason: another instance of LibreOffice is running.
-    */
-  case class LibreOfficeNoOutputException(reason: String) extends Exception(reason)
+  protected trait FileSystem {
+    def saveToFile(inputStream: InputStream, filePath: Path): File
+    def readFile(file: File): InputStream
+    def getFileLength(file: File): Long
+    def deleteFile(file: File): Boolean
+  }
+
+  /**
+   * The call to `LibreOffice` resulted in an error code (including if no
+   * `soffice` binary is found).
+   */
+  case class LibreOfficeConverterFailedException(reason: String) extends Exception(reason)
 
   private val LibreOfficeLocation = Configuration.getString("libre_office_path")
   private val OutputFileExtension = "pdf"
 
-  override def withStreamAsPdf[T](guid: UUID, inputStream: InputStream)(f: (InputStream, Long) => T): T = {
+  override def withStreamAsPdf[T](guid: UUID, inputStream: InputStream)(f: (InputStream, Long) => Future[T]): Future[T] = {
     withStreamAsTemporaryFile(guid, inputStream) { tempFile =>
       convertFileToPdf(tempFile) { pdfTempFile =>
         withFileAsStream(pdfTempFile)(f)
@@ -43,59 +54,66 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
     }
   }
 
-  /** Writes inputStream to a temporary file, calls `f`, and deletes it.
-    *
-    * The temporary file will be named "guid". LibreOffice does not seem to
-    * care about file extensions, and it does not let us specify an output
-    * filename; we use "guid" because we know LibreOffice will output
-    * "guid.pdf".
-    *
-    * @param guid A unique ID for creating temporary files.
-    * @param inputStream The input stream.
-    * @param f A function that will be passed the filename.
-    * @tparam T The return type of `f`
-    *
-    * @returns The return value of `f`
-    * @throws IOException if the file cannot be written
-    * @throws Exception if `f` throws an exception
-    */
-  protected def withStreamAsTemporaryFile[T](guid: UUID, inputStream: InputStream)(f: File => T): T = {
+  /**
+   * Writes inputStream to a temporary file, calls `f`, and deletes it.
+   *
+   * The temporary file will be named "guid". LibreOffice does not seem to
+   * care about file extensions, and it does not let us specify an output
+   * filename; we use "guid" because we know LibreOffice will output
+   * "guid.pdf".
+   *
+   * @param guid A unique ID for creating temporary files.
+   * @param inputStream The input stream.
+   * @param f A function that will be passed the filename.
+   * @tparam T The return type of `f`
+   *
+   * @returns The return value of `f`
+   * @throws IOException if the file cannot be written
+   * @throws Exception if `f` throws an exception
+   */
+  protected def withStreamAsTemporaryFile[T](guid: UUID, inputStream: InputStream)(f: File => Future[T]): Future[T] = {
     val inputFilePath = TempDirectory.filePath(guid.toString())
     val input = fileSystem.saveToFile(inputStream, inputFilePath)
 
-    ultimately(fileSystem.deleteFile(input)) {
-      f(inputFilePath.toFile)
-    }
+    val result = f(inputFilePath.toFile)
+    result.onComplete { _ => fileSystem.deleteFile(input) }
+    
+    result
   }
 
   // Calls LibreOffice with the given inputFile as input parameter
   // If the call succeeds, f is called with the resulting output file as a parameter.
   // The output file is deleted after the call to f
-  // If the call fails a LibreOfficeConverterFailed exception is thrown
-  private def convertFileToPdf[T](inputFile: File)(f: File => T): T = {
+  private def convertFileToPdf[T](inputFile: File)(f: File => Future[T]): Future[T] = {
     val officeCommand = conversionCommand(inputFile.getAbsolutePath)
 
-    val result: Either[String, String] = runner.run(officeCommand)
-    result.fold(e => throw new LibreOfficeConverterFailedException(e), { s =>
-      val output = outputFile(inputFile)
+    val output = outputFile(inputFile)
 
-      ultimately(fileSystem.deleteFile(output)) {
-        f(outputFile(inputFile))
-      }
-    })
+    val result = for {
+      _ <- runner.run(officeCommand, conversionTimeout)
+      r <- f(output)
+    } yield r
+
+    result.onComplete { _ => fileSystem.deleteFile(output) }
+
+    result
   }
 
   // reads the given outputFile as a stream, passed to f
   // Closes the stream after call to f
   // If output file does not exist, a LibreOfficeNoOutput exception is thrown
-  private def withFileAsStream[T](file: File)(f: (InputStream,Long) => T): T = {
-    val detectingNoFile = handling(classOf[FileNotFoundException]) by { e => throw LibreOfficeNoOutputException(e.getMessage) }
-    def fileStream = detectingNoFile { fileSystem.readFile(file) }
-    def fileLength = detectingNoFile { fileSystem.getFileLength(file) }
-
-    ultimately(fileStream.close) {
-      f(fileStream, fileLength)
+  private def withFileAsStream[T](file: File)(f: (InputStream, Long) => Future[T]): Future[T] = {
+    val detectingNoFile = handling(classOf[FileNotFoundException]) by { e =>
+      throw LibreOfficeDocumentConverter.LibreOfficeNoOutputException(e.getMessage)
     }
+    val fileStream = detectingNoFile { fileSystem.readFile(file) }
+    val fileLength = detectingNoFile { fileSystem.getFileLength(file) }
+
+
+    val result = f(fileStream, fileLength)
+    result.onComplete(_ => fileStream.close)
+
+    result
   }
 
   private def conversionCommand(inputFile: String): String =
@@ -108,61 +126,45 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
     TempDirectory.filePath(outputName).toFile
   }
 
-  protected val runner: LibreOfficeDocumentConverter.Runner
-  protected val fileSystem: LibreOfficeDocumentConverter.FileSystem
 }
 
 /** Implements [[DocumentConverter]] with components that perform filesystem and command runner functions */
-object LibreOfficeDocumentConverter extends LibreOfficeDocumentConverter {
-  import scala.language.postfixOps
-  import scala.concurrent.duration._
-  import scala.concurrent.TimeoutException
+object LibreOfficeDocumentConverter {
 
-  override protected val runner: Runner = ShellRunner
-  override protected val fileSystem: FileSystem = OsFileSystem
+  /**
+   * Conversion succeeded, but no output file was found.
+   *
+   * The most likely reason: another instance of LibreOffice is running.
+   */
+  case class LibreOfficeNoOutputException(reason: String) extends Exception(reason)
 
-  trait Runner {
-    def run(command: String): Either[String, String]
-  }
+  def apply(timeoutGenerator: TimeoutGenerator)(implicit executionContext: ExecutionContext): DocumentConverter =
+    new LibreOfficeDocumentConverterImpl(timeoutGenerator, executionContext)
 
-  trait FileSystem {
-    def saveToFile(inputStream: InputStream, filePath: Path): File
-    def readFile(file: File): InputStream
-    def getFileLength(file: File): Long
-    def deleteFile(file: File): Boolean
-  }
+  private class LibreOfficeDocumentConverterImpl(
+    timeoutGenerator: TimeoutGenerator,
+    override implicit protected val executionContext: ExecutionContext) extends LibreOfficeDocumentConverter {
 
-  object OsFileSystem extends FileSystem {
-    override def saveToFile(inputStream: InputStream, filePath: Path): File = {
-      val bufferedInputStream = new BufferedInputStream(inputStream, 5 * 1024 * 1024)
-      Files.copy(bufferedInputStream, filePath, REPLACE_EXISTING)
+    import scala.language.postfixOps
+    import scala.concurrent.duration._
+    import scala.concurrent.TimeoutException
 
-      filePath.toFile
-    }
+    override protected val runner = ShellRunner(timeoutGenerator)
+    override protected val fileSystem: FileSystem = OsFileSystem
+    override protected val conversionTimeout = Configuration.getInt("document_conversion_timeout") millis
 
-    override def readFile(file: File): InputStream = new FileInputStream(file)
-    override def getFileLength(file: File): Long = file.length
-    override def deleteFile(file: File): Boolean = file.delete
-  }
+    object OsFileSystem extends FileSystem {
+      override def saveToFile(inputStream: InputStream, filePath: Path): File = {
+        val bufferedInputStream = new BufferedInputStream(inputStream, 5 * 1024 * 1024)
+        Files.copy(bufferedInputStream, filePath, REPLACE_EXISTING)
 
-  object ShellRunner extends Runner {
-    private val ConversionTimeout = Configuration.getInt("document_conversion_timeout") millis 
-    private val TimeoutErrorMessage = "Conversion timeout exceeded"
-
-    override def run(command: String): Either[String, String] = {
-      def cancellingProcessAfterTimeout(process: RunningCommand) =
-        handling(classOf[TimeoutException]) by { _ =>
-          process.cancel
-          Left(TimeoutErrorMessage)
-        }
-
-      val commandRunner = new CommandRunner(command)
-
-      val runningCommand = commandRunner.runAsync
-
-      cancellingProcessAfterTimeout(runningCommand) {
-        Await.result(runningCommand.result, ConversionTimeout)
+        filePath.toFile
       }
+
+      override def readFile(file: File): InputStream = new FileInputStream(file)
+      override def getFileLength(file: File): Long = file.length
+      override def deleteFile(file: File): Boolean = file.delete
     }
+
   }
 }

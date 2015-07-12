@@ -8,6 +8,7 @@ import org.overviewproject.jobhandler.filegroup.task.UploadedFileProcessCreator
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.util.BulkDocumentWriter
+import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
 
 
 
@@ -39,19 +40,21 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep {
 
 object CreateUploadedFileProcess {
   def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, options: UploadProcessOptions,
-            documentIdSupplier: ActorRef,
+            timeoutGenerator: TimeoutGenerator, documentIdSupplier: ActorRef,
             bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): CreateUploadedFileProcess =
     new CreateUploadedFileProcessImpl(documentSetId, uploadedFile, options,
-      documentIdSupplier, bulkDocumentWriter)
+      timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
 
   private class CreateUploadedFileProcessImpl(
     override protected val documentSetId: Long,
     override protected val uploadedFile: GroupedFileUpload,
     override protected val options: UploadProcessOptions,
+    timeoutGenerator: TimeoutGenerator,
     override protected val documentIdSupplier: ActorRef,
     override protected val bulkDocumentWriter: BulkDocumentWriter
   )(override implicit protected val executor: ExecutionContext) extends CreateUploadedFileProcess {
-    override protected val uploadedFileProcessCreator = UploadedFileProcessCreator(bulkDocumentWriter)
+    override protected val uploadedFileProcessCreator = 
+      UploadedFileProcessCreator(bulkDocumentWriter, timeoutGenerator)
   }
 
 }

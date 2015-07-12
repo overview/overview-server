@@ -1,12 +1,10 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import java.io.InputStream
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.blocking
 import scala.util.control.Exception.ultimately
-
 import org.overviewproject.blobstorage.BlobBucketId
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.database.HasBlockingDatabase
@@ -19,6 +17,7 @@ import org.overviewproject.models.tables.Files
 import org.overviewproject.models.tables.GroupedFileUploads
 import org.overviewproject.models.tables.TempDocumentSetFiles
 import org.overviewproject.postgres.LargeObjectInputStream
+import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
 
 /**
  * Creates a view by converting the [[GroupedFileUpload] contents to PDF
@@ -41,20 +40,19 @@ trait CreateFileWithView extends UploadedFileProcessStep with LargeObjectMover w
       file <- createFile(uploadedFile.name, uploadedFile.size, contentsLocation, sha1, viewSize, viewLocation)
     } yield nextStep(file)
 
-  private def createView(upload: GroupedFileUpload): Future[(String, Long)] = blocking {
+  private def createView(upload: GroupedFileUpload): Future[(String, Long)] = {
     withLargeObjectInputStream(uploadedFile.contentsOid) { stream =>
-      converter.withStreamAsPdf(uploadedFile.guid, stream) { (viewStream, viewSize) =>
-        blobStorage.create(BlobBucketId.FileView, viewStream, viewSize)
-          .map((_, viewSize))
+      converter.withStreamAsPdf(uploadedFile.guid, stream) { (viewStream, viewSize) => 
+        for {
+          location <- blobStorage.create(BlobBucketId.FileView, viewStream, viewSize)
+        } yield (location, viewSize)
       }
     }
   }
 
   protected lazy val fileInserter = (
     Files.map(f => (
-      f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.contentsSha1, f.viewLocation, f.viewSize
-    )) returning Files
-  )
+      f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.contentsSha1, f.viewLocation, f.viewSize)) returning Files)
 
   private def createFile(name: String,
                          contentsSize: Long, contentsLocation: String, sha1: Array[Byte],
@@ -75,16 +73,16 @@ trait CreateFileWithView extends UploadedFileProcessStep with LargeObjectMover w
 }
 
 object CreateFileWithView {
-  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload, next: File => TaskStep)
-    (implicit executor: ExecutionContext): CreateFileWithView =
-    new CreateFileWithViewImpl(documentSetId, uploadedFile, next)
+  def apply(documentSetId: Long, uploadedFile: GroupedFileUpload,
+            timeoutGenerator: TimeoutGenerator, next: File => TaskStep)(implicit executor: ExecutionContext): CreateFileWithView =
+    new CreateFileWithViewImpl(documentSetId, uploadedFile, timeoutGenerator, next)
 
   private class CreateFileWithViewImpl(
     override protected val documentSetId: Long,
     override protected val uploadedFile: GroupedFileUpload,
-    override protected val nextStep: File => TaskStep
-  )(override protected implicit val executor: ExecutionContext) extends CreateFileWithView {
-    override protected val converter = LibreOfficeDocumentConverter
+    timeoutGenerator: TimeoutGenerator,
+    override protected val nextStep: File => TaskStep)(override protected implicit val executor: ExecutionContext) extends CreateFileWithView {
+    override protected val converter = LibreOfficeDocumentConverter(timeoutGenerator)
     override protected val blobStorage = BlobStorage
 
     override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)

@@ -5,12 +5,13 @@ import scala.sys.process._
 import scala.language.postfixOps
 import scala.util.control.Exception._
 import scala.concurrent.Future
+import scala.concurrent.blocking
 
 /**
  * Run an external command, returning any output
  * @param command the command to run. Must be a single command.
  */
-class CommandRunner(command: String) {
+class CommandRunner(command: String, timeoutGenerator: TimeoutGenerator) {
 
   /**
    * Starts running the command.
@@ -20,15 +21,10 @@ class CommandRunner(command: String) {
     val outputCatcher = new OutputCatcher
     val commandProcess = Process(command)
 
-    // catch Exception thrown if command is not found
-    val process = allCatch either {
-      commandProcess.run(outputCatcher.log)
-    }
+    val process = commandProcess.run(outputCatcher.log)
 
     new RunningShellCommand(process, outputCatcher)
   }
-  
-  private def success(exitCode: Int) = exitCode == 0
 
   private class OutputCatcher {
     private var outputLog: String = ""
@@ -40,34 +36,36 @@ class CommandRunner(command: String) {
     def output = outputLog
   }
 
-  private class RunningShellCommand(process: Either[Throwable, Process], outputCatcher: OutputCatcher) extends RunningCommand {
+  private class RunningShellCommand(process: Process, outputCatcher: OutputCatcher) extends RunningCommand {
     import scala.concurrent.ExecutionContext.Implicits.global
-    
-    override def cancel: Unit = process.right.map(_.destroy)
-    
-    override def result: Future[Either[String, String]] = Future {
-      val result = process.right.map(_.exitValue)
 
-      result match {
-        case r @ Right(exitCode) if success(exitCode) => Right(outputCatcher.output)
-        case r @ Left(e) => Left(s"${e.getMessage()}\nOutput: ${outputCatcher.output}\n")
-        case _ => Left(s"Output: ${outputCatcher.output}")
-      }
+    override def cancel: Unit = process.destroy
 
+    override def result: Future[String] = waitForExitValue.collect {
+      case v if success(v) => outputCatcher.output
+      case _               => throw new CommandFailedException(outputCatcher.output)
+    }
+
+    private def success(exitCode: Int) = exitCode == 0
+
+    private def waitForExitValue: Future[Int] = Future {
+      blocking { process.exitValue }
     }
 
   }
 }
 
+class CommandFailedException(output: String) extends Exception(output)
+
 /** A command currently being executed */
 trait RunningCommand {
   /** Interrupt the running command */
   def cancel: Unit
-  
-  /** 
+
+  /**
    * @returns the output of the command in the [[Future]]. If the command returned a non-zero exit code, the output
-   * is a [[Left]], otherwise a [[Right]]. 
+   * is a [[Left]], otherwise a [[Right]].
    */
-  def result: Future[Either[String, String]]
+  def result: Future[String]
 }
 

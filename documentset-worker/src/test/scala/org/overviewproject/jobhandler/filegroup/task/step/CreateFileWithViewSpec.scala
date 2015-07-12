@@ -54,7 +54,7 @@ class CreateFileWithViewSpec extends DbSpecification with Mockito {
 
       class NullConverter extends DocumentConverter {
         override def withStreamAsPdf[T](guid: UUID, inputStream: InputStream)
-          (f: (InputStream, Long) => T) = f(inputStream, viewSize)
+          (f: (InputStream, Long) => Future[T]) = f(inputStream, viewSize)
       }
 
       case class NextStep(file: File) extends TaskStep {

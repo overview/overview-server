@@ -41,7 +41,7 @@ trait UploadedFileProcessCreator {
 
   protected val documentTypeDetector: DocumentTypeDetector
   protected def largeObjectInputStream(oid: Long): InputStream
-
+  
   protected val processMap: ProcessMap
 
   protected trait ProcessMap {
@@ -57,10 +57,11 @@ object UploadedFileProcessCreator extends HasBlockingDatabase {
   case class UnsupportedDocumentTypeException(t: UnsupportedDocument) // FIXME: should not be an exception
     extends Exception(s"Unsupported Document type ${t.filename}: ${t.mimeType}")
 
-  def apply(bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): UploadedFileProcessCreator =
-    new UploadedFileProcessCreatorImpl(bulkDocumentWriter)
+  def apply(bulkDocumentWriter: BulkDocumentWriter, timeoutGenerator: TimeoutGenerator)(implicit executor: ExecutionContext): UploadedFileProcessCreator =
+    new UploadedFileProcessCreatorImpl(bulkDocumentWriter, timeoutGenerator)
 
-  private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext) extends UploadedFileProcessCreator {
+  private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter,
+      timeoutGenerator: TimeoutGenerator)(implicit executor: ExecutionContext) extends UploadedFileProcessCreator {
     override protected val documentTypeDetector = DocumentTypeDetector
     override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
 
@@ -77,9 +78,9 @@ object UploadedFileProcessCreator extends HasBlockingDatabase {
           case PdfDocument =>
             CreateDocumentFromPdfFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument if options.splitDocument =>
-            CreateDocumentsFromConvertedFilePages(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
+            CreateDocumentsFromConvertedFilePages(documentSetId, name, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument =>
-            CreateDocumentFromConvertedFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
+            CreateDocumentFromConvertedFile(documentSetId, name, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case t: UnsupportedDocument => throw new UnsupportedDocumentTypeException(t)
         }
     }
