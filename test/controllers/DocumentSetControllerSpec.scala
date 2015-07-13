@@ -104,7 +104,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
           MetadataField("foo", MetadataFieldType.String),
           MetadataField("bar", MetadataFieldType.String)
         ))
-        System.out.println(h.contentAsString(result))
         h.status(result) must beEqualTo(h.NO_CONTENT)
         there was one(mockBackend).updateMetadataSchema(documentSetId, expectSchema)
       }
