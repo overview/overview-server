@@ -9,14 +9,15 @@ define [
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
 
+      @documentSet = new Backbone.Model(id: 1)
+      @documentSet.url = '/documentsets/1'
+
       @params =
+        documentSet: @documentSet
         params: { tags: [ 20 ] }
         toQueryParams: -> { tags: '20' }
 
-      @list = new DocumentList({}, {
-        params: @params
-        url: '/documentsets/1/documents'
-      })
+      @list = new DocumentList({}, params: @params)
 
       @tagCountsChangedSpy = sinon.spy()
       @list.on('tag-counts-changed', @tagCountsChangedSpy)

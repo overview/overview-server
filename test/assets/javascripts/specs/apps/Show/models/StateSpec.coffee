@@ -15,6 +15,7 @@ define [
         id: 123
         tags: new Backbone.Collection
         views: new Backbone.Collection
+        url: '/documentsets/123.json'
       @transactionQueue =
         ajax: sinon.spy()
 
@@ -37,8 +38,6 @@ define [
       expect(@state.get('view')?.id).to.eq(456)
 
     describe 'setView', ->
-      class DocumentSet
-
       class View extends Backbone.Model
 
       beforeEach ->
@@ -48,11 +47,11 @@ define [
         ])
 
         @params =
-          state: @state
+          documentSet: @documentSet
           view: @view1
           params: {}
           withView: (view) =>
-            state: @state
+            documentSet: @documentSet
             view: view
             params: {}
 
@@ -69,7 +68,7 @@ define [
 
       it 'should set documentList', ->
         params = @state.get('documentList')?.params
-        expect(params.state).to.eq(@state)
+        expect(params.documentSet).to.eq(@documentSet)
         expect(params.view).to.eq(@view2)
 
     describe 'setDocumentListParams', ->

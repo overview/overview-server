@@ -57,10 +57,10 @@ define [
 
     initialize: (attributes, options) ->
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
-      throw 'Must pass options.url, a String like /documentsets/1234/documents with no question mark' if !options.url?
 
       @params = options.params
-      @url = options.url
+      @documentSet = @params.documentSet
+      @url = _.result(@documentSet, 'url').replace(/\.json$/, '') + '/documents'
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
       @documents = new Documents([])
       @documents.url = @url

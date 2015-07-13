@@ -97,10 +97,7 @@ define [
     _createSetDocumentListParamsOptions: (params) ->
       ret =
         document: null
-        documentList: new DocumentList {},
-          state: @
-          params: params
-          url: "/documentsets/#{@documentSetId}/documents"
+        documentList: new DocumentList({}, params: params)
 
       if 'nodes' not of params.params
         ret.highlightedDocumentListParams = params
