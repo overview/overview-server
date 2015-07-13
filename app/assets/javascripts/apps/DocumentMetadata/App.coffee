@@ -33,8 +33,10 @@ define [
       if @jsonView
         @$el.append(@jsonView.el)
         @$el.append(@addFieldView.el)
-      else
+      else if @document?
         @$el.append(@$loading)
+
+      @
 
     setDocument: (document) ->
       @jsonView?.remove()
@@ -43,10 +45,14 @@ define [
       @document = document
       @documentMetadataFetched = false
 
-      @document.fetch
-        success: =>
-          @documentMetadataFetched = true
-          @jsonView = new JsonView(documentSet: @documentSet, document: @document)
+      if @document?
+        @document.fetch
+          success: =>
+            return if @document != document # stale response
 
-          @render()
+            @documentMetadataFetched = true
+            @jsonView = new JsonView(documentSet: @documentSet, document: @document)
 
+            @render()
+
+      @render()
