@@ -3,8 +3,9 @@ define [
   'underscore'
   'backbone'
   './views/JsonView'
+  './views/AddFieldView'
   'i18n'
-], ($, _, Backbone, JsonView, i18n) ->
+], ($, _, Backbone, JsonView, AddFieldView, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.DocumentMetadata.App')
 
   class DocumentMetadataApp extends Backbone.View
@@ -12,6 +13,7 @@ define [
       throw 'Must specify options.documentSet, a Backbone.Model with metadataFields' if !options.documentSet
 
       @documentSet = options.documentSet
+      @addFieldView = new AddFieldView(documentSet: @documentSet)
       @document = null
       @documentMetadataFetched = false
 
@@ -30,6 +32,7 @@ define [
 
       if @jsonView
         @$el.append(@jsonView.el)
+        @$el.append(@addFieldView.el)
       else
         @$el.append(@$loading)
 

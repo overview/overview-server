@@ -10,8 +10,13 @@ define [
       @document2 = new Backbone.Model()
       @document2.fetch = sinon.spy()
 
-      i18n.reset_messages
-        'views.DocumentSet.show.DocumentMetadata.App.loading': 'loading'
+      i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentMetadata',
+        'App.loading': 'loading'
+        'AddFieldView.label': 'label'
+        'AddFieldView.expand': 'expand'
+        'AddFieldView.placeholder': 'placeholder'
+        'AddFieldView.submit': 'submit'
+        'AddFieldView.reset': 'reset'
 
       @subject = new App(documentSet: @documentSet)
 
@@ -34,3 +39,4 @@ define [
 
         it 'should hide the loading indicator', -> expect(@subject.$el.text()).not.to.contain('loading')
         it 'should show a metadata form', -> expect(@subject.$('form.metadata-json')).to.have.length(1)
+        it 'should show an add-field form', -> expect(@subject.$('form.add-metadata-field')).to.have.length(1)
