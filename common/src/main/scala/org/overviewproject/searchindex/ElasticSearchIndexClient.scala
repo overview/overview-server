@@ -65,6 +65,7 @@ import org.overviewproject.util.Logger
 trait ElasticSearchIndexClient extends IndexClient {
   protected val AllDocumentsAlias = "documents"
   protected val DefaultIndexName = "documents_v1"
+  private val MaxTermExpansions = 1000 // https://groups.google.com/d/topic/overview-dev/CzPGxoOXdCI/discussion
 
   @volatile private var connected = false
 
@@ -375,6 +376,7 @@ trait ElasticSearchIndexClient extends IndexClient {
       case PrefixQuery(field, prefix) => {
         QueryBuilders
           .matchPhrasePrefixQuery(repr(field), prefix)
+          .maxExpansions(MaxTermExpansions)
           .rewrite("constant_score_auto")
       }
       case ProximityQuery(field, phrase, slop) => {
@@ -392,7 +394,7 @@ trait ElasticSearchIndexClient extends IndexClient {
         //QueryBuilders.fuzzyQuery(repr(field), term)
         QueryBuilders.matchQuery(repr(field), term)
           .fuzziness(Fuzziness.build(fuzziness.getOrElse("AUTO")))
-          .maxExpansions(500) // https://groups.google.com/d/topic/overview-dev/CzPGxoOXdCI/discussion
+          .maxExpansions(MaxTermExpansions)
           .rewrite("constant_score_auto")
       }
     }
