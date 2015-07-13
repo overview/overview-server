@@ -46,3 +46,18 @@ define [
     _parseMetadataFields: (schemaJson) ->
       throw new Error("Wrong schema version, must be 1") if schemaJson.version != 1
       _.pluck(schemaJson.fields, 'name')
+
+    # Sets metadataFields and persists the change to the server.
+    #
+    # Normally, this would just be
+    # `.save({ metadataFields: [ 'foo' ] }, patch: true)`. But in this case,
+    # `metadataFields` is a derived value: we need to send the server a
+    # `metadataSchema` JSON.
+    patchMetadataFields: (fields) ->
+      return if _.isEqual(fields, @get('metadataFields'))
+
+      schema =
+        version: 1
+        fields: fields.map((name) -> name: name, type: 'String')
+      @set(metadataFields: fields)
+      @sync('patch', @, attrs: { metadataSchema: schema })

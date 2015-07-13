@@ -76,6 +76,7 @@ define [
         jqxhr.done(next.resolve)
 
       handleError = (xhr, textStatus, errorThrown) =>
+        console.log('XMLHttpRequest error:', textStatus, errorThrown)
         if xhr.status <= 0
           @trigger('network-error', xhr, doIt)
         else

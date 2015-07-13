@@ -8,7 +8,7 @@ define [
       @sandbox = sinon.sandbox.create()
       @sandbox.stub(Backbone, 'ajax')
 
-      @documentSet = new DocumentSet(id: 12)
+      @documentSet = new DocumentSet(id: 12, metadataFields: [ 'foo' ])
 
     afterEach ->
       @sandbox.restore()
@@ -25,7 +25,7 @@ define [
     describe 'fetch', ->
       beforeEach ->
         @sampleResponse =
-          metadataSchema: { version: 1, fields: [] }
+          metadataSchema: { version: 1, fields: [ 'foo' ] }
           tags: []
           views: []
           nDocuments: 1
@@ -69,3 +69,31 @@ define [
         @withAjaxResponse response, =>
           expect(@documentSet.get('metadataFields')).to.deep.eq([ 'foo', 'bar' ])
           done()
+
+    describe 'patchMetadataFields', ->
+      it 'should work with an empty Array', ->
+        @documentSet.patchMetadataFields([])
+        expect(Backbone.ajax).to.have.been.called
+        args = Backbone.ajax.args[0][0]
+        expect(args).to.have.property('type', 'PATCH')
+        expect(args).to.have.property('url', '/documentsets/12.json')
+        expect(args.data).to.deep.eq(JSON.stringify(metadataSchema: { version: 1, fields: [] }))
+        expect(@documentSet.get('metadataFields')).to.deep.eq([])
+        expect(@documentSet.get('metadataSchema')).not.to.exist
+        # The server will never respond, and we'll never care whether the
+        # request finished. (Rely on TransactionQueue to handle failure.)
+
+      it 'should not send a request when there is no change', ->
+        @documentSet.patchMetadataFields([ 'foo' ])
+        expect(Backbone.ajax).not.to.have.been.called
+
+      it 'should set a new value', ->
+        @documentSet.patchMetadataFields(['foo', 'bar'])
+        expect(Backbone.ajax).to.have.been.called
+        expect(Backbone.ajax.args[0][0].data).to.deep.eq(JSON.stringify(metadataSchema:
+          version: 1
+          fields: [
+            { name: 'foo', type: 'String' }
+            { name: 'bar', type: 'String' }
+          ]
+      ))

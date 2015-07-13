@@ -1,7 +1,8 @@
 define [
   'backbone'
   'apps/DocumentMetadata/views/JsonView'
-], (Backbone, JsonView) ->
+  'i18n'
+], (Backbone, JsonView, i18n) ->
   describe 'apps/DocumentMetadata/views/JsonView', ->
     beforeEach ->
       @documentSet = new Backbone.Model(metadataFields: [ 'field1', 'field2', 'field3' ])
@@ -14,6 +15,11 @@ define [
 
     it 'should be a form', ->
       expect(@subject.$el).to.match('form')
+
+    it 'should show help when empty', ->
+      i18n.reset_messages('views.DocumentSet.show.DocumentMetadata.JsonView.help_html': 'help_html')
+      @documentSet.set(metadataFields: [])
+      expect(@subject.$('.help').html()).to.eq('help_html')
 
     it 'should display fields in the order specified in metadataFields', ->
       expect(@subject.$('dt:eq(0)')).to.contain('field1')

@@ -65,7 +65,8 @@ GET    /documentsets/:id                  controllers.DocumentSetController.show
 GET    /documentsets/:id/$jsParams<[a-zA-Z]+-[0-9]+> controllers.DocumentSetController.showWithJsParams(id: Long, jsParams: String)
 DELETE /documentsets/:id                  controllers.DocumentSetController.delete(id: Long)
 PUT    /documentsets/:id                  controllers.DocumentSetController.update(id: Long)
-PATCH  /documentsets/:id                  controllers.DocumentSetController.updateJson(id: Long)
+# TODO nix the ".json" here (and everywhere, really)
+PATCH  /documentsets/:id.json             controllers.DocumentSetController.updateJson(id: Long)
 
 GET    /documentsets/:id/api-tokens        controllers.ApiTokenController.indexForDocumentSet(id: Long)
 POST   /documentsets/:id/api-tokens        controllers.ApiTokenController.createForDocumentSet(id: Long)

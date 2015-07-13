@@ -50,7 +50,7 @@ trait DocumentController extends Controller {
 
   def showJson(documentSetId: Long, documentId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     documentBackend.show(documentSetId, documentId).map(_ match {
-      case Some(document) => Ok(views.json.Document.show(document))
+      case Some(document) => Ok(views.json.Document.show(document)).withHeaders(CACHE_CONTROL -> "max-age=0")
       case None => NotFound
     })
   }

@@ -11,18 +11,17 @@ define [
 
     template: _.template('''
       <a href="#" class="expand"><%- t('expand') %></a>
-      <div class="details">
-        <label>
-          <span><%- t('label') %></span>
-          <input name="name" required="required" type="text" placeholder="<%- t('placeholder') %>">
-        </label>
-        <button type="submit"><%- t('submit') %></button>
-        <button type="reset"><%- t('reset') %></button>
+      <div class="details form-inline">
+        <label for="document-metadata-add-field"><%- t('label') %></label>
+        <input id="document-metadata-add-field" class="form-control" name="name" required="required" type="text" placeholder="<%- t('placeholder') %>">
+        <button type="submit" class="btn btn-primary"><%- t('submit') %></button>
+        <button type="reset" class="btn btn-default"><%- t('reset') %></button>
       </div>
     ''')
 
     events:
       'click a.expand': '_onClickExpand'
+      'keydown input': '_onKeydown'
       'submit': '_onSubmit'
       'reset': '_onReset'
 
@@ -36,24 +35,33 @@ define [
     render: ->
       @$el.html(@template(t: t))
 
-    _collapse: -> @$el.removeClass('expanded')
+    _collapse: ->
+      @$('input').val('')
+      @$el.removeClass('expanded')
 
     _onClickExpand: (e) ->
       e.preventDefault()
       @$el.toggleClass('expanded')
+      @$('input')[0].focus() if @$el.hasClass('expanded')
 
-    _onReset: (e) ->
-      # Don't preventDefault()
-      @_collapse()
+    _onKeydown: (e) ->
+      if e.which == 27 # Escape
+        e.stopPropagation()
+        e.preventDefault()
+        @_collapse()
+
+    _onReset: (e) -> @_collapse()
 
     _onSubmit: (e) ->
       e.preventDefault()
 
       fields = @documentSet.get('metadataFields').slice(0)
 
-      name = @$('input').val().trim()
+      $input = @$('input')
+
+      name = $input.val().trim()
       if name && name not in fields
         fields.push(name)
-        @documentSet.save({ metadataFields: fields }, patch: true)
+        @documentSet.patchMetadataFields(fields)
 
       @_collapse()

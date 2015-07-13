@@ -40,12 +40,17 @@ define [
     selection = undefined
     documentList = undefined
     displayApp = undefined
+    documentMetadataApp = undefined
 
     initAt = (cursorIndex, nDocuments) ->
       selection = new Selection(cursorIndex: cursorIndex)
       documentList = nDocuments? && new DocumentList(length: nDocuments) || undefined
       documentList?.documents = new Backbone.Collection([])
       tags = new Tags([])
+
+      documentMetadataApp =
+        el: $('<div class="document-metadata-app"></div>')[0]
+        setDocument: sinon.spy()
 
       view = new View
         selection: selection
@@ -56,6 +61,7 @@ define [
           @setDocument = sinon.spy()
           @setSearch = sinon.spy()
           displayApp = this
+        documentMetadataApp: documentMetadataApp
 
     testClickTriggersEvent = (selector, trigger, shouldBeCalled) ->
       spy = sinon.spy()
@@ -108,10 +114,19 @@ define [
         selection.set({ cursorIndex: 2 })
         expect(displayApp.setDocument).to.have.been.calledWith(documentList.documents.at(2).attributes)
 
+      it 'should call documentMetadataApp.setDocument with a document', ->
+        selection.set(cursorIndex: 2)
+        expect(documentMetadataApp.setDocument).to.have.been.calledWith(documentList.documents.at(2))
+
       it 'should call documentDisplayApp.setDocument with undefined', ->
         selection.set({ cursorIndex: 2 }) # defined
         selection.set({ cursorIndex: 7 }) # undefined
         expect(displayApp.setDocument).to.have.been.calledWith(undefined)
+
+      it 'should call documentMetadataApp.setDocument(null)', ->
+        selection.set(cursorIndex: 2) # defined
+        selection.set(cursorIndex: 7) # undefined
+        expect(documentMetadataApp.setDocument).to.have.been.calledWith(null)
 
     it 'should recognize document 0/10 as "1 of 10"', ->
       initAt(0, 10)

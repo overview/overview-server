@@ -1,0 +1,85 @@
+#document-current>.document-metadata {
+  overflow: auto;
+  -webkit-flex: 0 0 auto;
+  flex: 0 0 auto;
+  box-sizing: content-box; // so when not .expanded, padding remains
+  padding: 10px;
+  max-height: 30%;
+  .transition(max-height .35s ease);
+  border-top: 1px solid @table-border-color;
+
+  h4 {
+    text-align: center;
+    margin-top: 0;
+    font-size: 1em;
+    line-height: 1.5em;
+
+    a {
+      display: block;
+    }
+
+    a::before {
+      content: "⏷ ";
+    }
+  }
+
+  &:not(.expanded) {
+    max-height: 1.5em;
+    overflow: hidden;
+
+    h4 + * {
+      visibility: hidden;
+    }
+
+    h4 a::before {
+      content: "⏵ ";
+    }
+  }
+
+  .metadata-json {
+    label {
+      display: block;
+      font-size: 12px; // match input-sm
+      line-height: 1.5; // match input-sm
+      padding: 6px 0; // match input-sm's height
+      margin: 0;
+    }
+
+    dl {
+      margin: 0; // override Bootstrap's 20px margin
+    }
+
+    dt, dd {
+      margin-top: -1px; // make input borders bleed into each other
+    }
+
+    input:focus {
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .add-metadata-field {
+    font-size: 12px; // rrgh, we're px-ing all over the place here
+    padding-top: .5em * @font-size-base / 12px;
+
+    &.expanded .expand { display: none; }
+    &:not(.expanded) .details { display: none; }
+
+    a.expand {
+      display: block;
+      text-align: center;
+      line-height: 34px; // that's the height of the new-field form
+    }
+
+    .details {
+      text-align: center;
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  #document-current>.metadata .metadata-json dd {
+    margin-left: 170px; // look for something more compact than Bootstrap's 180px
+  }
+}

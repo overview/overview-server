@@ -27,9 +27,12 @@ define [
   #   and `selectedIndices` (maybe-empty Array of integers). 0 is the first
   #   index.
   # * tags: a Backbone.Collection of Tag objects.
-  # * documentDisplayApp: a DocumentDisplay/App constructor, such that
+  # * documentDisplayApp: a DocumentDisplay/App _constructor_, such that
   #   `new options.documentDisplayApp({ el: HTMLElement })` will create an
   #   object with a `setDocument()` method.
+  # * documentMetadataApp: a DocumentMetadata/App _instance_, such that
+  #   `options.documentMetadataApp.el` is an HTMLElement and
+  #   `options.documentMetadataApp.setDocument(document)` sets the document.
   class DocumentListCursor extends Backbone.View
     events:
       'click a.next': '_onClickNext'
@@ -65,11 +68,14 @@ define [
       throw 'Must pass options.selection, a Backbone.Model with a "cursorIndex" property' if !@options.selection
       throw 'Must pass options.documentList, a DocumentList' if 'documentList' not of @options
       throw 'Must pass options.documentDisplayApp, a DocumentDisplay App constructor' if !@options.documentDisplayApp
+      throw 'Must pass options.documentMetadataApp, a DocumentMetadata App instance' if !@options.documentMetadataApp
       throw 'Must pass options.tags, a Collection of Backbone.Tags' if !@options.tags
 
       @selection = @options.selection
       @documentList = @options.documentList
       @preferences = new DocumentDisplayPreferences() # it's a singleton, kinda
+
+      @documentMetadataApp = @options.documentMetadataApp
 
       @initialRender()
 
@@ -89,6 +95,8 @@ define [
 
       @preferencesView = new DocumentDisplayPreferencesView(model: @preferences)
       @preferencesView.render()
+
+      @$el.append(@documentMetadataApp.el)
 
       this
 
@@ -123,6 +131,7 @@ define [
 
     _renderDocument: (maybeDocument) ->
       @documentDisplayApp.setDocument(maybeDocument?.attributes)
+      @documentMetadataApp.setDocument(maybeDocument ? null)
 
     renderHeader: ->
       maybeDocument = @_getDocument()

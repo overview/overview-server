@@ -13,6 +13,7 @@ object show {
       "description" -> document.keywords.mkString(" "),
       "title" -> document.title,
       "text" -> document.text,
+      "metadata" -> document.metadataJson,
       "suppliedId" -> document.suppliedId,
       "url" -> url
     )

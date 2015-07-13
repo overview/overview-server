@@ -28,6 +28,8 @@ define [
       metadata: null # We normally *don't* load metadata -- hence null
 
     parse: (json) ->
+      return null if !json? # a PATCH response should be empty
+
       tagIds = {}
       tagIds[tagId] = true for tagId in (json.tagids || [])
 

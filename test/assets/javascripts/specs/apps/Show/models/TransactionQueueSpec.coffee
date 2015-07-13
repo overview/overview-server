@@ -4,6 +4,7 @@ define [
   describe 'models/TransactionQueue', ->
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
+      @sandbox.stub(console, 'log')
       @tq = new TransactionQueue()
       @tq.on('all', @allSpy = sinon.spy())
 

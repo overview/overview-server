@@ -350,6 +350,15 @@ views.DocumentSet.show.DocumentListTitle.num_documents={0,choice,0#no documents|
 views.DocumentSet.show.DocumentListTitle.tag.edit=edit tag…
 views.DocumentSet.show.DocumentListTitle.list=Back to list
 
+views.DocumentSet.show.DocumentMetadata.App.title=Metadata
+views.DocumentSet.show.DocumentMetadata.App.loading=loading…
+views.DocumentSet.show.DocumentMetadata.JsonView.help_html=Add metadata fields (such as “Author”) to your document set, and you'll be able to store each document's metadata.
+views.DocumentSet.show.DocumentMetadata.AddFieldView.label=New metadata field name
+views.DocumentSet.show.DocumentMetadata.AddFieldView.expand=Add new metadata field…
+views.DocumentSet.show.DocumentMetadata.AddFieldView.placeholder=Author
+views.DocumentSet.show.DocumentMetadata.AddFieldView.submit=Add
+views.DocumentSet.show.DocumentMetadata.AddFieldView.reset=Cancel
+
 views.DocumentSet.show.NewViewDialog.title=New visualization
 views.DocumentSet.show.NewViewDialog.cancel=Cancel
 views.DocumentSet.show.NewViewDialog.submit=Create visualization

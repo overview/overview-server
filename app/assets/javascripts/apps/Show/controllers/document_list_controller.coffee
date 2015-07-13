@@ -8,9 +8,11 @@ define [
   '../views/DocumentListCursor'
   './ListSelectionController'
   'apps/DocumentDisplay/app'
-], (_, $, Backbone, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, DocumentDisplayApp) ->
+  'apps/DocumentMetadata/App'
+], (_, $, Backbone, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, DocumentDisplayApp, DocumentMetadataApp) ->
   class Controller extends Backbone.Model
     # Properties set on initialize:
+    # * documentSet (a DocumentSet)
     # * tags (a Tags)
     # * state (a State)
     # * listEl (an HTMLElement)
@@ -22,13 +24,14 @@ define [
     # * listView
     # * cursorView
     initialize: (attrs, options) ->
-      throw 'Must specify options.tags, a Tags' if !options.tags
+      throw 'Must specify options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must specify options.state, a State' if !options.state
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
       throw 'Must specify options.titleEl, an HTMLElement' if !options.titleEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
 
-      @tags = options.tags
+      @documentSet = options.documentSet
+      @tags = @documentSet.tags
       @state = options.state
 
       @listEl = options.listEl
@@ -134,6 +137,7 @@ define [
         selection: @listSelection
         documentList: @state.get('documentList')
         documentDisplayApp: DocumentDisplayApp
+        documentMetadataApp: new DocumentMetadataApp(documentSet: @documentSet)
         tags: @tags
         el: @cursorEl
 
@@ -144,7 +148,7 @@ define [
 
   document_list_controller = (titleDiv, listDiv, cursorDiv, state, keyboardController) ->
     controller = new Controller({},
-      tags: state.documentSet.tags
+      documentSet: state.documentSet
       state: state
       listEl: listDiv
       titleEl: titleDiv

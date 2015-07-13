@@ -1,7 +1,10 @@
 define [
   'underscore'
   'backbone'
-], (_, Backbone) ->
+  'i18n'
+], (_, Backbone, i18n) ->
+  t = i18n.namespaced('views.DocumentSet.show.DocumentMetadata.JsonView')
+
   DefaultValue = ''
 
   class JsonView extends Backbone.View
@@ -16,8 +19,9 @@ define [
       main: _.template('<dl class="dl-horizontal"></dl>') # http://getbootstrap.com/css/#horizontal-description
 
       row: _.template('''
-        <dt><%- fieldName %></dt>
-        <dd><input name="<%- fieldName %>" value="<%- value %>"/></dd>
+        <% var randomInputId = 'json-view-input-' + Math.random().toString().split('.')[1]; %>
+        <dt><label for="<%= randomInputId %>" class="control-label"><%- fieldName %></label></dt>
+        <dd><input id="<%= randomInputId %>" class="form-control input-sm" name="<%- fieldName %>" value="<%- value %>"/></dd>
       ''')
 
     initialize: (options) ->
@@ -48,9 +52,12 @@ define [
             $(@templates.row({ fieldName: f, value: metadata[f] ? DefaultValue })).toArray() # Array(HTMLElement)
         .reduce(((sum, arr) -> sum.concat(arr)), []) # flatten into a single Array of HTMLElements
 
-      $main = $(@templates.main()).append(els)
+      if els.length
+        $main = $(@templates.main()).append(els)
+        @$el.empty().append($main)
+      else
+        @$el.empty().append($('<p class="help"></p>').html(t('help_html')))
 
-      @$el.empty().append($main)
       @
 
     _onChangeInput: -> @_saveChanges()
