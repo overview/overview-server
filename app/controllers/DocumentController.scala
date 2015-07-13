@@ -9,20 +9,13 @@ import play.api.mvc.ResponseHeader
 import play.api.mvc.Result
 import scala.concurrent.Future
 
-import controllers.auth.Authorities.{userOwningDocument,userOwningDocumentSet}
+import controllers.auth.Authorities.{userOwningDocument,userOwningDocumentSet,userViewingDocumentSet}
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.models.{Document,File,Page}
 
 trait DocumentController extends Controller {
-  def showJson(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
-    documentBackend.show(documentId).map(_ match {
-      case Some(document) => Ok(views.json.Document.show(document))
-      case None => NotFound
-    })
-  }
-
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
       case Some(document) => Ok(document.text)
@@ -49,9 +42,16 @@ trait DocumentController extends Controller {
   }
 
   def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
-    DocumentBackend.show(documentId).map(_ match {
+    documentBackend.show(documentId).map(_ match {
       case None => NotFound
       case Some(document) => Ok(views.html.Document.show(document))
+    })
+  }
+
+  def showJson(documentSetId: Long, documentId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+    documentBackend.show(documentSetId, documentId).map(_ match {
+      case Some(document) => Ok(views.json.Document.show(document))
+      case None => NotFound
     })
   }
 

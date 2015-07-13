@@ -63,6 +63,7 @@ define [
       @url = options.url
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
       @documents = new Documents([])
+      @documents.url = @url
 
       @listenTo(@documents, 'document-tagged', @_onDocumentTagged)
       @listenTo(@documents, 'document-untagged', @_onDocumentUntagged)

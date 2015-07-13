@@ -25,6 +25,7 @@ define [
       description: ''
       pageNumber: null
       url: null
+      metadata: null # We normally *don't* load metadata -- hence null
 
     parse: (json) ->
       tagIds = {}

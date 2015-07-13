@@ -12,7 +12,7 @@ module.exports = (config) ->
     frameworks: [ 'mocha', 'requirejs' ]
     preprocessors: { '**/*.coffee': ['coffee'] }
     reporters: [ 'dots', 'junit' ]
-    reportSlowerThan: 15
+    reportSlowerThan: 40 # TODO upgrade to PhantomJS 2 when it comes out, and change this to 10
     verbose: true
 
     junitReporter:

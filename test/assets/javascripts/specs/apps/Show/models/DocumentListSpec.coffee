@@ -124,6 +124,9 @@ define [
         it 'should have tagCount=n,exact', -> expect(@list.getTagCount(@tag)).to.deep.eq(n: 2, howSure: 'exact')
         it 'should fire tag-counts-changed', -> expect(@tagCountsChangedSpy).to.have.been.called.once
 
+        it 'should have the right url on every document', ->
+          expect(@docs.at(1).url()).to.eq('/documentsets/1/documents/2')
+
         it 'should increase tag count when a document is tagged', -> 
           @docs.at(2).tagLocal(@tag)
           expect(@list.getTagCount(@tag)).to.deep.eq(n: 3, howSure: 'exact')
