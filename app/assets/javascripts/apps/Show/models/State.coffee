@@ -7,9 +7,7 @@ define [
 ], (Backbone, Tags, Views, DocumentList, DocumentListParams) ->
   # Tracks global state.
   #
-  # * Provides `documentSetId` and `transactionQueue`: constants.
-  # * Proxies DocumentSet's `tags`, `views` and `nDocuments`: constants set
-  #   during construction. (TODO: remove these)
+  # * Provides `documentSet` and `transactionQueue`: constants.
   # * Gives access to `view`, `documentList`, `document` and
   #   `highlightedDocumentListParams`: global state as Backbone.Model
   #   attributes.
@@ -58,11 +56,9 @@ define [
       @documentSet = options.documentSet
       @documentSetId = @documentSet.id
       @transactionQueue = options.transactionQueue
-      @tags = @documentSet.tags
-      @views = @documentSet.views
 
-      view = @views.at(0)
-      attributes = @_createSetDocumentListParamsOptions(new DocumentListParams(@, view))
+      view = @documentSet.views.at(0)
+      attributes = @_createSetDocumentListParamsOptions(new DocumentListParams(@documentSet, view))
       attributes.view = view
       @set(attributes)
 
@@ -91,7 +87,7 @@ define [
       params = if args[0] instanceof DocumentListParams
         args[0]
       else
-        DocumentListParams.Builder(@, @get('view'))(args...)
+        DocumentListParams.Builder(@documentSet, @get('view'))(args...)
 
       return if oldParams?.equals(params)
 
@@ -127,7 +123,7 @@ define [
     #
     # ... will call `reset(nodes: [3])` on the current documentListParams.
     _startResetDocumentListParams: ->
-      build = new DocumentListParams.Builder(this, @get('view'))
+      build = new DocumentListParams.Builder(@documentSet, @get('view'))
       ret = {}
 
       prepare = (func) =>

@@ -26,11 +26,6 @@ define [
     afterEach ->
       @state?.stopListening()
 
-    it 'should set @tags and @views', ->
-      @buildState()
-      expect(@state.tags).to.eq(@documentSet.tags)
-      expect(@state.views).to.eq(@documentSet.views)
-
     it 'should set documentList to all', ->
       @buildState()
       expect(@state.get('documentList')).to.exist

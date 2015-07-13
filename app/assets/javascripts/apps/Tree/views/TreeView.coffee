@@ -69,7 +69,7 @@ define [
       @setHighlightedDocumentListParams(@state.get('highlightedDocumentListParams'))
 
       @listenTo(@state, 'change:highlightedDocumentListParams', (__, params) => @setHighlightedDocumentListParams(params))
-      @listenTo(@state.tags, 'documents-changed', @_onTagOrUntag)
+      @listenTo(@state.documentSet.tags, 'documents-changed', @_onTagOrUntag)
 
       $div = $(@div)
       @canvas = $('<canvas width="1" height="1"></canvas>')[0]
@@ -125,7 +125,7 @@ define [
       @tree.state.on('change:documentList change:document change:highlightedDocumentListParams', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
-      @state.tags.on('change:color', update)
+      @state.documentSet.tags.on('change:color', update)
       $(window).on('resize.tree-view', update)
 
       @focus.on('change:zoom', this._refresh_zoom_button_status.bind(this))
@@ -247,7 +247,7 @@ define [
     _getHighlightColor: ->
       if (highlightedDocumentListParams = @tree.state.get('highlightedDocumentListParams')?.params)?
         if (tagId = highlightedDocumentListParams.tags?[0])?
-          @state.tags.get(tagId)?.get('color')
+          @state.documentSet.tags.get(tagId)?.get('color')
         else if false == highlightedDocumentListParams.tagged
           '#dddddd'
         else if !_.isEmpty(highlightedDocumentListParams)

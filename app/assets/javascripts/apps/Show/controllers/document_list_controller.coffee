@@ -144,7 +144,7 @@ define [
 
   document_list_controller = (titleDiv, listDiv, cursorDiv, state, keyboardController) ->
     controller = new Controller({},
-      tags: state.tags
+      tags: state.documentSet.tags
       state: state
       listEl: listDiv
       titleEl: titleDiv

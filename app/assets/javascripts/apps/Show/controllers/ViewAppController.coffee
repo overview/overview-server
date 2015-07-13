@@ -24,7 +24,7 @@ define [
 
       @facade = new ShowAppFacade
         state: @state
-        tags: @state.tags
+        tags: @state.documentSet.tags
 
       @_setView(@state.get('view'))
       @listenTo(@state, 'change:view', (__, view) => @_setView(view))

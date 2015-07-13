@@ -41,6 +41,7 @@ define [
       @documentSet = new DocumentSet(id: documentSetId)
       @documentSet.fetch()
       @documentSet.once 'sync', =>
+        @documentSet.views.pollUntilStable()
         @state = new State({}, documentSet: @documentSet, transactionQueue: @transactionQueue)
         @_initializeUi()
 
@@ -155,10 +156,9 @@ define [
       transactionQueue
 
     _initializeUi: ->
-      @state.views.pollUntilStable()
       # Choose the view that's in the URL
       if (m = /\/documentsets\/\d+\/([-_a-zA-Z0-9]+)/.exec(window.location.pathname))?
-        if (view = @state.views.get(m[1]))?
+        if (view = @documentSet.views.get(m[1]))?
           @state.setView(view)
 
       els = @_buildHtml()
@@ -170,7 +170,7 @@ define [
         url = "/documentsets/#{@state.documentSetId}/#{view.id}"
         window.history?.replaceState(url, '', url)
 
-      controller = new ViewsController(@state.views, @state)
+      controller = new ViewsController(@documentSet.views, @state)
       els.views.appendChild(controller.el)
 
       new ModeView(el: @el, state: @state)
@@ -181,7 +181,7 @@ define [
 
       tag_list_controller
         state: @state
-        tags: @state.tags
+        tags: @documentSet.tags
         tagSelectEl: els.tags
         tagThisEl: els.tagThis
         keyboardController: keyboardController

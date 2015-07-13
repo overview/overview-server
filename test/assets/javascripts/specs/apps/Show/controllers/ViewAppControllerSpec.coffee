@@ -3,6 +3,8 @@ define [
   'backbone'
   'apps/Show/controllers/ViewAppController'
 ], ($, Backbone, ViewAppController) ->
+  class MockDocumentSet extends Backbone.Model
+
   class MockState extends Backbone.Model
 
   class MockView extends Backbone.Model
@@ -14,12 +16,15 @@ define [
       @jobView = new MockView(type: 'job')
       @treeView = new MockView(type: 'tree')
 
+      @documentSet = new MockDocumentSet()
+      @documentSet.tags = @tags
+
       @state = new MockState
         highlightedDocumentListParams: 'highlightedDocumentListParams'
         documentList: { params: 'documentListParams' }
         document: 'document'
         view: @jobView
-      @state.tags = @tags
+      @state.documentSet = @documentSet
 
       @transactionQueue = 'transactionQueue'
 
