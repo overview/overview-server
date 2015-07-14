@@ -3,7 +3,7 @@
 )(implicit messages: Messages, request: RequestHeader)
 
 @defining(scopedMessages("views.Password._newForm")) { m =>
-  <form method="post" action="@routes.PasswordController.create()" class="well form-horizontal" autocomplete="off">
+  <form method="post" action="@routes.PasswordController.create()" class="well form-horizontal login-form" autocomplete="off">
     @helper.Form.csrfToken
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))

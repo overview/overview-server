@@ -2,7 +2,7 @@ define [
   'apps/DocumentMetadata/App'
   'i18n'
 ], (App, i18n) ->
-  describe.only 'apps/DocumentMetadata/App', ->
+  describe 'apps/DocumentMetadata/App', ->
     beforeEach ->
       @sandbox = sinon.sandbox.create()
 
@@ -14,6 +14,8 @@ define [
       i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentMetadata',
         'App.loading': 'loading'
         'App.title': 'title'
+        'JsonView.delete': 'delete'
+        'JsonView.confirmDelete': 'confirmDelete,{0}'
         'AddFieldView.label': 'label'
         'AddFieldView.expand': 'expand'
         'AddFieldView.placeholder': 'placeholder'

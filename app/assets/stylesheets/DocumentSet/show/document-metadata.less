@@ -1,5 +1,7 @@
 #document-current>.document-metadata {
   overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-flex: 0 0 auto;
   flex: 0 0 auto;
   box-sizing: content-box; // so when not .expanded, padding remains
@@ -37,25 +39,22 @@
   }
 
   .metadata-json {
-    label {
-      display: block;
-      font-size: 12px; // match input-sm
-      line-height: 1.5; // match input-sm
-      padding: 6px 0; // match input-sm's height
-      margin: 0;
-    }
-
-    dl {
-      margin: 0; // override Bootstrap's 20px margin
-    }
-
-    dt, dd {
-      margin-top: -1px; // make input borders bleed into each other
-    }
-
-    input:focus {
+    .form-group {
       position: relative;
-      z-index: 1;
+    }
+
+    label {
+      padding-right: 0; // not the 15px that comes by default
+    }
+
+    button.delete {
+      position: absolute;
+      top: 0;
+      right: 15px; // from the grid system
+      border: 1px solid transparent; // mimic the input
+      padding: 6px 12px;
+      background: transparent;
+      color: @brand-danger;
     }
   }
 
@@ -75,11 +74,5 @@
     .details {
       text-align: center;
     }
-  }
-}
-
-@media (min-width: 768px) {
-  #document-current>.metadata .metadata-json dd {
-    margin-left: 170px; // look for something more compact than Bootstrap's 180px
   }
 }

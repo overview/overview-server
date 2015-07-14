@@ -352,6 +352,8 @@ views.DocumentSet.show.DocumentListTitle.list=Back to list
 
 views.DocumentSet.show.DocumentMetadata.App.title=Metadata
 views.DocumentSet.show.DocumentMetadata.App.loading=loading…
+views.DocumentSet.show.DocumentMetadata.JsonView.delete=Delete this metadata field
+views.DocumentSet.show.DocumentMetadata.JsonView.confirmDelete=Are you sure? This will remove the “{0}” metadata field from every document in this document set.
 views.DocumentSet.show.DocumentMetadata.JsonView.help_html=Add metadata fields (such as “Author”) to your document set, and you'll be able to store each document's metadata.
 views.DocumentSet.show.DocumentMetadata.AddFieldView.label=New metadata field name
 views.DocumentSet.show.DocumentMetadata.AddFieldView.expand=Add new metadata field…

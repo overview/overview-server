@@ -5,7 +5,7 @@
 
 @defining(scopedMessages("views.Password._editForm")) { m =>
   <div class="well">
-    <form method="post" action="@routes.PasswordController.update(token)" class="form-horizontal" autocomplete="off">
+    <form method="post" action="@routes.PasswordController.update(token)" class="form-horizontal login-form" autocomplete="off">
       @helper.Form.csrfToken
       @helper.Form.errors(form.globalErrors)
       @helper.Form.translatedInput(form("password"), m, Map('type -> "password", 'class -> "minlength-password form-control", 'required -> "required", scala.Symbol("data-minlength-password-error-too-short") -> Messages("authentication.password.secure"), scala.Symbol("data-minlength-password-min-length") -> "7"))

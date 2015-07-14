@@ -9,22 +9,28 @@ define [
 
   class JsonView extends Backbone.View
     tagName: 'form'
-    className: 'metadata-json'
+    className: 'metadata-json form-horizontal'
 
     events:
       'change input': '_onChangeInput'
       'focus input': '_onFocusInput'
       'mousedown input': '_onMousedownInput'
       'mouseup input': '_onMouseupInput'
+      'click button.delete': '_onClickDelete'
       'submit': '_onSubmit'
 
     templates:
-      main: _.template('<dl class="dl-horizontal"></dl>') # http://getbootstrap.com/css/#horizontal-description
-
       row: _.template('''
         <% var randomInputId = 'json-view-input-' + Math.random().toString().split('.')[1]; %>
-        <dt><label for="<%= randomInputId %>" class="control-label"><%- fieldName %></label></dt>
-        <dd><input id="<%= randomInputId %>" class="form-control input-sm" name="<%- fieldName %>" value="<%- value %>"/></dd>
+        <div class="form-group form-group-sm">
+          <label for="<%= randomInputId %>" class="col-sm-2 control-label"><%- fieldName %></label>
+          <div class="col-sm-10">
+            <input id="<%= randomInputId %>" class="form-control" name="<%- fieldName %>" value="<%- value %>"/>
+            <button class="delete" data-field-name="<%- fieldName %>" title="<%- t('delete') %>" data-confirm="<%- t('confirmDelete', fieldName) %>">
+              <i class="overview-icon-trash"></i>
+            </button>
+          </div>
+        </div>
       ''')
 
     initialize: (options) ->
@@ -40,24 +46,22 @@ define [
     render: ->
       # Maintain previous HTML elements -- that way, we don't overwrite the
       # user's stuff during render
-      alreadyRendered = {}
-      children = @$('dl').children().toArray()
+      alreadyRendered = {} # Hash of fieldName => HTMLEntity
+      children = @$el.children().toArray()
       for fieldName, i in (@_renderedMetadataFields ? [])
-        alreadyRendered[fieldName] = children.slice(i * 2, i * 2 + 2)
+        alreadyRendered[fieldName] = children[i]
 
       @_renderedMetadataFields = @documentSet.get('metadataFields')
       metadata = @document.get('metadata') ? {}
       els = @_renderedMetadataFields
         .map (f) =>
           if f of alreadyRendered
-            alreadyRendered[f] # Array(HTMLElement,HTMLElement)
+            alreadyRendered[f]
           else
-            $(@templates.row({ fieldName: f, value: metadata[f] ? DefaultValue })).toArray() # Array(HTMLElement)
-        .reduce(((sum, arr) -> sum.concat(arr)), []) # flatten into a single Array of HTMLElements
+            $(@templates.row({ fieldName: f, t: t, value: metadata[f] ? DefaultValue }))[0]
 
       if els.length
-        $main = $(@templates.main()).append(els)
-        @$el.empty().append($main)
+        @$el.empty().append(els)
       else
         @$el.empty().append($('<p class="help"></p>').html(t('help_html')))
 
@@ -82,6 +86,14 @@ define [
       e.preventDefault() if !@_clickingAndAlreadyFocused
       @_clickingAndAlreadyFocused = false
       undefined # avoid "return false"
+
+    _onClickDelete: (e) ->
+      confirm = e.currentTarget.getAttribute('data-confirm')
+      if window.confirm(confirm)
+        fieldName = e.currentTarget.getAttribute('data-field-name')
+        newFields = @documentSet.get('metadataFields').filter((n) -> n != fieldName)
+        @documentSet.patchMetadataFields(newFields)
+      e.preventDefault()
 
     # Sends a PATCH for this document's "metadata"
     _saveChanges: ->
