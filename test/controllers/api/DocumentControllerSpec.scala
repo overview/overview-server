@@ -5,18 +5,25 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedRequest
-import controllers.backend.{DocumentBackend,SelectionBackend}
+import controllers.backend.{DocumentBackend,DocumentSetBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{InMemorySelection,Selection}
 import org.overviewproject.models.DocumentHeader
+import org.overviewproject.metadata.{MetadataSchema,MetadataField,MetadataFieldType}
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    val selection = InMemorySelection(Seq()) // override for a different Selection
+    lazy val selection = InMemorySelection(Seq()) // override for a different Selection
+    val documentSet = factory.documentSet(metadataSchema = MetadataSchema(1, Seq(
+      MetadataField("foo", MetadataFieldType.String)
+    )))
     def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
-    val mockDocumentBackend = mock[DocumentBackend]
+    val mockDocumentBackend = smartMock[DocumentBackend]
+    val mockDocumentSetBackend = smartMock[DocumentSetBackend]
+    mockDocumentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
     val controller = new DocumentController with TestController {
       override val documentBackend = mockDocumentBackend
+      override val documentSetBackend = mockDocumentSetBackend
       override def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]) = buildSelection
     }
   }
@@ -24,7 +31,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
   "DocumentController" should {
     "#index" should {
       trait IndexScope extends BaseScope {
-        val documentSetId = 1L
+        val documentSetId = documentSet.id
         val q = ""
         val fields = ""
         val pageRequest = PageRequest(0, 1000)
@@ -73,19 +80,19 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
       "return an Array of IDs when fields=id" in new IndexScope {
         override val fields = "id"
-        override val selection = InMemorySelection(Seq(1L, 2L, 3L))
+        override lazy val selection = InMemorySelection(Seq(1L, 2L, 3L))
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
         contentAsString(result) must beEqualTo("[1,2,3]")
       }
 
       "return the selectionId" in new IndexScope {
-        override val selection = InMemorySelection(Seq(1L, 2L, 3L))
+        override lazy val selection = InMemorySelection(Seq(1L, 2L, 3L))
         contentAsString(result) must /("selectionId" -> selection.id.toString)
       }
 
       trait IndexFieldsScope extends IndexScope {
-        val documents = List(
+        lazy val documents = List(
           factory.document(
             title="foo",
             keywords=Seq("foo", "bar"),
@@ -97,8 +104,8 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         )
-        override val selection = InMemorySelection(documents.map(_.id))
-        mockDocumentBackend.index(any, any, any) returns Future.successful(
+        override lazy val selection = InMemorySelection(documents.map(_.id))
+        mockDocumentBackend.index(any, any, any) returns Future(
           Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )
       }
@@ -163,6 +170,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         override val fields = "id,text"
 
         status(result) must beEqualTo(OK)
+        contentAsString(result) must /("items") /#(0) /("text" -> "text")
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
       }
 
@@ -171,7 +179,17 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         override val fields = "id,metadata"
 
         status(result) must beEqualTo(OK)
+        contentAsString(result) must /("items") /#(0) /("metadata") /("foo" -> "bar")
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
+      }
+
+      "ensure returned metadata matches the MetadataSchema" in new IndexFieldsScope {
+        override lazy val documents = List(factory.document(metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz")))
+        override val fields = "id,metadata"
+
+        val json = contentAsString(result)
+        json must /("items") /#(0) /("metadata") /("foo" -> "3")
+        json must not(contain("baz"))
       }
 
       "include text in JSON response" in new IndexFieldsScope {
@@ -226,18 +244,28 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("pagination") /("total" -> 2)
         json must /("items") /#(0) /("id" -> documents(0).id)
       }
+
+      "ensure returned metadata matches the MetadataSchema when streaming" in new IndexFieldsScope {
+        override lazy val request = fakeRequest("GET", "/?stream=true")
+        override lazy val documents = List(factory.document(metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz")))
+        override val fields = "id,metadata"
+
+        val json = contentAsString(result)
+        json must /("items") /#(0) /("metadata") /("foo" -> "3")
+        json must not(contain("baz"))
+      }
     }
 
     "#show" should {
       trait ShowScope extends BaseScope {
-        val documentSetId = 1L
+        val documentSetId = documentSet.id
         val documentId = 2L
 
         override def action = controller.show(documentSetId, documentId)
       }
 
       "return 404 when not found" in new ShowScope {
-        mockDocumentBackend.show(documentSetId, documentId) returns Future(None)
+        mockDocumentBackend.show(documentSetId, documentId) returns Future.successful(None)
         status(result) must beEqualTo(NOT_FOUND)
         contentType(result) must beSome("application/json")
         val json = contentAsString(result)
@@ -245,7 +273,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       }
 
       "return JSON with status code 200" in new ShowScope {
-        mockDocumentBackend.show(documentSetId, documentId) returns Future(Some(factory.document(
+        mockDocumentBackend.show(documentSetId, documentId) returns Future.successful(Some(factory.document(
           id=documentId,
           documentSetId=documentSetId,
           keywords=Seq("foo", "bar"),
@@ -270,6 +298,17 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("text" -> "text")
         json must /("metadata") /("foo" -> "bar")
         json must /("suppliedId" -> "suppliedId")
+      }
+
+      "ensure returned metadata matches the MetadataSchema" in new ShowScope {
+        mockDocumentBackend.show(documentSetId, documentId) returns Future.successful(Some(factory.document(
+          id=documentId,
+          metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz value")
+        )))
+
+        val json = contentAsString(result)
+        json must /("metadata") /("foo" -> "3")
+        json must not(contain("baz"))
       }
     }
   }

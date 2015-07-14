@@ -20,7 +20,6 @@ define [
       throw 'Must specify options.documentSet, a Backbone.Model with metadataFields' if !options.documentSet
 
       @documentSet = options.documentSet
-      @addFieldView = new AddFieldView(documentSet: @documentSet)
       @document = null
       @documentMetadataFetched = false
 
@@ -38,13 +37,14 @@ define [
       @$loading = $(_.template('<div class="loading"><i class="icon icon-spinner icon-spin"/><%- loading %></div>')(loading: t('loading')))
 
       @jsonView = null
+      @addFieldView = null
 
       @render()
 
     render: ->
       @$el.empty()
 
-      if @jsonView
+      if @jsonView && @addFieldView
         @$el.append(@$title)
         @$el.append(@jsonView.el)
         @$el.append(@addFieldView.el)
@@ -58,6 +58,12 @@ define [
       @jsonView?.remove()
       @jsonView = null
 
+      # It'd be nice to create a single AddFieldView and keep it forever. But
+      # when we remove it from the document its jQuery events go with it.
+      # Rather than mess with reattaching, let's just build a new one.
+      @addFieldView?.remove()
+      @addFieldView = null
+
       @document = document
       @documentMetadataFetched = false
 
@@ -70,6 +76,7 @@ define [
             return if @document != document # stale response
             @document.set(metadata: data.metadata)
             @jsonView = new JsonView(documentSet: @documentSet, document: @document)
+            @addFieldView = new AddFieldView(documentSet: @documentSet)
 
             @render()
 

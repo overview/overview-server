@@ -3,24 +3,28 @@ package controllers.api
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsArray,JsNull,JsNumber,JsObject,JsString,JsValue,Json}
-import play.api.mvc.{RequestHeader,Result}
+import play.api.mvc.Result
 import scala.concurrent.Future
 
-import controllers.auth.ApiAuthorizedAction
+import controllers.auth.{ApiAuthorizedAction,ApiAuthorizedRequest}
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{DocumentBackend,SelectionBackend}
+import controllers.backend.{DocumentBackend,DocumentSetBackend}
 import models.pagination.PageRequest
 import models.{Selection,SelectionRequest}
-import org.overviewproject.models.DocumentHeader
+import org.overviewproject.metadata.Metadata
+import org.overviewproject.models.{DocumentSet,DocumentHeader}
 
 trait DocumentController extends ApiController with ApiSelectionHelpers {
   import DocumentController.Field
+  protected val documentSetBackend: DocumentSetBackend
   protected val documentBackend: DocumentBackend
 
-  private def _indexDocuments(selection: Selection, pageRequest: PageRequest, fields: Set[Field]): Future[Result] = {
-    for { documents <- documentBackend.index(selection, pageRequest, Field.needFullDocuments(fields)) }
+  private def _indexDocuments(documentSet: DocumentSet, selection: Selection, pageRequest: PageRequest, fields: Set[Field]): Future[Result] = {
+    for {
+      documents <- documentBackend.index(selection, pageRequest, Field.needFullDocuments(fields))
+    }
     yield {
-      val jsObjects = documents.items.map(d => Field.formatDocument(d, fields))
+      val jsObjects = documents.items.map(d => Field.formatDocument(documentSet, d, fields))
       val json = JsObject(Seq(
         "selectionId" -> JsString(selection.id.toString),
         "pagination" -> views.json.api.pagination.PageInfo.show(documents.pageInfo),
@@ -30,7 +34,7 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
     }
   }
 
-  private def _streamDocumentsInner(selection: Selection, pageRequest: PageRequest, fields: Set[Field], documentCount: Int): Result = {
+  private def _streamDocumentsInner(documentSet: DocumentSet, selection: Selection, pageRequest: PageRequest, fields: Set[Field], documentCount: Int): Result = {
     import play.api.libs.iteratee._
 
     val start = pageRequest.offset
@@ -42,7 +46,7 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
       documentBackend.index(selection, PageRequest(pageStart, batchSize), Field.needFullDocuments(fields))
         .map { (documents) =>
           val initialComma = if (pageStart != start && documents.items.nonEmpty) "," else ""
-          val jsObjects = documents.items.map(d => Field.formatDocument(d, fields))
+          val jsObjects = documents.items.map(d => Field.formatDocument(documentSet, d, fields))
           s"${initialComma}${jsObjects.map(_.toString).mkString(",")}"
         }
     }
@@ -63,10 +67,10 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
       .as("application/json")
   }
 
-  private def _streamDocuments(selection: Selection, pageRequest: PageRequest, fields: Set[Field]): Future[Result] = {
+  private def _streamDocuments(documentSet: DocumentSet, selection: Selection, pageRequest: PageRequest, fields: Set[Field]): Future[Result] = {
     for {
       documentCount <- selection.getDocumentCount
-    } yield _streamDocumentsInner(selection, pageRequest, fields, documentCount)
+    } yield _streamDocumentsInner(documentSet, selection, pageRequest, fields, documentCount)
   }
 
   private def _indexIds(selection: Selection): Future[Result] = {
@@ -75,45 +79,58 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
   }
 
   def index(documentSetId: Long, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
-    requestToSelection(documentSetId, request).flatMap(_ match {
-      case Left(result) => Future.successful(result)
-      case Right(selection) => {
-        val fieldSet = Set(Field.id) ++ Field.parseManyOrDefaults(fields)
-
-        if (fieldSet == Set(Field.id)) {
-          _indexIds(selection)
-        } else {
-          val streaming = RequestData(request).getBoolean("stream").getOrElse(false)
-
-          val pageLimit = if (streaming) {
-            Int.MaxValue
-          } else if (Field.needFullDocuments(fieldSet)) {
-            DocumentController.MaxTextPageLimit
-          } else {
-            DocumentController.MaxPageLimit
-          }
-          val pr = pageRequest(request, pageLimit)
-
-          if (streaming) {
-            _streamDocuments(selection, pr, fieldSet)
-          } else {
-            _indexDocuments(selection, pr, fieldSet)
-          }
-        }
-      }
+    documentSetBackend.show(documentSetId).flatMap(_ match {
+      case None => Future.successful(NotFound)
+      case Some(documentSet) => indexDocumentSet(documentSet, fields)(request)
     })
   }
 
-  def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
-    documentBackend.show(documentSetId, documentId).map(_ match {
-      case Some(document) => Ok(Field.formatDocument(document, Field.all))
-      case None => NotFound(jsonError("not-found", s"Document $documentId not found in document set $documentSetId"))
+  def indexDocumentSet(documentSet: DocumentSet, fields: String)(request: ApiAuthorizedRequest[_]): Future[Result] = {
+    requestToSelection(documentSet.id, request).flatMap(_ match {
+      case Left(result) => Future.successful(result)
+      case Right(selection) => indexSelection(documentSet, selection, fields)(request)
     })
+  }
+
+  def indexSelection(documentSet: DocumentSet, selection: Selection, fields: String)(request: ApiAuthorizedRequest[_]): Future[Result] = {
+    val fieldSet = Set(Field.id) ++ Field.parseManyOrDefaults(fields)
+
+    if (fieldSet == Set(Field.id)) {
+      _indexIds(selection)
+    } else {
+      val streaming = RequestData(request).getBoolean("stream").getOrElse(false)
+
+      val pageLimit = if (streaming) {
+        Int.MaxValue
+      } else if (Field.needFullDocuments(fieldSet)) {
+        DocumentController.MaxTextPageLimit
+      } else {
+        DocumentController.MaxPageLimit
+      }
+      val pr = pageRequest(request, pageLimit)
+
+      if (streaming) {
+        _streamDocuments(documentSet, selection, pr, fieldSet)
+      } else {
+        _indexDocuments(documentSet, selection, pr, fieldSet)
+      }
+    }
+  }
+
+  def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
+    for {
+      maybeDocumentSet <- documentSetBackend.show(documentSetId)
+      maybeDocument <- documentBackend.show(documentSetId, documentId)
+    } yield (maybeDocumentSet, maybeDocument) match {
+      case (Some(documentSet), Some(document)) => Ok(Field.formatDocument(documentSet, document, Field.all))
+      case _ => NotFound(jsonError("not-found", s"Document $documentId not found in document set $documentSetId"))
+    }
   }
 }
 
 object DocumentController extends DocumentController {
   override protected val documentBackend = DocumentBackend
+  override protected val documentSetBackend = DocumentSetBackend
 
   private val MaxPageLimit = 1000
   private val MaxTextPageLimit = 20
@@ -149,11 +166,11 @@ object DocumentController extends DocumentController {
       case `url` => "url"
     }
 
-    def format(field: Field, document: DocumentHeader): JsValue = field match {
+    def format(field: Field, documentSet: DocumentSet, document: DocumentHeader): JsValue = field match {
       case `id` => JsNumber(document.id)
       case `documentSetId` => JsNumber(document.documentSetId)
       case `keywords` => JsArray(document.keywords.map(JsString.apply))
-      case `metadata` => document.metadataJson
+      case `metadata` => Metadata(documentSet.metadataSchema, document.metadataJson).cleanJson
       case `pageNumber` => document.pageNumber.map(JsNumber(_)).getOrElse(JsNull)
       case `suppliedId` => JsString(document.suppliedId)
       case `text` => JsString(document.text)
@@ -161,8 +178,8 @@ object DocumentController extends DocumentController {
       case `url` => document.url.map(JsString).getOrElse(JsNull)
     }
 
-    def formatDocument(document: DocumentHeader, fields: Set[Field]): JsObject = {
-      JsObject(fields.toSeq.map(f => name(f) -> format(f, document)))
+    def formatDocument(documentSet: DocumentSet, document: DocumentHeader, fields: Set[Field]): JsObject = {
+      JsObject(fields.toSeq.map(f => name(f) -> format(f, documentSet, document)))
     }
 
     def parseOne(string: String): Option[Field] = string match {

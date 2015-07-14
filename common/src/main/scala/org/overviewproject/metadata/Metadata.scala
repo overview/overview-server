@@ -1,6 +1,6 @@
 package org.overviewproject.metadata
 
-import play.api.libs.json.{JsObject,JsString,JsValue,Reads}
+import play.api.libs.json.{JsArray,JsBoolean,JsDefined,JsNull,JsObject,JsNumber,JsString,JsValue,JsUndefined}
 
 /** User-supplied data about a document that adheres to a MetadataSchema.
   *
@@ -11,13 +11,27 @@ import play.api.libs.json.{JsObject,JsString,JsValue,Reads}
   * canonical.
   */
 case class Metadata(schema: MetadataSchema, val json: JsObject = JsObject(Seq())) {
+  /** Returns the metadata as JSON.
+    *
+    * In the course of normal operation, it is easy for a user to make a
+    * Document's `metadataJson` non-compliant with the schema. That's okay:
+    * we sanitize it on output.
+    *
+    * Use this method whenever you are returning JSON to the user.
+    */
+  def cleanJson: JsObject = {
+    val parts: Seq[(String,JsValue)] = schema.fields
+      .map((field) => (field.name -> JsString(getString(field.name))))
+    JsObject(parts)
+  }
+
   /** Returns a new Metadata with the field set to the new value.
     *
     * @throws IllegalArgumentException if fieldName is not in the schema or
     *         does not specify a String.
     */
-  def setString(fieldName: String, fieldValue: String) = {
-    checkField(fieldName, MetadataFieldType.String)
+  def setString(fieldName: String, fieldValue: String): Metadata = {
+    checkFieldAndType(fieldName, MetadataFieldType.String)
     Metadata(schema, json.+((fieldName, JsString(fieldValue))))
   }
 
@@ -28,15 +42,27 @@ case class Metadata(schema: MetadataSchema, val json: JsObject = JsObject(Seq())
     *
     * @throws IllegalArgumentException if fieldName is not in the schema.
     */
-  def getString(fieldName: String) = {
-    checkField(fieldName, MetadataFieldType.String)
-    (json \ fieldName).asOpt[String](Reads.StringReads).getOrElse("")
+  def getString(fieldName: String): String = {
+    checkField(fieldName)
+    (json \ fieldName) match {
+      case JsDefined(JsString(s)) => s
+      case JsDefined(JsNull) => ""
+      case JsDefined(v) => v.toString
+      case _ => ""
+    }
+  }
+
+  /** Throws an err iff the given field is not in the schema. */
+  private def checkField(fieldName: String): Unit = {
+    if (!schema.fields.exists { _.name == fieldName }) {
+      throw new IllegalArgumentException(s"The metadata schema does not include a `$fieldName`")
+    }
   }
 
   /** Throws an error iff the given field of the given type is not in the schema. */
-  private def checkField(fieldName: String, fieldType: MetadataFieldType): Unit = {
+  private def checkFieldAndType(fieldName: String, fieldType: MetadataFieldType): Unit = {
     if (!schema.fields.exists { f => f.name == fieldName && f.fieldType == fieldType }) {
-      throw new IllegalArgumentException("The metadata schema does not include a `foo2` of type `String`")
+      throw new IllegalArgumentException(s"The metadata schema does not include a `$fieldName` of type `$fieldType`")
     }
   }
 }

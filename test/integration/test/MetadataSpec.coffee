@@ -47,6 +47,27 @@ describe 'Metadata', ->
           .click(css: '.document-nav a.next')
           .click(css: '.document-nav a.previous')
 
+      it 'should add and remove metadata fields', ->
+        @browser
+          .click(link: 'Add new metadata field')
+          .sendKeys('baz', css: '.add-metadata-field input[name=name]')
+          .click(css: '.add-metadata-field button[type=submit]')
+          .sendKeys('a baz value', css: '.metadata-json input[name=baz]')
+          # Navigate away and come back
+          .click(css: '.document-nav a.next')
+          .click(css: '.document-nav a.previous')
+          .getAttribute({ css: '.metadata-json input[name=baz]', wait: 'fast' }, 'value')
+            .then((value) -> expect(value).to.eq('a baz value'))
+
+        # Remove the field
+        @browser
+          .click(css: '.metadata-json input[name=baz] + button.delete')
+          .alert().accept()
+          # Navigate away and come back, to ensure request was sent
+          .click(css: '.document-nav a.next')
+          .click(css: '.document-nav a.previous')
+          .find(@locatorWithWait)
+
     describe 'GET /documents', ->
       it 'should return metadata when requested', ->
         @browser.getUrl()
