@@ -22,3 +22,15 @@ module.exports = class Element
     debug('getText()')
     @driverElement.getText()
       .thenCatch((ex) -> console.warn('Failed getText', ex); throw ex)
+
+  # Returns a Promise of the element's attribute.
+  getAttribute: (attribute) ->
+    debug("getAttribute(#{JSON.stringify(attribute)})")
+    @driverElement.getAttribute(attribute)
+      .thenCatch((ex) -> console.warn('Failed getAttribute', ex); throw ex)
+
+  # Schedules a clear of the element. Returns an empty Promise.
+  clear: ->
+    debug('clear')
+    @driverElement.clear()
+      .thenCatch((ex) -> console.warn('Failed clear', ex); throw ex)

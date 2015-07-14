@@ -176,11 +176,24 @@ module.exports = class Browser
     @driver.call => @find(locator).then((el) -> el.sendKeys(keys))
     @
 
+  # Alias for find(locator).clear()
+  clear: (locator) ->
+    debug("scheduling clear(#{JSON.stringify(locator)})")
+    @debug("clear(#{JSON.stringify(locator)})")
+    @driver.call => @find(locator).then((el) -> el.clear())
+    @
+
   # Alias for find(locator).getText()
   getText: (locator) ->
     debug("scheduling getText(#{JSON.stringify(locator)})")
     @debug("getText(#{JSON.stringify(locator)})")
     @driver.call => @find(locator).then((el) -> el.getText())
+
+  # Alias for find(locator).getAttribute(attribute)
+  getAttribute: (locator, attribute) ->
+    debug("scheduling getAttribute(#{JSON.stringify(locator)},#{JSON.stringify(attribute)})")
+    @debug("getAttribute(#{JSON.stringify(locator)},#{JSON.stringify(attribute)})")
+    @driver.call => @find(locator).then((el) -> el.getAttribute(attribute))
 
   # Returns the "alert" interface. Usage:
   #
