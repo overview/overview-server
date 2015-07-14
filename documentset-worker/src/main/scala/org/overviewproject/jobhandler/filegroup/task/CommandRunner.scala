@@ -6,6 +6,7 @@ import scala.language.postfixOps
 import scala.util.control.Exception._
 import scala.concurrent.Future
 import scala.concurrent.blocking
+import java.io.InputStream
 
 /**
  * Run an external command, returning any output
@@ -26,6 +27,7 @@ class CommandRunner(command: String, timeoutGenerator: TimeoutGenerator) {
     new RunningShellCommand(process, outputCatcher)
   }
 
+  
   private class OutputCatcher {
     private var outputLog: String = ""
 
