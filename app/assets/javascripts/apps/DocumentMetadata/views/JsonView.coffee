@@ -13,6 +13,9 @@ define [
 
     events:
       'change input': '_onChangeInput'
+      'focus input': '_onFocusInput'
+      'mousedown input': '_onMousedownInput'
+      'mouseup input': '_onMouseupInput'
       'submit': '_onSubmit'
 
     templates:
@@ -62,6 +65,23 @@ define [
 
     _onChangeInput: -> @_saveChanges()
     _onSubmit: -> @_saveChanges()
+
+    _onFocusInput: (e) ->
+      # https://code.google.com/p/chromium/issues/detail?id=4505
+      #
+      # We want to select-all when focusing. But we *don't* want to select-all
+      # when clicking in the text field a second time, because that would
+      # prevent the user from moving the cursor to a position within the field.
+      $(e.currentTarget).select() if !@_clickingAndAlreadyFocused
+
+    _onMousedownInput: (e) ->
+      @_clickingAndAlreadyFocused = $(e.currentTarget).is(':focus')
+      undefined # avoid "return false"
+
+    _onMouseupInput: (e) ->
+      e.preventDefault() if !@_clickingAndAlreadyFocused
+      @_clickingAndAlreadyFocused = false
+      undefined # avoid "return false"
 
     # Sends a PATCH for this document's "metadata"
     _saveChanges: ->
