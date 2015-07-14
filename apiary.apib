@@ -263,6 +263,7 @@ The Document resource has the following attributes:
 - title: what to call the document in Overview's document list
 - page: if this document represents one page, the page number; `null` otherwise
 - keywords: An Array of Strings that Overview finds interesting about this document (as compared to the other documents in the document set)
+- metadata: An Object containing extra-field values keyed by field name
 
 + Parameters
     + documentSetId (required, number, `1`) ... The Document Set ID.
@@ -276,7 +277,8 @@ The Document resource has the following attributes:
             "suppliedId": "foo/bar",
             "title": "Foo Bar",
             "keywords": [ "foo", "bar" ],
-            "text": "foo. bar. foo foo bar bar...."
+            "text": "foo. bar. foo foo bar bar....",
+            "metadata": {}
         }
 
 ### Retrieve a Document [GET]
