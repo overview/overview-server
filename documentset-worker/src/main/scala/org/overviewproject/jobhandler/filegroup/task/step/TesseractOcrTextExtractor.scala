@@ -1,17 +1,22 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
-import java.io.ByteArrayOutputStream
-import java.io.ByteArrayInputStream
-import scala.concurrent.Future
-import org.overviewproject.jobhandler.filegroup.task.ShellRunner
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
-import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
-import scala.io.Source
 import java.io.File
+import javax.imageio.ImageIO
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.io.Source
+import scala.language.postfixOps
+import scala.util.Try
 import scala.util.control.Exception.ultimately
+
+import org.overviewproject.jobhandler.filegroup.task.ShellRunner
+import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
+import org.overviewproject.util.Configuration
+
 
 trait TesseractOcrTextExtractor {
   implicit protected val executionContext: ExecutionContext
@@ -38,11 +43,15 @@ trait TesseractOcrTextExtractor {
   }
 
   private def withImageAsTemporaryFile(image: BufferedImage)(f: File => Future[String]): Future[String] = {
-    val imageFile = fileSystem.writeImage(image)
-
-    ultimately(fileSystem.deleteFile(imageFile)) {
+    val storedImage = Future.fromTry(Try { fileSystem.writeImage(image) })
+    def callFunction(imageFile: File): Future[String] = ultimately(fileSystem.deleteFile(imageFile)) {
       f(imageFile)
     }
+    
+    for {
+      imageFile <- storedImage
+      result <- callFunction(imageFile)
+    } yield result
   }
 
   private def extractTextWithOcr(imageFile: File, language: String)(f: File => String): Future[String] = {
