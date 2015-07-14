@@ -6,15 +6,15 @@
   flex: 0 0 auto;
   box-sizing: content-box; // so when not .expanded, padding remains
   padding: 10px;
-  max-height: 30%;
+  max-height: 30%; // Don't let metadata overtake the document itself
   .transition(max-height .35s ease);
   border-top: 1px solid @table-border-color;
 
   h4 {
     text-align: center;
     margin-top: 0;
-    font-size: 1em;
-    line-height: 1.5em;
+    font-size: inherit;
+    line-height: 1.5;
 
     a {
       display: block;
@@ -44,23 +44,25 @@
     }
 
     label {
-      padding-right: 0; // not the 15px that comes by default
+      padding-right: 0; // not the grid gutter that comes by default
+      line-height: @line-height-small; // XXX nix when Bootstrap fixes https://github.com/twbs/bootstrap/issues/16824
+      vertical-align: bottom;
+      border-top: 1px solid transparent; // No idea why! The label text is too high otherwise, even though the boxes line up properly. Chrome 44.0.2403.81 (beta)
     }
 
     button.delete {
       position: absolute;
       top: 0;
-      right: 15px; // from the grid system
+      right: @grid-gutter-width / 2;
       border: 1px solid transparent; // mimic the input
-      padding: 6px 12px;
+      padding: @padding-small-vertical @padding-small-horizontal;
       background: transparent;
       color: @brand-danger;
     }
   }
 
   .add-metadata-field {
-    font-size: 12px; // rrgh, we're px-ing all over the place here
-    padding-top: .5em * @font-size-base / 12px;
+    font-size: @font-size-small;
 
     &.expanded .expand { display: none; }
     &:not(.expanded) .details { display: none; }
@@ -68,7 +70,7 @@
     a.expand {
       display: block;
       text-align: center;
-      line-height: 34px; // that's the height of the new-field form
+      line-height: @input-height-base;
     }
 
     .details {
