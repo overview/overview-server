@@ -26,7 +26,7 @@ define [
           <label for="<%= randomInputId %>" class="col-sm-2 control-label"><%- fieldName %></label>
           <div class="col-sm-10">
             <input id="<%= randomInputId %>" class="form-control" name="<%- fieldName %>" value="<%- value %>"/>
-            <button class="delete" data-field-name="<%- fieldName %>" title="<%- t('delete') %>" data-confirm="<%- t('confirmDelete', fieldName) %>">
+            <button type="button" class="delete" data-field-name="<%- fieldName %>" title="<%- t('delete') %>" data-confirm="<%- t('confirmDelete', fieldName) %>">
               <i class="overview-icon-trash"></i>
             </button>
           </div>
@@ -68,7 +68,7 @@ define [
       @
 
     _onChangeInput: -> @_saveChanges()
-    _onSubmit: -> @_saveChanges()
+    _onSubmit: (e) -> e.preventDefault(); @_saveChanges()
 
     _onFocusInput: (e) ->
       # https://code.google.com/p/chromium/issues/detail?id=4505
