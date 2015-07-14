@@ -15,7 +15,7 @@ describe 'Metadata', ->
 
         @browser
           .click(tag: 'h3', contains: 'First')
-          .click(link: 'Metadata', wait: 'fast')
+          .click(link: 'Fields', wait: 'fast')
           .find(@locatorWithWait)
 
       it 'should show default metadata', ->
