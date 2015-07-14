@@ -9,7 +9,6 @@ package org.overviewproject.database
 
 import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
 import java.sql.Connection
-import javax.sql.DataSource
 import org.postgresql.PGConnection
 
 /**
@@ -18,7 +17,7 @@ import org.postgresql.PGConnection
  * Reads Hikari connection configuration from Typesafe Config, in `db.default`.
  */
 object DB {
-  lazy val dataSource: DataSource = {
+  lazy val dataSource: HikariDataSource = {
     val hikariConfig = DatabaseConfiguration.fromConfig
     new HikariDataSource(hikariConfig)
   }
