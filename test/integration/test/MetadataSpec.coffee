@@ -49,7 +49,7 @@ describe 'Metadata', ->
 
       it 'should add and remove metadata fields', ->
         @browser
-          .click(link: 'Add new metadata field')
+          .click(link: 'Add new field')
           .sendKeys('baz', css: '.add-metadata-field input[name=name]')
           .click(css: '.add-metadata-field button[type=submit]')
           .sendKeys('a baz value', css: '.metadata-json input[name=baz]')
