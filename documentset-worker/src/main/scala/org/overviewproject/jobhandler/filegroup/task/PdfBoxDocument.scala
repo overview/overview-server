@@ -5,6 +5,7 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.util.PDFTextStripper
 import scala.collection.JavaConverters._
+import scala.collection.mutable.Buffer
 import scala.concurrent.Future
 import org.overviewproject.blobstorage.BlobStorage
 import org.overviewproject.util.Textify
@@ -14,6 +15,7 @@ import org.apache.pdfbox.io.RandomAccessFile
 import java.io.File
 import scala.util.control.Exception.ultimately
 import scala.util.Try
+import java.awt.image.BufferedImage
 
 class PdfBoxDocument(file: File) extends PdfDocument {
   private val TempFilePrefix = "overview-pdfbox-"
@@ -30,6 +32,9 @@ class PdfBoxDocument(file: File) extends PdfDocument {
 
     PdfPage(data, text)
   }
+
+  
+  override def pageImages: SeqView[BufferedImage, Seq[_]] = getPages.map(_.convertToImage)
 
   override def text: String = getText(document)
 
@@ -53,11 +58,14 @@ class PdfBoxDocument(file: File) extends PdfDocument {
     }
   }
 
+  
   // Use a view to prevent all page data from being loaded into memory at once
+  private def getPages: SeqView[PDPage, Seq[_]] =
+    document.getDocumentCatalog.getAllPages.asScala.view.map(_.asInstanceOf[PDPage])
+    
   private def splitPages: SeqView[PDDocument, Seq[_]] =
-    document.getDocumentCatalog.getAllPages().asScala.view.map { p =>
-      createDocument(p.asInstanceOf[PDPage])
-    }
+    getPages.map(createDocument)
+
 
   private def createDocument(page: PDPage): PDDocument = {
 
