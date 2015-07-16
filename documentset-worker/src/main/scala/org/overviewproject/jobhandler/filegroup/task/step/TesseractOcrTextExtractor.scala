@@ -17,8 +17,7 @@ import org.overviewproject.jobhandler.filegroup.task.ShellRunner
 import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
 import org.overviewproject.util.Configuration
 
-
-trait TesseractOcrTextExtractor {
+trait TesseractOcrTextExtractor extends OcrTextExtractor {
   implicit protected val executionContext: ExecutionContext
   protected val shellRunner: ShellRunner
   protected val ocrTimeout: FiniteDuration
@@ -44,18 +43,23 @@ trait TesseractOcrTextExtractor {
 
   private def withImageAsTemporaryFile(image: BufferedImage)(f: File => Future[String]): Future[String] = {
     val storedImage = Future.fromTry(Try { fileSystem.writeImage(image) })
-    def callFunction(imageFile: File): Future[String] = ultimately(fileSystem.deleteFile(imageFile)) {
-      f(imageFile)
+    def callAndDeleteWhenComplete(imageFile: File): Future[String] = {
+      val result = f(imageFile)
+      result.onComplete {
+        case _ => fileSystem.deleteFile(imageFile)
+      }
+
+      result
     }
-    
+
     for {
       imageFile <- storedImage
-      result <- callFunction(imageFile)
+      result <- callAndDeleteWhenComplete(imageFile)
     } yield result
   }
 
   private def extractTextWithOcr(imageFile: File, language: String)(f: File => String): Future[String] = {
-    
+
     val output = outputFile(imageFile)
     shellRunner.run(tesseractCommand(imageFile.getAbsolutePath, output.getAbsolutePath(), language), ocrTimeout)
       .map { _ =>
@@ -66,9 +70,10 @@ trait TesseractOcrTextExtractor {
 
   }
 
-  private def tesseractCommand(inputFile: String, outputFile: String, language: String): String =
-    s"$tesseractLocation $inputFile $outputFile -l $language"
-
+  private def tesseractCommand(inputFile: String, outputFile: String, language: String): String = {
+    val outputBase = outputFile.replace(".txt", "")
+    s"$tesseractLocation $inputFile $outputBase -l $language"
+  }
   private def outputFile(inputFile: File): File = {
     val inputFilePath = inputFile.getAbsolutePath
     val outputFilePath = inputFilePath.replace(".png", ".txt")

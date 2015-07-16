@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import scala.collection.SeqView
 import org.overviewproject.jobhandler.filegroup.task.PdfPage
+import java.awt.image.BufferedImage
 
 class ExtractTextWithrOcrSpec extends Specification with Mockito {
 
@@ -46,7 +47,7 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
       pdfProcessor.loadFromBlobStorage(viewLocation) returns Future.successful(document)
 
       override protected val nextStep = NextStep(_)
-      override protected def startOcr(f: File, p: SeqView[PdfPage, Seq[_]]): TaskStep = OcrStep(f, p)
+      override protected def startOcr(f: File, p: SeqView[BufferedImage, Seq[_]]): TaskStep = OcrStep(f, p)
     }
 
   }
@@ -63,9 +64,9 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
 
   trait PdfWithNoTextContext extends PdfContext {
     val document = smartMock[PdfDocument]
-    val pages = smartMock[SeqView[PdfPage, Seq[_]]]
+    val pages = smartMock[SeqView[BufferedImage, Seq[_]]]
     document.textWithFonts returns Left("")
-    document.pages returns pages
+    document.pageImages returns pages
     
     val extractTextStep = new TestExtractTextWithOcr(document)
 
@@ -74,7 +75,7 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
   case class NextStep(documentData: Seq[DocumentData]) extends TaskStep {
     override def execute = Future.successful(this)
   }
-  case class OcrStep(file: File, pages: SeqView[PdfPage, Seq[_]]) extends TaskStep {
+  case class OcrStep(file: File, pages: SeqView[BufferedImage, Seq[_]]) extends TaskStep {
     override def execute = Future.successful(this)
   }
 
