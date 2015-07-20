@@ -8,6 +8,7 @@ import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
 import java.awt.image.BufferedImage
+import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 
 class OcrDocumentPagesSpec extends Specification with Mockito {
 
@@ -27,6 +28,7 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
   }
 
   trait OcrContext extends Scope {
+    val pdfDocument = smartMock[PdfDocument]
     val file = smartMock[File]
     val filename = "filename"
     val fileId = 1l
@@ -39,7 +41,7 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
     
     val textExtractor = smartMock[OcrTextExtractor]
     
-    val ocrDocumentPages = new TestOcrDocumentPages(textExtractor, file, pages, text)
+    val ocrDocumentPages = new TestOcrDocumentPages(textExtractor, file, pdfDocument, pages, text)
 
     def pages: SeqView[BufferedImage, Seq[_]]
   }
@@ -68,6 +70,7 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
   class TestOcrDocumentPages(
     override protected val ocrTextExtractor: OcrTextExtractor,
     override protected val file: File,
+    override protected val pdfDocument: PdfDocument,
     override protected val pageImages: SeqView[BufferedImage, Seq[_]],
     override protected val currentText: String) extends OcrDocumentPages {
 

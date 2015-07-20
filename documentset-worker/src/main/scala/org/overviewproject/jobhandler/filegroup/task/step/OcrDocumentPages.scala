@@ -7,6 +7,7 @@ import scala.concurrent.Future
 import java.awt.image.BufferedImage
 import scala.concurrent.ExecutionContext
 import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
+import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 
 trait OcrDocumentPages extends UploadedFileProcessStep {
   protected val file: File
@@ -14,6 +15,7 @@ trait OcrDocumentPages extends UploadedFileProcessStep {
 
   protected val ocrTextExtractor: OcrTextExtractor
 
+  protected val pdfDocument: PdfDocument
   protected val pageImages: SeqView[BufferedImage, Seq[_]]
   protected val language: String
   protected val currentText: String
@@ -27,6 +29,7 @@ trait OcrDocumentPages extends UploadedFileProcessStep {
       .getOrElse(completeOcr)
 
   private def completeOcr: Future[TaskStep] = Future.successful {
+    pdfDocument.close
     nextStep(Seq(PdfFileDocumentData(filename, file.id, currentText)))
   }
 
@@ -39,6 +42,7 @@ trait OcrDocumentPages extends UploadedFileProcessStep {
 object OcrDocumentPages {
 
   def apply(documentSetId: Long, file: File, language: String,
+            pdfDocument: PdfDocument,
             pageImages: SeqView[BufferedImage, Seq[_]],
             timeoutGenerator: TimeoutGenerator,
             nextStep: Seq[DocumentData] => TaskStep)(implicit executor: ExecutionContext): OcrDocumentPages = {
@@ -46,7 +50,7 @@ object OcrDocumentPages {
     val ocrTextExtractor = TesseractOcrTextExtractor(timeoutGenerator)
 
     new OcrDocumentPagesImpl(documentSetId, file, language, ocrTextExtractor, nextStep,
-      pageImages, "")
+      pdfDocument, pageImages, "")
   }
 
   private class OcrDocumentPagesImpl(
@@ -55,7 +59,7 @@ object OcrDocumentPages {
     override protected val language: String,
     override protected val ocrTextExtractor: OcrTextExtractor,
     override protected val nextStep: Seq[DocumentData] => TaskStep,
-
+    override protected val pdfDocument: PdfDocument,
     override protected val pageImages: SeqView[BufferedImage, Seq[_]],
 
     override protected val currentText: String)(override implicit protected val executor: ExecutionContext) extends OcrDocumentPages {
@@ -63,7 +67,7 @@ object OcrDocumentPages {
     override protected val nextPageStep = continueOcr _
 
     private def continueOcr(remainingPages: SeqView[BufferedImage, Seq[_]], textFromOcr: String): TaskStep =
-      new OcrDocumentPagesImpl(documentSetId, file, language, ocrTextExtractor, nextStep, remainingPages, textFromOcr)
+      new OcrDocumentPagesImpl(documentSetId, file, language, ocrTextExtractor, nextStep, pdfDocument, remainingPages, textFromOcr)
   }
 
 }

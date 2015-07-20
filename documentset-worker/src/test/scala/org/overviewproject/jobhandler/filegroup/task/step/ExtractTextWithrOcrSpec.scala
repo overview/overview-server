@@ -47,7 +47,7 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
       pdfProcessor.loadFromBlobStorage(viewLocation) returns Future.successful(document)
 
       override protected val nextStep = NextStep(_)
-      override protected def startOcr(f: File, p: SeqView[BufferedImage, Seq[_]]): TaskStep = OcrStep(f, p)
+      override protected def startOcr(f: File, d: PdfDocument, p: SeqView[BufferedImage, Seq[_]]): TaskStep = OcrStep(f, p)
     }
 
   }

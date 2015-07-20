@@ -17,7 +17,7 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
   override protected lazy val filename = file.name
 
   protected val nextStep: Seq[DocumentData] => TaskStep
-  protected def startOcr(file: File, pages: SeqView[BufferedImage, Seq[_]]): TaskStep
+  protected def startOcr(file: File, pdfDocument: PdfDocument, pages: SeqView[BufferedImage, Seq[_]]): TaskStep
 
   protected val pdfProcessor: PdfProcessor
 
@@ -27,13 +27,11 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
 
   override protected def doExecute: Future[TaskStep] = for {
     pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
-  } yield ultimately(pdfDocument.close) {
-    pdfDocument.textWithFonts.fold(
-      _ => startOcr(file, pdfDocument.pageImages),
-      startNextStep)
+  } yield pdfDocument.textWithFonts.fold(
+    _ => startOcr(file, pdfDocument, pdfDocument.pageImages),
+    startNextStep)
 
-  }
-
+  
   private def startNextStep(text: String): TaskStep = {
     val documentInfo = Seq(PdfFileDocumentData(file.name, file.id, text))
     nextStep(documentInfo)
@@ -59,8 +57,8 @@ object ExtractTextWithOcr {
         PdfBoxDocument.loadFromLocation(location)
     }
 
-    override protected def startOcr(file: File, pages: SeqView[BufferedImage, Seq[_]]): TaskStep =
-      OcrDocumentPages(documentSetId, file, language, pages, timeoutGenerator, nextStep)
+    override protected def startOcr(file: File, pdfDocument: PdfDocument, pages: SeqView[BufferedImage, Seq[_]]): TaskStep =
+      OcrDocumentPages(documentSetId, file, language, pdfDocument, pages, timeoutGenerator, nextStep)
   }
 
 }
