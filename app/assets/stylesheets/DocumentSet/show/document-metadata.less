@@ -18,10 +18,11 @@
 
     a {
       display: block;
-    }
+      .fa-icon();
 
-    a::before {
-      content: "⏷ ";
+      &::before {
+        content: @fa-var-caret-down + " ";
+      }
     }
   }
 
@@ -34,7 +35,7 @@
     }
 
     h4 a::before {
-      content: "⏵ ";
+      content: @fa-var-caret-right + " ";
     }
   }
 
