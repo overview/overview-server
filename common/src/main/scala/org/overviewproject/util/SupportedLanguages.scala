@@ -5,6 +5,7 @@ import java.util.Locale
 object SupportedLanguages {
   val languageCodes = Set(
     "ar",
+    "ca",
     "de",
     "en",
     "es",
