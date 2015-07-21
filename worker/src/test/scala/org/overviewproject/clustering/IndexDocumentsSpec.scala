@@ -22,25 +22,6 @@ import org.overviewproject.nlp.StopWordSet
 class IndexDocumentsSpec extends Specification {
   val stopWords = StopWordSet("en", None)
 
-  "Lexer" should {
-
-    "remove stop words" in {
-      Lexer.makeTerms("no i haha you", stopWords) must beEqualTo(Seq("haha"))
-    }
-
-    "tokenize a complex string" in {
-      val sentence = "the quick\t  brown.. Fox jump{s over\nyour 500 lAzy"
-      val terms = Seq("quick", "brown", "fox", "jumps", "lazy")
-      Lexer.makeTerms(sentence, stopWords) must beEqualTo(terms)
-    }
-
-    "truncate long words" in {
-      val longword = "thequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydog"
-      val sentence = "now is the time for all good " + longword + " to come to the aid of their module."
-      Lexer.makeTerms(sentence, stopWords).map(_.length).max must beEqualTo(Lexer.maxTokenLength)
-    }
-  }
-
   "DocumentVectorGenerator" should {
 
     "index a complex document set" in {

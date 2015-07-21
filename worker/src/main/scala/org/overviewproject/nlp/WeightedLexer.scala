@@ -23,14 +23,14 @@ case class WeightedTermString(term:String,weight:TermWeight)
 class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,TermWeight]) {
 
   // longest token we'll tolerate (silently truncates, to prevent bad input from destroying everything downstream)
-  val maxTokenLength = 40
+  private[nlp] val maxTokenLength = 40
 
   // Remove certain types of terms. At the moment:
   //  - we insist that terms are at least three chars
   //  - discard if a) starts with a digit and b) 40% or more of the characters are digits
   //  - discard stop words
 
-  def termAcceptable(t: String): Boolean = {
+  private def termAcceptable(t: String): Boolean = {
     if (t.length < 3)
       false // too short, unacceptable
     else if (stopWords.contains(t))
@@ -46,7 +46,7 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
   // multiply the weights of the matched patterns if more than one
   // Otherwise standard processing strips punctuation, lowecases, checks termAcceptable
   // Throws out invalid terms.
-  def ProcessTerm(rawTerm:String) : Option[WeightedTermString] ={
+  private def processTerm(rawTerm:String) : Option[WeightedTermString] ={
 
     var weight:TermWeight = 1
     var matched = false
@@ -77,7 +77,7 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
 
   // Clips term to maximum length (avoids pathalogical cases)
   // also copies it with new (avoids substring references created by .split chewing up all our memory)
-  def limitTermLength(wt:WeightedTermString) =
+  private def limitTermLength(wt:WeightedTermString) =
     WeightedTermString(new String(wt.term.take(maxTokenLength)), wt.weight)
 
   // Given a string and a list of stop words, returns a list of weighted terms.
@@ -88,7 +88,7 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
     val text = "[ \t\n\r\u00A0]+".r.replaceAllIn(textIn, " ")
 
     // split on (condensed) spaces and weight each term
-    text.split(' ').flatMap(ProcessTerm).map(limitTermLength)
+    text.split(' ').flatMap(processTerm).map(limitTermLength)
   }
 
   private def validPatternMatch(term: String, pattern: String): Boolean =

@@ -15,14 +15,14 @@ import scala.Array.canBuildFrom
 object Lexer {
 
   // longest token we'll tolerate (silently truncates, to prevent bad input from destroying everything downstream)
-  val maxTokenLength = 40
+  private[nlp] val maxTokenLength = 40
 
   // Remove certain types of terms. At the moment:
   //  - we insist that terms are at least three chars
   //  - discard if a) starts with a digit and b) 40% or more of the characters are digits
   //  - discard stop words
 
-  def termAcceptable(t: String, stopWords: Set[String]): Boolean = {
+  private def termAcceptable(t: String, stopWords: Set[String]): Boolean = {
     if (t.length < 3)
       false // too short, unacceptable
     else if (stopWords.contains(t))
