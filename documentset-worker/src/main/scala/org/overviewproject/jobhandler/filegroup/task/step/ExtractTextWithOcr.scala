@@ -1,22 +1,22 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
+import java.awt.image.BufferedImage
+
 import scala.collection.SeqView
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.control.Exception.ultimately
-import org.overviewproject.models.File
-import org.overviewproject.jobhandler.filegroup.task.PdfPage
+
+import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
-import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
-import java.awt.image.BufferedImage
+import org.overviewproject.models.File
 
 trait ExtractTextWithOcr extends UploadedFileProcessStep {
 
   protected val file: File
   override protected lazy val filename = file.name
 
-  protected val nextStep: Seq[DocumentData] => TaskStep
+  protected val nextStep: ((File, PdfDocument, Seq[String])) => TaskStep
   protected def startOcr(file: File, pdfDocument: PdfDocument, pages: SeqView[BufferedImage, Seq[_]]): TaskStep
 
   protected val pdfProcessor: PdfProcessor
@@ -29,25 +29,24 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
     pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
   } yield pdfDocument.textWithFonts.fold(
     _ => startOcr(file, pdfDocument, pdfDocument.pageImages),
-    startNextStep)
+    startNextStep(pdfDocument))
 
   
-  private def startNextStep(text: String): TaskStep = {
-    val documentInfo = Seq(PdfFileDocumentData(file.name, file.id, text))
-    nextStep(documentInfo)
+  private def startNextStep(pdfDocument: PdfDocument)(text: String): TaskStep = {
+    nextStep((file, pdfDocument, Seq(text)))
   }
 }
 
 object ExtractTextWithOcr {
 
-  def apply(documentSetId: Long, file: File, next: Seq[DocumentData] => TaskStep,
+  def apply(documentSetId: Long, file: File, next: ((File, PdfDocument, Seq[String])) => TaskStep,
             language: String, timeoutGenerator: TimeoutGenerator)(implicit executor: ExecutionContext): ExtractTextWithOcr =
     new ExtractTextWithOcrImpl(documentSetId, file, next, language, timeoutGenerator)
 
   private class ExtractTextWithOcrImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: Seq[DocumentData] => TaskStep,
+    override protected val nextStep: ((File, PdfDocument, Seq[String])) => TaskStep,
     language: String, timeoutGenerator: TimeoutGenerator)(override implicit protected val executor: ExecutionContext) extends ExtractTextWithOcr {
 
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
