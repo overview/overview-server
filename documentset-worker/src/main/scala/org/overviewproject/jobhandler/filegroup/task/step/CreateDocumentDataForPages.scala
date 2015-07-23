@@ -1,8 +1,10 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
-import org.overviewproject.models.File
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import scala.concurrent.Future
+import scala.util.control.Exception.ultimately
+
+import org.overviewproject.jobhandler.filegroup.task.PdfDocument
+import org.overviewproject.models.File
 import org.overviewproject.models.Page
 
 trait CreateDocumentDataForPages extends UploadedFileProcessStep {
@@ -19,7 +21,9 @@ trait CreateDocumentDataForPages extends UploadedFileProcessStep {
   override protected def doExecute: Future[TaskStep] =
     for {
       pageAttributes <- pageSaver.savePages(file.id, pageData)
-    } yield nextStep(pageDocumentData(pageAttributes))
+    } yield ultimately (pdfDocument.close) {
+      nextStep(pageDocumentData(pageAttributes))
+    }
 
   private def pageData = pdfDocument.pages
     .map(_.data)

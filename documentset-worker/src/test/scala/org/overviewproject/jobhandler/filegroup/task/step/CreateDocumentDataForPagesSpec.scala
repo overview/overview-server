@@ -8,6 +8,8 @@ import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import scala.concurrent.Future
 import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import org.overviewproject.models.Page
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class CreateDocumentDataForPagesSpec extends Specification with Mockito {
 
@@ -17,6 +19,12 @@ class CreateDocumentDataForPagesSpec extends Specification with Mockito {
       val result = createDocumentDataForPages.execute
       
       result must be_==(NextStep(Seq(pageData))).await
+    }
+    
+    "close pdfDocument" in new TextContext {
+      Await.ready(createDocumentDataForPages.execute, Duration.Inf)
+      
+      there was one(mockPdfDocument).close
     }
   }
   
