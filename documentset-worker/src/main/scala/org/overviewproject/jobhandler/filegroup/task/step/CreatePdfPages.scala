@@ -41,13 +41,13 @@ trait CreatePdfPages extends UploadedFileProcessStep {
   private def loadDocument(location: String): Future[PdfDocument] =
     pdfProcessor.loadFromBlobStorage(location)
 
-  private def getPages(pdfDocument: PdfDocument): SeqView[PdfPage, Seq[_]] =
+  private def getPageData(pdfDocument: PdfDocument): SeqView[(Array[Byte], String), Seq[_]] =
     blocking {
-      pdfDocument.pages
+      pdfDocument.pages.map(p => (p.data, p.text))
     }
 
   private def nextStepWithPages(pdfDocument: PdfDocument): Future[TaskStep] = for {
-    pageAttributes <- pageSaver.savePages(file.id, getPages(pdfDocument))
+    pageAttributes <- pageSaver.savePages(file.id, getPageData(pdfDocument))
     pageDocumentData = pageAttributes.map(p =>
       PdfPageDocumentData(file.name, file.id, p.pageNumber, p.id, p.text))
   } yield nextStep(pageDocumentData)

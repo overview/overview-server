@@ -17,7 +17,7 @@ class PageSaverSpec extends DbSpecification with Mockito {
       import database.api._
 
       val foundPages = for {
-        attributes <- pageSaver.savePages(file.id, pages.view)
+        attributes <- pageSaver.savePages(file.id, pageData.view)
         ids = attributes.map(_.id)
       } yield blockingDatabase.seq(Pages.filter(_.id inSet ids))
 
@@ -33,7 +33,7 @@ class PageSaverSpec extends DbSpecification with Mockito {
 
     val file = factory.file()
     val numberOfPages = 10
-    val pages = Seq.tabulate(numberOfPages)(n => PdfPage(Array[Byte](0, 1, 3), s"text-$n"))
+    val pageData = Seq.tabulate(numberOfPages)(n => (Array[Byte](0, 1, 3), s"text-$n"))
 
     val expectedAttributes = Seq.tabulate(numberOfPages)(n => (file.id, n + 1, pageLocation, 3, s"text-$n"))
 

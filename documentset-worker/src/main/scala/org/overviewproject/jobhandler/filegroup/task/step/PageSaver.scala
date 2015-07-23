@@ -24,16 +24,16 @@ trait PageSaver extends HasDatabase {
   protected val pageBlobSaver: PageBlobSaver
 
   protected trait PageBlobSaver {
-    def save(page: PdfPage): Future[String]
+    def save(pageData: Array[Byte]): Future[String]
   }
 
-  def savePages(fileId: Long, pdfPages: SeqView[PdfPage, Seq[_]]): Future[Seq[Page.ReferenceAttributes]] = {
+  def savePages(fileId: Long, pageInfo: SeqView[(Array[Byte], String), Seq[_]]): Future[Seq[Page.ReferenceAttributes]] = {
     val pageAttributes = for {
-      (p, pageNumberZeroBased) <- pdfPages.zipWithIndex
+      (p, pageNumberZeroBased) <- pageInfo.zipWithIndex
     } yield {
-      val size = p.data.length
-      val text = p.text
-      pageBlobSaver.save(p).map { location =>
+      val size = p._1.length
+      val text = p._2
+      pageBlobSaver.save(p._1).map { location =>
         Page.CreateAttributes(fileId, pageNumberZeroBased + 1, location, size, text)
       }
     }
@@ -71,12 +71,12 @@ object PageSaver extends PageSaver {
     //
     // The tempfile stuff ought to be async
 
-    def save(page: PdfPage): Future[String] = {
+    def save(pageData: Array[Byte]): Future[String] = {
       val tempfile = new TempFile
 
-      tempfile.outputStream.write(page.data)
+      tempfile.outputStream.write(pageData)
       tempfile.outputStream.close
-      BlobStorage.create(BlobBucketId.PageData, tempfile.inputStream, page.data.length)
+      BlobStorage.create(BlobBucketId.PageData, tempfile.inputStream, pageData.length)
       // yay, now data won't be in memory any more
     }
   }

@@ -19,7 +19,7 @@ class CreatePdfPagesSpec extends Specification with Mockito {
     "write pages to blob storage" in new FileScope {
       Await.result(createPdfPages.execute, Duration.Inf)
 
-      there was one(pageSaver).savePages(fileId, pages.view)
+      there was one(pageSaver).savePages(fileId, savedPageData.view)
     }
 
     "generate next step with page data" in new FileScope {
@@ -47,9 +47,16 @@ class CreatePdfPagesSpec extends Specification with Mockito {
     file.viewLocation returns viewLocation
 
     val pageText = "page text"
-    val pages = Seq.fill(3)(smartMock[PdfPage])
-    pages.foreach { _.text returns pageText }
+    val pageBytes = Array[Byte](1, 2, 4)
 
+    val pages = Seq.fill(3)(smartMock[PdfPage])
+    pages.foreach { p =>
+      p.text returns pageText
+      p.data returns pageBytes
+    }
+    
+    val savedPageData = Seq.fill(3)((pageBytes, pageText))
+    
     val pageAttributes = Seq.tabulate(pages.length)(n => Page.ReferenceAttributes(n, fileId, n, pageText))
 
     val pageData = pageAttributes.map { p => PdfPageDocumentData(fileName, fileId, p.pageNumber, p.id, pageText) }
@@ -62,9 +69,9 @@ class CreatePdfPagesSpec extends Specification with Mockito {
       override protected val documentSetId: Long,
       override protected val file: File)
       extends CreatePdfPages {
-       
+
       override protected val executor: ExecutionContext = implicitly
-       
+
       override protected val pdfProcessor = smartMock[PdfProcessor]
       override protected val pageSaver = smartMock[PageSaver]
       override protected val nextStep = { pageData => NextStep(pageData) }
