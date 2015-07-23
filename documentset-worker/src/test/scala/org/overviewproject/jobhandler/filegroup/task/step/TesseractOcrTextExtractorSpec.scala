@@ -36,13 +36,14 @@ class TesseractOcrTextExtractorSpec extends Specification with Mockito with NoTi
 
     val tesseract = "tesseract"
     val image = smartMock[BufferedImage]
-    val language = "eng"
+    val language = "en"
+    val iso639_2Language = "eng"
     val text = "Text from OCR"
     val tempFileBase = "/path/to/tmp/file"
     val imageFile = smartMock[File]
     val outputFile = new File(s"$tempFileBase.txt")
 
-    val tesseractCommand = s"$tesseract $tempFileBase.png $tempFileBase -l $language"
+    val tesseractCommand = s"$tesseract $tempFileBase.png $tempFileBase -l $iso639_2Language"
     val textExtractor = new TestTesseractOcrTextExtractor
 
     class TestTesseractOcrTextExtractor extends TesseractOcrTextExtractor {

@@ -4,6 +4,8 @@ import java.util.Locale
 
 object SupportedLanguages {
   // Supported languages, iso639-1 mapped to iso639-2 format
+  // If we want to have different language support for stop-word removal and OCR
+  // a more sophisticated approach will be required.
   private val iso639Codes = Map(
     "ar" -> "ara",
     "ca" -> "cat",

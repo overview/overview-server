@@ -3,7 +3,6 @@ package org.overviewproject.jobhandler.filegroup.task.step
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -12,10 +11,10 @@ import scala.io.Source
 import scala.language.postfixOps
 import scala.util.Try
 import scala.util.control.Exception.ultimately
-
 import org.overviewproject.jobhandler.filegroup.task.ShellRunner
 import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
 import org.overviewproject.util.Configuration
+import org.overviewproject.util.SupportedLanguages
 
 trait TesseractOcrTextExtractor extends OcrTextExtractor {
   implicit protected val executionContext: ExecutionContext
@@ -31,7 +30,7 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
   }
 
   def extractText(image: BufferedImage, language: String): Future[String] = {
-
+  
     val result = withImageAsTemporaryFile(image) { tempFile =>
       extractTextWithOcr(tempFile, language) { textTempFile =>
         fileSystem.readText(textTempFile)
@@ -59,9 +58,13 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
   }
 
   private def extractTextWithOcr(imageFile: File, language: String)(f: File => String): Future[String] = {
-
+    // Tesseract needs language specified as a ISO639-2 code. 
+    // A language parameter that does not have an appropriate transformation denotes an error
+    // and an exception is thrown.
+    val iso639_2Code = SupportedLanguages.asIso639_2(language).get
+    
     val output = outputFile(imageFile)
-    shellRunner.run(tesseractCommand(imageFile.getAbsolutePath, output.getAbsolutePath(), language), ocrTimeout)
+    shellRunner.run(tesseractCommand(imageFile.getAbsolutePath, output.getAbsolutePath(), iso639_2Code), ocrTimeout)
       .map { _ =>
         ultimately(fileSystem.deleteFile(output)) {
           f(output)
