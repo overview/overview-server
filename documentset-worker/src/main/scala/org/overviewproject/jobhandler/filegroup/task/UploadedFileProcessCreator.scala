@@ -1,22 +1,24 @@
 package org.overviewproject.jobhandler.filegroup.task
 
 import java.io.InputStream
-
 import scala.concurrent.ExecutionContext
 import scala.util.control.Exception.ultimately
-
 import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.DocumentType
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.OfficeDocument
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
+import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.UnsupportedDocument
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
+import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromFileWithOcr
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfPage
+import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
 import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentsFromConvertedFilePages
 import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
 import org.overviewproject.models.GroupedFileUpload
 import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.util.BulkDocumentWriter
-
 import akka.actor.ActorRef
+import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentsFromPagesWithOcr
 
 trait UploadedFileProcessCreator {
 
@@ -41,7 +43,7 @@ trait UploadedFileProcessCreator {
 
   protected val documentTypeDetector: DocumentTypeDetector
   protected def largeObjectInputStream(oid: Long): InputStream
-  
+
   protected val processMap: ProcessMap
 
   protected trait ProcessMap {
@@ -61,7 +63,7 @@ object UploadedFileProcessCreator extends HasBlockingDatabase {
     new UploadedFileProcessCreatorImpl(bulkDocumentWriter, timeoutGenerator)
 
   private class UploadedFileProcessCreatorImpl(bulkDocumentWriter: BulkDocumentWriter,
-      timeoutGenerator: TimeoutGenerator)(implicit executor: ExecutionContext) extends UploadedFileProcessCreator {
+                                               timeoutGenerator: TimeoutGenerator)(implicit executor: ExecutionContext) extends UploadedFileProcessCreator {
     override protected val documentTypeDetector = DocumentTypeDetector
     override protected def largeObjectInputStream(oid: Long) = new LargeObjectInputStream(oid, blockingDatabase)
 
@@ -75,8 +77,10 @@ object UploadedFileProcessCreator extends HasBlockingDatabase {
         documentType match {
           case PdfDocument if options.splitDocument =>
             CreateDocumentFromPdfPage(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
+          //CreateDocumentsFromPagesWithOcr(documentSetId, name, options.lang, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case PdfDocument =>
             CreateDocumentFromPdfFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
+          //CreateDocumentFromFileWithOcr(documentSetId, name, options.lang, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument if options.splitDocument =>
             CreateDocumentsFromConvertedFilePages(documentSetId, name, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument =>
