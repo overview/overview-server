@@ -23,6 +23,8 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
   protected val tesseractLocation: String
   protected val fileSystem: FileSystem
 
+  import TesseractOcrTextExtractor.FileFormats._
+  
   protected trait FileSystem {
     def writeImage(image: BufferedImage): File
     def readText(file: File): String
@@ -74,12 +76,13 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
   }
 
   private def tesseractCommand(inputFile: String, outputFile: String, language: String): String = {
-    val outputBase = outputFile.replace(".txt", "")
+    val outputBase = outputFile.replace(s".$TextOutput", "")
     s"$tesseractLocation $inputFile $outputBase -l $language"
   }
+  
   private def outputFile(inputFile: File): File = {
     val inputFilePath = inputFile.getAbsolutePath
-    val outputFilePath = inputFilePath.replace(".png", ".txt")
+    val outputFilePath = inputFilePath.replace(s".$ImageFormat", s".$TextOutput")
     new File(outputFilePath)
   }
 
@@ -90,7 +93,13 @@ object TesseractOcrTextExtractor {
   import scala.concurrent.duration.DurationInt
   import scala.language.postfixOps
   import org.overviewproject.util.Configuration
-
+  
+  object FileFormats {
+    val ImageFormat = "png"
+    val TextOutput = "txt"
+  }
+  
+  
   def apply(timeoutGenerator: TimeoutGenerator)(implicit executionContext: ExecutionContext): TesseractOcrTextExtractor =
     new TesseractOcrTextExtractorImpl(ShellRunner(timeoutGenerator), executionContext)
 
@@ -105,8 +114,9 @@ object TesseractOcrTextExtractor {
 
     private class OsFileSystem extends FileSystem {
       override def writeImage(image: BufferedImage): File = {
-        val imageFile = File.createTempFile("overview-ocr", ".png")
-        ImageIO.write(image, "png", imageFile)
+        val imageFile = File.createTempFile("overview-ocr", s".${FileFormats.ImageFormat}")
+
+        ImageIO.write(image, FileFormats.ImageFormat, imageFile)
 
         imageFile
       }

@@ -20,7 +20,10 @@ import java.awt.image.BufferedImage
 class PdfBoxDocument(file: File) extends PdfDocument {
   private val TempFilePrefix = "overview-pdfbox-"
   private val TempFileExtension = ".tmp"
-
+  
+  private val ImageType = BufferedImage.TYPE_BYTE_GRAY
+  private val ImageResolution = 400
+  
   private val textStripper = new FontDetectingTextStripper
   private val document: PDDocument = init(file)
 
@@ -34,7 +37,8 @@ class PdfBoxDocument(file: File) extends PdfDocument {
   }
 
   
-  override def pageImages: SeqView[BufferedImage, Seq[_]] = getPages.map(_.convertToImage)
+  override def pageImages: SeqView[BufferedImage, Seq[_]] = 
+    getPages.map(_.convertToImage(ImageType, ImageResolution))
 
   override def text: String = getText(document)
 
