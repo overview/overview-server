@@ -17,6 +17,8 @@ define [
   # it. Highlights are an Array of [begin,end) pairs of string offsets.
   class TextDocument extends Backbone.Model
     defaults:
+      # the document's original URL (may be null)
+      url: null
       # the document text, or null if loading
       text: null
       # set iff we could not load the text

@@ -33,6 +33,8 @@ define [
       else if attrs.text?
         if @preferences.get('text') == false
           @_renderOnlyTextAvailable()
+        if @model.get('url')
+          @_renderOpenInNewTab()
         @_renderTextWithHighlights(attrs.text, attrs.highlights || [])
       else
         @_renderLoading()
@@ -48,6 +50,15 @@ define [
     _renderOnlyTextAvailable: ->
       $p = $('<p class="only-text-available"></p>').text(t('onlyTextAvailable'))
       @$el.append($p)
+      @
+
+    _renderOpenInNewTab: ->
+      $a = $('<a target="_blank"></a>')
+        .attr('href', @model.get('url'))
+        .text(t('openInNewTab'))
+      $p = $('<p class="open-in-new-tab"></p>').append($a)
+      @$el.append($p)
+      @
 
     # If there are no highlights, call this with highlights=[]
     _renderTextWithHighlights: (text, highlights) ->

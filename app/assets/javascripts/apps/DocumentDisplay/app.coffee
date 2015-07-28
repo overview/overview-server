@@ -1,11 +1,12 @@
 define [
+  'backbone'
   './models/TextDocument'
   './models/UrlPropertiesExtractor'
   './models/CurrentCapabilities'
   './views/DocumentView'
   './views/TextView'
   './views/FindView'
-], (TextDocument, UrlPropertiesExtractor, CurrentCapabilities, DocumentView, TextView, FindView) ->
+], (Backbone, TextDocument, UrlPropertiesExtractor, CurrentCapabilities, DocumentView, TextView, FindView) ->
   DocumentSetId = /\/documentsets\/(\d+)/.exec(window.location.pathname)[1]
 
   ViewableDocumentTypes =
@@ -83,6 +84,8 @@ define [
         else
           @_renderText()
 
+      @
+
     _onTweetDeleted: ->
       @currentCapabilities.set(canShowDocument: false)
       @_renderText()
@@ -106,6 +109,7 @@ define [
       if @document?
         @textDocument = new TextDocument
           id: @document.id
+          url: @document.url
           documentSetId: DocumentSetId
         @textDocument.fetchText()
         @textDocument.fetchHighlights(@q)
