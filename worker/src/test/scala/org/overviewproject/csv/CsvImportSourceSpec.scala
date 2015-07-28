@@ -37,16 +37,19 @@ class CsvImportSourceSpec extends Specification {
     "find a suppliedId column named `id`" in new BaseScope {
       override val input = "text,id\nline0,id0\nline1,id1"
       documents.map(_.suppliedId) must beEqualTo(Seq("id0", "id1"))
+      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
     }
 
     "find a url column named `url`" in new BaseScope {
       override val input = "text,url\nline0,url0\nline1,url1"
       documents.map(_.url) must beEqualTo(Seq(Some("url0"), Some("url1")))
+      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
     }
 
     "find a title column named `title`" in new BaseScope {
       override val input = "text,title\nline0,title0\nline1,title1"
       documents.map(_.title) must beEqualTo(Seq("title0", "title1"))
+      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
     }
 
     "find a column named `tags`" in new BaseScope {
@@ -54,6 +57,7 @@ class CsvImportSourceSpec extends Specification {
                             |line0,"foo,bar"
                             |line1,"bar,baz"""".stripMargin
       documents.map(_.tags) must beEqualTo(Seq(Set("foo", "bar"), Set("bar", "baz")))
+      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
     }
 
     "handle uppercase suppliedId, text, tags and url headers" in new BaseScope {
@@ -140,6 +144,20 @@ class CsvImportSourceSpec extends Specification {
         Map("foo" -> "foo0", "bar" -> "bar0"),
         Map("foo" -> "foo1", "bar" -> "bar1")
       ))
+    }
+
+    "ignore a second metadata field of the same name" in new BaseScope {
+      override val input = """|text,f,f
+                              |text0,foo,bar
+                              |text1,moo,mar""".stripMargin
+      csvImportSource.metadataColumnNames must beEqualTo(Seq("f"))
+      documents.map(_.metadata) must beEqualTo(Seq(Map("f" -> "foo"), Map("f" -> "moo")))
+    }
+
+    "ignore an empty-name metadata field" in new BaseScope {
+      override val input = "text,f,\ntext,foo"
+      csvImportSource.metadataColumnNames must beEqualTo(Seq("f"))
+      documents.map(_.metadata) must beEqualTo(Seq(Map("f" -> "foo")))
     }
 
     "treat contents/snippet as metadata when there is `text`" in new BaseScope {

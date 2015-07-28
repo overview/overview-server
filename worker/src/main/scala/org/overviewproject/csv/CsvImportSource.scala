@@ -24,6 +24,7 @@ import scala.collection.Iterable
   */
 class CsvImportSource(textify: (String) => String, reader: Reader) extends Iterable[CsvImportDocument] {
   class CsvHeader(columnNames: Array[String]) {
+    private val MaxNMetadataColumns = 100 // crazy-high limit to prevent DoS
     private val asMap = columnNames.map(_.toLowerCase).zipWithIndex.toMap
 
     val textIndex: Option[Int] = asMap.get("text").orElse(asMap.get("contents")).orElse(asMap.get("snippet"))
@@ -34,7 +35,24 @@ class CsvImportSource(textify: (String) => String, reader: Reader) extends Itera
 
     private val nonMetadataIndices: Seq[Int] = Seq(textIndex, idIndex, urlIndex, titleIndex, tagsIndex).flatten
 
-    val metadataIndices: Array[Int] = (columnNames.indices.toSet -- nonMetadataIndices).toArray.sorted
+    /** The indices of metadata columns.
+      *
+      * Normally, every CSV column that is specified in the header is a
+      * metadata column. But we have exceptions:
+      *
+      * * If there are too many metadata columns, we truncate the list (to
+      *   prevent DoS).
+      * * If two metadata columns share the same name, we only parse the first.
+      * * If a metadata column is named `""`, we nix it.
+      */
+    private val metadataIndices: Array[Int] = (columnNames.indices.toSet -- nonMetadataIndices)
+      .toArray
+      .take(MaxNMetadataColumns).sorted // sort after truncate, to avoid DoS
+      .reverseMap(index => columnNames(index) -> index) // Array[String,Int]
+      .toMap // Map[String,Int], with earlier columns overriding others of same name
+      .-("")
+      .values.toArray.sorted
+
     val metadataColumnNames = metadataIndices.map(columnNames)
 
     private def fetch(array: Array[String], maybeIndex: Option[Int]): Option[String] = {
