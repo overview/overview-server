@@ -15,13 +15,6 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
 
   "ExtractTextWithOcr" should {
 
-    "attempt to extract text without OCR" in new PdfWithTextContext {
-
-      val r = extractTextStep.execute
-
-      r must be_==(NextStep(pdfFile, document, Seq(text))).await
-    }
-
     "start ocr step if needed" in new PdfWithNoTextContext {
       val r = extractTextStep.execute
 

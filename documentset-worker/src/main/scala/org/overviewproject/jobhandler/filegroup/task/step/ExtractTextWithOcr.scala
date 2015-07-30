@@ -26,9 +26,8 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
 
   override protected def doExecute: Future[TaskStep] = for {
     pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
-  } yield pdfDocument.textWithFonts.fold(
-    _ => startOcr(file, pdfDocument),
-    startNextStep(pdfDocument))
+  } yield startOcr(file, pdfDocument)
+
 
   
   private def startNextStep(pdfDocument: PdfDocument)(text: String): TaskStep = 
