@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage
 
 trait PdfDocument {
   /** @returns a View to prevent all page data to be loaded into memory at once */
-  def pages: SeqView[PdfPage, Seq[_]]
+  def pages: Seq[PdfPage]
   
   /** @returns a View of images of all the document pages */
   def pageImages: SeqView[BufferedImage, Seq[_]]
@@ -22,4 +22,10 @@ trait PdfDocument {
   def close(): Unit
 }
 
-case class PdfPage(data: Array[Byte], text: String)
+trait PdfPage {
+  def data: Array[Byte]
+  def text: String
+  def image: BufferedImage
+  def close(): Unit
+}
+

@@ -1,15 +1,16 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
-
 import scala.collection.SeqView
 import scala.concurrent.Future
-
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.models.File
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import org.overviewproject.jobhandler.filegroup.task.PdfPage
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class OcrDocumentPagesSpec extends Specification with Mockito {
 
@@ -24,7 +25,13 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
     "ocr the next page" in new ContinueOcrContext {
       val next = ocrDocumentPages.execute
 
-      next must be_==(NextPage(Seq.empty.view, text :+ ocrText)).await
+      next must be_==(NextPage(Seq.empty, text :+ ocrText)).await
+    }
+    
+    "close the processed page" in new ContinueOcrContext {
+      Await.ready(ocrDocumentPages.execute, Duration.Inf)
+      
+      there was one(page).close
     }
   }
 
@@ -42,20 +49,20 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
     
     val textExtractor = smartMock[OcrTextExtractor]
     
-    val ocrDocumentPages = new TestOcrDocumentPages(textExtractor, file, pdfDocument, pages, text)
+    lazy val ocrDocumentPages = new TestOcrDocumentPages(textExtractor, file, pdfDocument, pages, text)
 
-    def pages: SeqView[BufferedImage, Seq[_]]
+    def pages: Seq[PdfPage]
   }
 
   trait CompleteOcrContext extends OcrContext {
 
-    override def pages = Seq.empty.view
+    override def pages = Seq.empty
   }
 
   trait ContinueOcrContext extends OcrContext {
 
-    def page = smartMock[BufferedImage]
-    override def pages = Seq(page).view
+    val page = smartMock[PdfPage]
+    override def pages = Seq(page)
     
     textExtractor.extractText(any, any) returns Future.successful(ocrText)
   }
@@ -64,7 +71,7 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
     override def execute = Future.successful(this)
   }
 
-  case class NextPage(pages: SeqView[BufferedImage, Seq[_]], text: Seq[String]) extends TaskStep {
+  case class NextPage(pages: Seq[PdfPage], text: Seq[String]) extends TaskStep {
     override def execute = Future.successful(this)
   }
 
@@ -72,7 +79,7 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
     override protected val ocrTextExtractor: OcrTextExtractor,
     override protected val file: File,
     override protected val pdfDocument: PdfDocument,
-    override protected val pageImages: SeqView[BufferedImage, Seq[_]],
+    override protected val pages: Seq[PdfPage],
     override protected val currentText: Seq[String]) extends OcrDocumentPages {
 
     override protected val documentSetId = 1l

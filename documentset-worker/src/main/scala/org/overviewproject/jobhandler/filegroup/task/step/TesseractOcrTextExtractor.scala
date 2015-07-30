@@ -24,34 +24,26 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
   protected val fileSystem: FileSystem
 
   import TesseractOcrTextExtractor.FileFormats._
-  
+
   protected trait FileSystem {
     def writeImage(image: BufferedImage): File
     def readText(file: File): String
     def deleteFile(file: File): Boolean
   }
 
-  def extractText(image: BufferedImage, language: String): Future[String] = {
-  
-    val result = withImageAsTemporaryFile(image) { tempFile =>
+  def extractText(image: BufferedImage, language: String): Future[String] =
+    withImageAsTemporaryFile(image) { tempFile =>
       extractTextWithOcr(tempFile, language) { textTempFile =>
         fileSystem.readText(textTempFile)
       }
     }
 
-    result
-  }
-
   private def withImageAsTemporaryFile(image: BufferedImage)(f: File => Future[String]): Future[String] = {
     val storedImage = Future.fromTry(Try { fileSystem.writeImage(image) })
-    def callAndDeleteWhenComplete(imageFile: File): Future[String] = {
-      val result = f(imageFile)
-      result.onComplete {
-        case _ => fileSystem.deleteFile(imageFile)
-      }
 
-      result
-    }
+    def callAndDeleteWhenComplete(imageFile: File): Future[String] = 
+      f(imageFile).andThen { case _ => fileSystem.deleteFile(imageFile) }
+
 
     for {
       imageFile <- storedImage
@@ -64,7 +56,7 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
     // A language parameter that does not have an appropriate transformation denotes an error
     // and an exception is thrown.
     val iso639_2Code = SupportedLanguages.asIso639_2(language).get
-    
+
     val output = outputFile(imageFile)
     shellRunner.run(tesseractCommand(imageFile.getAbsolutePath, output.getAbsolutePath(), iso639_2Code), ocrTimeout)
       .map { _ =>
@@ -79,7 +71,7 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
     val outputBase = outputFile.replace(s".$TextOutput", "")
     s"$tesseractLocation $inputFile $outputBase -l $language"
   }
-  
+
   private def outputFile(inputFile: File): File = {
     val inputFilePath = inputFile.getAbsolutePath
     val outputFilePath = inputFilePath.replace(s".$ImageFormat", s".$TextOutput")
@@ -93,13 +85,12 @@ object TesseractOcrTextExtractor {
   import scala.concurrent.duration.DurationInt
   import scala.language.postfixOps
   import org.overviewproject.util.Configuration
-  
+
   object FileFormats {
     val ImageFormat = "png"
     val TextOutput = "txt"
   }
-  
-  
+
   def apply(timeoutGenerator: TimeoutGenerator)(implicit executionContext: ExecutionContext): TesseractOcrTextExtractor =
     new TesseractOcrTextExtractorImpl(ShellRunner(timeoutGenerator), executionContext)
 

@@ -20,37 +20,29 @@ import java.awt.image.BufferedImage
 class PdfBoxDocument(file: File) extends PdfDocument {
   private val TempFilePrefix = "overview-pdfbox-"
   private val TempFileExtension = ".tmp"
-  
+
   private val ImageType = BufferedImage.TYPE_BYTE_GRAY
   private val ImageResolution = 400
-  
+
   private val textStripper = new FontDetectingTextStripper
   private val document: PDDocument = init(file)
 
-  override def pages: SeqView[PdfPage, Seq[_]] = splitPages.map { p =>
-    val data = getData(p)
-    val text = getText(p)
+  override def pages: Seq[PdfPage] = splitPages.map(PdfBoxPage(_))
 
-    p.close
-
-    PdfPage(data, text)
-  }
-
-  
-  override def pageImages: SeqView[BufferedImage, Seq[_]] = 
-    getPages.map(_.convertToImage(ImageType, ImageResolution))
+  override def pageImages: SeqView[BufferedImage, Seq[_]] =
+    getPages.view.map(_.convertToImage(ImageType, ImageResolution))
 
   override def text: String = getText(document)
 
   /**
-   * Text extraction and font detection is combined in one call 
-   * to avoid having to read the file twice. 
+   * Text extraction and font detection is combined in one call
+   * to avoid having to read the file twice.
    */
   def textWithFonts: Either[String, String] = {
     val t = getText(document)
     Either.cond(textStripper.foundFonts, t, t)
   }
-  
+
   override def close(): Unit = document.close()
 
   private def init(file: File): PDDocument = {
@@ -62,14 +54,12 @@ class PdfBoxDocument(file: File) extends PdfDocument {
     }
   }
 
-  
   // Use a view to prevent all page data from being loaded into memory at once
-  private def getPages: SeqView[PDPage, Seq[_]] =
-    document.getDocumentCatalog.getAllPages.asScala.view.map(_.asInstanceOf[PDPage])
-    
-  private def splitPages: SeqView[PDDocument, Seq[_]] =
-    getPages.map(createDocument)
+  private def getPages: Seq[PDPage] =
+    document.getDocumentCatalog.getAllPages.asScala.map(_.asInstanceOf[PDPage])
 
+  private def splitPages: Seq[PDDocument] =
+    getPages.map(createDocument)
 
   private def createDocument(page: PDPage): PDDocument = {
 
@@ -101,14 +91,14 @@ class PdfBoxDocument(file: File) extends PdfDocument {
 
     Textify(rawText)
   }
-  
+
   private class FontDetectingTextStripper extends PDFTextStripper {
     import org.apache.pdfbox.util.TextPosition
-    
+
     private var detectedFont: Boolean = false
-   
+
     def foundFonts: Boolean = detectedFont
-    
+
     override protected def writeString(text: String, textPositions: java.util.List[TextPosition]): Unit = {
       super.writeString(text, textPositions)
 
@@ -120,7 +110,7 @@ class PdfBoxDocument(file: File) extends PdfDocument {
     }
 
   }
-  
+
 }
 
 object PdfBoxDocument {

@@ -15,7 +15,7 @@ trait CreateDocumentData extends UploadedFileProcessStep {
 
   protected val nextStep: Seq[DocumentData] => TaskStep
 
-  override protected def doExecute: Future[TaskStep] = Future.successful {
+  override protected def doExecute: Future[TaskStep] = Future.successful { 
     pdfDocument.close
     val documentData = Seq(PdfFileDocumentData(filename, file.id, combineText))
     nextStep(documentData)

@@ -1,16 +1,15 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
-
 import scala.collection.SeqView
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.models.File
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import org.overviewproject.jobhandler.filegroup.task.PdfPage
 
 class ExtractTextWithrOcrSpec extends Specification with Mockito {
 
@@ -26,7 +25,7 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
     "start ocr step if needed" in new PdfWithNoTextContext {
       val r = extractTextStep.execute
 
-      r must be_==(OcrStep(pdfFile, pages)).await
+      r must be_==(OcrStep(pdfFile, document)).await
     }
   }
 
@@ -48,7 +47,7 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
       pdfProcessor.loadFromBlobStorage(viewLocation) returns Future.successful(document)
 
       override protected val nextStep = Function.tupled(NextStep)
-      override protected def startOcr(f: File, d: PdfDocument, p: SeqView[BufferedImage, Seq[_]]): TaskStep = OcrStep(f, p)
+      override protected def startOcr(f: File, d: PdfDocument): TaskStep = OcrStep(f, d)
     }
 
   }
@@ -64,9 +63,12 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
 
   trait PdfWithNoTextContext extends PdfContext {
     val document = smartMock[PdfDocument]
-    val pages = smartMock[SeqView[BufferedImage, Seq[_]]]
+    val image = smartMock[BufferedImage]
+    val page = smartMock[PdfPage]
+    
+    page.image returns image
     document.textWithFonts returns Left("")
-    document.pageImages returns pages
+    document.pages returns Seq(page).view
     
     val extractTextStep = new TestExtractTextWithOcr(document)
 
@@ -75,7 +77,7 @@ class ExtractTextWithrOcrSpec extends Specification with Mockito {
   case class NextStep(file: File, pdfDocument: PdfDocument, text: Seq[String]) extends TaskStep {
     override def execute = Future.successful(this)
   }
-  case class OcrStep(file: File, pages: SeqView[BufferedImage, Seq[_]]) extends TaskStep {
+  case class OcrStep(file: File, pdfDocument: PdfDocument) extends TaskStep {
     override def execute = Future.successful(this)
   }
 

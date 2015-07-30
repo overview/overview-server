@@ -29,7 +29,7 @@ trait RequestDocumentIds extends UploadedFileProcessStep {
 
   override protected def doExecute: Future[TaskStep] = for {
     IdRequestResponse(ids) <- documentIdSupplier ? RequestIds(documentSetId, documentData.size)
-  } yield nextStep(createDocuments(ids))
+  } yield nextStep(createDocuments(ids)) 
 
   private def createDocuments(documentSetIds: Seq[Long]): Seq[Document] =
     for {

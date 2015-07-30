@@ -43,7 +43,7 @@ trait CreatePdfPages extends UploadedFileProcessStep {
 
   private def getPageData(pdfDocument: PdfDocument): SeqView[(Array[Byte], String), Seq[_]] =
     blocking {
-      pdfDocument.pages.map(p => (p.data, p.text))
+      pdfDocument.pages.view.map(p => (p.data, p.text))
     }
 
   private def nextStepWithPages(pdfDocument: PdfDocument): Future[TaskStep] = for {

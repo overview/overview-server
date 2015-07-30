@@ -25,9 +25,14 @@ trait CreateDocumentDataForPages extends UploadedFileProcessStep {
       nextStep(pageDocumentData(pageAttributes))
     }
 
-  private def pageData = pdfDocument.pages
-    .map(_.data)
-    .zip(textPages)
+  private def pageData = {
+    val pageBytes = for {
+      page <- pdfDocument.pages
+    } yield ultimately(page.close) {
+      page.data
+    }
+    pageBytes.view.zip(textPages)
+  }
 
   private def pageDocumentData(pageAttributes: Seq[Page.ReferenceAttributes]): Seq[DocumentData] =
     for {

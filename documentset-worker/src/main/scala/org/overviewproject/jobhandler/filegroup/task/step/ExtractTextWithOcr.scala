@@ -1,15 +1,14 @@
 package org.overviewproject.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
-
 import scala.collection.SeqView
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
 import org.overviewproject.jobhandler.filegroup.task.PdfDocument
 import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
 import org.overviewproject.models.File
+import org.overviewproject.jobhandler.filegroup.task.PdfPage
 
 trait ExtractTextWithOcr extends UploadedFileProcessStep {
 
@@ -17,7 +16,7 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
   override protected lazy val filename = file.name
 
   protected val nextStep: ((File, PdfDocument, Seq[String])) => TaskStep
-  protected def startOcr(file: File, pdfDocument: PdfDocument, pages: SeqView[BufferedImage, Seq[_]]): TaskStep
+  protected def startOcr(file: File, pdfDocument: PdfDocument): TaskStep
 
   protected val pdfProcessor: PdfProcessor
 
@@ -28,13 +27,13 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
   override protected def doExecute: Future[TaskStep] = for {
     pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
   } yield pdfDocument.textWithFonts.fold(
-    _ => startOcr(file, pdfDocument, pdfDocument.pageImages),
+    _ => startOcr(file, pdfDocument),
     startNextStep(pdfDocument))
 
   
-  private def startNextStep(pdfDocument: PdfDocument)(text: String): TaskStep = {
+  private def startNextStep(pdfDocument: PdfDocument)(text: String): TaskStep = 
     nextStep((file, pdfDocument, Seq(text)))
-  }
+
 }
 
 object ExtractTextWithOcr {
@@ -56,8 +55,9 @@ object ExtractTextWithOcr {
         PdfBoxDocument.loadFromLocation(location)
     }
 
-    override protected def startOcr(file: File, pdfDocument: PdfDocument, pages: SeqView[BufferedImage, Seq[_]]): TaskStep =
-      OcrDocumentPages(documentSetId, file, language, pdfDocument, pages, timeoutGenerator, nextStep)
+    override protected def startOcr(file: File, pdfDocument: PdfDocument): TaskStep = 
+      OcrDocumentPages(documentSetId, file, language, pdfDocument, pdfDocument.pages, timeoutGenerator, nextStep)
+
   }
 
 }
