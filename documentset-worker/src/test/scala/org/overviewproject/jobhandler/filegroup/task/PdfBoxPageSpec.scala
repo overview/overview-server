@@ -25,6 +25,10 @@ class PdfBoxPageSpec extends Specification with Mockito {
     "render page as an image" in new PdfContext {
       testPage.image must be equalTo(pageImage)
     }
+    
+    "get text with font" in new PdfContext {
+      testPage.textWithFonts must beRight(pageText)
+    }
   }
 
   trait PdfContext extends Scope {
@@ -44,6 +48,7 @@ class PdfBoxPageSpec extends Specification with Mockito {
     page.convertToImage(BufferedImage.TYPE_BYTE_GRAY, 400) returns pageImage
     
     textStripper.getText(document) returns pageText
+    textStripper.foundFonts returns true
     
     val testPage = new TestPdfBoxPage(document, textStripper)
   }

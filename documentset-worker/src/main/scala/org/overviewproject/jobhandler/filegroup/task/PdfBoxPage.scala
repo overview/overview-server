@@ -33,6 +33,12 @@ trait PdfBoxPage extends PdfPage {
     Textify(rawText)
   }
 
+  
+  def textWithFonts: Either[String, String] = {
+    val t = text
+    Either.cond(textStripper.foundFonts, t, t)
+  }
+   
   /**
    * @returns a rendering of the page as an image.
    * @throws an exception if no page is found, because a [[PdfBoxPage]] must contain
