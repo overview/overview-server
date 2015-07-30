@@ -40,10 +40,13 @@ trait OcrDocumentPages extends UploadedFileProcessStep {
 
   private def findPageText(page: PdfPage): Future[String] =
     page.textWithFonts match {
-      case Right(text) => Future.successful(text)
-      case Left(_)     => ocrPage(page)
+      case Right(text) if significant(text) => Future.successful(text)
+      case _ => ocrPage(page)
     }
 
+  
+  private def significant(text: String) = text.size >= OcrDocumentPages.MinimumTextSize
+  
   private def ocrPage(page: PdfPage): Future[String] =
     for {
       text <- ocrTextExtractor.extractText(page.image, language)

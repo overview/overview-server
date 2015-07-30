@@ -28,17 +28,23 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
 
       next must be_==(NextPage(Seq.empty, text :+ ocrText)).await
     }
-    
+
     "close the processed page" in new ContinueOcrContext {
       Await.ready(ocrDocumentPages.execute, Duration.Inf)
-      
+
       there was one(page).close
     }
-    
+
     "Use extracted text if OCR not needed" in new TextFoundContext {
       val next = ocrDocumentPages.execute
-      
+
       next must be_==(NextPage(Seq.empty, text :+ extractedText)).await
+    }
+
+    "OCR page if found text is too small" in new NotEnoughTextFoundContext {
+      val next = ocrDocumentPages.execute
+
+      next must be_==(NextPage(Seq.empty, text :+ ocrText)).await
     }
   }
 
@@ -53,9 +59,9 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
 
     val text = Seq("initial text")
     val ocrText = "text from ocr"
-    
+
     val textExtractor = smartMock[OcrTextExtractor]
-    
+
     lazy val ocrDocumentPages = new TestOcrDocumentPages(textExtractor, file, pdfDocument, pages, text)
 
     def pages: Seq[PdfPage]
@@ -72,19 +78,28 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
     override def pages = Seq(page)
 
     page.textWithFonts returns Left("")
-    
+
     textExtractor.extractText(any, any) returns Future.successful(ocrText)
   }
 
   trait TextFoundContext extends ContinueOcrContext {
     val pageWithText = smartMock[PdfPage]
     val extractedText = Random.nextString(2 * OcrDocumentPages.MinimumTextSize)
-    
+
     pageWithText.textWithFonts returns Right(extractedText)
-    
+
     override def pages = Seq(pageWithText)
   }
-  
+
+  trait NotEnoughTextFoundContext extends ContinueOcrContext {
+    val pageWithText = smartMock[PdfPage]
+    val extractedText = Random.nextString(OcrDocumentPages.MinimumTextSize - 1)
+
+    pageWithText.textWithFonts returns Right(extractedText)
+
+    override def pages = Seq(pageWithText)
+  }
+
   case class NextStep(file: File, pdfDocument: PdfDocument, text: Seq[String]) extends TaskStep {
     override def execute = Future.successful(this)
   }
@@ -107,7 +122,6 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
     override protected val nextStep = Function.tupled(NextStep)
 
     override protected val nextPageStep = Function.tupled(NextPage)
-
 
   }
 
