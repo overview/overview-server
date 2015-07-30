@@ -34,21 +34,24 @@ trait OcrDocumentPages extends UploadedFileProcessStep {
   }
 
   private def ocrThenClosePage(page: PdfPage): Future[TaskStep] =
-    ocrPage(page).andThen { case _ => page.close() }
+    findPageText(page)
+      .map(text => nextPageStep(pages.tail, currentText :+ text))
+      .andThen { case _ => page.close }
 
-  private def ocrPageImage(image: BufferedImage): Future[TaskStep] = {
-    for {
-      text <- ocrTextExtractor.extractText(image, language)
-    } yield nextPageStep(pages.tail, currentText :+ text) 
-  }
+  private def findPageText(page: PdfPage): Future[String] =
+    page.textWithFonts match {
+      case Right(text) => Future.successful(text)
+      case Left(_)     => ocrPage(page)
+    }
 
-  private def ocrPage(page: PdfPage): Future[TaskStep] = 
+  private def ocrPage(page: PdfPage): Future[String] =
     for {
       text <- ocrTextExtractor.extractText(page.image, language)
-    } yield nextPageStep(pages.tail, currentText :+ text) 
+    } yield text
 }
 
 object OcrDocumentPages {
+  val MinimumTextSize = 100
 
   def apply(documentSetId: Long, file: File, language: String,
             pdfDocument: PdfDocument,

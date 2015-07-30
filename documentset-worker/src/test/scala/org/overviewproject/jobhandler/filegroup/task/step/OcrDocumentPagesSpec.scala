@@ -11,6 +11,7 @@ import org.specs2.specification.Scope
 import org.overviewproject.jobhandler.filegroup.task.PdfPage
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.util.Random
 
 class OcrDocumentPagesSpec extends Specification with Mockito {
 
@@ -32,6 +33,12 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
       Await.ready(ocrDocumentPages.execute, Duration.Inf)
       
       there was one(page).close
+    }
+    
+    "Use extracted text if OCR not needed" in new TextFoundContext {
+      val next = ocrDocumentPages.execute
+      
+      next must be_==(NextPage(Seq.empty, text :+ extractedText)).await
     }
   }
 
@@ -63,10 +70,21 @@ class OcrDocumentPagesSpec extends Specification with Mockito {
 
     val page = smartMock[PdfPage]
     override def pages = Seq(page)
+
+    page.textWithFonts returns Left("")
     
     textExtractor.extractText(any, any) returns Future.successful(ocrText)
   }
 
+  trait TextFoundContext extends ContinueOcrContext {
+    val pageWithText = smartMock[PdfPage]
+    val extractedText = Random.nextString(2 * OcrDocumentPages.MinimumTextSize)
+    
+    pageWithText.textWithFonts returns Right(extractedText)
+    
+    override def pages = Seq(pageWithText)
+  }
+  
   case class NextStep(file: File, pdfDocument: PdfDocument, text: Seq[String]) extends TaskStep {
     override def execute = Future.successful(this)
   }
