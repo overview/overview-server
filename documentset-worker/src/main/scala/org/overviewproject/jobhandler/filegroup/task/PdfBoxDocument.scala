@@ -21,27 +21,13 @@ class PdfBoxDocument(file: File) extends PdfDocument {
   private val TempFilePrefix = "overview-pdfbox-"
   private val TempFileExtension = ".tmp"
 
-  private val ImageType = BufferedImage.TYPE_BYTE_GRAY
-  private val ImageResolution = 400
 
-  private val textStripper = new FontDetectingTextStripper
+  private val textStripper = new PDFTextStripper
   private val document: PDDocument = init(file)
 
   override def pages: Seq[PdfPage] = splitPages.map(PdfBoxPage(_))
 
-  override def pageImages: SeqView[BufferedImage, Seq[_]] =
-    getPages.view.map(_.convertToImage(ImageType, ImageResolution))
-
   override def text: String = getText(document)
-
-  /**
-   * Text extraction and font detection is combined in one call
-   * to avoid having to read the file twice.
-   */
-  def textWithFonts: Either[String, String] = {
-    val t = getText(document)
-    Either.cond(textStripper.foundFonts, t, t)
-  }
 
   override def close(): Unit = document.close()
 
@@ -54,7 +40,6 @@ class PdfBoxDocument(file: File) extends PdfDocument {
     }
   }
 
-  // Use a view to prevent all page data from being loaded into memory at once
   private def getPages: Seq[PDPage] =
     document.getDocumentCatalog.getAllPages.asScala.map(_.asInstanceOf[PDPage])
 
@@ -91,26 +76,6 @@ class PdfBoxDocument(file: File) extends PdfDocument {
 
     Textify(rawText)
   }
-
-  private class FontDetectingTextStripper extends PDFTextStripper {
-    import org.apache.pdfbox.util.TextPosition
-
-    private var detectedFont: Boolean = false
-
-    def foundFonts: Boolean = detectedFont
-
-    override protected def writeString(text: String, textPositions: java.util.List[TextPosition]): Unit = {
-      super.writeString(text, textPositions)
-
-      if (!detectedFont) {
-        val fontNames = textPositions.asScala.map(_.getFont().getBaseFont())
-        if (fontNames.nonEmpty) detectedFont = true
-      }
-
-    }
-
-  }
-
 }
 
 object PdfBoxDocument {
