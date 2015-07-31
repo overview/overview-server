@@ -33,7 +33,7 @@ trait CreatePdfPages extends UploadedFileProcessStep {
 
   override protected def doExecute: Future[TaskStep] =
     loadDocument(file.viewLocation).flatMap { pdfDocument =>
-      ultimately(pdfDocument.close) {
+      ultimately(pdfDocument.close()) {
         nextStepWithPages(pdfDocument)
       }
     }
@@ -42,9 +42,10 @@ trait CreatePdfPages extends UploadedFileProcessStep {
     pdfProcessor.loadFromBlobStorage(location)
 
   private def getPageData(pdfDocument: PdfDocument): SeqView[(Array[Byte], String), Seq[_]] =
-    blocking {
-      pdfDocument.pages.view.map(p => (p.data, p.text))
-    }
+    pdfDocument.pages.view.map(p =>
+      ultimately(p.close()) {
+        (p.data, p.text)
+      })
 
   private def nextStepWithPages(pdfDocument: PdfDocument): Future[TaskStep] = for {
     pageAttributes <- pageSaver.savePages(file.id, getPageData(pdfDocument))
