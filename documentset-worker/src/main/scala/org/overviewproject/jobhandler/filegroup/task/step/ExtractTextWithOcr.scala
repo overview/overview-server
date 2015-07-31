@@ -15,7 +15,6 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
   protected val file: File
   override protected lazy val filename = file.name
 
-  protected val nextStep: ((File, PdfDocument, Seq[String])) => TaskStep
   protected def startOcr(file: File, pdfDocument: PdfDocument): TaskStep
 
   protected val pdfProcessor: PdfProcessor
@@ -28,11 +27,6 @@ trait ExtractTextWithOcr extends UploadedFileProcessStep {
     pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
   } yield startOcr(file, pdfDocument)
 
-
-  
-  private def startNextStep(pdfDocument: PdfDocument)(text: String): TaskStep = 
-    nextStep((file, pdfDocument, Seq(text)))
-
 }
 
 object ExtractTextWithOcr {
@@ -44,7 +38,7 @@ object ExtractTextWithOcr {
   private class ExtractTextWithOcrImpl(
     override protected val documentSetId: Long,
     override protected val file: File,
-    override protected val nextStep: ((File, PdfDocument, Seq[String])) => TaskStep,
+    nextStep: ((File, PdfDocument, Seq[String])) => TaskStep,
     language: String, timeoutGenerator: TimeoutGenerator)(override implicit protected val executor: ExecutionContext) extends ExtractTextWithOcr {
 
     override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
