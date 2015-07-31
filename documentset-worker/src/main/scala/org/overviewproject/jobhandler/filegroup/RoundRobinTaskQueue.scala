@@ -4,13 +4,14 @@ import scala.collection.mutable
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol.TaskWorkerTask
 
 class RoundRobinTaskQueue extends TaskQueue {
-  override def isEmpty: Boolean = order.isEmpty
+  override def isEmpty: Boolean = queues.isEmpty
 
   override def addTask(task: TaskWorkerTask): TaskQueue = {
-    val documentSetQueue = queues.getOrElseUpdate(task.documentSetId, mutable.Queue.empty)
-
-    documentSetQueue += task
-    if (!order.exists(_ == task.documentSetId)) order += task.documentSetId
+    queues
+      .find(_._1 == task.documentSetId) match {
+      case Some((ds, q)) => q += task
+      case None => queues += ((task.documentSetId, mutable.Queue(task)))
+    }
     
     this
   }
@@ -21,34 +22,21 @@ class RoundRobinTaskQueue extends TaskQueue {
   }
 
   override def dequeue: TaskWorkerTask = {
-    val documentSetId = order.dequeue
+    val documentSetTasks = queues.dequeue
+    val task = documentSetTasks._2.dequeue
 
-    val taskQueue = queues.get(documentSetId).get
+    if (!documentSetTasks._2.isEmpty) queues += documentSetTasks
 
-    val task = taskQueue.dequeue
-    
-    if (taskQueue.isEmpty) queues -= task.documentSetId
-    else order += documentSetId
-    
     task
   }
 
   override def dequeueAll(p: TaskWorkerTask => Boolean): Seq[TaskWorkerTask] = {
-    val tasks = order.map(
-      queues.get(_).get
-        .dequeueAll(p))
-
-    queues.keys.map { ds =>
-      if (queues.get(ds).get.isEmpty) {
-        queues -= ds
-        order.dequeueAll(_ == ds)
-      }
-    }
-
+    val tasks = queues.map(_._2.dequeueAll(p))
+    queues.dequeueAll(_._2.isEmpty)
+    
     tasks.flatten
   }
 
-  private val order: mutable.Queue[Long] = mutable.Queue.empty
-  private val queues: mutable.Map[Long, mutable.Queue[TaskWorkerTask]] = mutable.HashMap.empty
+  private val queues: mutable.Queue[(Long, mutable.Queue[TaskWorkerTask])] = mutable.Queue.empty
 
 }
