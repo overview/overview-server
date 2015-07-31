@@ -8,9 +8,9 @@ class RoundRobinTaskQueue extends TaskQueue {
 
   override def addTask(task: TaskWorkerTask): TaskQueue = {
     queues
-      .find(_._1 == task.documentSetId) match {
-      case Some((ds, q)) => q += task
-      case None => queues += ((task.documentSetId, mutable.Queue(task)))
+      .find(_.documentSetId == task.documentSetId) match {
+      case Some(queue) => queue.tasks += task
+      case None => queues += DocumentSetTaskQueue(task.documentSetId, mutable.Queue(task))
     }
     
     this
@@ -23,20 +23,21 @@ class RoundRobinTaskQueue extends TaskQueue {
 
   override def dequeue: TaskWorkerTask = {
     val documentSetTasks = queues.dequeue
-    val task = documentSetTasks._2.dequeue
+    val task = documentSetTasks.tasks.dequeue
 
-    if (!documentSetTasks._2.isEmpty) queues += documentSetTasks
+    if (!documentSetTasks.tasks.isEmpty) queues += documentSetTasks
 
     task
   }
 
   override def dequeueAll(p: TaskWorkerTask => Boolean): Seq[TaskWorkerTask] = {
-    val tasks = queues.map(_._2.dequeueAll(p))
-    queues.dequeueAll(_._2.isEmpty)
+    val tasks = queues.map(_.tasks.dequeueAll(p))
+    queues.dequeueAll(_.tasks.isEmpty)
     
     tasks.flatten
   }
 
-  private val queues: mutable.Queue[(Long, mutable.Queue[TaskWorkerTask])] = mutable.Queue.empty
+  private case class DocumentSetTaskQueue(documentSetId: Long, tasks: mutable.Queue[TaskWorkerTask])
+  private val queues: mutable.Queue[DocumentSetTaskQueue] = mutable.Queue.empty
 
 }
