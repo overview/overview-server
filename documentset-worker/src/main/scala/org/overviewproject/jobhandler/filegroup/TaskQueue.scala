@@ -4,6 +4,8 @@ import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol
 
 trait TaskQueue {
   def isEmpty: Boolean
+  def addTask(task: TaskWorkerTask): TaskQueue
   def addTasks(tasks: Iterable[TaskWorkerTask]): TaskQueue
   def dequeue: TaskWorkerTask
+  def dequeueAll(p: TaskWorkerTask => Boolean): Seq[TaskWorkerTask]
 }

@@ -60,7 +60,7 @@ trait FileGroupJobQueue extends Actor {
   private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
-  private val taskQueue: mutable.Queue[TaskWorkerTask] = mutable.Queue.empty
+  private val taskQueue: TaskQueue = new RoundRobinTaskQueue
   private val jobShepherds: mutable.Map[DocumentSetId, JobShepherd] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
   private val busyWorkers: mutable.Map[ActorRef, TaskWorkerTask] = mutable.Map.empty
@@ -119,7 +119,7 @@ trait FileGroupJobQueue extends Actor {
     }
 
     case AddTasks(tasks) => {
-      taskQueue ++= tasks
+      taskQueue.addTasks(tasks)
 
       notifyWorkers
     }
@@ -129,7 +129,7 @@ trait FileGroupJobQueue extends Actor {
       workerPool -= worker
       busyWorkers.get(worker).map { task =>
         busyWorkers -= worker
-        taskQueue += task
+        taskQueue.addTask(task)
       }
 
       notifyWorkers
