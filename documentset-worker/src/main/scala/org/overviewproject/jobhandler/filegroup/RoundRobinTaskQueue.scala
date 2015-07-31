@@ -51,7 +51,7 @@ class RoundRobinTaskQueue extends TaskQueue {
    * Removes all [[TaskWorkerTasks]] matching the specified predicate.
    * The tasks are returned ordered by `documentSetId`, not in round-robin order.
    */
-  override def dequeueAll(p: TaskWorkerTask => Boolean): Seq[TaskWorkerTask] = {
+  override def removeAll(p: TaskWorkerTask => Boolean): Seq[TaskWorkerTask] = {
     val tasks = queues.map(_.tasks.dequeueAll(p))
     queues.dequeueAll(_.tasks.isEmpty)
     

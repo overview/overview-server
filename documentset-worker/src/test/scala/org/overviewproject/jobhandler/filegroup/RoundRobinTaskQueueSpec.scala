@@ -29,8 +29,8 @@ class RoundRobinTaskQueueSpec extends Specification {
     "dequeue all tasks matching a predicate" in new MultipleTasksContext {
       taskQueue.addTasks(tasks)
 
-      val evenTasks = taskQueue.dequeueAll(t => (t.documentSetId % 2) == 0)
-      val remainder = taskQueue.dequeueAll(_ => true)
+      val evenTasks = taskQueue.removeAll(t => (t.documentSetId % 2) == 0)
+      val remainder = taskQueue.removeAll(_ => true)
 
       evenTasks must be equalTo tasks.filter(t => (t.documentSetId % 2) == 0)
       remainder must be equalTo tasks.filter(t => (t.documentSetId % 2) == 1)

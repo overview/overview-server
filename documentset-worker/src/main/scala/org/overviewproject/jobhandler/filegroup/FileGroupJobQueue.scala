@@ -167,7 +167,7 @@ trait FileGroupJobQueue extends Actor {
     } yield worker
 
   private def removeTasksInQueue(documentSetId: Long): Unit =
-    taskQueue.dequeueAll(_.documentSetId == documentSetId)
+    taskQueue.removeAll(_.documentSetId == documentSetId)
 
 }
 
