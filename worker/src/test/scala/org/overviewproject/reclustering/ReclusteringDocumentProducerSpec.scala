@@ -1,100 +1,88 @@
 package org.overviewproject.reclustering
 
+import org.reactivestreams.Subscriber
+import scala.concurrent.{ExecutionContext,Future}
+import slick.backend.DatabasePublisher
+
 import org.overviewproject.models.Document
 import org.overviewproject.util.DocumentConsumer
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 import org.overviewproject.util.Progress.Progress
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 
 class ReclusteringDocumentProducerSpec extends Specification with Mockito {
 
   "ReclusteringDocumentProducer" should {
-
     class TestReclusteringDocumentProducer(
-      override protected val pagedDocumentFinder: PagedDocumentFinder,
       override protected val consumer: DocumentConsumer,
-      override protected val progAbort: ProgressAbortFn) extends ReclusteringDocumentProducer
+      override protected val progAbort: ProgressAbortFn,
+      override protected val nDocuments: Int,
+      override protected val documentStream: DatabasePublisher[(Long,String)]
+    ) extends ReclusteringDocumentProducer {
+      override protected val progressReportThrottle: Long = -1 // always check progress
+      override protected val ec: ExecutionContext = ExecutionContext.Implicits.global
+    }
 
-    trait ReclusteringContext extends Before {
-      val documentSetId = 1l
+    class DocumentPublisher(documents: Seq[(Long,String)]) extends DatabasePublisher[(Long,String)] {
+      override def subscribe(arg0: Subscriber[_ >: (Long,String)]): Unit = ??? // We're not *really* streaming
+
+      override def foreach[U](f: (Tuple2[Long,String]) => U)(implicit ec: ExecutionContext): Future[Unit] = {
+        // Our _real_ mocking goes here
+        Future(documents.foreach(f))(ec) // Future() wraps a control-flow exception, AbortedException
+      }
+    }
+
+    trait BaseScope extends Scope {
+      val documentSetId = 123L
+      val maybeTagId: Option[Long] = None
       val consumer = smartMock[DocumentConsumer]
       val progAbort = mock[ProgressAbortFn] // smartMock triggers bug https://code.google.com/p/mockito/issues/detail?id=107
-      val numberOfDocuments = 5
-      val factory = org.overviewproject.test.factories.PodoFactory
-
-      val documentFinder = smartMock[PagedDocumentFinder]
-      documentFinder.numberOfDocuments returns numberOfDocuments
-      documentFinder.findDocuments(1) returns Seq.tabulate(numberOfDocuments) { n =>
-        // Gotta give id=n+1, because id=0 will auto-assign an ID
-        factory.document(id=n+1, text=s"text-$n")
-      }
-      documentFinder.findDocuments(2) returns Seq.empty
-
-      val documentProducer = new TestReclusteringDocumentProducer(documentFinder, consumer, progAbort)
-
-      override def before = setupProgAbort
-
-      protected def setupProgAbort: Unit = progAbort.apply(any) returns false
-
-      private def createMockDocuments: Seq[Document] = {
-        Seq.tabulate(numberOfDocuments) { n => factory.document(id=n, text=s"text-$n") }
-      }
+      val documents = Seq(
+        (1L, "doc1"),
+        (2L, "doc2"),
+        (3L, "doc3")
+      )
+      lazy val documentStream = new DocumentPublisher(documents)
+      lazy val subject = new TestReclusteringDocumentProducer(consumer, progAbort, documents.length, documentStream)
     }
 
-    trait CancelledClustering extends ReclusteringContext {
+    "consume documents" in new BaseScope {
+      progAbort.apply(any) returns false
 
-      override protected def setupProgAbort: Unit =
-        progAbort.apply(any) returns false thenReturn true
+      val numberOfDocumentsProduced = subject.produce
+      numberOfDocumentsProduced must beEqualTo(3)
+      there was one(consumer).processDocument(1, "doc1")
+      there was one(consumer).processDocument(2, "doc2")
+      there was one(consumer).processDocument(3, "doc3")
     }
 
-    "read documents by page" in new ReclusteringContext {
-      val numberOfDocumentsProduced = documentProducer.produce
+    "report progress" in new BaseScope {
+      progAbort.apply(any) returns false
 
-      numberOfDocumentsProduced must be equalTo (numberOfDocuments)
-      there was one(documentFinder).findDocuments(1)
-      there was one(documentFinder).findDocuments(2)
+      subject.produce
+      there was one(progAbort).apply(Progress(0.5 * 1 / 3, Retrieving(1, 3)))
+      there was one(progAbort).apply(Progress(0.5 * 2 / 3, Retrieving(2, 3)))
+      there was one(progAbort).apply(Progress(0.5 * 3 / 3, Retrieving(3, 3)))
     }
 
-    "pass documents to consumer" in new ReclusteringContext {
-      documentProducer.produce
+    "call productionComplete" in new BaseScope {
+      progAbort.apply(any) returns false
+      subject.produce
 
-      for { n <- 0 until numberOfDocuments } yield {
-        there was one(consumer).processDocument(n+1, s"text-$n")
-      }
-    }
-
-    "report progress" in new ReclusteringContext {
-      documentProducer.produce
-      val status = Seq.tabulate(numberOfDocuments)(n =>
-        Progress(0.5 * (1.0 + n) / numberOfDocuments, Retrieving(n + 1, numberOfDocuments)))
-
-      there was
-        one(progAbort).apply(status(0)) andThen
-        one(progAbort).apply(status(1)) andThen
-        one(progAbort).apply(status(2)) andThen
-        one(progAbort).apply(status(3)) andThen
-        one(progAbort).apply(status(4))
-
-    }
-    
-    "tells consumer when all documents have been found" in new ReclusteringContext {
-      documentProducer.produce
-      
       there was one(consumer).productionComplete
     }
 
-    "stop processing when cancelled" in new CancelledClustering {
-      documentProducer.produce
+    "stop processing when cancelled" in new BaseScope {
+      progAbort.apply(any) returns false thenReturn true
 
-      there was one(consumer).processDocument(1, "text-0") andThen
-        one(consumer).processDocument(2, "text-1")
-      for { n <- 2 until numberOfDocuments } yield {
-        there was no(consumer).processDocument(n+1, s"text-$n")
-      }
+      subject.produce
+
+      there was one(consumer).processDocument(1, "doc1")
+      there was one(consumer).processDocument(2, "doc2")
+      there was no(consumer).processDocument(3, "doc3")
     }
-
   }
 }
