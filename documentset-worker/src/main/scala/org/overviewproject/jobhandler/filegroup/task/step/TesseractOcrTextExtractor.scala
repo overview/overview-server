@@ -69,7 +69,7 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
 
   private def tesseractCommand(inputFile: String, outputFile: String, language: String): String = {
     val outputBase = outputFile.replace(s".$TextOutput", "")
-    s"$tesseractLocation $inputFile $outputBase -l $language"
+    s"$tesseractLocation $inputFile $outputBase -l $language -psm 1"
   }
 
   private def outputFile(inputFile: File): File = {
