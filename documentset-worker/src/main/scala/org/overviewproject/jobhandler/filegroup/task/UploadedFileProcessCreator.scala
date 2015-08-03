@@ -76,11 +76,11 @@ object UploadedFileProcessCreator extends HasBlockingDatabase {
                               documentIdSupplier: ActorRef): UploadedFileProcess =
         documentType match {
           case PdfDocument if options.splitDocument =>
-            CreateDocumentFromPdfPage(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
-          //CreateDocumentsFromPagesWithOcr(documentSetId, name, options.lang, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
+            // CreateDocumentFromPdfPage(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
+            CreateDocumentsFromPagesWithOcr(documentSetId, name, options.lang, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case PdfDocument =>
-            CreateDocumentFromPdfFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
-          //CreateDocumentFromFileWithOcr(documentSetId, name, options.lang, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
+            //            CreateDocumentFromPdfFile(documentSetId, name, documentIdSupplier, bulkDocumentWriter)
+            CreateDocumentFromFileWithOcr(documentSetId, name, options.lang, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument if options.splitDocument =>
             CreateDocumentsFromConvertedFilePages(documentSetId, name, timeoutGenerator, documentIdSupplier, bulkDocumentWriter)
           case OfficeDocument =>
