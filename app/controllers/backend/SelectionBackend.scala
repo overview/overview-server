@@ -122,7 +122,14 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
     }
   }
 
-  private implicit val timeout: Timeout = Timeout.longToTimeout(1000)
+  // pudo's 2M documents led to:
+  // play.api.UnexpectedException: Unexpected exception[AskTimeoutException: Ask timed out on [Actor[akka://RedisPlugin/user/redis-client-0#429941718]] after [1000 ms]]
+  // ... and after that, every future request for documents failed. So I've
+  // upped it to 5000.
+  //
+  // I can't reproduce the error locally. Redis ought to be plenty fast for
+  // this. Maybe context switches are extremely slow/rare on Linux on AWS?
+  private implicit val timeout: Timeout = Timeout.longToTimeout(5000)
 
   private def encodeDocumentIds(documentIds: Seq[Long]): Array[Byte] = {
     val buffer = ByteBuffer.allocate(documentIds.length * SizeOfLong)
