@@ -26,24 +26,14 @@ trait DeleteFileUploadTaskStep extends ErrorHandlingTaskStep {
   override protected def doExecute: Future[TaskStep] =
     deleteJobThenCleanup.map { _ => nextStep }
 
-  private def deleteJobThenCleanup: Future[Unit] =
+  private def deleteJobThenCleanup: Future[Unit] = {
     for {
-      job <- jobDeleter.deleteByDocumentSet(documentSetId)
-      tempFiles <- tempFileDeleter.delete(documentSetId)
-      upload <- deleteUploadRemains
+      _ <- jobDeleter.deleteByDocumentSet(documentSetId)
+      _ <- tempFileDeleter.delete(documentSetId)
+      _ <- documentSetDeleter.delete(documentSetId)
+      _ <- fileGroupDeleter.delete(fileGroupId)
     } yield ()
-
-  private def deleteUploadRemains: Future[Unit] = {
-    val documentSetDeletion = documentSetDeleter.delete(documentSetId)
-    val fileGroupDeletion = fileGroupDeleter.delete(fileGroupId)
-
-    for {
-      documentSet <- documentSetDeletion
-      fileGroup <- fileGroupDeletion
-    } yield ()
-
   }
-
 }
 
 object DeleteFileUploadTaskStep {
