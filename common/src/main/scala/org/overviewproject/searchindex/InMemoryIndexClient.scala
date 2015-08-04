@@ -1,4 +1,4 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
 import java.io.File
 import java.nio.file.Files

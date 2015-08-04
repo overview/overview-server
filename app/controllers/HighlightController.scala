@@ -8,8 +8,8 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.HighlightBackend
-import org.overviewproject.query.QueryParser
-import org.overviewproject.searchindex.Highlight
+import com.overviewdocs.query.QueryParser
+import com.overviewdocs.searchindex.Highlight
 
 trait HighlightController extends Controller {
   protected val highlightBackend: HighlightBackend
@@ -21,7 +21,7 @@ trait HighlightController extends Controller {
     */
   def index(documentSetId: Long, documentId: Long, queryString: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     QueryParser.parse(queryString) match {
-      case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("org.overviewproject.query.SyntaxError"))))
+      case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("com.overviewdocs.query.SyntaxError"))))
       case Right(query) => {
         highlightBackend.index(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
           val json = JsArray(highlights.map { highlight =>

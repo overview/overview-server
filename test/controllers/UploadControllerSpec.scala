@@ -13,8 +13,8 @@ import controllers.auth.AuthorizedRequest
 import controllers.backend.DocumentSetBackend
 import models.upload.{OverviewUpload,OverviewUploadedFile}
 import models.{Session,User}
-import org.overviewproject.models.DocumentSet
-import org.overviewproject.test.factories.{PodoFactory=>factory}
+import com.overviewdocs.models.DocumentSet
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class UploadControllerSpec extends ControllerSpecification with Mockito {
   class MockOverviewUploadedFile(

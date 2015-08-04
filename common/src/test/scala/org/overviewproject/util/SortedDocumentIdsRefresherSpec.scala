@@ -1,11 +1,11 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import play.api.libs.json.JsObject
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models.DocumentDisplayMethod
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models.DocumentDisplayMethod
+import com.overviewdocs.test.DbSpecification
 
 class SortedDocumentIdsRefresherSpec extends DbSpecification {
   "#refreshDocumentSet" should {
@@ -63,8 +63,8 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
 
   class DbMethods extends HasBlockingDatabase {
     import database.api._
-    import org.overviewproject.models.tables.{Documents,DocumentSets}
-    import org.overviewproject.models.{Document,DocumentSet}
+    import com.overviewdocs.models.tables.{Documents,DocumentSets}
+    import com.overviewdocs.models.{Document,DocumentSet}
     import slick.jdbc.GetResult
 
     def createDocumentSet(id: Long): DocumentSet = {

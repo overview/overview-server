@@ -1,4 +1,4 @@
-package org.overviewproject.test
+package com.overviewdocs.test
 
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner

@@ -1,9 +1,9 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.documentcloud.DocumentRetrievalError
-import org.overviewproject.models.DocumentProcessingError
-import org.overviewproject.models.tables.DocumentProcessingErrors
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.documentcloud.DocumentRetrievalError
+import com.overviewdocs.models.DocumentProcessingError
+import com.overviewdocs.models.tables.DocumentProcessingErrors
 
 object DocRetrievalErrorWriter extends HasBlockingDatabase {
   def write(documentSetId: Long, errors: Seq[DocumentRetrievalError]) {

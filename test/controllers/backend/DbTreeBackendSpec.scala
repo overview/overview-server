@@ -1,7 +1,7 @@
 package controllers.backend
 
-import org.overviewproject.models.{Node,NodeDocument,Tree}
-import org.overviewproject.models.tables.{Nodes,NodeDocuments,Trees}
+import com.overviewdocs.models.{Node,NodeDocument,Tree}
+import com.overviewdocs.models.tables.{Nodes,NodeDocuments,Trees}
 
 class DbTreeBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

@@ -1,4 +1,4 @@
-package org.overviewproject.postgres
+package com.overviewdocs.postgres
 
 import scala.collection.Seq
 import org.specs2.mutable.Specification

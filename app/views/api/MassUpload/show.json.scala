@@ -2,7 +2,7 @@ package views.json.api.MassUpload
 
 import play.api.libs.json.Json
 
-import org.overviewproject.models.GroupedFileUpload
+import com.overviewdocs.models.GroupedFileUpload
 
 object show {
   def apply(upload: GroupedFileUpload) = Json.obj(

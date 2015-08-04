@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 object DocumentDisplayMethod extends Enumeration {
   

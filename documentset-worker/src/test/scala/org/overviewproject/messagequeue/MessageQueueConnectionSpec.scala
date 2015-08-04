@@ -1,10 +1,10 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 import scala.util.{Success, Try}
 import akka.testkit._
-import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.messagequeue.ConnectionMonitorProtocol._
+import com.overviewdocs.messagequeue.MessageQueueConnectionProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 

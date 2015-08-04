@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.File
 import org.rogach.scallop.{ArgType,ScallopConf,ValueConverter}

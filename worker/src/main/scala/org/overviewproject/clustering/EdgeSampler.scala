@@ -13,12 +13,12 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.{HashMap, Map, PriorityQueue}
 
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.util.{CompactPairArray, Logger}
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.util.{CompactPairArray, Logger}
 
 // It's like a global typedef, but wordier :P
 object DocumentDistanceFn {

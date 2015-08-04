@@ -1,13 +1,13 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
 
 import akka.actor.ActorRef
 
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.util.BulkDocumentWriter
+import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
+import com.overviewdocs.jobhandler.filegroup.task.process.UploadedFileProcess
+import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.util.BulkDocumentWriter
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

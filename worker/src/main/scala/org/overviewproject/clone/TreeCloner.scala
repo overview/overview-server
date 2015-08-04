@@ -1,4 +1,4 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
 object TreeCloner extends InDatabaseCloner {
   import database.api._

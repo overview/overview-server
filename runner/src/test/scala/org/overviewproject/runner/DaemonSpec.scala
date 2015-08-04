@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.File
 import java.io.{ByteArrayOutputStream,PrintStream}
@@ -8,7 +8,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.sys.process.{ Process, ProcessBuilder, ProcessLogger }
 
-import org.overviewproject.runner.commands.{ Command, JvmCommand }
+import com.overviewdocs.runner.commands.{ Command, JvmCommand }
 
 class DaemonSpec extends Specification {
   lazy val TestAppJar : File = { // lazy so the error message is nicer

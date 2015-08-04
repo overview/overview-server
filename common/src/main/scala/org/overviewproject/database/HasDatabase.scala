@@ -1,4 +1,4 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 /** Dependency injection: provides a Database.
   *
@@ -7,8 +7,8 @@ package org.overviewproject.database
   * ```
   * object ThingLister extends HasDatabase {
   *   import database.api._
-  *   import org.overviewproject.models.Thing
-  *   import org.overviewproject.models.tables.Things
+  *   import com.overviewdocs.models.Thing
+  *   import com.overviewdocs.models.tables.Things
   *
   *   def things: Future[Seq[Thing]] = database.seq(Things)
   * }
@@ -19,5 +19,5 @@ trait HasDatabase {
   protected lazy val database: Database = Database()
 
   /** Exposes the Slick Database API. */
-  protected val databaseApi = org.overviewproject.database.Slick.api
+  protected val databaseApi = com.overviewdocs.database.Slick.api
 }

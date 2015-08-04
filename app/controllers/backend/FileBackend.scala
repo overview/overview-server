@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.File
-import org.overviewproject.models.tables.Files
+import com.overviewdocs.models.File
+import com.overviewdocs.models.tables.Files
 
 trait FileBackend {
   /** Returns a single File. */

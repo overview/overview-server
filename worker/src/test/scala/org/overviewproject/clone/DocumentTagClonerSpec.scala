@@ -1,8 +1,8 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.{Document,DocumentTag}
-import org.overviewproject.models.tables.DocumentTags
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.{Document,DocumentTag}
+import com.overviewdocs.models.tables.DocumentTags
 
 class DocumentTagClonerSpec extends DbSpecification {
   "DocumentTagCloner" should {

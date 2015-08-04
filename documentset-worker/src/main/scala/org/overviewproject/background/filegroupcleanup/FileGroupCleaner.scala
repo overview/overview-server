@@ -1,8 +1,8 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import akka.actor.{ Actor, Props }
 import akka.pattern.pipe
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 object FileGroupCleanerProtocol {
   case class Clean(fileGroupId: Long)

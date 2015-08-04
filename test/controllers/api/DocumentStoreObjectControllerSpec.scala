@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import controllers.auth.ApiAuthorizedRequest
 import controllers.backend.{StoreBackend,DocumentStoreObjectBackend}
 import models.{Selection,SelectionRequest}
-import org.overviewproject.models.{Store,DocumentStoreObject}
+import com.overviewdocs.models.{Store,DocumentStoreObject}
 
 class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {

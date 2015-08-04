@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.util.Date
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.Document
-import org.overviewproject.models.tables.DocumentSets
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.Document
+import com.overviewdocs.models.tables.DocumentSets
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
 
 class DocumentSetInfoUpdaterSpec extends DbSpecification with Mockito {
 

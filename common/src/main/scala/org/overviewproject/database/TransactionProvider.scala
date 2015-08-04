@@ -1,8 +1,8 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import java.sql.Connection
 import org.squeryl.{AbstractSession,Session}
-import org.overviewproject.postgres.{SquerylEntrypoint,SquerylPostgreSqlAdapter}
+import com.overviewdocs.postgres.{SquerylEntrypoint,SquerylPostgreSqlAdapter}
 
 /**
  * Manages database connections.

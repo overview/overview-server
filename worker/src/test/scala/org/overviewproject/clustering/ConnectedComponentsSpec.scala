@@ -6,7 +6,7 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.{Map, Set}
 import org.specs2.mutable.Specification

@@ -1,8 +1,8 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.util.Date
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.{DocumentDisplayMethod,DocumentInfo}
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.{DocumentDisplayMethod,DocumentInfo}
 
 /** READ-ONLY!
   *

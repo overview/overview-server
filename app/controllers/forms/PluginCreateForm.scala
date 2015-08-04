@@ -2,7 +2,7 @@ package controllers.forms
 
 import play.api.data.{Form,Forms}
 
-import org.overviewproject.models.Plugin
+import com.overviewdocs.models.Plugin
 
 object PluginCreateForm {
   def apply(): Form[Plugin.CreateAttributes] = {

@@ -1,4 +1,4 @@
-package org.overviewproject.postgres
+package com.overviewdocs.postgres
 
 import org.squeryl.adapters.PostgreSqlAdapter
 import org.squeryl.dsl.ast.QueryExpressionElements

@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.File
 import java.io.FileNotFoundException
@@ -9,8 +9,8 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import scala.util.control.Exception._
-import org.overviewproject.jobhandler.filegroup.task.LibreOfficeDocumentConverter._
-import org.overviewproject.util.Configuration
+import com.overviewdocs.jobhandler.filegroup.task.LibreOfficeDocumentConverter._
+import com.overviewdocs.util.Configuration
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext

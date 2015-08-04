@@ -2,7 +2,7 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.tables.{Documents,Files}
+import com.overviewdocs.models.tables.{Documents,Files}
 
 trait DocumentSetFileBackend extends Backend {
   /** Returns true if a file with the given sha1 exists in the given docset */

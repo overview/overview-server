@@ -1,9 +1,9 @@
 package controllers.backend
 
 import models.pagination.PageRequest
-import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import org.overviewproject.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Views}
-import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Views}
+import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

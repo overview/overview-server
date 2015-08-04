@@ -1,8 +1,8 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.UploadedFile
+import com.overviewdocs.persistence.orm.Schema
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.tree.orm.UploadedFile
 
 class EncodedUploadFileSpec extends DbSpecification {
   "EncodedUploadedFile" should {

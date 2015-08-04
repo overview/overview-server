@@ -9,13 +9,13 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.util.Configuration
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
+import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.util.Configuration
 
 // Given a set of document vectors, generate a tree of nodes and their descriptions
 // This is where all of the hard-coded algorithmic constants live

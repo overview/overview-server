@@ -1,9 +1,9 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.sql.Timestamp
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.ApiToken
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.ApiToken
 
 class ApiTokensImpl(tag: Tag) extends Table[ApiToken](tag, "api_token") {
   def token = column[String]("token", O.PrimaryKey)

@@ -13,7 +13,7 @@ DIR="$(dirname "$0")"
 INFILE="$DIR"/../../../public/pdfjs/web/viewer.html
 OUTFILE="$DIR"/show.scala.html
 
-echo "@(document: org.overviewproject.models.Document)" > "$OUTFILE"
+echo "@(document: com.overviewdocs.models.Document)" > "$OUTFILE"
 cat "$INFILE" \
   | sed -e 's/^.*<!DOCTYPE/<!DOCTYPE/' \
   | sed -e 's/<head>/<head><base href="\/assets\/pdfjs\/web\/viewer.html">/' \

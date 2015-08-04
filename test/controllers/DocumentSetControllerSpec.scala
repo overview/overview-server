@@ -9,11 +9,11 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
-import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
-import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
-import org.overviewproject.test.factories.PodoFactory
-import org.overviewproject.tree.orm.{Tag,Tree}
+import com.overviewdocs.jobs.models.{CancelFileUpload,Delete}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
+import com.overviewdocs.test.factories.PodoFactory
+import com.overviewdocs.tree.orm.{Tag,Tree}
 
 class DocumentSetControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {

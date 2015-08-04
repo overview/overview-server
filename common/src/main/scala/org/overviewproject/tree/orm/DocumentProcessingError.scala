@@ -1,4 +1,4 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
 import org.squeryl.annotations.Column
 import org.squeryl.KeyedEntity

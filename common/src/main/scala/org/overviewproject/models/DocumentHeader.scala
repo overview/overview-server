@@ -1,9 +1,9 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import java.util.Date // should be java.time.LocalDateTime
 import play.api.libs.json.JsObject
 
-import org.overviewproject.models.DocumentDisplayMethod.DocumentDisplayMethod
+import com.overviewdocs.models.DocumentDisplayMethod.DocumentDisplayMethod
 
 
 /** Metadata about a Document.

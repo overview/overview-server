@@ -11,7 +11,7 @@ import controllers.forms.TreeCreationJobForm
 import controllers.forms.TreeUpdateAttributesForm
 import models.orm.finders.{TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tag,Tree}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob,Tag,Tree}
 
 trait TreeController extends Controller {
   protected val backend: TreeBackend

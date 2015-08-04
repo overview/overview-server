@@ -1,10 +1,10 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.GroupedFileUpload
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.GroupedFileUpload
 
 class FindUploadedFileSpec extends DbSpecification {
 

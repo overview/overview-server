@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.{userViewingDocumentSet}
 import controllers.backend.TagBackend
-import org.overviewproject.models.Tag
+import com.overviewdocs.models.Tag
 
 trait TagController extends ApiController {
   protected val tagBackend: TagBackend

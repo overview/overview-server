@@ -1,4 +1,4 @@
-package org.overviewproject.query
+package com.overviewdocs.query
 
 import play.api.libs.json.{Json,JsValue,JsString,JsNumber}
 

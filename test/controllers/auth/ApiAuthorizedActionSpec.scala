@@ -8,7 +8,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.models.ApiToken
+import com.overviewdocs.models.ApiToken
 
 class ApiAuthorizedActionSpec extends test.helpers.InAppSpecification with Mockito {
   trait BaseScope extends Scope {

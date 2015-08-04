@@ -1,13 +1,13 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
-import org.overviewproject.test.ActorSystemContext
-import org.overviewproject.test.ParameterStore
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
+import com.overviewdocs.test.ActorSystemContext
+import com.overviewdocs.test.ParameterStore
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
-import org.overviewproject.jobhandler.filegroup.JobDescription._
+import com.overviewdocs.jobhandler.filegroup.JobDescription._
 
 class ProgressReporterSpec extends Specification {
 

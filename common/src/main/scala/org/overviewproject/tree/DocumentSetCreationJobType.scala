@@ -1,4 +1,4 @@
-package org.overviewproject.tree
+package com.overviewdocs.tree
 
 object DocumentSetCreationJobType extends Enumeration {
   type DocumentSetCreationJobType = Value

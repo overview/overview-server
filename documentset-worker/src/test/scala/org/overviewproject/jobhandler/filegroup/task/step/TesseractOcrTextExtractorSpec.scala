@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.filegroup.task.ShellRunner
+import com.overviewdocs.jobhandler.filegroup.task.ShellRunner
 import scala.concurrent.duration.DurationInt
 import java.awt.image.BufferedImage
 import org.specs2.time.NoTimeConversions

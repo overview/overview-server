@@ -1,11 +1,11 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.tables.Files
-import org.overviewproject.database.HasDatabase
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.tables.Files
+import com.overviewdocs.database.HasDatabase
 
 /**
  * Delete the file, associated data, including pages.

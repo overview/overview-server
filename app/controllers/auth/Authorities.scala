@@ -6,8 +6,8 @@ import slick.jdbc.JdbcBackend.Session
 import slick.lifted.{ConstColumn,Query,RunnableCompiled}
 
 import models.User
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.{ApiToken,UserRole}
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.{ApiToken,UserRole}
 
 trait Authorities extends HasDatabase {
   private val q = Authorities.queries
@@ -96,7 +96,7 @@ object Authorities extends Authorities {
   /** A bunch of queries that return true if successful and no rows otherwise. */
   private object queries {
     import database.api._
-    import org.overviewproject.models.tables._
+    import com.overviewdocs.models.tables._
 
     lazy val userDocumentSetTag = Compiled { (email: Rep[String], documentSetId: Rep[Long], tagId: Rep[Long]) =>
       for {

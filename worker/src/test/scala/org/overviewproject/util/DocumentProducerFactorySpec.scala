@@ -1,18 +1,18 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 
-import org.overviewproject.http.DocumentCloudDocumentProducer
-import org.overviewproject.persistence.PersistentDocumentSetCreationJob
-import org.overviewproject.csv.CsvImportDocumentProducer
-import org.overviewproject.tree.DocumentSetCreationJobType
+import com.overviewdocs.http.DocumentCloudDocumentProducer
+import com.overviewdocs.persistence.PersistentDocumentSetCreationJob
+import com.overviewdocs.csv.CsvImportDocumentProducer
+import com.overviewdocs.tree.DocumentSetCreationJobType
 
 class DocumentProducerFactorySpec extends Specification with Mockito {
   "DocumentProducerFactory" should {
     trait BaseScope extends Scope {
-      val factory = org.overviewproject.test.factories.PodoFactory
+      val factory = com.overviewdocs.test.factories.PodoFactory
 
       val consumer = smartMock[DocumentConsumer]
       val documentSetCreationJob = smartMock[PersistentDocumentSetCreationJob]

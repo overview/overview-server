@@ -6,11 +6,11 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
-import org.overviewproject.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.DocumentVectorTypes._
 import org.specs2.mutable.Specification
-import org.overviewproject.clustering.DocumentComponent
+import com.overviewdocs.clustering.DocumentComponent
 
 class KMeansDocumentComponentsSpec extends Specification {
 

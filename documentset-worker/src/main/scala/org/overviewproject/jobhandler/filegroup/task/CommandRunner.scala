@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.ByteArrayOutputStream
 import scala.sys.process._

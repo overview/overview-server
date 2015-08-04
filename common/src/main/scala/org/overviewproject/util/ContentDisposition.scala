@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import java.net.URLDecoder
 import scala.util.control.Exception._

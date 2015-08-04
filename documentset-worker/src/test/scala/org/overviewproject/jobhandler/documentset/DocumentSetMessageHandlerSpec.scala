@@ -1,12 +1,12 @@
-package org.overviewproject.jobhandler.documentset
+package com.overviewdocs.jobhandler.documentset
 
 import akka.actor._
 import akka.testkit._
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.messagequeue.MessageHandlerProtocol._
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
-import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+import com.overviewdocs.jobhandler.JobProtocol._
+import com.overviewdocs.messagequeue.MessageHandlerProtocol._
+import com.overviewdocs.jobhandler.documentset.DeleteHandlerProtocol._
+import com.overviewdocs.jobhandler.documentset.DocumentSetJobHandlerProtocol._
+import com.overviewdocs.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mutable.Specification
 import org.specs2.mutable.Before
 

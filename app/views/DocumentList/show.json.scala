@@ -4,7 +4,7 @@ import java.util.UUID
 import play.api.libs.json.{JsValue,Json}
 
 import models.pagination.Page
-import org.overviewproject.models.DocumentHeader
+import com.overviewdocs.models.DocumentHeader
 
 object show {
   private def documentToJson(document: DocumentHeader, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {

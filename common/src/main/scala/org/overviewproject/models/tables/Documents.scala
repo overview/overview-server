@@ -1,10 +1,10 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.util.Date
 import play.api.libs.json.JsObject
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.{Document,DocumentDisplayMethod}
 
 object DocumentsImpl {
   implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](

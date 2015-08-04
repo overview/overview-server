@@ -8,11 +8,11 @@ import slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
-import org.overviewproject.models.Document
-import org.overviewproject.models.tables.Documents
-import org.overviewproject.query.{Field,PhraseQuery,Query}
-import org.overviewproject.searchindex.{InMemoryIndexClient,IndexClient}
-import org.overviewproject.util.SortedDocumentIdsRefresher
+import com.overviewdocs.models.Document
+import com.overviewdocs.models.tables.Documents
+import com.overviewdocs.query.{Field,PhraseQuery,Query}
+import com.overviewdocs.searchindex.{InMemoryIndexClient,IndexClient}
+import com.overviewdocs.util.SortedDocumentIdsRefresher
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {

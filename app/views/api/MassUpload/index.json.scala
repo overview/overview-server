@@ -2,7 +2,7 @@ package views.json.api.MassUpload
 
 import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.models.GroupedFileUpload
+import com.overviewdocs.models.GroupedFileUpload
 
 object index {
   def apply(uploads: Seq[GroupedFileUpload]) = {

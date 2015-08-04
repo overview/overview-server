@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler.filegroup.task.process
+package com.overviewdocs.jobhandler.filegroup.task.process
 
 import scala.concurrent.ExecutionContext
-import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
-import org.overviewproject.util.BulkDocumentWriter
+import com.overviewdocs.jobhandler.filegroup.task.TimeoutGenerator
+import com.overviewdocs.util.BulkDocumentWriter
 import akka.actor.ActorRef
 
 object CreateDocumentFromFileWithOcr {

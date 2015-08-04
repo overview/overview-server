@@ -4,15 +4,15 @@
  * Overview
  * Created by Jonas Karlsson, November 2012
  */
-package org.overviewproject.util
+package com.overviewdocs.util
 
-import org.overviewproject.csv.CsvImportDocumentProducer
-import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
-import org.overviewproject.models.DocumentSet
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.persistence.PersistentDocumentSetCreationJob
-import org.overviewproject.reclustering.ReclusteringDocumentProducer
-import org.overviewproject.util.Progress.ProgressAbortFn
+import com.overviewdocs.csv.CsvImportDocumentProducer
+import com.overviewdocs.http.{Credentials, DocumentCloudDocumentProducer}
+import com.overviewdocs.models.DocumentSet
+import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.persistence.PersistentDocumentSetCreationJob
+import com.overviewdocs.reclustering.ReclusteringDocumentProducer
+import com.overviewdocs.util.Progress.ProgressAbortFn
 
 /** Common functionality for DocumentProducers */
 trait DocumentProducer {

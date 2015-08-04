@@ -1,11 +1,11 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import scala.concurrent.Future
 import scala.language.higherKinds
 import slick.dbio.DBIO
 import slick.lifted.RunnableCompiled
 
-import org.overviewproject.database.Slick.api._
+import com.overviewdocs.database.Slick.api._
 
 /** Like a Database, but adds an await() to each method.
   *

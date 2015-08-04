@@ -2,7 +2,7 @@ package controllers.forms
 
 import play.api.data.validation._
 
-import org.overviewproject.util.SupportedLanguages
+import com.overviewdocs.util.SupportedLanguages
 
 package object validation {
   def minLengthPassword(length: Int): Constraint[String] = Constraint[String]("constraint.passwordMinLength", length) { o =>

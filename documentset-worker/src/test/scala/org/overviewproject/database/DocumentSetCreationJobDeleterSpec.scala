@@ -1,15 +1,15 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import org.specs2.mock.Mockito
 import scala.concurrent.Future
 
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.DocumentSetCreationJob
-import org.overviewproject.models.DocumentSetCreationJobState
-import org.overviewproject.models.DocumentSetCreationJobState._
-import org.overviewproject.models.DocumentSetCreationJobType._
-import org.overviewproject.models.tables.DocumentSetCreationJobs
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.DocumentSetCreationJob
+import com.overviewdocs.models.DocumentSetCreationJobState
+import com.overviewdocs.models.DocumentSetCreationJobState._
+import com.overviewdocs.models.DocumentSetCreationJobType._
+import com.overviewdocs.models.tables.DocumentSetCreationJobs
+import com.overviewdocs.test.DbSpecification
 
 class DocumentSetCreationJobDeleterSpec extends DbSpecification with Mockito {
 

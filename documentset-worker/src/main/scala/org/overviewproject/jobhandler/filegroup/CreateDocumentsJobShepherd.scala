@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
-import org.overviewproject.jobhandler.filegroup.JobDescription._
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol._
+import com.overviewdocs.jobhandler.filegroup.JobDescription._
+import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 
 /**
  * Creates the tasks for generating `Document`s from uploaded files.
@@ -109,7 +109,7 @@ object CreateDocumentsJobShepherd {
 
     protected class DatabaseStorage extends Storage with HasBlockingDatabase {
       import database.api._
-      import org.overviewproject.models.tables.GroupedFileUploads
+      import com.overviewdocs.models.tables.GroupedFileUploads
 
       override def uploadedFileIds(fileGroupId: Long): Set[Long] = {
         blockingDatabase.seq(GroupedFileUploads.filter(_.fileGroupId === fileGroupId).map(_.id)).toSet

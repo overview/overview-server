@@ -1,7 +1,7 @@
-package org.overviewproject.postgres
+package com.overviewdocs.postgres
 
-import org.overviewproject.database.{LargeObject=>GoodLargeObject}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.database.{LargeObject=>GoodLargeObject}
+import com.overviewdocs.test.DbSpecification
 
 class LargeObjectInputStreamSpec extends DbSpecification {
   trait BaseScope extends DbScope {

@@ -1,6 +1,6 @@
 package controllers.util
 
-import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
+import com.overviewdocs.jobs.models.{CancelFileUpload,Delete}
 
 trait DocumentSetDeletionComponents {
   trait DocumentSetDeletionJobMessageQueue {

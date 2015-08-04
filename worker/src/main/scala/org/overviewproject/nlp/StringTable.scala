@@ -9,9 +9,9 @@
  */
 
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
-import org.overviewproject.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.DocumentVectorTypes._
 import scala.collection.mutable.{ArrayBuffer,HashTable,HashEntry,Map,MapLike}
 
 // CompactStringIntMap Looks like a Map[String,Int]

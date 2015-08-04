@@ -5,9 +5,9 @@ import org.specs2.matcher.{JsonMatchers,Matcher}
 import scala.concurrent.Future
 
 import controllers.backend.TreeBackend
-import org.overviewproject.models.Tree
-import org.overviewproject.test.factories.PodoFactory
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tag}
+import com.overviewdocs.models.Tree
+import com.overviewdocs.test.factories.PodoFactory
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob,Tag}
 
 class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {

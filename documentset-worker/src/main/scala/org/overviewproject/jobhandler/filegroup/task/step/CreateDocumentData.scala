@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
-import org.overviewproject.models.File
+import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
+import com.overviewdocs.models.File
 
 trait CreateDocumentData extends UploadedFileProcessStep {
 

@@ -5,8 +5,8 @@ import scala.concurrent.Future
 import slick.jdbc.StaticQuery
 
 import models.Selection
-import org.overviewproject.models.DocumentStoreObject
-import org.overviewproject.models.tables.{DocumentStoreObjects,StoreObjects}
+import com.overviewdocs.models.DocumentStoreObject
+import com.overviewdocs.models.tables.{DocumentStoreObjects,StoreObjects}
 
 trait DocumentStoreObjectBackend extends Backend {
   /** Fetches a single DocumentStoreObject.

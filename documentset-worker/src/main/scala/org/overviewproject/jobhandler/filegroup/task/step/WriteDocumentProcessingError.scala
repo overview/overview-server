@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.tables.DocumentProcessingErrors
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.tables.DocumentProcessingErrors
 
 trait WriteDocumentProcessingError extends HasDatabase {
   import database.api._

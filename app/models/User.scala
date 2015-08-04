@@ -2,7 +2,7 @@ package models
 
 import java.sql.Timestamp
 
-import org.overviewproject.models.UserRole
+import com.overviewdocs.models.UserRole
 
 case class User(
   id: Long = 0L,

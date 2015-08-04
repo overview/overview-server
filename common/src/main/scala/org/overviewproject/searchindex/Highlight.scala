@@ -1,4 +1,4 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
 /** A place in a document where a search query was found.
   *

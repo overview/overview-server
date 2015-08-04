@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.{Tag=>OrmTag}
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.{Tag=>OrmTag}
 
 class TagsImpl(tag: Tag) extends Table[OrmTag](tag, "tag") {
   def id = column[Long]("id", O.PrimaryKey)

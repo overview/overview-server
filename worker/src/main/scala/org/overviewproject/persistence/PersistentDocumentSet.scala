@@ -1,8 +1,8 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.tables.DocumentSets
-import org.overviewproject.util.SortedDocumentIdsRefresher
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.tables.DocumentSets
+import com.overviewdocs.util.SortedDocumentIdsRefresher
 
 trait PersistentDocumentSet extends HasBlockingDatabase {
   import database.api._

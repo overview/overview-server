@@ -1,8 +1,8 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.tables.FileGroups
+import com.overviewdocs.models.tables.FileGroups
 
 /**
  * Mark the [[FileGroup]] as deleted, and hope some background process

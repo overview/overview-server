@@ -12,8 +12,8 @@ import scala.concurrent.Future
 import controllers.auth.Authorities.{userOwningDocument,userOwningDocumentSet,userViewingDocumentSet}
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.{Document,File,Page}
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.{Document,File,Page}
 
 trait DocumentController extends Controller {
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>

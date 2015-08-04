@@ -1,4 +1,4 @@
-package org.overviewproject.metadata
+package com.overviewdocs.metadata
 
 sealed trait MetadataFieldType
 object MetadataFieldType {

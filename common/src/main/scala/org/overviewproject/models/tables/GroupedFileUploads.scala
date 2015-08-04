@@ -1,9 +1,9 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.util.UUID
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.GroupedFileUpload
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.GroupedFileUpload
 
 class GroupedFileUploadsImpl(tag: Tag) extends Table[GroupedFileUpload](tag, "grouped_file_upload") {
   def id = column[Long]("id", O.PrimaryKey)

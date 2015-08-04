@@ -1,4 +1,4 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import scala.concurrent.duration._
 import org.specs2.mutable.Specification

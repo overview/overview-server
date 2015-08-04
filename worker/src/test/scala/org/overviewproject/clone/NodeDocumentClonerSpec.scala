@@ -1,8 +1,8 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.{NodeDocument,Document}
-import org.overviewproject.models.tables.NodeDocuments
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.{NodeDocument,Document}
+import com.overviewdocs.models.tables.NodeDocuments
 
 class NodeDocumentClonerSpec extends DbSpecification {
   "NodeDocumentCloner" should {

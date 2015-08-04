@@ -6,10 +6,10 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
-import org.overviewproject.nlp._
-import org.overviewproject.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp._
+import com.overviewdocs.nlp.DocumentVectorTypes._
 import org.specs2.mutable.Specification
 
 class BigramDocumentVectorGeneratorSpec extends Specification {

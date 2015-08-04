@@ -2,7 +2,7 @@ package views.json.DocumentSetUser
 
 import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.models.DocumentSetUser
+import com.overviewdocs.models.DocumentSetUser
 
 object index {
   def apply(documentSetUsers: Iterable[DocumentSetUser]): JsValue = {

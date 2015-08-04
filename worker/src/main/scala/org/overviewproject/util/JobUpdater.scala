@@ -1,10 +1,10 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.DocumentSetCreationJob
-import org.overviewproject.models.DocumentSetCreationJobState
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.DocumentSetCreationJob
+import com.overviewdocs.models.DocumentSetCreationJobState
 
 trait JobUpdater extends HasDatabase {
   import database.api._

@@ -1,4 +1,4 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration

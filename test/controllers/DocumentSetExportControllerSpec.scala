@@ -9,8 +9,8 @@ import scala.concurrent.Future
 import controllers.backend.{DocumentSetBackend,TagBackend}
 import models.export.rows.{DocumentForCsvExport,Rows}
 import models.export.format.Format
-import org.overviewproject.models.Tag
-import org.overviewproject.util.TempFile
+import com.overviewdocs.models.Tag
+import com.overviewdocs.util.TempFile
 
 class DocumentSetExportControllerSpec extends ControllerSpecification {
   def makeFileInputStream(contents: Array[Byte]): FileInputStream = {
@@ -33,7 +33,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
     def request = fakeAuthorizedRequest
 
-    val factory = org.overviewproject.test.factories.PodoFactory
+    val factory = com.overviewdocs.test.factories.PodoFactory
   }
 
   "DocumentSetExportController" should {

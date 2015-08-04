@@ -5,7 +5,7 @@ import play.api.libs.json.{Json,JsValue}
 import play.api.mvc.RequestHeader
 
 import models.User
-import org.overviewproject.models.DocumentSet
+import com.overviewdocs.models.DocumentSet
 
 object showHtml {
   def apply(user: User, documentSet: DocumentSet, nViews: Int)(implicit messages: Messages, request: RequestHeader): JsValue = {

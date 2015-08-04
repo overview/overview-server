@@ -1,17 +1,17 @@
-package org.overviewproject.reclustering
+package com.overviewdocs.reclustering
 
 import org.reactivestreams.Subscriber
 import scala.concurrent.{ExecutionContext,Future}
 import slick.backend.DatabasePublisher
 
-import org.overviewproject.models.Document
-import org.overviewproject.util.DocumentConsumer
-import org.overviewproject.util.Progress.ProgressAbortFn
+import com.overviewdocs.models.Document
+import com.overviewdocs.util.DocumentConsumer
+import com.overviewdocs.util.Progress.ProgressAbortFn
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.overviewproject.util.Progress.Progress
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
+import com.overviewdocs.util.Progress.Progress
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.Retrieving
 
 class ReclusteringDocumentProducerSpec extends Specification with Mockito {
 

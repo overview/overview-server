@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

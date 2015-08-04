@@ -1,7 +1,7 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor._
-import org.overviewproject.messagequeue.apollo.ApolloMessageReceiver
+import com.overviewdocs.messagequeue.apollo.ApolloMessageReceiver
 
 
 object ClusteringCommandsMessageQueueBridge {

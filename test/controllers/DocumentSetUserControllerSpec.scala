@@ -4,7 +4,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import controllers.backend.{DocumentSetBackend,DocumentSetUserBackend}
-import org.overviewproject.test.factories.{PodoFactory=>factory}
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class DocumentSetUserControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {

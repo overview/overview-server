@@ -1,4 +1,4 @@
-package org.overviewproject.metadata
+package com.overviewdocs.metadata
 
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification

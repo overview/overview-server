@@ -7,7 +7,7 @@ import org.specs2.specification.Scope
 import play.api.libs.json.Json
 
 import models.pagination.Page
-import org.overviewproject.test.factories.{PodoFactory=>factory}
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class showSpec extends Specification with JsonMatchers {
   trait BaseScope extends Scope {

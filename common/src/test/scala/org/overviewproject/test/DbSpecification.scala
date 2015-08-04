@@ -1,4 +1,4 @@
-package org.overviewproject.test
+package com.overviewdocs.test
 
 import java.sql.Connection
 import org.postgresql.PGConnection
@@ -11,10 +11,10 @@ import scala.concurrent.{Await,Future,blocking}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.database.{DB,HasBlockingDatabase}
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import org.overviewproject.postgres.SquerylEntrypoint.using
-import org.overviewproject.test.factories.{DbFactory,PodoFactory}
+import com.overviewdocs.database.{DB,HasBlockingDatabase}
+import com.overviewdocs.postgres.SquerylPostgreSqlAdapter
+import com.overviewdocs.postgres.SquerylEntrypoint.using
+import com.overviewdocs.test.factories.{DbFactory,PodoFactory}
 
 /**
  * Tests that access the database should extend DbSpecification.

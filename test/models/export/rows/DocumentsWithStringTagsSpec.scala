@@ -6,12 +6,12 @@ import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.libs.json.Json
 import play.api.test.{DefaultAwaitTimeout,FutureAwaits}
 
-import org.overviewproject.metadata.{Metadata,MetadataField,MetadataFieldType,MetadataSchema}
-import org.overviewproject.models.Tag
+import com.overviewdocs.metadata.{Metadata,MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.models.Tag
 
 class DocumentsWithStringTagsSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
   trait BaseScope extends Scope {
-    val factory = org.overviewproject.test.factories.PodoFactory
+    val factory = com.overviewdocs.test.factories.PodoFactory
     def documents: Enumerator[DocumentForCsvExport]
     val metadataSchema: MetadataSchema = MetadataSchema.empty
     val tags: Seq[Tag] = Seq()

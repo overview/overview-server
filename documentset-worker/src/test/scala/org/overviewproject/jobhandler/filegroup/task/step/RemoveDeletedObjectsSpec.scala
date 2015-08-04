@@ -1,15 +1,15 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import akka.actor.ActorSelection
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import akka.testkit.TestProbe
 import org.specs2.mutable.Before
 import akka.actor.ActorRef
-import org.overviewproject.test.ForwardingActor
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import com.overviewdocs.test.ForwardingActor
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 import scala.concurrent.ExecutionContext
 
 class RemoveDeletedObjectsSpec extends Specification {

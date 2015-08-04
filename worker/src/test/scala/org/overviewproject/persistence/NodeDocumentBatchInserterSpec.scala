@@ -4,15 +4,15 @@
  * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.IdGenerator
-import org.overviewproject.models.{Document,NodeDocument}
-import org.overviewproject.models.tables.NodeDocuments
-import org.overviewproject.tree.orm.{NodeDocument=>DeprecatedNodeDocument}
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.persistence.orm.Schema
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.test.IdGenerator
+import com.overviewdocs.models.{Document,NodeDocument}
+import com.overviewdocs.models.tables.NodeDocuments
+import com.overviewdocs.tree.orm.{NodeDocument=>DeprecatedNodeDocument}
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
   trait BaseScope extends DbScope {

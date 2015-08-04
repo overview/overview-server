@@ -1,7 +1,7 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.tables.{ Files, TempDocumentSetFiles }
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.tables.{ Files, TempDocumentSetFiles }
 
 class TempFileDeleterSpec extends DbSpecification {
 

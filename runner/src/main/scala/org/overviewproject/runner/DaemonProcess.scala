@@ -1,8 +1,8 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import scala.concurrent.Future
 
-import org.overviewproject.runner.commands.Command
+import com.overviewdocs.runner.commands.Command
 
 /** Something that runs in the background. */
 trait DaemonProcess {

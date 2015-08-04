@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 import models.{Session,User}
 import models.tables.{Sessions,Users}
-import org.overviewproject.postgres.InetAddress
+import com.overviewdocs.postgres.InetAddress
 
 trait SessionBackend extends Backend {
   /** Maximum age of a session.

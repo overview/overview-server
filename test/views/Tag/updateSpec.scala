@@ -3,7 +3,7 @@ package views.json.Tag
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-import org.overviewproject.models.Tag
+import com.overviewdocs.models.Tag
 
 class updateSpec extends Specification with JsonMatchers {
   "Json for update tag result" should {

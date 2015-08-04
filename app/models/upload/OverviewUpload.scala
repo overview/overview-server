@@ -3,9 +3,9 @@ package models.upload
 import java.sql.Timestamp
 import java.util.UUID
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.{Upload,UploadedFile}
-import org.overviewproject.models.tables.{UploadedFiles,Uploads}
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.{Upload,UploadedFile}
+import com.overviewdocs.models.tables.{UploadedFiles,Uploads}
 
 /**
  * Wrapper around models.orm.Upload hiding details of storage and managing

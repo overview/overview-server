@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
 import java.sql.Connection

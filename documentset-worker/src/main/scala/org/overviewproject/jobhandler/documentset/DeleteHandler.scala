@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.documentset
+package com.overviewdocs.jobhandler.documentset
 
 import akka.actor.Actor
 import akka.actor.FSM
@@ -7,12 +7,12 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{ Failure, Success }
 
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
-import org.overviewproject.database.DocumentSetCreationJobDeleter
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.util.Logger
-import org.overviewproject.searchindex.IndexClient
+import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol._
+import com.overviewdocs.database.DocumentSetCreationJobDeleter
+import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.jobhandler.JobProtocol._
+import com.overviewdocs.util.Logger
+import com.overviewdocs.searchindex.IndexClient
 
 /**
  * [[DeleteHandler]] deletes a document set and all associated data if deletion is requested after

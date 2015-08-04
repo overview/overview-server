@@ -1,4 +1,4 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 trait StrategyFactory {
   def forLocation(s: String): BlobStorageStrategy = {

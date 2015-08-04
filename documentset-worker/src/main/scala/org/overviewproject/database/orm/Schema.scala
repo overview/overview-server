@@ -1,10 +1,10 @@
-package org.overviewproject.database.orm
+package com.overviewdocs.database.orm
 
 import org.squeryl.KeyedEntityDef
 
-import org.overviewproject.models.ApiToken
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm._
+import com.overviewdocs.models.ApiToken
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.tree.orm._
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName (propertyName: String) = NamingConventionTransforms.snakify(propertyName) 

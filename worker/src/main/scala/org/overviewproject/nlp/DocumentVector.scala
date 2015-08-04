@@ -11,7 +11,7 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import scala.collection.mutable
 

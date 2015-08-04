@@ -2,10 +2,10 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.exceptions.Conflict
-import org.overviewproject.models.DocumentSetUser
-import org.overviewproject.models.DocumentSetUser.Role
-import org.overviewproject.models.tables.DocumentSetUsers
+import com.overviewdocs.database.exceptions.Conflict
+import com.overviewdocs.models.DocumentSetUser
+import com.overviewdocs.models.DocumentSetUser.Role
+import com.overviewdocs.models.tables.DocumentSetUsers
 
 trait DocumentSetUserBackend {
   /** Returns non-owner DocumentSetUsers for a given DocumentSet. */

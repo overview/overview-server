@@ -4,9 +4,9 @@ import models.orm.Schema
 import org.squeryl.Table
 import scala.language.postfixOps
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.finders.{DocumentSetComponentFinder,FinderResult}
-import org.overviewproject.tree.orm.Tree
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.tree.orm.finders.{DocumentSetComponentFinder,FinderResult}
+import com.overviewdocs.tree.orm.Tree
 
 object TreeFinder extends DocumentSetComponentFinder[Tree] {
   override protected val table = Schema.trees

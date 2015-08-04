@@ -1,4 +1,4 @@
-package org.overviewproject.upgrade.reindex_documents
+package com.overviewdocs.upgrade.reindex_documents
 
 // We can't just pass a String to Postgres, because our own config files use
 // Play's special syntax, not the standard JDBC one.

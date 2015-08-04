@@ -1,8 +1,8 @@
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import java.io.InputStream
 import java.io.ByteArrayInputStream
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 object StopWordSet {
   private val logger = Logger.forClass(getClass)

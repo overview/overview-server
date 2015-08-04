@@ -1,9 +1,9 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
-import org.overviewproject.http.{ Credentials, PrivateRequest, PublicRequest }
-import org.overviewproject.http.RequestQueueProtocol._
-import org.overviewproject.test.{ ActorSystemContext, TestSimpleResponse }
+import com.overviewdocs.documentcloud.DocumentRetrieverProtocol._
+import com.overviewdocs.http.{ Credentials, PrivateRequest, PublicRequest }
+import com.overviewdocs.http.RequestQueueProtocol._
+import com.overviewdocs.test.{ ActorSystemContext, TestSimpleResponse }
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import akka.actor._

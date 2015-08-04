@@ -2,7 +2,7 @@ package controllers.forms
 
 import play.api.data.{Form,Forms}
 
-import org.overviewproject.models.View
+import com.overviewdocs.models.View
 
 object ViewUpdateAttributesForm {
   def apply() = Form(

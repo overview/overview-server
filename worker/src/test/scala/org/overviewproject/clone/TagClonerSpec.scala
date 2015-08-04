@@ -1,8 +1,8 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.models.tables.Tags
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.models.tables.Tags
+import com.overviewdocs.test.DbSpecification
 
 class TagClonerSpec extends DbSpecification {
   "TagCloner" should {

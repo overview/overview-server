@@ -1,7 +1,7 @@
 package controllers.backend
 
-import org.overviewproject.models.FileGroup
-import org.overviewproject.models.tables.FileGroups
+import com.overviewdocs.models.FileGroup
+import com.overviewdocs.models.tables.FileGroups
 
 class DbFileGroupBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

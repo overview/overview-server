@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import scala.annotation.tailrec
 
 import akka.actor.Actor
 import akka.actor.Props
 
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
-import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.database.orm.finders.DocumentSetCreationJobFinder
+import com.overviewdocs.database.orm.stores.DocumentSetCreationJobStore
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
 
 /** Description keys for job status */
 object JobDescription extends Enumeration {

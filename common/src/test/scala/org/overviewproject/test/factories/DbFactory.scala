@@ -1,13 +1,13 @@
-package org.overviewproject.test.factories
+package com.overviewdocs.test.factories
 
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models._
-import org.overviewproject.models.tables._
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models._
+import com.overviewdocs.models.tables._
 
 /** Creates objects in the database while returning them.
   *

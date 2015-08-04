@@ -1,6 +1,6 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.test.DbSpecification
 
 class TreeIdGeneratorSpec extends DbSpecification {
   "TreeIdGenerator" should {

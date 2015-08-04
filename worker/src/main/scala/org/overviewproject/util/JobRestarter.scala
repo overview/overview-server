@@ -1,9 +1,9 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
-import org.overviewproject.models.DocumentSetCreationJob
-import org.overviewproject.models.DocumentSetCreationJobState._
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.searchindex.TransportIndexClient
+import com.overviewdocs.models.DocumentSetCreationJob
+import com.overviewdocs.models.DocumentSetCreationJobState._
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.searchindex.TransportIndexClient
 
 trait JobRestarter {
   val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
@@ -32,8 +32,8 @@ trait JobRestarter {
 
 object JobRestarter extends HasBlockingDatabase {
   import scala.concurrent.ExecutionContext.Implicits.global
-  import org.overviewproject.models.DocumentSetCreationJobType._
-  import org.overviewproject.models.tables.DocumentSetCreationJobs
+  import com.overviewdocs.models.DocumentSetCreationJobType._
+  import com.overviewdocs.models.tables.DocumentSetCreationJobs
 
   import database.api._
 

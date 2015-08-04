@@ -8,8 +8,8 @@
  *
  */
 
-package org.overviewproject.clustering
-import org.overviewproject.nlp.DocumentVectorTypes._
+package com.overviewdocs.clustering
+import com.overviewdocs.nlp.DocumentVectorTypes._
 
 // Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated
 // ASSUMES document vectors are normalized (we don't check here as this is inner loop code)

@@ -2,7 +2,7 @@ package controllers.forms
 
 import play.api.data.{Form,Forms,Mapping}
 
-import org.overviewproject.models.Tag
+import com.overviewdocs.models.Tag
 
 object TagForm {
   /** Parses "#abc123" as "abc123". */

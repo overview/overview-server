@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
 
 
 /**

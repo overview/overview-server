@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
 import scala.collection.SeqView
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.Exception.ultimately
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
-import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
-import org.overviewproject.models.File
-import org.overviewproject.jobhandler.filegroup.task.PdfPage
+import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
+import com.overviewdocs.jobhandler.filegroup.task.TimeoutGenerator
+import com.overviewdocs.models.File
+import com.overviewdocs.jobhandler.filegroup.task.PdfPage
 
 trait OcrDocumentPages extends UploadedFileProcessStep {
   protected val file: File

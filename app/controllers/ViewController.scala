@@ -11,8 +11,8 @@ import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSe
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import controllers.forms.{ViewForm,ViewUpdateAttributesForm}
 import models.orm.finders.{DocumentSetCreationJobFinder,TreeFinder}
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,Tree}
-import org.overviewproject.models.{ApiToken,View}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob,Tree}
+import com.overviewdocs.models.{ApiToken,View}
 
 trait ViewController extends Controller {
   def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async {

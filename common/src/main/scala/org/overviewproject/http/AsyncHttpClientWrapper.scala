@@ -1,4 +1,4 @@
-package org.overviewproject.http
+package com.overviewdocs.http
 
 import java.util.concurrent.{ Future => JFuture }
 import com.ning.http.client.{AsyncCompletionHandler, AsyncHttpClient, AsyncHttpClientConfig, Realm}

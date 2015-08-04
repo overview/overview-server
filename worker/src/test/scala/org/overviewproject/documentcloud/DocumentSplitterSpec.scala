@@ -1,7 +1,7 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{JobComplete, Start}
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.documentcloud.DocumentRetrieverProtocol.{JobComplete, Start}
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.{Before, Specification}
 import org.specs2.time.NoTimeConversions
 

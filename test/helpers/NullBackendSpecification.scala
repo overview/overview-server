@@ -6,7 +6,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.{Await,Future}
 
-import org.overviewproject.test.factories.{Factory,PodoFactory}
+import com.overviewdocs.test.factories.{Factory,PodoFactory}
 
 /** Helps test Backends.
   *

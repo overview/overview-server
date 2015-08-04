@@ -1,7 +1,7 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import slick.jdbc.JdbcBackend.Session
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.test.DbSpecification
 
 class DocumentIdGeneratorSpec extends DbSpecification {
 

@@ -1,8 +1,8 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
-import org.overviewproject.test.Specification
-import org.overviewproject.util.DocumentSetCreationJobStateDescription._
-import org.overviewproject.util.Progress.{ Progress => Prog }
+import com.overviewdocs.test.Specification
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription._
+import com.overviewdocs.util.Progress.{ Progress => Prog }
 import org.specs2.specification.Scope
 
 class ThrottledProgressReporterSpec extends Specification {

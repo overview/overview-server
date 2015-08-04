@@ -1,8 +1,8 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.models.tables.Trees
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.models.tables.Trees
+import com.overviewdocs.test.DbSpecification
 
 class TreeClonerSpec extends DbSpecification {
   "TreeCloner" should {

@@ -1,8 +1,8 @@
 package models
 
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.DocumentProcessingError
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.tree.orm.DocumentProcessingError
 
 class OverviewDocumentProcessingErrorSpec extends DbSpecification {
   "OverviewDocumentProcessingError" should {

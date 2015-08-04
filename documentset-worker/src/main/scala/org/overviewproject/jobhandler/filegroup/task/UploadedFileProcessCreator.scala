@@ -1,24 +1,24 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
 import scala.concurrent.ExecutionContext
 import scala.util.control.Exception.ultimately
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.DocumentType
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.OfficeDocument
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector.UnsupportedDocument
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromFileWithOcr
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfPage
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentsFromConvertedFilePages
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.postgres.LargeObjectInputStream
-import org.overviewproject.util.BulkDocumentWriter
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector.DocumentType
+import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector.OfficeDocument
+import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector.PdfDocument
+import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector.UnsupportedDocument
+import com.overviewdocs.jobhandler.filegroup.task.process.CreateDocumentFromConvertedFile
+import com.overviewdocs.jobhandler.filegroup.task.process.CreateDocumentFromFileWithOcr
+import com.overviewdocs.jobhandler.filegroup.task.process.CreateDocumentFromPdfPage
+import com.overviewdocs.jobhandler.filegroup.task.process.CreateDocumentFromPdfFile
+import com.overviewdocs.jobhandler.filegroup.task.process.CreateDocumentsFromConvertedFilePages
+import com.overviewdocs.jobhandler.filegroup.task.process.UploadedFileProcess
+import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.postgres.LargeObjectInputStream
+import com.overviewdocs.util.BulkDocumentWriter
 import akka.actor.ActorRef
-import org.overviewproject.jobhandler.filegroup.task.process.CreateDocumentsFromPagesWithOcr
+import com.overviewdocs.jobhandler.filegroup.task.process.CreateDocumentsFromPagesWithOcr
 
 trait UploadedFileProcessCreator {
 

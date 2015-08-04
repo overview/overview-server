@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.{ByteArrayOutputStream,File,FileOutputStream}
 import java.sql.{Connection,DriverManager,ResultSet}
@@ -7,7 +7,7 @@ import scala.concurrent.{Await,Future,Promise,blocking}
 import scala.concurrent.duration.Duration
 import scala.language.reflectiveCalls
 
-import org.overviewproject.runner.commands.{Command,JvmCommand,JvmCommandWithAppendableClasspath,PostgresCommand}
+import com.overviewdocs.runner.commands.{Command,JvmCommand,JvmCommandWithAppendableClasspath,PostgresCommand}
 
 object Hack {
   lazy val isDevMode = getClass.getResource("/postgresql.conf").getProtocol() == "file"

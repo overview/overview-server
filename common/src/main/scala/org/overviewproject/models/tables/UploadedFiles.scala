@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.UploadedFile
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.UploadedFile
 import java.sql.Timestamp
 
 class UploadedFilesImpl(tag: Tag) extends Table[UploadedFile](tag, "uploaded_file") {

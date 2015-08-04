@@ -9,13 +9,13 @@ import controllers.backend.ImportJobBackend
 import controllers.util.DocumentSetDeletionComponents
 import controllers.Controller
 import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
-import org.overviewproject.models.tables.{DocumentSetCreationJobs,DocumentSets}
-import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
-import org.overviewproject.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob}
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.DocumentSetCreationJobState
+import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
+import com.overviewdocs.models.tables.{DocumentSetCreationJobs,DocumentSets}
+import com.overviewdocs.jobs.models.{CancelFileUpload,Delete}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob}
+import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState
 
 trait ImportJobController extends Controller {
   protected val storage: ImportJobController.Storage

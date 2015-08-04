@@ -1,13 +1,13 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import scala.concurrent.{ Await, Future, Promise, TimeoutException }
 import scala.concurrent.duration._
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
 
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.tables.Pages
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.tables.Pages
+import com.overviewdocs.test.DbSpecification
 
 class PageRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
 

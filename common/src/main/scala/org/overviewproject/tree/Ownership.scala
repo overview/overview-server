@@ -1,4 +1,4 @@
-package org.overviewproject.tree
+package com.overviewdocs.tree
 
 object Ownership extends Enumeration {
   // Constants copied from "ownership" table

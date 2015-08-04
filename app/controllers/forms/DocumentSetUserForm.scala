@@ -3,8 +3,8 @@ package controllers.forms
 import play.api.data.Form
 import play.api.data.Forms._
 
-import org.overviewproject.tree.Ownership
-import org.overviewproject.tree.orm.DocumentSetUser
+import com.overviewdocs.tree.Ownership
+import com.overviewdocs.tree.orm.DocumentSetUser
 
 object DocumentSetUserForm {
   def apply(documentSetId: Long): Form[DocumentSetUser] = Form(

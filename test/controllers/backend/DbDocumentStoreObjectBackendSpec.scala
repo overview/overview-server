@@ -3,9 +3,9 @@ package controllers.backend
 import play.api.libs.json.{JsObject,Json}
 
 import models.{InMemorySelection,Selection,SelectionRequest}
-import org.overviewproject.database.exceptions
-import org.overviewproject.models.DocumentStoreObject
-import org.overviewproject.models.tables.DocumentStoreObjects
+import com.overviewdocs.database.exceptions
+import com.overviewdocs.models.DocumentStoreObject
+import com.overviewdocs.models.tables.DocumentStoreObjects
 
 class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

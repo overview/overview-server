@@ -1,11 +1,11 @@
-package org.overviewproject.database.orm.stores
+package com.overviewdocs.database.orm.stores
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.database.orm.Schema.documentSetCreationJobs
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.tree.orm.stores.BaseStore
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.tree.DocumentSetCreationJobType._
+import com.overviewdocs.database.orm.Schema.documentSetCreationJobs
+import com.overviewdocs.tree.orm.DocumentSetCreationJob
 
 object DocumentSetCreationJobStore extends BaseStore(documentSetCreationJobs) {
 

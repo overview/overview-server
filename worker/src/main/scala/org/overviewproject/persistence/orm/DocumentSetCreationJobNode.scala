@@ -1,6 +1,6 @@
-package org.overviewproject.persistence.orm
+package com.overviewdocs.persistence.orm
 
-import org.overviewproject.postgres.SquerylEntrypoint.compositeKey
+import com.overviewdocs.postgres.SquerylEntrypoint.compositeKey
 import org.squeryl.dsl.CompositeKey2
 import org.squeryl.KeyedEntity
 

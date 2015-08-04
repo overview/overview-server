@@ -1,4 +1,4 @@
-package org.overviewproject.metadata
+package com.overviewdocs.metadata
 
 import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString,JsValue,Json}
 

@@ -1,10 +1,10 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import scala.concurrent.Promise
 
-import org.overviewproject.documentcloud.DocumentReceiverProtocol._
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
-import org.overviewproject.util.Textify
+import com.overviewdocs.documentcloud.DocumentReceiverProtocol._
+import com.overviewdocs.documentcloud.DocumentRetrieverProtocol._
+import com.overviewdocs.util.Textify
 
 import akka.actor._
 

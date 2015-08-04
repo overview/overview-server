@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
 import java.util.UUID

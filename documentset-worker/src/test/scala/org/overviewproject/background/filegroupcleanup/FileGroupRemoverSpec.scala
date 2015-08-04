@@ -1,11 +1,11 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import org.specs2.mock.Mockito
 import scala.concurrent.Promise
 
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.tables.FileGroups
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.tables.FileGroups
+import com.overviewdocs.test.DbSpecification
 
 class FileGroupRemoverSpec extends DbSpecification with Mockito {
   "FileGroupRemover" should {

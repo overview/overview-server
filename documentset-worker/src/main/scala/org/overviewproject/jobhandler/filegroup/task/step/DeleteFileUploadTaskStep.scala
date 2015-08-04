@@ -1,11 +1,11 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.database.FileGroupDeleter
-import org.overviewproject.database.DocumentSetCreationJobDeleter
-import org.overviewproject.database.TempFileDeleter
+import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.database.FileGroupDeleter
+import com.overviewdocs.database.DocumentSetCreationJobDeleter
+import com.overviewdocs.database.TempFileDeleter
 
 /**
  * Deletes the document set and file group.

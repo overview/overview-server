@@ -1,4 +1,4 @@
-package org.overviewproject.test
+package com.overviewdocs.test
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender,TestKit,TestKitBase}

@@ -1,9 +1,9 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.DocumentSetCreationJob
-import org.overviewproject.models.DocumentSetCreationJobState._
-import org.overviewproject.models.tables.DocumentSetCreationJobs
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.DocumentSetCreationJob
+import com.overviewdocs.models.DocumentSetCreationJobState._
+import com.overviewdocs.models.tables.DocumentSetCreationJobs
 
 class JobUpdaterSpec extends DbSpecification {
 

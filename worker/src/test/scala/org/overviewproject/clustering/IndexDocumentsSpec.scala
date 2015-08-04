@@ -8,16 +8,16 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import java.io.File
 import scala.Array.canBuildFrom
-import org.overviewproject.nlp.DocumentVectorTypes.DocumentVectorBuilder
+import com.overviewdocs.nlp.DocumentVectorTypes.DocumentVectorBuilder
 import org.specs2.mutable.Specification
-import org.overviewproject.nlp.UnigramDocumentVectorGenerator
-import org.overviewproject.nlp.Lexer
+import com.overviewdocs.nlp.UnigramDocumentVectorGenerator
+import com.overviewdocs.nlp.Lexer
 import scala.Int.int2long
-import org.overviewproject.nlp.StopWordSet
+import com.overviewdocs.nlp.StopWordSet
 
 class IndexDocumentsSpec extends Specification {
   val stopWords = StopWordSet("en", None)

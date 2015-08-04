@@ -1,10 +1,10 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.sql.Timestamp
 import play.api.libs.json.{Json,JsObject}
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.View
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.View
 
 class ViewsImpl(tag: Tag) extends Table[View](tag, "view") {
   private implicit val postgres91JsonTextColumnType = MappedColumnType.base[JsObject, String](

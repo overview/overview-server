@@ -3,7 +3,7 @@ package controllers.iteratees
 import play.api.libs.iteratee.{Enumeratee,Iteratee,Traversable}
 
 import controllers.backend.GroupedFileUploadBackend
-import org.overviewproject.models.GroupedFileUpload
+import com.overviewdocs.models.GroupedFileUpload
 
 trait GroupedFileUploadIteratee {
   protected val groupedFileUploadBackend: GroupedFileUploadBackend

@@ -9,8 +9,8 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.{Document,File,Page}
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.{Document,File,Page}
 
 class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait DocumentScope extends Scope {
@@ -26,7 +26,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
       override val pageBackend = mockPageBackend
     }
 
-    val factory = org.overviewproject.test.factories.PodoFactory
+    val factory = com.overviewdocs.test.factories.PodoFactory
 
     val request : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest
 

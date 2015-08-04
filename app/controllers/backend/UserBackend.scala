@@ -7,7 +7,7 @@ import scala.concurrent.Future
 import models.User
 import models.tables.Users
 import models.pagination.{Page,PageRequest}
-import org.overviewproject.models.UserRole
+import com.overviewdocs.models.UserRole
 
 trait UserBackend extends Backend {
   /** Returns a page of Users. */
@@ -95,7 +95,7 @@ trait DbUserBackend extends UserBackend with DbBackend {
 
 object DbUserBackend {
   protected object q {
-    import org.overviewproject.database.Slick.api._
+    import com.overviewdocs.database.Slick.api._
 
     lazy val byEmail = Compiled { (email: Rep[String]) =>
       Users.filter(_.email === email)

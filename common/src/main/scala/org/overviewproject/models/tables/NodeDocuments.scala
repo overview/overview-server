@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.NodeDocument
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.NodeDocument
 
 class NodeDocumentsImpl(tag: Tag) extends Table[NodeDocument](tag, "node_document") {
   def nodeId = column[Long]("node_id")

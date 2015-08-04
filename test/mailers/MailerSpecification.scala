@@ -8,7 +8,7 @@ import play.api.mvc.{Flash,RequestHeader}
 import play.api.test.{FakeApplication,FakeRequest}
 
 import models.{User=>UserModel}
-import org.overviewproject.models.UserRole
+import com.overviewdocs.models.UserRole
 
 class MailerSpecification extends test.helpers.InAppSpecification {
   // Need fake application, because some views show CSRF tokens
@@ -18,7 +18,7 @@ class MailerSpecification extends test.helpers.InAppSpecification {
   }
 
   trait MailerScope extends Scope {
-    val factory = org.overviewproject.test.factories.PodoFactory
+    val factory = com.overviewdocs.test.factories.PodoFactory
     def fakeUser: UserModel = UserModel(email="user@example.org", role=UserRole.NormalUser)
 
     implicit def request: RequestHeader = FakeRequest()

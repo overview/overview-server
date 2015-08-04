@@ -1,8 +1,8 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import akka.actor.Actor
 
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
+import com.overviewdocs.documentcloud.DocumentRetrieverProtocol._
 import scala.concurrent.Promise
 import scala.util.control.Exception._
 
@@ -27,7 +27,7 @@ case class DocumentRetrievalError(url: String, message: String, statusCode: Opti
  * 
  * @todo Handle exceptions in callback
  * 
- * @param textify Callback to convert "raw text" to text. See org.overviewproject.util.Textify
+ * @param textify Callback to convert "raw text" to text. See com.overviewdocs.util.Textify
  * @param processDocument The callback function that does the actual processing of the documents.
  * @param finished To be completed with information about the document retrievals
  */

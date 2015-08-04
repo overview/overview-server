@@ -1,6 +1,6 @@
 package views.html.DocumentSet
 
-import org.overviewproject.models.DocumentSet
+import com.overviewdocs.models.DocumentSet
 
 class _documentSetSpec extends views.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {

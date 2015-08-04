@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import java.util.Date // should be java.time.LocalDateTime
 import play.api.libs.json.JsObject

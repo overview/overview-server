@@ -1,10 +1,10 @@
-package org.overviewproject.postgres
+package com.overviewdocs.postgres
 
 import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.database.DB
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.database.DB
 
 class LargeObjectSpec extends DbSpecification {
   "postgres.LargeObject (deprecated)" should {

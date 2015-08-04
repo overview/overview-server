@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 object UserRole extends Enumeration {
   val NormalUser = Value(1, "NormalUser")

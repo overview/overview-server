@@ -4,10 +4,10 @@ import java.util.Date
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import org.overviewproject.models.View
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tag,Tree}
-import org.overviewproject.test.factories.{PodoFactory=>factory}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.models.View
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tag,Tree}
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class showSpec extends views.ViewSpecification {
   trait BaseScope extends JsonViewSpecificationScope {

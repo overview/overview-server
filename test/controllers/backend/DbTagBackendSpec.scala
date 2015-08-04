@@ -1,7 +1,7 @@
 package controllers.backend
 
-import org.overviewproject.models.Tag
-import org.overviewproject.models.tables.{DocumentTags,Tags}
+import com.overviewdocs.models.Tag
+import com.overviewdocs.models.tables.{DocumentTags,Tags}
 
 class DbTagBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

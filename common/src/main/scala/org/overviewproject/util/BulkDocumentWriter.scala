@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import java.io.{ByteArrayInputStream,ByteArrayOutputStream,DataOutputStream}
 import java.nio.charset.Charset
@@ -7,10 +7,10 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.{Database,HasDatabase}
-import org.overviewproject.models.Document
-import org.overviewproject.models.tables.Documents
-import org.overviewproject.searchindex.TransportIndexClient
+import com.overviewdocs.database.{Database,HasDatabase}
+import com.overviewdocs.models.Document
+import com.overviewdocs.models.tables.Documents
+import com.overviewdocs.searchindex.TransportIndexClient
 
 /** Writes documents to the database and/or search index in bulk.
   *
@@ -76,7 +76,7 @@ trait BulkDocumentWriter {
   }
 
   protected def flushDocumentsToDatabase(database: Database, documents: Iterable[Document]): Future[Unit] = {
-    import org.overviewproject.database.Slick.api._
+    import com.overviewdocs.database.Slick.api._
     import slick.dbio.SynchronousDatabaseAction
     import slick.jdbc.JdbcBackend
     import slick.util.DumpInfo

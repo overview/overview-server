@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import java.util.Date
 
-import org.overviewproject.postgres.InetAddress
+import com.overviewdocs.postgres.InetAddress
 
 class SessionSpec extends Specification {
   trait BaseScope extends Scope {

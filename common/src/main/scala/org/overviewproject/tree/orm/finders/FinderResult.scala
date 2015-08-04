@@ -1,7 +1,7 @@
-package org.overviewproject.tree.orm.finders
+package com.overviewdocs.tree.orm.finders
 
 import org.squeryl.Query
-import org.overviewproject.postgres.SquerylEntrypoint
+import com.overviewdocs.postgres.SquerylEntrypoint
 import scala.language.implicitConversions
 
 /** An SQL query with useful conversions.
@@ -19,7 +19,7 @@ class FinderResult[A](val query: Query[A]) {
   }
   def headOption : Option[A] = query.headOption // avoid double implicit conversion
   def count : Long = {
-    import org.overviewproject.postgres.SquerylEntrypoint._
+    import com.overviewdocs.postgres.SquerylEntrypoint._
     val countQuery = from(query)(_ => compute(SquerylEntrypoint.count))
     countQuery.headOption.getOrElse(throw new AssertionError("Count did not return anything")).measures
   }

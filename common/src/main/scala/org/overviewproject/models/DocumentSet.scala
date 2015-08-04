@@ -1,8 +1,8 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import java.sql.Timestamp
 
-import org.overviewproject.metadata.MetadataSchema
+import com.overviewdocs.metadata.MetadataSchema
 
 case class DocumentSet(
   id: Long,

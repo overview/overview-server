@@ -1,4 +1,4 @@
-package org.overviewproject.upgrade.reindex_documents
+package com.overviewdocs.upgrade.reindex_documents
 
 import play.api.libs.json.{JsValue,Json}
 

@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.ByteArrayOutputStream
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -7,8 +7,8 @@ import org.apache.pdfbox.util.PDFTextStripper
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
 import scala.concurrent.Future
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.util.Textify
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.util.Textify
 import scala.collection.IterableView
 import scala.collection.SeqView
 import org.apache.pdfbox.io.RandomAccessFile

@@ -11,9 +11,9 @@ import scala.concurrent.Future
 
 import controllers.auth.{ApiAuthorizedRequest,ApiTokenFactory}
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
-import org.overviewproject.models.{ApiToken,DocumentSet,FileGroup,GroupedFileUpload}
-import org.overviewproject.models.DocumentSetCreationJobType._
-import org.overviewproject.models.DocumentSetCreationJobState._
+import com.overviewdocs.models.{ApiToken,DocumentSet,FileGroup,GroupedFileUpload}
+import com.overviewdocs.models.DocumentSetCreationJobType._
+import com.overviewdocs.models.DocumentSetCreationJobState._
 
 class MassUploadControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends Scope {
@@ -33,7 +33,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       override val uploadIterateeFactory = mockUploadIterateeFactory
     }
 
-    val factory = org.overviewproject.test.factories.PodoFactory
+    val factory = com.overviewdocs.test.factories.PodoFactory
     val apiToken = factory.apiToken(createdBy="user@example.org", token="api-token", documentSetId=Some(1L))
   }
 

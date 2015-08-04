@@ -1,6 +1,6 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
-import org.overviewproject.util.Progress._
+import com.overviewdocs.util.Progress._
 
 class ThrottledProgressReporter(val stateChange: Seq[Progress => Unit], val interval: Seq[Progress => Unit], updateInterval: Long = 500l) {
 

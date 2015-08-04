@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import org.specs2.mutable.Specification
 import play.api.libs.json.JsObject

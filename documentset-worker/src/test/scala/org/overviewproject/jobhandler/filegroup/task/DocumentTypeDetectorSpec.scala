@@ -1,13 +1,12 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
-import java.io.BufferedInputStream
-import java.io.InputStream
-
-import org.overviewproject.jobhandler.filegroup.task.DocumentTypeDetector._
-import org.overviewproject.mime_types.MimeTypeDetector
+import java.io.{BufferedInputStream,InputStream}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+
+import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector._
+import org.overviewproject.mime_types.MimeTypeDetector
 
 class DocumentTypeDetectorSpec extends Specification with Mockito {
 

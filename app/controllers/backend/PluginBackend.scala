@@ -3,8 +3,8 @@ package controllers.backend
 import java.util.UUID
 import scala.concurrent.Future
 
-import org.overviewproject.models.Plugin
-import org.overviewproject.models.tables.Plugins
+import com.overviewdocs.models.Plugin
+import com.overviewdocs.models.tables.Plugins
 
 trait PluginBackend {
   /** Lists all Plugins, in alphabetical order. */

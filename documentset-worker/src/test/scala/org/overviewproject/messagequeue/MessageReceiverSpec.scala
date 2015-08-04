@@ -1,11 +1,11 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 import akka.actor._
 import akka.testkit._
 
-import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.messagequeue.ConnectionMonitorProtocol._
+import com.overviewdocs.messagequeue.AcknowledgingMessageReceiverProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 import javax.jms.Connection

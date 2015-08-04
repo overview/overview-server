@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.File
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.File
 
 class FilesImpl(tag: Tag) extends Table[File](tag, "file") {
   def id = column[Long]("id", O.PrimaryKey)

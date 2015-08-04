@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 case class UploadProcessOptions(lang: String, splitDocument: Boolean)
 

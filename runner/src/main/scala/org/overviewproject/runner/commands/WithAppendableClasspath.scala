@@ -1,4 +1,4 @@
-package org.overviewproject.runner.commands
+package com.overviewdocs.runner.commands
 
 trait WithAppendableClasspath { self: JvmCommand =>
   def withClasspath(paths: Seq[String]) : JvmCommand with WithAppendableClasspath = {

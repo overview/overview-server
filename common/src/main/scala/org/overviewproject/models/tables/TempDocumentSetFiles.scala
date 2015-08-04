@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.TempDocumentSetFile
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.TempDocumentSetFile
 
 class TempDocumentSetFilesImpl(tag: Tag) extends Table[TempDocumentSetFile](tag, "temp_document_set_file") { 
   def documentSetId = column[Long]("document_set_id")

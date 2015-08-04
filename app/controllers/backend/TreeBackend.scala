@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.Tree
-import org.overviewproject.models.tables.Trees
+import com.overviewdocs.models.Tree
+import com.overviewdocs.models.tables.Trees
 
 trait TreeBackend extends Backend {
   /** Updates a Tree.

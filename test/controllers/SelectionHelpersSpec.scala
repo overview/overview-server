@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,Selection,SelectionRequest}
-import org.overviewproject.query.{Field,PhraseQuery}
+import com.overviewdocs.query.{Field,PhraseQuery}
 import test.helpers.MockMessagesApi
 
 class SelectionHelpersSpec extends Specification with Mockito {

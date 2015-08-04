@@ -1,6 +1,6 @@
 package models
 
-import org.overviewproject.query.Query
+import com.overviewdocs.query.Query
 
 /** Identifies a few documents out of an entire document set.
   *

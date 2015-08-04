@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.DocumentTag
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.DocumentTag
 
 class DocumentTagsImpl(tag: Tag) extends Table[DocumentTag](tag, "document_tag") {
   def documentId = column[Long]("document_id")

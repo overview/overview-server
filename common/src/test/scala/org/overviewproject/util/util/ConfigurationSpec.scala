@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import scala.collection.JavaConverters._
 import org.specs2.mutable.Specification

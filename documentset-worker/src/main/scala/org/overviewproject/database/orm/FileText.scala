@@ -1,6 +1,6 @@
-package org.overviewproject.database.orm
+package com.overviewdocs.database.orm
 
-import org.overviewproject.postgres.SquerylEntrypoint.compositeKey
+import com.overviewdocs.postgres.SquerylEntrypoint.compositeKey
 import org.squeryl.KeyedEntity
 import org.squeryl.dsl.CompositeKey2
 

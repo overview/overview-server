@@ -1,4 +1,4 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 class DocumentPage(document: Document, pageNum: Int) extends 
 Document(

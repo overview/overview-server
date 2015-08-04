@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.Node
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.Node
 
 class NodesImpl(tag: Tag) extends Table[Node](tag, "node") {
   def id = column[Long]("id", O.PrimaryKey)

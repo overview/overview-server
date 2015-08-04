@@ -4,7 +4,7 @@
  * Overview
  * Created by Jonas Karlsson, November 2012
  */
-package org.overviewproject.csv
+package com.overviewdocs.csv
 
 import com.opencsv.CSVReader
 import java.io.Reader
@@ -19,7 +19,7 @@ import scala.collection.Iterable
   * be stored in the CsvImportDocument.suppliedId field.
   *
   * Arguments:
-  * * textify: see org.overviewproject.util.Textify
+  * * textify: see com.overviewdocs.util.Textify
   * * reader: a Reader
   */
 class CsvImportSource(textify: (String) => String, reader: Reader) extends Iterable[CsvImportDocument] {

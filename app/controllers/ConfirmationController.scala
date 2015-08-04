@@ -9,8 +9,8 @@ import controllers.auth.Authorities.anyUser
 import controllers.backend.SessionBackend
 import models.{IntercomConfiguration, MailChimp, OverviewUser}
 import models.orm.stores.UserStore
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.util.Logger
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.util.Logger
 
 object ConfirmationController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")

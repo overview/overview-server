@@ -6,8 +6,8 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import controllers.backend.TagBackend
-import org.overviewproject.models.Tag
-import org.overviewproject.test.factories.PodoFactory
+import com.overviewdocs.models.Tag
+import com.overviewdocs.test.factories.PodoFactory
 
 class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   class BaseScope extends Scope {

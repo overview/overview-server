@@ -1,8 +1,8 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
 import org.squeryl.KeyedEntity
 
-import org.overviewproject.models.{Tag => BetterTag}
+import com.overviewdocs.models.{Tag => BetterTag}
 
 case class Tag(
   documentSetId: Long,

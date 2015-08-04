@@ -1,10 +1,10 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
-import org.overviewproject.http.{ Credentials, PrivateRequest, PublicRequest }
-import org.overviewproject.http.RequestQueueProtocol._
-import org.overviewproject.http.SimpleResponse
+import com.overviewdocs.http.{ Credentials, PrivateRequest, PublicRequest }
+import com.overviewdocs.http.RequestQueueProtocol._
+import com.overviewdocs.http.SimpleResponse
 import akka.actor._
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 object DocumentRetrieverProtocol {
   /** Start retrieving the document */

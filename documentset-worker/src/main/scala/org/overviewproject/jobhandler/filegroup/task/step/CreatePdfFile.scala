@@ -1,15 +1,15 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.io.{ BufferedInputStream, InputStream }
 import java.security.{ DigestInputStream, MessageDigest }
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import org.overviewproject.blobstorage.BlobBucketId
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.{ File, GroupedFileUpload, TempDocumentSetFile }
-import org.overviewproject.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
-import org.overviewproject.postgres.LargeObjectInputStream
+import com.overviewdocs.blobstorage.BlobBucketId
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.{ File, GroupedFileUpload, TempDocumentSetFile }
+import com.overviewdocs.models.tables.{ Files, GroupedFileUploads, TempDocumentSetFiles }
+import com.overviewdocs.postgres.LargeObjectInputStream
 
 
 /**

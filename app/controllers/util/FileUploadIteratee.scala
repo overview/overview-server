@@ -10,8 +10,8 @@ import play.api.mvc.{ RequestHeader, Result }
 import play.api.mvc.Results.BadRequest
 
 import models.upload.OverviewUpload
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.postgres.LO
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.postgres.LO
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object

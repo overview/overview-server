@@ -9,8 +9,8 @@ import controllers.backend.DocumentSetBackend
 import controllers.forms.DocumentCloudImportJobForm
 import models.DocumentCloudImportJob
 import models.orm.stores.DocumentCloudImportJobStore
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.models.DocumentSet
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.models.DocumentSet
 
 trait DocumentCloudImportJobController extends Controller {
   protected val documentSetBackend: DocumentSetBackend

@@ -1,10 +1,10 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.{BufferedReader,IOException,InputStream,InputStreamReader,PrintStream}
 import java.lang.Process
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
-import org.overviewproject.runner.commands.Command
+import com.overviewdocs.runner.commands.Command
 
 class Daemon(val logger: StdLogger, val command: Command) extends DaemonProcess {
   logger.out.println("Running " + command)

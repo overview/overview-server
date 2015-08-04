@@ -1,8 +1,8 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
-import org.overviewproject.tree.orm.{DocumentSetCreationJob => DeprecatedDocumentSetCreationJob}
-import org.overviewproject.tree.{DocumentSetCreationJobType => DeprecatedDocumentSetCreationJobType}
-import org.overviewproject.tree.orm.{DocumentSetCreationJobState => DeprecatedDocumentSetCreationJobState}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob => DeprecatedDocumentSetCreationJob}
+import com.overviewdocs.tree.{DocumentSetCreationJobType => DeprecatedDocumentSetCreationJobType}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJobState => DeprecatedDocumentSetCreationJobState}
 
 object DocumentSetCreationJobType extends Enumeration {
   type DocumentSetCreationJobType = Value

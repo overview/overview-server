@@ -8,7 +8,7 @@ import play.api.libs.json.Json.toJson
 import plugins.StompPlugin
 import scala.concurrent.Future
 
-import org.overviewproject.jobs.models._
+import com.overviewdocs.jobs.models._
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.

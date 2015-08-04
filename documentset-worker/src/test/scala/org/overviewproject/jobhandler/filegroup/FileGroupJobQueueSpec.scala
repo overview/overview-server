@@ -1,21 +1,21 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import scala.concurrent.duration._
 import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.Before
-import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol._
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import akka.testkit._
 import org.specs2.time.NoTimeConversions
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
 import akka.actor.Terminated
 import akka.actor.PoisonPill
 import akka.actor.Actor
 import akka.actor.Props
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 
 class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 

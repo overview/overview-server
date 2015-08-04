@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import slick.lifted.RunnableCompiled
 
 import models.pagination.{Page,PageInfo,PageRequest}
-import org.overviewproject.database.HasDatabase
+import com.overviewdocs.database.HasDatabase
 
 trait DbBackend extends HasDatabase {
   import database.api._

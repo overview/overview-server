@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 /**
  * Classes that are used to process uploaded files. Files are split into pages with extracted text.

@@ -1,9 +1,9 @@
-package org.overviewproject.http
+package com.overviewdocs.http
 
 import scala.concurrent.duration._
 
-import org.overviewproject.http.RequestQueueProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.http.RequestQueueProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

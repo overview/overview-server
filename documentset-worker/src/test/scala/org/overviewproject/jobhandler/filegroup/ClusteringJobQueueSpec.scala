@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorSelection
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 
 class ClusteringJobQueueSpec extends Specification with Mockito {
 

@@ -1,7 +1,7 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
-import org.overviewproject.models.tables.DocumentProcessingErrors
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.models.tables.DocumentProcessingErrors
+import com.overviewdocs.test.DbSpecification
 
 class WriteDocumentProcessingErrorSpec extends DbSpecification {
 

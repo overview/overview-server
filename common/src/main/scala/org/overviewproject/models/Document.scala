@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import java.util.Date
 import play.api.libs.json.JsObject

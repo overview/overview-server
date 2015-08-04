@@ -8,10 +8,10 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.DocumentVectorTypes._
 
 // Produce sets of documents all connected through edges of at least some threshold
 // Optionally use an edge sampler to make this not an N^2 operation

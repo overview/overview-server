@@ -1,4 +1,4 @@
-package org.overviewproject.query
+package com.overviewdocs.query
 
 import scala.util.parsing.combinator.RegexParsers
 

@@ -1,10 +1,10 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.models.tables.GroupedFileUploads
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.models.tables.GroupedFileUploads
 
 
 /**

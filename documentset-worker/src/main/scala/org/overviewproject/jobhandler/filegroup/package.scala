@@ -1,10 +1,10 @@
-package org.overviewproject.jobhandler
+package com.overviewdocs.jobhandler
 
 
 /**
  * Contains classes that process files that have been uploaded to a 
  * [[FileGroup]]. Uploads are split into pages with their text extracted, 
- * then converted to [[org.overviewproject.model.Document]]s, which are
+ * then converted to [[com.overviewdocs.model.Document]]s, which are
  * clustered into trees by the [[JobHandler]] process.
  * 
  * When all files in a [[FileGroup]] have been uploaded, the `Overview server` 

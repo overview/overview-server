@@ -9,16 +9,16 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.{Set, ArrayBuffer}
 
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.nlp.IterativeKMeansDocuments
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import org.overviewproject.util.Logger
-import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
-import org.overviewproject.util.ToMutableSet._
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.IterativeKMeansDocuments
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
+import com.overviewdocs.util.Logger
+import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
+import com.overviewdocs.util.ToMutableSet._
 
 
 class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {

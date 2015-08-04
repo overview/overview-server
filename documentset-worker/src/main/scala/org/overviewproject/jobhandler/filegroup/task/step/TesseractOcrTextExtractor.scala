@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
 import java.io.File
@@ -11,10 +11,10 @@ import scala.io.Source
 import scala.language.postfixOps
 import scala.util.Try
 import scala.util.control.Exception.ultimately
-import org.overviewproject.jobhandler.filegroup.task.ShellRunner
-import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
-import org.overviewproject.util.Configuration
-import org.overviewproject.util.SupportedLanguages
+import com.overviewdocs.jobhandler.filegroup.task.ShellRunner
+import com.overviewdocs.jobhandler.filegroup.task.TimeoutGenerator
+import com.overviewdocs.util.Configuration
+import com.overviewdocs.util.SupportedLanguages
 
 trait TesseractOcrTextExtractor extends OcrTextExtractor {
   implicit protected val executionContext: ExecutionContext
@@ -84,7 +84,7 @@ object TesseractOcrTextExtractor {
 
   import scala.concurrent.duration.DurationInt
   import scala.language.postfixOps
-  import org.overviewproject.util.Configuration
+  import com.overviewdocs.util.Configuration
 
   object FileFormats {
     val ImageFormat = "png"

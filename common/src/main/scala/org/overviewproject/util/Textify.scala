@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import com.google.common.escape.UnicodeEscaper
 import com.google.common.base.CharMatcher

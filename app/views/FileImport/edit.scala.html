@@ -1,6 +1,6 @@
 @(
   user: User,
-  documentSet: org.overviewproject.models.DocumentSet,
+  documentSet: com.overviewdocs.models.DocumentSet,
   nOwnedDocumentSets: Int
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
@@ -10,7 +10,7 @@
   @* Let's hope there is no end-script tag in _supportedLanguages.... *@
   <script>
     window.supportedLanguages = @Html(views.DocumentSet._supportedLanguages().toString());
-    window.defaultLanguageCode = "@org.overviewproject.util.SupportedLanguages.defaultLanguage.languageCode";
+    window.defaultLanguageCode = "@com.overviewdocs.util.SupportedLanguages.defaultLanguage.languageCode";
   </script>
 }
 

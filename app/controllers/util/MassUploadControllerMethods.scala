@@ -7,8 +7,8 @@ import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
 
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
-import org.overviewproject.models.{FileGroup,GroupedFileUpload}
-import org.overviewproject.util.ContentDisposition
+import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
+import com.overviewdocs.util.ContentDisposition
 
 private[controllers] object MassUploadControllerMethods extends controllers.Controller {
   case class Create(

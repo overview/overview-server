@@ -1,6 +1,6 @@
 package controllers.backend
 
-import org.overviewproject.models.Page
+import com.overviewdocs.models.Page
 
 class DbPageBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

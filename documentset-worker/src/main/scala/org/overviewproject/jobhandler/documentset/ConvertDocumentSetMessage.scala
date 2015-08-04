@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler.documentset
+package com.overviewdocs.jobhandler.documentset
 
 import play.api.libs.json._
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
-import org.overviewproject.messagequeue.ConvertMessage
+import com.overviewdocs.jobhandler.documentset.DocumentSetJobHandlerProtocol._
+import com.overviewdocs.messagequeue.ConvertMessage
 
 
 /** Converts messages from the queue into specific Command Messages */

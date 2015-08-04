@@ -1,6 +1,6 @@
-package org.overviewproject.tree.orm.finders
+package com.overviewdocs.tree.orm.finders
 
-import org.overviewproject.postgres.SquerylEntrypoint._
+import com.overviewdocs.postgres.SquerylEntrypoint._
 import org.squeryl.Table
 import org.squeryl.KeyedEntity
 

@@ -5,7 +5,7 @@ import play.api.mvc.AnyContentAsJson
 import scala.concurrent.Future
 
 import controllers.backend.StoreBackend
-import org.overviewproject.models.Store
+import com.overviewdocs.models.Store
 
 class StoreStateControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {

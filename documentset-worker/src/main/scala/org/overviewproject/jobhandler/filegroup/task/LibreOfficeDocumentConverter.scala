@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.{ BufferedInputStream, File, FileInputStream, FileNotFoundException, InputStream }
 import java.nio.file.Files
@@ -6,7 +6,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption._
 import java.util.UUID
 import scala.util.control.Exception._
-import org.overviewproject.util.Configuration
+import com.overviewdocs.util.Configuration
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration

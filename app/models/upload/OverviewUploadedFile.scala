@@ -4,10 +4,10 @@ import java.net.URLDecoder
 import java.sql.Timestamp
 import scala.util.control.Exception._
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.UploadedFile
-import org.overviewproject.models.tables.UploadedFiles
-import org.overviewproject.util.ContentDisposition
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.UploadedFile
+import com.overviewdocs.models.tables.UploadedFiles
+import com.overviewdocs.util.ContentDisposition
 
 trait OverviewUploadedFile {
   val id: Long
@@ -27,7 +27,7 @@ trait OverviewUploadedFile {
 }
 
 object OverviewUploadedFile extends HasBlockingDatabase {
-  import org.overviewproject.database.Slick.api._
+  import com.overviewdocs.database.Slick.api._
 
   lazy val updater = Compiled { (id: Rep[Long]) =>
     UploadedFiles.filter(_.id === id).map(_.updateAttributes)

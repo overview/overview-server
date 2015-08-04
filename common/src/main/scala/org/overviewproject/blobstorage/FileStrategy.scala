@@ -1,4 +1,4 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import java.io.{ File, InputStream, IOException }
 import play.api.libs.iteratee.Enumerator

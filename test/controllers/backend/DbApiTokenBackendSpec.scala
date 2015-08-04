@@ -2,9 +2,9 @@ package controllers.backend
 
 import play.api.libs.json.Json
 
-import org.overviewproject.database.exceptions
-import org.overviewproject.models.ApiToken
-import org.overviewproject.models.tables.ApiTokens
+import com.overviewdocs.database.exceptions
+import com.overviewdocs.models.ApiToken
+import com.overviewdocs.models.tables.ApiTokens
 
 class DbApiTokenBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

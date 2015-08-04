@@ -1,11 +1,11 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import java.io.{IOException,InputStream}
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.{HasDatabase,LargeObject}
+import com.overviewdocs.database.{HasDatabase,LargeObject}
 
 trait PgLoStrategy extends BlobStorageStrategy with HasDatabase {
   import database.api._

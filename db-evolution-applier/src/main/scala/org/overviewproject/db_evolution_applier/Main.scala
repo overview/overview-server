@@ -1,4 +1,4 @@
-package org.overviewproject.db_evolution_applier
+package com.overviewdocs.db_evolution_applier
 
 import com.typesafe.config.{Config,ConfigFactory}
 import com.zaxxer.hikari.{HikariConfig,HikariDataSource}

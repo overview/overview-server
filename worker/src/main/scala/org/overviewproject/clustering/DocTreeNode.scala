@@ -8,10 +8,10 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
+import com.overviewdocs.nlp.DocumentVectorTypes.DocumentID
 
 // Document tree node. Contains items, children, and a description which lists top terms in all docs of this node
 class DocTreeNode(val docs: Set[DocumentID]) {

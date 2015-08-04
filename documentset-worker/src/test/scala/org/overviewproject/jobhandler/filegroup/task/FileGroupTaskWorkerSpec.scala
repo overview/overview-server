@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -8,12 +8,12 @@ import akka.actor.ActorSystem
 import akka.testkit.TestActor
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.task.step.FinalStep
-import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
-import org.overviewproject.searchindex.ElasticSearchIndexClient
-import org.overviewproject.test.ActorSystemContext
-import org.overviewproject.test.ForwardingActor
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import com.overviewdocs.jobhandler.filegroup.task.step.FinalStep
+import com.overviewdocs.jobhandler.filegroup.task.step.TaskStep
+import com.overviewdocs.searchindex.ElasticSearchIndexClient
+import com.overviewdocs.test.ActorSystemContext
+import com.overviewdocs.test.ForwardingActor
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions

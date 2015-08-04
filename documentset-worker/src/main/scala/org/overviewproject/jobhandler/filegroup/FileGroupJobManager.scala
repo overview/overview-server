@@ -1,20 +1,20 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import scala.concurrent.duration._
 import scala.collection.mutable
 import scala.language.postfixOps
 import akka.actor.{ Actor, ActorRef }
 import akka.actor.Props
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
-import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.util.Logger
-import org.overviewproject.util.Configuration
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.database.orm.finders.DocumentSetCreationJobFinder
+import com.overviewdocs.database.orm.stores.DocumentSetCreationJobStore
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobMessages._
+import com.overviewdocs.tree.DocumentSetCreationJobType._
+import com.overviewdocs.tree.orm.DocumentSetCreationJob
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.util.Logger
+import com.overviewdocs.util.Configuration
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)

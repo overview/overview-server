@@ -1,12 +1,12 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import play.api.libs.json.{Json,JsObject}
 
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models.tables.{DocumentSets,Documents,Files,Pages}
-import org.overviewproject.models.{Document,DocumentSet,File,Page}
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.DocumentDisplayMethod
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models.tables.{DocumentSets,Documents,Files,Pages}
+import com.overviewdocs.models.{Document,DocumentSet,File,Page}
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.DocumentDisplayMethod
 
 class BulkDocumentWriterSpec extends DbSpecification {
   sequential

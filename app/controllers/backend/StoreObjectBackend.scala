@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.StoreObject
-import org.overviewproject.models.tables.StoreObjects
+import com.overviewdocs.models.StoreObject
+import com.overviewdocs.models.tables.StoreObjects
 
 trait StoreObjectBackend {
   /** Lists all StoreObjects we can read.

@@ -1,6 +1,6 @@
-package org.overviewproject.test
+package com.overviewdocs.test
 
-import org.overviewproject.http.SimpleResponse
+import com.overviewdocs.http.SimpleResponse
 
 case class TestSimpleResponse(
   override val status: Int,

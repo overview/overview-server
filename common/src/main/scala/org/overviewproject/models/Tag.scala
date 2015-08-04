@@ -1,6 +1,6 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
-import org.overviewproject.tree.orm.{Tag=>DeprecatedTag}
+import com.overviewdocs.tree.orm.{Tag=>DeprecatedTag}
 
 case class Tag(
   id: Long,

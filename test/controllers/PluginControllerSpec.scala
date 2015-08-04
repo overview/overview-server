@@ -7,8 +7,8 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.PluginBackend
-import org.overviewproject.models.Plugin
-import org.overviewproject.test.factories.PodoFactory
+import com.overviewdocs.models.Plugin
+import com.overviewdocs.test.factories.PodoFactory
 
 class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {

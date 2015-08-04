@@ -35,13 +35,13 @@
 
   <!-- Turn off our own log messages, when they're a normal part of unit tests -->
   <logger name="controllers.backend" level="ERROR"/>
-  <logger name="org.overviewproject.background.filecleanup" level="OFF"/>
-  <logger name="org.overviewproject.background.filegroupcleanup" level="OFF"/>
-  <logger name="org.overviewproject.documentcloud.DocumentRetriever" level="ERROR"/>
-  <logger name="org.overviewproject.nlp" level="WARN"/>
-  <logger name="org.overviewproject.messagequeue" level="OFF"/>
-  <logger name="org.overviewproject.jobhandler.documentset" level="ERROR"/>
-  <logger name="org.overviewproject.jobhandler.filegroup" level="OFF"/>
+  <logger name="com.overviewdocs.background.filecleanup" level="OFF"/>
+  <logger name="com.overviewdocs.background.filegroupcleanup" level="OFF"/>
+  <logger name="com.overviewdocs.documentcloud.DocumentRetriever" level="ERROR"/>
+  <logger name="com.overviewdocs.nlp" level="WARN"/>
+  <logger name="com.overviewdocs.messagequeue" level="OFF"/>
+  <logger name="com.overviewdocs.jobhandler.documentset" level="ERROR"/>
+  <logger name="com.overviewdocs.jobhandler.filegroup" level="OFF"/>
 
   <root level="DEBUG">
     <appender-ref ref="STDOUT"/>

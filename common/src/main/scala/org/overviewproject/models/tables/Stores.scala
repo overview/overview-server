@@ -1,9 +1,9 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import play.api.libs.json.JsObject
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.Store
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.Store
 
 class StoresImpl(tag: Tag) extends Table[Store](tag, "store") {
   def id = column[Long]("id", O.PrimaryKey)

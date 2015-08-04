@@ -1,7 +1,7 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
-import org.overviewproject.models.DocumentSetCreationJob
-import org.overviewproject.models.DocumentSetCreationJobState._
+import com.overviewdocs.models.DocumentSetCreationJob
+import com.overviewdocs.models.DocumentSetCreationJobState._
 import scala.concurrent.ExecutionContext
 
 /**

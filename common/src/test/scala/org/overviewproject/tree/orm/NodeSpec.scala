@@ -1,12 +1,12 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.IdGenerator
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.test.IdGenerator
 
 class NodeSpec extends DbSpecification {
   "Node" should {
     "write and read from the database" in new DbTestContext {
-      import org.overviewproject.postgres.SquerylEntrypoint._
+      import com.overviewdocs.postgres.SquerylEntrypoint._
 
       val id = IdGenerator.nextNodeId(1L)
       val node = Node(

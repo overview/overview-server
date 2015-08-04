@@ -7,11 +7,11 @@ import slick.jdbc.{GetResult,StaticQuery}
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
-import org.overviewproject.models.{Document,DocumentDisplayMethod,DocumentHeader,DocumentInfo}
-import org.overviewproject.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
-import org.overviewproject.query.{Query=>SearchQuery}
-import org.overviewproject.searchindex.IndexClient
-import org.overviewproject.util.Logger
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,DocumentInfo}
+import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
+import com.overviewdocs.query.{Query=>SearchQuery}
+import com.overviewdocs.searchindex.IndexClient
+import com.overviewdocs.util.Logger
 
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
@@ -265,5 +265,5 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
 }
 
 object DocumentBackend extends DbDocumentBackend {
-  override protected val indexClient = org.overviewproject.searchindex.TransportIndexClient.singleton
+  override protected val indexClient = com.overviewdocs.searchindex.TransportIndexClient.singleton
 }

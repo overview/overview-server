@@ -1,7 +1,7 @@
-package org.overviewproject.jobhandler.documentset
+package com.overviewdocs.jobhandler.documentset
 
 import org.specs2.mutable.Specification
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
+import com.overviewdocs.jobhandler.documentset.DocumentSetJobHandlerProtocol._
 
 class ConvertDocumentSetMessageSpec extends Specification {
 

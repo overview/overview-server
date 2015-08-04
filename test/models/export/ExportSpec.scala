@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 import models.export.rows.Rows
 import models.export.format.Format
-import org.overviewproject.util.TempFile
+import com.overviewdocs.util.TempFile
 
 class ExportSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
   def createFileInputStreamWithBytes(bytes: Array[Byte]) = {

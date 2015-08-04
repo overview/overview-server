@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.io.InputStream
 import java.security.DigestInputStream
@@ -7,8 +7,8 @@ import java.security.MessageDigest
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.overviewproject.blobstorage.BlobBucketId
-import org.overviewproject.blobstorage.BlobStorage
+import com.overviewdocs.blobstorage.BlobBucketId
+import com.overviewdocs.blobstorage.BlobStorage
 
 /**
  * Helper methods for classes that need to transfer large object data from

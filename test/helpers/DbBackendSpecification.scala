@@ -4,7 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.test.DbSpecification
 
 /** Helps test Backends.
   *

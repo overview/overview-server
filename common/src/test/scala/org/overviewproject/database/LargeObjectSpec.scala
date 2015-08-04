@@ -1,8 +1,8 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import slick.dbio.DBIO
 
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.test.DbSpecification
 
 class LargeObjectSpec extends DbSpecification {
   "LargeObject" should {

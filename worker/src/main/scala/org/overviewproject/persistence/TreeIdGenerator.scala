@@ -1,8 +1,8 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.persistence.orm.Schema.trees
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.persistence.orm.Schema.trees
 
 object TreeIdGenerator {
   def next(documentSetId: Long): Long = DeprecatedDatabase.inTransaction {

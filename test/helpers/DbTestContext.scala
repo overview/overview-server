@@ -16,7 +16,7 @@ import play.api.Play.current
 import play.api.test._
 import play.api.test.Helpers._
 
-import org.overviewproject.database.DeprecatedDatabase
+import com.overviewdocs.database.DeprecatedDatabase
 
 /**
  * A helper class for tests that access the test-database. Wraps the test in a

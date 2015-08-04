@@ -4,9 +4,9 @@ import java.util.UUID
 import org.postgresql.PGConnection
 import scala.concurrent.Future
 
-import org.overviewproject.database.LargeObject
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.models.tables.GroupedFileUploads
+import com.overviewdocs.database.LargeObject
+import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.models.tables.GroupedFileUploads
 
 trait GroupedFileUploadBackend extends Backend {
   /** Lists GroupedFileUploads in a FileGroup.

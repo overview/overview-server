@@ -2,10 +2,10 @@ package models.orm.stores
 
 import org.squeryl.{ KeyedEntityDef, Query }
 
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.DocumentSetCreationJobType.Recluster
-import org.overviewproject.tree.orm.stores.BaseStore
+import com.overviewdocs.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.tree.DocumentSetCreationJobType.Recluster
+import com.overviewdocs.tree.orm.stores.BaseStore
 import models.orm.Schema
 
 object DocumentSetCreationJobStore extends BaseStore(models.orm.Schema.documentSetCreationJobs) {
@@ -24,7 +24,7 @@ object DocumentSetCreationJobStore extends BaseStore(models.orm.Schema.documentS
    * This method is actually a lot simpler than what we had before. [adam edit - even simpler now!]
    */
   def findCancellableJobByDocumentSetAndCancel(documentSetId: Long): Option[DocumentSetCreationJob] = {
-    import org.overviewproject.postgres.SquerylEntrypoint._
+    import com.overviewdocs.postgres.SquerylEntrypoint._
 
     val runningJobs = from(Schema.documentSetCreationJobs)(dscj =>
       where(dscj.documentSetId === documentSetId and dscj.jobType <> Recluster)

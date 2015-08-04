@@ -1,12 +1,12 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 
 import akka.actor._
 import javax.jms.Connection
 import scala.concurrent.duration._
 
-import org.overviewproject.messagequeue.MessageHandlerProtocol._
-import org.overviewproject.util.Logger
+import com.overviewdocs.messagequeue.MessageHandlerProtocol._
+import com.overviewdocs.util.Logger
 
 object AcknowledgingMessageReceiverFSM {
   sealed trait State
@@ -49,7 +49,7 @@ import AcknowledgingMessageReceiverFSM._
  */
 abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) extends Actor with FSM[State, Data] with MessageHandling[T] {
   import AcknowledgingMessageReceiverProtocol._
-  import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
+  import com.overviewdocs.messagequeue.ConnectionMonitorProtocol._
 
   private val logger = Logger.forClass(getClass)
 

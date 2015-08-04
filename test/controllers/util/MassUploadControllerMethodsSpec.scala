@@ -9,8 +9,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.test.factories.PodoFactory
+import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.test.factories.PodoFactory
 
 class MassUploadControllerMethodsSpec extends controllers.ControllerSpecification with JsonMatchers {
   "Create" should {

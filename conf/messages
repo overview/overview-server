@@ -71,7 +71,7 @@ models.DocumentSetCreationJob.state.NotStarted=queued
 models.DocumentSetCreationJob.state.FilesUploaded=processing uploaded files
 models.DocumentSetCreationJob.state.TextExtractionInProgress=processing uploaded files
 
-org.overviewproject.query.SyntaxError=Your search is invalid. Check that you have an even number of parentheses and you put AND or OR between terms.
+com.overviewdocs.query.SyntaxError=Your search is invalid. Check that you have an even number of parentheses and you put AND or OR between terms.
 
 time_display.datetime.medium={0,date,medium} at {0,time,medium}
 

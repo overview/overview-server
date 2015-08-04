@@ -1,6 +1,6 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.test.DbSpecification
 
 /** Find [[File]] ids where `referenceCount == 0` */
 class DeletedFileFinderSpec extends DbSpecification {

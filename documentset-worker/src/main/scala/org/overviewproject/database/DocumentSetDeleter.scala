@@ -1,9 +1,9 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import scala.concurrent.Future 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.models.tables._
+import com.overviewdocs.models.tables._
 
 trait DocumentSetDeleter extends HasDatabase {
   import database.api._

@@ -1,8 +1,8 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
 import java.sql.Timestamp
 import org.squeryl.KeyedEntity
-import org.overviewproject.postgres.SquerylEntrypoint._
+import com.overviewdocs.postgres.SquerylEntrypoint._
 import java.util.Date
 
 case class UploadedFile(

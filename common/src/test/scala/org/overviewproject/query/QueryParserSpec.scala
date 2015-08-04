@@ -1,4 +1,4 @@
-package org.overviewproject.query
+package com.overviewdocs.query
 
 import org.specs2.mutable.Specification
 

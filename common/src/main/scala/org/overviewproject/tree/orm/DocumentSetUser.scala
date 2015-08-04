@@ -1,11 +1,11 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
 import org.squeryl.KeyedEntity
 import org.squeryl.dsl.CompositeKey2
 
-import org.overviewproject.postgres.PostgresqlEnum
-import org.overviewproject.postgres.SquerylEntrypoint.compositeKey
-import org.overviewproject.tree.Ownership
+import com.overviewdocs.postgres.PostgresqlEnum
+import com.overviewdocs.postgres.SquerylEntrypoint.compositeKey
+import com.overviewdocs.tree.Ownership
 
 case class DocumentSetUser(
   documentSetId: Long, 

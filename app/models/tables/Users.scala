@@ -3,8 +3,8 @@ package models.tables
 import java.sql.Timestamp
 
 import models.User
-import org.overviewproject.models.UserRole
-import org.overviewproject.database.Slick.api._
+import com.overviewdocs.models.UserRole
+import com.overviewdocs.database.Slick.api._
 
 class UsersImpl(tag: Tag) extends Table[User](tag, "user") {
   def id = column[Long]("id", O.PrimaryKey)

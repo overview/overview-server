@@ -1,10 +1,10 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.sql.Timestamp
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models.DocumentSet
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models.DocumentSet
 
 class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set") {
   def id = column[Long]("id", O.PrimaryKey)

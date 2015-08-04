@@ -1,9 +1,9 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.models.tables.TempDocumentSetFiles
+import com.overviewdocs.models.tables.TempDocumentSetFiles
 
 /**
  * Deletes [[File]]s referenced by [[TempDocumentSetFile]] entries.

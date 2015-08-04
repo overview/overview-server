@@ -1,6 +1,6 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
-import org.overviewproject.postgres.SquerylEntrypoint._
+import com.overviewdocs.postgres.SquerylEntrypoint._
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName(propertyName: String) = NamingConventionTransforms.snakify(propertyName)

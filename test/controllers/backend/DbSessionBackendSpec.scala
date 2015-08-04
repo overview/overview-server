@@ -5,7 +5,7 @@ import java.sql.Timestamp
 
 import models.{Session=>OSession,User} // beware database.Slick.simple.Session
 import models.tables.{Sessions,Users}
-import org.overviewproject.postgres.InetAddress
+import com.overviewdocs.postgres.InetAddress
 
 class DbSessionBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

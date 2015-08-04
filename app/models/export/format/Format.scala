@@ -3,7 +3,7 @@ package models.export.format
 import java.io.{FileInputStream,OutputStream}
 import scala.concurrent.{Future,blocking}
 
-import org.overviewproject.util.TempFile
+import com.overviewdocs.util.TempFile
 import models.export.rows.Rows
 
 trait Format {
@@ -29,7 +29,7 @@ trait Format {
     * We return a FileInputStream so callers can incorporate java.nio features.
     *
     * @see writeContentsToOutputStream
-    * @see org.overviewproject.util.TempFile
+    * @see com.overviewdocs.util.TempFile
     */
   def getContentsAsInputStream(rows: Rows): Future[FileInputStream] = {
     val tempFile = blocking(new TempFile)

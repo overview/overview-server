@@ -2,7 +2,7 @@ package views.json.Tag
 
 import play.api.libs.json.{JsArray,JsValue,Json}
 
-import org.overviewproject.models.Tag
+import com.overviewdocs.models.Tag
 
 object index {
   def withDocsetCounts(tags: Seq[(Tag,Long)]) = {

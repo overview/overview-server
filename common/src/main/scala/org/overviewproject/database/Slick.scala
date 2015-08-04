@@ -1,13 +1,13 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import com.github.tminglei.slickpg._
 import play.api.libs.json.{ JsObject, Json }
 import slick.driver.{ JdbcTypesComponent, PostgresDriver }
 
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models.{DocumentSetCreationJobState, DocumentSetCreationJobType, DocumentSetUser, UserRole}
-import org.overviewproject.models.DocumentDisplayMethod
-import org.overviewproject.postgres.InetAddress
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models.{DocumentSetCreationJobState, DocumentSetCreationJobType, DocumentSetUser, UserRole}
+import com.overviewdocs.models.DocumentDisplayMethod
+import com.overviewdocs.postgres.InetAddress
 
 trait MyPostgresDriver extends PostgresDriver
   with PgArraySupport
@@ -72,7 +72,7 @@ trait MyPostgresDriver extends PostgresDriver
  *
  * Usage:
  *
- *   import org.overviewproject.database.Slick.api._
+ *   import com.overviewdocs.database.Slick.api._
  *   ... do stuff like at http://slick.typesafe.com/doc/3.0.0
  */
 object Slick extends MyPostgresDriver

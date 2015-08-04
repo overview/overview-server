@@ -1,14 +1,14 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 import akka.actor._
 import akka.testkit._
 
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.messagequeue.MessageHandlerProtocol._
-import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
-import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
-import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+import com.overviewdocs.jobhandler.JobProtocol._
+import com.overviewdocs.messagequeue.ConnectionMonitorProtocol._
+import com.overviewdocs.messagequeue.MessageHandlerProtocol._
+import com.overviewdocs.messagequeue.AcknowledgingMessageReceiverProtocol._
+import com.overviewdocs.messagequeue.MessageQueueConnectionProtocol._
+import com.overviewdocs.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 

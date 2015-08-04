@@ -1,8 +1,8 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasDatabase
+import com.overviewdocs.database.HasDatabase
 
 trait SortedDocumentIdsRefresher extends HasDatabase {
   import database.api._

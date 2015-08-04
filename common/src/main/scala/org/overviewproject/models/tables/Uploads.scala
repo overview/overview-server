@@ -1,10 +1,10 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.sql.Timestamp
 import java.util.UUID
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.Upload
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.Upload
 
 class UploadsImpl(tag: Tag) extends Table[Upload](tag, "upload") {
   def id = column[Long]("id", O.PrimaryKey)

@@ -4,9 +4,9 @@ import play.api.libs.json.JsObject
 import scala.concurrent.Future
 import scala.util.{Failure,Success}
 
-import org.overviewproject.database.exceptions
-import org.overviewproject.models.tables.Stores
-import org.overviewproject.models.Store
+import com.overviewdocs.database.exceptions
+import com.overviewdocs.models.tables.Stores
+import com.overviewdocs.models.Store
 
 /** Stores stores.
   *

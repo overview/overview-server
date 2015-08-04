@@ -1,7 +1,7 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.util.Logger
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.util.Logger
 
 trait InDatabaseCloner extends HasBlockingDatabase {
   protected val logger: Logger = Logger.forClass(getClass)

@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.{Date,UUID}
 import org.squeryl.KeyedEntity
 
-import org.overviewproject.postgres.InetAddress
+import com.overviewdocs.postgres.InetAddress
 
 /** A user's session in the database.
   *

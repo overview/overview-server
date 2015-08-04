@@ -6,7 +6,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.{Mode,Play}
 import scala.concurrent.Future
 
-import org.overviewproject.database.DB
+import com.overviewdocs.database.DB
 
 
 /** Provides a DataSource.

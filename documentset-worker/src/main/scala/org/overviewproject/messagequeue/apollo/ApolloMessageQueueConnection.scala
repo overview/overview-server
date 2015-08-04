@@ -1,11 +1,11 @@
-package org.overviewproject.messagequeue.apollo
+package com.overviewdocs.messagequeue.apollo
 
 import javax.jms.Connection
 import scala.util.Try
 import akka.actor.Props
 import org.fusesource.stomp.jms.StompJmsConnectionFactory
-import org.overviewproject.messagequeue.MessageQueueConnection
-import org.overviewproject.util.Configuration
+import com.overviewdocs.messagequeue.MessageQueueConnection
+import com.overviewdocs.util.Configuration
 
 
 /**

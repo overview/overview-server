@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
 import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 
 class TestCreateDocumentsJobShepherd(
     val documentSetId: Long,

@@ -1,6 +1,6 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.test.DbSpecification
 
 class DeletedFileGroupFinderSpec extends DbSpecification {
   

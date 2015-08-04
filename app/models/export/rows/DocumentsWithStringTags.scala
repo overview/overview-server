@@ -3,8 +3,8 @@ package models.export.rows
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-import org.overviewproject.metadata.{Metadata,MetadataSchema}
-import org.overviewproject.models.Tag
+import com.overviewdocs.metadata.{Metadata,MetadataSchema}
+import com.overviewdocs.models.Tag
 
 object DocumentsWithStringTags {
   def apply(metadataSchema: MetadataSchema, result: Enumerator[DocumentForCsvExport], tags: Seq[Tag]): Rows = {

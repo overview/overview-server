@@ -1,9 +1,9 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
 import scala.concurrent.Future
 
-import org.overviewproject.query.Query
-import org.overviewproject.models.Document
+import com.overviewdocs.query.Query
+import com.overviewdocs.models.Document
 
 /** Interacts with a search index.
   *

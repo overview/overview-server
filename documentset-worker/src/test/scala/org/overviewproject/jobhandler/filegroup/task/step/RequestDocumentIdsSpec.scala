@@ -1,10 +1,10 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import org.overviewproject.jobhandler.filegroup.DocumentIdSupplierProtocol._
-import org.overviewproject.models.Document
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
+import com.overviewdocs.models.Document
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification

@@ -1,4 +1,4 @@
-package org.overviewproject.tree.orm.finders
+package com.overviewdocs.tree.orm.finders
 
 import scala.language.implicitConversions
 

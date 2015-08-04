@@ -5,7 +5,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.i18n.{Lang,Messages}
 
-import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState}
 import test.helpers.MockMessagesApi
 
 class DocumentSetHelperSpec extends Specification with Mockito {

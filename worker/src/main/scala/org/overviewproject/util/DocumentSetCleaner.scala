@@ -1,8 +1,8 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.tables.Documents
+import com.overviewdocs.models.tables.Documents
 
 trait DocumentSetCleaner extends JobUpdater {
   import database.api._

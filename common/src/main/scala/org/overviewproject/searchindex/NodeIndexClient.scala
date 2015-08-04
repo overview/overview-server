@@ -1,11 +1,11 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
 import org.elasticsearch.client.Client
 import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.node.{Node,NodeBuilder}
 import scala.concurrent.Future
 
-import org.overviewproject.util.Configuration
+import com.overviewdocs.util.Configuration
 
 /** An ElasticSearch client that connects as a peer.
   *

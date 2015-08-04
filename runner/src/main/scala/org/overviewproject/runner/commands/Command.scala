@@ -1,4 +1,4 @@
-package org.overviewproject.runner.commands
+package com.overviewdocs.runner.commands
 
 /** A command that can be run.
   *

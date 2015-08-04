@@ -1,10 +1,10 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
 import scala.collection.mutable
 
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
 
 /**
  * Takes care of all the little tasks needed to complete a job. Keeps track of when the job

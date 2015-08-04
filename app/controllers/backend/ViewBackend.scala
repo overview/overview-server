@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.View
-import org.overviewproject.models.tables.Views
+import com.overviewdocs.models.View
+import com.overviewdocs.models.tables.Views
 
 trait ViewBackend {
   /** Lists all Views for a DocumentSet.

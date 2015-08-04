@@ -1,12 +1,12 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import scala.concurrent.duration.DurationInt
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.TestProbe
-import org.overviewproject.background.filecleanup.DeletedFileCleanerProtocol._
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol.RemoveFiles
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.background.filecleanup.DeletedFileCleanerProtocol._
+import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol.RemoveFiles
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions

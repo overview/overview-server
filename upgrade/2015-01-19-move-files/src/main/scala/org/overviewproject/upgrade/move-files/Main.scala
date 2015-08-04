@@ -1,15 +1,15 @@
-package org.overviewproject.upgrade.move_files
+package com.overviewdocs.upgrade.move_files
 
 import play.api.libs.iteratee.Iteratee
 import scala.concurrent.{Await,Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
-import org.overviewproject.database.{DB,DataSource,DatabaseConfiguration}
-import org.overviewproject.models.File
-import org.overviewproject.models.tables.Files
-import org.overviewproject.util.TempFile
+import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
+import com.overviewdocs.database.{DB,DataSource,DatabaseConfiguration}
+import com.overviewdocs.models.File
+import com.overviewdocs.models.tables.Files
+import com.overviewdocs.util.TempFile
 
 /** Move File blobs to wherever it is configured to go in application.conf.
   *
@@ -110,7 +110,7 @@ object Main {
     DB.withConnection { connection =>
       val session = DB.slickSession(connection)
 
-      import org.overviewproject.database.Slick.simple._
+      import com.overviewdocs.database.Slick.simple._
       Files
         .filter(_.id === file.id)
         .map((f) => (f.contentsLocation, f.viewLocation))
@@ -130,7 +130,7 @@ object Main {
     DB.withConnection { connection =>
       val session = DB.slickSession(connection)
 
-      import org.overviewproject.database.Slick.simple._
+      import com.overviewdocs.database.Slick.simple._
       Files
         .filter(!_.contentsLocation.startsWith("s3:"))
         .take(limit)

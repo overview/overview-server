@@ -1,4 +1,4 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.{LargeObject=>PGLargeObject}

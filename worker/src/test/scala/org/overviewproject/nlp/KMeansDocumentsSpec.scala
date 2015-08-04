@@ -7,7 +7,7 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import java.io.File
 import org.specs2.mutable.Specification

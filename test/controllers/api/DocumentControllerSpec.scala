@@ -8,8 +8,8 @@ import controllers.auth.ApiAuthorizedRequest
 import controllers.backend.{DocumentBackend,DocumentSetBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{InMemorySelection,Selection}
-import org.overviewproject.models.DocumentHeader
-import org.overviewproject.metadata.{MetadataSchema,MetadataField,MetadataFieldType}
+import com.overviewdocs.models.DocumentHeader
+import com.overviewdocs.metadata.{MetadataSchema,MetadataField,MetadataFieldType}
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {

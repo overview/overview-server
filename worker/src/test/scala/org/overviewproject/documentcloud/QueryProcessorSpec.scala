@@ -1,18 +1,18 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import java.net.URLEncoder
-import org.overviewproject.documentcloud.QueryProcessorProtocol.GetPage
-import org.overviewproject.http.{Credentials, PrivateRequest, PublicRequest}
-import org.overviewproject.http.RequestQueueProtocol.{AddToFront, Result}
-import org.overviewproject.test.{ActorSystemContext, TestSimpleResponse}
-import org.overviewproject.util.Configuration
+import com.overviewdocs.documentcloud.QueryProcessorProtocol.GetPage
+import com.overviewdocs.http.{Credentials, PrivateRequest, PublicRequest}
+import com.overviewdocs.http.RequestQueueProtocol.{AddToFront, Result}
+import com.overviewdocs.test.{ActorSystemContext, TestSimpleResponse}
+import com.overviewdocs.util.Configuration
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import akka.testkit.{TestActorRef, TestProbe}
 import org.specs2.mutable.Before
-import org.overviewproject.http.RequestQueueProtocol.Failure
+import com.overviewdocs.http.RequestQueueProtocol.Failure
 
 
 class QueryProcessorSpec extends Specification with NoTimeConversions with Mockito {

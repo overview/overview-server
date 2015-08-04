@@ -1,12 +1,12 @@
-package org.overviewproject.test.factories
+package com.overviewdocs.test.factories
 
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import scala.util.Random
 
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models._
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models._
 
 /** Plain Old Data Object factory.
   *

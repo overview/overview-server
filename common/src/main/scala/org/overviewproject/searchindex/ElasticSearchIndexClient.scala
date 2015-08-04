@@ -1,4 +1,4 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
 import org.elasticsearch.ElasticsearchWrapperException
 import org.elasticsearch.action.{ActionListener,ActionRequest,ActionRequestBuilder,ActionResponse}
@@ -13,9 +13,9 @@ import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
 
-import org.overviewproject.models.Document
-import org.overviewproject.query.Query
-import org.overviewproject.util.Logger
+import com.overviewdocs.models.Document
+import com.overviewdocs.query.Query
+import com.overviewdocs.util.Logger
 
 /** ElasticSearch index client.
   *
@@ -341,7 +341,7 @@ trait ElasticSearchIndexClient extends IndexClient {
   }
 
   protected implicit class QueryForElasticSearch(query: Query) {
-    import org.overviewproject.query._
+    import com.overviewdocs.query._
 
     private def repr(field: Field): String = field match {
       case Field.All => "_all"

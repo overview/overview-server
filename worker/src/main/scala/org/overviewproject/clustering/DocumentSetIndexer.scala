@@ -8,19 +8,19 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import java.sql.Connection
 
-import org.overviewproject.database.{ DeprecatedDatabase, DB }
-import org.overviewproject.persistence.{ DocumentWriter, NodeWriter }
-import org.overviewproject.util.{ DocumentConsumer, Logger }
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
-import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
-import org.overviewproject.nlp.WeightedLexer
-import org.overviewproject.nlp.BigramDocumentVectorGenerator
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.nlp.StopWordSet
+import com.overviewdocs.database.{ DeprecatedDatabase, DB }
+import com.overviewdocs.persistence.{ DocumentWriter, NodeWriter }
+import com.overviewdocs.util.{ DocumentConsumer, Logger }
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
+import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
+import com.overviewdocs.nlp.WeightedLexer
+import com.overviewdocs.nlp.BigramDocumentVectorGenerator
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.StopWordSet
 
 // Home for all indexing and clustering options.
 // Instantiate this to pass down call chain, plus it contains our defaults

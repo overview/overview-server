@@ -1,12 +1,12 @@
-package org.overviewproject
+package com.overviewdocs
 
 import akka.actor._
 import akka.actor.SupervisorStrategy._
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorker
-import org.overviewproject.jobhandler.filegroup.task.TempDirectory
-import org.overviewproject.util.{BulkDocumentWriter,Logger}
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorker
+import com.overviewdocs.jobhandler.filegroup.task.TempDirectory
+import com.overviewdocs.util.{BulkDocumentWriter,Logger}
 
 object FileGroupTaskWorkerStartup {
 

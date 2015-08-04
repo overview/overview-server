@@ -3,7 +3,7 @@ package controllers.forms
 import play.api.data.Form
 import play.api.data.Forms._
 
-import org.overviewproject.jobs.models.Search
+import com.overviewdocs.jobs.models.Search
 
 object SearchForm {
   def apply(documentSetId: Long) : Form[Search] = {

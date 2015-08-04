@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.Page
-import org.overviewproject.models.tables.Pages
+import com.overviewdocs.models.Page
+import com.overviewdocs.models.tables.Pages
 
 trait PageBackend {
   /** Returns a single Page. */

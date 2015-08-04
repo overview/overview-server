@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import java.math.BigInteger
 import java.security.SecureRandom

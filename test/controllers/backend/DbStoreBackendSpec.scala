@@ -2,9 +2,9 @@ package controllers.backend
 
 import play.api.libs.json.Json
 
-import org.overviewproject.database.exceptions
-import org.overviewproject.models.Store
-import org.overviewproject.models.tables.{DocumentStoreObjects,StoreObjects,Stores}
+import com.overviewdocs.database.exceptions
+import com.overviewdocs.models.Store
+import com.overviewdocs.models.tables.{DocumentStoreObjects,StoreObjects,Stores}
 
 class DbStoreBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

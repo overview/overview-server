@@ -1,12 +1,12 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import akka.actor.{ ActorRef, Props }
 import akka.testkit.TestProbe
 import scala.concurrent.Future
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.Before
 
 

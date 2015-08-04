@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import scala.collection.mutable
 import akka.actor.Actor
@@ -6,10 +6,10 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.Terminated
 
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
-import org.overviewproject.util.Logger
+import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.util.Logger
 
 trait FileGroupJob {
   val fileGroupId: Long

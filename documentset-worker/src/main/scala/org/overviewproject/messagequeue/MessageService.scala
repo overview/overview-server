@@ -1,4 +1,4 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 import javax.jms.Connection
 

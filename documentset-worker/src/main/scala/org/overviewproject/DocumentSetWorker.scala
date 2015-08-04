@@ -1,20 +1,20 @@
-package org.overviewproject
+package com.overviewdocs
 
 import akka.actor._
 import akka.actor.SupervisorStrategy._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-import org.overviewproject.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
-import org.overviewproject.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
-import org.overviewproject.database.DB
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
-import org.overviewproject.jobhandler.filegroup._
-import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
-import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
-import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
-import org.overviewproject.util.BulkDocumentWriter
-import org.overviewproject.util.Logger
+import com.overviewdocs.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
+import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
+import com.overviewdocs.database.DB
+import com.overviewdocs.jobhandler.documentset.DocumentSetJobHandler
+import com.overviewdocs.jobhandler.filegroup._
+import com.overviewdocs.messagequeue.AcknowledgingMessageReceiverProtocol._
+import com.overviewdocs.messagequeue.apollo.ApolloMessageQueueConnection
+import com.overviewdocs.messagequeue.MessageQueueConnectionProtocol._
+import com.overviewdocs.util.BulkDocumentWriter
+import com.overviewdocs.util.Logger
 
 object ActorCareTakerProtocol {
   case object StartListening

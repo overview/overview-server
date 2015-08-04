@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import org.slf4j.LoggerFactory
 import org.slf4j.{Logger => JLogger}

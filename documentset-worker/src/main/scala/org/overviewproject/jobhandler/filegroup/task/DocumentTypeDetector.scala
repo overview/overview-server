@@ -1,8 +1,9 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
-import org.overviewproject.mime_types.MimeTypeDetector
 import java.io.BufferedInputStream
+
+import org.overviewproject.mime_types.MimeTypeDetector
 
 trait DocumentTypeDetector {
 

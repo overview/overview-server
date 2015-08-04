@@ -2,7 +2,7 @@ package views.json.Document
 
 import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.models.Document
+import com.overviewdocs.models.Document
 
 object show {
   def apply(document: Document): JsValue = {

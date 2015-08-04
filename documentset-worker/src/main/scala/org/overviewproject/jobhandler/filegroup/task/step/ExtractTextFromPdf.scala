@@ -1,12 +1,12 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.Exception.ultimately
 
-import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
-import org.overviewproject.models.File
+import com.overviewdocs.jobhandler.filegroup.task.PdfBoxDocument
+import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
+import com.overviewdocs.models.File
 
 /**
  * Extract the text from a [[File]]'s PDF view.
@@ -38,7 +38,7 @@ trait ExtractTextFromPdf extends UploadedFileProcessStep {
 
 object ExtractTextFromPdf {
   import scala.concurrent.blocking
-  import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
+  import com.overviewdocs.jobhandler.filegroup.task.PdfBoxDocument
 
   def apply(documentSetId: Long, file: File,
             next: Seq[DocumentData] => TaskStep)(implicit executor: ExecutionContext): ExtractTextFromPdf =

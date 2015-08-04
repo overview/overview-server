@@ -1,7 +1,7 @@
-package org.overviewproject.messagequeue.apollo
+package com.overviewdocs.messagequeue.apollo
 
 import akka.actor._
-import org.overviewproject.messagequeue.{ MessageContainer, MessageReceiver }
+import com.overviewdocs.messagequeue.{ MessageContainer, MessageReceiver }
 
 /**
  * Helper for creating MessageReceivers listening to a given apollo Message queue

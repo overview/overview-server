@@ -1,9 +1,9 @@
-package org.overviewproject.tree.orm.stores
+package com.overviewdocs.tree.orm.stores
 
 import org.squeryl.{ KeyedEntity, KeyedEntityDef, Query, Table }
 import org.squeryl.dsl.QueryDsl
 
-import org.overviewproject.postgres.SquerylEntrypoint._
+import com.overviewdocs.postgres.SquerylEntrypoint._
 
 class BaseStore[A](protected val table: Table[A]) {
   implicit protected val ked: KeyedEntityDef[A,_] = table.ked.getOrElse(throw new AssertionError("Need KeyedEntityDef"))
@@ -27,7 +27,7 @@ class BaseStore[A](protected val table: Table[A]) {
 
   /** Deletes the object by the given key.
     *
-    * Warning: you _must_ import org.overviewproject.postgres.SquerylEntrypoint._
+    * Warning: you _must_ import com.overviewdocs.postgres.SquerylEntrypoint._
     * before calling this method, or it will not compile.
     */
   def delete[K](k: K)(implicit ked: KeyedEntityDef[A,K]) : Unit = {

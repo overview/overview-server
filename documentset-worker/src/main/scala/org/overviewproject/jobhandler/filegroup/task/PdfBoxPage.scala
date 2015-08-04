@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -9,7 +9,7 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.util.PDFTextStripper
 import org.apache.pdfbox.util.TextPosition
-import org.overviewproject.util.Textify
+import com.overviewdocs.util.Textify
 
 trait PdfBoxPage extends PdfPage {
 

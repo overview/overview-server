@@ -8,7 +8,7 @@
  *
  */
 
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import akka.actor._
 import org.slf4j.LoggerFactory

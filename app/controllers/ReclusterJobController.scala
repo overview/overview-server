@@ -5,8 +5,8 @@ import controllers.auth.Authorities.userOwningJob
 import controllers.util.JobQueueSender
 import models.orm.finders.DocumentSetCreationJobFinder
 import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.jobs.models.DeleteTreeJob
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
+import com.overviewdocs.jobs.models.DeleteTreeJob
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
 
 trait ReclusterJobController extends Controller {
   trait Storage {

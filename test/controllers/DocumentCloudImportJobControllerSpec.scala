@@ -6,8 +6,8 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedRequest
 import controllers.backend.DocumentSetBackend
 import models.DocumentCloudImportJob
-import org.overviewproject.models.DocumentSet
-import org.overviewproject.test.factories.{PodoFactory=>factory}
+import com.overviewdocs.models.DocumentSet
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class DocumentCloudImportJobControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {

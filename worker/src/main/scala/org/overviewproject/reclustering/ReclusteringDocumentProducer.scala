@@ -1,15 +1,15 @@
-package org.overviewproject.reclustering
+package com.overviewdocs.reclustering
 
 import scala.concurrent.{ExecutionContext,Future}
 import slick.backend.DatabasePublisher
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.Document
-import org.overviewproject.models.tables.{DocumentTags,Documents}
-import org.overviewproject.util.DocumentConsumer
-import org.overviewproject.util.DocumentProducer
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
-import org.overviewproject.util.Progress._
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.Document
+import com.overviewdocs.models.tables.{DocumentTags,Documents}
+import com.overviewdocs.util.DocumentConsumer
+import com.overviewdocs.util.DocumentProducer
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.Retrieving
+import com.overviewdocs.util.Progress._
 
 trait ReclusteringDocumentProducer extends DocumentProducer {
   protected class AbortedException extends Exception

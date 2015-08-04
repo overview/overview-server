@@ -4,7 +4,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{ActionBuilder, RequestHeader, Request, Result}
 import scala.concurrent.Future
 
-import org.overviewproject.database.DeprecatedDatabase
+import com.overviewdocs.database.DeprecatedDatabase
 import models.{Session,User}
 
 trait AuthorizedAction {

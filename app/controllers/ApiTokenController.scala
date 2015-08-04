@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
 import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
 import controllers.backend.ApiTokenBackend
-import org.overviewproject.models.ApiToken
+import com.overviewdocs.models.ApiToken
 
 trait ApiTokenController extends Controller {
   protected val backend: ApiTokenBackend

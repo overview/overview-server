@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import scala.collection.mutable.{Map,IndexedSeq}
 import scala.util.Random

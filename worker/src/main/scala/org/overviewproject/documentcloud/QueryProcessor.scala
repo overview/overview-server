@@ -1,11 +1,11 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import akka.actor._
 import java.net.URLEncoder
 
-import org.overviewproject.http._
-import org.overviewproject.http.RequestQueueProtocol._
-import org.overviewproject.util.{Configuration,Logger}
+import com.overviewdocs.http._
+import com.overviewdocs.http.RequestQueueProtocol._
+import com.overviewdocs.util.{Configuration,Logger}
 
 /** Messages sent when interacting with QueryProcessor */
 object QueryProcessorProtocol {

@@ -12,11 +12,11 @@
  * Created by Jonathan Stray, October 2013
  *
  */
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import scala.util.control.Exception._
-import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
-import org.overviewproject.util.DisplayedError
+import com.overviewdocs.nlp.DocumentVectorTypes.TermWeight
+import com.overviewdocs.util.DisplayedError
 
 case class WeightedTermString(term:String,weight:TermWeight)
 

@@ -1,6 +1,6 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol.TaskWorkerTask
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol.TaskWorkerTask
 
 trait TaskQueue {
   def isEmpty: Boolean

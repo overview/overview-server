@@ -8,7 +8,7 @@
  */
 
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set

@@ -1,4 +1,4 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 import akka.actor._
 import javax.jms.{ Connection, ExceptionListener, JMSException }
@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
-import org.overviewproject.util.{ Configuration, Logger }
+import com.overviewdocs.util.{ Configuration, Logger }
 
 /**
  * An actor managing the connection that hosts all message queues. Message queue clients

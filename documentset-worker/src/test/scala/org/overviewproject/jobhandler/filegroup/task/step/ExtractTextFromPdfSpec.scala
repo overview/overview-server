@@ -1,13 +1,13 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.overviewproject.models.Document
+import com.overviewdocs.models.Document
 import org.specs2.mock.Mockito
-import org.overviewproject.models.File
+import com.overviewdocs.models.File
 import scala.concurrent.Future
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
+import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
 import scala.concurrent.ExecutionContext
 
 class ExtractTextFromPdfSpec extends Specification with Mockito {

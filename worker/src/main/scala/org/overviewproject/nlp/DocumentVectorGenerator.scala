@@ -9,13 +9,13 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import scala.collection.mutable.{Map, HashMap}
 import scala.math.Numeric
 
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.util.{Logger, DisplayedError}
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.util.{Logger, DisplayedError}
 
 // Error object
 case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer)

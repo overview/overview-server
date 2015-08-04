@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler.filegroup.task.process
+package com.overviewdocs.jobhandler.filegroup.task.process
 
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorRef
-import org.overviewproject.util.BulkDocumentWriter
+import com.overviewdocs.util.BulkDocumentWriter
 
 
 

@@ -1,4 +1,4 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 import play.api.libs.json._
 import play.api.libs.functional.syntax.functionalCanBuildApplicative

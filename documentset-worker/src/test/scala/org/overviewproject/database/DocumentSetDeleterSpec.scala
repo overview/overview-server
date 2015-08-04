@@ -1,8 +1,8 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.{ Document, DocumentSet, UploadedFile }
-import org.overviewproject.models.tables.{ Documents, DocumentSets, Files, Pages, UploadedFiles }
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.{ Document, DocumentSet, UploadedFile }
+import com.overviewdocs.models.tables.{ Documents, DocumentSets, Files, Pages, UploadedFiles }
 
 class DocumentSetDeleterSpec extends DbSpecification {
 

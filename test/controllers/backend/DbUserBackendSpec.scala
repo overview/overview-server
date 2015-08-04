@@ -6,9 +6,9 @@ import java.sql.{SQLException,Timestamp}
 import models.User
 import models.pagination.PageRequest
 import models.tables.Users
-import org.overviewproject.database.LargeObject
-import org.overviewproject.database.exceptions
-import org.overviewproject.models.UserRole
+import com.overviewdocs.database.LargeObject
+import com.overviewdocs.database.exceptions
+import com.overviewdocs.models.UserRole
 
 class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
@@ -137,7 +137,7 @@ class DbUserBackendSpec extends DbBackendSpecification {
 
     "destroy a user's uploads" in new DestroyScope {
       import database.api._
-      import org.overviewproject.models.tables.{UploadedFiles,Uploads}
+      import com.overviewdocs.models.tables.{UploadedFiles,Uploads}
 
       val loManager = blockingDatabase.largeObjectManager
 

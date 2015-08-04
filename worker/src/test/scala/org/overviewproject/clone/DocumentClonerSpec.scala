@@ -1,9 +1,9 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.persistence.DocumentSetIdGenerator
-import org.overviewproject.models.{Document,DocumentSet,File}
-import org.overviewproject.models.tables.{Documents,Files}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.persistence.DocumentSetIdGenerator
+import com.overviewdocs.models.{Document,DocumentSet,File}
+import com.overviewdocs.models.tables.{Documents,Files}
+import com.overviewdocs.test.DbSpecification
 
 class DocumentClonerSpec extends DbSpecification {
   "DocumentCloner" should {

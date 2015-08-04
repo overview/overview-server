@@ -1,4 +1,4 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import scala.concurrent.duration._
 import akka.actor.{ ActorRef, Props }
@@ -7,10 +7,10 @@ import akka.testkit.TestProbe
 import org.specs2.mutable.Specification
 import org.specs2.mutable.Before
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.test.ActorSystemContext
 
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
-import org.overviewproject.background.filegroupcleanup.FileGroupCleanerProtocol._
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import com.overviewdocs.background.filegroupcleanup.FileGroupCleanerProtocol._
 
 class FileGroupRemovalRequestQueueSpec extends Specification with NoTimeConversions {
 

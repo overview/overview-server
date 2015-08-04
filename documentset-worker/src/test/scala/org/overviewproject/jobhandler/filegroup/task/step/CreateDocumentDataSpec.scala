@@ -1,10 +1,10 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
-import org.overviewproject.models.File
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
+import com.overviewdocs.models.File
+import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration

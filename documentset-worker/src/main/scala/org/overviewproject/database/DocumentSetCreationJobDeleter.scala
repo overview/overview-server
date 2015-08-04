@@ -1,11 +1,11 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.{DocumentSetCreationJob,DocumentSetCreationJobState}
-import org.overviewproject.models.tables.DocumentSetCreationJobs
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.{DocumentSetCreationJob,DocumentSetCreationJobState}
+import com.overviewdocs.models.tables.DocumentSetCreationJobs
 
 trait DocumentSetCreationJobDeleter extends HasDatabase {
   import database.api._

@@ -4,12 +4,12 @@
  * Overview
  * Created by Jonas Karlsson, November 2012
  */
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
 import java.sql.Connection
 
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.tree.orm.UploadedFile
+import com.overviewdocs.persistence.orm.Schema
+import com.overviewdocs.tree.orm.UploadedFile
 
 /** Information describing an uploaded file */
 trait EncodedUploadFile {
@@ -30,7 +30,7 @@ trait EncodedUploadFile {
 
 /** Helper for loading an UploadedFile from the database */
 object EncodedUploadFile {
-  import org.overviewproject.postgres.SquerylEntrypoint._
+  import com.overviewdocs.postgres.SquerylEntrypoint._
 
   /** @return the UploadedFile specified by the uploadedFileId */
   def load(uploadedFileId: Long)(implicit c: Connection): EncodedUploadFile = {

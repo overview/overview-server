@@ -3,9 +3,9 @@ package controllers.backend
 import scala.concurrent.Future
 
 import models.pagination.{Page,PageRequest}
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models.{ApiToken,DocumentSet,DocumentSetUser,View}
-import org.overviewproject.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
+import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
 
 trait DocumentSetBackend {
   /** Creates a DocumentSet, a DocumentSetUser, and one View per autocreate Plugin.

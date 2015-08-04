@@ -4,7 +4,7 @@ import java.util.Date
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-import org.overviewproject.tree.orm.Node
+import com.overviewdocs.tree.orm.Node
 
 class indexSpec extends Specification with JsonMatchers {
   private def buildNode(id: Long, parentId: Option[Long], cachedSize: Int) : Node = {

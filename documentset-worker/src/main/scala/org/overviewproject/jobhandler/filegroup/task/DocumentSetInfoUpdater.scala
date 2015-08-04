@@ -1,12 +1,12 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.tables.{Documents,DocumentProcessingErrors}
-import org.overviewproject.models.tables.DocumentSets
-import org.overviewproject.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.tables.{Documents,DocumentProcessingErrors}
+import com.overviewdocs.models.tables.DocumentSets
+import com.overviewdocs.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
 
 trait DocumentSetInfoUpdater extends SortedDocumentIdsRefresher with HasDatabase {
   import database.api._

@@ -1,6 +1,6 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
-import org.overviewproject.models.Document
+import com.overviewdocs.models.Document
 
 trait DocumentData {
   def toDocument(documentSetId: Long, documentId: Long): Document

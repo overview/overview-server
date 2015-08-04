@@ -11,7 +11,7 @@ import play.twirl.api.Html
 import play.api.test.FakeRequest
 
 import models.{User=>UserModel}
-import org.overviewproject.models.UserRole
+import com.overviewdocs.models.UserRole
 import test.helpers.MockMessagesApi
 
 class ViewSpecification extends test.helpers.InAppSpecification with Mockito with JsonMatchers {
@@ -19,7 +19,7 @@ class ViewSpecification extends test.helpers.InAppSpecification with Mockito wit
   def fakeUser: UserModel = UserModel(email="user@example.org", role=UserRole.NormalUser)
 
   trait ViewSpecificationScope[Result] extends Scope {
-    val factory = org.overviewproject.test.factories.PodoFactory
+    val factory = com.overviewdocs.test.factories.PodoFactory
     implicit def request: RequestHeader = FakeRequest()
     implicit def flash: Flash = Flash()
     implicit def messages: Messages = new Messages(Lang("en"), new MockMessagesApi())

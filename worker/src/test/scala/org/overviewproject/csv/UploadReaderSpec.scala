@@ -1,10 +1,10 @@
-package org.overviewproject.csv
+package com.overviewdocs.csv
 
 import java.io.Reader
 import java.nio.charset.Charset
 
-import org.overviewproject.database.LargeObject
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.database.LargeObject
+import com.overviewdocs.test.DbSpecification
 
 class UploadReaderSpec extends DbSpecification {
   trait BaseScope extends DbScope {

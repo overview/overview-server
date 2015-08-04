@@ -8,7 +8,7 @@ import scala.reflect.classTag
 import controllers.backend.{StoreBackend,StoreObjectBackend}
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.{anyUser,userOwningStoreObject}
-import org.overviewproject.models.StoreObject
+import com.overviewdocs.models.StoreObject
 
 trait StoreObjectController extends ApiController {
   protected val storeBackend: StoreBackend

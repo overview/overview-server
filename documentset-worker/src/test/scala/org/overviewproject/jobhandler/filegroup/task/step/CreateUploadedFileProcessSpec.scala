@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import akka.actor.ActorRef
 import scala.concurrent.ExecutionContext
@@ -6,12 +6,12 @@ import scala.concurrent.Future
 import slick.jdbc.JdbcBackend.Session
 import org.specs2.mock.Mockito
 
-import org.overviewproject.jobhandler.filegroup.task.UploadedFileProcessCreator
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
-import org.overviewproject.jobhandler.filegroup.task.process.UploadedFileProcess
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.util.BulkDocumentWriter
+import com.overviewdocs.jobhandler.filegroup.task.UploadedFileProcessCreator
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.jobhandler.filegroup.task.process.UploadedFileProcess
+import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.util.BulkDocumentWriter
 
 class CreateUploadedFileProcessSpec extends DbSpecification with Mockito {
 

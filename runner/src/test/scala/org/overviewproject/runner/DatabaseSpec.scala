@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import scala.language.reflectiveCalls
 
@@ -8,7 +8,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import org.overviewproject.runner.commands.Command
+import com.overviewdocs.runner.commands.Command
 
 class DatabaseSpec extends Specification with Mockito {
   trait BaseScope extends Scope {

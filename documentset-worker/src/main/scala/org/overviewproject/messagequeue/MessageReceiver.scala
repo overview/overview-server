@@ -1,4 +1,4 @@
-package org.overviewproject.messagequeue
+package com.overviewdocs.messagequeue
 
 
 import scala.concurrent.duration._
@@ -6,9 +6,9 @@ import scala.util.{Failure, Success, Try}
 
 import akka.actor._
 
-import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
-import org.overviewproject.util.Logger
+import com.overviewdocs.messagequeue.ConnectionMonitorProtocol._
+import com.overviewdocs.messagequeue.AcknowledgingMessageReceiverProtocol._
+import com.overviewdocs.util.Logger
 
 /**
  * A MessageReceiver is a message queue client, that converts and forwards incoming messages to the

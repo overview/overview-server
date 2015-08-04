@@ -1,9 +1,9 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
 import java.sql.Timestamp
 import java.util.UUID
 import org.squeryl.KeyedEntity
-import org.overviewproject.util.ContentDisposition
+import com.overviewdocs.util.ContentDisposition
 
 // This class should be merged with or replace UploadedFile
 case class GroupedFileUpload(

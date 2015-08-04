@@ -1,6 +1,6 @@
 package controllers.forms
 
-import org.overviewproject.test.Specification
+import com.overviewdocs.test.Specification
 import org.specs2.specification.Scope
 import play.api.data.Form
 

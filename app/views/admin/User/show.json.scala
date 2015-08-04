@@ -5,7 +5,7 @@ import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.json.{Json, JsValue}
 
 import models.User
-import org.overviewproject.models.UserRole
+import com.overviewdocs.models.UserRole
 
 object show {
   private val dateFormatter = ISODateTimeFormat.dateTime()

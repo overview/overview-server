@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 import controllers.backend.{SessionBackend,UserBackend}
 import models.{Session,User}
-import org.overviewproject.models.UserRole
+import com.overviewdocs.models.UserRole
 
 /** Restores and authorizes sessions.
   *

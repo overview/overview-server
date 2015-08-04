@@ -6,7 +6,7 @@
  *
  */
 
-import org.overviewproject.clustering._
+import com.overviewdocs.clustering._
 import org.specs2.mutable.Specification
 
 class BigramIteratorSpec extends Specification {

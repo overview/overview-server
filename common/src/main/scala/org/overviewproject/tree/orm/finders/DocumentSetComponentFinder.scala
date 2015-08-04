@@ -1,8 +1,8 @@
-package org.overviewproject.tree.orm.finders
+package com.overviewdocs.tree.orm.finders
 
-import org.overviewproject.tree.orm.DocumentSetComponent
+import com.overviewdocs.tree.orm.DocumentSetComponent
 import org.squeryl.Table
-import org.overviewproject.postgres.SquerylEntrypoint._
+import com.overviewdocs.postgres.SquerylEntrypoint._
 
 trait DocumentSetComponentFinder[A <: DocumentSetComponent] extends Finder {
   protected val table: Table[A]

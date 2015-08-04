@@ -5,16 +5,16 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
 import scala.collection.mutable.Set
 
-import org.overviewproject.clustering.DocTreeNode
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.IdGenerator
-import org.overviewproject.models.{Document,DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Node,NodeDocument}
-import org.overviewproject.models.tables.{NodeDocuments,Nodes}
+import com.overviewdocs.clustering.DocTreeNode
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.test.IdGenerator
+import com.overviewdocs.models.{Document,DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Node,NodeDocument}
+import com.overviewdocs.models.tables.{NodeDocuments,Nodes}
 
 class NodeWriterSpec extends DbSpecification {
   private def addChildren(parent: DocTreeNode, description: String): Seq[DocTreeNode] = {

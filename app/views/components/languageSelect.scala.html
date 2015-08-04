@@ -3,7 +3,7 @@
   selectedLanguageCode: Option[String] = None
 )(implicit messages: Messages)
 
-@import org.overviewproject.util.SupportedLanguages
+@import com.overviewdocs.util.SupportedLanguages
 
 <select name="@name">
   @defining(messages.lang.toLocale) { locale =>

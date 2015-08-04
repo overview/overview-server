@@ -6,7 +6,7 @@ import play.filters.csrf.CSRFFilter
 import scala.concurrent.Future
 
 import modules.DbConnection
-import org.overviewproject.database.DB
+import com.overviewdocs.database.DB
 
 object LoggingFilter extends EssentialFilter {
   // Copy/paste of http://www.playframework.com/documentation/2.2.1/ScalaHttpFilters

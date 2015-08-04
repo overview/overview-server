@@ -12,14 +12,14 @@ import controllers.util.DocumentSetDeletionComponents
 import models.orm.finders.{DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetCreationJobStore
 import models.pagination.{Page,PageRequest}
-import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
-import org.overviewproject.models.tables.DocumentSets
-import org.overviewproject.jobs.models.{CancelFileUpload,Delete}
-import org.overviewproject.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob,Tag,Tree}
-import org.overviewproject.tree.orm.DocumentSetCreationJobState
-import org.overviewproject.tree.DocumentSetCreationJobType
+import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
+import com.overviewdocs.models.tables.DocumentSets
+import com.overviewdocs.jobs.models.{CancelFileUpload,Delete}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob,Tag,Tree}
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState
+import com.overviewdocs.tree.DocumentSetCreationJobType
 
 trait DocumentSetController extends Controller {
   import Authorities._

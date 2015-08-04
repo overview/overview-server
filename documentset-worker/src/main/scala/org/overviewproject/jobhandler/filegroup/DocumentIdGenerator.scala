@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.tables.Documents
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.tables.Documents
 
 /**
  * Used by [[DocumentIdSupplier]] to generate ids for [[Document]s

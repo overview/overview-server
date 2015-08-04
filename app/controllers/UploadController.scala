@@ -16,10 +16,10 @@ import controllers.util.FileUploadIteratee
 import models.orm.stores.DocumentSetCreationJobStore
 import models.upload.OverviewUpload
 import models.User
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.models.DocumentSet
-import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.models.DocumentSet
+import com.overviewdocs.tree.{ DocumentSetCreationJobType, Ownership }
+import com.overviewdocs.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
 
 /**
  * Handles a file upload, storing the file in a LargeObject, updating the upload table,

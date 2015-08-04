@@ -1,8 +1,8 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import akka.actor.{ Actor, ActorRef, Props }
 
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 object FileGroupRemovalRequestQueueProtocol {
   case class RemoveFileGroup(fileGroupId: Long)

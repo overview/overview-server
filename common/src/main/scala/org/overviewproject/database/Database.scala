@@ -1,4 +1,4 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import java.sql.SQLException
 import javax.sql.DataSource
@@ -8,7 +8,7 @@ import slick.dbio.DBIO
 import slick.jdbc.JdbcBackend.{Database=>DatabaseFactory}
 import slick.lifted.RunnableCompiled
 
-import org.overviewproject.database.Slick.api._
+import com.overviewdocs.database.Slick.api._
 
 /** Runs queries on a Postgres database.
   *
@@ -34,9 +34,9 @@ class Database(val dataSource: DataSource) {
 
   /** Exposes the Slick Database API.
     *
-    * This saves typing over "org.overviewproject.database.Slick.api".
+    * This saves typing over "com.overviewdocs.database.Slick.api".
     */
-  val api = org.overviewproject.database.Slick.api
+  val api = com.overviewdocs.database.Slick.api
 
   /** Exposes a "standard" execution context for flatMap operations.
     *
@@ -76,7 +76,7 @@ class Database(val dataSource: DataSource) {
     * Usage:
     *
     * ```
-    * import org.overviewproject.database.Slick.api._
+    * import com.overviewdocs.database.Slick.api._
     * database.seq(Documents.filter(_.documentSetId === documentSetId))
     * ```
     */
@@ -87,7 +87,7 @@ class Database(val dataSource: DataSource) {
     * Usage:
     *
     * ```
-    * import org.overviewproject.database.Slick.api._
+    * import com.overviewdocs.database.Slick.api._
     * lazy val compiledQuery = Compiled { (documentSetId: Rep[Long]) =&gt;
     *   Documents.filter(_.documentSetId === documentSetId)
     * }

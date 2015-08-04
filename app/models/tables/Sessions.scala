@@ -4,8 +4,8 @@ import java.util.UUID
 import java.sql.Timestamp
 
 import models.Session
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.postgres.InetAddress
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.postgres.InetAddress
 
 class SessionsImpl(tag: Tag) extends Table[Session](tag, "session") {
   def id = column[UUID]("id", O.PrimaryKey)

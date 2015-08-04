@@ -1,6 +1,6 @@
 package views.html.DocumentSet
 
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
 import models.pagination.Page
 
 class indexSpec extends views.ViewSpecification {

@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.{ByteArrayOutputStream,OutputStream}
 import org.specs2.mutable.Specification

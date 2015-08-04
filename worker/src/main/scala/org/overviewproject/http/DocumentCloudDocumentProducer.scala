@@ -4,7 +4,7 @@
  * Overview
  * Created by Jonas Karlsson, November 2012
  */
-package org.overviewproject.http
+package com.overviewdocs.http
 
 import akka.actor._
 import java.util.concurrent.TimeoutException
@@ -13,17 +13,17 @@ import scala.language.postfixOps
 import scala.concurrent.{Await,Future,Promise,blocking}
 import scala.concurrent.duration._
 
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.documentcloud.{Document => RetrievedDocument, _ }
-import org.overviewproject.documentcloud.ImporterProtocol._
-import org.overviewproject.models.Document
-import org.overviewproject.models.DocumentDisplayMethod
-import org.overviewproject.persistence._
-import org.overviewproject.searchindex.TransportIndexClient
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
-import org.overviewproject.util.{BulkDocumentWriter,Configuration,DocumentProducer,Logger,WorkerActorSystem}
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
-import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.documentcloud.{Document => RetrievedDocument, _ }
+import com.overviewdocs.documentcloud.ImporterProtocol._
+import com.overviewdocs.models.Document
+import com.overviewdocs.models.DocumentDisplayMethod
+import com.overviewdocs.persistence._
+import com.overviewdocs.searchindex.TransportIndexClient
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState.Cancelled
+import com.overviewdocs.util.{BulkDocumentWriter,Configuration,DocumentProducer,Logger,WorkerActorSystem}
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.Retrieving
+import com.overviewdocs.util.Progress.{Progress, ProgressAbortFn}
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int,

@@ -8,7 +8,7 @@
  * Created by Jonathan Stray, June 2012
  *
  */
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import scala.Array.canBuildFrom
 

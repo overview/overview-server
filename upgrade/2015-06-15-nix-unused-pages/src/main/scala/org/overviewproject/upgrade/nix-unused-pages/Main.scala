@@ -1,13 +1,13 @@
-package org.overviewproject.upgrade.nix_useless_pages
+package com.overviewdocs.upgrade.nix_useless_pages
 
 import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
 import scala.concurrent.{Await,Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.database.{DataSource,Database,DatabaseConfiguration}
-import org.overviewproject.models.tables.Pages
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.database.{DataSource,Database,DatabaseConfiguration}
+import com.overviewdocs.models.tables.Pages
 
 /** Nix Pages that nobody refers to.
   *

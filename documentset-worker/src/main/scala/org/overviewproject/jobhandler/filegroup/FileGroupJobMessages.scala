@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 object FileGroupJobMessages {
   sealed trait Command

@@ -1,11 +1,11 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration._
 
-import org.overviewproject.documentcloud.DocumentRetrieverManagerProtocol._
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.documentcloud.DocumentRetrieverManagerProtocol._
+import com.overviewdocs.documentcloud.DocumentRetrieverProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{Before, Specification}
 import org.specs2.time.NoTimeConversions

@@ -12,8 +12,8 @@ import java.sql.Timestamp
 import java.util.Date
 
 import models.tables.Users
-import org.overviewproject.database.HasBlockingDatabase
-import org.overviewproject.models.UserRole
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.UserRole
 
 /**
  * A user that exists in the database

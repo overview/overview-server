@@ -15,7 +15,7 @@ import play.api.Plugin
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 /** Message queue config values set in application.conf */
 object MessageQueueConfiguration {

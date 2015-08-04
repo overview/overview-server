@@ -1,4 +1,4 @@
-package org.overviewproject.upgrade.reindex_documents
+package com.overviewdocs.upgrade.reindex_documents
 
 import scala.language.higherKinds
 import slick.ast.Node

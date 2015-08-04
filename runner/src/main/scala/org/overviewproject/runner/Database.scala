@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.{File,FileWriter,InputStream}
 import java.nio.file.attribute.PosixFilePermissions
@@ -10,7 +10,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.io.Source
 
-import org.overviewproject.runner.commands.{Command,PostgresCommand}
+import com.overviewdocs.runner.commands.{Command,PostgresCommand}
 
 trait DatabaseLike {
   val file: File

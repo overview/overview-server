@@ -2,7 +2,7 @@ package controllers
 
 import org.specs2.specification.Scope
 
-import org.overviewproject.jobs.models.DeleteTreeJob
+import com.overviewdocs.jobs.models.DeleteTreeJob
 
 class ReclusterJobControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {

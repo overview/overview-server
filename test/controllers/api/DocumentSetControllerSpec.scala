@@ -4,7 +4,7 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.{ApiTokenBackend,DocumentSetBackend}
-import org.overviewproject.models.DocumentSet
+import com.overviewdocs.models.DocumentSet
 
 class DocumentSetControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {

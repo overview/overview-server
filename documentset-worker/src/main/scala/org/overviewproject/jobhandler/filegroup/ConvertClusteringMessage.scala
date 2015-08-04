@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import play.api.libs.json.Json
-import org.overviewproject.messagequeue.ConvertMessage
-import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
+import com.overviewdocs.messagequeue.ConvertMessage
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobMessages._
 
 
 object ConvertClusteringMessage extends ConvertMessage {

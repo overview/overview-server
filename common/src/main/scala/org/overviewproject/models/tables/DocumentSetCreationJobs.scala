@@ -1,9 +1,9 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.DocumentSetCreationJob
-import org.overviewproject.models.DocumentSetCreationJobType
-import org.overviewproject.models.DocumentSetCreationJobState
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.DocumentSetCreationJob
+import com.overviewdocs.models.DocumentSetCreationJobType
+import com.overviewdocs.models.DocumentSetCreationJobState
 
 class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob](tag, "document_set_creation_job") {
   def id = column[Long]("id", O.PrimaryKey)

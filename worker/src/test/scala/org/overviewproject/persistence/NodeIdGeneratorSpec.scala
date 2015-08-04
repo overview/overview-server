@@ -1,4 +1,4 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
 import org.specs2.mutable.Specification
 

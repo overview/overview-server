@@ -1,12 +1,12 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import java.io.{ByteArrayInputStream,IOException,InputStream}
 import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Iteratee
 import scala.util.{Failure,Success}
 
-import org.overviewproject.database.{LargeObject}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.database.{LargeObject}
+import com.overviewdocs.test.DbSpecification
 
 class PgLoStrategySpec extends DbSpecification with StrategySpecification {
   trait PgLoBaseScope extends DbScope {

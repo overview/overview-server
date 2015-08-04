@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup.task
 
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt

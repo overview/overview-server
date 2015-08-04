@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.Document
-import org.overviewproject.models.TempDocumentSetFile
-import org.overviewproject.util.BulkDocumentWriter
-import org.overviewproject.searchindex.ElasticSearchIndexClient
-import org.overviewproject.searchindex.TransportIndexClient
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.Document
+import com.overviewdocs.models.TempDocumentSetFile
+import com.overviewdocs.util.BulkDocumentWriter
+import com.overviewdocs.searchindex.ElasticSearchIndexClient
+import com.overviewdocs.searchindex.TransportIndexClient
 
 /**
  * Write documents to the database and index them in ElasticSearch.
@@ -68,7 +68,7 @@ object WriteDocuments {
 
     private class SlickStorage extends Storage with HasDatabase {
       import database.api._
-      import org.overviewproject.models.tables.TempDocumentSetFiles
+      import com.overviewdocs.models.tables.TempDocumentSetFiles
 
       override def deleteTempDocumentSetFiles(documents: Seq[Document]): Future[Int] = {
         val fileIds = documents.flatMap(_.fileId)

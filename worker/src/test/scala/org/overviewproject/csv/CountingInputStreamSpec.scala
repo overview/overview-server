@@ -1,6 +1,6 @@
-package org.overviewproject.csv
+package com.overviewdocs.csv
 
-import org.overviewproject.test.Specification
+import com.overviewdocs.test.Specification
 import org.specs2.specification.Scope
 import java.io.ByteArrayInputStream
 

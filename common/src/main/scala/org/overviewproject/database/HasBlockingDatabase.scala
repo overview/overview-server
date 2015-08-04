@@ -1,4 +1,4 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 /** Like HasDatabase, but only for ugly code (and nice unit tests).
   *

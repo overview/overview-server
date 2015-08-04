@@ -3,8 +3,8 @@ package controllers.auth
 import slick.jdbc.JdbcBackend.Session
 
 import models.User
-import org.overviewproject.models.{DocumentSetUser,UserRole}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.models.{DocumentSetUser,UserRole}
+import com.overviewdocs.test.DbSpecification
 
 /** Tests authorities.
   *

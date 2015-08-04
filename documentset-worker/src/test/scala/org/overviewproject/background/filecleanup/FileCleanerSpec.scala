@@ -1,7 +1,7 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.Before
 import org.specs2.mock.Mockito
 import akka.actor._

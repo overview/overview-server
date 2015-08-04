@@ -5,9 +5,9 @@ import scala.concurrent.Future
 
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.{DocumentSet,DocumentSetUser}
-import org.overviewproject.models.tables.{DocumentSetUsers,DocumentSets}
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.{DocumentSet,DocumentSetUser}
+import com.overviewdocs.models.tables.{DocumentSetUsers,DocumentSets}
 
 trait SharedDocumentSetController extends Controller {
   def index = AuthorizedAction(anyUser).async { implicit request =>

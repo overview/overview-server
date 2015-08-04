@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import org.specs2.mutable.Specification
 import scala.concurrent.ExecutionContext

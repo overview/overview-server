@@ -4,13 +4,13 @@
  * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState=>State,DocumentSetCreationJobType=>Type}
-import org.overviewproject.models.tables.DocumentSetCreationJobs
-import org.overviewproject.tree.{DocumentSetCreationJobType=>DeprecatedType}
-import org.overviewproject.tree.orm.{DocumentSetCreationJobState=>DeprecatedState}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState=>State,DocumentSetCreationJobType=>Type}
+import com.overviewdocs.models.tables.DocumentSetCreationJobs
+import com.overviewdocs.tree.{DocumentSetCreationJobType=>DeprecatedType}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJobState=>DeprecatedState}
+import com.overviewdocs.test.DbSpecification
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   "PersistentDocumentSetCreationJob" should {

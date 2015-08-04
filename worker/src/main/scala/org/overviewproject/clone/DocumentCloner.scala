@@ -1,6 +1,6 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 object DocumentCloner extends InDatabaseCloner {
   import database.api._

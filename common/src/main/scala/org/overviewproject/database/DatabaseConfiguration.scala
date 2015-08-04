@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, June 2012
  */
 
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import com.typesafe.config.ConfigFactory
 import com.zaxxer.hikari.HikariConfig

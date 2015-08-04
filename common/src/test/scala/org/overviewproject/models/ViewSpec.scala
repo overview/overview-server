@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import java.sql.Timestamp
 import org.specs2.mutable.Specification

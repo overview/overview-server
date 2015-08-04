@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import java.net.URLEncoder
 import org.specs2.mutable.Specification

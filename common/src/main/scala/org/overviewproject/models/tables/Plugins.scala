@@ -1,9 +1,9 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.util.UUID
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.Plugin
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.Plugin
 
 class PluginsImpl(tag: Tag) extends Table[Plugin](tag, "plugin") {
   def id = column[UUID]("id", O.PrimaryKey)

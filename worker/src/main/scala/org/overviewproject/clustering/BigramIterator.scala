@@ -10,7 +10,7 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 class BigramIterator(val terms:Seq[String])
   extends Iterator[String] {

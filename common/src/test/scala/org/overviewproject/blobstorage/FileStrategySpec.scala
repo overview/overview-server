@@ -1,4 +1,4 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import java.io.{ File, IOException, InputStream }
 import java.nio.file.{ Files, Path }

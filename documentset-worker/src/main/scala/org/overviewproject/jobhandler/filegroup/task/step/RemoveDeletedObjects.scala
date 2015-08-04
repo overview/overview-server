@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import akka.actor.ActorSelection
 import scala.concurrent.Future
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol._
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 
 
 /**

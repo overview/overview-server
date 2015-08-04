@@ -10,8 +10,8 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{SelectionBackend,TagBackend}
 import controllers.forms.TagForm
 import models.orm.finders.TagFinder
-import org.overviewproject.tree.orm.{Tag=>DeprecatedTag}
-import org.overviewproject.models.Tag
+import com.overviewdocs.tree.orm.{Tag=>DeprecatedTag}
+import com.overviewdocs.models.Tag
 
 trait TagController extends Controller {
   protected val storage: TagController.Storage

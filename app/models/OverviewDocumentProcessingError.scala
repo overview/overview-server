@@ -1,7 +1,7 @@
 package models
 
 import models.orm.Schema.documentProcessingErrors
-import org.overviewproject.tree.orm.DocumentProcessingError
+import com.overviewdocs.tree.orm.DocumentProcessingError
 
 trait OverviewDocumentProcessingError {
   val statusCode: Option[Int]
@@ -10,7 +10,7 @@ trait OverviewDocumentProcessingError {
 
 object OverviewDocumentProcessingError {
   def sortedByStatus(documentSetId: Long): Seq[(String, Seq[OverviewDocumentProcessingError])] = {
-    import org.overviewproject.postgres.SquerylEntrypoint._
+    import com.overviewdocs.postgres.SquerylEntrypoint._
 
     val errors = documentProcessingErrors.where(dpe => dpe.documentSetId === documentSetId).map(new OverviewDocumentProcessingErrorImpl(_))
 

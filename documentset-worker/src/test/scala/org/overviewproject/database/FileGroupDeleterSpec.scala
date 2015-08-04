@@ -1,7 +1,7 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
-import org.overviewproject.models.tables.FileGroups
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.models.tables.FileGroups
+import com.overviewdocs.test.DbSpecification
 
 class FileGroupDeleterSpec extends DbSpecification {
 

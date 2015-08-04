@@ -4,8 +4,8 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import controllers.backend.HighlightBackend
-import org.overviewproject.query.{Field,PhraseQuery,Query}
-import org.overviewproject.searchindex.Highlight
+import com.overviewdocs.query.{Field,PhraseQuery,Query}
+import com.overviewdocs.searchindex.Highlight
 
 class HighlightControllerSpec extends ControllerSpecification {
   trait HighlightScope extends Scope {

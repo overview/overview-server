@@ -1,4 +1,4 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import akka.actor.{ Actor, ActorRef, FSM }
 import akka.pattern.pipe
@@ -8,7 +8,7 @@ import scala.collection.immutable.Queue
 import DeletedFileCleanerFSM._
 import akka.actor.Props
 
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 object DeletedFileCleanerProtocol {
   case object RemoveDeletedFiles

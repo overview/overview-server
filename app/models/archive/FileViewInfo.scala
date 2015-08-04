@@ -3,7 +3,7 @@ package models.archive
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
-import org.overviewproject.blobstorage.BlobStorage
+import com.overviewdocs.blobstorage.BlobStorage
 
 abstract class FileViewInfo(
   val documentTitle: String,

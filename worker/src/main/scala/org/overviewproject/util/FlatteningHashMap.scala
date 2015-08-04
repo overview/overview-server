@@ -8,7 +8,7 @@
  *
  */
 
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import scala.collection.mutable.{IndexedSeq,ArrayBuffer,Map,MapLike}
 

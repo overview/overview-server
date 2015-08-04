@@ -4,21 +4,21 @@
  * Overview
  * Created by Jonas Karlsson, November 2012
  */
-package org.overviewproject.csv
+package com.overviewdocs.csv
 
 import scala.collection.mutable.Buffer
 import scala.concurrent.{Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.overviewproject.database.{DeprecatedDatabase,HasBlockingDatabase}
-import org.overviewproject.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import org.overviewproject.models.{Document,DocumentTag,Tag}
-import org.overviewproject.models.tables.{Documents,DocumentSets,DocumentTags,Tags}
-import org.overviewproject.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
-import org.overviewproject.searchindex.TransportIndexClient
-import org.overviewproject.util.{BulkDocumentWriter,DocumentProducer,Logger,TagColorList}
-import org.overviewproject.util.Progress.{Progress,ProgressAbortFn}
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
+import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.models.{Document,DocumentTag,Tag}
+import com.overviewdocs.models.tables.{Documents,DocumentSets,DocumentTags,Tags}
+import com.overviewdocs.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
+import com.overviewdocs.searchindex.TransportIndexClient
+import com.overviewdocs.util.{BulkDocumentWriter,DocumentProducer,Logger,TagColorList}
+import com.overviewdocs.util.Progress.{Progress,ProgressAbortFn}
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.Parsing
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -55,7 +55,7 @@ class CsvImportDocumentProducer(
     }
     val uploadReader = new UploadReader(contentsOid, uploadedFile.encoding, blockingDatabase)
     val reader = uploadReader.reader
-    val documentSource = new CsvImportSource(org.overviewproject.util.Textify.apply, reader)
+    val documentSource = new CsvImportSource(com.overviewdocs.util.Textify.apply, reader)
 
     writeMetadataSchema(documentSource.metadataColumnNames)
 

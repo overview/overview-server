@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{Future,blocking}
 
-import org.overviewproject.database.HasDatabase
+import com.overviewdocs.database.HasDatabase
 
 abstract class TextViewInfo(
   val suppliedId: String,
@@ -54,7 +54,7 @@ object TextViewInfo {
     override def stream = {
       import database.api._
       import database.executionContext
-      import org.overviewproject.models.tables.Documents
+      import com.overviewdocs.models.tables.Documents
 
       for {
         maybeString: Option[String] <- database.option(Documents.filter(_.id === documentId).map(_.text.getOrElse("")))

@@ -8,9 +8,9 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
-import org.overviewproject.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.DocumentVectorTypes._
 import scala.collection.mutable.{Map, HashMap}
 
 object SuggestedTags {

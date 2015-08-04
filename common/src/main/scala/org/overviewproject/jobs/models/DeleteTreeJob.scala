@@ -1,3 +1,3 @@
-package org.overviewproject.jobs.models
+package com.overviewdocs.jobs.models
 
 case class DeleteTreeJob(jobId: Long)

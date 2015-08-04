@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedRequest
 import controllers.backend.SelectionBackend
 import models.{Selection,SelectionRequest}
-import org.overviewproject.query.{Query,QueryParser,SyntaxError}
+import com.overviewdocs.query.{Query,QueryParser,SyntaxError}
 
 trait SelectionHelpers { self: Controller =>
   protected val selectionBackend: SelectionBackend = SelectionBackend
@@ -23,7 +23,7 @@ trait SelectionHelpers { self: Controller =>
     val reqData = RequestData(request)
 
     def syntaxError = {
-      val message = self.messagesApi.preferred(request)("org.overviewproject.query.SyntaxError")
+      val message = self.messagesApi.preferred(request)("com.overviewdocs.query.SyntaxError")
       BadRequest(jsonError("illegal-arguments", message))
         .withHeaders(CONTENT_TYPE -> "application/json")
     }

@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 case class DocumentSetCreationJobNode(
   documentSetId: Long,

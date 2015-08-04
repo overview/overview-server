@@ -11,8 +11,8 @@ import play.api.test.{DefaultAwaitTimeout,FakeRequest,ResultExtractors,FutureAwa
 import scala.concurrent.Future
 
 import controllers.auth.{ApiAuthorizedAction,ApiAuthorizedRequest}
-import org.overviewproject.models.ApiToken
-import org.overviewproject.test.factories.{Factory,PodoFactory}
+import com.overviewdocs.models.ApiToken
+import com.overviewdocs.test.factories.{Factory,PodoFactory}
 
 trait ApiControllerSpecification
   extends Specification

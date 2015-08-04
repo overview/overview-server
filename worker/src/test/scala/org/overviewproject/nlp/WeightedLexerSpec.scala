@@ -1,7 +1,7 @@
-package org.overviewproject.nlp
-import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
+package com.overviewdocs.nlp
+import com.overviewdocs.nlp.DocumentVectorTypes.TermWeight
 import org.specs2.mutable.Specification
-import org.overviewproject.util.DisplayedError
+import com.overviewdocs.util.DisplayedError
 
 class WeightedLexerSpec extends Specification {
   val stopWords = StopWordSet("en", None)

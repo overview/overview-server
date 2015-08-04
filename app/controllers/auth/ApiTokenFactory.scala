@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import scala.util.control.Exception.catching
 
 import controllers.backend.ApiTokenBackend
-import org.overviewproject.models.ApiToken
+import com.overviewdocs.models.ApiToken
 
 /** Authorizes API tokens.
   *

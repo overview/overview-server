@@ -1,4 +1,4 @@
-package org.overviewproject.upgrade.reindex_documents
+package com.overviewdocs.upgrade.reindex_documents
 
 import org.elasticsearch.client.Client
 import org.elasticsearch.client.transport.TransportClient

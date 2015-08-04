@@ -1,6 +1,6 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
-import org.overviewproject.util.DocumentSetCreationJobStateDescription._
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription._
 
 // Returns a key for the error message to display to the user, to be internationalized 
 // keys in conf/messages under views.DocumentSet._documentSet.job_state_description 

@@ -1,4 +1,4 @@
-package org.overviewproject.http
+package com.overviewdocs.http
 
 import com.ning.http.client.AsyncCompletionHandler
 

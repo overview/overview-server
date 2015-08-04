@@ -2,7 +2,7 @@ package views.json.api.StoreObject
 
 import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.models.StoreObject
+import com.overviewdocs.models.StoreObject
 
 object show {
   def apply(storeObject: StoreObject): JsValue = Json.obj(

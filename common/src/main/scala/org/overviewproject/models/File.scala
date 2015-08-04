@@ -1,4 +1,4 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 /** A user-uploaded file that is the source of documents.
   *

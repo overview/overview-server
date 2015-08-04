@@ -8,7 +8,7 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import DocumentVectorTypes._
 

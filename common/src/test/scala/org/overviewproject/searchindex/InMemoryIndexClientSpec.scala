@@ -1,4 +1,4 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
 import java.util.concurrent.ExecutionException
 import org.elasticsearch.common.settings.ImmutableSettings
@@ -9,8 +9,8 @@ import play.api.libs.json.JsObject
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.models.{Document,DocumentDisplayMethod}
-import org.overviewproject.query.{Field,FuzzyTermQuery,PhraseQuery,PrefixQuery}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.query.{Field,FuzzyTermQuery,PhraseQuery,PrefixQuery}
 
 class InMemoryIndexClientSpec extends Specification {
   import scala.concurrent.ExecutionContext.Implicits.global

@@ -1,4 +1,4 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import com.google.common.base.Charsets
 import java.nio.charset.Charset

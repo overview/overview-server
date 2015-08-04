@@ -1,7 +1,7 @@
-package org.overviewproject.persistence.orm
+package com.overviewdocs.persistence.orm
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm._
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.tree.orm._
 
 
 object Schema extends org.squeryl.Schema {

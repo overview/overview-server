@@ -10,10 +10,10 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.nlp.{EarlyOutDocVecDistance, IterativeKMeans}
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.{EarlyOutDocVecDistance, IterativeKMeans}
 
 // Representation of a document connected component (tight cluster of documents)
 // For the purposes of clustering, this acts like nDocs identical docs at centroid

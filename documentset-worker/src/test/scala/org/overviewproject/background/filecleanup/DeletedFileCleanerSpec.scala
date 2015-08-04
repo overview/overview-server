@@ -1,4 +1,4 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import akka.actor.{ ActorRef, Props }
 import akka.testkit.TestActor
@@ -7,9 +7,9 @@ import scala.concurrent.duration._
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import org.overviewproject.test.ActorSystemContext
-import org.overviewproject.background.filecleanup.DeletedFileCleanerProtocol._
-import org.overviewproject.background.filecleanup.FileCleanerProtocol._
+import com.overviewdocs.test.ActorSystemContext
+import com.overviewdocs.background.filecleanup.DeletedFileCleanerProtocol._
+import com.overviewdocs.background.filecleanup.FileCleanerProtocol._
 import scala.concurrent.Future
 import org.specs2.time.NoTimeConversions
 

@@ -7,7 +7,7 @@
  * created March 2013
  */
 
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import java.io._
 

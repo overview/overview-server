@@ -11,7 +11,7 @@ import controllers.backend.SessionBackend
 import mailers.Mailer
 import models.{OverviewUser,ResetPasswordRequest,User}
 import models.orm.stores.{UserStore}
-import org.overviewproject.database.DeprecatedDatabase
+import com.overviewdocs.database.DeprecatedDatabase
 
 /**
  * Handles reset-password.

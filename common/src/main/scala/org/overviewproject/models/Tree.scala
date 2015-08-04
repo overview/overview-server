@@ -1,7 +1,7 @@
-package org.overviewproject.models
+package com.overviewdocs.models
 
 import java.sql.Timestamp
-import org.overviewproject.tree.orm.{Tree=>DeprecatedTree}
+import com.overviewdocs.tree.orm.{Tree=>DeprecatedTree}
 
 case class Tree(
   val id: Long,

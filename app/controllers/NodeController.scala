@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningTree
 import models.orm.finders.{NodeFinder,TreeFinder}
-import org.overviewproject.tree.orm.{Node,Tree}
+import com.overviewdocs.tree.orm.{Node,Tree}
 
 trait NodeController extends Controller {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children

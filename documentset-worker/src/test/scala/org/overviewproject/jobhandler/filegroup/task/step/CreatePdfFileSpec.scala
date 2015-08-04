@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.io.InputStream
 import org.mockito.Matchers
@@ -6,10 +6,10 @@ import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
-import org.overviewproject.models.{File,GroupedFileUpload}
-import org.overviewproject.models.tables.{Files,TempDocumentSetFiles}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
+import com.overviewdocs.models.{File,GroupedFileUpload}
+import com.overviewdocs.models.tables.{Files,TempDocumentSetFiles}
+import com.overviewdocs.test.DbSpecification
 
 class CreatePdfFileSpec extends DbSpecification with Mockito {
 

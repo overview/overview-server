@@ -1,11 +1,11 @@
-package org.overviewproject.messagequeue.apollo
+package com.overviewdocs.messagequeue.apollo
 
 import javax.jms._
 import org.fusesource.stomp.jms.StompJmsDestination
 import scala.concurrent.duration._
 
-import org.overviewproject.messagequeue.{ MessageService, MessageContainer }
-import org.overviewproject.util.Logger
+import com.overviewdocs.messagequeue.{ MessageService, MessageContainer }
+import com.overviewdocs.util.Logger
 
 /**
  * ApolloMessageService manages communication with the specified message queue.

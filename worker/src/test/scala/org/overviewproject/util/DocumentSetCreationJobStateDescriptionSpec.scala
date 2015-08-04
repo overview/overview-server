@@ -1,8 +1,8 @@
 
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import org.specs2.mutable.Specification
-import org.overviewproject.util.DocumentSetCreationJobStateDescription._
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription._
 
 class DocumentSetCreationJobStateDescriptionSpec extends Specification {
 

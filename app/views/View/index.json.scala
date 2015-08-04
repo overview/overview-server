@@ -7,8 +7,8 @@ import play.api.i18n.Messages
 import play.api.libs.json.{Json,JsValue,JsArray}
 import scala.collection.mutable.ArrayBuffer
 
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
-import org.overviewproject.models.View
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
+import com.overviewdocs.models.View
 import views.helper.DocumentSetHelper.jobDescriptionKeyToMessage
 
 object index {

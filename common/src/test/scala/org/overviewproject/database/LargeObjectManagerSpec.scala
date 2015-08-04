@@ -1,9 +1,9 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 import java.sql.SQLException
 import slick.dbio.DBIO
 
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.test.DbSpecification
 
 class LargeObjectManagerSpec extends DbSpecification {
   "LargeObjectManager" should {

@@ -6,10 +6,10 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.models.{ApiToken,View}
-import org.overviewproject.test.factories.PodoFactory
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
+import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.models.{ApiToken,View}
+import com.overviewdocs.test.factories.PodoFactory
 
 class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {

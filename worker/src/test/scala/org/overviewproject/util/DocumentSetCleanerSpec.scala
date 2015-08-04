@@ -1,9 +1,9 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import slick.jdbc.JdbcBackend.Session
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.models.tables.Documents
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.models.tables.Documents
 
 class DocumentSetCleanerSpec extends DbSpecification {
   "DocumentSetCleaner" should {

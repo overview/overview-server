@@ -1,10 +1,10 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.tables.FileGroups
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.tables.FileGroups
 
 /** 
  *  Find ids of deleted [[FileGroup]]s

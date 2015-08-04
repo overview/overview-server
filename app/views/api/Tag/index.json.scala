@@ -2,7 +2,7 @@ package views.json.api.Tag
 
 import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.models.Tag
+import com.overviewdocs.models.Tag
 
 object index {
   def apply(tags: Seq[Tag]): JsValue = {

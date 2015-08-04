@@ -7,13 +7,13 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.postgres.LO
-import org.overviewproject.database.DB
-import org.overviewproject.database.DeprecatedDatabase
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.postgres.LO
+import com.overviewdocs.database.DB
+import com.overviewdocs.database.DeprecatedDatabase
 
 /**
  * Contains attributes of a DocumentSetCreationJob
@@ -70,9 +70,9 @@ trait PersistentDocumentSetCreationJob {
 
 /** Factory for loading jobs from the database */
 object PersistentDocumentSetCreationJob {
-  import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
-  import org.overviewproject.postgres.SquerylEntrypoint._
-  import org.overviewproject.tree.orm.DocumentSetCreationJob
+  import com.overviewdocs.persistence.orm.Schema.documentSetCreationJobs
+  import com.overviewdocs.postgres.SquerylEntrypoint._
+  import com.overviewdocs.tree.orm.DocumentSetCreationJob
 
   /** Find all jobs in the specified state */
   def findJobsWithState(state: DocumentSetCreationJobState): List[PersistentDocumentSetCreationJob] = {
@@ -126,7 +126,7 @@ object PersistentDocumentSetCreationJob {
      */
     override def update = DeprecatedDatabase.inTransaction {
       checkForCancellation
-      val updatedJob = org.overviewproject.postgres.SquerylEntrypoint.update(documentSetCreationJobs)(d =>
+      val updatedJob = com.overviewdocs.postgres.SquerylEntrypoint.update(documentSetCreationJobs)(d =>
         where(d.id === documentSetCreationJob.id)
         set (
           d.documentSetId := documentSetId,

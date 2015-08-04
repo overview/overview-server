@@ -6,9 +6,9 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
 import controllers.backend.DocumentSetBackend
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,UploadedFile}
-import org.overviewproject.models.tables.{DocumentSetCreationJobs,UploadedFiles}
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,UploadedFile}
+import com.overviewdocs.models.tables.{DocumentSetCreationJobs,UploadedFiles}
 
 trait CloneImportJobController extends Controller {
   protected val documentSetBackend: DocumentSetBackend

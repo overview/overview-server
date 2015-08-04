@@ -4,11 +4,11 @@ import java.util.Locale
 import play.api.i18n.Messages
 import play.api.libs.json.{Json,JsValue}
 
-import org.overviewproject.util.{SupportedLanguages,SupportedLanguage}
+import com.overviewdocs.util.{SupportedLanguages,SupportedLanguage}
 
 /** Returns [ { code: "en", name: "English" }, ... ]
   *
-  * @see org.overviewproject.util.SupportedLanguages
+  * @see com.overviewdocs.util.SupportedLanguages
   **/
 object _supportedLanguages {
   private[DocumentSet] def supportedLanguageToJson(language: SupportedLanguage, locale: Locale) : JsValue = {

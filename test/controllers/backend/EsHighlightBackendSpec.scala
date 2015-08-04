@@ -2,8 +2,8 @@ package controllers.backend
 
 import org.specs2.mutable.After
 
-import org.overviewproject.query.{Field,PhraseQuery}
-import org.overviewproject.searchindex.{Highlight,InMemoryIndexClient}
+import com.overviewdocs.query.{Field,PhraseQuery}
+import com.overviewdocs.searchindex.{Highlight,InMemoryIndexClient}
 
 class EsHighlightBackendSpec extends NullBackendSpecification {
   trait BaseScope extends NullScope with After {

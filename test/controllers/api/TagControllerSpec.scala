@@ -3,7 +3,7 @@ package controllers.api
 import scala.concurrent.Future
 
 import controllers.backend.TagBackend
-import org.overviewproject.models.Tag
+import com.overviewdocs.models.Tag
 
 class TagControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {

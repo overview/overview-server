@@ -1,12 +1,12 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration._
 import scala.util.Failure
 
-import org.overviewproject.documentcloud.DocumentReceiverProtocol.Done
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{GetTextError, GetTextFailed, GetTextSucceeded}
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.documentcloud.DocumentReceiverProtocol.Done
+import com.overviewdocs.documentcloud.DocumentRetrieverProtocol.{GetTextError, GetTextFailed, GetTextSucceeded}
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.{Before, Specification}
 import org.specs2.time.NoTimeConversions
 

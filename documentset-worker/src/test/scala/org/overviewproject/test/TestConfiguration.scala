@@ -1,4 +1,4 @@
-package org.overviewproject.test
+package com.overviewdocs.test
 
 import scala.language.postfixOps
 import scala.concurrent.duration._

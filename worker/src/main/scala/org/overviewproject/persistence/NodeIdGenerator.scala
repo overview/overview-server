@@ -1,4 +1,4 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
 class NodeIdGenerator(treeId: Long) {
   private val documentSetId = treeId >> 32

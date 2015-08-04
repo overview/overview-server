@@ -11,9 +11,9 @@ import scala.concurrent.Future
 import controllers.auth.{AuthorizedRequest,SessionFactory}
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
 import models.{ Session, User }
-import org.overviewproject.models.{DocumentSet,FileGroup,GroupedFileUpload}
-import org.overviewproject.models.DocumentSetCreationJobType._
-import org.overviewproject.models.DocumentSetCreationJobState._
+import com.overviewdocs.models.{DocumentSet,FileGroup,GroupedFileUpload}
+import com.overviewdocs.models.DocumentSetCreationJobType._
+import com.overviewdocs.models.DocumentSetCreationJobState._
 
 class MassUploadControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -35,7 +35,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       override val uploadIterateeFactory = mockUploadIterateeFactory
     }
 
-    val factory = org.overviewproject.test.factories.PodoFactory
+    val factory = com.overviewdocs.test.factories.PodoFactory
   }
 
   "#create" should {

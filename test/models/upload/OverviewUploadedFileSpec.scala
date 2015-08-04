@@ -3,8 +3,8 @@ package models.upload
 import java.sql.Timestamp
 import org.postgresql.PGConnection
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.postgres.LO
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.postgres.LO
 
 class OverviewUploadedFileSpec extends DbSpecification {
   "OverviewUploadedFile" should {

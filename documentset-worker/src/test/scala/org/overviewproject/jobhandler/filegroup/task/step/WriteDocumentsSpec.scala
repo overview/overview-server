@@ -1,15 +1,15 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.overviewproject.util.BulkDocumentWriter
+import com.overviewdocs.util.BulkDocumentWriter
 import org.specs2.mock.Mockito
-import org.overviewproject.models.Document
+import com.overviewdocs.models.Document
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.searchindex.ElasticSearchIndexClient
+import com.overviewdocs.searchindex.ElasticSearchIndexClient
 import scala.concurrent.ExecutionContext
 
 class WriteDocumentsSpec extends Specification with NoTimeConversions with Mockito {

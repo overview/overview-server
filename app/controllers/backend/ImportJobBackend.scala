@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.tables.{DocumentSetCreationJobs,DocumentSetUsers,DocumentSets}
-import org.overviewproject.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetUser}
+import com.overviewdocs.models.tables.{DocumentSetCreationJobs,DocumentSetUsers,DocumentSets}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetUser}
 
 trait ImportJobBackend extends Backend {
   /** Returns a list of ImportJob IDs, from currently processing to last in the

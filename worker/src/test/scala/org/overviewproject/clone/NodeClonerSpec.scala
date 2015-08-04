@@ -1,14 +1,14 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.persistence.{ DocumentSetIdGenerator, NodeIdGenerator }
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.Node
+import com.overviewdocs.persistence.{ DocumentSetIdGenerator, NodeIdGenerator }
+import com.overviewdocs.persistence.orm.Schema
+import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.tree.orm.Node
 
 class NodeClonerSpec extends DbSpecification {
   trait CloneContext extends DbTestContext {
     def createTreeNodes(ids: NodeIdGenerator, parentId: Option[Long], depth: Int): Seq[Node] = {
-      import org.overviewproject.postgres.SquerylEntrypoint._
+      import com.overviewdocs.postgres.SquerylEntrypoint._
       if (depth == 0) Nil
       else {
         val child = Node(
@@ -29,7 +29,7 @@ class NodeClonerSpec extends DbSpecification {
     var cloneNodes: Seq[Node] = _
 
     override def setupWithDb = {
-      import org.overviewproject.postgres.SquerylEntrypoint._
+      import com.overviewdocs.postgres.SquerylEntrypoint._
 
       val documentSetId = 1L
       val cloneDocumentSetId = 2L

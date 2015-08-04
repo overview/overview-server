@@ -1,9 +1,9 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import akka.actor.{ Actor, ActorRef, Props}
 import akka.pattern.pipe
 
-import org.overviewproject.util.Logger
+import com.overviewdocs.util.Logger
 
 object FileCleanerProtocol {
   case class Clean(fileId: Long)

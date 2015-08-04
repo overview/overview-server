@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Oct 2012
  */
 
-package org.overviewproject.postgres
+package com.overviewdocs.postgres
 
 import scala.util.control.Exception._
 import org.postgresql.PGConnection

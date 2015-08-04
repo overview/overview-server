@@ -1,4 +1,4 @@
-package org.overviewproject.background.filecleanup
+package com.overviewdocs.background.filecleanup
 
 import akka.actor.Actor
 import akka.actor.ActorRef

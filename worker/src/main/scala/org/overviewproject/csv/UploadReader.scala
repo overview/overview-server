@@ -4,15 +4,15 @@
  * Overview
  * Created by Jonas Karlsson, November 2012
  */
-package org.overviewproject.csv
+package com.overviewdocs.csv
 
 import java.io.{BufferedInputStream,BufferedReader,InputStreamReader,Reader}
 import java.nio.charset.{Charset,CharsetDecoder,CodingErrorAction,StandardCharsets}
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
 
-import org.overviewproject.database.BlockingDatabase
-import org.overviewproject.postgres.LargeObjectInputStream
+import com.overviewdocs.database.BlockingDatabase
+import com.overviewdocs.postgres.LargeObjectInputStream
 
 /**
  * Provides a context for reading an uploaded file from the database. The

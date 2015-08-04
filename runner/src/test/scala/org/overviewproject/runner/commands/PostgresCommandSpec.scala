@@ -1,4 +1,4 @@
-package org.overviewproject.runner.commands
+package com.overviewdocs.runner.commands
 
 import java.io.File
 import org.specs2.mutable.Specification

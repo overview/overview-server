@@ -1,8 +1,8 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.documentcloud.DocumentRetrievalError
-import org.overviewproject.models.tables.{DocumentProcessingErrors,DocumentSets}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.documentcloud.DocumentRetrievalError
+import com.overviewdocs.models.tables.{DocumentProcessingErrors,DocumentSets}
+import com.overviewdocs.test.DbSpecification
 
 class DocRetrievalErrorWriterSpec extends DbSpecification {
   trait OurContext extends DbScope {

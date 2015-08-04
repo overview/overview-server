@@ -1,4 +1,4 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
 import org.elasticsearch.client.Client
 import org.elasticsearch.client.transport.TransportClient
@@ -6,7 +6,7 @@ import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.common.transport.InetSocketTransportAddress
 import scala.concurrent.Future
 
-import org.overviewproject.util.Configuration
+import com.overviewdocs.util.Configuration
 
 /** An ElasticSearch client that connects as a peer.
   *

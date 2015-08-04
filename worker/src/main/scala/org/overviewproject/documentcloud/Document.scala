@@ -1,4 +1,4 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 /** Information about a document stored by DocumentCloud */
 case class Document(id: String, title: String, pages: Int, access: String, textUrl: String, pageUrlTemplate: String) {

@@ -1,9 +1,9 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
 import java.sql.Timestamp
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.Tree
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.Tree
 
 class TreesImpl(tag: Tag) extends Table[Tree](tag, "tree") {
   def id = column[Long]("id", O.PrimaryKey)

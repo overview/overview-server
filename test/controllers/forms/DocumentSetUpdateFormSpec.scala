@@ -1,12 +1,12 @@
 package controllers.forms
 
-import org.overviewproject.test.Specification
+import com.overviewdocs.test.Specification
 import org.specs2.specification.Scope
 import play.api.data.Form
 import org.specs2.execute.Result
 
-import org.overviewproject.models.DocumentSet
-import org.overviewproject.test.factories.PodoFactory
+import com.overviewdocs.models.DocumentSet
+import com.overviewdocs.test.factories.PodoFactory
 
 class DocumentSetUpdateFormSpec extends Specification {
 

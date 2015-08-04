@@ -2,7 +2,7 @@ package controllers.forms
 
 import play.api.data.{Form,Forms}
 
-import org.overviewproject.models.Tree
+import com.overviewdocs.models.Tree
 
 object TreeUpdateAttributesForm {
   def apply() = Form(

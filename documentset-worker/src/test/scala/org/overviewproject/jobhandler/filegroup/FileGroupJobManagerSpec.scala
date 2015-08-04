@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor._
 import akka.testkit._
-import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol._
-import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.jobhandler.filegroup.ClusteringJobQueueProtocol._
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.{ Before, Specification }
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.DocumentSetCreationJobType._
+import com.overviewdocs.tree.orm.DocumentSetCreationJob
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.tree.DocumentSetCreationJobType._
 
 class FileGroupJobManagerSpec extends Specification {
 

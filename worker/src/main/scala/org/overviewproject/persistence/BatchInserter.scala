@@ -1,4 +1,4 @@
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
 import scala.collection.mutable.Seq
 import org.squeryl.Table

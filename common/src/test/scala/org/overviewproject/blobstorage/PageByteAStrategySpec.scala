@@ -1,11 +1,11 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import java.io.ByteArrayInputStream
 import scala.concurrent.Future
 
-import org.overviewproject.models.{File,Page}
-import org.overviewproject.models.tables.{Files,Pages}
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.models.{File,Page}
+import com.overviewdocs.models.tables.{Files,Pages}
+import com.overviewdocs.test.DbSpecification
 
 class PageByteAStrategySpec extends DbSpecification with StrategySpecHelper {
   trait BaseScope extends DbScope {

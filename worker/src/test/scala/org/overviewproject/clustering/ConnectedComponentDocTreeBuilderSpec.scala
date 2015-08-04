@@ -6,10 +6,10 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.nlp.StringTable
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.StringTable
 import org.specs2.mutable.Specification
 
 class ConnectedComponentDocTreeBuilderSpec extends Specification {

@@ -1,13 +1,13 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import scala.concurrent.Future
 
-import org.overviewproject.jobhandler.filegroup.task.PdfPage
-import org.overviewproject.models.Page
-import org.overviewproject.models.tables.Pages
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.jobhandler.filegroup.task.PdfPage
+import com.overviewdocs.models.Page
+import com.overviewdocs.models.tables.Pages
+import com.overviewdocs.test.DbSpecification
 
 class PageSaverSpec extends DbSpecification with Mockito {
 

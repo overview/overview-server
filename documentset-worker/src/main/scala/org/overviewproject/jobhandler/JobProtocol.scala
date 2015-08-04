@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler
+package com.overviewdocs.jobhandler
 
 // Message to notify parent actor about job status 
 // The jobEntityId is fileGroupId or documentSetId. Eventually they will

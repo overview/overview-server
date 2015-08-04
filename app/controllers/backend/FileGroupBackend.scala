@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import org.overviewproject.models.FileGroup
-import org.overviewproject.models.tables.FileGroups
+import com.overviewdocs.models.FileGroup
+import com.overviewdocs.models.tables.FileGroups
 
 trait FileGroupBackend extends Backend {
   /** Updates a FileGroup.

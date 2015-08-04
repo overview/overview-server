@@ -13,12 +13,12 @@ import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.models.{DocumentSet,GroupedFileUpload}
-import org.overviewproject.jobs.models.ClusterFileGroup
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.Ownership
-import org.overviewproject.util.ContentDisposition
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.models.{DocumentSet,GroupedFileUpload}
+import com.overviewdocs.jobs.models.ClusterFileGroup
+import com.overviewdocs.tree.orm.DocumentSetCreationJob
+import com.overviewdocs.tree.Ownership
+import com.overviewdocs.util.ContentDisposition
 
 trait MassUploadController extends Controller {
   protected val documentSetBackend: DocumentSetBackend
@@ -211,8 +211,8 @@ object MassUploadController extends MassUploadController {
   }
 
   object DatabaseStorage extends Storage {
-    import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
-    import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
+    import com.overviewdocs.tree.orm.DocumentSetCreationJobState.FilesUploaded
+    import com.overviewdocs.tree.DocumentSetCreationJobType.FileUpload
 
     override def createMassUploadDocumentSetCreationJob(
       documentSetId: Long,

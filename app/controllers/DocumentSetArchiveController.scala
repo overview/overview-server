@@ -3,8 +3,8 @@ package controllers
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import org.overviewproject.models.tables.Documents
-import org.overviewproject.util.ContentDisposition
+import com.overviewdocs.models.tables.Documents
+import com.overviewdocs.util.ContentDisposition
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.backend.DbBackend
 import models.DocumentFileInfo

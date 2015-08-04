@@ -6,10 +6,10 @@ import scala.language.postfixOps
 
 import models.orm.Schema
 import models.User
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.{DocumentSetCreationJobType, Ownership}
-import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState}
-import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.tree.{DocumentSetCreationJobType, Ownership}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState}
+import com.overviewdocs.tree.orm.finders.{ Finder, FinderResult }
 
 object DocumentSetCreationJobFinder extends Finder {
   class DocumentSetCreationJobFinderResult(query: Query[DocumentSetCreationJob]) extends FinderResult(query) {

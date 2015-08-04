@@ -5,8 +5,8 @@ import java.sql.Timestamp
 import java.util.UUID
 import org.postgresql.PGConnection
 
-import org.overviewproject.postgres.LO
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.postgres.LO
+import com.overviewdocs.test.DbSpecification
 
 class OverviewUploadSpec extends DbSpecification {
   "OverviewUpload" should {

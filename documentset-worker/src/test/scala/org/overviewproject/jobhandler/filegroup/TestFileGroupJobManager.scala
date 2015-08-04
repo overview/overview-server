@@ -1,12 +1,12 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor._
-import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.test.ParameterStore
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobMessages._
+import com.overviewdocs.tree.orm.DocumentSetCreationJob
+import com.overviewdocs.tree.DocumentSetCreationJobType._
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.test.ParameterStore
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 
 trait JobParameters {
   protected val documentSetId = 1l

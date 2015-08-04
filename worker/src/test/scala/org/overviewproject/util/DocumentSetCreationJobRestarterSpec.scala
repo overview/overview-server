@@ -1,13 +1,13 @@
-package org.overviewproject.util
+package com.overviewdocs.util
 
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import org.overviewproject.models.DocumentSetCreationJob
-import org.overviewproject.models.DocumentSetCreationJobState._
-import org.overviewproject.models.DocumentSetCreationJobType._
-import org.overviewproject.searchindex.IndexClient
+import com.overviewdocs.models.DocumentSetCreationJob
+import com.overviewdocs.models.DocumentSetCreationJobState._
+import com.overviewdocs.models.DocumentSetCreationJobType._
+import com.overviewdocs.searchindex.IndexClient
 
 class DocumentSetCreationJobRestarterSpec extends Specification with Mockito {
 

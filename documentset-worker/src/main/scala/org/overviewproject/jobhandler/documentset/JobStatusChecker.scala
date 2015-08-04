@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler.documentset
+package com.overviewdocs.jobhandler.documentset
 
-import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import com.overviewdocs.tree.orm.finders.DocumentSetComponentFinder
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.database.orm.stores.DocumentSetCreationJobStore
 
 trait JobStatusChecker {
   def isJobRunning(documentSetId: Long): Boolean
@@ -12,7 +12,7 @@ trait JobStatusChecker {
 
 object JobStatusChecker {
   
-  import org.overviewproject.database.orm.Schema._
+  import com.overviewdocs.database.orm.Schema._
   
   def apply(): JobStatusChecker = new JobStatusChecker {
     override def isJobRunning(documentSetId: Long): Boolean = DeprecatedDatabase.inTransaction {

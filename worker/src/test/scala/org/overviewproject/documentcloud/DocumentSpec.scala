@@ -1,4 +1,4 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

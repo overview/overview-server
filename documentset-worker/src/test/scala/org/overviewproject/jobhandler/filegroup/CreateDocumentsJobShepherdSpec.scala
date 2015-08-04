@@ -1,16 +1,16 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
+import com.overviewdocs.test.ActorSystemContext
 import akka.testkit.TestProbe
 import akka.actor.ActorRef
-import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
+import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol.AddTasks
 import org.specs2.mutable.Before
-import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
-import org.overviewproject.jobhandler.filegroup.JobDescription._
-import org.overviewproject.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
+import com.overviewdocs.jobhandler.filegroup.JobDescription._
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 
 class CreateDocumentsJobShepherdSpec extends Specification {
 

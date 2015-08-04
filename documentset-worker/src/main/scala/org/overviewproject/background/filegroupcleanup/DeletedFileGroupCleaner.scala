@@ -1,9 +1,9 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import scala.concurrent.Future
 import akka.actor.{ Actor, ActorRef, Props }
 import akka.pattern.pipe
-import org.overviewproject.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 
 
 /**

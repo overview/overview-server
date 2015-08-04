@@ -6,10 +6,10 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
+import com.overviewdocs.nlp.DocumentVectorTypes.DocumentID
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 

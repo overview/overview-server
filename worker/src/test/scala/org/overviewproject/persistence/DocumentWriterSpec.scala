@@ -4,10 +4,10 @@
  * Overview
  * Created by Jonas Karlsson, Aug 2012
  */
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
-import org.overviewproject.database.DeprecatedDatabase
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.test.DbSpecification
 
 class DocumentWriterSpec extends DbSpecification {
   "DocumentWriter" should {
@@ -18,7 +18,7 @@ class DocumentWriterSpec extends DbSpecification {
       DocumentWriter.updateDescription(document.id, "bar baz")
 
       import database.api._
-      import org.overviewproject.models.tables.Documents
+      import com.overviewdocs.models.tables.Documents
       blockingDatabase.option(Documents.filter(_.id === document.id)).map(_.keywords) must beSome(Seq("bar", "baz"))
     }
   }

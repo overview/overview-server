@@ -1,7 +1,7 @@
 package controllers.backend
 
-import org.overviewproject.models.View
-import org.overviewproject.models.tables.Views
+import com.overviewdocs.models.View
+import com.overviewdocs.models.tables.Views
 
 class DbViewBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

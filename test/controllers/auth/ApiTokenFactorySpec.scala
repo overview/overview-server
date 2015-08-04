@@ -10,7 +10,7 @@ import scala.concurrent.{Await,Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import controllers.backend.ApiTokenBackend
-import org.overviewproject.models.ApiToken
+import com.overviewdocs.models.ApiToken
 
 class ApiTokenFactorySpec extends test.helpers.InAppSpecification with Mockito with JsonMatchers {
   val h = play.api.test.Helpers

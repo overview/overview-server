@@ -5,13 +5,13 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package org.overviewproject.persistence
+package com.overviewdocs.persistence
 
 import java.sql.Connection
-import org.overviewproject.clustering.DocTreeNode
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.tree.orm.{ Node, NodeDocument }
-import org.overviewproject.persistence.orm.DocumentSetCreationJobNode
+import com.overviewdocs.clustering.DocTreeNode
+import com.overviewdocs.persistence.orm.Schema
+import com.overviewdocs.tree.orm.{ Node, NodeDocument }
+import com.overviewdocs.persistence.orm.DocumentSetCreationJobNode
 
 /**
  * Writes out tree with the given root node to the database.
@@ -47,8 +47,8 @@ class NodeWriter(jobId: Long, treeId: Long) {
   }
 
   private def insertJobCleanupData: Unit = {
-    import org.overviewproject.persistence.orm.Schema
-    import org.overviewproject.postgres.SquerylEntrypoint._
+    import com.overviewdocs.persistence.orm.Schema
+    import com.overviewdocs.postgres.SquerylEntrypoint._
     val jobNode = DocumentSetCreationJobNode(jobId, rootNodeId)
     Schema.documentSetCreationJobNodes.insert(jobNode)
   }

@@ -1,16 +1,16 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
 import org.squeryl.annotations.Column
 import org.squeryl.dsl.ManyToOne
 import org.squeryl.KeyedEntity
 import scala.runtime.ScalaRunTime
 
-import org.overviewproject.postgres.PostgresqlEnum
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.models.{DocumentSetCreationJob => GoodDocumentSetCreationJob}
-import org.overviewproject.models.{DocumentSetCreationJobType => GoodDocumentSetCreationJobType}
-import org.overviewproject.models.{DocumentSetCreationJobState => GoodDocumentSetCreationJobState}
-import org.overviewproject.tree.DocumentSetCreationJobType
+import com.overviewdocs.postgres.PostgresqlEnum
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.models.{DocumentSetCreationJob => GoodDocumentSetCreationJob}
+import com.overviewdocs.models.{DocumentSetCreationJobType => GoodDocumentSetCreationJobType}
+import com.overviewdocs.models.{DocumentSetCreationJobState => GoodDocumentSetCreationJobState}
+import com.overviewdocs.tree.DocumentSetCreationJobType
 
 object DocumentSetCreationJobState extends Enumeration {
   type DocumentSetCreationJobState = Value

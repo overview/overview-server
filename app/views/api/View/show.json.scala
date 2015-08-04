@@ -2,7 +2,7 @@ package views.json.api.View
 
 import play.api.libs.json.{JsValue,Json}
 
-import org.overviewproject.models.View
+import com.overviewdocs.models.View
 
 object show extends views.json.api.helpers.JsonDateFormatter {
   def apply(view: View): JsValue = Json.obj(

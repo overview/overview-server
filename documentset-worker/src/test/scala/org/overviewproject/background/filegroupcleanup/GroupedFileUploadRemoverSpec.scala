@@ -1,13 +1,13 @@
-package org.overviewproject.background.filegroupcleanup
+package com.overviewdocs.background.filegroupcleanup
 
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
 import scala.concurrent.{ Await, Promise, TimeoutException }
 import scala.concurrent.duration._
 
-import org.overviewproject.blobstorage.BlobStorage
-import org.overviewproject.models.tables.GroupedFileUploads
-import org.overviewproject.test.DbSpecification
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.tables.GroupedFileUploads
+import com.overviewdocs.test.DbSpecification
 
 class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
 

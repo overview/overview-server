@@ -1,4 +1,4 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import com.amazonaws.AmazonClientException
 import com.amazonaws.services.s3.AmazonS3

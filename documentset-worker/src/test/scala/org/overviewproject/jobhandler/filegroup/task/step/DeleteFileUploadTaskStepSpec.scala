@@ -1,10 +1,10 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import scala.concurrent.Promise
-import org.overviewproject.database.DocumentSetCreationJobDeleter
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.database.FileGroupDeleter
-import org.overviewproject.database.TempFileDeleter
+import com.overviewdocs.database.DocumentSetCreationJobDeleter
+import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.database.FileGroupDeleter
+import com.overviewdocs.database.TempFileDeleter
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

@@ -11,7 +11,7 @@ import controllers.Controller
 import models.User
 import models.tables.Users
 import models.pagination.PageRequest
-import org.overviewproject.database.exceptions.Conflict
+import com.overviewdocs.database.exceptions.Conflict
 
 trait UserController extends Controller {
   protected val backend: UserBackend

@@ -3,9 +3,9 @@ package models.orm.finders
 import scala.language.implicitConversions
 import scala.language.postfixOps
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.Node
-import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.tree.orm.Node
+import com.overviewdocs.tree.orm.finders.{ Finder, FinderResult }
 
 import org.squeryl.Query
 

@@ -6,8 +6,8 @@ import org.joda.time.DateTimeZone
 import play.api.libs.json.{Json,JsValue}
 import scala.collection.mutable.Buffer
 
-import org.overviewproject.tree.orm.{Tree=>BadTree}
-import org.overviewproject.models.Tree
+import com.overviewdocs.tree.orm.{Tree=>BadTree}
+import com.overviewdocs.models.Tree
 
 object show {
   private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)
@@ -37,7 +37,7 @@ object show {
     )
   }
 
-  /** @deprecated("Use org.overviewproject.models.Tree instead", "0.0.1") */
+  /** @deprecated("Use com.overviewdocs.models.Tree instead", "0.0.1") */
   def apply(tree: BadTree): JsValue = {
     val creationData = tree.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
 

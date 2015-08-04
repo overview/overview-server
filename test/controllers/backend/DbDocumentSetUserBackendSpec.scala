@@ -1,8 +1,8 @@
 package controllers.backend
 
-import org.overviewproject.models.DocumentSetUser
-import org.overviewproject.models.DocumentSetUser.Role
-import org.overviewproject.models.tables.DocumentSetUsers
+import com.overviewdocs.models.DocumentSetUser
+import com.overviewdocs.models.DocumentSetUser.Role
+import com.overviewdocs.models.tables.DocumentSetUsers
 
 class DbDocumentSetUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

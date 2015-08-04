@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import controllers.backend.ApiTokenBackend
-import org.overviewproject.models.ApiToken
+import com.overviewdocs.models.ApiToken
 
 class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {

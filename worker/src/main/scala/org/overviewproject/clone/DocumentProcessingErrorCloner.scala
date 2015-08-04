@@ -1,7 +1,7 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.persistence.orm.Schema
+import com.overviewdocs.postgres.SquerylEntrypoint._
+import com.overviewdocs.persistence.orm.Schema
 
 object DocumentProcessingErrorCloner {
 

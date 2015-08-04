@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import scala.concurrent.{ExecutionContext, Future}
 

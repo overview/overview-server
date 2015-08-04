@@ -1,13 +1,13 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import scala.language.postfixOps
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 
-import org.overviewproject.documentcloud.DocumentRetrieverManagerProtocol._
-import org.overviewproject.documentcloud.QueryProcessorProtocol._
-import org.overviewproject.http.{AsyncHttpClientWrapper, Credentials, RequestQueue}
-import org.overviewproject.util.Configuration
+import com.overviewdocs.documentcloud.DocumentRetrieverManagerProtocol._
+import com.overviewdocs.documentcloud.QueryProcessorProtocol._
+import com.overviewdocs.http.{AsyncHttpClientWrapper, Credentials, RequestQueue}
+import com.overviewdocs.util.Configuration
 
 import akka.actor._
 

@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.File
 import scala.io.Source
@@ -69,7 +69,7 @@ package object commands {
     override def documentSetWorker = new JvmCommandWithAppendableClasspath(
       Flags.DatabaseEnv,
       Seq(),
-      Seq("org.overviewproject.DocumentSetWorker")
+      Seq("com.overviewdocs.DocumentSetWorker")
     )
 
     override def redis = new ShCommand(Seq(), Seq("./deps/redis/dev.sh"))
@@ -132,7 +132,7 @@ package object commands {
       "documentset-worker",
       Flags.DatabaseEnv,
       Seq(),
-      Seq("org.overviewproject.DocumentSetWorker")
+      Seq("com.overviewdocs.DocumentSetWorker")
     )
 
     override def messageBroker = cmd(
@@ -193,7 +193,7 @@ package object commands {
       "db-evolution-applier",
       Flags.DatabaseEnv,
       Seq(),
-      Seq("org.overviewproject.db_evolution_applier.Main")
+      Seq("com.overviewdocs.db_evolution_applier.Main")
     )
   }
 }

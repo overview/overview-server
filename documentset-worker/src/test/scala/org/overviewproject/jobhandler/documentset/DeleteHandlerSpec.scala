@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.documentset
+package com.overviewdocs.jobhandler.documentset
 
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
@@ -10,13 +10,13 @@ import org.specs2.time.NoTimeConversions
 import scala.concurrent.duration._
 import scala.concurrent.Promise
 
-import org.overviewproject.background.filecleanup.FileRemovalRequestQueueProtocol._
-import org.overviewproject.database.DocumentSetCreationJobDeleter
-import org.overviewproject.database.DocumentSetDeleter
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.searchindex.IndexClient
-import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol._
+import com.overviewdocs.database.DocumentSetCreationJobDeleter
+import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.jobhandler.documentset.DeleteHandlerProtocol._
+import com.overviewdocs.jobhandler.JobProtocol._
+import com.overviewdocs.searchindex.IndexClient
+import com.overviewdocs.test.{ ActorSystemContext, ForwardingActor }
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
 

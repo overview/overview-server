@@ -1,14 +1,14 @@
-package org.overviewproject.clone
+package com.overviewdocs.clone
 
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.libs.streams.Streams
 import scala.concurrent.Future
 
-import org.overviewproject.database.HasDatabase
-import org.overviewproject.searchindex.TransportIndexClient
-import org.overviewproject.util.BulkDocumentWriter
-import org.overviewproject.models.Document
-import org.overviewproject.models.tables.Documents
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.searchindex.TransportIndexClient
+import com.overviewdocs.util.BulkDocumentWriter
+import com.overviewdocs.models.Document
+import com.overviewdocs.models.tables.Documents
 
 object DocumentSetIndexer extends HasDatabase {
   import database.api._

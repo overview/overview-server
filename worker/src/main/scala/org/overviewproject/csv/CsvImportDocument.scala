@@ -4,11 +4,11 @@
  * Overview
  * Created by Jonas Karlsson, November 2012
  */
-package org.overviewproject.csv
+package com.overviewdocs.csv
 
 import play.api.libs.json.{JsObject,JsString}
 
-import org.overviewproject.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod}
 
 /** Document generated from a CsvImport. suppliedId is present if an "id" column exists in the source */
 case class CsvImportDocument(

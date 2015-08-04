@@ -1,18 +1,18 @@
-package org.overviewproject.test.factories
+package com.overviewdocs.test.factories
 
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 
-import org.overviewproject.metadata.MetadataSchema
-import org.overviewproject.models._
+import com.overviewdocs.metadata.MetadataSchema
+import com.overviewdocs.models._
 
 /**
  * Creates models simply.
  *
  * Usage:
  *
- *   val factory = new org.overviewproject.test.factories.Factory
+ *   val factory = new com.overviewdocs.test.factories.Factory
  *   val documentSet = factory.documentSet()
  *   val document = factory.document(documentSetId=documentSet.id)
  *   val tag = factory.tag(documentSetId=documentSet.id)

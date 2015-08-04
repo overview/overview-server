@@ -2,7 +2,7 @@ package views.helper
 
 import play.api.i18n.Messages
 
-import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState}
+import com.overviewdocs.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState}
 
 object DocumentSetHelper {
   /**

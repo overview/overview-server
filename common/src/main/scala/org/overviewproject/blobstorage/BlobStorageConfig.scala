@@ -1,4 +1,4 @@
-package org.overviewproject.blobstorage
+package com.overviewdocs.blobstorage
 
 import com.typesafe.config.{Config,ConfigFactory}
 

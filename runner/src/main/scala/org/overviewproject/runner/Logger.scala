@@ -1,4 +1,4 @@
-package org.overviewproject.runner
+package com.overviewdocs.runner
 
 import java.io.{ FilterOutputStream, OutputStream, PrintStream }
 import scala.sys.process.ProcessLogger

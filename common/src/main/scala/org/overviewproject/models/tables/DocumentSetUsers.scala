@@ -1,7 +1,7 @@
-package org.overviewproject.models.tables
+package com.overviewdocs.models.tables
 
-import org.overviewproject.database.Slick.api._
-import org.overviewproject.models.DocumentSetUser
+import com.overviewdocs.database.Slick.api._
+import com.overviewdocs.models.DocumentSetUser
 
 class DocumentSetUsersImpl(tag: Tag) extends Table[DocumentSetUser](tag, "document_set_user") {
   def documentSetId = column[Long]("document_set_id")

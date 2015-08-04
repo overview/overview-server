@@ -1,4 +1,4 @@
-package org.overviewproject.upgrade.reindex_documents
+package com.overviewdocs.upgrade.reindex_documents
 
 import slick.driver.PostgresDriver.simple._
 import slick.jdbc.{GetResult,StaticQuery => Q}

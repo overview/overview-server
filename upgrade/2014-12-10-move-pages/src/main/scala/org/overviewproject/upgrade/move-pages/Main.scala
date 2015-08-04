@@ -1,13 +1,13 @@
-package org.overviewproject.upgrade.move_pages
+package com.overviewdocs.upgrade.move_pages
 
 import java.io.ByteArrayInputStream
 import play.api.libs.iteratee.Iteratee
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.blobstorage.{BlobBucketId,BlobStorage}
-import org.overviewproject.database.{DB,DataSource,DeprecatedDatabase,DatabaseConfiguration}
-import org.overviewproject.models.tables.Pages
+import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
+import com.overviewdocs.database.{DB,DataSource,DeprecatedDatabase,DatabaseConfiguration}
+import com.overviewdocs.models.tables.Pages
 
 /** Move page.data to wherever it is configured to go in application.conf.
   *
@@ -98,7 +98,7 @@ object Main {
     System.out.println(s"Updating page ${pageId} to have location ${location} and data NULL...")
 
     DeprecatedDatabase.withSlickSession { session =>
-      import org.overviewproject.database.Slick.simple._
+      import com.overviewdocs.database.Slick.simple._
       Pages
         .filter(_.id === pageId)
         .map((p) => (p.dataLocation, p.data))
@@ -111,7 +111,7 @@ object Main {
     System.out.println(s"Finding <= ${limit} pages to transfer...")
 
     DeprecatedDatabase.withSlickSession { session =>
-      import org.overviewproject.database.Slick.simple._
+      import com.overviewdocs.database.Slick.simple._
       Pages
         .filter(_.data.isDefined)
         .map(_.id)

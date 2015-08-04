@@ -14,7 +14,7 @@
  *
  */
 
-package org.overviewproject.util
+package com.overviewdocs.util
 import scala.collection.JavaConverters._
 import com.typesafe.config.{ Config, ConfigFactory }
 

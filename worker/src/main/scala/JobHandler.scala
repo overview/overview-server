@@ -11,18 +11,18 @@ import scala.annotation.tailrec
 import scala.util._
 import scala.util.control.NonFatal
 
-import org.overviewproject.clone.CloneDocumentSet
-import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
-import org.overviewproject.database.{ DeprecatedDatabase, DB, HasBlockingDatabase }
-import org.overviewproject.persistence.{ NodeWriter, PersistentDocumentSetCreationJob }
-import org.overviewproject.persistence.TreeIdGenerator
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.tree.orm.DocumentSetCreationJobState
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.models.{ DocumentSet, Tree }
-import org.overviewproject.models.tables.{DocumentSets,Trees}
-import org.overviewproject.util._
-import org.overviewproject.util.Progress._
+import com.overviewdocs.clone.CloneDocumentSet
+import com.overviewdocs.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
+import com.overviewdocs.database.{ DeprecatedDatabase, DB, HasBlockingDatabase }
+import com.overviewdocs.persistence.{ NodeWriter, PersistentDocumentSetCreationJob }
+import com.overviewdocs.persistence.TreeIdGenerator
+import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.tree.orm.DocumentSetCreationJobState
+import com.overviewdocs.tree.orm.stores.BaseStore
+import com.overviewdocs.models.{ DocumentSet, Tree }
+import com.overviewdocs.models.tables.{DocumentSets,Trees}
+import com.overviewdocs.util._
+import com.overviewdocs.util.Progress._
 
 object JobHandler extends HasBlockingDatabase {
   import database.api._
@@ -163,7 +163,7 @@ object JobHandler extends HasBlockingDatabase {
   }
 
   private def handleCloneJob(job: PersistentDocumentSetCreationJob): Unit = {
-    import org.overviewproject.clone.{ JobProgressLogger, JobProgressReporter }
+    import com.overviewdocs.clone.{ JobProgressLogger, JobProgressReporter }
 
     val jobProgressReporter = new JobProgressReporter(job)
     val progressObservers: Seq[Progress => Unit] = Seq(
@@ -256,10 +256,10 @@ object JobHandler extends HasBlockingDatabase {
   // FIXME: Submitting jobs, along with creating documents should move into documentset-worker
   private def submitClusteringJob(documentSetId: Long): Unit = DeprecatedDatabase.inTransaction {
     import database.api._
-    import org.overviewproject.postgres.SquerylEntrypoint._
-    import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
-    import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-    import org.overviewproject.tree.orm.DocumentSetCreationJob
+    import com.overviewdocs.postgres.SquerylEntrypoint._
+    import com.overviewdocs.persistence.orm.Schema.documentSetCreationJobs
+    import com.overviewdocs.tree.orm.finders.DocumentSetComponentFinder
+    import com.overviewdocs.tree.orm.DocumentSetCreationJob
 
     val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
     val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)

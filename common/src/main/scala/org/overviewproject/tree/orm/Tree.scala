@@ -1,4 +1,4 @@
-package org.overviewproject.tree.orm
+package com.overviewdocs.tree.orm
 
 import java.sql.Timestamp
 import org.squeryl.KeyedEntity

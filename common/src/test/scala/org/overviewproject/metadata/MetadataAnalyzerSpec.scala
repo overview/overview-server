@@ -1,4 +1,4 @@
-package org.overviewproject.metadata
+package com.overviewdocs.metadata
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

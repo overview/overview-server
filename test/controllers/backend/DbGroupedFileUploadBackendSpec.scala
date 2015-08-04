@@ -2,9 +2,9 @@ package controllers.backend
 
 import java.util.UUID
 
-import org.overviewproject.database.LargeObject
-import org.overviewproject.models.GroupedFileUpload
-import org.overviewproject.models.tables.GroupedFileUploads
+import com.overviewdocs.database.LargeObject
+import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.models.tables.GroupedFileUploads
 
 class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {

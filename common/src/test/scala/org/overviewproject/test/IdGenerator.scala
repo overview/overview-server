@@ -1,4 +1,4 @@
-package org.overviewproject.test
+package com.overviewdocs.test
 
 /**
  * A simple way to provide ids for tables in the database

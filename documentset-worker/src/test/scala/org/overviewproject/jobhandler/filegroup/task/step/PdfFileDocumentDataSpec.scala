@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import play.api.libs.json.JsObject
 
 import org.specs2.mutable.Specification
-import org.overviewproject.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod}
 
 class PdfFileDocumentDataSpec extends Specification {
 

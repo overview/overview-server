@@ -5,7 +5,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
 import controllers.backend.ImportJobBackend
-import org.overviewproject.models.{ DocumentSet, DocumentSetCreationJob }
+import com.overviewdocs.models.{ DocumentSet, DocumentSetCreationJob }
 
 trait ImportJobController extends Controller {
   val importJobBackend: ImportJobBackend

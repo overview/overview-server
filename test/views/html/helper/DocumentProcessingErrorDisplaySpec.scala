@@ -1,6 +1,6 @@
 package views.html.helper
 
-import org.overviewproject.test.Specification
+import com.overviewdocs.test.Specification
 
 class DocumentProcessingErrorDisplaySpec extends Specification {
   

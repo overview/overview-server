@@ -1,14 +1,14 @@
-package org.overviewproject.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
 import scala.collection.SeqView
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import org.overviewproject.jobhandler.filegroup.task.PdfBoxDocument
-import org.overviewproject.jobhandler.filegroup.task.PdfDocument
-import org.overviewproject.jobhandler.filegroup.task.TimeoutGenerator
-import org.overviewproject.models.File
-import org.overviewproject.jobhandler.filegroup.task.PdfPage
+import com.overviewdocs.jobhandler.filegroup.task.PdfBoxDocument
+import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
+import com.overviewdocs.jobhandler.filegroup.task.TimeoutGenerator
+import com.overviewdocs.models.File
+import com.overviewdocs.jobhandler.filegroup.task.PdfPage
 
 trait ExtractTextWithOcr extends UploadedFileProcessStep {
 

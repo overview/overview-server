@@ -8,7 +8,7 @@
  *
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.{Stack, Set}
 

@@ -10,13 +10,13 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
 
-import org.overviewproject.util.{Logger, LoopedIterator, Ranges}
+import com.overviewdocs.util.{Logger, LoopedIterator, Ranges}
 
 // T is element type, C is centroid type
 abstract class IterativeKMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,C] {

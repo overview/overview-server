@@ -3,8 +3,8 @@ package controllers.backend
 import scala.concurrent.Future
 import slick.jdbc.StaticQuery
 
-import org.overviewproject.models.DocumentTag
-import org.overviewproject.models.tables.DocumentTags
+import com.overviewdocs.models.DocumentTag
+import com.overviewdocs.models.tables.DocumentTags
 
 trait TagDocumentBackend extends Backend {
   /** Returns a mapping from tag ID to number of documents with that tag.
@@ -39,7 +39,7 @@ trait DbTagDocumentBackend extends TagDocumentBackend with DbBackend {
   import database.api._
   import database.executionContext
 
-  import org.overviewproject.database.Slick.SimpleArrayJdbcType
+  import com.overviewdocs.database.Slick.SimpleArrayJdbcType
   implicit val longSeqMapper = new SimpleArrayJdbcType[Long]("int8")
 
   override def count(documentSetId: Long, documentIds: Seq[Long]) = {

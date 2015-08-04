@@ -1,4 +1,4 @@
-package org.overviewproject.documentcloud
+package com.overviewdocs.documentcloud
 
 import akka.actor._
 

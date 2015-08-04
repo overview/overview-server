@@ -3,8 +3,8 @@ package controllers.backend
 import scala.concurrent.Future
 import slick.jdbc.StaticQuery
 
-import org.overviewproject.models.Tag
-import org.overviewproject.models.tables.Tags
+import com.overviewdocs.models.Tag
+import com.overviewdocs.models.tables.Tags
 
 trait TagBackend {
   /** Lists all Tags for the given DocumentSet. */

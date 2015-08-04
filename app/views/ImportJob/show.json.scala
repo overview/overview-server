@@ -5,7 +5,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 import play.api.mvc.RequestHeader
 
-import org.overviewproject.models.{ DocumentSet, DocumentSetCreationJob }
+import com.overviewdocs.models.{ DocumentSet, DocumentSetCreationJob }
 
 object show {
   def apply(

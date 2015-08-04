@@ -1,4 +1,4 @@
-package org.overviewproject.database
+package com.overviewdocs.database
 
 package object exceptions {
   /** You tried to duplicate a primary key or unique index tuple. */

@@ -1,7 +1,7 @@
-package org.overviewproject.jobhandler.filegroup.task.process
+package com.overviewdocs.jobhandler.filegroup.task.process
 
-import org.overviewproject.jobhandler.filegroup.task.step.TaskStep
-import org.overviewproject.models.GroupedFileUpload
+import com.overviewdocs.jobhandler.filegroup.task.step.TaskStep
+import com.overviewdocs.models.GroupedFileUpload
 import scala.concurrent.Future
 
 trait UploadedFileProcess { 

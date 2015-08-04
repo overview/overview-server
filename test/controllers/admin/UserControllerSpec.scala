@@ -10,8 +10,8 @@ import controllers.TestController
 import controllers.backend.UserBackend
 import models.User
 import models.pagination.{Page,PageInfo,PageRequest}
-import org.overviewproject.database.exceptions.Conflict
-import org.overviewproject.models.UserRole
+import com.overviewdocs.database.exceptions.Conflict
+import com.overviewdocs.models.UserRole
 
 class UserControllerSpec extends controllers.ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {

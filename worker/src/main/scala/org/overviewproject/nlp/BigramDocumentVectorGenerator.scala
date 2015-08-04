@@ -11,14 +11,14 @@
  *
  */
 
-package org.overviewproject.nlp
+package com.overviewdocs.nlp
 
 import com.opencsv.{CSVReader, CSVWriter}
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
 import scala.collection.mutable.{Map, IndexedSeq, ArrayBuffer}
 
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
 
 
 case class BigramKey(val term1:TermID, val term2:TermID = BigramKey.noTerm) {

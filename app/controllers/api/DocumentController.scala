@@ -11,8 +11,8 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend,DocumentSetBackend}
 import models.pagination.PageRequest
 import models.{Selection,SelectionRequest}
-import org.overviewproject.metadata.Metadata
-import org.overviewproject.models.{DocumentSet,DocumentHeader}
+import com.overviewdocs.metadata.Metadata
+import com.overviewdocs.models.{DocumentSet,DocumentHeader}
 
 trait DocumentController extends ApiController with ApiSelectionHelpers {
   import DocumentController.Field

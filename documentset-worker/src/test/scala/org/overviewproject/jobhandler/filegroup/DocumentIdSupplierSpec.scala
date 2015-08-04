@@ -1,11 +1,11 @@
-package org.overviewproject.jobhandler.filegroup
+package com.overviewdocs.jobhandler.filegroup
 
 import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
+import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.Before
 import akka.actor.{ ActorRef, Props }
 import akka.pattern.ask
-import org.overviewproject.jobhandler.filegroup.DocumentIdSupplierProtocol._
+import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
 import akka.util.Timeout
 import org.specs2.time.NoTimeConversions
 import scala.concurrent.duration._

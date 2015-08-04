@@ -1,6 +1,6 @@
-package org.overviewproject.searchindex
+package com.overviewdocs.searchindex
 
-import org.overviewproject.util.Configuration
+import com.overviewdocs.util.Configuration
 
 /**
  * Keeps a singleton client for ElasticSearch.

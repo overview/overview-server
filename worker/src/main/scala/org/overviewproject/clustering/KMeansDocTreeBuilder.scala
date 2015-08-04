@@ -7,13 +7,13 @@
  * @author Jonathan Stray
  */
 
-package org.overviewproject.clustering
+package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
-import org.overviewproject.nlp.DocumentVectorTypes._
-import org.overviewproject.nlp.IterativeKMeansDocuments
+import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
+import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
+import com.overviewdocs.nlp.DocumentVectorTypes._
+import com.overviewdocs.nlp.IterativeKMeansDocuments
 
 // Take a node and create K children.
 // Encapsulates parameters of our our-means clustering
