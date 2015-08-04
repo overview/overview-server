@@ -85,7 +85,8 @@ object TesseractOcrTextExtractor {
   import scala.concurrent.duration.DurationInt
   import scala.language.postfixOps
   import com.overviewdocs.util.Configuration
-
+  private val ImageResolution = 400 // dpi
+  
   object FileFormats {
     val ImageFormat = "png"
     val TextOutput = "txt"
@@ -107,7 +108,7 @@ object TesseractOcrTextExtractor {
       override def writeImage(image: BufferedImage): File = {
         val imageFile = File.createTempFile("overview-ocr", s".${FileFormats.ImageFormat}")
 
-        ImageIO.write(image, FileFormats.ImageFormat, imageFile)
+        PdfImageWriter.writeImage(image, imageFile, FileFormats.ImageFormat, ImageResolution)
 
         imageFile
       }
