@@ -3,4 +3,9 @@
 DIR="$(dirname "$0")"/..
 
 set -x
-rm -rf "$DIR"/target "$DIR"/.target "$DIR"/*/target "$DIR"/*/.target "$DIR"/project/project
+rm -rf "$DIR"/target \
+  "$DIR"/.target \
+  "$DIR"/*/target \
+  "$DIR"/*/.target \
+  "$DIR"/upgrade/*/target \
+  "$DIR"/project/project
