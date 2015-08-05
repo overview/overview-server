@@ -108,7 +108,7 @@ object TesseractOcrTextExtractor {
       override def writeImage(image: BufferedImage): File = {
         val imageFile = File.createTempFile("overview-ocr", s".${FileFormats.ImageFormat}")
 
-        PdfImageWriter.writeImage(image, imageFile, FileFormats.ImageFormat, ImageResolution)
+        ImageFileWriter.writeImage(image, imageFile, FileFormats.ImageFormat, ImageResolution)
 
         imageFile
       }

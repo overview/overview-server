@@ -12,10 +12,26 @@ import javax.imageio.metadata.IIOMetadata
 import javax.imageio.metadata.IIOMetadataNode
 import java.io.File
 
-object PdfImageWriter {
+
+/**
+ * Helper that writes a [[RenderedImage]] to a [[File]], in the specified `format` and `resolution`
+ */
+object ImageFileWriter {
   private val StandardMetadataFormat = "javax_imageio_1.0";
   private val InchesPerMm = 25.4
 
+  /**
+   * Writes the `image` to the `outputFile`.
+   * No compression is attempted, and it's assumed that an [[ImageWriter]] exists for
+   * the specified `imageFormat`. Really only tested with png.
+   * @param image the image to be saved
+   * @param outputFile the file where the image is saved
+   * @param imageFormat a string specifying the format, eg. "png"
+   * @param resolution the image resolution, in dpi 
+   *
+   * If the call completes, the file should have been written successfully.
+   * @throws exceptions if something goes wrong
+   */
   def writeImage(image: RenderedImage, outputFile: File, imageFormat: String, resolution: Int): Unit = {
     val writers = ImageIO.getImageWritersByFormatName(imageFormat)
 
@@ -23,11 +39,11 @@ object PdfImageWriter {
 
     val writerParams = imageWriter.getDefaultWriteParam
 
-    val meta = createMetadata(image, imageWriter, writerParams, resolution);
+    val metadata = createMetadata(image, imageWriter, writerParams, resolution);
 
     val output = ImageIO.createImageOutputStream(outputFile)
     imageWriter.setOutput(output)
-    imageWriter.write(null, new IIOImage(image, null, meta), writerParams);
+    imageWriter.write(null, new IIOImage(image, null, metadata), writerParams);
 
     imageWriter.dispose
 
@@ -43,13 +59,13 @@ object PdfImageWriter {
         if (writerParams.getDestinationType() != null) writerParams.getDestinationType()
         else ImageTypeSpecifier.createFromRenderedImage(image)
 
-      val meta = imageWriter.getDefaultImageMetadata(imageType, writerParams)
+      val metadata = imageWriter.getDefaultImageMetadata(imageType, writerParams)
 
-      addResolution(meta, resolution)
+      addResolution(metadata, resolution)
 
     }
 
-  private def addResolution(meta: IIOMetadata, resolution: Int): IIOMetadata = {
+  private def addResolution(metadata: IIOMetadata, resolution: Int): IIOMetadata = {
 
     def findOrAppendNode(node: IIOMetadataNode, name: String): IIOMetadataNode =
       findChildNode(node, name).getOrElse {
@@ -61,7 +77,7 @@ object PdfImageWriter {
     def setPixelSize(sizeNode: IIOMetadataNode) =
       sizeNode.setAttribute("value", (resolution / InchesPerMm).toString)
 
-    val root = meta.getAsTree(StandardMetadataFormat).asInstanceOf[IIOMetadataNode]
+    val root = metadata.getAsTree(StandardMetadataFormat).asInstanceOf[IIOMetadataNode]
 
     val dimension = findOrAppendNode(root, "Dimension")
 
@@ -71,16 +87,16 @@ object PdfImageWriter {
     val verticalSize = findOrAppendNode(dimension, "VerticalPixelSize")
     setPixelSize(verticalSize)
 
-    meta.mergeTree(StandardMetadataFormat, root)
+    metadata.mergeTree(StandardMetadataFormat, root)
 
-    meta
+    metadata
   }
 
   private def findChildNode(node: Node, name: String): Option[IIOMetadataNode] = {
     val children = new AbstractIterator[Node] {
       private val nodes = node.getChildNodes
       private var index = -1
-      override def hasNext = index < (nodes.getLength - 1)
+      override def hasNext = (index + 1) < nodes.getLength 
       override def next() = {
         index += 1
         nodes.item(index)
