@@ -3,37 +3,39 @@ package controllers
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{EssentialAction, Result}
+import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
-import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
-import controllers.auth.{AuthorizedAction,SessionFactory}
-import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
-import controllers.forms.MassUploadControllerForm
-import controllers.iteratees.GroupedFileUploadIteratee
-import controllers.util.{MassUploadControllerMethods,JobQueueSender}
-import models.orm.stores.DocumentSetCreationJobStore
 import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.models.{DocumentSet,GroupedFileUpload}
 import com.overviewdocs.jobs.models.ClusterFileGroup
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.tree.Ownership
 import com.overviewdocs.util.ContentDisposition
+import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
+import controllers.auth.{AuthorizedAction,AuthorizedBodyParser}
+import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
+import controllers.forms.MassUploadControllerForm
+import controllers.iteratees.GroupedFileUploadIteratee
+import controllers.util.{MassUploadControllerMethods,JobQueueSender}
+import models.orm.stores.DocumentSetCreationJobStore
+import models.User
 
 trait MassUploadController extends Controller {
   protected val documentSetBackend: DocumentSetBackend
   protected val fileGroupBackend: FileGroupBackend
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
-  protected val sessionFactory: SessionFactory
   protected val storage: MassUploadController.Storage
   protected val messageQueue: MassUploadController.MessageQueue
   protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
 
-  /** Starts or resumes a file upload. */
-  def create(guid: UUID) = EssentialAction { request =>
-    Iteratee.flatten(sessionFactory.loadAuthorizedSession(request, anyUser).map(_ match {
-      case Left(result) => Iteratee.ignore.map(_ => result)
-      case Right((session, user)) => MassUploadControllerMethods.Create(
+  /** Calls MassUploadControllerMethods.Create(), returning the result as body.
+    *
+    * Used in create().
+    */
+  private def createInnerBodyParser(user: User, guid: UUID): BodyParser[Result] = {
+    BodyParser("MassUploadController.createInnerBodyParser") { request =>
+      MassUploadControllerMethods.Create(
         user.email,
         None,
         guid,
@@ -42,8 +44,20 @@ trait MassUploadController extends Controller {
         uploadIterateeFactory,
         false
       )(request)
-    }))
+        .map(result => Right(result)) // Doesn't matter which it is...
+    }
   }
+
+  /** Checks user auth, then calls createInnerBodyParser().
+    *
+    * Used in create().
+    */
+  private def createAuthBodyParser(guid: UUID): BodyParser[Result] = {
+    AuthorizedBodyParser(anyUser)(user => createInnerBodyParser(user, guid))
+  }
+
+  /** Starts or resumes a file upload. */
+  def create(guid: UUID) = Action(createAuthBodyParser(guid))(finishedRequest => finishedRequest.body)
 
   /** Responds to a HEAD request.
     *
@@ -188,7 +202,6 @@ object MassUploadController extends MassUploadController {
   override protected val messageQueue = ApolloQueue
   override protected val documentSetBackend = DocumentSetBackend
   override protected val fileGroupBackend = FileGroupBackend
-  override protected val sessionFactory = SessionFactory
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
   override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
 
