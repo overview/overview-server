@@ -42,7 +42,7 @@ define [
           </div>
         </div>
 
-        <p class="help-block"><%- t('explanation') %></p>        
+        <p class="instructions"><%- t('explanation') %></p>        
         <div class='progress-bar'></div>
 
       </div>
