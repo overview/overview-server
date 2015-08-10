@@ -86,7 +86,7 @@ define [
 
           <% if (view.nDocuments) { %>
             <dt class="n-documents"><%- t('view.nDocuments.dt') %></dt>
-            <dd class="n-documents"><%- t('view.nDocuments.dd', view.nDocuments, state.nDocuments) %></dd>
+            <dd class="n-documents"><%- t('view.nDocuments.dd', view.nDocuments, state.documentSet.nDocuments) %></dd>
           <% } %>
 
           <% if (view.createdAt) { %>

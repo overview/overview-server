@@ -66,7 +66,7 @@ define [
         @view1 = new View(type: 'view', id: 1, longId: 'view-1', title: 'foo', nDocuments: 10, createdAt: new Date(), creationData: [])
         @viewList = new ViewList([@view1])
         @state = new State(view: @view1)
-        @state.nDocuments = 1234
+        @state.documentSet = { nDocuments: 1234 }
         @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state)
 
       describe 'after opening the popover', ->
@@ -111,7 +111,7 @@ define [
         @view2 = new View(type: 'view', id: 2, longId: 'view-2', title: 'bar', nDocuments: 10, createdAt: new Date(), creationData: [])
         @viewList = new ViewList([@view1, @view2])
         @state = new State(view: @view1)
-        @state.nDocuments = 1234
+        @state.documentSet = { nDocuments: 1234 }
         @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state)
         $('body').append(@view.el)
 
