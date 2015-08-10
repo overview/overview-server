@@ -45,7 +45,9 @@ define [
         'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
+        'views.DocumentSet._massUploadForm.explanation': 'explanation'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
+
 
       @sandbox.spy(UploadCollectionView.prototype, 'render')
 
