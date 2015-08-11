@@ -1,5 +1,7 @@
 package com.overviewdocs.clone
 
+import play.api.libs.json.Json
+
 import com.overviewdocs.persistence.DocumentSetIdGenerator
 import com.overviewdocs.models.{Document,DocumentSet,File}
 import com.overviewdocs.models.tables.{Documents,Files}
@@ -28,14 +30,30 @@ class DocumentClonerSpec extends DbSpecification {
     "with CSV-uploaded Documents" should {
       trait CsvUploadScope extends BaseScope {
         val originalDocuments: Seq[Document] = Seq(
-          factory.document(id=(0x1L << 32) | 1L, documentSetId=originalDocumentSet.id, text="foo"),
-          factory.document(id=(0x1L << 32) | 2L, documentSetId=originalDocumentSet.id, text="bar")
+          factory.document(
+            id=(0x1L << 32) | 1L,
+            documentSetId=originalDocumentSet.id,
+            text="foo",
+            metadataJson=Json.obj("foo" -> "bar")
+          ),
+          factory.document(
+            id=(0x1L << 32) | 2L,
+            documentSetId=originalDocumentSet.id,
+            text="bar",
+            metadataJson=Json.obj("bar" -> "baz")
+          )
         )
       }
 
-      "clone documents" in new CsvUploadScope {
+      "clone document text" in new CsvUploadScope {
         go
         findDocuments(cloneDocumentSet.id).map(_.text) must beEqualTo(originalDocuments.map(_.text))
+      }
+
+      "clone document metadata" in new CsvUploadScope {
+        // https://www.pivotaltracker.com/story/show/99507728
+        go
+        findDocuments(cloneDocumentSet.id).map(_.metadataJson) must beEqualTo(originalDocuments.map(_.metadataJson))
       }
 
       "match clone document IDs to original document IDs" in new CsvUploadScope {
