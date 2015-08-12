@@ -22,4 +22,7 @@ trait DocumentHeader {
   val text: String
 
   def viewUrl: Option[String] = url
+
+  /** Returns NFKC-normalized tokens split according to Unicode tr29. */
+  def tokens: Seq[String] = Seq()
 }

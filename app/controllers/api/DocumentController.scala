@@ -146,11 +146,12 @@ object DocumentController extends DocumentController {
     case object suppliedId extends Field
     case object text extends Field
     case object title extends Field
+    case object tokens extends Field
     case object url extends Field
 
     val defaults: Set[Field] = Set(id, keywords, pageNumber, suppliedId, title, url)
-    val all: Set[Field] = Set(id, documentSetId, keywords, metadata, pageNumber, suppliedId, text, title, url)
-    val fullDocumentKeywords: Set[Field] = Set(text, metadata)
+    val all: Set[Field] = Set(id, documentSetId, keywords, metadata, pageNumber, suppliedId, text, title, tokens, url)
+    val fullDocumentKeywords: Set[Field] = Set(text, tokens, metadata)
 
     def needFullDocuments(fields: Set[Field]): Boolean = fields.intersect(fullDocumentKeywords).nonEmpty
 
@@ -163,6 +164,7 @@ object DocumentController extends DocumentController {
       case `suppliedId` => "suppliedId"
       case `text` => "text"
       case `title` => "title"
+      case `tokens` => "tokens"
       case `url` => "url"
     }
 
@@ -175,6 +177,7 @@ object DocumentController extends DocumentController {
       case `suppliedId` => JsString(document.suppliedId)
       case `text` => JsString(document.text)
       case `title` => JsString(document.title)
+      case `tokens` => JsString(document.tokens.mkString(" "))
       case `url` => document.url.map(JsString).getOrElse(JsNull)
     }
 
@@ -191,6 +194,7 @@ object DocumentController extends DocumentController {
       case "suppliedId" => Some(suppliedId)
       case "text" => Some(text)
       case "title" => Some(title)
+      case "tokens" => Some(tokens)
       case "url" => Some(url)
       case _ => None
     }

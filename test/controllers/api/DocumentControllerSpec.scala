@@ -78,6 +78,13 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
       }
 
+      "set page limit to 20 when requesting tokens" in new IndexScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
+        override val fields = "id,tokens"
+        status(result)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
+      }
+
       "return an Array of IDs when fields=id" in new IndexScope {
         override val fields = "id"
         override lazy val selection = InMemorySelection(Seq(1L, 2L, 3L))
@@ -174,6 +181,15 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
       }
 
+      "query for tokens when fields includes tokens" in new IndexFieldsScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
+        override val fields = "id,tokens"
+
+        status(result) must beEqualTo(OK)
+        contentAsString(result) must /("items") /#(0) /("tokens" -> "text")
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
+      }
+
       "query for metadata when fields includes metadata" in new IndexFieldsScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
         override val fields = "id,metadata"
@@ -199,6 +215,15 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val json = contentAsString(result)
 
         json must /("items") /#(0) /("text" -> "text")
+      }
+
+      "include tokens in JSON response" in new IndexFieldsScope {
+        override val fields = "id,tokens"
+
+        status(result) must beEqualTo(OK)
+        val json = contentAsString(result)
+
+        json must /("items") /#(0) /("tokens" -> "text")
       }
 
       "include metadata in JSON response" in new IndexFieldsScope {
@@ -296,6 +321,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("url" -> "http://example.org")
         json must /("title" -> "title")
         json must /("text" -> "text")
+        json must /("tokens" -> "text")
         json must /("metadata") /("foo" -> "bar")
         json must /("suppliedId" -> "suppliedId")
       }
