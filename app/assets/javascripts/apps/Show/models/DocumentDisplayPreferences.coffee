@@ -22,6 +22,17 @@ define [ 'backbone' ], (Backbone) ->
       'boolean': (key, value) ->
         localStorage.setItem(PREFIX + key, value && 'true' || 'false')
 
+  # Stores data for the document-display dropdown menu and options.
+  #
+  # Attributes:
+  #
+  # * `text`: a localStorage boolean indicating we're in text mode
+  # * `wrap`: a localStorage boolean indicating text should wrap
+  # * `sidebar`: a localStorage boolean indicating we should show a sidebar
+  # * `documentUrl`: the URL for opening the current document in a new tab
+  #
+  # You store `text`, `wrap` and `sidebar` in localStorage by calling `set()`.
+  # Other than that, this object behaves like a regular Backbone.Model.
   class DocumentDisplayPreferences extends Backbone.Model
     initialize: ->
       attrs = {}

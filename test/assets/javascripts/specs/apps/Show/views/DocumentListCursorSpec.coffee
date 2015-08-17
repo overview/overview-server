@@ -84,6 +84,7 @@ define [
         'views.DocumentSet.show.DocumentDisplayPreferences.text.true': 'prefs.text.true'
         'views.DocumentSet.show.DocumentDisplayPreferences.sidebar': 'prefs.sidebar'
         'views.DocumentSet.show.DocumentDisplayPreferences.wrap': 'prefs.wrap'
+        'views.DocumentSet.show.DocumentDisplayPreferences.openInNewTab': 'prefs.openInNewTab'
 
     describe 'starting with a full list at no index', ->
       beforeEach ->

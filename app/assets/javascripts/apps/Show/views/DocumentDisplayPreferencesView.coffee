@@ -20,12 +20,15 @@ define [
         <ul class="dropdown-menu dropdown-menu-right" role="menu">
           <li><a href="#"><label class="checkbox"><input type="checkbox" name="sidebar"/> <%- t('sidebar') %></label></a></li>
           <li><a href="#"><label class="checkbox"><input type="checkbox" name="wrap"/> <%- t('wrap') %></label></a></li>
+          <li role="separator" class="divider"></li>
+          <li><a target="_blank" class="open-in-new-tab" href=""><i class="icon icon-external-link"></i><%- t('openInNewTab') %></a></li>
         </ul>
       </div>
     ''')
 
     events:
       'click .switch-text-mode': '_onClickText'
+      'click .open-in-new-tab': '_onClickOpenInNewTab'
       'change [name=sidebar]': '_onChangeSidebar'
       'change [name=wrap]': '_onChangeWrap'
 
@@ -33,6 +36,7 @@ define [
       throw 'Must pass options.model, a DocumentDisplayPreferences' if !@model
 
       @listenTo(@model, 'change:text', @render)
+      @listenTo(@model, 'change:documentUrl', @render)
 
       @render()
 
@@ -42,6 +46,7 @@ define [
       @ui.text.prop('checked', @model.get('text'))
       @ui.sidebar.prop('checked', @model.get('sidebar'))
       @ui.wrap.prop('checked', @model.get('wrap'))
+      @ui.url.attr('href', @model.get('documentUrl'))
       @
 
     _initialRender: ->
@@ -51,6 +56,7 @@ define [
         text: @$('[name=text]')
         sidebar: @$('[name=sidebar]')
         wrap: @$('[name=wrap]')
+        url: @$('a.open-in-new-tab')
 
     _onClickText: ->
       @model.set(text: !@model.get('text'))
@@ -60,3 +66,9 @@ define [
 
     _onChangeWrap: ->
       @model.set(wrap: @ui.wrap.prop('checked'))
+
+    _onClickOpenInNewTab: (e) ->
+      if e.currentTarget.getAttribute('href') == ''
+        e.preventDefault() # The document has no URL. Ignore the click.
+        e.stopPropagation() # Keep the menu open
+      # Otherwise, do the default action (open in new tab, close menu)

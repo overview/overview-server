@@ -17,6 +17,7 @@ define [
         'text.true': 'text.true'
         'sidebar': 'sidebar'
         'wrap': 'wrap'
+        'openInNewTab': 'openInNewTab'
 
       @preferences = new Preferences
       @$ = (args...) => @subject.$(args...)
@@ -49,3 +50,7 @@ define [
       expect(@preferences.get('wrap')).to.be.false
       @$('[name=wrap]').prop('checked', true).change()
       expect(@preferences.get('wrap')).to.be.true
+
+    it 'should update openInNewTab href when documentUrl changes', ->
+      @preferences.set('documentUrl': 'foobar')
+      expect(@$('.open-in-new-tab').attr('href')).to.eq('foobar')

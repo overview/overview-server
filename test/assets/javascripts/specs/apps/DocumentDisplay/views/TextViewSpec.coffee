@@ -11,7 +11,6 @@ define [
         loading: 'loading'
         error: 'error'
         onlyTextAvailable: 'onlyTextAvailable'
-        openInNewTab: 'openInNewTab'
 
       @preferences = new Backbone.Model(wrap: true)
       @$ = (args...) => @subject.$(args...)
@@ -44,11 +43,6 @@ define [
     it 'should render text when loading succeeds', ->
       @model.set(text: 'foobar')
       expect(@subject.$('pre')).to.contain('foobar')
-
-    it 'should render an open-in-new-tab link when loading succeeds', ->
-      @model.set(text: 'foobar', url: 'http://example.org')
-      expect(@subject.$('p.open-in-new-tab')).to.contain('openInNewTab')
-      expect(@subject.$('a')).to.have.attr('href', 'http://example.org')
 
     it 'should render highlights when they come after text', ->
       @model.set(text: 'foo bar moo mar')

@@ -213,7 +213,6 @@ views.Document.show.FindView.previousHighlight=Highlight previous match
 views.Document.show.TextView.error=We could not load the document text. Try refreshing the page.
 views.Document.show.TextView.loading=Loading text…
 views.Document.show.TextView.onlyTextAvailable=Only text view is available for this document.
-views.Document.show.TextView.openInNewTab=Open in new tab
 
 views.DocumentCloudImportJob.new.title=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.h1=Import documents from DocumentCloud
@@ -383,6 +382,7 @@ views.DocumentSet.show.DocumentDisplayPreferences.text.disabled=Overview can onl
 views.DocumentSet.show.DocumentDisplayPreferences.text.false=Document
 views.DocumentSet.show.DocumentDisplayPreferences.text.true=Text
 views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
+views.DocumentSet.show.DocumentDisplayPreferences.openInNewTab=Open in new tab
 
 views.DocumentSet.show.SearchView.query_placeholder=Search documents
 

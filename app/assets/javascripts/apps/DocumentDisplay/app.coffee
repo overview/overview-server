@@ -84,6 +84,8 @@ define [
         else
           @_renderText()
 
+      @preferences.set(documentUrl: urlProperties?.url)
+
       @
 
     _onTweetDeleted: ->
