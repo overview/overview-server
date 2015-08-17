@@ -20,6 +20,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 class LibreOfficeDocumentConverterSpec extends Specification with Mockito with NoTimeConversions {
+  sequential
+
   "LibreOfficeDocumentConverter" should {
     "call conversion command with the correct parameters" in new BaseScope {
       documentConverter.withStreamAsPdf(guid, inputStream)(doNothing _)
@@ -78,16 +80,13 @@ class LibreOfficeDocumentConverterSpec extends Specification with Mockito with N
     def convertAndCall[T](f: (InputStream, Long) => Future[T]): T = 
       Await.result(documentConverter.withStreamAsPdf(guid, inputStream)(f), Duration.Inf)
       
-    def tempDir = {
-      val tmpDir = System.getProperty("java.io.tmpdir")
-      Paths.get(tmpDir, "overview-documentset-worker")
-    }
+    val tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "overview-documentset-worker")
     val fileGuid = "ccddeeff-1122-3344-5566-77889900aabb"
     val filename = "abcd.doc"
     val outputFileName = s"$fileGuid.pdf"
-    val inputFilePath = tempDir.resolve(Paths.get(fileGuid))
+    val inputFilePath = tempDir.resolve(fileGuid)
     val inputFile = inputFilePath.toFile
-    val outputFile = tempDir.resolve(Paths.get(outputFileName)).toFile
+    val outputFile = tempDir.resolve(outputFileName).toFile
     
     val officeCommandPieces = Seq(
       Configuration.getString("libre_office_path"),
