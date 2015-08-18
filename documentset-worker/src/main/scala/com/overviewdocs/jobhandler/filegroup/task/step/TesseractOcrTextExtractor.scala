@@ -114,7 +114,7 @@ object TesseractOcrTextExtractor {
       }
 
       override def readText(textFile: File): String =
-        Source.fromFile(textFile).mkString
+        Source.fromFile(textFile)(scala.io.Codec.UTF8).mkString
 
       override def deleteFile(file: File): Boolean = file.delete
     }
