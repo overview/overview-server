@@ -19,27 +19,6 @@
     .flex(0 0 auto);
   }
 
-  #tree-app-search-and-tags {
-    border-bottom: 5px solid transparent;
-    .display-flex();
-    .flex-wrap(wrap);
-    margin: -5px -5px 0;
-
-    &>* {
-      margin: 5px 5px 0;
-    }
-
-    #tree-app-search {  
-      min-width: 10em;
-      width: 16em;
-    }
-
-    #tree-app-tags {
-      min-width: 10em;
-      width: 16em;
-    }
-  }
-
   #tree-app-view {
     .flex(1 1 auto);
     position: relative;
@@ -78,11 +57,35 @@
   .display-flex();
   .flex-direction-column();
 
-  #tree-app-right-top {
+  #tree-app-document-list-params {
+    border-bottom: 5px solid transparent;
+    .display-flex();
+    .flex-wrap(wrap);
+
+    &>* {
+      margin-right: 5px;
+    }
+
+    #document-list-title {
+      width: 100%;
+    }
+
+    #tree-app-search {  
+      min-width: 10em;
+      width: 16em;
+    }
+
+    #tree-app-tags {
+      min-width: 10em;
+      width: 16em;
+    }
+  }
+
+  #tree-app-selection-actions {
     .flex(0 0 auto);
     .display-flex();
+    .flex-justify-content(flex-end);
 
-    #document-list-title { .flex(1 1 auto); }
     #tree-app-document-list-tags { .flex(0 0 auto); }
   }
 

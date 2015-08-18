@@ -384,7 +384,7 @@ views.DocumentSet.show.DocumentDisplayPreferences.text.true=Text
 views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 views.DocumentSet.show.DocumentDisplayPreferences.openInNewTab=Open in new tab
 
-views.DocumentSet.show.SearchView.query_placeholder=Search documents
+views.DocumentSet.show.SearchView.query_placeholder=Refine by text search
 
 views.DocumentSet.show.TagCountList.prompt=Applied tags
 views.DocumentSet.show.TagCountList.empty=These documents are all untagged
@@ -393,7 +393,7 @@ views.DocumentSet.show.TagCountList.error=Overview failed to load tag counts. Pl
 views.DocumentSet.show.TagCountList.nDocuments={0,choice,0#no documents|1#1 document|1<{0,number,integer} documents}
 views.DocumentSet.show.TagCountList.remove=remove
 
-views.DocumentSet.show.TagSelect.placeholder=Select a tag
+views.DocumentSet.show.TagSelect.placeholder=Refine by tag
 views.DocumentSet.show.TagSelect.all=All documents
 views.DocumentSet.show.TagSelect.untagged=Untagged documents
 views.DocumentSet.show.TagSelect.organize=Organize tags…

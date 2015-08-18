@@ -104,19 +104,17 @@ define [
     _buildHtml: ->
       html = """
         <div id="tree-app-left">
-          <div id="tree-app-search-and-tags">
-            <div id="tree-app-search"></div>
-            <div id="tree-app-tags"></div>
-          </div>
           <div id="tree-app-views"></div>
           <div id="tree-app-view"></div>
         </div>
         <div id="tree-app-right">
-          <div id="tree-app-right-top">
+          <div id="tree-app-document-list-params">
+            <div id="tree-app-search"></div>
+            <div id="tree-app-tags"></div>
             <div id="document-list-title"></div>
-            <div id="tree-app-document-list-tags">
-              <div id="tree-app-tag-this"></div>
-            </div>
+          </div>
+          <div id="tree-app-selection-actions">
+            <div id="tree-app-tag-this"></div>
           </div>
           <div id="tree-app-right-bottom">
             <div id="document-list"></div>
