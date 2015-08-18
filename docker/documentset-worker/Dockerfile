@@ -2,10 +2,7 @@ FROM overview/overview-base
 
 
 RUN apt-get install -y \
-  libreoffice-common \
-  libreoffice-writer \
-  libreoffice-calc \
-  libreoffice-impress \
+  libreoffice \
   tesseract-ocr \
   tesseract-ocr-ara \
   tesseract-ocr-cat \
