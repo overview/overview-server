@@ -10,7 +10,8 @@ ENV DATABASE_NAME=overview \
     ES_HOSTS="overview-searchindex:9300" \
     ES_CLUSTER_NAME="DevSearchIndex" \
     REDIS_HOST=overview-redis \
-    REDIS_PORT=6379
+    REDIS_PORT=6379 \
+    BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage
 
 EXPOSE 9000
 

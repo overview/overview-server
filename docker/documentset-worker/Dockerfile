@@ -24,7 +24,8 @@ ENV DATABASE_NAME=overview \
     DATABASE_PORT=5432 \
     MESSAGE_BROKER_URI=tcp://overview-messagebroker:61613 \
     ES_HOSTS="overview-searchindex:9300" \
-    ES_CLUSTER_NAME="DevSearchIndex"
+    ES_CLUSTER_NAME="DevSearchIndex" \
+    BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage
 
 
 RUN mkdir /opt/overview/bin && \
