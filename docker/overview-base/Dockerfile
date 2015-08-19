@@ -4,9 +4,10 @@ RUN apt-get update && apt-get install -y \
   openjdk-8-jdk 
 
 RUN locale-gen en_US.UTF-8  
+
 ENV LANG=en_US.UTF-8  \
     LANGUAGE=en_US:en  \
-    LC_ALL=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 
 
 RUN mkdir /opt/overview
 COPY . /opt/overview/src/
