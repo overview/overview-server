@@ -4,19 +4,17 @@ define [
   'backbone',
   '../models/list_selection'
   '../views/DocumentList'
-  '../views/DocumentListTitle'
   '../views/DocumentListCursor'
   './ListSelectionController'
   'apps/DocumentDisplay/app'
   'apps/DocumentMetadata/App'
-], (_, $, Backbone, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, DocumentDisplayApp, DocumentMetadataApp) ->
+], (_, $, Backbone, ListSelection, DocumentListView, DocumentListCursorView, ListSelectionController, DocumentDisplayApp, DocumentMetadataApp) ->
   class Controller extends Backbone.Model
     # Properties set on initialize:
     # * documentSet (a DocumentSet)
     # * tags (a Tags)
     # * state (a State)
     # * listEl (an HTMLElement)
-    # * titleEl (an HTMLElement)
     # * cursorEl (an HTMLElement)
     #
     # Properties created here, whose attributes may change:
@@ -27,7 +25,6 @@ define [
       throw 'Must specify options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must specify options.state, a State' if !options.state
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
-      throw 'Must specify options.titleEl, an HTMLElement' if !options.titleEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
 
       @documentSet = options.documentSet
@@ -35,11 +32,9 @@ define [
       @state = options.state
 
       @listEl = options.listEl
-      @titleEl = options.titleEl
       @cursorEl = options.cursorEl
 
       @_addListSelection()
-      @_addTitleView()
       @_addListView()
       @_addCursorView()
 
@@ -69,17 +64,6 @@ define [
       @listenTo(@listSelection, 'change:cursorIndex', setStateSelectionFromListSelection)
       @listenTo(@state, 'change:documentList', => @listSelection.onSelectAll())
       @listenTo(@state, 'change:document', (__, newValue) => @listSelection.onSelectAll() if !newValue?)
-
-    _addTitleView: ->
-      view = new DocumentListTitleView
-        documentList: @state.get('documentList')
-        state: @state
-        el: @titleEl
-
-      @listenTo @state, 'change:documentList', (__, documentList) ->
-        view.setDocumentList(documentList)
-
-      @titleView = view
 
     _addListView: ->
       view = new DocumentListView
@@ -146,12 +130,11 @@ define [
 
       @cursorView = view
 
-  document_list_controller = (titleDiv, listDiv, cursorDiv, state, keyboardController) ->
+  document_list_controller = (listDiv, cursorDiv, state, keyboardController) ->
     controller = new Controller({},
       documentSet: state.documentSet
       state: state
       listEl: listDiv
-      titleEl: titleDiv
       cursorEl: cursorDiv
     )
 

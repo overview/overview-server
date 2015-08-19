@@ -17,6 +17,7 @@ define [
   '../Tree/app'
   '../View/app'
   '../Job/app'
+  '../DocumentListParamsSelector/App'
 ], (_, $, Backbone, \
     DocumentSet, TransactionQueue, State, \
     KeyboardController, \
@@ -26,7 +27,7 @@ define [
     SearchView, \
     TransactionQueueErrorMonitor, \
     ModeView, \
-    TreeApp, ViewApp, JobApp) ->
+    TreeApp, ViewApp, JobApp, DocumentListParamsSelectorApp) ->
 
   class App
     constructor: (options) ->
@@ -109,9 +110,9 @@ define [
         </div>
         <div id="tree-app-right">
           <div id="tree-app-document-list-params">
+            <div id="document-list-title"></div>
             <div id="tree-app-search"></div>
             <div id="tree-app-tags"></div>
-            <div id="document-list-title"></div>
           </div>
           <div id="tree-app-selection-actions">
             <div id="tree-app-tag-this"></div>
@@ -184,7 +185,9 @@ define [
         tagThisEl: els.tagThis
         keyboardController: keyboardController
 
-      document_list_controller(els.documentListTitle, els.documentList, els.documentCursor, @state, keyboardController)
+      document_list_controller(els.documentList, els.documentCursor, @state, keyboardController)
+
+      new DocumentListParamsSelectorApp(documentSet: @documentSet, state: @state, el: els.documentListTitle)
 
       new ViewAppController
         el: els.view

@@ -5,6 +5,8 @@ define [
 ], (_, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.DocumentListParamsSelector.SelectViewView')
 
+  MaxRecentSelections = 5
+
   # Lets the user select whether to show documents in the entire docset or in
   # a particular View.
   #
@@ -23,7 +25,7 @@ define [
       withView: _.template('''
         <div class="dropdown">
           <a data-target="#" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-            <%- selectedOption.text %>
+            <span class="text"><%- selectedOption.text %></span>
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
@@ -42,8 +44,6 @@ define [
         throw new Error('Must set options.model, a DocumentListParamsModel')
       if 'views' not of options
         throw new Error('Must set options.views, a Backbone.Collection of Models with `title` attributes')
-      if 'state' not of options
-        throw new Error('Must set options.state, a Backbone.Model with a `view` attribute')
 
       @model = options.model
       @state = options.state
@@ -98,10 +98,10 @@ define [
           { text: t('inDocumentSet'), attrs: @_encodeParamParts(view: null, objectIds: [], nodeIds: [], title: '') }
           { text: t('inView', view.get('title')), attrs: @_encodeParamParts(view: view, objectIds: [], nodeIds: [], title: '') }
         ]
-        @_logCurrentParams() if @model.get('title')
+        @_maybeLogCurrentParams()
         options = options.concat(@_getLoggedParamOptions())
 
-        selectedOption = if @model.get('title')
+        selectedOption = if @model.get('objectIds').length + @model.get('nodeIds').length > 0
           options[2]
         else if @model.get('view') == view
           options[1]
@@ -116,16 +116,29 @@ define [
           .text(t('inDocumentSet'))
           .attr(class: 'has-no-view')
 
-    _logCurrentParams: ->
-      view = @state.get('view') # assume non-null
+    # Saves the current state of the model into history, MAYBE.
+    #
+    # We save the state when an object or node is selected.
+    _maybeLogCurrentParams: ->
+      return if @model.get('objectIds').length + @model.get('nodeIds').length == 0
+
+      view = @model.get('view') # assume non-null
 
       # History doesn't persist between Views
       if view != @_pastOptionsView
         @_pastOptionsView = view
         @_pastOptions = []
 
+      currentAttrs = @_encodeCurrentParams()
+
+      # Remove entries that will become duplicates
+      @_pastOptions = @_pastOptions.filter((attrs) -> attrs != currentAttrs)
+
       # Log this option
-      @_pastOptions.unshift(@_encodeCurrentParams())
+      @_pastOptions.unshift(currentAttrs)
+
+      # Truncate so we only have the most recent entries
+      @_pastOptions = @_pastOptions.slice(0, MaxRecentSelections)
 
     _getLoggedParamOptions: ->
       for encodedAttrs in (@_pastOptions || [])

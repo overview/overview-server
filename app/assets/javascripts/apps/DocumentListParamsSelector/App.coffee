@@ -1,13 +1,15 @@
 define [
   'underscore'
   'backbone'
-], (Backbone) ->
+  './models/DocumentListParamsModel'
+  './views/NDocumentsView'
+  './views/SelectViewView'
+], (_, Backbone, DocumentListParamsModel,
+    NDocumentsView, SelectViewView) ->
   class App extends Backbone.View
     template: _.template('''
-      <div class="max-one-line">
-        <div class="n-documents"></div>
-        <div class="select-view-or-objects"></div>
-      </div>
+      <div class="n-documents"></div>
+      <div class="select-view-or-objects"></div>
       <div class="q-if-set"></div>
       <div class="tags-if-set"></div>
       <div class="q-if-unset"></div>
@@ -22,6 +24,8 @@ define [
 
       @documentSet = options.documentSet
       @tags = @documentSet.tags
+      @views = @documentSet.views
+      @state = options.state
 
       @model = new DocumentListParamsModel
         documentSet: @documentSet
@@ -30,12 +34,42 @@ define [
       @_refreshModel()
       @_initialRender()
 
-    # Updates the model with whatever's in the state.
-    _refreshModel: ->
-      @model.set(@state.get('documentList')?.params?.toJSON(), refreshing: true)
+      @listenTo(@state, 'change:documentList', @_refreshModel)
+      @listenTo(@model, 'change', @_refreshState)
 
-    _refreshState: ->
-      @state.setDocumentList(@model.toDocumentListParams(), refreshing: true)
+    # Updates the model with whatever's in the state.
+    _refreshModel: (__, _1, options) ->
+      return if options?.refreshing
+
+      attrs =
+        view: null
+        tagIds: []
+        tagOperation: 'any'
+        objectIds: []
+        nodeIds: []
+        title: ''
+        q: ''
+
+      stateParams = @state.get('documentList')?.params
+
+      for k, v of stateParams?.toJSON() || {} when v
+        k = switch k
+          when 'nodes' then 'nodeIds'
+          when 'tags' then 'tagIds'
+          when 'objects' then 'objectIds'
+          else k
+      
+        if k of attrs
+          attrs[k] = v
+
+      attrs.title = stateParams?.title || ''
+      attrs.view = stateParams?.view || null
+
+      @model.set(attrs, refreshing: true)
+
+    _refreshState: (__, options) ->
+      return if options?.refreshing
+      @state.setDocumentListParams(@model.toDocumentListParams(), refreshing: true)
 
     _initialRender: ->
       @$el.html(@template())
@@ -51,7 +85,7 @@ define [
           unset: @$('.q-if-unset')
 
       new NDocumentsView(model: @state, el: @ui.nDocuments)
-      new SelectViewView(model: @model, state: @state, el: @ui.selectViewOrObjects)
+      new SelectViewView(model: @model, state: @state, views: @views, el: @ui.selectViewOrObjects)
       #new SelectQUnsetView(model: @model, el: @ui.q.unset)
       #new SelectQSetView(model: @model, el: @ui.q.set)
       #new SelectTagsUnsetView(model: @model, tags: @tags, el: @ui.tags.unset)

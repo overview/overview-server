@@ -339,6 +339,9 @@ views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 document
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 
+views.DocumentSet.show.DocumentListParamsSelector.SelectViewView.inDocumentSet=in document set
+views.DocumentSet.show.DocumentListParamsSelector.SelectViewView.inView=in view “{0}”
+
 views.DocumentSet.show.DocumentListParams.all=%s in document set
 views.DocumentSet.show.DocumentListParams.node=%s in folder “{0}”
 views.DocumentSet.show.DocumentListParams.q=%s matching “{0}”

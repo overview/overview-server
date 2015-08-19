@@ -71,3 +71,23 @@ define [
           expect(@subject.$('a:eq(3)')).to.have.text('in object 1') # it doesn't go away
           @subject.$('a:eq(3)').click()
           expect(@params.attributes).to.deep.eq(view: @view, nodeIds: [], objectIds: [ 1 ], title: '%s in object 1')
+
+        it 'should hide duplicate history entries', ->
+          @subject.$('a:eq(1)').click()
+          @subject.$('a:eq(3)').click()
+          expect(@subject.$('a')).to.have.length(4)
+
+        it 'should limit to five history entries', ->
+          select = (n) => @params.set(view: @view, objectIds: [ n ], title: "%s in object #{n}")
+          select(n) for n in [ 0 ... 6 ]
+          expect(@subject.$('a')).to.have.length(8)
+
+      describe 'when a Tag is selected', ->
+        beforeEach ->
+          @params.set(view: @view, tagIds: [ 1 ], title: '%s with tag 1')
+
+        it 'should not show the tag or title', ->
+          expect(@subject.$('a:eq(0)')).to.contain('inView,view1')
+
+        it 'should not include the tag in the history', ->
+          expect(@subject.$('a')).to.have.length(3)

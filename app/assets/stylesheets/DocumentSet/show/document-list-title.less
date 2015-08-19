@@ -5,37 +5,38 @@
 }
 
 #document-list-title {
-  .display-flex();
   padding: .25em 0;
   font-family: @font-family-sans-serif;
   font-weight: normal;
-  font-size: 1.25em;
-  overflow: hidden;
+  font-size: 1.2em;
+  color: @text-color;
 
-  h4 {
-    .flex(1 1 auto);
-    font: inherit;
-    line-height: inherit;
-    margin: 0;
-    white-space: nowrap;
-    color: @text-color;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  &>* {
+    display: inline-block;
+    max-width: 100%;
   }
 
-  span.show-list-link {
-    .flex(0 0 auto);
-    max-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
+  a[data-toggle="dropdown"] {
+    max-width: 100%;
+    .display-flex();
 
-    .transition(max-width .35s ease);
+    .text {
+      .flex(0 1 auto);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .caret {
+      .flex(0 0 auto);
+      margin-top: .5em;
+    }
   }
 
-  a.show-list {
-    .flex(0 0 auto);
-    display: block;
-    padding: 0 1em 0 0;
-    float: right; // so animation is slide, not reveal
+  ul.dropdown-menu {
+    max-width: 100%;
+    a {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 }

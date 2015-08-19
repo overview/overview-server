@@ -14,9 +14,10 @@ define [
       q: ''                  # String
 
     toDocumentListParams: ->
-      new DocumentListParams @get('documentSet'), @get('view'),
+      ret = new DocumentListParams @get('documentSet'), @get('view'),
         nodes: @get('nodeIds')
         tags: @get('tagIds')
         objects: @get('objectIds')
         tagOperation: @get('tagOperation')
         q: @get('q')
+        title: @get('title')
