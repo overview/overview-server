@@ -384,6 +384,9 @@ views.DocumentSet.show.DocumentDisplayPreferences.text.true=Text
 views.DocumentSet.show.DocumentDisplayPreferences.wrap=Wrap long lines of text
 views.DocumentSet.show.DocumentDisplayPreferences.openInNewTab=Open in new tab
 
+views.DocumentSet.show.DocumentListParamsSelector.NDocumentsView.loading=Loading documents
+views.DocumentSet.show.DocumentListParamsSelector.NDocumentsView.nDocuments={0,choice,0#no documents|1#1 document|1<{0,number,integer} documents}
+
 views.DocumentSet.show.SearchView.query_placeholder=Refine by text search
 
 views.DocumentSet.show.TagCountList.prompt=Applied tags
