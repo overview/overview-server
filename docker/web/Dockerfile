@@ -23,7 +23,7 @@ RUN mkdir /opt/overview/bin && \
 
 WORKDIR /opt/overview/bin
 
-CMD ["stage/bin/overview-server"]
+CMD ["stage/bin/overview-server", "-Duser.timezone=UTC", "-Dpidfile.enabled=false"]
 
 
 
