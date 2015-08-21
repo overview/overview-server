@@ -1,7 +1,10 @@
 FROM ubuntu:vivid
 
 RUN apt-get update && apt-get install -y \
-  openjdk-8-jdk 
+  openjdk-8-jre-headless \
+  unzip \
+  wget 
+
 
 RUN locale-gen en_US.UTF-8  
 
@@ -9,11 +12,13 @@ ENV LANG=en_US.UTF-8  \
     LANGUAGE=en_US:en  \
     LC_ALL=en_US.UTF-8 
 
-RUN mkdir /opt/overview
-COPY . /opt/overview/src/
+RUN \
+  mkdir /opt/overview && \
+  wget -P /opt/overview https://s3.amazonaws.com/overview-builds/production.zip
 
-WORKDIR /opt/overview/src
 
-RUN ./sbt -Dsbt.log.noformat=true '; db-evolution-applier/stage; overview-server/stage; worker/stage; documentset-worker/stage; message-broker/stage'
+
+WORKDIR /opt/overview
+
 
 

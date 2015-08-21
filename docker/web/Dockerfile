@@ -16,14 +16,22 @@ ENV DATABASE_NAME=overview \
 EXPOSE 9000
 
 
-RUN mkdir /opt/overview/bin && \
-  mv target/universal/stage /opt/overview/bin && \
-  cd /opt/overview && \
-  rm -rf src
 
-WORKDIR /opt/overview/bin
+RUN \
+  export FILENAMES="$(unzip -qq -p production.zip archive/frontend/classpath.txt | \
+    sed -e 's/^/archive\/lib\//')" && \
+  unzip -qq -d bin -j production.zip $FILENAMES && \
+  rm production.zip
 
-CMD ["stage/bin/overview-server", "-Duser.timezone=UTC", "-Dpidfile.enabled=false"]
+WORKDIR /opt/overview
+
+CMD ["/usr/bin/java", \
+       "-cp", "bin/*", \
+        "-Dfile.encoding=UTF8", \
+        "-Duser.timezone=UTC", \
+        "-Dpidfile.path=/dev/null", \
+        "play.core.server.ProdServerStart"]
+
 
 
 

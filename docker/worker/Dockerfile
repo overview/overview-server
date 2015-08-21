@@ -9,12 +9,19 @@ ENV DATABASE_NAME=overview \
     ES_CLUSTER_NAME="DevSearchIndex" \
     BLOB_STORAGE_FILE_BASE_DIRECTORY=/var/lib/overview/blob-storage
 
-RUN mkdir /opt/overview/bin && \
-  mv worker/target/universal/stage /opt/overview/bin && \
-  cd /opt/overview && \
-  rm -rf src
 
-WORKDIR /opt/overview/bin
+RUN \
+  export FILENAMES="$(unzip -qq -p production.zip archive/worker/classpath.txt | \
+    sed -e 's/^/archive\/lib\//')" && \
+  unzip -qq -d bin -j production.zip $FILENAMES && \
+  rm production.zip
 
-CMD ["stage/bin/worker"]
+
+WORKDIR /opt/overview
+
+CMD ["/usr/bin/java", \
+       "-cp", "bin/*", \
+        "-Dfile.encoding=UTF8", \
+        "-Duser.timezone=UTC", \
+        "JobHandler"]
 
