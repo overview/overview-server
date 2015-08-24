@@ -1,183 +1,141 @@
-define [ 'underscore', 'i18n' ], (_, i18n) ->
-  t = i18n.namespaced('views.DocumentSet.show.DocumentListParams')
-
-  string =
-    toParam: (s) -> String(s)
-    toString: (s) -> s
-    toQueryParam: (s) -> s
-
-  intArray =
-    toParam: (arr) ->
-      if _.isEmpty(arr)
-        null
-      else
-        arr = [ arr ] if !_.isArray(arr)
-        (Math.round(Number(n))) for n in arr
-    toString: (arr) -> String(arr)
-    toQueryParam: (arr) -> String(arr)
-
-  boolean =
-    toParam: (b) ->
-      if b == true
-        true
-      else
-        false
-    toString: (b) -> String(b)
-    toQueryParam: (b) -> String(b)
-
-  Attributes =
-    q: string
-    nodes: intArray
-    tagged: boolean
-    objects: intArray
-    nodes: intArray
-    tags: intArray
-
+define [ 'underscore' ], (_) ->
   # Describes how to find a document list.
+  #
+  # A DocumentListParams is the intersection of the lists of documents found
+  # from each of the following searches:
+  #
+  # * `objects`: { title: <String>, ids: <Array of Object IDs>, nodeIds: <Array of Node IDs> }
+  # * `tags`: { ids: <Array of Tag IDs>, tagged: <Boolean>, operation: '<all|any|none, default any>' }
+  # * `q`: <String -- empty string for no search>
   #
   # Each DocumentListParams is immutable.
   #
   # Example usage:
   #
-  #     params = new DocumentListParams(documentSet, view, nodes: [ 123 ], title: '%s in topic “blah”')
-  #     params.toString()        # "DocumentListParams(nodes=123)"
-  #     params2 = params.reset(tags: [ 2,3 ], title: '%s tagged “foo”')
-  #     params2.toString()       # "DocumentListParams(tags=2,3)"
-  #     params3 = params2.withView(view2).reset(nodes: 234, tags: [2,3], title: '%s in topic “bleh”)
-  #     params3.toString()       # "DocumentListParams(tags=2,3;nodes=234)"
-  #     params3.equals(params3)  # true
-  #     params3.equals(params2)  # false
-  #     params3.title            # '%s in topic “bleh”' ... %s will be replaced elsewhere
+  #     params = new DocumentListParams(
+  #       objects: { title: '%s in folder "foo"', ids: [ 234 ] }
+  #       q: 'bar'
+  #     )
   #
-  #     params3.toJSON()         # { tags: [ 2, 3 ], nodes: 234 }
-  #     params3.toQueryString()  # tags=2,3&nodes=234&q=foo with no initial '?'
-  #                              # if view2.addScopeToQueryParams(tags: [ 2, 3 ], nodes: 234)
-  #                              # returns { tags: [ 2, 3 ], nodes: 234, q: 'foo' }
-  #     params3.toQueryParams()  # { tags: '2,3', nodes: '234', q: 'foo' }
+  #     # Shortcut to build DocumentListParams(q=bar)
+  #     params.withObjects(null)
   #
-  # Here are the possible attributes, which become query string parameters:
+  #     # Shortcut to build a DocumentListParams that searches for documents
+  #     # that have tag 345, tag 456 or no tags at all
+  #     params.withTags(ids: [ 345, 456 ], tagged: false)
+  #
+  #     params.reset() # DocumentListParams()
+  #
+  #     # You can also specify tags as just an Array of IDs
+  #     params.withTags([ 345, 455 ])
+  #
+  #     params.toJSON() # { objects: [ 234 ], q: 'bar' }
+  #     params.toQueryString() # objects=234&q=bar
+  #
+  # The query strings (or JSON) may include some (or none) of these parameters:
   #
   # * q: a full-text search query string (toQueryString() url-encodes it)
-  # * tags: an Array of Tag IDs, or null
-  # * objects: an Array of StoreObject IDs, or null
-  # * tagged: a boolean, or null
-  # * nodes: Tree nodes (TODO: nix and use objects instead)
-  #
-  # You're expected to use .reset() and .withView() instead of constructing
-  # DocumentListParams from scratch. Here are some helper methods:
-  #
-  #     params.reset.byNode(node) # nodes: [ node.id ], title: '%s in topic “#{node.description}”
-  #     params.reset.byTag(tag)   # tags: [ tag.id ], title: '%s tagged “#{tag.name}”
-  #     params.reset.byUntagged() # tagged: false, title: '%s without any tags'
-  #     params.reset.byQ(q)       # q: q, title: '%s matching “#{q}”
-  #     params.reset.all()        # title: '%s in document set
-  #
-  # If you call reset() without a title, some calls will auto-generate titles
-  #
-  #     params.reset(nodes: [ 2 ])  # nodes: [ 2 ], title: '%s in topic “#{node.description}”'
-  #     params.reset(tags: [ 1 ])   # tags: [ 1 ], title: '%s tagged “#{tag.name}”
-  #     params.reset(tagged: false) # tagged: false, title: '%s without any tags'
-  #     params.reset(q: 'foo')      # q: 'foo', title: '%s matching “foo”
-  #     params.reset({})            # title: '%s in document set'
-  #
-  # These five title strings come from i18n constants defined here. Plugins can
-  # pass their own i18n strings.
+  # * objects: an Array of StoreObject IDs
+  # * nodes: Tree node IDs (deprecated)
+  # * tags: an Array of Tag IDs
+  # * tagged: a boolean
+  # * tagOperation: 'all', 'none' or undefined (default, 'any')
   class DocumentListParams
-    constructor: (@documentSet, @view, options={}) ->
-      @title = options.title || t('all')
-      @params = {}
-      for k, type of Attributes
-        @params[k] = type.toParam(options[k]) if k of options
+    constructor: (options={}) ->
+      @objects = @_parseObjects(options.objects)
+      @tags = @_parseTags(options.tags)
+      @q = @_parseQ(options.q)
 
-      @reset = new DocumentListParams.Builder(@documentSet, @view)
+    withQ: (q) -> new DocumentListParams(objects: @objects, tags: @tags, q: q)
+    withTags: (tags) -> new DocumentListParams(objects: @objects, tags: tags, q: @q)
+    withObjects: (objects) -> new DocumentListParams(objects: objects, tags: @tags, q: @q)
 
-    # Return some params with a different view
-    withView: (view) ->
-      return @ if view == @view
-      newParams = if @params.nodes
-        # Switching to a new view will _always_ break the Tree
-        {}
-      else
-        _.extend({ title: @title }, @params)
-      new DocumentListParams(@documentSet, view, newParams)
-
-    # Returns a String representation, useful for debugging
-    toString: ->
-      parts = [ 'DocumentListParams(' ]
-      for k, type of Attributes
-        parts.push("#{k}=#{type.toString(@params[k])}") if k of @params
-      parts.push(')')
-      parts.join('')
-
-    # Returns a JSON representation, useful for debugging.
+    # Convenience method: returns new DocumentListParams().
     #
-    # This is simply @params.
-    toJSON: -> @params
+    # This is handy in situations where you otherwise wouldn't need to require()
+    # it at all.
+    reset: -> new DocumentListParams()
+
+    # Finds the query string from the constructor option `q`.
+    #
+    # The argument is trimmed; if it is empty, we use `null` instead.
+    _parseQ: (q) ->
+      q = q?.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '') # FIXME: with PhantomJS 2, q = q.trim()
+      q || null
+
+    # Finds the tags from the constructor option `tags`.
+    #
+    # If the argument is an Array of IDs, we use those. Otherwise, we parse an
+    # Object that contains any of `ids`, `tagged` and/or `operation`.
+    _parseTags: (tags={}) ->
+      tags = { ids: tags } if _.isArray(tags)
+
+      for k, __ of tags when k not in [ 'ids', 'tagged', 'operation' ]
+        throw new Error("Invalid option tags.#{k}")
+
+      if tags.tagged? && !_.isBoolean(tags.tagged)
+        throw new Error("Invalid option tags.tagged=#{JSON.stringify(tags.tagged)}")
+
+      if tags.operation? && tags.operation not in [ 'any', 'all', 'none' ]
+        throw new Error("Invalid option tags.operation=#{JSON.stringify(tags.operation)}")
+
+      if !tags.ids && !tags.tagged?
+        null
+      else
+        ret = {}
+        ret.ids = tags.ids if tags.ids
+        ret.tagged = tags.tagged if tags.tagged?
+        ret.operation = tags.operation if tags.operation in [ 'all', 'none' ]
+        ret
+
+    # Finds the objects from the constructor option `objects`.
+    #
+    # We parse an Object that contains `title` and one of `ids` or `nodeIds`.
+    _parseObjects: (objects) ->
+      return null if !objects
+
+      if _.isEmpty(objects.ids) && _.isEmpty(objects.nodeIds)
+        throw new Error('Missing option objects.ids or objects.nodeIds')
+      if !objects.title
+        throw new Error('Missing option objects.title')
+
+      ret = { title: objects.title }
+      ret.ids = objects.ids if !_.isEmpty(objects.ids)
+      ret.nodeIds = objects.nodeIds if !_.isEmpty(objects.nodeIds)
+      ret
+
+    # Returns a flattened representation, for querying the server.
+    toJSON: ->
+      ret = {}
+      ret.objects = @objects.ids if !_.isEmpty(@objects?.ids)
+      ret.nodes = @objects.nodeIds if !_.isEmpty(@objects?.nodeIds)
+      ret.tags = @tags.ids if !_.isEmpty(@tags?.ids)
+      ret.tagged = @tags.tagged if _.isBoolean(@tags?.tagged)
+      ret.tagOperation = @tags.operation if _.isString(@tags?.operation) && @tags.operation != 'any'
+      ret.q = @q if @q
+      ret
+
+    # Returns a String representation, for debugging.
+    toString: ->
+      parts = []
+      for k, v of @toJSON()
+        parts.push("#{k}=#{v.toString()}")
+      if @objects?.title
+        parts.push("title=#{@objects.title}")
+
+      "DocumentListParams(#{parts.join(';')})"
 
     # Returns true iff rhs is certainly equivalent to this one.
     #
     # This means same documentSet, view, title and params.
     equals: (rhs) ->
-      @documentSet == rhs.documentSet && @view == rhs.view && @title == rhs.title && _.isEqual(@params, rhs.params)
-
-    # Returns the parameters such that Overview servers can understand them.
-    #
-    # For instance, if we want ".../tag/34/add?nodes=2", then this method
-    # should return `{ nodes: '2' }`.
-    #
-    # Overview's servers expect each ID array to be a single String, with
-    # commas delimiting each ID.
-    #
-    # If there is a View, this selection's return value will be passed through
-    # View.addScopeToQueryParams(). For instance, a Tree view can add a `node`
-    # property to selections that don't already have one.
-    #
-    # Note that query params may be rather verbose. You should use POST
-    # requests where these parameters are involved.
-    toQueryParams: ->
-      queryParams = {}
-      for k, type of Attributes
-        queryParams[k] = type.toQueryParam(@params[k]) if k of @params
-
-      if @view?
-        @view.addScopeToQueryParams(queryParams)
-      else
-        queryParams
+      _.isEqual(@toJSON(), rhs.toJSON())
 
     toQueryString: ->
       arr = []
-      for k, v of @toQueryParams()
-        arr.push("#{encodeURIComponent(k)}=#{encodeURIComponent(v)}")
-      arr.join('&')
-
-  DocumentListParams.Builder = (documentSet, view) ->
-    build = (options={}) =>
-      realOptions = _.extend({}, options)
-      if 'title' not of realOptions
-        keys = Object.keys(realOptions)
-        realOptions.title = if keys.length == 0
-          t('all')
-        else if keys.length == 1
-          if keys[0] == 'nodes' && options.nodes.length == 1
-            t('node', view?.onDemandTree?.getNode?(options.nodes[0])?.description)
-          else if keys[0] == 'tags' && options.tags.length == 1
-            t('tag', documentSet?.tags?.get?(options.tags[0])?.attributes?.name)
-          else if keys[0] == 'tagged' && !options.tagged
-            t('untagged')
-          else if keys[0] == 'q'
-            t('q', options.q)
-          else
-            undefined
+      for k, v of @toJSON()
+        if _.isArray(v)
+          arr.push("#{k}=#{v.toString()}")
         else
-          undefined
-
-      new DocumentListParams(documentSet, view, realOptions)
-
-    build.byNode = (node) -> build(nodes: [ node.id ], title: t('node', node.description))
-    build.byTag = (tag) -> build(tags: [ tag.id ], title: t('tag', tag.attributes.name))
-    build.byUntagged = -> build(tagged: false, title: t('untagged'))
-    build.byQ = (q) -> build(q: q, title: t('q', q))
-    build.all = -> build(title: t('all'))
-    build
-
-  DocumentListParams
+          arr.push("#{k}=#{encodeURIComponent(v)}")
+      arr.join('&')

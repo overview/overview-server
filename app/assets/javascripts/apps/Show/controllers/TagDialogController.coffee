@@ -68,10 +68,8 @@ define [
       state = @state
 
       @listenTo @listView, 'remove', (tag) ->
-        if tag.id in (state.get('documentList')?.params?.params?.tags || [])
-          state.setDocumentListParams().all()
-        if tag.id in (state.get('highlightedDocumentListParams')?.params?.tags || [])
-          state.set(highlightedDocumentListParams: null)
+        if tag.id in (state.get('documentList')?.params?.tags?.ids || [])
+          state.refineDocumentListParams(tags: null)
         tag.destroy()
 
       @$dialog = $dialog = $(template({ t: t }))
@@ -87,14 +85,8 @@ define [
           @$dialog = undefined
           @stopListening()
 
-      # Refresh tag counts
-      url = if (view = @state.get('view'))? && view.get('type') == 'tree'
-        @tags.url.replace(/\/tags$/, "/trees/#{view.get('id')}/tags")
-      else
-        @tags.url
-
       Backbone.ajax
-        url: url
+        url: @tags.url
         success: (tags) =>
           counts = _.indexBy(tags, 'id')
           @listView.renderCounts(counts)

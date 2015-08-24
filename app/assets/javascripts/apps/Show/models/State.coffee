@@ -8,18 +8,21 @@ define [
   # Tracks global state.
   #
   # * Provides `documentSet` and `transactionQueue`: constants.
-  # * Gives access to `view`, `documentList`, `document` and
-  #   `highlightedDocumentListParams`: global state as Backbone.Model
-  #   attributes.
+  # * Gives access to `view`, `documentList`, `document`: global state as
+  #   Backbone.Model attributes.
   #
   # Usage:
   #
   #     transactionQueue = new TransactionQueue()
-  #     state = new State({}, documentSetId: '123', transactionQueue: transactionQueue)
+  #     documentSet = new DocumentSet(...)
+  #     state = new State({}, documentSet: documentSet, transactionQueue: transactionQueue)
   #     state.once('sync', -> renderEverything())
   #     state.init()
   class State extends Backbone.Model
     defaults:
+      # The currently displayed View.
+      view: null
+
       # The currently displayed list of documents.
       #
       # This is a partially-loaded list. Callers can read its `.params`,
@@ -36,20 +39,7 @@ define [
       # document is null, tagging/untagging applies to documentList.
       document: null
 
-      # Which document list is under view as far as the Tree is concerned.
-      #
-      # This gets set in setDocumentListParams, except when searching by Node.
-      # That's so you can:
-      #
-      # 1. Select a tag (sets highlightedDocumentListParams)
-      # 2. See the tree highlight the tag
-      # 3. Click one of the nodes (_doesn't_ set highlightedDocumentListParams)
-      # 4. Still see the tag highlighted
-      highlightedDocumentListParams: null
-
     initialize: (attributes, options={}) ->
-      super()
-
       throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue
 
@@ -57,95 +47,54 @@ define [
       @documentSetId = @documentSet.id
       @transactionQueue = options.transactionQueue
 
-      view = @documentSet.views.at(0)
-      attributes = @_createSetDocumentListParamsOptions(new DocumentListParams(@documentSet, view))
-      attributes.view = view
-      @set(attributes)
+      view = attributes.view || @documentSet.views.at(0)
+
+      @set
+        view: view
+        document: null
+        documentList: new DocumentList({}, documentSet: @documentSet, params: new DocumentListParams())
 
     # Sets new documentList params and unsets document.
     #
     # This is the only safe way to change document lists.
     #
-    # Calling convention
-    # ------------------
-    #
-    # There are several ways to call this method:
-    #
-    # 1. call `setDocumentListParams(params)`, where `params` is a
-    #    DocumentListParams.
-    # 2. call `setDocumentListParams({ foo: 'bar' }), and the options will be
-    #    passed to `DocumentListParams.Builder`. For instance,
-    #    `{ tags: [ 1 ] }` will select Tag 1.
-    # 3. call `setDocumentListParams().all()`, `.byUntagged()`,
-    #    `.byQ('search')`, etc. See `DocumentListParams.Builder` for the full
-    #    list of methods.
-    setDocumentListParams: (args...) ->
-      return @_startResetDocumentListParams() if !args.length
-
+    # You may pass a DocumentListParams instance, or you may pass a plain JSON
+    # object that will be passed to the DocumentListParams constructor.
+    setDocumentListParams: (options) ->
       oldParams = @get('documentList')?.params
 
-      params = if args[0] instanceof DocumentListParams
-        args[0]
+      params = if options instanceof DocumentListParams
+        options
       else
-        DocumentListParams.Builder(@documentSet, @get('view'))(args...)
+        new DocumentListParams(options)
 
       return if oldParams?.equals(params)
 
-      options = @_createSetDocumentListParamsOptions(params)
-      @set(options)
-
-    _createSetDocumentListParamsOptions: (params) ->
-      ret =
+      @set
         document: null
-        documentList: new DocumentList({}, params: params)
+        documentList: new DocumentList({}, documentSet: @documentSet, params: params)
 
-      if 'nodes' not of params.params
-        ret.highlightedDocumentListParams = params
-
-      ret
-
-    # _sets up_ a reset.
+    # Sets new documentList params relative to the current ones.
     #
-    # Use it like this:
+    # Example:
     #
-    #   state._startResetDocumentListParams().byDocument(document)
-    #
-    # It will call `reset.byDocument(document)` on the documentListParams
-    # to get new DocumentListParams, and then it will call
-    # `setDocumentListParams`.
-    #
-    # The special
-    #
-    #   state._startResetDocumentListParams().byJSON(nodes: [ 3 ])
-    #
-    # ... will call `reset(nodes: [3])` on the current documentListParams.
-    _startResetDocumentListParams: ->
-      build = new DocumentListParams.Builder(@documentSet, @get('view'))
-      ret = {}
+    #     state.setDocumentListParams(tags: { ids: [ 1, 2 ] })
+    #     state.refineDocumentListParams(q: 'foo')
+    #     state.refineDocumentListParams(q: null)
+    refineDocumentListParams: (options) ->
+      oldParams = @get('documentList')?.params || new DocumentListParams()
 
-      prepare = (func) =>
-        (args...) => @setDocumentListParams(func(args...))
-
-      for k, v of build
-        ret[k] = prepare(build[k])
-
-      ret.byJSON = (args...) =>
-        @setDocumentListParams(build(args...))
-
-      ret
+      @setDocumentListParams
+        q: if _.isUndefined(options.q) then oldParams.q else options.q
+        tags: if _.isUndefined(options.tags) then oldParams.tags else options.tags
+        objects: if _.isUndefined(options.objects) then oldParams.objects else options.objects
 
     # Switches to a new View.
     #
     # This is the correct way of calling .set('view', ...). The reason: we
     # need to update documentList to point to the new view.
     setView: (view) ->
-      reset = =>
-        params = @get('documentList')?.params
-        params = params?.withView(view)
-
-        options = @_createSetDocumentListParamsOptions(params)
-        options.view = view
-        @set(options)
+      reset = => @set(view: view)
 
       @stopListening(@get('view'))
 

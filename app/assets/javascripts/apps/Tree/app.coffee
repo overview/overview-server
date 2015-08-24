@@ -34,7 +34,6 @@ define [
 
     constructor: (options) ->
       throw 'Must pass el, an HTMLElement' if !options.el
-      throw 'Must pass app, a Show app' if !options.app
       throw 'Must pass view, a View' if !options.view
       throw 'Must pass options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must pass state, a State' if !options.state

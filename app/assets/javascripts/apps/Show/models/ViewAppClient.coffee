@@ -28,7 +28,7 @@ define [
     onTag: (tag, params) -> @viewApp.onTag?(tag, params)
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
 
-    setDocumentListParams: (params) -> @state.setDocumentListParams(params)
+    setDocumentListParams: (params) -> @state.refineDocumentListParams(params)
 
     _onMessage: (e) ->
       viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message

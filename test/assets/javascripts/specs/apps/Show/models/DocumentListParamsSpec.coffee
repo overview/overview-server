@@ -2,114 +2,152 @@ define [
   'underscore'
   'backbone'
   'apps/Show/models/DocumentListParams'
-  'i18n'
-], (_, Backbone, DocumentListParams, i18n) ->
+], (_, Backbone, DocumentListParams) ->
   describe 'apps/Show/models/DocumentListParams', ->
-    beforeEach ->
-      i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentListParams',
-        all: 'all'
-        node: 'node,{0}'
-        tag: 'tag,{0}'
-        untagged: 'untagged'
-        q: 'q,{0}'
+    c = (options) -> new DocumentListParams(options)
 
-      class MockTag extends Backbone.Model
-      @tag = new MockTag(id: 1, name: 'tag 1')
+    describe 'the constructor', ->
+      it 'should parse q', -> expect(c(q: 'foo')).to.have.property('q', 'foo')
+      it 'should not parse empty q', -> expect(c(q: ' ')).to.have.property('q', null)
+      it 'should parse tag IDs', -> expect(c(tags: [ 1, 2 ]).tags).to.deep.eq(ids: [ 1, 2 ])
+      it 'should parse tag IDs long-form', -> expect(c(tags: { ids: [ 1, 2 ] }).tags).to.deep.eq(ids: [ 1, 2 ])
+      it 'should parse untagged', -> expect(c(tags: { tagged: false }).tags).to.deep.eq(tagged: false)
+      it 'should set q=null by default', -> expect(c().q).to.be.null
+      it 'should set tags=null by default', -> expect(c().tags).to.be.null
+      it 'should set objects=null by default', -> expect(c().objects).to.be.null
 
-      @node = { id: 2, description: 'node 2' }
-      _.extend(@node, Backbone.Events)
+      it 'should parse tag NONE op', ->
+        expect(c(tags: { ids: [1], tagged: false, operation: 'none' }).tags)
+          .to.deep.eq(ids: [1], tagged: false, operation: 'none')
 
-      @documentSet =
-        id: 12
-        tags:
-          get: (id) => if id == 1 then @tag else undefined
-      @view =
-        id: 13
-        addScopeToQueryParams: (params) -> params
-        onDemandTree:
-          getNode: (id) => if id == 2 then @node else undefined
-      @builder = new DocumentListParams(@documentSet, @view).reset
+      it 'should parse tag ALL op', ->
+        expect(c(tags: { ids: [ 1, 2 ], operation: 'all' }).tags)
+          .to.deep.eq(ids: [ 1, 2 ], operation: 'all')
+
+      it 'should parse tag ANY op', ->
+        expect(c(tags: { ids: [ 1, 2 ], operation: 'any' }).tags).to.deep.eq(ids: [ 1, 2 ])
+
+      it 'should error when given a bad tag op', ->
+        expect(-> c(tags: { ids: [ 1, 2 ], operation: 'foo' }))
+          .to.throw('Invalid option tags.operation="foo"')
+
+      it 'should error when given a bad tagged value', ->
+        expect(-> c(tags: { tagged: 3 })).to.throw('Invalid option tags.tagged=3')
+
+      it 'shoudl error when given a bad tag key', ->
+        expect(-> c(tags: { foo: 'bar' })).to.throw('Invalid option tags.foo')
+
+      it 'should parse an object spec with ids', ->
+        expect(c(objects: { ids: [ 1, 2 ], title: '%s in foo' }).objects)
+          .to.deep.eq(ids: [ 1, 2 ], title: '%s in foo')
+
+      it 'should parse an object spec with nodeIds', ->
+        expect(c(objects: { nodeIds: [ 1, 2 ], title: '%s in foo' }).objects)
+          .to.deep.eq(nodeIds: [ 1, 2 ], title: '%s in foo')
+
+      it 'should error when given neither Object IDs nor Node IDs', ->
+        expect(-> c(objects: { title: '%s in foo' })).to.throw('Missing option objects.ids or objects.nodeIds')
+
+      it 'should error when given no object title', ->
+        expect(-> c(objects: { ids: [ 1, 2 ] })).to.throw('Missing option objects.title')
+
+    describe 'withTags()', ->
+      it 'should clear tags', -> expect(c(tags: { ids: [ 1, 2 ]}).withTags().tags).to.be.null
+      it 'should replace tags', -> expect(c(tags: { ids: [ 1 ] }).withTags(ids: [ 2 ]).tags).to.deep.eq(ids: [ 2 ])
+      it 'should not modify the original object', ->
+        tags1 = { ids: [ 1 ] }
+        tags2 = { ids: [ 2 ] }
+        params1 = c(tags: tags1)
+        params2 = params1.withTags(tags2)
+        expect(tags1).to.deep.eq({ ids: [ 1 ] })
+        expect(tags2).to.deep.eq({ ids: [ 2 ] })
+        expect(params1.tags).to.deep.eq({ ids: [ 1 ] })
+
+    describe 'withQ()', ->
+      it 'should clear q', -> expect(c(q: 'foo').withQ().q).to.be.null
+      it 'should replace q', -> expect(c(q: 'foo').withQ('bar').q).to.eq('bar')
+
+    describe 'withObjects()', ->
+      it 'should clear objects', ->
+        expect(c(objects: { ids: [ 1 ], title: '%s in foo' }).withObjects().objects).to.be.null
+
+      it 'should replace objects', ->
+        expect(c(objects: { ids: [ 1 ], title: '%s in foo' }).withObjects(ids: [ 2 ], title: '%s in bar').objects)
+          .to.deep.eq(ids: [ 2 ], title: '%s in bar')
+
+      it 'should not modify the original object', ->
+        objects1 = { ids: [ 1 ], title: '%s in foo' }
+        objects2 = { ids: [ 2 ], title: '%s in bar' }
+        params1 = c(objects: objects1)
+        params2 = params1.withObjects(params2)
+        expect(objects1).to.deep.eq(ids: [ 1 ], title: '%s in foo')
+        expect(objects2).to.deep.eq(ids: [ 2 ], title: '%s in bar')
+        expect(params1.objects).to.deep.eq(ids: [ 1 ], title: '%s in foo')
 
     describe 'reset()', ->
-      beforeEach -> @reset = @builder.all().reset
+      it 'should clear objects', -> expect(c(objects: { ids: [ 1 ], title: '%s in foo' }).reset().objects).to.be.null
+      it 'should clear tags', -> expect(c(tags: { ids: [ 1 ] }).reset().tags).to.be.null
+      it 'should clear q', -> expect(c(q: 'foo').reset().q).to.be.null
 
-      it 'should set a node title from the view', -> expect(@reset(nodes: [ @node.id ]).title).to.eq('node,node 2')
-      it 'should set a tag title from the docset', -> expect(@reset(tags: [ @tag.id ]).title).to.eq('tag,tag 1')
-      it 'should set a query title', -> expect(@reset(q: 'foo').title).to.eq('q,foo')
-      it 'should set an untagged title', -> expect(@reset(tagged: false).title).to.eq('untagged')
-      it 'should set an all title', -> expect(@reset().title).to.eq('all')
-      it 'should not override a title', -> expect(@reset(title: 'blah').title).to.eq('blah')
+    describe 'toJSON()', ->
+      it 'should give q', -> expect(c(q: 'foo').toJSON()).to.deep.eq(q: 'foo')
 
-    describe 'all', ->
-      beforeEach -> @params = @builder.all()
+      it 'should give objects', ->
+        expect(c(objects: { ids: [ 1, 2 ], title: '%s in foo' }).toJSON()).to.deep.eq(objects: [ 1, 2 ])
 
-      it 'should have no params', -> expect(@params.params).to.deep.eq({})
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams()')
-      it 'should equals() another', -> expect(@params.equals(@builder.all())).to.be.true
-      it 'should not equals() something else', -> expect(@params.equals(@builder.byUntagged())).to.be.false
-      it 'should give empty query params', -> expect(@params.toQueryParams()).to.deep.eq({})
-      it 'should have correct i18n', -> expect(@params.title).to.eq('all')
-      it 'should have a documentSet', -> expect(@params.documentSet).to.eq(@documentSet)
-      it 'should have a view', -> expect(@params.view).to.eq(@view)
+      it 'should give nodes', -> # DEPRECATED
+        expect(c(objects: { nodeIds: [ 1, 2 ], title: '%s in foo' }).toJSON()).to.deep.eq(nodes: [ 1, 2 ])
 
-      it 'should reset to add objects', ->
-        params2 = @params.reset(objects: [ 1, 2, 3 ], title: 'blah')
-        expect(params2.params).to.deep.eq(objects: [ 1, 2, 3 ])
-        expect(params2.title).to.eq('blah')
+      it 'should give tags', ->
+        expect(c(tags: { ids: [ 1, 2 ] }).toJSON()).to.deep.eq(tags: [ 1, 2 ])
 
-    describe 'byNode', ->
-      beforeEach ->
-        @params = @builder.byNode(@node)
+      it 'should give tagged=true', ->
+        expect(c(tags: { tagged: true }).toJSON()).to.deep.eq(tagged: true)
 
-      it 'should have one param', -> expect(@params.params).to.deep.eq(nodes: [ 2 ])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(nodes=2)')
-      it 'should give query params', -> expect(@params.toQueryParams()).to.deep.eq(nodes: '2')
-      it 'should equals() another', -> expect(@params.equals(@params.reset.byNode(@node))).to.be.true
-      it 'should not equals() something else', -> expect(@params.equals(@params.reset.byNode(id: 3))).to.be.false
-      it 'should have correct title', -> expect(@params.title).to.eq('node,node 2')
+      it 'should give tagged=false', ->
+        expect(c(tags: { tagged: false }).toJSON()).to.deep.eq(tagged: false)
 
-    describe 'byTag', ->
-      beforeEach ->
-        @params = @builder.byTag(@tag)
+      it 'should give tagOperation=all', ->
+        expect(c(tags: { ids: [ 1, 2 ], operation: 'all' }).toJSON())
+          .to.deep.eq(tags: [ 1, 2 ], tagOperation: 'all')
 
-      it 'should have one param', -> expect(@params.params).to.deep.eq(tags: [1])
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(tags=1)')
-      it 'should give query params', -> expect(@params.toQueryParams()).to.deep.eq(tags: '1')
-      it 'should have correct title', -> expect(@params.title).to.eq('tag,tag 1')
+      it 'should give tagOperation=none', ->
+        expect(c(tags: { ids: [ 1, 2 ], operation: 'none' }).toJSON())
+          .to.deep.eq(tags: [ 1, 2 ], tagOperation: 'none')
 
-      it 'should use view.addScopeToQueryParams() in toQueryParams()', ->
-        @view.addScopeToQueryParams = (apiParams) -> _.extend({ foo: 'bar' }, apiParams)
-        expect(@params.toQueryParams()).to.deep.eq(tags: '1', foo: 'bar')
+      it 'should not give tagOperation=any, because it is the default', ->
+        expect(c(tags: { ids: [ 1, 2 ], operation: 'any' }).toJSON()).to.deep.eq(tags: [ 1, 2 ])
 
-      it 'should not use view.addScopeToQueryParams() in toApiParams() if view is null', ->
-        params = @params.withView(null).reset.byTag(@tag)
-        expect(params.toQueryParams()).to.deep.eq(tags: '1')
+    describe 'toQueryString()', ->
+      it 'should encodeURIComponent() the q parameter', ->
+        expect(c(q: 'foo=bar').toQueryString()).to.eq('q=foo%3Dbar')
 
-      it 'should reset', ->
-        params2 = @params.reset.byNode(id: 3, description: 'foo')
-        expect(params2.params).to.deep.eq(nodes: [ 3 ])
-        expect(params2.title).to.eq('node,foo')
-        expect(params2.documentSet).to.eq(@documentSet)
-        expect(params2.view).to.eq(@view)
+      it 'should comma-separate object IDs', ->
+        expect(c(objects: { ids: [ 1, 2 ], title: '%s in foo' }).toQueryString()).to.eq('objects=1,2')
 
-      it 'should reset to a different view', ->
-        view2 = 'view2'
-        params2 = @params.withView(view2).reset.all()
-        expect(params2.view).to.eq(view2)
+      it 'should comma-separate node IDs', ->
+        expect(c(objects: { nodeIds: [ 1, 2 ], title: '%s in foo' }).toQueryString()).to.eq('nodes=1,2')
 
-    describe 'untagged', ->
-      beforeEach -> @params = @builder.byUntagged()
+      it 'should comma-separate tag IDs', ->
+        expect(c(tags: { ids: [ 1, 2 ] }).toQueryString()).to.eq('tags=1,2')
 
-      it 'should have no params', -> expect(@params.params).to.deep.eq(tagged: false)
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(tagged=false)')
-      it 'should have a query param', -> expect(@params.toQueryParams()).to.deep.eq(tagged: 'false')
-      it 'should have correct title', -> expect(@params.title).to.eq('untagged')
+      it 'should encode tagOperation', ->
+        expect(c(tags: { ids: [ 1, 2 ], operation: 'all' }).toQueryString()).to.match(/(^|&)tagOperation=all($|&)/)
 
-    describe 'byQ', ->
-      beforeEach ->
-        @params = @builder.byQ('foo')
+      it 'should encode tagged=true', ->
+        expect(c(tags: { tagged: true }).toQueryString()).to.eq('tagged=true')
 
-      it 'should have one param', -> expect(@params.params).to.deep.eq(q: 'foo')
-      it 'should have toString', -> expect(@params.toString()).to.eq('DocumentListParams(q=foo)')
-      it 'should have a query param', -> expect(@params.toQueryParams()).to.deep.eq(q: 'foo')
-      it 'should have correct title', -> expect(@params.title).to.deep.eq('q,foo')
+      it 'should encode tagged=false', ->
+        expect(c(tags: { tagged: false }).toQueryString()).to.eq('tagged=false')
+
+    describe 'equals()', ->
+      # Let's not test too completely; it's just a toJSON() match.
+      it 'should return true when true', ->
+        p1 = c(tags: { ids: [ 1, 2 ], tagged: false }, objects: { ids: [ 1, 2 ], title: '%s in foo' })
+        p2 = c(tags: { ids: [ 1, 2 ], tagged: false }, objects: { ids: [ 1, 2 ], title: '%s in foo' })
+        expect(p1.equals(p2)).to.be.true
+
+      it 'should return false when false', ->
+        p1 = c(tags: { ids: [ 1, 2 ], tagged: false }, objects: { ids: [ 1, 2 ], title: '%s in foo' })
+        p2 = c(tags: { ids: [ 1, 2 ], tagged: true }, objects: { ids: [ 1, 2 ], title: '%s in foo' })
+        expect(p1.equals(p2)).to.be.false

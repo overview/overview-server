@@ -2,9 +2,8 @@ define [
   'jquery'
   'underscore'
   'backbone'
-  '../models/ShowAppFacade'
   '../models/ViewAppClient'
-], ($, _, Backbone, ShowAppFacade, ViewAppClient) ->
+], ($, _, Backbone, ViewAppClient) ->
   class ViewAppController
     _.extend(@::, Backbone.Events)
 
@@ -21,10 +20,6 @@ define [
       @keyboardController = options.keyboardController
       @transactionQueue = options.transactionQueue
       @viewAppConstructors = options.viewAppConstructors
-
-      @facade = new ShowAppFacade
-        state: @state
-        tags: @state.documentSet.tags
 
       @_setView(@state.get('view'))
       @listenTo(@state, 'change:view', (__, view) => @_setView(view))
@@ -45,7 +40,6 @@ define [
         el = $('<div class="view"></div>').appendTo(@el)[0]
 
         viewApp = new @viewAppConstructors[type]
-          app: @facade
           documentSetId: @state.documentSetId
           view: view
           transactionQueue: @transactionQueue

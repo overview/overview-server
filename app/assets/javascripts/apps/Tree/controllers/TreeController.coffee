@@ -1,7 +1,10 @@
 define [
   'underscore'
   'backbone'
-], (_, Backbone) ->
+  'i18n'
+], (_, Backbone, i18n) ->
+  t = i18n.namespaced('views.DocumentSet.show.DocumentListParams')
+
   class TreeController
     _.extend(@::, Backbone.Events)
 
@@ -50,7 +53,7 @@ define [
       if _.isEqual(@state.get('documentList')?.params?.params, nodes: [ node.id ])
         @state.set(document: null)
       else
-        @state.setDocumentListParams(nodes: [ node.id ])
+        @_refineStateDocumentListParams(node)
 
     _onExpand: (node) ->
       @tree.demandNode(node.id)
@@ -61,11 +64,14 @@ define [
       selectedNodeIds = @state.get('documentList')?.params?.params?.nodes || []
       collapsedIsSelected = selectedNodeIds.some((id) => @tree.id_tree.is_id_ancestor_of_id(node.id, id))
       if collapsedIsSelected
-        @state.setDocumentListParams(nodes: [ node.id ])
+        @_refineStateDocumentListParams(node)
 
     _selectNode: (node) ->
-      @state.setDocumentListParams(nodes: [ node.id ])
+      @_refineStateDocumentListParams(node)
       @tree.demandNode(node.id)
+
+    _refineStateDocumentListParams: (node) ->
+      @state.refineDocumentListParams(objects: { nodeIds: [ node.id ], title: t('node', node.description) })
 
     _findNodeRelativeToSelectedNode: (finder) ->
       nodeId = @state.get('documentList')?.params?.params?.nodes?[0] || null

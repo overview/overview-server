@@ -11,8 +11,8 @@ define [
   # * state.change('documentList')
   #
   # Calls:
-  # * state.setDocumentListParams().byQ()
-  # * state.setDocumentListParams().all()
+  # * state.refineDocumentListParams(q: 'a string')
+  # * state.refineDocumentListParams(q: null)
   #
   # Triggers: nothing
   class SearchView extends Backbone.View
@@ -49,12 +49,12 @@ define [
     render: ->
       @initialRender() if !@$input
 
-      @$input.val(@state.get('documentList')?.params?.params?.q || '')
+      @$input.val(@state.get('documentList')?.params?.q || '')
       @_refreshChanging()
       @_refreshEmpty()
 
     _refreshChanging: ->
-      realQ = @state.get('documentList')?.params?.params?.q || ''
+      realQ = @state.get('documentList')?.params?.q || ''
       q = @$input.val().trim()
       @$el.toggleClass('changing', q != realQ)
 
@@ -68,11 +68,8 @@ define [
 
     _onSubmit: (e) ->
       e.preventDefault()
-      q = @$input.val().trim()
-      if q
-        @state.setDocumentListParams().byQ(q)
-      else
-        @state.setDocumentListParams().all()
+      q = @$input.val().trim() || null
+      @state.refineDocumentListParams(q: q)
 
     initialRender: ->
       html = @template(t: t)

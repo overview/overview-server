@@ -105,22 +105,19 @@ define [
     _buildHtml: ->
       html = """
         <div id="tree-app-left">
+          <div id="document-list-params"></div>
+          <div id="tree-app-search"></div>
+          <div id="tree-app-tags"></div>
           <div id="tree-app-views"></div>
           <div id="tree-app-view"></div>
         </div>
         <div id="tree-app-right">
-          <div id="tree-app-document-list-params">
+          <div id="document-list-title-and-tag-this">
             <div id="document-list-title"></div>
-            <div id="tree-app-search"></div>
-            <div id="tree-app-tags"></div>
-          </div>
-          <div id="tree-app-selection-actions">
             <div id="tree-app-tag-this"></div>
           </div>
-          <div id="tree-app-right-bottom">
-            <div id="document-list"></div>
-            <div id="document-current"></div>
-          </div>
+          <div id="document-list"></div>
+          <div id="document-current"></div>
         </div>
         <div id="transaction-queue-error-monitor">
         </div>
@@ -135,6 +132,7 @@ define [
       view: el('tree-app-view')
       tags: el('tree-app-tags')
       search: el('tree-app-search')
+      documentListParams: el('document-list-params')
       documentList: el('document-list')
       documentListTitle: el('document-list-title')
       tagThis: el('tree-app-tag-this')
@@ -187,7 +185,7 @@ define [
 
       document_list_controller(els.documentList, els.documentCursor, @state, keyboardController)
 
-      new DocumentListParamsSelectorApp(documentSet: @documentSet, state: @state, el: els.documentListTitle)
+      new DocumentListParamsSelectorApp(documentSet: @documentSet, state: @state, el: els.documentListParams)
 
       new ViewAppController
         el: els.view

@@ -101,12 +101,6 @@ define [
         options = @viewAppConstructors.job.lastCall.args[0]
         expect(options.state).to.eq(@state)
 
-      it 'should pass an app facade to the viewApp', ->
-        app = @viewAppConstructors.job.lastCall.args[0].app
-        expect(app).not.to.be.undefined
-        expect(app).to.respondTo('setDocumentListParams')
-        expect(app).to.respondTo('getTag')
-
       it 'should use ViewAppClient to notify the viewApp of changes', ->
         @state.set(document: 'document2')
         expect(@jobViewApp.onDocumentChanged).to.have.been.calledWith('document2')

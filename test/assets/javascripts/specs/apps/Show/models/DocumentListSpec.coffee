@@ -13,11 +13,10 @@ define [
       @documentSet.url = '/documentsets/1'
 
       @params =
-        documentSet: @documentSet
-        params: { tags: [ 20 ] }
-        toQueryParams: -> { tags: '20' }
+        toJSON: -> { tags: [ 20 ] }
+        toQueryString: -> 'tags=20'
 
-      @list = new DocumentList({}, params: @params)
+      @list = new DocumentList({}, documentSet: @documentSet, params: @params)
 
       @tagCountsChangedSpy = sinon.spy()
       @list.on('tag-counts-changed', @tagCountsChangedSpy)
@@ -30,6 +29,7 @@ define [
       @docs.off()
       @sandbox.restore()
 
+    it 'should set documentSet', -> expect(@list.documentSet).to.eq(@documentSet)
     it 'should set params', -> expect(@list.params).to.eq(@params)
     it 'should be empty', -> expect(@docs.length).to.eq(0)
     it 'should start with length=null', -> expect(@list.get('length')).to.be.null
@@ -39,11 +39,13 @@ define [
     it 'should have tagCount=0,atLeast', -> expect(@list.getTagCount(new Tag())).to.deep.eq(n: 0, howSure: 'atLeast')
     it 'should have selectionId=null', -> expect(@list.get('selectionId')).to.be.null
 
-    it 'should have getQueryParams()=params.toQueryParams', ->
-      expect(@list.getQueryParams()).to.deep.eq(@list.params.toQueryParams())
+    it 'should have tagCount=0,exact when not-the-tag is the params', ->
+      tag = new Tag(name: 'a tag')
+      # Violate API and modify params: there's no way in these unit tests
+      # to create a new DocumentList.
+      @list.params = { toJSON: -> tags: [ tag.id ], tagOperation: 'none' }
+      expect(@list.getTagCount(tag)).to.deep.eq(n: 0, howSure: 'exact')
 
-    it 'should have toSelectionQueryParams()=null', ->
-      expect(@list.getSelectionQueryParams()).to.be.null
 
     describe 'on first .fetchNextPage()', ->
       beforeEach ->
@@ -61,7 +63,7 @@ define [
         expect(@sandbox.server.requests.length).to.eq(1)
         req = @sandbox.server.requests[0]
         expect(req.method).to.eq('GET')
-        expect(req.url).to.eq('/documentsets/1/documents?refresh=true&tags=20&limit=20&offset=0')
+        expect(req.url).to.eq('/documentsets/1/documents?tags=20&refresh=true&limit=20&offset=0')
 
       it 'should return the same promise and not change anything when calling again', ->
         p1 = @list.fetchNextPage()
@@ -154,12 +156,6 @@ define [
         it 'should have tagCount=0,atLeast', -> expect(@list.getTagCount(new Tag())).to.deep.eq(n: 0, howSure: 'atLeast')
         it 'should have selectionId', -> expect(@list.get('selectionId')).to.eq('ea21b9a6-4f4b-42f9-a694-f177eba71ed7')
 
-        it 'should have getQueryParams()=params.toQueryParams', ->
-          expect(@list.getQueryParams()).to.deep.eq(@list.params.toQueryParams())
-
-        it 'should have toSelectionQueryParams()=[selectionId stuff]', ->
-          expect(@list.getSelectionQueryParams()).to.deep.eq(selectionId: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7')
-
         it 'should have tagCount=n,atLeast when computed from the server', ->
           tag = new Tag(id: 2)
           expect(@list.getTagCount(tag)).to.deep.eq(n: @list.nDocumentsPerPage>>1, howSure: 'atLeast')
@@ -209,7 +205,7 @@ define [
           expect(@list.getTagCount(tag)).to.deep.eq(n: 0, howSure: 'exact')
           expect(@tagCountsChangedSpy).to.have.been.called.twice
 
-        it 'should give tagCount=n,exact when the tag is in the params', ->
+        it 'should give tagCount=n,exact when the tag is the params', ->
           expect(@list.getTagCount(new Tag(id: 20))).to.deep.eq(n: @list.get('length'), howSure: 'exact')
 
         describe 'on subsequent fetchNextPage()', ->

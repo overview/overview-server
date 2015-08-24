@@ -159,7 +159,7 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
       @asts[key] ||= if @messages[key]?
         MessageFormatParser.parse(@messages[key])
       else
-        throw "Unknown i18n message key '#{key}'"
+        throw new Error("Unknown i18n message key '#{key}'")
 
   cache = new MessageCache(window.messages || {})
 

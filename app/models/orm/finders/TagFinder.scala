@@ -20,13 +20,6 @@ object TagFinder extends Finder {
         on(tags.id === counts.map(_.key))
       )
     }
-
-    def withCountsForDocumentSetAndTree(tree: Long) : FinderResult[(Tag,Long,Long)] = {
-      join(toQuery, tagCounts.toQuery.leftOuter, tagCountsInTree(tree).toQuery.leftOuter)((t, dsc, tc) =>
-        select((t, &(nvl(dsc.map(_.measures), 0L)), &(nvl(tc.map(_.measures), 0L))))
-        on(t.id === dsc.map(_.key), t.id === tc.map(_.key))
-      )
-    }
   }
   object TagResult {
     implicit def fromQuery(query: Query[Tag]) = new TagResult(query)
@@ -37,25 +30,6 @@ object TagFinder extends Finder {
     from(Schema.documentTags)(dt =>
       groupBy(dt.tagId)
       compute(count)
-    )
-  }
-
-  /** @return A mapping from Tag ID to count for the given Tree.  */
-  def tagCountsInTree(tree: Long) : FinderResult[GroupWithMeasures[Long,Long]] = {
-    /*
-     * node (1) -> node_document (many) -> document_tag (many).
-     *
-     * This may be slow.
-     */
-    join(Schema.documentTags, Schema.nodeDocuments, Schema.nodes, Schema.trees)((dt, nd, n, t) =>
-      where(t.id === tree)
-      groupBy(dt.tagId)
-      compute(count(dt.documentId))
-      on(
-        dt.documentId === nd.documentId,
-        nd.nodeId === n.id,
-        n.id === t.rootNodeId // we only count for the root node
-      )
     )
   }
 

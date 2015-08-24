@@ -1,16 +1,9 @@
 define [
   'backbone'
   'apps/Show/models/State'
-  'i18n'
-], (Backbone, State, i18n) ->
+], (Backbone, State) ->
   describe 'apps/Show/models/State', ->
     beforeEach ->
-      i18n.reset_messages
-        'views.DocumentSet.show.DocumentListParams.all': 'hack'
-        'views.DocumentSet.show.DocumentListParams.q': 'hack2'
-        'views.DocumentSet.show.DocumentListParams.node': 'hack3'
-        'views.DocumentSet.show.DocumentListParams.tag': 'hack4'
-
       @documentSet =
         id: 123
         tags: new Backbone.Collection
@@ -73,38 +66,31 @@ define [
 
     describe 'setDocumentListParams', ->
       beforeEach ->
-        @params1 =
-          equals: sinon.stub().returns(false)
-          params: {}
+        @buildState()
 
       it 'should change document to null when changing documentList', ->
-        @buildState()
         @state.set(document: 'foo')
-        @state.setDocumentListParams().byQ('new list')
+        @state.setDocumentListParams(q: 'foo')
         expect(@state.get('document')).to.be.null
 
-      it 'should not change document to null when setting to equivalent documentList', ->
-        @buildState()
-        @state.setDocumentListParams().byQ('q1')
+      it 'should not change document to null when not changing documentList', ->
+        @state.setDocumentListParams(q: 'foo')
         @state.set(document: 'foo')
-        @state.setDocumentListParams().byQ('q1')
+        @state.setDocumentListParams(q: 'foo')
         expect(@state.get('document')).to.eq('foo')
 
-      it 'should change highlightedDocumentListParams to the new value when changing documentList to a tag', ->
+    describe 'refineDocumentListParams', ->
+      beforeEach ->
         @buildState()
-        @state.set(highlightedDocumentListParams: @params1)
-        @params1.equals.returns(false)
-        @state.setDocumentListParams(tags: [ 1 ])
-        expect(@state.get('highlightedDocumentListParams')?.params?.tags).to.deep.eq([1])
 
-      it 'should not change highlightedDocumentListParams when changing documentList to a node', ->
-        @buildState()
-        @state.set(highlightedDocumentListParams: @params1)
-        @params1.equals.returns(false)
-        @state.setDocumentListParams(nodes: [ 2 ])
-        expect(@state.get('highlightedDocumentListParams')).to.eq(@params1)
+      it 'should change document to null when changing documentList', ->
+        @state.setDocumentListParams(tags: { ids: [ 1 ] })
+        @state.set(document: 'foo')
+        @state.refineDocumentListParams(q: 'foo')
+        expect(@state.get('document')).to.be.null
 
-      it 'should act as a factory method when called with no arguments', ->
-        state = new State({}, documentSet: @documentSet, transactionQueue: 'xxx')
-        state.setDocumentListParams().byQ('search')
-        expect(state.get('documentList')?.params?.params?.q).to.eq('search')
+      it 'should not change document to null when not changing documentList', ->
+        @state.setDocumentListParams(tags: { ids: [ 1 ] })
+        @state.set(document: 'foo')
+        @state.refineDocumentListParams(tags: { ids: [ 1 ] })
+        expect(@state.get('document')).to.eq('foo')

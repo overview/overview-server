@@ -9,6 +9,8 @@ define [
   #
   # A DocumentList is composed of:
   #
+  # * the `documentSet` _property_, a `DocumentSet` object passed as an option
+  #   to the constructor.
   # * the `params` _property_, a `DocumentListParams` object passed as an
   #   option to the constructor.
   # * the `documents` _property_, a `Documents` collection holding the partial,
@@ -20,8 +22,9 @@ define [
   #
   # Invoke it like this:
   #
-  #   params = DocumentListParams.all()
-  #   documentList = new DocumentList({}, params: params)
+  #   documentSet = new DocumentSet(...)
+  #   params = new DocumentListParams()
+  #   documentList = new DocumentList({}, documentSet: documentSet, params: params)
   #   documentList.fetchNextPage() # returns a Promise
   #
   #   documentList.get('length') # returns null if unknown, Number if known
@@ -56,10 +59,11 @@ define [
       statusCode: null
 
     initialize: (attributes, options) ->
+      throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet?
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
 
+      @documentSet = options.documentSet
       @params = options.params
-      @documentSet = @params.documentSet
       @url = _.result(@documentSet, 'url').replace(/\.json$/, '') + '/documents'
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
       @documents = new Documents([])
@@ -72,28 +76,26 @@ define [
       @_tagCounts = {} # Object of Tag CID -> { n: Number, howSure: '(atLeast|exact)' }
       @_halfCountedTags = {} # Object of Tag CID -> Tag
 
-    # Returns the query-string parameters we're using to build this list.
+    # Returns the query string when we want to refresh the query on the server.
     #
-    # If you re-run a query with these parameters, consider adding another
-    # parameter: `"refresh":true`. (Without that parameter, Overview might use a
-    # cached document list to serve subsequent requests. if you wanted that
-    # behavior, you should use getSelectionQueryParams().
-    getQueryParams: -> @params.toQueryParams()
+    # Normally, the server will cache any query results for a given query
+    # string. If we add, remove or tag documents, the cached results won't
+    # change. This method adds a ?refresh=true to the query string to ensure
+    # the server ignores its cache.
+    _getQueryStringNoCache: ->
+      ret = @params.toQueryString()
+      ret && "#{ret}&refresh=true" || 'refresh=true'
 
-    # Returns query-string parameters that tell the server about this exact
-    # list of documents.
+    # Returns the query string when we want to use the server's cached values.
     #
-    # The server persists Selections for many minutes: long enough that users
-    # can paginate. If you're tagging, say, or counting things that relate to
-    # this document list, use getSelectionQueryParams(). See
-    # https://www.pivotaltracker.com/story/show/92354552 to see what can happen
-    # otherwise.
+    # When we fetch the first page of results, the server will return a
+    # selection ID, which we can use to paginate results.
     #
-    # Only call this method after the first page fetch is complete. Before, it
-    # will return `null`.
-    getSelectionQueryParams: ->
+    # If we haven't fetched the first page of results yet, this method will
+    # return `null`.
+    _getQueryStringCached: ->
       if @get('selectionId')
-        selectionId: @get('selectionId')
+        "selectionId=#{@get('selectionId')}"
       else
         null
 
@@ -143,14 +145,11 @@ define [
     #
     # See `tagLocal()`.
     tag: (tag) ->
-      params = @getSelectionQueryParams()
-
-      if !params?
-        return @fetchNextPage() # usually a no-op
-          .then(=> @tag(tag))
-
-      @tagLocal(tag)
-      tag.addToDocumentsOnServer(params)
+      if @get('selectionId')?
+        @tagLocal(tag)
+        tag.addToDocumentsOnServer(selectionId: @get('selectionId'))
+      else
+        @fetchNextPage().then(=> @tag(tag))
 
     # Untags all documents, on the server and locally.
     #
@@ -159,14 +158,11 @@ define [
     #
     # See `untagLocal()`.
     untag: (tag) ->
-      params = @getSelectionQueryParams()
-
-      if !params?
-        return @fetchNextPage() # usually a no-op
-          .then(=> @untag(tag))
-
-      @untagLocal(tag)
-      tag.removeFromDocumentsOnServer(params)
+      if @get('selectionId')?
+        @untagLocal(tag)
+        tag.removeFromDocumentsOnServer(selectionId: @get('selectionId'))
+      else
+        @fetchNextPage().then(=> @untag(tag))
 
     # Returns true iff we have fetched every document in the list.
     isComplete: ->
@@ -205,10 +201,12 @@ define [
     getTagCount: (tag) ->
       return @_tagCounts[tag.cid] if tag.cid of @_tagCounts
 
-      # When the tag is in the DocumentListParams, it's a full count
-      paramTags = @params.params.tags
-      if paramTags?.length == 1 && tag.id == paramTags[0]
+      # When the DocumentListParams is just the tag, it's a full count
+      if _.isEqual(@params.toJSON(), tags: [ tag.id ])
         n = @get('length')
+        howSure = 'exact'
+      else if _.isEqual(@params.toJSON(), tags: [ tag.id ], tagOperation: 'none')
+        n = 0
         howSure = 'exact'
       else
         n = 0
@@ -301,12 +299,12 @@ define [
     _doFetch: ->
       new RSVP.Promise (resolve, reject) =>
         query = if @get('length') == null
-          _.extend({ refresh: true }, @getQueryParams())
+          @_getQueryStringNoCache()
         else
-          @getSelectionQueryParams()
+          @_getQueryStringCached()
 
-        query.limit = @nDocumentsPerPage
-        query.offset = @get('nPagesFetched') * @nDocumentsPerPage
+        query += "&limit=#{@nDocumentsPerPage}"
+        query += "&offset=#{@get('nPagesFetched') * @nDocumentsPerPage}"
 
         @set(loading: true)
 

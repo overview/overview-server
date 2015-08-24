@@ -28,12 +28,6 @@ trait TagController extends Controller {
     )
   }
 
-  def indexJsonWithTree(documentSetId: Long, treeId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val tagsWithCounts = storage.findTagsWithCounts(documentSetId, treeId)
-    Ok(views.json.Tag.index.withDocsetCountsAndTreeCounts(tagsWithCounts))
-      .withHeaders(CACHE_CONTROL -> "max-age=0")
-  }
-
   def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val tagsWithCounts = storage.findTagsWithCounts(documentSetId)
     Ok(views.json.Tag.index.withDocsetCounts(tagsWithCounts))
@@ -82,9 +76,6 @@ object TagController extends TagController {
   trait Storage {
     /** @return (Tag, docset-count) pairs.  */
     def findTagsWithCounts(documentSetId: Long) : Seq[(Tag,Long)]
-
-    /** @return (Tag, docset-count, tree-count) tuples. */
-    def findTagsWithCounts(documentSetId: Long, treeId: Long) : Seq[(Tag,Long,Long)]
   }
 
   override protected val storage = new Storage {
@@ -94,14 +85,6 @@ object TagController extends TagController {
         .withCounts
         .toSeq
         .map((t: Tuple2[DeprecatedTag,Long]) => (t._1.toTag, t._2))
-    }
-
-    override def findTagsWithCounts(documentSetId: Long, treeId: Long) : Seq[(Tag,Long,Long)] = {
-      TagFinder
-        .byDocumentSet(documentSetId)
-        .withCountsForDocumentSetAndTree(treeId)
-        .toSeq
-        .map((t: Tuple3[DeprecatedTag,Long,Long]) => (t._1.toTag, t._2, t._3))
     }
   }
 }

@@ -24,8 +24,6 @@ define [
         'views.Tree.show.tag_list.submit': 'submit'
         'views.Tree.show.tag_list.tag_name.placeholder': 'tag_name.placeholder'
         'views.Tree.show.tag_list.compound_n_documents_html': 'compound_n_documents_html,{0},{1},{2},{3}'
-        'views.Tree.show.tag_list.th.count_in_tree': 'th.count_in_tree'
-        'views.Tree.show.tag_list.th.count_in_docset': 'th.count_in_docset'
         'views.Tree.show.tag_list.th.count': 'th.count'
         'views.Tree.show.tag_list.th.name': 'th.name'
         'views.Tree.show.tag_list.n_documents': 'n_documents,{0}'
@@ -155,23 +153,10 @@ define [
         # TagList.coffee for details.
         collection.add(makeModel('tag30'))
         expect(view.$('tbody tr:eq(2) .count')).to.contain('0')
-        expect(view.$('tbody tr:eq(2) .tree-count')).to.contain('0')
 
       it 'should not automatically set size=0 in existing tags on load', ->
         # https://github.com/overview/overview-server/issues/568
         expect(view.$('tbody tr:eq(0) td.count')).not.to.contain('0')
-
-      it 'should render a separate tree-count when all counts are the same', ->
-        counts = {}
-        counts[collection.first().id] = { size: 10, sizeInTree: 5 }
-        view.renderCounts(counts)
-        expect(view.$('table')).to.have.class('has-tree-counts')
-
-      it 'should not render a separate count when it is the same', ->
-        counts = {}
-        counts[collection.first().id] = { size: 10, sizeInTree: 10 }
-        view.renderCounts(counts)
-        expect(view.$('table')).not.to.have.class('has-tree-counts')
 
       it 'should not change a tag when interacting', ->
         collection.first().set(

@@ -339,13 +339,11 @@ views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 document
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 
-views.DocumentSet.show.DocumentListParamsSelector.SelectViewView.inDocumentSet=in document set
-views.DocumentSet.show.DocumentListParamsSelector.SelectViewView.inView=in view “{0}”
+views.DocumentSet.show.DocumentListParamsSelector.ObjectsOrDocumentSetView.all=%s all documents
+views.DocumentSet.show.DocumentListParamsSelector.ObjectsOrDocumentSetView.term=Searching
+views.DocumentSet.show.DocumentListParamsSelector.ObjectsOrDocumentSetView.nix=Search all documents
 
-views.DocumentSet.show.DocumentListParams.all=%s in document set
 views.DocumentSet.show.DocumentListParams.node=%s in folder “{0}”
-views.DocumentSet.show.DocumentListParams.q=%s matching “{0}”
-views.DocumentSet.show.DocumentListParams.tag=%s with tag “{0}”
 views.DocumentSet.show.DocumentListParams.untagged=%s without any tags
 
 views.DocumentSet.show.DocumentListTitle.loading=Loading documents…
@@ -512,8 +510,6 @@ views.Tree.show.helpers.DocumentHelper.title.page={0} – page {1,number,integer
 views.Tree.show.tag_list.header=Tags
 views.Tree.show.tag_list.n_documents={0,number,integer}
 views.Tree.show.tag_list.th.count=documents
-views.Tree.show.tag_list.th.count_in_tree=in tree
-views.Tree.show.tag_list.th.count_in_docset=total
 views.Tree.show.tag_list.th.name=Tag
 views.Tree.show.tag_list.preamble=These are all the tags you have created in this document set.
 views.Tree.show.tag_list.export=Export this list as a spreadsheet

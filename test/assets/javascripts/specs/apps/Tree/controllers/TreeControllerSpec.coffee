@@ -2,7 +2,8 @@ define [
   'underscore'
   'backbone'
   'apps/Tree/controllers/TreeController'
-], (_, Backbone, TreeController) ->
+  'i18n'
+], (_, Backbone, TreeController, i18n) ->
   describe 'apps/Tree/controllers/TreeController', ->
     defer = (fn) -> window.setTimeout(fn, 0) # _.defer takes 1ms -- too slow
 
@@ -12,10 +13,13 @@ define [
         documentList: null
 
       initialize: ->
-        @setDocumentListParams = sinon.spy()
+        @refineDocumentListParams = sinon.spy()
 
     beforeEach ->
       @state = new MockState
+
+      i18n.reset_messages
+        'views.DocumentSet.show.DocumentListParams.node': 'node,{0}'
 
       @focus =
         animateNode: sinon.spy()
@@ -110,7 +114,7 @@ define [
           @subject.goLeft()
           @subject.goRight()
         ).not.to.throw
-        expect(@state.setDocumentListParams).not.to.have.been.called
+        expect(@state.refineDocumentListParams).not.to.have.been.called
 
       describe 'when navigating Down from no selection', ->
         beforeEach ->
@@ -118,7 +122,7 @@ define [
           @tree.getRoot.returns(id: 1)
           @subject.goDown()
 
-        it 'should select the root node', -> expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [1])
+        it 'should select the root node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [1], title: 'node,undefined' })
         it 'should expand the root node', -> expect(@tree.demandNode).to.have.been.calledWith(1)
 
       describe 'when navigating Down from a node', ->
@@ -130,7 +134,7 @@ define [
           @state.set(documentList: { params: { params: { nodes: [1] }}})
           @subject.goDown()
 
-        it 'should select the node', -> expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [2])
+        it 'should select the node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ 2 ], title: 'node,undefined' })
         it 'should expand the node', -> expect(@tree.demandNode).to.have.been.calledWith(2)
 
       describe 'when navigating Up from a node', ->
@@ -142,7 +146,7 @@ define [
           @state.set(documentList: { params: { params: { nodes: [2] }}})
           @subject.goUp()
 
-        it 'should select the parent node', -> expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [1])
+        it 'should select the parent node', -> expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ 1 ], title: 'node,undefined' })
 
       describe 'when navigating left and right', ->
         beforeEach ->
@@ -159,23 +163,23 @@ define [
 
         it 'should go Right', ->
           @subject.goRight()
-          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [4])
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ 4 ], title: 'node,undefined' })
           expect(@tree.demandNode).to.have.been.calledWith(4)
 
         it 'should go Left', ->
           @subject.goLeft()
-          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [2])
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [2], title: 'node,undefined' })
           expect(@tree.demandNode).to.have.been.calledWith(2)
 
         it 'should not go too far Right', ->
           @state.set(documentList: { params: { params: { nodes: [4] }}})
           @subject.goRight()
-          expect(@state.setDocumentListParams).not.to.have.been.called
+          expect(@state.refineDocumentListParams).not.to.have.been.called
 
         it 'should not go too far Left', ->
           @state.set(documentList: { params: { params: { nodes: [2] }}})
           @subject.goLeft()
-          expect(@state.setDocumentListParams).not.to.have.been.called
+          expect(@state.refineDocumentListParams).not.to.have.been.called
 
       describe 'on expand', ->
         beforeEach ->
@@ -204,7 +208,7 @@ define [
           @view.trigger('collapse', @node)
 
           expect(@tree.id_tree.is_id_ancestor_of_id).to.have.been.calledWith(3, 6)
-          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [3])
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [3], title: 'node,description' })
 
       describe 'when clicking a node', ->
         beforeEach ->
@@ -230,4 +234,4 @@ define [
             document: 'foo'
             documentList: { params: { params: { nodes: [ 1 ] }}}
           @view.trigger('click', @node)
-          expect(@state.setDocumentListParams).to.have.been.calledWith(nodes: [ @node.id ])
+          expect(@state.refineDocumentListParams).to.have.been.calledWith(objects: { nodeIds: [ @node.id ], title: 'node,description' })

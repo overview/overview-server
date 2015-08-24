@@ -57,7 +57,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
             </div>
           </form>
         </td>
-        <td class="tree-count">⋯</td>
         <td class="count">⋯</td>
         <td class="actions"><a class="remove" href="#"><%- t('remove') %></a></td>
       </tr>
@@ -71,21 +70,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         <% } %>
       </p>
       <table>
-        <thead class="tree-count">
-          <tr>
-            <th rowspan="2" class="name"><%- t('th.name') %></th>
-            <th colspan="2" class="count-top"><%- t('th.count') %></th>
-            <th rowspan="2"/>
-          </tr>
-          <tr>
-            <th class="tree-count"><%- t('th.count_in_tree') %></th>
-            <th class="count"><%- t('th.count_in_docset') %></th>
-          </tr>
-        </thead>
-        <thead class="no-tree-count">
+        <thead>
           <tr>
             <th class="name"><%- t('th.name') %></th>
-            <th class="count-top"><%- t('th.count') %></th>
+            <th class="count"><%- t('th.count') %></th>
             <th/>
           </tr>
         </thead>
@@ -94,7 +82,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4">
+            <td colspan="3">
               <form method="post" action="#" role="form">
                 <div class="input-group">
                   <input type="text" class="form-control input-sm" name="name" required="required" placeholder="<%- t('tag_name.placeholder') %>" />
@@ -117,7 +105,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       @listenTo(@collection, 'change', @_changeTag)
       @listenTo(@collection, 'reset', @_resetTags)
 
-      # Hash of tag CID => { $tr, $id, $color, $name, $count, $treeCount, count, treeCount }
+      # Hash of tag CID => { $tr, $id, $color, $name, $count, count }
       #
       # Invariant: after any method, @tags reflects what's in the DOM.
       @tags = {}
@@ -149,35 +137,16 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         $name: $tr.find('input[name=name]')
         $color: $tr.find('input[type=color]')
         $count: $tr.find('.count')
-        $treeCount: $tr.find('.tree-count')
         count: null
-        treeCount: null
 
-    # Fills in tree counts for each tag.
+    # Fills in counts for each tag.
     renderCounts: (counts) ->
       for tagId, values of counts
         if (cid = @collection.get(tagId)?.cid)?
           data = @tags[cid]
-          data.count = values.size           # null means unknown; 0 means 0
-          data.treeCount = values.sizeInTree # null means unknown; 0 means 0
+          data.count = values.size # null means unknown; 0 means 0
           data.$count.text(t('n_documents', data.count ? 0))
-          data.$treeCount.text(t('n_documents', data.treeCount ? data.count ? 0))
       undefined
-
-      @_refreshHasTreeCounts()
-
-    # Toggles the 'has-tree-counts' class on the table.
-    #
-    # After calling this method, the class will be set iff there is a tag that
-    # has a different count in the tree than in the document set.
-    _refreshHasTreeCounts: ->
-      needed = false
-      for _, data of @tags
-        if data.treeCount? && data.count != data.treeCount
-          needed = true
-          break
-
-      @$('table').toggleClass('has-tree-counts', needed)
 
     remove: ->
       removeSpectrum(@$('input[type=color]'))
@@ -215,9 +184,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       # It's not like our users expect the view to update as HTTP requests
       # complete, right?
       tagData.$count.text(t('n_documents', 0))
-      tagData.$treeCount.text(t('n_documents', 0))
-
-      @_refreshHasTreeCounts()
 
     _removeTag: (tag) ->
       tagData = @tags[tag.cid]

@@ -22,11 +22,9 @@ define [
   # Lets the user select a Tag.
   #
   # Calls:
-  # * state.setDocumentListParams().byTag(tag)
-  # * state.setDocumentListParams().byUntagged()
-  # * state.setDocumentListParams().all()
-  #
-  # Emits `organize-clicked`
+  # * state.refineDocumentListParams(tags: { ids: [ tag.id ] })
+  # * state.refineDocumentListParams(tags: { tagged: false })
+  # * state.refineDocumentListParams(tags: null)
   class TagSelectView extends Backbone.View
     tagName: 'form'
     attributes:
@@ -73,7 +71,7 @@ define [
             </li>
           <% }); %>
         </ul>
-        <% if (showAll || showUntagged || showOrganize) { %>
+        <% if (showAll || showUntagged) { %>
           <ul class="actions">
             <% if (showAll) { %>
               <li class="all">
@@ -86,13 +84,6 @@ define [
               <li class="untagged">
                 <a href="#" tabindex="-1" class="untagged">
                   <span class="name"><%- t('untagged') %></span>
-                </a>
-              </li>
-            <% } %>
-            <% if (showOrganize) { %>
-              <li class="organize">
-                <a href="#" tabindex="-1" class="organize">
-                  <span class="name"><%- t('organize') %></span>
                 </a>
               </li>
             <% } %>
@@ -144,7 +135,6 @@ define [
 
       showUntagged = fuzzyContains(t('untagged'), search)
       showAll = !search || fuzzyContains(t('all'), search)
-      showOrganize = !search
 
       html = @templates.expanded
         t: t
@@ -152,7 +142,6 @@ define [
         highlight: search
         showAll: showAll
         showUntagged: showUntagged
-        showOrganize: showOrganize
       @ui.expanded.html(html)
 
       @ui.tags = @$('ul.tags')
@@ -222,16 +211,14 @@ define [
 
     _activateLink: (a) ->
       $a = $(a)
-      if $a.hasClass('untagged')
-        @state.setDocumentListParams().byUntagged()
-      else if $a.hasClass('organize')
-        @trigger('organize-clicked')
+
+      tags = if $a.hasClass('untagged')
+        tagged: false
       else if $a.hasClass('all')
-        @state.setDocumentListParams().all()
+        null
       else
         cid = $a.attr('data-cid')
         tag = @collection.get(cid)
-        if tag?
-          @state.setDocumentListParams().byTag(tag)
+        tag? && { ids: [ tag.id ] } || null
 
-      @close() # We only need this for organize-tags, but what the heck
+      @state.refineDocumentListParams(tags: tags)

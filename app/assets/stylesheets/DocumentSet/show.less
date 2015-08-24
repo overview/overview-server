@@ -16,13 +16,18 @@ body.document-set-show {
   }
 
   &>.container:not(#flash) {
-    .flex(1 0 auto);
+    .flex(1 1 auto);
     width: 100%;
     position: relative;
+    padding: 0;
   }
 
   #main {
+    position: absolute;
+    height: 100%;
+    width: 100%;
     overflow: visible; // never show scrollbar
+    .display-flex();
   }
 
   @import "show/app.less";
@@ -32,6 +37,7 @@ body.document-set-show {
   @import "show/focus.less";
   @import "show/tag-select.less";
   @import "show/search-result-list.less";
+  @import "show/document-list-params.less";
   @import "show/document-list-title.less";
   @import "show/document-list.less";
   @import "show/document-current.less";
