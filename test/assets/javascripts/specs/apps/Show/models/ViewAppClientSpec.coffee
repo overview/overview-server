@@ -6,7 +6,6 @@ define [
     defaults:
       documentList: 'foo'
       document: 'bar'
-      highlightedDocumentListParams: 'baz'
 
   describe 'apps/Show/models/ViewAppClient', ->
     beforeEach ->
@@ -17,7 +16,6 @@ define [
         @viewApp =
           onDocumentListParamsChanged: sinon.spy()
           onDocumentChanged: sinon.spy()
-          onHighlightedDocumentListParamsChanged: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -35,10 +33,6 @@ define [
       it 'should invoke onDocumentChanged', ->
         @state.set(document: 'baz')
         expect(@viewApp.onDocumentChanged).to.have.been.calledWith('baz')
-
-      it 'should invoke onHighlightedDocumentListParamsChanged', ->
-        @state.set(highlightedDocumentListParams: 'baz2')
-        expect(@viewApp.onHighlightedDocumentListParamsChanged).to.have.been.calledWith('baz2')
 
       it 'should invoke onTag', ->
         @state.trigger('tag', 'foo', 'bar')
@@ -59,13 +53,11 @@ define [
           @state.set
             documentList: 'foo2'
             document: 'bar2'
-            highlightedDocumentListParams: 'baz2'
           @state.trigger('tag', 'foo', 'bar')
           @state.trigger('untag', 'foo', 'bar')
 
           expect(@viewApp.onDocumentListParamsChanged).not.to.have.been.called
           expect(@viewApp.onDocumentChanged).not.to.have.been.called
-          expect(@viewApp.onHighlightedDocumentListParamsChanged).not.to.have.been.called
           expect(@viewApp.onTag).not.to.have.been.called
           expect(@viewApp.onUntag).not.to.have.been.called
 
@@ -84,7 +76,6 @@ define [
         @state.set
           documentList: 'foo2'
           document: 'bar2'
-          highlightedDocumentListParams: 'baz2'
         @state.trigger('tag', 'foo', 'bar')
         @state.trigger('untag', 'foo', 'bar')
         expect(true).to.be.true # really, we're just testing nothing crashes

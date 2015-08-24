@@ -20,7 +20,6 @@ define [
       @documentSet.tags = @tags
 
       @state = new MockState
-        highlightedDocumentListParams: 'highlightedDocumentListParams'
         documentList: { params: 'documentListParams' }
         document: 'document'
         view: @jobView
@@ -86,7 +85,6 @@ define [
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch
           documentListParams: 'documentListParams'
           document: 'document'
-          highlightedDocumentListParams: 'highlightedDocumentListParams'
 
       it 'should pass transactionQueue to the viewApp', ->
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch
