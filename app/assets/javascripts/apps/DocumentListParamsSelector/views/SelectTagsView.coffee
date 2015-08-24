@@ -54,6 +54,7 @@ define [
         </div>
         <div class="expanded">
         </div>
+        <a href="#" class="nix">&times;</a>
       ''')
 
       expanded: _.template('''
@@ -71,15 +72,8 @@ define [
             </li>
           <% }); %>
         </ul>
-        <% if (showAll || showUntagged) { %>
+        <% if (showUntagged) { %>
           <ul class="actions">
-            <% if (showAll) { %>
-              <li class="all">
-                <a href="#" tabindex="-1" class="all">
-                  <span class="name"><%- t('all') %></span>
-                </a>
-              </li>
-            <% } %>
             <% if (showUntagged) { %>
               <li class="untagged">
                 <a href="#" tabindex="-1" class="untagged">
@@ -99,6 +93,7 @@ define [
       'mouseenter li': '_onMouseenterLi'
       'mousedown a': '_onClick' # mousedown because it comes before blur
       'mouseup a': '_onClick' # mousedown to focus; mouseup on selection
+      'click a.nix': '_onClickNix'
 
     initialize: (options) ->
       throw 'Must set options.model, a Backbone.Model with `tags`' if !@options.model
@@ -117,11 +112,13 @@ define [
 
       tag = if (tagId = @model.get('tags')?.ids?[0])?
         @tags.get(tagId)
-      else if params?.tagged == false
+      else if @model.get('tags')?.tagged == false
         Untagged
 
       html = @templates.main(t: t, tag: tag)
       @$el.html(html)
+
+      @$el.toggleClass('empty', !@model.get('tags')?)
 
       @ui =
         input: @$('input')
@@ -135,13 +132,11 @@ define [
         .sort(compareTags)
 
       showUntagged = fuzzyContains(t('untagged'), search)
-      showAll = !search || fuzzyContains(t('all'), search)
 
       html = @templates.expanded
         t: t
         tags: tags
         highlight: search
-        showAll: showAll
         showUntagged: showUntagged
       @ui.expanded.html(html)
 
@@ -215,11 +210,13 @@ define [
 
       tags = if $a.hasClass('untagged')
         tagged: false
-      else if $a.hasClass('all')
-        null
       else
         cid = $a.attr('data-cid')
         tag = @tags.get(cid)
         tag? && { ids: [ tag.id ] } || null
 
       @state.refineDocumentListParams(tags: tags)
+
+    _onClickNix: (e) ->
+      e.preventDefault()
+      @state.refineDocumentListParams(tags: null)

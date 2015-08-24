@@ -77,6 +77,7 @@ define [
       @state.refineDocumentListParams(q: q)
 
     _onClickNix: (e) ->
+      e.preventDefault()
       @state.refineDocumentListParams(q: null)
 
     initialRender: ->

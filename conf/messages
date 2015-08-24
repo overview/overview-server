@@ -399,10 +399,8 @@ views.DocumentSet.show.TagCountList.error=Overview failed to load tag counts. Pl
 views.DocumentSet.show.TagCountList.nDocuments={0,choice,0#no documents|1#1 document|1<{0,number,integer} documents}
 views.DocumentSet.show.TagCountList.remove=remove
 
-views.DocumentSet.show.TagSelect.placeholder=Refine by tag
-views.DocumentSet.show.TagSelect.all=All documents
+views.DocumentSet.show.TagSelect.placeholder=Search by tag
 views.DocumentSet.show.TagSelect.untagged=Untagged documents
-views.DocumentSet.show.TagSelect.organize=Organize tags…
 
 views.DocumentSet.show.TagThis.prompt=Tags
 views.DocumentSet.show.TagThis.label=Tag {0,choice,0#no documents|1#this document|1<these {0,number,integer} documents} as

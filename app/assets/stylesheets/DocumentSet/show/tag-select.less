@@ -1,10 +1,29 @@
 @import "../../mixins.less";
 @import "_variables.less";
 
-#tree-app-tags {
+#document-list-params>.tags {
   position: relative;
+  max-width: 25em;
   .expanded { display: none; }
   &.open .expanded { display: block; }
+
+  .nix {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 1.5em;
+    font-weight: bold;
+    width: 1em;
+    text-align: center;
+    height: @input-height-small;
+    line-height: @input-height-small;
+  }
+
+  &:not(.empty) {
+    .nix { display: block; }
+    padding-right: 1.75em;
+  }
 
   input {
     position: relative;
@@ -20,6 +39,7 @@
     border: none;
     .text-muted();
     padding-left: .75em;
+    width: 3em; // give room for the label inside
     // It would be nice to have cursor:pointer here; however, that means
     // putting a z-index to bring the input group above the addon. Then we'd
     // need to make a mousedown on the addon focus the input; some simple
@@ -86,7 +106,7 @@
     top: .125em;
   }
 
-  a {
+  ul a {
     display: block;
     padding: .25em 1em .25em .5em;
     font: inherit;
@@ -98,7 +118,7 @@
     overflow: hidden;
   }
 
-  li.active a, a:hover {
+  li.active a, li a:hover {
     background: @table-bg-hover;
   }
 
