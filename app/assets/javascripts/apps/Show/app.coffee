@@ -11,7 +11,6 @@ define [
   './controllers/document_list_controller'
   './controllers/ViewAppController'
   './controllers/TourController'
-  './views/SearchView'
   './views/TransactionQueueErrorMonitor'
   './views/Mode'
   '../Tree/app'
@@ -24,7 +23,6 @@ define [
     ViewsController, tag_list_controller, document_list_controller, \
     ViewAppController, \
     TourController, \
-    SearchView, \
     TransactionQueueErrorMonitor, \
     ModeView, \
     TreeApp, ViewApp, JobApp, DocumentListParamsSelectorApp) ->
@@ -171,7 +169,6 @@ define [
       els.views.appendChild(controller.el)
 
       new ModeView(el: @el, state: @state)
-      new SearchView(el: els.search, state: @state)
 
       @_listenForRefocus()
       @_listenForResize(els.document)

@@ -2,11 +2,13 @@ define [
   'underscore'
   'backbone'
   './views/ObjectsOrDocumentSetView'
-], (_, Backbone, ObjectsOrDocumentSetView) ->
+  './views/SearchView'
+  './views/SelectTagsView'
+], (_, Backbone, ObjectsOrDocumentSetView, SearchView, SelectTagsView) ->
   class App extends Backbone.View
     template: _.template('''
       <div class="objects-or-document-set"></div>
-      <div class="q"></div>
+      <div class="search"></div>
       <div class="tags"></div>
     ''')
 
@@ -14,7 +16,7 @@ define [
       if 'documentSet' not of options
         throw new Error('Must set options.documentSet, a DocumentSet')
       if 'state' not of options
-        throw new Error('Must set options.state, a Backbone.Model with a `setDocumentListParams()` method and a `documentList` _attribute_ that has a `params` _property_ (which, in turn, has a `toJSON()` method) and a `length` _attribute_ which is null when loading')
+        throw new Error('Must set options.state, a Backbone.Model with a `refineDocumentListParams()` method and a `documentList` _attribute_ that has a `params` _property_ (which, in turn, has a `toJSON()` method) and a `length` _attribute_ which is null when loading')
 
       @documentSet = options.documentSet
       @tags = @documentSet.tags
@@ -36,11 +38,9 @@ define [
 
       @ui =
         objectsOrDocumentSet: @$('.objects-or-document-set')
-        q: @$('.q')
+        search: @$('.search')
         tags: @$('.tags')
 
       new ObjectsOrDocumentSetView(model: @model, state: @state, el: @ui.objectsOrDocumentSet)
-      #new SelectQUnsetView(model: @model, el: @ui.q.unset)
-      #new SelectQSetView(model: @model, el: @ui.q.set)
-      #new SelectTagsUnsetView(model: @model, tags: @tags, el: @ui.tags.unset)
-      #new SelectTagsSetView(model: @model, tags: @tags, el: @ui.tags.set)
+      new SearchView(model: @model, state: @state, el: @ui.search)
+      new SelectTagsView(model: @model, state: @state, tags: @tags, el: @ui.tags)

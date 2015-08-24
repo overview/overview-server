@@ -111,6 +111,13 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
 
       undefined
 
+    # Returns an Object set of { nodeId: null } from the current DocumentList
+    _getSelectedNodeIds: ->
+      ret = {}
+      for nodeId in @state.get('documentList')?.objects?.nodeIds || []
+        ret[nodeId] = null
+      ret
+
     _attachState: ->
       selectedNodeIds = []
 
@@ -121,7 +128,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
           for nodeId in selectedNodeIds
             @nodes[nodeId]?.setSelected(false, @animator, time)
 
-          selectedNodeIds = documentList?.params?.params?.nodes || []
+          selectedNodeIds = documentList?.params?.objects?.nodeIds || []
 
           for nodeId in selectedNodeIds
             @nodes[nodeId]?.setSelected(true, @animator, time)
@@ -137,9 +144,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       c = id_tree.children
       nodes = @on_demand_tree.nodes
       animatedNodes = @nodes
-      selectedNodeId = null
-      if (params = @state.get('documentList')?.params)? && params.type == 'node'
-        selectedNodeId = params.node.id
+      selectedNodeIds = @_getSelectedNodeIds()
 
       # When ids are added to the tree, their parents become open. Assume their
       # parents were unopened before (because siblings are always added all at
@@ -153,7 +158,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       for parentId in parentIds when parentId isnt null
         parentNode = animatedNodes[parentId]
         siblingNodes = for id in c[parentId]
-          animatedNodes[id] = new AnimatedNode(nodes[id], parentNode, id == selectedNodeId, ms)
+          animatedNodes[id] = new AnimatedNode(nodes[id], parentNode, id of selectedNodeIds, ms)
         parentNode.setChildren(siblingNodes, @animator, undefined, ms)
 
       undefined
@@ -183,11 +188,10 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       if rootId?
         ms ?= Date.now()
 
-        if (params = @state.get('documentList')?.params)? && params.type == 'node'
-          selectedNodeId = params.node.id
+        selectedNodeIds = @_getSelectedNodeIds()
 
         json = @_getNode(rootId)
-        @root = new AnimatedNode(json, null, rootId == selectedNodeId, ms)
+        @root = new AnimatedNode(json, null, rootId of selectedNodeIds, ms)
         @nodes[rootId] = @root
       else
         @root = null

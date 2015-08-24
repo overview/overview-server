@@ -66,9 +66,9 @@ define [
       @options = _.extend({}, DEFAULT_OPTIONS, options)
       @state = @tree.state
 
-      @setHighlightedDocumentListParams(@state.get('highlightedDocumentListParams'))
+      @listenTo(@state, 'change:documentList', @refreshDocumentListParams)
+      @refreshDocumentListParams()
 
-      @listenTo(@state, 'change:highlightedDocumentListParams', (__, params) => @setHighlightedDocumentListParams(params))
       @listenTo(@state.documentSet.tags, 'documents-changed', @_onTagOrUntag)
 
       $div = $(@div)
@@ -122,7 +122,7 @@ define [
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
-      @tree.state.on('change:documentList change:document change:highlightedDocumentListParams', update)
+      @tree.state.on('change:documentList change:document', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
       @state.documentSet.tags.on('change:color', update)
@@ -245,15 +245,14 @@ define [
       @last_draw?.pixel_to_action(x, y)
 
     _getHighlightColor: ->
-      if (highlightedDocumentListParams = @tree.state.get('highlightedDocumentListParams')?.params)?
-        if (tagId = highlightedDocumentListParams.tags?[0])?
-          @state.documentSet.tags.get(tagId)?.get('color')
-        else if false == highlightedDocumentListParams.tagged
-          '#dddddd'
-        else if !_.isEmpty(highlightedDocumentListParams)
-          '#50ade5'
-        else
-          null
+      params = @state.get('documentList')?.params
+
+      if params?.tags?.ids?.length == 1 && !params?.tags?.tagged && !params?.tags?.operation
+        @state.documentSet.tags.get(params.tags.ids[0])?.get('color')
+      else if params?.tags?.tagged? && !params?.tags?.ids
+        '#dddddd'
+      else if params?.tags? || params?.objects? || params?.q
+        '#50ade5'
       else
         null
 
@@ -332,15 +331,15 @@ define [
 
       @_set_needs_update()
 
-    _onTagOrUntag: (tag) ->
-      if @_isCurrentTag(tag) || @_isCurrentUntagged()
-        @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
+    _onTagOrUntag: (tag) -> @tree.on_demand_tree.refreshHighlightCountsOnCurrentNodes()
 
-    _isCurrentTag: (tag) -> @state.get('highlightedDocumentListParams')?.params?.tags?[0] == tag.id
-    _isCurrentUntagged: -> false == @state.get('highlightedDocumentListParams')?.params?.tagged
+    refreshDocumentListParams: ->
+      fullQueryString = @state.get('documentList')?.params?.toQueryString() || ''
+      parts = fullQueryString.split('&')
+        .filter((s) -> !/^nodes=/.test(s))
+      highlightQueryString = parts.join('&')
 
-    setHighlightedDocumentListParams: (params) ->
-      @tree.on_demand_tree.setHighlightJson(params?.toQueryParams() || null)
+      @tree.on_demand_tree.setHighlightQueryString(highlightQueryString)
 
   TreeView.helpers =
     # Returns a set of { nodeid: null }.
@@ -354,12 +353,11 @@ define [
     # border.)
     getHighlightedNodeIds: (documentListParams, document, onDemandTree) ->
       return {} if !document?
-      params = documentListParams?.params || {}
 
       # parentNodes: if our doclist is showing a node's contents, no need to
       # highlight its parents.
       parentNodes = {}
-      for nodeId in (params.nodes || [])
+      for nodeId in (documentListParams?.objects?.nodeIds || [])
         parentNodes[nodeId] = null
         while (nodeId = onDemandTree.nodes[nodeId]?.parentId)?
           parentNodes[nodeId] = null

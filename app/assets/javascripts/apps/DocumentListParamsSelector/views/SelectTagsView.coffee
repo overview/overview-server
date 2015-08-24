@@ -25,7 +25,7 @@ define [
   # * state.refineDocumentListParams(tags: { ids: [ tag.id ] })
   # * state.refineDocumentListParams(tags: { tagged: false })
   # * state.refineDocumentListParams(tags: null)
-  class TagSelectView extends Backbone.View
+  class SelectTagsView extends Backbone.View
     tagName: 'form'
     attributes:
       method: 'get'
@@ -101,21 +101,22 @@ define [
       'mouseup a': '_onClick' # mousedown to focus; mouseup on selection
 
     initialize: (options) ->
-      throw 'Must set options.collection, a Tag Collection' if !@collection
-      throw 'Must set options.state, a State' if !@options.state
+      throw 'Must set options.model, a Backbone.Model with `tags`' if !@options.model
+      throw 'Must set options.tags, a Tag Collection' if !@options.tags
+      throw 'Must set options.state, an Object with a refineDocumentListParams method' if !@options.state
 
       @state = options.state
+      @tags = options.tags
 
-      @listenTo(@collection, 'change', @render) # handle tag name change
-      @listenTo(@state, 'change:documentList', @render)
+      @listenTo(@tags, 'change', @render) # handle tag name change
+      @listenTo(@model, 'change:tags', @render)
       @render()
 
     render: ->
-      allTags = @collection.toArray().sort(compareTags)
+      allTags = @tags.toArray().sort(compareTags)
 
-      params = @state.get('documentList')?.params?.toJSON()
-      tag = if (tagId = params?.tags?[0])?
-        @collection.get(tagId)
+      tag = if (tagId = @model.get('tags')?.ids?[0])?
+        @tags.get(tagId)
       else if params?.tagged == false
         Untagged
 
@@ -129,7 +130,7 @@ define [
     _renderExpanded: (search) ->
       search ||= ''
 
-      tags = @collection
+      tags = @tags
         .filter((tag) -> fuzzyContains(tag.get('name'), search))
         .sort(compareTags)
 
@@ -218,7 +219,7 @@ define [
         null
       else
         cid = $a.attr('data-cid')
-        tag = @collection.get(cid)
+        tag = @tags.get(cid)
         tag? && { ids: [ tag.id ] } || null
 
       @state.refineDocumentListParams(tags: tags)

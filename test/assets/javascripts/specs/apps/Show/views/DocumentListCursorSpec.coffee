@@ -29,7 +29,7 @@ define [
       length: null
 
     initialize: ->
-      @params = { params: {} }
+      @params = {}
       @documents = new Documents
 
   class Selection extends Backbone.Model
@@ -180,7 +180,7 @@ define [
       initAt(5, 10)
       documentList = new DocumentList({ n: 3 })
       documentList.documents = new Backbone.Collection()
-      documentList.params = { params: { q: 'foo' } }
+      documentList.params = { q: 'foo' }
       view.setDocumentList(documentList)
       expect(displayApp.setSearch).to.have.been.calledWith('foo')
 

@@ -8,7 +8,7 @@ define [
   # Prompts the user to enter a search; displays the active search.
   #
   # Listens to:
-  # * state.change('documentList')
+  # * model.change('q')
   #
   # Calls:
   # * state.refineDocumentListParams(q: 'a string')
@@ -19,15 +19,17 @@ define [
     template: _.template("""
       <form method="post" action="#">
         <div class="input-group input-group-sm">
+          <span class="input-group-addon">
+            <i class="icon icon-search"></i>
+          </span>
           <input
             class="form-control"
             type="text"
             name="query"
             placeholder="<%- t('query_placeholder') %>"
             />
-          <%= window.csrfTokenHtml %>
           <span class="input-group-btn">
-            <button class="btn btn-default" type="submit"><i class="icon icon-search"></i></button>
+            <button class="btn btn-primary"><%- t('button') %></button>
           </span>
         </div>
       </form>
@@ -38,23 +40,24 @@ define [
       'submit form': '_onSubmit'
 
     initialize: (options) ->
-      throw 'Must pass options.state, a State' if !options.state
+      throw new Error('Must pass options.model, a Backbone.Model with a `q` attribute') if !options.model
+      throw new Error('Must pass options.state, an Object with a refineDocumentListParams() method') if !options.state
 
       @state = options.state
 
-      @listenTo(@state, 'change:documentList', @render)
+      @listenTo(@model, 'change:q', @render)
 
       @render()
 
     render: ->
       @initialRender() if !@$input
 
-      @$input.val(@state.get('documentList')?.params?.q || '')
+      @$input.val(@model.get('q') || '')
       @_refreshChanging()
       @_refreshEmpty()
 
     _refreshChanging: ->
-      realQ = @state.get('documentList')?.params?.q || ''
+      realQ = @model.get('q') || ''
       q = @$input.val().trim()
       @$el.toggleClass('changing', q != realQ)
 

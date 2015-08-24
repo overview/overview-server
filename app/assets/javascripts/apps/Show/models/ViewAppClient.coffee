@@ -16,7 +16,6 @@ define [
 
       @listenTo(@state, 'change:documentList', @onDocumentListChanged)
       @listenTo(@state, 'change:document', @onDocumentChanged)
-      @listenTo(@state, 'change:highlightedDocumentListParams', @onHighlightedDocumentListParamsChanged)
       @listenTo(@state, 'tag', @onTag)
       @listenTo(@state, 'untag', @onUntag)
       @onMessageCallback = @_onMessage.bind(@)
@@ -24,11 +23,10 @@ define [
 
     onDocumentListChanged: (__, value) -> @viewApp.onDocumentListParamsChanged?(value?.params)
     onDocumentChanged: (__, value) -> @viewApp.onDocumentChanged?(value)
-    onHighlightedDocumentListParamsChanged: (__, value) -> @viewApp.onHighlightedDocumentListParamsChanged?(value)
     onTag: (tag, params) -> @viewApp.onTag?(tag, params)
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
 
-    setDocumentListParams: (params) -> @state.refineDocumentListParams(params)
+    setDocumentListParams: (params) -> @state.setDocumentListParams(params)
 
     _onMessage: (e) ->
       viewUrl = @viewApp?.view?.attributes?.url || '' # _any_ iframe, e.g. Twitter, can post a message

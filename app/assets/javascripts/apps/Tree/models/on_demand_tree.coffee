@@ -234,8 +234,8 @@ define [
         url: "/trees/#{@view.get('id')}/#{arg}.json"
         success: (json) =>
           @_add_json(json)
-          if @highlightJson
-            @_refreshHighlightCounts(@highlightJson, (n.id for n in json.nodes), false)
+          if @highlightQueryString
+            @_refreshHighlightCounts(@highlightQueryString, (n.id for n in json.nodes), false)
 
     _collapse_node: (idTreeRemove, id) ->
       idsToRemove = []
@@ -286,10 +286,10 @@ define [
         success: => @id_tree.batchAdd(->) # refresh
         debugInfo: 'OnDemandTree.saveNode'
 
-    setHighlightJson: (json) ->
-      return if _.isEqual(@highlightJson, json)
+    setHighlightQueryString: (queryString) ->
+      return if _.isEqual(@highlightQueryString, queryString)
 
-      @highlightJson = json
+      @highlightQueryString = queryString
 
       # drop existing counts
       (node.highlightCount = null) for __, node of @nodes
@@ -297,16 +297,20 @@ define [
       @refreshHighlightCountsOnCurrentNodes()
 
     refreshHighlightCountsOnCurrentNodes: ->
-      if @highlightJson
-        @_refreshHighlightCounts(@highlightJson, Object.keys(@nodes), true)
+      if @highlightQueryString
+        @_refreshHighlightCounts(@highlightQueryString, Object.keys(@nodes), true)
 
-    _refreshHighlightCounts: (json, nodeIds, forceRefresh) ->
+    _refreshHighlightCounts: (queryString, nodeIds, forceRefresh) ->
       return if !nodeIds?.length
+
+      fullQueryString = "countNodes=#{nodeIds.join(',')}"
+      fullQueryString += "&#{queryString}" if queryString
+      fullQueryString += "&refresh=true" if forceRefresh
 
       @transactionQueue.ajax
         type: 'POST'
         url: "/documentsets/#{@state.documentSetId}/document-nodes/count-by-node"
-        data: _.extend({ countNodes: nodeIds.join(','), refresh: forceRefresh }, json) # at the time the transaction was _scheduled_
+        data: fullQueryString # at the time the transaction was _scheduled_
         debugInfo: 'OnDemandTree._refreshHighlightCounts'
         error: (xhr, textStatus, errorThrown) ->
           # This Error can come up when a search is invalid. In that case,

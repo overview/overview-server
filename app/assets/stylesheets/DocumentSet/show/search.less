@@ -1,0 +1,86 @@
+@import "../../mixins.less";
+@import "../../vendor/bootstrap/less/forms.less";
+@import "_variables.less";
+@import "tag-like-list.less";
+
+#document-list-params>.search {
+  // We want the whole thing to "feel" like an input: a single border, which
+  // highlights. And we don't want to manage the border ourselves: Bootstrap
+  // can do that.
+  //
+  // So we set a fixed height, stretch the <input> to 100%, and give everything
+  // else position: absolute;
+  height: @input-height-small;
+  position: relative;
+  margin: .5em 0;
+
+  form {
+    display: block;
+  }
+
+  .input-group {
+    display: block;
+
+    &>* {
+      display: block; // Not table-cell
+    }
+
+    &>:not(input) {
+      position: absolute;
+      border: 0;
+    }
+  }
+
+  .input-group-addon {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+    width: 2em;
+    text-align: right;
+    z-index: 3;
+  }
+
+  input {
+    padding-left: 2.5em; // For icon
+    border-radius: @border-radius-small;
+  }
+
+  .input-group-btn {
+    position: absolute;
+    right: 0;
+    width: 0;
+  }
+
+  .btn {
+    display: none;
+  }
+
+  &.changing {
+    input {
+      padding-right: 6em;
+    }
+
+    .icon {
+      color: @brand-primary;
+    }
+
+    .btn {
+      display: block;
+      position: absolute;
+      right: 0;
+      width: 6em;
+    }
+  }
+
+  &:not(.changing):not(.empty) {
+    input {
+      color: white;
+      text-shadow: 0 0 .1em @gray-dark;
+      background-color: @complete-color;
+    }
+
+    .input-group-addon {
+      color: white;
+    }
+  }
+}
