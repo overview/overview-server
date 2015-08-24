@@ -33,10 +33,12 @@ define [
           </span>
         </div>
       </form>
+      <a href="#" class="nix" title="<%- t('nix') %>">&times;</a>
     """)
 
     events:
       'input input[type=text]': '_onInput'
+      'click a.nix': '_onClickNix'
       'submit form': '_onSubmit'
 
     initialize: (options) ->
@@ -73,6 +75,9 @@ define [
       e.preventDefault()
       q = @$input.val().trim() || null
       @state.refineDocumentListParams(q: q)
+
+    _onClickNix: (e) ->
+      @state.refineDocumentListParams(q: null)
 
     initialRender: ->
       html = @template(t: t)

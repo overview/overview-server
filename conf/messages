@@ -390,6 +390,7 @@ views.DocumentSet.show.DocumentListParamsSelector.NDocumentsView.nDocuments={0,c
 
 views.DocumentSet.show.SearchView.query_placeholder=Search
 views.DocumentSet.show.SearchView.button=Search
+views.DocumentSet.show.SearchView.nix=Clear text search
 
 views.DocumentSet.show.TagCountList.prompt=Applied tags
 views.DocumentSet.show.TagCountList.empty=These documents are all untagged
