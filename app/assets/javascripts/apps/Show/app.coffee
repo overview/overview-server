@@ -104,8 +104,6 @@ define [
       html = """
         <div id="tree-app-left">
           <div id="document-list-params"></div>
-          <div id="tree-app-search"></div>
-          <div id="tree-app-tags"></div>
           <div id="tree-app-views"></div>
           <div id="tree-app-view"></div>
         </div>
