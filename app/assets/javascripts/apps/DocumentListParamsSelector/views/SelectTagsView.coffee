@@ -216,6 +216,7 @@ define [
         tag? && { ids: [ tag.id ] } || null
 
       @state.refineDocumentListParams(tags: tags)
+      @close() # Gotta do this manually on Firefox
 
     _onClickNix: (e) ->
       e.preventDefault()
