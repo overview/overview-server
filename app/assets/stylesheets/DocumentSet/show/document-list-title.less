@@ -1,42 +1,12 @@
-@import "../../variables.less";
-
-#main.document-selected #document-list-title span.show-list-link {
-  max-width: 15em;
-}
-
 #document-list-title {
-  padding: .25em 0;
-  font-family: @font-family-sans-serif;
-  font-weight: normal;
-  font-size: 1.2em;
-  color: @text-color;
+  .flex(1 1 auto);
 
-  &>* {
-    display: inline-block;
-    max-width: 100%;
-  }
-
-  a[data-toggle="dropdown"] {
-    max-width: 100%;
-    .display-flex();
-
-    .text {
-      .flex(0 1 auto);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .caret {
-      .flex(0 0 auto);
-      margin-top: .5em;
-    }
-  }
-
-  ul.dropdown-menu {
-    max-width: 100%;
-    a {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+  h3 {
+    font-family: @font-family-sans-serif;
+    font-weight: normal;
+    font-size: 1.25em;
+    line-height: inherit; // not browser default
+    color: @text-color;
+    margin: 0;
   }
 }

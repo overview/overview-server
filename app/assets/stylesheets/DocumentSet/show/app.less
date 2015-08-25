@@ -1,6 +1,3 @@
-@import "../../mixins.less";
-@import "./_variables.less";
-
 #tree-app-left {
   .flex(1 1 auto);
   width: 1px; // equal to tree-app-left
@@ -28,16 +25,6 @@
       .flex-direction-column();
     }
   }
-
-  // FIXME move the below code somewhere better
-  #tree-app-tree {
-    .flex(1 1 auto);
-  }
-
-  #tree-app-zoom-slider {
-    position: relative;
-    height: @focus_height;
-  }
 }
 
 #tree-app-right {
@@ -53,4 +40,39 @@
   // left of the edge of the screen. It's no big deal if a pixel of the
   // scrollbar gets cut off, but it *is* a big deal if we violate Fitts' law.
   right: -.5px;
+}
+
+#document-list-container {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+
+  .display-flex();
+  .flex-direction-column();
+
+  &>.header {
+    .flex(0 0 auto);
+    .display-flex();
+
+    margin-top: 1em;
+  }
+
+  &>#document-list {
+    .flex(1 1 auto);
+  }
+
+  #tree-app-tag-this {
+    margin-top: -.5em;
+    margin-right: .5px; // so we're sure to see the border -- poor Fitts
+  }
+}
+
+// FIXME move the below code somewhere better
+#tree-app-tree {
+  .flex(1 1 auto);
+}
+
+#tree-app-zoom-slider {
+  position: relative;
+  height: @focus_height;
 }

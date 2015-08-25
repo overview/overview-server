@@ -13,6 +13,7 @@ define [
   './controllers/TourController'
   './views/TransactionQueueErrorMonitor'
   './views/Mode'
+  './views/DocumentListTitle'
   '../Tree/app'
   '../View/app'
   '../Job/app'
@@ -25,6 +26,7 @@ define [
     TourController, \
     TransactionQueueErrorMonitor, \
     ModeView, \
+    DocumentListTitleView, \
     TreeApp, ViewApp, JobApp, DocumentListParamsSelectorApp) ->
 
   class App
@@ -108,11 +110,13 @@ define [
           <div id="tree-app-view"></div>
         </div>
         <div id="tree-app-right">
-          <div id="document-list-title-and-tag-this">
-            <div id="document-list-title"></div>
-            <div id="tree-app-tag-this"></div>
+          <div id="document-list-container">
+            <div class="header">
+              <div id="document-list-title"></div>
+              <div id="tree-app-tag-this"></div>
+            </div>
+            <div id="document-list"></div>
           </div>
-          <div id="document-list"></div>
           <div id="document-current"></div>
         </div>
         <div id="transaction-queue-error-monitor">
@@ -179,6 +183,7 @@ define [
         keyboardController: keyboardController
 
       document_list_controller(els.documentList, els.documentCursor, @state, keyboardController)
+      new DocumentListTitleView(state: @state).$el.appendTo(els.documentListTitle)
 
       new DocumentListParamsSelectorApp(documentSet: @documentSet, state: @state, el: els.documentListParams)
 
