@@ -5,8 +5,8 @@ module.exports = (opts) ->
   testMethods.usingPromiseChainMethods
     waitForDocumentListToLoad: ->
       # It's loaded when "#document-list-title.loading" changes to
-      # "#document-list-title.loaded"
-      @waitForElementByCss('#document-list-title.loaded', 5000)
+      # "#document-list:not(.loading)"
+      @waitForElementByCss('#document-list:not(.loading)', 5000)
 
   before ->
     @likeATree = {}
@@ -49,11 +49,11 @@ module.exports = (opts) ->
   opts.searches?.forEach (search) ->
     it "should search for #{search.query}", ->
       @userBrowser
-        .elementByCss('#tree-app-search [name=query]').type(search.query)
+        .elementByCss('#document-list-params .search input[name=query]').type(search.query)
         .listenForJqueryAjaxComplete()
-        .elementByCss('#tree-app-search button[type=submit]').click()
+        .elementByCss('#document-list-params .search button').click()
         .waitForJqueryAjaxComplete() # wait for UI to clear previous search results
-        .waitForElementBy({ tag: 'h4', contains: "#{search.nResults} document" }, 20000).should.eventually.exist
+        .waitForElementBy({ tag: 'h3', contains: "#{search.nResults} document" }, 20000).should.eventually.exist
 
   opts.ignoredWords?.forEach (word) ->
     it "should show ignored word #{word}", ->

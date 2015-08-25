@@ -18,7 +18,7 @@ define [
       bodyHtml: t('tagThis.body_html')
     }
     {
-      find: '#tree-app-tags'
+      find: '#document-list-params .tags'
       placement: 'right'
       title: t('select.title')
       bodyHtml: t('select.body_html')

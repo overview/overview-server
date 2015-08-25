@@ -68,5 +68,5 @@ describe 'FileUpload', ->
         .shortcuts.importFiles.open()
         .shortcuts.importFiles.addFiles("ManyFiles/file-#{n}.pdf" for n in [1..60])
         .shortcuts.importFiles.finish(name: 'Many FileUpload', splitByPage: true)
-        .assertExists(tag: 'h4', contains: '120 documents')
+        .assertExists(tag: 'h3', contains: '120 documents')
         .shortcuts.documentSets.destroy('Many FileUpload')

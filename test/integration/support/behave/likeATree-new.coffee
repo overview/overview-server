@@ -9,7 +9,7 @@ module.exports = likeATree = (opts) ->
     it 'should show a document list title', ->
       @browser
         .getText(id: 'document-list-title')
-          .then((text) -> expect(text).to.match(/\d+ documents?/))
+          .then((text) -> expect(text).to.match(/Found \d+ documents?/))
 
     opts.documents?.forEach (document) ->
       it "should show a #{document.type} document with title #{document.title}", ->
@@ -29,11 +29,11 @@ module.exports = likeATree = (opts) ->
     opts.searches?.forEach (search) ->
       it "should search for #{search.query}", ->
         @browser
-          .sendKeys(search.query, css: '#tree-app-search [name=query]')
+          .sendKeys(search.query, css: '#document-list-params .search input[name=query]')
           .shortcuts.jquery.listenForAjaxComplete()
-          .click(css: '#tree-app-search button[type=submit]')
+          .click(css: '#document-list-params .search button')
           .shortcuts.jquery.waitUntilAjaxComplete() # waits for something to change
-          .assertExists(tag: 'h4', contains: "#{search.nResults} document", wait: 'pageLoad')
+          .assertExists(tag: 'h3', contains: "#{search.nResults} document", wait: 'pageLoad')
 
     opts.ignoredWords?.forEach (word) ->
       it "should show ignored word #{word}", ->

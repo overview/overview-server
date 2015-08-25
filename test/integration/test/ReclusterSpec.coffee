@@ -46,5 +46,5 @@ describe 'Recluster', ->
           { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
         ]
         searches: [
-          { query: 'document', nResults: 3 }
+          { query: 'document', nResults: 4 } # Shows results outside that tag
         ]

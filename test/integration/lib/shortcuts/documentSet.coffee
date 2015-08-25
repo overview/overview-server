@@ -3,7 +3,7 @@ debug_ = require('debug')('shortcuts/documentSet')
 
 clientTests =
   noJobsInProgress: -> $?.isReady && !$('progress').length # needs jQuery check because page refreshes
-  documentListLoaded: -> !!$('#document-list-title.loaded').length
+  documentListLoaded: -> !!$('#document-list:not(.loading)').length
   pluginDataLoaded: -> !!$('a[data-plugin-url="about:tree"]').length
 
 # Shortcuts for doing stuff while on the DocumentSet page.
@@ -61,7 +61,7 @@ module.exports = (browser) ->
       .shortcuts.jquery.waitUntilAjaxComplete()
       .click(link: 'Close')
 
-  # Waits for #document-list-title.loaded to exist.
+  # Waits for #document-list:not(.loading) to exist.
   waitUntilDocumentListLoaded: ->
     debug_('scheduling waitUntilDocumentListLoaded()')
     debug('waitUntilDocumentListLoaded()')
