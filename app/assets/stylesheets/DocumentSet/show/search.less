@@ -1,8 +1,3 @@
-@import "../../mixins.less";
-@import "../../vendor/bootstrap/less/forms.less";
-@import "_variables.less";
-@import "tag-like-list.less";
-
 #document-list-params>.search {
   // We want the whole thing to "feel" like an input: a single border, which
   // highlights. And we don't want to manage the border ourselves: Bootstrap
@@ -12,7 +7,7 @@
   // else position: absolute;
   height: @input-height-small;
   position: relative;
-  margin: .5em 0;
+  margin: .5em auto;
   max-width: 25em;
 
   form {
