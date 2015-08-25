@@ -72,7 +72,7 @@ define [
     beforeEach ->
       i18n.reset_messages
         'views.Tree.show.DocumentListCursor.position_html': 'position_html,{0},{1}'
-        'views.Tree.show.DocumentListCursor.tag.remove': 'tag.remove'
+        'views.Tree.show.DocumentListCursor.backToList': 'backToList'
         'views.Tree.show.DocumentListCursor.next': 'next'
         'views.Tree.show.DocumentListCursor.previous': 'previous'
         'views.Tree.show.DocumentListCursor.description': 'description,{0}'
