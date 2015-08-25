@@ -33,7 +33,7 @@ define [
       'click .expand-metadata': '_onClickExpand'
 
     initialRender: ->
-      @$title = $(_.template('<h4><a href="#" class="expand-metadata"><%- title %></a></h4>')(title: t('title')))
+      @$title = $(_.template('<h4><a href="#" class="expand-metadata"><span><%- title %></span></a></h4>')(title: t('title')))
       @$loading = $(_.template('<div class="loading"><i class="icon icon-spinner icon-spin"/><%- loading %></div>')(loading: t('loading')))
 
       @jsonView = null

@@ -5,19 +5,22 @@
   -webkit-flex: 0 0 auto;
   flex: 0 0 auto;
   box-sizing: content-box; // so when not .expanded, padding remains
-  padding: 10px;
   max-height: 30%; // Don't let metadata overtake the document itself
   .transition(max-height .35s ease);
   border-top: 1px solid @table-border-color;
 
   h4 {
     text-align: center;
-    margin-top: 0;
-    font-size: inherit;
+    margin: 0;
+    font: inherit;
     line-height: 1.5;
 
     a {
+      padding: .5em;
       display: block;
+    }
+
+    span {
       .fa-icon();
 
       &::before {
@@ -27,19 +30,21 @@
   }
 
   &:not(.expanded) {
-    max-height: 1.5em;
+    max-height: 2.5em;
     overflow: hidden;
 
     h4 + * {
       visibility: hidden;
     }
 
-    h4 a::before {
+    h4 span::before {
       content: @fa-var-caret-right + " ";
     }
   }
 
   .metadata-json {
+    padding: 0 10px 10px;
+
     .form-group {
       position: relative;
     }
