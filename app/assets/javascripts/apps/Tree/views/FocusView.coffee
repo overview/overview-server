@@ -90,13 +90,21 @@ define [ 'jquery', 'backbone' ], ($, Backbone) ->
       update = (e) =>
         dx = e.pageX - startX
         thisX = positions[leftOrRight] + dx
+        thisX = 0 if thisX < 0
+        thisX = width if thisX > width
         otherX = leftOrRight == 'left' && positions.right || positions.left
 
         x1 = if otherX < thisX then otherX else thisX
         x2 = if otherX < thisX then thisX else otherX
 
+        if x1 == x2
+          if x1 == 0
+            x2 = 1
+          else
+            x1 = x2 - 1
+
         zoom = (x2 - x1) / width # difference
-        pan = ((x1 / width - 0.5) + (x2 / width) - 0.5) / 2 # average
+        pan = ((x1 / width - 0.5) + (x2 / width - 0.5)) / 2 # average
 
         @trigger('zoom-pan', { zoom: zoom, pan: pan })
 
