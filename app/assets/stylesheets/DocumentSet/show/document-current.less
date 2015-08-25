@@ -14,15 +14,22 @@
   overflow: hidden;
 
   background: @body-bg-dark;
-  border-top: 1px solid @nav-tabs-border-color;
   border-left: 1px solid @nav-tabs-border-color;
-  border-top-left-radius: 5px;
   .display-flex();
   .flex-direction-column();
 
   .document-nav {
-    line-height: 1em;
+    position: relative;
     text-align: center;
+
+    a.back-to-list {
+      // Symmetric wrt CRAZY HACK in app.less: fixed tag-this button
+      position: absolute;
+      left: 0;
+      color: @brand-danger;
+
+      &:hover i::before { text-decoration: underline; }
+    }
 
     h4 {
       display: inline;
@@ -33,18 +40,21 @@
     }
 
     a.previous {
-      padding-right: 1em;
+      padding-right: .8em;
     }
 
     a.next {
-      padding-left: 1em;
+      padding-left: .8em;
     }
 
-    // font-awesome puts the chevron on the baseline; we want it descending
-    i { vertical-align: middle; }
-    // Now the on-hover underlines look terrible; stop underlining the space between
-    a { text-decoration: none; }
-    a:hover span, a:hover i { text-decoration: underline; }
+    a.previous, a.next {
+      // font-awesome puts the chevron on the baseline; we want it descending
+      i { vertical-align: middle; }
+
+      // Now the on-hover underlines look terrible; stop underlining the space between
+      text-decoration: none;
+      &:hover span, &:hover i { text-decoration: underline; }
+    }
   }
 
   .disabled {

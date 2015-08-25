@@ -32,7 +32,7 @@
   width: 1px; // equal to tree-app-left
   position: relative;
 
-  margin-left: 30px;
+  margin-left: 1em;
   overflow: hidden;
 
   // Nudge ever so slightly to the right. Otherwise Chrome rounds down and a
@@ -64,6 +64,20 @@
   #tree-app-tag-this {
     margin-top: -.5em;
     margin-right: .5px; // so we're sure to see the border -- poor Fitts
+
+    // CRAZY hack: the tag-this button is tied to the keyboard, so we only
+    // want one. We'll leave it on the screen even when the user is viewing
+    // a single document.
+    //
+    // This breaks a bunch of things: for one thing, the user sees it float
+    // when switching to single-doc mode; for another, it harms layout at low
+    // resolutions. There are several alternatives; they all force us to
+    // modularize our HTML, JavaScript and CSS, which takes time.
+    //
+    // TODO modularize our code and nix this floating button.
+    position: fixed;
+    right: 0;
+    z-index: 1;
   }
 }
 

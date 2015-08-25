@@ -35,6 +35,7 @@ define [
   #   `options.documentMetadataApp.setDocument(document)` sets the document.
   class DocumentListCursor extends Backbone.View
     events:
+      'click a.back-to-list': '_onClickBackToList'
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
 
@@ -46,6 +47,7 @@ define [
 
       header: _.template("""
         <div class="document-nav">
+          <a href="#" class="back-to-list"><i class="icon icon-close"></i> <span><%- t('backToList') %></span></a>
           <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon icon-chevron-left"></i> <span><%- t('previous') %></span></a>
           <h4><%= t('position_html', cursorIndex + 1, nDocuments) %></h4>
           <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><span><%- t('next') %></span> <i class="icon icon-chevron-right"></i></a>
@@ -163,6 +165,10 @@ define [
 
     _onClickNext: (e) -> @_handleNextOrPrevious(e, 'next')
     _onClickPrevious: (e) -> @_handleNextOrPrevious(e, 'previous')
+
+    _onClickBackToList: (e) ->
+      e.preventDefault()
+      @selection.onSelectAll()
 
     setDocumentList: (documentList) ->
       if @documentList?

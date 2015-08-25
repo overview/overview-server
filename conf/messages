@@ -469,12 +469,11 @@ views.Tree.show.DocumentList.placeholder=…
 views.Tree.show.DocumentList.tag.remove=Remove tag from document
 
 views.Tree.show.DocumentListCursor.position_html=Document <strong>{0,number,integer}</strong> of <strong>{1,number,integer}</strong>
-views.Tree.show.DocumentListCursor.close=Back to list
+views.Tree.show.DocumentListCursor.backToList=Back to list
 views.Tree.show.DocumentListCursor.next=Next
 views.Tree.show.DocumentListCursor.previous=Previous
 views.Tree.show.DocumentListCursor.description.empty=(no key words)
 views.Tree.show.DocumentListCursor.description=Key words: {0}
-views.Tree.show.DocumentListCursor.tag.remove=Remove tag from document
 
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
 
