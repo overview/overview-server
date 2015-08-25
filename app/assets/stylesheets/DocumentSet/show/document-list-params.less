@@ -5,6 +5,18 @@
     text-align: center;
     font-size: 1.25em;
 
-    a.nix { font-size: 1.5em / 1.25; font-weight: bold; }
+    .display-flex();
+    .flex-justify-content(center);
+    span.title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    a.nix {
+      font-size: 1.5em / 1.25;
+      font-weight: bold;
+      margin-top: -.1em;
+    }
   }
 }
