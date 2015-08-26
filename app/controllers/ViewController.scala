@@ -30,7 +30,6 @@ trait ViewController extends Controller {
       case None => Future.successful(BadRequest("You must POST a 'title' and 'url'."))
       case Some(attributes) => {
         val result: Future[Result] = for {
-          u <- appUrlChecker.check(attributes.url + "/metadata")
           apiToken <- apiTokenBackend.create(Some(documentSetId), ApiToken.CreateAttributes(request.user.email, attributes.title))
           view <- viewBackend.create(documentSetId, View.CreateAttributes(attributes.url, apiToken.token, attributes.title))
         } yield Created(views.json.api.View.show(view))
@@ -63,7 +62,6 @@ trait ViewController extends Controller {
   }
 
   protected val storage: ViewController.Storage
-  protected val appUrlChecker: ViewController.AppUrlChecker
 
   protected val apiTokenBackend: ApiTokenBackend
   protected val storeBackend: StoreBackend
@@ -71,21 +69,6 @@ trait ViewController extends Controller {
 }
 
 object ViewController extends ViewController {
-  trait AppUrlChecker {
-    def check(url: String): Future[Unit]
-  }
-
-  object WsAppUrlChecker extends AppUrlChecker {
-    override def check(url: String): Future[Unit] = {
-      import play.api.Play.current
-      import play.api.libs.concurrent.Execution.Implicits._
-
-      val isAbsolute = url.startsWith("http")
-      val absoluteUrl = if (isAbsolute) url else ("https:" + url)
-      WS.url(absoluteUrl).get.map(x => ())
-    }
-  }
-
   trait Storage {
     def findTrees(documentSetId: Long) : Iterable[Tree]
     def findViewJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
@@ -104,7 +87,6 @@ object ViewController extends ViewController {
   }
 
   override protected val storage = DatabaseStorage
-  override protected val appUrlChecker = WsAppUrlChecker
 
   override protected val apiTokenBackend = ApiTokenBackend
   override protected val storeBackend = StoreBackend
