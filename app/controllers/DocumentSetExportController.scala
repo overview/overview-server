@@ -100,8 +100,6 @@ object DocumentSetExportController extends DocumentSetExportController {
       import slick.jdbc.GetResult
 
       val idsAsSqlTuples: Seq[String] = ids.map((id: Long) => s"($id)")
-      // The GROUP BY is the killer here.
-      // TODO Paginate through the IDs as we do in ApiDocumentController.
       val query = sql"""
         WITH selection AS (
           SELECT *
@@ -109,16 +107,18 @@ object DocumentSetExportController extends DocumentSetExportController {
             AS t(document_id)
         )
         SELECT
-          d.supplied_id,
-          d.title,
-          d.text,
-          COALESCE(d.url, '') AS url,
-          COALESCE(d.metadata_json_text, '{}') AS metadata_json,
-          COALESCE(ARRAY_AGG(dt.tag_id), '{}'::BIGINT[]) AS tag_ids
-        FROM document d
-        LEFT JOIN document_tag dt ON d.id = dt.document_id
-        WHERE EXISTS (SELECT 1 FROM selection WHERE document_id = d.id)
-        GROUP BY d.supplied_id, d.title, d.text, d.url, d.metadata_json_text
+          supplied_id,
+          title,
+          text,
+          COALESCE(url, '') AS url,
+          COALESCE(metadata_json_text, '{}') AS metadata_json,
+          (
+            SELECT COALESCE(ARRAY_AGG(tag_id), '{}'::BIGINT[])
+            FROM document_tag
+            WHERE document_id = document.id
+          ) AS tag_ids
+        FROM document
+        WHERE EXISTS (SELECT 1 FROM selection WHERE selection.document_id = document.id)
       """.as[DocumentForCsvExport](GetResult(r => DocumentForCsvExport(
         r.nextString(),
         r.nextString(),
