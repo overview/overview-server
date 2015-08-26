@@ -8,22 +8,33 @@ import com.overviewdocs.models.tables.Files
 import models.archive.{DocumentViewInfo,FileViewInfo,PageViewInfo,TextViewInfo}
 
 trait DocumentFileInfoBackend extends Backend {
-  def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]]
+  def indexDocumentViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]]
 }
 
 trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
   import database.api._
 
-  override def indexDocumentViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
+  override def indexDocumentViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]] = {
     for {
-      infos1 <- pageViewInfos(documentSetId)
-      infos2 <- fileViewInfos(documentSetId)
-      infos3 <- textViewInfos(documentSetId)
+      infos1 <- pageViewInfos(documentIds)
+      infos2 <- fileViewInfos(documentIds)
+      infos3 <- textViewInfos(documentIds)
     } yield infos1 ++ infos2 ++ infos3
   }
 
-  private def pageViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
+  private def selectionSql(documentIds: Seq[Long]): String = {
+    val idsAsSqlTuples: Seq[String] = documentIds.map((id: Long) => s"($id)")
+    s"""
+      selection AS (
+        SELECT *
+        FROM (VALUES ${idsAsSqlTuples.mkString(",")}) AS t(document_id)
+      )
+    """
+  }
+
+  private def pageViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]] = {
   	val q = sql"""
+  	  WITH #${selectionSql(documentIds)}
       SELECT
         d.title,
         p.page_number,
@@ -31,33 +42,39 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
         p.data_size
       FROM document d
       INNER JOIN page p ON d.page_id = p.id
-      WHERE d.document_set_id = $documentSetId
-    """.as[(String, Int, String, Long)]
+      WHERE EXISTS (SELECT 1 FROM selection WHERE document_id = d.id)
+    """.as[(Option[String], Int, String, Long)]
 
     database.run(q).map { seq =>
-      seq.map((PageViewInfo.apply _).tupled)
+      seq.map(p => PageViewInfo(p._1.getOrElse(""), p._2, p._3, p._4))
     }
   }
 
-  private def fileViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
-    val q = for {
-      d <- Documents if (d.documentSetId === documentSetId) && d.pageId.isEmpty
-      f <- Files if d.fileId === f.id
-    } yield (d.title, f.viewLocation, f.viewSize)
+  private def fileViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]] = {
+    val q = sql"""
+      WITH #${selectionSql(documentIds)}
+      SELECT document.title, file.view_location, file.view_size
+      FROM document
+      INNER JOIN file ON document.file_id = file.id
+      WHERE EXISTS (SELECT 1 FROM selection WHERE document_id = document.id)
+        AND document.page_id IS NULL
+    """.as[(Option[String], String, Long)]
 
-    database.seq(q).map { seq =>
+    database.run(q).map { seq =>
       seq.map(f => FileViewInfo(f._1.getOrElse(""), f._2, f._3))
     }
   }
-  
-  
-  private def textViewInfos(documentSetId: Long): Future[Seq[DocumentViewInfo]] = {
+
+  private def textViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]] = {
     val q = sql"""
-      SELECT title, supplied_id, id, page_number, octet_length(text) FROM document
-      WHERE ((document_set_id = $documentSetId) AND
-             (file_id IS NULL) AND
-             (text IS NOT NULL))""".as[(Option[String], Option[String], Long, Option[Int], Long)]
-    
+      WITH #${selectionSql(documentIds)}
+      SELECT title, supplied_id, id, page_number, octet_length(text)
+      FROM document
+      WHERE EXISTS (SELECT 1 FROM selection WHERE document_id = document.id)
+        AND file_id IS NULL
+        AND text IS NOT NULL
+    """.as[(Option[String], Option[String], Long, Option[Int], Long)]
+
     database.run(q).map { seq =>
       seq.map(f => TextViewInfo(f._1.getOrElse(""), f._2.getOrElse(""), f._3, f._4, f._5))
     }

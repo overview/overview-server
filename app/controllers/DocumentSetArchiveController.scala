@@ -1,24 +1,17 @@
 package controllers
 
-import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
-import com.overviewdocs.models.tables.Documents
-import com.overviewdocs.util.ContentDisposition
-import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.backend.DbBackend
-import models.DocumentFileInfo
-import models.archive.Archive
-import models.archive.ArchiveEntry
-import models.archive.ArchiveEntryCollection
-import models.archive.zip.ZipArchive
 import play.api.mvc.Result
+import scala.concurrent.Future
+
+import com.overviewdocs.util.ContentDisposition
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.userViewingDocumentSet
 import controllers.backend.DocumentFileInfoBackend
+import models.archive.{Archive,ArchiveEntry,ArchiveEntryCollection}
+import models.archive.zip.ZipArchive
 
-trait DocumentSetArchiveController extends Controller {
-
-  import Authorities._
-
+trait DocumentSetArchiveController extends Controller with SelectionHelpers {
   val MaxNumberOfEntries: Int = 0xFFFF // If more than 2 bytes are needed for entries, ZIP64 should be used
   val MaxArchiveSize: Long = 0xFFFFFFFFl // If more than 4 bytes are needed for size, ZIP64 should be used
 
@@ -27,16 +20,22 @@ trait DocumentSetArchiveController extends Controller {
   protected val Unsupported = "unsupported"
 
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
-    for {
-      documentViewInfos <- backend.indexDocumentViewInfos(documentSetId)
-    } yield {
-      val archiveEntries = documentViewInfos.map(_.archiveEntry)
+    requestToSelection(documentSetId, request).flatMap(_ match {
+      case Left(result) => Future.successful(result)
+      case Right(selection) => {
+        for {
+          documentIds <- selection.getAllDocumentIds
+          documentViewInfos <- backend.indexDocumentViewInfos(documentIds)
+        } yield {
+          val archiveEntries = documentViewInfos.map(_.archiveEntry)
 
-      createArchive(archiveEntries) match {
-        case Left(warning) => flashWarning(warning)
-        case Right(archive) => streamArchive(archive, filename)
+          createArchive(archiveEntries) match {
+            case Left(warning) => flashWarning(warning)
+            case Right(archive) => streamArchive(archive, filename)
+          }
+        }
       }
-    }
+    })
   }
 
   private def createArchive(archiveEntries: Seq[ArchiveEntry]): Either[String, Archive] = {

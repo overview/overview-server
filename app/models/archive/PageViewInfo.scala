@@ -16,7 +16,7 @@ abstract class PageViewInfo(
   private def fileNameWithPage(fileName: String, pageNumber: Int): String =
     asPdf(addPageNumber(fileName, pageNumber))
 
-  override def equals(o: Any) = o match {
+  override def equals(o: Any): Boolean = o match {
     case rhs: PageViewInfo => (
       documentTitle == rhs.documentTitle
       && pageNumber == rhs.pageNumber

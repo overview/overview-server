@@ -30,9 +30,9 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification {
         )
       )
 
-      backend.indexDocumentViewInfos(documentSet.id)
-        .map(_.asInstanceOf[Traversable[PageViewInfo]])
-        .must(containTheSameElementsAs(Seq(
+      backend.indexDocumentViewInfos(documents.map(_.id))
+        .map(_.sortBy(_.name))
+        .must(beEqualTo(Seq(
           PageViewInfo(filename, 1, "loca:tion:0", 123),
           PageViewInfo(filename, 2, "loca:tion:1", 246)
         )).await)
@@ -45,7 +45,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification {
       val file = factory.file(name = filename, viewLocation = location, viewSize = size)
       val document = factory.document(documentSetId = documentSet.id, title = filename, fileId = Some(file.id))
 
-      backend.indexDocumentViewInfos(documentSet.id) must beEqualTo(Seq(
+      backend.indexDocumentViewInfos(Seq(document.id)) must beEqualTo(Seq(
         FileViewInfo(filename, location, size)
       )).await
     }
@@ -57,7 +57,7 @@ class DbDocumentFileInfoBackendSpec extends DbBackendSpecification {
         text = "document text"
       )
 
-      await(backend.indexDocumentViewInfos(documentSet.id)) must beEqualTo(Seq(
+      await(backend.indexDocumentViewInfos(Seq(document.id))) must beEqualTo(Seq(
         TextViewInfo(filename, "", document.id, None, "document text".size)
       ))
     }

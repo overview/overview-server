@@ -87,7 +87,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     archive.stream returns Enumerator(archiveData)
 
     val backend = smartMock[DocumentFileInfoBackend]
-    backend.indexDocumentViewInfos(documentSetId) returns Future.successful(documentViewInfos)
+    backend.indexDocumentViewInfos(any) returns Future.successful(documentViewInfos)
 
     archiver.createArchive(any) returns archive
   }
