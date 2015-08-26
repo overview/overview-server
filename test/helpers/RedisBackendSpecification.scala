@@ -4,12 +4,14 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.redis.RedisClient
 import org.specs2.mutable.Specification
-import org.specs2.specification.{Fragments,Scope,Step}
+import org.specs2.specification.Scope
+import play.api.Play
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.{Await,Future}
 
 import com.overviewdocs.test.factories.{Factory,PodoFactory}
+import modules.RedisModule
 
 /** Helps test Backends.
   *
@@ -18,7 +20,7 @@ import com.overviewdocs.test.factories.{Factory,PodoFactory}
   * class MyRedisBackendSpec extends RedisBackendSpecification {
   *   "MyRedisBackend" should {
   *     "create something" in new RedisScope {
-  *       val backend = new TestRedisBackend(redis) with MyRedisBackend
+  *       val backend = new TestRedisBackend with MyRedisBackend
   *
   *       val documentSet = factory.documentSet()
   *       val result = await(backend.create(documentSet.id))
@@ -28,42 +30,25 @@ import com.overviewdocs.test.factories.{Factory,PodoFactory}
   * }
   */
 trait RedisBackendSpecification
-  extends Specification
-{
+  extends test.helpers.InAppSpecification // for play.api.Play.current, for Redis configuration
+{ self =>
   sequential
 
   implicit val duration: FiniteDuration = FiniteDuration(2, "seconds")
   implicit val timeout: Timeout = Timeout(duration)
 
-  lazy val actorSystem = ActorSystem("RedisBackendSpecification")
-  lazy val redis = {
-    implicit val sys = actorSystem
-    RedisClient("localhost", 9020)
-  }
-
-  private lazy val _redis = redis
-
-  def setupRedis = {
-    Await.result(redis.flushdb, duration)
-  }
-
-  def shutdownRedis = {
-    Await.result(redis.flushdb, duration)
-    actorSystem.shutdown()
-    actorSystem.awaitTermination()
-  }
-
-  override def map(fs: => Fragments) = {
-    Step(setupRedis) ^ super.map(fs) ^ Step(shutdownRedis)
-  }
+  // HACK: We'll keep the same RedisClient between tests, because we know how
+  // RedisModule works. (RedisBackendSpecification and RedisModule could use
+  // some cleanup.)
+  lazy val redis = Play.current.injector.instanceOf[RedisModule].client
 
   class TestRedisBackend extends RedisBackend {
-    override protected lazy val redis: RedisClient = _redis
+    override protected lazy val redis: RedisClient = self.redis
   }
 
   trait RedisScope extends Scope {
     lazy val factory: Factory = PodoFactory
     def await[A](f: Future[A]) = Await.result(f, duration)
-    setupRedis
+    await(redis.flushdb)
   }
 }
