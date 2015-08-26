@@ -93,7 +93,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
       mockDocumentSetBackend.show(45L) returns Future.successful(Some(documentSet))
       mockTagBackend.index(45L) returns Future.successful(tags)
-      mockStorage.streamDocumentsWithTagIds(45L) returns documents
+      mockStorage.streamDocumentsWithTagIds(any) returns Future.successful(documents)
 
       val format = smartMock[Format]
       format.contentType returns "text/csv; charset=\"utf-8\""
