@@ -18,14 +18,14 @@
     <to>${LOGGER_SMTP_TO}</to>
     <subject>${LOGGER_SMTP_SUBJECT_PREFIX}: %logger{20} - %m</subject>
     <layout class="ch.qos.logback.classic.PatternLayout">
-      <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n</pattern>
+      <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n%xException</pattern>
     </layout>
     <bufferSize>20</bufferSize>
   </appender>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%-5level %logger{36} - %message%n</pattern>
+      <pattern>%-5level %logger{36} - %message%n%xException</pattern>
     </encoder>
   </appender>
 
