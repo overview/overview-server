@@ -36,7 +36,6 @@ requirejs.config
 
 require [
   'for-view/DocumentSet/delete-document-set',
-  'for-view/DocumentSet/export-document-set',
   'for-view/DocumentSet/share-document-set',
   'for-view/DocumentSet/_index/watch-jobs',
   'for-view/DocumentSet/index',

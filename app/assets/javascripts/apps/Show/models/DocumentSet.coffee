@@ -7,9 +7,9 @@ define [
   # Represents a DocumentSet from the server.
   #
   # * Provides `id`, a Number
-  # * Fetches `tags`, `views` and `nDocuments` constants. (Whoever constructs
-  #   a DocumentSet should call `fetch()` on it, and wait for `sync` before
-  #   using `tags`, `views` and `nDocuments`.
+  # * Fetches `name`, `tags`, `views` and `nDocuments` constants. (Whoever
+  #   constructs a DocumentSet should call `fetch()` on it, and wait for `sync`
+  #   before using `tags`, `views`, `name` and `nDocuments`.
   # * Handles a `metadataFields` attribute, an Array of String field names. Set
   #   it with `setMetadataFields()` to send a PATCH request to the server.
   #
@@ -36,6 +36,7 @@ define [
       @tags.reset(data.tags)
       @views.reset(data.views)
       @nDocuments = data.nDocuments
+      @name = data.name
 
       metadataFields: @_parseMetadataFields(data.metadataSchema)
 

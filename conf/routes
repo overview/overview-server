@@ -82,7 +82,6 @@ GET    /documentsets/:id/documents controllers.DocumentListController.index(id: 
 
 GET    /documentsets/:id/documents/:documentId/highlights controllers.HighlightController.index(id: Long, documentId: Long, q: String)
 
-GET    /documentsets/:id/export                                              controllers.DocumentSetExportController.index(id: Long)
 GET    /documentsets/:id/export/documents-with-string-tags/:format/:filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
 GET    /documentsets/:id/export/documents-with-column-tags/:format/:filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 

@@ -26,6 +26,7 @@ define [
       beforeEach ->
         @sampleResponse =
           metadataSchema: { version: 1, fields: [ 'foo' ] }
+          name: 'name'
           tags: []
           views: []
           nDocuments: 1
@@ -56,6 +57,12 @@ define [
         response = _.extend(@sampleResponse, nDocuments: 321)
         @withAjaxResponse response, =>
           expect(@documentSet.nDocuments).to.eq(321)
+          done()
+
+      it 'should fetch name from the server', (done) ->
+        response = _.extend(@sampleResponse, name: 'foobar')
+        @withAjaxResponse response, =>
+          expect(@documentSet.name).to.eq('foobar')
           done()
 
       it 'should parse metadataFields from the server', (done) ->

@@ -12,6 +12,7 @@ define [
   './controllers/ViewAppController'
   './controllers/TourController'
   './views/TransactionQueueErrorMonitor'
+  './views/ExportDialog'
   './views/Mode'
   './views/DocumentListTitle'
   '../Tree/app'
@@ -25,6 +26,7 @@ define [
     ViewAppController, \
     TourController, \
     TransactionQueueErrorMonitor, \
+    ExportDialog, \
     ModeView, \
     DocumentListTitleView, \
     TreeApp, ViewApp, JobApp, DocumentListParamsSelectorApp) ->
@@ -153,6 +155,8 @@ define [
       transactionQueue
 
     _initializeUi: ->
+      @_attachNavbar()
+
       # Choose the view that's in the URL
       if (m = /\/documentsets\/\d+\/([-_a-zA-Z0-9]+)/.exec(window.location.pathname))?
         if (view = @documentSet.views.get(m[1]))?
@@ -204,3 +208,9 @@ define [
 
       if @tourEnabled
         TourController()
+
+    _attachNavbar: ->
+      console.log(@documentSet)
+      $('nav .show-export-options').on 'click', (e) =>
+        e.preventDefault()
+        ExportDialog.show(documentSet: @documentSet, documentList: @state.get('documentList'))

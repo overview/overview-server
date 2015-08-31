@@ -272,9 +272,6 @@ views.DocumentSet._documentSet.share=Share
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
 
-views.DocumentSet._export.h3=Export your document set
-views.DocumentSet._export.close=Close
-
 views.DocumentSet._manualForm.title=Import a DocumentCloud project
 views.DocumentSet._manualForm.label.title=Title
 views.DocumentSet._manualForm.placeholder.title=My document set
@@ -359,6 +356,25 @@ views.DocumentSet.show.DocumentMetadata.AddFieldView.expand=Add new field…
 views.DocumentSet.show.DocumentMetadata.AddFieldView.placeholder=Author
 views.DocumentSet.show.DocumentMetadata.AddFieldView.submit=Add
 views.DocumentSet.show.DocumentMetadata.AddFieldView.reset=Cancel
+
+views.DocumentSet.show.ExportDialog.h4=Export your documents
+views.DocumentSet.show.ExportDialog.close=Close
+views.DocumentSet.show.ExportDialog.close=Close
+views.DocumentSet.show.ExportDialog.selection.label=Which documents would you like to download?
+views.DocumentSet.show.ExportDialog.selection.all=All documents ({0,number,integer})
+views.DocumentSet.show.ExportDialog.selection.list=Found documents ({0,number,integer})
+views.DocumentSet.show.ExportDialog.format.label=How would you like the documents organized?
+views.DocumentSet.show.ExportDialog.format.bundle=Bundle (one file per document)
+views.DocumentSet.show.ExportDialog.format.spreadsheet=Spreadsheet (one row per document)
+views.DocumentSet.show.ExportDialog.list.spreadsheet=Pick a spreadsheet from this list:
+views.DocumentSet.show.ExportDialog.list.bundle=Pick a bundle from this list:
+views.DocumentSet.show.ExportDialog.formats.DocumentsWithStringTags.csv=CSV file, all tags in one column
+views.DocumentSet.show.ExportDialog.formats.DocumentsWithStringTags.xlsx=Excel file, all tags in one column
+views.DocumentSet.show.ExportDialog.formats.DocumentsWithColumnTags.csv=CSV file, each tag in its own column
+views.DocumentSet.show.ExportDialog.formats.DocumentsWithColumnTags.xlsx=Excel file each tag in its own column
+views.DocumentSet.show.ExportDialog.spreadsheet_help_html=Choose Excel formats if you use Microsoft Excel: Overview will <a href="https://blog.overviewdocs.com/2015/08/31/how-overview-handles-pesky-microsoft-excel/" target="_blank">circumvent Excel issues</a>. Otherwise, choose CSV.
+views.DocumentSet.show.ExportDialog.download=Download
+views.DocumentSet.show.ExportDialog.formats.ZipArchive=Zip archive
 
 views.DocumentSet.show.NewViewDialog.title=New visualization
 views.DocumentSet.show.NewViewDialog.cancel=Cancel
@@ -535,18 +551,6 @@ views.ImportJob._documentSetCreationJob.action_cancel=Cancel Import
 views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.
 views.ImportJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.ImportJob._documentSetCreationJob.subtitle.other=From uploaded file
-
-
-views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet. Please choose the format:
-views.DocumentSetExport.index.formats.DocumentsWithStringTags.csv=CSV file, all tags in one column
-views.DocumentSetExport.index.formats.DocumentsWithStringTags.xlsx=Excel file, all tags in one column
-views.DocumentSetExport.index.formats.DocumentsWithColumnTags.csv=CSV file, each tag in its own column
-views.DocumentSetExport.index.formats.DocumentsWithColumnTags.xlsx=Excel file each tag in its own column
-views.DocumentSetExport.index.archive=Alternatively:
-views.DocumentSetExport.index.formats.ZipArchive=Zip archive of each document in its own file
-
-views.DocumentSetExport.index.download=Download
-views.DocumentSetExport.index.postamble_html=Note: Microsoft Excel for Mac cannot open CSV files with UTF-8 characters. All versions of Excel are limited 32,767 characters per cell, and Overview will truncate long documents during XLSX export.
 
 views.main.ie_not_supported_html=<p>Overview does not support your version of Internet Explorer.</p><p>Please <a href="http://browsehappy.com/">upgrade to a newer web browser</a> and return here.</p><p style="font-size: small;">In 2013, only four per cent of all visits to Overview came from outdated versions of Internet Explorer (like yours). It takes much longer to develop and debug each Overview feature when we must support older web browsers for a small number of people. We apologize for the inconvenience and hope you will return once you have installed a faster, more secure and more intuitive web browser.</p>
 

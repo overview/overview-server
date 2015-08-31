@@ -9,7 +9,6 @@ import scala.concurrent.Future
 import controllers.backend.{DocumentSetBackend,TagBackend}
 import models.export.rows.{DocumentForCsvExport,Rows}
 import models.export.format.Format
-import com.overviewdocs.models.Tag
 import com.overviewdocs.util.TempFile
 
 class DocumentSetExportControllerSpec extends ControllerSpecification {
@@ -37,43 +36,6 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
   }
 
   "DocumentSetExportController" should {
-    "#index" should {
-      trait IndexScope extends BaseScope {
-        mockDocumentSetBackend.show(45L) returns Future.successful(Some(factory.documentSet(title="foobar")))
-        lazy val result = controller.index(45)(request)
-      }
-
-      "use the title in output filenames" in new IndexScope {
-        // Icky: tests the view, really
-        h.contentAsString(result) must contain("foobar.csv")
-      }
-
-      "HTTP-path-encode question marks in output filenames" in new IndexScope {
-        // Icky: tests the view, really
-        // The problem: somebody requests "what?.csv", then HTTP servers like
-        // Play will treat everything after the ? as a path. 
-        mockDocumentSetBackend.show(45L) returns Future.successful(Some(factory.documentSet(title="foo?bar")))
-        h.contentAsString(result) must contain("foo_bar.csv")
-      }
-
-      "replace icky filename characters with underscores" in new IndexScope {
-        // Icky: tests the view, really
-        // The problem: we don't want the server to link to a filename like
-        // "foo/bar.csv?x#y" because when the client requests it the server won't
-        // understand the request.
-        mockDocumentSetBackend.show(45L) returns Future.successful(Some(factory.documentSet(title="foo/\n\\?*:|#\"<>bar")))
-        h.contentAsString(result) must contain("foo___________bar.csv")
-      }
-
-      "replace dots with underscores" in new IndexScope {
-        // Icky: tests the view, really
-        // The problem: if the server serves up foobar.csv.xlsx, virus scanners
-        // will complain that the file is masquerading as something else.
-        mockDocumentSetBackend.show(45L) returns Future.successful(Some(factory.documentSet(title="foo.bar")))
-        h.contentAsString(result) must contain("foo_bar.csv")
-      }
-    }
-
     trait ExportScope extends BaseScope {
       val documentSet = factory.documentSet()
 

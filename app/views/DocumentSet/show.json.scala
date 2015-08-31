@@ -31,6 +31,7 @@ object show {
     viewJobs: Iterable[DocumentSetCreationJob],
     tags: Iterable[Tag]
   )(implicit messages: Messages): JsValue = Json.obj(
+    "name" -> documentSet.title,
     "nDocuments" -> documentSet.documentCount,
     "metadataSchema" -> documentSet.metadataSchema.toJson,
     "views" -> views.json.View.index(trees, _views, viewJobs),

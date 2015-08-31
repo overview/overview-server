@@ -20,13 +20,6 @@ import models.export.format.Format
 import models.Selection
 
 trait DocumentSetExportController extends Controller with SelectionHelpers {
-  def index(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
-    documentSetBackend.show(documentSetId).map(_ match {
-      case Some(documentSet) => Ok(views.html.DocumentSetExport.index(documentSet))
-      case None => NotFound
-    })
-  }
-
   private def serveExport(
     format: Format,
     filename: String,
