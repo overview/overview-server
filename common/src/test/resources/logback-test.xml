@@ -14,7 +14,7 @@
       <onMatch>DENY</onMatch>
     </filter>
     <encoder>
-      <pattern>[%level] %logger{100} - %message%n%xException{10}</pattern>
+      <pattern>[%level] %logger{100} - %message%n%xException</pattern>
     </encoder>
   </appender>
 
