@@ -19,11 +19,11 @@ object DocumentCloner extends InDatabaseCloner {
     INSERT INTO document 
       (id, document_set_id,
        description, documentcloud_id, text, url, supplied_id, title,
-       created_at, file_id, page_id, metadata_json_text)
+       created_at, file_id, page_id, page_number, metadata_json_text)
      SELECT 
        ($cloneDocumentSetId << 32) | ($DocumentSetIdMask & id), $cloneDocumentSetId,
        description, documentcloud_id, text, url, supplied_id, title,
-       created_at, file_id, page_id, metadata_json_text
+       created_at, file_id, page_id, page_number, metadata_json_text
      FROM document
      WHERE document_set_id = $sourceDocumentSetId
    """

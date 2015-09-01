@@ -110,6 +110,11 @@ class DocumentClonerSpec extends DbSpecification {
         findDocuments(cloneDocumentSet.id).map(_.pageId) must beEqualTo(originalDocuments.map(_.pageId))
       }
 
+      "copy the pageNumbers" in new UploadedFileScope {
+        go
+        findDocuments(cloneDocumentSet.id).map(_.pageNumber) must beEqualTo(originalDocuments.map(_.pageNumber))
+      }
+
       "increment File refcounts" in new UploadedFileScope {
         val otherFile = factory.file(id=3L) // this one should *not* be incremented
         go
