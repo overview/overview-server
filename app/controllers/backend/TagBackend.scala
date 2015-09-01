@@ -10,6 +10,9 @@ trait TagBackend {
   /** Lists all Tags for the given DocumentSet. */
   def index(documentSetId: Long): Future[Seq[Tag]]
 
+  /** Lists all Tags and their counts for a given DocumentSet. */
+  def indexWithCounts(documentSetId: Long): Future[Seq[(Tag,Int)]]
+
   /** Returns one Tag, or None if it does not exist. */
   def show(documentSetId: Long, id: Long): Future[Option[Tag]]
 
@@ -52,6 +55,18 @@ trait DbTagBackend extends TagBackend with DbBackend {
   lazy val inserter = (Tags.map(t => (t.documentSetId, t.name, t.color)) returning Tags)
 
   override def index(documentSetId: Long) = database.seq(byDocumentSetIdCompiled(documentSetId))
+
+  override def indexWithCounts(documentSetId: Long) = {
+    val query = sql"""
+      SELECT id, name, color, (SELECT COUNT(*) FROM document_tag WHERE document_tag.tag_id = tag.id)::INT
+      FROM tag
+      WHERE document_set_id = ${documentSetId}
+    """.as[(Long,String,String,Int)]
+
+    for {
+      rows <- database.run(query)
+    } yield rows.map { case (id, name, color, count) => (Tag(id, documentSetId, name, color), count) }
+  }
 
   override def show(documentSetId: Long, id: Long) = database.option(byIdsCompiled(documentSetId, id))
 

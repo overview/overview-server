@@ -40,6 +40,45 @@ class DbTagBackendSpec extends DbBackendSpecification {
     }
   }
 
+  "#indexWithCounts" should {
+    trait IndexWithCountsScope extends BaseScope {
+      val documentSet = factory.documentSet()
+      lazy val result: Seq[(Tag,Int)] = await(backend.indexWithCounts(documentSet.id))
+    }
+
+    "return an empty Seq" in new IndexWithCountsScope {
+      result must beEqualTo(Seq())
+    }
+
+    "return a Seq with Tags" in new IndexWithCountsScope {
+      val tag1 = factory.tag(documentSetId=documentSet.id)
+      val tag2 = factory.tag(documentSetId=documentSet.id)
+
+      result must containTheSameElementsAs(Seq(tag1 -> 0, tag2 -> 0))
+    }
+
+    "return the correct counts" in new IndexWithCountsScope {
+      val tag1 = factory.tag(documentSetId=documentSet.id)
+      val tag2 = factory.tag(documentSetId=documentSet.id)
+      val tag3 = factory.tag(documentSetId=documentSet.id)
+      val doc1 = factory.document(documentSetId=documentSet.id)
+      val doc2 = factory.document(documentSetId=documentSet.id)
+      val doc3 = factory.document(documentSetId=documentSet.id)
+      factory.documentTag(doc1.id, tag1.id)
+      factory.documentTag(doc1.id, tag2.id)
+      factory.documentTag(doc2.id, tag1.id)
+
+      result must containTheSameElementsAs(Seq(tag1 -> 2, tag2 -> 1, tag3 -> 0))
+    }
+
+    "ignore tags in other document sets" in new IndexWithCountsScope {
+      val tag = factory.tag(documentSetId=documentSet.id)
+      factory.tag(documentSetId=factory.documentSet().id)
+
+      result must containTheSameElementsAs(Seq(tag -> 0))
+    }
+  }
+
   "#show" should {
     trait ShowScope extends BaseScope {
       val documentSet = factory.documentSet()

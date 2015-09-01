@@ -13,24 +13,9 @@ import org.squeryl.Query
 import models.orm.Schema
 
 object TagFinder extends Finder {
-  class TagResult(query: Query[Tag]) extends FinderResult(query) {
-    def withCounts : FinderResult[(Tag,Long)] = {
-      join(toQuery, tagCounts.toQuery.leftOuter)((tags, counts) =>
-        select((tags, &(nvl(counts.map(_.measures), 0L))))
-        on(tags.id === counts.map(_.key))
-      )
-    }
-  }
+  class TagResult(query: Query[Tag]) extends FinderResult(query)
   object TagResult {
     implicit def fromQuery(query: Query[Tag]) = new TagResult(query)
-  }
-
-  /** @return A mapping from Tag ID to document count */
-  def tagCounts : FinderResult[GroupWithMeasures[Long,Long]] = {
-    from(Schema.documentTags)(dt =>
-      groupBy(dt.tagId)
-      compute(count)
-    )
   }
 
   /** @return All `Tag`s with the given DocumentSet. */

@@ -11,10 +11,8 @@ import com.overviewdocs.test.factories.PodoFactory
 
 class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   class BaseScope extends Scope {
-    val mockStorage = mock[TagController.Storage]
     val mockTagBackend = mock[TagBackend]
     val controller = new TagController with TestController {
-      override val storage = mockStorage
       override val tagBackend = mockTagBackend
     }
 
@@ -117,8 +115,8 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   "indexJson" should {
     class IndexJsonScope extends BaseScope {
       val documentSetId = 1L
-      def tagsWithCounts : Seq[(Tag,Long)] = Seq()
-      mockStorage.findTagsWithCounts(anyInt) answers { (_) => tagsWithCounts }
+      def tagsWithCounts : Seq[(Tag,Int)] = Seq()
+      mockTagBackend.indexWithCounts(anyInt) answers { (_) => Future.successful(tagsWithCounts) }
       val result = controller.indexJson(documentSetId)(fakeAuthorizedRequest)
     }
 
@@ -133,8 +131,8 @@ class TagControllerSpec extends ControllerSpecification with JsonMatchers {
 
     "show a full list" in new IndexJsonScope {
       override def tagsWithCounts = Seq(
-        (Tag(documentSetId=documentSetId, id=1, name="tag1", color="111111") -> 5L),
-        (Tag(documentSetId=documentSetId, id=2, name="tag2", color="222222") -> 10L)
+        (Tag(documentSetId=documentSetId, id=1, name="tag1", color="111111") -> 5),
+        (Tag(documentSetId=documentSetId, id=2, name="tag2", color="222222") -> 10)
       )
       h.status(result) must beEqualTo(h.OK)
       h.contentAsJson(result) must beEqualTo(Json.arr(
