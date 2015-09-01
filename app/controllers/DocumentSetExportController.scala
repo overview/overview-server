@@ -92,36 +92,40 @@ object DocumentSetExportController extends DocumentSetExportController {
       import slick.backend.DatabasePublisher
       import slick.jdbc.GetResult
 
-      val idsAsSqlTuples: Seq[String] = ids.map((id: Long) => s"($id)")
-      val query = sql"""
-        WITH selection AS (
-          SELECT *
-          FROM (VALUES #${idsAsSqlTuples.mkString(",")})
-            AS t(document_id)
-        )
-        SELECT
-          supplied_id,
-          title,
-          text,
-          COALESCE(url, '') AS url,
-          COALESCE(metadata_json_text, '{}') AS metadata_json,
-          (
-            SELECT COALESCE(ARRAY_AGG(tag_id), '{}'::BIGINT[])
-            FROM document_tag
-            WHERE document_id = document.id
-          ) AS tag_ids
-        FROM document
-        WHERE EXISTS (SELECT 1 FROM selection WHERE selection.document_id = document.id)
-      """.as[DocumentForCsvExport](GetResult(r => DocumentForCsvExport(
-        r.nextString(),
-        r.nextString(),
-        r.nextString(),
-        r.nextString(),
-        Json.parse(r.nextString()).as[JsObject],
-        r.nextArray[Long]()
-      )))
+      if (ids.length == 0) {
+        Enumerator()
+      } else {
+        val idsAsSqlTuples: Seq[String] = ids.map((id: Long) => s"($id)")
+        val query = sql"""
+          WITH selection AS (
+            SELECT *
+            FROM (VALUES #${idsAsSqlTuples.mkString(",")})
+              AS t(document_id)
+          )
+          SELECT
+            supplied_id,
+            title,
+            text,
+            COALESCE(url, '') AS url,
+            COALESCE(metadata_json_text, '{}') AS metadata_json,
+            (
+              SELECT COALESCE(ARRAY_AGG(tag_id), '{}'::BIGINT[])
+              FROM document_tag
+              WHERE document_id = document.id
+            ) AS tag_ids
+          FROM document
+          WHERE EXISTS (SELECT 1 FROM selection WHERE selection.document_id = document.id)
+        """.as[DocumentForCsvExport](GetResult(r => DocumentForCsvExport(
+          r.nextString(),
+          r.nextString(),
+          r.nextString(),
+          r.nextString(),
+          Json.parse(r.nextString()).as[JsObject],
+          r.nextArray[Long]()
+        )))
 
-      Streams.publisherToEnumerator(database.slickDatabase.stream(query))
+        Streams.publisherToEnumerator(database.slickDatabase.stream(query))
+      }
     }
   }
 
