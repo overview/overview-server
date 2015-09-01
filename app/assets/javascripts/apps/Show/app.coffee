@@ -210,7 +210,6 @@ define [
         TourController()
 
     _attachNavbar: ->
-      console.log(@documentSet)
       $('nav .show-export-options').on 'click', (e) =>
         e.preventDefault()
         ExportDialog.show(documentSet: @documentSet, documentList: @state.get('documentList'))
