@@ -59,7 +59,8 @@ object CloneImportJobController extends CloneImportJobController with HasDatabas
       documentCount=documentSet.documentCount,
       documentProcessingErrorCount=documentSet.documentProcessingErrorCount,
       importOverflowCount=documentSet.importOverflowCount,
-      uploadedFileId=maybeUploadedFileId
+      uploadedFileId=maybeUploadedFileId,
+      metadataSchema=documentSet.metadataSchema
     )
   }
 
