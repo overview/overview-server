@@ -25,6 +25,7 @@ object ApplicationBuild extends Build {
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
     "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
+    "JBIG2 ImageIO" at "http://jbig2-imageio.googlecode.com/svn/maven-repository",
     "More FuseSource" at "http://repo.fusesource.com/maven2/",
     "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
   )

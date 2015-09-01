@@ -20,6 +20,7 @@ object Dependencies {
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val javaxMail = "javax.mail" % "mail" % "1.4.7"
+    val jbig2 = "com.levigo.jbig2" % "levigo-jbig2-imageio" % "1.6.1"
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
     val junit = "junit" % "junit-dep" % "4.11"
@@ -127,6 +128,7 @@ object Dependencies {
     deps.logback,
     deps.mimeTypes,
     deps.pdfbox,
+    deps.jbig2, // for PDFBox
     deps.janino % "test" // See logback-test.xml
   )
   
