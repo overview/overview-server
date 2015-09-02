@@ -23,9 +23,13 @@ trait PgLoStrategy extends BlobStorageStrategy with HasDatabase {
    *
    * We don't delete them all at once, because that would be too slow.
    * (Historically, Postgres 9.1 would abort any transaction that tried to
-   * delete more than 1,000 large objects.
+   * delete more than 1,000 large objects.)
+   *
+   * On production, 2015-09-01, we found that a batch size of 1,000 led to 20s
+   * queries. Since we email ourselves for _any_ query that takes longer than
+   * 10s, we lowered this. We aimed for a max 5s query.
    */
-  protected val DeleteManyChunkSize = 1000
+  protected val DeleteManyChunkSize = 250
 
   private def locationToOid(location: String): Long = {
     if (!location.startsWith("pglo:")) throw new IllegalArgumentException("Invalid prefix on location: " + location)
