@@ -104,6 +104,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         val nodeIds: Seq[Long] = Seq()
         val storeObjectIds: Seq[Long] = Seq()
         val tagged: Option[Boolean] = None
+        val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any
         val q: Option[Query] = None
 
         def request = SelectionRequest(
@@ -113,7 +114,8 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
           nodeIds=nodeIds,
           storeObjectIds=storeObjectIds,
           tagged=tagged,
-          q=q
+          q=q,
+          tagOperation=tagOperation
         )
         lazy val ret = await(backend.indexIds(request))
       }
@@ -131,29 +133,102 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         ret must beEqualTo(Seq(doc2.id))
       }
 
-      "search by tagIds" in new IndexIdsScope {
-        val tag = factory.tag(documentSetId=documentSet.id)
-        val dt1 = factory.documentTag(doc1.id, tag.id)
-        val dt2 = factory.documentTag(doc2.id, tag.id)
-
-        override val tagIds = Seq(tag.id)
-        ret must beEqualTo(Seq(doc2.id, doc1.id))
-      }
-
-      "take the union when given multiple tag IDs" in new IndexIdsScope {
+      trait IndexIdsWithTagsScope extends IndexIdsScope {
+        // tag1: doc1, doc2
+        // tag2: doc2
+        //
+        // Put otherwise:
+        //
+        // doc1: tag1
+        // doc2: tag1, tag2
         val tag1 = factory.tag(documentSetId=documentSet.id)
         val tag2 = factory.tag(documentSetId=documentSet.id)
-        val dt1 = factory.documentTag(doc1.id, tag1.id)
-        val dt2 = factory.documentTag(doc2.id, tag2.id)
 
+        factory.documentTag(doc1.id, tag1.id)
+        factory.documentTag(doc2.id, tag1.id)
+        factory.documentTag(doc2.id, tag2.id)
+      }
+
+      "search by tagId" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag1.id)
+        override val tagOperation = SelectionRequest.TagOperation.Any
+        ret must containTheSameElementsAs(Seq(doc1.id, doc2.id))
+      }
+
+      "search by ANY tagIds" in new IndexIdsWithTagsScope {
         override val tagIds = Seq(tag1.id, tag2.id)
-        ret must beEqualTo(Seq(doc2.id, doc1.id))
+        override val tagOperation = SelectionRequest.TagOperation.Any
+        ret must containTheSameElementsAs(Seq(doc1.id, doc2.id))
+      }
+
+      "search by ALL tagIds" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag1.id, tag2.id)
+        override val tagOperation = SelectionRequest.TagOperation.All
+        ret must beEqualTo(Seq(doc2.id))
+      }
+
+      "search by NONE tagIds" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag1.id, tag2.id)
+        override val tagOperation = SelectionRequest.TagOperation.None
+        ret must beEqualTo(Seq(doc3.id))
+      }
+
+      "search by tagged=false" in new IndexIdsWithTagsScope {
+        override val tagged = Some(false)
+        ret must beEqualTo(Seq(doc3.id))
+      }
+
+      "search by tagged=true" in new IndexIdsWithTagsScope {
+        override val tagged = Some(true)
+        ret must containTheSameElementsAs(Seq(doc1.id, doc2.id))
+      }
+
+      "search by tagged=false OR a tag" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag2.id)
+        override val tagged = Some(false)
+        override val tagOperation = SelectionRequest.TagOperation.Any
+        ret must containTheSameElementsAs(Seq(doc2.id, doc3.id))
+      }
+
+      "search by tagged=false AND a tag" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag2.id)
+        override val tagged = Some(false)
+        override val tagOperation = SelectionRequest.TagOperation.All
+        ret must beEqualTo(Seq())
+      }
+
+      "search by NOT tagged=false AND NOT a tag" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag2.id)
+        override val tagged = Some(false)
+        override val tagOperation = SelectionRequest.TagOperation.None
+        ret must containTheSameElementsAs(Seq(doc1.id))
+      }
+
+      "search by tagged=true OR a tag" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag2.id)
+        override val tagged = Some(true)
+        override val tagOperation = SelectionRequest.TagOperation.Any
+        ret must containTheSameElementsAs(Seq(doc1.id, doc2.id))
+      }
+
+      "search by tagged=true AND a tag" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag2.id)
+        override val tagged = Some(true)
+        override val tagOperation = SelectionRequest.TagOperation.All
+        ret must beEqualTo(Seq(doc2.id))
+      }
+
+      "search by NOT tagged=true AND NOT a tag" in new IndexIdsWithTagsScope {
+        override val tagIds = Seq(tag2.id)
+        override val tagged = Some(true)
+        override val tagOperation = SelectionRequest.TagOperation.None
+        ret must beEqualTo(Seq(doc3.id))
       }
 
       "intersect results from ElasticSearch and Postgres" in new IndexIdsScope {
         val tag = factory.tag(documentSetId=documentSet.id)
-        val dt1 = factory.documentTag(doc1.id, tag.id)
-        val dt2 = factory.documentTag(doc2.id, tag.id)
+        factory.documentTag(doc1.id, tag.id)
+        factory.documentTag(doc2.id, tag.id)
 
         override val tagIds = Seq(tag.id)
         override val q = Some(PhraseQuery(Field.All, "oneandthree"))
@@ -180,8 +255,8 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         val nd2 = factory.nodeDocument(node.id, doc2.id)
 
         val tag = factory.tag(documentSetId=documentSet.id)
-        val dt1 = factory.documentTag(doc1.id, tag.id)
-        val dt2 = factory.documentTag(doc3.id, tag.id)
+        factory.documentTag(doc1.id, tag.id)
+        factory.documentTag(doc3.id, tag.id)
 
         override val nodeIds = Seq(node.id)
         override val tagIds = Seq(tag.id)
@@ -197,24 +272,6 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         val dvo2 = factory.documentStoreObject(doc2.id, obj.id)
 
         override val storeObjectIds = Seq(obj.id)
-        ret must beEqualTo(Seq(doc2.id, doc1.id))
-      }
-
-      "search by tagged=false" in new IndexIdsScope {
-        val tag = factory.tag(documentSetId=documentSet.id)
-        val dt1 = factory.documentTag(doc1.id, tag.id)
-        val dt2 = factory.documentTag(doc2.id, tag.id)
-
-        override val tagged = Some(false)
-        ret must beEqualTo(Seq(doc3.id))
-      }
-
-      "search by tagged=true" in new IndexIdsScope {
-        val tag = factory.tag(documentSetId=documentSet.id)
-        val dt1 = factory.documentTag(doc1.id, tag.id)
-        val dt2 = factory.documentTag(doc2.id, tag.id)
-
-        override val tagged = Some(true)
         ret must beEqualTo(Seq(doc2.id, doc1.id))
       }
     }

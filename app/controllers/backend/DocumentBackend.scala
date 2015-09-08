@@ -1,6 +1,7 @@
 package controllers.backend
 
 import play.api.libs.json.JsObject
+import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import slick.jdbc.{GetResult,StaticQuery}
@@ -8,7 +9,7 @@ import slick.jdbc.{GetResult,StaticQuery}
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
 import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,DocumentInfo}
-import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,DocumentStoreObjects,NodeDocuments,Tags}
+import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,Tags}
 import com.overviewdocs.query.{Query=>SearchQuery}
 import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.util.Logger
@@ -118,7 +119,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     */
   private def indexByDB(request: SelectionRequest): Future[Set[Long]] = {
     logger.logExecutionTimeAsync("finding document IDs matching '{}'", request.toString) {
-      database.seq(idsBySelectionRequest(request)).map(_.toSet)
+      database.run(idsBySelectionRequest(request)).map(_.toSet)
     }
   }
 
@@ -175,53 +176,91 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
   }
 
-  protected def idsBySelectionRequest(request: SelectionRequest): Query[_,Long,Seq] = {
-    var sql = DocumentInfos
-      .filter(_.documentSetId === request.documentSetId)
-      .map(_.id)
+  protected def idsBySelectionRequest(request: SelectionRequest): DBIO[Seq[Long]] = {
+    // Don't have to worry about SQL injection: every SelectionRequest
+    // parameter is an ID. (Or it's "q", which this method ignores.)
+    val sb = new StringBuilder(s"""SELECT id FROM document WHERE document_set_id = ${request.documentSetId}""")
 
     if (request.documentIds.nonEmpty) {
-      sql = sql.filter(_ inSet request.documentIds)
-    }
-
-    if (request.tagIds.nonEmpty) {
-      val tagDocumentIds = DocumentTags
-        .filter(_.tagId inSet request.tagIds)
-        .map(_.documentId)
-      sql = sql.filter(_ in tagDocumentIds)
+      sb.append(s"""
+        AND id IN (${request.documentIds.mkString(",")})""")
     }
 
     if (request.nodeIds.nonEmpty) {
-      val nodeDocumentIds = NodeDocuments
-        .filter(_.nodeId inSet request.nodeIds)
-        .map(_.documentId)
-      sql = sql.filter(_ in nodeDocumentIds)
+      sb.append(s"""
+        AND EXISTS (
+          SELECT 1 FROM node_document WHERE document_id = document.id
+          AND node_id IN (${request.nodeIds.mkString(",")})
+        )""")
     }
 
     if (request.storeObjectIds.nonEmpty) {
-      val storeObjectDocumentIds = DocumentStoreObjects
-        .filter(_.storeObjectId inSet request.storeObjectIds)
-        .map(_.documentId)
-      sql = sql.filter(_ in storeObjectDocumentIds)
+      sb.append(s"""
+        AND EXISTS (
+          SELECT 1 FROM document_store_object WHERE document_id = document.id
+          AND store_object_id IN (${request.storeObjectIds.mkString(",")})
+        )""")
     }
 
-    request.tagged.foreach { tagged =>
-      val tagIds = Tags
-        .filter(_.documentSetId === request.documentSetId)
-        .map(_.id)
+    if (request.tagIds.nonEmpty || request.tagged.nonEmpty) {
+      val taggedSql = "EXISTS (SELECT 1 FROM document_tag WHERE document_id = document.id)"
 
-      val taggedDocumentIds = DocumentTags
-        .filter(_.tagId in tagIds)
-        .map(_.documentId)
+      request.tagOperation match {
+        case SelectionRequest.TagOperation.Any => {
+          val parts = Buffer[String]()
 
-      if (tagged) {
-        sql = sql.filter(_ in taggedDocumentIds)
-      } else {
-        sql = sql.filter((id) => !(id in taggedDocumentIds))
+          if (request.tagIds.nonEmpty) {
+            parts.append(s"""EXISTS (
+              SELECT 1
+              FROM document_tag
+              WHERE document_id = document.id
+                AND tag_id IN (${request.tagIds.mkString(",")})
+            )""")
+          }
+
+          request.tagged match {
+            case Some(true) => parts.append(taggedSql)
+            case Some(false) => parts.append("NOT " + taggedSql)
+            case None =>
+          }
+
+          sb.append(s" AND (${parts.mkString(" OR ")})")
+        }
+
+        case SelectionRequest.TagOperation.All => {
+          for (tagId <- request.tagIds) {
+            sb.append(s"""
+              AND EXISTS (SELECT 1 FROM document_tag WHERE document_id = document.id AND tag_id = $tagId)""")
+          }
+
+          request.tagged match {
+            case Some(true) => sb.append("\nAND " + taggedSql)
+            case Some(false) => sb.append("\nAND NOT " + taggedSql)
+            case None =>
+          }
+        }
+
+        case SelectionRequest.TagOperation.None => {
+          if (request.tagIds.nonEmpty) {
+            sb.append(s"""
+              AND NOT EXISTS (
+                SELECT 1
+                FROM document_tag
+                WHERE document_id = document.id
+                  AND tag_id IN (${request.tagIds.mkString(",")})
+              )""")
+          }
+
+          request.tagged match {
+            case Some(true) => sb.append("\nAND NOT " + taggedSql)
+            case Some(false) => sb.append("\nAND " + taggedSql)
+            case None =>
+          }
+        }
       }
     }
 
-    sql
+    sql"#${sb.toString}".as[Long]
   }
 
   protected object InfosByIds {
