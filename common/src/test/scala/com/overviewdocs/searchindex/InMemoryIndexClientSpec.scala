@@ -116,7 +116,7 @@ class InMemoryIndexClientSpec extends Specification {
         val resultsFuture = indexClient.publicClientFuture.map { client =>
           client.prepareSearch("documents_234")
             .setTypes("document")
-            .setQuery(QueryBuilders.queryString("*:*"))
+            .setQuery(QueryBuilders.matchAllQuery)
             .setSize(2)
             .addField("id")
             .execute().get()
@@ -205,11 +205,12 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 235L))))
         await(indexClient.refresh)
         await(indexClient.removeDocumentSet(234L))
+        await(indexClient.refresh)
 
         val resultsFuture = indexClient.publicClientFuture.map { client =>
           client.prepareSearch("documents")
             .setTypes("document")
-            .setQuery(QueryBuilders.queryString("*:*"))
+            .setQuery(QueryBuilders.matchAllQuery)
             .setSize(2)
             .addField("id")
             .execute().get()

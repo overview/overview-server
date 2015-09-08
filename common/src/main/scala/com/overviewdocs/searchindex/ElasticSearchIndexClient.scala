@@ -2,6 +2,7 @@ package com.overviewdocs.searchindex
 
 import org.elasticsearch.ElasticsearchWrapperException
 import org.elasticsearch.action.{ActionListener,ActionRequest,ActionRequestBuilder,ActionResponse}
+import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.search.{SearchResponse,SearchType}
 import org.elasticsearch.client.Client
 import org.elasticsearch.common.settings.ImmutableSettings
@@ -14,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
 
 import com.overviewdocs.models.Document
-import com.overviewdocs.query.Query
+import com.overviewdocs.query.{AllQuery,Query}
 import com.overviewdocs.util.Logger
 
 /** ElasticSearch index client.
@@ -205,27 +206,39 @@ trait ElasticSearchIndexClient extends IndexClient {
       .map(_ => Unit)
   }
 
-  private def removeDocumentSetImpl(client: Client, id: Long): Future[Unit] = {
-    val unalias = client.admin.indices.prepareAliases()
-      .removeAlias("_all", aliasName(id))
-
-    val unaliasFuture = execute(unalias)
-      .map(_ => Unit)
-      .recover { case e: AliasesMissingException => Unit }
-
+  private def removeDocumentSetImpl(client: Client, documentSetId: Long): Future[Unit] = {
     // Note: if we're reindexing into documents_v2 while we call this method,
     // the documents won't be deleted from documents_v1. But that's okay, since
     // we're going to delete documents_v1 _entirely_ soon, and there won't be
     // any alias pointing towards it.
-    val delete = client.prepareDeleteByQuery(AllDocumentsAlias)
-      .setTypes(DocumentTypeName)
-      .setQuery(QueryBuilders.termQuery(DocumentSetIdField, id))
+    def deleteAlias: Future[Unit] = {
+      val unalias = client.admin.indices.prepareAliases()
+        .removeAlias("_all", aliasName(documentSetId))
 
-    val deleteFuture = execute(delete)
+      execute(unalias)
+        .map(_ => ())
+        .recover { case e: AliasesMissingException => Unit }
+    }
+
+    def deleteDocuments(ids: Seq[Long]): Future[Unit] = {
+      if (ids.isEmpty) {
+        Future.successful(())
+      } else {
+        val bulkBuilder = client.prepareBulk()
+
+        ids.foreach { id =>
+          bulkBuilder.add(new DeleteRequest(AllDocumentsAlias, DocumentTypeName, id.toString))
+        }
+
+        execute(bulkBuilder).map(_ => ())
+      }
+    }
 
     for {
-      _ <- unaliasFuture
-      _ <- deleteFuture
+      _ <- addDocumentSetImpl(client, documentSetId) // Add so the search works
+      idsToDelete <- searchForIdsImpl(client, documentSetId, AllQuery, DefaultScrollSize)
+      _ <- deleteDocuments(idsToDelete)
+      _ <- deleteAlias
     } yield Unit
   }
 
@@ -359,6 +372,7 @@ trait ElasticSearchIndexClient extends IndexClient {
      * constant-score query throws off the highlighter.
      */
     def toElasticSearchQuery: QueryBuilder = query match {
+      case AllQuery => QueryBuilders.matchAllQuery
       case AndQuery(left, right) => {
         QueryBuilders.boolQuery
           .must(left.toElasticSearchQuery)

@@ -12,6 +12,7 @@ class QueryParserSpec extends Specification {
   }
 
   def repr(node: Query): String = node match {
+    case AllQuery => "ALL"
     case AndQuery(node1, node2) => s"AND(${repr(node1)},${repr(node2)})"
     case OrQuery(node1, node2) => s"OR(${repr(node1)},${repr(node2)})"
     case NotQuery(node) => s"NOT(${repr(node)})"

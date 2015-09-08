@@ -8,6 +8,7 @@ import play.api.libs.json.{Json,JsValue,JsString,JsNumber}
   * http://www.elastic.co/guide/en/elasticsearch/reference/1.x/query-dsl.html
   */
 sealed trait Query
+case object AllQuery extends Query
 case class AndQuery(node1: Query, node2: Query) extends Query
 case class OrQuery(node1: Query, node2: Query) extends Query
 case class NotQuery(node: Query) extends Query
