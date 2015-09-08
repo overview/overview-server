@@ -15,6 +15,7 @@ object Dependencies {
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
     val commonsIo = "commons-io" % "commons-io" % "2.4"
     val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.4.2"
+    val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.4.1" // find version at https://github.com/elastic/elasticsearch-analysis-icu
     val geronimoJms = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
@@ -83,6 +84,7 @@ object Dependencies {
     deps.awsS3,
     deps.commonsIo,
     deps.elasticSearch,
+    deps.elasticSearchIcu,
     deps.geronimoJms,
     deps.guava, // Textify
     deps.hackyScalaCompiler, // boo

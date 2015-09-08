@@ -111,11 +111,14 @@ trait ElasticSearchIndexClient extends IndexClient {
   protected val DocumentTypeName = "document"
   protected def aliasName(documentSetId: Long) = s"documents_$documentSetId"
 
-  protected lazy val Mapping = {
-    val inputStream = getClass.getResourceAsStream("/documents-mapping.json")
+  private def loadTextResource(path: String): String = {
+    val inputStream = getClass.getResourceAsStream(path)
     val source = scala.io.Source.fromInputStream(inputStream)
     source.getLines.mkString("\n")
   }
+
+  protected lazy val Settings = loadTextResource("/documents-settings.json")
+  protected lazy val Mapping = loadTextResource("/documents-mapping.json")
 
   def close: Future[Unit] = {
     if (connected) {
@@ -176,8 +179,10 @@ trait ElasticSearchIndexClient extends IndexClient {
   protected def defaultIndexSettings = ImmutableSettings.settingsBuilder
 
   private def createDefaultIndex(client: Client): Future[Unit] = {
+    val settings = defaultIndexSettings.loadFromSource(Settings)
+
     val req = client.admin.indices.prepareCreate(DefaultIndexName)
-      .setSettings(defaultIndexSettings)
+      .setSettings(settings)
       .addMapping(DocumentTypeName, Mapping)
 
     execute(req).map(_ => Unit)

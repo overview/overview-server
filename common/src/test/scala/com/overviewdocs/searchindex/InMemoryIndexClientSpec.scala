@@ -254,6 +254,36 @@ class InMemoryIndexClientSpec extends Specification {
         ids must beEqualTo(Seq())
       }
 
+      "find a term indexed from NFC and searched from NFD" in new BaseScope {
+        val document = buildDocument(123L, 234L).copy(text="\u00c5oo")
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(document)))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.Text, "\u0041\u030aoo")))
+
+        ids must containTheSameElementsAs(Seq(123L))
+      }
+
+      "find a term indexed from NFD and searched from NFKC" in new BaseScope {
+        val document = buildDocument(123L, 234L).copy(text="ﬁoo")
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(document)))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.Text, "fioo")))
+
+        ids must containTheSameElementsAs(Seq(123L))
+      }
+
+      "find a term indexed from NFD and searched from NFKC, when using default analyzer" in new BaseScope {
+        val document = buildDocument(123L, 234L).copy(text="ﬁoo")
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocuments(Seq(document)))
+        await(indexClient.refresh())
+        val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "fioo")))
+
+        ids must containTheSameElementsAs(Seq(123L))
+      }
+
       "find multiple documents" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))

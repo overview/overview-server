@@ -1,6 +1,7 @@
 {
   "document": {
     "_id": { "path": "id" },
+    "analyzer": "overview_text_analyzer",
     "properties": {
       "id":              { "type": "long", "store": "yes" },
       "document_set_id": { "type": "long" },

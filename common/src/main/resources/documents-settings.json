@@ -1,0 +1,10 @@
+{
+  "analysis": {
+    "analyzer": {
+      "overview_text_analyzer": {
+        "tokenizer": "standard",
+        "filter": [ "icu_normalizer" ]
+      }
+    }
+  }
+}
