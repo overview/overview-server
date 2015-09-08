@@ -30,6 +30,11 @@ trait SelectionHelpers { self: Controller =>
 
     val nodeIds = reqData.getLongs("nodes")
     val tagIds = reqData.getLongs("tags")
+    val tagOperation = reqData.getString("tagOperation") match {
+      case Some("all") => SelectionRequest.TagOperation.All
+      case Some("none") => SelectionRequest.TagOperation.None
+      case _ => SelectionRequest.TagOperation.Any
+    }
     val documentIds = reqData.getLongs("documents")
     val storeObjectIds = reqData.getLongs("objects")
     val maybeQOrError: Either[Result,Option[Query]] = reqData.getString("q").getOrElse("") match {
@@ -54,7 +59,8 @@ trait SelectionHelpers { self: Controller =>
         documentIds,
         storeObjectIds,
         tagged,
-        _
+        _,
+        tagOperation
       ))
   }
 

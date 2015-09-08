@@ -70,6 +70,26 @@ class SelectionHelpersSpec extends Specification with Mockito {
         test("/?q=foo", Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
       }
 
+      "make a SelectionRequest with tagOperation=all" in new SelectionScope {
+        test("/?tagOperation=all", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.All)))
+      }
+
+      "make a SelectionRequest with tagOperation=any" in new SelectionScope {
+        test("/?tagOperation=any", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.Any)))
+      }
+
+      "make a SelectionRequest with tagOperation=none" in new SelectionScope {
+        test("/?tagOperation=none", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.None)))
+      }
+
+      "set tagOperation=any when given an invalid value" in new SelectionScope {
+        test("/?tagOperation=moo", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.Any)))
+      }
+
+      "default to tagOperation=any" in new SelectionScope {
+        test("", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.Any)))
+      }
+
       "return a BadRequest on query syntax error" in new SelectionScope {
         f(1L, "/?q=(foo+AND") must beLeft { (result: Result) =>
           result.header.status must beEqualTo(400)

@@ -14,7 +14,8 @@ case class SelectionRequest(
   val documentIds: Seq[Long] = Seq(),
   val storeObjectIds: Seq[Long] = Seq(),
   val tagged: Option[Boolean] = None,
-  val q: Option[Query] = None
+  val q: Option[Query] = None,
+  val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any
 ) {
   lazy val hash = hashCode
 
@@ -30,5 +31,14 @@ case class SelectionRequest(
       && tagged.isEmpty
       && q.isEmpty
     )
+  }
+}
+
+object SelectionRequest {
+  sealed trait TagOperation
+  object TagOperation {
+    case object Any extends TagOperation
+    case object All extends TagOperation
+    case object None extends TagOperation
   }
 }
