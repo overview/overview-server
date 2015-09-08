@@ -31,7 +31,7 @@ object TreeCloner extends InDatabaseCloner {
         supplied_stop_words,
         important_words,
         description,
-        created_at
+        CLOCK_TIMESTAMP()
       FROM tree
       WHERE document_set_id = $sourceDocumentSetId
     """)

@@ -45,5 +45,9 @@ class TreeClonerSpec extends DbSpecification {
       cloneTree.get.suppliedStopWords must beEqualTo("stopwords")
       cloneTree.get.importantWords must beEqualTo("importantwords")
     }
+
+    "give a more recent createdAt than the original" in new TreeCloneContext {
+      cloneTree.get.createdAt.getTime must beGreaterThan(sourceTree.createdAt.getTime)
+    }
   }
 }
