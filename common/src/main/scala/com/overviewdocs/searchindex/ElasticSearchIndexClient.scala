@@ -177,10 +177,13 @@ trait ElasticSearchIndexClient extends IndexClient {
       .flatMap(_ => createDefaultAlias(client))
   }
 
-  protected def defaultIndexSettings = ImmutableSettings.settingsBuilder
+  protected val defaultIndexSettings = ImmutableSettings.EMPTY
 
   private def createDefaultIndex(client: Client): Future[Unit] = {
-    val settings = defaultIndexSettings.loadFromSource(Settings)
+    val settings = ImmutableSettings.builder
+      .put(defaultIndexSettings.getAsMap)
+      .loadFromSource(Settings)
+      .build
 
     val req = client.admin.indices.prepareCreate(DefaultIndexName)
       .setSettings(settings)

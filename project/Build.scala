@@ -221,7 +221,7 @@ object ApplicationBuild extends Build {
       // we want.)
       pipelineStages := Seq(rjs)
     )
-    .dependsOn(common % "test->test;compile->compile")
+    .dependsOn(common % "test->test;compile->compile;test->compile")
 
   lazy val all = Project("all", file("all"))
     .aggregate(main, worker, documentSetWorker, common)

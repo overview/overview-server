@@ -25,6 +25,8 @@ class InMemoryIndexClient extends ElasticSearchIndexClient {
       .put("http.enabled", false)
       .put("path.logs", s"$path/logs")
       .put("path.data", s"$path/data")
+      .put("plugin.mandatory", "analysis-icu")
+      .build
 
     NodeBuilder.nodeBuilder()
       .clusterName(clusterName)
@@ -34,10 +36,11 @@ class InMemoryIndexClient extends ElasticSearchIndexClient {
       .node()
   }
 
-  override protected def defaultIndexSettings = ImmutableSettings.settingsBuilder
+  override protected val defaultIndexSettings = ImmutableSettings.settingsBuilder
     .put("index.store.type", "memory")
     .put("index.number_of_shards", 1)
     .put("index.number_of_replicas", 0)
+    .build
 
   override def connect = {
     Future.successful(node.client())
