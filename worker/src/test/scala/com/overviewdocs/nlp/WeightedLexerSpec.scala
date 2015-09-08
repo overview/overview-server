@@ -6,12 +6,13 @@ import com.overviewdocs.util.DisplayedError
 class WeightedLexerSpec extends Specification {
   val stopWords = StopWordSet("en", None)
 
-  def makeWeightedTermSeq(s:Seq[(String,TermWeight)]) =
-    s map { case (t,w) => WeightedTermString(t,w) }
+  def makeWeightedTermSeq(s:Seq[(String,TermWeight)]) = s map { case (t,w) => WeightedTermString(t,w) }
 
   "WeightedLexer wihout custom weights" should {
-
-    val wl = new WeightedLexer(stopWords, Map("cat"->5, "cats+"->13, "CAT-mission"->20, "\\w*CAT\\w*"->10, "\\w*DOG\\w*"->10))
+    val wl = new WeightedLexer(
+      stopWords,
+      Map("cat\\b"->5, "cats+"->13, "\\w*CAT\\w*"->10, "\\w*DOG\\w*"->10)
+    )
 
     "remove stop words when no matches" in {
       wl.makeTerms("no i haha you") must beEqualTo(makeWeightedTermSeq(Seq(("haha",1))))
@@ -19,7 +20,7 @@ class WeightedLexerSpec extends Specification {
 
     "handle spaces and punct when no matches" in {
       val sentence = "the quick\t  brown.. Fox jump{s over\nyour 500 lAzy"
-      val terms = makeWeightedTermSeq(Seq(("quick",1), ("brown",1), ("fox",1), ("jumps",1), ("lazy",1)))
+      val terms = makeWeightedTermSeq(Seq(("quick",1), ("brown",1), ("fox",1), ("jump",1), ("lazy",1)))
       wl.makeTerms(sentence) must beEqualTo(terms)
     }
 
@@ -41,13 +42,7 @@ class WeightedLexerSpec extends Specification {
       wl.makeTerms(sentence) must beEqualTo(terms)
     }
 
-    "match an uppercase-punct regex" in {
-      val sentence = "a CAT-mission tomorrow"
-      val terms = makeWeightedTermSeq(Seq(("CAT-mission",20), ("tomorrow",1)))
-      wl.makeTerms(sentence) must beEqualTo(terms)
-    }
-
-    "match multiple regexes at once" in {
+    "match uppercase in a regex" in {
       val sentence = "you sir are a weirdCATandDOGmongrel"
       val terms = makeWeightedTermSeq(Seq(("sir",1), ("weirdCATandDOGmongrel", 100)))
       wl.makeTerms(sentence) must beEqualTo(terms)

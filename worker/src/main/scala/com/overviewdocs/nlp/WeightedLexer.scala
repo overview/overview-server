@@ -14,13 +14,29 @@
  */
 package com.overviewdocs.nlp
 
-import scala.util.control.Exception._
+import java.io.StringReader
+import java.text.Normalizer
+import java.util.regex.Pattern
+import org.apache.lucene.analysis.standard.StandardTokenizer // Built in to ElasticSearch
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute // Built in to ElasticSearch
+import scala.collection.mutable.ArrayBuffer
+import scala.util.control.Exception
+
 import com.overviewdocs.nlp.DocumentVectorTypes.TermWeight
 import com.overviewdocs.util.DisplayedError
 
-case class WeightedTermString(term:String,weight:TermWeight)
+case class WeightedTermString(term: String, weight: TermWeight)
+case class WeightedTermRegex(pattern: Pattern, weight: TermWeight)
 
-class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,TermWeight]) {
+class WeightedLexer(val stopWords: Set[String], val weightedTerms: Map[String,TermWeight]) {
+  // None iff there's an invalid regex (TODO make the *caller* compile regexes)
+  private val weightedTermRegexes: Option[Seq[WeightedTermRegex]] = {
+    Exception.catching(classOf[java.util.regex.PatternSyntaxException]).opt {
+      weightedTerms
+        .toSeq // (String, TermWeight)
+        .map({ case (s, w) => WeightedTermRegex(Pattern.compile(s), w) })
+    }
+  }
 
   // longest token we'll tolerate (silently truncates, to prevent bad input from destroying everything downstream)
   private[nlp] val maxTokenLength = 40
@@ -29,7 +45,6 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
   //  - we insist that terms are at least three chars
   //  - discard if a) starts with a digit and b) 40% or more of the characters are digits
   //  - discard stop words
-
   private def termAcceptable(t: String): Boolean = {
     if (t.length < 3)
       false // too short, unacceptable
@@ -41,64 +56,66 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
       10 * t.count(_.isDigit) < 4 * t.length // < 40% digits, acceptable
   }
 
-
   // If the raw term string matches any of the regex patterns, we emit the term and the pattern weight
   // multiply the weights of the matched patterns if more than one
   // Otherwise standard processing strips punctuation, lowecases, checks termAcceptable
   // Throws out invalid terms.
-  private def processTerm(rawTerm:String) : Option[WeightedTermString] ={
+  private def processTerm(term: String) : Option[WeightedTermString] ={
+    var weight: TermWeight = 1
+    var matched: Boolean = false
 
-    var weight:TermWeight = 1
-    var matched = false
-
-    // Strip leading/trailing punct
-    def isPunct(c:Char) = c.toString.matches("\\p{Punct}")
-    val strippedTerm = rawTerm.dropWhile(isPunct(_)).reverse.dropWhile(isPunct(_)).reverse
-
-    weightedTerms foreach { case (pattern,patternWeight) =>
-      if (validPatternMatch(strippedTerm, pattern)) {
-        weight *= patternWeight
-        matched = true
-      }
+    for (regex <- weightedTermRegexes.get if regex.pattern.matcher(term).find) {
+      weight *= regex.weight
+      matched = true
     }
 
     if (matched) {
       // Got a match, return unprocessed term (case sensitive etc.)
-      Some(WeightedTermString(strippedTerm, weight))
+      Some(WeightedTermString(term, weight))
     } else {
-      // lose case, allow only alphanum, dash, apostrophe
-      var term = strippedTerm.toLowerCase.filter(c => c.isDigit || c.isLetter || "-'".contains(c))
-      if (termAcceptable(term))
-        Some(WeightedTermString(term, 1f))
-      else
+      val lowerTerm = term.toLowerCase
+      if (termAcceptable(lowerTerm)) {
+        Some(WeightedTermString(lowerTerm, 1))
+      } else {
         None
+      }
     }
   }
 
   // Clips term to maximum length (avoids pathalogical cases)
   // also copies it with new (avoids substring references created by .split chewing up all our memory)
-  private def limitTermLength(wt:WeightedTermString) =
+  private def limitTermLength(wt:WeightedTermString) = {
     WeightedTermString(new String(wt.term.take(maxTokenLength)), wt.weight)
+  }
 
-  // Given a string and a list of stop words, returns a list of weighted terms.
+  /** Given some text, builds a list of weighted terms. */
   def makeTerms(textIn: String): Seq[WeightedTermString] = {
-    if (textIn.length == 0) Seq()
+    if (!weightedTermRegexes.isDefined) {
+      throw new DisplayedError("bad_important_words_pattern")
+    }
 
-    // collapse runs of spaces (including non-breaking space, U+160) into single space
-    val text = "[ \t\n\r\u00A0]+".r.replaceAllIn(textIn, " ")
+    // If we start paying attention to Asian languages, switch this to use
+    // ICUTokenizer, which is in a separate package. We're mimicking our
+    // ElasticSearch behavior here.
+    //
+    // https://www.elastic.co/guide/en/elasticsearch/guide/current/icu-tokenizer.html
+    val normalizedText = Normalizer.normalize(textIn, Normalizer.Form.NFKC)
+    val reader = new StringReader(normalizedText)
+    val tokenizer = new StandardTokenizer(reader)
+    var charTermAttribute = tokenizer.addAttribute(classOf[CharTermAttribute])
 
-    // split on (condensed) spaces and weight each term
-    text.split(' ').flatMap(processTerm).map(limitTermLength)
+    val ret = new ArrayBuffer[WeightedTermString]
+
+    // Docs say reset. http://lucene.apache.org/core/4_8_0/core/index.html?org/apache/lucene/analysis/TokenStream.html
+    tokenizer.reset()
+    while (tokenizer.incrementToken()) {
+      processTerm(charTermAttribute.toString).foreach { weightedTerm =>
+        ret.append(limitTermLength(weightedTerm))
+      }
+    }
+    tokenizer.end()
+    tokenizer.close()
+
+    ret
   }
-
-  private def validPatternMatch(term: String, pattern: String): Boolean =
-    catching(classOf[java.util.regex.PatternSyntaxException])
-      .withApply(e => throw new DisplayedError("bad_important_words_pattern")) {
-    term.matches(pattern)
-  }
-
-
-
-
 }
-
