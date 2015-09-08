@@ -21,14 +21,5 @@
         @documentSets.map(Function.tupled(views.html.DocumentSet._smallDocumentSet.apply))
       </ul>
     }
-    <div class="quick-start-container">
-      <!-- set src in script, to make page onload come sooner -->
-      <iframe id="quick-start-video" class="quick-start-video" src="" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
-      <script>
-        window.addEventListener('load', function() {
-          document.getElementById('quick-start-video').setAttribute('src', 'https://player.vimeo.com/video/77729177?byline=0&portrait=0&color=ffffff');
-        }, false);
-      </script>
-    </div>
   }
 }
