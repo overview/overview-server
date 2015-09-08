@@ -14,8 +14,8 @@ object Dependencies {
     val bcprov = "org.bouncycastle" % "bcprov-jdk15" % "1.44" // https://pdfbox.apache.org/1.8/dependencies.html
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
     val commonsIo = "commons-io" % "commons-io" % "2.4"
-    val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.4.2"
-    val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.4.1" // find version at https://github.com/elastic/elasticsearch-analysis-icu
+    val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.7.1"
+    val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.7.0" // find version at https://github.com/elastic/elasticsearch-analysis-icu
     val geronimoJms = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
