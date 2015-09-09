@@ -36,6 +36,9 @@
         color: @input-color;
       }
     }
+
+    span.tag {
+    }
   }
 
   &.open a.description {
@@ -82,6 +85,11 @@
       margin: 0;
       font-size: @font-size-small;
 
+      &.hover {
+        // It's not ':hover', because the keyboard can "hover" elements too
+        background: @table-bg-hover;
+      }
+
       label {
         display: block;
         padding-left: 30px; // 20px is for the <input> margin-left
@@ -90,10 +98,6 @@
         overflow: hidden; // redundant, for ellipsis
         white-space: nowrap;
         text-overflow: ellipsis;
-      }
-
-      &:hover {
-        background: @table-bg-hover;
       }
 
       input[type=checkbox] {
@@ -112,8 +116,11 @@
     width: 1em;
     height: 1em;
     margin-right: .5em;
+
+    // Center vertically. Height is 1em, hence the margin-top.
+    vertical-align: top;
     position: relative;
-    left: .125em;
-    top: .125em;
+    top: @font-size-small * @line-height-small / 2;
+    margin-top: -.5em;
   }
 }

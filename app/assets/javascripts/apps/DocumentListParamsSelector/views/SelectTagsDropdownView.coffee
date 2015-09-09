@@ -21,6 +21,10 @@ define [
   #
   # Triggers:
   # * close: when you click outside it
+  #
+  # Responds to:
+  # * handleKeydown(HTMLEvent): the owner listens for keydown and passes it to
+  #   this method.
   class SelectTagsDropdownView extends Backbone.View
     tagName: 'form'
     attributes:
@@ -33,19 +37,19 @@ define [
         <div class="operation">
           <div class="radio operation-any">
             <label>
-              <input type="radio" name="operation" value="any" <%= operation == 'any' && 'checked' || '' %>>
+              <input type="radio" name="operation" value="any" tabindex="-1" <%= operation == 'any' && 'checked' || '' %>>
               <span class="name"></span>
             </label>
           </div>
           <div class="radio operation-all">
             <label>
-              <input type="radio" name="operation" value="all" <%= operation == 'all' && 'checked' || '' %>>
+              <input type="radio" name="operation" value="all" tabindex="-1" <%= operation == 'all' && 'checked' || '' %>>
               <span class="name"></span>
             </label>
           </div>
           <div class="radio operation-none">
             <label>
-              <input type="radio" name="operation" value="none" <%= operation == 'none' && 'checked' || '' %>>
+              <input type="radio" name="operation" value="none" tabindex="-1" <%= operation == 'none' && 'checked' || '' %>>
               <span class="name"></span>
             </label>
           </div>
@@ -55,7 +59,7 @@ define [
       tag: _.template('''
         <div class="checkbox">
           <label>
-            <input type="checkbox" name="tag" value="<%- id %>" <%= checked && 'checked' || '' %>>
+            <input type="checkbox" name="tag" value="<%- id %>" tabindex="-1" <%= checked && 'checked' || '' %>>
             <span class="<%- className %>" style="<%- style %>"></span>
             <span class="name"><%- name %></span>
           </label>
@@ -110,6 +114,7 @@ define [
     events:
       'change input': '_onChange'
       'click input': '_onClickInput'
+      'mouseenter div.radio, div.checkbox': '_onMouseenterDiv'
       'submit': '_onSubmit'
 
     _initialRender: (operation) ->
@@ -145,7 +150,8 @@ define [
         @ui.operation.addClass('disabled')
         # Disable the radios, so they don't take over the keyboard
         for __, obj of @ui.operations
-          obj.input.prop('disabled', true)
+          obj.container.addClass('disabled')
+          obj.input.prop('disabled', obj.disabled = true)
       else
         @ui.operation.removeClass('disabled')
         if nOptions == 1
@@ -171,12 +177,12 @@ define [
               none: { all: false, any: true, none: true }
             }[operation][op]
             obj.container.toggleClass('disabled', !enable)
-            obj.input.prop('disabled', !enable)
+            obj.input.prop('disabled', obj.disabled = !enable)
         else
           for op, obj of @ui.operations
             obj.name.html(t("operation.multiple.#{op}_html"))
             obj.container.removeClass('disabled')
-            obj.input.prop('disabled', false)
+            obj.input.prop('disabled', obj.disabled = false)
 
     _onChange: ->
       @_setStateSelection()
@@ -186,6 +192,10 @@ define [
       # When the user clicks on the checkbox/radio itself, do not close the
       # dropdown.
       ev.stopPropagation()
+
+    _onMouseenterDiv: (ev) ->
+      $divs = @$('div.radio:not(.disabled), div.checkbox:not(.disabled)')
+      @_highlight($divs.index(ev.currentTarget))
 
     _onSubmit: (ev) ->
       ev.preventDefault()
@@ -212,3 +222,48 @@ define [
         selection = null
 
       @state.refineDocumentListParams(tags: selection)
+
+    _highlight: (newIndex) ->
+      $divs = @$('div.radio:not(.disabled), div.checkbox:not(.disabled)')
+
+      newIndex = 0 if newIndex >= $divs.length
+      newIndex = -1 if newIndex < 0
+
+      if @_highlightedIndex?
+        $divs.eq(@_highlightedIndex).removeClass('hover')
+
+      @_highlightedIndex = newIndex
+      $divs.eq(@_highlightedIndex).addClass('hover')
+
+    _toggleHighlightedElement: ->
+      return if !@_highlightedIndex?
+
+      $input = @$('input:not(:disabled)').eq(@_highlightedIndex)
+
+      if $input.attr('type') == 'checkbox'
+        $input.prop('checked', !$input.prop('checked'))
+      else if $input.attr('type') == 'radio'
+        $input.prop('checked', true)
+
+      @_setStateSelection()
+      @_renderOperations()
+
+    handleKeydown: (ev) ->
+      handled = true
+
+      switch ev.keyCode
+        when 27 # Escape: close
+          @trigger('close')
+        when 38 # Up: Move up
+          @_highlight((@_highlightedIndex ? 0) - 1)
+        when 40 # Down: Move down
+          @_highlight((@_highlightedIndex ? -1) + 1)
+        when 32 # Space: Toggle current element
+          @_toggleHighlightedElement()
+        when 13 # Enter: Toggle current element and close
+          @_toggleHighlightedElement()
+          # The parent will close it
+        else
+          handled = false
+
+      ev.stopPropagation() if handled

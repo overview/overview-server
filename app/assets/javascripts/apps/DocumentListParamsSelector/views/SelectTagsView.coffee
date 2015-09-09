@@ -23,13 +23,14 @@ define [
 
       tag: _.template('''
         <span class="selected-tag" data-tag-id="<%- tag.id %>">
-          <span class="<%- tag.className %>" style="<%- tag.style %>"></span>
-          <span class="name"><%- tag.name %></span>
+          <span class="<%- tag.className %>" style="<%- tag.style %>"></span
+          ><span class="name"><%- tag.name %></span>
         </span>
       ''')
 
     events:
       'click .description': '_onClickDescription'
+      'keydown .description': '_onKeydownDescription'
       'click a.nix': '_onClickNix'
 #      'mouseenter li': '_onMouseenterLi'
 #      'mouseup li a': '_onClick' # mousedown to focus; mouseup on selection. Otherwise, this is a click.
@@ -115,6 +116,9 @@ define [
           @$el.removeClass('open')
           @child.remove()
           @child = null
+
+    _onKeydownDescription: (e) ->
+      @child?.handleKeydown(e)
 
     _onClickNix: (e) ->
       e.preventDefault()
