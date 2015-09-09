@@ -74,11 +74,29 @@
     }
 
     div.operation {
+      box-sizing: content-box;
+      overflow: hidden;
       border-top: 1px solid @table-border-color;
+      margin-top: .25em;
+      padding-top: .25em;
+      transition: border-top-width .5s, margin-top .5s, padding-top .5s;
 
-      &.disabled { display: none; }
+      &.disabled {
+        border-top-width: 0;
+        margin-top: 0;
+        padding-top: 0;
+      }
 
-      div.radio.disabled { display: none; }
+      div.radio {
+        overflow: hidden;
+        transition: height .5s;
+        height: @input-height-small;
+
+        &.disabled {
+          color: @dropdown-link-disabled-color;
+          height: 0; // animates
+        }
+      }
     }
 
     div.checkbox, div.radio {
