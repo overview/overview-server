@@ -414,6 +414,17 @@ views.DocumentSet.show.TagCountList.remove=remove
 
 views.DocumentSet.show.TagSelect.placeholder=Search by tag
 views.DocumentSet.show.TagSelect.untagged=Untagged documents
+views.DocumentSet.show.TagSelect.tagged=Tagged documents
+views.DocumentSet.show.TagSelect.description.single.any_html=tagged {0}
+views.DocumentSet.show.TagSelect.description.single.none_html=<strong>not</strong> tagged{0}
+views.DocumentSet.show.TagSelect.description.multiple.any_html=tagged <strong>any</strong> of{0}
+views.DocumentSet.show.TagSelect.description.multiple.all_html=tagged <strong>all</strong> of{0}
+views.DocumentSet.show.TagSelect.description.multiple.none_html=<strong>not</strong> tagged{0}
+views.DocumentSet.show.TagSelect.operation.single.any_html=Documents <strong>with</strong> this tag
+views.DocumentSet.show.TagSelect.operation.single.none_html=Documents <strong>without</strong> this tag
+views.DocumentSet.show.TagSelect.operation.multiple.any_html=Documents with <strong>at least one</strong> of these tags
+views.DocumentSet.show.TagSelect.operation.multiple.all_html=Documents with <strong>all</strong> of these tags
+views.DocumentSet.show.TagSelect.operation.multiple.none_html=Documents with <strong>none</strong> of these tags
 
 views.DocumentSet.show.TagThis.prompt=Tags
 views.DocumentSet.show.TagThis.label=Tag {0,choice,0#no documents|1#this document|1<these {0,number,integer} documents} as
