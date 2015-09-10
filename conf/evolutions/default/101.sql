@@ -16,7 +16,7 @@ DO $$
       WHERE c.relname = 'node_document_document_id_node_id'
       AND n.nspname = 'public'
     ) THEN
-      CREATE INDEX node_document_document_id_node_id ON node_document (document_id, node_id);
+      CREATE INDEX node_document_document_id_node_id ON node_document (document_id, node_id);;
     END IF;;
   END
 $$ LANGUAGE plpgsql;
