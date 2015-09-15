@@ -48,16 +48,15 @@ trait DocumentSetDeleter extends HasDatabase {
   }
 
   // Artifacts added by clustering
-  private def deleteTrees(documentSetId: Long): DBIO[Unit] = {
-    val trees = Trees.filter(_.documentSetId === documentSetId)
-    val nodes = Nodes.filter(_.rootId in trees.map(_.rootNodeId))
-    val nodeDocuments = NodeDocuments.filter(_.nodeId in nodes.map(_.id))
-
-    for {
-      _ <- nodeDocuments.delete
-      _ <- trees.delete
-      _ <- nodes.delete
-    } yield ()
+  private def deleteTrees(documentSetId: Long): DBIO[Int] = {
+    // Hand-crafted is waaaaay faster than Scala-style
+    sqlu"""
+      WITH trees_to_delete AS (SELECT id, root_node_id FROM tree WHERE document_set_id = $documentSetId),
+           nodes_to_delete AS (SELECT id FROM node WHERE root_id IN (SELECT root_node_id FROM trees_to_delete)),
+           delete1 AS (DELETE FROM node_document WHERE node_id IN (SELECT id FROM nodes_to_delete)),
+           delete2 AS (DELETE FROM node WHERE id IN (SELECT id FROM nodes_to_delete))
+      DELETE FROM tree WHERE id IN (SELECT id FROM trees_to_delete);
+    """
   }
   
   private def deleteUploadedFile(maybeUploadedFileId: Option[Long]): DBIO[Unit] = {
