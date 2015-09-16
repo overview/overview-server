@@ -26,15 +26,16 @@ import com.overviewdocs.util.DocumentSetCreationJobStateDescription.Retrieving
 import com.overviewdocs.util.Progress.{Progress, ProgressAbortFn}
 
 /** Feeds the documents from sourceDocList to the consumer */
-class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int,
-  progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
-
+class DocumentCloudDocumentProducer(
+  job: PersistentDocumentSetCreationJob,
+  query: String,
+  credentials: Option[Credentials],
+  maxDocuments: Int,
+  progAbort: ProgressAbortFn
+) extends DocumentProducer with PersistentDocumentSet {
   private val logger: Logger = Logger.forClass(this.getClass)
 
-  private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
   private val DocumentCloudUrl = Configuration.getString("documentcloud_url")
-  private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
-  private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done
   private val RequestQueueName = "requestqueue"
   private val QueryProcessorName = "queryprocessor"
   private val ImporterName = "importer"
@@ -45,6 +46,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private var numDocs = 0
   private var totalDocs: Option[Int] = None
   private var importer: ActorRef = _
+  private val asyncHttpClient = new AsyncHttpClient
 
   private def await[A](f: Future[A]): A = {
     scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
@@ -62,7 +64,6 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     // queryProcessor - The main object that drives the query. Requests query result pages
     //   and spawns DocumentRetrievers for each document. The retrieval results are sent
     //   to a DocumentReceiver that processes each document with a callback function.
-    // requestQueue - an actor that manages the incoming requests
     // asyncHttpClient - A wrapper around AsyncHttpClient
     // retrieverGenerator - A factory for actors that will retrieve documents. One actor is
     //   responsible for one document only. DocumentRetrievers simply retrieve the document.
@@ -92,16 +93,21 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
       numDocs += 1
 
-      if (job.state == Cancelled) shutdownActors
+      if (job.state == Cancelled) {
+        asyncHttpClient.shutdown
+
+        // Burn it down! This is terrible form. We should make cancellation a
+        // normal part of the workflow, not force Akka to take care of stuff it
+        // doesn't understand.
+        context.stop(importer)
+      }
     }
 
     WorkerActorSystem.withActorSystem { implicit context =>
-
       val importResult = Promise[RetrievalResult]
-      val asyncHttpClient = new AsyncHttpClientWrapper
-      val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests, SuperTimeout)), RequestQueueName)
+
       def retrieverCreator(document: RetrievedDocument, receiver: ActorRef) =
-        new DocumentRetriever(document, receiver, requestQueue, credentials, RequestRetryTimes())
+        new DocumentRetriever(document, receiver, asyncHttpClient, credentials)
 
       def splitterCreator(document: RetrievedDocument, receiver: ActorRef) =
         new DocumentSplitter(document, receiver, retrieverCreator)
@@ -130,7 +136,6 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       try {
         importer ! StartImport()
         result = Await.result(importResult.future, Duration.Inf)
-        logger.info("Failed to retrieve " + result.failedRetrievals.length + " documents")
         DeprecatedDatabase.inTransaction {
           DocRetrievalErrorWriter.write(documentSetId, result.failedRetrievals)
         }
@@ -138,7 +143,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         case t: Throwable if (t.getCause() != null) => throw t.getCause()
         case t: Throwable => throw t
       } finally {
-        shutdownActors
+        asyncHttpClient.shutdown
       }
     }
 
@@ -155,9 +160,4 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private def updateRetrievalProgress(retrieved: Int, total: Int): Unit = {
     progAbort(Progress(retrieved * FetchingFraction / total, Retrieving(retrieved, total)))
   }
-
-  private def shutdownActors(implicit context: ActorSystem): Unit = {
-    context.stop(importer)
-  }
-
 }

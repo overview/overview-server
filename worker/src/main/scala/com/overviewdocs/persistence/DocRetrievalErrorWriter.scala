@@ -1,11 +1,25 @@
 package com.overviewdocs.persistence
 
+import scala.collection.mutable.Buffer
+
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.documentcloud.DocumentRetrievalError
 import com.overviewdocs.models.DocumentProcessingError
 import com.overviewdocs.models.tables.DocumentProcessingErrors
 
 object DocRetrievalErrorWriter extends HasBlockingDatabase {
+  /** Encodes headers as `k: v\r\nk: v2\r\nk2: v3`
+    */
+  private def encodeHeaders(headers: Map[String,Seq[String]]): String = {
+    val lines = Buffer[String]()
+    headers.foreach { case (key, values) =>
+      values.foreach { value =>
+        lines.append(s"$key: $value")
+      }
+    }
+    lines.mkString("\r\n")
+  }
+
   def write(documentSetId: Long, errors: Seq[DocumentRetrievalError]) {
     import database.api._
 
@@ -14,7 +28,7 @@ object DocRetrievalErrorWriter extends HasBlockingDatabase {
       e.url,
       e.message,
       e.statusCode,
-      e.headers
+      e.headers.map(encodeHeaders)
     ))
 
     blockingDatabase.runUnit(DocumentProcessingErrors.map(_.createAttributes).++=(toInsert))

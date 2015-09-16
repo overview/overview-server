@@ -11,20 +11,8 @@
 package com.overviewdocs.util
 
 import akka.actor._
-import org.slf4j.LoggerFactory
 import scala.language.implicitConversions  // for toMutableSet
 import scala.util.control.Exception._
-
-// Singleton Akka actor system object. One per process, managing all actors.
-object WorkerActorSystem {
-  def withActorSystem(f: ActorSystem => Unit) {
-    val context = ActorSystem("WorkerActorSystem")
-    ultimately(context.shutdown) {
-      f(context)
-    }
-
-  }
-}
 
 // Iterator that loops infinitely over an underlying (presumably finite) iterator
 // Resets when it hits the end by calling makeIter. Can be empty if makeIter returns empty iter.
@@ -113,6 +101,3 @@ object Progress {
   // stub that you can pass in when you don't case about progress reporting
   def NoProgressReporting(p: Progress): Boolean = { false }
 }
-
-
-
