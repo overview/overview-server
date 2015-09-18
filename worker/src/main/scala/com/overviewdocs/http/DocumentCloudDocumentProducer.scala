@@ -33,8 +33,6 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
   private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
   private val DocumentCloudUrl = Configuration.getString("documentcloud_url")
-  private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
-  private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done
   private val RequestQueueName = "requestqueue"
   private val QueryProcessorName = "queryprocessor"
   private val ImporterName = "importer"
@@ -63,7 +61,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     //   and spawns DocumentRetrievers for each document. The retrieval results are sent
     //   to a DocumentReceiver that processes each document with a callback function.
     // requestQueue - an actor that manages the incoming requests
-    // asyncHttpClient - A wrapper around AsyncHttpClient
+    // httpClient - a NingClient
     // retrieverGenerator - A factory for actors that will retrieve documents. One actor is
     //   responsible for one document only. DocumentRetrievers simply retrieve the document.
     //   A different retriever could be used to request the document text page-by-page.
@@ -98,10 +96,10 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     WorkerActorSystem.withActorSystem { implicit context =>
 
       val importResult = Promise[RetrievalResult]
-      val asyncHttpClient = new AsyncHttpClientWrapper
-      val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests, SuperTimeout)), RequestQueueName)
+      val httpClient = new NingClient
+      val requestQueue = context.actorOf(Props(new RequestQueue(httpClient, MaxInFlightRequests)), RequestQueueName)
       def retrieverCreator(document: RetrievedDocument, receiver: ActorRef) =
-        new DocumentRetriever(document, receiver, requestQueue, credentials, RequestRetryTimes())
+        new DocumentRetriever(document, receiver, requestQueue, credentials)
 
       def splitterCreator(document: RetrievedDocument, receiver: ActorRef) =
         new DocumentSplitter(document, receiver, retrieverCreator)

@@ -31,7 +31,8 @@ class DocumentRetrieverManager(
   retrieverGenerator: RetrieverGenerator,
   processDocument: (Document, String) => Unit,
   retrievalResult: Promise[RetrievalResult],
-  maxDocuments: Int) extends Actor {
+  maxDocuments: Int
+) extends Actor {
   import DocumentRetrieverManagerProtocol._
   import DocumentRetrieverProtocol._
 

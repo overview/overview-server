@@ -7,7 +7,7 @@ object Dependencies {
     val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.3.4"
     val akka = "com.typesafe.akka" %% "akka-actor" % "2.3.4"
     val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.3.4"
-    val asyncHttpClient = "com.ning" % "async-http-client" % "1.7.18"
+    val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.9.23"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.9.23"
     val bcmail = "org.bouncycastle" % "bcmail-jdk15" % "1.44" // https://pdfbox.apache.org/1.8/dependencies.html

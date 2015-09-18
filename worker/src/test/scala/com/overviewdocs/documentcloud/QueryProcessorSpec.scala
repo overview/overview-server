@@ -1,19 +1,18 @@
 package com.overviewdocs.documentcloud
 
 import java.net.URLEncoder
-import com.overviewdocs.documentcloud.QueryProcessorProtocol.GetPage
-import com.overviewdocs.http.{Credentials, PrivateRequest, PublicRequest}
-import com.overviewdocs.http.RequestQueueProtocol.{AddToFront, Result}
-import com.overviewdocs.test.{ActorSystemContext, TestSimpleResponse}
-import com.overviewdocs.util.Configuration
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import akka.testkit.{TestActorRef, TestProbe}
 import org.specs2.mutable.Before
-import com.overviewdocs.http.RequestQueueProtocol.Failure
 
+import com.overviewdocs.documentcloud.QueryProcessorProtocol.GetPage
+import com.overviewdocs.http.{Credentials, Request, Response}
+import com.overviewdocs.http.RequestQueueProtocol.{AddToFront, HttpSuccess, HttpFailure}
+import com.overviewdocs.test.ActorSystemContext
+import com.overviewdocs.util.Configuration
 
 class QueryProcessorSpec extends Specification with NoTimeConversions with Mockito {
 
@@ -41,7 +40,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions with Mocki
       val queryProcessor = TestActorRef(createQueryProcessor())
       
       queryProcessor ! GetPage(pageNum)
-      expectMsg(AddToFront(PublicRequest(pageQuery(pageNum, query))))
+      expectMsg(AddToFront(Request(pageQuery(pageNum, query))))
     }
 
     "request non-default query page" in new QueryContext {
@@ -66,7 +65,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions with Mocki
       val queryProcessor = TestActorRef(createQueryProcessor())
       
       queryProcessor ! GetPage(pageNum)
-      expectMsg(AddToFront(PublicRequest(s"https://foo.bar/api/search.json?per_page=$pageSize&page=$pageNum&q=query+string")))
+      expectMsg(AddToFront(Request(s"https://foo.bar/api/search.json?per_page=$pageSize&page=$pageNum&q=query+string")))
     }
 
     "send authenticated request if credentials are provided" in new QueryContext {
@@ -75,7 +74,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions with Mocki
       val queryProcessor = TestActorRef(createQueryProcessor(Some(credentials)))
 
       queryProcessor ! GetPage(pageNum)
-      expectMsg(AddToFront(PrivateRequest(pageQuery(pageNum, query), credentials)))
+      expectMsg(AddToFront(Request(pageQuery(pageNum, query), Some(credentials))))
     }
     
 
@@ -85,7 +84,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions with Mocki
       val parent = TestProbe()
       val queryProcessor = TestActorRef(Props(createQueryProcessor()), parent.ref, "QueryProcess")
 
-      queryProcessor ! Result(TestSimpleResponse(200, result))
+      queryProcessor ! HttpSuccess(Response(200, Map(), result.getBytes))
 
       val r = parent.expectMsgType[SearchResult]
       r.total must be equalTo(numberOfDocuments)
@@ -99,9 +98,9 @@ class QueryProcessorSpec extends Specification with NoTimeConversions with Mocki
       val queryProcessor = TestActorRef(Props(createQueryProcessor()), parent.ref, "QueryProcess")
 
       val error = new Exception("Exception from RequestQueue")
-      queryProcessor ! Failure(error)
+      queryProcessor ! HttpFailure(error)
       
-      parent.expectMsg(Failure(error))
+      parent.expectMsg(HttpFailure(error))
     }
   }
 

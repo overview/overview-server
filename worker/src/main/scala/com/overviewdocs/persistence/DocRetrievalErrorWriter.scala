@@ -6,6 +6,13 @@ import com.overviewdocs.models.DocumentProcessingError
 import com.overviewdocs.models.tables.DocumentProcessingErrors
 
 object DocRetrievalErrorWriter extends HasBlockingDatabase {
+  private def headersToString(headers: Map[String,Seq[String]]): String = {
+    headers.toSeq
+      .map { case (key, values) => values.map { value => s"$key: $value" } }
+      .flatten
+      .mkString("\r\n")
+  }
+
   def write(documentSetId: Long, errors: Seq[DocumentRetrievalError]) {
     import database.api._
 
@@ -14,7 +21,7 @@ object DocRetrievalErrorWriter extends HasBlockingDatabase {
       e.url,
       e.message,
       e.statusCode,
-      e.headers
+      e.headers.map(headersToString)
     ))
 
     blockingDatabase.runUnit(DocumentProcessingErrors.map(_.createAttributes).++=(toInsert))

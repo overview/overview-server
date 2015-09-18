@@ -6,16 +6,18 @@ import com.overviewdocs.documentcloud.DocumentRetrieverProtocol._
 import scala.concurrent.Promise
 import scala.util.control.Exception._
 
-
 object DocumentReceiverProtocol {
   /** No more documents will be processed */
   case class Done(documentsRetrieved: Int, totalDocumentsInQuery: Int)
 }
 
 /** Information about documents that could not be retrieved */
-case class DocumentRetrievalError(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
-
-
+case class DocumentRetrievalError(
+  url: String,
+  message: String,
+  statusCode: Option[Int],
+  headers: Option[Map[String,Seq[String]]]
+)
 
 /**
  * Actor that serializes the processing of documents retrieved from DocumentCloud.
@@ -24,8 +26,6 @@ case class DocumentRetrievalError(url: String, message: String, statusCode: Opti
  * is completed.
  * If a document retrieval fails because of an exception or other error, the finished
  * promise will fail.
- * 
- * @todo Handle exceptions in callback
  * 
  * @param textify Callback to convert "raw text" to text. See com.overviewdocs.util.Textify
  * @param processDocument The callback function that does the actual processing of the documents.
@@ -43,11 +43,15 @@ class DocumentReceiver(textify: (String) => String, processDocument: (Document, 
     case GetTextSucceeded(document, rawText) => {
       failOnError { processDocument(document, textify(rawText)) }
     }
-    case GetTextFailed(url, text, maybeStatus, maybeHeaders) => {
-      failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, maybeStatus, maybeHeaders)
+    case GetTextBadResponse(url, response) => {
+      failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, response.body, Some(response.statusCode), Some(response.headers))
     }
-    case GetTextError(error) => finished.failure(error)
-    case Done(documentsRetrieved, totalDocumentsInQuery) => finished.success(Result(failedRetrievals, documentsRetrieved, totalDocumentsInQuery))
+    case GetTextException(url, ex) => {
+      failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, ex.getMessage, None, None)
+    }
+    case Done(documentsRetrieved, totalDocumentsInQuery) => {
+      finished.success(Result(failedRetrievals, documentsRetrieved, totalDocumentsInQuery))
+    }
   }
   
   /** 
@@ -57,5 +61,4 @@ class DocumentReceiver(textify: (String) => String, processDocument: (Document, 
 
   /** Apply to methods that can throw, and complete `finished` with failure if they do */
   private val failOnError = allCatch withApply { error => finished.failure(error) }
-  
 }

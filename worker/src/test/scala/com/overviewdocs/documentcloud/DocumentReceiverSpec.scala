@@ -1,17 +1,17 @@
 package com.overviewdocs.documentcloud
 
+import akka.actor._
+import akka.testkit.TestActorRef
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration._
 import scala.util.Failure
-
-import com.overviewdocs.documentcloud.DocumentReceiverProtocol.Done
-import com.overviewdocs.documentcloud.DocumentRetrieverProtocol.{GetTextError, GetTextFailed, GetTextSucceeded}
-import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.{Before, Specification}
 import org.specs2.time.NoTimeConversions
 
-import akka.actor._
-import akka.testkit.TestActorRef
+import com.overviewdocs.documentcloud.DocumentReceiverProtocol.Done
+import com.overviewdocs.documentcloud.DocumentRetrieverProtocol.{GetTextBadResponse, GetTextException, GetTextSucceeded}
+import com.overviewdocs.http.Response
+import com.overviewdocs.test.ActorSystemContext
 
 class DocumentReceiverSpec extends Specification with NoTimeConversions {
 
@@ -48,7 +48,7 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
     }
     
     "not call callback when retrieval failed" in new ReceiverContext {
-      receiver ! GetTextFailed("failed url", text)
+      receiver ! GetTextBadResponse("failed url", Response(404, Map(), text.getBytes))
 
       expectNoMsg
     }
@@ -59,35 +59,25 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
     }
     
 
-    "return retrieval results in future" in new ReceiverContext {
+    "return bad responses" in new ReceiverContext {
       val r = 5
       val t = 20
-      
-      receiver ! GetTextSucceeded(document, text)
-      receiver ! GetTextFailed(url, text)
+
+      receiver ! GetTextBadResponse(url, Response(404, Map(), text.getBytes))
       receiver ! Done(r, t)
       
-      retrievalDone.isCompleted must beTrue
       val retrievalResult: RetrievalResult = Await.result(retrievalDone.future, 1 millis)
-      retrievalResult.failedRetrievals must containTheSameElementsAs(Seq(DocumentRetrievalError(url, text)))
-      retrievalResult.numberOfDocumentsRetrieved must be equalTo(r)
-      retrievalResult.totalDocumentsInQuery must be equalTo(t)
+      retrievalResult.failedRetrievals must containTheSameElementsAs(Seq(DocumentRetrievalError(url, text, Some(404), Some(Map()))))
     }
     
     "fail future in case of exceptions" in new ReceiverContext {
-      val error = new Exception("error")
-      
-      receiver ! GetTextError(error)
-      retrievalDone.isCompleted must beTrue
-      
-      retrievalDone.future.value must beSome(Failure(error))
-    }
-    
-    "fail future if callback throws" in new CallbackError {
-      receiver ! GetTextSucceeded(document, text)
-      
-      retrievalDone.isCompleted must beTrue
-      retrievalDone.future.value must beSome(Failure(error))
+      val error = new Exception("foo")
+
+      receiver ! GetTextException(url, error)
+      receiver ! Done(1, 2)
+
+      val retrievalResult: RetrievalResult = Await.result(retrievalDone.future, 1 millis)
+      retrievalResult.failedRetrievals must containTheSameElementsAs(Seq(DocumentRetrievalError(url, "foo", None, None)))
     }
   }
 }
