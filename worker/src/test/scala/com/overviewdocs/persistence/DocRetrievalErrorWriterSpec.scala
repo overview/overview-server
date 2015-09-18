@@ -7,7 +7,7 @@ import com.overviewdocs.test.DbSpecification
 class DocRetrievalErrorWriterSpec extends DbSpecification {
   trait OurContext extends DbScope {
     val documentSet = factory.documentSet()
-    val errors = Seq.tabulate(3)(i => DocumentRetrievalError("url" + i, "error: " + i, Some(i), Some(Map("foo" -> Seq("bar")))))
+    val errors = Seq.tabulate(3)(i => DocumentRetrievalError("url" + i, "error: " + i, Some(i), Some("header")))
 
     DocRetrievalErrorWriter.write(documentSet.id, errors)
   }
@@ -18,7 +18,7 @@ class DocRetrievalErrorWriterSpec extends DbSpecification {
     val foundErrors = blockingDatabase.seq(DocumentProcessingErrors.filter(_.documentSetId === documentSet.id))
 
     foundErrors.length must beEqualTo(3)
-    foundErrors.head.headers must beSome("foo: bar")
+    foundErrors.head.headers must beSome("header")
   }
 
   "write document_set.document_processing_error_count" in new OurContext {

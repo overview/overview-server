@@ -12,6 +12,11 @@ object DocumentReceiverProtocol {
   case class Done(documentsRetrieved: Int, totalDocumentsInQuery: Int)
 }
 
+/** Information about documents that could not be retrieved */
+case class DocumentRetrievalError(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
+
+
+
 /**
  * Actor that serializes the processing of documents retrieved from DocumentCloud.
  * Calls the specified callback function with the received document information and text.
@@ -38,9 +43,10 @@ class DocumentReceiver(textify: (String) => String, processDocument: (Document, 
     case GetTextSucceeded(document, rawText) => {
       failOnError { processDocument(document, textify(rawText)) }
     }
-    case GetTextFailed(url, text, status, headers) => {
-      failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, status, headers)
+    case GetTextFailed(url, text, maybeStatus, maybeHeaders) => {
+      failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, maybeStatus, maybeHeaders)
     }
+    case GetTextError(error) => finished.failure(error)
     case Done(documentsRetrieved, totalDocumentsInQuery) => finished.success(Result(failedRetrievals, documentsRetrieved, totalDocumentsInQuery))
   }
   

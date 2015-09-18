@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 
 import com.overviewdocs.documentcloud.DocumentRetrieverManagerProtocol._
 import com.overviewdocs.documentcloud.QueryProcessorProtocol._
-import com.overviewdocs.http.{AsyncHttpClient,Credentials}
+import com.overviewdocs.http.{AsyncHttpClientWrapper, Credentials, RequestQueue}
 import com.overviewdocs.util.Configuration
 
 import akka.actor._
@@ -17,19 +17,21 @@ object ImporterProtocol {
 
 
 class Importer(
-  query: String,
-  credentials: Option[Credentials],
-  retrieverGenerator: RetrieverGenerator,
-  processDocument: (Document, String) => Unit,
-  maxDocuments: Int,
+  query: String, credentials: Option[Credentials],
+  retrieverGenerator: RetrieverGenerator, processDocument: (Document, String) => Unit, maxDocuments: Int,
   reportProgress: (Int, Int) => Unit,
-  importResult: Promise[RetrievalResult]
-) extends Actor {
+  importResult: Promise[RetrievalResult]) extends Actor {
 
   import ImporterProtocol._
 
-  private val asyncHttpClient = new AsyncHttpClient
-  private val queryProcessor: ActorRef = context.actorOf(Props(new QueryProcessor(query, credentials, asyncHttpClient)))
+  private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
+  private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
+  private val RequestQueueName = "requestqueue"
+
+  private val asyncHttpClient = new AsyncHttpClientWrapper
+  private val requestQueue: ActorRef = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests, SuperTimeout)), RequestQueueName)
+  private val queryProcessor: ActorRef = context.actorOf(Props(new QueryProcessor(query, credentials, requestQueue)))
+  
   private val retrieverManager: ActorRef = context.actorOf(Props(new DocumentRetrieverManager(retrieverGenerator, processDocument, importResult, maxDocuments)))
   
   def receive = {
