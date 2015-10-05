@@ -17,6 +17,7 @@ object SupportedLanguages {
     "nl" -> "nld",
     "it" -> "ita",
     "pt" -> "por",
+    "ro" -> "ron",
     "ru" -> "rus"
   )
 
