@@ -55,7 +55,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   }
 
   "DbDocumentBackendSpec" should {
-    "#index" should {
+    "#index (selection)" should {
       trait IndexScope extends CommonIndexScope {
         val selection = mock[Selection]
         val pageRequest = PageRequest(0, 1000)
@@ -94,6 +94,34 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         selection.getDocumentIds(any) returns Future.successful(Page(Seq[Long]()))
         ret.items.length must beEqualTo(0)
         ret.pageInfo.total must beEqualTo(0)
+      }
+    }
+
+    "#index (document IDs)" should {
+      trait IndexScope extends BaseScopeNoIndex {
+        val documentSet = factory.documentSet()
+        def index(documentIds: Seq[Long]) = await(backend.index(documentSet.id, documentIds))
+      }
+
+      "return Documents, in requested-ID order" in new IndexScope {
+        val documents = Seq(
+          factory.document(documentSetId=documentSet.id, text="foo"),
+          factory.document(documentSetId=documentSet.id, text="bar"),
+          factory.document(documentSetId=documentSet.id, text="baz")
+        )
+
+        index(documents.map(_.id)).map(_.text) must beEqualTo(Seq("foo", "bar", "baz"))
+      }
+
+      "work with 0 documents" in new IndexScope {
+        index(Seq()) must beEqualTo(Seq())
+      }
+
+      "not include non-requested documents" in new IndexScope {
+        val doc = factory.document(documentSetId=documentSet.id)
+        val notDoc = factory.document(documentSetId=documentSet.id)
+
+        index(Seq(doc.id)) must beEqualTo(Seq(doc))
       }
     }
 

@@ -22,6 +22,9 @@ trait DocumentBackend {
     includeText: Boolean
   ): Future[Page[DocumentHeader]]
 
+  /** Lists all requested Documents, in the requested order. */
+  def index(documentSetId: Long, documentIds: Seq[Long]): Future[Seq[Document]]
+
   /** Lists all Document IDs for the given parameters.
     *
     * Will only fail is a server is down.
@@ -98,6 +101,13 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
           }
         }
       }
+  }
+
+  override def index(documentSetId: Long, documentIds: Seq[Long]) = {
+    database.seq(byDocumentSetIdAndIds(documentSetId, documentIds)).map { documents =>
+      val map: Map[Long,Document] = documents.map((d) => (d.id -> d)).toMap
+      documentIds.collect(map)
+    }
   }
 
   /** Returns all a DocumentSet's Document IDs, sorted. */
@@ -289,6 +299,12 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     Documents
       .filter(_.documentSetId === documentSetId)
       .filter(_.id === documentId)
+  }
+
+  private def byDocumentSetIdAndIds(documentSetId: Long, documentIds: Seq[Long]) = {
+    Documents
+      .filter(_.documentSetId === documentSetId)
+      .filter(_.id inSet documentIds)
   }
 
   private lazy val updateMetadataJsonCompiled = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>

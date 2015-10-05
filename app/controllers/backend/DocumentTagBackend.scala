@@ -3,9 +3,9 @@ package controllers.backend
 import scala.concurrent.Future
 
 trait DocumentTagBackend extends Backend {
-  /** Gives a list of Node IDs for each Document.
+  /** Gives a list of Tag IDs for each Document.
     *
-    * There are no empty lists: they are not defined.
+    * When a Document does not have any Tags, its list will be empty.
     *
     * The returned lists are not ordered.
     */
@@ -28,7 +28,9 @@ trait DbDocumentTagBackend extends DocumentTagBackend with DbBackend {
         WHERE document_id IN (#${documentIds.mkString(",")})
         GROUP BY document_id
       """.as[(Long,Seq[Long])])
-        .map(_.toMap)
+        .map { rows =>
+          documentIds.map(_ -> Seq[Long]()).toMap ++ rows.toMap
+        }
     }
   }
 }

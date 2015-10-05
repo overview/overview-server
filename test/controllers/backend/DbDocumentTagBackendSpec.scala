@@ -30,8 +30,8 @@ class DbDocumentTagBackendSpec extends DbBackendSpecification {
         result(doc2.id) must beEqualTo(Seq(tag1.id))
       }
 
-      "return nothing for Documents that have no Tags" in new IndexManyScope {
-        result.isDefinedAt(doc3.id) must beFalse
+      "return empty list for Documents that have no Tags" in new IndexManyScope {
+        result(doc3.id) must beEqualTo(Seq())
       }
 
       "not return Documents that were not requested" in new IndexManyScope {
