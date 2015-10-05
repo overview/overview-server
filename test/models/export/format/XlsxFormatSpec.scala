@@ -3,7 +3,7 @@ package models.export.format
 import java.io.ByteArrayOutputStream
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
+import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.test.{FutureAwaits,DefaultAwaitTimeout}
 
 import models.export.rows.Rows
@@ -11,12 +11,7 @@ import models.export.rows.Rows
 class XlsxFormatSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
   trait BaseScope extends Scope {
     val rows = new Rows(Array(), Enumerator())
-
-    lazy val bytes: Array[Byte] = {
-      val stream = new ByteArrayOutputStream
-      await(XlsxFormat.writeContentsToOutputStream(rows, stream))
-      stream.toByteArray
-    }
+    lazy val bytes: Array[Byte] = await(XlsxFormat.bytes(rows).run(Iteratee.consume()))
   }
 
   "XlsxFormat" should {

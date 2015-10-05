@@ -1,7 +1,6 @@
 package models.export
 
-import java.io.FileInputStream
-import scala.concurrent.Future
+import play.api.libs.iteratee.Enumerator
 
 import models.export.rows.Rows
 import models.export.format.Format
@@ -14,10 +13,7 @@ class Export(rows: Rows, format: Format) {
     */
   def contentType: String = format.contentType
 
-  /** InputStream of bytes we'll produce.
-    *
-    * Calls to .read() may block a bit, as they'll grab more rows from the Rows
-    * enumerator. (That, in turn, can lead to a database fetch.)
+  /** Generate byte data.
     */
-  def futureFileInputStream: Future[FileInputStream] = format.getContentsAsInputStream(rows)
+  def bytes: Enumerator[Array[Byte]] = format.bytes(rows)
 }

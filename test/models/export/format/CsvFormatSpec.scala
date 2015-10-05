@@ -4,40 +4,30 @@ import com.opencsv.CSVReader
 import java.io.{ByteArrayOutputStream,StringReader}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
+import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.test.{FutureAwaits,DefaultAwaitTimeout}
 
 import models.export.rows.Rows
 
 class CsvFormatSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
-  trait BaseScope extends Scope {
-    val headers : Array[String] = Array("header 1", "header 2", "header 3")
-    val rows : Enumerator[Array[String]] = Enumerator(
-      Array("one", "two", "three"),
-      Array("four", "five", "six")
+  trait StringScope extends Scope {
+    val headers: Array[String] = Array("col1", "col2", "col3")
+    val rowRows: Enumerator[Array[String]] = Enumerator(
+      Array("val1", "val2", "val3"),
+      Array("val4", "val5", "val6")
     )
 
-    lazy val bytes = {
-      val outputStream = new ByteArrayOutputStream
-      await(CsvFormat.writeContentsToOutputStream(Rows(headers, rows), outputStream))
-      outputStream.toByteArray
-    }
+    val rows = Rows(headers, rowRows)
 
-    lazy val parsedCsv : Seq[Array[String]] = {
+    def bytes: Array[Byte] = await(CsvFormat.bytes(rows).run(Iteratee.consume()))
+
+    lazy val parsedCsv: Seq[Array[String]] = {
       import scala.collection.JavaConverters.asScalaBufferConverter
       // Drop the UTF-8 BOM when reading, so we can do string comparisons
       val csv = new CSVReader(new StringReader(new String(bytes.drop(3), "utf-8")))
       val rowsList = csv.readAll
       asScalaBufferConverter(rowsList).asScala
     }
-  }
-
-  trait StringScope extends BaseScope {
-    override val headers = Array("col1", "col2", "col3")
-    override val rows : Enumerator[Array[String]] = Enumerator(
-      Array("val1", "val2", "val3"),
-      Array("val4", "val5", "val6")
-    )
   }
 
   "CsvFormat" should {

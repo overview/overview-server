@@ -46,15 +46,17 @@ trait DocumentSetExportController extends Controller with SelectionHelpers {
         for {
           tags <- tagBackend.index(documentSetId)
           documents <- streamDocumentsWithTagIds(documentSetId, selection)
-          export <- Future.successful(new Export(createRows(documentSet.metadataSchema, documents, tags), format))
-          byteStream <- export.futureFileInputStream // FileInputStream so we can find size
-        } yield Ok.feed(Enumerator.fromStream(byteStream))
-          .withHeaders(
-            CONTENT_TYPE -> export.contentType,
-            CONTENT_LENGTH -> byteStream.getChannel.size.toString, // InputStream.available makes no guarantee
-            CACHE_CONTROL -> "max-age=0",
-            CONTENT_DISPOSITION -> contentDisposition
-          )
+        } yield {
+          val export = new Export(createRows(documentSet.metadataSchema, documents, tags), format)
+          val bytes: Enumerator[Array[Byte]] = export.bytes
+
+          Ok.feed(bytes)
+            .withHeaders(
+              CONTENT_TYPE -> export.contentType,
+              CACHE_CONTROL -> "max-age=0",
+              CONTENT_DISPOSITION -> contentDisposition
+            )
+        }
       }
     })
   }

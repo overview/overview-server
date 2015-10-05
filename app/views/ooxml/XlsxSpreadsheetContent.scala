@@ -15,18 +15,18 @@ object XlsxSpreadsheetContent {
     } yield ()
   }
 
-  private val header: String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  val header: String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet
     xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
     xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 
   <sheetData>"""
 
-  private val footer: String = """
+  val footer: String = """
   </sheetData>
 </worksheet>"""
 
-  private def row(values: Array[String]): String = {
+  def row(values: Array[String]): String = {
     s"""<row>${values.map(cell).mkString("")}</row>"""
   }
 

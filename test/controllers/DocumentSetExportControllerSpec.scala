@@ -12,13 +12,6 @@ import models.export.format.Format
 import com.overviewdocs.util.TempFile
 
 class DocumentSetExportControllerSpec extends ControllerSpecification {
-  def makeFileInputStream(contents: Array[Byte]): FileInputStream = {
-    val tempFile = new TempFile
-    tempFile.outputStream.write(contents)
-    tempFile.outputStream.close
-    tempFile.inputStream
-  }
-
   trait BaseScope extends Scope {
     val mockDocumentBackend = smartMock[DocumentBackend]
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
@@ -52,14 +45,13 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
       val contents = "id,name\n1,foo".getBytes
       val filename = "foobar.csv"
-      val fileInputStream = makeFileInputStream(contents)
 
       mockDocumentSetBackend.show(45L) returns Future.successful(Some(documentSet))
       mockTagBackend.index(45L) returns Future.successful(tags)
 
       val format = smartMock[Format]
       format.contentType returns "text/csv; charset=\"utf-8\""
-      format.getContentsAsInputStream(any) returns Future.successful(fileInputStream)
+      format.bytes(any) returns Enumerator(contents)
     }
 
     "#documentsWithStringTags" should {
@@ -69,10 +61,6 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
       "set Content-Type header" in new DocumentsWithStringTagsScope {
         h.header(h.CONTENT_TYPE, result) must beSome("text/csv; charset=\"utf-8\"")
-      }
-
-      "set Content-Length header" in new DocumentsWithStringTagsScope {
-        h.header(h.CONTENT_LENGTH, result) must beSome(contents.size.toString)
       }
 
       "set contents" in new DocumentsWithStringTagsScope {
@@ -91,10 +79,6 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
       "set Content-Type header" in new DocumentsWithColumnTagsScope {
         h.header(h.CONTENT_TYPE, result) must beSome("text/csv; charset=\"utf-8\"")
-      }
-
-      "set Content-Length header" in new DocumentsWithColumnTagsScope {
-        h.header(h.CONTENT_LENGTH, result) must beSome(contents.size.toString)
       }
 
       "set the proper Content-Disposition" in new DocumentsWithColumnTagsScope {
