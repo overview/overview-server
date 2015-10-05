@@ -7,12 +7,12 @@ import play.api.libs.json.Json
 import play.api.test.{DefaultAwaitTimeout,FutureAwaits}
 
 import com.overviewdocs.metadata.{Metadata,MetadataField,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.Tag
+import com.overviewdocs.models.{Document,Tag}
 
 class DocumentsWithColumnTagsSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
   trait BaseScope extends Scope {
     val factory = com.overviewdocs.test.factories.PodoFactory
-    def documents: Enumerator[DocumentForCsvExport]
+    def documents: Enumerator[(Document,Seq[Long])]
     val metadataSchema: MetadataSchema = MetadataSchema.empty
     val tags: Seq[Tag] = Seq()
     lazy val rows: Rows = DocumentsWithColumnTags(metadataSchema, documents, tags)
@@ -22,8 +22,14 @@ class DocumentsWithColumnTagsSpec extends Specification with FutureAwaits with D
   }
 
   trait OneDocumentScope extends BaseScope {
-    val sampleDocument = DocumentForCsvExport("suppliedId", "title", "text", "url", Json.obj(), Seq())
-    val document = sampleDocument
+    val sampleDocument: Document = factory.document(
+      suppliedId="suppliedId",
+      title="title",
+      text="text",
+      url=Some("url"),
+      metadataJson=Json.obj()
+    )
+    val document: (Document,Seq[Long]) = (sampleDocument, Seq())
     override def documents = Enumerator(document)
   }
 
@@ -52,28 +58,33 @@ class DocumentsWithColumnTagsSpec extends Specification with FutureAwaits with D
         factory.tag(id=3L, name="bbb"),
         factory.tag(id=1L, name="ccc")
       )
-      override val document = sampleDocument.copy(tagIds=Seq(1L, 3L))
+      override val document = (sampleDocument, Seq(1L, 3L))
       outRow1.drop(4) must beEqualTo(Array("", "1", "1"))
     }
 
     "export suppliedId" in new OneDocumentScope {
-      override val document = sampleDocument.copy(suppliedId="supplied-id")
+      override val document = (sampleDocument.copy(suppliedId="supplied-id"), Seq())
       outRow1(0).toString must beEqualTo("supplied-id")
     }
 
     "export title" in new OneDocumentScope {
-      override val document = sampleDocument.copy(title="title")
+      override val document = (sampleDocument.copy(title="title"), Seq())
       outRow1(1).toString must beEqualTo("title")
     }
 
     "export text" in new OneDocumentScope {
-      override val document = sampleDocument.copy(text="text")
+      override val document = (sampleDocument.copy(text="text"), Seq())
       outRow1(2).toString must beEqualTo("text")
     }
 
     "export url" in new OneDocumentScope {
-      override val document = sampleDocument.copy(url="http://example.org")
+      override val document = (sampleDocument.copy(url=Some("http://example.org")), Seq())
       outRow1(3).toString must beEqualTo("http://example.org")
+    }
+
+    "handle None as url" in new OneDocumentScope {
+      override val document = (sampleDocument.copy(url=None), Seq())
+      outRow1(3).toString must beEqualTo("")
     }
 
     "export metadata" in new OneDocumentScope {
@@ -81,7 +92,7 @@ class DocumentsWithColumnTagsSpec extends Specification with FutureAwaits with D
         MetadataField("fooField", MetadataFieldType.String),
         MetadataField("barField", MetadataFieldType.String)
       ))
-      override val document = sampleDocument.copy(metadataJson=Json.obj("fooField" -> "foo1", "barField" -> "bar1"))
+      override val document = (sampleDocument.copy(metadataJson=Json.obj("fooField" -> "foo1", "barField" -> "bar1")), Seq())
       outHeaders.drop(4).take(2) must beEqualTo(Array("fooField", "barField")) // metadata before tags
       outRow1.drop(4).take(2) must beEqualTo(Array("foo1", "bar1"))
     }

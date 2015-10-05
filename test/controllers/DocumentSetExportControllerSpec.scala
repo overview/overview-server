@@ -6,8 +6,8 @@ import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json
 import scala.concurrent.Future
 
-import controllers.backend.{DocumentSetBackend,TagBackend}
-import models.export.rows.{DocumentForCsvExport,Rows}
+import controllers.backend.{DocumentBackend,DocumentSetBackend,DocumentTagBackend,TagBackend}
+import models.export.rows.Rows
 import models.export.format.Format
 import com.overviewdocs.util.TempFile
 
@@ -20,14 +20,16 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
   }
 
   trait BaseScope extends Scope {
-    val mockStorage = smartMock[DocumentSetExportController.Storage]
+    val mockDocumentBackend = smartMock[DocumentBackend]
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
+    val mockDocumentTagBackend = smartMock[DocumentTagBackend]
     val mockTagBackend = smartMock[TagBackend]
 
     val controller = new DocumentSetExportController with TestController {
+      override val documentBackend = mockDocumentBackend
       override val documentSetBackend = mockDocumentSetBackend
+      override val documentTagBackend = mockDocumentTagBackend
       override val tagBackend = mockTagBackend
-      override val storage = mockStorage
     }
 
     def request = fakeAuthorizedRequest
@@ -39,9 +41,8 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
     trait ExportScope extends BaseScope {
       val documentSet = factory.documentSet()
 
-      val doc1 = DocumentForCsvExport("1", "2", "3", "4", Json.obj(), Seq(5L, 6L))
-      val doc2 = DocumentForCsvExport("7", "8", "9", "0", Json.obj(), Seq())
-      val documents = Enumerator(doc1, doc2)
+      val doc1 = (factory.document(), Seq(5L, 6L))
+      val doc2 = (factory.document(), Seq(5L))
 
       val tags = Seq(
         factory.tag(id=5L, name="tag five"),
@@ -55,7 +56,6 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
       mockDocumentSetBackend.show(45L) returns Future.successful(Some(documentSet))
       mockTagBackend.index(45L) returns Future.successful(tags)
-      mockStorage.streamDocumentsWithTagIds(any) returns Future.successful(documents)
 
       val format = smartMock[Format]
       format.contentType returns "text/csv; charset=\"utf-8\""

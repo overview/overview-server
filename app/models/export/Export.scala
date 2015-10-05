@@ -14,10 +14,10 @@ class Export(rows: Rows, format: Format) {
     */
   def contentType: String = format.contentType
 
-  /** FileInputStream that we wish to transfer.
+  /** InputStream of bytes we'll produce.
     *
-    * This method must be called within an DeprecatedDatabase.inTransaction
-    * block: it may require database access. FIXME: remove this oddity.
+    * Calls to .read() may block a bit, as they'll grab more rows from the Rows
+    * enumerator. (That, in turn, can lead to a database fetch.)
     */
   def futureFileInputStream: Future[FileInputStream] = format.getContentsAsInputStream(rows)
 }
