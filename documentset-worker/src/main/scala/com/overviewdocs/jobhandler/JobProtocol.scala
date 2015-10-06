@@ -6,5 +6,4 @@ package com.overviewdocs.jobhandler
 
 object JobProtocol {
   case class JobDone(jobEntityId: Long)
-  case class JobStart(jobEntityId: Long)
 }
