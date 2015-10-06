@@ -14,9 +14,14 @@ define [ 'underscore', 'apps/Show/collections/Tags' ], (_, Tags) ->
       expect(req.url).to.eq('/documentsets/4/tags')
 
     it 'should sort by name', ->
-      @subject.add({ name: 'tag2' })
-      @subject.add({ name: 'tag1' })
+      @subject.add(name: 'tag2')
+      @subject.add(name: 'tag1')
       expect(@subject.pluck('name')).to.deep.eq([ 'tag1', 'tag2' ])
+
+    it 'should sort by name, case-insensitive-ly', ->
+      @subject.add(name: 'aaa')
+      @subject.add(name: 'BBB')
+      expect(@subject.pluck('name')).to.deep.eq([ 'aaa', 'BBB' ])
 
     it 'should give each Tag the correct URL', ->
       @subject.add(name: 'foo', id: 1)
