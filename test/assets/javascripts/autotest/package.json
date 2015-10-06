@@ -6,20 +6,19 @@
     "test-continuously": "node_modules/karma/bin/karma start"
   },
   "devDependencies": {
-    "chai": "^3.0.0",
+    "chai": "^3.3.0",
     "chai-as-promised": "^5.1.0",
     "chai-jquery": "^2.0.0",
     "coffee-script": "^1.9.3",
-    "karma": "^0.12.37",
-    "karma-coffee-preprocessor": "~0.2.1",
-    "karma-junit-reporter": "^0.2.2",
+    "karma": "^0.13.10",
+    "karma-coffee-preprocessor": "^0.3.0",
+    "karma-electron-launcher": "lele85/karma-electron-launcher#279b063f12e891d5c020a15e00c55f861051d77f",
+    "karma-junit-reporter": "^0.3.7",
     "karma-mocha": "^0.2.0",
-    "karma-phantomjs-launcher": "^0.2.0",
     "karma-requirejs": "^0.2.2",
-    "mocha": "^2.2.5",
-    "phantomjs": "^1.9.17",
+    "mocha": "^2.3.3",
     "requirejs": "^2.1.18",
-    "sinon": "^1.15.4",
+    "sinon": "^1.17.1",
     "sinon-chai": "^2.8.0"
   }
 }

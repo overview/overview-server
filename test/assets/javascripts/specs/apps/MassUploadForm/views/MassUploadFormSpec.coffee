@@ -224,7 +224,7 @@ define [
           ]
 
         it 'clears the file input once files have been queued', ->
-          expect(@$fileInput[0].value).to.eq('')
+          expect(@$fileInput[0].value).to.be.undefined
 
     describe 'buttons', ->
       beforeEach ->

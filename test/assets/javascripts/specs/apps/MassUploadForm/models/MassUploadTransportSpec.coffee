@@ -3,26 +3,6 @@ define [
   'apps/MassUploadForm/models/MassUploadTransport',
   'util/net/upload'
 ], (Backbone, MassUploadTransport, NetUpload) ->
-  # Replacement Blob constructor, for PhantomJS <2.0
-  #
-  # Once we upgrade to PhantomJS 2.0, we can drop this and use new Blob()
-  # instead.
-  #
-  # https://github.com/ariya/phantomjs/issues/11013
-  buildBlob = (asciiString) ->
-    if (typeof(Blob) == 'function')
-      new Blob(asciiString)
-    else
-      builder = new WebKitBlobBuilder()
-      builder.append(asciiString)
-      ret = builder.getBlob()
-      aliasedSlice = (args...) ->
-        ret = @webkitSlice(args...)
-        ret.slice = aliasedSlice
-        ret
-      ret.slice = aliasedSlice
-      ret
-
   describe 'apps/MassUploadForm/models/MassUploadTransport', ->
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
@@ -112,7 +92,7 @@ define [
 
       describe 'with a uniqueCheckUrlPrefix', ->
         beforeEach ->
-          @file = buildBlob('foo bar baz')
+          @file = new Blob(['foo bar baz'])
           @file.name = 'foo.pdf'
           @file.lastModifiedDate = new Date('2013-10-01T12:00:00Z')
           @upload = new Backbone.Model(file: @file)

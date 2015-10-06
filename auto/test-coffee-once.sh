@@ -1,5 +1,10 @@
 #!/bin/sh
 
-# Before running this script, run ./setup-coffee-tests.sh
+pushd "$(dirname "$0")/../test/assets/javascripts/autotest"
 
-(cd "$(dirname $0)/../test/assets/javascripts/autotest" && npm test)
+# Before running this script, run ./setup-coffee-tests.sh
+if command -v xvfb-run >/dev/null 2>&1; then
+  xvfb-run npm test
+else
+  npm test
+fi

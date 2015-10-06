@@ -8,7 +8,7 @@ module.exports = (config) ->
   config.set
     autoWatch: true
     basePath: base
-    browsers: [ 'PhantomJS' ]
+    browsers: [ 'Electron' ]
     frameworks: [ 'mocha', 'requirejs' ]
     preprocessors: { '**/*.coffee': ['coffee'] }
     reporters: [ 'dots', 'junit' ]
@@ -16,7 +16,8 @@ module.exports = (config) ->
     verbose: true
 
     junitReporter:
-      outputFile: 'test/assets/javascripts/autotest/test-results.xml'
+      outputFile: 'test-results.xml'
+      outputDir: 'test/assets/javascripts/autotest/results'
 
     client:
       captureConsole: true # https://github.com/karma-runner/karma/issues/961

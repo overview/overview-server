@@ -1,33 +1,13 @@
 define [
   'util/BlobHasher'
 ], (BlobHasher) ->
-  # Replacement Blob constructor, for PhantomJS <2.0
-  #
-  # Once we upgrade to PhantomJS 2.0, we can drop this and use new Blob()
-  # instead.
-  #
-  # https://github.com/ariya/phantomjs/issues/11013
-  buildBlob = (asciiString) ->
-    if (typeof(Blob) == 'function')
-      new Blob(asciiString)
-    else
-      builder = new WebKitBlobBuilder()
-      builder.append(asciiString)
-      ret = builder.getBlob()
-      aliasedSlice = (args...) ->
-        ret = @webkitSlice(args...)
-        ret.slice = aliasedSlice
-        ret
-      ret.slice = aliasedSlice
-      ret
-
   hex = (buffer) ->
     uint8Array = new Uint8Array(buffer)
     "0x" + (i.toString(16) for i in uint8Array).join('')
 
   describe 'util/BlobHasher', ->
     beforeEach ->
-      @blob = buildBlob("foobarbaz")
+      @blob = new Blob([ 'foobarbaz' ])
       @hasher = new BlobHasher()
       @sha1 = "0x5f5513f8822fdbe5145af33b64d8d970dcf95c6e"
 
