@@ -6,7 +6,6 @@ import org.specs2.mutable.Before
 import akka.actor.{ ActorRef, Props }
 import akka.pattern.ask
 import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
-import akka.util.Timeout
 import org.specs2.time.NoTimeConversions
 import scala.concurrent.duration._
 import org.specs2.mock.Mockito
@@ -44,7 +43,6 @@ class DocumentIdSupplierSpec extends Specification with NoTimeConversions {
   }
   
   abstract class DocumentIdSupplierScope extends ActorSystemContext with Before with Mockito {
-    val timeout = Timeout(1 second)
     val documentSetId = 1l
     val numberOfIds = 3
 
