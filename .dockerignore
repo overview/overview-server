@@ -6,7 +6,6 @@ logs
 search-index
 travis
 vm
-message-broker
 test
 znmeb-release
 project/project
@@ -37,5 +36,4 @@ database
 test
 */*/test
 
-message-broker/data
 search-index/data

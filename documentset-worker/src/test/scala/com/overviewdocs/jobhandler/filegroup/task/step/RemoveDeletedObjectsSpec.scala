@@ -13,6 +13,7 @@ import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueue
 import scala.concurrent.ExecutionContext
 
 class RemoveDeletedObjectsSpec extends Specification {
+  sequential
 
   "RemoveDeletedObject" should {
 

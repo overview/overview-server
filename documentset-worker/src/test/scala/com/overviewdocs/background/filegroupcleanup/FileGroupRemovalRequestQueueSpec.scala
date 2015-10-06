@@ -13,6 +13,7 @@ import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueue
 import com.overviewdocs.background.filegroupcleanup.FileGroupCleanerProtocol._
 
 class FileGroupRemovalRequestQueueSpec extends Specification with NoTimeConversions {
+  sequential
 
   
   "FileGroupRemovalRequestQueue" should {

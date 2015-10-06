@@ -12,6 +12,7 @@ import org.specs2.mock.Mockito
 import akka.testkit.TestProbe
 
 class DocumentIdSupplierSpec extends Specification with NoTimeConversions {
+  sequential
 
   "DocumentIdSupplier" should {
 

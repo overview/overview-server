@@ -15,6 +15,7 @@ import org.specs2.time.NoTimeConversions
 
 
 class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConversions {
+  sequential
 
   "DeletedFileCleaner" should {
 

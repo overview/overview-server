@@ -1,20 +1,20 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import scala.concurrent.duration._
-import scala.collection.mutable
-import scala.language.postfixOps
 import akka.actor.{ Actor, ActorRef }
 import akka.actor.Props
+import scala.collection.mutable
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
 import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.database.orm.finders.DocumentSetCreationJobFinder
 import com.overviewdocs.database.orm.stores.DocumentSetCreationJobStore
-import com.overviewdocs.jobhandler.filegroup.FileGroupJobMessages._
+import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.messages.ClusterCommands
 import com.overviewdocs.tree.DocumentSetCreationJobType._
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
-import com.overviewdocs.util.Logger
-import com.overviewdocs.util.Configuration
-import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.util.{Configuration,Logger}
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -47,7 +47,7 @@ trait FileGroupJobManager extends Actor {
   private val runningJobs: mutable.Map[Long, FileGroupJob] = mutable.Map.empty
   private val cancellingJobs: mutable.Map[Long, Long] = mutable.Map.empty
 
-  private case class UpdateJobStateRetryAttempt(command: ClusterFileGroupCommand, count: Int)
+  private case class UpdateJobStateRetryAttempt(command: ClusterCommands.ClusterFileGroup, count: Int)
 
   override def preStart(): Unit = {
     storage.findValidInProgressUploadJobs.foreach { j =>
@@ -60,29 +60,23 @@ trait FileGroupJobManager extends Actor {
   }
 
   override def receive = {
-
-    case command: ClusterFileGroupCommand           => attemptUpdateJobState(command, 0)
-
+    case command: ClusterCommands.ClusterFileGroup => attemptUpdateJobState(command, 0)
+    case ClusterCommands.CancelFileUpload(documentSetId, fileGroupId) => cancelJob(documentSetId, fileGroupId)
     case UpdateJobStateRetryAttempt(command, count) => attemptUpdateJobState(command, count)
-
-    case JobCompleted(documentSetId)                => handleCompletedJob(documentSetId)
-
-    case CancelClusterFileGroupCommand(documentSetId, fileGroupId) =>
-      cancelJob(documentSetId, fileGroupId)
-
+    case JobCompleted(documentSetId) => handleCompletedJob(documentSetId)
   }
 
-  private def attemptUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit = {
+  private def attemptUpdateJobState(command: ClusterCommands.ClusterFileGroup, count: Int): Unit = {
     storage.updateJobState(command.documentSetId).map(queueCreateDocumentsJob)
       .getOrElse(limitedRetryUpdateJobState(command, count))
   }
 
-  private def limitedRetryUpdateJobState(command: ClusterFileGroupCommand, count: Int): Unit = {
+  private def limitedRetryUpdateJobState(command: ClusterCommands.ClusterFileGroup, count: Int): Unit = {
     if (count < MaxRetryAttempts) retryUpdateJobState(command, count + 1)
     else logger.error("Trying to cluster non-existent job for document set {}", command.documentSetId)
   }
 
-  private def retryUpdateJobState(command: ClusterFileGroupCommand, attempt: Int): Unit = {
+  private def retryUpdateJobState(command: ClusterCommands.ClusterFileGroup, attempt: Int): Unit = {
     import context.dispatcher
     context.system.scheduler.scheduleOnce(1 seconds, self, UpdateJobStateRetryAttempt(command, attempt))
   }
@@ -114,7 +108,7 @@ trait FileGroupJobManager extends Actor {
   private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit = {
     runningJobs -= documentSetId
     cancellingJobs += (documentSetId -> fileGroupId)
-    fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+    fileGroupJobQueue ! ClusterCommands.CancelFileUpload(documentSetId, fileGroupId)
   }
 
   private def deleteCancelledJobFileGroup(documentSetId: Long) = {

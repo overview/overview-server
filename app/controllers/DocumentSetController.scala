@@ -5,21 +5,21 @@ import play.api.libs.json.{JsError,JsObject,JsResult,JsSuccess}
 import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
 
-import controllers.auth.{AuthorizedAction,Authorities}
-import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
-import controllers.forms.DocumentSetUpdateForm
-import controllers.util.DocumentSetDeletionComponents
-import models.orm.finders.{DocumentSetCreationJobFinder,TagFinder,TreeFinder}
-import models.orm.stores.DocumentSetCreationJobStore
-import models.pagination.{Page,PageRequest}
 import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
+import com.overviewdocs.messages.{ClusterCommands,DocumentSetCommands}
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
 import com.overviewdocs.models.tables.DocumentSets
-import com.overviewdocs.jobs.models.{CancelFileUpload,Delete}
 import com.overviewdocs.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob,Tag,Tree}
 import com.overviewdocs.tree.orm.DocumentSetCreationJobState
 import com.overviewdocs.tree.DocumentSetCreationJobType
+import controllers.auth.{AuthorizedAction,Authorities}
+import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
+import controllers.forms.DocumentSetUpdateForm
+import controllers.util.JobQueueSender
+import models.orm.finders.{DocumentSetCreationJobFinder,TagFinder,TreeFinder}
+import models.orm.stores.DocumentSetCreationJobStore
+import models.pagination.{Page,PageRequest}
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -163,21 +163,16 @@ trait DocumentSetController extends Controller {
     // than trying to guess.
     val cancelledJob: Option[DeprecatedDocumentSetCreationJob] = storage.cancelJob(documentSetId)
 
-    if (cancelledJob.doesNotExist) {
+    if (cancelledJob.doesNotExist || cancelledJob.wasRunningInWorker || cancelledJob.wasNotRunning) {
       storage.deleteDocumentSet(documentSetId)
-      jobQueue.send(Delete(documentSetId))
-
-      done("deleteDocumentSet.success")
-    } else if (cancelledJob.wasRunningInWorker) {
-      storage.deleteDocumentSet(documentSetId)
-      jobQueue.send(Delete(documentSetId, waitForJobRemoval = true)) // wait for worker to stop clustering and remove job
+      jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
       done("deleteJob.success")
     } else if (cancelledJob.wasNotRunning) {
       storage.deleteDocumentSet(documentSetId)
-      jobQueue.send(Delete(documentSetId, waitForJobRemoval = false)) // don't wait for worker
+      jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
       done("deleteJob.success")
     } else if (cancelledJob.wasRunningInTextExtractionWorker && cancelledJob.wasTextExtractionJob) {
-      jobQueue.send(CancelFileUpload(documentSetId, cancelledJob.get.fileGroupId.get))
+      jobQueue.send(ClusterCommands.CancelFileUpload(documentSetId, cancelledJob.get.fileGroupId.get))
       done("deleteJob.success")
     } else {
       throw new RuntimeException("A job was in a state we do not handle")
@@ -221,13 +216,13 @@ trait DocumentSetController extends Controller {
   }
 
   protected val storage: DocumentSetController.Storage
-  protected val jobQueue: DocumentSetController.JobMessageQueue
+  protected val jobQueue: JobQueueSender
   protected val backend: DocumentSetBackend
   protected val importJobBackend: ImportJobBackend
   protected val viewBackend: ViewBackend
 }
 
-object DocumentSetController extends DocumentSetController with DocumentSetDeletionComponents {
+object DocumentSetController extends DocumentSetController {
   trait Storage {
     /** Returns a mapping from DocumentSet ID to the total number of Views,
       * Trees and Recluster jobs.
@@ -246,11 +241,6 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
 
     /** All Tags for the document set. */
     def findTags(documentSetId: Long) : Iterable[Tag]
-  }
-
-  trait JobMessageQueue {
-    def send(deleteCommand: Delete): Unit
-    def send(cancelFileUploadCommand: CancelFileUpload): Unit
   }
 
   object DatabaseStorage extends Storage with HasBlockingDatabase {
@@ -330,10 +320,8 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     }
   }
 
-  object ApolloJobMessageQueue extends JobMessageQueue with DocumentSetDeletionJobMessageQueue
-
   override val storage = DatabaseStorage
-  override val jobQueue = ApolloJobMessageQueue
+  override val jobQueue = JobQueueSender
   override val backend = DocumentSetBackend
   override val importJobBackend = ImportJobBackend
   override val viewBackend = ViewBackend

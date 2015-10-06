@@ -15,6 +15,7 @@ import akka.testkit.{TestActorRef, TestProbe}
 
 
 class DocumentRetrieverManagerSpec extends Specification with Mockito with NoTimeConversions {
+  sequential
 
   "DocumentRetrieverManager" should {
 

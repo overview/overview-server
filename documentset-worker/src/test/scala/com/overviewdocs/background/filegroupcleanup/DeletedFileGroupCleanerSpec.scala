@@ -11,6 +11,7 @@ import org.specs2.mutable.Before
 
 
 class DeletedFileGroupCleanerSpec extends Specification with Mockito {
+  sequential
   
   "DeletedFileGroupCleaner" should {
     

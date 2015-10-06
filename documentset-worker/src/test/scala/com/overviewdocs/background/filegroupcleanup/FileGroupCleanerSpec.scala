@@ -11,6 +11,7 @@ import akka.testkit.TestActorRef
 import FileGroupCleanerProtocol._
 
 class FileGroupCleanerSpec extends Specification with Mockito {
+  sequential
 
   "FileGroupCleaner" should {
     

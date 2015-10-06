@@ -3,23 +3,23 @@ package controllers.admin
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
-import controllers.auth.Authorities.adminUser
-import controllers.auth.AuthorizedAction
-import controllers.backend.ImportJobBackend
-import controllers.util.DocumentSetDeletionComponents
-import controllers.Controller
-import models.orm.stores.DocumentSetCreationJobStore
 import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
 import com.overviewdocs.models.tables.{DocumentSetCreationJobs,DocumentSets}
-import com.overviewdocs.jobs.models.{CancelFileUpload,Delete}
+import com.overviewdocs.messages.{DocumentSetCommands,ClusterCommands}
 import com.overviewdocs.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob}
 import com.overviewdocs.tree.DocumentSetCreationJobType
 import com.overviewdocs.tree.orm.DocumentSetCreationJobState
+import controllers.auth.Authorities.adminUser
+import controllers.auth.AuthorizedAction
+import controllers.backend.ImportJobBackend
+import controllers.util.JobQueueSender
+import controllers.Controller
+import models.orm.stores.DocumentSetCreationJobStore
 
 trait ImportJobController extends Controller {
   protected val storage: ImportJobController.Storage
-  protected val jobQueue: ImportJobController.JobMessageQueue
+  protected val jobQueue: JobQueueSender
   protected val importJobBackend: ImportJobBackend
 
   def index() = AuthorizedAction(adminUser).async { implicit request =>
@@ -67,21 +67,12 @@ trait ImportJobController extends Controller {
         // than trying to guess.
         val cancelledJob: Option[DeprecatedDocumentSetCreationJob] = storage.cancelJob(documentSetId)
 
-        if (cancelledJob.doesNotExist) {
+        if (cancelledJob.doesNotExist || cancelledJob.wasRunningInWorker || cancelledJob.wasNotRunning) {
           storage.deleteDocumentSet(documentSetId)
-          jobQueue.send(Delete(documentSetId))
-          
+          jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
           done("deleteDocumentSet.success")
-        } else if (cancelledJob.wasRunningInWorker) {
-          storage.deleteDocumentSet(documentSetId)
-          jobQueue.send(Delete(documentSetId, waitForJobRemoval = true)) // wait for worker to stop clustering and remove job
-          done("deleteJob.success")
-        } else if (cancelledJob.wasNotRunning) {
-          storage.deleteDocumentSet(documentSetId)
-          jobQueue.send(Delete(documentSetId, waitForJobRemoval = false)) // don't wait for worker
-          done("deleteJob.success")
         } else if (cancelledJob.wasRunningInTextExtractionWorker && cancelledJob.wasTextExtractionJob) {
-          jobQueue.send(CancelFileUpload(documentSetId, cancelledJob.get.fileGroupId.get))
+          jobQueue.send(ClusterCommands.CancelFileUpload(documentSetId, cancelledJob.get.fileGroupId.get))
           done("deleteJob.success")
         } else {
           throw new RuntimeException("A job was in a state we do not handle")
@@ -98,16 +89,11 @@ trait ImportJobController extends Controller {
 
 }
 
-object ImportJobController extends ImportJobController with DocumentSetDeletionComponents {
+object ImportJobController extends ImportJobController {
   trait Storage {
     def findDocumentSetIdByJobId(jobId: Long): Future[Option[Long]]
     def cancelJob(documentSetId: Long): Option[DeprecatedDocumentSetCreationJob]
     def deleteDocumentSet(documentSetId: Long): Unit
-  }
-
-  trait JobMessageQueue {
-    def send(deleteCommand: Delete): Unit
-    def send(cancelFileUploadCommand: CancelFileUpload): Unit
   }
 
   object DatabaseStorage extends Storage with HasBlockingDatabase {
@@ -132,9 +118,7 @@ object ImportJobController extends ImportJobController with DocumentSetDeletionC
     )
   }
 
-  object ApolloJobMessageQueue extends JobMessageQueue with DocumentSetDeletionJobMessageQueue 
-
   override protected val storage = DatabaseStorage
-  override protected val jobQueue = ApolloJobMessageQueue
+  override protected val jobQueue = JobQueueSender
   override protected val importJobBackend = ImportJobBackend
 }

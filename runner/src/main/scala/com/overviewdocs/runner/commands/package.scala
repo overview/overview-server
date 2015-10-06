@@ -6,7 +6,6 @@ import scala.io.Source
 package object commands {
   trait UsefulCommands {
     def documentSetWorker: Command
-    def messageBroker: Command
     def searchIndex: Command
     def redis: Command
     def webServer: Command
@@ -38,17 +37,6 @@ package object commands {
         "-Des.path.home=./search-index"
       ),
       Seq("org.elasticsearch.bootstrap.Bootstrap")
-    )
-
-    override def messageBroker = new JvmCommandWithAppendableClasspath(
-      Seq(),
-      Seq(Flags.ApolloBase),
-      Seq(
-        "org.apache.activemq.apollo.boot.Apollo",
-        "documentset-worker/lib",
-        "org.apache.activemq.apollo.cli.Apollo",
-        "run"
-      )
     )
 
     override def webServer = new JvmCommand(
@@ -133,18 +121,6 @@ package object commands {
       Flags.DatabaseEnv,
       Seq(),
       Seq("com.overviewdocs.DocumentSetWorker")
-    )
-
-    override def messageBroker = cmd(
-      "message-broker",
-      Seq(),
-      Seq(Flags.ApolloBase),
-      Seq(
-        "org.apache.activemq.apollo.boot.Apollo",
-        "documentset-worker/lib",
-        "org.apache.activemq.apollo.cli.Apollo",
-        "run"
-      )
     )
 
     override def searchIndex = cmd(

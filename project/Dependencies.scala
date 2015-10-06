@@ -4,8 +4,9 @@ import play.sbt.PlayImport.{evolutions,filters,jdbc,ws}
 object Dependencies {
   private object deps {
     // shared dependencies
-    val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.3.4"
     val akka = "com.typesafe.akka" %% "akka-actor" % "2.3.4"
+    val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.3.4"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.3.4"
     val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.3.4"
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.9.23"
@@ -16,7 +17,6 @@ object Dependencies {
     val commonsIo = "commons-io" % "commons-io" % "2.4"
     val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.7.1"
     val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.7.0" // find version at https://github.com/elastic/elasticsearch-analysis-icu
-    val geronimoJms = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
@@ -44,7 +44,6 @@ object Dependencies {
     val slick = "com.typesafe.slick" %% "slick" % "3.0.0"
     val specs2 = "org.specs2" %% "specs2" % "2.3.13"
     val squeryl = "org.squeryl" %% "squeryl" % "0.9.6-RC3"
-    val stomp = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
 
     // Hacky deps below
 
@@ -80,12 +79,12 @@ object Dependencies {
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
   val commonDependencies = Seq(
     deps.akka,
+    deps.akkaRemote,
     deps.asyncHttpClient,
     deps.awsS3,
     deps.commonsIo,
     deps.elasticSearch,
     deps.elasticSearchIcu,
-    deps.geronimoJms,
     deps.guava, // Textify
     deps.hackyScalaCompiler, // boo
     deps.hikariCp,
@@ -96,7 +95,6 @@ object Dependencies {
     deps.redis,
     deps.slick,
     deps.squeryl, // boo
-    deps.stomp, // boo
     deps.akkaTestkit % "test",
     deps.janino % "test", // See logback-text.xml
     deps.junitInterface % "test",
@@ -124,6 +122,7 @@ object Dependencies {
   
   val documentSetWorkerDependencies = Seq(
     deps.akkaAgent,
+    deps.akkaRemote,
     deps.bcmail,
     deps.bcprov,
     deps.javaxMail,
@@ -132,18 +131,6 @@ object Dependencies {
     deps.pdfbox,
     deps.jbig2, // for PDFBox
     deps.janino % "test" // See logback-test.xml
-  )
-  
-  val messageBrokerDependencies = Seq(
-    // [adam] I tried excluding things while upgrading to Scala 2.11. It turns
-    // out we need to stick with Scala 2.10 for this project. But I figured we
-    // might as well leave the exclusions there.
-    "org.apache.activemq" % "apache-apollo" % "1.7.1"
-      exclude("org.apache.activemq", "apollo-openwire")
-      exclude("org.apache.activemq", "apollo-amqp")
-      exclude("org.apache.activemq", "apollo-mqtt")
-      exclude("org.apache.activemq", "apollo-web"),
-    deps.javaxMail
   )
 
   val searchIndexDependencies = Seq(

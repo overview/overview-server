@@ -5,8 +5,6 @@ cd "$(dirname "$0")"
 
 # Support services
 docker build -t overview/database docker/database
-docker build -t overview/message-broker docker/message-broker
-
 
 # Create a base with everything built and staged
 docker build -t overview/overview-base  docker/overview-base

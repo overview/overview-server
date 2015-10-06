@@ -12,6 +12,7 @@ import akka.actor._
 import akka.testkit.TestActorRef
 
 class DocumentPageRetrieverGeneratorSpec extends Specification with Mockito with NoTimeConversions {
+  sequential
 
   "DocumentPageRetrieverGenerator" should {
 

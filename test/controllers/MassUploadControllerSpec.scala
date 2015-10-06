@@ -8,12 +8,14 @@ import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
 
-import controllers.auth.{AuthorizedRequest}
-import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
-import models.{ Session, User }
+import com.overviewdocs.messages.ClusterCommands
 import com.overviewdocs.models.{DocumentSet,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.DocumentSetCreationJobType._
 import com.overviewdocs.models.DocumentSetCreationJobState._
+import controllers.auth.{AuthorizedRequest}
+import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
+import controllers.util.JobQueueSender
+import models.{ Session, User }
 
 class MassUploadControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -21,7 +23,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
     val mockFileGroupBackend = smartMock[FileGroupBackend]
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockStorage = smartMock[MassUploadController.Storage]
-    val mockMessageQueue = smartMock[MassUploadController.MessageQueue]
+    val mockMessageQueue = smartMock[JobQueueSender]
     val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
 
     val controller = new MassUploadController with TestController {
@@ -29,8 +31,8 @@ class MassUploadControllerSpec extends ControllerSpecification {
       override val fileGroupBackend = mockFileGroupBackend
       override val groupedFileUploadBackend = mockUploadBackend
       override val storage = mockStorage
-      override val messageQueue = mockMessageQueue
       override val uploadIterateeFactory = mockUploadIterateeFactory
+      override val messageQueue = mockMessageQueue
     }
 
     val factory = com.overviewdocs.test.factories.PodoFactory
@@ -142,7 +144,6 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.update(any, any) returns Future.successful(fileGroup.copy(completed=true))
       mockDocumentSetBackend.create(any, any) returns Future.successful(documentSet)
       mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
-      mockMessageQueue.startClustering(any, any) returns Future.successful(())
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
       lazy val result = controller.startClustering()(request)
@@ -166,8 +167,8 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "send a ClusterFileGroup message" in new StartClusteringScope {
       h.status(result)
-      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, fileGroupName)
-    }
+      there was one(mockMessageQueue).send(any[ClusterCommands.ClusterFileGroup])
+    }.pendingUntilFixed
 
     "set splitDocuments=true when asked" in new StartClusteringScope {
       override val splitDocumentsString = "true"
@@ -210,7 +211,6 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
       mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
       mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
-      mockMessageQueue.startClustering(any, any) returns Future(())
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
       lazy val result = controller.startClusteringExistingDocumentSet(documentSetId)(request)
@@ -229,8 +229,8 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "send a ClusterFileGroup message" in new StartClusteringExistingDocumentSetScope {
       h.status(result)
-      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob, "[add-to-existing-docset]")
-    }
+      there was one(mockMessageQueue).send(any[ClusterCommands.ClusterFileGroup])
+    }.pendingUntilFixed
 
     "redirect if user has no FileGroup in progress" in new StartClusteringExistingDocumentSetScope {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)

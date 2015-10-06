@@ -9,6 +9,7 @@ import akka.actor.Terminated
 import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
 import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
+import com.overviewdocs.messages.ClusterCommands.CancelFileUpload
 import com.overviewdocs.util.Logger
 
 trait FileGroupJob {
@@ -22,8 +23,6 @@ object FileGroupJobQueueProtocol {
   case class SubmitJob(documentSetId: Long, job: FileGroupJob)
   case class JobCompleted(documentSetId: Long)
   case class AddTasks(tasks: Iterable[TaskWorkerTask])
-
-  case class CancelFileUpload(documentSetId: Long, fileGroupId: Long)
 }
 
 /**
@@ -36,7 +35,7 @@ object FileGroupJobQueueProtocol {
  *  can be received after the cancellation message has been received). The JobQueue expects only one response from any
  *  worker working on a task. Once all tasks have been completed or cancelled, the requester is notified that the job
  *  is complete.
- *  A CanceFilelUpload message may be received for an unknown job during restart and recovery from an unexpected shutdown. In
+ *  A CancelFilelUpload message may be received for an unknown job during restart and recovery from an unexpected shutdown. In
  *  this case, the JobQueue responds as if the job has been successfully cancelled.
  *  @todo Rename CancelFileUpload to be more generic and make it sure it works for any jobs.
  *

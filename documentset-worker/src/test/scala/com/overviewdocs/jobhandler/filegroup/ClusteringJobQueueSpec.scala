@@ -11,6 +11,7 @@ import org.specs2.mock.Mockito
 import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 
 class ClusteringJobQueueSpec extends Specification with Mockito {
+  sequential
 
   "ClusteringJobQueue" should {
 

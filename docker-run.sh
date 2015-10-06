@@ -3,7 +3,6 @@
 
 # Start support services
 docker run --name overview-database -v /opt/overview-data/postgres:/var/lib/postgresql/data -d overview/database
-docker run --name overview-messagebroker -d overview/message-broker
 docker run --name overview-redis -d redis:2.8
 docker run --name overview-searchindex \
   -v /opt/overview-data/elasticsearch:/usr/share/elasticsearch/data \

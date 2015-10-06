@@ -10,8 +10,8 @@ import akka.testkit.{TestActorRef, TestProbe}
 
 
 class DocumentSplitterSpec extends Specification with NoTimeConversions {
+  sequential
 
-  
   class SilentActor extends Actor {
     def receive = {
       case _ =>

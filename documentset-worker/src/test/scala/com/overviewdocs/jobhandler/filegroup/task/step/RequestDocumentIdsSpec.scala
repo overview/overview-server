@@ -15,6 +15,7 @@ import akka.testkit.TestActor
 import scala.concurrent.ExecutionContext
 
 class RequestDocumentIdsSpec extends Specification with Mockito {
+  sequential
 
   "RequestDocumentIdsSpec" should {
 

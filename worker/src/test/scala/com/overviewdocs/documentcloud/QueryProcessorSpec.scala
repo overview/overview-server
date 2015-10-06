@@ -15,6 +15,7 @@ import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.util.Configuration
 
 class QueryProcessorSpec extends Specification with NoTimeConversions with Mockito {
+  sequential
 
   "QueryProcessor" should {
 

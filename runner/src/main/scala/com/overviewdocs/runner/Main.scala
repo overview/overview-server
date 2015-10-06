@@ -19,7 +19,6 @@ object Flags {
     "DATABASE_PORT" -> "9010",
     "DATABASE_SSL_FACTORY" -> "org.postgresql.ssl.NonValidatingFactory"
   )
-  val ApolloBase = "-Dapollo.base=message-broker"
   val SearchCluster = "DevSearchIndex"
 }
 
@@ -50,7 +49,6 @@ object DaemonInfoRepository extends DaemonInfoRepository {
     // do their jobs if all are running.
 
     DaemonInfo("search-index", Console.BLUE, cmds.searchIndex),
-    DaemonInfo("message-broker", Console.YELLOW, cmds.messageBroker),
     DaemonInfo("overview-server", Console.GREEN, cmds.webServer),
     DaemonInfo("documentset-worker", Console.CYAN, cmds.documentSetWorker),
     DaemonInfo("redis", Console.CYAN_B, cmds.redis),

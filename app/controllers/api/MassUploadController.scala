@@ -6,6 +6,11 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
 
+import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.models.{ApiToken,FileGroup,GroupedFileUpload}
+import com.overviewdocs.messages.ClusterCommands
+import com.overviewdocs.tree.orm.DocumentSetCreationJob
+import com.overviewdocs.util.ContentDisposition
 import controllers.auth.{ApiAuthorizedAction,ApiTokenFactory}
 import controllers.auth.Authorities.anyUser
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
@@ -13,17 +18,12 @@ import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 import models.orm.stores.DocumentSetCreationJobStore
-import com.overviewdocs.database.DeprecatedDatabase
-import com.overviewdocs.models.{ApiToken,FileGroup,GroupedFileUpload}
-import com.overviewdocs.jobs.models.ClusterFileGroup
-import com.overviewdocs.tree.orm.DocumentSetCreationJob
-import com.overviewdocs.util.ContentDisposition
 
 trait MassUploadController extends ApiController {
   protected val fileGroupBackend: FileGroupBackend
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
   protected val storage: MassUploadController.Storage
-  protected val messageQueue: MassUploadController.MessageQueue
+  protected val messageQueue: JobQueueSender
   protected val apiTokenFactory: ApiTokenFactory
   protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
 
@@ -149,7 +149,6 @@ trait MassUploadController extends ApiController {
         }
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
-          .map(_ => messageQueue.startClustering(job))
           .map(_ => Created)
       }
       case None => Future.successful(NotFound)
@@ -160,7 +159,7 @@ trait MassUploadController extends ApiController {
 /** Controller implementation */
 object MassUploadController extends MassUploadController {
   override protected val storage = DatabaseStorage
-  override protected val messageQueue = ApolloQueue
+  override protected val messageQueue = JobQueueSender
   override protected val fileGroupBackend = FileGroupBackend
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
   override protected val apiTokenFactory = ApiTokenFactory
@@ -172,11 +171,6 @@ object MassUploadController extends MassUploadController {
                                                suppliedStopWords: String, importantWords: String): DocumentSetCreationJob
   }
 
-  trait MessageQueue {
-    /** Notify the worker that clustering can start */
-    def startClustering(job: DocumentSetCreationJob): Future[Unit]
-  }
-
   object DatabaseStorage extends Storage {
     override def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long,
                                                         lang: String, splitDocuments: Boolean,
@@ -185,7 +179,7 @@ object MassUploadController extends MassUploadController {
       import com.overviewdocs.tree.orm.DocumentSetCreationJobState.FilesUploaded
       import com.overviewdocs.tree.DocumentSetCreationJobType.FileUpload
 
-      DeprecatedDatabase.inTransaction {
+      val job = DeprecatedDatabase.inTransaction {
         DocumentSetCreationJobStore.insertOrUpdate(
           DocumentSetCreationJob(
             documentSetId = documentSetId,
@@ -200,22 +194,12 @@ object MassUploadController extends MassUploadController {
           )
         )
       }
-    }
-  }
 
-  object ApolloQueue extends MessageQueue {
-    override def startClustering(job: DocumentSetCreationJob): Future[Unit] = {
-      val command = ClusterFileGroup(
-        documentSetId=job.documentSetId,
-        fileGroupId=job.fileGroupId.get,
-        name="api-add-documents-to-docset",
-        lang=job.lang,
-        splitDocuments=job.splitDocuments,
-        stopWords=job.suppliedStopWords,
-        importantWords=job.importantWords
-      )
+      val command = ClusterCommands.ClusterFileGroup(documentSetId=job.documentSetId, fileGroupId=job.fileGroupId.get)
 
       JobQueueSender.send(command)
+
+      job
     }
   }
 }

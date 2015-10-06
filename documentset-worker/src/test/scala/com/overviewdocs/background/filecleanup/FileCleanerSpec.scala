@@ -12,6 +12,7 @@ import FileCleanerProtocol._
 import org.specs2.time.NoTimeConversions
 
 class FileCleanerSpec extends Specification with Mockito with NoTimeConversions {
+  sequential
 
   "FileCleaner" should {
 

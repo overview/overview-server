@@ -83,14 +83,6 @@ object ApplicationBuild extends Build {
     .settings(ourGlobalSettings: _*)
     .enablePlugins(JavaAppPackaging)
 
-  lazy val messageBroker = project("message-broker")
-    .settings(ourGlobalSettings: _*)
-    .settings(
-      baseDirectory in (Compile, run) := file("message-broker"),
-      scalaVersion := "2.10.5",
-      libraryDependencies ++= Dependencies.messageBrokerDependencies
-    )
-
   lazy val searchIndex = project("search-index")
     .settings(
       libraryDependencies ++= Dependencies.searchIndexDependencies,
@@ -129,10 +121,7 @@ object ApplicationBuild extends Build {
 
   // Project definitions
   lazy val common = project("common")
-    .settings(
-      unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" }, // TODO remove
-      libraryDependencies ++= Dependencies.commonDependencies
-    )
+    .settings(libraryDependencies ++= Dependencies.commonDependencies)
 
   lazy val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
     .settings(ourGlobalSettings: _*)
@@ -166,14 +155,16 @@ object ApplicationBuild extends Build {
   lazy val documentSetWorker = project("documentset-worker")
     .settings(
       unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
-      libraryDependencies ++= Dependencies.documentSetWorkerDependencies
+      libraryDependencies ++= Dependencies.documentSetWorkerDependencies,
+      javaOptions in Test += "-Dconfig.resource=test.conf"
     )
     .dependsOn(common % "test->test;compile->compile")
 
   lazy val worker = project("worker")
     .settings(
       unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
-      libraryDependencies ++= Dependencies.workerDependencies
+      libraryDependencies ++= Dependencies.workerDependencies,
+      javaOptions in Test += "-Dconfig.resource=test.conf"
     )
     .dependsOn(common % "test->test;compile->compile")
 
@@ -206,7 +197,7 @@ object ApplicationBuild extends Build {
         WebJs.JS.Object("name" -> "bundle/Welcome/show")
       ),
       javaOptions in Test ++= Seq(
-        "-Dconfig.file=conf/application-test.conf",
+        "-Dconfig.resource=application-test.conf",
         "-Dlogger.resource=logback-test.xml"
       ),
       sources in doc in Compile := List(),

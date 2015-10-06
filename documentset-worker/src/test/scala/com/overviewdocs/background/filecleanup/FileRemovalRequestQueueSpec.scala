@@ -13,6 +13,7 @@ import org.specs2.time.NoTimeConversions
 
 
 class FileRemovalRequestQueueSpec extends Specification with NoTimeConversions {
+  sequential
 
   "FileRemovalRequestQueue" should {
 

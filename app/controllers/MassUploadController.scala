@@ -7,8 +7,8 @@ import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
 import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.messages.ClusterCommands
 import com.overviewdocs.models.{DocumentSet,GroupedFileUpload}
-import com.overviewdocs.jobs.models.ClusterFileGroup
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.tree.Ownership
 import com.overviewdocs.util.ContentDisposition
@@ -26,7 +26,7 @@ trait MassUploadController extends Controller {
   protected val fileGroupBackend: FileGroupBackend
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
   protected val storage: MassUploadController.Storage
-  protected val messageQueue: MassUploadController.MessageQueue
+  protected val messageQueue: JobQueueSender
   protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
 
   /** Calls MassUploadControllerMethods.Create(), returning the result as body.
@@ -163,7 +163,6 @@ trait MassUploadController extends Controller {
           documentSet <- documentSetBackend.create(DocumentSet.CreateAttributes(name), userEmail)
           job <- Future.successful(storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords, true))
           _ <- fileGroupBackend.update(fileGroup.id, true)
-          _ <- messageQueue.startClustering(job, name)
         } yield Redirect(routes.DocumentSetController.show(documentSet.id))
       }
       case None => Future.successful(NotFound)
@@ -189,7 +188,6 @@ trait MassUploadController extends Controller {
         })
 
         fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
-          .map(_ => messageQueue.startClustering(job, "[add-to-existing-docset]"))
           .map(_ => redirect)
       }
     })
@@ -199,7 +197,7 @@ trait MassUploadController extends Controller {
 /** Controller implementation */
 object MassUploadController extends MassUploadController {
   override protected val storage = DatabaseStorage
-  override protected val messageQueue = ApolloQueue
+  override protected val messageQueue = JobQueueSender
   override protected val documentSetBackend = DocumentSetBackend
   override protected val fileGroupBackend = FileGroupBackend
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
@@ -218,11 +216,6 @@ object MassUploadController extends MassUploadController {
     ): DocumentSetCreationJob
   }
 
-  trait MessageQueue {
-    /** Notify the worker that clustering can start */
-    def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit]
-  }
-
   object DatabaseStorage extends Storage {
     import com.overviewdocs.tree.orm.DocumentSetCreationJobState.FilesUploaded
     import com.overviewdocs.tree.DocumentSetCreationJobType.FileUpload
@@ -236,7 +229,7 @@ object MassUploadController extends MassUploadController {
       importantWords: String,
       canBeCancelled: Boolean
     ): DocumentSetCreationJob = {
-      DeprecatedDatabase.inTransaction {
+      val job = DeprecatedDatabase.inTransaction {
         DocumentSetCreationJobStore.insertOrUpdate(
           DocumentSetCreationJob(
             documentSetId = documentSetId,
@@ -251,22 +244,11 @@ object MassUploadController extends MassUploadController {
           )
         )
       }
-    }
-  }
 
-  object ApolloQueue extends MessageQueue {
-    override def startClustering(job: DocumentSetCreationJob, documentSetTitle: String): Future[Unit] = {
-      val command = ClusterFileGroup(
-        documentSetId=job.documentSetId,
-        fileGroupId=job.fileGroupId.get,
-        name=documentSetTitle,
-        lang=job.lang,
-        splitDocuments=job.splitDocuments,
-        stopWords=job.suppliedStopWords,
-        importantWords=job.importantWords
-      )
-
+      val command = ClusterCommands.ClusterFileGroup(documentSetId=job.documentSetId, fileGroupId=job.fileGroupId.get)
       JobQueueSender.send(command)
+
+      job
     }
   }
 }

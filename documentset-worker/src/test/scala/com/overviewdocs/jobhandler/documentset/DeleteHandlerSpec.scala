@@ -19,6 +19,7 @@ import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.test.{ ActorSystemContext, ForwardingActor }
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
+  sequential
 
   "DeleteHandler" should {
 

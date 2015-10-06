@@ -1,7 +1,8 @@
 package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor._
-import com.overviewdocs.jobhandler.filegroup.FileGroupJobMessages._
+
+import com.overviewdocs.messages.ClusterCommands
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.tree.DocumentSetCreationJobType._
 import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
@@ -11,16 +12,9 @@ import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 trait JobParameters {
   protected val documentSetId = 1l
   protected val fileGroupId = 2l
-  protected val title = "title"
-  protected val lang = "en"
   protected val options = UploadProcessOptions("en", false)
-  protected val importantWords = "important words"
-  protected val suppliedStopWords = "stop words"
-
-  protected val clusterCommand =
-    ClusterFileGroupCommand(documentSetId, fileGroupId, title, options.lang, options.splitDocument, suppliedStopWords, importantWords)
-  protected val cancelCommand = CancelClusterFileGroupCommand(documentSetId, fileGroupId)
-
+  protected val clusterCommand = ClusterCommands.ClusterFileGroup(documentSetId, fileGroupId)
+  protected val cancelCommand = ClusterCommands.CancelFileUpload(documentSetId, fileGroupId)
 }
 
 trait StorageMonitor extends JobParameters {

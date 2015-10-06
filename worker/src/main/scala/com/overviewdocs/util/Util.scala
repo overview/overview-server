@@ -11,18 +11,21 @@
 package com.overviewdocs.util
 
 import akka.actor._
-import org.slf4j.LoggerFactory
+import com.typesafe.config.ConfigFactory
 import scala.language.implicitConversions  // for toMutableSet
 import scala.util.control.Exception._
 
 // Singleton Akka actor system object. One per process, managing all actors.
 object WorkerActorSystem {
   def withActorSystem(f: ActorSystem => Unit) {
-    val context = ActorSystem("WorkerActorSystem")
+    val context = ActorSystem("WorkerActorSystem", ConfigFactory.parseString("""
+      akka {
+        jvm-exit-on-fatal-error: on
+      }
+    """))
     ultimately(context.shutdown) {
       f(context)
     }
-
   }
 }
 

@@ -14,6 +14,7 @@ import com.overviewdocs.http.Response
 import com.overviewdocs.test.ActorSystemContext
 
 class DocumentReceiverSpec extends Specification with NoTimeConversions {
+  sequential
 
   "DocumentReceiver" should {
 

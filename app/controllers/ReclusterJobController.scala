@@ -5,7 +5,7 @@ import controllers.auth.Authorities.userOwningJob
 import controllers.util.JobQueueSender
 import models.orm.finders.DocumentSetCreationJobFinder
 import models.orm.stores.DocumentSetCreationJobStore
-import com.overviewdocs.jobs.models.DeleteTreeJob
+import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
 
 trait ReclusterJobController extends Controller {
@@ -22,17 +22,13 @@ trait ReclusterJobController extends Controller {
     def cancelJob(id: Long) : ReclusterJobController.CancelResult
   }
 
-  trait JobQueue {
-    def send(job: DeleteTreeJob): Unit
-  }
-
   val storage : ReclusterJobController.Storage
-  val jobQueue: ReclusterJobController.JobQueue
+  val jobQueue: JobQueueSender
 
   def delete(jobId: Long) = AuthorizedAction.inTransaction(userOwningJob(jobId)) {
     val cancelResult = storage.cancelJob(jobId)
     cancelResult match {
-      case ReclusterJobController.JobWasNotRunning => jobQueue.send(DeleteTreeJob(jobId))
+      case ReclusterJobController.JobWasNotRunning => jobQueue.send(DocumentSetCommands.DeleteDocumentSetJob(-1L, jobId)) // -1L because I think this'll work for now ... and really we want all this code gone.
       case ReclusterJobController.JobWasRunning => // The worker will delete it or finish it -- we don't care which
       case ReclusterJobController.JobNotFound => // Yay, it finished before we could cancel it
     }
@@ -61,10 +57,6 @@ object ReclusterJobController extends ReclusterJobController {
     }
   }
 
-  object RealJobQueue extends JobQueue {
-    override def send(job: DeleteTreeJob) = JobQueueSender.send(job)
-  }
-
   override val storage = DatabaseStorage
-  override val jobQueue = RealJobQueue
+  override val jobQueue = JobQueueSender
 }

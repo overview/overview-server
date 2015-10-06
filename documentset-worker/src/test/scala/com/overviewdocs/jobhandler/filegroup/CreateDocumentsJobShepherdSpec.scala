@@ -13,6 +13,7 @@ import com.overviewdocs.jobhandler.filegroup.JobDescription._
 import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 
 class CreateDocumentsJobShepherdSpec extends Specification {
+  sequential
 
   "CreateDocumentsJobShepherd" should {
 

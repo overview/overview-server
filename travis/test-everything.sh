@@ -15,7 +15,7 @@ deps/redis/build.sh
 # works or it doesn't; all errors are the same to us.
 #
 # test:update downloads test deps, which are always a superset of deps
-./sbt '; set every logLevel := Level.Warn; common/test:update; overview-server/test:update; documentset-worker/test:update; worker/test:update; runner/test:update; db-evolution-applier/update; search-index/update; message-broker/update'
+./sbt '; set every logLevel := Level.Warn; common/test:update; overview-server/test:update; documentset-worker/test:update; worker/test:update; runner/test:update; db-evolution-applier/update; search-index/update'
 
 # Check for compiler errors
 ./sbt '; overview-server/test:compile; common/test:compile; worker/test:compile; documentset-worker/test:compile; runner/test:compile' # with no "|| true"
@@ -31,4 +31,4 @@ deps/redis/build.sh
 SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" ./build overview-server.zip
 
 # Now that we've built, we can run integration tests with the resulting jars
-(cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M= -Ddocumentset-worker.jvm.Xmx200M= -Dsearchindex.jvm.Xmx200M= -Dmessage-broker.jvm.Xmx200M= -Doverview-server.jvm.Xmx200M= --sh ../travis/wait-and-test-integration.sh) || true # Jenkins will pick up test-result XML
+(cd dist && ./run -Doverview-server.props.overview.multi_user=true -Dworker.jvm.Xmx200M= -Ddocumentset-worker.jvm.Xmx200M= -Dsearchindex.jvm.Xmx200M= -Doverview-server.jvm.Xmx200M= --sh ../travis/wait-and-test-integration.sh) || true # Jenkins will pick up test-result XML

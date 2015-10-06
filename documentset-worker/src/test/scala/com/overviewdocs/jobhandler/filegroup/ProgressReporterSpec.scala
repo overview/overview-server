@@ -10,6 +10,7 @@ import org.specs2.mutable.Specification
 import com.overviewdocs.jobhandler.filegroup.JobDescription._
 
 class ProgressReporterSpec extends Specification {
+  sequential
 
   "ProgressReporter" should {
 

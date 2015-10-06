@@ -2,15 +2,18 @@ package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor._
 import akka.testkit._
+
 import com.overviewdocs.jobhandler.filegroup.ClusteringJobQueueProtocol._
 import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol._
+import com.overviewdocs.messages.ClusterCommands.CancelFileUpload
 import com.overviewdocs.test.ActorSystemContext
-import org.specs2.mutable.{ Before, Specification }
+import com.overviewdocs.tree.DocumentSetCreationJobType._
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
-import com.overviewdocs.tree.DocumentSetCreationJobType._
+import org.specs2.mutable.{ Before, Specification }
 
 class FileGroupJobManagerSpec extends Specification {
+  sequential
 
   "FileGroupJobManager" should {
 
@@ -36,7 +39,6 @@ class FileGroupJobManagerSpec extends Specification {
     }
 
     "restart in progress jobs and cancel cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
-
       fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet1, CreateDocumentsJob(fileGroup1, options)))
       fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet2, CreateDocumentsJob(fileGroup2, options)))
 

@@ -11,6 +11,7 @@ import scala.concurrent.Future
 
 import controllers.auth.{ApiAuthorizedRequest,ApiTokenFactory}
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
+import controllers.util.JobQueueSender
 import com.overviewdocs.models.{ApiToken,DocumentSet,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.DocumentSetCreationJobType._
 import com.overviewdocs.models.DocumentSetCreationJobState._
@@ -20,8 +21,8 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     val mockFileGroupBackend = smartMock[FileGroupBackend]
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockApiTokenFactory = smartMock[ApiTokenFactory]
+    val mockMessageQueue = smartMock[JobQueueSender]
     val mockStorage = smartMock[MassUploadController.Storage]
-    val mockMessageQueue = smartMock[MassUploadController.MessageQueue]
     val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
 
     lazy val controller = new MassUploadController with TestController {
@@ -176,7 +177,6 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       mockFileGroupBackend.find(any, any) returns Future(Some(fileGroup))
       mockFileGroupBackend.update(any, any) returns Future(fileGroup.copy(completed=true))
       mockStorage.createMassUploadDocumentSetCreationJob(any, any, any, any, any, any) returns job.toDeprecatedDocumentSetCreationJob
-      mockMessageQueue.startClustering(any) returns Future(())
     }
 
     "return Created" in new StartClusteringScope {
@@ -187,11 +187,6 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       status(result)
       there was one(mockStorage).createMassUploadDocumentSetCreationJob(
         documentSetId, 234L, lang, false, stopWords, importantWords)
-    }
-
-    "send a ClusterFileGroup message" in new StartClusteringScope {
-      status(result)
-      there was one(mockMessageQueue).startClustering(job.toDeprecatedDocumentSetCreationJob)
     }
 
     "set splitDocuments=true when asked" in new StartClusteringScope {

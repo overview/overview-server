@@ -14,6 +14,7 @@ import com.overviewdocs.http.RequestQueueProtocol._
 import com.overviewdocs.test.ActorSystemContext
 
 class DocumentRetrieverSpec extends Specification with NoTimeConversions {
+  sequential
 
   "DocumentRetriever" should {
 
