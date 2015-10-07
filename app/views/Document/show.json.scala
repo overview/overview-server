@@ -15,6 +15,7 @@ object show {
       "text" -> document.text,
       "metadata" -> document.metadataJson,
       "suppliedId" -> document.suppliedId,
+      "isFromOcr" -> document.isFromOcr,
       "url" -> url
     )
   }

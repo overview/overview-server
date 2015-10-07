@@ -2,7 +2,7 @@ package controllers.api
 
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{JsArray,JsNull,JsNumber,JsObject,JsString,JsValue,Json}
+import play.api.libs.json.{JsArray,JsBoolean,JsNull,JsNumber,JsObject,JsString,JsValue,Json}
 import play.api.mvc.Result
 import scala.concurrent.Future
 
@@ -141,6 +141,7 @@ object DocumentController extends DocumentController {
     case object id extends Field
     case object documentSetId extends Field
     case object keywords extends Field
+    case object isFromOcr extends Field
     case object metadata extends Field
     case object pageNumber extends Field
     case object suppliedId extends Field
@@ -150,7 +151,7 @@ object DocumentController extends DocumentController {
     case object url extends Field
 
     val defaults: Set[Field] = Set(id, keywords, pageNumber, suppliedId, title, url)
-    val all: Set[Field] = Set(id, documentSetId, keywords, metadata, pageNumber, suppliedId, text, title, tokens, url)
+    val all: Set[Field] = Set(id, documentSetId, keywords, isFromOcr, metadata, pageNumber, suppliedId, text, title, tokens, url)
     val fullDocumentKeywords: Set[Field] = Set(text, tokens, metadata)
 
     def needFullDocuments(fields: Set[Field]): Boolean = fields.intersect(fullDocumentKeywords).nonEmpty
@@ -159,6 +160,7 @@ object DocumentController extends DocumentController {
       case `id` => "id"
       case `documentSetId` => "documentSetId"
       case `keywords` => "keywords"
+      case `isFromOcr` => "isFromOcr"
       case `metadata` => "metadata"
       case `pageNumber` => "pageNumber"
       case `suppliedId` => "suppliedId"
@@ -172,6 +174,7 @@ object DocumentController extends DocumentController {
       case `id` => JsNumber(document.id)
       case `documentSetId` => JsNumber(document.documentSetId)
       case `keywords` => JsArray(document.keywords.map(JsString.apply))
+      case `isFromOcr` => JsBoolean(document.isFromOcr)
       case `metadata` => Metadata(documentSet.metadataSchema, document.metadataJson).cleanJson
       case `pageNumber` => document.pageNumber.map(JsNumber(_)).getOrElse(JsNull)
       case `suppliedId` => JsString(document.suppliedId)
@@ -189,6 +192,7 @@ object DocumentController extends DocumentController {
       case "id" => Some(id)
       case "documentSetId" => Some(documentSetId)
       case "keywords" => Some(keywords)
+      case "isFromOcr" => Some(isFromOcr)
       case "metadata" => Some(metadata)
       case "pageNumber" => Some(pageNumber)
       case "suppliedId" => Some(suppliedId)

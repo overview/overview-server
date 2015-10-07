@@ -199,6 +199,15 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
       }
 
+      "query for isFromOcr when fields includes isFromOcr" in new IndexFieldsScope {
+        override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
+        override val fields = "id,isFromOcr"
+
+        status(result) must beEqualTo(OK)
+        contentAsString(result) must /("items") /#(0) /("isFromOcr" -> false)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), false)
+      }
+
       "ensure returned metadata matches the MetadataSchema" in new IndexFieldsScope {
         override lazy val documents = List(factory.document(metadataJson=Json.obj("foo" -> 3L, "baz" -> "baz")))
         override val fields = "id,metadata"
@@ -305,6 +314,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           url=Some("http://example.org"),
           text="text",
           title="title",
+          isFromOcr=false,
           suppliedId="suppliedId",
           metadataJson=Json.obj("foo" -> "bar")
         )))
@@ -318,6 +328,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must not /("documentSetId")
         json must /("keywords") /#(0) /("foo")
         json must /("keywords") /#(1) /("bar")
+        json must /("isFromOcr" -> false)
         json must /("url" -> "http://example.org")
         json must /("title" -> "title")
         json must /("text" -> "text")

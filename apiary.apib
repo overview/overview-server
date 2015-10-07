@@ -256,7 +256,6 @@ A single Document object, with all metadata and text.
 
 The Document resource has the following attributes:
 
-
 - id: Overview's way of identifying the document
 - url: where to find the document on the Web (or your intranet)
 - suppliedId: a String you use to identify the document when you aren't using Overview
@@ -265,6 +264,8 @@ The Document resource has the following attributes:
 - keywords: An Array of Strings that Overview finds interesting about this document (as compared to the other documents in the document set)
 - metadata: An Object containing extra-field values keyed by field name
 - tokens: A space-separated String listing every token in the document, according to [ElasticSearch's Standard Tokenizer](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-standard-tokenizer.html)
+- text: The text of the document
+- isFromOcr: `true` when Overview generated the text with an Optical Character Recognition engine ([Tesseract](https://github.com/tesseract-ocr/tesseract)); `false` when the document was already machine-readable
 
 + Parameters
     + documentSetId (required, number, `1`) ... The Document Set ID.
