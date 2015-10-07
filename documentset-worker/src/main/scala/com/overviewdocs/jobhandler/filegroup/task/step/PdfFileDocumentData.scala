@@ -18,6 +18,7 @@ case class PdfFileDocumentData(title: String, fileId: Long, text: String) extend
     fileId = Some(fileId),
     pageId = None,
     displayMethod = DocumentDisplayMethod.pdf,
+    isFromOcr = false,
     metadataJson = JsObject(Seq()),
     text = text
   )

@@ -68,6 +68,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     override val keywords = Seq()
     override val createdAt = new java.util.Date(0L)
     override val displayMethod = DocumentDisplayMethod.auto
+    override val isFromOcr = false
     override val metadataJson = JsObject(Seq())
     override val text = ""
   }

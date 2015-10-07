@@ -44,6 +44,7 @@ trait Factory {
     fileId: Option[Long] = None,
     pageId: Option[Long] = None,
     displayMethod: DocumentDisplayMethod.Value = DocumentDisplayMethod.auto,
+    isFromOcr: Boolean = false,
     metadataJson: JsObject = JsObject(Seq()),
     text: String = ""): Document
 

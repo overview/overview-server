@@ -73,6 +73,7 @@ object PodoFactory extends Factory {
     fileId: Option[Long],
     pageId: Option[Long],
     displayMethod: DocumentDisplayMethod.Value,
+    isFromOcr: Boolean,
     metadataJson: JsObject,
     text: String
   ) = Document(
@@ -87,6 +88,7 @@ object PodoFactory extends Factory {
     fileId,
     pageId,
     displayMethod,
+    isFromOcr,
     metadataJson,
     text
   )

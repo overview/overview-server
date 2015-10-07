@@ -49,6 +49,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     fileId: Option[Long],
     pageId: Option[Long],
     displayMethod: DocumentDisplayMethod.Value,
+    isFromOcr: Boolean,
     metadataJson: JsObject,
     text: String
   ) = run(q.insertDocument += podoFactory.document(
@@ -63,6 +64,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     fileId,
     pageId,
     displayMethod,
+    isFromOcr,
     metadataJson,
     text
   ))

@@ -18,6 +18,7 @@ trait DocumentHeader {
   val keywords: Seq[String]
   val createdAt: Date
   val displayMethod: DocumentDisplayMethod
+  val isFromOcr: Boolean
   val metadataJson: JsObject
   val text: String
 

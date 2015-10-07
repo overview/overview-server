@@ -72,6 +72,7 @@ class InMemoryIndexClientSpec extends Specification {
       fileId=None,
       pageId=None,
       displayMethod=DocumentDisplayMethod.auto,
+      isFromOcr=false,
       metadataJson=JsObject(Seq()),
       text=s"foo$id bar baz"
     )
@@ -147,6 +148,7 @@ class InMemoryIndexClientSpec extends Specification {
             None,
             None,
             DocumentDisplayMethod.auto,
+            false,
             JsObject(Seq()),
             text
           )

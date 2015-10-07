@@ -25,6 +25,7 @@ case class Document(
   val fileId: Option[Long],
   val pageId: Option[Long],
   override val displayMethod: DocumentDisplayMethod.Value,
+  override val isFromOcr: Boolean,
   override val metadataJson: JsObject,
   override val text: String
 ) extends DocumentHeader {
@@ -38,6 +39,7 @@ case class Document(
     keywords,
     createdAt,
     displayMethod,
+    isFromOcr,
     fileId.isDefined
   )
 

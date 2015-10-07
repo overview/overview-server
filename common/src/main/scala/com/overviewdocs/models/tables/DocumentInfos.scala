@@ -30,6 +30,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   def pageNumber = column[Option[Int]]("page_number")
   def fileId = column[Option[Long]]("file_id")
   def displayMethod = column[Option[DocumentDisplayMethod.Value]]("display_method")
+  def isFromOcr = column[Option[Boolean]]("is_from_ocr")
 
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
@@ -47,10 +48,10 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     keywords,
     createdAt,
     fileId,
-    displayMethod
-  ).<>[DocumentInfo,
-    Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value]]](
-    (t: Tuple11[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value]]) => DocumentInfo.apply(
+    displayMethod,
+    isFromOcr
+  ).<>[DocumentInfo, Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean]]](
+    (t: Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean]]) => DocumentInfo.apply(
       t._1,
       t._2,
       t._3,
@@ -60,6 +61,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       t._8,
       t._9,
       t._11.getOrElse(DocumentDisplayMethod.auto),
+      t._12.getOrElse(false),          // isFromOcr
       t._10.isDefined
     ),
     { d: DocumentInfo => Some(
@@ -73,7 +75,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       d.keywords,
       d.createdAt,
       None,
-      Some(d.displayMethod)
+      Some(d.displayMethod),
+      Some(d.isFromOcr)
     )}
   )
 }

@@ -13,6 +13,7 @@ class DocumentInfoSpec extends Specification {
     Seq(),
     new java.util.Date(0L),
     DocumentDisplayMethod.auto,
+    false,
     hasFileView
   )
 

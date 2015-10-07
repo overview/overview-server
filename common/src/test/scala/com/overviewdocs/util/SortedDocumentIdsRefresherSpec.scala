@@ -85,6 +85,7 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
         None,
         None,
         DocumentDisplayMethod.auto,
+        false,
         JsObject(Seq()),
         ""
       )

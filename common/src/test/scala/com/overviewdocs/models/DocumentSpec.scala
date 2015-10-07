@@ -17,6 +17,7 @@ class DocumentSpec extends Specification {
       fileId,
       None,
       DocumentDisplayMethod.auto,
+      false,
       JsObject(Seq()),
       ""
     )
@@ -55,6 +56,7 @@ class DocumentSpec extends Specification {
       None,
       None,
       DocumentDisplayMethod.auto,
+      false,
       JsObject(Seq()),
       text
     )

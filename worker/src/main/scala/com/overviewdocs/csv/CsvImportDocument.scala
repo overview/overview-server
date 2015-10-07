@@ -31,6 +31,7 @@ case class CsvImportDocument(
     None,
     None,
     DocumentDisplayMethod.auto,
+    false,
     JsObject(metadata.mapValues(JsString).toSeq),
     text
   )

@@ -34,6 +34,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def pageId = column[Option[Long]]("page_id")
   def pageNumber = column[Option[Int]]("page_number")
   def displayMethod = column[Option[DocumentDisplayMethod.Value]]("display_method")
+  def isFromOcr = column[Option[Boolean]]("is_from_ocr")
   def metadataJson = column[Option[JsObject]]("metadata_json_text") // add DocumentSet.metadataSchema to make a Metadata
 
   /*
@@ -54,23 +55,25 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     fileId,
     pageId,
     displayMethod,
+    isFromOcr,
     metadataJson,
     text
-  ).<>[Document,Tuple14[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[JsObject],Option[String]]](
-    (t: Tuple14[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[JsObject],Option[String]]) => Document.apply(
+  ).<>[Document,Tuple15[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String]]](
+    (t: Tuple15[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String]]) => Document.apply(
       t._1,
       t._2,
       t._3,
-      t._4.orElse(t._5).getOrElse(""), // suppliedId || documentcloudId || ""
-      t._6.getOrElse(""),              // title
+      t._4.orElse(t._5).getOrElse(""),  // suppliedId || documentcloudId || ""
+      t._6.getOrElse(""),               // title
       t._7,
       t._8,
       t._9,
       t._10,
       t._11,
       t._12.getOrElse(DocumentDisplayMethod.auto),
-      t._13.getOrElse(JsObject(Seq())),
-      t._14.getOrElse("")              // text
+      t._13.getOrElse(false),           // isFromOcr
+      t._14.getOrElse(JsObject(Seq())), // metadataJson
+      t._15.getOrElse("")               // text
     ),
     { d: Document => Some(
       d.id,
@@ -85,6 +88,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       d.fileId,
       d.pageId,
       Some(d.displayMethod),
+      Some(d.isFromOcr),
       Some(d.metadataJson),
       Some(d.text)
     )}

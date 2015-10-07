@@ -83,6 +83,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         None,
         None,
         DocumentDisplayMethod.auto,
+        false,
         JsObject(Seq()),
         text
       )

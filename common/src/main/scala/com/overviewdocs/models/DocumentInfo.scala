@@ -19,6 +19,7 @@ case class DocumentInfo(
   override val keywords: Seq[String],
   override val createdAt: Date,
   override val displayMethod: DocumentDisplayMethod.Value,
+  override val isFromOcr: Boolean,
   val hasFileView: Boolean
 ) extends DocumentHeader {
   override val metadataJson = JsObject(Seq())
