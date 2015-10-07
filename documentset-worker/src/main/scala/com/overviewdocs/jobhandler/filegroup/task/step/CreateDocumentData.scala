@@ -7,7 +7,6 @@ import com.overviewdocs.models.{DocumentDisplayMethod,File}
 
 case class CreateDocumentData(
   override val documentSetId: Long,
-  isFromOcr: Boolean,
   nextStep: Seq[DocumentWithoutIds] => TaskStep,
   file: File,
   textPages: Seq[String]
@@ -25,7 +24,7 @@ case class CreateDocumentData(
       fileId=Some(file.id),
       pageId=None,
       displayMethod=DocumentDisplayMethod.auto,
-      isFromOcr=isFromOcr,
+      isFromOcr=false,
       metadataJson=JsObject(Seq()),
       text=textPages.mkString("")
     )

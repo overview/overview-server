@@ -12,7 +12,7 @@ object CreateDocumentFromFileWithOcr {
       override protected val steps =
         DoCreatePdfFile(documentSetId, filename).andThen(
           DoExtractTextWithOcr(documentSetId, language).andThen(
-            DoCreateDocumentData(documentSetId, true).andThen(
+            DoCreateDocumentData(documentSetId).andThen(
               DoRequestDocumentIds (documentIdSupplier, documentSetId, filename).andThen(
                 DoWriteDocuments(documentSetId, filename, bulkDocumentWriter)))))
     }

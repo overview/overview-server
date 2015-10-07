@@ -9,7 +9,6 @@ import com.overviewdocs.models.{DocumentDisplayMethod,File,Page}
 
 case class CreateDocumentDataForPages(
   override val documentSetId: Long,
-  isFromOcr: Boolean,
   nextStep: Seq[DocumentWithoutIds] => TaskStep,
   file: File,
   textPages: Seq[String],
@@ -37,7 +36,7 @@ case class CreateDocumentDataForPages(
         fileId=Some(file.id),
         pageId=Some(p.id),
         displayMethod=DocumentDisplayMethod.page,
-        isFromOcr=isFromOcr,
+        isFromOcr=false,
         metadataJson=JsObject(Seq()),
         text=p.text
       )}
