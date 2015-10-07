@@ -1,122 +1,85 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
-import java.io.File
+import java.nio.file.{Files,Path}
 import javax.imageio.ImageIO
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
-import scala.io.Source
-import scala.language.postfixOps
-import scala.util.Try
-import scala.util.control.Exception.ultimately
-import com.overviewdocs.jobhandler.filegroup.task.ShellRunner
-import com.overviewdocs.jobhandler.filegroup.task.TimeoutGenerator
+import scala.concurrent.{ExecutionContext,Future,blocking}
+import scala.collection.JavaConversions.iterableAsScalaIterable
+import scala.sys.process.{Process,ProcessLogger}
+
+import com.overviewdocs.jobhandler.filegroup.task.CommandFailedException
 import com.overviewdocs.util.Configuration
 import com.overviewdocs.util.SupportedLanguages
 
 trait TesseractOcrTextExtractor extends OcrTextExtractor {
-  implicit protected val executionContext: ExecutionContext
-  protected val shellRunner: ShellRunner
-  protected val ocrTimeout: FiniteDuration
-  protected val tesseractLocation: String
-  protected val fileSystem: FileSystem
+  protected val fileSystem: TesseractOcrTextExtractor.FileSystem
 
-  import TesseractOcrTextExtractor.FileFormats._
-
-  protected trait FileSystem {
-    def writeImage(image: BufferedImage): File
-    def readText(file: File): String
-    def deleteFile(file: File): Boolean
-  }
-
-  def extractText(image: BufferedImage, language: String): Future[String] =
-    withImageAsTemporaryFile(image) { tempFile =>
-      extractTextWithOcr(tempFile, language) { textTempFile =>
-        fileSystem.readText(textTempFile)
+  override def extractText(image: BufferedImage, language: String)(implicit ec: ExecutionContext): Future[String] = {
+    withImageAsTemporaryFile(image) { tempPath =>
+      extractTextWithOcr(tempPath, language) { textTempPath =>
+        fileSystem.readText(textTempPath)
       }
     }
-
-  private def withImageAsTemporaryFile(image: BufferedImage)(f: File => Future[String]): Future[String] = {
-    val storedImage = Future.fromTry(Try { fileSystem.writeImage(image) })
-
-    def callAndDeleteWhenComplete(imageFile: File): Future[String] = 
-      f(imageFile).andThen { case _ => fileSystem.deleteFile(imageFile) }
-
-
-    for {
-      imageFile <- storedImage
-      result <- callAndDeleteWhenComplete(imageFile)
-    } yield result
   }
 
-  private def extractTextWithOcr(imageFile: File, language: String)(f: File => String): Future[String] = {
+  private def withImageAsTemporaryFile(image: BufferedImage)(f: Path => Future[String])(implicit ec: ExecutionContext): Future[String] = {
+    Future(blocking(fileSystem.writeImage(image)))
+      .flatMap { imagePath =>
+        f(imagePath).andThen { case _ => fileSystem.deleteFile(imagePath) }
+      }
+  }
+
+  private def extractTextWithOcr(imagePath: Path, language: String)(f: Path => String)(implicit ec: ExecutionContext): Future[String] = {
     // Tesseract needs language specified as a ISO639-2 code. 
     // A language parameter that does not have an appropriate transformation denotes an error
     // and an exception is thrown.
     val iso639_2Code = SupportedLanguages.asIso639_2(language).get
 
-    val output = outputFile(imageFile)
-    shellRunner.run(tesseractCommand(imageFile.getAbsolutePath, output.getAbsolutePath(), iso639_2Code), ocrTimeout)
-      .map { _ =>
-        ultimately(fileSystem.deleteFile(output)) {
-          f(output)
-        }
+    val basename = imagePath.getFileName.toString
+    val basenameNoExtension = basename.substring(0, basename.length - 4)
+
+    val output: Path = imagePath.resolveSibling(s"$basename.txt")
+    val outputWithoutExtension: Path = imagePath.resolveSibling(basename)
+
+    val consoleOutput = new StringBuilder()
+
+    val process = Process(Seq(
+      TesseractOcrTextExtractor.tesseractLocation,
+      imagePath.toAbsolutePath.toString,
+      outputWithoutExtension.toAbsolutePath.toString,
+      "-l",
+      iso639_2Code,
+      "-psm",
+      "1"
+    )).run(ProcessLogger(s => consoleOutput.append(s), s => consoleOutput.append(s)))
+
+    Future(blocking(process.exitValue))
+      .map { retval =>
+        if (retval == 0) throw new CommandFailedException(consoleOutput.toString)
+        f(output)
       }
-
+      .andThen { case _ => fileSystem.deleteFile(output) }
   }
-
-  private def tesseractCommand(inputFile: String, outputFile: String, language: String): String = {
-    val outputBase = outputFile.replace(s".$TextOutput", "")
-    s"$tesseractLocation $inputFile $outputBase -l $language -psm 1"
-  }
-
-  private def outputFile(inputFile: File): File = {
-    val inputFilePath = inputFile.getAbsolutePath
-    val outputFilePath = inputFilePath.replace(s".$ImageFormat", s".$TextOutput")
-    new File(outputFilePath)
-  }
-
 }
 
-object TesseractOcrTextExtractor {
-
-  import scala.concurrent.duration.DurationInt
-  import scala.language.postfixOps
-  import com.overviewdocs.util.Configuration
-  private val ImageResolution = 400 // dpi
-  
-  object FileFormats {
-    val ImageFormat = "png"
-    val TextOutput = "txt"
+object TesseractOcrTextExtractor extends TesseractOcrTextExtractor {
+  trait FileSystem {
+    def writeImage(image: BufferedImage): Path
+    def readText(path: Path): String
+    def deleteFile(path: Path): Unit
   }
 
-  def apply(timeoutGenerator: TimeoutGenerator)(implicit executionContext: ExecutionContext): TesseractOcrTextExtractor =
-    new TesseractOcrTextExtractorImpl(ShellRunner(timeoutGenerator), executionContext)
+  val ImageResolution = 400 // dpi
+  lazy val tesseractLocation = Configuration.getString("tesseract_path")
 
-  private class TesseractOcrTextExtractorImpl(
-    override protected val shellRunner: ShellRunner,
-    override implicit protected val executionContext: ExecutionContext) extends TesseractOcrTextExtractor {
-
-    override protected val ocrTimeout = Configuration.getInt("ocr_timeout") millis
-    override protected val fileSystem: FileSystem = new OsFileSystem
-
-    override protected val tesseractLocation = Configuration.getString("tesseract_path")
-
-    private class OsFileSystem extends FileSystem {
-      override def writeImage(image: BufferedImage): File = {
-        val imageFile = File.createTempFile("overview-ocr", s".${FileFormats.ImageFormat}")
-
-        ImageFileWriter.writeImage(image, imageFile, FileFormats.ImageFormat, ImageResolution)
-
-        imageFile
-      }
-
-      override def readText(textFile: File): String =
-        Source.fromFile(textFile)(scala.io.Codec.UTF8).mkString
-
-      override def deleteFile(file: File): Boolean = file.delete
+  override protected val fileSystem = new FileSystem {
+    override def writeImage(image: BufferedImage) = {
+      val imagePath: Path = Files.createTempFile("overview-ocr-", ".png")
+      ImageFileWriter.writeImage(image, imagePath.toFile, "png", ImageResolution)
+      imagePath
     }
+
+    override def readText(path: Path) = iterableAsScalaIterable(Files.readAllLines(path)).mkString
+    override def deleteFile(path: Path) = Files.delete(path)
   }
 }

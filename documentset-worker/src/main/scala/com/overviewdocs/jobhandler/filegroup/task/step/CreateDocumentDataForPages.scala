@@ -1,60 +1,57 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
-import scala.concurrent.Future
-import scala.util.control.Exception.ultimately
-import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
-import com.overviewdocs.models.File
-import com.overviewdocs.models.Page
-import scala.concurrent.ExecutionContext
+import play.api.libs.json.JsObject
+import scala.collection.SeqView
+import scala.concurrent.{ExecutionContext,Future}
 
-trait CreateDocumentDataForPages extends UploadedFileProcessStep {
-  protected val file: File
-  override protected lazy val filename = file.name
+import com.overviewdocs.jobhandler.filegroup.task.{PdfBoxDocument,PdfDocument}
+import com.overviewdocs.models.{DocumentDisplayMethod,File,Page}
 
-  protected val pdfDocument: PdfDocument
-  protected val textPages: Seq[String]
+case class CreateDocumentDataForPages(
+  override val documentSetId: Long,
+  nextStep: Seq[DocumentWithoutIds] => TaskStep,
+  file: File,
+  textPages: Seq[String],
+  pageSaver: PageSaver = PageSaver
+)(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep {
+  override protected val filename = file.name
 
-  protected val nextStep: Seq[DocumentData] => TaskStep
-
-  protected val pageSaver: PageSaver
-
-  override protected def doExecute: Future[TaskStep] =
-    for {
-      pageAttributes <- pageSaver.savePages(file.id, pageData)
-    } yield ultimately(pdfDocument.close) {
-      nextStep(pageDocumentData(pageAttributes))
-    }
-
-  private def pageData = {
-    val pageBytes = for {
-      page <- pdfDocument.pages
-    } yield ultimately(page.close) {
-      page.data
-    }
-    pageBytes.view.zip(textPages)
+  protected def loadPdfDocumentFromBlobStorage(location: String): Future[PdfDocument] = {
+    PdfBoxDocument.loadFromLocation(location)
   }
 
-  private def pageDocumentData(pageAttributes: Seq[Page.ReferenceAttributes]): Seq[DocumentData] =
+  override protected def doExecute: Future[TaskStep] = {
     for {
-      pageInfo <- pageAttributes
-    } yield PdfPageDocumentData(file.name, file.id, pageInfo.pageNumber, pageInfo.id, pageInfo.text)
+      pdfDocument <- loadPdfDocumentFromBlobStorage(file.viewLocation)
+      pages <- Future.successful(pageData(pdfDocument)) // a lazy Iterable
+      pageAttributes <- pageSaver.savePages(file.id, pages)
+    } yield {
+      val documents: Seq[DocumentWithoutIds] = pageAttributes.map { p => DocumentWithoutIds(
+        url=None,
+        suppliedId=file.name,
+        title=file.name,
+        pageNumber=Some(p.pageNumber),
+        keywords=Seq(),
+        createdAt=new java.util.Date(),
+        fileId=Some(file.id),
+        pageId=Some(p.id),
+        displayMethod=DocumentDisplayMethod.page,
+        isFromOcr=false,
+        metadataJson=JsObject(Seq()),
+        text=p.text
+      )}
+      pdfDocument.close
+      nextStep(documents)
+    }
+  }
 
-}
-
-object CreateDocumentDataForPages {
-
-  def apply(documentSetId: Long, nextStep: Seq[DocumentData] => TaskStep,
-            file: File, pdfDocument: PdfDocument,
-            textPages: Seq[String])(implicit executor: ExecutionContext): CreateDocumentDataForPages =
-    new CreateDocumentDataForPagesImpl(documentSetId, nextStep, file, pdfDocument, textPages)
-
-  private class CreateDocumentDataForPagesImpl(
-    override protected val documentSetId: Long,
-    override protected val nextStep: Seq[DocumentData] => TaskStep,
-    override protected val file: File,
-    override protected val pdfDocument: PdfDocument,
-    override protected val textPages: Seq[String])(override implicit protected val executor: ExecutionContext) extends CreateDocumentDataForPages {
-
-    override protected val pageSaver = PageSaver
+  private def pageData(pdfDocument: PdfDocument): Iterable[(Array[Byte],String)] = {
+    pdfDocument.pages // an Iterable, lazy
+      .map { p =>
+        val data = p.data
+        p.close
+        data
+      }
+      .zip(textPages)
   }
 }

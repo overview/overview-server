@@ -1,8 +1,8 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
 import java.awt.image.BufferedImage
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext,Future}
 
 trait OcrTextExtractor {
-   def extractText(image: BufferedImage, language: String): Future[String] 
+   def extractText(image: BufferedImage, language: String)(implicit ec: ExecutionContext): Future[String] 
 }

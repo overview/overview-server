@@ -1,10 +1,7 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
-import scala.collection.SeqView
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.language.postfixOps
-import scala.util.control.Exception.ultimately
 
 import com.overviewdocs.blobstorage.BlobBucketId
 import com.overviewdocs.blobstorage.BlobStorage
@@ -19,7 +16,6 @@ import com.overviewdocs.util.TempFile
  */
 trait PageSaver extends HasDatabase {
   import database.api._
-  import scala.language.postfixOps
 
   protected val pageBlobSaver: PageBlobSaver
 
@@ -27,7 +23,7 @@ trait PageSaver extends HasDatabase {
     def save(pageData: Array[Byte]): Future[String]
   }
 
-  def savePages(fileId: Long, pageInfo: SeqView[(Array[Byte], String), Seq[_]]): Future[Seq[Page.ReferenceAttributes]] = {
+  def savePages(fileId: Long, pageInfo: Iterable[(Array[Byte], String)]): Future[Seq[Page.ReferenceAttributes]] = {
     val pageAttributes = for {
       (p, pageNumberZeroBased) <- pageInfo.zipWithIndex
     } yield {
@@ -38,7 +34,7 @@ trait PageSaver extends HasDatabase {
       }
     }
 
-    val allAttributes = Future.sequence(pageAttributes)
+    val allAttributes = Future.sequence(pageAttributes.toSeq)
 
     for {
       attributes <- allAttributes

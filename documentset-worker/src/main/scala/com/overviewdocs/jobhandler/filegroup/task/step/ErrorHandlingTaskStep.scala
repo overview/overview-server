@@ -1,9 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
+import scala.concurrent.{ExecutionContext,Future}
 
 trait ErrorHandlingTaskStep extends TaskStep {
   protected implicit val executor: ExecutionContext
@@ -20,6 +17,4 @@ trait ErrorHandlingTaskStep extends TaskStep {
 
   protected def doExecute: Future[TaskStep]
   protected def errorHandler(t: Throwable): Unit = {}
-  
-
 }

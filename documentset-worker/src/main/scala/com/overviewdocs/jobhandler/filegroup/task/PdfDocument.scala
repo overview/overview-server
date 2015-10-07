@@ -1,11 +1,10 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
-import scala.collection.SeqView
 import java.awt.image.BufferedImage
 
 trait PdfDocument {
   /** @returns a View to prevent all page data to be loaded into memory at once */
-  def pages: Seq[PdfPage]
+  def pages: Iterable[PdfPage]
   
   /** @returns any found text in the document */
   def text: String

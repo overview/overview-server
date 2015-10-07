@@ -23,7 +23,7 @@ trait RequestDocumentIds extends UploadedFileProcessStep {
   override protected val documentSetId: Long
   override protected val filename: String
   
-  protected val documentData: Seq[DocumentData]
+  protected val documentData: Seq[DocumentWithoutIds]
 
   protected val nextStep: Seq[Document] => TaskStep
 
@@ -39,7 +39,7 @@ trait RequestDocumentIds extends UploadedFileProcessStep {
 }
 
 object RequestDocumentIds {
-  def apply(documentIdSupplier: ActorRef, documentSetId: Long, filename: String, documentData: Seq[DocumentData],
+  def apply(documentIdSupplier: ActorRef, documentSetId: Long, filename: String, documentData: Seq[DocumentWithoutIds],
             nextStep: Seq[Document] => TaskStep)(implicit executor: ExecutionContext): RequestDocumentIds = 
               new RequestDocumentIdsImpl(documentIdSupplier, documentSetId, filename, documentData, nextStep)
 
@@ -47,7 +47,7 @@ object RequestDocumentIds {
     override protected val documentIdSupplier: ActorRef,
     override protected val documentSetId: Long,
     override protected val filename: String,
-    override protected val documentData: Seq[DocumentData],
+    override protected val documentData: Seq[DocumentWithoutIds],
     override protected val nextStep: Seq[Document] => TaskStep)
    (override implicit protected val executor: ExecutionContext) extends RequestDocumentIds
 

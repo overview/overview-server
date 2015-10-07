@@ -1,18 +1,18 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
-import com.overviewdocs.models.Document
-import com.overviewdocs.test.ActorSystemContext
+import akka.actor.ActorRef
+import akka.testkit.TestActor
+import akka.testkit.TestProbe
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
-import akka.actor.ActorRef
-import akka.testkit.TestProbe
-import scala.concurrent.Future
-import akka.testkit.TestActor
-import scala.concurrent.ExecutionContext
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext,Future}
+
+import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
+import com.overviewdocs.models.Document
+import com.overviewdocs.test.ActorSystemContext
 
 class RequestDocumentIdsSpec extends Specification with Mockito {
   sequential
@@ -36,7 +36,7 @@ class RequestDocumentIdsSpec extends Specification with Mockito {
     val documentSetId = 4l
     val documentId = 10l
     val document = smartMock[Document]
-    val inputData = smartMock[PdfFileDocumentData]
+    val inputData = smartMock[DocumentWithoutIds]
     inputData.toDocument(documentSetId, documentId) returns document
 
     var idSupplier: TestProbe = _

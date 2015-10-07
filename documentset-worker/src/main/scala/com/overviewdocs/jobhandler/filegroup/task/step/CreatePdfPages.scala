@@ -1,82 +1,56 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
+import play.api.libs.json.JsObject
 import scala.collection.SeqView
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.blocking
-import scala.util.control.Exception.ultimately
+import scala.concurrent.{ExecutionContext,Future}
 
-import com.overviewdocs.jobhandler.filegroup.task.PdfBoxDocument
-import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
-import com.overviewdocs.jobhandler.filegroup.task.PdfPage
-import com.overviewdocs.models.File
+import com.overviewdocs.jobhandler.filegroup.task.{PdfBoxDocument,PdfDocument,PdfPage}
+import com.overviewdocs.models.{DocumentDisplayMethod,File}
 
 /**
  * Split a [[File]] with a PDF view into [[Page]]s
  */
-trait CreatePdfPages extends UploadedFileProcessStep {
+case class CreatePdfPages(
+  override val documentSetId: Long,
+  file: File,
+  nextStep: Seq[DocumentWithoutIds] => TaskStep,
+  pageSaver: PageSaver = PageSaver
+)(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep {
+  override protected val filename: String = file.name
 
-  protected val file: File
-
-  override protected val documentSetId: Long
-  override protected lazy val filename: String = file.name
-
-  protected val pdfProcessor: PdfProcessor
-
-  protected val pageSaver: PageSaver
-
-  protected val nextStep: Seq[DocumentData] => TaskStep
-
-  protected trait Storage {
-    def savePages(fileId: Long, pdfPages: Seq[PdfPage]): Seq[Long]
+  protected def loadPdfDocumentFromBlobStorage(location: String): Future[PdfDocument] = {
+    PdfBoxDocument.loadFromLocation(location)
   }
 
-  override protected def doExecute: Future[TaskStep] =
-    loadDocument(file.viewLocation).flatMap { pdfDocument =>
-      ultimately(pdfDocument.close()) {
-        nextStepWithPages(pdfDocument)
-      }
+  private def getPageData(pdfDocument: PdfDocument): Iterable[(Array[Byte], String)] = {
+    pdfDocument.pages.map { p =>
+      val ret = (p.data, p.text)
+      p.close
+      ret
     }
-
-  private def loadDocument(location: String): Future[PdfDocument] =
-    pdfProcessor.loadFromBlobStorage(location)
-
-  private def getPageData(pdfDocument: PdfDocument): SeqView[(Array[Byte], String), Seq[_]] =
-    pdfDocument.pages.view.map(p =>
-      ultimately(p.close()) {
-        (p.data, p.text)
-      })
-
-  private def nextStepWithPages(pdfDocument: PdfDocument): Future[TaskStep] = for {
-    pageAttributes <- pageSaver.savePages(file.id, getPageData(pdfDocument))
-    pageDocumentData = pageAttributes.map(p =>
-      PdfPageDocumentData(file.name, file.id, p.pageNumber, p.id, p.text))
-  } yield nextStep(pageDocumentData)
-
-  trait PdfProcessor {
-    def loadFromBlobStorage(location: String): Future[PdfDocument]
   }
-}
 
-object CreatePdfPages {
-
-  def apply(documentSetId: Long, file: File,
-            nextStep: Seq[DocumentData] => TaskStep)(implicit executor: ExecutionContext): CreatePdfPages =
-    new CreatePdfPagesImpl(documentSetId, file, nextStep)
-
-  private class CreatePdfPagesImpl(
-    override protected val documentSetId: Long,
-    override protected val file: File,
-    override protected val nextStep: Seq[DocumentData] => TaskStep)(override implicit protected val executor: ExecutionContext)
-    extends CreatePdfPages {
-
-    override protected val pageSaver: PageSaver = PageSaver
-    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
-
-    private class PdfProcessorImpl extends PdfProcessor {
-      override def loadFromBlobStorage(location: String): Future[PdfDocument] =
-        PdfBoxDocument.loadFromLocation(location)
+  override protected def doExecute: Future[TaskStep] = {
+    for {
+      pdfDocument <- loadPdfDocumentFromBlobStorage(file.viewLocation)
+      pages <- Future.successful(getPageData(pdfDocument))
+      attributes <- pageSaver.savePages(file.id, pages)
+    } yield {
+      val documents = attributes.map { p => DocumentWithoutIds(
+        url=None,
+        suppliedId=file.name,
+        title=file.name,
+        pageNumber=Some(p.pageNumber),
+        keywords=Seq(),
+        createdAt=new java.util.Date(),
+        fileId=Some(file.id),
+        pageId=Some(p.id),
+        displayMethod=DocumentDisplayMethod.page,
+        isFromOcr=false,
+        metadataJson=JsObject(Seq()),
+        text=p.text
+      )}
+      nextStep(documents)
     }
-
   }
 }

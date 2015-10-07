@@ -1,59 +1,47 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.control.Exception.ultimately
+import play.api.libs.json.JsObject
+import scala.concurrent.{ExecutionContext,Future}
 
-import com.overviewdocs.jobhandler.filegroup.task.PdfBoxDocument
-import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
-import com.overviewdocs.models.File
+import com.overviewdocs.jobhandler.filegroup.task.{PdfBoxDocument,PdfDocument}
+import com.overviewdocs.models.{DocumentDisplayMethod,File}
 
 /**
- * Extract the text from a [[File]]'s PDF view.
- */
-trait ExtractTextFromPdf extends UploadedFileProcessStep {
-
-  protected val file: File
-
-  override protected val documentSetId: Long
+  * Extract the text from a [[File]]'s PDF view.
+  */
+case class ExtractTextFromPdf(
+  override val documentSetId: Long,
+  file: File,
+  nextStep: Seq[DocumentWithoutIds] => TaskStep
+)(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep {
   override protected lazy val filename: String = file.name
 
-  protected val pdfProcessor: PdfProcessor
-  protected val nextStep: Seq[DocumentData] => TaskStep
-
-  override protected def doExecute: Future[TaskStep] = for {
-    documentInfo <- getDocumentInfo
-  } yield nextStep(documentInfo)
-
-  private def getDocumentInfo: Future[Seq[DocumentData]] = for {
-    pdfDocument <- pdfProcessor.loadFromBlobStorage(file.viewLocation)
-  } yield ultimately(pdfDocument.close) {
-    Seq(PdfFileDocumentData(file.name, file.id, pdfDocument.text))
+  protected def loadPdfDocumentFromBlobStorage(location: String): Future[PdfDocument] = {
+    import scala.concurrent.blocking
+    blocking(PdfBoxDocument.loadFromLocation(location))
   }
 
-  trait PdfProcessor {
-    def loadFromBlobStorage(location: String): Future[PdfDocument]
-  }
-}
+  override protected def doExecute: Future[TaskStep] = {
+    for {
+      pdfDocument <- loadPdfDocumentFromBlobStorage(file.viewLocation)
+    } yield {
+      val document = DocumentWithoutIds(
+        url=None,
+        suppliedId=file.name,
+        title=file.name,
+        pageNumber=None,
+        keywords=Seq(),
+        createdAt=new java.util.Date(),
+        fileId=Some(file.id),
+        pageId=None,
+        displayMethod=DocumentDisplayMethod.pdf,
+        isFromOcr=false,
+        metadataJson=JsObject(Seq()),
+        text=pdfDocument.text
+      )
 
-object ExtractTextFromPdf {
-  import scala.concurrent.blocking
-  import com.overviewdocs.jobhandler.filegroup.task.PdfBoxDocument
-
-  def apply(documentSetId: Long, file: File,
-            next: Seq[DocumentData] => TaskStep)(implicit executor: ExecutionContext): ExtractTextFromPdf =
-    new ExtractTextFromPdfImpl(documentSetId, file, next)
-
-  private class ExtractTextFromPdfImpl(
-    override protected val documentSetId: Long,
-    override protected val file: File,
-    override protected val nextStep: Seq[DocumentData] => TaskStep)(override implicit protected val executor: ExecutionContext) extends ExtractTextFromPdf {
-    override protected val pdfProcessor: PdfProcessor = new PdfProcessorImpl
-
-    private class PdfProcessorImpl extends PdfProcessor {
-      override def loadFromBlobStorage(location: String): Future[PdfDocument] =
-        PdfBoxDocument.loadFromLocation(location)
+      pdfDocument.close
+      nextStep(Seq(document))
     }
-
   }
 }

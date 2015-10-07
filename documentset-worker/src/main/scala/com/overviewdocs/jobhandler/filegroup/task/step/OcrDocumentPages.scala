@@ -1,88 +1,67 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
-import java.awt.image.BufferedImage
 import scala.collection.SeqView
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.control.Exception.ultimately
-import com.overviewdocs.jobhandler.filegroup.task.PdfDocument
-import com.overviewdocs.jobhandler.filegroup.task.TimeoutGenerator
+import scala.concurrent.{ExecutionContext,Future}
+
+import com.overviewdocs.jobhandler.filegroup.task.{PdfBoxDocument,PdfDocument,PdfPage}
 import com.overviewdocs.models.File
-import com.overviewdocs.jobhandler.filegroup.task.PdfPage
 
-trait OcrDocumentPages extends UploadedFileProcessStep {
-  protected val file: File
-  override protected lazy val filename = file.name
+case class OcrDocumentPages(
+  override val documentSetId: Long,
+  file: File,
+  language: String,
+  nextStep: ((File, Seq[String])) => TaskStep,
+  ocrTextExtractor: OcrTextExtractor = TesseractOcrTextExtractor
+)(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep { self =>
+  override protected val filename = file.name
 
-  protected val ocrTextExtractor: OcrTextExtractor
+  case class OcrNextPage(
+    pdfDocument: PdfDocument,
+    remainingPages: Iterable[PdfPage],
+    textBeforeRemainingPages: Seq[String]
+  ) extends UploadedFileProcessStep {
+    override val documentSetId = self.documentSetId
+    override val filename = self.filename
+    override implicit val executor = self.executor
 
-  protected val pdfDocument: PdfDocument
-  protected val pages: Seq[PdfPage]
-  protected val language: String
-  protected val currentText: Seq[String]
-
-  protected val nextPageStep: ((Seq[PdfPage], Seq[String])) => TaskStep
-  protected val nextStep: ((File, PdfDocument, Seq[String])) => TaskStep
-
-  override protected def doExecute: Future[TaskStep] =
-    pages.headOption
-      .map(ocrThenClosePage)
-      .getOrElse(completeOcr)
-
-  private def completeOcr: Future[TaskStep] = Future.successful {
-    nextStep(file, pdfDocument, currentText)
-  }
-
-  private def ocrThenClosePage(page: PdfPage): Future[TaskStep] =
-    findPageText(page)
-      .map(text => nextPageStep(pages.tail, currentText :+ text))
-      .andThen { case _ => page.close }
-
-  private def findPageText(page: PdfPage): Future[String] =
-    page.textWithFonts match {
-      case Right(text) if significant(text) => Future.successful(text)
-      case _ => ocrPage(page)
+    override protected def doExecute: Future[TaskStep] = {
+      remainingPages.headOption match {
+        case Some(page) => ocrAndClosePage(page)
+        case None => {
+          pdfDocument.close
+          Future.successful(nextStep((file, textBeforeRemainingPages)))
+        }
+      }
     }
 
-  
-  private def significant(text: String) = text.size >= OcrDocumentPages.MinimumTextSize
-  
-  private def ocrPage(page: PdfPage): Future[String] =
+    private def ocrAndClosePage(page: PdfPage): Future[TaskStep] = {
+      findPageText(page).map { text =>
+        page.close
+        OcrNextPage(pdfDocument, remainingPages.tail, textBeforeRemainingPages :+ text)
+      }
+    }
+
+    private def findPageText(page: PdfPage): Future[String] = {
+      page.textWithFonts match {
+        case Right(text) if text.size >= OcrDocumentPages.MinimumTextSize => Future.successful(text)
+        case _ => ocrPage(page)
+      }
+    }
+
+    private def ocrPage(page: PdfPage): Future[String] = ocrTextExtractor.extractText(page.image, language)
+  }
+
+  protected def loadPdfDocumentFromBlobStorage(location: String): Future[PdfDocument] = {
+    PdfBoxDocument.loadFromLocation(location)
+  }
+
+  override protected def doExecute: Future[TaskStep] = {
     for {
-      text <- ocrTextExtractor.extractText(page.image, language)
-    } yield text
+      pdfDocument <- loadPdfDocumentFromBlobStorage(file.contentsLocation)
+    } yield OcrNextPage(pdfDocument, pdfDocument.pages, Seq())
+  }
 }
 
 object OcrDocumentPages {
-  val MinimumTextSize = 100
-
-  def apply(documentSetId: Long, file: File, language: String,
-            pdfDocument: PdfDocument,
-            pages: Seq[PdfPage],
-            timeoutGenerator: TimeoutGenerator,
-            nextStep: ((File, PdfDocument, Seq[String])) => TaskStep)(implicit executor: ExecutionContext): OcrDocumentPages = {
-
-    val ocrTextExtractor = TesseractOcrTextExtractor(timeoutGenerator)
-
-    new OcrDocumentPagesImpl(documentSetId, file, language, ocrTextExtractor, nextStep,
-      pdfDocument, pages, Seq.empty)
-  }
-
-  private class OcrDocumentPagesImpl(
-    override protected val documentSetId: Long,
-    override protected val file: File,
-    override protected val language: String,
-    override protected val ocrTextExtractor: OcrTextExtractor,
-    override protected val nextStep: ((File, PdfDocument, Seq[String])) => TaskStep,
-    override protected val pdfDocument: PdfDocument,
-    override protected val pages: Seq[PdfPage],
-    override protected val currentText: Seq[String])(override implicit protected val executor: ExecutionContext) extends OcrDocumentPages {
-
-    override protected val nextPageStep = Function.tupled(continueOcr _)
-
-    private def continueOcr(remainingPages: Seq[PdfPage], textFromOcr: Seq[String]): TaskStep =
-      new OcrDocumentPagesImpl(documentSetId, file, language, ocrTextExtractor, nextStep, pdfDocument, remainingPages, textFromOcr)
-
-  }
-
+  val MinimumTextSize: Int = 100
 }
