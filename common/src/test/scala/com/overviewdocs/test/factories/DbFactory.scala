@@ -247,20 +247,16 @@ object DbFactory extends Factory with HasBlockingDatabase {
     pageNumber: Int,
     dataLocation: String,
     dataSize: Long,
-    data: Option[Array[Byte]],
-    text: Option[String],
-    dataErrorMessage: Option[String],
-    textErrorMessage: Option[String]
+    text: String,
+    isFromOcr: Boolean
   ) = run(q.insertPage += podoFactory.page(
     id, 
     fileId,
     pageNumber,
     dataLocation,
     dataSize,
-    data,
     text,
-    dataErrorMessage,
-    textErrorMessage
+    isFromOcr
   ))
 
   override def file(

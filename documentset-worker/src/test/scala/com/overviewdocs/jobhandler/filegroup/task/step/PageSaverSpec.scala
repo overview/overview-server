@@ -4,46 +4,47 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import scala.concurrent.Future
 
+import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.jobhandler.filegroup.task.PdfPage
 import com.overviewdocs.models.Page
 import com.overviewdocs.models.tables.Pages
 import com.overviewdocs.test.DbSpecification
 
 class PageSaverSpec extends DbSpecification with Mockito {
-
   "PageSaver" should {
-
-    "save pages" in new PageContext {
+    "save pages" in new DbScope {
       import database.api._
 
-      val foundPages = for {
-        attributes <- pageSaver.savePages(file.id, pageData.view)
-        ids = attributes.map(_.id)
-      } yield blockingDatabase.seq(Pages.filter(_.id inSet ids))
+      val mockBlobStorage = smartMock[BlobStorage]
+      mockBlobStorage.create(any, any, any) returns Future.successful("location")
 
-      val attributes = await(foundPages).map(p =>
-          (p.fileId, p.pageNumber, p.dataLocation, p.dataSize, p.text.getOrElse("")))
+      val pageSaver = new PageSaver {
+        override protected val blobStorage = mockBlobStorage
+      }
 
-      attributes must containTheSameElementsAs(expectedAttributes)
+      val file = factory.file()
+
+      val inData: Seq[(Array[Byte],String,Boolean)] = Seq(
+        (Array[Byte](1, 2, 3), "page-1", true),
+        (Array[Byte](2, 3, 4, 5), "page-2", false)
+      )
+
+      val result = for {
+        attributes <- pageSaver.savePages(file.id, inData)
+        outPages <- database.seq(Pages.filter(_.id inSet attributes.map(_.id)).map(_.createAttributes))
+      } yield (attributes, outPages)
+
+      val (attributes, outPages) = await(result)
+
+      attributes.map(ra => (ra.fileId, ra.pageNumber, ra.text, ra.isFromOcr)) must beEqualTo(Seq(
+        (file.id, 1, "page-1", true),
+        (file.id, 2, "page-2", false)
+      ))
+
+      outPages must beEqualTo(Seq(
+        Page.CreateAttributes(file.id, 1, "location", 3, "page-1", true),
+        Page.CreateAttributes(file.id, 2, "location", 4, "page-2", false)
+      ))
     }
-  }
-
-  trait PageContext extends DbScope {
-    val pageLocation = "page:location"
-
-    val file = factory.file()
-    val numberOfPages = 10
-    val pageData = Seq.tabulate(numberOfPages)(n => (Array[Byte](0, 1, 3), s"text-$n"))
-
-    val expectedAttributes = Seq.tabulate(numberOfPages)(n => (file.id, n + 1, pageLocation, 3, s"text-$n"))
-
-    val pageSaver = new TestPageSaver
-  }
-
-  protected class TestPageSaver extends PageSaver {
-    override protected val pageBlobSaver = smartMock[PageBlobSaver]
-
-    pageBlobSaver.save(any) returns Future.successful("page:location")
-
   }
 }

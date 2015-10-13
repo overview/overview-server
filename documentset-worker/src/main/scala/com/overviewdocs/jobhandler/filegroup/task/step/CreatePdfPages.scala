@@ -22,9 +22,9 @@ case class CreatePdfPages(
     PdfBoxDocument.loadFromLocation(location)
   }
 
-  private def getPageData(pdfDocument: PdfDocument): Iterable[(Array[Byte], String)] = {
+  private def getPageData(pdfDocument: PdfDocument): Iterable[(Array[Byte],String,Boolean)] = {
     pdfDocument.pages.map { p =>
-      val ret = (p.data, p.text)
+      val ret = (p.data, p.text, false)
       p.close
       ret
     }

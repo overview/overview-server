@@ -9,9 +9,9 @@ import com.overviewdocs.models.File
 
 object DoCreateDocumentData {
   def apply(documentSetId: Long)(implicit executor: ExecutionContext) =
-    new StepGenerator[(File, Seq[String]), Seq[DocumentWithoutIds]] {
+    new StepGenerator[(File, Seq[(String,Boolean)]), Seq[DocumentWithoutIds]] {
     
-    override def generate(documentInfo: (File, Seq[String])): TaskStep =
+    override def generate(documentInfo: (File, Seq[(String,Boolean)])): TaskStep =
       CreateDocumentData(documentSetId, nextStepFn,  documentInfo._1, documentInfo._2)
   }
 }

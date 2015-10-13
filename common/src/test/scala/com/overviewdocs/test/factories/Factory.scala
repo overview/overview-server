@@ -161,10 +161,9 @@ trait Factory {
     pageNumber: Int = 1,
     dataLocation: String = "pagebytea:123",
     dataSize: Long = 9L,
-    data: Option[Array[Byte]] = Some("page text".getBytes("utf-8")),
-    text: Option[String] = Some("page text"),
-    dataErrorMessage: Option[String] = None,
-    textErrorMessage: Option[String] = None): Page
+    text: String = "page text",
+    isFromOcr: Boolean = false
+  ): Page
 
   def file(
     id: Long = 0L,

@@ -11,7 +11,7 @@ case class CreateDocumentDataForPages(
   override val documentSetId: Long,
   nextStep: Seq[DocumentWithoutIds] => TaskStep,
   file: File,
-  textPages: Seq[String],
+  textPages: Seq[(String,Boolean)],
   pageSaver: PageSaver = PageSaver
 )(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep {
   override protected val filename = file.name
@@ -36,7 +36,7 @@ case class CreateDocumentDataForPages(
         fileId=Some(file.id),
         pageId=Some(p.id),
         displayMethod=DocumentDisplayMethod.page,
-        isFromOcr=false,
+        isFromOcr=p.isFromOcr,
         metadataJson=JsObject(Seq()),
         text=p.text
       )}
@@ -45,13 +45,18 @@ case class CreateDocumentDataForPages(
     }
   }
 
-  private def pageData(pdfDocument: PdfDocument): Iterable[(Array[Byte],String)] = {
+  private def pageData(pdfDocument: PdfDocument): Iterable[(Array[Byte],String,Boolean)] = {
+    val textIterator = textPages.iterator
     pdfDocument.pages // an Iterable, lazy
       .map { p =>
         val data = p.data
         p.close
-        data
+        if (textIterator.hasNext) {
+          val (text: String, isFromOcr: Boolean) = textIterator.next
+          (data, text, isFromOcr)
+        } else {
+          (data, "", false)
+        }
       }
-      .zip(textPages)
   }
 }

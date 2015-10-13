@@ -10,7 +10,7 @@ case class OcrDocumentPages(
   override val documentSetId: Long,
   file: File,
   language: String,
-  nextStep: ((File, Seq[String])) => TaskStep,
+  nextStep: ((File, Seq[(String,Boolean)])) => TaskStep,
   ocrTextExtractor: OcrTextExtractor = TesseractOcrTextExtractor
 )(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep { self =>
   override protected val filename = file.name
@@ -18,7 +18,7 @@ case class OcrDocumentPages(
   case class OcrNextPage(
     pdfDocument: PdfDocument,
     remainingPages: Iterable[PdfPage],
-    textBeforeRemainingPages: Seq[String]
+    textBeforeRemainingPages: Seq[(String,Boolean)]
   ) extends UploadedFileProcessStep {
     override val documentSetId = self.documentSetId
     override val filename = self.filename
@@ -41,14 +41,16 @@ case class OcrDocumentPages(
       }
     }
 
-    private def findPageText(page: PdfPage): Future[String] = {
+    private def findPageText(page: PdfPage): Future[(String,Boolean)] = {
       page.textWithFonts match {
-        case Right(text) if text.size >= OcrDocumentPages.MinimumTextSize => Future.successful(text)
-        case _ => ocrPage(page)
+        case Right(text) if text.size >= OcrDocumentPages.MinimumTextSize => {
+          Future.successful((text,false))
+        }
+        case _ => {
+          ocrTextExtractor.extractText(page.image, language).map(text => (text, true))
+        }
       }
     }
-
-    private def ocrPage(page: PdfPage): Future[String] = ocrTextExtractor.extractText(page.image, language)
   }
 
   protected def loadPdfDocumentFromBlobStorage(location: String): Future[PdfDocument] = {

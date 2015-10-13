@@ -9,7 +9,7 @@ import com.overviewdocs.models.File
 object DoExtractTextWithOcr {
 
   def apply(documentSetId: Long, language: String)(implicit executor: ExecutionContext) = 
-    new StepGenerator[File, (File, Seq[String])] {
+    new StepGenerator[File, (File, Seq[(String,Boolean)])] {
     override def generate(file: File): TaskStep = ExtractTextWithOcr(documentSetId, file, nextStepFn, language)
   }
 }

@@ -8,11 +8,11 @@ import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.sys.process.{Process,ProcessLogger}
 
 import com.overviewdocs.jobhandler.filegroup.task.CommandFailedException
-import com.overviewdocs.util.Configuration
-import com.overviewdocs.util.SupportedLanguages
+import com.overviewdocs.util.{Configuration,Logger,SupportedLanguages}
 
 trait TesseractOcrTextExtractor extends OcrTextExtractor {
   protected val fileSystem: TesseractOcrTextExtractor.FileSystem
+  protected val logger: Logger
 
   override def extractText(image: BufferedImage, language: String)(implicit ec: ExecutionContext): Future[String] = {
     withImageAsTemporaryFile(image) { tempPath =>
@@ -38,12 +38,10 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
     val basename = imagePath.getFileName.toString
     val basenameNoExtension = basename.substring(0, basename.length - 4)
 
-    val output: Path = imagePath.resolveSibling(s"$basename.txt")
-    val outputWithoutExtension: Path = imagePath.resolveSibling(basename)
+    val output: Path = imagePath.resolveSibling(s"$basenameNoExtension.txt")
+    val outputWithoutExtension: Path = imagePath.resolveSibling(basenameNoExtension)
 
-    val consoleOutput = new StringBuilder()
-
-    val process = Process(Seq(
+    val command = Seq(
       TesseractOcrTextExtractor.tesseractLocation,
       imagePath.toAbsolutePath.toString,
       outputWithoutExtension.toAbsolutePath.toString,
@@ -51,11 +49,16 @@ trait TesseractOcrTextExtractor extends OcrTextExtractor {
       iso639_2Code,
       "-psm",
       "1"
-    )).run(ProcessLogger(s => consoleOutput.append(s), s => consoleOutput.append(s)))
+    )
+
+    logger.info("Running command: {}", command.mkString(" "))
+
+    val consoleOutput = new StringBuilder()
+    val process = Process(command).run(ProcessLogger(s => consoleOutput.append(s), s => consoleOutput.append(s)))
 
     Future(blocking(process.exitValue))
       .map { retval =>
-        if (retval == 0) throw new CommandFailedException(consoleOutput.toString)
+        if (retval != 0) throw new CommandFailedException(consoleOutput.toString)
         f(output)
       }
       .andThen { case _ => fileSystem.deleteFile(output) }
@@ -72,6 +75,7 @@ object TesseractOcrTextExtractor extends TesseractOcrTextExtractor {
   val ImageResolution = 400 // dpi
   lazy val tesseractLocation = Configuration.getString("tesseract_path")
 
+  override protected val logger = Logger.forClass(getClass)
   override protected val fileSystem = new FileSystem {
     override def writeImage(image: BufferedImage) = {
       val imagePath: Path = Files.createTempFile("overview-ocr-", ".png")

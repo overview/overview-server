@@ -99,6 +99,7 @@ trait BulkDocumentWriter {
     // Header extension area length
     dataOut.writeInt(0)
 
+    def writeBoolean(b: Boolean) = { dataOut.writeInt(1); dataOut.writeByte(if (b) 1 else 0) }
     def writeInt(i: Int) = { dataOut.writeInt(4); dataOut.writeInt(i) }
     def writeIntOption(i: Option[Int]) = i match {
       case Some(j) => writeInt(j)
@@ -123,7 +124,7 @@ trait BulkDocumentWriter {
     // Tuples
     // Tracks models/tables/Documents.scala and models/Document.scala
     documents.foreach { document =>
-      dataOut.writeShort(13) // Number of fields
+      dataOut.writeShort(14) // Number of fields
 
       writeLong(document.id)
       writeLong(document.documentSetId)
@@ -138,6 +139,7 @@ trait BulkDocumentWriter {
       writeString(document.metadataJson.toString)
       writeString(document.text)
       writeString(document.displayMethod.toString)
+      writeBoolean(document.isFromOcr)
     }
 
     // File trailer
@@ -167,7 +169,8 @@ trait BulkDocumentWriter {
             page_id,
             metadata_json_text,
             text,
-            display_method
+            display_method,
+            is_from_ocr
           )
           FROM STDIN
           BINARY

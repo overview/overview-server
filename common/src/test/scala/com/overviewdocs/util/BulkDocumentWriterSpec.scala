@@ -104,7 +104,7 @@ class BulkDocumentWriterSpec extends DbSpecification {
   "handle non-NULLs when writing" in new BaseScope {
     import database.api._
     blockingDatabase.runUnit(Files.+=(File(3L, 0, "", "", 0, emptySha1, "", 0)))
-    blockingDatabase.runUnit(Pages.+=(Page(4L, 3L, 0, "", 0, None, None, None, None)))
+    blockingDatabase.runUnit(Pages.+=(Page(4L, 3L, 0, "", 0, "", false)))
     add(podoFactory.document(documentSetId=documentSet.id, url=Some("http://example.org"), pageNumber=Some(5), fileId=Some(3L), pageId=Some(4L)))
     await(subject.flush)
     val doc = fetchDocuments(0)
@@ -133,6 +133,20 @@ class BulkDocumentWriterSpec extends DbSpecification {
     await(subject.flush)
     
     fetchDocuments(0).displayMethod must beEqualTo(DocumentDisplayMethod.auto)
+  }
+
+  "handle isFromOcr=false" in new BaseScope {
+    add(podoFactory.document(documentSetId=documentSet.id, isFromOcr=false))
+    await(subject.flush)
+
+    fetchDocuments(0).isFromOcr must beEqualTo(false)
+  }
+
+  "handle isFromOcr=true" in new BaseScope {
+    add(podoFactory.document(documentSetId=documentSet.id, isFromOcr=true))
+    await(subject.flush)
+
+    fetchDocuments(0).isFromOcr must beEqualTo(true)
   }
 
   "handle metadataJson" in new BaseScope {

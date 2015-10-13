@@ -21,12 +21,12 @@ trait PageRemover extends HasDatabase {
     
   private def pageQuery(fileId: Long) = Pages.filter(_.fileId === fileId)
 
-  private def deletePageData(fileId: Long): Future[Unit] =
+  private def deletePageData(fileId: Long): Future[Unit] = {
     findDataLocations(fileId).flatMap(blobStorage.deleteMany)
+  }
 
   private def findDataLocations(fileId: Long): Future[Seq[String]] = {
     database.seq(pageQuery(fileId).map(_.dataLocation))
-      .map(_.flatten)
   }
   
   def deletePages(fileId: Long): Future[Unit] = {

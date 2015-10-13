@@ -49,10 +49,10 @@ trait DocumentSetController extends Controller {
       } else {
         val jobIdPositions: Map[Long,Int] = jobIdsInProcessingOrder.zipWithIndex.toMap
         val jobsWithPositions: Seq[(DocumentSetCreationJob,DocumentSet,Int)] = userJobs
-          .map(j => (j._1, j._2, jobIdPositions(j._1.id)))
+          .map(j => (j._1, j._2, jobIdPositions.getOrElse(j._1.id, 0)))
 
         val nViews: Map[Long,Int] = storage.findNViewsByDocumentSets(documentSets.items.map(_.id))
-        val documentSetsWithCounts: Page[(DocumentSet,Int)] = documentSets.map(ds => (ds, nViews.get(ds.id).getOrElse(0)))
+        val documentSetsWithCounts: Page[(DocumentSet,Int)] = documentSets.map(ds => (ds, nViews.getOrElse(ds.id, 0)))
         Ok(views.html.DocumentSet.index(request.user, documentSetsWithCounts, jobsWithPositions))
       }
     }

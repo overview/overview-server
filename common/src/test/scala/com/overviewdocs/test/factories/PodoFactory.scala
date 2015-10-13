@@ -279,31 +279,25 @@ object PodoFactory extends Factory {
     title,
     createdAt
   )
-  
-  
+
   override def page(
     id: Long,
     fileId: Long,
     pageNumber: Int,
     dataLocation: String,
     dataSize: Long,
-    data: Option[Array[Byte]],
-    text: Option[String],
-    dataErrorMessage: Option[String],
-    textErrorMessage: Option[String]
+    text: String,
+    isFromOcr: Boolean
   ) = Page(
     getId(id),
     getId(fileId), 
     pageNumber,
     dataLocation,
     dataSize,
-    data,
     text,
-    dataErrorMessage,
-    textErrorMessage
+    isFromOcr
   )
-  
-  
+
   override def file(
     id: Long,
     referenceCount: Int,

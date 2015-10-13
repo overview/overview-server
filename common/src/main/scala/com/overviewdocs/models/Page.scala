@@ -6,10 +6,8 @@ case class Page(
   pageNumber: Int,
   dataLocation: String,
   dataSize: Long,
-  data: Option[Array[Byte]],
-  text: Option[String],
-  dataErrorMessage: Option[String] = None,
-  textErrorMessage: Option[String] = None
+  text: String,
+  isFromOcr: Boolean
 )
 
 object Page {
@@ -18,13 +16,15 @@ object Page {
     pageNumber: Int,
     dataLocation: String,
     dataSize: Long,
-    text: String
+    text: String,
+    isFromOcr: Boolean
   )
   
   case class ReferenceAttributes(
     id: Long,
     fileId: Long,
     pageNumber: Int,
-    text: String
+    text: String,
+    isFromOcr: Boolean
   )
 }

@@ -10,7 +10,7 @@ import com.overviewdocs.models.File
 case class ExtractTextWithOcr(
   override val documentSetId: Long,
   file: File,
-  nextStep: ((File, Seq[String])) => TaskStep,
+  nextStep: ((File, Seq[(String,Boolean)])) => TaskStep,
   language: String
 )(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep {
   override protected val filename = file.name

@@ -9,8 +9,8 @@ import com.overviewdocs.jobhandler.filegroup.task.step.CreateDocumentDataForPage
 object DoCreateDocumentDataForPages {
 
   def apply(documentSetId: Long)(implicit executor: ExecutionContext) = {
-    new StepGenerator[(File, Seq[String]), Seq[DocumentWithoutIds]] {
-      override def generate(documentInfo: (File, Seq[String])): TaskStep = {
+    new StepGenerator[(File, Seq[(String,Boolean)]), Seq[DocumentWithoutIds]] {
+      override def generate(documentInfo: (File, Seq[(String,Boolean)])): TaskStep = {
         CreateDocumentDataForPages(documentSetId, nextStepFn, documentInfo._1, documentInfo._2)
       }
     }
