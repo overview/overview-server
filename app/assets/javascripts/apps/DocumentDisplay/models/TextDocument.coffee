@@ -21,6 +21,8 @@ define [
       url: null
       # the document text, or null if loading
       text: null
+      # true iff the text came from Tesseract
+      isFromOcr: false
       # set iff we could not load the text
       error: null
       # search query we're highlighting
@@ -62,7 +64,7 @@ define [
       @set(text: null, error: null)
       @_textFetch = Backbone.$.ajax
         url: "/documents/#{@id}.txt"
-        success: (text) => @set(text: text)
+        success: (text, __, xhr) => @set(text: text, isFromOcr: xhr.getResponseHeader('Generated-By') == 'tesseract')
         error: (jqXHR, textStatus, errorThrown) =>
           console.warn("Text fetch failed", jqXHR, textStatus, errorThrown)
           @set(error: errorThrown)

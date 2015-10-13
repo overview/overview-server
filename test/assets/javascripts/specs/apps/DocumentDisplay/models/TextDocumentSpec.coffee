@@ -33,7 +33,13 @@ define [
       @subject.fetchText()
       @sandbox.server.requests[0].respond(200, { 'Content-Type': 'text/plain; charset=utf-8' }, 'foo bar')
       expect(@subject.get('text')).to.eq('foo bar')
+      expect(@subject.get('isFromOcr')).to.be.false
       expect(@subject.get('error')).to.be.null
+
+    it 'should set isFromOcr on success', ->
+      @subject.fetchText()
+      @sandbox.server.requests[0].respond(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Generated-By': 'tesseract' }, 'foo bar')
+      expect(@subject.get('isFromOcr')).to.be.true
 
     it 'should set error on failure', ->
       @subject.fetchText()

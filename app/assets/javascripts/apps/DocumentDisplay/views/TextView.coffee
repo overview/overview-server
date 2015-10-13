@@ -18,7 +18,7 @@ define [
       @preferences = options.preferences
 
       @listenTo(@preferences, 'change:wrap', @_onChangeWrap)
-      @listenTo(@model, 'change:text change:error change:highlights', @render)
+      @listenTo(@model, 'change:text change:isFromOcr change:error change:highlights', @render)
       @listenTo(@model, 'change:highlightsIndex', @_renderHighlightsIndex)
 
       @render()
@@ -33,6 +33,8 @@ define [
       else if attrs.text?
         if @preferences.get('text') == false
           @_renderOnlyTextAvailable()
+        if @model.get('isFromOcr') == true
+          @_renderIsFromOcr()
         @_renderTextWithHighlights(attrs.text, attrs.highlights || [])
       else
         @_renderLoading()
@@ -43,6 +45,11 @@ define [
 
     _renderError: ->
       @$el.html($('<div class="error"></div>').text(t('error')))
+      @
+
+    _renderIsFromOcr: ->
+      $p = $('<p class="is-from-ocr"></p>').html(t('isFromOcr_html'))
+      @$el.append($p)
       @
 
     _renderOnlyTextAvailable: ->

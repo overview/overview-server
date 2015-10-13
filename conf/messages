@@ -213,6 +213,7 @@ views.Document.show.FindView.previousHighlight=Highlight previous match
 views.Document.show.TextView.error=We could not load the document text. Try refreshing the page.
 views.Document.show.TextView.loading=Loading text…
 views.Document.show.TextView.onlyTextAvailable=Only text view is available for this document.
+views.Document.show.TextView.isFromOcr_html=Overview used image analysis to produce this text. <a href="https://blog.overviewdocs.com/2015/10/13/overview-and-optical-character-recognition/">Learn more</a>
 
 views.DocumentCloudImportJob.new.title=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.h1=Import documents from DocumentCloud

@@ -111,7 +111,7 @@ define [
             expect(@sandbox.server.requests).to.have.length(1)
             expect(@sandbox.server.requests[0].url).to.eq('/exists/c7567e8b39e2428e38bf9c9226ac68de4c67dc39')
             done()
-          , 0)
+          , 1)
 
         it 'uploads when the file passes the uniqueness check', (done) ->
           setTimeout(=>
@@ -119,7 +119,7 @@ define [
             expect(@netUploadSpy).to.have.been.called
             expect(@doneSpy).not.to.have.been.called
             done()
-          )
+          , 1)
 
         it 'succeeds without uploading when the server has the file already', (done) ->
           setTimeout(=>
@@ -128,7 +128,7 @@ define [
             expect(@upload.get('skippedBecauseAlreadyInDocumentSet')).to.eq(true)
             expect(@doneSpy).to.have.been.calledWith(null)
             done()
-          )
+          , 1)
 
         it 'skips uploading when aborting during existence check', (done) ->
           @abort()
@@ -137,7 +137,7 @@ define [
             expect(@netUploadSpy).not.to.have.been.called
             expect(@doneSpy).to.have.been.calledWith(null)
             done()
-          )
+          , 1)
 
     describe 'doDeleteFile', ->
       it 'exists, but does not do anything for now', ->

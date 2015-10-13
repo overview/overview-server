@@ -63,6 +63,16 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         h.charset(result) must beSome("utf-8")
         h.contentAsString(result) must beEqualTo("foo bar")
       }
+
+      "set Generated-By tesseract if isFromOcr=true" in new ShowTextScope {
+        override def foundDocument = Some(factory.document(text="foo", isFromOcr=true))
+        h.header("Generated-By", result) must beSome("tesseract")
+      }
+
+      "not set Generated-By tesseract if isFromOcr=false" in new ShowTextScope {
+        override def foundDocument = Some(factory.document(text="foo", isFromOcr=false))
+        h.header("Generated-By", result) must beNone
+      }
     }
 
     "showPdf()" should {

@@ -18,7 +18,10 @@ import com.overviewdocs.models.{Document,File,Page}
 trait DocumentController extends Controller {
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
-      case Some(document) => Ok(document.text)
+      case Some(document) => {
+        val extraHeaders: Seq[(String,String)] = if (document.isFromOcr) Seq("Generated-By" -> "tesseract") else Seq()
+        Ok(document.text).withHeaders(extraHeaders: _*)
+      }
       case None => NotFound
     })
   }

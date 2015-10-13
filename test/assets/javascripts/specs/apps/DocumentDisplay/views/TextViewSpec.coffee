@@ -11,6 +11,7 @@ define [
         loading: 'loading'
         error: 'error'
         onlyTextAvailable: 'onlyTextAvailable'
+        isFromOcr_html: 'isFromOcr_html'
 
       @preferences = new Backbone.Model(wrap: true)
       @$ = (args...) => @subject.$(args...)
@@ -92,6 +93,10 @@ define [
       @preferences.set(text: false)
       @model.set(text: 'foobar')
       expect(@subject.$('.only-text-available').text()).to.eq('onlyTextAvailable')
+
+    it 'should render "is from OCR" when the document is from OCR', ->
+      @model.set(text: 'foobar', isFromOcr: true)
+      expect(@subject.$('.is-from-ocr').html()).to.eq('isFromOcr_html')
 
     it 'should not render "only text available" normally', ->
       @preferences.set(text: true)
