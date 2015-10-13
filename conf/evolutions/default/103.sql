@@ -10,6 +10,8 @@ BEGIN;
 ALTER TABLE page ADD COLUMN is_from_ocr BOOLEAN;
 
 UPDATE page SET is_from_ocr = FALSE;
+UPDATE page SET data_location = '' WHERE data_location IS NULL;
+UPDATE page SET text = '' WHERE text IS NULL;
 
 ALTER TABLE page
   DROP COLUMN data_error_message,
