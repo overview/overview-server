@@ -83,7 +83,7 @@ object TesseractOcrTextExtractor extends TesseractOcrTextExtractor {
       imagePath
     }
 
-    override def readText(path: Path) = iterableAsScalaIterable(Files.readAllLines(path)).mkString
+    override def readText(path: Path) = iterableAsScalaIterable(Files.readAllLines(path)).mkString("\n")
     override def deleteFile(path: Path) = Files.delete(path)
   }
 }
