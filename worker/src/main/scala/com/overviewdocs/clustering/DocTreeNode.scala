@@ -22,7 +22,20 @@ class DocTreeNode(val docs: Set[DocumentID]) {
 
   // return children in predictable order. Sort descending by size, then ascending by document IDs
   def orderedChildren: List[DocTreeNode] = {
-    children.toList.sortWith((a, b) => (a.docs.size > b.docs.size) || (a.docs.size == b.docs.size && a.docs.min < b.docs.min))
+    children.toList.sortWith { (a, b) =>
+      if (a.docs.size > b.docs.size) {
+        true
+      } else if (a.docs.size == b.docs.size) {
+        if (a.docs.isEmpty) {
+          // Unit tests sometimes have no documents
+          a.description < b.description
+        } else {
+          a.docs.min < b.docs.min
+        }
+      } else {
+        false
+      }
+    }
   }
 
   // simple string representation, good for unit tests. We sort the sets to ensure consistent output

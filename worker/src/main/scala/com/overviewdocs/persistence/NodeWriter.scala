@@ -7,49 +7,65 @@
 
 package com.overviewdocs.persistence
 
-import java.sql.Connection
+import scala.collection.mutable.Queue
+
 import com.overviewdocs.clustering.DocTreeNode
-import com.overviewdocs.persistence.orm.Schema
-import com.overviewdocs.tree.orm.{ Node, NodeDocument }
-import com.overviewdocs.persistence.orm.DocumentSetCreationJobNode
+import com.overviewdocs.models.{Node,NodeDocument,DocumentSetCreationJobNode}
+import com.overviewdocs.models.tables.{Nodes,NodeDocuments,DocumentSetCreationJobNodes}
 
-/**
- * Writes out tree with the given root node to the database.
- * Inserts entries into document and node_document tables. Documents contained by
- * the nodes must already exist in the database.
- */
+/**Writes out tree with the given root node to the database.
+  *
+  * Inserts entries into document and node_document tables. Documents contained
+  * by the nodes must already exist in the database.
+  *
+  * If this clustering job is interrupted, the tree will remain in the
+  * database.
+  */
 class NodeWriter(jobId: Long, treeId: Long) {
-  val batchInserter = new BatchInserter[NodeDocument](500, Schema.nodeDocuments)
-  val ids = new NodeIdGenerator(treeId)
-  val rootNodeId = ids.rootId
+  val rootNodeId = new NodeIdGenerator(treeId).rootId
 
-  def write(root: DocTreeNode)(implicit c: Connection) {
-    writeSubTree(root, None)
-    batchInserter.flush
-    insertJobCleanupData
+  def write(root: DocTreeNode): Unit = {
+    writeNodes(root)
+    writeNodeDocuments(root)
   }
 
-  private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
-    val n = Node(
-      id=ids.next,
-      rootId=rootNodeId,
-      parentId=parentId,
-      description=node.description,
-      cachedSize=node.docs.size,
-      isLeaf=node.children.isEmpty
-    )
+  private def writeNodes(root: DocTreeNode): Unit = {
+    val inserter = new BatchInserter[Node](1000, Nodes)
 
-    Schema.nodes.insert(n)
+    // levelorder() from https://en.wikipedia.org/wiki/Tree_traversal
+    val queue: Queue[(Option[Long],DocTreeNode)] = Queue((None,root))
+    var nodeId = rootNodeId
 
-    node.docs.foreach(docId => batchInserter.insert(NodeDocument(n.id, docId)))
+    while (!queue.isEmpty) {
+      val (parentId, node) = queue.dequeue
 
-    node.children.foreach(writeSubTree(_, Some(n.id)))
+      inserter.insert(Node(nodeId, rootNodeId, parentId, node.description, node.docs.size, node.children.isEmpty))
+      node.orderedChildren.foreach { subNode => queue.enqueue((Some(nodeId), subNode)) }
+      nodeId += 1
+    }
+
+    inserter.flush
   }
 
-  private def insertJobCleanupData: Unit = {
-    import com.overviewdocs.persistence.orm.Schema
-    import com.overviewdocs.postgres.SquerylEntrypoint._
-    val jobNode = DocumentSetCreationJobNode(jobId, rootNodeId)
-    Schema.documentSetCreationJobNodes.insert(jobNode)
+  private def writeNodeDocuments(root: DocTreeNode): Unit = {
+    val inserter = new BatchInserter(1000, NodeDocuments)
+
+    // levelorder() from https://en.wikipedia.org/wiki/Tree_traversal
+    val queue: Queue[DocTreeNode] = Queue(root)
+    var nodeId = rootNodeId
+
+    while (!queue.isEmpty) {
+      val node = queue.dequeue
+
+      node.docs.toArray.sorted.foreach { documentId =>
+        inserter.insert(NodeDocument(nodeId, documentId))
+      }
+
+      node.orderedChildren.foreach { node => queue.enqueue(node) }
+
+      nodeId += 1
+    }
+
+    inserter.flush
   }
 }
