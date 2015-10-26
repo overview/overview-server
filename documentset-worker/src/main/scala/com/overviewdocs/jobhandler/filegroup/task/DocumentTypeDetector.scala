@@ -31,8 +31,8 @@ object DocumentTypeDetector extends DocumentTypeDetector {
   sealed trait DocumentType
   case object PdfDocument extends DocumentType
   case object OfficeDocument extends DocumentType
-  case object TextDocument extends DocumentType
-  case object HtmlDocument extends DocumentType
+  //case object TextDocument extends DocumentType
+  //case object HtmlDocument extends DocumentType
   case class UnsupportedDocument(filename: String, mimeType: String) extends DocumentType
 
   override protected val mimeTypeDetector = new MimeTypeDetector

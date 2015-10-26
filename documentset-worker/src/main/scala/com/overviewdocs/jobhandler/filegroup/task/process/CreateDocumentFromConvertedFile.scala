@@ -11,7 +11,7 @@ object CreateDocumentFromConvertedFile {
     new UploadedFileProcess {
       override protected val steps =
         DoCreateFileWithView(documentSetId, timeoutGenerator).andThen(
-          DoExtractTextFromPdf(documentSetId).andThen(
+          DoCreateDocumentData(documentSetId).andThen(
             DoRequestDocumentIds(documentIdSupplier, documentSetId, filename).andThen(
               DoWriteDocuments(documentSetId, filename, bulkDocumentWriter))))
     }

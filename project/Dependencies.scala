@@ -11,8 +11,6 @@ object Dependencies {
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.9.23"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.9.23"
-    val bcmail = "org.bouncycastle" % "bcmail-jdk15" % "1.44" // https://pdfbox.apache.org/1.8/dependencies.html
-    val bcprov = "org.bouncycastle" % "bcprov-jdk15" % "1.44" // https://pdfbox.apache.org/1.8/dependencies.html
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
     val commonsIo = "commons-io" % "commons-io" % "2.4"
     val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.7.1"
@@ -21,7 +19,6 @@ object Dependencies {
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val javaxMail = "javax.mail" % "mail" % "1.4.7"
-    val jbig2 = "com.levigo.jbig2" % "levigo-jbig2-imageio" % "1.6.1"
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
     val junit = "junit" % "junit-dep" % "4.11"
@@ -30,7 +27,7 @@ object Dependencies {
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
     val openCsv = "com.opencsv" % "opencsv" % "3.4"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
-    val pdfbox = "org.apache.pdfbox" % "pdfbox" % "1.8.9"
+    val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.1-SNAPSHOT"
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.9.0"
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
     val playMailer = "com.typesafe.play" %% "play-mailer" % "3.0.1"
@@ -123,13 +120,10 @@ object Dependencies {
   val documentSetWorkerDependencies = Seq(
     deps.akkaAgent,
     deps.akkaRemote,
-    deps.bcmail,
-    deps.bcprov,
     deps.javaxMail,
     deps.logback,
     deps.mimeTypes,
-    deps.pdfbox,
-    deps.jbig2, // for PDFBox
+    deps.pdfocr,
     deps.janino % "test" // See logback-test.xml
   )
 

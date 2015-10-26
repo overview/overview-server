@@ -8,9 +8,9 @@ import com.overviewdocs.models.File
 import com.overviewdocs.models.GroupedFileUpload
 
 object DoCreatePdfFile {
-  def apply(documentSetId: Long, name: String)(implicit executor: ExecutionContext) =
+  def apply(documentSetId: Long, name: String, lang: String)(implicit executor: ExecutionContext) =
     new StepGenerator[GroupedFileUpload, File] {
       override def generate(uploadedFile: GroupedFileUpload): TaskStep =
-        CreatePdfFile(documentSetId, name, uploadedFile, nextStepFn)
+        CreatePdfFile(documentSetId, name, uploadedFile, lang, nextStepFn)
     }
 }

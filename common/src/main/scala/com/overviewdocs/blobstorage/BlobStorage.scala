@@ -1,7 +1,7 @@
 package com.overviewdocs.blobstorage
 
 import java.io.{File,InputStream}
-import java.nio.file.Files
+import java.nio.file.{Files,Path}
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import scala.concurrent.{Future,blocking}
 import scala.util.{Failure,Success,Try}
@@ -131,6 +131,33 @@ trait BlobStorage {
   def create(bucket: BlobBucketId, inputStream: InputStream, nBytes: Long): Future[String] = {
     val prefix = config.getPreferredPrefix(bucket)
     strategyFactory.forLocation(prefix).create(prefix, inputStream, nBytes)
+  }
+
+  /** Writes a file and returns its identifier.
+    *
+    * The <tt>bucketName</tt> must be a key in Config's
+    * <tt>config.storage.preferredPrefixes</tt>.
+    *
+    * The <tt>path</tt> must remain valid until the return value is resolved,
+    * or you'll get undefined behavior.
+    *
+    * @param bucket What bundle of blobs to write to
+    * @param path Which file to write
+    * @return A <tt>location</tt>
+    */
+  def create(bucket: BlobBucketId, path: Path): Future[String] = {
+    def open: (InputStream, Long) = {
+      val nBytes = Files.size(path)
+      val inputStream = Files.newInputStream(path)
+      (inputStream, nBytes)
+    }
+
+    // TODO make S3Strategy use a File instead of an InputStream.
+    import scala.concurrent.ExecutionContext.Implicits.global
+    for {
+      (inputStream, nBytes) <- Future(blocking(open))
+      result <- create(bucket, inputStream, nBytes)
+    } yield result
   }
 }
 

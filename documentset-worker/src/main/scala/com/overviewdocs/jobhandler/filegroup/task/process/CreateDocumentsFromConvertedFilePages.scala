@@ -12,7 +12,7 @@ object CreateDocumentsFromConvertedFilePages {
   (implicit executor: ExecutionContext) = new UploadedFileProcess {
     override protected val steps =
       DoCreateFileWithView(documentSetId, timeoutGenerator).andThen(
-        DoCreatePdfPages(documentSetId).andThen(
+        DoCreateDocumentDataForPages(documentSetId).andThen(
           DoRequestDocumentIds(documentIdSupplier, documentSetId, filename).andThen(
             DoWriteDocuments(documentSetId, filename, bulkDocumentWriter))))
   }

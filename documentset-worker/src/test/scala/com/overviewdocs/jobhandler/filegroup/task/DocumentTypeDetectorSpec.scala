@@ -16,10 +16,6 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
       documentTypeDetector.detect(filename, stream) must be equalTo PdfDocument
     }
 
-    "attempt parent type" in new PlainTextScope {
-      documentTypeDetector.detect(filename, stream) must be equalTo TextDocument
-    }
-
     "return UnsupportedDocument if mimetype is not handled" in new UnsupportedScope {
       documentTypeDetector.detect(filename, stream) must be equalTo UnsupportedDocument(filename, unsupportedMimeType)
     }
@@ -33,9 +29,7 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
     val filename = "file name"
 
     class TestDocumentTypeDetector(mimeType: String) extends DocumentTypeDetector {
-      override protected val mimeTypeToDocumentType = Map(
-        ("application/x-pdf" -> PdfDocument),
-        ("text/*" -> TextDocument))
+      override protected val mimeTypeToDocumentType = Map("application/x-pdf" -> PdfDocument)
 
       override protected val mimeTypeDetector = mockMimeTypeDetector
 
@@ -46,10 +40,6 @@ class DocumentTypeDetectorSpec extends Specification with Mockito {
 
   trait PdfScope extends DetectorScope {
     val documentTypeDetector = new TestDocumentTypeDetector("application/x-pdf")
-  }
-
-  trait PlainTextScope extends DetectorScope {
-    val documentTypeDetector = new TestDocumentTypeDetector("text/plain")
   }
 
   trait UnsupportedScope extends DetectorScope {
