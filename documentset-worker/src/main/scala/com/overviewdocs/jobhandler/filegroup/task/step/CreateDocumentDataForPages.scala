@@ -61,7 +61,7 @@ class CreateDocumentDataForPages(
       blobLocation,
       blobNBytes,
       Textify(pdfPage.toText),
-      true /* FIXME should be pdfPage.isFromOcr */
+      pdfPage.isFromOcr
      )
 
     database.run(pageInserter.+=(createAttributes))

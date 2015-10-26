@@ -15,14 +15,16 @@ class CreateDocumentData(
 )(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep {
   override protected val filename: String = file.name
 
-  private def getText: Future[String] = {
+  private def getText: Future[(String,Boolean)] = {
     BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
       PdfDocument.load(file.toPath).flatMap { pdfDocument =>
         val pageTexts = new Array[String](pdfDocument.nPages)
+        var isFromOcr = false
         val it = pdfDocument.pages
         def fillRemainingPageTexts: Future[Unit] = if (it.hasNext) {
           it.next.flatMap { pdfPage =>
             pageTexts(pdfPage.pageNumber) = pdfPage.toText
+            if (!isFromOcr && pdfPage.isFromOcr) isFromOcr = true
             fillRemainingPageTexts
           }
         } else {
@@ -31,14 +33,14 @@ class CreateDocumentData(
 
         fillRemainingPageTexts
           .andThen { case _ => pdfDocument.close }
-          .map(_ => Textify(pageTexts.mkString("\n")))
+          .map(_ => (Textify(pageTexts.mkString("\n")), isFromOcr))
       }
     }
   }
 
   override protected def doExecute: Future[TaskStep] = {
     for {
-      text <- getText
+      (text, isFromOcr) <- getText
     } yield {
       val document = DocumentWithoutIds(
         url=None,
@@ -50,7 +52,7 @@ class CreateDocumentData(
         fileId=Some(file.id),
         pageId=None,
         displayMethod=DocumentDisplayMethod.pdf,
-        isFromOcr=false,
+        isFromOcr=isFromOcr,
         metadataJson=JsObject(Seq()),
         text=text
       )
