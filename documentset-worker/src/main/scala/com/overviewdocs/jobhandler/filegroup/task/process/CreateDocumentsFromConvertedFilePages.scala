@@ -13,7 +13,6 @@ object CreateDocumentsFromConvertedFilePages {
     override protected val steps =
       DoCreateFileWithView(documentSetId, timeoutGenerator).andThen(
         DoCreateDocumentDataForPages(documentSetId).andThen(
-          DoRequestDocumentIds(documentIdSupplier, documentSetId, filename).andThen(
-            DoWriteDocuments(documentSetId, filename, bulkDocumentWriter))))
+          DoWriteDocuments(documentSetId, filename, documentIdSupplier, bulkDocumentWriter)))
   }
 }

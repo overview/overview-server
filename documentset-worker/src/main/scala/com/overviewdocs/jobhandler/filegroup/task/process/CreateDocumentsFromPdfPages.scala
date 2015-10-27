@@ -11,8 +11,7 @@ object CreateDocumentsFromPdfPages {
       override protected val steps =
         DoCreatePdfFile(documentSetId, filename, lang).andThen(
           DoCreateDocumentDataForPages(documentSetId).andThen(
-            DoRequestDocumentIds(documentIdSupplier, documentSetId, filename).andThen(
-              DoWriteDocuments(documentSetId, filename, bulkDocumentWriter))))
+            DoWriteDocuments(documentSetId, filename, documentIdSupplier, bulkDocumentWriter)))
     }
   }
 }

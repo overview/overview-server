@@ -1,79 +1,52 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import akka.actor.ActorRef
+import akka.pattern.ask
+import akka.util.Timeout
+import java.util.concurrent.TimeUnit
+import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
 import com.overviewdocs.models.Document
-import com.overviewdocs.models.TempDocumentSetFile
+import com.overviewdocs.models.tables.TempDocumentSetFiles
 import com.overviewdocs.util.BulkDocumentWriter
-import com.overviewdocs.searchindex.ElasticSearchIndexClient
-import com.overviewdocs.searchindex.TransportIndexClient
 
-/**
- * Write documents to the database and index them in ElasticSearch.
- */
-trait WriteDocuments extends UploadedFileProcessStep {
-
-  override protected val documentSetId: Long
-  override protected val filename: String
-
-  protected val storage: Storage
-  protected val bulkDocumentWriter: BulkDocumentWriter
-  protected val searchIndex: ElasticSearchIndexClient
-
-  protected val documents: Seq[Document]
-
-  override protected def doExecute: Future[TaskStep] = {
-    val write = writeDocuments
-    val index = indexDocuments
-
-    for {
-      writeResult <- write
-      indexResult <- index
-      deleted <- storage.deleteTempDocumentSetFiles(documents)
-    } yield FinalStep
-
+/** Writes [[Document]]s to the database and deletes [[TempDocumentSetFile]]s.
+  */
+class WriteDocuments(
+  override protected val documentSetId: Long,
+  override protected val filename: String,
+  val documentsWithoutIds: Seq[DocumentWithoutIds],
+  val documentIdSupplier: ActorRef,
+  val bulkDocumentWriter: BulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
+)(implicit protected override val executor: ExecutionContext)
+extends UploadedFileProcessStep with HasDatabase {
+  private def makeDocument(documentWithoutIds: DocumentWithoutIds, id: Long): Document = {
+    documentWithoutIds.toDocument(documentSetId, id)
   }
 
-  protected trait Storage {
-    def deleteTempDocumentSetFiles(documents: Seq[Document]): Future[Int]
-  }
+  override protected def doExecute: Future[TaskStep] = for {
+    IdRequestResponse(ids) <- documentIdSupplier.ask(RequestIds(documentSetId, documentsWithoutIds.size))(Timeout(30, TimeUnit.SECONDS))
+    _ <- writeDocuments(documentsWithoutIds.zip(ids).map((makeDocument _).tupled))
+    _ <- deleteTempDocumentSetFiles
+  } yield FinalStep
 
-  private def writeDocuments: Future[Unit] =
-    for {
-      docsAdded <- Future.sequence(documents.map(bulkDocumentWriter.addAndFlushIfNeeded))
-    } yield {}
+  private def writeDocuments(documents: Seq[Document]): Future[Unit] = {
+    val it = documents.iterator
 
-  private def indexDocuments: Future[Unit] = searchIndex.addDocuments(documents)
-
-}
-
-object WriteDocuments {
-
-  def apply(documentSetId: Long, filename: String, documents: Seq[Document],
-            bulkDocumentWriter: BulkDocumentWriter)(implicit executor: ExecutionContext): WriteDocuments =
-    new WriteDocumentsImpl(documentSetId, filename, documents, bulkDocumentWriter)
-
-  private class WriteDocumentsImpl(
-    override protected val documentSetId: Long,
-    override protected val filename: String,
-    override protected val documents: Seq[Document],
-    override protected val bulkDocumentWriter: BulkDocumentWriter)
-   (override implicit protected val executor: ExecutionContext) extends WriteDocuments {
-
-    override protected val searchIndex = TransportIndexClient.singleton
-
-    override protected val storage: Storage = new SlickStorage
-
-    private class SlickStorage extends Storage with HasDatabase {
-      import database.api._
-      import com.overviewdocs.models.tables.TempDocumentSetFiles
-
-      override def deleteTempDocumentSetFiles(documents: Seq[Document]): Future[Int] = {
-        val fileIds = documents.flatMap(_.fileId)
-        database.run(TempDocumentSetFiles.filter(_.fileId inSet fileIds).delete)
-      }
+    def step: Future[Unit] = it.hasNext match {
+      case true => bulkDocumentWriter.addAndFlushIfNeeded(it.next).flatMap(_ => step)
+      case false => Future.successful(())
     }
+
+    step
+  }
+
+  private def deleteTempDocumentSetFiles: Future[Unit] = {
+    import database.api._
+
+    val fileIds = documentsWithoutIds.map(_.fileId).flatten.toSet
+    database.runUnit(TempDocumentSetFiles.filter(_.fileId inSet fileIds).delete)
   }
 }
