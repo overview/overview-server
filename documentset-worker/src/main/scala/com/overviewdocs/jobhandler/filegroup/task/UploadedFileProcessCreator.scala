@@ -12,8 +12,7 @@ import com.overviewdocs.util.BulkDocumentWriter
 
 class UploadedFileProcessCreator(
   val documentTypeDetector: DocumentTypeDetector,
-  val bulkDocumentWriter: BulkDocumentWriter,
-  val timeoutGenerator: TimeoutGenerator
+  val bulkDocumentWriter: BulkDocumentWriter
 ) extends HasBlockingDatabase {
   def create(
     uploadedFile: GroupedFileUpload,
@@ -30,8 +29,7 @@ class UploadedFileProcessCreator(
         documentType,
         options,
         documentIdSupplier,
-        bulkDocumentWriter,
-        timeoutGenerator
+        bulkDocumentWriter
       )
 
       new UploadedFileProcess(parameters)(ec)
@@ -50,12 +48,7 @@ class UploadedFileProcessCreator(
 }
 
 object UploadedFileProcessCreator extends HasBlockingDatabase {
-  def apply(
-    bulkDocumentWriter: BulkDocumentWriter,
-    timeoutGenerator: TimeoutGenerator
-  )(implicit ec: ExecutionContext): UploadedFileProcessCreator = new UploadedFileProcessCreator(
-    DocumentTypeDetector,
-    bulkDocumentWriter,
-    timeoutGenerator
-  )
+  def apply(bulkDocumentWriter: BulkDocumentWriter)(implicit ec: ExecutionContext): UploadedFileProcessCreator = {
+    new UploadedFileProcessCreator(DocumentTypeDetector, bulkDocumentWriter)
+  }
 }

@@ -13,8 +13,7 @@ case class FilePipelineParameters(
   documentType: DocumentType,
   options: UploadProcessOptions,
   documentIdSupplier: ActorRef,
-  bulkDocumentWriter: BulkDocumentWriter,
-  timeoutGenerator: TimeoutGenerator // TODO nix TimeoutGenerator entirely
+  bulkDocumentWriter: BulkDocumentWriter
 ) {
   def lang: String = options.lang
   def ocrLocales: Seq[Locale] = Seq(new Locale(lang))
