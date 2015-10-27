@@ -8,10 +8,14 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
 import scala.language.postfixOps
 
+import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.jobhandler.filegroup.task.step.DeleteFileUploadTaskStep
+import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.database.FileGroupDeleter
+import com.overviewdocs.database.DocumentSetCreationJobDeleter
+import com.overviewdocs.database.TempFileDeleter
 import com.overviewdocs.jobhandler.filegroup.task.step.FinalStep
-import com.overviewdocs.jobhandler.filegroup.task.step.RemoveDeletedObjects
 import com.overviewdocs.jobhandler.filegroup.task.step.TaskStep
 import com.overviewdocs.models.tables.GroupedFileUploads
 import com.overviewdocs.searchindex.ElasticSearchIndexClient
@@ -80,7 +84,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   private val RetryInterval: FiniteDuration = 1 second
 
-  protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep
+  protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Future[Unit]
 
   protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
                                     options: UploadProcessOptions, documentIdSupplier: ActorRef): Future[Unit]
@@ -129,7 +133,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       goto(Working) using TaskInfo(jobQueue, documentSetId, false)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), ExternalActors(jobQueue)) => {
-      startDeleteFileUploadJob(documentSetId, fileGroupId).execute pipeTo self
+      deleteFileUploadJob(documentSetId, fileGroupId).map { _ => FinalStep } pipeTo self
 
       goto(Working) using TaskInfo(jobQueue, documentSetId, false)
     }
@@ -223,12 +227,17 @@ object FileGroupTaskWorker {
     private val uploadedFileProcessCreator = UploadedFileProcessCreator(bulkDocumentWriter, timeoutGenerator)
     override protected val searchIndex = TransportIndexClient.singleton
 
-    override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep = {
-      DeleteFileUploadTaskStep(
-        documentSetId,
-        fileGroupId,
-        RemoveDeletedObjects(fileGroupId, fileRemovalQueue, fileGroupRemovalQueue)
-      )
+    override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Future[Unit] = {
+      for {
+        _ <- DocumentSetCreationJobDeleter.deleteByDocumentSet(documentSetId)
+        _ <- TempFileDeleter.delete(documentSetId)
+        _ <- DocumentSetDeleter.delete(documentSetId)
+        _ <- FileGroupDeleter.delete(fileGroupId)
+      } yield {
+        fileRemovalQueue ! FileRemovalRequestQueueProtocol.RemoveFiles
+        fileGroupRemovalQueue ! FileGroupRemovalRequestQueueProtocol.RemoveFileGroup(fileGroupId)
+        ()
+      }
     }
 
     protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,

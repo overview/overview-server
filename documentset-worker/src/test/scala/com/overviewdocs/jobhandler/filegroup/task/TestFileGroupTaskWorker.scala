@@ -20,8 +20,7 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
 
   override protected val jobQueueSelection = context.actorSelection(jobQueuePath)
 
-  override protected def startDeleteFileUploadJob(documentSetId: Long, fileGroupId: Long): TaskStep =
-    FinalStep
+  override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long) = Future.successful(())
 
   override protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
                                              options: UploadProcessOptions, documentIdSupplier: ActorRef): Future[Unit] = {
