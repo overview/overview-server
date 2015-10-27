@@ -109,7 +109,7 @@ class LibreOfficeDocumentConverterSpec extends Specification with Mockito with N
 
   class TestLibreOfficeDocumentConverter(inputFile: File) extends LibreOfficeDocumentConverter {
     override val runner = smartMock[ShellRunner]
-    override val fileSystem = smartMock[FileSystem]
+    override val fileSystem = smartMock[LibreOfficeDocumentConverter.FileSystem]
     override protected val conversionTimeout = 1 millis
     override implicit protected val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.global
     

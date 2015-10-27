@@ -1,11 +1,11 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
+import java.nio.file.Path
 import java.util.UUID
 import scala.concurrent.Future
 
-/** Converts an [[InputStream]] to a PDF and calls a method with it.
-  */
+/** Converts an [[InputStream]] to a PDF and calls a method with it. */
 trait DocumentConverter {
   /** Converts the given `inputStream` into a PDF [[InputStream]].
     *
@@ -20,4 +20,7 @@ trait DocumentConverter {
     * @throws Exception if `f` throws an exception
     */
   def withStreamAsPdf[T](guid: UUID, inputStream: InputStream)(f: (InputStream, Long) => Future[T]): Future[T]
+
+  /** Converts the given `file` into a PDF. */
+  def convertFileToPdf(in: Path, out: Path): Future[Unit]
 }

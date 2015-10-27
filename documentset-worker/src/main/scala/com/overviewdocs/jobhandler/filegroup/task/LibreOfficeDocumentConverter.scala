@@ -1,17 +1,14 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.{ BufferedInputStream, File, FileInputStream, FileNotFoundException, InputStream }
-import java.nio.file.Files
-import java.nio.file.Path
+import java.nio.file.{Files,Path}
 import java.nio.file.StandardCopyOption._
 import java.util.UUID
 import scala.util.control.Exception._
-import com.overviewdocs.util.Configuration
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext,Future,blocking}
+
+import com.overviewdocs.util.Configuration
 
 /**
  * Converts an [[InputStream]] to a PDF using LibreOffice.
@@ -28,14 +25,7 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
   implicit protected val executionContext: ExecutionContext
   protected val conversionTimeout: FiniteDuration
   protected val runner: ShellRunner
-  protected val fileSystem: FileSystem
-
-  protected trait FileSystem {
-    def saveToFile(inputStream: InputStream, filePath: Path): File
-    def readFile(file: File): InputStream
-    def getFileLength(file: File): Long
-    def deleteFile(file: File): Boolean
-  }
+  protected val fileSystem: LibreOfficeDocumentConverter.FileSystem
 
   /**
    * The call to `LibreOffice` resulted in an error code (including if no
@@ -48,7 +38,7 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
 
   override def withStreamAsPdf[T](guid: UUID, inputStream: InputStream)(f: (InputStream, Long) => Future[T]): Future[T] = {
     withStreamAsTemporaryFile(guid, inputStream) { tempFile =>
-      convertFileToPdf(tempFile) { pdfTempFile =>
+      convertFileToPdfAndThen(tempFile) { pdfTempFile =>
         withFileAsStream(pdfTempFile)(f)
       }
     }
@@ -76,27 +66,28 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
     val input = fileSystem.saveToFile(inputStream, inputFilePath)
 
     val result = f(inputFilePath.toFile)
-    result.onComplete { _ => fileSystem.deleteFile(input) }
-    
-    result
+    result.andThen { case _ => fileSystem.deleteFile(input) }
   }
 
   // Calls LibreOffice with the given inputFile as input parameter
   // If the call succeeds, f is called with the resulting output file as a parameter.
   // The output file is deleted after the call to f
-  private def convertFileToPdf[T](inputFile: File)(f: File => Future[T]): Future[T] = {
-    val officeCommand = conversionCommand(inputFile.getAbsolutePath)
-
+  private def convertFileToPdfAndThen[T](inputFile: File)(f: File => Future[T]): Future[T] = {
     val output = outputFile(inputFile)
 
-    val result = for {
+    convertFileToPdf(inputFile.toPath, output.toPath)
+      .flatMap { _ => f(output) }
+      .andThen { case _ => Future(blocking(fileSystem.deleteFile(output))) }
+  }
+
+  override def convertFileToPdf(in: Path, out: Path): Future[Unit] = {
+    val officeCommand = conversionCommand(in.toString)
+    val outputPath = outputFile(in.toFile).toPath
+
+    for {
       _ <- runner.run(officeCommand, conversionTimeout)
-      r <- f(output)
-    } yield r
-
-    result.onComplete { _ => fileSystem.deleteFile(output) }
-
-    result
+      _ <- Future(blocking(fileSystem.moveFile(outputPath, out)))
+    } yield ()
   }
 
   // reads the given outputFile as a stream, passed to f
@@ -116,8 +107,9 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
     result
   }
 
-  private def conversionCommand(inputFile: String): String =
+  private def conversionCommand(inputFile: String): String = {
     s"$LibreOfficeLocation --headless --nologo --invisible --norestore --nolockcheck --convert-to pdf --outdir ${TempDirectory.path} $inputFile"
+  }
 
   private def outputFile(inputFile: File): File = {
     val inputName = inputFile.getName
@@ -130,6 +122,13 @@ trait LibreOfficeDocumentConverter extends DocumentConverter {
 
 /** Implements [[DocumentConverter]] with components that perform filesystem and command runner functions */
 object LibreOfficeDocumentConverter {
+  trait FileSystem {
+    def saveToFile(inputStream: InputStream, filePath: Path): File
+    def readFile(file: File): InputStream
+    def getFileLength(file: File): Long
+    def deleteFile(file: File): Boolean
+    def moveFile(from: Path, to: Path): Unit
+  }
 
   /**
    * Conversion succeeded, but no output file was found.
@@ -163,6 +162,7 @@ object LibreOfficeDocumentConverter {
 
       override def readFile(file: File): InputStream = new FileInputStream(file)
       override def getFileLength(file: File): Long = file.length
+      override def moveFile(from: Path, to: Path): Unit = Files.move(from, to)
       override def deleteFile(file: File): Boolean = file.delete
     }
 

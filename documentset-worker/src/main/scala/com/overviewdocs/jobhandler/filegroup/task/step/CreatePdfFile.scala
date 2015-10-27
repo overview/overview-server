@@ -31,11 +31,11 @@ class CreatePdfFile(
 extends UploadedFileProcessStep with HasBlockingDatabase {
   import database.api._
 
-  protected val CopyBufferSize = 1024 * 1024 * 5 // Copy 5MB at a time from database
+  private val CopyBufferSize = 1024 * 1024 * 5 // Copy 5MB at a time from database
 
   protected val blobStorage: BlobStorage = BlobStorage
 
-  protected def downloadLargeObjectAndCalculateSha1(destination: Path): Future[Array[Byte]] = {
+  private def downloadLargeObjectAndCalculateSha1(destination: Path): Future[Array[Byte]] = {
     Future(blocking(JFiles.newOutputStream(destination))).flatMap { outputStream =>
       val loStream = new LargeObjectInputStream(upload.contentsOid, blockingDatabase)
       val digest = MessageDigest.getInstance("SHA-1")

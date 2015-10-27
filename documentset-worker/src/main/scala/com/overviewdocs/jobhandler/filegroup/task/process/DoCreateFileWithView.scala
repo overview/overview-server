@@ -11,7 +11,8 @@ object DoCreateFileWithView {
 
   def apply(documentSetId: Long, timeoutGenerator: TimeoutGenerator)(implicit executor: ExecutionContext) = new StepGenerator[GroupedFileUpload, File] {
     
-    override def generate(uploadedFile: GroupedFileUpload): TaskStep = 
-      CreateFileWithView(documentSetId, uploadedFile, timeoutGenerator, nextStepFn)
+    override def generate(uploadedFile: GroupedFileUpload): TaskStep = {
+      new CreateFileWithView(documentSetId, uploadedFile, timeoutGenerator, nextStepFn)
+    }
   }
 }
