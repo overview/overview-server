@@ -1,16 +1,16 @@
 package com.overviewdocs.jobhandler.filegroup.task.step
 
+import akka.actor.ActorRef
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import akka.actor.ActorRef
+import scala.util.Try
+
 import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 import com.overviewdocs.jobhandler.filegroup.task.UploadedFileProcessCreator
 import com.overviewdocs.jobhandler.filegroup.task.process.UploadedFileProcess
 import com.overviewdocs.models.GroupedFileUpload
 import com.overviewdocs.util.BulkDocumentWriter
 import com.overviewdocs.jobhandler.filegroup.task.TimeoutGenerator
-
-
 
 /**
  * Create a process to convert a [[GroupedFileUpload]] into [[Document]](s).
@@ -32,10 +32,9 @@ trait CreateUploadedFileProcess extends UploadedFileProcessStep {
     firstStep <- process.start(uploadedFile)
   } yield firstStep
 
-  private def createProcess: Future[UploadedFileProcess] = AsFuture {
-    uploadedFileProcessCreator.create(uploadedFile, options, documentSetId,
-      documentIdSupplier, bulkDocumentWriter)
-  }
+  private def createProcess: Future[UploadedFileProcess] = Future.fromTry(Try {
+    uploadedFileProcessCreator.create(uploadedFile, options, documentSetId, documentIdSupplier, bulkDocumentWriter)
+  })
 }
 
 object CreateUploadedFileProcess {

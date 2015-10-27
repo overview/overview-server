@@ -27,14 +27,14 @@ trait LargeObjectMover {
    */
   protected def moveLargeObjectToBlobStorage(oid: Long, size: Long, bucket: BlobBucketId)
   (implicit executor: ExecutionContext): Future[(String, Array[Byte])] = {
+    val (digestStream, digest) = sha1Digest(oid)
 
     for {
-      (digestStream, digest) <- sha1Digest(oid)
       location <- blobStorage.create(bucket, digestStream, size)
     } yield (location, digest.digest)
   }
 
-  private def sha1Digest(oid: Long): Future[(InputStream, MessageDigest)] = AsFuture {
+  private def sha1Digest(oid: Long): (InputStream, MessageDigest) = {
     val loStream = largeObjectInputStream(oid)
     val digest = MessageDigest.getInstance("SHA-1")
     val digestStream = new DigestInputStream(loStream, digest)
