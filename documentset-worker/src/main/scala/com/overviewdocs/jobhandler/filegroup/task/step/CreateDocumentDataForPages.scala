@@ -7,39 +7,37 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.{DocumentDisplayMethod,File,Page}
 import com.overviewdocs.models.tables.Pages
 import com.overviewdocs.util.Textify
 
-class CreateDocumentDataForPages(
-  override val documentSetId: Long,
-  file: File,
-  nextStep: Seq[DocumentWithoutIds] => TaskStep
-)(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep with HasDatabase {
+class CreateDocumentDataForPages(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext)
+extends HasDatabase {
   import database.api._
 
-  override protected val filename = file.name
-
-  override protected def doExecute: Future[TaskStep] = BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
-    PdfDocument.load(file.toPath).flatMap { pdfDocument =>
-      val documents: Array[DocumentWithoutIds] = new Array(pdfDocument.nPages)
-      val it = pdfDocument.pages
-      def step: Future[Unit] = {
-        if (it.hasNext) {
-          it.next.flatMap { pdfPage =>
-            writePage(pdfPage).flatMap { document =>
-              documents(pdfPage.pageNumber) = document
-              step
+  def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
+      PdfDocument.load(file.toPath).flatMap { pdfDocument =>
+        val documents: Array[DocumentWithoutIds] = new Array(pdfDocument.nPages)
+        val it = pdfDocument.pages
+        def step: Future[Unit] = {
+          if (it.hasNext) {
+            it.next.flatMap { pdfPage =>
+              writePage(pdfPage).flatMap { document =>
+                documents(pdfPage.pageNumber) = document
+                step
+              }
             }
+          } else {
+            Future.successful(())
           }
-        } else {
-          Future.successful(())
         }
-      }
 
-      step
-        .andThen { case _ => pdfDocument.close }
-        .map(_ => nextStep(documents.toSeq))
+        step
+          .andThen { case _ => pdfDocument.close }
+          .map(_ => Right(documents.toSeq))
+      }
     }
   }
 
@@ -85,5 +83,11 @@ class CreateDocumentDataForPages(
       metadataJson=JsObject(Seq()),
       text=attributes.text
     )
+  }
+}
+
+object CreateDocumentDataForPages {
+  def apply(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    new CreateDocumentDataForPages(file, params).execute
   }
 }

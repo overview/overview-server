@@ -24,10 +24,10 @@ class TestFileGroupTaskWorker(jobQueuePath: String,
     FinalStep
 
   override protected def processUploadedFile(documentSetId: Long, uploadedFileId: Long,
-                                             options: UploadProcessOptions, documentIdSupplier: ActorRef): TaskStep = {
+                                             options: UploadProcessOptions, documentIdSupplier: ActorRef): Future[Unit] = {
     processUploadedFileFn.store((documentSetId, uploadedFileId, options, documentIdSupplier))
 
-    processStep
+    Future.successful(())
   }
 
   override protected def updateDocumentSetInfo(documentSetId: Long) =

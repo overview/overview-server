@@ -5,15 +5,32 @@ import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.{DocumentDisplayMethod,File}
 import com.overviewdocs.util.Textify
 
-class CreateDocumentData(
-  override val documentSetId: Long,
-  file: File,
-  nextStep: Seq[DocumentWithoutIds] => TaskStep
-)(implicit override val executor: ExecutionContext) extends UploadedFileProcessStep {
-  override protected val filename: String = file.name
+class CreateDocumentDataForFile(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext) {
+  def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    getText
+      .map { case (text, isFromOcr) =>
+        val document = DocumentWithoutIds(
+          url=None,
+          suppliedId=file.name,
+          title=file.name,
+          pageNumber=None,
+          keywords=Seq(),
+          createdAt=new java.util.Date(),
+          fileId=Some(file.id),
+          pageId=None,
+          displayMethod=DocumentDisplayMethod.pdf,
+          isFromOcr=isFromOcr,
+          metadataJson=JsObject(Seq()),
+          text=text
+        )
+
+        Right(Seq(document))
+      }
+  }
 
   private def getText: Future[(String,Boolean)] = {
     BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
@@ -33,31 +50,14 @@ class CreateDocumentData(
 
         fillRemainingPageTexts
           .andThen { case _ => pdfDocument.close }
-          .map(_ => (Textify(pageTexts.mkString("\n")), isFromOcr))
+          .map(_ => (Textify(pageTexts.mkString("\n\n")), isFromOcr))
       }
     }
   }
+}
 
-  override protected def doExecute: Future[TaskStep] = {
-    for {
-      (text, isFromOcr) <- getText
-    } yield {
-      val document = DocumentWithoutIds(
-        url=None,
-        suppliedId=file.name,
-        title=file.name,
-        pageNumber=None,
-        keywords=Seq(),
-        createdAt=new java.util.Date(),
-        fileId=Some(file.id),
-        pageId=None,
-        displayMethod=DocumentDisplayMethod.pdf,
-        isFromOcr=isFromOcr,
-        metadataJson=JsObject(Seq()),
-        text=text
-      )
-
-      nextStep(Seq(document))
-    }
+object CreateDocumentDataForFile {
+  def apply(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    new CreateDocumentDataForFile(file, params).execute
   }
 }

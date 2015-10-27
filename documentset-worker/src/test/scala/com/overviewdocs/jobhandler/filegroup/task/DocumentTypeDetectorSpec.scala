@@ -1,50 +1,31 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
-import java.io.{BufferedInputStream,InputStream}
+import java.io.InputStream
+import org.overviewproject.mime_types.MimeTypeDetector
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
 import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector._
-import org.overviewproject.mime_types.MimeTypeDetector
 
 class DocumentTypeDetectorSpec extends Specification with Mockito {
-
   "DocumentTypeDetector" should {
-
-    "detect document type" in new PdfScope {
-      documentTypeDetector.detect(filename, stream) must be equalTo PdfDocument
+    "detect document type" in new BaseScope {
+      mockMimeTypeDetector.detectMimeType(any[String], any[InputStream]) returns "application/pdf"
+      subject.detect("file.pdf", mock[InputStream]) must beEqualTo(PdfDocument)
     }
 
-    "return UnsupportedDocument if mimetype is not handled" in new UnsupportedScope {
-      documentTypeDetector.detect(filename, stream) must be equalTo UnsupportedDocument(filename, unsupportedMimeType)
+    "return UnsupportedDocument if mimetype is not handled" in new BaseScope {
+      mockMimeTypeDetector.detectMimeType(any[String], any[InputStream]) returns "some-nonexistent/file-type"
+      subject.detect("file.pdf", mock[InputStream]) must beEqualTo(UnsupportedDocument("some-nonexistent/file-type"))
     }
   }
 
-  trait DetectorScope extends Scope {
+  class TestDetector(override val mimeTypeDetector: MimeTypeDetector) extends DocumentTypeDetector
 
+  trait BaseScope extends Scope {
     val mockMimeTypeDetector = smartMock[MimeTypeDetector]
-    val stream = smartMock[InputStream]
-    
-    val filename = "file name"
-
-    class TestDocumentTypeDetector(mimeType: String) extends DocumentTypeDetector {
-      override protected val mimeTypeToDocumentType = Map("application/x-pdf" -> PdfDocument)
-
-      override protected val mimeTypeDetector = mockMimeTypeDetector
-
-      mimeTypeDetector.detectMimeType(be(filename), org.mockito.Matchers.isA(classOf[BufferedInputStream])) returns mimeType
-      mimeTypeDetector.getMaxGetBytesLength returns 5
-    }
+    mockMimeTypeDetector.getMaxGetBytesLength returns 4
+    val subject = new TestDetector(mockMimeTypeDetector)
   }
-
-  trait PdfScope extends DetectorScope {
-    val documentTypeDetector = new TestDocumentTypeDetector("application/x-pdf")
-  }
-
-  trait UnsupportedScope extends DetectorScope {
-    val unsupportedMimeType = "image/png"
-    val documentTypeDetector = new TestDocumentTypeDetector(unsupportedMimeType)
-  }
-
 }

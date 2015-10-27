@@ -8,11 +8,12 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.{File,GroupedFileUpload,TempDocumentSetFile}
 import com.overviewdocs.models.tables.{Files,TempDocumentSetFiles}
 import com.overviewdocs.postgres.LargeObjectInputStream
 
-/** Create a [[File]] from a PDF document.
+/** Creates a [[File]] from a PDF document.
   *
   * Does this:
   *
@@ -20,15 +21,14 @@ import com.overviewdocs.postgres.LargeObjectInputStream
   * 2. Makes a searchable copy, using PdfOcr.
   * 3. Uploads both copies to BlobStorage.
   * 4. Writes a File and a TempDocumentSetFile to Postgres.
+  * 5. Returns the File.
+  *
+  * If there's a recoverable error (i.e., the file is an invalid or
+  * password-protected PDF), returns a String error message.
+  *
+  * TODO share some code with CreateOfficeFile.scala
   */
-class CreatePdfFile(
-  override protected val documentSetId: Long,
-  override protected val filename: String,
-  val upload: GroupedFileUpload,
-  val language: Locale,
-  val nextStep: File => TaskStep
-)(override implicit protected val executor: ExecutionContext)
-extends UploadedFileProcessStep with HasBlockingDatabase {
+class CreatePdfFile(params: FilePipelineParameters)(implicit ec: ExecutionContext) extends HasBlockingDatabase {
   import database.api._
 
   private val CopyBufferSize = 1024 * 1024 * 5 // Copy 5MB at a time from database
@@ -37,7 +37,7 @@ extends UploadedFileProcessStep with HasBlockingDatabase {
 
   private def downloadLargeObjectAndCalculateSha1(destination: Path): Future[Array[Byte]] = {
     Future(blocking(JFiles.newOutputStream(destination))).flatMap { outputStream =>
-      val loStream = new LargeObjectInputStream(upload.contentsOid, blockingDatabase)
+      val loStream = new LargeObjectInputStream(params.inputOid, blockingDatabase)
       val digest = MessageDigest.getInstance("SHA-1")
       val digestStream = new DigestInputStream(loStream, digest)
 
@@ -70,7 +70,7 @@ extends UploadedFileProcessStep with HasBlockingDatabase {
           JFiles.delete(rawPath)
           JFiles.delete(pdfPath)
           ()
-        })(executor)
+        })
       }
 
       f(rawPath, pdfPath)
@@ -79,15 +79,17 @@ extends UploadedFileProcessStep with HasBlockingDatabase {
     }
   }
 
-  override protected def doExecute: Future[TaskStep] = withTempFiles { (rawPath, pdfPath) =>
-    for {
-      sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
-      _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, Seq(language), dummyProgress)
-      pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
-      rawLocation <- BlobStorage.create(BlobBucketId.FileContents, rawPath)
-      pdfLocation <- BlobStorage.create(BlobBucketId.FileContents, pdfPath)
-      file <- writeDatabase(rawLocation, sha1, pdfLocation, pdfNBytes)
-    } yield nextStep(file)
+  def execute: Future[Either[String,File]] = {
+    withTempFiles { (rawPath, pdfPath) =>
+      for {
+        sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
+        _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, params.ocrLocales, dummyProgress)
+        pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
+        rawLocation <- BlobStorage.create(BlobBucketId.FileContents, rawPath)
+        pdfLocation <- BlobStorage.create(BlobBucketId.FileContents, pdfPath)
+        file <- writeDatabase(rawLocation, sha1, pdfLocation, pdfNBytes)
+      } yield Right(file)
+    }
   }
 
   private lazy val fileInserter = {
@@ -100,14 +102,14 @@ extends UploadedFileProcessStep with HasBlockingDatabase {
 
   private def writeDatabase(rawLocation: String, sha1: Array[Byte], pdfLocation: String, pdfNBytes: Long): Future[File] = {
     database.run((for {
-      file <- fileInserter.+=((1, upload.name, rawLocation, upload.size, sha1, pdfLocation, pdfNBytes))
-      _ <- TempDocumentSetFiles.+=(TempDocumentSetFile(documentSetId, file.id))
+      file <- fileInserter.+=((1, params.filename, rawLocation, params.inputSize, sha1, pdfLocation, pdfNBytes))
+      _ <- TempDocumentSetFiles.+=(TempDocumentSetFile(params.documentSetId, file.id))
     } yield file).transactionally)
   }
 }
 
 object CreatePdfFile {
-  def apply(documentSetId: Long, filename: String, upload: GroupedFileUpload, lang: String, next: File => TaskStep)(implicit executor: ExecutionContext): CreatePdfFile = {
-    new CreatePdfFile(documentSetId, filename, upload, new Locale(lang), next)
+  def apply(params: FilePipelineParameters)(implicit ec: ExecutionContext): Future[Either[String,File]] = {
+    new CreatePdfFile(params).execute
   }
 }
