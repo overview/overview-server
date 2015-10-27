@@ -7,9 +7,8 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.jobhandler.filegroup.task.DocumentConverter
 import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
-import com.overviewdocs.jobhandler.filegroup.task.LibreOfficeDocumentConverter
+import com.overviewdocs.jobhandler.filegroup.task.OfficeDocumentConverter
 import com.overviewdocs.models.{File,GroupedFileUpload,TempDocumentSetFile}
 import com.overviewdocs.models.tables.{Files,TempDocumentSetFiles}
 import com.overviewdocs.postgres.LargeObjectInputStream
@@ -34,7 +33,7 @@ class CreateOfficeFile(params: FilePipelineParameters)(implicit ec: ExecutionCon
 
   private val CopyBufferSize = 1024 * 1024 * 5 // Copy 5MB at a time from database
 
-  protected val converter: DocumentConverter = LibreOfficeDocumentConverter(params.timeoutGenerator)
+  protected val converter: OfficeDocumentConverter = OfficeDocumentConverter
   protected val blobStorage: BlobStorage = BlobStorage
 
   protected def withTempFiles[A](f: (Path, Path) => Future[A]): Future[A] = {
@@ -55,13 +54,18 @@ class CreateOfficeFile(params: FilePipelineParameters)(implicit ec: ExecutionCon
     withTempFiles { case (rawPath, pdfPath) =>
       for {
         sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
-        _ <- converter.convertFileToPdf(rawPath, pdfPath)
+        tempPdfPath <- converter.convertFileToPdf(rawPath)
+        _ <- Future(blocking(JFiles.move(tempPdfPath, pdfPath)))
         pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
         contentsLocation <- blobStorage.create(BlobBucketId.FileContents, rawPath)
         viewLocation <- blobStorage.create(BlobBucketId.FileView, pdfPath)
         file <- createFile(contentsLocation, sha1, pdfNBytes, viewLocation)
       } yield Right(file)
     }
+      .recover {
+        case OfficeDocumentConverter.LibreOfficeFailedException(message) => Left(message)
+        case OfficeDocumentConverter.LibreOfficeTimedOutException() => Left("LibreOffice timed out")
+      }
   }
 
   protected lazy val fileInserter = {
