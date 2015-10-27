@@ -4,6 +4,7 @@ import java.nio.file.{Files=>JFiles,Path}
 import java.security.{DigestInputStream,MessageDigest}
 import java.util.Locale
 import org.overviewproject.pdfocr.PdfOcr
+import org.overviewproject.pdfocr.exceptions._
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
@@ -90,6 +91,10 @@ class CreatePdfFile(params: FilePipelineParameters)(implicit ec: ExecutionContex
         file <- writeDatabase(rawLocation, sha1, pdfLocation, pdfNBytes)
       } yield Right(file)
     }
+      .recover {
+        case ex: PdfInvalidException => Left(ex.getMessage)
+        case ex: PdfEncryptedException => Left(ex.getMessage)
+      }
   }
 
   private lazy val fileInserter = {

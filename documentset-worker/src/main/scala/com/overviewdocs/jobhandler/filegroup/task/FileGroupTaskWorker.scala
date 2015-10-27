@@ -1,12 +1,12 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
 import akka.actor._
-import akka.actor.Status.Failure
 import akka.pattern.pipe
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.Future
 import scala.language.postfixOps
+import scala.util.{Failure,Success,Try}
 
 import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol
 import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol
@@ -15,8 +15,6 @@ import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.database.FileGroupDeleter
 import com.overviewdocs.database.DocumentSetCreationJobDeleter
 import com.overviewdocs.database.TempFileDeleter
-import com.overviewdocs.jobhandler.filegroup.task.step.FinalStep
-import com.overviewdocs.jobhandler.filegroup.task.step.TaskStep
 import com.overviewdocs.models.tables.GroupedFileUploads
 import com.overviewdocs.searchindex.ElasticSearchIndexClient
 import com.overviewdocs.searchindex.TransportIndexClient
@@ -50,12 +48,11 @@ object FileGroupTaskWorkerFSM {
   case object LookingForExternalActors extends State
   case object Ready extends State
   case object Working extends State
-  case object Cancelled extends State
 
   sealed trait Data
   case class ExternalActorsFound(jobQueue: Option[ActorRef]) extends Data
   case class ExternalActors(jobQueue: ActorRef) extends Data
-  case class TaskInfo(queue: ActorRef, documentSetId: Long, exceptionsHandled: Boolean) extends Data
+  case class TaskInfo(queue: ActorRef, documentSetId: Long) extends Data
 
 }
 
@@ -116,68 +113,47 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       stay
     }
     case Event(CreateSearchIndexAlias(documentSetId, fileGroupId), ExternalActors(jobQueue)) => {
-      searchIndex.addDocumentSet(documentSetId).map { _ => FinalStep } pipeTo self
+      searchIndex.addDocumentSet(documentSetId)
+        .andThen { case x => self ! x }
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, false)
+      goto(Working) using TaskInfo(jobQueue, documentSetId)
     }
     case Event(CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier), ExternalActors(jobQueue)) => {
       processUploadedFile(documentSetId, uploadedFileId, options, documentIdSupplier)
-        .map(_ => FinalStep)
-        .pipeTo(self)
+        .andThen { case x => self ! x }
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, true)
+      goto(Working) using TaskInfo(jobQueue, documentSetId)
     }
     case Event(CompleteDocumentSet(documentSetId, fileGroupId), ExternalActors(jobQueue)) => {
-      updateDocumentSetInfo(documentSetId).map { _ => FinalStep } pipeTo self
+      updateDocumentSetInfo(documentSetId)
+        .andThen { case x => self ! x }
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, false)
+      goto(Working) using TaskInfo(jobQueue, documentSetId)
     }
     case Event(DeleteFileUploadJob(documentSetId, fileGroupId), ExternalActors(jobQueue)) => {
-      deleteFileUploadJob(documentSetId, fileGroupId).map { _ => FinalStep } pipeTo self
+      deleteFileUploadJob(documentSetId, fileGroupId)
+        .andThen { case x => self ! x }
 
-      goto(Working) using TaskInfo(jobQueue, documentSetId, false)
+      goto(Working) using TaskInfo(jobQueue, documentSetId)
     }
     case Event(CancelTask, _) => stay
   }
 
   when(Working) {
-    case Event(FinalStep, TaskInfo(jobQueue, documentSetId, _)) => {
+    case Event(Success(()), TaskInfo(jobQueue, documentSetId)) => {
       jobQueue ! TaskDone(documentSetId, None)
       jobQueue ! ReadyForTask
 
       goto(Ready) using ExternalActors(jobQueue)
     }
-    case Event(step: TaskStep, _) => {
-      step.execute pipeTo self
-      stay
-    }
-    case Event(Failure(e), TaskInfo(_, documentSetId, false)) => {
+    case Event(Failure(e), TaskInfo(jobQueue, documentSetId)) => {
       // If exceptions are not handled in the task step, the exception is re-thrown in order to kill
       // the worker and have the job rescheduled.
-      logger.error("Failed task, documentSetId={}", documentSetId, e)
+      logger.error("Exception in task, documentSetId={}", documentSetId)
       throw e
     }
-    case Event(Failure(e), TaskInfo(jobQueue, documentSetId, true)) => {
-      logDocumentProcessingError(documentSetId, e)
 
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
-
-      goto(Ready) using ExternalActors(jobQueue)
-    }
-    
-    case Event(CancelTask, _)    => goto(Cancelled)
-    case Event(TaskAvailable, _) => stay
-  }
-
-  when(Cancelled) {
-    case Event(step: TaskStep, TaskInfo(jobQueue, documentSetId, _)) => {
-      jobQueue ! TaskDone(documentSetId, None)
-      jobQueue ! ReadyForTask
-
-      goto(Ready) using ExternalActors(jobQueue)
-    }
-
+    case Event(CancelTask, _)    => stay
     case Event(TaskAvailable, _) => stay
   }
 

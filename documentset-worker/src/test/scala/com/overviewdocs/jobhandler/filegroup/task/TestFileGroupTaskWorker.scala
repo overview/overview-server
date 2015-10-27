@@ -7,13 +7,12 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import com.overviewdocs.models.GroupedFileUpload
 import com.overviewdocs.searchindex.ElasticSearchIndexClient
-import com.overviewdocs.jobhandler.filegroup.task.step.TaskStep
-import com.overviewdocs.jobhandler.filegroup.task.step.FinalStep
 
-class TestFileGroupTaskWorker(jobQueuePath: String,
-                              override protected val searchIndex: ElasticSearchIndexClient,
-                              outputFileId: Long,
-                              processStep: TaskStep = FinalStep) extends FileGroupTaskWorker {
+class TestFileGroupTaskWorker(
+  jobQueuePath: String,
+  override protected val searchIndex: ElasticSearchIndexClient,
+  outputFileId: Long
+) extends FileGroupTaskWorker {
 
   val updateDocumentSetInfoFn = ParameterStore[Long]
   val processUploadedFileFn = ParameterStore[(Long, Long, UploadProcessOptions, ActorRef)]
