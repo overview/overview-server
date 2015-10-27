@@ -1,11 +1,10 @@
-package com.overviewdocs.jobhandler.filegroup.task.process
+package com.overviewdocs.jobhandler.filegroup.task
 
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.jobhandler.filegroup.task.step._
 import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector._
-import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
-import com.overviewdocs.models.{DocumentProcessingError,File,GroupedFileUpload}
+import com.overviewdocs.models.File
 
 class UploadedFileProcess(parameters: FilePipelineParameters)(implicit ec: ExecutionContext) {
   def start: Future[Unit] = {

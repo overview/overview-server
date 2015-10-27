@@ -6,7 +6,6 @@ import scala.concurrent.ExecutionContext
 import scala.util.control.Exception.ultimately
 
 import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.jobhandler.filegroup.task.process._
 import com.overviewdocs.models.GroupedFileUpload
 import com.overviewdocs.postgres.LargeObjectInputStream
 import com.overviewdocs.util.BulkDocumentWriter
