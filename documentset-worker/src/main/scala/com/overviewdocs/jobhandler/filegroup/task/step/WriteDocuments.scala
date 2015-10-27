@@ -37,7 +37,7 @@ extends UploadedFileProcessStep with HasDatabase {
 
     def step: Future[Unit] = it.hasNext match {
       case true => bulkDocumentWriter.addAndFlushIfNeeded(it.next).flatMap(_ => step)
-      case false => Future.successful(())
+      case false => bulkDocumentWriter.flush
     }
 
     step
