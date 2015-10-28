@@ -199,7 +199,6 @@ object FileGroupTaskWorker {
 
     private val fileRemovalQueue = context.actorSelection(fileRemovalQueueActorPath)
     private val fileGroupRemovalQueue = context.actorSelection(fileGroupRemovalQueueActorPath)
-    private val uploadedFileProcessCreator = UploadedFileProcessCreator(bulkDocumentWriter)
     override protected val searchIndex = TransportIndexClient.singleton
 
     override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Future[Unit] = {
@@ -221,8 +220,15 @@ object FileGroupTaskWorker {
       database.option(GroupedFileUploads.filter(_.id === uploadedFileId)).flatMap(_ match {
         case None => Future.successful(())
         case Some(upload) => {
-          val process = uploadedFileProcessCreator.create(upload, options, documentSetId, documentIdSupplier)
-          process.start
+          val parameters = FilePipelineParameters(
+            documentSetId,
+            upload,
+            options,
+            documentIdSupplier,
+            bulkDocumentWriter
+          )
+
+          new UploadedFileProcess(parameters).start
         }
       })
     }
