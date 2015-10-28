@@ -3,14 +3,12 @@ package com.overviewdocs.jobhandler.filegroup.task
 import akka.actor.ActorRef
 import java.util.{Locale,UUID}
 
-import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector.DocumentType
 import com.overviewdocs.models.GroupedFileUpload
 import com.overviewdocs.util.BulkDocumentWriter
 
 case class FilePipelineParameters(
   documentSetId: Long,
   upload: GroupedFileUpload,
-  documentType: DocumentType,
   options: UploadProcessOptions,
   documentIdSupplier: ActorRef,
   bulkDocumentWriter: BulkDocumentWriter
