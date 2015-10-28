@@ -1,9 +1,10 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
-import java.io.BufferedInputStream
-
 import org.overviewproject.mime_types.MimeTypeDetector
+
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.postgres.LargeObjectInputStream
 
 trait DocumentTypeDetector {
   protected val mimeTypeDetector: MimeTypeDetector
@@ -109,9 +110,7 @@ trait DocumentTypeDetector {
   }
 
   def detect(filename: String, stream: InputStream): DocumentTypeDetector.DocumentType = {
-    val bufferedInputStream = new BufferedInputStream(stream, maximumBytesRead)
-    
-    val mimeType = mimeTypeDetector.detectMimeType(filename, bufferedInputStream)
+    val mimeType = mimeTypeDetector.detectMimeType(filename, stream)
 
     mimeTypeToDocumentType.get(mimeType)
       .orElse(mimeTypeToDocumentType.get(parentType(mimeType)))
@@ -123,7 +122,7 @@ trait DocumentTypeDetector {
   private def maximumBytesRead: Int = mimeTypeDetector.getMaxGetBytesLength
 }
 
-object DocumentTypeDetector extends DocumentTypeDetector {
+object DocumentTypeDetector extends DocumentTypeDetector with HasBlockingDatabase {
   sealed trait DocumentType
   case object PdfDocument extends DocumentType
   case object OfficeDocument extends DocumentType
@@ -132,4 +131,9 @@ object DocumentTypeDetector extends DocumentTypeDetector {
   case class UnsupportedDocument(mimeType: String) extends DocumentType
 
   override protected val mimeTypeDetector = new MimeTypeDetector
+
+  def detectForLargeObject(filename: String, oid: Long): DocumentTypeDetector.DocumentType = {
+    val stream = new LargeObjectInputStream(oid, blockingDatabase)
+    detect(filename, stream)
+  }
 }
