@@ -6,18 +6,17 @@ import scala.concurrent.duration.Duration
 
 import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorker
 import com.overviewdocs.jobhandler.filegroup.task.TempDirectory
-import com.overviewdocs.util.{BulkDocumentWriter,Logger}
+import com.overviewdocs.util.Logger
 
 object FileGroupTaskWorkerStartup {
 
   def apply(
     fileGroupJobQueuePath: String,
     fileRemovalQueuePath: String,
-    fileGroupRemovalQueuePath: String,
-    bulkDocumentWriter: BulkDocumentWriter)(implicit context: ActorContext): Props = {
+    fileGroupRemovalQueuePath: String
+  )(implicit context: ActorContext): Props = {
     TempDirectory.create
-    TaskWorkerSupervisor(fileGroupJobQueuePath, fileRemovalQueuePath,
-        fileGroupRemovalQueuePath, bulkDocumentWriter)
+    TaskWorkerSupervisor(fileGroupJobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath)
   }
 
 }
@@ -25,17 +24,17 @@ object FileGroupTaskWorkerStartup {
 class TaskWorkerSupervisor(
   jobQueuePath: String,
   fileRemovalQueuePath: String,
-  fileGroupRemovalQueuePath: String,
-  bulkDocumentWriter: BulkDocumentWriter) extends Actor {
-
+  fileGroupRemovalQueuePath: String
+) extends Actor {
   private val logger = Logger.forClass(getClass)
 
   private val NumberOfTaskWorkers = 2
-  private val taskWorkers: Seq[ActorRef] = Seq.tabulate(NumberOfTaskWorkers)(n =>
+  private val taskWorkers: Seq[ActorRef] = Seq.tabulate(NumberOfTaskWorkers) { n =>
     context.actorOf(
-      FileGroupTaskWorker(jobQueuePath, fileRemovalQueuePath,
-          fileGroupRemovalQueuePath, bulkDocumentWriter),
-      workerName(n)))
+      FileGroupTaskWorker(jobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath),
+      workerName(n)
+    )
+  }
 
   private def workerName(n: Int): String = s"TaskWorker-$n"
 
@@ -53,12 +52,7 @@ class TaskWorkerSupervisor(
 }
 
 object TaskWorkerSupervisor {
-  def apply(
-    jobQueuePath: String,
-    fileRemovalQueuePath: String,
-    fileGroupRemovalQueuePath: String,
-    bulkDocumentWriter: BulkDocumentWriter): Props =
-
-    Props(new TaskWorkerSupervisor(jobQueuePath, fileRemovalQueuePath,
-      fileGroupRemovalQueuePath, bulkDocumentWriter))
+  def apply(jobQueuePath: String, fileRemovalQueuePath: String, fileGroupRemovalQueuePath: String): Props = {
+    Props(new TaskWorkerSupervisor(jobQueuePath, fileRemovalQueuePath, fileGroupRemovalQueuePath))
+  }
 }

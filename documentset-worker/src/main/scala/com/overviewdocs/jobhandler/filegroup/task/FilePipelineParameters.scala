@@ -4,14 +4,12 @@ import akka.actor.ActorRef
 import java.util.{Locale,UUID}
 
 import com.overviewdocs.models.GroupedFileUpload
-import com.overviewdocs.util.BulkDocumentWriter
 
 case class FilePipelineParameters(
   documentSetId: Long,
   upload: GroupedFileUpload,
   options: UploadProcessOptions,
-  documentIdSupplier: ActorRef,
-  bulkDocumentWriter: BulkDocumentWriter
+  documentIdSupplier: ActorRef
 ) {
   def lang: String = options.lang
   def ocrLocales: Seq[Locale] = Seq(new Locale(lang))

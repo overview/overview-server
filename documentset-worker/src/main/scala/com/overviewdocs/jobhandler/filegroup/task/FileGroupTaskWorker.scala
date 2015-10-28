@@ -19,7 +19,6 @@ import com.overviewdocs.models.tables.GroupedFileUploads
 import com.overviewdocs.searchindex.ElasticSearchIndexClient
 import com.overviewdocs.searchindex.TransportIndexClient
 import com.overviewdocs.util.Logger
-import com.overviewdocs.util.BulkDocumentWriter
 
 import FileGroupTaskWorkerFSM._
 
@@ -176,21 +175,20 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 }
 
 object FileGroupTaskWorker {
-  def apply(jobQueueActorPath: String,
-            fileRemovalQueueActorPath: String,
-            fileGroupRemovalQueueActorPath: String,
-            bulkDocumentWriter: BulkDocumentWriter): Props =
+  def apply(
+    jobQueueActorPath: String,
+    fileRemovalQueueActorPath: String,
+    fileGroupRemovalQueueActorPath: String
+  ): Props =
     Props(new FileGroupTaskWorkerImpl(
       jobQueueActorPath,
       fileRemovalQueueActorPath,
-      fileGroupRemovalQueueActorPath,
-      bulkDocumentWriter))
+      fileGroupRemovalQueueActorPath))
 
   private class FileGroupTaskWorkerImpl(
     jobQueueActorPath: String,
     fileRemovalQueueActorPath: String,
-    fileGroupRemovalQueueActorPath: String,
-    bulkDocumentWriter: BulkDocumentWriter
+    fileGroupRemovalQueueActorPath: String
   ) extends FileGroupTaskWorker with HasDatabase {
 
     import context.dispatcher
@@ -224,8 +222,7 @@ object FileGroupTaskWorker {
             documentSetId,
             upload,
             options,
-            documentIdSupplier,
-            bulkDocumentWriter
+            documentIdSupplier
           )
 
           new UploadedFileProcess(parameters).start
@@ -234,9 +231,7 @@ object FileGroupTaskWorker {
     }
 
     override protected def updateDocumentSetInfo(documentSetId: Long): Future[Unit] = {
-      documentSetInfoUpdater.update(documentSetId)
+      DocumentSetInfoUpdater.update(documentSetId)
     }
-
-    private val documentSetInfoUpdater = DocumentSetInfoUpdater(bulkDocumentWriter)
   }
 }

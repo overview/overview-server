@@ -11,49 +11,35 @@ import com.overviewdocs.test.DbSpecification
 import com.overviewdocs.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
 
 class DocumentSetInfoUpdaterSpec extends DbSpecification with Mockito {
-
   "DocumentSetInfoUpdater" should {
+    "update the documentSet counts" in new DbScope {
+      val documentSet = factory.documentSet()
+      val documents = Seq.tabulate(3) { i => factory.document(documentSetId = documentSet.id, text=i.toString) }
+      val documentProcessingErrors = Seq.fill(2)(factory.documentProcessingError(documentSetId = documentSet.id))
 
-    "update document counts" in new DocumentSetScope {
-      await(documentSetInfoUpdater.update(documentSet.id))
+      await(DocumentSetInfoUpdater.update(documentSet.id))
 
       import database.api._
-      val info = blockingDatabase.option(
+
+      val counts = blockingDatabase.option(
         DocumentSets
           .filter(_.id === documentSet.id)
           .map(ds => (ds.documentCount, ds.documentProcessingErrorCount))
       )
-
-      info must beSome((numberOfDocuments, numberOfDocumentProcessingErrors))
+      counts must beSome((3, 2))
     }
 
-  }
+    "sort document IDs" in new DbScope {
+      val documentSet = factory.documentSet()
+      val mockRefresher = smartMock[SortedDocumentIdsRefresher]
+      mockRefresher.refreshDocumentSet(documentSet.id) returns Future.successful(())
+      val updater = new DocumentSetInfoUpdater {
+        override protected val sortedDocumentIdsRefresher = mockRefresher
+      }
 
-  trait DocumentSetScope extends DbScope with Mockito {
-    val numberOfDocuments = 5
-    val numberOfDocumentProcessingErrors = 3
-    val bulkWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
+      await(updater.update(documentSet.id))
 
-    val documentSet = factory.documentSet(documentCount = 0, documentProcessingErrorCount = 0)
-    val documents = Seq.fill(numberOfDocuments)(factory.document(documentSetId = documentSet.id))
-
-    val documentProcessingErrors =
-      Seq.fill(numberOfDocumentProcessingErrors)(factory.documentProcessingError(documentSetId = documentSet.id))
-
-    val documentSetInfoUpdater = new TestDocumentSetInfoUpdater
-
-    def addDocuments: Future[Seq[Unit]] = Future.sequence {
-      documents.map(bulkWriter.addAndFlushIfNeeded)
-    }
-
-    class TestDocumentSetInfoUpdater extends DocumentSetInfoUpdater with HasDatabase {
-      override protected val bulkDocumentWriter = smartMock[BulkDocumentWriter]
-      bulkDocumentWriter.flush returns Future.successful(())
-
-      private val documentIdsRefresher = smartMock[SortedDocumentIdsRefresher]
-      documentIdsRefresher.refreshDocumentSet(documentSet.id) returns Future.successful(())
-
-      override def refreshDocumentSet(documentSetId: Long) = documentIdsRefresher.refreshDocumentSet(documentSetId)
+      there was one(mockRefresher).refreshDocumentSet(documentSet.id)
     }
   }
 }

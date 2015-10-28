@@ -10,7 +10,6 @@ import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, F
 import com.overviewdocs.database.{DB,DocumentSetDeleter,DocumentSetCreationJobDeleter}
 import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
 import com.overviewdocs.jobhandler.filegroup._
-import com.overviewdocs.util.BulkDocumentWriter
 import com.overviewdocs.util.Logger
 
 /** Main app: starts up actors and listens for messages.
@@ -79,15 +78,12 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   logger.info("Clustering job queue path: {}", clusteringJobQueue.toString)
 
   private val fileGroupJobQueueManager = createMonitoredActor(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
-
-  private val bulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
   
   private val taskWorkerSupervisor = createMonitoredActor(
     FileGroupTaskWorkerStartup(
       fileGroupJobQueue.path.toString,
       fileRemovalQueue.path.toString,
-      fileGroupRemovalRequestQueue.path.toString,
-      bulkDocumentWriter
+      fileGroupRemovalRequestQueue.path.toString
     ),
     "TaskWorkerSupervisor"
   )

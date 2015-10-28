@@ -11,6 +11,7 @@ import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol.{Request
 import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.TempDocumentSetFiles
+import com.overviewdocs.util.BulkDocumentWriter
 
 /** Writes [[Document]]s to the database and deletes [[TempDocumentSetFile]]s.
   */
@@ -40,10 +41,11 @@ extends HasDatabase {
 
   private def writeDocuments(documents: Seq[Document]): Future[Unit] = {
     val it = documents.iterator
+    val bulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex
 
     def step: Future[Unit] = it.hasNext match {
-      case true => params.bulkDocumentWriter.addAndFlushIfNeeded(it.next).flatMap(_ => step)
-      case false => params.bulkDocumentWriter.flush
+      case true => bulkDocumentWriter.addAndFlushIfNeeded(it.next).flatMap(_ => step)
+      case false => bulkDocumentWriter.flush
     }
 
     step

@@ -8,25 +8,15 @@ import com.overviewdocs.models.tables.{Documents,DocumentProcessingErrors}
 import com.overviewdocs.models.tables.DocumentSets
 import com.overviewdocs.util.{BulkDocumentWriter,SortedDocumentIdsRefresher}
 
-trait DocumentSetInfoUpdater extends SortedDocumentIdsRefresher with HasDatabase {
+trait DocumentSetInfoUpdater extends HasDatabase {
   import database.api._
 
-  protected val bulkDocumentWriter: BulkDocumentWriter
+  protected val sortedDocumentIdsRefresher: SortedDocumentIdsRefresher
 
   def update(documentSetId: Long)(implicit executionContext: ExecutionContext): Future[Unit] = {
     for {
-      _ <- bulkDocumentWriter.flush
-      _ <- updateCountsAndIds(documentSetId)
-    } yield ()
-  }
-
-  private def updateCountsAndIds(documentSetId: Long)(implicit executionContext: ExecutionContext): Future[Unit] = {
-    val counts = updateCounts(documentSetId)
-    val sortedIds = refreshDocumentSet(documentSetId)
-
-    for {
       _ <- updateCounts(documentSetId)
-      _ <- refreshDocumentSet(documentSetId)
+      _ <- sortedDocumentIdsRefresher.refreshDocumentSet(documentSetId)
     } yield ()
   }
 
@@ -44,10 +34,6 @@ trait DocumentSetInfoUpdater extends SortedDocumentIdsRefresher with HasDatabase
   }
 }
 
-object DocumentSetInfoUpdater {
-  def apply(bulkDocumentWriter: BulkDocumentWriter): DocumentSetInfoUpdater =
-    new DocumentSetInfoUpdaterImpl(bulkDocumentWriter)
-
-  private class DocumentSetInfoUpdaterImpl(override protected val bulkDocumentWriter: BulkDocumentWriter)
-    extends DocumentSetInfoUpdater
+object DocumentSetInfoUpdater extends DocumentSetInfoUpdater {
+  override protected val sortedDocumentIdsRefresher = SortedDocumentIdsRefresher
 }
