@@ -41,7 +41,7 @@ trait FileGroupJobManager extends Actor {
 
   protected val storage: FileGroupJobManager.Storage
 
-  private val runningJobs: mutable.Map[Long, FileGroupJob] = mutable.Map.empty
+  private val runningJobs: mutable.Map[Long, CreateDocumentsJob] = mutable.Map.empty
 
   private case class UpdateJobStateRetryAttempt(command: ClusterCommands.ClusterFileGroup, count: Int)
 
@@ -84,7 +84,7 @@ trait FileGroupJobManager extends Actor {
     submitToFileGroupJobQueue(job.documentSetId,
       CreateDocumentsJob(job.fileGroupId.get, UploadProcessOptions(job.lang, job.splitDocuments)))
 
-  private def submitToFileGroupJobQueue(documentSetId: Long, job: FileGroupJob): Unit = {
+  private def submitToFileGroupJobQueue(documentSetId: Long, job: CreateDocumentsJob): Unit = {
     runningJobs += (documentSetId -> job)
     fileGroupJobQueue ! SubmitJob(documentSetId, job)
   }

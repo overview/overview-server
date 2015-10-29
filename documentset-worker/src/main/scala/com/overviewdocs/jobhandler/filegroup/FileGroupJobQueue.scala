@@ -11,14 +11,10 @@ import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 import com.overviewdocs.util.Logger
 
-trait FileGroupJob {
-  val fileGroupId: Long
-}
-
-case class CreateDocumentsJob(fileGroupId: Long, options: UploadProcessOptions) extends FileGroupJob
+case class CreateDocumentsJob(fileGroupId: Long, options: UploadProcessOptions)
 
 object FileGroupJobQueueProtocol {
-  case class SubmitJob(documentSetId: Long, job: FileGroupJob)
+  case class SubmitJob(documentSetId: Long, job: CreateDocumentsJob)
   case class JobCompleted(documentSetId: Long)
   case class AddTasks(tasks: Iterable[TaskWorkerTask])
 }

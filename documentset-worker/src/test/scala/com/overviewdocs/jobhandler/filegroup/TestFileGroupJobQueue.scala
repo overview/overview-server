@@ -11,7 +11,7 @@ class TestFileGroupJobQueue(
   override protected val jobShepherdFactory = new TestJobShepherdFactory
   
   class TestJobShepherdFactory extends JobShepherdFactory {
-    override def createShepherd(documentSetId: Long, job: FileGroupJob,
+    override def createShepherd(documentSetId: Long, job: CreateDocumentsJob,
         taskQueue: ActorRef, progressReporter: ActorRef, documentIdSupplier: ActorRef): JobShepherd = job match {
       case CreateDocumentsJob(fileGroupId, options) =>
         new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, options,
