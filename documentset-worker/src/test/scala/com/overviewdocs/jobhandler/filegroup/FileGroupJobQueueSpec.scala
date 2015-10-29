@@ -12,7 +12,6 @@ import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import com.overviewdocs.jobhandler.filegroup.ProgressReporterProtocol._
 import com.overviewdocs.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
-import com.overviewdocs.messages.ClusterCommands.CancelFileUpload
 import com.overviewdocs.test.ActorSystemContext
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
@@ -73,66 +72,6 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       worker.expectNoMsg(50 millis)
 
     }
-
-
-    "cancel running tasks" in new JobQueueContext {
-      val workers = createNWorkers(1)
-      workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
-
-      submitJob(documentSetId)
-      val receivedTasks = expectTasks(workers)
-
-      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
-
-      expectCancellation(workers)
-
-      workers.head.expectNoTaskAvailable(fileGroupJobQueue)
-    }
-
-    "notify requester when cancellation is complete" in new JobQueueContext {
-      fileGroupJobQueue ! RegisterWorker(worker.ref)
-
-      submitJob(documentSetId)
-      val task = worker.expectATask
-
-      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
-      
-      worker.completeCancelledTask
-
-      expectMsg(JobCompleted(documentSetId))
-    }
-
-    "cancel not started job" in new JobQueueContext {
-      submitJob(documentSetId)
-      
-      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
-      
-      expectMsg(JobCompleted(documentSetId))
-    }
-    
-    "delete file upload" in new JobQueueContext {
-      fileGroupJobQueue ! RegisterWorker(worker.ref)
-      fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
-
-      worker.expectDeleteFileUploadJob
-    }
-
-    "notify requester when file upload is deleted" in new JobQueueContext {
-      ActAsImmediateJobCompleter(worker, fileId)
-      fileGroupJobQueue ! RegisterWorker(worker.ref)
-      
-      fileGroupJobQueue ! SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId))
-
-      expectMsg(JobCompleted(documentSetId))
-    }
-
-    "respond immediately when asked to cancel unknown job" in new JobQueueContext {
-
-      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
-
-      expectMsg(JobCompleted(documentSetId))
-    }
-    
     
     "don't notify busy workers" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
@@ -195,7 +134,6 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         fileGroupJobQueue ! SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, UploadProcessOptions("en", false)))
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
-      protected def expectCancellation(workers: Seq[WorkerTestProbe]) = workers.map { _.expectMsg(CancelTask) }
 
       protected def mustMatchUploadedFileIds(tasks: Seq[CreateDocuments], uploadedFileIds: Seq[Long]) =
         tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)
@@ -214,33 +152,16 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectMsgClass(classOf[TaskWorkerTask])
       }
 
-      def expectDeleteFileUploadJob = {
-        expectMsg(TaskAvailable)
-        reply(ReadyForTask)
-
-        expectMsg(DeleteFileUploadJob(documentSetId, fileGroupId))
-      }
-
       def expectNoTaskAvailable(jobQueue: ActorRef) = {
         jobQueue ! ReadyForTask
         expectNoMsg(50 millis)
       }
-
-      def completeCancelledTask = {
-        expectMsg(CancelTask)
-        reply(TaskDone(documentSetId, None))
-      }
-
     }
 
     class ImmediateJobCompleter(worker: ActorRef, outputFileId: Long) extends TestActor.AutoPilot {
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
-          case DeleteFileUploadJob(ds, fg) => {
-            sender.tell(TaskDone(ds, None), worker)
-            sender.tell(ReadyForTask, worker)
-          }
           case CreateSearchIndexAlias(ds, fg) => {
             sender.tell(TaskDone(ds, None), worker)
             sender.tell(ReadyForTask, worker)

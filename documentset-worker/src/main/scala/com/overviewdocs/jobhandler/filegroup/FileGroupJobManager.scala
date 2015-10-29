@@ -25,12 +25,9 @@ object ClusteringJobQueueProtocol {
  * and cluster them. It creates the needed sub-job and request that each job be performed by a specific
  * job queue, in sequence.
  *
- * If a cancel command is received, the cancellation is passed on to the job queue.
- * The job queue replies with `JobCompleted`,regardless of whether a job has been cancelled or completed.
- * If the job has been cancelled, a delete command is sent to the job queue. Otherwise, clustering is started.
+ * There is no cancellation. [adam, 2015-10-29] I have to destroy it to save it.
  *
  * On startup, any InProgress jobs are restarted.
- *
  */
 trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
@@ -45,7 +42,6 @@ trait FileGroupJobManager extends Actor {
   protected val storage: FileGroupJobManager.Storage
 
   private val runningJobs: mutable.Map[Long, FileGroupJob] = mutable.Map.empty
-  private val cancellingJobs: mutable.Map[Long, Long] = mutable.Map.empty
 
   private case class UpdateJobStateRetryAttempt(command: ClusterCommands.ClusterFileGroup, count: Int)
 
@@ -54,14 +50,10 @@ trait FileGroupJobManager extends Actor {
       if (j.retryAttempts < MaxRetryAttempts) retryJob(j)
       else failJob(j)
     }
-    storage.findValidCancelledUploadJobs.foreach { j =>
-      cancelJob(j.documentSetId, j.fileGroupId.get)
-    }
   }
 
   override def receive = {
     case command: ClusterCommands.ClusterFileGroup => attemptUpdateJobState(command, 0)
-    case ClusterCommands.CancelFileUpload(documentSetId, fileGroupId) => cancelJob(documentSetId, fileGroupId)
     case UpdateJobStateRetryAttempt(command, count) => attemptUpdateJobState(command, count)
     case JobCompleted(documentSetId) => handleCompletedJob(documentSetId)
   }
@@ -99,22 +91,10 @@ trait FileGroupJobManager extends Actor {
 
   private def handleCompletedJob(documentSetId: Long) = runningJobs.get(documentSetId).map {
     case CreateDocumentsJob(fileGroupId, splitDocuments) => submitClusteringJob(documentSetId)
-    case DeleteFileGroupJob(fileGroupId)                 =>
-  } getOrElse deleteCancelledJobFileGroup(documentSetId)
-
-  private def submitClusteringJob(documentSetId: Long): Unit =
-    clusteringJobQueue ! ClusterDocumentSet(documentSetId)
-
-  private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit = {
-    runningJobs -= documentSetId
-    cancellingJobs += (documentSetId -> fileGroupId)
-    fileGroupJobQueue ! ClusterCommands.CancelFileUpload(documentSetId, fileGroupId)
   }
 
-  private def deleteCancelledJobFileGroup(documentSetId: Long) = {
-    cancellingJobs.remove(documentSetId).map { fileGroupId =>
-      submitToFileGroupJobQueue(documentSetId, DeleteFileGroupJob(fileGroupId))
-    }
+  private def submitClusteringJob(documentSetId: Long): Unit = {
+    clusteringJobQueue ! ClusterDocumentSet(documentSetId)
   }
 }
 
@@ -128,12 +108,6 @@ class FileGroupJobManagerImpl(
       val jobs = DocumentSetCreationJobFinder.byState(TextExtractionInProgress)
 
       jobs.filter(_.fileGroupId.isDefined)
-    }
-
-    override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
-      val cancelledUploadJobs = DocumentSetCreationJobFinder.byStateAndType(Cancelled, FileUpload)
-
-      cancelledUploadJobs.filter(_.fileGroupId.isDefined)
     }
 
     override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
@@ -157,7 +131,6 @@ class FileGroupJobManagerImpl(
 object FileGroupJobManager {
   trait Storage {
     def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob]
-    def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob]
     def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob]
     def failJob(job: DocumentSetCreationJob): Unit
     def increaseRetryAttempts(job: DocumentSetCreationJob): Unit

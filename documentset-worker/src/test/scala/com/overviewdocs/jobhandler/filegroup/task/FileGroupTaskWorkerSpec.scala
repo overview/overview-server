@@ -106,40 +106,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectReadyForTask
     }
 
-    //"cancel a job" in new CancellableProcessContext {
-    //  createJobQueue.handingOutTask(
-    //    CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
-
-    //  createWorker
-
-    //  jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
-    //  jobQueueProbe.expectMsg(ReadyForTask)
-
-    //  worker ! CancelTask
-
-    //  step.success(())
-
-    //  jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-    //}
-
-    //"ignore TaskAvailable when not ready" in new CancellableProcessContext {
-    //  createWorker
-
-    //  createJobQueue.handingOutTask(
-    //    CreateDocuments(documentSetId, fileGroupId, uploadedFileId, options, documentIdSupplier.ref))
-
-    //  jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
-    //  jobQueueProbe.expectMsg(ReadyForTask)
-
-    //  worker ! TaskAvailable
-    //  worker ! CancelTask
-
-    //  step.success(())
-
-    //  jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-
-    //}
-
     "delete a file upload job" in new RunningTaskWorkerContext {
       createWorker
 
@@ -148,17 +114,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       jobQueueProbe.expectInitialReadyForTask
 
       jobQueueProbe.expectMsg(TaskDone(documentSetId, None))
-    }
-
-    "ignore CancelTask message if not working on a task" in new RunningTaskWorkerContext {
-      createJobQueue
-      createWorker
-
-      jobQueueProbe.expectMsg(RegisterWorker(worker))
-
-      worker ! CancelTask
-
-      jobQueueProbe.expectNoMsg(50 millis)
     }
 
     trait TaskWorkerContext extends ActorSystemContext with Mockito {
@@ -213,12 +168,6 @@ class FileGroupTaskWorkerSpec extends Specification with NoTimeConversions {
       val exception = new Exception("foo")
       override def firstStep = Future.failed(exception)
     }
-
-    //trait CancellableProcessContext extends TaskWorkerContext {
-    //  val step = Promise[Unit]()
-
-    //  override def firstStep = step.future
-    //}
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {
 

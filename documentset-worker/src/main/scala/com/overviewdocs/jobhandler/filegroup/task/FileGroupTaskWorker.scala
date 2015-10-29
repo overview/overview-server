@@ -26,7 +26,6 @@ object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
   case object TaskAvailable
   case object ReadyForTask
-  case object CancelTask
 
   trait TaskWorkerTask {
     val documentSetId: Long
@@ -135,7 +134,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
       goto(Working) using TaskInfo(jobQueue, documentSetId)
     }
-    case Event(CancelTask, _) => stay
   }
 
   when(Working) {
@@ -152,7 +150,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       throw e
     }
 
-    case Event(CancelTask, _)    => stay
     case Event(TaskAvailable, _) => stay
   }
 

@@ -14,7 +14,6 @@ trait JobParameters {
   protected val fileGroupId = 2l
   protected val options = UploadProcessOptions("en", false)
   protected val clusterCommand = ClusterCommands.ClusterFileGroup(documentSetId, fileGroupId)
-  protected val cancelCommand = ClusterCommands.CancelFileUpload(documentSetId, fileGroupId)
 }
 
 trait StorageMonitor extends JobParameters {
@@ -27,7 +26,6 @@ trait StorageMonitor extends JobParameters {
   
   class MockStorage extends FileGroupJobManager.Storage {
     override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = loadInterruptedJobs
-    override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = loadCancelledJobs
 
     override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = {
       updateJobStateFn.store(documentSetId)
@@ -47,8 +45,7 @@ class TestFileGroupJobManager(
     override protected val fileGroupJobQueue: ActorRef,
     override protected val clusteringJobQueue: ActorRef,
     uploadJobProducer: => Option[DocumentSetCreationJob],
-    interruptedJobs: Seq[(Long, Long, Int)],
-    cancelledJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
+    interruptedJobs: Seq[(Long, Long, Int)]) extends FileGroupJobManager with StorageMonitor {
 
   protected def produceUploadJob = uploadJobProducer
   
@@ -56,10 +53,6 @@ class TestFileGroupJobManager(
     for ((ds, fg, n) <- interruptedJobs)
       yield DocumentSetCreationJob(jobType = FileUpload, state = InProgress, 
           documentSetId = ds, fileGroupId = Some(fg), retryAttempts = n)
-
-  protected def loadCancelledJobs: Seq[DocumentSetCreationJob] =
-    for ((ds, fg) <- cancelledJobs)
-      yield DocumentSetCreationJob(jobType = FileUpload, state = Cancelled, documentSetId = ds, fileGroupId = Some(fg))
 
 }
 

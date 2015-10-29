@@ -16,7 +16,6 @@ class TestFileGroupJobQueue(
       case CreateDocumentsJob(fileGroupId, options) =>
         new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, options,
             taskQueue, progressReporter, documentIdSupplier, tasks.toSet)
-      case DeleteFileGroupJob(fileGroupId) => new DeleteFileGroupJobShepherd(documentSetId, fileGroupId, taskQueue)
     }
     
   }

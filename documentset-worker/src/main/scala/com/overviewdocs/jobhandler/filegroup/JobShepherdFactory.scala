@@ -15,7 +15,5 @@ class FileGroupJobShepherdFactory extends JobShepherdFactory {
       case CreateDocumentsJob(fileGroupId, options) =>
         CreateDocumentsJobShepherd(documentSetId, fileGroupId, options, 
             taskQueue, progressReporter, documentIdSupplier)
-      case DeleteFileGroupJob(fileGroupId) =>
-        new DeleteFileGroupJobShepherd(documentSetId, fileGroupId, taskQueue)
     }
 }

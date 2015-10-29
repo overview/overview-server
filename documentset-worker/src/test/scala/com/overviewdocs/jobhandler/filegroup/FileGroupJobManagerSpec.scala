@@ -5,7 +5,6 @@ import akka.testkit._
 
 import com.overviewdocs.jobhandler.filegroup.ClusteringJobQueueProtocol._
 import com.overviewdocs.jobhandler.filegroup.FileGroupJobQueueProtocol._
-import com.overviewdocs.messages.ClusterCommands.CancelFileUpload
 import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.tree.DocumentSetCreationJobType._
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
@@ -38,23 +37,9 @@ class FileGroupJobManagerSpec extends Specification {
       updateJobStateWasCalled(documentSetId)
     }
 
-    "restart in progress jobs and cancel cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
+    "restart in progress jobs found during startup" in new RestartingFileGroupJobManagerContext {
       fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet1, CreateDocumentsJob(fileGroup1, options)))
       fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet2, CreateDocumentsJob(fileGroup2, options)))
-
-      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet1, fileGroup3))
-      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
-    }
-
-    "delete cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
-      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet1, CreateDocumentsJob(fileGroup1, options)))
-      fileGroupJobQueue.expectMsg(SubmitJob(interruptedDocumentSet2, CreateDocumentsJob(fileGroup2, options)))
-
-      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet1, fileGroup3))
-      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
-
-      fileGroupJobManager ! JobCompleted(cancelledDocumentSet1)
-      fileGroupJobQueue.expectMsg(SubmitJob(cancelledDocumentSet1, DeleteFileGroupJob(fileGroup3)))
     }
 
     "fail job if restart limit is reached" in new RestartLimitContext {
@@ -64,25 +49,6 @@ class FileGroupJobManagerSpec extends Specification {
     "increase retryAttempts when restarting jobs" in new RestartingFileGroupJobManagerContext {
       increaseRetryAttemptsWasCalled(interruptedDocumentSet1, fileGroup1)
       increaseRetryAttemptsWasCalled(interruptedDocumentSet2, fileGroup2)
-    }
-
-    "cancel text extraction when requested" in new FileGroupJobManagerContext {
-      fileGroupJobManager ! clusterCommand
-      fileGroupJobManager ! cancelCommand
-
-      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, options)))
-      fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
-    }
-
-    "don't start clustering cancelled job" in new FileGroupJobManagerContext {
-      fileGroupJobManager ! clusterCommand
-      fileGroupJobManager ! cancelCommand
-
-      fileGroupJobQueue.expectMsgType[SubmitJob]
-      fileGroupJobQueue.expectMsgType[CancelFileUpload]
-      fileGroupJobQueue.reply(JobCompleted(documentSetId))
-
-      clusteringJobQueue.expectNoMsg
     }
 
     "don't start text extraction if no job is found" in new NoJobContext {
@@ -97,17 +63,6 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, options)))
     }
 
-    "delete cancelled job after cancellation is complete" in new FileGroupJobManagerContext {
-      fileGroupJobManager ! clusterCommand
-      fileGroupJobManager ! cancelCommand
-
-      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, CreateDocumentsJob(fileGroupId, options)))
-      fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
-      fileGroupJobQueue.reply(JobCompleted(documentSetId))
-
-      fileGroupJobQueue.expectMsg(SubmitJob(documentSetId, DeleteFileGroupJob(fileGroupId)))
-    }
-
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
 
       var fileGroupJobManager: TestActorRef[TestFileGroupJobManager] = _
@@ -118,8 +73,8 @@ class FileGroupJobManagerSpec extends Specification {
         fileGroupJobQueue = TestProbe()
         clusteringJobQueue = TestProbe()
         fileGroupJobManager = TestActorRef(
-          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, uploadJob, interruptedJobs, cancelledJobs))
-
+          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, uploadJob, interruptedJobs)
+        )
       }
 
       private def jm = fileGroupJobManager.underlyingActor
@@ -129,7 +84,6 @@ class FileGroupJobManagerSpec extends Specification {
           state = FilesUploaded))
 
       protected def interruptedJobs: Seq[(Long, Long, Int)] = Seq.empty
-      protected def cancelledJobs: Seq[(Long, Long)] = Seq.empty
 
       protected def updateJobStateWasCalled(documentSetId: Long) = jm.updateJobStateFn.wasCalledWith(documentSetId)
       
@@ -155,8 +109,6 @@ class FileGroupJobManagerSpec extends Specification {
     abstract class RestartingFileGroupJobManagerContext extends FileGroupJobManagerContext {
       val interruptedDocumentSet1: Long = 10l
       val interruptedDocumentSet2: Long = 20l
-      val cancelledDocumentSet1: Long = 30l
-      val cancelledDocumentSet2: Long = 40l
 
       val fileGroup1: Long = 15l
       val fileGroup2: Long = 25l
@@ -166,10 +118,6 @@ class FileGroupJobManagerSpec extends Specification {
       override protected def interruptedJobs: Seq[(Long, Long, Int)] = Seq(
         (interruptedDocumentSet1, fileGroup1, 0),
         (interruptedDocumentSet2, fileGroup2, 0))
-
-      override protected def cancelledJobs: Seq[(Long, Long)] = Seq(
-        (cancelledDocumentSet1, fileGroup3),
-        (cancelledDocumentSet2, fileGroup4))
     }
 
     abstract class NoJobContext extends FileGroupJobManagerContext {

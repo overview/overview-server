@@ -56,7 +56,7 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 
-  private def jobStepComplete = allTasksComplete && !jobCancelled
+  private def jobStepComplete = allTasksComplete
 
   /** Given the last task of the previous job step, kick off the next job step */
   private def startNextJobStep(task: TaskWorkerTask) =
