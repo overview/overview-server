@@ -1,6 +1,7 @@
 package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
+import scala.collection.mutable
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
@@ -13,7 +14,7 @@ import com.overviewdocs.jobhandler.filegroup.task.UploadProcessOptions
 /**
  * Creates the tasks for generating `Document`s from uploaded files.
  */
-trait CreateDocumentsJobShepherd extends JobShepherd {
+trait CreateDocumentsJobShepherd {
   protected val documentSetId: Long
   protected val fileGroupId: Long
   protected val options: UploadProcessOptions
@@ -26,7 +27,26 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   protected val CreateDocumentsStepSize = 0.90
   protected val CompleteDocumentSetStepSize = 0.05
 
-  override protected def generateTasks: Iterable[TaskWorkerTask] = {
+  /** 
+   * Create the tasks for the job 
+   * 
+   *  @returns the number of tasks created 
+   */
+  def createTasks: Int = {
+    val tasks = generateTasks
+
+    remainingTasks ++= tasks
+
+    remainingTasks.size
+  }
+
+  /** @returns true if all tasks for the job have been completed */
+  def allTasksComplete: Boolean = remainingTasks.isEmpty && startedTasks.isEmpty
+
+  private val remainingTasks: mutable.Set[TaskWorkerTask] = mutable.Set.empty
+  private val startedTasks: mutable.Set[TaskWorkerTask] = mutable.Set.empty
+
+  protected def generateTasks: Iterable[TaskWorkerTask] = {
     val tasks = Set(CreateSearchIndexAlias(documentSetId, fileGroupId))
 
     progressReporter ! StartJob(documentSetId, NumberOfJobSteps, ProcessUpload)
@@ -39,13 +59,14 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   // TODO: we need a unified progress reporting mechanism, but for now, do this ugly thing,
   // since progress reporting only applies to these tasks.
 
-  override def startTask(task: TaskWorkerTask): Unit = {
-    super.startTask(task)
+  def startTask(task: TaskWorkerTask): Unit = {
+    remainingTasks -= task
+    startedTasks += task
     progressReporter ! StartTask(documentSetId)
   }
 
-  override def completeTask(task: TaskWorkerTask): Unit = {
-    super.completeTask(task)
+  def completeTask(task: TaskWorkerTask): Unit = {
+    startedTasks -= task
     progressReporter ! CompleteTask(documentSetId)
 
     if (jobStepComplete) {
@@ -89,6 +110,8 @@ trait CreateDocumentsJobShepherd extends JobShepherd {
   protected trait Storage {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
   }
+
+  protected def addTask(task: TaskWorkerTask): Unit = remainingTasks += task
 }
 
 object CreateDocumentsJobShepherd {

@@ -50,7 +50,7 @@ trait FileGroupJobQueue extends Actor {
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: TaskQueue = new RoundRobinTaskQueue
-  private val jobShepherds: mutable.Map[DocumentSetId, JobShepherd] = mutable.Map.empty
+  private val jobShepherds: mutable.Map[DocumentSetId, CreateDocumentsJobShepherd] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
   private val busyWorkers: mutable.Map[ActorRef, TaskWorkerTask] = mutable.Map.empty
 
@@ -118,7 +118,7 @@ trait FileGroupJobQueue extends Actor {
 
   private def isNewRequest(documentSetId: Long): Boolean = !jobRequests.contains(documentSetId)
 
-  private def whenTaskIsComplete(documentSetId: Long, task: Option[TaskWorkerTask])(f: (JobRequest, Long, JobShepherd) => Unit) =
+  private def whenTaskIsComplete(documentSetId: Long, task: Option[TaskWorkerTask])(f: (JobRequest, Long, CreateDocumentsJobShepherd) => Unit) =
     for {
       completedTask <- task
       request <- jobRequests.get(documentSetId)
@@ -128,7 +128,7 @@ trait FileGroupJobQueue extends Actor {
       f(request, documentSetId, shepherd)
     }
 
-  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, shepherd: JobShepherd): Unit =
+  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, shepherd: CreateDocumentsJobShepherd): Unit =
     if (shepherd.allTasksComplete) {
       jobRequests -= documentSetId
 

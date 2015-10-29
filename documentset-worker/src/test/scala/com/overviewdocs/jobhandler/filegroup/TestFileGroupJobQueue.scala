@@ -12,10 +12,9 @@ class TestFileGroupJobQueue(
   
   class TestJobShepherdFactory extends JobShepherdFactory {
     override def createShepherd(documentSetId: Long, job: CreateDocumentsJob,
-        taskQueue: ActorRef, progressReporter: ActorRef, documentIdSupplier: ActorRef): JobShepherd = job match {
-      case CreateDocumentsJob(fileGroupId, options) =>
-        new TestCreateDocumentsJobShepherd(documentSetId, fileGroupId, options,
-            taskQueue, progressReporter, documentIdSupplier, tasks.toSet)
+        taskQueue: ActorRef, progressReporter: ActorRef, documentIdSupplier: ActorRef) = {
+      new TestCreateDocumentsJobShepherd(documentSetId, job.fileGroupId, job.options,
+          taskQueue, progressReporter, documentIdSupplier, tasks.toSet)
     }
     
   }
