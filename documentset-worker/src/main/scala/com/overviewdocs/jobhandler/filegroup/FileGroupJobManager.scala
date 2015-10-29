@@ -80,20 +80,16 @@ trait FileGroupJobManager extends Actor {
 
   private def failJob(job: DocumentSetCreationJob): Unit = storage.failJob(job)
 
-  private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit =
-    submitToFileGroupJobQueue(job.documentSetId,
-      CreateDocumentsJob(job.fileGroupId.get, UploadProcessOptions(job.lang, job.splitDocuments)))
+  private def queueCreateDocumentsJob(job: DocumentSetCreationJob): Unit = {
+    val createDocumentsJob = CreateDocumentsJob(
+      job.fileGroupId.get,
+      UploadProcessOptions(job.lang, job.splitDocuments)
+    )
 
-  private def submitToFileGroupJobQueue(documentSetId: Long, job: CreateDocumentsJob): Unit = {
-    runningJobs += (documentSetId -> job)
-    fileGroupJobQueue ! SubmitJob(documentSetId, job)
+    fileGroupJobQueue ! SubmitJob(job.documentSetId, createDocumentsJob)
   }
 
-  private def handleCompletedJob(documentSetId: Long) = runningJobs.get(documentSetId).map {
-    case CreateDocumentsJob(fileGroupId, splitDocuments) => submitClusteringJob(documentSetId)
-  }
-
-  private def submitClusteringJob(documentSetId: Long): Unit = {
+  private def handleCompletedJob(documentSetId: Long): Unit = {
     clusteringJobQueue ! ClusterDocumentSet(documentSetId)
   }
 }
