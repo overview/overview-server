@@ -44,7 +44,17 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     new task.UploadedFileProcess(parameters).start
   }
 
-  /** Deletes a Job from the database and freshens its DocumentSet info.
+  /** Deletes the Job from the database and freshens its DocumentSet info.
+    *
+    * In detail:
+    *
+    * 1. Ensures the DocumentSet has an alias in the search index.
+    * 2. Updates the DocumentSet's document-ID array and counts.
+    * 3. Deletes unprocessed GroupedFileUploads. (When the job is cancelled,
+    *    these remain behind.)
+    * 4. Deletes the DocumentSetCreationJob.
+    * 5. Deletes the FileGroup.
+    * 6. Creates a clustering job.
     */
   def finishJob(job: AddDocumentsJob)(implicit ec: ExecutionContext): Future[Unit] = {
     import com.overviewdocs.database.FileGroupDeleter
