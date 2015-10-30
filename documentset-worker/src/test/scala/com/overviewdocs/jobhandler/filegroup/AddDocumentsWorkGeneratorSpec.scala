@@ -2,11 +2,12 @@ package com.overviewdocs.jobhandler.filegroup
 
 import org.specs2.mutable.Specification
 
+import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class AddDocumentsWorkGeneratorSpec extends Specification {
   "AddDocumentsWorkGenerator" should {
-    val job = AddDocumentsJob(1L, 2L, 3L, "fr", true)
+    val job = AddDocumentsFromFileGroup(1L, 2L, 3L, "fr", true)
 
     def generator(nUploads: Int): AddDocumentsWorkGenerator = new AddDocumentsWorkGenerator(
       job,

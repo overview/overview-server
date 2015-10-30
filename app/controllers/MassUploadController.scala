@@ -7,7 +7,7 @@ import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
 import com.overviewdocs.database.DeprecatedDatabase
-import com.overviewdocs.messages.ClusterCommands
+import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.models.{DocumentSet,GroupedFileUpload}
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.tree.Ownership
@@ -245,7 +245,13 @@ object MassUploadController extends MassUploadController {
         )
       }
 
-      val command = ClusterCommands.ClusterFileGroup(documentSetId=job.documentSetId, fileGroupId=job.fileGroupId.get)
+      val command = DocumentSetCommands.AddDocumentsFromFileGroup(
+        job.id,
+        documentSetId=job.documentSetId,
+        fileGroupId=job.fileGroupId.get,
+        lang=job.lang,
+        splitDocuments=job.splitDocuments
+      )
       JobQueueSender.send(command)
 
       job

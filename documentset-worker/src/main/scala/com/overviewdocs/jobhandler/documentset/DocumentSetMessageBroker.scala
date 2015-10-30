@@ -1,6 +1,6 @@
 package com.overviewdocs.jobhandler.documentset
 
-import akka.actor.{Actor,ActorRef}
+import akka.actor.{Actor,ActorRef,Props}
 import scala.collection.mutable
 
 import com.overviewdocs.messages.DocumentSetCommands
@@ -48,5 +48,18 @@ class DocumentSetMessageBroker extends Actor {
 }
 
 object DocumentSetMessageBroker {
-  case object WorkerReady
+  def props: Props = Props(new DocumentSetMessageBroker)
+
+  /** A message from a worker. */
+  sealed trait WorkerMessage
+
+  /** The worker requests a command. */
+  case object WorkerReady extends WorkerMessage
+
+  /** The worker has completed a command on the given DocumentSet.
+    *
+    * This should inspire the message broker to "unlock" the DocumentSet, so
+    * its next command can be processed.
+    */
+  case class WorkerDoneDocumentSetCommand(documentSetId: Long) extends WorkerMessage
 }

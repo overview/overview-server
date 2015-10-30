@@ -1,20 +1,25 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import com.overviewdocs.models.GroupedFileUpload
+import scala.concurrent.{ExecutionContext,Future}
 
-/** Creates Work objects, tracking job state.
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
+import com.overviewdocs.models.{DocumentSetCreationJob,GroupedFileUpload}
+import com.overviewdocs.models.tables.GroupedFileUploads
+
+/** Creates Work objects, tracking command state.
   *
   * Use it like this:
   *
   *     // scheduler
-  *     val job: AddDocumentsJob = ...
+  *     val command: AddDocumentsFromFileGroup = ...
   *     val uploads: Seq[GroupedFileUpload] = ...
-  *     val generator = new AddDocumentsWorkGenerator(job, uploads)
+  *     val generator = new AddDocumentsWorkGenerator(command, uploads)
   *
   *     // when a worker comes along
   *     generator.nextWork match {
-  *       case ProcessFileWork(upload) =&gt; doSomething(job, upload).andThen { case _ =&gt; generator.markDoneOne }
-  *       case FinishJobWork =&gt; doSomething(job) // and never call `nextWork()` again; `generator` is done
+  *       case ProcessFileWork(upload) =&gt; doSomething(command, upload).andThen { case _ =&gt; generator.markDoneOne }
+  *       case FinishJobWork =&gt; doSomething(command) // and never call `nextWork()` again; `generator` is done
   *       case NoWorkForNow =&gt; // do nothing, but try again after the next `generator.markDone()`
   *     }
   *
@@ -30,7 +35,7 @@ import com.overviewdocs.models.GroupedFileUpload
   * whether to call it again.)
   */
 class AddDocumentsWorkGenerator(
-  val job: AddDocumentsJob,
+  val command: AddDocumentsFromFileGroup,
   val uploads: Seq[GroupedFileUpload]
 ) {
   @volatile var remainingUploads = uploads
@@ -68,7 +73,7 @@ class AddDocumentsWorkGenerator(
   }
 }
 
-object AddDocumentsWorkGenerator {
+object AddDocumentsWorkGenerator extends HasDatabase {
   /** A packet of work to be done by a worker.
     */
   sealed trait Work
@@ -76,4 +81,12 @@ object AddDocumentsWorkGenerator {
   case class ProcessFileWork(upload: GroupedFileUpload) extends Work
   case object FinishJobWork extends Work
   case object NoWorkForNow extends Work
+
+  def loadForCommand(command: AddDocumentsFromFileGroup)(implicit ec: ExecutionContext): Future[AddDocumentsWorkGenerator] = {
+    import database.api._
+
+    for {
+      uploads <- database.seq(GroupedFileUploads.filter(_.fileGroupId === command.fileGroupId))
+    } yield new AddDocumentsWorkGenerator(command, uploads)
+  }
 }

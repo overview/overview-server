@@ -2,29 +2,52 @@ package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.{Actor,ActorRef,Props}
 import scala.collection.mutable
+import scala.concurrent.{ExecutionContext,Future}
 
+import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
 import com.overviewdocs.models.GroupedFileUpload
 
 class AddDocumentsWorkBroker() extends Actor {
-  private val waitingWorkers: mutable.Queue[ActorRef] = mutable.Queue()
-  private val runningWorkers: mutable.Map[Long,mutable.Set[ActorRef]] = mutable.Map() // jobId => actors
-  private val generatorsCircle: mutable.Queue[AddDocumentsWorkGenerator] = mutable.Queue()
-  private val generators: mutable.Map[Long,AddDocumentsWorkGenerator] = mutable.Map() // jobId => generator
+  private case class JobInfo(
+    workGenerator: AddDocumentsWorkGenerator,
+    ackTarget: ActorRef,
+    ackMessage: Any,
+    runningWorkers: mutable.Set[ActorRef] = mutable.Set()
+  ) {
+    def command: AddDocumentsFromFileGroup = workGenerator.command
+    def jobId: Long = command.documentSetCreationJobId
+  }
+
+  private val waitingWorkers: mutable.Queue[ActorRef] = mutable.Queue() // round-robin
+  private val jobs: mutable.Map[Long,JobInfo] = mutable.Map() // documentSetCreationJobId => info
+  private val jobsCircle: mutable.Queue[JobInfo] = mutable.Queue() // round-robin
 
   import AddDocumentsWorkBroker._
 
+  protected def loadWorkGeneratorForCommand(command: AddDocumentsFromFileGroup)(implicit ec: ExecutionContext): Future[AddDocumentsWorkGenerator] = {
+    AddDocumentsWorkGenerator.loadForCommand(command)(ec)
+  }
+
   def receive = {
-    case AddWorkGenerator(workGenerator) => {
-      generatorsCircle.enqueue(workGenerator)
-      generators.+=(workGenerator.job.documentSetCreationJobId -> workGenerator)
-      sendJobs
+    case DoWorkThenAck(command, ackTarget, ackMessage) => {
+      import context.dispatcher
+      for {
+        workGenerator <- loadWorkGeneratorForCommand(command)
+      } yield {
+        val jobInfo = JobInfo(workGenerator, ackTarget, ackMessage)
+        jobs(jobInfo.jobId) = jobInfo
+        jobsCircle.enqueue(jobInfo)
+        sendJobs
+      }
     }
 
     case CancelJob(documentSetCreationJobId) => {
-      generators.get(documentSetCreationJobId).map { generator =>
-        generator.skipRemainingFileWork
-        runningWorkers.getOrElse(documentSetCreationJobId, Seq()).foreach { worker =>
-          worker ! AddDocumentsWorker.CancelHandleUpload(generator.job)
+      // Don't stop any running processes; just tell everybody to skip to the
+      // end...
+      jobs.get(documentSetCreationJobId).map { jobInfo =>
+        jobInfo.workGenerator.skipRemainingFileWork
+        jobInfo.runningWorkers.foreach { worker =>
+          worker ! AddDocumentsWorker.CancelHandleUpload(jobInfo.command)
         }
       }
     }
@@ -34,22 +57,29 @@ class AddDocumentsWorkBroker() extends Actor {
       sendJobs
     }
 
-    case WorkerDoneHandleUpload(job) => {
-      generators(job.documentSetCreationJobId).markDoneOne
-      // The worker can send that a job is done even after cancellation
-      runningWorkers.get(job.documentSetCreationJobId).map(_.-=(sender))
-      sendJobs
+    case WorkerDoneHandleUpload(command) => {
+      val jobInfo = jobs(command.documentSetCreationJobId) // or crash
+      jobInfo.workGenerator.markDoneOne
+      jobInfo.runningWorkers.-=(sender)
+      sendJobs // maybe this message freed up another Work
+    }
+
+    case WorkerDoneFinishJob(command) => {
+      val jobInfo = jobs.remove(command.documentSetCreationJobId).get // or crash
+      jobInfo.runningWorkers.-=(sender)
+      assert(jobInfo.runningWorkers.isEmpty)
+      jobInfo.ackTarget ! jobInfo.ackMessage
+      // no need for sendJobs -- it's impossible another Work became ready
     }
   }
 
   private def sendJobs: Unit = {
     while (waitingWorkers.nonEmpty) {
       nextWork match {
-        case Some(message) => {
+        case Some((jobInfo, work)) => {
           val worker = waitingWorkers.dequeue
-          val jobId = message.job.documentSetCreationJobId
-          runningWorkers.getOrElseUpdate(jobId, mutable.Set()).+=(worker)
-          worker ! message
+          jobInfo.runningWorkers.+=(worker)
+          worker ! work
         }
         case None => { return }
       }
@@ -58,33 +88,30 @@ class AddDocumentsWorkBroker() extends Actor {
 
   /** Finds a unit of Work from a non-idling generator.
     *
-    * Mutates `generatorsCircle` to find the first non-idling generator in
-    * round-robin fashion.
+    * Mutates `jobsCircle` to find the first non-idling job in round-robin
+    * fashion.
     *
     * If all generators are idling, returns None.
     */
-  private def nextWork: Option[AddDocumentsWorker.Work] = {
-    if (generatorsCircle.isEmpty) return None
+  private def nextWork: Option[(JobInfo,AddDocumentsWorker.Work)] = {
+    if (jobsCircle.isEmpty) return None
 
-    val head = generatorsCircle.head
+    val head = jobsCircle.head
 
     while (true) {
-      val generator = generatorsCircle.dequeue
-      generator.nextWork match {
+      val job = jobsCircle.dequeue
+      job.workGenerator.nextWork match {
         case AddDocumentsWorkGenerator.ProcessFileWork(upload) => {
-          generatorsCircle.enqueue(generator)
-          return Some(AddDocumentsWorker.HandleUpload(generator.job, upload))
+          jobsCircle.enqueue(job)
+          return Some((job, AddDocumentsWorker.HandleUpload(job.command, upload)))
         }
         case AddDocumentsWorkGenerator.FinishJobWork => {
-          // Forget about the generator; don't re-enqueue it
-          val jobId = generator.job.documentSetCreationJobId
-          runningWorkers.remove(jobId)
-          generators.remove(jobId)
-          return Some(AddDocumentsWorker.FinishJob(generator.job))
+          // don't re-enqueue the job, but do keep it in `jobs`.
+          return Some((job, AddDocumentsWorker.FinishJob(job.command)))
         }
         case AddDocumentsWorkGenerator.NoWorkForNow => {
-          generatorsCircle.enqueue(generator)
-          if (generatorsCircle.head == head) return None // We've looped around the entire circle
+          jobsCircle.enqueue(job)
+          if (jobsCircle.head == head) return None // We've looped around the entire circle
         }
       }
     }
@@ -94,7 +121,7 @@ class AddDocumentsWorkBroker() extends Actor {
 }
 
 object AddDocumentsWorkBroker {
-  def props: Props = Props[AddDocumentsWorkBroker]()
+  def props: Props = Props(new AddDocumentsWorkBroker)
 
   /** A message from a worker. */
   sealed trait WorkerMessage
@@ -104,17 +131,25 @@ object AddDocumentsWorkBroker {
 
   /** The sender completed some previously-returned work.
     *
-    * To be absolutely clear: this message does not mean the entire `job` is
+    * To be absolutely clear: this message does not mean the entire `command` is
     * complete: it merely means one unit of `Work` is complete.
     *
-    * @param job The job the work pertained to.
+    * @param command The command the work pertained to.
     */
-  case class WorkerDoneHandleUpload(job: AddDocumentsJob) extends WorkerMessage
+  case class WorkerDoneHandleUpload(command: AddDocumentsFromFileGroup) extends WorkerMessage
 
-  /** A message from elsewhere. */
-  case class AddWorkGenerator(workGenerator: AddDocumentsWorkGenerator)
+  /** The sender completed some previously-returned work.
+    *
+    * This message means the entire `command` is complete.
+    */
+  case class WorkerDoneFinishJob(command: AddDocumentsFromFileGroup) extends WorkerMessage
 
-  /** A request to cancel a job.
+  /** A request from the parent to generate and complete all work, then send
+    * `ackMessage` to `receiver`.
+    */
+  case class DoWorkThenAck(command: AddDocumentsFromFileGroup, receiver: ActorRef, ackMessage: Any)
+
+  /** A request from the parent to cancel a command.
     *
     * Perhaps this is a misnomer. "Cancel" really means "finish as quickly as
     * possible, deleting whatever information is necessary." It will delete

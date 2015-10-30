@@ -1,44 +1,82 @@
 package com.overviewdocs.jobhandler.documentset
 
 import akka.actor.Props
-import akka.pattern.ask
+import akka.testkit.{TestActorRef,TestProbe}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Future,Promise}
 
-import com.overviewdocs.database.{DocumentSetDeleter,DocumentSetCreationJobDeleter}
+import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.test.ActorSystemContext
 
 class DocumentSetCommandWorkerSpec extends Specification with Mockito {
   sequential
 
+  import DocumentSetMessageBroker._
+
   "DocumentSetCommandWorker" should {
     trait BaseScope extends ActorSystemContext {
-      val broker = testActor
+      val broker = TestProbe()
+      val addDocumentsWorkBroker = TestProbe()
       val documentSetDeleter = smartMock[DocumentSetDeleter]
-      val documentSetCreationJobDeleter = smartMock[DocumentSetCreationJobDeleter]
-      val subject = system.actorOf(Props(classOf[DocumentSetCommandWorker], broker, documentSetDeleter, documentSetCreationJobDeleter))
-      val duration = scala.concurrent.duration.Duration(1, "s")
+      val subject = TestActorRef(DocumentSetCommandWorker.props(broker.ref, addDocumentsWorkBroker.ref, documentSetDeleter))
     }
 
     "send WorkerReady on start" in new BaseScope {
-      expectMsg(DocumentSetMessageBroker.WorkerReady)
+      broker.expectMsg(WorkerReady)
     }
 
-    "call documentSetDeleter.delete" in new BaseScope {
-      documentSetDeleter.delete(1L) returns Future.successful(())
-      subject ! DocumentSetCommands.DeleteDocumentSet(1L)
-      receiveN(2, duration) // Initial WorkerReady, then second WorkerReady
-      there was one(documentSetDeleter).delete(1L)
+    "AddDocumentsFromFileGroup" should {
+      "send WorkerReady immediately" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        subject ! DocumentSetCommands.AddDocumentsFromFileGroup(1L, 2L, 3L, "en", true)
+        broker.expectMsg(WorkerReady)
+      }
+
+      "queue ack message for when command completes" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        val command = DocumentSetCommands.AddDocumentsFromFileGroup(1L, 2L, 3L, "en", true)
+        subject ! command
+        // This is one-half of the spec; the other half is in AddDocumentsWorkBroker
+        addDocumentsWorkBroker.expectMsg(
+          AddDocumentsWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(2L))
+        )
+      }
     }
 
-    "call documentSetCreationJobDeleter.delete" in new BaseScope {
-      documentSetCreationJobDeleter.delete(2L) returns Future.successful(())
-      subject ! DocumentSetCommands.DeleteDocumentSetJob(1L, 2L)
-      receiveN(2, duration) // Initial WorkerReady, then second WorkerReady
-      there was one(documentSetCreationJobDeleter).delete(2L)
+    "DeleteDocumentSet" should {
+      "call documentSetDeleter.delete" in new BaseScope {
+        documentSetDeleter.delete(1L) returns Future.successful(())
+        subject ! DocumentSetCommands.DeleteDocumentSet(1L)
+        there was one(documentSetDeleter).delete(1L)
+      }
+
+      "return to the broker when complete" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        val promise = Promise[Unit]()
+        documentSetDeleter.delete(1L) returns promise.future
+        subject ! DocumentSetCommands.DeleteDocumentSet(1L)
+
+        broker.expectNoMsg(Duration.Zero)
+
+        promise.success(())
+        broker.expectMsg(WorkerDoneDocumentSetCommand(1L))
+        broker.expectMsg(WorkerReady)
+      }
+    }
+
+    "CancelJob" should {
+      "forward to addDocumentsWorkBroker" in new BaseScope {
+        subject ! DocumentSetCommands.CancelJob(1L, 2L)
+        addDocumentsWorkBroker.expectMsg(AddDocumentsWorkBroker.CancelJob(2L))
+      }
     }
   }
 }

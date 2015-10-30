@@ -6,6 +6,7 @@ import org.specs2.mutable.Specification
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Future,Promise}
 
+import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
 import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
@@ -21,7 +22,7 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
       val broker = TestProbe()
       val subject = TestActorRef(AddDocumentsWorker.props(broker.ref, impl))
 
-      val job = AddDocumentsJob(1L, 2L, 3L, "fr", true)
+      val job = AddDocumentsFromFileGroup(1L, 2L, 3L, "fr", true)
       def makeUpload = factory.groupedFileUpload(fileGroupId=job.fileGroupId)
     }
 
@@ -71,13 +72,14 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
       there was one(impl).finishJob(job)(subject.dispatcher)
     }
 
-    "send WorkerReady when after a FinishJob" in new BaseScope {
+    "send WorkerDoneFinishJob and WorkerReady when after a FinishJob" in new BaseScope {
       broker.expectMsg(WorkerReady)
       val promise = Promise[Unit]()
       impl.finishJob(any)(any) returns promise.future
       subject.tell(FinishJob(job), broker.ref)
       broker.expectNoMsg(Duration.Zero)
       promise.success(())
+      broker.expectMsg(WorkerDoneFinishJob(job))
       broker.expectMsg(WorkerReady)
     }
   }

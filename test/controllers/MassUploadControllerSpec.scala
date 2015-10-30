@@ -8,7 +8,7 @@ import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
 
-import com.overviewdocs.messages.ClusterCommands
+import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.models.{DocumentSet,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.DocumentSetCreationJobType._
 import com.overviewdocs.models.DocumentSetCreationJobState._
@@ -167,7 +167,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "send a ClusterFileGroup message" in new StartClusteringScope {
       h.status(result)
-      there was one(mockMessageQueue).send(any[ClusterCommands.ClusterFileGroup])
+      there was one(mockMessageQueue).send(any[DocumentSetCommands.AddDocumentsFromFileGroup])
     }.pendingUntilFixed
 
     "set splitDocuments=true when asked" in new StartClusteringScope {
@@ -229,7 +229,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "send a ClusterFileGroup message" in new StartClusteringExistingDocumentSetScope {
       h.status(result)
-      there was one(mockMessageQueue).send(any[ClusterCommands.ClusterFileGroup])
+      there was one(mockMessageQueue).send(any[DocumentSetCommands.AddDocumentsFromFileGroup])
     }.pendingUntilFixed
 
     "redirect if user has no FileGroup in progress" in new StartClusteringExistingDocumentSetScope {

@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.models.{ApiToken,FileGroup,GroupedFileUpload}
-import com.overviewdocs.messages.ClusterCommands
+import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.{ApiAuthorizedAction,ApiTokenFactory}
@@ -195,7 +195,13 @@ object MassUploadController extends MassUploadController {
         )
       }
 
-      val command = ClusterCommands.ClusterFileGroup(documentSetId=job.documentSetId, fileGroupId=job.fileGroupId.get)
+      val command = DocumentSetCommands.AddDocumentsFromFileGroup(
+        job.id,
+        documentSetId=job.documentSetId,
+        fileGroupId=job.fileGroupId.get,
+        lang=job.lang,
+        splitDocuments=job.splitDocuments
+      )
 
       JobQueueSender.send(command)
 

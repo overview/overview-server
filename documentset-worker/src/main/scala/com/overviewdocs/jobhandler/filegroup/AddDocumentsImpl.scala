@@ -3,6 +3,7 @@ package com.overviewdocs.jobhandler.filegroup
 import akka.actor.ActorRef
 import scala.concurrent.{ExecutionContext,Future}
 
+import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
 import com.overviewdocs.models.GroupedFileUpload
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
@@ -33,12 +34,12 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * If there's an error we *don't* expect (e.g., out of disk space), it will
     * return that error in the Future.
     */
-  def processUpload(job: AddDocumentsJob, upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
+  def processUpload(command: AddDocumentsFromFileGroup, upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
     // This is all icky wrapper stuff. TODO tidy it all.
     val parameters = task.FilePipelineParameters(
-      job.documentSetId,
+      command.documentSetId,
       upload,
-      task.UploadProcessOptions(job.lang, job.splitDocuments),
+      task.UploadProcessOptions(command.lang, command.splitDocuments),
       documentIdSupplier
     )
     new task.UploadedFileProcess(parameters).start
@@ -50,22 +51,22 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     *
     * 1. Ensures the DocumentSet has an alias in the search index.
     * 2. Updates the DocumentSet's document-ID array and counts.
-    * 3. Deletes unprocessed GroupedFileUploads. (When the job is cancelled,
+    * 3. Deletes unprocessed GroupedFileUploads. (When the command is cancelled,
     *    these remain behind.)
     * 4. Deletes the DocumentSetCreationJob.
     * 5. Deletes the FileGroup.
-    * 6. Creates a clustering job.
+    * 6. Creates a clustering DocumentSetCreationJob.
     */
-  def finishJob(job: AddDocumentsJob)(implicit ec: ExecutionContext): Future[Unit] = {
+  def finishJob(command: AddDocumentsFromFileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
     import com.overviewdocs.database.FileGroupDeleter
     import com.overviewdocs.database.DocumentSetCreationJobDeleter
     import com.overviewdocs.searchindex.TransportIndexClient
     for {
-      _ <- TransportIndexClient.singleton.addDocumentSet(job.documentSetId) // FIXME move this to creation
-      _ <- task.DocumentSetInfoUpdater.update(job.documentSetId)
-      _ <- DocumentSetCreationJobDeleter.delete(job.documentSetCreationJobId)
-      _ <- FileGroupDeleter.delete(job.fileGroupId)
-      // _ <- [create clustering job...]
+      _ <- TransportIndexClient.singleton.addDocumentSet(command.documentSetId) // FIXME move this to creation
+      _ <- task.DocumentSetInfoUpdater.update(command.documentSetId)
+      _ <- FileGroupDeleter.delete(command.fileGroupId)
+      _ <- DocumentSetCreationJobDeleter.delete(command.documentSetCreationJobId)
+      // _ <- [create a DocumentSetCreationJob...]
     } yield {
       ()
     }

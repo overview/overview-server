@@ -59,33 +59,20 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   // sharded; one worker makes sense. Before increasing to multiple workers, be
   // sure to implement actual brokering in DocumentSetMessageBroker. Right now,
   // it won't serialize commands as it should.
-  private val documentSetMessageBroker = createMonitoredActor(Props[DocumentSetMessageBroker], "DocumentSetMessageBroker")
+  private val documentSetMessageBroker = createMonitoredActor(DocumentSetMessageBroker.props, "DocumentSetMessageBroker")
   logger.info("Message broker path: {}", documentSetMessageBroker.toString)
-  private val documentSetCommandWorker = createMonitoredActor(Props(
-    classOf[DocumentSetCommandWorker],
-    documentSetMessageBroker,
-    DocumentSetDeleter,
-    DocumentSetCreationJobDeleter
-  ), "DocumentSetCommandWorker")
 
   private val progressReporter = createMonitoredActor(ProgressReporter(), "ProgressReporter")
   private val documentIdSupplier = createMonitoredActor(DocumentIdSupplier(), "DocumentIdSupplier")
 
-  private val fileGroupJobQueue = createMonitoredActor(FileGroupJobQueue(progressReporter, documentIdSupplier), fileGroupJobQueueName)
-  logger.info("Job queue path {}", fileGroupJobQueue.path)
+  private val addDocumentsWorkBroker = createMonitoredActor(AddDocumentsWorkBroker.props, "AddDocumentsWorkBroker")
+  private val addDocumentsImpl = new AddDocumentsImpl(documentIdSupplier)
+  createMonitoredActor(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-1")
+  createMonitoredActor(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-2")
 
-  private val clusteringJobQueue = createMonitoredActor(ClusteringJobQueue(fileGroupRemovalRequestQueue.path.toString), "ClusteringJobQueue")
-  logger.info("Clustering job queue path: {}", clusteringJobQueue.toString)
-
-  private val fileGroupJobQueueManager = createMonitoredActor(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
-  
-  private val taskWorkerSupervisor = createMonitoredActor(
-    FileGroupTaskWorkerStartup(
-      fileGroupJobQueue.path.toString,
-      fileRemovalQueue.path.toString,
-      fileGroupRemovalRequestQueue.path.toString
-    ),
-    "TaskWorkerSupervisor"
+  createMonitoredActor(
+    DocumentSetCommandWorker.props(documentSetMessageBroker, addDocumentsWorkBroker, DocumentSetDeleter),
+    "DocumentSetCommandWorker"
   )
 
   /** Error? Die. On production, that will trigger restart. */

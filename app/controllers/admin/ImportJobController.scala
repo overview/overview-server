@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
 import com.overviewdocs.models.tables.{DocumentSetCreationJobs,DocumentSets}
-import com.overviewdocs.messages.{DocumentSetCommands,ClusterCommands}
+import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob}
 import com.overviewdocs.tree.DocumentSetCreationJobType
 import com.overviewdocs.tree.orm.DocumentSetCreationJobState
@@ -61,22 +61,9 @@ trait ImportJobController extends Controller {
     storage.findDocumentSetIdByJobId(importJobId).map(_ match {
       case None => done("deleteJob.success")
       case Some(documentSetId) => {
-        // FIXME: If a reclustering job is running, but there are failed jobs, we assume
-        // that the delete refers to canceling the running job.
-        // It would be better for the client to explicitly tell us what job to cancel, rather
-        // than trying to guess.
-        val cancelledJob: Option[DeprecatedDocumentSetCreationJob] = storage.cancelJob(documentSetId)
-
-        if (cancelledJob.doesNotExist || cancelledJob.wasRunningInWorker || cancelledJob.wasNotRunning) {
-          storage.deleteDocumentSet(documentSetId)
-          jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
-          done("deleteDocumentSet.success")
-        } else if (cancelledJob.wasRunningInTextExtractionWorker && cancelledJob.wasTextExtractionJob) {
-          jobQueue.send(ClusterCommands.CancelFileUpload(documentSetId, cancelledJob.get.fileGroupId.get))
-          done("deleteJob.success")
-        } else {
-          throw new RuntimeException("A job was in a state we do not handle")
-        }
+        storage.cancelJob(documentSetId)
+        jobQueue.send(DocumentSetCommands.CancelJob(documentSetId, importJobId))
+        done("deleteJob.success")
       }
     })
   }

@@ -1,9 +1,10 @@
 package com.overviewdocs.jobhandler.documentset
 
-import akka.actor.{Actor,ActorRef}
+import akka.actor.{Actor,ActorRef,Props}
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.{DocumentSetDeleter,DocumentSetCreationJobDeleter}
+import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.Logger
 
@@ -18,33 +19,63 @@ import com.overviewdocs.util.Logger
   */
 class DocumentSetCommandWorker(
   val broker: ActorRef,
-  val documentSetDeleter: DocumentSetDeleter,
-  val documentSetCreationJobDeleter: DocumentSetCreationJobDeleter
+  val addDocumentsWorkBroker: ActorRef,
+  val documentSetDeleter: DocumentSetDeleter
 ) extends Actor
 {
+  import DocumentSetCommands._
+
   private val logger = Logger.forClass(getClass)
 
-  override def preStart = ready
+  override def preStart = sendReady
 
   override def receive = {
-    case command: DocumentSetCommands.Command => run(command)(context.dispatcher)
+    case command: Command => run(command)(context.dispatcher)
   }
 
-  private def run(command: DocumentSetCommands.Command)(implicit ec: ExecutionContext): Unit = {
+  private def run(command: Command)(implicit ec: ExecutionContext): Unit = {
     logger.info("Handling DocumentSet command: {}", command)
-    commandToFuture(command).onComplete { _ => ready }
+
+    command match {
+      case addDocuments: AddDocumentsFromFileGroup => {
+        // AddDocuments is a special case, because it gets its own scheduler.
+        // The DocumentSetCommandWorker will return right away; that way, the
+        // downstream AddDocumentsWorkBroker can juggle all import jobs at
+        // once, while this DocumentSetCommandWorker can work on other
+        // commands.
+        val message = AddDocumentsWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
+        addDocumentsWorkBroker ! message
+        sendReady
+      }
+      case CancelJob(documentSetId, jobId) => {
+        // Another special case: this message arrives spontaneously. The
+        // DocumentSetCommandWorker should not respond to this message;
+        // instead, it should pass it to the AddDocumentsWorkBroker and keep
+        // going as it always has.
+        addDocumentsWorkBroker ! AddDocumentsWorkBroker.CancelJob(jobId)
+        // Don't send "ready": we don't know or care whether this worker has
+        // actually been doing anything.
+      }
+      case DeleteDocumentSet(documentSetId) => {
+        for {
+          _ <- documentSetDeleter.delete(documentSetId)
+        } yield {
+          sendDone(documentSetId)
+          sendReady
+        }
+      }
+    }
   }
 
-  private def commandToFuture(command: DocumentSetCommands.Command)(implicit ec: ExecutionContext): Future[Unit] = command match {
-    case DocumentSetCommands.DeleteDocumentSet(documentSetId) => {
-      documentSetDeleter.delete(documentSetId)
-    }
-    case DocumentSetCommands.DeleteDocumentSetJob(documentSetId, jobId) => {
-      documentSetCreationJobDeleter.delete(jobId)
-    }
-  }
+  private def done(documentSetId: Long) = DocumentSetMessageBroker.WorkerDoneDocumentSetCommand(documentSetId)
 
-  private def ready: Unit = {
-      broker ! DocumentSetMessageBroker.WorkerReady
+  private def sendDone(documentSetId: Long): Unit = broker ! done(documentSetId)
+
+  private def sendReady: Unit = broker ! DocumentSetMessageBroker.WorkerReady
+}
+
+object DocumentSetCommandWorker {
+  def props(broker: ActorRef, addDocumentsWorkBroker: ActorRef, documentSetDeleter: DocumentSetDeleter): Props = {
+    Props(new DocumentSetCommandWorker(broker, addDocumentsWorkBroker, documentSetDeleter))
   }
 }

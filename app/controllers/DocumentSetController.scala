@@ -6,7 +6,7 @@ import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
 
 import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
-import com.overviewdocs.messages.{ClusterCommands,DocumentSetCommands}
+import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
 import com.overviewdocs.models.tables.DocumentSets
@@ -172,7 +172,7 @@ trait DocumentSetController extends Controller {
       jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
       done("deleteJob.success")
     } else if (cancelledJob.wasRunningInTextExtractionWorker && cancelledJob.wasTextExtractionJob) {
-      jobQueue.send(ClusterCommands.CancelFileUpload(documentSetId, cancelledJob.get.fileGroupId.get))
+      jobQueue.send(DocumentSetCommands.CancelJob(documentSetId, cancelledJob.get.id))
       done("deleteJob.success")
     } else {
       throw new RuntimeException("A job was in a state we do not handle")

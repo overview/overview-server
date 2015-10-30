@@ -3,24 +3,19 @@ package controllers.util
 import akka.actor.{ActorSelection,ActorSystem}
 import com.typesafe.config.ConfigFactory
 
-import com.overviewdocs.messages.{ClusterCommands,DocumentSetCommands}
+import com.overviewdocs.messages.DocumentSetCommands
 
 trait JobQueueSender {
   protected def documentSetWorkerActor: ActorSelection
-  protected def clusterQueueActor: ActorSelection
 
   def send(command: DocumentSetCommands.Command): Unit = {
     documentSetWorkerActor ! command
   }
-
-  def send(command: ClusterCommands.Command): Unit = {
-    clusterQueueActor ! command
-  }
 }
 
 object JobQueueSender extends JobQueueSender {
+  // FIXME survive restarts in development
   override protected lazy val documentSetWorkerActor = find("DocumentSetMessageBroker")
-  override protected lazy val clusterQueueActor = find("FileGroupJobManager")
 
   private lazy val config = ConfigFactory.load.getConfig("documentset-worker")
   private lazy val hostname = config.getString("message_broker_hostname")
