@@ -1,10 +1,10 @@
 package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
-import scala.concurrent.{ExecutionContext,Future}
+import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
-import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.models.{File,GroupedFileUpload}
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
   */
@@ -34,15 +34,65 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * If there's an error we *don't* expect (e.g., out of disk space), it will
     * return that error in the Future.
     */
-  def processUpload(command: AddDocumentsFromFileGroup, upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
-    // This is all icky wrapper stuff. TODO tidy it all.
-    val parameters = task.FilePipelineParameters(
-      command.documentSetId,
-      upload,
-      task.UploadProcessOptions(command.lang, command.splitDocuments),
-      documentIdSupplier
-    )
-    new task.UploadedFileProcess(parameters).start
+  def processUpload(
+    command: AddDocumentsFromFileGroup,
+    upload: GroupedFileUpload
+  )(implicit ec: ExecutionContext): Future[Unit] = {
+    writeFile(upload, command.lang).flatMap(_ match {
+      case Left(message) => writeDocumentProcessingError(command, upload, message)
+      case Right(file) => {
+        buildDocuments(file, command.splitDocuments).flatMap(_ match {
+          case Left(message) => writeDocumentProcessingError(command, upload, message)
+          case Right(documentsWithoutIds) => writeDocuments(command.documentSetId, documentsWithoutIds)
+        })
+      }
+    })
+  }
+
+  private def detectDocumentType(
+    upload: GroupedFileUpload
+  )(implicit ec: ExecutionContext): Future[DocumentTypeDetector.DocumentType] = {
+    Future(blocking {
+      DocumentTypeDetector.detectForLargeObject(upload.name, upload.contentsOid)
+    })
+  }
+
+  private def writeFile(
+    upload: GroupedFileUpload,
+    lang: String
+  )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
+    detectDocumentType(upload).flatMap(_ match {
+      case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, lang)
+      case DocumentTypeDetector.OfficeDocument => task.CreateOfficeFile(upload)
+      case DocumentTypeDetector.UnsupportedDocument(mimeType) => Future.successful(Left(
+        s"Overview doesn't support documents of type $mimeType"
+      ))
+    })
+  }
+
+  private def buildDocuments(
+    file: File,
+    splitByPage: Boolean
+  )(implicit ec: ExecutionContext): Future[Either[String,Seq[task.DocumentWithoutIds]]] = {
+    splitByPage match {
+      case true => task.CreateDocumentDataForPages(file)
+      case false => task.CreateDocumentDataForFile(file)
+    }
+  }
+
+  private def writeDocuments(
+    documentSetId: Long,
+    documentsWithoutIds: Seq[task.DocumentWithoutIds]
+  )(implicit ec: ExecutionContext): Future[Unit] = {
+    task.WriteDocuments(documentSetId, documentsWithoutIds, documentIdSupplier)
+  }
+
+  private def writeDocumentProcessingError(
+    command: AddDocumentsFromFileGroup,
+    upload: GroupedFileUpload,
+    message: String
+  )(implicit ec: ExecutionContext): Future[Unit] = {
+    task.WriteDocumentProcessingError(command.documentSetId, upload.name, message)
   }
 
   /** Deletes the Job from the database and freshens its DocumentSet info.

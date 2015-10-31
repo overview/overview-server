@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
 import java.nio.file.{Files=>JFiles,Path}
@@ -7,8 +7,6 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
-import com.overviewdocs.jobhandler.filegroup.task.OfficeDocumentConverter
 import com.overviewdocs.models.{File,GroupedFileUpload,TempDocumentSetFile}
 import com.overviewdocs.models.tables.{Files,TempDocumentSetFiles}
 import com.overviewdocs.postgres.LargeObjectInputStream
@@ -28,7 +26,7 @@ import com.overviewdocs.postgres.LargeObjectInputStream
   *
   * TODO share some code with CreatePdfFile.scala
   */
-class CreateOfficeFile(params: FilePipelineParameters)(implicit ec: ExecutionContext) extends HasBlockingDatabase {
+class CreateOfficeFile(upload: GroupedFileUpload)(implicit ec: ExecutionContext) extends HasBlockingDatabase {
   import database.api._
 
   private val CopyBufferSize = 1024 * 1024 * 5 // Copy 5MB at a time from database
@@ -74,17 +72,18 @@ class CreateOfficeFile(params: FilePipelineParameters)(implicit ec: ExecutionCon
       .returning(Files)
   }
 
-  private def createFile(contentsLocation: String, sha1: Array[Byte],
-                         viewSize: Long, viewLocation: String): Future[File] = {
-    database.run((for {
-      file <- fileInserter.+=(1, params.filename, contentsLocation, params.inputSize, sha1, viewLocation, viewSize)
-      _ <- TempDocumentSetFiles.+=(TempDocumentSetFile(params.documentSetId, file.id))
-    } yield file).transactionally)
+  private def createFile(
+    contentsLocation: String,
+    sha1: Array[Byte],
+    viewSize: Long,
+    viewLocation: String
+  ): Future[File] = {
+    database.run(fileInserter.+=(1, upload.name, contentsLocation, upload.size, sha1, viewLocation, viewSize))
   }
 
   private def downloadLargeObjectAndCalculateSha1(destination: Path): Future[Array[Byte]] = {
     Future(blocking(JFiles.newOutputStream(destination))).flatMap { outputStream =>
-      val loStream = new LargeObjectInputStream(params.inputOid, blockingDatabase)
+      val loStream = new LargeObjectInputStream(upload.contentsOid, blockingDatabase)
       val digest = MessageDigest.getInstance("SHA-1")
       val digestStream = new DigestInputStream(loStream, digest)
 
@@ -108,7 +107,7 @@ class CreateOfficeFile(params: FilePipelineParameters)(implicit ec: ExecutionCon
 }
 
 object CreateOfficeFile {
-  def apply(params: FilePipelineParameters)(implicit ec: ExecutionContext): Future[Either[String,File]] = {
-    new CreateOfficeFile(params).execute
+  def apply(upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Either[String,File]] = {
+    new CreateOfficeFile(upload).execute
   }
 }

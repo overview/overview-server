@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task
 
 import akka.actor.ActorRef
 import akka.pattern.ask
@@ -8,7 +8,6 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol.{RequestIds,IdRequestResponse}
-import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.TempDocumentSetFiles
 import com.overviewdocs.util.BulkDocumentWriter
@@ -16,8 +15,9 @@ import com.overviewdocs.util.BulkDocumentWriter
 /** Writes [[Document]]s to the database and deletes [[TempDocumentSetFile]]s.
   */
 class WriteDocuments(
+  val documentSetId: Long,
   val documentsWithoutIds: Seq[DocumentWithoutIds],
-  val params: FilePipelineParameters
+  val documentIdSupplier: ActorRef
 )(implicit ec: ExecutionContext)
 extends HasDatabase {
   def execute: Future[Unit] = for {
@@ -27,15 +27,15 @@ extends HasDatabase {
   } yield ()
 
   private def makeDocument(documentWithoutIds: DocumentWithoutIds, id: Long): Document = {
-    documentWithoutIds.toDocument(params.documentSetId, id)
+    documentWithoutIds.toDocument(documentSetId, id)
   }
 
   private def getIds: Future[Seq[Long]] = {
-    val request = RequestIds(params.documentSetId, documentsWithoutIds.size)
+    val request = RequestIds(documentSetId, documentsWithoutIds.size)
     val timeout = Timeout(9999999, TimeUnit.SECONDS)
 
     for {
-      IdRequestResponse(ids) <- params.documentIdSupplier.ask(request)(timeout)
+      IdRequestResponse(ids) <- documentIdSupplier.ask(request)(timeout)
     } yield ids
   }
 
@@ -61,9 +61,10 @@ extends HasDatabase {
 
 object WriteDocuments {
   def apply(
+    documentSetId: Long,
     documentsWithoutIds: Seq[DocumentWithoutIds],
-    params: FilePipelineParameters
+    documentIdSupplier: ActorRef
   )(implicit ec: ExecutionContext): Future[Unit] = {
-    new WriteDocuments(documentsWithoutIds, params).execute
+    new WriteDocuments(documentSetId, documentsWithoutIds, documentIdSupplier).execute
   }
 }

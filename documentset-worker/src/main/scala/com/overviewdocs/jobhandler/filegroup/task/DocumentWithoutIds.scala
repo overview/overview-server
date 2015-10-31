@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.util.Date
 import play.api.libs.json.JsObject

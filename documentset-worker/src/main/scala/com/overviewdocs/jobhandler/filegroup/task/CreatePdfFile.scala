@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.nio.file.{Files=>JFiles,Path}
 import java.security.{DigestInputStream,MessageDigest}
@@ -9,7 +9,6 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.{File,GroupedFileUpload,TempDocumentSetFile}
 import com.overviewdocs.models.tables.{Files,TempDocumentSetFiles}
 import com.overviewdocs.postgres.LargeObjectInputStream
@@ -29,7 +28,10 @@ import com.overviewdocs.postgres.LargeObjectInputStream
   *
   * TODO share some code with CreateOfficeFile.scala
   */
-class CreatePdfFile(params: FilePipelineParameters)(implicit ec: ExecutionContext) extends HasBlockingDatabase {
+class CreatePdfFile(
+  upload: GroupedFileUpload,
+  lang: String
+)(implicit ec: ExecutionContext) extends HasBlockingDatabase {
   import database.api._
 
   private val CopyBufferSize = 1024 * 1024 * 5 // Copy 5MB at a time from database
@@ -38,7 +40,7 @@ class CreatePdfFile(params: FilePipelineParameters)(implicit ec: ExecutionContex
 
   private def downloadLargeObjectAndCalculateSha1(destination: Path): Future[Array[Byte]] = {
     Future(blocking(JFiles.newOutputStream(destination))).flatMap { outputStream =>
-      val loStream = new LargeObjectInputStream(params.inputOid, blockingDatabase)
+      val loStream = new LargeObjectInputStream(upload.contentsOid, blockingDatabase)
       val digest = MessageDigest.getInstance("SHA-1")
       val digestStream = new DigestInputStream(loStream, digest)
 
@@ -84,7 +86,7 @@ class CreatePdfFile(params: FilePipelineParameters)(implicit ec: ExecutionContex
     withTempFiles { (rawPath, pdfPath) =>
       for {
         sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
-        _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, params.ocrLocales, dummyProgress)
+        _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, Seq(new Locale(lang)), dummyProgress)
         pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
         rawLocation <- BlobStorage.create(BlobBucketId.FileContents, rawPath)
         pdfLocation <- BlobStorage.create(BlobBucketId.FileContents, pdfPath)
@@ -106,15 +108,12 @@ class CreatePdfFile(params: FilePipelineParameters)(implicit ec: ExecutionContex
   private lazy val tempDocumentSetFileInserter = (TempDocumentSetFiles returning TempDocumentSetFiles)
 
   private def writeDatabase(rawLocation: String, sha1: Array[Byte], pdfLocation: String, pdfNBytes: Long): Future[File] = {
-    database.run((for {
-      file <- fileInserter.+=((1, params.filename, rawLocation, params.inputSize, sha1, pdfLocation, pdfNBytes))
-      _ <- TempDocumentSetFiles.+=(TempDocumentSetFile(params.documentSetId, file.id))
-    } yield file).transactionally)
+    database.run(fileInserter.+=((1, upload.name, rawLocation, upload.size, sha1, pdfLocation, pdfNBytes)))
   }
 }
 
 object CreatePdfFile {
-  def apply(params: FilePipelineParameters)(implicit ec: ExecutionContext): Future[Either[String,File]] = {
-    new CreatePdfFile(params).execute
+  def apply(upload: GroupedFileUpload, lang: String)(implicit ec: ExecutionContext): Future[Either[String,File]] = {
+    new CreatePdfFile(upload, lang).execute
   }
 }

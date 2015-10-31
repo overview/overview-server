@@ -1,15 +1,14 @@
-package com.overviewdocs.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task
 
 import org.overviewproject.pdfocr.pdf.PdfDocument
 import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.{DocumentDisplayMethod,File}
 import com.overviewdocs.util.Textify
 
-class CreateDocumentDataForFile(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext) {
+class CreateDocumentDataForFile(file: File)(implicit ec: ExecutionContext) {
   def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
     getText
       .map { case (text, isFromOcr) =>
@@ -57,7 +56,7 @@ class CreateDocumentDataForFile(file: File, params: FilePipelineParameters)(impl
 }
 
 object CreateDocumentDataForFile {
-  def apply(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
-    new CreateDocumentDataForFile(file, params).execute
+  def apply(file: File)(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    new CreateDocumentDataForFile(file).execute
   }
 }

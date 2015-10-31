@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup
 
 import java.io.InputStream
 import org.overviewproject.mime_types.MimeTypeDetector

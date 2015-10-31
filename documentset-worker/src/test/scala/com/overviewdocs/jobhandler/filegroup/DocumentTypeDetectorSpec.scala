@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup.task
+package com.overviewdocs.jobhandler.filegroup
 
 import java.io.InputStream
 import org.overviewproject.mime_types.MimeTypeDetector
@@ -6,9 +6,9 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import com.overviewdocs.jobhandler.filegroup.task.DocumentTypeDetector._
-
 class DocumentTypeDetectorSpec extends Specification with Mockito {
+  import DocumentTypeDetector._
+
   "DocumentTypeDetector" should {
     "detect document type" in new BaseScope {
       mockMimeTypeDetector.detectMimeType(any[String], any[InputStream]) returns "application/pdf"

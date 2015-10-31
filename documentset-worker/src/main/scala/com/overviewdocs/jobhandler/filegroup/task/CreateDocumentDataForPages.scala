@@ -1,4 +1,4 @@
-package com.overviewdocs.jobhandler.filegroup.task.step
+package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.ByteArrayInputStream
 import org.overviewproject.pdfocr.pdf.{PdfDocument,PdfPage}
@@ -7,13 +7,11 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.jobhandler.filegroup.task.FilePipelineParameters
 import com.overviewdocs.models.{DocumentDisplayMethod,File,Page}
 import com.overviewdocs.models.tables.Pages
 import com.overviewdocs.util.Textify
 
-class CreateDocumentDataForPages(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext)
-extends HasDatabase {
+class CreateDocumentDataForPages(file: File)(implicit ec: ExecutionContext) extends HasDatabase {
   import database.api._
 
   def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
@@ -87,7 +85,7 @@ extends HasDatabase {
 }
 
 object CreateDocumentDataForPages {
-  def apply(file: File, params: FilePipelineParameters)(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
-    new CreateDocumentDataForPages(file, params).execute
+  def apply(file: File)(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    new CreateDocumentDataForPages(file).execute
   }
 }
