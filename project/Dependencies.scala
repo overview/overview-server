@@ -1,5 +1,5 @@
 import sbt._
-import play.sbt.PlayImport.{evolutions,filters,jdbc,ws}
+import play.sbt.PlayImport.{filters,ws}
 
 object Dependencies {
   private object deps {
