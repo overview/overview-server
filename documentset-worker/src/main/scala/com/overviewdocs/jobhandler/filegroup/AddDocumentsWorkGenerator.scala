@@ -1,5 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup
 
+import java.time.Instant
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future}
 
@@ -39,7 +40,12 @@ class AddDocumentsWorkGenerator(
   val fileGroup: FileGroup,
   val uploads: Seq[GroupedFileUpload]
 ) {
-  private case class UploadInfo(progress: Double)
+  private case class UploadInfo(fractionComplete: Double)
+
+  private val millisAtStart: Long = Instant.now.toEpochMilli
+  private val nBytesUnfinishedAtStart: Long = uploads.map(_.size).sum
+  private var nBytesUnfinished: Long = nBytesUnfinishedAtStart
+  private var nFilesUnfinished: Int = uploads.length
 
   private val pendingUploads: Iterator[GroupedFileUpload] = uploads.iterator
   private val inProgress: mutable.Map[GroupedFileUpload,UploadInfo] = mutable.Map()
@@ -62,16 +68,64 @@ class AddDocumentsWorkGenerator(
     * This is called during cancellation, so we can get right to the
     * FinishJobWork.
     */
-  def skipRemainingFileWork: Unit = while (pendingUploads.hasNext) pendingUploads.next
+  def skipRemainingFileWork: Unit = {
+    while (pendingUploads.hasNext) pendingUploads.next
+    nFilesUnfinished = 0
+    nBytesUnfinished = 0
+  }
 
-  /** Reports that a unit of Work returned from `nextWork` was completed.
+  /** Tell the generator a unit of Work returned from `nextWork` was completed.
     *
     * If a previous call to `nextWork` returned `NoWorkForNow`, it might return
     * something different after this call.
     */
   def markWorkDone(upload: GroupedFileUpload): Unit = {
+    nFilesUnfinished -= 1
+    nBytesUnfinished -= upload.size
     assert(inProgress.contains(upload))
     inProgress.-=(upload)
+  }
+
+  /** The current progress.
+    *
+    * This works even when `fileGroup.nFiles != uploads.length`, which happens
+    * when resuming across restarts.
+    *
+    * The return value gives an estimated end time. That date is calculated
+    * by extrapolating from now. If no bytes have been processed yet, it will
+    * be Instant.MAX.
+    */
+  def progress: AddDocumentsWorkGenerator.Progress = {
+    val nBytesInCurrentUploads = inProgress.toSeq
+      .map { case (upload, info) => (upload.size * info.fractionComplete).toLong }
+      .sum
+
+    val nFiles = fileGroup.nFiles.get - nFilesUnfinished
+    val nBytes = fileGroup.nBytes.get - nBytesUnfinished + nBytesInCurrentUploads
+
+    val estimatedCompletionTime = if (nBytesUnfinished != nBytesUnfinishedAtStart) {
+      val fractionRemaining: Double = nBytesUnfinished.toDouble / nBytesUnfinishedAtStart
+      val fractionComplete: Double = 1.0 - fractionRemaining
+      val millisDone = Instant.now.toEpochMilli - millisAtStart
+      val estimatedMillis = math.ceil(millisDone / fractionComplete).toLong
+      Instant.ofEpochMilli(millisAtStart + estimatedMillis)
+    } else {
+      Instant.MAX
+    }
+
+    AddDocumentsWorkGenerator.Progress(nFiles, nBytes, estimatedCompletionTime)
+  }
+
+  /** Tell the generator an upload is partially processed.
+    *
+    * @param upload The upload, which was returned by nextWork and hasn't been
+    *               passed to markWorkDone.
+    * @param fractionComplete A number between 0 (not started) and 1 (done).
+    */
+  def markWorkProgress(upload: GroupedFileUpload, fractionComplete: Double): Unit = {
+    assert(fractionComplete >= 0.0)
+    assert(fractionComplete <= 1.0)
+    inProgress(upload) = UploadInfo(fractionComplete)
   }
 }
 
@@ -83,6 +137,8 @@ object AddDocumentsWorkGenerator extends HasDatabase {
   case class ProcessFileWork(upload: GroupedFileUpload) extends Work
   case object FinishJobWork extends Work
   case object NoWorkForNow extends Work
+
+  case class Progress(nFilesProcessed: Int, nBytesProcessed: Long, estimatedCompletionTime: Instant)
 
   def loadForCommand(command: AddDocumentsFromFileGroup)(implicit ec: ExecutionContext): Future[AddDocumentsWorkGenerator] = {
     import database.api._
