@@ -141,7 +141,6 @@ trait DocumentSetController extends Controller {
 
     implicit class MaybeCancelledJob(maybeJob: Option[DeprecatedDocumentSetCreationJob]) {
       def doesNotExist: Boolean = maybeJob.isEmpty
-      def wasTextExtractionJob: Boolean = maybeJob.flatMap(_.fileGroupId).isDefined
       def wasRunningInWorker: Boolean = (
         maybeJob.map(_.state) == Some(DocumentSetCreationJobState.InProgress)
         && maybeJob.map(_.jobType) != Some(DocumentSetCreationJobType.Recluster)
@@ -170,9 +169,6 @@ trait DocumentSetController extends Controller {
     } else if (cancelledJob.wasNotRunning) {
       storage.deleteDocumentSet(documentSetId)
       jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
-      done("deleteJob.success")
-    } else if (cancelledJob.wasRunningInTextExtractionWorker && cancelledJob.wasTextExtractionJob) {
-      jobQueue.send(DocumentSetCommands.CancelJob(documentSetId, cancelledJob.get.id))
       done("deleteJob.success")
     } else {
       throw new RuntimeException("A job was in a state we do not handle")

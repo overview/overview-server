@@ -17,7 +17,6 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
   def documentcloudUsername = column[Option[String]]("documentcloud_username")
   def documentcloudPassword = column[Option[String]]("documentcloud_password")
   def contentsOid = column[Option[Long]]("contents_oid")
-  def fileGroupId = column[Option[Long]]("file_group_id")
   def sourceDocumentSetId = column[Option[Long]]("source_document_set_id")
   def treeTitle = column[Option[String]]("tree_title")
   def treeDescription = column[Option[String]]("tree_description")
@@ -29,13 +28,13 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
 
   def * =
     (id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
-      documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId,
+      documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
       treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled) <>
       ((DocumentSetCreationJob.apply _).tupled, DocumentSetCreationJob.unapply)
 
   def createAttributes =
     (documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
-      documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId,
+      documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
       treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled) <>
       (DocumentSetCreationJob.CreateAttributes.tupled, DocumentSetCreationJob.CreateAttributes.unapply)
 }

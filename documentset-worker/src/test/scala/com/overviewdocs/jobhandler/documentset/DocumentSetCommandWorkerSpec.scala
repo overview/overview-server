@@ -12,6 +12,7 @@ import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.test.ActorSystemContext
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class DocumentSetCommandWorkerSpec extends Specification with Mockito {
   sequential
@@ -34,14 +35,14 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       "send WorkerReady immediately" in new BaseScope {
         broker.expectMsg(WorkerReady)
 
-        subject ! DocumentSetCommands.AddDocumentsFromFileGroup(1L, 2L, 3L, "en", true)
+        subject ! DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(addToDocumentSetId=Some(1L)))
         broker.expectMsg(WorkerReady)
       }
 
       "queue ack message for when command completes" in new BaseScope {
         broker.expectMsg(WorkerReady)
 
-        val command = DocumentSetCommands.AddDocumentsFromFileGroup(1L, 2L, 3L, "en", true)
+        val command = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(addToDocumentSetId=Some(2L)))
         subject ! command
         // This is one-half of the spec; the other half is in AddDocumentsWorkBroker
         addDocumentsWorkBroker.expectMsg(
@@ -74,7 +75,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
 
     "CancelJob" should {
       "forward to addDocumentsWorkBroker" in new BaseScope {
-        subject ! DocumentSetCommands.CancelJob(1L, 2L)
+        subject ! DocumentSetCommands.CancelAddDocumentsFromFileGroup(1L, 2L)
         addDocumentsWorkBroker.expectMsg(AddDocumentsWorkBroker.CancelJob(2L))
       }
     }

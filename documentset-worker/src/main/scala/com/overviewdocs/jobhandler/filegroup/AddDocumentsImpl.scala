@@ -3,8 +3,7 @@ package com.overviewdocs.jobhandler.filegroup
 import akka.actor.ActorRef
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
-import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
-import com.overviewdocs.models.{File,GroupedFileUpload}
+import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload}
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
   */
@@ -34,16 +33,13 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * If there's an error we *don't* expect (e.g., out of disk space), it will
     * return that error in the Future.
     */
-  def processUpload(
-    command: AddDocumentsFromFileGroup,
-    upload: GroupedFileUpload
-  )(implicit ec: ExecutionContext): Future[Unit] = {
-    writeFile(upload, command.lang).flatMap(_ match {
-      case Left(message) => writeDocumentProcessingError(command, upload, message)
+  def processUpload(fileGroup: FileGroup, upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
+    writeFile(upload, fileGroup.lang.get).flatMap(_ match {
+      case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
       case Right(file) => {
-        buildDocuments(file, command.splitDocuments).flatMap(_ match {
-          case Left(message) => writeDocumentProcessingError(command, upload, message)
-          case Right(documentsWithoutIds) => writeDocuments(command.documentSetId, documentsWithoutIds)
+        buildDocuments(file, fileGroup.splitDocuments.get).flatMap(_ match {
+          case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
+          case Right(documentsWithoutIds) => writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds)
         })
       }
     })
@@ -88,11 +84,11 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
   }
 
   private def writeDocumentProcessingError(
-    command: AddDocumentsFromFileGroup,
+    documentSetId: Long,
     upload: GroupedFileUpload,
     message: String
   )(implicit ec: ExecutionContext): Future[Unit] = {
-    task.WriteDocumentProcessingError(command.documentSetId, upload.name, message)
+    task.WriteDocumentProcessingError(documentSetId, upload.name, message)
   }
 
   /** Deletes the Job from the database and freshens its DocumentSet info.
@@ -103,19 +99,17 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * 2. Updates the DocumentSet's document-ID array and counts.
     * 3. Deletes unprocessed GroupedFileUploads. (When the command is cancelled,
     *    these remain behind.)
-    * 4. Deletes the DocumentSetCreationJob.
     * 5. Deletes the FileGroup.
     * 6. Creates a clustering DocumentSetCreationJob.
     */
-  def finishJob(command: AddDocumentsFromFileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
+  def finishJob(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
     import com.overviewdocs.database.FileGroupDeleter
     import com.overviewdocs.database.DocumentSetCreationJobDeleter
     import com.overviewdocs.searchindex.TransportIndexClient
     for {
-      _ <- TransportIndexClient.singleton.addDocumentSet(command.documentSetId) // FIXME move this to creation
-      _ <- task.DocumentSetInfoUpdater.update(command.documentSetId)
-      _ <- FileGroupDeleter.delete(command.fileGroupId)
-      _ <- DocumentSetCreationJobDeleter.delete(command.documentSetCreationJobId)
+      _ <- TransportIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation
+      _ <- task.DocumentSetInfoUpdater.update(fileGroup.addToDocumentSetId.get)
+      _ <- FileGroupDeleter.delete(fileGroup.id)
       // _ <- [create a DocumentSetCreationJob...]
     } yield {
       ()

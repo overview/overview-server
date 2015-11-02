@@ -42,7 +42,6 @@ trait ImportJobController extends Controller {
     implicit class MaybeCancelledJob(maybeJob: Option[DeprecatedDocumentSetCreationJob]) {
       def documentSetId = maybeJob.map(_.id).getOrElse(throw new RuntimeException("Invalid access of document set id"))
       def doesNotExist: Boolean = maybeJob.isEmpty
-      def wasTextExtractionJob: Boolean = maybeJob.flatMap(_.fileGroupId).isDefined
       def wasRunningInWorker: Boolean = (
         maybeJob.map(_.state) == Some(DocumentSetCreationJobState.InProgress)
         && maybeJob.map(_.jobType) != Some(DocumentSetCreationJobType.Recluster)

@@ -47,12 +47,12 @@ class DocumentSetCommandWorker(
         addDocumentsWorkBroker ! message
         sendReady
       }
-      case CancelJob(documentSetId, jobId) => {
+      case CancelAddDocumentsFromFileGroup(documentSetId, fileGroupId) => {
         // Another special case: this message arrives spontaneously. The
         // DocumentSetCommandWorker should not respond to this message;
         // instead, it should pass it to the AddDocumentsWorkBroker and keep
         // going as it always has.
-        addDocumentsWorkBroker ! AddDocumentsWorkBroker.CancelJob(jobId)
+        addDocumentsWorkBroker ! AddDocumentsWorkBroker.CancelJob(fileGroupId)
         // Don't send "ready": we don't know or care whether this worker has
         // actually been doing anything.
       }
@@ -63,6 +63,9 @@ class DocumentSetCommandWorker(
           sendDone(documentSetId)
           sendReady
         }
+      }
+      case CancelJob(documentSetId, jobId) => {
+        // no-op ... for now!
       }
     }
   }

@@ -35,13 +35,12 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       override val viewBackend = mockViewBackend
     }
 
-    def fakeJob(documentSetId: Long, id: Long, fileGroupId: Long,
+    def fakeJob(documentSetId: Long, id: Long,
                 state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.InProgress,
                 jobType: DocumentSetCreationJobType.Value = DocumentSetCreationJobType.FileUpload) = {
       factory.documentSetCreationJob(
         id = id,
         documentSetId = documentSetId,
-        fileGroupId = Some(fileGroupId),
         jobType = jobType,
         state = state
       )
@@ -296,7 +295,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "return Ok if there are only jobs" in new IndexScope {
         override def fakeDocumentSets = Seq()
-        override def fakeJobs = Seq((fakeJob(2, 2, 2), factory.documentSet(id=2L)))
+        override def fakeJobs = Seq((fakeJob(2, 2), factory.documentSet(id=2L)))
 
         h.status(result) must beEqualTo(h.OK)
       }
@@ -352,8 +351,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "show jobs" in new IndexScope {
         override def fakeJobs = Seq(
-          (fakeJob(2, 2, 2), factory.documentSet(2L)),
-          (fakeJob(3, 3, 3), factory.documentSet(3L))
+          (fakeJob(2, 2), factory.documentSet(2L)),
+          (fakeJob(3, 3), factory.documentSet(3L))
         )
 
         j.$("[data-document-set-creation-job-id='2']").length must beEqualTo(1)

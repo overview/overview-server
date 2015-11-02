@@ -24,7 +24,7 @@ class AddDocumentsWorkBrokerSpec extends Specification {
 
     /** Add stub data, then send DoWorkThenAck. */
     def startTestWork(command: AddDocumentsFromFileGroup, nUploads: Int, ackTarget: ActorRef, ackMessage: Any): Unit = {
-      val uploads = Seq.tabulate(nUploads) { i => factory.groupedFileUpload(fileGroupId=command.fileGroupId) }
+      val uploads = Seq.tabulate(nUploads) { i => factory.groupedFileUpload(fileGroupId=command.fileGroup.id) }
       jobs.+=(command -> uploads)
       self ! DoWorkThenAck(command, ackTarget, ackMessage)
     }
@@ -36,7 +36,7 @@ class AddDocumentsWorkBrokerSpec extends Specification {
 
     override protected def loadWorkGeneratorForCommand(command: AddDocumentsFromFileGroup)(implicit ec: ExecutionContext) = {
       val uploads = jobs(command)
-      Future.successful(new AddDocumentsWorkGenerator(command, uploads))
+      Future.successful(new AddDocumentsWorkGenerator(command.fileGroup, uploads))
     }
   }
 
@@ -45,12 +45,20 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       val subject = TestActorRef(new TestSubject) // TestActorRef: messages are synchronous
       val broker: TestSubject = subject.underlyingActor
 
-      val command1 = AddDocumentsFromFileGroup(1L, 2L, 3L, "fr", true)
-      val command2 = AddDocumentsFromFileGroup(4L, 5L, 6L, "sw", false)
-      val command3 = AddDocumentsFromFileGroup(7L, 8L, 9L, "de", false)
+      val fileGroup1 = factory.fileGroup(id=1L, addToDocumentSetId=Some(2L), lang=Some("fr"), splitDocuments=Some(true))
+      val fileGroup2 = factory.fileGroup(id=3L, addToDocumentSetId=Some(4L), lang=Some("sw"), splitDocuments=Some(false))
+      val fileGroup3 = factory.fileGroup(id=5L, addToDocumentSetId=Some(6L), lang=Some("de"), splitDocuments=Some(false))
+
+      val command1 = AddDocumentsFromFileGroup(fileGroup1)
+      val command2 = AddDocumentsFromFileGroup(fileGroup2)
+      val command3 = AddDocumentsFromFileGroup(fileGroup3)
 
       def handleUpload(command: AddDocumentsFromFileGroup, index: Int): HandleUpload = {
-        HandleUpload(command, broker.jobs(command)(index))
+        HandleUpload(command.fileGroup, broker.jobs(command)(index))
+      }
+
+      def doneHandleUpload(command: AddDocumentsFromFileGroup, index: Int): WorkerDoneHandleUpload = {
+        WorkerDoneHandleUpload(command.fileGroup, broker.jobs(command)(index))
       }
     }
 
@@ -127,8 +135,8 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       subject ! WorkerReady
       expectNoMsg(Duration.Zero)
 
-      subject ! WorkerDoneHandleUpload(command1)
-      expectMsg(FinishJob(command1))
+      subject ! doneHandleUpload(command1, 0)
+      expectMsg(FinishJob(fileGroup1))
     }
 
     "resume a work generator when it gets finished and then a worker arrives" in new BaseScope {
@@ -137,10 +145,10 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       subject ! WorkerReady
       expectMsg(handleUpload(command1, 0))
 
-      subject ! WorkerDoneHandleUpload(command1)
+      subject ! doneHandleUpload(command1, 0)
 
       subject ! WorkerReady
-      expectMsg(FinishJob(command1))
+      expectMsg(FinishJob(fileGroup1))
     }
 
     "send cancel messages to workers that are working on a job" in new BaseScope {
@@ -149,18 +157,18 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       subject ! WorkerReady
       expectMsg(handleUpload(command1, 0))
 
-      subject ! CancelJob(command1.documentSetCreationJobId)
-      expectMsg(CancelHandleUpload(command1))
+      subject ! CancelJob(fileGroup1.id)
+      expectMsg(CancelHandleUpload(fileGroup1))
     }
 
     "not crash when cancelling a job that is already finished" in new BaseScope {
       broker.startTestWork(command1, 0)
 
       subject ! WorkerReady
-      expectMsg(FinishJob(command1))
-      subject ! WorkerDoneFinishJob(command1) // the broker forgets about the job now
+      expectMsg(FinishJob(fileGroup1))
+      subject ! WorkerDoneFinishJob(fileGroup1) // the broker forgets about the job now
 
-      subject ! CancelJob(command1.documentSetCreationJobId)
+      subject ! CancelJob(fileGroup1.id)
       expectNoMsg(Duration.Zero)
 
       subject ! WorkerReady
@@ -173,13 +181,13 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       subject ! WorkerReady
       expectMsg(handleUpload(command1, 0))
 
-      subject ! CancelJob(command1.documentSetCreationJobId)
-      expectMsg(CancelHandleUpload(command1))
+      subject ! CancelJob(fileGroup1.id)
+      expectMsg(CancelHandleUpload(fileGroup1))
 
-      subject ! WorkerDoneHandleUpload(command1)
+      subject ! doneHandleUpload(command1, 0)
       subject ! WorkerReady
 
-      expectMsg(FinishJob(command1))
+      expectMsg(FinishJob(fileGroup1))
     }
 
     "wait on FinishJob until cancelled uploads are finished" in new BaseScope {
@@ -188,16 +196,16 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       subject ! WorkerReady
       expectMsg(handleUpload(command1, 0))
 
-      subject ! CancelJob(command1.documentSetCreationJobId)
-      expectMsg(CancelHandleUpload(command1))
+      subject ! CancelJob(fileGroup1.id)
+      expectMsg(CancelHandleUpload(fileGroup1))
 
       // some other worker comes along...
       subject ! WorkerReady
       expectNoMsg(Duration.Zero)
 
       // and now the first worker says it finished the cancelled HandleUpload
-      subject ! WorkerDoneHandleUpload(command1)
-      expectMsg(FinishJob(command1)) // the broker sends somebody the FinishJob
+      subject ! doneHandleUpload(command1, 0)
+      expectMsg(FinishJob(fileGroup1)) // the broker sends somebody the FinishJob
     }
 
     "only cancel jobs for workers that are processing them" in new BaseScope {
@@ -214,9 +222,9 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       worker1.expectMsg(handleUpload(command1, 0))
       worker2.expectMsg(handleUpload(command2, 0))
 
-      subject ! CancelJob(command1.documentSetCreationJobId)
+      subject ! CancelJob(fileGroup1.id)
 
-      worker1.expectMsg(CancelHandleUpload(command1))
+      worker1.expectMsg(CancelHandleUpload(fileGroup1))
       worker2.expectNoMsg(Duration.Zero)
     }
 
@@ -228,13 +236,13 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       // a worker starts and finishes with a HandleUpload for command1...
       subject ! WorkerReady
       expectMsg(handleUpload(command1, 0))
-      subject ! WorkerDoneHandleUpload(command1)
+      subject ! doneHandleUpload(command1, 0)
 
       // the worker starts on a HandleUpload for command2...
       subject ! WorkerReady
       expectMsg(handleUpload(command2, 0))
 
-      subject ! CancelJob(command1.documentSetCreationJobId)
+      subject ! CancelJob(fileGroup1.id)
       expectNoMsg(Duration.Zero) // the worker isn't working on command1, so it gets no message
     }
 
@@ -244,8 +252,8 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       broker.startTestWork(command1, 0, probe.ref, "ack")
 
       subject ! WorkerReady
-      expectMsg(FinishJob(command1))
-      subject ! WorkerDoneFinishJob(command1)
+      expectMsg(FinishJob(fileGroup1))
+      subject ! WorkerDoneFinishJob(fileGroup1)
       probe.expectMsg("ack")
     }
   }

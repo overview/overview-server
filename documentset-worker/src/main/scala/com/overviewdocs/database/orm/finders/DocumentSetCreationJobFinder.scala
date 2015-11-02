@@ -14,9 +14,6 @@ object DocumentSetCreationJobFinder extends Finder {
   def byDocumentSet(documentSetId: Long): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId)
 
-  def byFileGroupId(fileGroupId: Long): DocumentSetCreationJobFinderResult =
-    Schema.documentSetCreationJobs.where(dscj => dscj.fileGroupId === fileGroupId)
-
   def byDocumentSetAndState(documentSetId: Long, state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId and dscj.state === state)
 

@@ -3,23 +3,24 @@ package controllers.backend
 import scala.concurrent.Future
 
 import com.overviewdocs.models.FileGroup
-import com.overviewdocs.models.tables.FileGroups
+import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 
 trait FileGroupBackend extends Backend {
-  /** Updates a FileGroup.
+  /** Changes a FileGroup from a place where the user uploads to a place where
+    * the worker processes.
     *
-    * The only property you can update is <tt>completed</tt>.
+    * Scans for GroupedFileUploads to set nFiles and nBytes.
     *
-    * Succeeds if the specified FileGroup does not exist.
+    * Returns the updated FileGroup, or None if the FileGroup does not exist.
     *
     * Returns an error if the database write fails.
     */
-  def update(id: Long, completed: Boolean): Future[Unit]
+  def addToDocumentSet(id: Long, documentSetId: Long, lang: String, splitDocuments: Boolean): Future[Option[FileGroup]]
 
   /** Finds or creates a FileGroup.
     *
-    * The FileGroup will <em>not</em> be <tt>completed</tt>. If no FileGroup
-    * exists which is not <tt>completed</tt> with the given parameters, a new
+    * The FileGroup will *not* have an `addToDocumentSetId`. If no FileGroup
+    * exists which has no `addToDocumentSetId` with the given parameters, a new
     * one will be created.
     *
     * XXX Unfortunately, this method contains a race. Pray the same user doesn't
@@ -29,7 +30,7 @@ trait FileGroupBackend extends Backend {
 
   /** Finds a FileGroup.
     *
-    * The FileGroup will <em>not</em> be <tt>completed</tt>.
+    * The FileGroup will *not* have an `addToDocumentSetId`.
     */
   def find(userEmail: String, apiToken: Option[String]): Future[Option[FileGroup]]
 
@@ -47,23 +48,32 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
   import database.api._
   import database.executionContext
 
+  lazy val byIdCompiled = Compiled { (id: Rep[Long]) => FileGroups.filter(_.id === id) }
+
   lazy val incompleteByAttributesCompiled = Compiled { (userEmail: Rep[String], apiToken: Rep[Option[String]]) =>
     // Option[String] equality is weird because (None === None) is false.
     // https://github.com/slick/slick/issues/947
     FileGroups
       .filter(_.userEmail === userEmail)
       .filter(fg => (fg.apiToken.isEmpty && apiToken.isEmpty) || (fg.apiToken.isDefined && fg.apiToken === apiToken))
-      .filter(_.completed === false)
+      .filter(_.addToDocumentSetId.isEmpty)
       .filter(_.deleted === false)
   }
 
-  lazy val inserter = (FileGroups.map(g => (g.userEmail, g.apiToken, g.completed, g.deleted)) returning FileGroups)
+  lazy val inserter = (FileGroups.map(g => (g.userEmail, g.apiToken, g.deleted)) returning FileGroups)
 
-  lazy val updateCompletedByIdCompiled = Compiled { (id: Rep[Long]) =>
+  lazy val countsByIdCompiled = Compiled { (id: Rep[Long]) =>
+    GroupedFileUploads
+      .filter(_.fileGroupId === id)
+      .groupBy(_.fileGroupId)
+      .map { group => (group._2.length, group._2.map(_.size).sum.getOrElse(0L)) }
+  }
+
+  lazy val addToDocumentSetByIdCompiled = Compiled { (id: Rep[Long]) =>
     FileGroups
       .filter(_.id === id)
       .filter(_.deleted === false)
-      .map(_.completed)
+      .map { g => (g.addToDocumentSetId, g.lang, g.splitDocuments, g.nFiles, g.nBytes, g.nFilesProcessed, g.nBytesProcessed) }
   }
 
   lazy val updateDeletedByIdCompiled = Compiled { (id: Rep[Long]) =>
@@ -77,7 +87,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     database.run {
       incompleteByAttributesCompiled(attributes.userEmail, attributes.apiToken).result.headOption
         .flatMap(_ match {
-          case None => inserter.+=((attributes.userEmail, attributes.apiToken, false, false))
+          case None => inserter.+=((attributes.userEmail, attributes.apiToken, false))
           case Some(fileGroup) => DBIO.successful(fileGroup)
         })
     }
@@ -87,8 +97,20 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     database.option(incompleteByAttributesCompiled(userEmail, apiToken))
   }
 
-  override def update(id: Long, completed: Boolean) = {
-    database.runUnit(updateCompletedByIdCompiled(id).update(completed))
+  override def addToDocumentSet(id: Long, documentSetId: Long, lang: String, splitDocuments: Boolean) = {
+    for {
+      counts <- database.option(countsByIdCompiled(id))
+      _ <- database.runUnit(addToDocumentSetByIdCompiled(id).update((
+        Some(documentSetId),
+        Some(lang),
+        Some(splitDocuments),
+        counts.map(_._1).orElse(Some(0)),
+        counts.map(_._2).orElse(Some(0L)),
+        Some(0),
+        Some(0L)
+      )))
+      maybeFileGroup <- database.option(byIdCompiled(id))
+    } yield maybeFileGroup
   }
 
   override def destroy(id: Long) = {

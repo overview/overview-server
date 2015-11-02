@@ -4,7 +4,7 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
-import com.overviewdocs.models.{DocumentSetCreationJob,GroupedFileUpload}
+import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.tables.GroupedFileUploads
 
 /** Creates Work objects, tracking command state.
@@ -12,14 +12,14 @@ import com.overviewdocs.models.tables.GroupedFileUploads
   * Use it like this:
   *
   *     // scheduler
-  *     val command: AddDocumentsFromFileGroup = ...
+  *     val fileGroup: FileGroup = ...
   *     val uploads: Seq[GroupedFileUpload] = ...
-  *     val generator = new AddDocumentsWorkGenerator(command, uploads)
+  *     val generator = new AddDocumentsWorkGenerator(fileGroup, uploads)
   *
   *     // when a worker comes along
   *     generator.nextWork match {
-  *       case ProcessFileWork(upload) =&gt; doSomething(command, upload).andThen { case _ =&gt; generator.markDoneOne }
-  *       case FinishJobWork =&gt; doSomething(command) // and never call `nextWork()` again; `generator` is done
+  *       case ProcessFileWork(upload) =&gt; doSomething(fileGroup, upload).andThen { case _ =&gt; generator.markDoneOne }
+  *       case FinishJobWork =&gt; doSomething(fileGroup) // and never call `nextWork()` again; `generator` is done
   *       case NoWorkForNow =&gt; // do nothing, but try again after the next `generator.markDone()`
   *     }
   *
@@ -35,7 +35,7 @@ import com.overviewdocs.models.tables.GroupedFileUploads
   * whether to call it again.)
   */
 class AddDocumentsWorkGenerator(
-  val command: AddDocumentsFromFileGroup,
+  val fileGroup: FileGroup,
   val uploads: Seq[GroupedFileUpload]
 ) {
   @volatile var remainingUploads = uploads
@@ -86,7 +86,7 @@ object AddDocumentsWorkGenerator extends HasDatabase {
     import database.api._
 
     for {
-      uploads <- database.seq(GroupedFileUploads.filter(_.fileGroupId === command.fileGroupId))
-    } yield new AddDocumentsWorkGenerator(command, uploads)
+      uploads <- database.seq(GroupedFileUploads.filter(_.fileGroupId === command.fileGroup.id))
+    } yield new AddDocumentsWorkGenerator(command.fileGroup, uploads)
   }
 }

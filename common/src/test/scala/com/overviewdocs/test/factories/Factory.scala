@@ -2,6 +2,7 @@ package com.overviewdocs.test.factories
 
 import java.sql.Timestamp
 import java.util.{Date,UUID}
+import java.time.Instant
 import play.api.libs.json.JsObject
 
 import com.overviewdocs.metadata.MetadataSchema
@@ -80,8 +81,15 @@ trait Factory {
     id: Long = 0L,
     userEmail: String = "user@example.org",
     apiToken: Option[String] = None,
-    completed: Boolean = false,
-    deleted: Boolean = false
+    deleted: Boolean = false,
+    addToDocumentSetId: Option[Long] = None,
+    lang: Option[String] = None,
+    splitDocuments: Option[Boolean] = None,
+    nFiles: Option[Int] = None,
+    nBytes: Option[Long] = None,
+    nFilesProcessed: Option[Int] = None,
+    nBytesProcessed: Option[Long] = None,
+    estimatedCompletionTime: Option[Instant] = None
   ): FileGroup
 
   def groupedFileUpload(
@@ -215,7 +223,6 @@ trait Factory {
     documentcloudUsername: Option[String] = None,
     documentcloudPassword: Option[String] = None,
     contentsOid: Option[Long] = None,
-    fileGroupId: Option[Long] = None,
     sourceDocumentSetId: Option[Long] = None,
     treeTitle: Option[String] = Some(""), // Because our default is Recluster
     treeDescription: Option[String] = None,

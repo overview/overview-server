@@ -24,9 +24,8 @@ import models.User
 trait MassUploadController extends Controller {
   protected val documentSetBackend: DocumentSetBackend
   protected val fileGroupBackend: FileGroupBackend
+  protected val jobQueueSender: JobQueueSender
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
-  protected val storage: MassUploadController.Storage
-  protected val messageQueue: JobQueueSender
   protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
 
   /** Calls MassUploadControllerMethods.Create(), returning the result as body.
@@ -116,11 +115,26 @@ trait MassUploadController extends Controller {
   def startClustering = AuthorizedAction(anyUser).async { request =>
     MassUploadControllerForm.new_.bindFromRequest()(request).fold(
       e => Future(BadRequest),
-      startClusteringFileGroupWithOptions(request.user.email, _)
+      values => {
+        val (name, lang, splitDocuments) = values
+
+        fileGroupBackend.find(request.user.email, None).map(_.map(_.id)).flatMap(_ match {
+          case None => Future.successful(NotFound)
+          case Some(fileGroupId) => {
+            for {
+              documentSet <- documentSetBackend.create(DocumentSet.CreateAttributes(name), request.user.email)
+              fileGroup <- fileGroupBackend.addToDocumentSet(fileGroupId, documentSet.id, lang, splitDocuments).map(_.get)
+            } yield {
+              jobQueueSender.send(DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup))
+              Redirect(routes.DocumentSetController.show(documentSet.id))
+            }
+          }
+        })
+      }
     )
   }
 
-  /** Marks the FileGroup as <tt>completed</tt> and kicks off a
+  /** Starts adding documents from the given `id` to the Marks the FileGroup as <tt>completed</tt> and kicks off a
     * DocumentSetCreationJob.
     *
     * Does <em>not</em> create a DocumentSet.
@@ -128,7 +142,19 @@ trait MassUploadController extends Controller {
   def startClusteringExistingDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { request =>
     MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
-      startClusteringFileGroupWithDocumentSetAndOptions(request.user.email, id, _)
+      values => {
+        fileGroupBackend.find(request.user.email, None).flatMap(_ match {
+          case None => Future.successful(NotFound)
+          case Some(fileGroup) => {
+            for {
+              newFileGroup <- fileGroupBackend.addToDocumentSet(fileGroup.id, id, values._1, values._2).map(_.get)
+            } yield {
+              jobQueueSender.send(DocumentSetCommands.AddDocumentsFromFileGroup(newFileGroup))
+              Redirect(routes.DocumentSetController.show(id))
+            }
+          }
+        })
+      }
     )
   }
 
@@ -152,109 +178,13 @@ trait MassUploadController extends Controller {
         case Some(fileGroup) => groupedFileUploadBackend.find(fileGroup.id, guid)
       })
   }
-
-  private def startClusteringFileGroupWithOptions(userEmail: String,
-                                                  options: (String, String, Boolean, String, String)): Future[Result] = {
-    val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
-
-    fileGroupBackend.find(userEmail, None).flatMap(_ match {
-      case Some(fileGroup) => {
-        for {
-          documentSet <- documentSetBackend.create(DocumentSet.CreateAttributes(name), userEmail)
-          job <- Future.successful(storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords, true))
-          _ <- fileGroupBackend.update(fileGroup.id, true)
-        } yield Redirect(routes.DocumentSetController.show(documentSet.id))
-      }
-      case None => Future.successful(NotFound)
-    })
-  }
-
-  // Yaaaay, copy/pasting! :)
-  private def startClusteringFileGroupWithDocumentSetAndOptions(
-    userEmail: String,
-    documentSetId: Long,
-    options: (String, Boolean, String, String)
-  ): Future[Result] = {
-    val (lang, splitDocuments, suppliedStopWords, importantWords) = options
-
-    def redirect = Redirect(routes.DocumentSetController.show(documentSetId))
-
-    fileGroupBackend.find(userEmail, None).flatMap(_ match {
-      case None => Future.successful(redirect)
-      case Some(fileGroup) => {
-        val job: DocumentSetCreationJob = blocking(DeprecatedDatabase.inTransaction {
-          storage.createMassUploadDocumentSetCreationJob(
-            documentSetId, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords, false)
-        })
-
-        fileGroupBackend.update(fileGroup.id, true) // TODO put in transaction
-          .map(_ => redirect)
-      }
-    })
-  }
 }
 
 /** Controller implementation */
 object MassUploadController extends MassUploadController {
-  override protected val storage = DatabaseStorage
-  override protected val messageQueue = JobQueueSender
   override protected val documentSetBackend = DocumentSetBackend
   override protected val fileGroupBackend = FileGroupBackend
+  override protected val jobQueueSender = JobQueueSender
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
   override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
-
-  trait Storage {
-    /** @returns a newly created DocumentSetCreationJob */
-    def createMassUploadDocumentSetCreationJob(
-      documentSetId: Long,
-      fileGroupId: Long,
-      lang: String,
-      splitDocuments: Boolean,
-      suppliedStopWords: String,
-      importantWords: String,
-      canBeCancelled: Boolean
-    ): DocumentSetCreationJob
-  }
-
-  object DatabaseStorage extends Storage {
-    import com.overviewdocs.tree.orm.DocumentSetCreationJobState.FilesUploaded
-    import com.overviewdocs.tree.DocumentSetCreationJobType.FileUpload
-
-    override def createMassUploadDocumentSetCreationJob(
-      documentSetId: Long,
-      fileGroupId: Long,
-      lang: String,
-      splitDocuments: Boolean,
-      suppliedStopWords: String,
-      importantWords: String,
-      canBeCancelled: Boolean
-    ): DocumentSetCreationJob = {
-      val job = DeprecatedDatabase.inTransaction {
-        DocumentSetCreationJobStore.insertOrUpdate(
-          DocumentSetCreationJob(
-            documentSetId = documentSetId,
-            fileGroupId = Some(fileGroupId),
-            lang = lang,
-            splitDocuments = splitDocuments,
-            suppliedStopWords = suppliedStopWords,
-            importantWords = importantWords,
-            state = FilesUploaded,
-            jobType = FileUpload,
-            canBeCancelled = canBeCancelled
-          )
-        )
-      }
-
-      val command = DocumentSetCommands.AddDocumentsFromFileGroup(
-        job.id,
-        documentSetId=job.documentSetId,
-        fileGroupId=job.fileGroupId.get,
-        lang=job.lang,
-        splitDocuments=job.splitDocuments
-      )
-      JobQueueSender.send(command)
-
-      job
-    }
-  }
 }

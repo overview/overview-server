@@ -7,10 +7,10 @@ import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class AddDocumentsWorkGeneratorSpec extends Specification {
   "AddDocumentsWorkGenerator" should {
-    val job = AddDocumentsFromFileGroup(1L, 2L, 3L, "fr", true)
+    val fileGroup = factory.fileGroup(id=1L, addToDocumentSetId=Some(2L), lang=Some("fr"), splitDocuments=Some(true))
 
     def generator(nUploads: Int): AddDocumentsWorkGenerator = new AddDocumentsWorkGenerator(
-      job,
+      fileGroup,
       Seq.tabulate(nUploads) { i => factory.groupedFileUpload(fileGroupId=3L, name=s"file $i") }
     )
 

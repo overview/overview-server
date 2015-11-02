@@ -5,7 +5,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
-import com.overviewdocs.models.GroupedFileUpload
+import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
 
 class AddDocumentsWorkBroker() extends Actor {
   private case class JobInfo(
@@ -14,12 +14,12 @@ class AddDocumentsWorkBroker() extends Actor {
     ackMessage: Any,
     runningWorkers: mutable.Set[ActorRef] = mutable.Set()
   ) {
-    def command: AddDocumentsFromFileGroup = workGenerator.command
-    def jobId: Long = command.documentSetCreationJobId
+    def fileGroup = workGenerator.fileGroup
+    def fileGroupId: Long = fileGroup.id
   }
 
   private val waitingWorkers: mutable.Queue[ActorRef] = mutable.Queue() // round-robin
-  private val jobs: mutable.Map[Long,JobInfo] = mutable.Map() // documentSetCreationJobId => info
+  private val jobs: mutable.Map[Long,JobInfo] = mutable.Map() // fileGroupId => info
   private val jobsCircle: mutable.Queue[JobInfo] = mutable.Queue() // round-robin
 
   import AddDocumentsWorkBroker._
@@ -35,19 +35,19 @@ class AddDocumentsWorkBroker() extends Actor {
         workGenerator <- loadWorkGeneratorForCommand(command)
       } yield {
         val jobInfo = JobInfo(workGenerator, ackTarget, ackMessage)
-        jobs(jobInfo.jobId) = jobInfo
+        jobs(jobInfo.fileGroupId) = jobInfo
         jobsCircle.enqueue(jobInfo)
         sendJobs
       }
     }
 
-    case CancelJob(documentSetCreationJobId) => {
+    case CancelJob(fileGroupId) => {
       // Don't stop any running processes; just tell everybody to skip to the
       // end...
-      jobs.get(documentSetCreationJobId).map { jobInfo =>
+      jobs.get(fileGroupId).map { jobInfo =>
         jobInfo.workGenerator.skipRemainingFileWork
         jobInfo.runningWorkers.foreach { worker =>
-          worker ! AddDocumentsWorker.CancelHandleUpload(jobInfo.command)
+          worker ! AddDocumentsWorker.CancelHandleUpload(jobInfo.fileGroup)
         }
       }
     }
@@ -57,15 +57,15 @@ class AddDocumentsWorkBroker() extends Actor {
       sendJobs
     }
 
-    case WorkerDoneHandleUpload(command) => {
-      val jobInfo = jobs(command.documentSetCreationJobId) // or crash
+    case WorkerDoneHandleUpload(fileGroup, upload) => {
+      val jobInfo = jobs(fileGroup.id) // or crash
       jobInfo.workGenerator.markDoneOne
       jobInfo.runningWorkers.-=(sender)
       sendJobs // maybe this message freed up another Work
     }
 
-    case WorkerDoneFinishJob(command) => {
-      val jobInfo = jobs.remove(command.documentSetCreationJobId).get // or crash
+    case WorkerDoneFinishJob(fileGroup) => {
+      val jobInfo = jobs.remove(fileGroup.id).get // or crash
       jobInfo.runningWorkers.-=(sender)
       assert(jobInfo.runningWorkers.isEmpty)
       jobInfo.ackTarget ! jobInfo.ackMessage
@@ -103,11 +103,11 @@ class AddDocumentsWorkBroker() extends Actor {
       job.workGenerator.nextWork match {
         case AddDocumentsWorkGenerator.ProcessFileWork(upload) => {
           jobsCircle.enqueue(job)
-          return Some((job, AddDocumentsWorker.HandleUpload(job.command, upload)))
+          return Some((job, AddDocumentsWorker.HandleUpload(job.fileGroup, upload)))
         }
         case AddDocumentsWorkGenerator.FinishJobWork => {
           // don't re-enqueue the job, but do keep it in `jobs`.
-          return Some((job, AddDocumentsWorker.FinishJob(job.command)))
+          return Some((job, AddDocumentsWorker.FinishJob(job.fileGroup)))
         }
         case AddDocumentsWorkGenerator.NoWorkForNow => {
           jobsCircle.enqueue(job)
@@ -133,16 +133,12 @@ object AddDocumentsWorkBroker {
     *
     * To be absolutely clear: this message does not mean the entire `command` is
     * complete: it merely means one unit of `Work` is complete.
-    *
-    * @param command The command the work pertained to.
     */
-  case class WorkerDoneHandleUpload(command: AddDocumentsFromFileGroup) extends WorkerMessage
+  case class WorkerDoneHandleUpload(fileGroup: FileGroup, upload: GroupedFileUpload) extends WorkerMessage
 
   /** The sender completed some previously-returned work.
-    *
-    * This message means the entire `command` is complete.
     */
-  case class WorkerDoneFinishJob(command: AddDocumentsFromFileGroup) extends WorkerMessage
+  case class WorkerDoneFinishJob(fileGroup: FileGroup) extends WorkerMessage
 
   /** A request from the parent to generate and complete all work, then send
     * `ackMessage` to `receiver`.
@@ -157,5 +153,5 @@ object AddDocumentsWorkBroker {
     * CancelHandleUpload() messages so they skip to the end of their own
     * processing.
     */
-  case class CancelJob(documentSetCreationJobId: Long)
+  case class CancelJob(fileGroupId: Long)
 }

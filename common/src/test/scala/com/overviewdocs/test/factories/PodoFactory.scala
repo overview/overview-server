@@ -1,6 +1,7 @@
 package com.overviewdocs.test.factories
 
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 import scala.util.Random
@@ -144,9 +145,29 @@ object PodoFactory extends Factory {
     id: Long,
     userEmail: String,
     apiToken: Option[String],
-    completed: Boolean,
-    deleted: Boolean
-  ) = FileGroup(getId(id), userEmail, apiToken, completed, deleted)
+    deleted: Boolean,
+    addToDocumentSetId: Option[Long],
+    lang: Option[String],
+    splitDocuments: Option[Boolean],
+    nFiles: Option[Int],
+    nBytes: Option[Long],
+    nFilesProcessed: Option[Int],
+    nBytesProcessed: Option[Long],
+    estimatedCompletionTime: Option[Instant]
+  ) = FileGroup(
+    getId(id),
+    userEmail,
+    apiToken,
+    deleted,
+    addToDocumentSetId,
+    lang,
+    splitDocuments,
+    nFiles,
+    nBytes,
+    nFilesProcessed,
+    nBytesProcessed,
+    estimatedCompletionTime
+  )
 
   override def groupedFileUpload(
     id: Long,
@@ -366,7 +387,6 @@ object PodoFactory extends Factory {
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
     contentsOid: Option[Long],
-    fileGroupId: Option[Long],
     sourceDocumentSetId: Option[Long],
     treeTitle: Option[String],
     treeDescription: Option[String],
@@ -376,7 +396,7 @@ object PodoFactory extends Factory {
     statusDescription: String,
     canBeCancelled: Boolean
   ) = DocumentSetCreationJob(getId(id), documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
-      splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId, sourceDocumentSetId, 
+      splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId, 
       treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled)
   
    override def documentSetCreationJobNode(

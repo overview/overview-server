@@ -22,8 +22,8 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
       val broker = TestProbe()
       val subject = TestActorRef(AddDocumentsWorker.props(broker.ref, impl))
 
-      val job = AddDocumentsFromFileGroup(1L, 2L, 3L, "fr", true)
-      def makeUpload = factory.groupedFileUpload(fileGroupId=job.fileGroupId)
+      val fileGroup = factory.fileGroup(id=1L, addToDocumentSetId=Some(2L), lang=Some("fr"), splitDocuments=Some(true))
+      def makeUpload = factory.groupedFileUpload(fileGroupId=fileGroup.id)
     }
 
     "ask for work on startup" in new BaseScope {
@@ -33,53 +33,56 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
     "do work" in new BaseScope {
       impl.processUpload(any, any)(any) returns Future.successful(())
       val upload = makeUpload
-      subject.tell(HandleUpload(job, upload), broker.ref)
-      there was one(impl).processUpload(job, upload)(subject.dispatcher)
+      subject.tell(HandleUpload(fileGroup, upload), broker.ref)
+      there was one(impl).processUpload(fileGroup, upload)(subject.dispatcher)
     }
 
     "send WorkerDoneHandleUpload when done work" in new BaseScope {
       broker.expectMsg(WorkerReady)
       val promise = Promise[Unit]()
+      val upload = makeUpload
       impl.processUpload(any, any)(any) returns promise.future
-      subject.tell(HandleUpload(job, makeUpload), broker.ref)
+      subject.tell(HandleUpload(fileGroup, upload), broker.ref)
       broker.expectNoMsg(Duration.Zero)
       promise.success(())
-      broker.expectMsg(WorkerDoneHandleUpload(job))
+      broker.expectMsg(WorkerDoneHandleUpload(fileGroup, upload))
     }
 
     "behave as usual when receiving CancelHandleUpload" in new BaseScope {
       broker.expectMsg(WorkerReady)
       val promise = Promise[Unit]()
+      val upload = makeUpload
       impl.processUpload(any, any)(any) returns promise.future
-      subject.tell(HandleUpload(job, makeUpload), broker.ref)
-      subject.tell(CancelHandleUpload(job), broker.ref)
+      subject.tell(HandleUpload(fileGroup, upload), broker.ref)
+      subject.tell(CancelHandleUpload(fileGroup), broker.ref)
       broker.expectNoMsg(Duration.Zero)
       promise.success(())
-      broker.expectMsg(WorkerDoneHandleUpload(job))
+      broker.expectMsg(WorkerDoneHandleUpload(fileGroup, upload))
     }
 
     "send WorkerReady when done work" in new BaseScope {
       broker.expectMsg(WorkerReady)
+      val upload = makeUpload
       impl.processUpload(any, any)(any) returns Future.successful(())
-      subject.tell(HandleUpload(job, makeUpload), broker.ref)
-      broker.expectMsg(WorkerDoneHandleUpload(job))
+      subject.tell(HandleUpload(fileGroup, upload), broker.ref)
+      broker.expectMsg(WorkerDoneHandleUpload(fileGroup, upload))
       broker.expectMsg(WorkerReady)
     }
 
     "handle a FinishJob message" in new BaseScope {
-      impl.finishJob(job)(subject.dispatcher) returns Future.successful(())
-      subject.tell(FinishJob(job), broker.ref)
-      there was one(impl).finishJob(job)(subject.dispatcher)
+      impl.finishJob(fileGroup)(subject.dispatcher) returns Future.successful(())
+      subject.tell(FinishJob(fileGroup), broker.ref)
+      there was one(impl).finishJob(fileGroup)(subject.dispatcher)
     }
 
     "send WorkerDoneFinishJob and WorkerReady when after a FinishJob" in new BaseScope {
       broker.expectMsg(WorkerReady)
       val promise = Promise[Unit]()
       impl.finishJob(any)(any) returns promise.future
-      subject.tell(FinishJob(job), broker.ref)
+      subject.tell(FinishJob(fileGroup), broker.ref)
       broker.expectNoMsg(Duration.Zero)
       promise.success(())
-      broker.expectMsg(WorkerDoneFinishJob(job))
+      broker.expectMsg(WorkerDoneFinishJob(fileGroup))
       broker.expectMsg(WorkerReady)
     }
   }

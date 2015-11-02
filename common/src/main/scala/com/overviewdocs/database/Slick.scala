@@ -1,6 +1,7 @@
 package com.overviewdocs.database
 
 import com.github.tminglei.slickpg._
+import java.time.Instant
 import play.api.libs.json.{ JsObject, Json }
 import slick.driver.{ JdbcTypesComponent, PostgresDriver }
 
@@ -26,6 +27,13 @@ trait MyPostgresDriver extends PostgresDriver
       Json.parse(_).as[JsObject])
 
     implicit val jsonTextOptionColumnType = jsonTextColumnType.optionType
+
+    implicit val instantColumnType = MappedColumnType.base[Instant, java.sql.Timestamp](
+      { i => new java.sql.Timestamp(i.toEpochMilli) },
+      { t => Instant.ofEpochMilli(t.getTime) }
+    )
+
+    implicit val instantOptionColumnType = instantColumnType.optionType
 
     implicit val ipColumnType = MappedColumnType.base[InetAddress, InetString](
       (a: InetAddress) => InetString(a.getHostAddress),

@@ -13,8 +13,8 @@ class MassUploadControllerFormSpec extends Specification {
     }
 
     "return all the fields" in new NewScope {
-      val form = parse("name" -> "foo", "lang" -> "en", "split_documents" -> "true", "supplied_stop_words" -> "x", "important_words" -> "y")
-      form.value must beSome("foo", "en", true, "x", "y")
+      val form = parse("name" -> "foo", "lang" -> "en", "split_documents" -> "true")
+      form.value must beSome("foo", "en", true)
     }
 
     "fail on unsupported language" in new NewScope {
@@ -34,7 +34,7 @@ class MassUploadControllerFormSpec extends Specification {
 
     "set defaults" in new NewScope {
       val form = parse("name" -> "foo", "lang" -> "en")
-      form.value must beSome("foo", "en", false, "", "")
+      form.value must beSome("foo", "en", false)
     }
   }
 }

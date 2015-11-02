@@ -1,6 +1,7 @@
 package com.overviewdocs.test.factories
 
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.{Date,UUID}
 import play.api.libs.json.JsObject
 
@@ -119,9 +120,29 @@ object DbFactory extends Factory with HasBlockingDatabase {
     id: Long,
     userEmail: String,
     apiToken: Option[String],
-    completed: Boolean,
-    deleted: Boolean
-  ) = run(q.insertFileGroup += podoFactory.fileGroup(id, userEmail, apiToken, completed, deleted))
+    deleted: Boolean,
+    addToDocumentSetId: Option[Long],
+    lang: Option[String],
+    splitDocuments: Option[Boolean],
+    nFiles: Option[Int],
+    nBytes: Option[Long],
+    nFilesProcessed: Option[Int],
+    nBytesProcessed: Option[Long],
+    estimatedCompletionTime: Option[Instant]
+  ) = run(q.insertFileGroup += podoFactory.fileGroup(
+    id,
+    userEmail,
+    apiToken,
+    deleted,
+    addToDocumentSetId,
+    lang,
+    splitDocuments,
+    nFiles,
+    nBytes,
+    nFilesProcessed,
+    nBytesProcessed,
+    estimatedCompletionTime
+  ))
 
   override def groupedFileUpload(
     id: Long,
@@ -333,7 +354,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
     contentsOid: Option[Long],
-    fileGroupId: Option[Long],
     sourceDocumentSetId: Option[Long],
     treeTitle: Option[String],
     treeDescription: Option[String],
@@ -344,7 +364,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     canBeCancelled: Boolean
   ) = run(q.insertDocumentSetCreationJob += podoFactory.documentSetCreationJob(
     id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
-    documentcloudUsername, documentcloudPassword, contentsOid, fileGroupId,  sourceDocumentSetId,
+    documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
     treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled
   ))
 

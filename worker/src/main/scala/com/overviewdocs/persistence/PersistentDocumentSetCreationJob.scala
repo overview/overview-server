@@ -40,9 +40,6 @@ trait PersistentDocumentSetCreationJob {
   // Only Clone jobs require sourceDocumentSetId
   val sourceDocumentSetId: Option[Long]
 
-  // Only FileUpload jobs require fileGroupId
-  val fileGroupId: Option[Long]
-
   // Only Recluster jobs require tree_title, tree_description or tag_id
   val treeTitle: Option[String]
   val treeDescription: Option[String]
@@ -105,7 +102,6 @@ object PersistentDocumentSetCreationJob {
     val splitDocuments: Boolean = documentSetCreationJob.splitDocuments
     val contentsOid: Option[Long] = documentSetCreationJob.contentsOid
     val sourceDocumentSetId: Option[Long] = documentSetCreationJob.sourceDocumentSetId
-    val fileGroupId: Option[Long] = documentSetCreationJob.fileGroupId
     val treeTitle: Option[String] = documentSetCreationJob.treeTitle
     val treeDescription: Option[String] = documentSetCreationJob.treeDescription
     val tagId: Option[Long] = documentSetCreationJob.tagId

@@ -75,7 +75,6 @@ object CloneImportJobController extends CloneImportJobController with HasDatabas
     documentcloudUsername=None, // doesn't matter for clone
     documentcloudPassword=None, // doesn't matter for clone
     contentsOid=None,           // doesn't matter for clone
-    fileGroupId=None,           // doesn't matter for clone
     sourceDocumentSetId=Some(sourceDocumentSetId),
     treeTitle=None,             // doesn't matter for clone
     treeDescription=None,       // doesn't matter for clone

@@ -1,5 +1,7 @@
 package com.overviewdocs.messages
 
+import com.overviewdocs.models.FileGroup
+
 /** Background tasks that must be serialized on a document set.
   *
   * These commands are sent from the web server to the worker. All messages
@@ -14,20 +16,15 @@ package com.overviewdocs.messages
   */
 object DocumentSetCommands {
   sealed trait Command { val documentSetId: Long }
-  sealed trait Cancellable { val documentSetCreationJobId: Long }
 
   /** Empty all GroupedFileUploads from the given FileGroup, add the resulting
     * Documents to the DocumentSet, then delete the FileGroup.
     *
     * Stored as a DocumentSetCreationJob.
     */
-  case class AddDocumentsFromFileGroup(
-    documentSetCreationJobId: Long,
-    documentSetId: Long,
-    fileGroupId: Long,
-    lang: String,
-    splitDocuments: Boolean
-  ) extends Command with Cancellable
+  case class AddDocumentsFromFileGroup(fileGroup: FileGroup) extends Command {
+    override val documentSetId = fileGroup.addToDocumentSetId.get
+  }
 
   /** Delete a DocumentSet and all associated information.
     *
@@ -46,4 +43,19 @@ object DocumentSetCommands {
     * Stored in the database as document_set_creation_job.state = Cancelled
     */
   case class CancelJob(documentSetId: Long, jobId: Long) extends Command
+
+  /** Completes all computations surrounding an AddDocumentsFromFileGroup job
+    * as soon as possible, then deletes the AddDocumentsFromFileGroup.
+    *
+    * This Command is different from the rest: it is *not serialized*. As soon
+    * as the broker receives this Command, it will forward a cancel message to
+    * all workers and purge the associated Job from its own memory (if it's
+    * pending).
+    *
+    * Stored in the database as file_group.deleted = true.
+    */
+  case class CancelAddDocumentsFromFileGroup(
+    documentSetId: Long,
+    fileGroupId: Long
+  ) extends Command
 }

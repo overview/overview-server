@@ -36,7 +36,7 @@ class ClusteringJobRestarterSpec extends Specification with Mockito {
     val jobId = 1l
     val rootNodeId = 5l
     val job = DocumentSetCreationJob(jobId, 10l, Recluster, retryAttempts, "en", "", "", false,
-      None, None, None, None, None, Some("tree"), None, None, InProgress, 0.4, "", true)
+      None, None, None, None, Some("tree"), None, None, InProgress, 0.4, "", true)
 
     val jobRestarter = new TestClusteringJobRestarter(job, isTreeComplete)
 
