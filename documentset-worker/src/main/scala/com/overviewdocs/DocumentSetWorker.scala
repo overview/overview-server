@@ -3,13 +3,16 @@ package com.overviewdocs
 import akka.actor._
 import akka.actor.SupervisorStrategy._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 
 import com.overviewdocs.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
 import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
-import com.overviewdocs.database.{DB,DocumentSetDeleter,DocumentSetCreationJobDeleter}
+import com.overviewdocs.database.{DB,DocumentSetDeleter,HasDatabase}
 import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
 import com.overviewdocs.jobhandler.filegroup._
+import com.overviewdocs.messages.DocumentSetCommands
+import com.overviewdocs.models.tables.FileGroups
 import com.overviewdocs.util.Logger
 
 /** Main app: starts up actors and listens for messages.
@@ -33,7 +36,7 @@ object DocumentSetWorker extends App {
  * If an error occurs at this level, we assume that something catastrophic has occurred.
  * All actors get killed, and the process exits.
  */
-class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String) extends Actor {
+class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String) extends Actor with HasDatabase {
   private val logger = Logger.forClass(getClass)
 
   // FileGroup removal background worker
@@ -75,6 +78,10 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
     "DocumentSetCommandWorker"
   )
 
+  override def preStart: Unit = {
+    resumeAddDocumentsCommands(context.dispatcher)
+  }
+
   /** Error? Die. On production, that will trigger restart. */
   override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
     case _ => stop
@@ -91,5 +98,15 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   private def createMonitoredActor(props: Props, name: String): ActorRef = {
     val monitee = context.actorOf(props, name) // like manatee? get it?
     context.watch(monitee)
+  }
+
+  private def resumeAddDocumentsCommands(implicit ec: ExecutionContext): Unit = {
+    import database.api._
+
+    database.seq(FileGroups.filter(_.addToDocumentSetId.nonEmpty)).map(_.foreach { fileGroup =>
+      val command = DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup)
+      logger.info("Resuming {}...", command)
+      documentSetMessageBroker ! command
+    })
   }
 }
