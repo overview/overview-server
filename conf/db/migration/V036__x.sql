@@ -1,0 +1,5 @@
+ALTER TABLE document_set_creation_job ADD COLUMN lang VARCHAR NOT NULL DEFAULT 'en';
+ALTER TABLE document_set_creation_job ALTER COLUMN lang DROP DEFAULT;
+
+ALTER TABLE document_set ADD COLUMN lang VARCHAR NOT NULL DEFAULT 'en';
+ALTER TABLE document_set ALTER COLUMN lang DROP DEFAULT;

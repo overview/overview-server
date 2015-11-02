@@ -1,13 +1,10 @@
 package com.overviewdocs.db_evolution_applier
 
 import com.typesafe.config.{Config,ConfigFactory}
-import com.zaxxer.hikari.{HikariConfig,HikariDataSource}
-import java.io.InputStream
-import java.sql.Connection
-import java.util.Properties
-import play.api.db.{DBApi,Database}
-import play.api.db.evolutions.{DatabaseEvolutions,DefaultEvolutionsApi,EvolutionsApi,ClassLoaderEvolutionsReader}
-import scala.collection.JavaConversions.asScalaSet
+import javax.sql.DataSource
+import org.flywaydb.core.Flyway
+import org.postgresql.ds.PGSimpleDataSource
+import scala.util.Try
 
 /** Simple program to run Play evolutions.
   *
@@ -17,16 +14,12 @@ import scala.collection.JavaConversions.asScalaSet
   * have all been applied.
   */
 object Main {
-  def main(args: Array[String]) : Unit = {
-    val DatabaseName: String = "default"
-
-    val config: Config = ConfigFactory.systemProperties
+  private lazy val dataSource: DataSource = {
+    val entireConfig: Config = ConfigFactory.systemProperties
       .withFallback(ConfigFactory.parseString("""
         |# We keep 'db.default' so caller can override via Java system properties
         |db {
         |  default {
-        |    dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
-        |    maximumPoolSize=2
         |    dataSource {
         |      serverName="localhost"
         |      portNumber="9010" # overridden in production.conf
@@ -38,70 +31,84 @@ object Main {
         |      databaseName=${?DATABASE_NAME}
         |      user=${?DATABASE_USERNAME}
         |      password=${?DATABASE_PASSWORD}
-        |      tcpKeepAlive=true
         |      ssl=${?DATABASE_SSL}
         |      sslfactory=${?DATABASE_SSL_FACTORY}
         |    }
         |  }
         |}
         |""".stripMargin)).resolve()
+    val config = entireConfig.getConfig("db.default.dataSource")
 
-    val hikariConfig: HikariConfig = configToHikariConfig(config, DatabaseName)
-    val hikariDataSource: HikariDataSource = new HikariDataSource(hikariConfig)
-    val database: Database = new HikariDatabase(DatabaseName, hikariDataSource)
-    val dbApi: DBApi = new SingleDatabaseDBApi(database)
-    val evolutionsApi: EvolutionsApi = new DefaultEvolutionsApi(dbApi)
-
-    val dbEvolutions = new DatabaseEvolutions(database)
-    val evolutions = dbEvolutions.scripts(new HackyClassLoaderEvolutionsReader)
-
-    if (evolutions.length > 0) {
-      System.out.println(s"Applying ${evolutions.length} database evolutions...")
-      dbEvolutions.evolve(evolutions, true)
+    val ret = new PGSimpleDataSource
+    ret.setServerName(config.getString("serverName"))
+    ret.setPortNumber(config.getInt("portNumber"))
+    ret.setDatabaseName(config.getString("databaseName"))
+    if (config.hasPath("ssl")) {
+      ret.setSsl(config.getBoolean("ssl"))
+      ret.setSslfactory(config.getString("sslfactory"))
     }
+    ret.setUser(config.getString("user"))
+    ret.setPassword(config.getString("password"))
 
-    System.out.println("Database schema is fresh: there are no more evolutions to apply")
-  }
-
-  private def configToHikariConfig(rootConfig: Config, databaseName: String): HikariConfig = {
-    val config = rootConfig.getConfig("db").getConfig(databaseName)
-    val props = new Properties()
-    val entrySet = asScalaSet(config.entrySet)
-    entrySet.foreach { entry => props.setProperty(entry.getKey, entry.getValue.unwrapped.toString) }
-    new HikariConfig(props)
-  }
-}
-
-class HikariDatabase(override val name: String, override val dataSource: HikariDataSource) extends Database {
-  override def url = "[you-do-not-need-this]"
-  override def getConnection = getConnection(false)
-  override def getConnection(autocommit: Boolean) = {
-    val ret = dataSource.getConnection
-    if (!autocommit) ret.setAutoCommit(false)
     ret
   }
-  override def withConnection[A](autocommit: Boolean)(block: Connection => A) = {
-    val connection = getConnection(autocommit)
-    try {
-      block(connection)
-    } finally {
-      connection.close
-    }
+
+  def main(args: Array[String]) : Unit = {
+    migrateToFlyway
+    migrate
   }
-  override def withConnection[A](block: Connection => A) = withConnection(true)(block)
-  override def withTransaction[A](block: Connection => A) = withConnection(false)(block)
-  override def shutdown = dataSource.shutdown
-}
 
-class SingleDatabaseDBApi(database: Database) extends DBApi {
-  override def databases = Seq(database)
-  override def database(name: String) = database
-  override def shutdown = database.shutdown
-}
+  /** Convert a Play Evolutions-style schema to a Flyway-style one.
+    *
+    * Steps:
+    *
+    * 1. Check if there's a play_evolutions table.
+    * 2. If there is, use the final applied ID as the Flyway baseline version.
+    * 3. Delete the play_evolutions table.
+    */
+  private def migrateToFlyway: Unit = {
+    val connection = dataSource.getConnection
 
-class HackyClassLoaderEvolutionsReader extends ClassLoaderEvolutionsReader {
-  override def loadResource(db: String, revision: Int): Option[InputStream] = {
-    val path = s"/${db}/${revision}.sql"
-    Option(getClass.getResourceAsStream(path))
+    val maybePlayEvolutionVersion: Try[Int] = Try {
+      val statement = connection.createStatement
+      try {
+        // Fail if the play_evolutions table doesn't exist ... which is okay;
+        // it just means we ran migrateToFlyway before.
+        val resultSet = statement.executeQuery("SELECT MAX(id) AS v FROM play_evolutions WHERE state = 'applied'")
+        resultSet.next
+        resultSet.getInt("v")
+      } finally {
+        statement.close
+      }
+    }
+
+    maybePlayEvolutionVersion.foreach { playEvolutionVersion =>
+      System.out.println(s"Migrating database from Play Evolutions (v$playEvolutionVersion) to Flyway...")
+      val flyway = new Flyway
+      flyway.setDataSource(dataSource)
+      flyway.setLocations("migration")
+      flyway.setBaselineVersionAsString(playEvolutionVersion.toString)
+      flyway.baseline
+
+      val dropStatement = connection.createStatement
+      dropStatement.execute("DROP TABLE play_evolutions")
+      dropStatement.close
+    }
+
+    connection.close
+  }
+
+  /** Call Flyway's migration code.
+    */
+  private def migrate: Unit = {
+    val flyway = new Flyway
+    flyway.setDataSource(dataSource)
+    flyway.setLocations("migration")
+
+    val nPendingMigrations = flyway.info.pending.length
+    if (nPendingMigrations > 0) {
+      System.out.println(s"Applying ${nPendingMigrations} database migrations...")
+      flyway.migrate
+    }
   }
 }

@@ -13,8 +13,10 @@ object Dependencies {
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.9.23"
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
     val commonsIo = "commons-io" % "commons-io" % "2.4"
+    val config = "com.typesafe" % "config" % "1.3.0"
     val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.7.1"
     val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.7.0" // find version at https://github.com/elastic/elasticsearch-analysis-icu
+    val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
@@ -67,10 +69,10 @@ object Dependencies {
   )
 
   val dbEvolutionApplierDependencies = Seq(
-    deps.hikariCp,
-    deps.postgresql,
-    evolutions,
-    jdbc
+    deps.config,
+    deps.flywayDb,
+    deps.logback,
+    deps.postgresql
   )
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...

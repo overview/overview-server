@@ -1,0 +1,3 @@
+ALTER TABLE "file"
+  ALTER COLUMN contents_size SET NOT NULL,
+  ALTER COLUMN view_size SET NOT NULL;

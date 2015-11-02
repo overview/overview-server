@@ -110,7 +110,7 @@ object ApplicationBuild extends Build {
     .settings(
       target := baseDirectory.value / "target" / name, // [error] Overlapping output directories
       libraryDependencies ++= Dependencies.dbEvolutionApplierDependencies,
-      unmanagedResourceDirectories in Compile += baseDirectory.value / ".." / "conf" / "evolutions"
+      unmanagedResourceDirectories in Compile += baseDirectory.value / ".." / "conf" / "db"
     )
 
   lazy val dbEvolutionApplier = dbEvolutionApplierProject("db-evolution-applier")

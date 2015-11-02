@@ -1,0 +1,2 @@
+ALTER TABLE file ADD COLUMN contents_size BIGINT;
+ALTER TABLE file ADD COLUMN view_size BIGINT;
