@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext,Future}
 import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
 
-class AddDocumentsWorkBroker() extends Actor {
+class AddDocumentsWorkBroker(progressReporter: ActorRef) extends Actor {
   private case class JobInfo(
     workGenerator: AddDocumentsWorkGenerator,
     ackTarget: ActorRef,
@@ -61,7 +61,14 @@ class AddDocumentsWorkBroker() extends Actor {
       val jobInfo = jobs(fileGroup.id) // or crash
       jobInfo.workGenerator.markWorkDone(upload)
       jobInfo.runningWorkers.-=(sender)
+      reportProgress(jobInfo)
       sendJobs // maybe this message freed up another Work
+    }
+
+    case WorkerHandleUploadProgress(fileGroup, upload, fractionComplete) => {
+      val jobInfo = jobs(fileGroup.id) // or crash
+      jobInfo.workGenerator.markWorkProgress(upload, fractionComplete)
+      reportProgress(jobInfo)
     }
 
     case WorkerDoneFinishJob(fileGroup) => {
@@ -71,6 +78,16 @@ class AddDocumentsWorkBroker() extends Actor {
       jobInfo.ackTarget ! jobInfo.ackMessage
       // no need for sendJobs -- it's impossible another Work became ready
     }
+  }
+
+  private def reportProgress(jobInfo: JobInfo): Unit = {
+    val progress = jobInfo.workGenerator.progress
+    progressReporter ! ProgressReporter.Update(
+      jobInfo.fileGroupId,
+      progress.nFilesProcessed,
+      progress.nBytesProcessed,
+      progress.estimatedCompletionTime
+    )
   }
 
   private def sendJobs: Unit = {
@@ -121,7 +138,7 @@ class AddDocumentsWorkBroker() extends Actor {
 }
 
 object AddDocumentsWorkBroker {
-  def props: Props = Props(new AddDocumentsWorkBroker)
+  def props(progressReporter: ActorRef): Props = Props(new AddDocumentsWorkBroker(progressReporter))
 
   /** A message from a worker. */
   sealed trait WorkerMessage
@@ -139,8 +156,16 @@ object AddDocumentsWorkBroker {
   /** The sender is partly done processing a file.
     *
     * The broker can use this to coordinate progress reporting.
+    *
+    * @param fileGroup The FileGroup of this upload.
+    * @param upload The Upload the worker is working on.
+    * @param fractionComplete A fraction between 0.0 and 1.0, inclusive.
     */
-  case class WorkerHandleUploadProgress(fileGroup: FileGroup, upload: GroupedFileUpload) extends WorkerMessage
+  case class WorkerHandleUploadProgress(
+    fileGroup: FileGroup,
+    upload: GroupedFileUpload,
+    fractionComplete: Double
+  ) extends WorkerMessage
 
   /** The sender completed some previously-returned work.
     */

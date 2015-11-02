@@ -19,12 +19,12 @@ class AddDocumentsWorkBrokerSpec extends Specification {
   import AddDocumentsWorker._
 
   /** AddDocumentsWorkBroker with a mock loadWorkGeneratorForCommand(). */
-  class TestSubject extends AddDocumentsWorkBroker {
+  class TestSubject(progressReporter: ActorRef) extends AddDocumentsWorkBroker(progressReporter) {
     val jobs: mutable.Map[AddDocumentsFromFileGroup,Seq[GroupedFileUpload]] = mutable.Map()
 
     /** Add stub data, then send DoWorkThenAck. */
     def startTestWork(command: AddDocumentsFromFileGroup, nUploads: Int, ackTarget: ActorRef, ackMessage: Any): Unit = {
-      val uploads = Seq.tabulate(nUploads) { i => factory.groupedFileUpload(fileGroupId=command.fileGroup.id) }
+      val uploads = Seq.tabulate(nUploads) { i => factory.groupedFileUpload(fileGroupId=command.fileGroup.id, size=10L) }
       jobs.+=(command -> uploads)
       self ! DoWorkThenAck(command, ackTarget, ackMessage)
     }
@@ -42,16 +42,20 @@ class AddDocumentsWorkBrokerSpec extends Specification {
 
   "AddDocumentsWorkBroker" should {
     trait BaseScope extends ActorSystemContext {
-      val subject = TestActorRef(new TestSubject) // TestActorRef: messages are synchronous
+      val progressReporter = TestProbe()
+      val subject = TestActorRef(new TestSubject(progressReporter.ref)) // TestActorRef: messages are synchronous
       val broker: TestSubject = subject.underlyingActor
 
-      val fileGroup1 = factory.fileGroup(id=1L, addToDocumentSetId=Some(2L), lang=Some("fr"), splitDocuments=Some(true))
-      val fileGroup2 = factory.fileGroup(id=3L, addToDocumentSetId=Some(4L), lang=Some("sw"), splitDocuments=Some(false))
-      val fileGroup3 = factory.fileGroup(id=5L, addToDocumentSetId=Some(6L), lang=Some("de"), splitDocuments=Some(false))
+      val fileGroup1 = factory.fileGroup(id=1L, addToDocumentSetId=Some(2L), lang=Some("fr"), splitDocuments=Some(true), nFiles=Some(10), nBytes=Some(100L))
+      val fileGroup2 = factory.fileGroup(id=3L, addToDocumentSetId=Some(4L), lang=Some("sw"), splitDocuments=Some(false), nFiles=Some(10), nBytes=Some(100L))
+      val fileGroup3 = factory.fileGroup(id=5L, addToDocumentSetId=Some(6L), lang=Some("de"), splitDocuments=Some(false), nFiles=Some(10), nBytes=Some(100L))
 
       val command1 = AddDocumentsFromFileGroup(fileGroup1)
       val command2 = AddDocumentsFromFileGroup(fileGroup2)
       val command3 = AddDocumentsFromFileGroup(fileGroup3)
+
+      val worker1 = TestProbe()
+      val worker2 = TestProbe()
 
       def handleUpload(command: AddDocumentsFromFileGroup, index: Int): HandleUpload = {
         HandleUpload(command.fileGroup, broker.jobs(command)(index))
@@ -64,8 +68,8 @@ class AddDocumentsWorkBrokerSpec extends Specification {
 
     "give a job to a sender if there is one pending" in new BaseScope {
       broker.startTestWork(command1, 1)
-      subject ! WorkerReady
-      expectMsg(handleUpload(command1, 0))
+      subject.tell(WorkerReady, worker1.ref)
+      worker1.expectMsg(handleUpload(command1, 0))
     }
 
     "give a job to a sender if if it comes in after the job does" in new BaseScope {
@@ -151,6 +155,25 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       expectMsg(FinishJob(fileGroup1))
     }
 
+    "report progress upon WorkerDoneHandleUpload" in new BaseScope {
+      broker.startTestWork(command1, 10)
+      subject ! WorkerReady
+      expectMsg(handleUpload(command1, 0))
+      subject ! doneHandleUpload(command1, 0)
+      progressReporter.expectMsgPF(Duration.Zero) {
+        case ProgressReporter.Update(1L, 1, _, _) => true
+      }
+    }
+
+    "report progress upon WorkerHandleUploadProgress" in new BaseScope {
+      broker.startTestWork(command1, 10)
+      subject.tell(WorkerReady, worker1.ref)
+      subject.tell(WorkerHandleUploadProgress(command1.fileGroup, broker.jobs(command1)(0), 0.5), worker1.ref)
+      progressReporter.expectMsgPF(Duration.Zero) {
+        case ProgressReporter.Update(1L, 0, 5L, _) => true
+      }
+    }
+
     "send cancel messages to workers that are working on a job" in new BaseScope {
       broker.startTestWork(command1, 2)
 
@@ -212,9 +235,6 @@ class AddDocumentsWorkBrokerSpec extends Specification {
       // In other words: if a worker has never seen a job, don't message it.
       broker.startTestWork(command1, 2)
       broker.startTestWork(command2, 2)
-
-      val worker1 = TestProbe()
-      val worker2 = TestProbe()
 
       subject.tell(WorkerReady, worker1.ref) // worker1: command1
       subject.tell(WorkerReady, worker2.ref) // worker2: command2
