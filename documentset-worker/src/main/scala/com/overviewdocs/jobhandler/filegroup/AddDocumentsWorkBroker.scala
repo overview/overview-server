@@ -59,7 +59,7 @@ class AddDocumentsWorkBroker() extends Actor {
 
     case WorkerDoneHandleUpload(fileGroup, upload) => {
       val jobInfo = jobs(fileGroup.id) // or crash
-      jobInfo.workGenerator.markDoneOne
+      jobInfo.workGenerator.markWorkDone(upload)
       jobInfo.runningWorkers.-=(sender)
       sendJobs // maybe this message freed up another Work
     }
@@ -135,6 +135,12 @@ object AddDocumentsWorkBroker {
     * complete: it merely means one unit of `Work` is complete.
     */
   case class WorkerDoneHandleUpload(fileGroup: FileGroup, upload: GroupedFileUpload) extends WorkerMessage
+
+  /** The sender is partly done processing a file.
+    *
+    * The broker can use this to coordinate progress reporting.
+    */
+  case class WorkerHandleUploadProgress(fileGroup: FileGroup, upload: GroupedFileUpload) extends WorkerMessage
 
   /** The sender completed some previously-returned work.
     */

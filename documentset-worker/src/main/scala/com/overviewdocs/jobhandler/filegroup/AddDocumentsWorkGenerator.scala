@@ -1,5 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.HasDatabase
@@ -38,17 +39,18 @@ class AddDocumentsWorkGenerator(
   val fileGroup: FileGroup,
   val uploads: Seq[GroupedFileUpload]
 ) {
-  @volatile var remainingUploads = uploads
-  @volatile var nInProgress = 0
+  private case class UploadInfo(progress: Double)
+
+  private val pendingUploads: Iterator[GroupedFileUpload] = uploads.iterator
+  private val inProgress: mutable.Map[GroupedFileUpload,UploadInfo] = mutable.Map()
 
   /** Requests another Work to act upon. */
   def nextWork: AddDocumentsWorkGenerator.Work = {
-    if (remainingUploads.nonEmpty) {
-      val upload = remainingUploads.head
-      remainingUploads = remainingUploads.tail
-      nInProgress += 1
+    if (pendingUploads.hasNext) {
+      val upload = pendingUploads.next
+      inProgress(upload) = UploadInfo(0.0)
       AddDocumentsWorkGenerator.ProcessFileWork(upload)
-    } else if (nInProgress > 0) {
+    } else if (inProgress.nonEmpty) {
       AddDocumentsWorkGenerator.NoWorkForNow
     } else {
       AddDocumentsWorkGenerator.FinishJobWork
@@ -60,16 +62,16 @@ class AddDocumentsWorkGenerator(
     * This is called during cancellation, so we can get right to the
     * FinishJobWork.
     */
-  def skipRemainingFileWork: Unit = remainingUploads = Seq()
+  def skipRemainingFileWork: Unit = while (pendingUploads.hasNext) pendingUploads.next
 
   /** Reports that a unit of Work returned from `nextWork` was completed.
     *
     * If a previous call to `nextWork` returned `NoWorkForNow`, it might return
     * something different after this call.
     */
-  def markDoneOne: Unit = {
-    if (nInProgress <= 0) throw new AssertionError("nInProgress <= 0")
-    nInProgress -= 1
+  def markWorkDone(upload: GroupedFileUpload): Unit = {
+    assert(inProgress.contains(upload))
+    inProgress.-=(upload)
   }
 }
 

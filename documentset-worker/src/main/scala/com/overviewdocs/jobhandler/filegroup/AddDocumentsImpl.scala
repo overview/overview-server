@@ -1,9 +1,12 @@
 package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
+import java.time.Instant
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
+import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload}
+import com.overviewdocs.models.tables.FileGroups
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
   */
@@ -114,5 +117,45 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     } yield {
       ()
     }
+  }
+
+  /** Updates progress in the database.
+    *
+    * If the file group does not exist, this is a no-op.
+    */
+  def writeProgress(
+    fileGroupId: Long,
+    nFilesProcessed: Int,
+    nBytesProcessed: Long,
+    estimatedCompletionTime: Instant
+  )(implicit ec: ExecutionContext): Future[Unit] = {
+    AddDocumentsImpl.writeProgress(fileGroupId, nFilesProcessed, nBytesProcessed, estimatedCompletionTime)
+  }
+}
+
+object AddDocumentsImpl extends HasDatabase {
+  private lazy val writeProgressCompiled = {
+    import com.overviewdocs.database.Slick.api._
+
+    Compiled { fileGroupId: Rep[Long] =>
+      FileGroups
+        .filter(_.id === fileGroupId)
+        .map(g => (g.nFilesProcessed, g.nBytesProcessed, g.estimatedCompletionTime))
+    }
+  }
+
+  def writeProgress(
+    fileGroupId: Long,
+    nFilesProcessed: Int,
+    nBytesProcessed: Long,
+    estimatedCompletionTime: Instant
+  )(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    database.runUnit(writeProgressCompiled(fileGroupId).update((
+      Some(nFilesProcessed),
+      Some(nBytesProcessed),
+      Some(estimatedCompletionTime)
+    )))
   }
 }

@@ -65,11 +65,12 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   private val documentSetMessageBroker = createMonitoredActor(DocumentSetMessageBroker.props, "DocumentSetMessageBroker")
   logger.info("Message broker path: {}", documentSetMessageBroker.toString)
 
-  private val progressReporter = createMonitoredActor(ProgressReporter(), "ProgressReporter")
   private val documentIdSupplier = createMonitoredActor(DocumentIdSupplier(), "DocumentIdSupplier")
 
   private val addDocumentsWorkBroker = createMonitoredActor(AddDocumentsWorkBroker.props, "AddDocumentsWorkBroker")
   private val addDocumentsImpl = new AddDocumentsImpl(documentIdSupplier)
+  private val progressReporter = createMonitoredActor(ProgressReporter.props(addDocumentsImpl), "ProgressReporter")
+
   createMonitoredActor(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-1")
   createMonitoredActor(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-2")
 

@@ -36,21 +36,21 @@ class AddDocumentsWorkGeneratorSpec extends Specification {
       val g = generator(2)
       g.nextWork
       g.nextWork
-      g.markDoneOne
+      g.markWorkDone(g.uploads(0))
       g.nextWork must beEqualTo(NoWorkForNow)
     }
 
     "return a ProcessFileWork even after markOneDone" in {
       val g = generator(2)
       g.nextWork
-      g.markDoneOne
+      g.markWorkDone(g.uploads(0))
       g.nextWork must beEqualTo(ProcessFileWork(g.uploads(1)))
     }
 
     "return a FinishJobWork after all ProcessFileWork is finished" in {
       val g = generator(1)
       g.nextWork
-      g.markDoneOne
+      g.markWorkDone(g.uploads(0))
       g.nextWork must beEqualTo(FinishJobWork)
     }
 
@@ -60,18 +60,18 @@ class AddDocumentsWorkGeneratorSpec extends Specification {
       g.nextWork must beEqualTo(FinishJobWork)
     }
 
-    "postpone FinishJobWork after skipping but before all markDoneOne calls have come in" in {
+    "postpone FinishJobWork after skipping but before all markWorkDone calls have come in" in {
       val g = generator(2)
       g.nextWork
       g.skipRemainingFileWork
       g.nextWork must beEqualTo(NoWorkForNow)
     }
 
-    "return FinishJobWork after skipRemainingFileWork+markDoneOne" in {
+    "return FinishJobWork after skipRemainingFileWork+markWorkDone" in {
       val g = generator(2)
-      g.nextWork
+      val w1 = g.nextWork
       g.skipRemainingFileWork
-      g.markDoneOne
+      g.markWorkDone(g.uploads(0))
       g.nextWork must beEqualTo(FinishJobWork)
     }
   }
