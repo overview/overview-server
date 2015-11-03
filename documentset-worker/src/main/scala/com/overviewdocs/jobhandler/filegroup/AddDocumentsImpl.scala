@@ -6,14 +6,14 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload}
-import com.overviewdocs.models.tables.FileGroups
+import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
   */
 class AddDocumentsImpl(documentIdSupplier: ActorRef) {
   /** Processes one GroupedFileUpload.
     *
-    * By the time this Future succeeds, one of several side effects may have
+    * By the time this Future succeeds, one of several side effects *may* have
     * occurred:
     *
     * * One File may have been written.
@@ -62,6 +62,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
         })
       }
     })
+      .flatMap(_ => deleteUpload(upload))
   }
 
   private def detectDocumentType(
@@ -110,6 +111,10 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     message: String
   )(implicit ec: ExecutionContext): Future[Unit] = {
     task.WriteDocumentProcessingError(documentSetId, upload.name, message)
+  }
+
+  private def deleteUpload(upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
+    AddDocumentsImpl.deleteUpload(upload)
   }
 
   /** Deletes the Job from the database and freshens its DocumentSet info.
@@ -162,6 +167,14 @@ object AddDocumentsImpl extends HasDatabase {
     }
   }
 
+  private lazy val compiledGroupedFileUpload = {
+    import com.overviewdocs.database.Slick.api._
+
+    Compiled { uploadId: Rep[Long] =>
+      GroupedFileUploads.filter(_.id === uploadId)
+    }
+  }
+
   def writeProgress(
     fileGroupId: Long,
     nFilesProcessed: Int,
@@ -175,5 +188,15 @@ object AddDocumentsImpl extends HasDatabase {
       Some(nBytesProcessed),
       Some(estimatedCompletionTime)
     )))
+  }
+
+  def deleteUpload(upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    val action = for {
+      _ <- database.largeObjectManager.unlink(upload.contentsOid)
+      _ <- compiledGroupedFileUpload(upload.id).delete
+    } yield ()
+    database.run(action.transactionally)
   }
 }
