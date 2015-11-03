@@ -2,11 +2,14 @@ package com.overviewdocs.jobhandler.documentset
 
 import akka.actor.Props
 import akka.pattern.ask
+import akka.testkit.TestProbe
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import scala.concurrent.duration.Duration
 
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.test.ActorSystemContext
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class DocumentSetMessageBrokerSpec extends Specification {
   sequential
@@ -47,6 +50,29 @@ class DocumentSetMessageBrokerSpec extends Specification {
       subject ! command2
       (subject ? DocumentSetMessageBroker.WorkerReady) must beEqualTo(command1).await
       (subject ? DocumentSetMessageBroker.WorkerReady) must beEqualTo(command2).await
+    }
+
+    "forward a CancelCommand to the worker that is handling it" in new BaseScope {
+      val worker = TestProbe()
+      val command1 = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(id=1L, addToDocumentSetId=Some(2L)))
+      val command2 = DocumentSetCommands.CancelAddDocumentsFromFileGroup(2L, 1L)
+      subject ! command1
+      subject.tell(DocumentSetMessageBroker.WorkerReady, worker.ref)
+      worker.expectMsg(command1)
+      subject ! command2
+      worker.expectMsg(command2)
+    }
+
+    "not forward a CancelCommand to a worker that is not handling it any more" in new BaseScope {
+      val worker = TestProbe()
+      val command1 = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(id=1L, addToDocumentSetId=Some(2L)))
+      val command2 = DocumentSetCommands.CancelAddDocumentsFromFileGroup(2L, 1L)
+      subject ! command1
+      subject.tell(DocumentSetMessageBroker.WorkerReady, worker.ref)
+      worker.expectMsg(command1)
+      subject.tell(DocumentSetMessageBroker.WorkerDoneDocumentSetCommand(2L), worker.ref)
+      subject ! command2
+      worker.expectNoMsg(Duration.Zero)
     }
   }
 }

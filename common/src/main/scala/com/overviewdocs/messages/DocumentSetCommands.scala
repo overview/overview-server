@@ -17,6 +17,12 @@ import com.overviewdocs.models.FileGroup
 object DocumentSetCommands {
   sealed trait Command { val documentSetId: Long }
 
+  /** A special kind of command that is passed to workers immediately.
+    *
+    * We haven't figured out the exact semantics yet....
+    */
+  sealed trait CancelCommand extends Command
+
   /** Empty all GroupedFileUploads from the given FileGroup, add the resulting
     * Documents to the DocumentSet, then delete the FileGroup.
     *
@@ -42,7 +48,7 @@ object DocumentSetCommands {
     *
     * Stored in the database as document_set_creation_job.state = Cancelled
     */
-  case class CancelJob(documentSetId: Long, jobId: Long) extends Command
+  case class CancelJob(documentSetId: Long, jobId: Long) extends CancelCommand
 
   /** Completes all computations surrounding an AddDocumentsFromFileGroup job
     * as soon as possible, then deletes the AddDocumentsFromFileGroup.
@@ -54,8 +60,5 @@ object DocumentSetCommands {
     *
     * Stored in the database as file_group.deleted = true.
     */
-  case class CancelAddDocumentsFromFileGroup(
-    documentSetId: Long,
-    fileGroupId: Long
-  ) extends Command
+  case class CancelAddDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long) extends CancelCommand
 }

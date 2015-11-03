@@ -19,30 +19,46 @@ import com.overviewdocs.util.Logger
   */
 class DocumentSetMessageBroker extends Actor {
   private val logger = Logger.forClass(getClass)
-  private val queue = mutable.Queue[DocumentSetCommands.Command]()
+  private val readyCommands = mutable.Queue[DocumentSetCommands.Command]()
   private val readyWorkers = mutable.Queue[ActorRef]() // Queue is nice because it has a dequeue() command
+  private val busyWorkers = mutable.Map[ActorRef,Long]()
+  private val busyDocumentSets = mutable.Map[Long,ActorRef]()
 
   override def receive = {
+    case command: DocumentSetCommands.CancelCommand => {
+      logger.info("Received CancelCommand: {}", command)
+      busyDocumentSets.get(command.documentSetId).foreach { worker =>
+        worker ! command
+      }
+    }
     case command: DocumentSetCommands.Command => {
-      logger.info("Brokering DocumentSet command: {}", command)
-      queue.enqueue(command)
+      logger.info("Received Command: {}", command)
+      readyCommands.enqueue(command)
       sendIfAvailable
     }
     case DocumentSetMessageBroker.WorkerReady => {
       readyWorkers.enqueue(sender)
       sendIfAvailable
     }
+    case DocumentSetMessageBroker.WorkerDoneDocumentSetCommand(documentSetId) => {
+      busyWorkers.remove(sender)
+      busyDocumentSets.remove(documentSetId)
+    }
   }
 
   /** Sends one message to one worker, if there is a message and a live worker.
     *
     * Side-effects:
-    * * Removes an element from `queue`
+    * * Removes an element from `readyCommands`
     * * Removes an element from `readyWorkers`
     */
   private def sendIfAvailable: Unit = {
-    if (queue.nonEmpty && readyWorkers.nonEmpty) {
-      readyWorkers.dequeue ! queue.dequeue
+    if (readyCommands.nonEmpty && readyWorkers.nonEmpty) {
+      val worker = readyWorkers.dequeue
+      val command = readyCommands.dequeue
+      busyWorkers(worker) = command.documentSetId
+      busyDocumentSets(command.documentSetId) = worker
+      worker ! command
     }
   }
 }

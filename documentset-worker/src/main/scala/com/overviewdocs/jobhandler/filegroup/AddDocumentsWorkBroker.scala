@@ -6,8 +6,11 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
+import com.overviewdocs.util.Logger
 
 class AddDocumentsWorkBroker(progressReporter: ActorRef) extends Actor {
+  private val logger = Logger.forClass(getClass)
+
   private case class JobInfo(
     workGenerator: AddDocumentsWorkGenerator,
     ackTarget: ActorRef,
@@ -30,6 +33,8 @@ class AddDocumentsWorkBroker(progressReporter: ActorRef) extends Actor {
 
   def receive = {
     case DoWorkThenAck(command, ackTarget, ackMessage) => {
+      logger.info("Dividing up {}", command)
+
       import context.dispatcher
       for {
         workGenerator <- loadWorkGeneratorForCommand(command)
