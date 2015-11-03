@@ -35,14 +35,30 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     *
     * If there's an error we *don't* expect (e.g., out of disk space), it will
     * return that error in the Future.
+    *
+    * @param fileGroup FileGroup that contains the upload.
+    * @param upload GroupedFileUpload that needs to be processed.
+    * @param onProgress Function that reports progress. Parameter is between
+    *                   `0.0` and `1.0`, inclusive.
     */
-  def processUpload(fileGroup: FileGroup, upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
-    writeFile(upload, fileGroup.lang.get).flatMap(_ match {
+  def processUpload(
+    fileGroup: FileGroup,
+    upload: GroupedFileUpload,
+    onProgress: Double => Unit
+  )(implicit ec: ExecutionContext): Future[Unit] = {
+    def onProgress1(progress1: Double) = onProgress(progress1 * 0.5)
+    def onProgress2(progress2: Double) = onProgress(0.5 + progress2 * 0.4)
+
+    writeFile(upload, fileGroup.lang.get, onProgress1).flatMap(_ match {
       case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
       case Right(file) => {
-        buildDocuments(file, fileGroup.splitDocuments.get).flatMap(_ match {
+        onProgress(0.5)
+        buildDocuments(file, fileGroup.splitDocuments.get, onProgress2).flatMap(_ match {
           case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
-          case Right(documentsWithoutIds) => writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds)
+          case Right(documentsWithoutIds) => {
+            onProgress(0.9)
+            writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds)
+          }
         })
       }
     })
@@ -58,10 +74,11 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
 
   private def writeFile(
     upload: GroupedFileUpload,
-    lang: String
+    lang: String,
+    onProgress: Double => Unit
   )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
     detectDocumentType(upload).flatMap(_ match {
-      case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, lang)
+      case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, lang, onProgress)
       case DocumentTypeDetector.OfficeDocument => task.CreateOfficeFile(upload)
       case DocumentTypeDetector.UnsupportedDocument(mimeType) => Future.successful(Left(
         s"Overview doesn't support documents of type $mimeType"
@@ -71,10 +88,11 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
 
   private def buildDocuments(
     file: File,
-    splitByPage: Boolean
+    splitByPage: Boolean,
+    onProgress: Double => Unit
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[task.DocumentWithoutIds]]] = {
     splitByPage match {
-      case true => task.CreateDocumentDataForPages(file)
+      case true => task.CreateDocumentDataForPages(file, onProgress)
       case false => task.CreateDocumentDataForFile(file)
     }
   }

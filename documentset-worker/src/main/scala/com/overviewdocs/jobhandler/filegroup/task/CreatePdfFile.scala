@@ -30,7 +30,8 @@ import com.overviewdocs.postgres.LargeObjectInputStream
   */
 class CreatePdfFile(
   upload: GroupedFileUpload,
-  lang: String
+  lang: String,
+  onProgress: Double => Unit
 )(implicit ec: ExecutionContext) extends HasBlockingDatabase {
   import database.api._
 
@@ -62,7 +63,10 @@ class CreatePdfFile(
     }
   }
 
-  private def dummyProgress(nPages: Int, nTotalPages: Int): Future[Unit] = Future.successful(())
+  private def progressCallback(nPages: Int, nTotalPages: Int): Future[Unit] = {
+    onProgress(nPages.toDouble / nTotalPages)
+    Future.successful(())
+  }
 
   private def withTempFiles[A](f: (Path, Path) => Future[A]): Future[A] = {
     Future(blocking {
@@ -86,7 +90,7 @@ class CreatePdfFile(
     withTempFiles { (rawPath, pdfPath) =>
       for {
         sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
-        _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, Seq(new Locale(lang)), dummyProgress)
+        _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, Seq(new Locale(lang)), progressCallback)
         pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
         rawLocation <- BlobStorage.create(BlobBucketId.FileContents, rawPath)
         pdfLocation <- BlobStorage.create(BlobBucketId.FileContents, pdfPath)
@@ -113,7 +117,11 @@ class CreatePdfFile(
 }
 
 object CreatePdfFile {
-  def apply(upload: GroupedFileUpload, lang: String)(implicit ec: ExecutionContext): Future[Either[String,File]] = {
-    new CreatePdfFile(upload, lang).execute
+  def apply(
+    upload: GroupedFileUpload,
+    lang: String,
+    onProgress: Double => Unit
+  )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
+    new CreatePdfFile(upload, lang, onProgress).execute
   }
 }

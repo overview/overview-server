@@ -17,10 +17,9 @@ class AddDocumentsWorker(
   override def receive = {
     case HandleUpload(fileGroup, upload) => {
       import context.dispatcher
-      val broker = sender
 
       for {
-        _ <- impl.processUpload(fileGroup, upload)
+        _ <- impl.processUpload(fileGroup, upload, onProgress(fileGroup, upload, _))
       } yield {
         broker ! AddDocumentsWorkBroker.WorkerDoneHandleUpload(fileGroup, upload)
         ready
@@ -29,7 +28,6 @@ class AddDocumentsWorker(
 
     case FinishJob(fileGroup) => {
       import context.dispatcher
-      val broker = sender
 
       for {
         _ <- impl.finishJob(fileGroup)
@@ -43,6 +41,10 @@ class AddDocumentsWorker(
   }
 
   private def ready: Unit = broker ! AddDocumentsWorkBroker.WorkerReady
+
+  private def onProgress(fileGroup: FileGroup, upload: GroupedFileUpload, fractionComplete: Double): Unit = {
+    broker ! AddDocumentsWorkBroker.WorkerHandleUploadProgress(fileGroup, upload, fractionComplete)
+  }
 }
 
 object AddDocumentsWorker {

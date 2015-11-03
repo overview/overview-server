@@ -107,7 +107,11 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   private def resumeAddDocumentsCommands(implicit ec: ExecutionContext): Unit = {
     import database.api._
 
-    database.seq(FileGroups.filter(_.addToDocumentSetId.nonEmpty)).map(_.foreach { fileGroup =>
+    val q = FileGroups
+      .filter(_.addToDocumentSetId.nonEmpty)
+      .filter(_.deleted === false)
+
+    database.seq(q).map(_.foreach { fileGroup =>
       val command = DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup)
       logger.info("Resuming {}...", command)
       documentSetMessageBroker ! command
