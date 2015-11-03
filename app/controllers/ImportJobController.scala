@@ -5,20 +5,15 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
 import controllers.backend.ImportJobBackend
-import com.overviewdocs.models.{ DocumentSet, DocumentSetCreationJob }
 
 trait ImportJobController extends Controller {
   val importJobBackend: ImportJobBackend
 
-  def index() = AuthorizedAction(anyUser).async { implicit request =>
+  def index = AuthorizedAction(anyUser).async { implicit request =>
     for {
-      allSortedIds <- importJobBackend.indexIdsInProcessingOrder
-      jobsAndDocumentSets <- importJobBackend.indexWithDocumentSets(request.user.email)
+      jobs <- importJobBackend.indexByUser(request.user.email)
     } yield {
-      val tuples = jobsAndDocumentSets.map({ (job: DocumentSetCreationJob, documentSet: DocumentSet) =>
-        (job, documentSet, allSortedIds.indexOf(job.id))
-      }.tupled)
-      Ok(views.json.ImportJob.index(tuples))
+      Ok(views.json.ImportJob.index(jobs.toSeq))
         .withHeaders(CACHE_CONTROL -> "max-age=0")
     }
   }

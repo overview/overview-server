@@ -2,81 +2,99 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import com.overviewdocs.models.tables.{DocumentSetCreationJobs,DocumentSetUsers,DocumentSets}
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetUser}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobImportJob,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetUser,FileGroup,FileGroupImportJob,ImportJob}
+import com.overviewdocs.models.tables.{DocumentSetCreationJobs,DocumentSetUsers,DocumentSets,DocumentSetsImpl,FileGroups,FileGroupsImpl}
 
 trait ImportJobBackend extends Backend {
-  /** Returns a list of ImportJob IDs, from currently processing to last in the
-    * queue.
-    */
-  def indexIdsInProcessingOrder: Future[Seq[Long]]
+  /** All ImportJobs for the user. */
+  def indexByUser(userEmail: String): Future[Seq[ImportJob]]
 
-  /** Returns a list of ImportJobs for the given user, in processing order.
-    */
-  def indexWithDocumentSets(userEmail: String): Future[Seq[(DocumentSetCreationJob,DocumentSet)]]
+  /** All ImportJobs. */
+  def indexWithDocumentSetsAndOwners: Future[Seq[(ImportJob,DocumentSet,Option[String])]]
 
-  /** Returns a list of all ImportJobs, in processing order.
-    */
-  def indexWithDocumentSetsAndUsers: Future[Seq[(DocumentSetCreationJob,DocumentSet,Option[String])]]
-
-  /** Returns a list of ImportJobs for the given DocumentSet, in processing
-    * order.
-    */
-  def index(documentSetId: Long): Future[Seq[DocumentSetCreationJob]]
+  /** All ImportJobs for the given DocumentSet. */
+  def indexByDocumentSet(documentSetId: Long): Future[Seq[ImportJob]]
 }
 
 trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   import database.api._
+  import database.executionContext
 
-  private lazy val processingIdsCompiled = Compiled {
-    DocumentSetCreationJobs
-      .filter(_.state =!= DocumentSetCreationJobState.Error)
-      .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
-      .sortBy(_.id)
-      .map(_.id)
+  private lazy val fileGroupsByUserEmail = Compiled { userEmail: Rep[String] =>
+    val documentSetIds = DocumentSetUsers.filter(_.userEmail === userEmail).map(_.documentSetId)
+
+    FileGroups
+      .filter(_.addToDocumentSetId in documentSetIds)
+      .filter(_.deleted === false)
   }
 
-  private lazy val indexWithDocumentSetsCompiled = Compiled { userEmail: Rep[String] =>
-    val allowedDocumentSetIds = DocumentSetUsers
-      .filter(_.userEmail === userEmail)
-      .map(_.documentSetId)
+  private lazy val dscjsByUserEmail = Compiled { userEmail: Rep[String] =>
+    val documentSetIds = DocumentSetUsers.filter(_.userEmail === userEmail).map(_.documentSetId)
 
-    for {
-      job <- DocumentSetCreationJobs
-        .filter(_.documentSetId in allowedDocumentSetIds)
-        .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
-        .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-        .sortBy(_.id.desc)
-      documentSet <- DocumentSets.filter(_.id === job.documentSetId)
-    } yield (job, documentSet)
+    DocumentSetCreationJobs
+      .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
+      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
+      .filter(_.documentSetId in documentSetIds)
   }
 
-  private lazy val indexWithDocumentSetsAndUsersCompiled = Compiled {
+  private lazy val fileGroupsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
+    FileGroups
+      .filter(_.addToDocumentSetId === documentSetId)
+      .filter(_.deleted === false)
+  }
+
+  private lazy val dscjsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
     DocumentSetCreationJobs
-      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
+      .filter(_.documentSetId === documentSetId)
       .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .join(DocumentSets).on(_.documentSetId === _.id)
-      .joinLeft(DocumentSetUsers).on { case (dcsjDs,dsu) => dcsjDs._2.id === dsu.documentSetId && dsu.role === DocumentSetUser.Role(true) }
-      .sortBy(_._1._1.id.desc)
+      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
+  }
+
+  private lazy val fileGroupsWithDocumentSetsAndOwners = {
+    FileGroups
+      .filter(_.addToDocumentSetId.nonEmpty)
+      .filter(_.deleted === false)
+      .join(DocumentSets)
+        .on(_.addToDocumentSetId === _.id)
+      .joinLeft(DocumentSetUsers.filter(_.role === DocumentSetUser.Role(true)))
+        .on(_._1.addToDocumentSetId === _.documentSetId)
       .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
   }
 
-  private lazy val indexCompiled = Compiled { documentSetId: Rep[Long] =>
+  private lazy val dscjsWithDocumentSetsAndOwners = {
     DocumentSetCreationJobs
-      .filter(_.documentSetId === documentSetId)
-      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
       .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .sortBy(_.id)
+      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
+      .join(DocumentSets)
+        .on(_.documentSetId === _.id)
+      .joinLeft(DocumentSetUsers.filter(_.role === DocumentSetUser.Role(true)))
+        .on(_._1.documentSetId === _.documentSetId)
+      .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
   }
 
-  override def indexIdsInProcessingOrder = database.seq(processingIdsCompiled)
+  override def indexByUser(userEmail: String) = {
+    for {
+      jobs1 <- database.seq(fileGroupsByUserEmail(userEmail))
+      jobs2 <- database.seq(dscjsByUserEmail(userEmail))
+    } yield jobs1.map(FileGroupImportJob.apply _) ++ jobs2.map(DocumentSetCreationJobImportJob.apply _)
+  }
 
-  override def indexWithDocumentSets(userEmail: String) = database.seq(indexWithDocumentSetsCompiled(userEmail))
+  override def indexByDocumentSet(documentSetId: Long) = {
+    for {
+      jobs1 <- database.seq(fileGroupsByDocumentSetId(documentSetId))
+      jobs2 <- database.seq(dscjsByDocumentSetId(documentSetId))
+    } yield jobs1.map(FileGroupImportJob.apply _) ++ jobs2.map(DocumentSetCreationJobImportJob.apply _)
+  }
 
-  override def indexWithDocumentSetsAndUsers = database.seq(indexWithDocumentSetsAndUsersCompiled)
-
-  override def index(documentSetId: Long) = database.seq(indexCompiled(documentSetId))
+  override def indexWithDocumentSetsAndOwners = {
+    for {
+      jobs1 <- database.seq(fileGroupsWithDocumentSetsAndOwners)
+      jobs2 <- database.seq(dscjsWithDocumentSetsAndOwners)
+    } yield {
+      jobs1.map(t => (FileGroupImportJob(t._1), t._2, t._3))
+        .++(jobs2.map(t => (DocumentSetCreationJobImportJob(t._1), t._2, t._3)))
+    }
+  }
 }
 
 object ImportJobBackend extends DbImportJobBackend

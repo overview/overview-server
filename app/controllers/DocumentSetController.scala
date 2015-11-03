@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.metadata.MetadataSchema
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,ImportJob}
 import com.overviewdocs.models.tables.DocumentSets
 import com.overviewdocs.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob,Tag,Tree}
 import com.overviewdocs.tree.orm.DocumentSetCreationJobState
@@ -40,20 +40,22 @@ trait DocumentSetController extends Controller {
      * there are usually only long-running jobs or no jobs on the index page.)
      */
     for {
-      userJobs: Seq[(DocumentSetCreationJob,DocumentSet)] <- importJobBackend.indexWithDocumentSets(request.user.email)
-      jobIdsInProcessingOrder: Seq[Long] <- importJobBackend.indexIdsInProcessingOrder
+      jobs: Iterable[ImportJob] <- importJobBackend.indexByUser(request.user.email)
       documentSets: Page[DocumentSet] <- backend.indexPageByOwner(request.user.email, pageRequest)
     } yield {
-      if (documentSets.pageInfo.total == 0 && userJobs.length == 0) {
+      if (documentSets.pageInfo.total == 0) {
         Redirect(routes.PublicDocumentSetController.index).flashing(request.flash)
       } else {
-        val jobIdPositions: Map[Long,Int] = jobIdsInProcessingOrder.zipWithIndex.toMap
-        val jobsWithPositions: Seq[(DocumentSetCreationJob,DocumentSet,Int)] = userJobs
-          .map(j => (j._1, j._2, jobIdPositions.getOrElse(j._1.id, 0)))
-
-        val nViews: Map[Long,Int] = storage.findNViewsByDocumentSets(documentSets.items.map(_.id))
-        val documentSetsWithCounts: Page[(DocumentSet,Int)] = documentSets.map(ds => (ds, nViews.getOrElse(ds.id, 0)))
-        Ok(views.html.DocumentSet.index(request.user, documentSetsWithCounts, jobsWithPositions))
+        val jobsById: Map[Long,Iterable[ImportJob]] = jobs.groupBy(_.documentSetId)
+        val nViewsById: Map[Long,Int] = storage.findNViewsByDocumentSets(documentSets.items.map(_.id))
+        val detailedDocumentSets: Page[(DocumentSet,Iterable[ImportJob],Int)] = documentSets.map { documentSet =>
+          (
+            documentSet,
+            jobsById.getOrElse(documentSet.id, Iterable()),
+            nViewsById.getOrElse(documentSet.id, 0)
+          )
+        }
+        Ok(views.html.DocumentSet.index(request.user, detailedDocumentSets))
       }
     }
   }
@@ -73,16 +75,9 @@ trait DocumentSetController extends Controller {
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
-        importJobBackend.index(id).flatMap(_.headOption match {
-          case None => Future.successful(Ok(views.html.DocumentSet.show(request.user, documentSet)))
-          case Some(job) => {
-            for {
-              idsInProcessingOrder <- importJobBackend.indexIdsInProcessingOrder
-            } yield {
-              val nAheadInQueue = idsInProcessingOrder.indexOf(job.id)
-              Ok(views.html.DocumentSet.showProgress(request.user, documentSet, job, math.max(nAheadInQueue, 0)))
-            }
-          }
+        importJobBackend.indexByDocumentSet(id).map(_ match {
+          case Seq() => Ok(views.html.DocumentSet.show(request.user, documentSet))
+          case _ => Ok(views.html.DocumentSet.showProgress(request.user, documentSet))
         })
       }
     })
@@ -91,11 +86,13 @@ trait DocumentSetController extends Controller {
   def showWithJsParams(id: Long, jsParams: String) = show(id)
 
   def showHtmlInJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async { implicit request =>
-    backend.show(id).map(_ match {
-      case None => NotFound
+    backend.show(id).flatMap(_ match {
+      case None => Future.successful(NotFound)
       case Some(documentSet) => {
-        val nViews: Int = storage.findNViewsByDocumentSets(Seq(id)).get(id).getOrElse(0)
-        Ok(views.json.DocumentSet.showHtml(request.user, documentSet, nViews))
+        for {
+          jobs: Iterable[ImportJob] <- importJobBackend.indexByDocumentSet(documentSet.id)
+          nViews: Int <- Future.successful(storage.findNViewsByDocumentSets(Seq(id)).get(id).getOrElse(0))
+        } yield Ok(views.json.DocumentSet.showHtml(documentSet, jobs, nViews))
       }
     })
   }

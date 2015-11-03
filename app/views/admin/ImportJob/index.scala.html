@@ -1,7 +1,7 @@
 @(
   user: User,
   jobs: Iterable[(
-    com.overviewdocs.models.DocumentSetCreationJob,
+    com.overviewdocs.models.ImportJob,
     com.overviewdocs.models.DocumentSet,
     Option[String]
   )]
@@ -13,37 +13,31 @@
 
 @defining(scopedMessages("views.admin.ImportJob.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), h1=m("h1"), bodyClass="admin-document-set-creation-job-index", javascripts=javascripts) {
-    <p class="current-time">@m("current_time_sentence", new java.util.Date())</p>
     <table class="table table-hover">
       <thead>
         <tr>
-          <th class="id">@m("th.id")</th>
-          <th class="date-started">@m("th.created_at")</th>
-          <th class="state">@m("th.state")</th>
-          <th class="fraction-complete">@m("th.fraction_complete")</th>
-          <th class="state-description">@m("th.state_description")</th>
           <th class="email">@m("th.email")</th>
-          <th class="title">@m("th.title")</th>
-          <th class="query">@m("th.query")</th>
-          <th class="actions"></th>
+          <th class="progress">@m("th.progress")</th>
+          <th class="document-set-id">@m("th.id")</th>
+          <th class="document-set-title">@m("th.title")</th>
         </tr>
       </thead>
       <tbody>
         @jobs.map { case (job, documentSet, ownerEmail) =>
           <tr>
-            <td class="id">@job.id</td>
-            <td class="date-started">@m("td.created_at", documentSet.createdAt)</td>
-            <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
-            <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete"></progress>@((job.fractionComplete * 100).toInt)%</td>
-            <td class="state-description">@job.statusDescription</td>
-            <td class="email">@ownerEmail.getOrElse("?")</td>
-            <td class="title">@documentSet.title</td>
-            <td class="query">@documentSet.query.getOrElse("")</td>
-            <td class="actions">
-              <form method="post" class="delete form-inline" data-confirm="Are you sure?" action="@controllers.admin.routes.ImportJobController.delete(job.id)?X-HTTP-Method-Override=DELETE"
-                >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="Delete"
-              /></form>
+            <td class="email">@ownerEmail.getOrElse("-")</td>
+            <td class="progress">
+              @job.progress.map { progress =>
+                <progress value="@progress"></progress>
+              }.getOrElse {
+                <progress></progress>
+              }
+              @job.description.map { description =>
+                <span class="progress-description">@Messages(description._1, description._2: _*)</span>
+              }
             </td>
+            <td class="document-set-id">@documentSet.id</th>
+            <td class="document-set-title">@documentSet.title</th>
           </tr>
         }
       </tbody>

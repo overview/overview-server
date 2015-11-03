@@ -1,8 +1,6 @@
 @(
   user: User,
-  documentSet: com.overviewdocs.models.DocumentSet,
-  job: com.overviewdocs.models.DocumentSetCreationJob,
-  nAheadInQueue: Int
+  documentSet: com.overviewdocs.models.DocumentSet
 )(
   implicit messages: Messages,
   flash: Flash,
@@ -11,7 +9,12 @@
 @javascripts = {
   @requireJsBundle("DocumentSet/show-progress")
 }
-@main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show-progress", javascripts=javascripts, optionalDocumentSet=Some(documentSet)) {
-  <ul id="main">@views.html.ImportJob._documentSetCreationJob(job, documentSet, nAheadInQueue)</ul>
-  <p class="introduction">@Messages("views.DocumentSet.showProgress.introduction")</p>
+
+@defining(scopedMessages("views.DocumentSet.showProgress")) { m =>
+  @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show-progress", javascripts=javascripts, optionalDocumentSet=Some(documentSet)) {
+    <div id="main">
+      <p class="introduction">@m("introduction")</p>
+      <ul class="import-jobs" data-document-set-id="@{documentSet.id}"></ul>
+    </div>
+  }
 }

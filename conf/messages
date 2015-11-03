@@ -71,22 +71,18 @@ models.DocumentSetCreationJob.state.NotStarted=queued
 models.DocumentSetCreationJob.state.FilesUploaded=processing uploaded files
 models.DocumentSetCreationJob.state.TextExtractionInProgress=processing uploaded files
 
+models.FileGroupImportJob.processing={2,choice,0#0 files|1#1 file|1<{2,number,integer} files} processed…
+
 com.overviewdocs.query.SyntaxError=Your search is invalid. Check that you have an even number of parentheses and you put AND or OR between terms.
 
 time_display.datetime.medium={0,date,medium} at {0,time,medium}
 
 views.admin.ImportJob.index.title=Jobs
 views.admin.ImportJob.index.h1=Jobs
-views.admin.ImportJob.index.current_time_sentence=The current time is {0,time,long} on {0,date,medium}.
-views.admin.ImportJob.index.th.id=ID
-views.admin.ImportJob.index.th.created_at=Created
-views.admin.ImportJob.index.th.state=Status
-views.admin.ImportJob.index.th.fraction_complete=Progress
-views.admin.ImportJob.index.th.state_description=Description
-views.admin.ImportJob.index.th.email=User
-views.admin.ImportJob.index.th.title=Title
-views.admin.ImportJob.index.th.query=Query
-views.admin.ImportJob.index.td.created_at={0,date,medium} at {0,time,short}
+views.admin.ImportJob.index.th.id=DocumentSet ID
+views.admin.ImportJob.index.th.title=DocumentSet Title
+views.admin.ImportJob.index.th.progress=Progress
+views.admin.ImportJob.index.th.email=Owner
 
 views.admin.Plugin.index.description=This is our registry of plugins: they appear when the user asks to list them.
 views.admin.Plugin.index.h1=Plugins
@@ -547,7 +543,6 @@ views.ImportJob._documentSetCreationJob.job_state_description.clustering=Cluster
 views.ImportJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
 views.ImportJob._documentSetCreationJob.job_state_description.job_complete=Import complete
 views.ImportJob._documentSetCreationJob.job_state_description.max_retry_attempts=Import Failed (maximum retries reached)
-views.ImportJob._documentSetCreationJob.job_state_description.no_description= 
 views.ImportJob._documentSetCreationJob.job_state_description.out_of_memory=Import failed (document set too large)
 views.ImportJob._documentSetCreationJob.job_state_description.parsing_data=Reading documents from uploaded file…
 views.ImportJob._documentSetCreationJob.job_state_description.processing_files=Extracting text from file {0}/{1}
@@ -559,10 +554,6 @@ views.ImportJob._documentSetCreationJob.job_state_description.not_enough_documen
 views.ImportJob._documentSetCreationJob.job_state_description.not_implemented_error=Cloning document sets with uploaded files is not yet implemented
 views.ImportJob._documentSetCreationJob.job_state_description.source_documentset_deleted=Copying failed because the original document set was deleted
 views.ImportJob._documentSetCreationJob.jobs_to_process=Waiting for {0,choice,0#no jobs|1#one job|2#{0,number,integer} jobs} to complete before processing can begin
-views.ImportJob._documentSetCreationJob.action_cancel=Cancel Import
-views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.
-views.ImportJob._documentSetCreationJob.subtitle.query=Query: {0}
-views.ImportJob._documentSetCreationJob.subtitle.other=From uploaded file
 
 views.main.ie_not_supported_html=<p>Overview does not support your version of Internet Explorer.</p><p>Please <a href="http://browsehappy.com/">upgrade to a newer web browser</a> and return here.</p><p style="font-size: small;">In 2013, only four per cent of all visits to Overview came from outdated versions of Internet Explorer (like yours). It takes much longer to develop and debug each Overview feature when we must support older web browsers for a small number of people. We apologize for the inconvenience and hope you will return once you have installed a faster, more secure and more intuitive web browser.</p>
 

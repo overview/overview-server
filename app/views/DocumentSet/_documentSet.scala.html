@@ -1,7 +1,7 @@
 @(
   documentSet: com.overviewdocs.models.DocumentSet,
-  nViews: Int,
-  viewer: User
+  importJobs: Iterable[com.overviewdocs.models.ImportJob],
+  nViews: Int
 )(implicit messages: Messages, request: RequestHeader)
 
 @import views.helper.DocumentSetHelper
@@ -52,6 +52,22 @@
         <span class="overflow-count" title="@m("nOverflow.title")">@m("nOverflow", documentSet.importOverflowCount)</span>
       }
     </h4>
+    @if(importJobs.nonEmpty) {
+      <ul class="import-jobs">
+        @importJobs.map { job =>
+          <li>
+            @job.progress.map { fraction =>
+              <progress value="@fraction"></progress>
+            }.getOrElse {
+              <progress></progress>
+            }
+            <span class="progress-description">
+              @{job.description.map(tuple => Messages(tuple._1, tuple._2: _*))}
+            </span>
+          </li>
+        }
+      </ul>
+    }
     <div class="open">
       <a href="@routes.DocumentSetController.show(documentSet.id)">@m("open")</a>
     </div>

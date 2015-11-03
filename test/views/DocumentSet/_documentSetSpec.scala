@@ -1,13 +1,14 @@
 package views.html.DocumentSet
 
-import com.overviewdocs.models.DocumentSet
+import com.overviewdocs.models.{DocumentSet,ImportJob}
 
 class _documentSetSpec extends views.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     val documentSet: DocumentSet = factory.documentSet(id=1L)
+    val importJobs: Set[ImportJob] = Set()
     val nViews: Int = 3
 
-    def result = _documentSet(documentSet, nViews, fakeUser)
+    def result = _documentSet(documentSet, importJobs, nViews)
   }
 
   "DocumentSet._documentSet" should {

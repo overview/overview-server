@@ -7,7 +7,7 @@ import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJobState,DocumentSetCreationJobType,ImportJob}
 import com.overviewdocs.test.factories.PodoFactory
 import com.overviewdocs.tree.orm.{Tag,Tree}
 import controllers.auth.AuthorizedRequest
@@ -33,17 +33,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       override val backend = mockBackend
       override val importJobBackend = mockImportJobBackend
       override val viewBackend = mockViewBackend
-    }
-
-    def fakeJob(documentSetId: Long, id: Long,
-                state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.InProgress,
-                jobType: DocumentSetCreationJobType.Value = DocumentSetCreationJobType.FileUpload) = {
-      factory.documentSetCreationJob(
-        id = id,
-        documentSetId = documentSetId,
-        jobType = jobType,
-        state = state
-      )
     }
   }
 
@@ -146,11 +135,13 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "return Ok if the DocumentSet exists but no trees do" in new ShowHtmlInJsonScope {
-        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Map(documentSetId -> 0)
+        mockStorage.findNViewsByDocumentSets(Seq(documentSetId)) returns Map()
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq())
         h.status(result) must beEqualTo(h.OK)
       }
 
       "return Ok if the DocumentSet exists with trees" in new ShowHtmlInJsonScope {
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq())
         h.status(result) must beEqualTo(h.OK)
       }
     }
@@ -237,8 +228,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def request = fakeAuthorizedRequest
         lazy val result = controller.show(documentSetId)(request)
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
-        mockImportJobBackend.index(documentSetId) returns Future.successful(Seq())
-        mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq())
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq())
       }
 
       "return NotFound when the DocumentSet is not present" in new ValidShowScope {
@@ -252,22 +242,13 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "show a progressbar if there is an ImportJob" in new ValidShowScope {
-        val job = factory.documentSetCreationJob(fractionComplete=0.4)
-        mockImportJobBackend.index(documentSetId) returns Future.successful(Seq(job))
-        mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq(job.id + 1, job.id + 2, job.id, job.id + 3))
-        h.contentAsString(result) must beMatching("""(?s).*progress.*value="40".*""")
-        h.contentAsString(result) must beMatching("""(?s).*views.ImportJob._documentSetCreationJob.jobs_to_process,2.*""")
-      }
-
-      "show 0 jobs ahead in the case of a race" in new ValidShowScope {
-        // More of an integration test than a unit test. Oh well.
-        val job = factory.documentSetCreationJob(fractionComplete=0.4)
-        mockImportJobBackend.index(documentSetId) returns Future.successful(Seq(job))
-        // job disappeared before we tried to find the position in queue
-        mockImportJobBackend.indexIdsInProcessingOrder returns Future.successful(Seq())
-        h.contentAsString(result) must beMatching("""(?s).*value="40".*""")
-        h.contentAsString(result) must not(beMatching("""(?s).*-1.*"""))
-      }
+        val job = smartMock[ImportJob]
+        job.progress returns Some(0.123)
+        job.description returns Some(("a-description", Seq()))
+        mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq(job))
+        h.contentAsString(result) must beMatching("""(?s).*progress.*value="0\.4".*""")
+        h.contentAsString(result) must beMatching("""(?s).*a-description.*""")
+      }.pendingUntilFixed
     }
 
     "index" should {
@@ -278,10 +259,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         mockBackend.indexPageByOwner(any, any) answers { _ => Future.successful(Page(fakeDocumentSets)) }
         def fakeNViews: Map[Long,Int] = Map(1L -> 2)
         mockStorage.findNViewsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNViews }
-        def fakeJobs: Seq[(DocumentSetCreationJob, DocumentSet)] = Seq()
-        mockImportJobBackend.indexWithDocumentSets(any) answers { _ => Future.successful(fakeJobs) }
-        def fakeJobIdsInOrder: Seq[Long] = Seq()
-        mockImportJobBackend.indexIdsInProcessingOrder answers { _ => Future.successful(fakeJobs.map(_._1.id)) }
+        def fakeJobs: Seq[ImportJob] = Seq()
+        mockImportJobBackend.indexByUser(any[String]) answers { _ => Future.successful(fakeJobs) }
 
         def request = fakeAuthorizedRequest
 
@@ -293,29 +272,14 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         h.status(result) must beEqualTo(h.OK)
       }
 
-      "return Ok if there are only jobs" in new IndexScope {
+      "redirect to examples if there are no document sets" in new IndexScope {
         override def fakeDocumentSets = Seq()
-        override def fakeJobs = Seq((fakeJob(2, 2), factory.documentSet(id=2L)))
-
-        h.status(result) must beEqualTo(h.OK)
-      }
-
-      "return Ok if there are only document sets" in new IndexScope {
-        override def fakeJobs = Seq()
-
-        h.status(result) must beEqualTo(h.OK)
-      }
-
-      "redirect to examples if there are no document sets or jobs" in new IndexScope {
-        override def fakeDocumentSets = Seq()
-        override def fakeJobs = Seq()
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
       }
 
       "flash when redirecting" in new IndexScope {
         override def fakeDocumentSets = Seq()
-        override def fakeJobs = Seq()
 
         override def request = super.request.withFlash("foo" -> "bar")
         h.flash(result).data must beEqualTo(Map("foo" -> "bar"))
@@ -348,106 +312,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         ds1.find(".view-count").text() must contain("views.DocumentSet._documentSet.nViews,4")
         ds2.find(".view-count").text() must contain("views.DocumentSet._documentSet.nViews,5")
       }
-
-      "show jobs" in new IndexScope {
-        override def fakeJobs = Seq(
-          (fakeJob(2, 2), factory.documentSet(2L)),
-          (fakeJob(3, 3), factory.documentSet(3L))
-        )
-
-        j.$("[data-document-set-creation-job-id='2']").length must beEqualTo(1)
-        j.$("[data-document-set-creation-job-id='3']").length must beEqualTo(1)
-      }
     }
-
-    // FIXME: delete is *crazy*-stupid, since the client doesn't specify what to delete
-    // It's not worth figuring out the spaghetti. Fix it.
-    //
-    // ... haven't fixed it yet? Okay, all this is commented out.
-    //"delete" should {
-
-    //  trait DeleteScope extends BaseScope {
-    //    val documentSetId = 1L
-    //    val fileGroupId = 10L
-    //    val documentSet = factory.documentSet(id=documentSetId)
-
-    //    def request = fakeAuthorizedRequest
-
-    //    lazy val result = controller.delete(documentSetId)(request)
-
-    //    mockBackend.show(documentSetId) returns Future.successful(Some(documentSet))
-
-    //    protected def setupJob(jobState: DocumentSetCreationJobState.Value, jobType: DocumentSetCreationJobType.Value = DocumentSetCreationJobType.FileUpload): Unit =
-    //      mockStorage.cancelJob(documentSetId) returns Some(fakeJob(documentSetId, 10L, fileGroupId, jobState, jobType).toDeprecatedDocumentSetCreationJob)
-    //  }
-
-    //  "mark document set deleted and send delete request if there is no job running" in new DeleteScope {
-    //    mockStorage.cancelJob(documentSetId) returns None
-
-    //    h.status(result) must beEqualTo(h.SEE_OTHER)
-
-    //    there was one(mockStorage).deleteDocumentSet(documentSetId)
-    //    there was one(mockJobQueue).send(Delete(documentSetId))
-    //  }
-
-    //  "mark document set and job deleted and send delete request if job has failed" in new DeleteScope {
-    //    setupJob(DocumentSetCreationJobState.Error)
-
-    //    h.status(result) must beEqualTo(h.SEE_OTHER)
-
-    //    there was one(mockStorage).cancelJob(documentSet.id)
-    //    there was one(mockStorage).deleteDocumentSet(documentSetId)
-    //    there was one(mockJobQueue).send(Delete(documentSetId))
-    //  }
-
-    //  "mark document set and job deleted and send delete request if job is cancelled" in new DeleteScope {
-    //    setupJob(DocumentSetCreationJobState.Cancelled)
-
-    //    h.status(result) must beEqualTo(h.SEE_OTHER)
-
-    //    there was one(mockStorage).cancelJob(documentSet.id)
-    //    there was one(mockStorage).deleteDocumentSet(documentSetId)
-    //    there was one(mockJobQueue).send(Delete(documentSetId))
-
-    //  }
-
-    //  "mark document set and job deleted and send delete request if import job has not started clustering" in new DeleteScope {
-    //    setupJob(DocumentSetCreationJobState.NotStarted)
-
-    //    h.status(result) must beEqualTo(h.SEE_OTHER)
-
-    //    there was one(mockStorage).cancelJob(documentSet.id)
-    //    there was one(mockStorage).deleteDocumentSet(documentSetId)
-    //    there was one(mockJobQueue).send(Delete(documentSetId))
-    //  }
-
-    //  "mark document set and job deleted and send delete request if import job has started clustering" in new DeleteScope {
-    //    setupJob(DocumentSetCreationJobState.InProgress)
-
-    //    h.status(result) must beEqualTo(h.SEE_OTHER)
-
-    //    there was one(mockStorage).cancelJob(documentSet.id)
-    //    there was one(mockStorage).deleteDocumentSet(documentSetId)
-    //    there was one(mockJobQueue).send(Delete(documentSetId, waitForJobRemoval = true))
-    //  }
-
-    //  "mark document set and job deleted and send cancel request if files have been uploaded" in new DeleteScope {
-    //    setupJob(DocumentSetCreationJobState.FilesUploaded)
-
-    //    h.status(result) must beEqualTo(h.SEE_OTHER)
-
-    //    there was one(mockStorage).cancelJob(documentSet.id)
-    //    there was one(mockJobQueue).send(CancelFileUpload(documentSetId, fileGroupId))
-    //  }
-
-    //  "mark document set and job deleted and send cancel request if text extraction in progress" in new DeleteScope {
-    //    setupJob(DocumentSetCreationJobState.TextExtractionInProgress)
-
-    //    h.status(result) must beEqualTo(h.SEE_OTHER)
-
-    //    there was one(mockStorage).cancelJob(documentSet.id)
-    //    there was one(mockJobQueue).send(CancelFileUpload(documentSetId, fileGroupId))
-    //  }
-    //}
   }
 }

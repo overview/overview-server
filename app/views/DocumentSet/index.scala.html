@@ -1,7 +1,6 @@
 @(
   user: User,
-  documentSets: models.pagination.Page[(com.overviewdocs.models.DocumentSet, Int)],
-  jobs: Seq[(com.overviewdocs.models.DocumentSetCreationJob,com.overviewdocs.models.DocumentSet,Int)]
+  detailedDocumentSets: models.pagination.Page[(com.overviewdocs.models.DocumentSet,Iterable[com.overviewdocs.models.ImportJob],Int)]
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
@@ -14,10 +13,6 @@
   </script>
 }
 
-@noDocuments = @{
-  documentSets.items.isEmpty && jobs.isEmpty
-}
-
 @jsMessageKeys = @{Seq(
   "time_display.datetime.medium",
   "views.DocumentSet._documentSet",
@@ -25,45 +20,18 @@
   "authentication.LoggedOutModal"
 )}
 
-@**** Stupid function needed only because I can't figure out how to pass 2 params in the map call ****@
-@displayDocumentSet(documentSetWithNViews: (com.overviewdocs.models.DocumentSet, Int)) = {
-  @views.html.DocumentSet._documentSet(
-    documentSetWithNViews._1,
-    documentSetWithNViews._2,
-    user
-  )
-}
-
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    @views.html.components.importNav(nOwnedDocumentSets=documentSets.pageInfo.total)
+    @views.html.components.importNav(nOwnedDocumentSets=detailedDocumentSets.pageInfo.total)
   } {
-    @if(noDocuments) {
+    @if(detailedDocumentSets.items.isEmpty) {
       <p class="preamble">@m("no_document_sets_or_jobs")</p>
-    }
-
-    @if(jobs) {
-      <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showHtmlInJson(0).url">
-        <h2>@m("subtitle_jobs")</h2>
-        <p class="description">@m("description_jobs")</p>
-        <ul class="list-unstyled">
-          @for(job <- jobs) {
-            @views.html.ImportJob._documentSetCreationJob(job._1, job._2, job._3.toInt)
-          }
-        </ul>
-      </div>
-    }
-
-    @if(documentSets.items || jobs) {
+    } else {
       <div class="document-sets">
         <ul class="list-unstyled">
-          @documentSets.items.map(displayDocumentSet(_))
+          @detailedDocumentSets.items.map((_documentSet.apply _).tupled)
         </ul>
-        @if(documentSets.items) {
-          @helper.Pagination.links(documentSets.pageInfo, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
-        } else {
-          <p class="no-document-sets">@m("no_document_sets")</p>
-        }
+        @helper.Pagination.links(detailedDocumentSets.pageInfo, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
       </div>
 
       @views.html.DocumentSet._errorList()

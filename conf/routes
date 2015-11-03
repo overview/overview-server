@@ -126,8 +126,7 @@ GET    /admin/users/:email controllers.admin.UserController.show(email: String)
 PUT    /admin/users/:email controllers.admin.UserController.update(email: String)
 DELETE /admin/users/:email controllers.admin.UserController.delete(email: String)
 
-GET    /admin/imports        controllers.admin.ImportJobController.index()
-DELETE /admin/imports/:jobId controllers.admin.ImportJobController.delete(jobId: Long)
+GET    /admin/imports controllers.admin.ImportJobController.index()
 
 GET    /admin/plugins controllers.admin.PluginController.index()
 
