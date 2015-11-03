@@ -5,6 +5,9 @@ import akka.actor.{Actor,ActorRef,Props}
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
 
 /** Asks a broker for work and does the work it's given.
+  *
+  * By agreement between the broker and this worker, each worker only does
+  * one thing at a time.
   */
 class AddDocumentsWorker(
   val broker: ActorRef,
@@ -12,10 +15,14 @@ class AddDocumentsWorker(
 ) extends Actor {
   import AddDocumentsWorker._
 
+  @volatile var cancelling: Boolean = false
+
   override def preStart = ready
 
   override def receive = {
     case HandleUpload(fileGroup, upload) => {
+      cancelling = false
+
       import context.dispatcher
 
       for {
@@ -37,13 +44,35 @@ class AddDocumentsWorker(
       }
     }
 
-    case CancelHandleUpload(fileGroup) => {} // TODO speed things up
+    case CancelHandleUpload(fileGroup) => {
+      /*
+       * There's a race here, but it isn't a big deal.
+       *
+       * Here's the race, at its full extent:
+       *
+       * 1. Worker sends `WorkerDoneHandleUpload(job1)`
+       * 2. Broker sends `CancelHandleUpload(job1)`
+       *
+       * We know that messages from one actor to another are serialized. That's
+       * enough to ensure it can't send us a `CancelHandleUpload` for a job it
+       * doesn't think we have. For instance, this is *impossible*:
+       *
+       * 1. Worker sends `WorkerDoneHandleUpload(job1)`
+       * 2. Broker sends `HandleUpload(job2)`
+       * 3. Broker sends `CancelHandleUpload(job1)`
+       *
+       * Conclusion: reset `cancelling` flag when we receive a
+       * `CancelHandleUpload`, and we'll be fine.
+       */
+      cancelling = true
+    }
   }
 
   private def ready: Unit = broker ! AddDocumentsWorkBroker.WorkerReady
 
-  private def onProgress(fileGroup: FileGroup, upload: GroupedFileUpload, fractionComplete: Double): Unit = {
+  private def onProgress(fileGroup: FileGroup, upload: GroupedFileUpload, fractionComplete: Double): Boolean = {
     broker ! AddDocumentsWorkBroker.WorkerHandleUploadProgress(fileGroup, upload, fractionComplete)
+    !cancelling
   }
 }
 

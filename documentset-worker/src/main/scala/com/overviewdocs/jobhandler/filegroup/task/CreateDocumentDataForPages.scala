@@ -13,18 +13,22 @@ import com.overviewdocs.util.Textify
 
 class CreateDocumentDataForPages(
   file: File,
-  onProgress: Double => Unit
+  onProgress: Double => Boolean
 )(implicit ec: ExecutionContext) extends HasDatabase {
   import database.api._
 
   def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
     BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
       PdfDocument.load(file.toPath).flatMap { pdfDocument =>
-        val documents: Array[DocumentWithoutIds] = new Array(pdfDocument.nPages)
+        var documents: Array[DocumentWithoutIds] = new Array(pdfDocument.nPages)
         var nPagesProcessed = 0
         val it = pdfDocument.pages
         def step: Future[Unit] = {
-          if (pdfDocument.nPages > 0) onProgress(nPagesProcessed.toInt / pdfDocument.nPages)
+          // progress-report / cancellation
+          if (pdfDocument.nPages > 0 && !onProgress(nPagesProcessed.toDouble / pdfDocument.nPages)) {
+            documents = Array()
+            return Future.successful(())
+          }
 
           if (it.hasNext) {
             it.next.flatMap { pdfPage =>
@@ -94,7 +98,7 @@ class CreateDocumentDataForPages(
 object CreateDocumentDataForPages {
   def apply(
     file: File,
-    onProgress: Double => Unit
+    onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
     new CreateDocumentDataForPages(file, onProgress).execute
   }

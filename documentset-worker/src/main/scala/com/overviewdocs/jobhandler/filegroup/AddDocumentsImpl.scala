@@ -39,15 +39,16 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * @param fileGroup FileGroup that contains the upload.
     * @param upload GroupedFileUpload that needs to be processed.
     * @param onProgress Function that reports progress. Parameter is between
-    *                   `0.0` and `1.0`, inclusive.
+    *                   `0.0` and `1.0`, inclusive. If it returns False, that
+    *                   means we want to cancel.
     */
   def processUpload(
     fileGroup: FileGroup,
     upload: GroupedFileUpload,
-    onProgress: Double => Unit
+    onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Unit] = {
-    def onProgress1(progress1: Double) = onProgress(progress1 * 0.5)
-    def onProgress2(progress2: Double) = onProgress(0.5 + progress2 * 0.4)
+    def onProgress1(progress1: Double): Boolean = onProgress(progress1 * 0.5)
+    def onProgress2(progress2: Double): Boolean = onProgress(0.5 + progress2 * 0.4)
 
     writeFile(upload, fileGroup.lang.get, onProgress1).flatMap(_ match {
       case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
@@ -56,8 +57,11 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
         buildDocuments(file, fileGroup.splitDocuments.get, onProgress2).flatMap(_ match {
           case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
           case Right(documentsWithoutIds) => {
-            onProgress(0.9)
-            writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds)
+            if (onProgress(0.9)) {
+              writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds)
+            } else {
+              Future.successful(())
+            }
           }
         })
       }
@@ -76,7 +80,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
   private def writeFile(
     upload: GroupedFileUpload,
     lang: String,
-    onProgress: Double => Unit
+    onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
     detectDocumentType(upload).flatMap(_ match {
       case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, lang, onProgress)
@@ -90,7 +94,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
   private def buildDocuments(
     file: File,
     splitByPage: Boolean,
-    onProgress: Double => Unit
+    onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[task.DocumentWithoutIds]]] = {
     splitByPage match {
       case true => task.CreateDocumentDataForPages(file, onProgress)
@@ -124,7 +128,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * 1. Ensures the DocumentSet has an alias in the search index.
     * 2. Updates the DocumentSet's document-ID array and counts.
     * 3. Deletes unprocessed GroupedFileUploads. (When the command is cancelled,
-    *    these remain behind.)
+    *    GroupedFileUploads that haven't been visited will still be there.)
     * 5. Deletes the FileGroup.
     * 6. Creates a clustering DocumentSetCreationJob.
     */

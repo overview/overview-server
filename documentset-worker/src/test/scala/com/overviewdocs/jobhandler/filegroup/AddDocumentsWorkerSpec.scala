@@ -39,14 +39,35 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
     }
 
     "update progress" in new BaseScope {
+      var progressRetval: Boolean = _
       broker.expectMsg(WorkerReady)
       impl.processUpload(any, any, any)(any) answers { (arguments, _) =>
-        arguments.asInstanceOf[Array[Any]](2).asInstanceOf[Double=>Unit](0.4)
+        progressRetval = arguments.asInstanceOf[Array[Any]](2).asInstanceOf[Double=>Boolean](0.4)
         Future.successful(())
       }
       val upload = makeUpload
       subject.tell(HandleUpload(fileGroup, upload), broker.ref)
       broker.expectMsg(WorkerHandleUploadProgress(fileGroup, upload, 0.4))
+      progressRetval must beEqualTo(true)
+    }
+
+    "tell impl to cancel via progress-update callback" in new BaseScope {
+      var progressRetval: Boolean = _
+      val promise = Promise[Unit]()
+      val upload = makeUpload
+      broker.expectMsg(WorkerReady)
+      impl.processUpload(any, any, any)(any) answers { (arguments, _) =>
+        for { _ <- promise.future }
+        yield {
+          progressRetval = arguments.asInstanceOf[Array[Any]](2).asInstanceOf[Double=>Boolean](0.4)
+          ()
+        }
+      }
+      subject.tell(HandleUpload(fileGroup, upload), broker.ref)
+      subject.tell(CancelHandleUpload(fileGroup), broker.ref)
+      promise.success(())
+      broker.expectMsg(WorkerHandleUploadProgress(fileGroup, upload, 0.4))
+      progressRetval must beEqualTo(false)
     }
 
     "send WorkerDoneHandleUpload when done work" in new BaseScope {

@@ -31,7 +31,7 @@ import com.overviewdocs.postgres.LargeObjectInputStream
 class CreatePdfFile(
   upload: GroupedFileUpload,
   lang: String,
-  onProgress: Double => Unit
+  onProgress: Double => Boolean
 )(implicit ec: ExecutionContext) extends HasBlockingDatabase {
   import database.api._
 
@@ -63,9 +63,8 @@ class CreatePdfFile(
     }
   }
 
-  private def progressCallback(nPages: Int, nTotalPages: Int): Future[Unit] = {
+  private def progressCallback(nPages: Int, nTotalPages: Int): Boolean = {
     onProgress(nPages.toDouble / nTotalPages)
-    Future.successful(())
   }
 
   private def withTempFiles[A](f: (Path, Path) => Future[A]): Future[A] = {
@@ -120,7 +119,7 @@ object CreatePdfFile {
   def apply(
     upload: GroupedFileUpload,
     lang: String,
-    onProgress: Double => Unit
+    onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
     new CreatePdfFile(upload, lang, onProgress).execute
   }
