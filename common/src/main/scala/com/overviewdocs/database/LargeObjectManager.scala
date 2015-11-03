@@ -15,7 +15,7 @@ import slick.util.DumpInfo
   * val action = for {
   *   lo &lt;- loManager.create(LargeObjects.Mode.ReadWrite)
   *   _ &lt;- lo.write(bytes)
-  * }
+  * } yield ()
   * database.run(action.transactionally) // Must be transactionally
   * ```
   *
