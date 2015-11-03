@@ -41,7 +41,6 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
     "update progress" in new BaseScope {
       broker.expectMsg(WorkerReady)
       impl.processUpload(any, any, any)(any) answers { (arguments, _) =>
-        System.out.println(arguments)
         arguments.asInstanceOf[Array[Any]](2).asInstanceOf[Double=>Unit](0.4)
         Future.successful(())
       }
