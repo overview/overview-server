@@ -35,6 +35,8 @@ class CreatePdfFile(
 )(implicit ec: ExecutionContext) extends HasBlockingDatabase {
   import database.api._
 
+  private case object PdfOcrCancelled extends Throwable
+
   private val CopyBufferSize = 1024 * 1024 * 5 // Copy 5MB at a time from database
 
   protected val blobStorage: BlobStorage = BlobStorage
@@ -61,6 +63,19 @@ class CreatePdfFile(
         _ <- Future(blocking(outputStream.close))
       } yield digest.digest
     }
+  }
+
+  private def getPdfOcrOutputSize(pdfPath: Path): Future[Long] = {
+    Future(blocking {
+      val ret = JFiles.size(pdfPath)
+      if (ret == 0) {
+        // pdfbox didn't write to pdfPath. (pdfPath will certainly exist,
+        // because we created it. But we didn't write to it.
+        throw PdfOcrCancelled
+      } else {
+        ret
+      }
+    })
   }
 
   private def progressCallback(nPages: Int, nTotalPages: Int): Boolean = {
@@ -90,13 +105,14 @@ class CreatePdfFile(
       for {
         sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
         _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, Seq(new Locale(lang)), progressCallback)
-        pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
+        pdfNBytes <- getPdfOcrOutputSize(pdfPath)
         rawLocation <- BlobStorage.create(BlobBucketId.FileContents, rawPath)
         pdfLocation <- BlobStorage.create(BlobBucketId.FileContents, pdfPath)
         file <- writeDatabase(rawLocation, sha1, pdfLocation, pdfNBytes)
       } yield Right(file)
     }
       .recover {
+        case PdfOcrCancelled => Left("user cancelled processing")
         case ex: PdfInvalidException => Left(ex.getMessage)
         case ex: PdfEncryptedException => Left(ex.getMessage)
       }

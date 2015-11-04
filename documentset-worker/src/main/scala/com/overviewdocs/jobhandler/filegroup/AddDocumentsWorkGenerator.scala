@@ -47,7 +47,7 @@ class AddDocumentsWorkGenerator(
   private var nBytesUnfinished: Long = nBytesUnfinishedAtStart
   private var nFilesUnfinished: Int = uploads.length
 
-  private val pendingUploads: Iterator[GroupedFileUpload] = uploads.iterator
+  private val pendingUploads: Iterator[GroupedFileUpload] = if (fileGroup.deleted) Iterator() else uploads.iterator
   private val inProgress: mutable.Map[GroupedFileUpload,UploadInfo] = mutable.Map()
 
   /** Requests another Work to act upon. */

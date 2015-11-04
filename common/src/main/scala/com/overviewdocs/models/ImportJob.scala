@@ -35,12 +35,22 @@ case class DocumentSetCreationJobImportJob(documentSetCreationJob: DocumentSetCr
 
 case class FileGroupImportJob(fileGroup: FileGroup) extends ImportJob {
   override val documentSetId = fileGroup.addToDocumentSetId.get
-  override val progress = (fileGroup.nBytesProcessed, fileGroup.nBytes) match {
-    case (Some(a), Some(b)) if a != 0L => Some(a.toDouble / b)
-    case _ => None
+
+  override val progress = {
+    (fileGroup.deleted, fileGroup.nBytesProcessed, fileGroup.nBytes) match {
+      case (_, _, Some(0L)) => None
+      case (false, Some(a), Some(b)) => Some(a.toDouble / b)
+      case _ => None
+    }
   }
-  override val description = (fileGroup.nBytesProcessed, fileGroup.nBytes, fileGroup.nFilesProcessed) match {
-    case (Some(a), Some(b), Some(c)) if a != 0L => Some(("models.FileGroupImportJob.processing", Seq(a, b, c)))
-    case _ => None
+
+  override val description = {
+    (fileGroup.deleted, fileGroup.nBytesProcessed, fileGroup.nBytes, fileGroup.nFilesProcessed) match {
+      case (true, _, _, _) => Some(("models.FileGroupImportJob.cleaning", Seq()))
+      case (_, Some(a), Some(b), _) if a == b => Some(("models.FileGroupImportJob.cleaning", Seq()))
+      case (_, Some(0L), _, _) => Some(("models.FileGroupImportJob.starting", Seq()))
+      case (_, Some(a), Some(b), Some(c)) if b != 0L => Some(("models.FileGroupImportJob.processing", Seq(a, b, c)))
+      case _ => None
+    }
   }
 }

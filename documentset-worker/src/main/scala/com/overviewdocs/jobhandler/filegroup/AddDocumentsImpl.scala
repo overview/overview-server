@@ -7,10 +7,13 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
+import com.overviewdocs.util.Logger
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
   */
 class AddDocumentsImpl(documentIdSupplier: ActorRef) {
+  private val logger = Logger.forClass(getClass)
+
   /** Processes one GroupedFileUpload.
     *
     * By the time this Future succeeds, one of several side effects *may* have
@@ -72,6 +75,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
   private def detectDocumentType(
     upload: GroupedFileUpload
   )(implicit ec: ExecutionContext): Future[DocumentTypeDetector.DocumentType] = {
+    logger.debug("Detecting document type for {}", upload)
     Future(blocking {
       DocumentTypeDetector.detectForLargeObject(upload.name, upload.contentsOid)
     })
@@ -82,6 +86,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     lang: String,
     onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
+    logger.debug("Creating File for {}", upload)
     detectDocumentType(upload).flatMap(_ match {
       case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, lang, onProgress)
       case DocumentTypeDetector.OfficeDocument => task.CreateOfficeFile(upload)
@@ -96,6 +101,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     splitByPage: Boolean,
     onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[task.DocumentWithoutIds]]] = {
+    logger.debug("Reading documents from {}", file)
     splitByPage match {
       case true => task.CreateDocumentDataForPages(file, onProgress)
       case false => task.CreateDocumentDataForFile(file)
@@ -106,6 +112,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     documentSetId: Long,
     documentsWithoutIds: Seq[task.DocumentWithoutIds]
   )(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.debug("Writing {} documents into DocumentSet {}", documentsWithoutIds.length, documentSetId)
     task.WriteDocuments(documentSetId, documentsWithoutIds, documentIdSupplier)
   }
 
@@ -114,10 +121,12 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     upload: GroupedFileUpload,
     message: String
   )(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.debug("Writing DocumentProcessingError {} for {} on DocumentSet {}", message, upload, documentSetId)
     task.WriteDocumentProcessingError(documentSetId, upload.name, message)
   }
 
   private def deleteUpload(upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.debug("Deleting {}", upload)
     AddDocumentsImpl.deleteUpload(upload)
   }
 
@@ -133,13 +142,14 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * 6. Creates a clustering DocumentSetCreationJob.
     */
   def finishJob(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
-    import com.overviewdocs.database.FileGroupDeleter
+    logger.debug("Completing {}", fileGroup)
+    import com.overviewdocs.background.filegroupcleanup.FileGroupRemover
     import com.overviewdocs.database.DocumentSetCreationJobDeleter
     import com.overviewdocs.searchindex.TransportIndexClient
     for {
       _ <- TransportIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation
       _ <- task.DocumentSetInfoUpdater.update(fileGroup.addToDocumentSetId.get)
-      _ <- FileGroupDeleter.delete(fileGroup.id)
+      _ <- FileGroupRemover().remove(fileGroup.id)
       // _ <- [create a DocumentSetCreationJob...]
     } yield {
       ()

@@ -87,8 +87,8 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   }
 
   /** Error? Die. On production, that will trigger restart. */
-  override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
-    case _ => stop
+  override def supervisorStrategy = OneForOneStrategy(0) {
+    case _ => Escalate
   }
 
   def receive = {
@@ -109,7 +109,7 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
 
     val q = FileGroups
       .filter(_.addToDocumentSetId.nonEmpty)
-      .filter(_.deleted === false)
+      .filter(_.deleted === false) // there's work to do even for deleted file groups
 
     database.seq(q).map(_.foreach { fileGroup =>
       val command = DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup)

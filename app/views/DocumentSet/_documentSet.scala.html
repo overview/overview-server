@@ -55,16 +55,7 @@
     @if(importJobs.nonEmpty) {
       <ul class="import-jobs">
         @importJobs.map { job =>
-          <li>
-            @job.progress.map { fraction =>
-              <progress value="@fraction"></progress>
-            }.getOrElse {
-              <progress></progress>
-            }
-            <span class="progress-description">
-              @{job.description.map(tuple => Messages(tuple._1, tuple._2: _*))}
-            </span>
-          </li>
+          <li>@views.html.ImportJob._importJob(job)</li>
         }
       </ul>
     }

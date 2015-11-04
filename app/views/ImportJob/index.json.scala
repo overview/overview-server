@@ -8,7 +8,7 @@ import play.api.mvc.RequestHeader
 import com.overviewdocs.models.ImportJob
 
 object index {
-  def apply(jobs: Iterable[ImportJob])(implicit messages: Messages, request: RequestHeader): JsValue = {
+  def apply(jobs: Iterable[ImportJob])(implicit messages: Messages): JsValue = {
     val items : Iterable[JsValue] = jobs.map(show.apply _)
     toJson(items)
   }

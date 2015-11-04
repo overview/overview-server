@@ -13,7 +13,7 @@ trait ImportJobController extends Controller {
     for {
       jobs <- importJobBackend.indexByUser(request.user.email)
     } yield {
-      Ok(views.json.ImportJob.index(jobs.toSeq))
+      Ok(views.json.ImportJob.index(jobs))
         .withHeaders(CACHE_CONTROL -> "max-age=0")
     }
   }

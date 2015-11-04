@@ -31,9 +31,7 @@ define [ 'jquery', 'elements/jquery-time_display' ], ($) ->
       lastIndex[node.documentSetId] += 1
       index = lastIndex[node.documentSetId]
       key = "#{node.documentSetId}-#{index}"
-      ret[key] =
-        documentSetId: node.documentSetId
-        description: node.description
+      ret[key] = node
     ret
 
   # Returns an updated `state` (leaving the original unmodified).
@@ -53,13 +51,19 @@ define [ 'jquery', 'elements/jquery-time_display' ], ($) ->
         $ul = $li.parent()
         $li.remove()
         if $ul.children().length == 0
-          $ul.remove()
+          redirectUrl = $ul.attr('data-redirect-when-finished')
+          if redirectUrl
+            window.location = redirectUrl
+          else
+            $ul.remove()
       else
         # Update the element
-        newState[key] = el
+        info = response[key]
         $li = $(el)
-        $li.find('.progress-description').text(response[key].description)
-        $li.find('progress').prop('value', response[key].progress)
+        $li.find('.progress-description').text(info.description || '')
+        $li.find('progress').attr('value', info.progress ? null)
+
+        newState[key] = el
 
     newState = state
 

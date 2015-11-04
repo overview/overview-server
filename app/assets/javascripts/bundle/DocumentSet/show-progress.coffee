@@ -71,5 +71,11 @@ requirejs.config
     underscore: 'vendor/underscore'
 
 require [
+  'for-view/DocumentSet/cancel-import-job'
+  'for-view/DocumentSet/delete-document-set'
+  'for-view/DocumentSet/share-document-set'
+  'for-view/DocumentSet/watch-import-jobs'
   'for-view/DocumentSet/show-progress'
+  'elements/logged-out-modal'
+  'elements/twitter-bootstrap'
 ], ->

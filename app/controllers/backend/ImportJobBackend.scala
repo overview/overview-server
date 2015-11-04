@@ -25,7 +25,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
 
     FileGroups
       .filter(_.addToDocumentSetId in documentSetIds)
-      .filter(_.deleted === false)
   }
 
   private lazy val dscjsByUserEmail = Compiled { userEmail: Rep[String] =>
@@ -40,7 +39,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   private lazy val fileGroupsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
     FileGroups
       .filter(_.addToDocumentSetId === documentSetId)
-      .filter(_.deleted === false)
   }
 
   private lazy val dscjsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
@@ -53,7 +51,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   private lazy val fileGroupsWithDocumentSetsAndOwners = {
     FileGroups
       .filter(_.addToDocumentSetId.nonEmpty)
-      .filter(_.deleted === false)
       .join(DocumentSets)
         .on(_.addToDocumentSetId === _.id)
       .joinLeft(DocumentSetUsers.filter(_.role === DocumentSetUser.Role(true)))

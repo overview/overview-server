@@ -1,8 +1,11 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import akka.actor.{Actor,ActorRef,Props}
+import akka.actor.{Actor,ActorRef,Props,Status}
+import scala.concurrent.{ExecutionContext,Future}
+import scala.util.{Failure,Success}
 
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
+import com.overviewdocs.util.Logger
 
 /** Asks a broker for work and does the work it's given.
   *
@@ -13,7 +16,10 @@ class AddDocumentsWorker(
   val broker: ActorRef,
   val impl: AddDocumentsImpl
 ) extends Actor {
+  private val logger = Logger.forClass(getClass)
+
   import AddDocumentsWorker._
+  import context.dispatcher
 
   @volatile var cancelling: Boolean = false
 
@@ -23,22 +29,14 @@ class AddDocumentsWorker(
     case HandleUpload(fileGroup, upload) => {
       cancelling = false
 
-      import context.dispatcher
-
-      for {
-        _ <- impl.processUpload(fileGroup, upload, onProgress(fileGroup, upload, _))
-      } yield {
+      startWork(impl.processUpload(fileGroup, upload, onProgress(fileGroup, upload, _))) {
         broker ! AddDocumentsWorkBroker.WorkerDoneHandleUpload(fileGroup, upload)
         ready
       }
     }
 
     case FinishJob(fileGroup) => {
-      import context.dispatcher
-
-      for {
-        _ <- impl.finishJob(fileGroup)
-      } yield {
+      startWork(impl.finishJob(fileGroup)) {
         broker ! AddDocumentsWorkBroker.WorkerDoneFinishJob(fileGroup)
         ready
       }
@@ -69,6 +67,13 @@ class AddDocumentsWorker(
   }
 
   private def ready: Unit = broker ! AddDocumentsWorkBroker.WorkerReady
+
+  private def startWork(work: => Future[Unit])(after: => Unit): Unit = {
+    work.onComplete {
+      case Success(()) => after
+      case Failure(ex) => broker ! Status.Failure(ex)
+    }
+  }
 
   private def onProgress(fileGroup: FileGroup, upload: GroupedFileUpload, fractionComplete: Double): Boolean = {
     broker ! AddDocumentsWorkBroker.WorkerHandleUploadProgress(fileGroup, upload, fractionComplete)

@@ -3,20 +3,35 @@ package com.overviewdocs.background.filegroupcleanup
 import com.overviewdocs.test.DbSpecification
 
 class DeletedFileGroupFinderSpec extends DbSpecification {
-  
-  "DeletedFileGroupFinder" should {
-    
-    "find deleted files" in new DeletedFileGroupScope {
-      val foundIds = await(deletedFileGroupFinder.deletedFileGroupIds)
-      foundIds must containTheSameElementsAs(deletedFileGroups.map(_.id))
-    }
+  trait BaseScope extends DbScope {
+    val finder = DeletedFileGroupFinder()
+    def go: Iterable[Long] = await(finder.deletedFileGroupIds)
   }
-  
-  trait DeletedFileGroupScope extends DbScope {
-    
-    val deletedFileGroups = Seq.fill(2)(factory.fileGroup(deleted = true))
-    val otherFileGroups = Seq.fill(2)(factory.fileGroup(deleted = false))
-    
-    val deletedFileGroupFinder = DeletedFileGroupFinder()
+
+  "DeletedFileGroupFinder" should {
+    "find a FileGroup" in new BaseScope {
+      val fileGroup = factory.fileGroup(deleted=true)
+      go must beEqualTo(Iterable(fileGroup.id))
+    }
+
+    "not find a non-deleted FileGroup" in new BaseScope {
+      val fileGroup = factory.fileGroup(deleted=false)
+      go must beEqualTo(Iterable())
+    }
+
+    "not find a deleted FileGroup that has an addToDocumentSetId" in new BaseScope {
+      val documentSet = factory.documentSet()
+      val fileGroup = factory.fileGroup(
+        addToDocumentSetId=Some(documentSet.id),
+        lang=Some("en"),
+        splitDocuments=Some(true),
+        nFiles=Some(1),
+        nBytes=Some(100L),
+        nFilesProcessed=Some(0),
+        nBytesProcessed=Some(0L),
+        deleted=true
+      )
+      go must beEqualTo(Iterable())
+    }
   }
 }

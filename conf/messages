@@ -16,7 +16,6 @@ controllers.DocumentSetArchiveController.unsupported=Zip archives are currently 
 controllers.ConfirmationController.show.success=Welcome! To get started, try cloning one of the example document sets.
 
 controllers.DocumentSetController.clone.failure=We were not able to clone the document set.
-controllers.DocumentSetController.deleteJob.success=You have cancelled your document set import.
 controllers.DocumentSetController.deleteDocumentSet.success=You have deleted your document set.
 controllers.DocumentSetController.deleteTree.success=You have cancelled creating a new tree.
 controllers.DocumentSetController.deleteTree.failure=Nothing happened. Overview can''t cancel tree creation quite yet; please wait and your tree will be created.
@@ -71,7 +70,9 @@ models.DocumentSetCreationJob.state.NotStarted=queued
 models.DocumentSetCreationJob.state.FilesUploaded=processing uploaded files
 models.DocumentSetCreationJob.state.TextExtractionInProgress=processing uploaded files
 
+models.FileGroupImportJob.starting=processing…
 models.FileGroupImportJob.processing={2,choice,0#0 files|1#1 file|1<{2,number,integer} files} processed…
+models.FileGroupImportJob.cleaning=cleaning up…
 
 com.overviewdocs.query.SyntaxError=Your search is invalid. Check that you have an even number of parentheses and you put AND or OR between terms.
 
@@ -255,6 +256,8 @@ views.DocumentSet._documentSet.add.files=Add documents
 views.DocumentSet._documentSet.menu=Actions...
 views.DocumentSet._documentSet.delete=Delete
 views.DocumentSet._documentSet.delete.confirm=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.
+views.DocumentSet._documentSet.cancelJob=Cancel
+views.DocumentSet._documentSet.cancelJob.confirm=If you cancel, some documents will be added to the document set and others will not. Are you sure you want that?
 views.DocumentSet._documentSet.nDocuments={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet._documentSet.nErrors={0,choice,0#no errors|1#One document could not be loaded|1<{0,number,integer} documents could not be loaded}
 views.DocumentSet._documentSet.nOverflow={0,choice,0#within limit|1#One document over the limit|1<{0,number,integer} documents over the limit}

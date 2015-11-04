@@ -1,0 +1,24 @@
+@(
+  importJob: com.overviewdocs.models.ImportJob
+)(implicit messages: Messages)
+
+@import com.overviewdocs.models.{ImportJob,FileGroupImportJob}
+
+@cancelUrl = @{importJob match {
+  case FileGroupImportJob(fileGroup) => Some(routes.FileImportController.delete(fileGroup.id))
+  case _ => None
+}}
+
+@defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
+  @importJob.progress.map { fraction =>
+    <progress value="@fraction"></progress>
+  }.getOrElse {
+    <progress></progress>
+  }
+  <span class="progress-description">
+    @{importJob.description.map(tuple => Messages(tuple._1, tuple._2: _*))}
+  </span>
+  @cancelUrl.map { url =>
+    <button class="delete-import-job" data-url="@cancelUrl" data-confirm="@m("cancelJob.confirm")">@m("cancelJob")</button>
+  }
+}

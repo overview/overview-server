@@ -35,12 +35,13 @@ requirejs.config
     underscore: 'vendor/underscore'
 
 require [
-  'for-view/DocumentSet/delete-document-set',
-  'for-view/DocumentSet/share-document-set',
-  'for-view/DocumentSet/_index/watch-jobs',
-  'for-view/DocumentSet/index',
-  'elements/form-submit-with-feedback',
-  'elements/form-with-confirm',
-  'elements/twitter-bootstrap',
+  'for-view/DocumentSet/cancel-import-job'
+  'for-view/DocumentSet/delete-document-set'
+  'for-view/DocumentSet/share-document-set'
+  'for-view/DocumentSet/watch-import-jobs'
+  'for-view/DocumentSet/index'
+  'elements/form-submit-with-feedback'
+  'elements/form-with-confirm'
+  'elements/twitter-bootstrap'
   'elements/logged-out-modal'
 ], ->

@@ -3,7 +3,6 @@ package com.overviewdocs.background.filegroupcleanup
 import org.specs2.mock.Mockito
 import scala.concurrent.Promise
 
-import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.tables.FileGroups
 import com.overviewdocs.test.DbSpecification
 
@@ -34,18 +33,14 @@ class FileGroupRemoverSpec extends DbSpecification with Mockito {
     val fileGroup = factory.fileGroup(deleted = true)
 
     val groupedFileUploadRemover = smartMock[GroupedFileUploadRemover]
-    val mockBlobStorage = smartMock[BlobStorage]
     
-    val fileGroupRemover = new TestFileGroupRemover(groupedFileUploadRemover, mockBlobStorage)
+    val fileGroupRemover = new TestFileGroupRemover(groupedFileUploadRemover)
     
     val uploadsRemoved = Promise[Unit]()
     groupedFileUploadRemover.removeFileGroupUploads(any) returns uploadsRemoved.future
   }
 
-  class TestFileGroupRemover(remover: GroupedFileUploadRemover, storage: BlobStorage)
-      extends FileGroupRemover {
+  class TestFileGroupRemover(remover: GroupedFileUploadRemover) extends FileGroupRemover {
     override protected val groupedFileUploadRemover = remover
-    override protected val blobStorage = storage
   }
-
 }

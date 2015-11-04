@@ -77,7 +77,7 @@ trait DocumentSetController extends Controller {
       case Some(documentSet) => {
         importJobBackend.indexByDocumentSet(id).map(_ match {
           case Seq() => Ok(views.html.DocumentSet.show(request.user, documentSet))
-          case _ => Ok(views.html.DocumentSet.showProgress(request.user, documentSet))
+          case importJobs: Seq[ImportJob] => Ok(views.html.DocumentSet.showProgress(request.user, documentSet, importJobs))
         })
       }
     })
@@ -118,58 +118,11 @@ trait DocumentSetController extends Controller {
     })
   }
 
-  def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
-    backend.show(id).map(_ match {
-      case None => NotFound
-      case Some(documentSet) => _delete(documentSet.id)
-    })
-  }
-
-  private def _delete(documentSetId: Long) = {
-    val m = views.Magic.scopedMessages("controllers.DocumentSetController")
-
-    // FIXME: Move all deletion to worker and remove database access here
-    // FIXME: Make client distinguish between deleting document sets and canceling jobs
-
-    def done(message: String) = Redirect(routes.DocumentSetController.index()).flashing(
-      "success" -> m(message),
-      "event" -> "document-set-delete"
-    )
-
-    implicit class MaybeCancelledJob(maybeJob: Option[DeprecatedDocumentSetCreationJob]) {
-      def doesNotExist: Boolean = maybeJob.isEmpty
-      def wasRunningInWorker: Boolean = (
-        maybeJob.map(_.state) == Some(DocumentSetCreationJobState.InProgress)
-        && maybeJob.map(_.jobType) != Some(DocumentSetCreationJobType.Recluster)
-      )
-      def wasNotRunning: Boolean = (
-        maybeJob.map(_.state) == Some(DocumentSetCreationJobState.NotStarted)
-        || maybeJob.map(_.state) == Some(DocumentSetCreationJobState.Error)
-        || maybeJob.map(_.state) == Some(DocumentSetCreationJobState.Cancelled)
-      )
-      def wasRunningInTextExtractionWorker: Boolean = (
-        maybeJob.map(_.state) == Some(DocumentSetCreationJobState.FilesUploaded)
-        || maybeJob.map(_.state) == Some(DocumentSetCreationJobState.TextExtractionInProgress)
-      )
-    }
-
-    // FIXME: If a reclustering job is running, but there are failed jobs, we assume
-    // that the delete refers to canceling the running job.
-    // It would be better for the client to explicitly tell us what job to cancel, rather
-    // than trying to guess.
-    val cancelledJob: Option[DeprecatedDocumentSetCreationJob] = storage.cancelJob(documentSetId)
-
-    if (cancelledJob.doesNotExist || cancelledJob.wasRunningInWorker || cancelledJob.wasNotRunning) {
-      storage.deleteDocumentSet(documentSetId)
-      jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
-      done("deleteJob.success")
-    } else if (cancelledJob.wasNotRunning) {
-      storage.deleteDocumentSet(documentSetId)
-      jobQueue.send(DocumentSetCommands.DeleteDocumentSet(documentSetId))
-      done("deleteJob.success")
-    } else {
-      throw new RuntimeException("A job was in a state we do not handle")
-    }
+  def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+    storage.deleteDocumentSet(id)
+    storage.cancelJob(id)
+    jobQueue.send(DocumentSetCommands.DeleteDocumentSet(id))
+    Redirect(routes.DocumentSetController.index()).flashing("event" -> "document-set-delete")
   }
 
   def update(id: Long) = AuthorizedAction(adminUser).async { implicit request =>

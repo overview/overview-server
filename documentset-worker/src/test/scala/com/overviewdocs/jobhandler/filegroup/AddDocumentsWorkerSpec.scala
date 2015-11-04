@@ -38,6 +38,15 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
       there was one(impl).processUpload(Matchers.eq(fileGroup), Matchers.eq(upload), any)(Matchers.eq(subject.dispatcher))
     }
 
+    "crash when impl returns a Failure" in new BaseScope {
+      broker.expectMsg(WorkerReady)
+      val ex = new Exception("foo")
+      impl.processUpload(any, any, any)(any) returns Future.failed(ex)
+      val upload = makeUpload
+      subject.tell(HandleUpload(fileGroup, upload), broker.ref)
+      broker.expectMsg(akka.actor.Status.Failure(ex))
+    }
+
     "update progress" in new BaseScope {
       var progressRetval: Boolean = _
       broker.expectMsg(WorkerReady)

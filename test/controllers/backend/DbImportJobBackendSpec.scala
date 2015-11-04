@@ -11,11 +11,11 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
 
   "indexByUser" should {
     trait IndexByUserScope extends BaseScope {
-      def ret: Iterable[ImportJob] = await(backend.indexByUser("user@example.org"))
+      def ret: Seq[ImportJob] = await(backend.indexByUser("user@example.org"))
     }
 
     "return nothing when there are no jobs" in new IndexByUserScope {
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "return a DocumentSetCreationJob job" in new IndexByUserScope {
@@ -26,7 +26,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         jobType=DocumentSetCreationJobType.DocumentCloud
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable(DocumentSetCreationJobImportJob(documentSetCreationJob)))
+      ret must beEqualTo(Seq(DocumentSetCreationJobImportJob(documentSetCreationJob)))
     }
 
     "ignore a DocumentSetCreationJob that is not InProgress" in new IndexByUserScope {
@@ -37,7 +37,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         jobType=DocumentSetCreationJobType.DocumentCloud
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "ignore a DocumentSetCreationJob of type Recluster" in new IndexByUserScope {
@@ -48,21 +48,21 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         jobType=DocumentSetCreationJobType.Recluster
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "return a DocumentSet that the user only views (does not own)" in new IndexByUserScope {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(documentSetId=documentSet.id)
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "ignore a DocumentSet that belongs to a different user" in new IndexByUserScope {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(documentSetId=documentSet.id)
       factory.documentSetUser(documentSet.id, "user2@example.org")
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "return a FileGroup job" in new IndexByUserScope {
@@ -78,19 +78,19 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         estimatedCompletionTime=Some(Instant.now)
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable(FileGroupImportJob(fileGroup)))
+      ret must beEqualTo(Seq(FileGroupImportJob(fileGroup)))
     }
 
     "ignore a FileGroup that has no addToDocumentSetId" in new IndexByUserScope {
       val documentSet = factory.documentSet()
       val fileGroup = factory.fileGroup(addToDocumentSetId=None)
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
-    "ignore a deleted FileGroup" in new IndexByUserScope {
+    "return (yes, RETURN) a deleted FileGroup" in new IndexByUserScope {
       val documentSet = factory.documentSet()
-      factory.fileGroup(
+      val fileGroup = factory.fileGroup(
         deleted=true,
         addToDocumentSetId=Some(documentSet.id),
         lang=Some("en"),
@@ -102,18 +102,18 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         estimatedCompletionTime=Some(Instant.now)
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq(FileGroupImportJob(fileGroup)))
     }
   }
 
   "indexByDocumentSet" should {
     trait IndexByDocumentSetScope extends BaseScope {
       val documentSet = factory.documentSet()
-      def ret: Iterable[ImportJob] = await(backend.indexByDocumentSet(documentSet.id))
+      def ret: Seq[ImportJob] = await(backend.indexByDocumentSet(documentSet.id))
     }
 
     "return nothing when there are no jobs" in new IndexByDocumentSetScope {
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "return a DocumentSetCreationJob job" in new IndexByDocumentSetScope {
@@ -122,7 +122,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.InProgress,
         jobType=DocumentSetCreationJobType.DocumentCloud
       )
-      ret must beEqualTo(Iterable(DocumentSetCreationJobImportJob(documentSetCreationJob)))
+      ret must beEqualTo(Seq(DocumentSetCreationJobImportJob(documentSetCreationJob)))
     }
 
     "ignore a DocumentSetCreationJob that is not InProgress" in new IndexByDocumentSetScope {
@@ -131,7 +131,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.Cancelled,
         jobType=DocumentSetCreationJobType.DocumentCloud
       )
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "ignore a DocumentSetCreationJob of type Recluster" in new IndexByDocumentSetScope {
@@ -140,7 +140,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.InProgress,
         jobType=DocumentSetCreationJobType.Recluster
       )
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "ignore a DocumentSetCreationJob of a different DocumentSet" in new IndexByDocumentSetScope {
@@ -150,7 +150,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.InProgress,
         jobType=DocumentSetCreationJobType.DocumentCloud
       )
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "return a FileGroup job" in new IndexByDocumentSetScope {
@@ -164,15 +164,15 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         nBytesProcessed=Some(20L),
         estimatedCompletionTime=Some(Instant.now)
       )
-      ret must beEqualTo(Iterable(FileGroupImportJob(fileGroup)))
+      ret must beEqualTo(Seq(FileGroupImportJob(fileGroup)))
     }
 
     "ignore a FileGroup that has no addToDocumentSetId" in new IndexByDocumentSetScope {
       factory.fileGroup(addToDocumentSetId=None)
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
-    "ignore a deleted FileGroup" in new IndexByDocumentSetScope {
+    "return (yes, RETURN) a deleted FileGroup" in new IndexByDocumentSetScope {
       val fileGroup = factory.fileGroup(
         deleted=true,
         addToDocumentSetId=Some(documentSet.id),
@@ -184,17 +184,17 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         nBytesProcessed=Some(20L),
         estimatedCompletionTime=Some(Instant.now)
       )
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq(FileGroupImportJob(fileGroup)))
     }
   }
 
   "indexWithDocumentSetsAndOwners" should {
     trait IndexWithDocumentSetsAndOwnersScope extends BaseScope {
-      def ret: Iterable[(ImportJob,DocumentSet,Option[String])] = await(backend.indexWithDocumentSetsAndOwners)
+      def ret: Seq[(ImportJob,DocumentSet,Option[String])] = await(backend.indexWithDocumentSetsAndOwners)
     }
 
     "return nothing when there are no jobs" in new IndexWithDocumentSetsAndOwnersScope {
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "return a DocumentSetCreationJob job" in new IndexWithDocumentSetsAndOwnersScope {
@@ -205,7 +205,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         jobType=DocumentSetCreationJobType.DocumentCloud
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable(
+      ret must beEqualTo(Seq(
         (DocumentSetCreationJobImportJob(documentSetCreationJob), documentSet, Some("user@example.org"))
       ))
     }
@@ -219,7 +219,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       )
       factory.documentSetUser(documentSet.id, "owner@example.org")
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
-      ret must beEqualTo(Iterable(
+      ret must beEqualTo(Seq(
         (DocumentSetCreationJobImportJob(documentSetCreationJob), documentSet, Some("owner@example.org"))
       ))
     }
@@ -241,7 +241,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.InProgress,
         jobType=DocumentSetCreationJobType.Recluster
       )
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "ignore a DocumentSetCreationJob that is not InProgress" in new IndexWithDocumentSetsAndOwnersScope {
@@ -251,7 +251,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.Cancelled,
         jobType=DocumentSetCreationJobType.DocumentCloud
       )
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
     "return a FileGroup job" in new IndexWithDocumentSetsAndOwnersScope {
@@ -267,17 +267,17 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         estimatedCompletionTime=Some(Instant.now)
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Iterable(
+      ret must beEqualTo(Seq(
         (FileGroupImportJob(fileGroup), documentSet, Some("user@example.org"))
       ))
     }
 
     "ignore a FileGroup that has no addToDocumentSetId" in new IndexWithDocumentSetsAndOwnersScope {
       factory.fileGroup(addToDocumentSetId=None)
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq())
     }
 
-    "ignore a deleted FileGroup" in new IndexWithDocumentSetsAndOwnersScope {
+    "return (yes, RETURN) a deleted FileGroup" in new IndexWithDocumentSetsAndOwnersScope {
       val documentSet = factory.documentSet()
       val fileGroup = factory.fileGroup(
         deleted=true,
@@ -290,7 +290,9 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         nBytesProcessed=Some(20L),
         estimatedCompletionTime=Some(Instant.now)
       )
-      ret must beEqualTo(Iterable())
+      ret must beEqualTo(Seq(
+        (FileGroupImportJob(fileGroup), documentSet, None)
+      ))
     }
   }
 }

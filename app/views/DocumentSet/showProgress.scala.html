@@ -1,6 +1,7 @@
 @(
   user: User,
-  documentSet: com.overviewdocs.models.DocumentSet
+  documentSet: com.overviewdocs.models.DocumentSet,
+  importJobs: Seq[com.overviewdocs.models.ImportJob]
 )(
   implicit messages: Messages,
   flash: Flash,
@@ -12,9 +13,13 @@
 
 @defining(scopedMessages("views.DocumentSet.showProgress")) { m =>
   @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show-progress", javascripts=javascripts, optionalDocumentSet=Some(documentSet)) {
-    <div id="main">
+    <div id="main" data-document-set-id="@documentSet.id">
       <p class="introduction">@m("introduction")</p>
-      <ul class="import-jobs" data-document-set-id="@{documentSet.id}"></ul>
+      <ul class="import-jobs" data-redirect-when-finished="@routes.DocumentSetController.show(documentSet.id)">
+        @importJobs.map { job =>
+          <li>@views.html.ImportJob._importJob(job)</li>
+        }
+      </ul>
     </div>
   }
 }

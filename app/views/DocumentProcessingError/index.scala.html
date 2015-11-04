@@ -1,4 +1,6 @@
-@(documentProcessingErrors: Seq[(String, Seq[models.OverviewDocumentProcessingError])])(implicit messages: Messages)
+@(
+  organizedErrors: Seq[(String,Seq[com.overviewdocs.models.DocumentProcessingError])]
+)(implicit messages: Messages)
 @import scala.util.Try
 @import java.net.{URL,MalformedURLException}
 
@@ -8,15 +10,15 @@
     <h4 class="modal-title">@m("h4")</h4>
   </div>
   <div class="modal-body">
-    @documentProcessingErrors.map { errorGroup =>
+    @organizedErrors.map { errorGroup =>
       <h2>@m("failedBecause", errorGroup._1)</h2>
       <ul class="list-unstyled error-list">
         @errorGroup._2.map { error =>
           <li>
-            @if(Try[Unit](new URL(error.url)).isSuccess) {
-              <a href="@error.url">@helper.DocumentProcessingErrorDisplay.url(error.url)</a>
+            @if(Try[Unit](new URL(error.textUrl)).isSuccess) {
+              <a href="@error.textUrl">@helper.DocumentProcessingErrorDisplay.url(error.textUrl)</a>
             } else {
-              @error.url
+              @error.textUrl
             }
           </li>
         }

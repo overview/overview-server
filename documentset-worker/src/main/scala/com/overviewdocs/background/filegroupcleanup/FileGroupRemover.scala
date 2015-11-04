@@ -4,7 +4,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.tables.FileGroups
 
 /**
@@ -28,7 +27,6 @@ trait FileGroupRemover extends HasDatabase {
   }
 
   protected val groupedFileUploadRemover: GroupedFileUploadRemover
-  protected val blobStorage: BlobStorage
 }
 
 object FileGroupRemover {
@@ -36,6 +34,5 @@ object FileGroupRemover {
   
   private class FileGroupRemoverImpl extends FileGroupRemover {
     override protected val groupedFileUploadRemover = GroupedFileUploadRemover()
-    override protected val blobStorage = BlobStorage
   }
 }

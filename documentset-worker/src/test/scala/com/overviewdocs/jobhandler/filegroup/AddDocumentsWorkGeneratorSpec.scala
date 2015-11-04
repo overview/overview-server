@@ -18,7 +18,7 @@ class AddDocumentsWorkGeneratorSpec extends Specification {
         nBytes=Some(100 * Seq.tabulate(nUploads)(_ + 1).sum)
       )
       val uploads = Seq.tabulate(nUploads) { i =>
-        factory.groupedFileUpload(fileGroupId=3L, name=s"file $i", size=100 * (i + 1))
+        factory.groupedFileUpload(fileGroupId=1L, name=s"file $i", size=100 * (i + 1))
       }
 
       new AddDocumentsWorkGenerator(fileGroup, uploads)
@@ -28,6 +28,24 @@ class AddDocumentsWorkGeneratorSpec extends Specification {
 
     "return FinishJobWork when initialized with an empty set of uploads" in {
       generator(0).nextWork must beEqualTo(FinishJobWork)
+    }
+
+    "return FinishJobWork when initialized with a deleted FileGroup" in {
+      val fileGroup = factory.fileGroup(
+        id=1L,
+        addToDocumentSetId=Some(2L),
+        lang=Some("fr"),
+        splitDocuments=Some(true),
+        nFiles=Some(1),
+        nBytes=Some(100L),
+        deleted=true
+      )
+
+      val uploads = Seq(factory.groupedFileUpload(fileGroupId=1L, name="ignore me", size=100L))
+
+      val generator = new AddDocumentsWorkGenerator(fileGroup, uploads)
+
+      generator.nextWork must beEqualTo(FinishJobWork)
     }
 
     "return a ProcessFileWork for each file" in {

@@ -12,9 +12,9 @@ import com.overviewdocs.models.tables.FileGroups
 trait DeletedFileGroupFinder extends HasDatabase {
   import database.api._
 
-  def deletedFileGroupIds: Future[Iterable[Long]] = {
-    database.seq(FileGroups.filter(_.deleted).map(_.id))
-  }
+  lazy val query = FileGroups.filter(_.deleted).filter(_.addToDocumentSetId.isEmpty).map(_.id)
+
+  def deletedFileGroupIds: Future[Iterable[Long]] = database.seq(query)
 }
 
 object DeletedFileGroupFinder {
