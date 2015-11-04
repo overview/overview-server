@@ -22,7 +22,6 @@ object Schema extends org.squeryl.Schema {
     override def isPersisted(u: User) = u.id != 0L
   }
 
-  val documentProcessingErrors = table[DocumentProcessingError]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSetUsers = table[DocumentSetUser]
   val documentTags = table[DocumentTag]

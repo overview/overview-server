@@ -3,13 +3,28 @@ package com.overviewdocs.clone
 import com.overviewdocs.postgres.SquerylEntrypoint._
 import com.overviewdocs.persistence.orm.Schema
 
-object DocumentProcessingErrorCloner {
+object DocumentProcessingErrorCloner extends InDatabaseCloner {
+  import database.api._
 
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) {
-    val sourceErrors = Schema.documentProcessingErrors.where(dpe => dpe.documentSetId === sourceDocumentSetId)
-    
-    val cloneErrors = sourceErrors.map(_.copy(documentSetId = cloneDocumentSetId))
+    logger.debug("Cloning DocumentProcessingErrors from {} to {}", sourceDocumentSetId, cloneDocumentSetId)
 
-    Schema.documentProcessingErrors.insert(cloneErrors)
+    blockingDatabase.runUnit(sqlu"""
+      INSERT INTO document_processing_error (
+        document_set_id,
+        text_url,
+        message,
+        status_code,
+        headers
+      )
+      SELECT
+        $cloneDocumentSetId,
+        text_url,
+        message,
+        status_code,
+        headers
+      FROM document_processing_error
+      WHERE document_set_id = $sourceDocumentSetId
+    """)
   }
 }
