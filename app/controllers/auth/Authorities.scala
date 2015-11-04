@@ -36,6 +36,12 @@ trait Authorities extends HasDatabase {
     override def apply(apiToken: ApiToken) = Future.successful(apiToken.documentSetId == Some(id))
   }
 
+  /** Allows the user who owns the FileGroup. */
+  def userOwningFileGroup(id: Long) = new Authority {
+    override def apply(user: User) = check(q.userFileGroup(user.email, id))
+    override def apply(apiToken: ApiToken) = check(q.userFileGroup(apiToken.createdBy, id))
+  }
+
   /** Allows any user who is owner of the DocumentSet associated with the given Tag. */
   def userOwningTag(documentSetId: Long, id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocumentSetTag(user.email, documentSetId, id))
@@ -109,6 +115,14 @@ object Authorities extends Authorities {
       Tags
         .filter(_.id === tagId)
         .filter(_.documentSetId === documentSetId)
+        .map(_ => (true))
+    }
+
+    lazy val userFileGroup = Compiled { (email: Rep[String], fileGroupId: Rep[Long]) =>
+      FileGroups
+        .filter(_.id === fileGroupId)
+        .filter(_.userEmail === email)
+        .filter(_.deleted === false)
         .map(_ => (true))
     }
 

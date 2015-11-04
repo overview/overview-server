@@ -91,7 +91,37 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     }
   }
 
-  "#find" should {
+  "#find(id)" should {
+    trait FindScope extends BaseScope {
+      def find(id: Long): Option[FileGroup] = await(backend.find(id))
+    }
+
+    "find an existing file group" in new FindScope {
+      val fileGroup = factory.fileGroup()
+      find(fileGroup.id) must beSome(fileGroup)
+    }
+
+    "skip a deleted file group" in new FindScope {
+      val fileGroup = factory.fileGroup(deleted=true)
+      find(fileGroup.id) must beNone
+    }
+
+    "find an existing file group that has an addToDocumentSetId" in new FindScope {
+      val documentSet = factory.documentSet()
+      val fileGroup = factory.fileGroup(
+        addToDocumentSetId=Some(documentSet.id),
+        lang=Some("fr"),
+        splitDocuments=Some(true),
+        nFiles=Some(1),
+        nBytes=Some(2L),
+        nFilesProcessed=Some(0),
+        nBytesProcessed=Some(0L)
+      )
+      find(fileGroup.id) must beSome(fileGroup)
+    }
+  }
+
+  "#find(email, maybeApiToken)" should {
     trait FindScope extends BaseScope {
       def find(userEmail: String, apiToken: Option[String]): Option[FileGroup] = await(backend.find(userEmail, apiToken))
     }

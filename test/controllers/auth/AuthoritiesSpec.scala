@@ -69,6 +69,27 @@ class AuthoritiesSpec extends DbSpecification {
       }
     }
 
+    "userOwningFileGroup" should {
+      "return true when the user owns the FileGroup" in new UserScope {
+        val fileGroup = factory.fileGroup(userEmail=goodUser.email)
+        await(auth.userOwningFileGroup(fileGroup.id)(goodUser)) must beTrue
+      }
+
+      "return false when the FileGroup is deleted" in new UserScope {
+        val fileGroup = factory.fileGroup(userEmail=goodUser.email, deleted=true)
+        await(auth.userOwningFileGroup(fileGroup.id)(goodUser)) must beFalse
+      }
+
+      "return false when another user owns the FileGroup" in new UserScope {
+        val fileGroup = factory.fileGroup(userEmail=goodUser.email)
+        await(auth.userOwningFileGroup(fileGroup.id)(badUser)) must beFalse
+      }
+
+      "return false when the FileGroup does not exist" in new UserScope {
+        await(auth.userOwningFileGroup(123L)(goodUser)) must beFalse
+      }
+    }
+
     "userViewingDocumentSet" should {
       "return true when the user owns the document set" in new UserScope {
         val documentSet = factory.documentSet()
@@ -279,6 +300,27 @@ class AuthoritiesSpec extends DbSpecification {
       "return false when another user owns the document set" in new ApiTokenScope {
         val otherDocumentSet = factory.documentSet()
         await(auth.userOwningDocumentSet(otherDocumentSet.id)(apiToken)) must beFalse
+      }
+    }
+
+    "userOwningFileGroup" should {
+      "return true when the user owns the FileGroup" in new ApiTokenScope {
+        val fileGroup = factory.fileGroup(userEmail=apiToken.createdBy)
+        await(auth.userOwningFileGroup(fileGroup.id)(apiToken)) must beTrue
+      }
+
+      "return false when the FileGroup is deleted" in new ApiTokenScope {
+        val fileGroup = factory.fileGroup(userEmail=apiToken.createdBy, deleted=true)
+        await(auth.userOwningFileGroup(fileGroup.id)(apiToken)) must beFalse
+      }
+
+      "return false when another user owns the FileGroup" in new ApiTokenScope {
+        val fileGroup = factory.fileGroup(userEmail=apiToken.createdBy + ".xxx")
+        await(auth.userOwningFileGroup(fileGroup.id)(apiToken)) must beFalse
+      }
+
+      "return false when the FileGroup does not exist" in new ApiTokenScope {
+        await(auth.userOwningFileGroup(123L)(apiToken)) must beFalse
       }
     }
 

@@ -30,6 +30,13 @@ trait FileGroupBackend extends Backend {
 
   /** Finds a FileGroup.
     *
+    * The FileGroup *may* have an `addToDocumentSetId`, but it will *not* have
+    * `deleted==true`.
+    */
+  def find(id: Long): Future[Option[FileGroup]]
+
+  /** Finds a FileGroup.
+    *
     * The FileGroup will *not* have an `addToDocumentSetId`.
     */
   def find(userEmail: String, apiToken: Option[String]): Future[Option[FileGroup]]
@@ -48,7 +55,11 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
   import database.api._
   import database.executionContext
 
-  lazy val byIdCompiled = Compiled { (id: Rep[Long]) => FileGroups.filter(_.id === id) }
+  lazy val byIdCompiled = Compiled { (id: Rep[Long]) =>
+    FileGroups
+      .filter(_.id === id)
+      .filter(_.deleted === false)
+  }
 
   lazy val incompleteByAttributesCompiled = Compiled { (userEmail: Rep[String], apiToken: Rep[Option[String]]) =>
     // Option[String] equality is weird because (None === None) is false.
@@ -91,6 +102,10 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
           case Some(fileGroup) => DBIO.successful(fileGroup)
         })
     }
+  }
+
+  override def find(id: Long) = {
+    database.option(byIdCompiled(id))
   }
 
   override def find(userEmail: String, apiToken: Option[String]) = {

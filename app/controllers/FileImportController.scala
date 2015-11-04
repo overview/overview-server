@@ -1,13 +1,19 @@
 package controllers
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.Future
 
+import com.overviewdocs.messages.DocumentSetCommands
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
-import controllers.backend.DocumentSetBackend
+import controllers.auth.Authorities.{anyUser,userOwningDocumentSet,userOwningFileGroup}
+import controllers.backend.{DocumentSetBackend,FileGroupBackend,ImportJobBackend}
+import controllers.util.JobQueueSender
 
 trait FileImportController extends Controller {
   val documentSetBackend: DocumentSetBackend
+  val jobQueueSender: JobQueueSender
+  val importJobBackend: ImportJobBackend
+  val fileGroupBackend: FileGroupBackend
 
   def _new = AuthorizedAction(anyUser).async { implicit request =>
     for {
@@ -24,8 +30,40 @@ trait FileImportController extends Controller {
       count <- documentSetBackend.countByOwnerEmail(request.user.email)
     } yield Ok(views.html.FileImport.edit(request.user, documentSet, count))
   }
+
+  /** Deletes a FileGroup, potentially cancelling any worker-side operations.
+    *
+    * There are many possibilities:
+    *
+    * * The FileGroup does not exist (or does not belong to the user, or it is
+    *   deleted): return auth error.
+    * * The FileGroup exists, but a race makes it disappear before we can
+    *   fetch it from the database: return `NoContent`.
+    * * The FileGroup exists and has an `addToDocumentSetId`: set
+    *   `deleted=true`, notify the worker, and return `NoContent`.
+    * * The FileGroup exists and has no `addToDocumentSetId`: undefined
+    *   behavior.
+    */
+  def delete(fileGroupId: Long) = AuthorizedAction(userOwningFileGroup(fileGroupId)).async { implicit request =>
+    fileGroupBackend.find(fileGroupId).map(_.map(_.addToDocumentSetId)).flatMap(_ match {
+      case None => Future.successful(NoContent)
+      case Some(None) => Future.successful(
+        BadRequest("This FileGroup has no addToDocumentSetId; whatever linked here is broken")
+      )
+      case Some(Some(documentSetId)) => {
+        fileGroupBackend.destroy(fileGroupId).map { _ =>
+          val command = DocumentSetCommands.CancelAddDocumentsFromFileGroup(documentSetId, fileGroupId)
+          jobQueueSender.send(command)
+          NoContent
+        }
+      }
+    })
+  }
 }
 
 object FileImportController extends FileImportController {
   override val documentSetBackend = DocumentSetBackend
+  override val fileGroupBackend = FileGroupBackend
+  override val jobQueueSender = JobQueueSender
+  override val importJobBackend = ImportJobBackend
 }
