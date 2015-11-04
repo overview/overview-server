@@ -144,7 +144,6 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
   def finishJob(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
     logger.debug("Completing {}", fileGroup)
     import com.overviewdocs.background.filegroupcleanup.FileGroupRemover
-    import com.overviewdocs.database.DocumentSetCreationJobDeleter
     import com.overviewdocs.searchindex.TransportIndexClient
     for {
       _ <- TransportIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation

@@ -3,7 +3,7 @@ package com.overviewdocs.jobhandler.documentset
 import akka.actor.{Actor,ActorRef,Props}
 import scala.concurrent.{ExecutionContext,Future}
 
-import com.overviewdocs.database.{DocumentSetDeleter,DocumentSetCreationJobDeleter}
+import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.Logger
