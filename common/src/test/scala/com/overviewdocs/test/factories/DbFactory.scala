@@ -101,7 +101,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     userEmail: String,
     role: DocumentSetUser.Role
   ) = run(q.insertDocumentSetUser += podoFactory.documentSetUser(documentSetId, userEmail, role))
-  
+
   override def documentTag(documentId: Long, tagId: Long) = {
     run(q.insertDocumentTag += podoFactory.documentTag(documentId, tagId))
   }
@@ -271,7 +271,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     text: String,
     isFromOcr: Boolean
   ) = run(q.insertPage += podoFactory.page(
-    id, 
+    id,
     fileId,
     pageNumber,
     dataLocation,
@@ -305,7 +305,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     contentDisposition: String,
     contentType: String,
     size: Long,
-    uploadedAt: Timestamp 
+    uploadedAt: Timestamp
   ) = run(q.insertUploadedFile += podoFactory.uploadedFile(id, contentDisposition, contentType, size, uploadedAt))
 
   override def upload(
@@ -376,11 +376,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     nodeId
   ))
 
-  override def tempDocumentSetFile(
-     documentSetId: Long,
-     fileId: Long
-  ) = run(q.insertTempDocumentSetFile += podoFactory.tempDocumentSetFile(documentSetId, fileId))
-
   object q {
     // Compile queries once, instead of once per test
     val insertApiToken = (ApiTokens returning ApiTokens)
@@ -406,6 +401,5 @@ object DbFactory extends Factory with HasBlockingDatabase {
     val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors)
     val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs)
     val insertDocumentSetCreationJobNode = (DocumentSetCreationJobNodes returning DocumentSetCreationJobNodes)
-    val insertTempDocumentSetFile = (TempDocumentSetFiles returning TempDocumentSetFiles)
   }
 }

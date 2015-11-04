@@ -9,11 +9,9 @@ import scala.concurrent.{ExecutionContext,Future}
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol.{RequestIds,IdRequestResponse}
 import com.overviewdocs.models.Document
-import com.overviewdocs.models.tables.TempDocumentSetFiles
 import com.overviewdocs.util.BulkDocumentWriter
 
-/** Writes [[Document]]s to the database and deletes [[TempDocumentSetFile]]s.
-  */
+/** Writes [[Document]]s to the database. */
 class WriteDocuments(
   val documentSetId: Long,
   val documentsWithoutIds: Seq[DocumentWithoutIds],
@@ -23,7 +21,6 @@ extends HasDatabase {
   def execute: Future[Unit] = for {
     ids <- getIds
     _ <- writeDocuments(documentsWithoutIds.zip(ids).map((makeDocument _).tupled))
-    _ <- deleteTempDocumentSetFiles
   } yield ()
 
   private def makeDocument(documentWithoutIds: DocumentWithoutIds, id: Long): Document = {
@@ -49,13 +46,6 @@ extends HasDatabase {
     }
 
     step
-  }
-
-  private def deleteTempDocumentSetFiles: Future[Unit] = {
-    import database.api._
-
-    val fileIds = documentsWithoutIds.map(_.fileId).flatten.toSet
-    database.runUnit(TempDocumentSetFiles.filter(_.fileId inSet fileIds).delete)
   }
 }
 

@@ -9,8 +9,8 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.models.{File,GroupedFileUpload,TempDocumentSetFile}
-import com.overviewdocs.models.tables.{Files,TempDocumentSetFiles}
+import com.overviewdocs.models.{File,GroupedFileUpload}
+import com.overviewdocs.models.tables.Files
 import com.overviewdocs.postgres.LargeObjectInputStream
 
 /** Creates a [[File]] from a PDF document.
@@ -20,13 +20,16 @@ import com.overviewdocs.postgres.LargeObjectInputStream
   * 1. Downloads the file from Postgres LargeObject and calculates its sha1.
   * 2. Makes a searchable copy, using PdfOcr.
   * 3. Uploads both copies to BlobStorage.
-  * 4. Writes a File and a TempDocumentSetFile to Postgres.
-  * 5. Returns the File.
+  * 4. Returns the File.
   *
   * If there's a recoverable error (i.e., the file is an invalid or
   * password-protected PDF), returns a String error message.
   *
   * TODO share some code with CreateOfficeFile.scala
+  *
+  * TODO delete the File if we cancel the job before creating Documents for it.
+  * (We used to have a TempDocumentSetFile structure in the database, but that
+  * was overkill and race-prond. We *ought* to be using the refcount field.)
   */
 class CreatePdfFile(
   upload: GroupedFileUpload,
@@ -123,8 +126,6 @@ class CreatePdfFile(
       .map(f => (f.referenceCount, f.name, f.contentsLocation, f.contentsSize, f.contentsSha1, f.viewLocation, f.viewSize))
       .returning(Files)
   }
-
-  private lazy val tempDocumentSetFileInserter = (TempDocumentSetFiles returning TempDocumentSetFiles)
 
   private def writeDatabase(rawLocation: String, sha1: Array[Byte], pdfLocation: String, pdfNBytes: Long): Future[File] = {
     database.run(fileInserter.+=((1, upload.name, rawLocation, upload.size, sha1, pdfLocation, pdfNBytes)))

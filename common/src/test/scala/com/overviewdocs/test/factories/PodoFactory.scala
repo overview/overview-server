@@ -123,9 +123,9 @@ object PodoFactory extends Factory {
   override def documentSetUser(
     documentSetId: Long,
     userEmail: String,
-    role: DocumentSetUser.Role  
+    role: DocumentSetUser.Role
   ) = DocumentSetUser(documentSetId, userEmail, role)
-    
+
   override def documentTag(
     documentId: Long,
     tagId: Long
@@ -311,7 +311,7 @@ object PodoFactory extends Factory {
     isFromOcr: Boolean
   ) = Page(
     getId(id),
-    getId(fileId), 
+    getId(fileId),
     pageNumber,
     dataLocation,
     dataSize,
@@ -356,7 +356,7 @@ object PodoFactory extends Factory {
     lastActivity,
     totalSize
   )
-  
+
   override def uploadedFile(
     id: Long,
     contentDisposition: String,
@@ -364,7 +364,7 @@ object PodoFactory extends Factory {
     size: Long,
     uploadedAt: Timestamp
   ) = UploadedFile(getId(id), contentDisposition, contentType, size, uploadedAt)
-  
+
   override def documentProcessingError(
     id: Long,
     documentSetId: Long,
@@ -373,7 +373,6 @@ object PodoFactory extends Factory {
     statusCode: Option[Int],
     headers: Option[String]
   ) = DocumentProcessingError(getId(id), documentSetId, textUrl, message, statusCode, headers)
-  
 
   override def documentSetCreationJob(
     id: Long,
@@ -395,17 +394,14 @@ object PodoFactory extends Factory {
     fractionComplete: Double,
     statusDescription: String,
     canBeCancelled: Boolean
-  ) = DocumentSetCreationJob(getId(id), documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
-      splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId, 
-      treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled)
-  
-   override def documentSetCreationJobNode(
-     documentSetCreationJobId: Long,
-     nodeId: Long
-   ) = DocumentSetCreationJobNode(documentSetCreationJobId, nodeId)
-  
-   override def tempDocumentSetFile(
-     documentSetId: Long,
-     fileId: Long
-   ) = TempDocumentSetFile(documentSetId, fileId)
+  ) = DocumentSetCreationJob(
+    getId(id), documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
+    splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
+    treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled
+  )
+
+  override def documentSetCreationJobNode(
+    documentSetCreationJobId: Long,
+    nodeId: Long
+  ) = DocumentSetCreationJobNode(documentSetCreationJobId, nodeId)
 }

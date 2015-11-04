@@ -66,7 +66,7 @@ trait Factory {
   def documentSetUser(
     documentSetId: Long = 0L,
     userEmail: String = "user@example.com",
-    role: DocumentSetUser.Role = DocumentSetUser.Role(1)  
+    role: DocumentSetUser.Role = DocumentSetUser.Role(1)
   ): DocumentSetUser
 
   def documentTag(documentId: Long, tagId: Long): DocumentTag
@@ -200,8 +200,8 @@ trait Factory {
     contentType: String = "text/csv",
     size: Long = 0L,
     uploadedAt: Timestamp = now
-  ): UploadedFile 
-  
+  ): UploadedFile
+
   def documentProcessingError(
     id: Long = 0L,
     documentSetId: Long = 0L,
@@ -210,7 +210,7 @@ trait Factory {
     statusCode: Option[Int] = None,
     headers: Option[String] = None
   ): DocumentProcessingError
-  
+
   def documentSetCreationJob(
     id: Long = 0L,
     documentSetId: Long = 0L,
@@ -232,14 +232,11 @@ trait Factory {
     statusDescription: String = "",
     canBeCancelled: Boolean = true
   ): DocumentSetCreationJob
-  
 
   def documentSetCreationJobNode(
     documentSetCreationJobId: Long = 0L,
     nodeId: Long = 0L
   ): DocumentSetCreationJobNode
 
-  def tempDocumentSetFile(documentSetId: Long, fileId: Long): TempDocumentSetFile
-  
   private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
 }
