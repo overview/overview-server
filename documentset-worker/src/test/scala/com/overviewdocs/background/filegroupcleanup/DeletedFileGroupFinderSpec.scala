@@ -4,8 +4,7 @@ import com.overviewdocs.test.DbSpecification
 
 class DeletedFileGroupFinderSpec extends DbSpecification {
   trait BaseScope extends DbScope {
-    val finder = DeletedFileGroupFinder()
-    def go: Iterable[Long] = await(finder.deletedFileGroupIds)
+    def go: Iterable[Long] = await(DeletedFileGroupFinder.indexIds)
   }
 
   "DeletedFileGroupFinder" should {

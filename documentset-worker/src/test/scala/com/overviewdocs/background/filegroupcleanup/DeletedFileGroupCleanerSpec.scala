@@ -27,7 +27,7 @@ class DeletedFileGroupCleanerSpec extends Specification with Mockito {
   }
 
   abstract class DeletedFileGroupScope extends ActorSystemContext with Before {
-    val numberOfFileGroups = 10
+    val numberOfFileGroups = 3
     val deletedFileGroupIds = Seq.range[Long](0, numberOfFileGroups)
     var supervisor: TestProbe = _ 
     var queue: TestProbe = _
@@ -45,7 +45,7 @@ class DeletedFileGroupCleanerSpec extends Specification with Mockito {
   class TestDeletedFileGroupCleaner(queue: ActorRef, ids: Seq[Long]) extends DeletedFileGroupCleaner {
     import context._
     override protected val deletedFileGroupFinder = smartMock[DeletedFileGroupFinder]
-    deletedFileGroupFinder.deletedFileGroupIds returns Future { ids }
+    deletedFileGroupFinder.indexIds returns Future { ids }
     
     override protected val fileGroupRemovalRequestQueue = queue
   }

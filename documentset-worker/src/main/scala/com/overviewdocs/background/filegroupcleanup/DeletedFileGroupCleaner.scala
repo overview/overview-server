@@ -26,11 +26,12 @@ trait DeletedFileGroupCleaner extends Actor {
     case RequestsSent =>  context.stop(self)
   }
 
-  private def requestRemovals =
-    deletedFileGroupFinder.deletedFileGroupIds.map { ids =>
+  private def requestRemovals = {
+    deletedFileGroupFinder.indexIds.map { ids =>
       ids.foreach(fileGroupRemovalRequestQueue ! RemoveFileGroup(_))
       RequestsSent
     }
+  }
 
   protected val deletedFileGroupFinder: DeletedFileGroupFinder
   protected val fileGroupRemovalRequestQueue: ActorRef
@@ -42,7 +43,7 @@ object DeletedFileGroupCleaner {
     Props(new DeletedFileGroupCleanerImpl(fileGroupRemovalRequestQueue))
   
   private class DeletedFileGroupCleanerImpl(fileGroupRemovalRequestQueueActor: ActorRef) extends DeletedFileGroupCleaner {
-    override protected val deletedFileGroupFinder = DeletedFileGroupFinder()
+    override protected val deletedFileGroupFinder = DeletedFileGroupFinder
     override protected val fileGroupRemovalRequestQueue = fileGroupRemovalRequestQueueActor
   }
 }
