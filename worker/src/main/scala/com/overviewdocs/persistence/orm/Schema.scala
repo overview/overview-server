@@ -10,7 +10,6 @@ object Schema extends org.squeryl.Schema {
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val pages = table[Page]
   val tags = table[Tag]
-  val tempDocumentSetFiles = table[TempDocumentSetFile]
   val trees = table[Tree]
   val uploadedFiles = table[UploadedFile]
 
