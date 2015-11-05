@@ -2,7 +2,7 @@ package com.overviewdocs.database
 
 import com.overviewdocs.test.DbSpecification
 import com.overviewdocs.models.{ Document, DocumentSet, UploadedFile }
-import com.overviewdocs.models.tables.{ Documents, DocumentSets, DocumentSetCreationJobs, Files, Pages, UploadedFiles }
+import com.overviewdocs.models.tables._
 
 class DocumentSetDeleterSpec extends DbSpecification {
 
@@ -16,10 +16,45 @@ class DocumentSetDeleterSpec extends DbSpecification {
 
     "delete jobs" in new BasicDocumentSetScope {
       val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
+
       deleteDocumentSet
 
       import database.api._
       blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === job.id)) must beNone
+    }
+
+    "delete document_set_creation_job_nodes" in new BasicDocumentSetScope {
+      val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
+      val node = factory.node()
+      factory.documentSetCreationJobNode(job.id, node.id)
+
+      deleteDocumentSet
+
+      import database.api._
+      blockingDatabase.option(
+        DocumentSetCreationJobNodes
+          .filter(_.documentSetCreationJobId === job.id)
+          .filter(_.nodeId === node.id)
+      ) must beNone
+      blockingDatabase.option(Nodes.filter(_.id === node.id)) must beNone
+    }
+
+    "delete document_set_creation_job_nodes that are also referenced by trees" in new BasicDocumentSetScope {
+      val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
+      val node = factory.node()
+      val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=node.id)
+      factory.documentSetCreationJobNode(job.id, node.id)
+
+      deleteDocumentSet
+
+      import database.api._
+      blockingDatabase.option(
+        DocumentSetCreationJobNodes
+          .filter(_.documentSetCreationJobId === job.id)
+          .filter(_.nodeId === node.id)
+      ) must beNone
+      blockingDatabase.option(Nodes.filter(_.id === node.id)) must beNone
+      blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
     }
 
     "delete csv uploads" in new CsvUploadScope {
