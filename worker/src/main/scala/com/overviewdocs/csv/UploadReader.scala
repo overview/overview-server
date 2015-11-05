@@ -11,8 +11,7 @@ import java.nio.charset.{Charset,CharsetDecoder,CodingErrorAction,StandardCharse
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
 
-import com.overviewdocs.database.BlockingDatabase
-import com.overviewdocs.postgres.LargeObjectInputStream
+import com.overviewdocs.database.{BlockingDatabase,LargeObjectInputStream}
 
 /**
  * Provides a context for reading an uploaded file from the database. The

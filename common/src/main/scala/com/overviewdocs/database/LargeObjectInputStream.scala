@@ -1,10 +1,8 @@
-package com.overviewdocs.postgres
+package com.overviewdocs.database
 
 import java.io.{IOException,InputStream}
 import java.sql.SQLException
 import scala.concurrent.ExecutionContext.Implicits.global
-
-import com.overviewdocs.database.{BlockingDatabase,LargeObject=>GoodLargeObject,LargeObjectManager}
 
 /** Reads data from a database LargeObject.
   *
@@ -34,7 +32,7 @@ class LargeObjectInputStream(val oid: Long, blockingDatabase: BlockingDatabase) 
     import com.overviewdocs.database.Slick.api._
     val bytes = try {
       blockingDatabase.run((for {
-        lo <- loManager.open(oid, GoodLargeObject.Mode.Read)
+        lo <- loManager.open(oid, LargeObject.Mode.Read)
         _ <- lo.seek(position)
         bytes <- lo.read(length)
       } yield bytes).transactionally)

@@ -1,6 +1,5 @@
-package com.overviewdocs.postgres
+package com.overviewdocs.database
 
-import com.overviewdocs.database.{LargeObject=>GoodLargeObject}
 import com.overviewdocs.test.DbSpecification
 
 class LargeObjectInputStreamSpec extends DbSpecification {
@@ -16,7 +15,7 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       // on test-suite start
       val lois = blockingDatabase.run((for {
         oid <- loManager.create
-        lo <- loManager.open(oid, GoodLargeObject.Mode.Write)
+        lo <- loManager.open(oid, LargeObject.Mode.Write)
         _ <- lo.write(loData)
       } yield new LargeObjectInputStream(oid, blockingDatabase)).transactionally)
       oidsToDelete.add(lois.oid)

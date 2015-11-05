@@ -3,8 +3,7 @@ package com.overviewdocs.jobhandler.filegroup
 import java.io.InputStream
 import org.overviewproject.mime_types.MimeTypeDetector
 
-import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.postgres.LargeObjectInputStream
+import com.overviewdocs.database.{HasBlockingDatabase,LargeObjectInputStream}
 
 trait DocumentTypeDetector {
   protected val mimeTypeDetector: MimeTypeDetector

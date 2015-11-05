@@ -6,10 +6,9 @@ import java.security.{DigestInputStream,MessageDigest}
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
-import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.database.{HasBlockingDatabase,LargeObjectInputStream}
 import com.overviewdocs.models.{File,GroupedFileUpload}
 import com.overviewdocs.models.tables.Files
-import com.overviewdocs.postgres.LargeObjectInputStream
 
 /** Creates a [[File]] from a LibreOffice-readable document.
   *
