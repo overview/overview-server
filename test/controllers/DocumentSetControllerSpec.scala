@@ -238,9 +238,9 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         job.progress returns Some(0.123)
         job.description returns Some(("a-description", Seq()))
         mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq(job))
-        h.contentAsString(result) must beMatching("""(?s).*progress.*value="0\.4".*""")
+        h.contentAsString(result) must beMatching("""(?s).*progress.*value="0\.123".*""")
         h.contentAsString(result) must beMatching("""(?s).*a-description.*""")
-      }.pendingUntilFixed
+      }
     }
 
     "index" should {
