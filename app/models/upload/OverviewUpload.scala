@@ -41,7 +41,7 @@ object OverviewUpload extends HasBlockingDatabase {
   lazy val inserter = (Uploads.map(_.createAttributes) returning Uploads)
   lazy val updater = Compiled { (id: Rep[Long]) => Uploads.map(_.updateAttributes) }
 
-  /** Create a new instance */
+  /** Create a new instance and write it to the database. ICK ICK ICK. */
   def apply(userId: Long, guid: UUID, contentDisposition: String, contentType: String, totalSize: Long, oid: Long): OverviewUpload = {
     val uploadedFile = OverviewUploadedFile(oid, contentDisposition, contentType).save
     val attributes = Upload.CreateAttributes(
@@ -89,5 +89,4 @@ object OverviewUpload extends HasBlockingDatabase {
   }
 
   private def now: Timestamp = new Timestamp(System.currentTimeMillis)
-
 }

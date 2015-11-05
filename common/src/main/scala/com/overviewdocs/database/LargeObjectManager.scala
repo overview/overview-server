@@ -13,7 +13,8 @@ import slick.util.DumpInfo
   * ```
   * loManager = database.largeObjectManager
   * val action = for {
-  *   lo &lt;- loManager.create(LargeObjects.Mode.ReadWrite)
+  *   oid &lt;- loManager.create
+  *   lo &lt;- loManager.open(lo, LargeObject.Mode.Write)
   *   _ &lt;- lo.write(bytes)
   * } yield ()
   * database.run(action.transactionally) // Must be transactionally
@@ -26,9 +27,9 @@ import slick.util.DumpInfo
   * val action = for {
   *   loid &lt;- Things.filter(_.id === id).map(_.loid).result.head
   *   lo &lt;- loManager.open(loid, LargeObject.Mode.ReadWrite)
-  *   _ &lt;- lo.seek(123, LargeObject.Seek.SEEK_CUR)
+  *   _ &lt;- lo.seek(123, LargeObject.Seek.Cur)
   *   _ &lt;- lo.write(Array(1, 2, 3).map(_.toByte))
-  * }
+  * } yield ()
   * database.run(action.transactionally)
   * ```
   */
@@ -50,6 +51,13 @@ class LargeObjectManager(database: Database) {
   def open(oid: Long, mode: LargeObject.Mode)
   : DBIOAction[LargeObject, NoStream, Effect.Read with Effect.Transactional] = {
     new LargeObjectManager.OpenAction(oid, mode)
+  }
+
+  /** Truncates an existing large object.
+    */
+  def truncate(oid: Long)
+  : DBIOAction[Unit, NoStream, Effect.Write with Effect.Transactional] = {
+    new LargeObjectManager.TruncateAction(oid)
   }
 
   /** Runs create, then opens the resulting large object.
@@ -106,6 +114,16 @@ object LargeObjectManager {
     override def run(context: JdbcBackend#Context): LargeObject = {
       val pgLargeObject = manager(context).open(oid, pgMode(mode))
       new LargeObject(pgLargeObject)
+    }
+  }
+
+  private class TruncateAction(oid: Long)
+    extends LargeObjectManagerAction[Unit, Effect.Write with Effect.Transactional]
+  {
+    override def getDumpInfo = DumpInfo("LargeObjectManager.TruncateAction", oid.toString)
+    override def run(context: JdbcBackend#Context): Unit = {
+      val pgLargeObject = manager(context).open(oid, PGLargeObjectManager.WRITE)
+      pgLargeObject.truncate(0)
     }
   }
 

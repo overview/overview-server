@@ -1,7 +1,6 @@
 package controllers.util
 
 import java.util.UUID
-import java.sql.Connection
 import org.postgresql.PGConnection
 import play.api.http.HeaderNames.{ CONTENT_DISPOSITION, CONTENT_TYPE, CONTENT_RANGE }
 import play.api.libs.concurrent.Execution.Implicits._
@@ -9,9 +8,8 @@ import play.api.libs.iteratee.{ Done, Input, Iteratee }
 import play.api.mvc.{ RequestHeader, Result }
 import play.api.mvc.Results.BadRequest
 
+import com.overviewdocs.database.{HasBlockingDatabase,LargeObject}
 import models.upload.OverviewUpload
-import com.overviewdocs.database.DeprecatedDatabase
-import com.overviewdocs.postgres.LO
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
@@ -96,7 +94,7 @@ trait FileUploadIteratee {
    * an error status if request is invalid or the valid OverviewUpload.
    * If start is 0, any previously uploaded data is truncated.
    */
-  private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadRequest): Option[Either[Result, OverviewUpload]] =
+  private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadRequest): Option[Either[Result, OverviewUpload]] = {
     findUpload(userId, guid).map(u =>
       info.start match {
         case 0 => Right(truncateUpload(u))
@@ -106,6 +104,7 @@ trait FileUploadIteratee {
           Left(BadRequest)
         }
       })
+  }
 
   // Find an existing upload attempt
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
@@ -125,45 +124,34 @@ trait FileUploadIteratee {
 }
 
 /** Implementation that writes to database */
-object FileUploadIteratee extends FileUploadIteratee {
-  
-  def findUpload(userId: Long, guid: UUID) = DeprecatedDatabase.inTransaction {
-    OverviewUpload.find(userId, guid)
-  }
+object FileUploadIteratee extends FileUploadIteratee with HasBlockingDatabase {
+  import database.api._
+
+  def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)
 
   def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload = {
-    DeprecatedDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
-      LO.withLargeObject { lo =>
-        OverviewUpload(userId, guid, contentDisposition, contentType, contentLength, lo.oid).save
-      }
-    }
+    val loid = blockingDatabase.run(database.largeObjectManager.create.transactionally)
+    OverviewUpload(userId, guid, contentDisposition, contentType, contentLength, loid).save
   }
 
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = {
-    DeprecatedDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
-      LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
-    }
+    blockingDatabase.run((for {
+      lo <- database.largeObjectManager.open(upload.contentsOid, LargeObject.Mode.ReadWrite)
+      _ <- lo.seek(upload.uploadedFile.size, LargeObject.Seek.Set)
+      _ <- lo.write(chunk)
+    } yield ()).transactionally)
+    upload.withUploadedBytes(upload.uploadedFile.size + chunk.size).save
   }
 
   def truncateUpload(upload: OverviewUpload): OverviewUpload = {
-    DeprecatedDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
-      LO.withLargeObject(upload.contentsOid) { lo =>
-        lo.truncate
-        upload.truncate.save
-      }
-    }
+    blockingDatabase.runUnit(database.largeObjectManager.truncate(upload.contentsOid).transactionally)
+    upload.withUploadedBytes(0).save
   }
 
   def cancelUpload(upload: OverviewUpload) = {
-    DeprecatedDatabase.inTransaction {
-      implicit val pgConnection: PGConnection = DeprecatedDatabase.currentConnection.unwrap(classOf[PGConnection])
-      LO.delete(upload.contentsOid)
-      upload.uploadedFile.delete
-      upload.delete
-    }
+    blockingDatabase.run(database.largeObjectManager.unlink(upload.contentsOid).transactionally)
+    upload.uploadedFile.delete
+    upload.delete
   }
 }
 
