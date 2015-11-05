@@ -15,6 +15,24 @@ import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.models.tables.{DocumentSets,FileGroups}
 import com.overviewdocs.util.Logger
 
+class DocumentSetWorkerKiller extends Actor {
+  private val logger = Logger.forClass(getClass)
+
+  override def receive = {
+    case UnhandledMessage(message, sender, recipient) => {
+      logger.error("Unhandled message from {} to {}: {}", sender, recipient, message)
+      if (message.isInstanceOf[Exception]) {
+        message.asInstanceOf[Exception].printStackTrace()
+      }
+      System.exit(-1)
+    }
+  }
+}
+
+object DocumentSetWorkerKiller {
+  def props: Props = Props(new DocumentSetWorkerKiller)
+}
+
 /** Main app: starts up actors and listens for messages.
   */
 object DocumentSetWorker extends App {
@@ -25,23 +43,26 @@ object DocumentSetWorker extends App {
   // Connect to the database
   DB.dataSource
 
-  implicit val system = ActorSystem(WorkerActorSystemName)
+  val system = ActorSystem(WorkerActorSystemName)
+  system.eventStream.subscribe(
+    system.actorOf(DocumentSetWorkerKiller.props, "DocumentSetWorkerKiller"),
+    classOf[UnhandledMessage]
+  )
+
   val actorCareTaker = system.actorOf(Props(classOf[ActorCareTaker], FileGroupJobQueueName, FileRemovalQueueName), "supervised")
 }
 
-/**
- * Supervisor for the actors.
- * Creates the connection hosting the message queues, and tells
- * clients to register for connection status messages.
- * If an error occurs at this level, we assume that something catastrophic has occurred.
- * All actors get killed, and the process exits.
- */
 class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String) extends Actor with HasDatabase {
   private val logger = Logger.forClass(getClass)
 
+  override def receive = {
+    // Really, this class shouldn't exist. It doesn't need any messages.
+    case Unit => {}
+  }
+
   // FileGroup removal background worker
-  private val fileGroupCleaner = createMonitoredActor(FileGroupCleaner(), "FileGroupCleaner")
-  private val fileGroupRemovalRequestQueue = createMonitoredActor(FileGroupRemovalRequestQueue(fileGroupCleaner), "FileGroupRemovalRequestQueue")
+  private val fileGroupCleaner = context.actorOf(FileGroupCleaner(), "FileGroupCleaner")
+  private val fileGroupRemovalRequestQueue = context.actorOf(FileGroupRemovalRequestQueue(fileGroupCleaner), "FileGroupRemovalRequestQueue")
 
   // deletedFileGroupRemover is not monitored, because it requests removals for
   // deleted FileGroups on startup, and then terminates.
@@ -50,9 +71,9 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   }
 
   // File removal background worker      
-  private val fileCleaner = createMonitoredActor(FileCleaner(), "FileCleaner")
-  private val deletedFileRemover = createMonitoredActor(DeletedFileCleaner(fileCleaner), "DeletedFileCleaner")
-  private val fileRemovalQueue = createMonitoredActor(FileRemovalRequestQueue(deletedFileRemover), fileRemovalQueueName)
+  private val fileCleaner = context.actorOf(FileCleaner(), "FileCleaner")
+  private val deletedFileRemover = context.actorOf(DeletedFileCleaner(fileCleaner), "DeletedFileCleaner")
+  private val fileRemovalQueue = context.actorOf(FileRemovalRequestQueue(deletedFileRemover), fileRemovalQueueName)
 
   // DocumentSetCommandWorker
   //
@@ -62,46 +83,28 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   // sharded; one worker makes sense. Before increasing to multiple workers, be
   // sure to implement actual brokering in DocumentSetMessageBroker. Right now,
   // it won't serialize commands as it should.
-  private val documentSetMessageBroker = createMonitoredActor(DocumentSetMessageBroker.props, "DocumentSetMessageBroker")
+  private val documentSetMessageBroker = context.actorOf(DocumentSetMessageBroker.props, "DocumentSetMessageBroker")
   logger.info("Message broker path: {}", documentSetMessageBroker.toString)
 
-  private val documentIdSupplier = createMonitoredActor(DocumentIdSupplier(), "DocumentIdSupplier")
+  private val documentIdSupplier = context.actorOf(DocumentIdSupplier(), "DocumentIdSupplier")
   private val addDocumentsImpl = new AddDocumentsImpl(documentIdSupplier)
-  private val progressReporter = createMonitoredActor(ProgressReporter.props(addDocumentsImpl), "ProgressReporter")
+  private val progressReporter = context.actorOf(ProgressReporter.props(addDocumentsImpl), "ProgressReporter")
 
-  private val addDocumentsWorkBroker = createMonitoredActor(
+  private val addDocumentsWorkBroker = context.actorOf(
     AddDocumentsWorkBroker.props(progressReporter),
     "AddDocumentsWorkBroker"
   )
 
-  createMonitoredActor(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-1")
-  createMonitoredActor(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-2")
+  context.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-1")
+  context.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-2")
 
-  createMonitoredActor(
+  context.actorOf(
     DocumentSetCommandWorker.props(documentSetMessageBroker, addDocumentsWorkBroker, DocumentSetDeleter),
     "DocumentSetCommandWorker"
   )
 
   override def preStart: Unit = {
     resumeCommands(context.dispatcher)
-  }
-
-  /** Error? Die. On production, that will trigger restart. */
-  override def supervisorStrategy = OneForOneStrategy(0) {
-    case _ => Escalate
-  }
-
-  def receive = {
-    case Terminated(a) => {
-      logger.error("Unexpected shutdown")
-      context.system.shutdown
-      System.exit(-1)
-    }
-  }
-
-  private def createMonitoredActor(props: Props, name: String): ActorRef = {
-    val monitee = context.actorOf(props, name) // like manatee? get it?
-    context.watch(monitee)
   }
 
   /** Infers Commands from the database and sends them to documentSetMessageBroker

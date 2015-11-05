@@ -63,7 +63,7 @@ class DocumentSetCommandWorker(
             sendDone(documentSetId)
             sendReady
           }
-          case Failure(ex) => broker ! ex
+          case Failure(ex) => self ! ex
         }
       }
       case CancelJob(documentSetId, jobId) => {

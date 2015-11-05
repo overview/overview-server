@@ -1,6 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import akka.actor.{Actor,ActorRef,Props,Status}
+import akka.actor.{Actor,ActorRef,Props}
 import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Failure,Success}
 
@@ -71,7 +71,7 @@ class AddDocumentsWorker(
   private def startWork(work: => Future[Unit])(after: => Unit): Unit = {
     work.onComplete {
       case Success(()) => after
-      case Failure(ex) => broker ! Status.Failure(ex)
+      case Failure(ex) => self ! ex
     }
   }
 
