@@ -9,16 +9,10 @@ $ ->
     done = (data) ->
       $li.replaceWith(data.html)
 
-    state_description = (data) ->
-      if data.n_jobs_ahead_in_queue
-        i18n("views.DocumentSet._documentSet.jobs_to_process", data.n_jobs_ahead_in_queue)
-      else
-        data.state_description
-
     progress = (data) ->
       $li.find('progress').attr('value', data.percent_complete)
       $li.find('.state').text(data.state)
-      $li.find('.state-description').text(state_description(data))
+      $li.find('.state-description').text(data.state_description)
 
     refresh = ->
       ajax = $.ajax({

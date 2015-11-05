@@ -6,7 +6,6 @@ import org.joda.time.DateTimeZone
 import play.api.libs.json.{Json,JsValue}
 import scala.collection.mutable.Buffer
 
-import com.overviewdocs.tree.orm.{Tree=>BadTree}
 import com.overviewdocs.models.Tree
 
 object show {
@@ -25,21 +24,6 @@ object show {
     if (tree.importantWords.length > 0) buffer += ("importantWords" -> tree.importantWords)
 
     val creationData = buffer.map((x: (String,String)) => Json.arr(x._1, x._2))
-
-    Json.obj(
-      "type" -> "tree",
-      "id" -> tree.id,
-      "jobId" -> tree.jobId,
-      "nDocuments" -> tree.documentCount,
-      "title" -> tree.title,
-      "createdAt" -> dateToISO8601(tree.createdAt),
-      "creationData" -> creationData.toSeq
-    )
-  }
-
-  /** @deprecated("Use com.overviewdocs.models.Tree instead", "0.0.1") */
-  def apply(tree: BadTree): JsValue = {
-    val creationData = tree.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
 
     Json.obj(
       "type" -> "tree",
