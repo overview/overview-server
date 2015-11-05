@@ -125,14 +125,6 @@ object ApplicationBuild extends Build {
   lazy val common = project("common")
     .settings(libraryDependencies ++= Dependencies.commonDependencies)
 
-  lazy val upgrade20141210MovePages = Project("upgrade-2014-12-10-move-pages", file("upgrade/2014-12-10-move-pages"))
-    .settings(ourGlobalSettings: _*)
-    .settings(
-      resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
-      includeFilter in (Compile, resourceDirectory) := "application.conf"
-    )
-    .dependsOn(common % "test->test;compile->compile")
-
   lazy val upgrade20150119MoveFiles = Project("upgrade-2015-01-19-move-files", file("upgrade/2015-01-19-move-files"))
     .settings(ourGlobalSettings: _*)
     .settings(
