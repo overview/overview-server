@@ -35,7 +35,7 @@ trait DocumentSetController extends Controller {
      * there are usually only long-running jobs or no jobs on the index page.)
      */
     for {
-      jobs: Iterable[ImportJob] <- importJobBackend.indexByUser(request.user.email)
+      jobs: Seq[ImportJob] <- importJobBackend.indexByUser(request.user.email)
       documentSets: Page[DocumentSet] <- backend.indexPageByOwner(request.user.email, pageRequest)
     } yield {
       if (documentSets.pageInfo.total == 0) {
