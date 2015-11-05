@@ -1,7 +1,5 @@
 package com.overviewdocs.models
 
-import com.overviewdocs.tree.orm.{Tag=>DeprecatedTag}
-
 case class Tag(
   id: Long,
   documentSetId: Long,
@@ -12,8 +10,6 @@ case class Tag(
     name=attributes.name,
     color=attributes.color
   )
-
-  def toDeprecatedTag: DeprecatedTag = DeprecatedTag(documentSetId, name, color, id)
 }
 
 object Tag {
