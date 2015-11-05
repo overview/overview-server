@@ -10,17 +10,15 @@ import java.util.TimeZone
 import scala.annotation.tailrec
 import scala.util._
 import scala.util.control.NonFatal
+import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.overviewdocs.clone.CloneDocumentSet
+import com.overviewdocs.clone.DocumentSetCloner
 import com.overviewdocs.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
 import com.overviewdocs.database.{ DeprecatedDatabase, DB, HasBlockingDatabase }
-import com.overviewdocs.persistence.{ NodeWriter, PersistentDocumentSetCreationJob }
+import com.overviewdocs.persistence.NodeWriter
 import com.overviewdocs.persistence.TreeIdGenerator
-import com.overviewdocs.tree.DocumentSetCreationJobType
-import com.overviewdocs.tree.orm.DocumentSetCreationJobState
-import com.overviewdocs.tree.orm.stores.BaseStore
-import com.overviewdocs.models.{ DocumentSet, Tree }
-import com.overviewdocs.models.tables.{DocumentSets,Trees}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tree}
+import com.overviewdocs.models.tables.{DocumentSets,DocumentSetCreationJobs,Trees}
 import com.overviewdocs.util._
 import com.overviewdocs.util.Progress._
 
@@ -42,7 +40,7 @@ object JobHandler extends HasBlockingDatabase {
   private def startHandlingJobs: Unit = {
     val pollingInterval = 500 //milliseconds
 
-    restartInterruptedJobs
+    JobRestarter.restartInterruptedJobs
 
     while (true) {
       // Exit when the user enters Ctrl-D
@@ -60,28 +58,34 @@ object JobHandler extends HasBlockingDatabase {
 
   // Run each job currently listed in the database
   private def scanForJobs: Unit = {
-
-    val firstSubmittedJob: Option[PersistentDocumentSetCreationJob] = DeprecatedDatabase.inTransaction {
-      PersistentDocumentSetCreationJob.findFirstJobWithState(DocumentSetCreationJobState.NotStarted)
-    }
-
-    firstSubmittedJob.map { j =>
-      logger.info(s"Processing job: [${j.id}] ${j.documentSetId}")
-      handleSingleJob(j)
-      System.gc()
+    for {
+      maybeJob <- database.option(DocumentSetCreationJobs.filter(_.state === DocumentSetCreationJobState.NotStarted))
+    } yield {
+      maybeJob.foreach { job =>
+        logger.info("Processing job {}", job)
+        handleSingleJob(job)
+        System.gc() // FIXME remove. Why the heck is this here?
+      }
     }
   }
 
   // Run a single job
-  private def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
-    // Helper functions used to track progress and monitor/update job state
+  private def handleSingleJob(job: DocumentSetCreationJob): Unit = {
+    import database.api._
 
-    def checkCancellation(progress: Progress): Unit = DeprecatedDatabase.inTransaction(j.checkForCancellation)
+    var j = job // You can tell this is unmaintainable by the variable name.
+
+    def checkCancellation(progress: Progress): Unit = {
+      // Overwrite the Cancelled state
+      j = blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === job.id)).getOrElse(job.copy(state=DocumentSetCreationJobState.Cancelled))
+    }
 
     def updateJobState(progress: Progress): Unit = {
-      j.fractionComplete = progress.fraction
-      j.statusDescription = Some(progress.status.toString)
-      DeprecatedDatabase.inTransaction { j.update }
+      blockingDatabase.runUnit(sqlu"""
+        UPDATE document_set_creation_job
+        SET fraction_complete = ${progress.fraction}, status_description = ${progress.status.toString}
+        WHERE id = ${job.id}
+      """)
     }
 
     def logProgress(progress: Progress): Unit = {
@@ -98,9 +102,11 @@ object JobHandler extends HasBlockingDatabase {
     }
 
     try {
-      j.state = DocumentSetCreationJobState.InProgress
-      DeprecatedDatabase.inTransaction { j.update }
-      j.observeCancellation(deleteCancelledJob)
+      blockingDatabase.runUnit(sqlu"""
+        UPDATE document_set_creation_job
+        SET state = ${DocumentSetCreationJobState.InProgress.id}
+        WHERE id = ${job.id}
+      """)
 
       j.jobType match {
         case DocumentSetCreationJobType.Clone => handleCloneJob(j)
@@ -110,10 +116,15 @@ object JobHandler extends HasBlockingDatabase {
       logger.info(s"Cleaning up job ${j.documentSetId}")
       blockingDatabase.runUnit(sqlu"""
         WITH a AS (
+          SELECT lo_unlink(contents_oid)
+          FROM document_set_creation_job
+          WHERE document_set_id = ${job.documentSetId}
+            AND contents_oid IS NOT NULL
+        ), b AS (
           DELETE FROM document_set_creation_job_node
-          WHERE document_set_creation_job_id = ${j.id}
+          WHERE document_set_creation_job_id = ${job.id}
         )
-        DELETE FROM document_set_creation_job WHERE id = ${j.id}
+        DELETE FROM document_set_creation_job WHERE id = ${job.id}
       """)
     } catch {
       case e: Exception => reportError(j, e)
@@ -124,7 +135,7 @@ object JobHandler extends HasBlockingDatabase {
     }
   }
 
-  private def handleCreationJob(job: PersistentDocumentSetCreationJob, progressFn: ProgressAbortFn): Unit = {
+  private def handleCreationJob(job: DocumentSetCreationJob, progressFn: ProgressAbortFn): Unit = {
     val documentSet = findDocumentSet(job.documentSetId)
 
     def documentSetInfo(documentSet: Option[DocumentSet]): String = documentSet.map { ds =>
@@ -152,9 +163,11 @@ object JobHandler extends HasBlockingDatabase {
       val numberOfDocuments = producer.produce()
 
       if (job.state != DocumentSetCreationJobState.Cancelled) {
-        if (job.jobType == DocumentSetCreationJobType.Recluster)
+        if (job.jobType == DocumentSetCreationJobType.Recluster) {
           createTree(treeId, nodeWriter.rootNodeId, ds, numberOfDocuments, job)
-        else submitClusteringJob(ds.id)
+        } else {
+          submitClusteringJob(job)
+        }
       }
 
       val t3 = System.currentTimeMillis()
@@ -162,19 +175,8 @@ object JobHandler extends HasBlockingDatabase {
     }
   }
 
-  private def handleCloneJob(job: PersistentDocumentSetCreationJob): Unit = {
-    import com.overviewdocs.clone.{ JobProgressLogger, JobProgressReporter }
-
-    val jobProgressReporter = new JobProgressReporter(job)
-    val progressObservers: Seq[Progress => Unit] = Seq(
-      jobProgressReporter.updateStatus _,
-      JobProgressLogger.apply(job.documentSetId, _: Progress))
-
-    job.sourceDocumentSetId.map { sourceDocumentSetId =>
-      logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
-      CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
-      verifySourceStillExists(sourceDocumentSetId)
-    }
+  private def handleCloneJob(job: DocumentSetCreationJob): Unit = {
+    DocumentSetCloner.run(job)
   }
 
   // If source document set has been deleted during the cloning process
@@ -193,43 +195,21 @@ object JobHandler extends HasBlockingDatabase {
     }
   }
 
-  private def restartInterruptedJobs: Unit = JobRestarter.restartInterruptedJobs
-
-  private def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
+  private def reportError(job: DocumentSetCreationJob, t: Throwable): Unit = {
     import database.api._
-    import database.executionContext
 
-    logger.info("Deleting cancelled job {} for DocumentSet {}", job.id, job.documentSetId)
-
-    blockingDatabase.runUnit(sqlu"""
-      WITH a AS (
-        SELECT lo_unlink(contents_oid)
-        FROM document_set_creation_job
-        WHERE document_set_id = ${job.documentSetId}
-          AND contents_oid IS NOT NULL
-      ), b AS (
-        DELETE FROM document_set_creation_job_node
-        WHERE document_set_creation_job_id = ${job.id}
-      )
-      DELETE FROM document_set_creation_job WHERE id = ${job.id}
-    """)
-  }
-
-  private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
     t match {
       case e: DisplayedError => logger.info("Handled error for DocumentSet {} creation: {}", job.documentSetId, e)
       case NonFatal(e) => {
-        logger.warn("Evil error for DocumentSet {} creation: {}", job.documentSetId, e)
-        logger.error("Evil error details:", e)
+        logger.error("Evil error for DocumentSet {} creation: {}", job.documentSetId, e)
       }
     }
 
-    job.state = DocumentSetCreationJobState.Error
-    job.statusDescription = Some(ExceptionStatusMessage(t))
-    DeprecatedDatabase.inTransaction {
-      job.update
-      if (job.state == DocumentSetCreationJobState.Cancelled) job.delete
-    }
+    blockingDatabase.runUnit(sqlu"""
+      UPDATE document_set_creation_job
+      SET state = ${DocumentSetCreationJobState.Cancelled.id}
+      WHERE job.id = ${job.id}
+    """)
   }
 
   private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
@@ -237,7 +217,7 @@ object JobHandler extends HasBlockingDatabase {
   }
 
   private def createTree(treeId: Long, rootNodeId: Long, documentSet: DocumentSet,
-                         numberOfDocuments: Int, job: PersistentDocumentSetCreationJob): Unit = {
+                         numberOfDocuments: Int, job: DocumentSetCreationJob): Unit = {
     blockingDatabase.runUnit(Trees.+=(Tree(
       id = treeId,
       documentSetId = documentSet.id,
@@ -247,41 +227,38 @@ object JobHandler extends HasBlockingDatabase {
       documentCount = numberOfDocuments,
       lang = job.lang,
       description = job.treeDescription.getOrElse(""),
-      suppliedStopWords = job.suppliedStopWords.getOrElse(""),
-      importantWords = job.importantWords.getOrElse(""),
+      suppliedStopWords = job.suppliedStopWords,
+      importantWords = job.importantWords,
       createdAt = new java.sql.Timestamp(System.currentTimeMillis)
     )))
   }
 
   // FIXME: Submitting jobs, along with creating documents should move into documentset-worker
-  private def submitClusteringJob(documentSetId: Long): Unit = DeprecatedDatabase.inTransaction {
+  private def submitClusteringJob(job: DocumentSetCreationJob): Unit = {
     import database.api._
-    import com.overviewdocs.postgres.SquerylEntrypoint._
-    import com.overviewdocs.persistence.orm.Schema.documentSetCreationJobs
-    import com.overviewdocs.tree.orm.finders.DocumentSetComponentFinder
-    import com.overviewdocs.tree.orm.DocumentSetCreationJob
 
-    val documentSetCreationJobStore = BaseStore(documentSetCreationJobs)
-    val documentSetCreationJobFinder = DocumentSetComponentFinder(documentSetCreationJobs)
-
-    for {
-      documentSet <- blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
-      job <- documentSetCreationJobFinder.byDocumentSet(documentSetId).forUpdate.headOption if (job.state != DocumentSetCreationJobState.Cancelled)
-    } {
-      val clusteringJob = DocumentSetCreationJob(
-        documentSetId = documentSet.id,
-        treeTitle = Some("Tree"), // FIXME: Translate by making treeTitle come from a job
-        jobType = DocumentSetCreationJobType.Recluster,
-        lang = job.lang,
-        suppliedStopWords = job.suppliedStopWords,
-        importantWords = job.importantWords,
-        contentsOid = job.contentsOid, // FIXME: should be deleted when we delete original job
-        splitDocuments = job.splitDocuments,
-        state = DocumentSetCreationJobState.NotStarted)
-
-      documentSetCreationJobStore.insertOrUpdate(clusteringJob)
-      documentSetCreationJobStore.delete(job.id)
-    }
+    blockingDatabase.run((for {
+      _ <- DocumentSetCreationJobs.filter(_.id === job.id).delete
+      _ <- DocumentSetCreationJobs.map(_.createAttributes).+=(DocumentSetCreationJob.CreateAttributes(
+        documentSetId=job.documentSetId,
+        jobType=DocumentSetCreationJobType.Recluster,
+        retryAttempts=0,
+        lang=job.lang,
+        suppliedStopWords=job.suppliedStopWords,
+        importantWords=job.importantWords,
+        splitDocuments=job.splitDocuments,
+        documentcloudUsername=None,
+        documentcloudPassword=None,
+        contentsOid=None,
+        sourceDocumentSetId=None,
+        treeTitle=Some("Tree"), // FIXME translate by making treeTitle come from a job
+        treeDescription=job.treeDescription,
+        tagId=job.tagId,
+        state=DocumentSetCreationJobState.NotStarted,
+        fractionComplete=0,
+        statusDescription="",
+        canBeCancelled=true
+      ))
+    } yield ()).transactionally)
   }
-
 }

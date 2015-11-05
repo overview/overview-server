@@ -1,18 +1,22 @@
 package com.overviewdocs.clone
 
-object TagCloner {
+import com.overviewdocs.database.HasBlockingDatabase
 
+object TagCloner extends HasBlockingDatabase {
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Map[Long, Long] = {
-	import com.overviewdocs.persistence.orm.Schema
-	import com.overviewdocs.postgres.SquerylEntrypoint._
-	
-    val sourceTags = Schema.tags.where(t => t.documentSetId === sourceDocumentSetId)
-    val cloneIds = sourceTags.map { t =>
-      val clone = t.copy(id = 0, documentSetId = cloneDocumentSetId)  
-      Schema.tags.insert(clone)
-      clone.id
-	}
-	
-	sourceTags.map(_.id).zip(cloneIds).toMap
+    import database.api._
+
+    blockingDatabase.run(sql"""
+      WITH old_and_new AS (
+        SELECT id AS old_id, nextval('tag_id_seq'::regclass) AS new_id, name, color
+        FROM tag
+        WHERE document_set_id = $sourceDocumentSetId
+      ), x_new_rows AS (
+        INSERT INTO tag (id, document_set_id, name, color)
+        SELECT new_id, $cloneDocumentSetId, name, color
+        FROM old_and_new
+      )
+      SELECT old_id, new_id FROM old_and_new
+    """.as[(Long,Long)]).toMap
   }
 }

@@ -4,185 +4,74 @@ import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-import com.overviewdocs.database.DeprecatedDatabase
-import com.overviewdocs.persistence.PersistentDocumentSetCreationJob
-import com.overviewdocs.tree.orm.DocumentSetCreationJobState._
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.{DocumentSetCreationJob,DocumentSetCreationJobState}
 import com.overviewdocs.util.{ DocumentSetCreationJobStateDescription, Logger, SortedDocumentIdsRefresher }
 import com.overviewdocs.util.Progress.Progress
 import com.overviewdocs.util.DocumentSetCreationJobStateDescription._
 
-/**
- * The Procedure trait enables the specification of blocks of code
- * inside steps. A step verifies that the Procedure has not been cancelled
- * before executing the block, and notifies observers when the step is complete.
- *
- * Each step has parameters specifying the amount of progress being made and end
- * state.
- *
- * Nested steps within the same class could be handled with DynamicVariable.
- * Some progress parameter needs to be passed if steps are performed in different classes.
- */
-trait Procedure {
-  private var progressListeners: Seq[Progress => Unit] = Seq.empty
+object DocumentSetCloner extends HasBlockingDatabase {
+  private case object JobWasCancelled extends Throwable
+  private lazy val logger = Logger.forClass(getClass)
 
-  /**
-   *  If we want steps to be able to return values, we need to use Either to
-   *  handle the case when the Procedure has been cancelled.
-   *  It might be nice to parameterize the type of the Right returned.
-   */
-  def step[T](fraction: Double, state: DocumentSetCreationJobStateDescription)(block: => T): Either[T, Boolean] = {
-    if (!isCancelled) {
-      val result = block
-      progressListeners.foreach(_(Progress(fraction, state)))
-      Left(result)
-    } else Right(false)
+  /** Updates the document_set_creation_job with the latest progress; throws
+    * JobWasCancelled if we are to skip the remaining steps.
+    *
+    * (Basically, it implements goto.)
+    */
+  private def reportProgressAndCheckContinue(job: DocumentSetCreationJob, progress: Double): Unit = {
+    import database.api._
+
+    logger.info("Job {} cloning {} to {}: {}%% done", job.id, job.sourceDocumentSetId.get, job.documentSetId, progress)
+    val cancelled = blockingDatabase.option(sql"""
+      UPDATE document_set_creation_job
+      SET
+        fraction_complete = $progress,
+        status_description = 'saving_document_tree'
+      WHERE id = ${job.id}
+      RETURNING state = ${DocumentSetCreationJobState.Cancelled.id}
+    """.as[Boolean]).getOrElse(true)
+
+    if (cancelled) throw JobWasCancelled
   }
 
-  def stepInTransaction[T](fraction: Double, state: DocumentSetCreationJobStateDescription)(block: => T): Either[T, Boolean] =
-    DeprecatedDatabase.inTransaction(step(fraction, state)(block))
+  /** Clones the document set and returns.
+    *
+    * If the job is cancelled partway, returns early.
+    */
+  def run(job: DocumentSetCreationJob): Unit = {
+    val sourceId: Long = job.sourceDocumentSetId.get
+    val cloneId: Long = job.documentSetId
 
-  /**
-   * Set observers to be notified at the completion of each step.
-   * We could also pass in the Procedure itself in the notification
-   */
-  def observeSteps(notificationFunctions: Seq[Progress => Unit]) {
-    progressListeners = notificationFunctions
-  }
+    logger.info("Job {} cloning {} to {}: starting", job.id, sourceId, cloneId)
 
-  /** Subclasses decide how to determine if the Procedure is cancelled */
-  protected def isCancelled: Boolean
-}
+    try {
+      DocumentCloner.clone(sourceId, cloneId)
+      reportProgressAndCheckContinue(job, 0.10)
 
-/**
- * DocumentSetCreationJobProcedure checks the state of the job
- * to determine cancellation state.
- */
-trait DocumentSetCreationJobProcedure extends Procedure {
-  val job: PersistentDocumentSetCreationJob
+      Await.result(DocumentSetIndexer.indexDocuments(cloneId), Duration.Inf)
+      reportProgressAndCheckContinue(job, 0.20)
 
-  override protected def isCancelled: Boolean = {
-    // again, assume we're in a transaction (see comment below)
-    job.update
-    job.state == Cancelled
-  }
-}
+      Await.result(SortedDocumentIdsRefresher.refreshDocumentSet(cloneId), Duration.Inf)
+      reportProgressAndCheckContinue(job, 0.30)
 
-// -------
+      NodeCloner.clone(sourceId, cloneId)
+      TreeCloner.clone(sourceId, cloneId)
+      reportProgressAndCheckContinue(job, 0.50)
 
-/**
- * Observer that updates the job state in the database after each
- * step is complete.
- */
-class JobProgressReporter(job: PersistentDocumentSetCreationJob) {
-  def updateStatus(progress: Progress) {
-    job.fractionComplete = progress.fraction
-    job.statusDescription = Some(progress.status.toString)
-    // Can't handle nested transactions yet, so assume we are always in a transaction
-    job.update
-    // Eventually we can do:
-    // DeprecatedDatabase.inTransaction(job.update)
-  }
-}
+      val tagIdMapping: Map[Long,Long] = TagCloner.clone(sourceId, cloneId)
+      reportProgressAndCheckContinue(job, 0.60)
 
-/**
- * Observer that Logs the status. Having access to the Procedure would allow
- * it to report that a job has been cancelled.
- */
-object JobProgressLogger {
-  private val logger = Logger.forClass(CloneDocumentSet.getClass)
+      DocumentTagCloner.clone(sourceId, cloneId, tagIdMapping)
+      reportProgressAndCheckContinue(job, 0.70)
 
-  def apply(documentSetId: Long, progress: Progress) {
-    logger.info("[%d] PROGRESS: %f%% done. %s".format(documentSetId, progress.fraction * 100, progress.status.toString))
-  }
-}
+      DocumentProcessingErrorCloner.clone(sourceId, cloneId)
+      reportProgressAndCheckContinue(job, 0.80)
 
-// --------
-
-/**
- * The Procedure for cloning a document set
- */
-trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
-
-  type DocumentIdMap = Map[Long, Long]
-  type NodeIdMap = Map[Long, Long]
-  type TagIdMap = Map[Long, Long]
-
-  val cloneDocuments: (Long, Long) => Unit
-  val cloneNodes: (Long, Long) => Unit
-  val cloneTags: (Long, Long) => TagIdMap
-
-  val cloneDocumentProcessingErrors: (Long, Long) => Unit
-
-  val cloneTrees: (Long, Long) => Unit
-  val cloneNodeDocuments: (Long, Long) => Unit
-  val cloneDocumentTags: (Long, Long, TagIdMap) => Unit
-  val refreshSortedDocumentIds: (Long) => Unit
-
-  val indexDocuments: (Long) => Future[Unit]
-
-  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) {
-
-    // We need the for comprehension to capture the values of the initial steps
-    // Having to reference the 'left' explicitly is a bit ugly.
-    // The alternative would be to not return values from a step, and instead 
-    // nest the step scopes (which would be even uglier)
-
-    stepInTransaction(0.10, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
-    val indexing = stepInTransaction(0.20, Saving)(indexDocuments(cloneDocumentSetId))
-    stepInTransaction(0.30, Saving)(refreshSortedDocumentIds(cloneDocumentSetId))
-    stepInTransaction(0.40, Saving) {
-      cloneNodes(sourceDocumentSetId, cloneDocumentSetId)
-      cloneTrees(sourceDocumentSetId, cloneDocumentSetId)
+      NodeDocumentCloner.clone(sourceId, cloneId)
+      reportProgressAndCheckContinue(job, 0.99)
+    } catch {
+      case JobWasCancelled => {}
     }
-
-    for (tagIdMapping <- stepInTransaction(0.60, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
-      stepInTransaction(0.70, Saving) {
-        cloneDocumentTags(sourceDocumentSetId, cloneDocumentSetId, tagIdMapping)
-      }
-
-    stepInTransaction(0.80, Saving) {
-      cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
-    }
-    stepInTransaction(0.90, Saving) {
-      cloneNodeDocuments(sourceDocumentSetId, cloneDocumentSetId)
-    }
-    stepInTransaction(1.00, Done) {
-      indexing.left.map { f =>
-        Await.result(f, Duration.Inf)
-      }
-    }
-  }
-
-}
-
-// -------
-
-/**
- * Implements specific cloning methods for each component
- * If we want to track progress within each step, then DocumentClone, NodeCloner, etc.
- * would also have to be Procedures that would be passed some parameter so progress
- * could be shared across objects.
- */
-object CloneDocumentSet {
-
-  def apply(sourceDocumentSetId: Long, cloneDocumentSetId: Long, cloneJob: PersistentDocumentSetCreationJob, progressObservers: Seq[Progress => Unit]) {
-    val cloner = new DocumentSetCloner {
-      override val job = cloneJob
-      override val cloneDocuments = DocumentCloner.clone _
-      override val cloneNodes = NodeCloner.clone _
-      override val cloneTags = TagCloner.clone _
-
-      override val cloneDocumentProcessingErrors = DocumentProcessingErrorCloner.clone _
-      override val cloneTrees = TreeCloner.clone _
-      override val cloneNodeDocuments = NodeDocumentCloner.clone _
-      override val cloneDocumentTags = DocumentTagCloner.clone _
-      override val refreshSortedDocumentIds = (documentSetId: Long) => {
-        Await.result(SortedDocumentIdsRefresher.refreshDocumentSet(documentSetId), Duration.Inf)
-      }
-
-      override val indexDocuments = DocumentSetIndexer.indexDocuments _
-    }
-    cloner.observeSteps(progressObservers)
-    cloner.clone(sourceDocumentSetId, cloneDocumentSetId)
   }
 }

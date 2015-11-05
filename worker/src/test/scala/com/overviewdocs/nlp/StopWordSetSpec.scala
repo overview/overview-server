@@ -7,13 +7,13 @@ class StopWordSetSpec extends Specification {
   "StopWordSet" should {
     
     "default to English stopwords file if language is empty or unknown" in {
-      val stopwords: Set[String] = StopWordSet("", None)
+      val stopwords: Set[String] = StopWordSet("", "")
       
       stopwords must contain("the")
     }
     
     "read known stopwords file" in {
-      val stopWords: Set[String] = StopWordSet("sv", None)
+      val stopWords: Set[String] = StopWordSet("sv", "")
       
       stopWords must contain("och")
     }
@@ -23,7 +23,7 @@ class StopWordSetSpec extends Specification {
      
       val suppliedStopWordsString = s"  $word1\t  $word2\n\n$word3,$word4\n"
       
-      val stopWords: Set[String] = StopWordSet("en", Some(suppliedStopWordsString))
+      val stopWords: Set[String] = StopWordSet("en", suppliedStopWordsString)
       
       stopWords must contain(word1, word2, word3, word4)
     }
@@ -31,7 +31,7 @@ class StopWordSetSpec extends Specification {
     "convert supplied stopwords to lowercase" in {
       val stopWord = "STOPWORD"
         
-      val stopWords: Set[String] = StopWordSet("en", Some(stopWord))
+      val stopWords: Set[String] = StopWordSet("en", stopWord)
       
       stopWords must contain(stopWord.toLowerCase)
     }
@@ -40,7 +40,7 @@ class StopWordSetSpec extends Specification {
       val (word1, word2, word3) = ("qapla'", "7-of-9", "engage")
       val stopWordString = s"""$word1! ($word2) "$word3""""
       
-      val stopWords: Set[String] = StopWordSet("en", Some(stopWordString))
+      val stopWords: Set[String] = StopWordSet("en", stopWordString)
       
       stopWords must contain(word1, word2, word3)
     }

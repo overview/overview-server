@@ -8,9 +8,7 @@ package com.overviewdocs.util
 
 import com.overviewdocs.csv.CsvImportDocumentProducer
 import com.overviewdocs.http.{Credentials, DocumentCloudDocumentProducer}
-import com.overviewdocs.models.DocumentSet
-import com.overviewdocs.tree.DocumentSetCreationJobType
-import com.overviewdocs.persistence.PersistentDocumentSetCreationJob
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobType}
 import com.overviewdocs.reclustering.ReclusteringDocumentProducer
 import com.overviewdocs.util.Progress.ProgressAbortFn
 
@@ -45,14 +43,14 @@ object DocumentProducerFactory {
   private val MaxDocuments = Configuration.getInt("max_documents")
 
   /** Return a DocumentProducer based on the DocumentSet type */
-  def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
+  def create(documentSetCreationJob: DocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
     progAbort: ProgressAbortFn): DocumentProducer = {
 
     documentSetCreationJob.jobType match {
       case DocumentSetCreationJobType.DocumentCloud =>
         val credentials = for {
-          username <- documentSetCreationJob.documentCloudUsername
-          password <- documentSetCreationJob.documentCloudPassword
+          username <- documentSetCreationJob.documentcloudUsername
+          password <- documentSetCreationJob.documentcloudPassword
         } yield Credentials(username, password)
 
         new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, progAbort)

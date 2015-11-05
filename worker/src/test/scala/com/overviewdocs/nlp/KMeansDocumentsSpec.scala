@@ -22,7 +22,7 @@ class KMeansDocumentsSpec extends Specification {
     val vectorGen = new UnigramDocumentVectorGenerator()
     val filenames =  new File("src/test/resources/docs").listFiles.sorted
     filenames foreach { filename =>
-      vectorGen.addDocument(filename.hashCode, Lexer.makeTerms(io.Source.fromFile(filename).mkString, StopWordSet("en", None)))
+      vectorGen.addDocument(filename.hashCode, Lexer.makeTerms(io.Source.fromFile(filename).mkString, StopWordSet("en", "")))
     }
     vectorGen.documentVectors()
   }

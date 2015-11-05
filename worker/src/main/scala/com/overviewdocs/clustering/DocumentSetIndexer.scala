@@ -28,7 +28,7 @@ import com.overviewdocs.nlp.StopWordSet
 // multiply weight of any word matching emphasizedWordsRegex
 class DocumentSetIndexerOptions(
     val lang: String = "en",
-    val suppliedStopWords: Option[String] = None,
+    val suppliedStopWords: String = "",
     val emphasizedWordsRegex: Map[String, TermWeight] = Map.empty) {
   // Tokenization
 
@@ -44,16 +44,12 @@ class DocumentSetIndexerOptions(
 object DocumentSetIndexerOptions {
   // Converts "important words" options string into a map of regex->weight
   // splits on runs of spaces, fixed weight
-  private def makeEmphasizedWords(s: Option[String]): Map[String, TermWeight] = {
-    if (s.isEmpty) {
-      Map[String, TermWeight]()
-    } else {
-      val extraWeight: TermWeight = 5
-      "[ \t\n\r\u00A0]+".r.replaceAllIn(s.get, " ").split(' ').filter(!_.isEmpty).map(w => (w, extraWeight)).toMap
-    }
+  private def makeEmphasizedWords(s: String): Map[String, TermWeight] = {
+    val extraWeight: TermWeight = 5
+    "[ \t\n\r\u00A0]+".r.replaceAllIn(s, " ").split(' ').filter(!_.isEmpty).map(w => (w, extraWeight)).toMap
   }
 
-  def apply(lang: String, suppliedStopWords: Option[String], importantWords: Option[String]): DocumentSetIndexerOptions = {
+  def apply(lang: String, suppliedStopWords: String, importantWords: String): DocumentSetIndexerOptions = {
     val options = new DocumentSetIndexerOptions(lang, suppliedStopWords, makeEmphasizedWords(importantWords))
     options
   }

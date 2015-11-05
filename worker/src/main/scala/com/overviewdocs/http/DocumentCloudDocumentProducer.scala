@@ -13,23 +13,27 @@ import scala.language.postfixOps
 import scala.concurrent.{Await,Future,Promise,blocking}
 import scala.concurrent.duration._
 
-import com.overviewdocs.database.DeprecatedDatabase
+import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.documentcloud.{Document => RetrievedDocument, _ }
 import com.overviewdocs.documentcloud.ImporterProtocol._
-import com.overviewdocs.models.Document
-import com.overviewdocs.models.DocumentDisplayMethod
-import com.overviewdocs.persistence._
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentSetCreationJob,DocumentSetCreationJobState}
+import com.overviewdocs.persistence.{DocRetrievalErrorWriter,DocumentSetIdGenerator,PersistentDocumentSet}
 import com.overviewdocs.searchindex.TransportIndexClient
-import com.overviewdocs.tree.orm.DocumentSetCreationJobState.Cancelled
 import com.overviewdocs.util.{BulkDocumentWriter,Configuration,DocumentProducer,Logger,WorkerActorSystem}
 import com.overviewdocs.util.DocumentSetCreationJobStateDescription.Retrieving
 import com.overviewdocs.util.Progress.{Progress, ProgressAbortFn}
 
 /** Feeds the documents from sourceDocList to the consumer */
-class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int,
-  progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
+class DocumentCloudDocumentProducer(
+  job: DocumentSetCreationJob,
+  query: String,
+  credentials: Option[Credentials],
+  maxDocuments: Int,
+  progAbort: ProgressAbortFn
+) extends DocumentProducer with PersistentDocumentSet with HasBlockingDatabase {
 
   private val logger: Logger = Logger.forClass(this.getClass)
+  private var aborting: Boolean = false
 
   private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
   private val DocumentCloudUrl = Configuration.getString("documentcloud_url")
@@ -91,7 +95,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
       numDocs += 1
 
-      if (job.state == Cancelled) shutdownActors
+      if (aborting) shutdownActors
     }
 
     WorkerActorSystem.withActorSystem { implicit context =>
@@ -130,9 +134,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         importer ! StartImport()
         result = Await.result(importResult.future, Duration.Inf)
         logger.info("Failed to retrieve " + result.failedRetrievals.length + " documents")
-        DeprecatedDatabase.inTransaction {
-          DocRetrievalErrorWriter.write(documentSetId, result.failedRetrievals)
-        }
+        DocRetrievalErrorWriter.write(documentSetId, result.failedRetrievals)
       } catch {
         case t: Throwable if (t.getCause() != null) => throw t.getCause()
         case t: Throwable => throw t
@@ -152,7 +154,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   }
 
   private def updateRetrievalProgress(retrieved: Int, total: Int): Unit = {
-    progAbort(Progress(retrieved * FetchingFraction / total, Retrieving(retrieved, total)))
+    aborting = progAbort(Progress(retrieved * FetchingFraction / total, Retrieving(retrieved, total)))
   }
 
   private def shutdownActors(implicit context: ActorSystem): Unit = {

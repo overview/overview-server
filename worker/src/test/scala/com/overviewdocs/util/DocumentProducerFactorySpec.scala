@@ -4,10 +4,9 @@ import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 
-import com.overviewdocs.http.DocumentCloudDocumentProducer
-import com.overviewdocs.persistence.PersistentDocumentSetCreationJob
 import com.overviewdocs.csv.CsvImportDocumentProducer
-import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.http.DocumentCloudDocumentProducer
+import com.overviewdocs.models.{DocumentSetCreationJob,DocumentSetCreationJobType}
 
 class DocumentProducerFactorySpec extends Specification with Mockito {
   "DocumentProducerFactory" should {
@@ -15,9 +14,9 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
       val factory = com.overviewdocs.test.factories.PodoFactory
 
       val consumer = smartMock[DocumentConsumer]
-      val documentSetCreationJob = smartMock[PersistentDocumentSetCreationJob]
-      documentSetCreationJob.documentCloudUsername returns None
-      documentSetCreationJob.documentCloudPassword returns None
+      val documentSetCreationJob = smartMock[DocumentSetCreationJob]
+      documentSetCreationJob.documentcloudUsername returns None
+      documentSetCreationJob.documentcloudPassword returns None
     }
 
     "create a DocumentCloudDocumentProducer" in new BaseScope {

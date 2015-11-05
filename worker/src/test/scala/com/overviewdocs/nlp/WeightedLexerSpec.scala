@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 import com.overviewdocs.util.DisplayedError
 
 class WeightedLexerSpec extends Specification {
-  val stopWords = StopWordSet("en", None)
+  val stopWords = StopWordSet("en", "")
 
   def makeWeightedTermSeq(s:Seq[(String,TermWeight)]) = s map { case (t,w) => WeightedTermString(t,w) }
 

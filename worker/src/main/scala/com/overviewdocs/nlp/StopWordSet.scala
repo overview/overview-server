@@ -9,7 +9,7 @@ object StopWordSet {
   private val DefaultStopWordsFile: String = "/stopwords-en.csv"
   private val EmptyStopWordsStream: InputStream = new ByteArrayInputStream(Array.empty)
 
-  def apply(lang: String, suppliedStopWordString: Option[String]): Set[String] = {
+  def apply(lang: String, suppliedStopWordString: String): Set[String] = {
     val stopWordLines = io.Source.fromInputStream(stopWordsFile(lang))(io.Codec.UTF8).getLines
     val suppliedStopWords = extractStopWords(suppliedStopWordString)
     
@@ -28,14 +28,13 @@ object StopWordSet {
 
   private def fileAsStream(filename: String): InputStream = getClass.getResourceAsStream(filename)
 
-  private def extractStopWords(wordString: Option[String]): Set[String] = wordString.map { s =>
+  private def extractStopWords(wordString: String): Set[String] = {
     val separators = """[\s\u00A0,]+""".r
     val allowedPunctuation = "-'"
     def allowedChar(c: Char): Boolean = c.isDigit || c.isLetter || allowedPunctuation.contains(c)
 
-    val words = separators.split(s.trim).toSet
+    val words = separators.split(wordString.trim).toSet
     
     words.map(_.filter(allowedChar).toLowerCase)
-  }.getOrElse(Set.empty[String])
-
+  }
 }
