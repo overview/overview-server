@@ -92,7 +92,7 @@ trait DocumentSetController extends Controller {
     })
   }
 
-  def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)).async {
+  def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async {
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {

@@ -3,18 +3,16 @@ package controllers
 import scala.annotation.tailrec
 
 import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.models.Tree
-import com.overviewdocs.models.tables.Trees
-import com.overviewdocs.tree.orm.Node
+import com.overviewdocs.models.{Node,Tree}
+import com.overviewdocs.models.tables.{Nodes,Trees}
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningTree
-import models.orm.finders.NodeFinder
 
 trait NodeController extends Controller {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
   val storage : NodeController.Storage
 
-  def index(treeId: Long) = AuthorizedAction.inTransaction(userOwningTree(treeId)) { implicit request =>
+  def index(treeId: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
     storage.findTree(treeId) match {
       case None => NotFound
       case Some(tree) => {
@@ -30,7 +28,7 @@ trait NodeController extends Controller {
     }
   }
 
-  def show(treeId: Long, id: Long) = AuthorizedAction.inTransaction(userOwningTree(treeId)) { implicit request =>
+  def show(treeId: Long, id: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
     val nodes = storage.findChildNodes(treeId, id)
 
     Ok(views.json.Node.index(nodes))
@@ -55,12 +53,11 @@ object NodeController extends NodeController {
   }
 
   override val storage = new Storage with HasBlockingDatabase {
+    import database.api._
+
     private def childrenOf(nodes: Iterable[Node]) : Iterable[Node] = {
       if (nodes.nonEmpty) {
-        val nodeIds = nodes.map(_.id)
-        NodeFinder
-          .byParentIds(nodeIds)
-          .map(_.copy()) // work around Squeryl bug
+        blockingDatabase.seq(Nodes.filter(_.parentId inSet nodes.map(_.id)))
       } else {
         Seq()
       }
@@ -78,18 +75,21 @@ object NodeController extends NodeController {
     }
 
     override def findRootNodes(treeId: Long, depth: Int) = {
-      val root : Iterable[Node] = NodeFinder.byTreeAndParent(treeId, None)
-        .map(_.copy()) // Squeryl bug
+      val root: Seq[Node] = blockingDatabase.seq(
+        Nodes.filter(_.id in Trees.filter(_.id === treeId).map(_.rootNodeId))
+      )
       addChildNodes(Seq(), root, depth)
     }
 
     override def findChildNodes(treeId: Long, parentNodeId: Long) = {
-      NodeFinder.byTreeAndParent(treeId, Some(parentNodeId))
-        .map(_.copy()) // Squeryl bug
+      blockingDatabase.seq(
+        Nodes
+          .filter(_.rootId in Trees.filter(_.id === treeId).map(_.rootNodeId))
+          .filter(_.parentId === parentNodeId)
+      )
     }
 
     override def findTree(treeId: Long) = {
-      import database.api._
       blockingDatabase.option(Trees.filter(_.id === treeId))
     }
   }

@@ -5,7 +5,7 @@ import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTimeZone
 import play.api.libs.json.{Json, JsValue}
 
-import com.overviewdocs.tree.orm.Node
+import com.overviewdocs.models.Node
 
 object index {
   private[Node] def writeNode(node: Node) : JsValue = {

@@ -25,14 +25,14 @@ trait TagController extends Controller {
     )
   }
 
-  def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def indexJson(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       tagsWithCounts <- tagBackend.indexWithCounts(documentSetId)
     } yield Ok(views.json.Tag.index.withCounts(tagsWithCounts))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  def indexCsv(documentSetId: Long) = AuthorizedAction.inTransaction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def indexCsv(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       tagsWithCounts <- tagBackend.indexWithCounts(documentSetId)
     } yield {
