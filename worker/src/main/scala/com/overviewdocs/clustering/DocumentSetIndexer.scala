@@ -10,9 +10,7 @@
 
 package com.overviewdocs.clustering
 
-import java.sql.Connection
-
-import com.overviewdocs.database.{ DeprecatedDatabase, DB }
+import com.overviewdocs.database.DB
 import com.overviewdocs.persistence.{ DocumentWriter, NodeWriter }
 import com.overviewdocs.util.{ DocumentConsumer, Logger }
 import com.overviewdocs.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
@@ -76,11 +74,9 @@ class DocumentSetIndexer(
     vectorGen.addDocumentWithWeightedTerms(documentId, lexer.makeTerms(text))
   }
 
-  private def addDocumentDescriptions(docVecs: DocumentSetVectors)(implicit c: Connection) {
-    DeprecatedDatabase.inTransaction {
-      for ((docId, vec) <- docVecs) {
-        DocumentWriter.updateDescription(docId, SuggestedTags.suggestedTagsForDocument(vec, docVecs))
-      }
+  private def addDocumentDescriptions(docVecs: DocumentSetVectors) {
+    for ((docId, vec) <- docVecs) {
+      DocumentWriter.updateDescription(docId, SuggestedTags.suggestedTagsForDocument(vec, docVecs))
     }
   }
 
@@ -105,11 +101,8 @@ class DocumentSetIndexer(
       // Save tree to database
       if (!progAbort(Progress(savingFraction, Saving))) {
         logger.logExecutionTime("Saved DocumentSet to database") {
-          DB.withConnection { implicit connection => addDocumentDescriptions(docVecs) }
-          DeprecatedDatabase.inTransaction {
-            implicit val connection = DeprecatedDatabase.currentConnection
-            nodeWriter.write(docTree)
-          }
+          addDocumentDescriptions(docVecs)
+          nodeWriter.write(docTree)
         }
         progAbort(Progress(1, Done))
       }

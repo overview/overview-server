@@ -1,6 +1,5 @@
 package com.overviewdocs.clone
 
-import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.models.tables.DocumentProcessingErrors
 import com.overviewdocs.test.DbSpecification
 
@@ -16,9 +15,7 @@ class DocumentProcessingErrorClonerSpec extends DbSpecification {
 
       val cloneDocumentSet = factory.documentSet()
 
-      DeprecatedDatabase.inTransaction {
-        DocumentProcessingErrorCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
-      }
+      DocumentProcessingErrorCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
 
       blockingDatabase.length(DocumentProcessingErrors.filter(_.documentSetId === cloneDocumentSet.id)) must beEqualTo(2)
     }

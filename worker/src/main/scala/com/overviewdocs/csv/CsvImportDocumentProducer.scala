@@ -10,7 +10,7 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.{Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
+import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{Document,DocumentTag,Tag,UploadedFile}
 import com.overviewdocs.models.tables.{Documents,DocumentSets,DocumentTags,Tags,UploadedFiles}

@@ -1,6 +1,5 @@
 package com.overviewdocs.clone
 
-import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.models.tables.Trees
 import com.overviewdocs.test.DbSpecification
 
@@ -27,9 +26,7 @@ class TreeClonerSpec extends DbSpecification {
         importantWords="importantwords"
       )
 
-      DeprecatedDatabase.inTransaction {
-        TreeCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
-      }
+      TreeCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
 
       val cloneTree = blockingDatabase.option(Trees.filter(_.documentSetId === cloneDocumentSet.id))
     }

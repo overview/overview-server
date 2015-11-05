@@ -1,6 +1,5 @@
 package com.overviewdocs.clone
 
-import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.models.tables.Tags
 import com.overviewdocs.test.DbSpecification
 
@@ -15,9 +14,7 @@ class TagClonerSpec extends DbSpecification {
 
       val sourceTags = Seq.tabulate(2)(i => factory.tag(documentSetId=sourceDocumentSet.id, name="tag-" + i))
 
-      val tagIdMapping = DeprecatedDatabase.inTransaction {
-        TagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
-      }
+      val tagIdMapping = TagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id)
 
       val cloneTags = blockingDatabase.seq(
         Tags

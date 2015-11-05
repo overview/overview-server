@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.overviewdocs.clone.DocumentSetCloner
 import com.overviewdocs.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
-import com.overviewdocs.database.{ DeprecatedDatabase, DB, HasBlockingDatabase }
+import com.overviewdocs.database.{DB, HasBlockingDatabase}
 import com.overviewdocs.persistence.NodeWriter
 import com.overviewdocs.persistence.TreeIdGenerator
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tree}

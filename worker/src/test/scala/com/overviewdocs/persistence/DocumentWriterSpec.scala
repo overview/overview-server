@@ -6,7 +6,6 @@
  */
 package com.overviewdocs.persistence
 
-import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.test.DbSpecification
 
 class DocumentWriterSpec extends DbSpecification {
