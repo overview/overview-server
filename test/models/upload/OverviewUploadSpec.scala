@@ -1,11 +1,10 @@
 package models.upload
 
-import helpers.DbTestContext
 import java.sql.Timestamp
 import java.util.UUID
 import org.postgresql.PGConnection
 
-import com.overviewdocs.postgres.LO
+import com.overviewdocs.database.LargeObject
 import com.overviewdocs.test.DbSpecification
 
 class OverviewUploadSpec extends DbSpecification {
@@ -25,17 +24,27 @@ class OverviewUploadSpec extends DbSpecification {
         VALUES (1, 'admin@overview-project.org', 2, '$2a$07$ZNI3MdA1MK7Td2w1EKpl5u38nll/MvlaRfZn0S8HLerNuP2hoD5JW', TIMESTAMP '1970-01-01 00:00:00', FALSE, FALSE);
       """)
 
-      connection.setAutoCommit(false) // for LO
+      def withLargeObject[A](block: Long => A): A = {
+        import database.api._
+
+        val loid = blockingDatabase.run(database.largeObjectManager.create.transactionally)
+
+        try {
+          block(loid)
+        } finally {
+          blockingDatabase.run(database.largeObjectManager.unlink(loid).transactionally)
+        }
+      }
     }
 
     "create uploadedFile" in new UploadContext {
-      LO.withLargeObject { lo =>
+      withLargeObject { loid =>
         val before = new Timestamp(System.currentTimeMillis)
-        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, lo.oid)
+        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, loid)
 
         upload.lastActivity.compareTo(before) must beGreaterThanOrEqualTo(0)
         upload.size must be equalTo (totalSize)
-        upload.contentsOid must be equalTo (lo.oid) 
+        upload.contentsOid must be equalTo (loid) 
         upload.uploadedFile.contentDisposition must be equalTo (contentDisposition)
         upload.uploadedFile.contentType must be equalTo (contentType)
         upload.uploadedFile.size must be equalTo (0)
@@ -44,24 +53,28 @@ class OverviewUploadSpec extends DbSpecification {
     }
 
     "update bytesUploaded" in new UploadContext {
-      LO.withLargeObject { lo =>
+      withLargeObject { loid =>
         val before = new Timestamp(System.currentTimeMillis)
-        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, lo.oid)
+        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, loid)
 
-        val uploadedSize = lo.add(chunk)
+        import database.api._
+        blockingDatabase.run((for {
+          lo <- database.largeObjectManager.open(loid, LargeObject.Mode.Write)
+          _ <- lo.write(chunk)
+        } yield ()).transactionally)
 
         val updateTime = new Timestamp(System.currentTimeMillis)
-        val updatedUpload = upload.withUploadedBytes(uploadedSize)
+        val updatedUpload = upload.withUploadedBytes(chunk.size)
 
         updatedUpload.lastActivity.compareTo(updateTime) must beGreaterThanOrEqualTo(0)
-        updatedUpload.uploadedFile.size must be equalTo (uploadedSize)
+        updatedUpload.uploadedFile.size must be equalTo (chunk.size)
       }
     }
 
     "be saveable and findable by (userid, guid)" in new UploadContext {
-      LO.withLargeObject { lo =>
-        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, lo.oid)
-        upload.contentsOid must be equalTo(lo.oid)
+      withLargeObject { loid =>
+        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, loid)
+        upload.contentsOid must be equalTo(loid)
         upload.save
       }
 
@@ -70,8 +83,8 @@ class OverviewUploadSpec extends DbSpecification {
     }
 
     "leave valid uploadedFile when deleted" in new UploadContext {
-      val uploadedFileId = LO.withLargeObject { lo =>
-        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, lo.oid)
+      val uploadedFileId = withLargeObject { loid =>
+        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, loid)
         upload.save
         upload.delete
         upload.uploadedFile.id
@@ -82,8 +95,8 @@ class OverviewUploadSpec extends DbSpecification {
     }
 
     "truncate large object" in new UploadContext {
-      LO.withLargeObject { lo =>
-        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, lo.oid).withUploadedBytes(234)
+      withLargeObject { loid =>
+        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, loid).withUploadedBytes(234)
         val truncatedUpload = upload.truncate
         truncatedUpload.uploadedFile.size must be equalTo (0)
       }
@@ -92,8 +105,8 @@ class OverviewUploadSpec extends DbSpecification {
     "save changes in uploadedFile" in new UploadContext {
       val fileSize = 234
 
-      LO.withLargeObject { lo =>
-        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, lo.oid).withUploadedBytes(fileSize)
+      withLargeObject { loid =>
+        val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, loid).withUploadedBytes(fileSize)
         upload.save
         val uploadedFile = OverviewUploadedFile.findById(upload.uploadedFile.id)
         uploadedFile must beSome.like { case u => u.size must be equalTo (fileSize) }

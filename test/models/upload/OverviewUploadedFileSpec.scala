@@ -1,25 +1,15 @@
 package models.upload
 
 import java.sql.Timestamp
-import org.postgresql.PGConnection
 
 import com.overviewdocs.test.DbSpecification
-import com.overviewdocs.postgres.LO
 
 class OverviewUploadedFileSpec extends DbSpecification {
   "OverviewUploadedFile" should {
 
-    trait UploadedFileContext extends DbTestContext {
+    trait UploadedFileContext extends DbScope {
       val before = new Timestamp(System.currentTimeMillis)
-      var overviewUploadedFile: OverviewUploadedFile = _
-
-      override def setupWithDb = {
-        connection.setAutoCommit(false)
-        implicit val pgConnection: PGConnection = connection.unwrap(classOf[PGConnection])
-        overviewUploadedFile = LO.withLargeObject { lo =>
-          OverviewUploadedFile(lo.oid, "attachment; filename=name", "content-type")
-        }
-      }
+      val overviewUploadedFile = OverviewUploadedFile(123L, "attachment; filename=name", "content-type")
     }
 
     "set uploadedAt time on creation" in new UploadedFileContext {
