@@ -1,156 +1,54 @@
 package controllers
 
-import akka.util.Timeout
-import java.sql.SQLException
-import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import org.squeryl.SquerylSQLException
-import play.api.data.Form
 import play.api.mvc.{AnyContent,Request,RequestHeader}
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{SEE_OTHER, status}
-import controllers.forms.UserForm
-import mailers.Mailer
-import models.{PotentialNewUser, OverviewUser, ConfirmationRequest}
 
-class UserControllerSpec extends test.helpers.InAppSpecification {
-  implicit val timeout : Timeout = Timeout(999999, scala.concurrent.duration.MILLISECONDS)
+import com.overviewdocs.database.exceptions.Conflict
+import models.{PotentialNewUser,User}
 
-  trait OurScope extends Scope with Mockito {
-    val validEmail = "user@example.org"
-    val validPassword = "askdfjg#$@r5djD"
+class UserControllerSpec extends ControllerSpecification {
+  trait OurScope extends Scope {
+    val mockBackendStuff = smartMock[UserController.BackendStuff]
 
-    // XXX remove vars
-    var existingUserMailed = false
-    var newUserMailed = false
-    var savedUser : Option[OverviewUser] = None
-    
-    trait TestUserController extends UserController {
-      override def mailExistingUser(user: OverviewUser)(implicit request: RequestHeader) = {
-        existingUserMailed = true
-      }
-
-      override def mailNewUser(user: OverviewUser with ConfirmationRequest)(implicit request: RequestHeader) = {
-        newUserMailed = true
-      }
-
-      override protected def saveUser(user: OverviewUser with ConfirmationRequest) : OverviewUser with ConfirmationRequest = {
-        savedUser = Some(user)
-        user
-      }
+    val controller = new UserController {
+      override val backendStuff = mockBackendStuff
     }
-
-    val controller : TestUserController
-    val requestHeader : Request[AnyContent]
-    def run = controller.create()(requestHeader)
-  }
-
-  trait OurScopeWithInvalidFormContents extends OurScope {
-    object TestUserControllerImpl extends TestUserController
-    override val controller : TestUserController = TestUserControllerImpl
-    override val requestHeader = FakeRequest().withFormUrlEncodedBody(
-      "email" -> "bademail",
-      "password" -> validPassword
-    )
-  }
-
-  trait OurScopeWithUser extends OurScope {
-    val optionalOverviewUser : Option[OverviewUser]
-    val subscribe: Boolean = false
-    
-    lazy val potentialUser = new PotentialNewUser(validEmail, validPassword, subscribe, optionalOverviewUser)
-
-    trait TestUserControllerWithUser extends TestUserController {
-      override val userForm = UserForm { (_: String, _: String, _: Boolean) => potentialUser }
-    }
-    object TestUserControllerWithUserImpl extends TestUserControllerWithUser
-
-    override val controller : TestUserController = TestUserControllerWithUserImpl
-    override val requestHeader = FakeRequest().withFormUrlEncodedBody(
-      "email" -> validEmail,
-      "password" -> validPassword
-    )
-  }
-
-  trait OurScopeWithExistingUser extends OurScopeWithUser {
-    val overviewUser = mock[OverviewUser]
-    overviewUser.email returns validEmail
-    override val optionalOverviewUser = Some(overviewUser)
-  }
-
-  trait OurScopeWithNewUser extends OurScopeWithUser {
-    override val optionalOverviewUser = None
-  }
-  
-  trait OurScopeWithUniqueKeyViolation extends OurScopeWithNewUser {
-    trait TestUserControllerWithUniqueKeyViolation extends TestUserControllerWithUser {
-      /*
-       * Test a race:
-       *
-       * 1. User #1 registers, with email "test@example.org"
-       * 2. User #2 registers, with email "test@example.org"
-       *    (there isn't a "test@example.org" in the DB yet)
-       * 3. User #1's "test@example.org" gets a confirmation token
-       * 4. User #2's "test@example.org" gets a confirmation token
-       * 5. User #1's "test@example.org" is saved to the DB
-       * 6. User #2 tries to save, but gets a unique key violation.
-       *
-       * This test class mocks User #2's request.
-       */
-
-      override protected def saveUser(user: OverviewUser with ConfirmationRequest) : OverviewUser with ConfirmationRequest = {
-        throw SquerylSQLException("unique key violation", new SQLException("unique key violation", "23505"))
-      }
-    }
-    object TestUserControllerWithUniqueKeyViolationImpl extends TestUserControllerWithUniqueKeyViolation
-
-    override val controller : TestUserController = TestUserControllerWithUniqueKeyViolationImpl
   }
 
   "UserController" should {
-    "create() with an existing user should email the user" in new OurScopeWithExistingUser {
-      existingUserMailed = false
-      newUserMailed = false
-      run
-      existingUserMailed must beTrue
-      newUserMailed must beFalse
-    }
+    "create" should {
+      trait CreateScope extends OurScope {
+        val formData: Seq[(String,String)] = Seq(
+          "email" -> "user@example.org",
+          "password" -> "abcdefg",
+          "subscribe" -> "true"
+        )
 
-    "create() with an existing user should redirect" in new OurScopeWithExistingUser {
-      val result = run
-      status(result) must equalTo(SEE_OTHER)
-    }
-    
-    "create() with a new user should email the user" in new OurScopeWithNewUser {
-      existingUserMailed = false
-      newUserMailed = false
-      run
-      existingUserMailed must beFalse
-      newUserMailed must beTrue
-    }
+        lazy val request = fakeRequest.withFormUrlEncodedBody(formData: _*)
+        lazy val response = controller.create()(request)
+      }
 
-    "create() should set a new user treeTooltipsEnabled=true" in new OurScopeWithNewUser {
-      savedUser = None
-      run
-      savedUser must beSome[OverviewUser].like { case u: OverviewUser => u.treeTooltipsEnabled must beEqualTo(true) }
-    }
+      "email an existing user" in new CreateScope {
+        mockBackendStuff.findUserByEmail("user@example.org") returns Some(User())
+        h.status(response) must beEqualTo(h.SEE_OTHER)
+        there was no(mockBackendStuff).createUser(any)
+        there was one(mockBackendStuff).mailExistingUser(any)(any)
+      }
 
-    "create() with a new user should redirect" in new OurScopeWithNewUser {
-      val result = run
-      status(result) must equalTo(SEE_OTHER)
-    }
+      "create and email a new user" in new CreateScope {
+        mockBackendStuff.findUserByEmail("user@example.org") returns None
+        h.status(response) must beEqualTo(h.SEE_OTHER)
+        there was one(mockBackendStuff).createUser(PotentialNewUser("user@example.org", "abcdefg", true))
+        there was one(mockBackendStuff).mailNewUser(any)(any)
+      }
 
-    "create() with a new user and unique-key violation should not email" in new OurScopeWithUniqueKeyViolation {
-      existingUserMailed = false
-      newUserMailed = false
-      run
-      existingUserMailed must beFalse
-      newUserMailed must beFalse
-    }
-
-    "create() with a new user and unique-key violation should redirect" in new OurScopeWithUniqueKeyViolation {
-      val result = run
-      status(result) must equalTo(SEE_OTHER)
+      "just redirect on unique-key violation" in new CreateScope {
+        mockBackendStuff.findUserByEmail("user@example.org") returns None
+        mockBackendStuff.createUser(any) answers { _ => throw new Conflict(null) }
+        h.status(response) must beEqualTo(h.SEE_OTHER)
+        there was no(mockBackendStuff).mailExistingUser(any)(any)
+        there was no(mockBackendStuff).mailNewUser(any)(any)
+      }
     }
   }
 }

@@ -124,23 +124,6 @@ object PotentialUser {
   }
 }
 
-/**
- * Potential new users have the option to subscribe to email announcements.
- */
-class PotentialNewUser(email: String, password: String, val emailSubscriber: Boolean, user: Option[OverviewUser]) extends PotentialUser(email, password, user) {
-  /**
-   * @return the OverviewUser with ConfirmationRequest. No matter what the state the user is in
-   * a new confirmation request can always be generated. User must be saved before change takes
-   * effect.
-   */
-  def requestConfirmation: OverviewUser with ConfirmationRequest =
-    OverviewUser.prepareNewRegistration(email, password, emailSubscriber)
-}
-
-object PotentialNewUser {
-  def apply(email: String, password: String, emailSubscriber: Boolean): PotentialNewUser =
-    new PotentialNewUser(email, password, emailSubscriber, OverviewUser.findByEmail(email))
-}
 
 /**
  * Helpers to get new or existing OverviewUsers

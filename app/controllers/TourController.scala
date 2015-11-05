@@ -1,17 +1,11 @@
 package controllers
 
-import controllers.auth.{ AuthorizedAction, Authorities }
-import models.orm.stores.UserStore
+import com.overviewdocs.database.HasBlockingDatabase
+import controllers.auth.{AuthorizedAction,Authorities}
+import models.tables.Users
 
 trait TourController extends Controller {
-  import Authorities.anyUser
-
-  trait Storage {
-    /** Sets the user at the given email address to _not_ see tooltips on the Tree/show page. */
-    def disableTreeTooltipsForEmail(email: String) : Unit
-  }
-
-  def delete() = AuthorizedAction.inTransaction(anyUser) { implicit request =>
+  def delete() = AuthorizedAction(Authorities.anyUser) { implicit request =>
     storage.disableTreeTooltipsForEmail(request.user.email)
     NoContent
   }
@@ -20,9 +14,16 @@ trait TourController extends Controller {
 }
 
 object TourController extends TourController {
-  object DatabaseStorage extends Storage {
+  trait Storage {
+    /** Sets the user at the given email address to _not_ see tooltips on the Tree/show page. */
+    def disableTreeTooltipsForEmail(email: String) : Unit
+  }
+
+  object DatabaseStorage extends Storage with HasBlockingDatabase {
+    import database.api._
+
     override def disableTreeTooltipsForEmail(email: String) = {
-      val user = UserStore.disableTreeTooltipsForEmail(email)
+      blockingDatabase.runUnit(Users.filter(_.email === email).map(_.treeTooltipsEnabled).update(false))
     }
   }
 

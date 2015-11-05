@@ -4,9 +4,12 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
 import scala.concurrent.Future
 
+import com.overviewdocs.database.HasBlockingDatabase
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
 import controllers.backend.SessionBackend
+import models.{PotentialExistingUser,User}
+import models.tables.Users
 
 trait SessionController extends Controller {
   private val loginForm = controllers.forms.LoginForm()
@@ -40,18 +43,49 @@ trait SessionController extends Controller {
   }
 
   def create = Action.async { implicit request =>
-    loginForm.bindFromRequest.fold(
+    val boundForm = loginForm.bindFromRequest
+    boundForm.fold(
       formWithErrors => Future.successful(BadRequest(views.html.Session._new(formWithErrors, registrationForm))),
-      user => {
-        for {
-          _ <- sessionBackend.destroyExpiredSessionsForUserId(user.id)
-          session <- sessionBackend.create(user.id, request.remoteAddress)
-        } yield AuthResults.loginSucceeded(request, session).flashing("event" -> "session-create")
+      potentialExistingUser => {
+        findUser(potentialExistingUser) match {
+          case Left(error) => {
+            Future.successful(BadRequest(views.html.Session._new(boundForm.withGlobalError(error), registrationForm)))
+          }
+          case Right(user) => {
+            for {
+              _ <- sessionBackend.destroyExpiredSessionsForUserId(user.id)
+              session <- sessionBackend.create(user.id, request.remoteAddress)
+            } yield AuthResults.loginSucceeded(request, session).flashing("event" -> "session-create")
+          }
+        }
       }
     )
   }
+
+  /** Finds a user matching the given credentials.
+    *
+    * Returns Left() on error. Possible errors:
+    *
+    * * The user does not exist or the password doesn't match (we don't leak which error this is).
+    * * The user has not yet confirmed.
+    */
+  protected def findUser(potentialExistingUser: PotentialExistingUser): Either[String,User]
 }
 
-object SessionController extends SessionController {
+object SessionController extends SessionController with HasBlockingDatabase {
   override protected val sessionBackend = SessionBackend
+
+  private val NotAllowed = Left("forms.LoginForm.error.invalid_credentials")
+  private val NotConfirmed = Left("forms.LoginForm.error.not_confirmed")
+
+  override def findUser(potentialExistingUser: PotentialExistingUser) = {
+    import database.api._
+
+    blockingDatabase.option(Users.filter(_.email === potentialExistingUser.email)) match {
+      case None => NotAllowed
+      case Some(user) if !User.passwordMatchesHash(potentialExistingUser.password, user.passwordHash) => NotAllowed
+      case Some(user) if user.confirmationToken.nonEmpty => NotConfirmed
+      case Some(user) => Right(user)
+    }
+  }
 }

@@ -4,9 +4,9 @@ import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 
 import mailers.Mailer
-import models.OverviewUser
+import models.User
 
-case class createErrorUserAlreadyExists(val user: OverviewUser)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
+case class createErrorUserAlreadyExists(val user: User)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.User.createErrorUserAlreadyExists")
 
   private val url = controllers.routes.SessionController._new().absoluteURL()

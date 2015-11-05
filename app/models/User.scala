@@ -35,6 +35,11 @@ object User {
     password.bcrypt(BcryptRounds)
   }
 
+  def passwordMatchesHash(password: String, hash: String): Boolean = {
+    import com.github.t3hnar.bcrypt._
+    password.isBcrypted(hash)
+  }
+
   case class CreateAttributes(
     email: String,
     passwordHash: String,

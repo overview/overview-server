@@ -4,7 +4,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import controllers.backend.SessionBackend
-import models.{Session,User}
+import models.{Session,User,PotentialExistingUser}
 
 class SessionControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -13,8 +13,11 @@ class SessionControllerSpec extends ControllerSpecification {
     mockSessionBackend.destroy(any) returns Future.successful(())
     mockSessionBackend.destroyExpiredSessionsForUserId(any) returns Future.successful(())
 
+    val mockFindUser = smartMock[PotentialExistingUser => Either[String,User]]
+
     val controller = new SessionController with TestController {
       override val sessionBackend = mockSessionBackend
+      override def findUser(potentialExistingUser: PotentialExistingUser) = mockFindUser(potentialExistingUser)
     }
   }
 

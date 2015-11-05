@@ -2,94 +2,113 @@ package controllers
 
 import org.squeryl.SquerylSQLException
 import play.api.data.Form
-import play.api.mvc.RequestHeader
+import play.api.mvc.{Action,RequestHeader}
 
-import controllers.util.TransactionAction
-import models.{ OverviewUser, ConfirmationRequest, PotentialNewUser }
-import models.orm.stores.UserStore
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.database.exceptions.Conflict
+import com.overviewdocs.models.UserRole
+import models.{PotentialNewUser,PotentialExistingUser,User}
+import models.tables.Users
 
 trait UserController extends Controller {
-  val loginForm: Form[OverviewUser] = controllers.forms.LoginForm()
-  val userForm: Form[PotentialNewUser] = controllers.forms.UserForm()
-
+  private val loginForm: Form[PotentialExistingUser] = controllers.forms.LoginForm()
+  private val userForm: Form[PotentialNewUser] = controllers.forms.UserForm()
   private val m = views.Magic.scopedMessages("controllers.UserController")
+
+  protected val backendStuff: UserController.BackendStuff
 
   def _new = SessionController._new
 
-  def create = TransactionAction { implicit request =>
+  def create = Action { implicit request =>
     userForm.bindFromRequest().fold(
       formWithErrors => BadRequest(views.html.Session._new(loginForm, formWithErrors)),
-      registration => {
-        registration.withRegisteredEmail match {
+      potentialNewUser => {
+        backendStuff.findUserByEmail(potentialNewUser.email) match {
           case Some(u) => handleExistingUser(u)
-          case None => handleNewUser(registration)
+          case None => handleNewUser(potentialNewUser)
         }
-        Redirect(routes.ConfirmationController.index(registration.email)).flashing(
-          "event" -> "user-create"
-        )
+        Redirect(routes.ConfirmationController.index(potentialNewUser.email))
+          .flashing("event" -> "user-create")
       })
   }
 
-  /** Sends an email to an existing user saying someone tried to log in. */
-  protected def mailExistingUser(user: OverviewUser)(implicit request: RequestHeader): Unit
-
-  /** Sends an email to a new user with a confirmation link. */
-  protected def mailNewUser(user: OverviewUser with ConfirmationRequest)(implicit request: RequestHeader): Unit
-
-  /**
-   * Adds the user to the database, with a confirmation token.
-   *
-   * @throws SquerylSQLException with Cause SQLException with SQLState "23505"
-   *        (unique key violation) if there's a race and the user has recently
-   *        been saved.
-   */
-  protected def saveUser(user: OverviewUser with ConfirmationRequest): OverviewUser with ConfirmationRequest
-
-  private def handleNewUser(user: PotentialNewUser)(implicit request: RequestHeader): Unit = {
-    val sqlStateUniqueKeyViolation: String = "23505"
-    val userWithRequest = user.requestConfirmation
-
-    try {
-      saveUser(userWithRequest)
-      mailNewUser(userWithRequest)
+  private def handleNewUser(potentialUser: PotentialNewUser)(implicit request: RequestHeader): Unit = {
+    val user = try {
+      val user = backendStuff.createUser(potentialUser)
+      backendStuff.mailNewUser(user) // only if the previous line didn't generate an exception
     } catch {
-      case e: SquerylSQLException => {
-        val sqlState = e.getCause.getSQLState()
-        if (sqlStateUniqueKeyViolation.equals(sqlState)) {
-          /*
-           * There's a duplicate key in the database. This means the email has
-           * already been saved. But the only way to get to this code path is a
-           * race: the email wasn't there when userForm.bindFromRequest was
-           * called (it calls PotentialUser.apply, which does the lookup).
-           *
-           * If the process arrives here, some *other* thread of execution
-           * *didn't*, and it's sending a confirmation email. We can just
-           * pretend the database request went as planned, since from the
-           * user's perspective, it did.
-           */
-        } else {
-          throw e
-        }
+      case _: Conflict => {
+        /*
+         * There's a duplicate key in the database. This means the email has
+         * already been saved. But the only way to get to this code path is a
+         * race: the email wasn't there when userForm.bindFromRequest was
+         * called (it calls PotentialUser.apply, which does the lookup).
+         *
+         * If the process arrives here, some *other* thread of execution
+         * *didn't*, and it's sending a confirmation email. We can just
+         * pretend the database request went as planned, since from the
+         * user's perspective, it did.
+         */
       }
     }
   }
 
-  private def handleExistingUser(user: OverviewUser)(implicit request: RequestHeader): Unit = {
-    mailExistingUser(user)
+  private def handleExistingUser(user: User)(implicit request: RequestHeader): Unit = {
+    backendStuff.mailExistingUser(user)
   }
 }
 
 object UserController extends UserController {
-  override protected def saveUser(user: OverviewUser with ConfirmationRequest): OverviewUser with ConfirmationRequest = {
-    val savedUser = OverviewUser(UserStore.insertOrUpdate(user.toUser))
-    savedUser.withConfirmationRequest.getOrElse(throw new Exception("impossible"))
+  trait BackendStuff {
+    /** Sends an email to an existing user saying someone tried to log in. */
+    def mailExistingUser(user: User)(implicit request: RequestHeader): Unit
+
+    /** Sends an email to a new user with a confirmation link. */
+    def mailNewUser(user: User)(implicit request: RequestHeader): Unit
+
+    /** Adds the user to the database, with a confirmation token, and returns it.
+      *
+      * @throws Conflict if there's a race and the user has recently been saved.
+      */
+    def createUser(user: PotentialNewUser): User
+
+    def findUserByEmail(email: String): Option[User]
   }
 
-  override protected def mailNewUser(user: OverviewUser with ConfirmationRequest)(implicit request: RequestHeader) = {
-    mailers.User.create(user).send
-  }
+  override protected val backendStuff = new BackendStuff with HasBlockingDatabase {
+    import database.api._
 
-  override protected def mailExistingUser(user: OverviewUser)(implicit request: RequestHeader) = {
-    mailers.User.createErrorUserAlreadyExists(user).send
+    override def createUser(user: PotentialNewUser): User = {
+      blockingDatabase.run(
+        Users
+          .map(_.createAttributes)
+          .returning(Users)
+          .+=(User.CreateAttributes(
+            email=user.email,
+            passwordHash=User.hashPassword(user.password),
+            role=UserRole.NormalUser,
+            confirmationToken=Some(User.generateToken),
+            confirmationSentAt=Some(new java.sql.Timestamp(new java.util.Date().getTime)),
+            resetPasswordToken=None,
+            resetPasswordSentAt=None,
+            lastActivityAt=None,
+            lastActivityIp=None,
+            emailSubscriber=user.emailSubscriber,
+            treeTooltipsEnabled=true
+          ))
+      )
+    }
+
+    override def findUserByEmail(email: String) = {
+      blockingDatabase.option(Users.filter(_.email === email))
+    }
+
+    override def mailNewUser(user: User)(implicit request: RequestHeader) = {
+      mailers.User.create(user).send
+    }
+
+    override def mailExistingUser(user: User)(implicit request: RequestHeader) = {
+      mailers.User.createErrorUserAlreadyExists(user).send
+    }
   }
 }

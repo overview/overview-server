@@ -1,26 +1,19 @@
 package mailers.User
 
-import org.specs2.mock.Mockito
-
-import models.{ConfirmationRequest, OverviewUser}
+import models.User
 
 class createSpec extends mailers.MailerSpecification {
-  trait OurContext extends MailerScope with Mockito {
-    trait UserType extends models.OverviewUser with models.ConfirmationRequest
-    val user = mock[UserType]
-    user.email returns "email@example.org"
-    user.confirmationToken returns "0123456789abcdef"
-
-    override lazy val mailer = create(user)
+  trait OurContext extends MailerScope {
+    override lazy val mailer = create(User(email="user@example.org", confirmationToken=Some("0123456789abcdef")))
   }
 
   "create()" should {
     "send to the user and only the user" in new OurContext {
-      mailer.recipients.must(equalTo(Seq(user.email)))
+      mailer.recipients must beEqualTo(Seq("user@example.org"))
     }
 
     "include the confirmation URL" in new OurContext {
-      mailer.text.must(contain(user.confirmationToken)) 
+      mailer.text must contain("0123456789abcdef")
     }
   }
 }

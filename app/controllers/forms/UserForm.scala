@@ -1,21 +1,17 @@
 package controllers.forms
 
-import play.api.data.Form
-import play.api.data.Forms
+import play.api.data.{Form,Forms}
 
 import models.PotentialNewUser
 
 object UserForm {
-  def apply(factory: (String, String, Boolean) => PotentialNewUser) : Form[PotentialNewUser] = {
+  def apply(): Form[PotentialNewUser] = {
     Form(
       Forms.mapping(
         "email" -> Forms.email,
         "password" -> Forms.text.verifying(validation.minLengthPassword(7)),
         "subscribe" -> Forms.boolean
-      )(factory
-      )(u => Some((u.email, u.password, u.emailSubscriber)))
+      )(PotentialNewUser.apply)(PotentialNewUser.unapply)
     )
   }
-
-  def apply() : Form[PotentialNewUser] = apply((email: String, password: String, subscribe: Boolean) => PotentialNewUser(email, password, subscribe))
 }
