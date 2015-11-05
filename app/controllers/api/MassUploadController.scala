@@ -6,10 +6,8 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
 
-import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.models.{ApiToken,FileGroup,GroupedFileUpload}
 import com.overviewdocs.messages.DocumentSetCommands
-import com.overviewdocs.tree.orm.DocumentSetCreationJob
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.{ApiAuthorizedAction,ApiTokenFactory}
 import controllers.auth.Authorities.anyUser
@@ -17,7 +15,6 @@ import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
-import models.orm.stores.DocumentSetCreationJobStore
 
 trait MassUploadController extends ApiController {
   protected val fileGroupBackend: FileGroupBackend

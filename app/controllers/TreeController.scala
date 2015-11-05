@@ -12,7 +12,6 @@ import controllers.auth.Authorities._
 import controllers.backend.TreeBackend
 import controllers.forms.TreeCreationJobForm
 import controllers.forms.TreeUpdateAttributesForm
-import models.orm.stores.DocumentSetCreationJobStore
 
 trait TreeController extends Controller {
   protected val backend: TreeBackend

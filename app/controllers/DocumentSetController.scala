@@ -14,7 +14,6 @@ import controllers.auth.{AuthorizedAction,Authorities}
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.JobQueueSender
-import models.orm.stores.DocumentSetCreationJobStore
 import models.pagination.{Page,PageRequest}
 
 trait DocumentSetController extends Controller {

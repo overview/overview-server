@@ -9,8 +9,6 @@ import com.overviewdocs.models.tables.DocumentSetCreationJobs
 import controllers.auth.Authorities.userOwningJob
 import controllers.auth.AuthorizedAction
 import controllers.util.JobQueueSender
-import models.orm.finders.DocumentSetCreationJobFinder
-import models.orm.stores.DocumentSetCreationJobStore
 
 trait ReclusterJobController extends Controller {
   val storage : ReclusterJobController.Storage

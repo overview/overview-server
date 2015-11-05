@@ -6,11 +6,8 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
-import com.overviewdocs.database.DeprecatedDatabase
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.models.{DocumentSet,GroupedFileUpload}
-import com.overviewdocs.tree.orm.DocumentSetCreationJob
-import com.overviewdocs.tree.Ownership
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
 import controllers.auth.{AuthorizedAction,AuthorizedBodyParser}
@@ -18,7 +15,6 @@ import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploa
 import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
-import models.orm.stores.DocumentSetCreationJobStore
 import models.User
 
 trait MassUploadController extends Controller {
