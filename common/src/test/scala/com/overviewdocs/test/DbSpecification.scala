@@ -5,15 +5,12 @@ import org.postgresql.PGConnection
 import org.specs2.execute.AsResult
 import org.specs2.mutable.{After,Around}
 import org.specs2.specification.{Fragments, Step}
-import org.squeryl.{Session=>SquerylSession}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future,blocking}
 import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
 import com.overviewdocs.database.{DB,HasBlockingDatabase}
-import com.overviewdocs.postgres.SquerylPostgreSqlAdapter
-import com.overviewdocs.postgres.SquerylEntrypoint.using
 import com.overviewdocs.test.factories.{DbFactory,PodoFactory}
 
 /**

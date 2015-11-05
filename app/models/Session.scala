@@ -2,7 +2,6 @@ package models
 
 import java.sql.Timestamp
 import java.util.{Date,UUID}
-import org.squeryl.KeyedEntity
 
 import com.overviewdocs.postgres.InetAddress
 

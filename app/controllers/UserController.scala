@@ -1,6 +1,5 @@
 package controllers
 
-import org.squeryl.SquerylSQLException
 import play.api.data.Form
 import play.api.mvc.{Action,RequestHeader}
 

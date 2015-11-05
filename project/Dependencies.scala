@@ -29,6 +29,7 @@ object Dependencies {
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
     val openCsv = "com.opencsv" % "opencsv" % "3.4"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
+    val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4" // for Query
     val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.1-SNAPSHOT"
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.9.0"
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
@@ -42,16 +43,6 @@ object Dependencies {
     val scallop = "org.rogach" %% "scallop" % "0.9.5"
     val slick = "com.typesafe.slick" %% "slick" % "3.0.0"
     val specs2 = "org.specs2" %% "specs2" % "2.3.13"
-    val squeryl = "org.squeryl" %% "squeryl" % "0.9.6-RC3"
-
-    // Hacky deps below
-
-    /*
-     * Make Squeryl's scala-compiler go away by requiring our own version.
-     *
-     * TODO: nix Squeryl, then nix this dependency.
-     */
-    val hackyScalaCompiler = "org.scala-lang" % "scala-compiler" % "2.11.6"
   }
 
   val serverDependencies = Seq(
@@ -85,15 +76,14 @@ object Dependencies {
     deps.elasticSearch,
     deps.elasticSearchIcu,
     deps.guava, // Textify
-    deps.hackyScalaCompiler, // boo
     deps.hikariCp,
     deps.logback,
+    deps.parserCombinators,
     deps.pgSlick,
     deps.playJson,
     deps.postgresql,
     deps.redis,
     deps.slick,
-    deps.squeryl, // boo
     deps.akkaTestkit % "test",
     deps.janino % "test", // See logback-text.xml
     deps.junitInterface % "test",
