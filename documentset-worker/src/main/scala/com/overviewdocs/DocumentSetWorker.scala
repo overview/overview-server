@@ -3,7 +3,7 @@ package com.overviewdocs
 import akka.actor._
 import akka.actor.SupervisorStrategy._
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext,Future}
 import scala.language.postfixOps
 
 import com.overviewdocs.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
@@ -12,7 +12,7 @@ import com.overviewdocs.database.{DB,DocumentSetDeleter,HasDatabase}
 import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
 import com.overviewdocs.jobhandler.filegroup._
 import com.overviewdocs.messages.DocumentSetCommands
-import com.overviewdocs.models.tables.FileGroups
+import com.overviewdocs.models.tables.{DocumentSets,FileGroups}
 import com.overviewdocs.util.Logger
 
 /** Main app: starts up actors and listens for messages.
@@ -83,7 +83,7 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   )
 
   override def preStart: Unit = {
-    resumeAddDocumentsCommands(context.dispatcher)
+    resumeCommands(context.dispatcher)
   }
 
   /** Error? Die. On production, that will trigger restart. */
@@ -104,7 +104,16 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
     context.watch(monitee)
   }
 
-  private def resumeAddDocumentsCommands(implicit ec: ExecutionContext): Unit = {
+  /** Infers Commands from the database and sends them to documentSetMessageBroker
+    */
+  private def resumeCommands(implicit ec: ExecutionContext): Unit = {
+    for {
+      _ <- resumeAddDocumentsCommands
+      _ <- resumeDeleteDocumentSetCommands // We add first, because an add, cancelled, nixes a GroupedFileUpload
+    } yield ()
+  }
+
+  private def resumeAddDocumentsCommands(implicit ec: ExecutionContext): Future[Unit] = {
     import database.api._
 
     val q = FileGroups
@@ -113,6 +122,16 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
 
     database.seq(q).map(_.foreach { fileGroup =>
       val command = DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup)
+      logger.info("Resuming {}...", command)
+      documentSetMessageBroker ! command
+    })
+  }
+
+  private def resumeDeleteDocumentSetCommands(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    database.seq(DocumentSets.filter(_.deleted).map(_.id)).map(_.foreach { id =>
+      val command = DocumentSetCommands.DeleteDocumentSet(id)
       logger.info("Resuming {}...", command)
       documentSetMessageBroker ! command
     })
