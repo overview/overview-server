@@ -3,14 +3,14 @@ package controllers
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
+import com.overviewdocs.models.tables.DocumentSetCreationJobs
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
 import controllers.backend.DocumentSetBackend
 import controllers.forms.DocumentCloudImportJobForm
 import models.DocumentCloudImportJob
-import models.orm.stores.DocumentCloudImportJobStore
-import com.overviewdocs.database.DeprecatedDatabase
-import com.overviewdocs.models.DocumentSet
 
 trait DocumentCloudImportJobController extends Controller {
   protected val documentSetBackend: DocumentSetBackend
@@ -46,10 +46,31 @@ trait DocumentCloudImportJobController extends Controller {
 object DocumentCloudImportJobController extends DocumentCloudImportJobController {
   override protected val documentSetBackend = DocumentSetBackend
 
-  object DatabaseStorage extends Storage {
-    override def insertJob(documentSetId: Long, job: DocumentCloudImportJob) = Future(DeprecatedDatabase.inTransaction {
-      DocumentCloudImportJobStore.insert(documentSetId, job)
-    })
+  object DatabaseStorage extends Storage with HasDatabase {
+    import database.api._
+
+    override def insertJob(documentSetId: Long, job: DocumentCloudImportJob) = {
+      database.runUnit(DocumentSetCreationJobs.map(_.createAttributes).+=(DocumentSetCreationJob.CreateAttributes(
+        documentSetId=documentSetId,
+        jobType=DocumentSetCreationJobType.DocumentCloud,
+        retryAttempts=0,
+        lang=job.lang,
+        suppliedStopWords=job.suppliedStopWords,
+        importantWords=job.importantWords,
+        splitDocuments=job.splitDocuments,
+        documentcloudUsername=job.credentials.map(_.username),
+        documentcloudPassword=job.credentials.map(_.password),
+        contentsOid=None,
+        sourceDocumentSetId=None,
+        treeTitle=None,
+        treeDescription=None,
+        tagId=None,
+        state=DocumentSetCreationJobState.NotStarted,
+        fractionComplete=0,
+        statusDescription="",
+        canBeCancelled=true
+      )))
+    }
   }
 
   override val storage = DatabaseStorage
