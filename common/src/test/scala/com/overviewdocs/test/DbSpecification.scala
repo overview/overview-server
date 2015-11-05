@@ -22,37 +22,6 @@ import com.overviewdocs.test.factories.{DbFactory,PodoFactory}
 class DbSpecification extends Specification {
   sequential
 
-  private val DatabaseProperty = "datasource.default.url"
-  private val TestDatabase = "postgres://overview:overview@localhost:9010/overview-test"
-
-  /**
-   * Context for test accessing the database. All tests are run inside a transaction
-   * which is rolled back after the test is complete.
-   */
-  // Commented out @deprecated because it produces too many warnings.
-  //@deprecated("Use DbScope instead: it supports Slick and only connects on-demand", "2015-02-24")
-  trait DbTestContext extends Around {
-    lazy implicit val connection = DB.getConnection()
-    clearDb(connection) // Before around() call
-
-    /** setup method called after database connection is established */
-    def setupWithDb {}
-    def sql(q: String): Unit = runQuery(q, connection)
-
-    def around[T : AsResult](test: => T) = {
-      try {
-        val adapter = new SquerylPostgreSqlAdapter()
-        val session = new SquerylSession(connection, adapter)
-        using(session) { // sets thread-local variable
-          setupWithDb
-          AsResult(test)
-        }
-      } finally {
-        connection.close()
-      }
-    }
-  }
-
   /** Context for test accessing the database.
     *
     * Provides these <em>deprecated</em> variables:
