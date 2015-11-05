@@ -1,5 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup
 
+import akka.actor.UnhandledMessage
 import akka.testkit.{TestActorRef,TestProbe}
 import org.mockito.Matchers
 import org.specs2.mock.Mockito
@@ -43,8 +44,10 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
       val ex = new Exception("foo")
       impl.processUpload(any, any, any)(any) returns Future.failed(ex)
       val upload = makeUpload
+      val probe = TestProbe()
+      system.eventStream.subscribe(probe.ref, classOf[UnhandledMessage])
       subject.tell(HandleUpload(fileGroup, upload), broker.ref)
-      broker.expectMsg(akka.actor.Status.Failure(ex))
+      probe.expectMsg(UnhandledMessage(ex, subject, subject))
     }
 
     "update progress" in new BaseScope {
