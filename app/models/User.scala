@@ -19,8 +19,6 @@ case class User(
   emailSubscriber: Boolean = false,
   treeTooltipsEnabled: Boolean = true
 ) {
-  def this() = this(role = UserRole.NormalUser) // For Squeryl
-
   def isAdministrator = role == UserRole.Administrator
 }
 

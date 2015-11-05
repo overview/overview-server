@@ -5,7 +5,7 @@ import java.security.SecureRandom
 
 case class ApiToken(
   token: String,
-  createdAt: java.sql.Timestamp, // Squeryl drops time when we use Date
+  createdAt: java.sql.Timestamp,
   createdBy: String,
   description: String,
   documentSetId: Option[Long]
