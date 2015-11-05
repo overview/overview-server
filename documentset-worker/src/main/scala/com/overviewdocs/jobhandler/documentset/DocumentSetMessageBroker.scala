@@ -60,6 +60,10 @@ class DocumentSetMessageBroker extends Actor {
       busyDocumentSets(command.documentSetId) = worker
       worker ! command
     }
+
+    if (readyWorkers.nonEmpty) {
+      logger.info("Worker {} idling", readyWorkers.head)
+    }
   }
 }
 

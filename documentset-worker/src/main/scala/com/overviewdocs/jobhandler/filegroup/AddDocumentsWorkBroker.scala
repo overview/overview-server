@@ -103,7 +103,10 @@ class AddDocumentsWorkBroker(progressReporter: ActorRef) extends Actor {
           jobInfo.runningWorkers.+=(worker)
           worker ! work
         }
-        case None => { return }
+        case None => {
+          logger.info("Worker {} idling", waitingWorkers.head)
+          return // not The Scala Way, but intuitive enough methinks
+        }
       }
     }
   }
