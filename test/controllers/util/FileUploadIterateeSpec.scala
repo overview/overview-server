@@ -21,7 +21,8 @@ class FileUploadIterateeSpec extends test.helpers.InAppSpecification with Mockit
     /** OverviewUpload implementation that stores data in an attribute */
     case class DummyUpload(userId: Long, guid: UUID, val bytesUploaded: Long, val size: Long, 
       var data: Array[Byte] = Array[Byte](), uploadedFile: OverviewUploadedFile = mock[OverviewUploadedFile]) extends OverviewUpload {
-      
+
+      val id = 1231234L
       val lastActivity: Timestamp = new Timestamp(0)
       val contentsOid: Long = 1l
 

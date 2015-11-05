@@ -8,18 +8,16 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ Action, BodyParser, Request, RequestHeader, Result }
 import scala.concurrent.Future
 
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
+import com.overviewdocs.models.tables.{DocumentSetCreationJobs,Uploads}
 import controllers.auth.Authorities.anyUser
-import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser, Authority, SessionFactory }
+import controllers.auth.{AuthorizedAction, AuthorizedBodyParser,Authority,SessionFactory}
 import controllers.backend.DocumentSetBackend
 import controllers.forms.UploadControllerForm
 import controllers.util.FileUploadIteratee
-import models.orm.stores.DocumentSetCreationJobStore
 import models.upload.OverviewUpload
 import models.User
-import com.overviewdocs.database.DeprecatedDatabase
-import com.overviewdocs.models.DocumentSet
-import com.overviewdocs.tree.{ DocumentSetCreationJobType, Ownership }
-import com.overviewdocs.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
 
 /**
  * Handles a file upload, storing the file in a LargeObject, updating the upload table,
@@ -70,7 +68,7 @@ trait UploadController extends Controller {
 
   private def isUploadComplete(upload: OverviewUpload) = upload.uploadedFile.size == upload.size
 
-  def show(guid: UUID) = AuthorizedAction.inTransaction(anyUser) { implicit request =>
+  def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
     def contentRange(upload: OverviewUpload): String = "bytes 0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
 
@@ -112,13 +110,13 @@ trait UploadController extends Controller {
 /**
  * UploadController implementation that uses FileUploadIteratee
  */
-object UploadController extends UploadController {
+object UploadController extends UploadController with HasDatabase {
   override protected val documentSetBackend = DocumentSetBackend
 
   override protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader)
 
-  override protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = DeprecatedDatabase.inTransaction {
+  override protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = {
     OverviewUpload.find(userId, guid)
   }
 
@@ -129,18 +127,34 @@ object UploadController extends UploadController {
     lang: String,
     suppliedStopWords: String,
     importantWords: String
-  ) = Future(DeprecatedDatabase.inTransaction {
-    DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-      documentSetId=documentSet.id,
-      lang=lang,
-      suppliedStopWords=suppliedStopWords,
-      importantWords=importantWords,
-      state=DocumentSetCreationJobState.NotStarted,
-      jobType=DocumentSetCreationJobType.CsvUpload,
-      contentsOid=Some(upload.contentsOid)
-    ))
+  ) = {
+    import database.api._
 
-    upload.delete
-  })
+    val t = (for {
+      _ <- DocumentSetCreationJobs.map(_.createAttributes).+=(DocumentSetCreationJob.CreateAttributes(
+        documentSetId=documentSet.id,
+        jobType=DocumentSetCreationJobType.CsvUpload,
+        retryAttempts=0,
+        lang=lang,
+        suppliedStopWords=suppliedStopWords,
+        importantWords=importantWords,
+        splitDocuments=false,
+        documentcloudUsername=None,
+        documentcloudPassword=None,
+        contentsOid=Some(upload.contentsOid),
+        sourceDocumentSetId=None,
+        treeTitle=None,
+        treeDescription=None,
+        tagId=None,
+        state=DocumentSetCreationJobState.NotStarted,
+        fractionComplete=0,
+        statusDescription="",
+        canBeCancelled=true
+      ))
+      _ <- Uploads.filter(_.id === upload.id).delete
+    } yield ()).transactionally
+
+    database.runUnit(t)
+  }
 }
  

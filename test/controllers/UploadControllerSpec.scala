@@ -32,6 +32,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
   }
 
   class MockOverviewUpload(val uploaded: Long, override val size: Long) extends OverviewUpload {
+    override val id = 2134L
     override val userId = 123L
     override val lastActivity = new Timestamp(1234L)
     override val uploadedFile = new MockOverviewUploadedFile(

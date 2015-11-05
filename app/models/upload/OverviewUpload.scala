@@ -15,6 +15,7 @@ import com.overviewdocs.models.tables.{UploadedFiles,Uploads}
  * consistent.
  */
 trait OverviewUpload {
+  val id: Long
   val userId: Long
   val lastActivity: Timestamp
   val size: Long
@@ -66,6 +67,7 @@ object OverviewUpload extends HasBlockingDatabase {
   }
 
   private class OverviewUploadImpl(upload: Upload, val uploadedFile: OverviewUploadedFile) extends OverviewUpload {
+    val id = upload.id
     val userId = upload.userId
     val lastActivity = upload.lastActivity
     val size = upload.totalSize
