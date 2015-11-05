@@ -14,6 +14,7 @@ trait DocumentSetDeleter extends HasDatabase {
       _ <- deleteViews(documentSetId)
       _ <- deleteUserAddedData(documentSetId)
       _ <- deleteTrees(documentSetId)
+      _ <- deleteJobs(documentSetId)
       _ <- deleteCore(documentSetId)
       _ <- deleteUploadedFile(uploadedFileId)
     } yield ())
@@ -25,6 +26,13 @@ trait DocumentSetDeleter extends HasDatabase {
       .map(_.uploadedFileId)
       .result.headOption // DBIO[Option[Option[Long]]]
       .map(_.flatten)
+  }
+
+  private def deleteJobs(documentSetId: Long): DBIO[Unit] = {
+    val q = DocumentSetCreationJobs
+      .filter(j => j.documentSetId === documentSetId || j.sourceDocumentSetId === documentSetId)
+      .delete
+    for { _ <- q } yield ()
   }
 
   // The minimal set of components, common to all document sets

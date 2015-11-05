@@ -2,7 +2,7 @@ package com.overviewdocs.database
 
 import com.overviewdocs.test.DbSpecification
 import com.overviewdocs.models.{ Document, DocumentSet, UploadedFile }
-import com.overviewdocs.models.tables.{ Documents, DocumentSets, Files, Pages, UploadedFiles }
+import com.overviewdocs.models.tables.{ Documents, DocumentSets, DocumentSetCreationJobs, Files, Pages, UploadedFiles }
 
 class DocumentSetDeleterSpec extends DbSpecification {
 
@@ -12,6 +12,14 @@ class DocumentSetDeleterSpec extends DbSpecification {
       deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
+    }
+
+    "delete jobs" in new BasicDocumentSetScope {
+      val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
+      deleteDocumentSet
+
+      import database.api._
+      blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === job.id)) must beNone
     }
 
     "delete csv uploads" in new CsvUploadScope {

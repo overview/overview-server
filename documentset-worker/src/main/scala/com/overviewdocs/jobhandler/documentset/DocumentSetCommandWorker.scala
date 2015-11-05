@@ -2,6 +2,7 @@ package com.overviewdocs.jobhandler.documentset
 
 import akka.actor.{Actor,ActorRef,Props}
 import scala.concurrent.{ExecutionContext,Future}
+import scala.util.{Failure,Success}
 
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
@@ -57,11 +58,12 @@ class DocumentSetCommandWorker(
         // actually been doing anything.
       }
       case DeleteDocumentSet(documentSetId) => {
-        for {
-          _ <- documentSetDeleter.delete(documentSetId)
-        } yield {
-          sendDone(documentSetId)
-          sendReady
+        documentSetDeleter.delete(documentSetId).onComplete {
+          case Success(()) => {
+            sendDone(documentSetId)
+            sendReady
+          }
+          case Failure(ex) => broker ! ex
         }
       }
       case CancelJob(documentSetId, jobId) => {
