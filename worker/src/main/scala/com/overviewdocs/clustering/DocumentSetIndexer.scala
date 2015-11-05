@@ -10,7 +10,6 @@
 
 package com.overviewdocs.clustering
 
-import com.overviewdocs.database.DB
 import com.overviewdocs.persistence.{ DocumentWriter, NodeWriter }
 import com.overviewdocs.util.{ DocumentConsumer, Logger }
 import com.overviewdocs.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
