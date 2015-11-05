@@ -15,7 +15,7 @@ import com.overviewdocs.models.{ApiToken,DocumentSetCreationJob,DocumentSetCreat
 import com.overviewdocs.models.tables.{DocumentSetCreationJobs,Trees}
 
 trait ViewController extends Controller {
-  def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async {
+  def indexJson(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async {
     val trees = storage.findTrees(documentSetId).map(_.copy()).toArray
     val jobs = storage.findViewJobs(documentSetId).map(_.copy()).toArray
 
