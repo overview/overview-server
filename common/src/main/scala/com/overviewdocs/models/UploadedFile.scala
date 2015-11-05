@@ -15,6 +15,17 @@ case class UploadedFile(
     size,
     uploadedAt
   )
+
+  private val ContentTypeEncoding = ".*charset=([^\\s]*)".r
+
+  /**
+   * @return a string with the value of the charset field in contentType,
+   * or None, if the contentType could not be parsed.
+   */
+  def encoding: Option[String] = contentType match {
+    case ContentTypeEncoding(c) => Some(c)
+    case _ => None
+  }
 }
 
 object UploadedFile {

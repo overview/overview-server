@@ -12,9 +12,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.{Document,DocumentTag,Tag}
-import com.overviewdocs.models.tables.{Documents,DocumentSets,DocumentTags,Tags}
-import com.overviewdocs.persistence.{DocumentSetIdGenerator,EncodedUploadFile,PersistentDocumentSet}
+import com.overviewdocs.models.{Document,DocumentTag,Tag,UploadedFile}
+import com.overviewdocs.models.tables.{Documents,DocumentSets,DocumentTags,Tags,UploadedFiles}
+import com.overviewdocs.persistence.{DocumentSetIdGenerator,PersistentDocumentSet}
 import com.overviewdocs.searchindex.TransportIndexClient
 import com.overviewdocs.util.{BulkDocumentWriter,DocumentProducer,Logger,TagColorList}
 import com.overviewdocs.util.Progress.{Progress,ProgressAbortFn}
@@ -50,8 +50,9 @@ class CsvImportDocumentProducer(
 
   /** Start parsing the CSV upload and feeding the result to the consumer */
   override def produce(): Int = {
-    val uploadedFile = DeprecatedDatabase.inTransaction {
-      EncodedUploadFile.load(uploadedFileId)(DeprecatedDatabase.currentConnection)
+    val uploadedFile = {
+      import database.api._
+      blockingDatabase.option(UploadedFiles.filter(_.id === uploadedFileId)).get
     }
     val uploadReader = new UploadReader(contentsOid, uploadedFile.encoding, blockingDatabase)
     val reader = uploadReader.reader

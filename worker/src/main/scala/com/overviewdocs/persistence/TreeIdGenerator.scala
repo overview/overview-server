@@ -1,17 +1,19 @@
 package com.overviewdocs.persistence
 
-import com.overviewdocs.postgres.SquerylEntrypoint._
-import com.overviewdocs.database.DeprecatedDatabase
-import com.overviewdocs.persistence.orm.Schema.trees
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.tables.Trees
 
-object TreeIdGenerator {
-  def next(documentSetId: Long): Long = DeprecatedDatabase.inTransaction {
-    val maxId: Option[Long] = from(trees)(t =>
-      where (t.documentSetId === documentSetId)
-      compute(max(t.id))
-      )
-      
-    val baseId: Long = maxId.getOrElse(documentSetId << 32)
-    baseId + 1
+object TreeIdGenerator extends HasBlockingDatabase {
+  import database.api._
+
+  lazy val query = Compiled { documentSetId: Rep[Long] =>
+    Trees
+      .filter(_.documentSetId === documentSetId)
+      .map(_.id)
+      .max
+  }
+
+  def next(documentSetId: Long): Long = {
+    blockingDatabase.run(query(documentSetId).result).getOrElse(documentSetId << 32) + 1
   }
 }
