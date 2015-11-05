@@ -1,5 +1,5 @@
 @(
-  userWithResetToken: models.OverviewUser with models.ResetPasswordRequest,
+  userWithResetToken: models.User,
   form: Form[String]
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
@@ -11,6 +11,6 @@
   @main(optionalUser=None, title=m("title"), bodyClass="password-edit", h1=m("h1"), javascripts=javascripts) {
     <p>@m("p", userWithResetToken.email)</p>
 
-    @views.html.Password._editForm(userWithResetToken.resetPasswordToken, form)
+    @views.html.Password._editForm(userWithResetToken.resetPasswordToken.get, form)
   }
 }

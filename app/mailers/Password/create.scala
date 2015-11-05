@@ -4,12 +4,12 @@ import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 
 import mailers.Mailer
-import models.{OverviewUser,ResetPasswordRequest}
+import models.User
 
-case class create(val user: OverviewUser with ResetPasswordRequest)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
+case class create(val user: User)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.Password.create")
 
-  private val url = controllers.routes.PasswordController.edit(user.resetPasswordToken).absoluteURL() 
+  private val url = controllers.routes.PasswordController.edit(user.resetPasswordToken.get).absoluteURL() 
   private val body = m("body")
   private val signoff = m("signoff")
   private val case1 = m("case1")

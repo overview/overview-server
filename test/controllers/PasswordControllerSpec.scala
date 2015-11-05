@@ -6,24 +6,13 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.Future
 
 import controllers.backend.SessionBackend
-import models.{OverviewUser, ResetPasswordRequest, Session, User}
+import models.{Session, User}
 
 class PasswordControllerSpec extends ControllerSpecification {
   trait OurScope extends Scope {
-    trait UserWithRequest extends OverviewUser with ResetPasswordRequest
-
     // We have a mock "user" and "userWithRequest" and they return each other
-    val user = smartMock[OverviewUser]
-    user.email returns "user@example.org"
-    user.passwordMatches("hash") returns true
-    user.toUser returns User(id=123L, email="user@example.org")
-
-    val userWithRequest = smartMock[UserWithRequest]
-    userWithRequest.email returns user.email
-    userWithRequest.resetPasswordToken returns "0123456789abcd"
-    userWithRequest.withNewPassword(anyString) returns user
-
-    user.withResetPasswordRequest returns userWithRequest
+    val user = User(123L, "user@example.org", User.hashPassword("hash"))
+    val userWithToken = User(123L, "user@example.org", User.hashPassword("hash"), resetPasswordToken=Some("0123456789abcd"))
 
     val mockStorage = smartMock[PasswordController.Storage]
     val mockMail = smartMock[PasswordController.Mail]
@@ -32,9 +21,9 @@ class PasswordControllerSpec extends ControllerSpecification {
     mockStorage.findUserByEmail(any[String]) returns None
     mockStorage.findUserByEmail("user@example.org") returns Some(user)
     mockStorage.findUserByResetToken(any[String]) returns None
-    mockStorage.findUserByResetToken("0123456789abcd") returns Some(userWithRequest)
+    mockStorage.findUserByResetToken("0123456789abcd") returns Some(userWithToken)
+    mockStorage.resetPassword(userWithToken, "Ersh3Phowb9") returns Future.successful(())
     mockSessionBackend.create(any[Long], any[String]) returns Future.successful(Session(123L, "127.0.0.1"))
-    mockStorage.insertOrUpdateUser(any[User]) answers { x => x.asInstanceOf[User] }
 
     val controller = new PasswordController with TestController {
       override val sessionBackend = mockSessionBackend
@@ -115,18 +104,16 @@ class PasswordControllerSpec extends ControllerSpecification {
         }
 
         "not change the database" in new CreateScopeUserNotFound {
-          there was no(mockStorage).insertOrUpdateUser(any[User])
+          there was no(mockStorage).addResetPasswordTokenToUser(any)
         }
       }
 
       "when the user is found" should {
         trait CreateScopeUserFound extends CreateScope {
+          mockStorage.addResetPasswordTokenToUser(user) returns "a-token"
+
           override val params = Seq("email" -> "user@example.org")
           h.status(result) // run
-        }
-
-        "email the user" in new CreateScopeUserFound {
-          there was one(mockMail).sendCreated(any[OverviewUser with ResetPasswordRequest])(any[RequestHeader])
         }
 
         "redirect" in new CreateScopeUserFound {
@@ -138,8 +125,11 @@ class PasswordControllerSpec extends ControllerSpecification {
         }
 
         "change the database" in new CreateScopeUserFound {
-          there was one(user).withResetPasswordRequest
-          there was one(mockStorage).insertOrUpdateUser(any[User])
+          there was one(mockStorage).addResetPasswordTokenToUser(user)
+        }
+
+        "email the user" in new CreateScopeUserFound {
+          there was one(mockMail).sendCreated(any)(any)
         }
       }
     }
@@ -173,8 +163,7 @@ class PasswordControllerSpec extends ControllerSpecification {
 
       "save the user with a new password" in new UpdateScope {
         h.status(result)
-        there was one(userWithRequest).withNewPassword("Ersh3Phowb9")
-        there was one(mockStorage).insertOrUpdateUser(any[User])
+        there was one(mockStorage).resetPassword(userWithToken, "Ersh3Phowb9")
       }
 
       "log the user in" in new UpdateScope {

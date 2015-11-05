@@ -25,6 +25,16 @@ case class User(
 }
 
 object User {
+  private val TokenLength = 26
+  private val BcryptRounds = 7
+
+  def generateToken: String = scala.util.Random.alphanumeric.take(TokenLength).mkString
+
+  def hashPassword(password: String): String = {
+    import com.github.t3hnar.bcrypt._
+    password.bcrypt(BcryptRounds)
+  }
+
   case class CreateAttributes(
     email: String,
     passwordHash: String,

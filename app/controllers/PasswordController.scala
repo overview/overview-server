@@ -5,13 +5,13 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action,AnyContent,Request,RequestHeader}
 import scala.concurrent.Future
 
+import com.overviewdocs.database.HasBlockingDatabase
 import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser
 import controllers.backend.SessionBackend
 import mailers.Mailer
-import models.{OverviewUser,ResetPasswordRequest,User}
-import models.orm.stores.{UserStore}
-import com.overviewdocs.database.DeprecatedDatabase
+import models.User
+import models.tables.Users
 
 /**
  * Handles reset-password.
@@ -61,11 +61,8 @@ trait PasswordController extends Controller {
           case None => mail.sendCreateErrorUserDoesNotExist(email)
           case Some(user) => {
             // Success: generate a token and send an email
-            val userWithRequest = user.withResetPasswordRequest
-            DeprecatedDatabase.inTransaction {
-              storage.insertOrUpdateUser(userWithRequest.toUser)
-            }
-            mail.sendCreated(userWithRequest)
+            val token = storage.addResetPasswordTokenToUser(user)
+            mail.sendCreated(user.copy(resetPasswordToken=Some(token)))
           }
         }
 
@@ -85,12 +82,9 @@ trait PasswordController extends Controller {
         editForm.bindFromRequest.fold(
           formWithErrors => Future.successful(BadRequest(views.html.Password.edit(user, formWithErrors))),
           newPassword => {
-            val savedUser = DeprecatedDatabase.inTransaction {
-              storage.insertOrUpdateUser(user.withNewPassword(newPassword).toUser)
-            }
-
             for {
-              session <- sessionBackend.create(savedUser.id, request.remoteAddress)
+              _ <- storage.resetPassword(user, newPassword)
+              session <- sessionBackend.create(user.id, request.remoteAddress)
             } yield AuthResults.loginSucceeded(request, session).flashing(
               "success" -> m("update.success"),
               "event" -> "password-update"
@@ -110,36 +104,58 @@ object PasswordController extends PasswordController {
   override protected val sessionBackend = SessionBackend
 
   trait Storage {
-    def findUserByEmail(email: String) : Option[OverviewUser]
-    def findUserByResetToken(token: String) : Option[OverviewUser with ResetPasswordRequest]
-    def insertOrUpdateUser(user: User) : User
+    def findUserByEmail(email: String): Option[User]
+    def findUserByResetToken(token: String): Option[User]
+    def addResetPasswordTokenToUser(user: User): String
+    def resetPassword(user: User, password: String): Future[Unit]
   }
 
   trait Mail {
-    def sendCreated(user: OverviewUser with ResetPasswordRequest)(implicit request: RequestHeader) : Unit
+    def sendCreated(user: User)(implicit request: RequestHeader) : Unit
     def sendCreateErrorUserDoesNotExist(email: String)(implicit request: RequestHeader) : Unit
   }
 
   val SecondsResetTokenIsValid = 14400 // 4 hours
 
-  override protected val storage = new Storage {
+  override protected val storage = new Storage with HasBlockingDatabase {
+    import database.api._
+
     override def findUserByEmail(email: String) = {
-      OverviewUser.findByEmail(email)
+      blockingDatabase.option(Users.filter(_.email === email))
     }
 
     override def findUserByResetToken(token: String) = {
-      OverviewUser.findByResetPasswordTokenAndMinDate(
-        token,
-        new Date((new Date()).getTime - SecondsResetTokenIsValid * 1000)
+      blockingDatabase.option(
+        Users
+          .filter(_.resetPasswordToken === token)
+          .filter(_.resetPasswordSentAt >= new java.sql.Timestamp(new Date().getTime - SecondsResetTokenIsValid * 1000))
       )
     }
 
-    override def insertOrUpdateUser(user: User) = UserStore.insertOrUpdate(user)
+    override def addResetPasswordTokenToUser(user: User) = {
+      val token = User.generateToken
+      blockingDatabase.runUnit(
+        Users
+          .filter(_.id === user.id)
+          .map(u => (u.resetPasswordToken, u.resetPasswordSentAt))
+          .update((Some(token), Some(new java.sql.Timestamp(new Date().getTime))))
+      )
+      token
+    }
+
+    override def resetPassword(user: User, password: String) = {
+      database.runUnit(
+        Users
+          .filter(_.id === user.id)
+          .map(u => (u.passwordHash, u.resetPasswordToken, u.resetPasswordSentAt))
+          .update((User.hashPassword(password), None, None))
+      )
+    }
   }
 
   override protected val mail = new Mail {
-    override def sendCreated(userWithRequest: OverviewUser with ResetPasswordRequest)(implicit request: RequestHeader) = {
-      val mail = mailers.Password.create(userWithRequest)
+    override def sendCreated(user: User)(implicit request: RequestHeader) = {
+      val mail = mailers.Password.create(user)
       mail.send
     }
 
