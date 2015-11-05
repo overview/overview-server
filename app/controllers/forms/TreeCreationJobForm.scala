@@ -3,8 +3,7 @@ package controllers.forms
 import play.api.data.{ Form, Forms }
 import play.api.data.validation.Constraints
 
-import com.overviewdocs.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
-import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.models.{DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
 
 object TreeCreationJobForm {
   private def buildJob(documentSetId: Long)(
@@ -13,18 +12,28 @@ object TreeCreationJobForm {
     lang: String,
     suppliedStopWords: String,
     importantWords: String
-  ) = DocumentSetCreationJob(
+  ) = DocumentSetCreationJob.CreateAttributes(
     documentSetId = documentSetId,
     jobType = DocumentSetCreationJobType.Recluster,
-    treeTitle = Some(title),
-    tagId = tagId,
+    retryAttempts = 0,
     lang = lang,
     suppliedStopWords = suppliedStopWords,
     importantWords = importantWords,
-    state = DocumentSetCreationJobState.NotStarted
+    splitDocuments = false,
+    documentcloudUsername = None,
+    documentcloudPassword = None,
+    contentsOid = None,
+    sourceDocumentSetId = None,
+    treeTitle = Some(title),
+    treeDescription = None,
+    tagId = tagId,
+    state = DocumentSetCreationJobState.NotStarted,
+    fractionComplete = 0,
+    statusDescription = "",
+    canBeCancelled = true
   )
 
-  def apply(documentSetId: Long) : Form[DocumentSetCreationJob] = Form(
+  def apply(documentSetId: Long) : Form[DocumentSetCreationJob.CreateAttributes] = Form(
     Forms.mapping(
       "tree_title" -> Forms.text.transform(_.trim, identity[String]).verifying(Constraints.nonEmpty),
       "tag_id" -> Forms.optional(Forms.longNumber),

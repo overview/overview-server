@@ -6,13 +6,13 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WS
 import scala.concurrent.Future
 
+import com.overviewdocs.database.HasBlockingDatabase
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet,userOwningView}
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import controllers.forms.{ViewForm,ViewUpdateAttributesForm}
-import models.orm.finders.{DocumentSetCreationJobFinder,TreeFinder}
-import com.overviewdocs.tree.orm.{DocumentSetCreationJob,Tree}
-import com.overviewdocs.models.{ApiToken,View}
+import com.overviewdocs.models.{ApiToken,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tree,View}
+import com.overviewdocs.models.tables.{DocumentSetCreationJobs,Trees}
 
 trait ViewController extends Controller {
   def indexJson(documentSetId: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(documentSetId)).async {
@@ -74,15 +74,20 @@ object ViewController extends ViewController {
     def findViewJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
   }
 
-  object DatabaseStorage extends Storage {
+  object DatabaseStorage extends Storage with HasBlockingDatabase {
+    import database.api._
+
     override def findTrees(documentSetId: Long) = {
-      TreeFinder.byDocumentSet(documentSetId).toSeq
+      blockingDatabase.seq(Trees.filter(_.documentSetId === documentSetId))
     }
 
     override def findViewJobs(documentSetId: Long) = {
-      DocumentSetCreationJobFinder
-        .byDocumentSet(documentSetId)
-        .excludeCancelledJobs
+      blockingDatabase.seq(
+        DocumentSetCreationJobs
+          .filter(_.documentSetId === documentSetId)
+          .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
+          .filter(_.jobType === DocumentSetCreationJobType.Recluster)
+      )
     }
   }
 

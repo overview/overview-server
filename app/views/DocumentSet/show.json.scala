@@ -6,8 +6,7 @@ import org.joda.time.DateTimeZone
 import play.api.i18n.Messages
 import play.api.libs.json.{Json, JsValue}
 
-import com.overviewdocs.tree.orm.{DocumentSetCreationJob,Tag,Tree}
-import com.overviewdocs.models.{DocumentSet,View}
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,Tag,Tree,View}
 
 object show {
   private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)

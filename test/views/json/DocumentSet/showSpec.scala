@@ -17,7 +17,7 @@ class showSpec extends views.ViewSpecification {
     val views: Iterable[View] = Seq()
     val viewJobs: Iterable[DocumentSetCreationJob] = Seq()
     val tags: Iterable[Tag] = Seq()
-    override def result = show(documentSet, trees.map(_.toDeprecatedTree), views, viewJobs.map(_.toDeprecatedDocumentSetCreationJob), tags.map(_.toDeprecatedTag))
+    override def result = show(documentSet, trees, views, viewJobs, tags)
   }
 
   "Tree view generated Json" should {

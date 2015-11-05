@@ -17,12 +17,13 @@ object DocumentSetCreationJobType extends Enumeration {
 object DocumentSetCreationJobState extends Enumeration {
   type DocumentSetCreationJobState = Value
   
-  val NotStarted = Value(0)
-  val InProgress = Value(1)
-  val Error = Value(2)
-  val Cancelled = Value(3)
-  val FilesUploaded = Value(4)
-  val TextExtractionInProgress = Value(5)
+  // XXX nix the capitalized stuff. I'm not sure why we need it, but we test for it in app/.
+  val NotStarted = Value(0, "NOT_STARTED")
+  val InProgress = Value(1, "IN_PROGRESS")
+  val Error = Value(2, "ERROR")
+  val Cancelled = Value(3, "CANCELLED")
+  val FilesUploaded = Value(4, "FILES_UPLOADED")
+  val TextExtractionInProgress = Value(5, "TEXT_EXTRACTION_IN_PROGRESS")
 }
 
 case class DocumentSetCreationJob( 

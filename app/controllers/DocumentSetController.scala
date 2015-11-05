@@ -5,19 +5,15 @@ import play.api.libs.json.{JsError,JsObject,JsResult,JsSuccess}
 import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
 
-import com.overviewdocs.database.{DeprecatedDatabase,HasBlockingDatabase}
+import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.metadata.MetadataSchema
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,ImportJob}
-import com.overviewdocs.models.tables.DocumentSets
-import com.overviewdocs.tree.orm.{DocumentSetCreationJob=>DeprecatedDocumentSetCreationJob,Tag,Tree}
-import com.overviewdocs.tree.orm.DocumentSetCreationJobState
-import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,ImportJob,Tag,Tree}
+import com.overviewdocs.models.tables.{DocumentSets,DocumentSetCreationJobs,Tags,Trees}
 import controllers.auth.{AuthorizedAction,Authorities}
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.JobQueueSender
-import models.orm.finders.{DocumentSetCreationJobFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetCreationJobStore
 import models.pagination.{Page,PageRequest}
 
@@ -100,7 +96,7 @@ trait DocumentSetController extends Controller {
   def showJson(id: Long) = AuthorizedAction.inTransaction(userViewingDocumentSet(id)).async {
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
-      case Some(documentSet) => DeprecatedDatabase.inTransaction {
+      case Some(documentSet) => {
         val trees = storage.findTrees(id).map(_.copy()).toArray
         val viewJobs = storage.findViewJobs(id).map(_.copy()).toArray
         val tags = storage.findTags(id).map(_.copy()).toArray
@@ -177,13 +173,13 @@ object DocumentSetController extends DocumentSetController {
 
     def deleteDocumentSet(documentSetId: Long): Unit
 
-    def cancelJob(documentSetId: Long): Option[DeprecatedDocumentSetCreationJob]
+    def cancelJob(documentSetId: Long): Unit
 
     /** All Views for the document set. */
     def findTrees(documentSetId: Long) : Iterable[Tree]
 
     /** All View-creation jobs for the document set. */
-    def findViewJobs(documentSetId: Long) : Iterable[DeprecatedDocumentSetCreationJob]
+    def findViewJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
 
     /** All Tags for the document set. */
     def findTags(documentSetId: Long) : Iterable[Tag]
@@ -192,10 +188,12 @@ object DocumentSetController extends DocumentSetController {
   object DatabaseStorage extends Storage with HasBlockingDatabase {
     import database.api._
 
-    override def cancelJob(documentSetId: Long): Option[DeprecatedDocumentSetCreationJob] = {
-      DeprecatedDatabase.inTransaction {
-        DocumentSetCreationJobStore.findCancellableJobByDocumentSetAndCancel(documentSetId)
-      }
+    override def cancelJob(documentSetId: Long): Unit = {
+      blockingDatabase.runUnit(
+        DocumentSetCreationJobs
+          .filter(_.documentSetId === documentSetId)
+          .map(_.state).update(DocumentSetCreationJobState.Cancelled)
+      )
     }
 
     override def deleteDocumentSet(documentSetId: Long) = {
@@ -251,18 +249,20 @@ object DocumentSetController extends DocumentSetController {
     }
 
     override def findTrees(documentSetId: Long) = {
-      TreeFinder.byDocumentSet(documentSetId).toSeq
+      blockingDatabase.seq(Trees.filter(_.documentSetId === documentSetId))
     }
 
     override def findViewJobs(documentSetId: Long) = {
-      DocumentSetCreationJobFinder
-        .byDocumentSet(documentSetId)
-        .excludeCancelledJobs
-        .toSeq
+      blockingDatabase.seq(
+        DocumentSetCreationJobs
+          .filter(_.documentSetId === documentSetId)
+          .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
+          .filter(_.jobType === DocumentSetCreationJobType.Recluster)
+      )
     }
 
     override def findTags(documentSetId: Long) = {
-      TagFinder.byDocumentSet(documentSetId).toSeq
+      blockingDatabase.seq(Tags.filter(_.documentSetId === documentSetId))
     }
   }
 

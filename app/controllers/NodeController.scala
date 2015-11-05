@@ -2,10 +2,13 @@ package controllers
 
 import scala.annotation.tailrec
 
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.Tree
+import com.overviewdocs.models.tables.Trees
+import com.overviewdocs.tree.orm.Node
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningTree
-import models.orm.finders.{NodeFinder,TreeFinder}
-import com.overviewdocs.tree.orm.{Node,Tree}
+import models.orm.finders.NodeFinder
 
 trait NodeController extends Controller {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
@@ -51,7 +54,7 @@ object NodeController extends NodeController {
     def findTree(treeId: Long) : Option[Tree]
   }
 
-  override val storage = new Storage {
+  override val storage = new Storage with HasBlockingDatabase {
     private def childrenOf(nodes: Iterable[Node]) : Iterable[Node] = {
       if (nodes.nonEmpty) {
         val nodeIds = nodes.map(_.id)
@@ -86,7 +89,8 @@ object NodeController extends NodeController {
     }
 
     override def findTree(treeId: Long) = {
-      TreeFinder.byId(treeId).headOption
+      import database.api._
+      blockingDatabase.option(Trees.filter(_.id === treeId))
     }
   }
 }

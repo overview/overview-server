@@ -5,9 +5,8 @@ import org.specs2.matcher.{JsonMatchers,Matcher}
 import scala.concurrent.Future
 
 import controllers.backend.TreeBackend
-import com.overviewdocs.models.Tree
+import com.overviewdocs.models.{DocumentSetCreationJob,Tag,Tree}
 import com.overviewdocs.test.factories.PodoFactory
-import com.overviewdocs.tree.orm.{DocumentSetCreationJob,Tag}
 
 class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
@@ -31,7 +30,9 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
 
     "store a DocumentSetCreationJob" in new CreateScope {
       h.status(result) // store result
-      def beJobWithDocumentSetId(id: Long) : Matcher[DocumentSetCreationJob] = beLike{ case (j: DocumentSetCreationJob) => j.documentSetId must beEqualTo(id) }
+      def beJobWithDocumentSetId(id: Long) : Matcher[DocumentSetCreationJob.CreateAttributes] = beLike{
+        case j: DocumentSetCreationJob.CreateAttributes => j.documentSetId must beEqualTo(id)
+      }
       there was one(mockStorage).insertJob(argThat(beJobWithDocumentSetId(documentSetId)))
     }
 
@@ -43,9 +44,11 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
     trait CreateScopeWithTag extends CreateScope {
       def tagId: Option[Long]
       override def formBody = super.formBody ++ Seq("tag_id" -> tagId.map(_.toString).getOrElse(""))
-      def beJobWithTreeData(expected: Option[(Long,String)]) = beLike[DocumentSetCreationJob] { case (j: DocumentSetCreationJob) =>
-        j.tagId must beEqualTo(expected.map(_._1))
-        j.treeDescription must beEqualTo(expected.map(_._2))
+      def beJobWithTreeData(expected: Option[(Long,String)]) = beLike[DocumentSetCreationJob.CreateAttributes] {
+        case j: DocumentSetCreationJob.CreateAttributes => {
+          j.tagId must beEqualTo(expected.map(_._1))
+          j.treeDescription must beEqualTo(expected.map(_._2))
+        }
       }
       // Call like this: `testTree(Some((102L, "description")))`
       def testTree(expected: Option[(Long,String)]) = {

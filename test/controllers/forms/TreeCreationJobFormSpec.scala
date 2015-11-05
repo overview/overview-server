@@ -2,49 +2,34 @@ package controllers.forms
 
 import play.api.data.FormError
 
-import com.overviewdocs.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState}
-import com.overviewdocs.tree.DocumentSetCreationJobType
+import com.overviewdocs.models.{DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
 
 class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
-  trait JobApplyScope extends ApplyScope[DocumentSetCreationJob] {
+  trait JobApplyScope extends ApplyScope[DocumentSetCreationJob.CreateAttributes] {
     val documentSetId = 4L // random
     override def form = TreeCreationJobForm(documentSetId)
   }
 
   trait ValidScope extends JobApplyScope {
-    val validTreeTitle = "title"
-    val validTagId = None
-    val requiredQuery = ""
-    val validLang = "en"
-    val requiredUsername = None
-    val requiredPassword = None
-    val requiredSplitDocuments = None
-    val validSuppliedStopWords = ""
-    val validImportantWords = ""
-
     override def args = Map(
-      "tree_title" -> validTreeTitle,
-      "tag_id" -> validTagId.map(_.toString).getOrElse(""),
-      "lang" -> validLang,
-      "supplied_stop_words" -> validSuppliedStopWords,
-      "important_words" -> validImportantWords
-    )
-
-    def expectedValue = DocumentSetCreationJob(
-      documentSetId = documentSetId,
-      jobType = DocumentSetCreationJobType.Recluster,
-      treeTitle = Some(validTreeTitle),
-      tagId = None,
-      lang = validLang,
-      suppliedStopWords = validSuppliedStopWords,
-      importantWords = validImportantWords,
-      state = DocumentSetCreationJobState.NotStarted
+      "tree_title" -> "title",
+      "tag_id" -> "",
+      "lang" -> "en",
+      "supplied_stop_words" -> "",
+      "important_words" -> ""
     )
   }
 
   "TreeCreationJobForm" should {
     "create a correct DocumentSetCreationJob" in new ValidScope {
-      value must beSome(expectedValue)
+      value.map(_.documentSetId) must beSome(documentSetId)
+      value.map(_.jobType) must beSome(DocumentSetCreationJobType.Recluster)
+      value.flatMap(_.treeTitle) must beSome("title")
+      value.flatMap(_.tagId) must beNone
+      value.map(_.suppliedStopWords) must beSome("")
+      value.map(_.importantWords) must beSome("")
+      value.map(_.state) must beSome(DocumentSetCreationJobState.NotStarted)
+      value.map(_.lang) must beSome("en")
     }
 
     "disallow if lang is missing" in new ValidScope {
@@ -84,7 +69,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
 
     "trim the title" in new ValidScope {
       override def args = super.args + ("tree_title" -> " title ")
-      value must beSome(expectedValue)
+      value.flatMap(_.treeTitle) must beSome("title")
     }
 
     "disallow if title is just spaces" in new ValidScope {
@@ -94,12 +79,12 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
 
     "set tagId" in new ValidScope {
       override def args = super.args + ("tag_id" -> "1125899906842624")
-      value must beSome(expectedValue.copy(tagId=Some(1125899906842624L)))
+      value.flatMap(_.tagId) must beSome(1125899906842624L)
     }
 
     "not set tagId when it is empty" in new ValidScope {
       override def args = super.args + ("tag_id" -> "")
-      value must beSome(expectedValue)
+      value.flatMap(_.tagId) must beNone
     }
   }
 }

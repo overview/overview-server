@@ -9,7 +9,6 @@ import scala.concurrent.Future
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJobState,DocumentSetCreationJobType,ImportJob}
 import com.overviewdocs.test.factories.PodoFactory
-import com.overviewdocs.tree.orm.{Tag,Tree}
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import controllers.util.JobQueueSender
@@ -151,7 +150,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val documentSetId = 1L
         def result = controller.showJson(documentSetId)(fakeAuthorizedRequest)
 
-        val sampleTree = Tree(
+        val sampleTree = factory.tree(
           id = 1L,
           documentSetId = 1L,
           rootNodeId = 3L,
@@ -163,16 +162,9 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
           importantWords = ""
         )
 
-        val sampleView = factory.view(
-          title="a view"
-        )
+        val sampleView = factory.view(title="a view")
 
-        val sampleTag = Tag(
-          id=1L,
-          documentSetId=1L,
-          name="a tag",
-          color="FFFFFF"
-        )
+        val sampleTag = factory.tag(id=1L, documentSetId=1L, name="a tag", color="ffffff")
 
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(documentCount=10)))
         mockStorage.findTrees(documentSetId) returns Seq(sampleTree)
@@ -210,7 +202,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
             jobType=DocumentSetCreationJobType.Recluster,
             state=DocumentSetCreationJobState.Error
           )
-        ).map(_.toDeprecatedDocumentSetCreationJob)
+        )
 
         val json = h.contentAsString(result)
 

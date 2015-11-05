@@ -6,9 +6,7 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
-import com.overviewdocs.tree.orm.{DocumentSetCreationJob,DocumentSetCreationJobState,Tree}
-import com.overviewdocs.tree.DocumentSetCreationJobType
-import com.overviewdocs.models.{ApiToken,View}
+import com.overviewdocs.models.{ApiToken,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tree,View}
 import com.overviewdocs.test.factories.PodoFactory
 
 class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
@@ -27,7 +25,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       override protected val viewBackend = mockViewBackend
     }
 
-    def fakeViewJob(id: Long) = DocumentSetCreationJob(
+    def fakeViewJob(id: Long) = factory.documentSetCreationJob(
       id=id,
       documentSetId=1L,
       treeTitle=Some(s"clustering job ${id}"),
@@ -35,7 +33,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       state=DocumentSetCreationJobState.InProgress
     )
 
-    def fakeViewErrorJob(id: Long) = DocumentSetCreationJob(
+    def fakeViewErrorJob(id: Long) = factory.documentSetCreationJob(
       id=id,
       documentSetId=1L,
       treeTitle=Some(s"failed job ${id}"),
@@ -43,7 +41,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       state=DocumentSetCreationJobState.Error
     )
 
-    def fakeTree(id: Long, jobId: Long) = Tree(
+    def fakeTree(id: Long, jobId: Long) = factory.tree(
       id=id,
       documentSetId=1L,
       rootNodeId=3L,
