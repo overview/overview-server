@@ -1,11 +1,11 @@
 package controllers.backend
 
+import com.github.tminglei.slickpg.InetString
 import java.util.{Date,UUID}
 import java.sql.Timestamp
 
 import models.{Session=>OSession,User} // beware database.Slick.simple.Session
 import models.tables.{Sessions,Users}
-import com.overviewdocs.postgres.InetAddress
 
 class DbSessionBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
@@ -25,7 +25,7 @@ class DbSessionBackendSpec extends DbBackendSpecification {
     def insertSession(userId: Long, ip: String, createdAt: Date): OSession = {
       val ret = OSession(UUID.randomUUID,
         userId,
-        InetAddress.getByName(ip),
+        InetString(ip),
         new Timestamp(createdAt.getTime),
         new Timestamp(createdAt.getTime)
       )
@@ -73,7 +73,7 @@ class DbSessionBackendSpec extends DbBackendSpecification {
     "change the IP" in new UpdateScope {
       val attributes = OSession.UpdateAttributes("192.168.0.2", updatedAt1)
       await(backend.update(session1.id, attributes))
-      findSession(session1.id).map(_.ip) must beSome(InetAddress.getByName("192.168.0.2"))
+      findSession(session1.id).map(_.ip) must beSome(InetString("192.168.0.2"))
     }
 
     "change updatedAt" in new UpdateScope {

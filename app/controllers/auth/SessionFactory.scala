@@ -57,7 +57,7 @@ trait SessionFactory {
   private def maybeLogActivity(request: RequestHeader, session: Session, user: User): Future[Unit] = {
     val now: Long = new Date().getTime()
 
-    val future1 = if (session.ip.getHostAddress != request.remoteAddress
+    val future1 = if (session.ip.value != request.remoteAddress
         || now > session.updatedAt.getTime + ActivityLoggingResolutinInMs) {
       val attributes = Session.UpdateAttributes(request.remoteAddress, new Date(now))
       sessionBackend.update(session.id, attributes)

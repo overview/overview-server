@@ -8,7 +8,6 @@ import slick.driver.{ JdbcTypesComponent, PostgresDriver }
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{DocumentSetCreationJobState, DocumentSetCreationJobType, DocumentSetUser, UserRole}
 import com.overviewdocs.models.DocumentDisplayMethod
-import com.overviewdocs.postgres.InetAddress
 
 trait MyPostgresDriver extends PostgresDriver
   with PgArraySupport
@@ -34,10 +33,6 @@ trait MyPostgresDriver extends PostgresDriver
     )
 
     implicit val instantOptionColumnType = instantColumnType.optionType
-
-    implicit val ipColumnType = MappedColumnType.base[InetAddress, InetString](
-      (a: InetAddress) => InetString(a.getHostAddress),
-      (s: InetString) => InetAddress.getByName(s.address))
 
     implicit val userRoleColumnType = MappedColumnType.base[UserRole.Value, Int](_.id, UserRole(_))
 

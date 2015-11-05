@@ -1,12 +1,12 @@
 package controllers.backend
 
+import com.github.tminglei.slickpg.InetString
 import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.Future
 
 import models.{Session,User}
 import models.tables.{Sessions,Users}
-import com.overviewdocs.postgres.InetAddress
 
 trait SessionBackend extends Backend {
   /** Maximum age of a session.
@@ -78,7 +78,7 @@ trait DbSessionBackend extends SessionBackend with DbBackend {
   override def showWithUser(id: UUID) = database.option(showWithUserCompiled(id, minCreatedAt))
 
   override def update(id: UUID, attributes: Session.UpdateAttributes) = {
-    val ip = InetAddress.getByName(attributes.ip)
+    val ip = InetString(attributes.ip)
     val updatedAt = new Timestamp(attributes.updatedAt.getTime())
 
     database.runUnit(updateCompiled(id).update((ip, updatedAt)))

@@ -3,7 +3,7 @@ package models
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 
-import com.overviewdocs.postgres.InetAddress
+import com.github.tminglei.slickpg.InetString
 
 /** A user's session in the database.
   *
@@ -24,21 +24,21 @@ import com.overviewdocs.postgres.InetAddress
 case class Session(
   val id: UUID,
   val userId: Long,
-  val ip: InetAddress, // TODO make this an InetString
+  val ip: InetString,
   val createdAt: Timestamp,
   val updatedAt: Timestamp
 ) {
-  def update(ip: InetAddress): Session = {
+  def update(ip: InetString): Session = {
     copy(
       ip=ip,
       updatedAt=new Timestamp((new Date()).getTime())
     )
   }
 
-  def update(ip: String): Session = update(InetAddress.getByName(ip))
+  def update(ip: String): Session = update(InetString(ip))
 
   def update(attributes: Session.UpdateAttributes): Session = copy(
-    ip=InetAddress.getByName(attributes.ip),
+    ip=InetString(attributes.ip),
     updatedAt=new Timestamp(attributes.updatedAt.getTime())
   )
 }
@@ -47,27 +47,18 @@ object Session {
   case class UpdateAttributes(ip: String, updatedAt: Date)
 
   /** Constructor with default id and updatedAt */
-  def apply(userId: Long, ip: InetAddress, createdAt: Timestamp) : Session = {
+  def apply(userId: Long, ip: String, createdAt: Timestamp) : Session = {
     apply(
       id=UUID.randomUUID(),
       userId=userId,
-      ip=ip,
+      ip=InetString(ip),
       createdAt=createdAt,
       updatedAt=createdAt
     )
   }
 
   /** Constructor with default id, updatedAt and createdAt */
-  def apply(userId: Long, ip: InetAddress) : Session = {
-    apply(
-      userId=userId,
-      ip=ip,
-      createdAt=new Timestamp((new Date()).getTime())
-    )
-  }
-
-  /** Constructor with default id, updatedAt and createdAt, with parsed IP */
   def apply(userId: Long, ip: String) : Session = {
-    apply(userId, InetAddress.getByName(ip))
+    apply(userId, ip, new Timestamp((new Date()).getTime))
   }
 }
