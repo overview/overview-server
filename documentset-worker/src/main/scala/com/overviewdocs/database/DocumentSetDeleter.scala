@@ -4,17 +4,23 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.overviewdocs.models.tables._
+import com.overviewdocs.searchindex.{IndexClient,TransportIndexClient}
 
 trait DocumentSetDeleter extends HasDatabase {
+  protected val indexClient: IndexClient
+
   import database.api._
 
   def delete(documentSetId: Long): Future[Unit] = {
+    val indexFuture = indexClient.removeDocumentSet(documentSetId)
+
     database.run(for {
       uploadedFileId <- findUploadedFileId(documentSetId)
       _ <- deleteViews(documentSetId)
       _ <- deleteUserAddedData(documentSetId)
       _ <- deleteTrees(documentSetId)
       _ <- deleteJobs(documentSetId)
+      _ <- DBIO.from(indexFuture) // Ensure it's out of ElasticSearch before deleting DocumentSet, so restart resumes the index-delete
       _ <- deleteCore(documentSetId)
       _ <- deleteUploadedFile(uploadedFileId)
     } yield ())
@@ -134,4 +140,6 @@ trait DocumentSetDeleter extends HasDatabase {
   }
 }
 
-object DocumentSetDeleter extends DocumentSetDeleter
+object DocumentSetDeleter extends DocumentSetDeleter {
+  override protected val indexClient = TransportIndexClient.singleton
+}

@@ -1,10 +1,14 @@
 package com.overviewdocs.database
 
+import org.specs2.mock.Mockito
+import scala.concurrent.Future
+
 import com.overviewdocs.test.DbSpecification
 import com.overviewdocs.models.{ Document, DocumentSet, UploadedFile }
 import com.overviewdocs.models.tables._
+import com.overviewdocs.searchindex.IndexClient
 
-class DocumentSetDeleterSpec extends DbSpecification {
+class DocumentSetDeleterSpec extends DbSpecification with Mockito {
 
   "DocumentSetDeleter" should {
 
@@ -12,6 +16,12 @@ class DocumentSetDeleterSpec extends DbSpecification {
       deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
+    }
+
+    "delete the DocumentSet from ElasticSearch" in new BasicDocumentSetScope {
+      deleteDocumentSet
+
+      there was one(mockIndexClient).removeDocumentSet(documentSet.id)
     }
 
     "delete jobs" in new BasicDocumentSetScope {
@@ -64,7 +74,10 @@ class DocumentSetDeleterSpec extends DbSpecification {
       findUploadedFile must beEmpty
     }
 
-    "delete user added data" in new UserAddedDataScope {
+    "delete user added data" in new BasicDocumentSetScope {
+      val tag = factory.tag(documentSetId = documentSet.id)
+      documents.foreach(d => factory.documentTag(d.id, tag.id))
+
       deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
@@ -88,13 +101,24 @@ class DocumentSetDeleterSpec extends DbSpecification {
       fileReferenceCount must beSome(0)
     }
     
-    "delete tree data" in new TreeScope {
+    "delete tree data" in new BasicDocumentSetScope {
+      val node = factory.node(id = 1l, rootId = 1l)
+
+      factory.nodeDocument(node.id, documents.head.id)
+      factory.tree(documentSetId = documentSet.id, rootNodeId = node.id)
+
       deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
     }
 
-    "delete view data" in new PluginScope {
+    "delete view data" in new BasicDocumentSetScope {
+      val apiToken = factory.apiToken(documentSetId = Some(documentSet.id))
+      val store = factory.store(apiToken = apiToken.token)
+      val storeObject = factory.storeObject(storeId = store.id)
+      documents.map(d => factory.documentStoreObject(documentId = d.id, storeObjectId = storeObject.id))
+      factory.view(documentSetId = documentSet.id, apiToken = apiToken.token)
+
       deleteDocumentSet
       
       findDocumentSet(documentSet.id) must beEmpty
@@ -104,9 +128,13 @@ class DocumentSetDeleterSpec extends DbSpecification {
   trait BasicDocumentSetScope extends DbScope {
     def numberOfDocuments = 3
 
-    val deleter = DocumentSetDeleter
-    val documentSet = createDocumentSet
+    val mockIndexClient = smartMock[IndexClient]
+    mockIndexClient.removeDocumentSet(any) returns Future.successful(())
+    val deleter = new DocumentSetDeleter {
+      override protected val indexClient = mockIndexClient
+    }
 
+    val documentSet = createDocumentSet
     val documents = createDocuments
 
     factory.documentSetUser(documentSetId = documentSet.id)
@@ -164,26 +192,6 @@ class DocumentSetDeleterSpec extends DbSpecification {
       blockingDatabase.option(UploadedFiles)
     }
 
-  }
-
-  trait UserAddedDataScope extends BasicDocumentSetScope {
-    val tag = factory.tag(documentSetId = documentSet.id)
-    documents.foreach(d => factory.documentTag(d.id, tag.id))
-  }
-
-  trait TreeScope extends BasicDocumentSetScope {
-    val node = factory.node(id = 1l, rootId = 1l)
-
-    factory.nodeDocument(node.id, documents.head.id)
-    factory.tree(documentSetId = documentSet.id, rootNodeId = node.id)
-  }
-  
-  trait PluginScope extends BasicDocumentSetScope {
-    val apiToken = factory.apiToken(documentSetId = Some(documentSet.id))
-    val store = factory.store(apiToken = apiToken.token)
-    val storeObject = factory.storeObject(storeId = store.id)
-    documents.map(d => factory.documentStoreObject(documentId = d.id, storeObjectId = storeObject.id))
-    factory.view(documentSetId = documentSet.id, apiToken = apiToken.token)
   }
 
   trait InterruptedDeleteScope extends FileUploadScope {
