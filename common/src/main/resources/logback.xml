@@ -6,9 +6,8 @@
   </appender>
 
   <logger name="com.ning.http.client" level="WARN"/><!-- Noisy Ning -->
-  <logger name="slick" level="INFO" />
 
-  <root level="DEBUG">
+  <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>
