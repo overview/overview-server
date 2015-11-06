@@ -25,7 +25,7 @@ object Dependencies {
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
     val junit = "junit" % "junit-dep" % "4.11"
-    val logback = "ch.qos.logback" % "logback-classic" % "1.0.9"
+    val logback = "ch.qos.logback" % "logback-classic" % "1.1.3"
     val log4jBridge = "org.slf4j" % "log4j-over-slf4j" % "1.7.12" // for ElasticSearch
     val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
