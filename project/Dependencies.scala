@@ -45,7 +45,7 @@ object Dependencies {
     val playStreams = "com.typesafe.play" %% "play-streams-experimental" % play.core.PlayVersion.current
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
     val postgresql = "org.postgresql" % "postgresql" % "9.4-1205-jdbc42"
-    val redis = "net.debasishg" %% "redisreact" % "0.6"
+    val redis = "net.debasishg" %% "redisreact" % "0.8"
     val scalaArm = "com.jsuereth" %% "scala-arm" % "1.4"
     val scallop = "org.rogach" %% "scallop" % "0.9.5"
     val slick = "com.typesafe.slick" %% "slick" % "3.1.0"
