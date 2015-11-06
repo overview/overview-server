@@ -4,10 +4,10 @@ import play.sbt.PlayImport.{filters,ws}
 object Dependencies {
   private object deps {
     // shared dependencies
-    val akka = "com.typesafe.akka" %% "akka-actor" % "2.3.4"
-    val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.3.4"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.3.4"
-    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.3.4"
+    val akka = "com.typesafe.akka" %% "akka-actor" % "2.4.0"
+    val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.4.0"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.4.0"
+    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.4.0"
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.9.23"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.9.23"
@@ -21,10 +21,12 @@ object Dependencies {
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.4.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val javaxMail = "javax.mail" % "mail" % "1.4.7"
+    val jna = "net.java.dev.jna" % "jna" % "4.2.1" // for ElasticSearch, partially to ignore a warning
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
     val junit = "junit" % "junit-dep" % "4.11"
     val logback = "ch.qos.logback" % "logback-classic" % "1.0.9"
+    val log4jBridge = "org.slf4j" % "log4j-over-slf4j" % "1.7.12" // for ElasticSearch
     val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
     val openCsv = "com.opencsv" % "opencsv" % "3.4"
@@ -60,6 +62,7 @@ object Dependencies {
     deps.slick,
     filters,
     ws,
+    deps.log4jBridge % "test",
     deps.joddWot % "test",
     deps.playTest % "test"
   )
@@ -78,10 +81,12 @@ object Dependencies {
     deps.asyncHttpClient,
     deps.awsS3,
     deps.commonsIo,
-    deps.elasticSearch,
-    deps.elasticSearchIcu,
+    deps.elasticSearch exclude("log4j", "log4j"),
+    deps.elasticSearchIcu exclude("log4j", "log4j"),
     deps.guava, // Textify
     deps.hikariCp,
+    deps.jna, // Make ElasticSearch client happy
+    deps.log4jBridge, // ElasticSearch
     deps.logback,
     deps.parserCombinators,
     deps.pgSlick,
@@ -90,7 +95,7 @@ object Dependencies {
     deps.redis,
     deps.slick,
     deps.akkaTestkit % "test",
-    deps.janino % "test", // See logback-text.xml
+    deps.janino % "test", // See logback-test.xml
     deps.junitInterface % "test",
     deps.junit % "test",
     deps.mockito % "test",
@@ -126,7 +131,8 @@ object Dependencies {
 
   val searchIndexDependencies = Seq(
     deps.elasticSearch,
-    deps.elasticSearchIcu
+    deps.elasticSearchIcu,
+    deps.jna // actually useful here
   )
 
   val runnerDependencies = Seq(

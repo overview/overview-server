@@ -40,7 +40,7 @@ object RedisModuleGlobalState {
 
     implicit val sys = ActorSystem("RedisModule")
     implicit val ec = sys.dispatcher
-    implicit val timeout = Timeout.longToTimeout(5000)
+    implicit val timeout = Timeout(5, java.util.concurrent.TimeUnit.SECONDS)
 
     (sys, RedisClient(config.host, config.port))
   }
@@ -67,7 +67,7 @@ class RedisModule @Inject() (lifecycle: ApplicationLifecycle) {
     // Assume Play is running -- otherwise, who called this code?
     if (Play.current.mode == Mode.Dev) {
       lifecycle.addStopHook { () =>
-        actorSystem.shutdown
+        actorSystem.terminate
         Future.successful(())
       }
     }

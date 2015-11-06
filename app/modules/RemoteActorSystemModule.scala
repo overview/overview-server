@@ -28,7 +28,7 @@ class RemoteActorSystemModule @Inject() (lifecycle: ApplicationLifecycle) {
     val ret = ActorSystem.create("documentset-worker", config)
 
     lifecycle.addStopHook { () =>
-      ret.shutdown
+      ret.terminate
       Future.successful(())
     }
 

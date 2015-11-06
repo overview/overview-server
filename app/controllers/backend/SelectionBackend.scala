@@ -129,7 +129,7 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
   // The delay comes from the actor not responding. The actor doesn't respond
   // because the CPU (just one, on production) is too busy to attend to it.
   // This isn't a legitimate exception; expanding timeout to 60s.
-  private implicit val timeout: Timeout = Timeout.longToTimeout(60000)
+  private implicit val timeout: Timeout = Timeout(60, java.util.concurrent.TimeUnit.SECONDS)
 
   private def encodeDocumentIds(documentIds: Seq[Long]): Array[Byte] = {
     val buffer = ByteBuffer.allocate(documentIds.length * SizeOfLong)
