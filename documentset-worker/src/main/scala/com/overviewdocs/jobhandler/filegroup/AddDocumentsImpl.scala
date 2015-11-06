@@ -149,7 +149,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
       _ <- TransportIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation
       _ <- task.DocumentSetInfoUpdater.update(fileGroup.addToDocumentSetId.get)
       _ <- FileGroupRemover().remove(fileGroup.id)
-      // _ <- [create a DocumentSetCreationJob...]
+      _ <- ReclusterJobCreator.createReclusterJob(fileGroup.addToDocumentSetId.get)
     } yield {
       ()
     }
