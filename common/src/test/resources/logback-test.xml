@@ -1,8 +1,5 @@
 <configuration>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>INFO</level>
-    </filter>
     <!-- Play 2.4.1 bug: during startup, Play _always_ (even in test) resets
          logger configuration. But it shows a warning if we try to specify
          a log file. https://github.com/playframework/playframework/issues/4574
@@ -43,7 +40,7 @@
   <logger name="com.overviewdocs.jobhandler.documentset" level="ERROR"/>
   <logger name="com.overviewdocs.jobhandler.filegroup" level="OFF"/>
 
-  <root level="DEBUG">
+  <root level="INFO">
     <appender-ref ref="STDOUT"/>
   </root>
 </configuration>
