@@ -18,7 +18,7 @@ object ApplicationBuild extends Build {
   val appName     = "overview-server"
   val appVersion    = "1.0-SNAPSHOT"
 
-  val ourScalaVersion = "2.11.6"
+  val ourScalaVersion = "2.11.7"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8")
 
   val ourResolvers = Seq(
