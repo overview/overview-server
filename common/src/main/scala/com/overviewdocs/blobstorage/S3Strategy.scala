@@ -2,12 +2,13 @@ package com.overviewdocs.blobstorage
 
 import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client}
 import com.amazonaws.services.s3.transfer.TransferManager
-import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,ObjectMetadata}
+import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
-import java.io.InputStream
+import java.io.{IOException,InputStream}
 import java.nio.file.Files
 import java.util.UUID
 import play.api.libs.iteratee.Enumerator
+import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.concurrent.{Future,Promise,blocking}
 import scala.util.Try
 
@@ -111,14 +112,18 @@ trait S3Strategy extends BlobStorageStrategy {
         new DeleteObjectsRequest(bucket).withKeys(keyGroup: _*)
       }.tupled)
 
-    Future.traverse(requests) { (request: DeleteObjectsRequest) => Future[Unit] { blocking {
-      try {
-        s3.deleteObjects(request)
-      } catch {
-        case ex: AmazonS3Exception if ex.getStatusCode == 404 =>
+    Future(blocking {
+      requests.foreach { request =>
+        try {
+          s3.deleteObjects(request)
+        } catch {
+          case multiEx: MultiObjectDeleteException => iterableAsScalaIterable(multiEx.getErrors).foreach { ex =>
+            throw new IOException(s"Delete of ${ex.getKey} failed with code ${ex.getCode}: ${ex.getMessage}")
+          }
+          case ex: AmazonS3Exception if ex.getStatusCode == 404 =>
+        }
       }
-    }}}
-      .map((_) => ()) // Seq[Unit] => Unit. side-feature: it looks like a wink
+    })
   }
 
   override def create(locationPrefixString: String, inputStream: InputStream, nBytes: Long): Future[String] = {

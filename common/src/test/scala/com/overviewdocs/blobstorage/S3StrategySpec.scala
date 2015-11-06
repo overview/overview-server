@@ -2,10 +2,10 @@ package com.overviewdocs.blobstorage
 
 import com.amazonaws.AmazonClientException
 import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,ObjectMetadata}
+import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.services.s3.transfer.{Download,TransferManager,Upload}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
-import java.io.{File,InputStream}
+import java.io.{File,IOException,InputStream}
 import java.nio.file.Files
 import org.specs2.matcher.{Expectable,Matcher}
 
@@ -184,6 +184,23 @@ class S3StrategySpec extends StrategySpecification {
       ex.setStatusCode(404)
       mockS3.deleteObjects(any[DeleteObjectsRequest]) throws ex
       await(TestStrategy.deleteMany(Seq("s3:foo:bar", "s3:foo:baz"))) must beEqualTo(())
+    }
+
+    "fail with a child exception of a multi-delete exception" in new S3BaseScope {
+      val e = new MultiObjectDeleteException.DeleteError
+      e.setKey("s3:foo:bar")
+      e.setMessage("something happened")
+      e.setCode("404")
+      e.setVersionId("123")
+      val multiEx = new MultiObjectDeleteException(
+        java.util.Collections.singletonList(e),
+        java.util.Collections.emptyList()
+      )
+
+      val ex = new IOException("Delete of s3:foo:bar failed with code 404: something happened")
+
+      mockS3.deleteObjects(any[DeleteObjectsRequest]) throws multiEx
+      await(TestStrategy.deleteMany(Seq("s3:foo:bar"))) must throwA(ex)
     }
 
     "succeed when an object does not exist" in new S3BaseScope {
