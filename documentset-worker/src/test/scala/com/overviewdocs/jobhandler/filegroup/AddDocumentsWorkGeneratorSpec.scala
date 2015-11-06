@@ -138,7 +138,7 @@ class AddDocumentsWorkGeneratorSpec extends Specification {
         g.markWorkDone(g.uploads(1))
         g.progress.nFilesProcessed must beEqualTo(2)
         g.progress.nBytesProcessed must beEqualTo(300)
-        g.progress.estimatedCompletionTime must beLessThanOrEqualTo(Instant.now)
+        g.progress.estimatedCompletionTime.toEpochMilli must beCloseTo(Instant.now.toEpochMilli, 1000L)
       }
 
       "give progress upon resume" in {

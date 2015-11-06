@@ -4,15 +4,14 @@ import play.api.libs.json.JsObject
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
-import slick.jdbc.{GetResult,StaticQuery}
 
-import models.pagination.{Page,PageInfo,PageRequest}
-import models.{Selection,SelectionRequest}
-import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,DocumentInfo}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader}
 import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,Tags}
 import com.overviewdocs.query.{Query=>SearchQuery}
 import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.util.Logger
+import models.pagination.{Page,PageRequest}
+import models.{Selection,SelectionRequest}
 
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
@@ -130,7 +129,8 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     */
   private def indexByDB(request: SelectionRequest): Future[Set[Long]] = {
     logger.logExecutionTimeAsync("finding document IDs matching '{}'", request.toString) {
-      database.run(idsBySelectionRequest(request)).map(_.toSet)
+      implicit val getLong = slick.jdbc.GetResult(r => r.nextLong)
+      database.run(sql"#${idsBySelectionRequestSql(request)}".as[Long]).map(_.toSet)
     }
   }
 
@@ -182,12 +182,10 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
 
   protected def sortedIds(documentSetId: Long): DBIO[Seq[Seq[Long]]] = {
     // The ORM is unaware of DocumentSet.sortedDocumentIds
-    implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextArray[Long]()))
-
     sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
   }
 
-  protected def idsBySelectionRequest(request: SelectionRequest): DBIO[Seq[Long]] = {
+  protected def idsBySelectionRequestSql(request: SelectionRequest): String = {
     // Don't have to worry about SQL injection: every SelectionRequest
     // parameter is an ID. (Or it's "q", which this method ignores.)
     val sb = new StringBuilder(s"""SELECT id FROM document WHERE document_set_id = ${request.documentSetId}""")
@@ -271,7 +269,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
       }
     }
 
-    sql"#${sb.toString}".as[Long]
+    sb.toString
   }
 
   protected object InfosByIds {
@@ -281,8 +279,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
 
     def page(ids: Seq[Long]) = {
       // We call this one when we're paginating.
-      DocumentInfos
-        .filter(_.id inSet ids) // bind: we know we don't have 10M IDs here
+      DocumentInfos.filter(_.id inSet ids) // we know we don't have 10M IDs here
     }
   }
 

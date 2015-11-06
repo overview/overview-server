@@ -18,7 +18,7 @@ object Dependencies {
     val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.7.0" // find version at https://github.com/elastic/elasticsearch-analysis-icu
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "2.3.8"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "2.4.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val javaxMail = "javax.mail" % "mail" % "1.4.7"
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
@@ -36,17 +36,17 @@ object Dependencies {
     // TODO release pdfocr and depend on a released version. Then delete all
     // the jarfiles in documentset-worker/lib/
     //val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.1-SNAPSHOT" // TODO release it, then use it
-    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.9.0"
+    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.10.1"
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
     val playMailer = "com.typesafe.play" %% "play-mailer" % "3.0.1"
     val playPluginsUtil = "com.typesafe.play.plugins" %% "play-plugins-util" % "2.3.0"
     val playStreams = "com.typesafe.play" %% "play-streams-experimental" % play.core.PlayVersion.current
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
-    val postgresql = "org.postgresql" % "postgresql" % "9.3-1103-jdbc41"
+    val postgresql = "org.postgresql" % "postgresql" % "9.4-1205-jdbc42"
     val redis = "net.debasishg" %% "redisreact" % "0.6"
     val scalaArm = "com.jsuereth" %% "scala-arm" % "1.4"
     val scallop = "org.rogach" %% "scallop" % "0.9.5"
-    val slick = "com.typesafe.slick" %% "slick" % "3.0.0"
+    val slick = "com.typesafe.slick" %% "slick" % "3.1.0"
     val specs2 = "org.specs2" %% "specs2" % "2.3.13"
   }
 

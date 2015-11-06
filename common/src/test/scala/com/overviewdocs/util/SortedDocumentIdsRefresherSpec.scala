@@ -97,7 +97,6 @@ class SortedDocumentIdsRefresherSpec extends DbSpecification {
     }
 
     def getSortedDocumentIds(documentSetId: Long): Option[Seq[Long]] = {
-      implicit val rconv: GetResult[Seq[Long]] = GetResult(r => (r.nextArray[Long]()))
       blockingDatabase.option(sql"""
         SELECT sorted_document_ids
         FROM document_set

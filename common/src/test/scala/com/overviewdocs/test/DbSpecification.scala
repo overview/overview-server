@@ -7,7 +7,6 @@ import org.specs2.mutable.{After,Around}
 import org.specs2.specification.{Fragments, Step}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future,blocking}
-import slick.jdbc.UnmanagedSession
 import slick.jdbc.JdbcBackend.Session
 
 import com.overviewdocs.database.{DB,HasBlockingDatabase}

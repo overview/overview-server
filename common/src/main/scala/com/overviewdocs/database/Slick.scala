@@ -16,7 +16,7 @@ trait MyPostgresDriver extends PostgresDriver
 {
   override val api = new APIPlus {}
 
-  trait CommonImplicitsPlus extends CommonImplicits
+  trait APIPlus extends API
     with ArrayImplicits
     with NetImplicits
     with SimpleArrayPlainImplicits {
@@ -66,8 +66,6 @@ trait MyPostgresDriver extends PostgresDriver
     implicit val documentDisplayMethodOptionColumnExtensionMethodsBuilder =
       createEnumOptionColumnExtensionMethodsBuilder(DocumentDisplayMethod)
   }
-
-  trait APIPlus extends API with CommonImplicitsPlus
 }
 
 /**

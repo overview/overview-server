@@ -2,7 +2,6 @@ package controllers.backend
 
 import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
-import slick.jdbc.StaticQuery
 
 import models.Selection
 import com.overviewdocs.models.DocumentStoreObject

@@ -27,9 +27,6 @@ object ApplicationBuild extends Build {
     //"Apache snapshot repository" at "https://repository.apache.org/content/groups/snapshots", // pdfocr
     //"Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots", // pdfocr
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
-    "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
-    "JBIG2 ImageIO" at "http://jbig2-imageio.googlecode.com/svn/maven-repository",
-    "More FuseSource" at "http://repo.fusesource.com/maven2/",
     "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
   )
 

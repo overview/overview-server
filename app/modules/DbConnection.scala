@@ -33,6 +33,6 @@ class DbConnection @Inject() (lifecycle: ApplicationLifecycle) {
   val dataSource: HikariDataSource = DB.dataSource
 
   if (Play.current.mode == Mode.Dev) { // Either `current` is set, or the caller shouldn't have called this
-    lifecycle.addStopHook { () => Future.successful(dataSource.shutdown) }
+    lifecycle.addStopHook { () => Future.successful(dataSource.close) }
   }
 }
