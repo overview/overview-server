@@ -55,7 +55,7 @@ class CreatePdfFile(
           if (nBytes == -1) {
             Future.successful(())
           } else {
-            Future(blocking(outputStream.write(buf))).flatMap(_ => step)
+            Future(blocking(outputStream.write(buf, 0, nBytes))).flatMap(_ => step)
           }
         }
       }

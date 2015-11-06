@@ -1,7 +1,7 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.InputStream
-import java.nio.file.{Files=>JFiles,Path}
+import java.nio.file.{Files=>JFiles,Path,StandardCopyOption}
 import java.security.{DigestInputStream,MessageDigest}
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
@@ -37,10 +37,12 @@ class CreateOfficeFile(upload: GroupedFileUpload)(implicit ec: ExecutionContext)
   protected val blobStorage: BlobStorage = BlobStorage
 
   protected def withTempFiles[A](f: (Path, Path) => Future[A]): Future[A] = {
+    val extension = upload.name.split('.').tail.lastOption.getOrElse(".tmp")
+
     val paths: (Path, Path) = blocking {
       (
-        JFiles.createTempFile("create-file-with-view", ".user-provided"),
-        JFiles.createTempFile("create-file-with-view", ".pdf")
+        JFiles.createTempFile("create-file-with-view-", s".$extension"),
+        JFiles.createTempFile("create-file-with-view-", ".pdf")
       )
     }
 
@@ -55,7 +57,7 @@ class CreateOfficeFile(upload: GroupedFileUpload)(implicit ec: ExecutionContext)
       for {
         sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
         tempPdfPath <- converter.convertFileToPdf(rawPath)
-        _ <- Future(blocking(JFiles.move(tempPdfPath, pdfPath)))
+        _ <- Future(blocking(JFiles.move(tempPdfPath, pdfPath, StandardCopyOption.REPLACE_EXISTING)))
         pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
         contentsLocation <- blobStorage.create(BlobBucketId.FileContents, rawPath)
         viewLocation <- blobStorage.create(BlobBucketId.FileView, pdfPath)
@@ -95,7 +97,7 @@ class CreateOfficeFile(upload: GroupedFileUpload)(implicit ec: ExecutionContext)
           if (nBytes == -1) {
             Future.successful(())
           } else {
-            Future(blocking(outputStream.write(buf))).flatMap(_ => step)
+            Future(blocking(outputStream.write(buf, 0, nBytes))).flatMap(_ => step)
           }
         }
       }
