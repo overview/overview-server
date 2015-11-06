@@ -208,7 +208,7 @@ object JobHandler extends HasBlockingDatabase {
     blockingDatabase.runUnit(sqlu"""
       UPDATE document_set_creation_job
       SET state = ${DocumentSetCreationJobState.Cancelled.id}
-      WHERE job.id = ${job.id}
+      WHERE id = ${job.id}
     """)
   }
 
