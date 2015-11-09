@@ -121,7 +121,7 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
 
     val q = FileGroups
       .filter(_.addToDocumentSetId.nonEmpty)
-      .filter(_.deleted === false) // there's work to do even for deleted file groups
+      //.filter(_.deleted === false) // there's work to do even for deleted file groups
 
     database.seq(q).map(_.foreach { fileGroup =>
       val command = DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup)
