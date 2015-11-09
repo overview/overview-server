@@ -1,0 +1,7 @@
+bootstrap.mlockall: true
+
+cluster.name: overview
+
+index.number_of_shards: 1
+
+network.bind_host: 0.0.0.0

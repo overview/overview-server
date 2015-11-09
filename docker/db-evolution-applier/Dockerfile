@@ -1,10 +1,8 @@
 FROM overview/overview-base
 
-ENV DATABASE_NAME=overview \
-    DATABASE_PASSWORD=overview \
-    DATABASE_SERVER_NAME=overview-database \
-    DATABASE_PORT=5432
-
+ENV \
+  DATABASE_NAME=overview \
+  DATABASE_PORT=5432
 
 RUN \
   export FILENAMES="$(unzip -qq -p production.zip archive/db-evolution-applier/classpath.txt | \
