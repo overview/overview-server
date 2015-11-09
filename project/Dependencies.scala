@@ -14,7 +14,7 @@ object Dependencies {
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
     val commonsIo = "commons-io" % "commons-io" % "2.4"
     val config = "com.typesafe" % "config" % "1.3.0"
-    val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.7.1"
+    val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.7.3"
     val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.7.0" // find version at https://github.com/elastic/elasticsearch-analysis-icu
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
