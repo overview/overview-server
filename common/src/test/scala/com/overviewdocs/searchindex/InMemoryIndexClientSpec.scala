@@ -131,6 +131,11 @@ class InMemoryIndexClientSpec extends Specification {
           
         ids must beEqualTo(Seq(123L))
       }
+
+      "be a no-op when the alias already exists" in new BaseScope {
+        await(indexClient.addDocumentSet(234L))
+        await(indexClient.addDocumentSet(234L)) must beEqualTo(())
+      }
     }
 
     "#highlight" should {
