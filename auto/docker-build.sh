@@ -1,6 +1,6 @@
 #/bin/bash
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")"/..
 
 # Support services
 docker build --rm -t overview/database docker/database
