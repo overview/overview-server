@@ -15,7 +15,7 @@ trait SharedDocumentSetController extends Controller {
     for {
       count <- documentSetBackend.countByOwnerEmail(request.user.email)
       documentSets <- storage.findDocumentSets(request.user.email)
-    } yield Ok(views.html.PublicDocumentSet.index(request.user, count, documentSets))
+    } yield Ok(views.html.SharedDocumentSet.index(request.user, count, documentSets))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
