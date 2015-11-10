@@ -1,0 +1,39 @@
+ul.import-jobs>li {
+  height: 3em;
+  max-width: 33em;
+
+  .display-flex();
+
+  .status {
+    height: 3em;
+    .display-flex();
+    .flex-direction-column();
+    .flex-justify-content(center);
+
+    &>* {
+      line-height: 1.5em;
+    }
+
+    .should-finish-in:empty {
+      height: 0;
+    }
+
+    .flex(1 1 auto);
+  }
+
+  .should-finish-in {
+    .text-muted();
+  }
+
+  progress {
+    vertical-align: middle;
+  }
+
+  .cancel {
+    padding-top: .3em; // button 2.4em high + .6em margin = 3em
+
+    i {
+      font-size: 2.4em;
+    }
+  }
+}
