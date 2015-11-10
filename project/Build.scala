@@ -148,7 +148,8 @@ object ApplicationBuild extends Build {
     .settings(
       unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
       libraryDependencies ++= Dependencies.documentSetWorkerDependencies,
-      javaOptions in Test += "-Dconfig.resource=test.conf"
+      javaOptions in Test += "-Dconfig.resource=test.conf",
+      mainClass in Compile := Some("com.overviewdocs.DocumentSetWorker")
     )
     .dependsOn(common % "test->test;compile->compile")
 
