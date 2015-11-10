@@ -237,9 +237,11 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val job = smartMock[ImportJob]
         job.progress returns Some(0.123)
         job.description returns Some(("a-description", Seq()))
+        job.estimatedCompletionTime returns Some(java.time.Instant.now())
         mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq(job))
         h.contentAsString(result) must beMatching("""(?s).*progress.*value="0\.123".*""")
-        h.contentAsString(result) must beMatching("""(?s).*a-description.*""")
+        h.contentAsString(result) must contain("a-description")
+        h.contentAsString(result) must contain("time_display.shouldFinishIn.zero")
       }
     }
 

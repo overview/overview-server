@@ -80,4 +80,18 @@ object Magic {
       data-main={controllers.routes.Assets.at(s"javascripts/bundle/${module}.js").url}
       ></script>
   }
+
+  /** Returns a String describing the number of ms before something finishes.
+    */
+  def shouldFinishInMs(ms: Long)(implicit messages: Messages): String = {
+    if (ms < 1000) {
+      messages("time_display.shouldFinishIn.zero")
+    } else if (ms < 1000 * 60) {
+      messages("time_display.shouldFinishIn.seconds", ms / 1000)
+    } else if (ms < 1000 * 60 * 60) {
+      messages("time_display.shouldFinishIn.minutes", ms / 1000 / 60)
+    } else {
+      messages("time_display.shouldFinishIn.hours", ms / 1000 / 60 / 60)
+    }
+  }
 }

@@ -10,9 +10,10 @@
 @javascripts = {
   @requireJsBundle("DocumentSet/show-progress")
 }
+@jsMessageKeys = @{Seq("time_display.shouldFinishIn")}
 
 @defining(scopedMessages("views.DocumentSet.showProgress")) { m =>
-  @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show-progress", javascripts=javascripts, optionalDocumentSet=Some(documentSet)) {
+  @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show-progress", javascripts=javascripts, jsMessageKeys=jsMessageKeys, optionalDocumentSet=Some(documentSet)) {
     <div id="main" data-document-set-id="@documentSet.id">
       <p class="introduction">@m("introduction")</p>
       <ul class="import-jobs" data-redirect-when-finished="@routes.DocumentSetController.show(documentSet.id)">

@@ -10,15 +10,22 @@
 }}
 
 @defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
-  @importJob.progress.map { fraction =>
-    <progress value="@fraction"></progress>
-  }.getOrElse {
-    <progress></progress>
-  }
-  <span class="progress-description">
-    @{importJob.description.map(tuple => Messages(tuple._1, tuple._2: _*))}
-  </span>
+	<div class="progress">
+		@importJob.progress.map { fraction =>
+			<progress value="@fraction"></progress>
+		}.getOrElse {
+			<progress></progress>
+		}
+		<span class="progress-description">
+			@{importJob.description.map(tuple => Messages(tuple._1, tuple._2: _*))}
+		</span>
+	</div>
+	<div class="should-finish-in">
+		@{importJob.estimatedCompletionTime.map(instant => views.Magic.shouldFinishInMs(instant.toEpochMilli - java.time.Instant.now().toEpochMilli))}
+	</div>
   @cancelUrl.map { url =>
-    <button class="delete-import-job" data-url="@cancelUrl" data-confirm="@m("cancelJob.confirm")">@m("cancelJob")</button>
+		<div class="cancel">
+			<button class="delete-import-job" data-url="@cancelUrl" data-confirm="@m("cancelJob.confirm")">@m("cancelJob")</button>
+		</div>
   }
 }

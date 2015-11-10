@@ -1,7 +1,7 @@
 POLL_DELAY = 500 # ms between requests. Shorter makes the progress bar smoother.
 RETRY_DELAY = 5000 # ms before a failed request is retried.
 
-define [ 'jquery', 'elements/jquery-time_display' ], ($) ->
+define [ 'jquery', 'should-finish-in', 'elements/jquery-time_display' ], ($, shouldFinishIn) ->
   # 1. Find all the running jobs on the page (look for <progress>).
   # 2. Schedule recurrent updates. For each response, update/remove all <li>
   #    elements.
@@ -62,6 +62,12 @@ define [ 'jquery', 'elements/jquery-time_display' ], ($) ->
         $li = $(el)
         $li.find('.progress-description').text(info.description || '')
         $li.find('progress').attr('value', info.progress ? null)
+
+        estimate = if info.estimatedCompletionTime
+          shouldFinishIn(info.estimatedCompletionTime - new Date().getTime())
+        else
+          ''
+        $li.find('.should-finish-in').text(estimate)
 
         newState[key] = el
 

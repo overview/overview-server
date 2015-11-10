@@ -76,6 +76,10 @@ models.FileGroupImportJob.cleaning=cleaning up…
 
 com.overviewdocs.query.SyntaxError=Your search is invalid. Check that you have an even number of parentheses and you put AND or OR between terms.
 
+time_display.shouldFinishIn.zero=should finish any second now
+time_display.shouldFinishIn.seconds=should finish in about {0,choice,1#a second|1<{0,number,integer} seconds}
+time_display.shouldFinishIn.minutes=should finish in about {0,choice,1#a minute|1<{0,number,integer} minutes}
+time_display.shouldFinishIn.hours=should finish in about {0,choice,1#an hour|2<{0,number,integer} hours}
 time_display.datetime.medium={0,date,medium} at {0,time,medium}
 
 views.admin.ImportJob.index.title=Jobs
