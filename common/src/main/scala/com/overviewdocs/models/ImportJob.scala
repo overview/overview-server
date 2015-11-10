@@ -1,5 +1,7 @@
 package com.overviewdocs.models
 
+import java.time.Instant
+
 sealed trait ImportJob {
   /** DocumentSet this job applies to.
     *
@@ -19,6 +21,12 @@ sealed trait ImportJob {
     * If None, we have no message. TODO remove this possibility?
     */
   val description: Option[(String, Seq[Any])]
+
+  /** When we'll be done.
+    *
+    * If None, we don't have an estimate.
+    */
+  val estimatedCompletionTime: Option[Instant]
 }
 
 case class DocumentSetCreationJobImportJob(documentSetCreationJob: DocumentSetCreationJob) extends ImportJob {
@@ -31,6 +39,7 @@ case class DocumentSetCreationJobImportJob(documentSetCreationJob: DocumentSetCr
       case Some(key) => Some((s"views.ImportJob._documentSetCreationJob.job_state_description.$key", strings.tail))
     }
   }
+  override val estimatedCompletionTime = None
 }
 
 case class FileGroupImportJob(fileGroup: FileGroup) extends ImportJob {
@@ -53,4 +62,6 @@ case class FileGroupImportJob(fileGroup: FileGroup) extends ImportJob {
       case _ => None
     }
   }
+
+  override val estimatedCompletionTime = fileGroup.estimatedCompletionTime
 }

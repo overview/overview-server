@@ -12,7 +12,8 @@ object show {
     Json.obj(
       "documentSetId" -> job.documentSetId,
       "progress" -> job.progress,
-      "description" -> job.description.map(tuple => Messages(tuple._1, tuple._2: _*))
+      "description" -> job.description.map(tuple => Messages(tuple._1, tuple._2: _*)),
+      "estimatedCompletionTime" -> job.estimatedCompletionTime.map(_.toEpochMilli)
     )
   }
 }

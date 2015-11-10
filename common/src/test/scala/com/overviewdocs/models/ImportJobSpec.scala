@@ -1,5 +1,6 @@
 package com.overviewdocs.models
 
+import java.time.Instant
 import org.specs2.mutable.Specification
 
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
@@ -63,6 +64,12 @@ class ImportJobSpec extends Specification {
     "give description of 'cleaning' when nFiles=0" in {
       FileGroupImportJob(baseFileGroup.copy(nFiles=Some(0), nBytes=Some(0L)))
         .description must beSome(("models.FileGroupImportJob.cleaning", Seq()))
+    }
+
+    "pass through to FileGroup.estimatedCompletionTime" in {
+      val instant = Instant.now()
+      FileGroupImportJob(baseFileGroup.copy(estimatedCompletionTime=Some(instant)))
+        .estimatedCompletionTime must beSome(instant)
     }
   }
 }
