@@ -17,62 +17,85 @@ class DocumentSetMessageBrokerSpec extends Specification {
   "DocumentSetMessageBroker" should {
     trait BaseScope extends ActorSystemContext {
       val subject = system.actorOf(Props[DocumentSetMessageBroker])
+      val worker1 = TestProbe()
+      val worker2 = TestProbe()
+
+      object msg {
+        def Delete(documentSetId: Long) = DocumentSetCommands.DeleteDocumentSet(documentSetId)
+        def Done(documentSetId: Long) = DocumentSetMessageBroker.WorkerDoneDocumentSetCommand(documentSetId)
+        def Ready = DocumentSetMessageBroker.WorkerReady
+        def Add(documentSetId: Long) = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(id=1L, addToDocumentSetId=Some(documentSetId)))
+        def CancelAdd(documentSetId: Long) = DocumentSetCommands.CancelAddDocumentsFromFileGroup(documentSetId, 1L)
+      }
     }
 
     "forward a Command to a worker when the command arrives first" in new BaseScope {
-      val command = DocumentSetCommands.DeleteDocumentSet(123L)
-      subject ! command
-      (subject ? DocumentSetMessageBroker.WorkerReady) must beEqualTo(command).await
+      subject ! msg.Delete(123L)
+      subject.tell(msg.Ready, worker1.ref)
+      worker1.expectMsg(msg.Delete(123L))
     }
 
     "forward a Command to a worker when the worker arrives first" in new BaseScope {
-      val command = DocumentSetCommands.DeleteDocumentSet(123L)
-      val future = (subject ? DocumentSetMessageBroker.WorkerReady)
-      subject ! command
-      future must beEqualTo(command).await
+      subject.tell(msg.Ready, worker1.ref)
+      subject ! msg.Delete(123L)
+      worker1.expectMsg(msg.Delete(123L))
     }
 
     "queue the workers" in new BaseScope {
-      val command1 = DocumentSetCommands.DeleteDocumentSet(1L)
-      val command2 = DocumentSetCommands.DeleteDocumentSet(2L)
-      val future1 = (subject ? DocumentSetMessageBroker.WorkerReady)
-      val future2 = (subject ? DocumentSetMessageBroker.WorkerReady)
-      subject ! command1
-      future1 must beEqualTo(command1).await
-      subject ! command2
-      future2 must beEqualTo(command2).await
+      subject.tell(msg.Ready, worker1.ref)
+      subject.tell(msg.Ready, worker2.ref)
+      subject ! msg.Delete(123L)
+      subject ! msg.Delete(234L)
+      worker1.expectMsg(msg.Delete(123L))
+      worker2.expectMsg(msg.Delete(234L))
     }
 
     "queue the commands" in new BaseScope {
-      val command1 = DocumentSetCommands.DeleteDocumentSet(1L)
-      val command2 = DocumentSetCommands.DeleteDocumentSet(2L)
-      subject ! command1
-      subject ! command2
-      (subject ? DocumentSetMessageBroker.WorkerReady) must beEqualTo(command1).await
-      (subject ? DocumentSetMessageBroker.WorkerReady) must beEqualTo(command2).await
+      subject ! msg.Delete(123L)
+      subject ! msg.Delete(234L)
+      subject.tell(msg.Ready, worker1.ref)
+      subject.tell(msg.Ready, worker2.ref)
+      worker1.expectMsg(msg.Delete(123L))
+      worker2.expectMsg(msg.Delete(234L))
     }
 
-    "forward a CancelCommand to the worker that is handling it" in new BaseScope {
-      val worker = TestProbe()
-      val command1 = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(id=1L, addToDocumentSetId=Some(2L)))
-      val command2 = DocumentSetCommands.CancelAddDocumentsFromFileGroup(2L, 1L)
-      subject ! command1
-      subject.tell(DocumentSetMessageBroker.WorkerReady, worker.ref)
-      worker.expectMsg(command1)
-      subject ! command2
-      worker.expectMsg(command2)
+    "forward a CancelCommand to only the worker that is handling it" in new BaseScope {
+      subject.tell(msg.Ready, worker1.ref)
+      subject.tell(msg.Ready, worker2.ref)
+      subject ! msg.Add(123L)
+      worker1.expectMsg(msg.Add(123L))
+      subject ! msg.CancelAdd(123L)
+      worker1.expectMsg(msg.CancelAdd(123L))
+      worker2.expectNoMsg(Duration.Zero)
     }
 
     "not forward a CancelCommand to a worker that is not handling it any more" in new BaseScope {
-      val worker = TestProbe()
-      val command1 = DocumentSetCommands.AddDocumentsFromFileGroup(factory.fileGroup(id=1L, addToDocumentSetId=Some(2L)))
-      val command2 = DocumentSetCommands.CancelAddDocumentsFromFileGroup(2L, 1L)
-      subject ! command1
-      subject.tell(DocumentSetMessageBroker.WorkerReady, worker.ref)
-      worker.expectMsg(command1)
-      subject.tell(DocumentSetMessageBroker.WorkerDoneDocumentSetCommand(2L), worker.ref)
-      subject ! command2
-      worker.expectNoMsg(Duration.Zero)
+      subject.tell(msg.Ready, worker1.ref)
+      subject ! msg.Add(123L)
+      worker1.expectMsg(msg.Add(123L))
+      subject.tell(msg.Done(123L), worker1.ref)
+      subject ! msg.CancelAdd(123L)
+      worker1.expectNoMsg(Duration.Zero)
+    }
+
+    "run only one command per document set at a time" in new BaseScope {
+      subject.tell(msg.Ready, worker1.ref)
+      subject.tell(msg.Ready, worker2.ref)
+      subject ! msg.Add(123L)
+      subject ! msg.Delete(123L)
+      worker1.expectMsg(msg.Add(123L))
+      worker2.expectNoMsg(Duration.Zero)
+      subject.tell(msg.Done(123L), worker1.ref)
+      worker2.expectMsg(msg.Delete(123L))
+    }
+
+    "send two commands to the same worker, if it asks" in new BaseScope {
+      subject.tell(msg.Ready, worker1.ref)
+      subject ! msg.Add(123L)
+      worker1.expectMsg(msg.Add(123L))
+      subject.tell(msg.Ready, worker1.ref)
+      subject ! msg.Add(234L)
+      worker1.expectMsg(msg.Add(234L))
     }
   }
 }
