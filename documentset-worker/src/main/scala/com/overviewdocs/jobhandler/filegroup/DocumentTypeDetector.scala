@@ -1,6 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import java.io.InputStream
+import java.io.{BufferedInputStream,InputStream}
 import org.overviewproject.mime_types.MimeTypeDetector
 
 import com.overviewdocs.database.{HasBlockingDatabase,LargeObjectInputStream}
@@ -109,7 +109,10 @@ trait DocumentTypeDetector {
   }
 
   def detect(filename: String, stream: InputStream): DocumentTypeDetector.DocumentType = {
-    val mimeType = mimeTypeDetector.detectMimeType(filename, stream)
+    // MimeTypeDetector needs mark/reset.
+    val bufferedStream = new BufferedInputStream(stream, mimeTypeDetector.getMaxGetBytesLength)
+
+    val mimeType = mimeTypeDetector.detectMimeType(filename, bufferedStream)
 
     mimeTypeToDocumentType.get(mimeType)
       .orElse(mimeTypeToDocumentType.get(parentType(mimeType)))
