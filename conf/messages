@@ -67,8 +67,6 @@ models.DocumentSetCreationJob.state.Cancelled=cancelling
 models.DocumentSetCreationJob.state.Error=stalled
 models.DocumentSetCreationJob.state.InProgress=importing
 models.DocumentSetCreationJob.state.NotStarted=queued
-models.DocumentSetCreationJob.state.FilesUploaded=processing uploaded files
-models.DocumentSetCreationJob.state.TextExtractionInProgress=processing uploaded files
 
 models.FileGroupImportJob.starting=processing…
 models.FileGroupImportJob.processing={2,choice,0#0 files|1#1 file|1<{2,number,integer} files} processed…
