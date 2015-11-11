@@ -12,6 +12,8 @@ import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.concurrent.{Future,Promise,blocking}
 import scala.util.Try
 
+import com.overviewdocs.util.Logger
+
 /** Uses S3 to send and receive files.
   *
   * Right now, this is implemented using the Java SDK. Straight HTTP requests
@@ -20,6 +22,7 @@ import scala.util.Try
 trait S3Strategy extends BlobStorageStrategy {
   protected val s3: AmazonS3
   protected val transferManager: TransferManager
+  protected val logger: Logger
 
   private case class Location(bucket: String, key: String)
   private val LocationRegex = """^s3:([-\w]+):([-\w]+)$""".r
@@ -113,16 +116,24 @@ trait S3Strategy extends BlobStorageStrategy {
       }.tupled)
 
     Future(blocking {
+      var error: Option[Throwable] = None
+
       requests.foreach { request =>
         try {
           s3.deleteObjects(request)
         } catch {
           case multiEx: MultiObjectDeleteException => iterableAsScalaIterable(multiEx.getErrors).foreach { ex =>
-            throw new IOException(s"Delete of ${ex.getKey} failed with code ${ex.getCode}: ${ex.getMessage}")
+            val message = s"Delete of ${ex.getKey} failed with code ${ex.getCode}: ${ex.getMessage}"
+            ex.getCode match {
+              case "InternalError" => logger.warn(message) // It's a server-side problem; leak the file
+              case _ => throw new IOException(message) // We don't know; panic
+            }
           }
           case ex: AmazonS3Exception if ex.getStatusCode == 404 =>
         }
       }
+
+      error.foreach(ex => throw ex)
     })
   }
 
@@ -164,4 +175,5 @@ trait S3Strategy extends BlobStorageStrategy {
 object S3Strategy extends S3Strategy {
   override lazy val s3 = new AmazonS3Client
   override lazy val transferManager = new TransferManager(s3)
+  override val logger = Logger.forClass(getClass)
 }

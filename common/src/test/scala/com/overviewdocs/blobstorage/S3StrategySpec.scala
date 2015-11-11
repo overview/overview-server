@@ -5,9 +5,11 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.services.s3.transfer.{Download,TransferManager,Upload}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
-import java.io.{File,IOException,InputStream}
+import java.io.{File,InputStream}
 import java.nio.file.Files
 import org.specs2.matcher.{Expectable,Matcher}
+
+import com.overviewdocs.util.Logger
 
 class S3StrategySpec extends StrategySpecification {
   class DeleteManyRequestLike(bucket: String, keys: Seq[String]) extends Matcher[DeleteObjectsRequest] {
@@ -65,11 +67,13 @@ class S3StrategySpec extends StrategySpecification {
   }
 
   trait S3BaseScope extends BaseScope {
-    val mockS3 = mock[AmazonS3]
+    val mockS3 = smartMock[AmazonS3]
     val mockTransferManager = new MockTransferManager
+    val mockLogger = smartMock[Logger]
     object TestStrategy extends S3Strategy {
       override val s3 = mockS3
       override val transferManager = mockTransferManager
+      override val logger = mockLogger
     }
   }
 
@@ -186,21 +190,20 @@ class S3StrategySpec extends StrategySpecification {
       await(TestStrategy.deleteMany(Seq("s3:foo:bar", "s3:foo:baz"))) must beEqualTo(())
     }
 
-    "fail with a child exception of a multi-delete exception" in new S3BaseScope {
+    "log when a child exception occurs" in new S3BaseScope {
       val e = new MultiObjectDeleteException.DeleteError
       e.setKey("s3:foo:bar")
       e.setMessage("something happened")
-      e.setCode("404")
+      e.setCode("InternalError")
       e.setVersionId("123")
       val multiEx = new MultiObjectDeleteException(
         java.util.Collections.singletonList(e),
         java.util.Collections.emptyList()
       )
 
-      val ex = new IOException("Delete of s3:foo:bar failed with code 404: something happened")
-
       mockS3.deleteObjects(any[DeleteObjectsRequest]) throws multiEx
-      await(TestStrategy.deleteMany(Seq("s3:foo:bar"))) must throwA(ex)
+      await(TestStrategy.deleteMany(Seq("s3:foo:bar"))) must beEqualTo(())
+      there was one(mockLogger).warn("Delete of s3:foo:bar failed with code InternalError: something happened")
     }
 
     "succeed when an object does not exist" in new S3BaseScope {
