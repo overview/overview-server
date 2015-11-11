@@ -104,6 +104,7 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   )
 
   override def preStart: Unit = {
+    jobhandler.filegroup.task.TempDirectory.create
     resumeCommands(context.dispatcher)
   }
 
