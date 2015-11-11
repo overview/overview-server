@@ -40,6 +40,20 @@ trait DocumentSetBackend {
     */
   def indexPageByOwner(email: String, pageRequest: PageRequest): Future[Page[DocumentSet]]
 
+  /** Finds all DocumentSets viewed by a User, with their owners.
+    *
+    * The DocumentSets will be sorted by createdAt, newest to oldest.
+    *
+    * DocumentSets for which the User is an Owner will not be returned.
+    */
+  def indexByViewerEmail(email: String): Future[Seq[(DocumentSet,String)]]
+
+  /** Finds all public DocumentSets, with their owners.
+    *
+    * The DocumentSets will be sorted by createdAt, newest to oldest.
+    */
+  def indexPublic: Future[Seq[(DocumentSet,String)]]
+
   /** Returns a single DocumentSet. */
   def show(documentSetId: Long): Future[Option[DocumentSet]]
 
@@ -83,6 +97,14 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
     )
   }
 
+  override def indexByViewerEmail(email: String) = {
+    database.seq(indexByViewerEmailCompiled(email))
+  }
+
+  override def indexPublic = {
+    database.seq(indexPublicCompiled)
+  }
+
   override def updatePublic(documentSetId: Long, public: Boolean) = {
     database.runUnit(updatePublicCompiled(documentSetId).update(public))
   }
@@ -112,6 +134,26 @@ trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
 
   private lazy val byIdCompiled = Compiled { (documentSetId: Rep[Long]) =>
     DocumentSets.filter(_.id === documentSetId)
+  }
+
+  private lazy val indexByViewerEmailCompiled = Compiled { (email: Rep[String]) =>
+    val ids = DocumentSetUsers
+      .filter(dsu => dsu.userEmail === email && dsu.role === DocumentSetUser.Role(false))
+      .map(_.documentSetId)
+
+    DocumentSets
+      .filter(_.id in ids)
+      .join(DocumentSetUsers).on((ds, dsu) => ds.id === dsu.documentSetId && dsu.role === DocumentSetUser.Role(true))
+      .map(t => t._1 -> t._2.userEmail)
+      .sortBy(_._1.createdAt.desc)
+  }
+
+  private lazy val indexPublicCompiled = {
+    DocumentSets
+      .filter(_.isPublic)
+      .join(DocumentSetUsers).on((ds, dsu) => ds.id === dsu.documentSetId && dsu.role === DocumentSetUser.Role(true))
+      .map(t => t._1 -> t._2.userEmail)
+      .sortBy(_._1.createdAt.desc)
   }
 
   private lazy val updatePublicCompiled = Compiled { (documentSetId: Rep[Long]) =>

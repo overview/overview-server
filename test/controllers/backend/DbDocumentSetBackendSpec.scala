@@ -124,6 +124,103 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
     }
   }
 
+  "#indexByViewerEmail" should {
+    trait IndexByViewerEmailScope extends BaseScope
+
+    "not find another User's DocumentSets" in new IndexByViewerEmailScope {
+      val documentSet = factory.documentSet()
+      factory.documentSetUser(documentSet.id, "user2@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet.id, "user3@example.org", DocumentSetUser.Role(true))
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq())
+    }
+
+    "not find an owned DocumentSet" in new IndexByViewerEmailScope {
+      val documentSet = factory.documentSet()
+      factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(true))
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq())
+    }
+
+    "not find a DocumentSet with no owner" in new IndexByViewerEmailScope {
+      val documentSet = factory.documentSet()
+      factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq())
+    }
+
+    "find a DocumentSet and its owner" in new IndexByViewerEmailScope {
+      val documentSet = factory.documentSet()
+      factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
+      await(backend.indexByViewerEmail("user@example.org")) must beEqualTo(Seq((documentSet, "owner@example.org")))
+    }
+
+    "work with multiple results" in new IndexByViewerEmailScope {
+      val documentSet1 = factory.documentSet()
+      factory.documentSetUser(documentSet1.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet1.id, "owner1@example.org", DocumentSetUser.Role(true))
+      val documentSet2 = factory.documentSet()
+      factory.documentSetUser(documentSet2.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
+      await(backend.indexByViewerEmail("user@example.org")) must containTheSameElementsAs(Seq(
+        (documentSet1, "owner1@example.org"),
+        (documentSet2, "owner2@example.org")
+      ))
+    }
+
+    "sort by createdAt" in new IndexByViewerEmailScope {
+      val documentSet1 = factory.documentSet(createdAt=new java.sql.Timestamp(12345L))
+      factory.documentSetUser(documentSet1.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet1.id, "owner1@example.org", DocumentSetUser.Role(true))
+      val documentSet2 = factory.documentSet(createdAt=new java.sql.Timestamp(23456L))
+      factory.documentSetUser(documentSet2.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
+      await(backend.indexByViewerEmail("user@example.org")).map(_._1.id) must beEqualTo(Seq(documentSet2.id, documentSet1.id))
+    }
+  }
+
+  "#indexPublic" should {
+    trait IndexPublicScope extends BaseScope
+
+    "not find a non-public DocumentSet" in new IndexPublicScope {
+      val documentSet = factory.documentSet(isPublic=false)
+      factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
+      await(backend.indexPublic) must beEqualTo(Seq())
+    }
+
+    "not find a DocumentSet with no owner" in new IndexPublicScope {
+      val documentSet = factory.documentSet(isPublic=true)
+      factory.documentSetUser(documentSet.id, "viewer@example.org", DocumentSetUser.Role(false))
+      await(backend.indexPublic) must beEqualTo(Seq())
+    }
+
+    "find a DocumentSet and its owner" in new IndexPublicScope {
+      val documentSet = factory.documentSet(isPublic=true)
+      factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet.id, "owner@example.org", DocumentSetUser.Role(true))
+      await(backend.indexPublic) must beEqualTo(Seq((documentSet, "owner@example.org")))
+    }
+
+    "work with multiple results" in new IndexPublicScope {
+      val documentSet1 = factory.documentSet(isPublic=true)
+      factory.documentSetUser(documentSet1.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet1.id, "owner1@example.org", DocumentSetUser.Role(true))
+      val documentSet2 = factory.documentSet(isPublic=true)
+      factory.documentSetUser(documentSet2.id, "user@example.org", DocumentSetUser.Role(false))
+      factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
+      await(backend.indexPublic) must containTheSameElementsAs(Seq(
+        (documentSet1, "owner1@example.org"),
+        (documentSet2, "owner2@example.org")
+      ))
+    }
+
+    "sort by createdAt" in new IndexPublicScope {
+      val documentSet1 = factory.documentSet(isPublic=true, createdAt=new java.sql.Timestamp(12345L))
+      factory.documentSetUser(documentSet1.id, "owner1@example.org", DocumentSetUser.Role(true))
+      val documentSet2 = factory.documentSet(isPublic=true, createdAt=new java.sql.Timestamp(23456L))
+      factory.documentSetUser(documentSet2.id, "owner2@example.org", DocumentSetUser.Role(true))
+      await(backend.indexPublic).map(_._1.id) must beEqualTo(Seq(documentSet2.id, documentSet1.id))
+    }
+  }
+
   "#updatePublic" should {
     trait UpdatePublicScope extends BaseScope
 
