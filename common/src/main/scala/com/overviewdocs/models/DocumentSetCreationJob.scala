@@ -6,7 +6,6 @@ object DocumentSetCreationJobType extends Enumeration {
   val DocumentCloud = Value(1)
   val CsvUpload = Value(2)
   val Clone = Value(3)
-  val FileUpload = Value(4)
   val Recluster = Value(5)
 }
 
