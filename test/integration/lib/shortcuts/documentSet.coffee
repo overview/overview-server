@@ -61,6 +61,24 @@ module.exports = (browser) ->
       .shortcuts.jquery.waitUntilAjaxComplete()
       .click(link: 'Close')
 
+  renameDocument: (oldTitle, newTitle) ->
+    debug_("scheduling renameDocument(#{oldTitle}, #{newTitle})")
+    debug("renameDocument(#{oldTitle}, #{newTitle})")
+    browser
+      .click(tag: 'h3', contains: oldTitle)
+      .click(css: 'header .edit-title', wait: true) # wait for popover to appear
+      .sendKeys(newTitle, css: 'input[name=title]')
+      .shortcuts.jquery.listenForAjaxComplete()
+      .click(button: 'Save')
+      .shortcuts.jquery.waitUntilAjaxComplete()
+
+  search: (q) ->
+    debug_("scheduling search(#{q})")
+    debug("search(#{q})")
+    browser
+      .sendKeys(q, css: '#document-list-params .search input[name=query]')
+      .click(css: '#document-list-params .search button')
+
   # Waits for #document-list:not(.loading) to exist.
   waitUntilDocumentListLoaded: ->
     debug_('scheduling waitUntilDocumentListLoaded()')

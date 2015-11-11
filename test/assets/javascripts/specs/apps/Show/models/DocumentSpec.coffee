@@ -19,9 +19,18 @@ define [
 
     describe 'with a typical document', ->
       beforeEach ->
-        @document = new Document({ id: 1, title: 'title', description: 'a description', tagids: [ 3 ] }, parse: true)
+        @document = new Document({
+          id: 1
+          documentSetId: 2
+          title: 'title'
+          description: 'a description'
+          tagids: [ 3 ]
+        }, parse: true)
+        @sandbox = sinon.sandbox.create()
+        @sandbox.stub(Backbone, 'ajax')
 
       afterEach ->
+        @sandbox.restore()
         @document.off()
 
       it 'should not have a tag by default', ->
@@ -71,3 +80,24 @@ define [
         @document.on('document-untagged', spy = sinon.spy())
         @document.untagLocal(tag)
         expect(spy).not.to.have.been.called
+
+      it 'should send a rename request', ->
+        @document.rename('foo')
+        expect(Backbone.ajax).to.have.been.called
+        expect(Backbone.ajax.getCall(0).args[0].url).to.eq('/documentsets/2/documents/1')
+
+      it 'should trigger when renaming', ->
+        @document.on('document-renamed', spy = sinon.spy())
+        @document.rename('foo')
+        Backbone.ajax.getCall(0).args[0].success()
+        expect(spy).to.have.been.calledWith(@document, 'foo')
+
+      it 'should not notify on rename until the server responds', ->
+        @document.on('document-renamed', spy = sinon.spy())
+        @document.rename('foo')
+        expect(spy).not.to.have.been.called # Backbone.ajax isn't done yet...
+
+      it 'should rename locally', ->
+        @document.rename('foo')
+        Backbone.ajax.getCall(0).args[0].success()
+        expect(@document.get('title')).to.eq('foo')

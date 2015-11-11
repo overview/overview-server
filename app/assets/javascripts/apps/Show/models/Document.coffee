@@ -19,13 +19,17 @@ define [
   # Events:
   #   document-tagged(document, tag)
   #   document-untagged(document, tag)
+  #   document-renamed(document, newTitle)
   class Document extends Backbone.Model
     defaults:
+      documentSetId: null
       title: ''
       description: ''
       pageNumber: null
       url: null
       metadata: null # We normally *don't* load metadata -- hence null
+
+    url: -> "/documentsets/#{@get('documentSetId')}/documents/#{@id}"
 
     parse: (json) ->
       return null if !json? # a PATCH response should be empty
@@ -34,6 +38,7 @@ define [
       tagIds[tagId] = true for tagId in (json.tagids || [])
 
       id: json.id
+      documentSetId: json.documentSetId
       title: json.title
       description: json.description
       pageNumber: json.page_number || null
@@ -91,3 +96,17 @@ define [
       return if !@hasTag(tag)
       @untagLocal(tag, options)
       tag.removeFromDocumentsOnServer(documents: String(@id))
+
+    # Renames the document, locally and on the server.
+    #
+    # Triggers `document-renamed`, whether or not the name actually changed.
+    rename: (newTitle, options) ->
+      Backbone.ajax
+        type: 'PATCH'
+        url: _.result(@, 'url')
+        contentType: 'application/json'
+        data: JSON.stringify(title: newTitle)
+        debugInfo: 'Document.rename'
+        success: =>
+          @set('title', newTitle)
+          @trigger('document-renamed', @, newTitle, options)

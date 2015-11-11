@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject,JsString}
 import play.api.mvc.ResponseHeader
 import play.api.mvc.Result
 import scala.concurrent.Future
@@ -59,17 +59,22 @@ trait DocumentController extends Controller {
   }
 
   def update(documentSetId: Long, documentId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
-    val maybeMetadataJson: Option[JsObject] = for {
-      jsonBody <- request.body.asJson
-      jsonBodyAsObject <- jsonBody.asOpt[JsObject]
-      metadataJson <- jsonBodyAsObject.value.get("metadata")
-      metadataJsonAsObject <- metadataJson.asOpt[JsObject]
-    } yield metadataJsonAsObject
+    val maybeJson: Option[JsObject] = request.body.asJson.flatMap(_.asOpt[JsObject])
+    val maybeMetadataJson: Option[JsObject] = maybeJson.flatMap(_.value.get("metadata")).flatMap(_.asOpt[JsObject])
+    val maybeTitle: Option[String] = maybeJson.flatMap(_.value.get("title")).flatMap(_.asOpt[JsString]).map(_.value)
 
-    maybeMetadataJson match {
-      case None => Future.successful(BadRequest(jsonError("illegal-arguments", "You must pass a JSON Object with a \"metadata\" property")))
-      case Some(metadataJson) => {
+    (maybeMetadataJson, maybeTitle) match {
+      case (Some(metadataJson), None) => {
         documentBackend.updateMetadataJson(documentSetId, documentId, metadataJson).map(_ => NoContent)
+      }
+      case (None, Some(title)) => {
+        documentBackend.updateTitle(documentSetId, documentId, title).map(_ => NoContent)
+      }
+      case _ => {
+        Future.successful(BadRequest(jsonError(
+          "illegal-arguments",
+          "You must pass a JSON Object with a \"metadata\" property or a \"title\" property"
+        )))
       }
     }
   }

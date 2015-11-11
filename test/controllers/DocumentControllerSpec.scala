@@ -115,6 +115,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         val documentSetId = 123L
         val documentId = 124L
 
+        mockDocumentBackend.updateTitle(any, any, any) returns Future.successful(())
         mockDocumentBackend.updateMetadataJson(any, any, any) returns Future.successful(())
 
         def input: JsValue = Json.obj()
@@ -125,6 +126,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         override def input = Json.obj("metadata" -> Json.obj("foo" -> "bar"))
         h.status(result) must beEqualTo(h.NO_CONTENT)
         there was one(mockDocumentBackend).updateMetadataJson(documentSetId, documentId, Json.obj("foo" -> "bar"))
+        there was no(mockDocumentBackend).updateTitle(any, any, any)
       }
 
       "throw a 400 when the input is not JSON" in new UpdateScope {
@@ -137,7 +139,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         override def input = Json.arr("foo", "bar")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
         h.contentAsString(result) must /("code" -> "illegal-arguments")
-        h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property")
+        h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property or a \"title\" property")
         there was no(mockDocumentBackend).updateMetadataJson(any, any, any)
       }
 
@@ -147,8 +149,23 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         override def input = Json.obj("metadatblah" -> Json.obj("foo" -> "bar"))
         h.status(result) must beEqualTo(h.BAD_REQUEST)
         h.contentAsString(result) must /("code" -> "illegal-arguments")
-        h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property")
+        h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property or a \"title\" property")
         there was no(mockDocumentBackend).updateMetadataJson(any, any, any)
+      }
+
+      "set new title in the backend" in new UpdateScope {
+        override def input = Json.obj("title" -> "foo")
+        h.status(result) must beEqualTo(h.NO_CONTENT)
+        there was one(mockDocumentBackend).updateTitle(documentSetId, documentId, "foo")
+        there was no(mockDocumentBackend).updateMetadataJson(any, any, any)
+      }
+
+      "throw a 400 when the title is not a String" in new UpdateScope {
+        override def input = Json.obj("title" -> Json.arr("foo", "bar"))
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        h.contentAsString(result) must /("code" -> "illegal-arguments")
+        h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property or a \"title\" property")
+        there was no(mockDocumentBackend).updateTitle(any, any, any)
       }
     }
   }

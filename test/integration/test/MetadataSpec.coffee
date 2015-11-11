@@ -5,7 +5,6 @@ describe 'Metadata', ->
   asUserWithDocumentSet 'Metadata/basic.csv', ->
     before ->
       @browser
-        .loadShortcuts('importCsv')
         .loadShortcuts('api')
 
     describe 'the Show page', ->

@@ -503,6 +503,9 @@ views.Tree.show.DocumentListCursor.next=Next
 views.Tree.show.DocumentListCursor.previous=Previous
 views.Tree.show.DocumentListCursor.description.empty=(no key words)
 views.Tree.show.DocumentListCursor.description=Key words: {0}
+views.Tree.show.DocumentListCursor.title.edit=rename
+views.Tree.show.DocumentListCursor.title.save=Save
+views.Tree.show.DocumentListCursor.title.reset=Cancel
 
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
 

@@ -77,6 +77,9 @@ define [
         'views.Tree.show.DocumentListCursor.previous': 'previous'
         'views.Tree.show.DocumentListCursor.description': 'description,{0}'
         'views.Tree.show.DocumentListCursor.description.empty': 'description.empty'
+        'views.Tree.show.DocumentListCursor.title.edit': 'title.edit'
+        'views.Tree.show.DocumentListCursor.title.save': 'title.save'
+        'views.Tree.show.DocumentListCursor.title.reset': 'title.reset'
         'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
         'views.Tree.show.helpers.DocumentHelper.title.empty': 'title.empty'
         # ick ick ick...

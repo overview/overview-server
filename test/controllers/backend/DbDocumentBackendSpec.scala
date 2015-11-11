@@ -17,16 +17,15 @@ import com.overviewdocs.util.SortedDocumentIdsRefresher
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {
     val refresher = SortedDocumentIdsRefresher
+
+    import database.api._
+    def findDocument(id: Long): Option[Document] = blockingDatabase.option(Documents.filter(_.id === id))
   }
 
   trait BaseScopeNoIndex extends BaseScope {
-    import database.api._
-
     val backend = new DbDocumentBackend {
-      override val indexClient = mock[IndexClient]
+      override val indexClient = smartMock[IndexClient]
     }
-
-    def findDocument(id: Long): Option[Document] = blockingDatabase.option(Documents.filter(_.id === id))
   }
 
   trait BaseScopeWithIndex extends BaseScope {
@@ -340,6 +339,30 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       "not show a document with the wrong ID" in new ShowScope {
         override val documentId = document.id + 1L
         ret must beNone
+      }
+    }
+
+    "#updateTitle" should {
+      trait UpdateTitleScope extends BaseScopeWithIndex {
+        val documentSet = factory.documentSet()
+        val document = factory.document(documentSetId=documentSet.id, title="foo")
+      }
+
+      "update title" in new UpdateTitleScope {
+        await(backend.updateTitle(documentSet.id, document.id, "bar"))
+        findDocument(document.id).map(_.title) must beSome("bar")
+      }
+
+      "not update title with the wrong document set ID" in new UpdateTitleScope {
+        await(backend.updateTitle(documentSet.id + 1, document.id, "bar"))
+        findDocument(document.id).map(_.title) must beSome("foo")
+      }
+
+      "update the search index" in new UpdateTitleScope {
+        await(testIndexClient.addDocumentSet(documentSet.id))
+        await(backend.updateTitle(documentSet.id, document.id, "bar"))
+        await(testIndexClient.searchForIds(documentSet.id, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq())
+        await(testIndexClient.searchForIds(documentSet.id, PhraseQuery(Field.All, "bar"))) must beEqualTo(Seq(document.id))
       }
     }
 

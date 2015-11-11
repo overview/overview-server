@@ -47,6 +47,11 @@ class showSpec extends Specification with JsonMatchers {
       result must /("documents") /#(0) /("title" -> "aTitle")
     }
 
+    "set a documentSetId" in new BaseScope {
+      override def doc1 = factory.document(documentSetId=123L)
+      result must /("documents") /#(0) /("documentSetId" -> "123")
+    }
+
     "handle a null page_number" in new BaseScope {
       override def doc1 = factory.document(pageNumber=None)
       result must /("documents") /#(0) /("page_number" -> null)

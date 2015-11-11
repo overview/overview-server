@@ -9,6 +9,7 @@ object show {
     val url: String = document.url.getOrElse("")
 
     Json.obj(
+      "documentSetId" -> document.documentSetId,
       "id" -> document.id,
       "description" -> document.keywords.mkString(" "),
       "title" -> document.title,

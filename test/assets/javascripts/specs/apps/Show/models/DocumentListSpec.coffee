@@ -113,7 +113,11 @@ define [
         beforeEach ->
           @tag = new Tag(id: 5)
           @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-            documents: [ { id: 1, tagids: [ 5 ] }, { id: 2, tagids: [ 5 ] }, { id: 3 } ]
+            documents: [
+              { documentSetId: 1, id: 1, tagids: [ 5 ] }
+              { documentSetId: 1, id: 2, tagids: [ 5 ] }
+              { documentSetId: 1, id: 3 }
+            ]
             total_items: 3
             selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
           ))

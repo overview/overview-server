@@ -10,6 +10,7 @@ object show {
   private def documentToJson(document: DocumentHeader, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {
     Json.obj(
       "id" -> document.id,
+      "documentSetId" -> document.documentSetId.toString,
       "description" -> document.keywords,
       "title" -> document.title,
       "page_number" -> document.pageNumber,

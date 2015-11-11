@@ -33,16 +33,33 @@ define [
   # * documentMetadataApp: a DocumentMetadata/App _instance_, such that
   #   `options.documentMetadataApp.el` is an HTMLElement and
   #   `options.documentMetadataApp.setDocument(document)` sets the document.
+  #
+  # FIXME this needs a rewrite. The "prev/next" buttons should be distinct from
+  # the cursor part. It's all together because I couldn't figure out the CSS
+  # we'd need to keep things nice.
   class DocumentListCursor extends Backbone.View
     events:
       'click a.back-to-list': '_onClickBackToList'
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
+      'click a.edit-title': '_onClickEditTitle'
 
     templates:
       root: _.template("""
         <header></header>
         <article></article>
+      """)
+
+      editTitle: _.template("""
+        <form class="edit-title">
+          <button type="reset" class="btn btn-link"><%- t('title.reset') %></button>
+          <div class="input-group">
+            <input class="form-control" type="text" name="title" placeholder="Title" required/>
+            <span class="input-group-btn">
+              <button type="submit" class="btn btn-primary"><%- t('title.save') %></button>
+            </span>
+          </div>
+        </form>
       """)
 
       header: _.template("""
@@ -52,7 +69,10 @@ define [
           <h4><%= t('position_html', cursorIndex + 1, nDocuments) %></h4>
           <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><span><%- t('next') %></span> <i class="icon icon-chevron-right"></i></a>
         </div>
-        <h2><%- title %></h2>
+        <div class="title">
+          <h2><%- title %></h2>
+          <a href="#" class="edit-title"><%- t('title.edit') %></a>
+        </div>
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
             <li class="tag" data-cid="<%- tag.cid %>">
@@ -169,6 +189,47 @@ define [
     _onClickBackToList: (e) ->
       e.preventDefault()
       @selection.onSelectAll()
+
+    _onClickEditTitle: (e) ->
+      e.preventDefault()
+
+      document = @_getDocument()
+      return if !document?
+
+      $form = $(@templates.editTitle(t: t))
+
+      $header = $(e.currentTarget.parentNode)
+
+      $header
+        .addClass('editing')
+        .append($form)
+
+      $form.find('input').val(document.get('title')).focus().select()
+
+      locked = false
+
+      cancel = ->
+        return if locked
+        $form.remove()
+        $header.removeClass('editing')
+
+      $form.on 'keydown', (ev) =>
+        if (ev.keyCode == 27)
+          ev.stopPropagation()
+          ev.preventDefault()
+          cancel()
+
+      $form.on 'submit', (e) =>
+        return if locked
+        locked = true
+        e.preventDefault()
+        document.rename($form.find('input').val())
+        $form.prop('disabled', true)
+        $form.find('button[type=submit]').html('<i class="icon icon-spinner icon-spin"></i>')
+
+      $form.on 'reset', (e) =>
+        e.preventDefault()
+        cancel()
 
     setDocumentList: (documentList) ->
       if @documentList?

@@ -44,6 +44,13 @@ trait DocumentBackend {
     */
   def show(documentId: Long): Future[Option[Document]]
 
+  /** Updates a Document's title.
+    *
+    * Is a no-op if the Document does not exist or if it exists in a different
+    * DocumentSet.
+    */
+  def updateTitle(documentSetId: Long, documentId: Long, title: String): Future[Unit]
+
   /** Updates a Document's metadata.
     *
     * Is a no-op if the Document does not exist or if it exists in a different
@@ -176,6 +183,21 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     database.option(byId(documentId))
   }
 
+  override def updateTitle(documentSetId: Long, documentId: Long, title: String) = {
+    for {
+      _ <- database.runUnit(updateTitleCompiled(documentSetId, documentId).update(Some(title)))
+      _ <- database.option(byDocumentSetIdAndId(documentSetId, documentId)).flatMap(_ match {
+        case Some(document) => {
+          for {
+            _ <- indexClient.addDocuments(Seq(document.copy(title=title)))
+            _ <- indexClient.refresh
+          } yield ()
+        }
+        case _ => Future.successful(())
+      })
+    } yield ()
+  }
+
   override def updateMetadataJson(documentSetId: Long, documentId: Long, metadataJson: JsObject) = {
     database.runUnit(updateMetadataJsonCompiled(documentSetId, documentId).update(Some(metadataJson)))
   }
@@ -303,6 +325,13 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     Documents
       .filter(_.documentSetId === documentSetId)
       .filter(_.id inSet documentIds)
+  }
+
+  private lazy val updateTitleCompiled = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>
+    Documents
+      .filter(_.documentSetId === documentSetId)
+      .filter(_.id === documentId)
+      .map(_.title)
   }
 
   private lazy val updateMetadataJsonCompiled = Compiled { (documentSetId: Rep[Long], documentId: Rep[Long]) =>

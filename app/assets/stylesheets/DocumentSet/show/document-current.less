@@ -157,15 +157,53 @@
     }
   }
 
-  h2 {
-    font-family: inherit;
-    font-weight: normal;
-    font-size: 1.25em;
-    line-height: 1.2em;
-    margin: .8em 0 .4em 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .title {
+    .display-flex();
+    padding: 1em 0 .5em 0;
+
+    &.editing {
+      h2, a.edit-title {
+        display: none;
+      }
+    }
+
+    h2 {
+      .flex(0 1 auto);
+      font-family: inherit;
+      font-weight: normal;
+      line-height: 1;
+      font-size: 1.25em;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      // Make edit height pixel-perfect
+      padding: (.5em / 1.25) 0;
+      border-top: 1px solid transparent;
+      border-bottom: 1px solid transparent;
+    }
+
+    a.edit-title {
+      .flex(0 0 auto);
+      display: block;
+      font-size: .8em;
+      line-height: 1.25 / .8;
+      vertical-align: middle;
+      padding-left: 1em;
+
+      // Make edit height pixel-perfect
+      padding-top: (.5em / .8);
+      border-top: 1px solid transparent;
+    }
+
+    form.edit-title {
+      button[type=reset] {
+        float: right;
+        padding-right: 0;
+        border-right: 0;
+      }
+    }
   }
 
   .keywords {
