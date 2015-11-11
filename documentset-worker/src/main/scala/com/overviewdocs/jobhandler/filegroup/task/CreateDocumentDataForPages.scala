@@ -1,9 +1,11 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.ByteArrayInputStream
+import java.nio.file.{Files=>JFiles}
 import org.overviewproject.pdfocr.pdf.{PdfDocument,PdfPage}
 import play.api.libs.json.JsObject
-import scala.concurrent.{ExecutionContext,Future}
+import scala.collection.mutable
+import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasDatabase
@@ -17,82 +19,88 @@ class CreateDocumentDataForPages(
 )(implicit ec: ExecutionContext) extends HasDatabase {
   import database.api._
 
+  private def onSplitProgress(pageNumber: Int, nPages: Int): Boolean = onProgress(0.5 * pageNumber / nPages)
+  private def onWriteProgress(pageNumber: Int, nPages: Int): Boolean = onProgress(0.5 + 0.5 * pageNumber / nPages)
+
   def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
     BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
-      PdfDocument.load(file.toPath).flatMap { pdfDocument =>
-        var documents: Array[DocumentWithoutIds] = new Array(pdfDocument.nPages)
-        var nPagesProcessed = 0
-        val it = pdfDocument.pages
-        def step: Future[Unit] = {
-          // progress-report / cancellation
-          if (pdfDocument.nPages > 0 && !onProgress(nPagesProcessed.toDouble / pdfDocument.nPages)) {
-            documents = Array()
-            return Future.successful(())
-          }
+      PdfSplitter.splitPdf(file.toPath, true, onSplitProgress)
+    }
+      .flatMap(_ match {
+        case Left(message) => Future.successful(Left(message))
+        case Right(pageInfos) => {
+          for {
+            result <- writePagesAndBuildDocuments(pageInfos)
+            _ <- Future(blocking(pageInfos.flatMap(_.pdfPath).foreach(JFiles.delete _)))
+          } yield result
+        }
+      })
+  }
 
-          if (it.hasNext) {
-            it.next.flatMap { pdfPage =>
-              writePage(pdfPage).flatMap { document =>
-                documents(pdfPage.pageNumber) = document
-                nPagesProcessed += 1
-                step
-              }
-            }
-          } else {
-            Future.successful(())
+  /** Writes pages to the database.
+    *
+    * We anticipate no errors -- if anything fails, we should crash.
+    *
+    * We *do* expect cancellation. If the user cancels, we simply don't go any
+    * further. We only abort in between writes to S3/Postgres -- so on restart,
+    * the File stranded in the database has as many complete Pages attached to
+    * it as possible. (These stranded Files can be deleted, recovering the
+    * extra space.)
+    */
+  private def writePagesAndBuildDocuments(pageInfos: Seq[PdfSplitter.PageInfo]): Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    val ret = mutable.ArrayBuffer[DocumentWithoutIds]()
+    val it = pageInfos.iterator
+
+    def step: Future[Boolean] = { // true if completed, false if user cancelled
+      if (!it.hasNext) {
+        Future.successful(true)
+      } else {
+        if (!onWriteProgress(ret.length, pageInfos.length)) {
+          Future.successful(false)
+        } else {
+          writePageAndBuildDocument(it.next).flatMap { documentWithoutIds =>
+            ret.+=(documentWithoutIds)
+            step
           }
         }
-
-        step
-          .andThen { case _ => pdfDocument.close }
-          .map(_ => Right(documents.toSeq))
       }
     }
+
+    step.map(_ match {
+      case true => Right(ret.toSeq)
+      case false => Left("You cancelled an import job")
+    })
   }
 
-  private def writePageToBlobStorage(pdfPage: PdfPage): Future[(String,Long)] = {
-    val blob: Array[Byte] = pdfPage.toPdf
-    val blobInputStream = new ByteArrayInputStream(blob)
-
+  private def writePageAndBuildDocument(pageInfo: PdfSplitter.PageInfo): Future[DocumentWithoutIds] = {
     for {
-      location <- BlobStorage.create(BlobBucketId.PageData, blobInputStream, blob.length)
-    } yield (location, blob.length)
-  }
-
-  private val pageInserter = (Pages.map(_.createAttributes) returning Pages.map(_.referenceAttributes))
-
-  private def writePageToDatabase(pdfPage: PdfPage, blobLocation: String, blobNBytes: Long): Future[Page.ReferenceAttributes] = {
-    val createAttributes = Page.CreateAttributes(
-      file.id,
-      pdfPage.pageNumber + 1,
-      blobLocation,
-      blobNBytes,
-      Textify(pdfPage.toText),
-      pdfPage.isFromOcr
-     )
-
-    database.run(pageInserter.+=(createAttributes))
-  }
-
-  private def writePage(pdfPage: PdfPage): Future[DocumentWithoutIds] = {
-    for {
-      (blobLocation, blobNBytes) <- writePageToBlobStorage(pdfPage)
-      attributes <- writePageToDatabase(pdfPage, blobLocation, blobNBytes)
+      location <- BlobStorage.create(BlobBucketId.PageData, pageInfo.pdfPath.get)
+      nBytes <- Future(blocking(JFiles.size(pageInfo.pdfPath.get)))
+      pageId <- database.run(pageInserter.+=(Page.CreateAttributes(
+        file.id,
+        pageInfo.pageNumber,
+        location,
+        nBytes,
+        pageInfo.text,
+        pageInfo.isFromOcr
+      )))
     } yield DocumentWithoutIds(
       url=None,
       suppliedId=file.name,
       title=file.name,
-      pageNumber=Some(attributes.pageNumber),
+      pageNumber=Some(pageInfo.pageNumber),
       keywords=Seq(),
       createdAt=new java.util.Date(),
-      fileId=Some(attributes.fileId),
-      pageId=Some(attributes.id),
+      fileId=Some(file.id),
+      pageId=Some(pageId),
       displayMethod=DocumentDisplayMethod.page,
-      isFromOcr=attributes.isFromOcr,
+      isFromOcr=pageInfo.isFromOcr,
       metadataJson=JsObject(Seq()),
-      text=attributes.text
+      text=pageInfo.text
     )
   }
+
+  private val pageInserter = (Pages.map(_.createAttributes) returning Pages.map(_.id))
 }
 
 object CreateDocumentDataForPages {

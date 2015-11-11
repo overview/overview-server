@@ -16,9 +16,6 @@ class PagesImpl(tag: Tag) extends Table[Page](tag, "page") {
 
   def createAttributes = (fileId, pageNumber, dataLocation, dataSize, text, isFromOcr)
     .<>(Page.CreateAttributes.tupled, Page.CreateAttributes.unapply)
-
-  def referenceAttributes = (id, fileId, pageNumber, text, isFromOcr)
-    .<>(Page.ReferenceAttributes.tupled, Page.ReferenceAttributes.unapply)
 }
 
 object Pages extends TableQuery(new PagesImpl(_))

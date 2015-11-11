@@ -104,7 +104,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     logger.debug("Reading documents from {}", file)
     splitByPage match {
       case true => task.CreateDocumentDataForPages(file, onProgress)
-      case false => task.CreateDocumentDataForFile(file)
+      case false => task.CreateDocumentDataForFile(file, onProgress)
     }
   }
 

@@ -67,19 +67,6 @@ class CreatePdfFile(
     }
   }
 
-  private def getPdfOcrOutputSize(pdfPath: Path): Future[Long] = {
-    Future(blocking {
-      val ret = JFiles.size(pdfPath)
-      if (ret == 0) {
-        // pdfbox didn't write to pdfPath. (pdfPath will certainly exist,
-        // because we created it. But we didn't write to it.
-        throw PdfOcrCancelled
-      } else {
-        ret
-      }
-    })
-  }
-
   private def progressCallback(nPages: Int, nTotalPages: Int): Boolean = {
     onProgress(nPages.toDouble / nTotalPages)
   }
@@ -106,18 +93,29 @@ class CreatePdfFile(
     withTempFiles { (rawPath, pdfPath) =>
       for {
         sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
-        _ <- PdfOcr.makeSearchablePdf(rawPath, pdfPath, Seq(new Locale(lang)), progressCallback)
-        pdfNBytes <- getPdfOcrOutputSize(pdfPath)
-        rawLocation <- BlobStorage.create(BlobBucketId.FileContents, rawPath)
-        pdfLocation <- BlobStorage.create(BlobBucketId.FileContents, pdfPath)
-        file <- writeDatabase(rawLocation, sha1, pdfLocation, pdfNBytes)
-      } yield Right(file)
+        pdfResult <- PdfNormalizer.makeSearchablePdf(rawPath, pdfPath, lang, progressCallback)
+        result <- writeFileOnSuccess(pdfResult, rawPath, sha1, pdfPath)
+      } yield result
     }
-      .recover {
-        case PdfOcrCancelled => Left("user cancelled processing")
-        case ex: PdfInvalidException => Left(ex.getMessage)
-        case ex: PdfEncryptedException => Left(ex.getMessage)
+  }
+
+  def writeFileOnSuccess(
+    result: Either[String,Unit],
+    rawPath: Path,
+    sha1: Array[Byte],
+    pdfPath: Path
+  ): Future[Either[String,File]] = {
+    result match {
+      case Left(message) => Future.successful(Left(message))
+      case Right(()) => {
+        for {
+          pdfNBytes <- Future(blocking(JFiles.size(pdfPath)))
+          rawLocation <- BlobStorage.create(BlobBucketId.FileContents, rawPath)
+          pdfLocation <- BlobStorage.create(BlobBucketId.FileView, pdfPath)
+          file <- writeDatabase(rawLocation, sha1, pdfLocation, pdfNBytes)
+        } yield Right(file)
       }
+    }
   }
 
   private lazy val fileInserter = {

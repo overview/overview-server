@@ -100,11 +100,13 @@ class AddDocumentsWorkGenerator(
       .map { case (upload, info) => (upload.size * info.fractionComplete).toLong }
       .sum
 
-    val nFiles = fileGroup.nFiles.get - nFilesUnfinished
-    val nBytes = fileGroup.nBytes.get - nBytesUnfinished + nBytesInCurrentUploads
+    val nBytesUnfinishedPartial = nBytesUnfinished - nBytesInCurrentUploads
 
-    val estimatedCompletionTime = if (nBytesUnfinished != nBytesUnfinishedAtStart) {
-      val fractionRemaining: Double = nBytesUnfinished.toDouble / nBytesUnfinishedAtStart
+    val nFiles = fileGroup.nFiles.get - nFilesUnfinished
+    val nBytes = fileGroup.nBytes.get - nBytesUnfinishedPartial
+
+    val estimatedCompletionTime = if (nBytesUnfinishedPartial != nBytesUnfinishedAtStart) {
+      val fractionRemaining: Double = nBytesUnfinishedPartial.toDouble / nBytesUnfinishedAtStart
       val fractionComplete: Double = 1.0 - fractionRemaining
       val millisDone = Instant.now.toEpochMilli - millisAtStart
       val estimatedMillis = math.ceil(millisDone / fractionComplete).toLong

@@ -8,11 +8,15 @@ import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.{DocumentDisplayMethod,File}
 import com.overviewdocs.util.Textify
 
-class CreateDocumentDataForFile(file: File)(implicit ec: ExecutionContext) {
+class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(implicit ec: ExecutionContext) {
+  private def onSplitterProgress(nPages: Int, pageNumber: Int): Boolean = onProgress(nPages.toDouble / pageNumber)
+
   def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
-    getText
-      .map { case (text, isFromOcr) =>
-        val document = DocumentWithoutIds(
+    BlobStorage.withBlobInTempFile(file.viewLocation) { jFile =>
+      PdfSplitter.splitPdf(jFile.toPath, false, onSplitterProgress)
+    }
+      .map(_.right.map { pageInfos =>
+        Seq(DocumentWithoutIds(
           url=None,
           suppliedId=file.name,
           title=file.name,
@@ -22,41 +26,19 @@ class CreateDocumentDataForFile(file: File)(implicit ec: ExecutionContext) {
           fileId=Some(file.id),
           pageId=None,
           displayMethod=DocumentDisplayMethod.pdf,
-          isFromOcr=isFromOcr,
+          isFromOcr=pageInfos.map(_.isFromOcr).contains(true),
           metadataJson=JsObject(Seq()),
-          text=text
-        )
-
-        Right(Seq(document))
-      }
-  }
-
-  private def getText: Future[(String,Boolean)] = {
-    BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
-      PdfDocument.load(file.toPath).flatMap { pdfDocument =>
-        val pageTexts = new Array[String](pdfDocument.nPages)
-        var isFromOcr = false
-        val it = pdfDocument.pages
-        def fillRemainingPageTexts: Future[Unit] = if (it.hasNext) {
-          it.next.flatMap { pdfPage =>
-            pageTexts(pdfPage.pageNumber) = pdfPage.toText
-            if (!isFromOcr && pdfPage.isFromOcr) isFromOcr = true
-            fillRemainingPageTexts
-          }
-        } else {
-          Future.successful(())
-        }
-
-        fillRemainingPageTexts
-          .andThen { case _ => pdfDocument.close }
-          .map(_ => (Textify(pageTexts.mkString("\n\n")), isFromOcr))
-      }
-    }
+          text=pageInfos.map(_.text).mkString("\n\n")
+        ))
+      })
   }
 }
 
 object CreateDocumentDataForFile {
-  def apply(file: File)(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
-    new CreateDocumentDataForFile(file).execute
+  def apply(
+    file: File,
+    onProgress: Double => Boolean
+  )(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
+    new CreateDocumentDataForFile(file, onProgress).execute
   }
 }

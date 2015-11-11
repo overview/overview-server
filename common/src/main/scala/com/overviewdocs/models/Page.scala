@@ -19,12 +19,4 @@ object Page {
     text: String,
     isFromOcr: Boolean
   )
-  
-  case class ReferenceAttributes(
-    id: Long,
-    fileId: Long,
-    pageNumber: Int,
-    text: String,
-    isFromOcr: Boolean
-  )
 }

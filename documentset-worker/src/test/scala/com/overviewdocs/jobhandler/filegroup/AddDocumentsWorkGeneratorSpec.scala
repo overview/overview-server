@@ -161,6 +161,7 @@ class AddDocumentsWorkGeneratorSpec extends Specification {
         g.markWorkProgress(g.uploads(0), 0.5 /* 50b */)
         g.progress.nFilesProcessed must beEqualTo(0)
         g.progress.nBytesProcessed must beEqualTo(50)
+        g.progress.estimatedCompletionTime must not(beEqualTo(Instant.MAX))
       }
 
       "add nBytesProcessed for each worker" in {
