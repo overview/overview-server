@@ -56,7 +56,6 @@ object JobHandler extends HasBlockingDatabase {
       maybeJob.foreach { job =>
         logger.info("Processing job {}", job)
         handleSingleJob(job)
-        System.gc() // FIXME remove. Why the heck is this here?
       }
     }
   }
