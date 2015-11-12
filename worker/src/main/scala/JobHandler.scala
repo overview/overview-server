@@ -43,14 +43,6 @@ object JobHandler extends HasBlockingDatabase {
     JobRestarter.restartInterruptedJobs
 
     while (true) {
-      // Exit when the user enters Ctrl-D
-      while (System.in.available > 0) {
-        val EOF = 4
-        val next = System.in.read
-        if (next == EOF) {
-          System.exit(0)
-        }
-      }
       scanForJobs
       Thread.sleep(pollingInterval)
     }
