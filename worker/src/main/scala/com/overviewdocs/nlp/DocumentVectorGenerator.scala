@@ -215,7 +215,7 @@ class UnigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
     }
 
     // Replace our string table with the new, reduced table. NB: invalidates idf, so we clear it to prevent misunderstandings
-    logger.info("Input vocabulary size {}, output vocabulary size {}", inStrings.size, outStrings.size)
+    logger.debug("Input vocabulary size {}, output vocabulary size {}", inStrings.size, outStrings.size)
 
     // Done with all of this; only docVecs remain (and references outStrings)
     inStrings = null

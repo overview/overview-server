@@ -10,13 +10,13 @@ import java.util.TimeZone
 import scala.annotation.tailrec
 import scala.util._
 import scala.util.control.NonFatal
+import scala.concurrent.{Await,Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 import com.overviewdocs.clone.DocumentSetCloner
-import com.overviewdocs.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
-import com.overviewdocs.database.{DB, HasBlockingDatabase}
+import com.overviewdocs.database.{DB,DanglingNodeDeleter,HasBlockingDatabase,TreeIdGenerator}
 import com.overviewdocs.persistence.NodeWriter
-import com.overviewdocs.persistence.TreeIdGenerator
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tree}
 import com.overviewdocs.models.tables.{DocumentSets,DocumentSetCreationJobs,Trees}
 import com.overviewdocs.util._
@@ -26,12 +26,17 @@ object JobHandler extends HasBlockingDatabase {
   import database.api._
   private val logger = Logger.forClass(getClass)
 
+  private def await[T](future: Future[T]): T = blocking(Await.result(future, Duration.Inf))
+
   def main(args: Array[String]) {
     // Make sure java.sql.Timestamp values are correct
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
     // Connect to the database
     DB.dataSource
+
+    logger.info("Cleaning up dangling nodes")
+    await(DanglingNodeDeleter.run)
 
     logger.info("Starting to scan for jobs")
     startHandlingJobs
@@ -43,21 +48,29 @@ object JobHandler extends HasBlockingDatabase {
     JobRestarter.restartInterruptedJobs
 
     while (true) {
-      scanForJobs
+      handleJobs
+      handleTrees
       Thread.sleep(pollingInterval)
     }
   }
 
   // Run each job currently listed in the database
-  private def scanForJobs: Unit = {
-    for {
-      maybeJob <- database.option(DocumentSetCreationJobs.filter(_.state === DocumentSetCreationJobState.NotStarted))
-    } yield {
-      maybeJob.foreach { job =>
+  private def handleJobs: Unit = {
+    blockingDatabase.seq(DocumentSetCreationJobs.filter(_.state === DocumentSetCreationJobState.NotStarted))
+      .foreach { job =>
         logger.info("Processing job {}", job)
         handleSingleJob(job)
       }
-    }
+  }
+
+  // Build each tree currently listed in the database
+  private def handleTrees: Unit = {
+    blockingDatabase.seq(Trees.filter(_.progress =!= 1.0))
+      .foreach { tree =>
+        logger.info("Processing tree {}", tree)
+        val runner = new com.overviewdocs.clustering.Runner(tree)
+        runner.runBlocking
+      }
   }
 
   // Run a single job
@@ -111,9 +124,6 @@ object JobHandler extends HasBlockingDatabase {
           FROM document_set_creation_job
           WHERE document_set_id = ${job.documentSetId}
             AND contents_oid IS NOT NULL
-        ), b AS (
-          DELETE FROM document_set_creation_job_node
-          WHERE document_set_creation_job_id = ${job.id}
         )
         DELETE FROM document_set_creation_job WHERE id = ${job.id}
       """)
@@ -142,27 +152,16 @@ object JobHandler extends HasBlockingDatabase {
       val t1 = ds.createdAt.getTime()
       val t2 = System.currentTimeMillis()
 
-      val treeId = TreeIdGenerator.next(ds.id)
+      val producer = DocumentProducerFactory.create(job, ds, progressFn)
 
-      val nodeWriter = new NodeWriter(job.id, treeId)
-
-      val opts = DocumentSetIndexerOptions(job.lang, job.suppliedStopWords, job.importantWords)
-
-      val indexer = new DocumentSetIndexer(nodeWriter, opts, progressFn)
-      val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
-
-      val numberOfDocuments = producer.produce()
+      producer.produce()
 
       if (job.state != DocumentSetCreationJobState.Cancelled) {
-        if (job.jobType == DocumentSetCreationJobType.Recluster) {
-          createTree(treeId, nodeWriter.rootNodeId, ds, numberOfDocuments, job)
-        } else {
-          submitClusteringJob(job)
-        }
-      }
+        submitClusteringJob(job)
 
-      val t3 = System.currentTimeMillis()
-      logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
+        val t3 = System.currentTimeMillis()
+        logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
+      }
     }
   }
 
@@ -207,49 +206,14 @@ object JobHandler extends HasBlockingDatabase {
     blockingDatabase.option(DocumentSets.filter(_.id === documentSetId))
   }
 
-  private def createTree(treeId: Long, rootNodeId: Long, documentSet: DocumentSet,
-                         numberOfDocuments: Int, job: DocumentSetCreationJob): Unit = {
-    blockingDatabase.runUnit(Trees.+=(Tree(
-      id = treeId,
-      documentSetId = documentSet.id,
-      rootNodeId = rootNodeId,
-      jobId = job.id,
-      title = job.treeTitle.getOrElse("Tree"), // FIXME: Translate by making treeTitle a String instead of Option[String]
-      documentCount = numberOfDocuments,
-      lang = job.lang,
-      description = job.treeDescription.getOrElse(""),
-      suppliedStopWords = job.suppliedStopWords,
-      importantWords = job.importantWords,
-      createdAt = new java.sql.Timestamp(System.currentTimeMillis)
-    )))
-  }
-
-  // FIXME: Submitting jobs, along with creating documents should move into documentset-worker
   private def submitClusteringJob(job: DocumentSetCreationJob): Unit = {
     import database.api._
 
-    blockingDatabase.run((for {
-      _ <- DocumentSetCreationJobs.filter(_.id === job.id).delete
-      _ <- DocumentSetCreationJobs.map(_.createAttributes).+=(DocumentSetCreationJob.CreateAttributes(
-        documentSetId=job.documentSetId,
-        jobType=DocumentSetCreationJobType.Recluster,
-        retryAttempts=0,
-        lang=job.lang,
-        suppliedStopWords=job.suppliedStopWords,
-        importantWords=job.importantWords,
-        splitDocuments=job.splitDocuments,
-        documentcloudUsername=None,
-        documentcloudPassword=None,
-        contentsOid=None,
-        sourceDocumentSetId=None,
-        treeTitle=Some("Tree"), // FIXME translate by making treeTitle come from a job
-        treeDescription=job.treeDescription,
-        tagId=job.tagId,
-        state=DocumentSetCreationJobState.NotStarted,
-        fractionComplete=0,
-        statusDescription="",
-        canBeCancelled=true
-      ))
-    } yield ()).transactionally)
+    val treeId = await(TreeIdGenerator.next(job.documentSetId))
+
+    blockingDatabase.runUnit(Trees.+=(Tree.CreateAttributes(
+      documentSetId=job.documentSetId,
+      lang=job.lang
+    ).toTreeWithId(treeId)))
   }
 }

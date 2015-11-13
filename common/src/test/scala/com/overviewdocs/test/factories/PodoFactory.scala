@@ -62,6 +62,8 @@ object PodoFactory extends Factory {
     documentSetId
   )
 
+  override def danglingNode(rootNodeId: Long) = DanglingNode(getId(rootNodeId))
+
   override def document(
     id: Long,
     documentSetId: Long,
@@ -261,28 +263,34 @@ object PodoFactory extends Factory {
 
   override def tree(
     id: Long = 0L,
-    documentSetId: Long = 0L,
-    rootNodeId: Long = 0L,
-    jobId: Long = 0L,
-    title: String = "title",
-    documentCount: Int = 10,
-    lang: String = "en",
-    description: String = "description",
-    suppliedStopWords: String = "supplied stop words",
-    importantWords: String = "important words",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
+    documentSetId: Long,
+    rootNodeId: Option[Long],
+    title: String,
+    documentCount: Option[Int],
+    lang: String,
+    description: String,
+    suppliedStopWords: String,
+    importantWords: String,
+    createdAt: Timestamp,
+    tagId: Option[Long],
+    progress: Double,
+    progressDescription: String,
+    cancelled: Boolean
   ) = Tree(
     id=getId(id),
     documentSetId=getId(documentSetId),
-    rootNodeId=getId(rootNodeId),
-    jobId=getId(jobId),
+    rootNodeId=rootNodeId,
     title=title,
     documentCount=documentCount,
     lang=lang,
     description=description,
     suppliedStopWords=suppliedStopWords,
     importantWords=importantWords,
-    createdAt=createdAt
+    createdAt=createdAt,
+    tagId=tagId,
+    progress=progress,
+    progressDescription=progressDescription,
+    cancelled=cancelled
   )
 
   override def view(
@@ -380,28 +388,29 @@ object PodoFactory extends Factory {
     jobType: DocumentSetCreationJobType.Value,
     retryAttempts: Int,
     lang: String,
-    suppliedStopWords: String,
-    importantWords: String,
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
     contentsOid: Option[Long],
     sourceDocumentSetId: Option[Long],
-    treeTitle: Option[String],
-    treeDescription: Option[String],
-    tagId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
     statusDescription: String,
     canBeCancelled: Boolean
   ) = DocumentSetCreationJob(
-    getId(id), documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords,
-    splitDocuments, documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
-    treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled
+    getId(id),
+    documentSetId,
+    jobType,
+    retryAttempts,
+    lang,
+    splitDocuments,
+    documentcloudUsername,
+    documentcloudPassword,
+    contentsOid,
+    sourceDocumentSetId,
+    state,
+    fractionComplete,
+    statusDescription,
+    canBeCancelled
   )
-
-  override def documentSetCreationJobNode(
-    documentSetCreationJobId: Long,
-    nodeId: Long
-  ) = DocumentSetCreationJobNode(documentSetCreationJobId, nodeId)
 }

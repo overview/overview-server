@@ -3,12 +3,15 @@ package com.overviewdocs.blobstorage
 import java.io.{ByteArrayInputStream,IOException,InputStream}
 import org.postgresql.util.PSQLException
 import play.api.libs.iteratee.Iteratee
+import scala.concurrent.Future
 import scala.util.{Failure,Success}
 
 import com.overviewdocs.database.{LargeObject}
 import com.overviewdocs.test.DbSpecification
 
 class PgLoStrategySpec extends DbSpecification with StrategySpecification {
+  override def await[T](future: Future[T]): T = super[StrategySpecification].await(future)
+
   trait PgLoBaseScope extends DbScope {
     import database.api._
 

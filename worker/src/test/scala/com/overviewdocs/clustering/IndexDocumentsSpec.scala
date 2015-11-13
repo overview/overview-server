@@ -20,7 +20,7 @@ import scala.Int.int2long
 import com.overviewdocs.nlp.StopWordSet
 
 class IndexDocumentsSpec extends Specification {
-  val stopWords = StopWordSet("en", "")
+  val stopWords = StopWordSet("en", Seq())
 
   "DocumentVectorGenerator" should {
 

@@ -13,7 +13,6 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
     trait BaseScope extends Scope {
       val factory = com.overviewdocs.test.factories.PodoFactory
 
-      val consumer = smartMock[DocumentConsumer]
       val documentSetCreationJob = smartMock[DocumentSetCreationJob]
       documentSetCreationJob.documentcloudUsername returns None
       documentSetCreationJob.documentcloudPassword returns None
@@ -23,7 +22,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
       documentSetCreationJob.jobType returns DocumentSetCreationJobType.DocumentCloud
       documentSetCreationJob.contentsOid returns None
       val documentSet = factory.documentSet(title="title", query=Some("query"))
-      val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, { _ => true })
+      val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, { _ => true })
 
       producer match {
         case p: DocumentCloudDocumentProducer => success
@@ -35,7 +34,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
       documentSetCreationJob.jobType returns DocumentSetCreationJobType.CsvUpload
       documentSetCreationJob.contentsOid returns Some(0l)
       val documentSet = factory.documentSet(title="title", uploadedFileId = Some(100L))
-      val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, {_ => true })
+      val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, {_ => true })
 
       producer match {
         case p: CsvImportDocumentProducer => success

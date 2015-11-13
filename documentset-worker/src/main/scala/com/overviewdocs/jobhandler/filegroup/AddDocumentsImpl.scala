@@ -4,9 +4,9 @@ import akka.actor.ActorRef
 import java.time.Instant
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
-import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload}
-import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
+import com.overviewdocs.database.{HasDatabase,TreeIdGenerator}
+import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload,Tree}
+import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads,Trees}
 import com.overviewdocs.util.Logger
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
@@ -149,7 +149,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
       _ <- TransportIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation
       _ <- task.DocumentSetInfoUpdater.update(fileGroup.addToDocumentSetId.get)
       _ <- FileGroupRemover().remove(fileGroup.id)
-      _ <- ReclusterJobCreator.createReclusterJob(fileGroup.addToDocumentSetId.get)
+      _ <- AddDocumentsImpl.createTree(fileGroup)
     } yield {
       ()
     }
@@ -211,5 +211,17 @@ object AddDocumentsImpl extends HasDatabase {
       _ <- compiledGroupedFileUpload(upload.id).delete
     } yield ()
     database.run(action.transactionally)
+  }
+
+  def createTree(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    for {
+      treeId <- TreeIdGenerator.next(fileGroup.addToDocumentSetId.get)
+      _ <- database.runUnit(Trees.+=(Tree.CreateAttributes(
+        documentSetId=fileGroup.addToDocumentSetId.get,
+        lang=fileGroup.lang.get
+      ).toTreeWithId(treeId)))
+    } yield ()
   }
 }

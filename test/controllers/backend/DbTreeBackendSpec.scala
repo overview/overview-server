@@ -33,7 +33,7 @@ class DbTreeBackendSpec extends DbBackendSpecification {
         val rootNodeId = 123L
         val rootNode = factory.node(id=rootNodeId, rootId=rootNodeId, parentId=None)
         val subNode = factory.node(rootId=rootNodeId, parentId=Some(rootNodeId))
-        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=rootNodeId)
+        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=Some(rootNodeId))
 
         def destroy = await(backend.destroy(tree.id))
       }
@@ -46,7 +46,7 @@ class DbTreeBackendSpec extends DbBackendSpecification {
       "not destroy another Tree" in new DestroyScope {
         val rootNodeId2 = 124L
         val rootNode2 = factory.node(id=rootNodeId2, rootId=rootNodeId2, parentId=None)
-        val tree2 = factory.tree(documentSetId=documentSet.id, rootNodeId=rootNodeId2)
+        val tree2 = factory.tree(documentSetId=documentSet.id, rootNodeId=Some(rootNodeId2))
 
         destroy
 
@@ -62,7 +62,7 @@ class DbTreeBackendSpec extends DbBackendSpecification {
       "not destroy another Tree's Nodes" in new DestroyScope {
         val rootNodeId2 = 124L
         val rootNode2 = factory.node(id=rootNodeId2, rootId=rootNodeId2, parentId=None)
-        val tree2 = factory.tree(documentSetId=documentSet.id, rootNodeId=rootNodeId2)
+        val tree2 = factory.tree(documentSetId=documentSet.id, rootNodeId=Some(rootNodeId2))
 
         destroy
 
@@ -86,7 +86,7 @@ class DbTreeBackendSpec extends DbBackendSpecification {
       "not destroy another Tree's NodeDocuments" in new DestroyScope {
         val rootNodeId2 = 124L
         val rootNode2 = factory.node(id=rootNodeId2, rootId=rootNodeId2, parentId=None)
-        val tree2 = factory.tree(documentSetId=documentSet.id, rootNodeId=rootNodeId2)
+        val tree2 = factory.tree(documentSetId=documentSet.id, rootNodeId=Some(rootNodeId2))
         val doc1 = factory.document(documentSetId=documentSet.id)
         val doc2 = factory.document(documentSetId=documentSet.id)
         val nd1 = factory.nodeDocument(rootNodeId2, doc1.id)
@@ -104,7 +104,7 @@ class DbTreeBackendSpec extends DbBackendSpecification {
         val documentSet = factory.documentSet()
         val rootNodeId = 123L
         val rootNode = factory.node(id=rootNodeId, rootId=rootNodeId, parentId=None)
-        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=rootNodeId, title="original-title")
+        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=Some(rootNodeId), title="original-title")
 
         val treeId = tree.id
         val attributes = Tree.UpdateAttributes(title="foobar")
@@ -123,7 +123,6 @@ class DbTreeBackendSpec extends DbBackendSpecification {
         val dbTree = findTree(tree.id)
         dbTree.map(_.documentSetId) must beSome(tree.documentSetId)
         dbTree.map(_.rootNodeId) must beSome(tree.rootNodeId)
-        dbTree.map(_.jobId) must beSome(tree.jobId)
         dbTree.map(_.documentCount) must beSome(tree.documentCount)
         dbTree.map(_.lang) must beSome(tree.lang)
         dbTree.map(_.description) must beSome(tree.description)

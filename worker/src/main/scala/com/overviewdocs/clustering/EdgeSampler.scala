@@ -77,9 +77,6 @@ class SampledEdges extends HashMap[ DocumentID, CompactPairArray[DocumentID, Flo
 
 
 class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanceFn) {
-
-  private val logger = Logger.forClass(getClass)
-
   // Store all edges that the "short edge" sampling has produced, map from doc to (doc,weight)
   private var mySampledEdges = new SampledEdges
 
@@ -95,7 +92,7 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   // Generate a table of lists indexed by term. Each list has all docs containing that term, sorted in decreasing weight.
   // This is something like the transpose of the document vector set, and it's important to be memory efficient here,
   // hence CompactPairArray
-  private def createTermTable() = logger.logExecutionTime("Generated term/dimension array") {
+  private def createTermTable() = {
     // term -> array of (doc, weight)
     val ret = Map[TermID, CompactPairArray[DocumentID,TermWeight]]()
 
@@ -117,39 +114,37 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   // replace the item with a new product with the highest term weight among remaining docs.
   // Effectively, this samples edges in order of the largest term in their dot-product.
   private def createSampledEdges(termTable:Map[TermID, CompactPairArray[DocumentID, TermWeight]], numEdgesPerDoc:Int, maxDist:Double) : Unit = {
-    logger.logExecutionTime("Generated sampled edges") {
-      docVecs.foreach { case (id,vec) =>
+    docVecs.foreach { case (id,vec) =>
 
-        // pq stores one entry for each term in the doc,
-        // sorted by product of term weight times largest weight on that term in all docs
-        var pq = PriorityQueue[TermProduct]()
-        vec.foreach { case (term,weight) =>
-          pq += TermProduct(term, weight, 0, weight* termTable(term)(0)._2)  // add term to this doc's queue
+      // pq stores one entry for each term in the doc,
+      // sorted by product of term weight times largest weight on that term in all docs
+      var pq = PriorityQueue[TermProduct]()
+      vec.foreach { case (term,weight) =>
+        pq += TermProduct(term, weight, 0, weight* termTable(term)(0)._2)  // add term to this doc's queue
+      }
+
+      // Now we just pop edges out of the queue on by one
+      var numEdgesLeft = numEdgesPerDoc
+      while (numEdgesLeft>0 && !pq.isEmpty) {
+
+        // Generate edge from this doc to the doc with the highest term product
+        val termProduct = pq.dequeue
+        val otherId = termTable(termProduct.term)(termProduct.docIdx)._1
+        val distance = distanceFn(docVecs(id), docVecs(otherId)).toFloat
+        if (distance <= maxDist)
+          mySampledEdges.addEdge(id, otherId, distance)
+
+        // Put this term back in the queue, with a new product entry
+        // We multiply this term's weight by weight on the document with the next highest weight on this term
+        val newDocIdx = termProduct.docIdx + 1
+        if (newDocIdx < termTable(termProduct.term).size) {
+          pq += TermProduct(termProduct.term,
+                            termProduct.weight,
+                            newDocIdx,
+                            termProduct.weight * termTable(termProduct.term)(newDocIdx)._2)
         }
 
-        // Now we just pop edges out of the queue on by one
-        var numEdgesLeft = numEdgesPerDoc
-        while (numEdgesLeft>0 && !pq.isEmpty) {
-
-          // Generate edge from this doc to the doc with the highest term product
-          val termProduct = pq.dequeue
-          val otherId = termTable(termProduct.term)(termProduct.docIdx)._1
-          val distance = distanceFn(docVecs(id), docVecs(otherId)).toFloat
-          if (distance <= maxDist)
-            mySampledEdges.addEdge(id, otherId, distance)
-
-          // Put this term back in the queue, with a new product entry
-          // We multiply this term's weight by weight on the document with the next highest weight on this term
-          val newDocIdx = termProduct.docIdx + 1
-          if (newDocIdx < termTable(termProduct.term).size) {
-            pq += TermProduct(termProduct.term,
-                              termProduct.weight,
-                              newDocIdx,
-                              termProduct.weight * termTable(termProduct.term)(newDocIdx)._2)
-          }
-
-          numEdgesLeft -= 1
-        }
+        numEdgesLeft -= 1
       }
     }
   }

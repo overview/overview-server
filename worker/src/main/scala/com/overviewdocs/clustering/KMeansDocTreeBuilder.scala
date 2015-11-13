@@ -11,13 +11,16 @@ package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
 import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
 import com.overviewdocs.nlp.DocumentVectorTypes._
 import com.overviewdocs.nlp.IterativeKMeansDocuments
 
 // Take a node and create K children.
 // Encapsulates parameters of our our-means clustering
 class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected val k:Int) {
+  protected def makeNestedProgress(onProgress: Double => Unit, start: Double, end: Double): Double => Unit = {
+    (inner) => onProgress(start + inner * (end - start))
+  }
+
   private val km = new IterativeKMeansDocuments(docVecs)
 
   def splitNode(node:DocTreeNode) : Unit = {
@@ -42,39 +45,36 @@ class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected va
 }
 
 
-class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k:Int)
-  extends KMeansNodeSplitter(_docVecs, _k) {
+class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k: Int) extends KMeansNodeSplitter(_docVecs, _k) {
 
   val stopSize = 16   // keep breaking into clusters until <= 16 docs in a node
   val maxDepth = 10   // ...or we reach depth limit
 
-  private def splitNode(node:DocTreeNode, level:Integer, progAbort:ProgressAbortFn) : Unit = {
+  private def splitNode(node:DocTreeNode, level:Integer, onProgress: Double => Unit) : Unit = {
+    require(node.docs.size > 0)
 
-    if (!progAbort(Progress(0, ClusteringLevel(1)))) { // if we haven't been cancelled...
+    onProgress(0)
 
-      require(node.docs.size > 0)
+    if ((node.docs.size > stopSize) && (level < maxDepth)) {
 
-      if ((node.docs.size > stopSize) && (level < maxDepth)) {
+      splitNode(node)
 
-        splitNode(node)
-
-        if (!node.children.isEmpty) {
-          // recurse, computing progress along the way
-          var i=0
-          var denom = node.children.size.toDouble
-          node.children foreach { node =>
-            splitNode(node, level+1, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
-            i+=1
-          }
+      if (!node.children.isEmpty) {
+        // recurse, computing progress along the way
+        var i=0
+        var denom = node.children.size.toDouble
+        node.children foreach { node =>
+          splitNode(node, level+1, makeNestedProgress(onProgress, i/denom, (i+1)/denom))
+          i+=1
         }
       }
-
-      progAbort(Progress(1, ClusteringLevel(1)))
     }
+
+    onProgress(1)
   }
 
-  def BuildTree(root:DocTreeNode, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    splitNode(root, 1, progAbort)   // root is level 0, so first split is level 1
+  def BuildTree(root:DocTreeNode, onProgress: Double => Unit): DocTreeNode = {
+    splitNode(root, 1, onProgress)   // root is level 0, so first split is level 1
 
     root
   }

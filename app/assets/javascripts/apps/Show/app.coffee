@@ -17,7 +17,6 @@ define [
   './views/DocumentListTitle'
   '../Tree/app'
   '../View/app'
-  '../Job/app'
   '../DocumentListParamsSelector/App'
 ], (_, $, Backbone, \
     DocumentSet, TransactionQueue, State, \
@@ -29,7 +28,7 @@ define [
     ExportDialog, \
     ModeView, \
     DocumentListTitleView, \
-    TreeApp, ViewApp, JobApp, DocumentListParamsSelectorApp) ->
+    TreeApp, ViewApp, DocumentListParamsSelectorApp) ->
 
   class App
     constructor: (options) ->
@@ -199,8 +198,6 @@ define [
         viewAppConstructors:
           tree: TreeApp
           view: ViewApp
-          job: JobApp
-          error: JobApp
 
       new TransactionQueueErrorMonitor
         model: @transactionQueue

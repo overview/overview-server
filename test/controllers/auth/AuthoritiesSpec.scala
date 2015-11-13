@@ -155,8 +155,7 @@ class AuthoritiesSpec extends DbSpecification {
     "userOwningTree" should {
       "return true when the user owns the document set and tree" in new UserScope {
         val documentSet = factory.documentSet()
-        val node = factory.node(parentId=None)
-        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=node.id)
+        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=None)
         factory.documentSetUser(documentSet.id, goodUser.email)
         await(auth.userOwningTree(tree.id)(goodUser)) must beTrue
       }
@@ -164,8 +163,7 @@ class AuthoritiesSpec extends DbSpecification {
       "return false when the user owns a tree in a different document set" in new UserScope {
         val documentSet = factory.documentSet()
         val otherDocumentSet = factory.documentSet()
-        val node = factory.node(parentId=None)
-        val tree = factory.tree(documentSetId=otherDocumentSet.id, rootNodeId=node.id)
+        val tree = factory.tree(documentSetId=otherDocumentSet.id, rootNodeId=None)
         factory.documentSetUser(documentSet.id, goodUser.email)
         await(auth.userOwningTree(tree.id)(goodUser)) must beFalse
       }
@@ -178,8 +176,7 @@ class AuthoritiesSpec extends DbSpecification {
 
       "return false when a different user owns the tree" in new UserScope {
         val documentSet = factory.documentSet()
-        val node = factory.node(parentId=None)
-        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=node.id)
+        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=None)
         factory.documentSetUser(documentSet.id, goodUser.email)
         await(auth.userOwningTree(tree.id)(badUser)) must beFalse
       }
@@ -356,8 +353,7 @@ class AuthoritiesSpec extends DbSpecification {
 
     "userOwningTree" should {
       "return false" in new ApiTokenScope {
-        val node = factory.node(parentId=None)
-        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=node.id)
+        val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=None)
         await(auth.userOwningTree(tree.id)(apiToken)) must beFalse
       }
     }

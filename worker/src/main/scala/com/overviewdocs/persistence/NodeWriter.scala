@@ -1,71 +1,49 @@
-/*
- * nodewriter.scala
- *
- * Overview
- * Created by Jonas Karlsson, Aug 2012
- */
-
 package com.overviewdocs.persistence
 
-import scala.collection.mutable.Queue
+import scala.collection.mutable
 
-import com.overviewdocs.clustering.DocTreeNode
-import com.overviewdocs.models.{Node,NodeDocument,DocumentSetCreationJobNode}
-import com.overviewdocs.models.tables.{Nodes,NodeDocuments,DocumentSetCreationJobNodes}
+import com.overviewdocs.database.HasBlockingDatabase
+import com.overviewdocs.models.{Node,NodeDocument}
+import com.overviewdocs.models.tables.{Nodes,NodeDocuments}
 
-/**Writes out tree with the given root node to the database.
+/** Writes out the given tree nodes, batched.
   *
-  * Inserts entries into document and node_document tables. Documents contained
-  * by the nodes must already exist in the database.
+  * Inserts entries into the `node` and `node_document` tables. Documents must
+  * exist in the database, or these methods will crash.
   *
-  * If this clustering job is interrupted, the tree will remain in the
-  * database.
+  * The caller must provide nodes in order: that is, a parent before its
+  * children.
+  *
+  * Not thread-safe.
   */
-class NodeWriter(jobId: Long, treeId: Long) {
-  val rootNodeId = new NodeIdGenerator(treeId).rootId
+class NodeWriter extends HasBlockingDatabase {
+  private val BatchSize = 5000 // Big -> jitter; small -> everything is slow
+  private val nodeBatch = mutable.ArrayBuffer[Node]()
+  private val nodeDocumentBatch = mutable.ArrayBuffer[NodeDocument]()
 
-  def write(root: DocTreeNode): Unit = {
-    writeNodes(root)
-    writeNodeDocuments(root)
+  def blockingCreateAndFlushIfNeeded(
+    id: Long,
+    rootId: Long,
+    parentId: Option[Long],
+    description: String,
+    isLeaf: Boolean,
+    documentIds: Seq[Long]
+  ): Unit = {
+    nodeBatch.+=(Node(id, rootId, parentId, description, documentIds.length, isLeaf))
+    nodeDocumentBatch.++=(documentIds.map(documentId => NodeDocument(id, documentId)))
+
+    if (nodeDocumentBatch.size > BatchSize) {
+      blockingFlush
+    }
   }
 
-  private def writeNodes(root: DocTreeNode): Unit = {
-    val inserter = new BatchInserter[Node](1000, Nodes)
+  def blockingFlush: Unit = {
+    import database.api._
 
-    // levelorder() from https://en.wikipedia.org/wiki/Tree_traversal
-    val queue: Queue[(Option[Long],DocTreeNode)] = Queue((None,root))
-    var nodeId = rootNodeId
+    blockingDatabase.runUnit(Nodes.++=(nodeBatch))
+    blockingDatabase.runUnit(NodeDocuments.++=(nodeDocumentBatch))
 
-    while (!queue.isEmpty) {
-      val (parentId, node) = queue.dequeue
-
-      inserter.insert(Node(nodeId, rootNodeId, parentId, node.description, node.docs.size, node.children.isEmpty))
-      node.orderedChildren.foreach { subNode => queue.enqueue((Some(nodeId), subNode)) }
-      nodeId += 1
-    }
-
-    inserter.flush
-  }
-
-  private def writeNodeDocuments(root: DocTreeNode): Unit = {
-    val inserter = new BatchInserter(1000, NodeDocuments)
-
-    // levelorder() from https://en.wikipedia.org/wiki/Tree_traversal
-    val queue: Queue[DocTreeNode] = Queue(root)
-    var nodeId = rootNodeId
-
-    while (!queue.isEmpty) {
-      val node = queue.dequeue
-
-      node.docs.toArray.sorted.foreach { documentId =>
-        inserter.insert(NodeDocument(nodeId, documentId))
-      }
-
-      node.orderedChildren.foreach { node => queue.enqueue(node) }
-
-      nodeId += 1
-    }
-
-    inserter.flush
+    nodeBatch.clear
+    nodeDocumentBatch.clear
   }
 }

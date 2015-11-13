@@ -32,6 +32,8 @@ trait Factory {
     description: String = "description",
     documentSetId: Option[Long] = None): ApiToken
 
+  def danglingNode(rootNodeId: Long = 0L): DanglingNode
+
   /** Creates a new Document with the given parameters. */
   def document(
     id: Long = 0L,
@@ -131,15 +133,18 @@ trait Factory {
   def tree(
     id: Long = 0L,
     documentSetId: Long = 0L,
-    rootNodeId: Long = 0L,
-    jobId: Long = 0L,
+    rootNodeId: Option[Long] = None,
     title: String = "title",
-    documentCount: Int = 10,
+    documentCount: Option[Int] = None,
     lang: String = "en",
     description: String = "description",
     suppliedStopWords: String = "supplied stop words",
     importantWords: String = "important words",
-    createdAt: Timestamp = now
+    createdAt: Timestamp = now,
+    tagId: Option[Long] = None,
+    progress: Double = 1.0,
+    progressDescription: String = "",
+    cancelled: Boolean = false
   ): Tree
 
   def view(
@@ -214,29 +219,19 @@ trait Factory {
   def documentSetCreationJob(
     id: Long = 0L,
     documentSetId: Long = 0L,
-    jobType: DocumentSetCreationJobType.Value = DocumentSetCreationJobType.Recluster,
+    jobType: DocumentSetCreationJobType.Value = DocumentSetCreationJobType.Clone,
     retryAttempts: Int = 0,
     lang: String = "en",
-    suppliedStopWords: String = "",
-    importantWords: String = "",
     splitDocuments: Boolean = false,
     documentcloudUsername: Option[String] = None,
     documentcloudPassword: Option[String] = None,
     contentsOid: Option[Long] = None,
-    sourceDocumentSetId: Option[Long] = None,
-    treeTitle: Option[String] = Some(""), // Because our default is Recluster
-    treeDescription: Option[String] = None,
-    tagId: Option[Long] = None,
+    sourceDocumentSetId: Option[Long] = Some(1L),
     state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.NotStarted,
     fractionComplete: Double = 0.0,
     statusDescription: String = "",
     canBeCancelled: Boolean = true
   ): DocumentSetCreationJob
-
-  def documentSetCreationJobNode(
-    documentSetCreationJobId: Long = 0L,
-    nodeId: Long = 0L
-  ): DocumentSetCreationJobNode
 
   private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
 }

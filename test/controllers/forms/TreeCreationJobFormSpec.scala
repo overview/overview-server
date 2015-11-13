@@ -2,10 +2,10 @@ package controllers.forms
 
 import play.api.data.FormError
 
-import com.overviewdocs.models.{DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
+import com.overviewdocs.models.Tree
 
 class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
-  trait JobApplyScope extends ApplyScope[DocumentSetCreationJob.CreateAttributes] {
+  trait JobApplyScope extends ApplyScope[Tree.CreateAttributes] {
     val documentSetId = 4L // random
     override def form = TreeCreationJobForm(documentSetId)
   }
@@ -21,14 +21,12 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
   }
 
   "TreeCreationJobForm" should {
-    "create a correct DocumentSetCreationJob" in new ValidScope {
+    "create a correct Tree" in new ValidScope {
       value.map(_.documentSetId) must beSome(documentSetId)
-      value.map(_.jobType) must beSome(DocumentSetCreationJobType.Recluster)
-      value.flatMap(_.treeTitle) must beSome("title")
+      value.map(_.title) must beSome("title")
       value.flatMap(_.tagId) must beNone
       value.map(_.suppliedStopWords) must beSome("")
       value.map(_.importantWords) must beSome("")
-      value.map(_.state) must beSome(DocumentSetCreationJobState.NotStarted)
       value.map(_.lang) must beSome("en")
     }
 
@@ -69,7 +67,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
 
     "trim the title" in new ValidScope {
       override def args = super.args + ("tree_title" -> " title ")
-      value.flatMap(_.treeTitle) must beSome("title")
+      value.map(_.title) must beSome("title")
     }
 
     "disallow if title is just spaces" in new ValidScope {

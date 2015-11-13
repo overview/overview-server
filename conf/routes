@@ -55,8 +55,6 @@ POST   /imports/documentcloud                controllers.DocumentCloudImportJobC
 GET    /imports/documentcloud/new/:query     controllers.DocumentCloudImportJobController._new(query: String)
 POST   /imports/clone/:sourceDocumentSetId   controllers.CloneImportJobController.create(sourceDocumentSetId: Long)
 
-DELETE /trees/jobs/:jobId controllers.ReclusterJobController.delete(jobId: Long)
-
 # Routes that relate to a DocumentSet
 GET    /documentsets                      controllers.DocumentSetController.index(page: Int ?= 1)
 GET    /documentsets/:id.html.json        controllers.DocumentSetController.showHtmlInJson(id: Long)

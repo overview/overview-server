@@ -33,40 +33,6 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === job.id)) must beNone
     }
 
-    "delete document_set_creation_job_nodes" in new BasicDocumentSetScope {
-      val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
-      val node = factory.node()
-      factory.documentSetCreationJobNode(job.id, node.id)
-
-      deleteDocumentSet
-
-      import database.api._
-      blockingDatabase.option(
-        DocumentSetCreationJobNodes
-          .filter(_.documentSetCreationJobId === job.id)
-          .filter(_.nodeId === node.id)
-      ) must beNone
-      blockingDatabase.option(Nodes.filter(_.id === node.id)) must beNone
-    }
-
-    "delete document_set_creation_job_nodes that are also referenced by trees" in new BasicDocumentSetScope {
-      val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
-      val node = factory.node()
-      val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=node.id)
-      factory.documentSetCreationJobNode(job.id, node.id)
-
-      deleteDocumentSet
-
-      import database.api._
-      blockingDatabase.option(
-        DocumentSetCreationJobNodes
-          .filter(_.documentSetCreationJobId === job.id)
-          .filter(_.nodeId === node.id)
-      ) must beNone
-      blockingDatabase.option(Nodes.filter(_.id === node.id)) must beNone
-      blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
-    }
-
     "delete csv uploads" in new CsvUploadScope {
       deleteDocumentSet
 
@@ -105,7 +71,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       val node = factory.node(id = 1l, rootId = 1l)
 
       factory.nodeDocument(node.id, documents.head.id)
-      factory.tree(documentSetId = documentSet.id, rootNodeId = node.id)
+      factory.tree(documentSetId = documentSet.id, rootNodeId = Some(node.id))
 
       deleteDocumentSet
 

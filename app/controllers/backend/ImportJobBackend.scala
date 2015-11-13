@@ -32,7 +32,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
 
     DocumentSetCreationJobs
       .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
       .filter(_.documentSetId in documentSetIds)
   }
 
@@ -45,7 +44,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
     DocumentSetCreationJobs
       .filter(_.documentSetId === documentSetId)
       .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
   }
 
   private lazy val fileGroupsWithDocumentSetsAndOwners = {
@@ -61,7 +59,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   private lazy val dscjsWithDocumentSetsAndOwners = {
     DocumentSetCreationJobs
       .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .filter(_.jobType =!= DocumentSetCreationJobType.Recluster)
       .join(DocumentSets)
         .on(_.documentSetId === _.id)
       .joinLeft(DocumentSetUsers.filter(_.role === DocumentSetUser.Role(true)))

@@ -12,8 +12,6 @@
 package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
 import com.overviewdocs.nlp.DocumentVectorTypes._
 import com.overviewdocs.util.Configuration
 
@@ -34,29 +32,29 @@ object BuildDocTree {
     (new DocTreeNode(nonEmptyDocs), new DocTreeNode(emptyDocs))
   }
 
-  def applyKMeans(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def applyKMeans(root:DocTreeNode, docVecs: DocumentSetVectors, onProgress: Double => Unit): DocTreeNode = {
     val arity = 5
     val builder = new KMeansDocTreeBuilder(docVecs, arity)
-    builder.BuildTree(root, progAbort) // actually build the tree!
+    builder.BuildTree(root, onProgress) // actually build the tree!
   }
 
-  def applyKMeansComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def applyKMeansComponents(root:DocTreeNode, docVecs: DocumentSetVectors, onProgress: Double => Unit): DocTreeNode = {
     val arity = 5
     val builder = new KMeansComponentsDocTreeBuilder(docVecs, arity)
-    builder.BuildTree(root, progAbort) // actually build the tree!
+    builder.BuildTree(root, onProgress) // actually build the tree!
   }
 
-  def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    (new ConnectedComponentDocTreeBuilder(docVecs)).applyConnectedComponents(root, docVecs, progAbort)
+  def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, onProgress: Double => Unit): DocTreeNode = {
+    (new ConnectedComponentDocTreeBuilder(docVecs)).applyConnectedComponents(root, docVecs, onProgress)
   }
 
-  def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def apply(docVecs: DocumentSetVectors, onProgress: Double => Unit): DocTreeNode = {
     var (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
 
     Configuration.getString("clustering_alg") match {
-      case "KMeans" => applyKMeans(nonEmptyDocs, docVecs, progAbort)
-      case "ConnectedComponents" => applyConnectedComponents(nonEmptyDocs, docVecs, progAbort)
-      case _  => applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)
+      case "KMeans" => applyKMeans(nonEmptyDocs, docVecs, onProgress)
+      case "ConnectedComponents" => applyConnectedComponents(nonEmptyDocs, docVecs, onProgress)
+      case _  => applyKMeansComponents(nonEmptyDocs, docVecs, onProgress)
     }
 
     SuggestedTags.makeSuggestedTagsForTree(docVecs, nonEmptyDocs) // create a descriptive label for each node
@@ -64,7 +62,7 @@ object BuildDocTree {
     // If there are any empty documents, create a node labelled "no meaningful words"
     var tree = nonEmptyDocs
     if (emptyDocs.docs.size>0) {
-      emptyDocs.description = "(no meaningful words)"
+      emptyDocs.description = ""
 
       if (nonEmptyDocs.docs.isEmpty) {
         // The tree is ONLY empty docs, so just one node

@@ -8,7 +8,7 @@ define [
   # in the UI.
   class View extends Backbone.Model
     defaults:
-      type: 'view' # 'tree', 'view', 'job' or 'error'
+      type: 'view' # 'tree' or 'view'
       title: '' # What the user calls this View
       creationData: [] # View-dependent [key,value] strings
 
@@ -18,14 +18,7 @@ define [
       if 'createdAt' of attrs
         attrs.createdAt = new Date(attrs.createdAt)
 
-      attrs.clientId = if attrs.jobId > 0
-        "job-#{attrs.jobId}"
-      else
-        "#{attrs.type}-#{attrs.id}"
-
-      for [ k, v ] in (attrs.creationData || [])
-        if k == 'rootNodeId'
-          attrs.rootNodeId = +v
+      attrs.clientId = "#{attrs.type}-#{attrs.id}"
 
       super(attrs, options)
 

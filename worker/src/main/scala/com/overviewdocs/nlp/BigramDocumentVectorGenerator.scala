@@ -1,7 +1,7 @@
 /**
  * BigramDocumentVectorGenerator.scala
  * Takes lists of terms for each document (post-lexing), generates weighted and normalized vectors for a document set
- * Two pass algorithm: first we discover colocations (common bigrams) as we write the text to a temp CSV file,
+ * Two pass algorithm: first we discover colocations (common bigrams) as we write the text to a tempfile,
  * then we read the text back in, parsing bigrams
  *
  * Overview
@@ -13,13 +13,11 @@
 
 package com.overviewdocs.nlp
 
-import com.opencsv.{CSVReader, CSVWriter}
-import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
-import scala.collection.mutable.{Map, IndexedSeq, ArrayBuffer}
+import java.io.{BufferedWriter,OutputStreamWriter}
+import scala.collection.mutable.{Map,IndexedSeq,ArrayBuffer}
 
 import com.overviewdocs.nlp.DocumentVectorTypes._
-import com.overviewdocs.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
-
+import com.overviewdocs.util.{TempFile,FlatteningHashMap,KeyValueFlattener}
 
 case class BigramKey(val term1:TermID, val term2:TermID = BigramKey.noTerm) {
   def isBigram = term2 != BigramKey.noTerm
@@ -93,8 +91,6 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
   type WeightedBigramKey = (BigramKey,TermWeight)
 
-  private val logger = Logger.forClass(getClass)
-
   // --- Config ---
   var minBigramOccurrences:Int   = 5                // throw out bigram if it has less than this many occurrences
   var minBigramLikelihood:Double = 30               // ...or if not this many times more likely than chance to be a colocation
@@ -103,7 +99,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
   // ---- state ----
   private val docSpool = new TempFile
-  private val spoolWriter = new CSVWriter(new BufferedWriter(new OutputStreamWriter(docSpool.outputStream, "utf-8")))
+  private val spoolWriter = new BufferedWriter(new OutputStreamWriter(docSpool.outputStream, "utf-8"))
 
   // -- Vocabulary tables --
 
@@ -220,12 +216,13 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
   // saves document terms to a temp file
   def spoolDocToDisk(docId: DocumentID, terms: Seq[WeightedTermString]) : Unit = {
-
     // write docid,terms to disk. Simple format:
     //  docid,numterms
-    //  terms,weight    <-- repeated numterms times
-    spoolWriter.writeNext(Array(docId.toString, terms.length.toString))
-    terms.foreach { tw => spoolWriter.writeNext(Array(tw.term.toString, tw.weight.toString)) }
+    //  term weight    <-- repeated numterms times
+    spoolWriter.write(s"$docId,${terms.length}\n")
+    terms.foreach { tw =>
+      spoolWriter.write(s"${tw.term} ${tw.weight}\n")
+    }
   }
 
   // --- Processing during copmputeDocumentVectors ---
@@ -239,37 +236,30 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   }
 
   // Iterator that reads saved document terms back in, counting term frequency and creating new TF vectors
-  def documentVectorIterator() : Iterator[(DocumentID, Map[BigramKey, TermWeight])] = {
-
-    // iterator to read the documents in one at a time from CSV, converting back to document vectors
+  def documentVectorIterator: Iterator[(DocumentID, Map[BigramKey, TermWeight])] = {
     new Iterator[(DocumentID, Map[BigramKey, TermWeight])] {
+      val lines = io.Source.fromInputStream(docSpool.inputStream)(io.Codec.UTF8).getLines
 
-      spoolWriter.close()              // flushes, so we can read all we've written
-      val spoolReader = new CSVReader(new BufferedReader(new InputStreamReader(docSpool.inputStream, "utf-8")))
-
-      var line = spoolReader.readNext()
-
-      def hasNext = line != null
+      def hasNext = lines.hasNext
 
       def next = {
-
         // Read document header: docID, numTerms
+        val line = lines.next.split(',')
         val id = line(0).toLong.asInstanceOf[DocumentID]
-        var numTerms = line(1).toInt
+        var nTerms = line(1).toInt
 
         // Read each term, weight pair (there must be a more elegant way...)
-        val terms = new ArrayBuffer[WeightedTermString](numTerms)
-        while (numTerms > 0) {
-          var termAndWeight = spoolReader.readNext()
-          terms += WeightedTermString(termAndWeight(0),termAndWeight(1).toDouble.asInstanceOf[TermWeight])
-          numTerms -= 1
+        val terms = new ArrayBuffer[WeightedTermString](nTerms)
+        while (nTerms > 0) {
+          val termLine = lines.next
+          val i = termLine.indexOf(' ')
+          val term = termLine.substring(0, i)
+          val weight = termLine.substring(i + 1).toDouble.asInstanceOf[TermWeight]
+          terms += WeightedTermString(term, weight)
+          nTerms -= 1
         }
 
         val docVec = countBigramTerms(terms)
-
-        line = spoolReader.readNext()
-        if (line == null)
-          spoolReader.close()           // frees the temp file
 
         (id, docVec)
       }
@@ -325,9 +315,12 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // Generate final TF-IDF.
   // Determines bigrams we want to keep, trims vocabulary, reads docs back in from temp file
   protected def computeDocVecs():Unit = {
+    spoolWriter.close // flushes, so we can read all we've written
 
-    if (numDocs < minDocsToKeepTerm)
+    if (numDocs < minDocsToKeepTerm) {
+      // FIXME this isn't an error!
       throw new NotEnoughDocumentsError(numDocs, minDocsToKeepTerm)
+    }
 
     // Detect bigrams, generate IDF values and new outStrings table of term indices
     val idf = computeIdf()
@@ -355,9 +348,6 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
       docVecs += (docid -> DocumentVector(docvec))                  // convert final vector to packed format and save
     }
-
-    // Replace our string table with the new, reduced table. NB: invalidates idf, so we clear it to prevent misunderstandings
-    logger.info("Input vocabulary size {}, output vocabulary size {}", inStrings.size, outStrings.size)
 
     // Done with all of this; only docVecs remain (and references outStrings)
     inStrings = null

@@ -45,7 +45,7 @@ object SuggestedTags {
     val numSuggestedTagsForDoc = 7
     val terms = vec.toList.sortWith(_._2 > _._2).take(numSuggestedTagsForDoc).map(_._1).map(docVecs.stringTable.idToString(_))
     var filtered = removeUnigramsThatAppearInBigrams(terms)
-    filtered.mkString(", ")
+    filtered.mkString(" ")
   }
 
 
@@ -65,7 +65,7 @@ object SuggestedTags {
        val termIds = vec.take(count).map(_._1)
        val termStrings = termIds.map(docVecs.stringTable.idToString(_))
        val stripped = removeUnigramsThatAppearInBigrams(termStrings)
-       stripped.mkString(", ")
+       stripped.mkString(" ")
       }
 
       val numTopTerms = 10   // only consider terms with weight down to this rank

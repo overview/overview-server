@@ -157,7 +157,8 @@ object ApplicationBuild extends Build {
     .settings(
       unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
       libraryDependencies ++= Dependencies.workerDependencies,
-      javaOptions in Test += "-Dconfig.resource=test.conf"
+      javaOptions in Test += "-Dconfig.resource=test.conf",
+      mainClass in Compile := Some("JobHandler")
     )
     .dependsOn(common % "test->test;compile->compile")
 

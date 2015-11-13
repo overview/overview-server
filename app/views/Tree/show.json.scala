@@ -3,6 +3,7 @@ package views.json.Tree
 import java.util.Date
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTimeZone
+import play.api.i18n.Messages
 import play.api.libs.json.{Json,JsValue}
 import scala.collection.mutable.Buffer
 
@@ -12,9 +13,8 @@ object show {
   private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)
   private def dateToISO8601(time: Date) : String = iso8601Format.print(time.getTime())
 
-  def apply(tree: Tree): JsValue = {
+  def apply(tree: Tree)(implicit messages: Messages): JsValue = {
     val buffer = Buffer(
-      "jobId" -> tree.jobId.toString,
       "nDocuments" -> tree.documentCount.toString,
       "rootNodeId" -> tree.rootNodeId.toString,
       "lang" -> tree.lang
@@ -28,9 +28,11 @@ object show {
     Json.obj(
       "type" -> "tree",
       "id" -> tree.id,
-      "jobId" -> tree.jobId,
       "nDocuments" -> tree.documentCount,
       "title" -> tree.title,
+      "rootNodeId" -> tree.rootNodeId,
+      "progress" -> tree.progress,
+      "progressDescription" -> Messages("views.Tree.progressDescription." + tree.progressDescription),
       "createdAt" -> dateToISO8601(tree.createdAt),
       "creationData" -> creationData.toSeq
     )

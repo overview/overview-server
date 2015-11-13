@@ -4,18 +4,18 @@ import org.specs2.specification.Scope
 import org.specs2.matcher.{JsonMatchers,Matcher}
 import scala.concurrent.Future
 
-import controllers.backend.TreeBackend
-import com.overviewdocs.models.{DocumentSetCreationJob,Tag,Tree}
-import com.overviewdocs.test.factories.PodoFactory
+import controllers.backend.{TagBackend,TreeBackend}
+import com.overviewdocs.models.{Tag,Tree}
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val mockBackend = mock[TreeBackend]
-    val mockStorage = mock[TreeController.Storage]
+    val mockTagBackend = mock[TagBackend]
 
     val controller = new TreeController with TestController {
       override val backend = mockBackend
-      override val storage = mockStorage
+      override val tagBackend = mockTagBackend
     }
   }
 
@@ -28,52 +28,64 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
       def result = create(documentSetId)
     }
 
-    "store a DocumentSetCreationJob" in new CreateScope {
-      h.status(result) // store result
-      def beJobWithDocumentSetId(id: Long) : Matcher[DocumentSetCreationJob.CreateAttributes] = beLike{
-        case j: DocumentSetCreationJob.CreateAttributes => j.documentSetId must beEqualTo(id)
+    "store a Tree" in new CreateScope {
+      mockBackend.create(any) returns Future.successful(factory.tree())
+      def isTheRightTree: Matcher[Tree.CreateAttributes] = beLike {
+        case tree: Tree.CreateAttributes => {
+          tree.copy(createdAt=new java.sql.Timestamp(0L)) must beEqualTo(Tree.CreateAttributes(
+            documentSetId=1L,
+            rootNodeId=None,
+            title="tree title",
+            description="",
+            documentCount=None,
+            lang="en",
+            suppliedStopWords="",
+            importantWords="",
+            createdAt=new java.sql.Timestamp(0L),
+            tagId=None,
+            progress=0.0,
+            progressDescription="",
+            cancelled=false
+          ))
+        }
       }
-      there was one(mockStorage).insertJob(argThat(beJobWithDocumentSetId(documentSetId)))
+
+      h.status(result) must beEqualTo(h.NO_CONTENT)
+      there was one(mockBackend).create(argThat(isTheRightTree))
     }
 
     "return a BAD_REQUEST if the form is filled in badly" in new CreateScope {
       override def formBody = Seq()
       h.status(result) must beEqualTo(h.BAD_REQUEST)
+      there was no(mockBackend).create(any)
     }
 
-    trait CreateScopeWithTag extends CreateScope {
-      def tagId: Option[Long]
-      override def formBody = super.formBody ++ Seq("tag_id" -> tagId.map(_.toString).getOrElse(""))
-      def beJobWithTreeData(expected: Option[(Long,String)]) = beLike[DocumentSetCreationJob.CreateAttributes] {
-        case j: DocumentSetCreationJob.CreateAttributes => {
-          j.tagId must beEqualTo(expected.map(_._1))
-          j.treeDescription must beEqualTo(expected.map(_._2))
-        }
-      }
-      // Call like this: `testTree(Some((102L, "description")))`
-      def testTree(expected: Option[(Long,String)]) = {
-        h.status(result) // store result
-        there was one(mockStorage).insertJob(argThat(beJobWithTreeData(expected)))
-      }
+    "store a description when there is a tag" in new CreateScope {
+      override def formBody = super.formBody ++ Seq("tag_id" -> "2")
+
+      mockTagBackend.show(1L, 2L) returns Future.successful(Some(factory.tag(name="foo")))
+      mockBackend.create(any) returns Future.successful(factory.tree())
+
+      def hasDescription = beLike[Tree.CreateAttributes] { case t: Tree.CreateAttributes => {
+        t.description must beEqualTo("controllers.TreeController.treeDescription.fromTag,foo")
+      }}
+
+      h.status(result) must beEqualTo(h.NO_CONTENT)
+      there was one(mockBackend).create(argThat(hasDescription))
     }
 
-    "store no description when there is no tag" in new CreateScopeWithTag {
-      override def tagId = None
-      testTree(None)
-    }
+    "store no description when the tag does not exist" in new CreateScope {
+      override def formBody = super.formBody ++ Seq("tag_id" -> "2")
 
-    "store a description when there is a tag" in new CreateScopeWithTag {
-      override def tagId = Some(102L)
-      val mockTag = mock[Tag]
-      mockTag.name returns "tag name"
-      mockStorage.findTag(documentSetId, 102L) returns Some(mockTag)
-      testTree(Some((102L, "controllers.TreeController.treeDescription.fromTag,tag name")))
-    }
+      mockTagBackend.show(1L, 2L) returns Future.successful(None)
+      mockBackend.create(any) returns Future.successful(factory.tree())
 
-    "return NotFound when the tag is not in the document set" in new CreateScopeWithTag {
-      override def tagId = Some(1023L)
-      mockStorage.findTag(documentSetId, 1023L) returns None
-      h.status(result) must beEqualTo(h.NOT_FOUND)
+      def hasDescription = beLike[Tree.CreateAttributes] { case t: Tree.CreateAttributes => {
+        t.description must beEqualTo("")
+      }}
+
+      h.status(result) must beEqualTo(h.NO_CONTENT)
+      there was one(mockBackend).create(argThat(hasDescription))
     }
   }
 
@@ -81,7 +93,7 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
     trait UpdateScope extends BaseScope {
       val documentSetId = 1L
       val treeId = 2L
-      mockBackend.update(any, any) returns Future.successful(Some(PodoFactory.tree(title="updated")))
+      mockBackend.update(any, any) returns Future.successful(Some(factory.tree(title="updated")))
       val request = fakeAuthorizedRequest.withFormUrlEncodedBody("title" -> "submitted")
       lazy val result = controller.update(documentSetId, treeId)(request)
     }

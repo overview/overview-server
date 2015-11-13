@@ -125,7 +125,7 @@ class Database(val dataSource: DataSource) {
     * lazy val compiledQuery = Compiled { (id: Rep[Long]) =&gt;
     *   Documents.filter(_.id === id)
     * }
-    * database.seq(compiledQuery(documentId))
+    * database.option(compiledQuery(documentId))
     * ```
     */
   def option[T](query: RunnableCompiled[_, Seq[T]]): Future[Option[T]] = option(query.result)

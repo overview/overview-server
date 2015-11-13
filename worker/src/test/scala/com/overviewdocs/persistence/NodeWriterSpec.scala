@@ -1,162 +1,51 @@
-/*
- * NodeWriterSpec.scala
- *
- * Overview
- * Created by Jonas Karlsson, Aug 2012
- */
-
 package com.overviewdocs.persistence
 
-import scala.collection.mutable.Set
-
-import com.overviewdocs.clustering.DocTreeNode
+import com.overviewdocs.models.{Node,NodeDocument}
+import com.overviewdocs.models.tables.{Nodes,NodeDocuments}
 import com.overviewdocs.test.DbSpecification
-import com.overviewdocs.test.IdGenerator
-import com.overviewdocs.models.{Document,DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Node,NodeDocument}
-import com.overviewdocs.models.tables.{NodeDocuments,Nodes}
 
 class NodeWriterSpec extends DbSpecification {
-  private def addChildren(parent: DocTreeNode, description: String): Seq[DocTreeNode] = {
-    val children = for (i <- 1 to 2) yield new DocTreeNode(Set())
-    children.foreach(_.description = description)
-    children.foreach(parent.children.add)
-
-    children
-  }
-
   "NodeWriter" should {
-    trait NodeWriterContext extends DbScope {
+    "not flush immediately" in new DbScope {
+      val writer = new NodeWriter
+      writer.blockingCreateAndFlushIfNeeded(1L, 1L, None, "root", true, Seq())
+
       import database.api._
+      blockingDatabase.seq(Nodes) must beEmpty
+    }
 
+    "write Nodes" in new DbScope {
+      val writer = new NodeWriter
+      writer.blockingCreateAndFlushIfNeeded(1L, 1L, None, "root", false, Seq())
+      writer.blockingCreateAndFlushIfNeeded(2L, 1L, Some(1L), "leaf", true, Seq())
+      writer.blockingFlush
+
+      import database.api._
+      blockingDatabase.seq(Nodes.sortBy(_.id)) must beEqualTo(Seq(
+        Node(1L, 1L, None, "root", 0, false),
+        Node(2L, 1L, Some(1L), "leaf", 0, true)
+      ))
+    }
+
+    "write NodeDocuments and counts" in new DbScope {
       val documentSet = factory.documentSet()
-      val job = factory.documentSetCreationJob(
-        documentSetId=documentSet.id,
-        jobType=DocumentSetCreationJobType.Recluster,
-        state=DocumentSetCreationJobState.InProgress,
-        treeTitle=Some("title")
-      )
-      val writer = new NodeWriter(job.id, IdGenerator.nextTreeId(documentSet.id))
+      val document1 = factory.document(documentSetId=documentSet.id)
+      val document2 = factory.document(documentSetId=documentSet.id)
 
-      implicit object NodeDocumentOrdering extends math.Ordering[NodeDocument] {
-        override def compare(a: NodeDocument, b: NodeDocument) = {
-          val c1 = a.documentId compare b.documentId
-          if (c1 == 0) a.nodeId compare b.nodeId else c1
-        }
-      }
+      val writer = new NodeWriter
+      writer.blockingCreateAndFlushIfNeeded(1L, 1L, None, "root", false, Seq(document1.id, document2.id))
+      writer.blockingCreateAndFlushIfNeeded(2L, 1L, Some(1L), "leaf", true, Seq(document1.id))
+      writer.blockingCreateAndFlushIfNeeded(3L, 1L, Some(1L), "leaf", true, Seq(document2.id))
+      writer.blockingFlush
 
-      protected def findAllRootNodes: Seq[Node] = blockingDatabase.seq(Nodes.filter(!_.parentId.isDefined))
-
-      protected def findRootNode: Option[Node] = findAllRootNodes.headOption
-
-      protected def findChildNodes(parentIds: Seq[Long]): Seq[Node] = blockingDatabase.seq {
-        Nodes.filter(_.parentId inSet parentIds)
-      }
-
-      protected def findNodeDocuments(nodeId: Long): Seq[NodeDocument] = blockingDatabase.seq {
-        NodeDocuments
-          .filter(_.nodeId === nodeId)
-          .sortBy(nd => (nd.documentId, nd.nodeId))
-      }
-
-      protected def createNode(idSet: Set[Long] = Set(), description: String = "root"): DocTreeNode = {
-        val node = new DocTreeNode(idSet)
-        node.description = description
-
-        node
-      }
-
-      protected def insertDocument(documentSetId: Long): Document = {
-        factory.document(id=IdGenerator.nextDocumentId(documentSetId), documentSetId=documentSet.id)
-      }
-    }
-
-    "insert root node with description, document set, and no parent" in new NodeWriterContext {
-      val description = "root"
-      val root = createNode(description = description)
-
-      writer.write(root)
-
-      val node = findRootNode
-      node must beSome.like { case n =>
-        n.description must be equalTo (description)
-        n.parentId must beNone
-      }
-    }
-
-    "insert child nodes" in new NodeWriterContext {
-      val root = createNode()
-      val childNodes = addChildren(root, "child")
-      val grandChildNodes = childNodes.map(n => (n, addChildren(n, "grandchild")))
-
-      writer.write(root)
-
-      val savedRoot = findRootNode
-      savedRoot must beSome
-
-      val savedChildren = findChildNodes(Seq(savedRoot.get.id))
-      savedChildren must have size (2)
-      savedChildren.map(_.description must be equalTo ("child"))
-
-      val childIds = savedChildren.map(_.id)
-      val savedGrandChildren = findChildNodes(childIds)
-
-      savedGrandChildren must have size (4)
-    }
-
-    "insert document into node_document table" in new NodeWriterContext {
-      val documents = Seq.fill(5)(insertDocument(documentSet.id))
-      val idSet = Set(documents.map(_.id): _*)
-
-      val node = createNode(idSet)
-
-      writer.write(node)
-
-      val savedNode = findRootNode
-
-      savedNode must beSome
-      val nodeId = savedNode.get.id
-
-      val nodeDocuments = findNodeDocuments(nodeId)
-
-      val expectedNodeDocuments = documents.map(d => NodeDocument(nodeId, d.id))
-
-      nodeDocuments.sorted must beEqualTo(expectedNodeDocuments.sorted)
-    }
-
-    "write nodes with ids generated from documentSetId" in new NodeWriterContext {
-      val node = createNode()
-      writer.write(node)
-      val savedNode = findRootNode
-
-      savedNode must beSome.like {
-        case n => (n.id >> 32) must be equalTo (documentSet.id)
-      }
-    }
-
-    "return a rootNodeId" in new NodeWriterContext {
-      val node = createNode()
-      writer.write(node)
-      val savedNode = findRootNode
-
-      Some(writer.rootNodeId) must beEqualTo(savedNode.map(_.id))
-    }
-
-    "write nodes into second tree for the same document set" in new NodeWriterContext {
-      val job2 = factory.documentSetCreationJob(
-        documentSetId=documentSet.id,
-        jobType=DocumentSetCreationJobType.Recluster,
-        state=DocumentSetCreationJobState.InProgress,
-        treeTitle=Some("title")
-      )
-
-      val writer2 = new NodeWriter(job2.id, IdGenerator.nextTreeId(documentSet.id))
-      val root1 = createNode()
-      writer.write(root1)
-
-      val root2 = createNode()
-      writer2.write(root2)
-
-      findAllRootNodes.length must beEqualTo(2)
+      import database.api._
+      blockingDatabase.seq(Nodes.sortBy(_.id)).map(_.cachedSize) must beEqualTo(Seq(2, 1, 1))
+      blockingDatabase.seq(NodeDocuments).toSet must beEqualTo(Set(
+        NodeDocument(1L, document1.id),
+        NodeDocument(1L, document2.id),
+        NodeDocument(2L, document1.id),
+        NodeDocument(3L, document2.id)
+      ))
     }
   }
 }

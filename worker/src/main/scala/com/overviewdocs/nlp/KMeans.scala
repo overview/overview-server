@@ -147,9 +147,8 @@ abstract class KMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,C] {
     mean(List(elem))
   }
 
-
   // -- Main --
-  def apply (elements:IndexedSeq[T], k:Int) : Array[Int] = {
+  def apply(elements:IndexedSeq[T], k:Int) : Array[Int] = {
     var clusters = initialAssignments(elements)
 
     if (!elements.isEmpty) {
@@ -157,7 +156,7 @@ abstract class KMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,C] {
 
       val logThis = elements.size > 10000
       def logIfBig(message: String, args: Any*): Unit = {
-        if (logThis) logger.info(message, args: _*)
+        if (logThis) logger.debug(message, args: _*)
       }
       def logExecutionTimeIfBig[T](message: String, args: Any*)(fn: => T): T = {
         if (logThis) {
@@ -179,8 +178,9 @@ abstract class KMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,C] {
 
           // Stop if we hit max iteration count
           iterCount += 1
-          if (iterCount == maxIterations)
+          if (iterCount == maxIterations) {
             stopNow = true
+          }
 
           // stop if the split failed to generate more than one cluster
           val clusterSizes = (0 until k).map(i => clusters.count(_ == i))

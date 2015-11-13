@@ -61,7 +61,6 @@ define [
       @nodes = {}
       @_paging_strategy = new LruPagingStrategy(@options.cache_size || DEFAULT_OPTIONS.cache_size)
       @demandRoot()
-        .then(=> @view.set(rootNodeId: @id_tree.root))
 
     remove: ->
       n.off() for __, n of @nodes

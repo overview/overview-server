@@ -6,7 +6,7 @@ import org.specs2.mutable.Specification
 
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.View
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tag,Tree}
+import com.overviewdocs.models.{DocumentSet,Tag,Tree}
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class showSpec extends views.ViewSpecification {
@@ -15,9 +15,8 @@ class showSpec extends views.ViewSpecification {
     val documentSet: DocumentSet = factory.documentSet(metadataSchema=metadataSchema)
     val trees: Iterable[Tree] = Seq()
     val views: Iterable[View] = Seq()
-    val viewJobs: Iterable[DocumentSetCreationJob] = Seq()
     val tags: Iterable[Tag] = Seq()
-    override def result = show(documentSet, trees, views, viewJobs, tags)
+    override def result = show(documentSet, trees, views, tags)
   }
 
   "Tree view generated Json" should {
@@ -41,10 +40,9 @@ class showSpec extends views.ViewSpecification {
       override val trees = Seq(factory.tree(
         documentSetId=10L,
         id=2L,
-        rootNodeId=3L,
+        rootNodeId=Some(3L),
         title="title",
-        jobId=4L,
-        documentCount=100,
+        documentCount=Some(100),
         createdAt=new java.sql.Timestamp(1000),
         lang="en"
       ))
@@ -52,10 +50,9 @@ class showSpec extends views.ViewSpecification {
       json must /("views") */("type" -> "tree")
       json must /("views") */("id" -> 2L)
       json must /("views") */("title" -> "title")
-      json must /("views") */("jobId" -> 4L)
       json must /("views") */("createdAt" -> "1970-01-01T00:00:01Z")
-      json must /("views") */("creationData") /#(3) /#(0) / "lang"
-      json must /("views") */("creationData") /#(3) /#(1) / "en"
+      json must /("views") */("creationData") /#(2) /#(0) / "lang"
+      json must /("views") */("creationData") /#(2) /#(1) / "en"
       json must /("views") */("nDocuments" -> 100)
     }
 
@@ -74,20 +71,6 @@ class showSpec extends views.ViewSpecification {
       json must /("views") */("createdAt" -> "1970-01-01T00:00:01Z")
       json must /("views") */("url" -> "http://localhost:9001")
       json must /("views") */("apiToken" -> "api-token")
-    }
-
-    "contain view jobs" in new BaseScope {
-      override val viewJobs = Seq(factory.documentSetCreationJob(
-        id=2L,
-        documentSetId=1L,
-        treeTitle=Some("tree job"),
-        jobType=DocumentSetCreationJobType.Recluster,
-        state=DocumentSetCreationJobState.InProgress
-      ))
-
-      json must /("views") /#(0) /("id" -> 2.0)
-      json must /("views") /#(0) /("type" -> "job")
-      // For the rest, we assume the call to views.json.Views.index() is successful.
     }
 
     "contain metadataSchema" in new BaseScope {

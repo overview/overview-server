@@ -22,7 +22,7 @@ class Logger(private val jLogger: JLogger) {
   def logElapsedTime(op: String, t0: Long, args: Any*): Unit = {
     val t1 = System.nanoTime()
     val ms = (t1 - t0) / 1000000
-    info(s"${op}, time: {}ms", (args :+ ms): _*)
+    debug(s"${op}, time: {}ms", (args :+ ms): _*)
   }
 
   /** Runs the given block and then logs the time taken.

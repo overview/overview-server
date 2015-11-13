@@ -69,16 +69,11 @@ object CloneImportJobController extends CloneImportJobController with HasDatabas
     jobType=DocumentSetCreationJobType.Clone,
     retryAttempts=0,
     lang="en",                  // doesn't matter for clone
-    suppliedStopWords="",       // doesn't matter for clone
-    importantWords="",          // doesn't matter for clone
     splitDocuments=false,       // doesn't matter for clone
     documentcloudUsername=None, // doesn't matter for clone
     documentcloudPassword=None, // doesn't matter for clone
     contentsOid=None,           // doesn't matter for clone
     sourceDocumentSetId=Some(sourceDocumentSetId),
-    treeTitle=None,             // doesn't matter for clone
-    treeDescription=None,       // doesn't matter for clone
-    tagId=None,                 // doesn't matter for clone
     state=DocumentSetCreationJobState.NotStarted,
     fractionComplete=0,
     statusDescription="",

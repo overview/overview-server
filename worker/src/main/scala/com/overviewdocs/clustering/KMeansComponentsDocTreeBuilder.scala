@@ -15,14 +15,14 @@ import scala.collection.mutable.{Set, ArrayBuffer}
 
 import com.overviewdocs.nlp.DocumentVectorTypes._
 import com.overviewdocs.nlp.IterativeKMeansDocuments
-import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import com.overviewdocs.util.Logger
-import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
 import com.overviewdocs.util.ToMutableSet._
 
 
 class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
-  private val logger = Logger.forClass(getClass)
+  protected def makeNestedProgress(onProgress: Double => Unit, start: Double, end: Double): Double => Unit = {
+    (inner) => onProgress(start + inner * (end - start))
+  }
+
   private val kmComponents = new IterativeKMeansDocumentComponents(docVecs)
   private val kmDocs = new IterativeKMeansDocuments(docVecs)
 
@@ -106,28 +106,26 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
   }
 
   // Split the given node, which must contain the documents from all given components.
-  private def splitNode(node:DocTreeNode, level:Integer, progAbort:ProgressAbortFn) : Unit = {
+  private def splitNode(node:DocTreeNode, level:Integer, onProgress: Double => Unit) : Unit = {
+    onProgress(0)
 
-    if (!progAbort(Progress(0, ClusteringLevel(2)))) { // if we haven't been cancelled...
+    if ((level < maxDepth) && (node.docs.size >= minSplitSize)) {
+      splitNode(node)
 
-      if ((level < maxDepth) && (node.docs.size >= minSplitSize)) {
-
-        splitNode(node)
-
-        if (!node.children.isEmpty) {
-          // recurse, computing progress along the way
-          var i=0
-          var denom = node.children.size.toDouble
-          node.children foreach { node =>
-            splitNode(node, level+1, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
-            i+=1
-          }
+      if (!node.children.isEmpty) {
+        // recurse, computing progress along the way
+        var i=0
+        var denom = node.children.size.toDouble
+        node.children foreach { node =>
+          splitNode(node, level+1, makeNestedProgress(onProgress, i/denom, (i+1)/denom))
+          i+=1
         }
       }
-
-      node.components.clear     // we are done with those components, if any, so empty that list
-      progAbort(Progress(1, ClusteringLevel(2)))
     }
+
+    node.components.clear     // we are done with those components, if any, so empty that list
+
+    onProgress(1)
   }
 
   private def makeComponents(docs:Iterable[DocumentID]) : Set[DocumentComponent] = {
@@ -145,24 +143,19 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
       components += new DocumentComponent(_, docVecs)
     }
 
-    logger.info("Found {} connected components at threshold {}", components.size, threshold)
     components
   }
 
   // ---- Main ----
 
-  def BuildTree(root:DocTreeNode, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def BuildTree(root:DocTreeNode, onProgress: Double => Unit): DocTreeNode = {
+    onProgress(0)
 
-    progAbort(Progress(0, ClusteringLevel(1)))
-    logger.logExecutionTime("Found connected components") {
-      root.components = makeComponents(root.docs)
-    }
+    root.components = makeComponents(root.docs)
 
-    if (!progAbort(Progress(0.2, ClusteringLevel(2)))) { // if we haven't been cancelled...
-      logger.logExecutionTime("Clustered components") {
-        splitNode(root, 1, makeNestedProgress(progAbort, 0.2, 1.0))   // root is level 0, so first split is level 1
-      }
-    }
+    onProgress(0.2)
+
+    splitNode(root, 1, makeNestedProgress(onProgress, 0.2, 1.0)) // root is level 0, so first split is level 1
 
     root
   }

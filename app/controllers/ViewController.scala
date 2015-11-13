@@ -17,10 +17,9 @@ import com.overviewdocs.models.tables.{DocumentSetCreationJobs,Trees}
 trait ViewController extends Controller {
   def indexJson(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async {
     val trees = storage.findTrees(documentSetId).map(_.copy()).toArray
-    val jobs = storage.findViewJobs(documentSetId).map(_.copy()).toArray
 
     viewBackend.index(documentSetId)
-      .map((vs) => Ok(views.json.View.index(trees, vs, jobs)).withHeaders(CACHE_CONTROL -> "max-age=0"))
+      .map((vs) => Ok(views.json.View.index(trees, vs)).withHeaders(CACHE_CONTROL -> "max-age=0"))
       .recover { case t: Throwable => InternalServerError(t.getMessage) }
   }
 
@@ -71,7 +70,6 @@ trait ViewController extends Controller {
 object ViewController extends ViewController {
   trait Storage {
     def findTrees(documentSetId: Long) : Iterable[Tree]
-    def findViewJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
   }
 
   object DatabaseStorage extends Storage with HasBlockingDatabase {
@@ -79,15 +77,6 @@ object ViewController extends ViewController {
 
     override def findTrees(documentSetId: Long) = {
       blockingDatabase.seq(Trees.filter(_.documentSetId === documentSetId))
-    }
-
-    override def findViewJobs(documentSetId: Long) = {
-      blockingDatabase.seq(
-        DocumentSetCreationJobs
-          .filter(_.documentSetId === documentSetId)
-          .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-          .filter(_.jobType === DocumentSetCreationJobType.Recluster)
-      )
     }
   }
 

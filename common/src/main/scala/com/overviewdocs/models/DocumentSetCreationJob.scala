@@ -6,7 +6,6 @@ object DocumentSetCreationJobType extends Enumeration {
   val DocumentCloud = Value(1)
   val CsvUpload = Value(2)
   val Clone = Value(3)
-  val Recluster = Value(5)
 }
 
 object DocumentSetCreationJobState extends Enumeration {
@@ -25,16 +24,11 @@ case class DocumentSetCreationJob(
   jobType: DocumentSetCreationJobType.Value,
   retryAttempts: Int,
   lang: String,
-  suppliedStopWords: String,
-  importantWords: String,
   splitDocuments: Boolean,
   documentcloudUsername: Option[String],
   documentcloudPassword: Option[String],
   contentsOid: Option[Long],
   sourceDocumentSetId: Option[Long],
-  treeTitle: Option[String],
-  treeDescription: Option[String],
-  tagId: Option[Long],
   state: DocumentSetCreationJobState.Value,
   fractionComplete: Double,
   statusDescription: String,
@@ -47,16 +41,11 @@ object DocumentSetCreationJob {
     jobType: DocumentSetCreationJobType.Value,
     retryAttempts: Int,
     lang: String,
-    suppliedStopWords: String,
-    importantWords: String,
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
     contentsOid: Option[Long],
     sourceDocumentSetId: Option[Long],
-    treeTitle: Option[String],
-    treeDescription: Option[String],
-    tagId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
     statusDescription: String,

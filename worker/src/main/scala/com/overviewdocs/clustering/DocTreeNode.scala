@@ -10,6 +10,7 @@
 
 package com.overviewdocs.clustering
 
+import scala.collection.mutable
 import scala.collection.mutable.Set
 import com.overviewdocs.nlp.DocumentVectorTypes.DocumentID
 
@@ -56,5 +57,19 @@ class DocTreeNode(val docs: Set[DocumentID]) {
         "\n" + orderedChildren.map(_.prettyString(indent + 4)).mkString("\n")
       else
         "")
+  }
+
+  def nNodes: Int = {
+    val stack = new mutable.ArrayStack[DocTreeNode]()
+    stack.push(this)
+    var retval: Int = 0
+
+    while (stack.nonEmpty) {
+      val node = stack.pop
+      retval += 1
+      node.children.foreach(stack.push)
+    }
+
+    retval
   }
 }

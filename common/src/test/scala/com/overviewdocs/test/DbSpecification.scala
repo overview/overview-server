@@ -18,6 +18,8 @@ import com.overviewdocs.test.factories.{DbFactory,PodoFactory}
 class DbSpecification extends Specification {
   sequential
 
+  protected def await[A](f: Future[A]) = blocking(Await.result(f, Duration.Inf))
+
   /** Context for test accessing the database.
     *
     * Provides these <em>deprecated</em> variables:
@@ -48,8 +50,6 @@ class DbSpecification extends Specification {
     val factory = DbFactory
     val podoFactory = PodoFactory
 
-    def await[A](f: Future[A]) = blocking(Await.result(f, Duration.Inf))
-
     clearDb(connection) // *not* in a before block: that's too late
     override def after = connection.close()
 
@@ -69,7 +69,7 @@ class DbSpecification extends Specification {
     runQuery("""
       WITH
       q1 AS (DELETE FROM document_store_object),
-      q1_i_remember_basic_now AS (DELETE FROM document_set_creation_job_node),
+      q1_i_remember_BASIC_now AS (DELETE FROM dangling_node),
       q2 AS (DELETE FROM store_object),
       q3 AS (DELETE FROM store),
       q4 AS (DELETE FROM temp_document_set_file),

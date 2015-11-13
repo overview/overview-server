@@ -97,7 +97,6 @@ trait DocumentSetController extends Controller {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
         val trees = storage.findTrees(id).map(_.copy()).toArray
-        val viewJobs = storage.findViewJobs(id).map(_.copy()).toArray
         val tags = storage.findTags(id).map(_.copy()).toArray
 
         for {
@@ -106,7 +105,6 @@ trait DocumentSetController extends Controller {
           documentSet,
           trees,
           _views,
-          viewJobs,
           tags
         ))
       }
@@ -165,8 +163,7 @@ trait DocumentSetController extends Controller {
 
 object DocumentSetController extends DocumentSetController {
   trait Storage {
-    /** Returns a mapping from DocumentSet ID to the total number of Views,
-      * Trees and Recluster jobs.
+    /** Returns a mapping from DocumentSet ID to nViews+nTrees.
       */
     def findNViewsByDocumentSets(documentSetIds: Seq[Long]): Map[Long,Int]
 
@@ -176,9 +173,6 @@ object DocumentSetController extends DocumentSetController {
 
     /** All Views for the document set. */
     def findTrees(documentSetId: Long) : Iterable[Tree]
-
-    /** All View-creation jobs for the document set. */
-    def findViewJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
 
     /** All Tags for the document set. */
     def findTags(documentSetId: Long) : Iterable[Tag]
@@ -218,16 +212,10 @@ object DocumentSetController extends DocumentSetController {
             FROM (VALUES #${documentSetIds.map("(" + _ + ")").mkString(",")}) AS t(id)
           ), counts1 AS (
             SELECT document_set_id, COUNT(*) AS c
-            FROM document_set_creation_job
-            WHERE document_set_id IN (SELECT id FROM ids)
-              AND state <> #${DocumentSetCreationJobState.Cancelled.id}
-            GROUP BY document_set_id
-          ), counts2 AS (
-            SELECT document_set_id, COUNT(*) AS c
             FROM tree
             WHERE document_set_id IN (SELECT id FROM ids)
             GROUP BY document_set_id
-          ), counts3 AS (
+          ), counts2 AS (
             SELECT document_set_id, COUNT(*) AS c
             FROM "view"
             WHERE document_set_id IN (SELECT id FROM ids)
@@ -236,8 +224,6 @@ object DocumentSetController extends DocumentSetController {
             SELECT * FROM counts1
             UNION
             SELECT * FROM counts2
-            UNION
-            SELECT * FROM counts3
           )
           SELECT document_set_id, SUM(c)
           FROM all_counts
@@ -249,15 +235,6 @@ object DocumentSetController extends DocumentSetController {
 
     override def findTrees(documentSetId: Long) = {
       blockingDatabase.seq(Trees.filter(_.documentSetId === documentSetId))
-    }
-
-    override def findViewJobs(documentSetId: Long) = {
-      blockingDatabase.seq(
-        DocumentSetCreationJobs
-          .filter(_.documentSetId === documentSetId)
-          .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-          .filter(_.jobType === DocumentSetCreationJobType.Recluster)
-      )
     }
 
     override def findTags(documentSetId: Long) = {

@@ -7,7 +7,7 @@ import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJobState,DocumentSetCreationJobType,ImportJob}
+import com.overviewdocs.models.{DocumentSet,ImportJob}
 import com.overviewdocs.test.factories.PodoFactory
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
@@ -153,10 +153,9 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         val sampleTree = factory.tree(
           id = 1L,
           documentSetId = 1L,
-          rootNodeId = 3L,
-          jobId = 0L,
+          rootNodeId = Some(3L),
           title = "Tree title",
-          documentCount = 10,
+          documentCount = Some(10),
           lang = "en",
           suppliedStopWords = "",
           importantWords = ""
@@ -169,7 +168,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(documentCount=10)))
         mockStorage.findTrees(documentSetId) returns Seq(sampleTree)
         mockViewBackend.index(documentSetId) returns Future.successful(Seq(sampleView))
-        mockStorage.findViewJobs(documentSetId) returns Seq()
         mockStorage.findTags(documentSetId) returns Seq(sampleTag)
       }
 
@@ -182,35 +180,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         resultJson must /("views") */("title" -> sampleTree.title)
         resultJson must /("views") */("title" -> "a view")
         resultJson must /("tags") */("name" -> "a tag")
-      }
-
-      "include view creation jobs" in new ShowJsonScope {
-        mockStorage.findTrees(sampleTree.documentSetId) returns Seq()
-        mockViewBackend.index(sampleTree.documentSetId) returns Future.successful(Seq())
-        mockStorage.findViewJobs(sampleTree.documentSetId) returns Seq(
-          factory.documentSetCreationJob(
-            id=2L,
-            documentSetId=sampleTree.documentSetId,
-            treeTitle=Some("tree job"),
-            jobType=DocumentSetCreationJobType.Recluster,
-            state=DocumentSetCreationJobState.InProgress
-          ),
-          factory.documentSetCreationJob(
-            id=3L,
-            documentSetId=sampleTree.documentSetId,
-            treeTitle=Some("tree job"),
-            jobType=DocumentSetCreationJobType.Recluster,
-            state=DocumentSetCreationJobState.Error
-          )
-        )
-
-        val json = h.contentAsString(result)
-
-        json must /("views") /#(0) /("type" -> "job")
-        json must /("views") /#(0) /("id" -> 2.0)
-        json must /("views") /#(0) /("creationData") /#(0) /("lang")
-        json must /("views") /#(0) /("creationData") /#(0) /("en")
-        json must /("views") /#(1) /("type" -> "error")
       }
     }
 

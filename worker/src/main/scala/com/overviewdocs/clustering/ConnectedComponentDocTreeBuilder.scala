@@ -16,13 +16,13 @@
 package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
 import com.overviewdocs.nlp.DocumentVectorTypes._
-import scala.util.control.Breaks._
 import com.overviewdocs.util.Configuration
 
 class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
+  private def makeNestedProgress(onProgress: Double => Unit, start: Double, end: Double): Double => Unit = {
+    (inner) => onProgress(start + inner * (end - start))
+  }
 
   private val cc = new ConnectedComponentsDocuments(docVecs)
 
@@ -50,49 +50,38 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
   // --- public ---
 
-  def buildNodeSubtree(root:DocTreeNode, threshSteps: Seq[Double], minComponentSize:Int, progAbort: ProgressAbortFn) : Unit = {
+  def buildNodeSubtree(root:DocTreeNode, threshSteps: Seq[Double], minComponentSize:Int, onProgress: Double => Unit) : Unit = {
     val numSteps: Double = threshSteps.size
 
     // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
     var currentLeaves = List(root)
 
-    breakable {
-      for (curStep <- 1 to threshSteps.size - 1) {
-        if (progAbort(Progress(curStep / numSteps, ClusteringLevel(curStep + 1)))) break
-        currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep), minComponentSize)
-      }
+    for (curStep <- 1 to threshSteps.size - 1) {
+      onProgress(curStep / numSteps)
+      currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep), minComponentSize)
     }
 
-/* Don't do single document leaves - they add massive overhead to tree and don't help user
-
-    // bottom level thresh=0.0 is one leaf node for each document
-    if (!progAbort(Progress((numSteps - 1) / numSteps, ClusteringLevel(numSteps.toInt)))) {
-      for (node <- currentLeaves) {
-        if (node.docs.size > 1) // don't expand if already one node
-          node.children = node.docs.map(item => new DocTreeNode(Set(item)))
-      }
-    }
-*/
+    // Don't do single-document leaves - they add massive overhead to tree and don't help user
   }
 
   // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
-  def BuildTree(root:DocTreeNode, threshSteps: Seq[Double], minComponentSize:Int, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def BuildTree(root:DocTreeNode, threshSteps: Seq[Double], minComponentSize:Int, onProgress: Double => Unit): DocTreeNode = {
     require(threshSteps.head == 1.0)
     require(threshSteps.forall(step => step > 0 && step <= 1.0))
 
-    // root thresh=1.0 is one node with all documents
-    progAbort(Progress(0, ClusteringLevel(1)))
+    onProgress(0)
 
-    buildNodeSubtree(root, threshSteps, minComponentSize, progAbort)
+    // root thresh=1.0 is one node with all documents
+    buildNodeSubtree(root, threshSteps, minComponentSize, onProgress)
 
     root
   }
 
   // version which sets root = all docs
-  def BuildFullTree(threshSteps: Seq[Double], minComponentSize:Int, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def BuildFullTree(threshSteps: Seq[Double], minComponentSize:Int, onProgress: Double => Unit): DocTreeNode = {
     val topLevel = Set(docVecs.keys.toSeq:_*)
     val root = new DocTreeNode(topLevel)
-    BuildTree(root, threshSteps, minComponentSize, progAbort)
+    BuildTree(root, threshSteps, minComponentSize, onProgress)
   }
 
   def sampleCloseEdges(numEdgesPerDoc: Int, maxDist:Double): Unit = {
@@ -102,7 +91,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
   // --- Main ----
 
   // this entry encapsulates default parameters and usage
-  def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, onProgress: Double => Unit): DocTreeNode = {
     // By default: step down in roughly 0.1 increments
     val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
     val minComponentSize = Configuration.getInt("min_connected_component_size")
@@ -115,13 +104,16 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     if (docVecs.size > numDocsWhereSamplingHelpful)
       sampleCloseEdges(numSampledEdgesPerDoc, 0.8) // use sampled edges if the docset is large
 
-    BuildTree(root, threshSteps, minComponentSize, progAbort) // actually build the tree!
+    BuildTree(root, threshSteps, minComponentSize, onProgress) // actually build the tree!
   }
 }
 
 
 // Use k-means until nodes get small enough, then switch to Connected Components down to leaves
 class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
+  private def makeNestedProgress(onProgress: Double => Unit, start: Double, end: Double): Double => Unit = {
+    (inner) => onProgress(start + inner * (end - start))
+  }
 
   // Parameters
   val largeNodeSize = 200     // less docs than this, we generate children by finding connected components
@@ -130,43 +122,41 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
   private val km = new KMeansNodeSplitter(docVecs, largeNodeArity)
   private val cc = new ConnectedComponentDocTreeBuilder(docVecs)
 
-  private def splitKMeans(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
+  private def splitKMeans(node:DocTreeNode, onProgress: Double => Unit) : Unit = {
+    onProgress(0)
 
-    if (!progAbort(Progress(0, ClusteringLevel(1)))) { // if we haven't been cancelled...
+    km.splitNode(node)
 
-      km.splitNode(node)
-
-      // recurse, computing progress along the way
-      var i=0
-      var denom = node.children.size.toDouble
-      node.children foreach { node =>
-        splitNode(node, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
-        i+=1
-      }
-
-      progAbort(Progress(1, ClusteringLevel(1)))
+    // recurse, computing progress along the way
+    var i=0
+    var denom = node.children.size.toDouble
+    node.children foreach { node =>
+      splitNode(node, makeNestedProgress(onProgress, i/denom, (i+1)/denom))
+      i+=1
     }
+
+    onProgress(1)
   }
 
   // here we do not recurse as the connected component splitter always goes down to the leaves
-  private def splitCC(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
+  private def splitCC(node:DocTreeNode, onProgress: Double => Unit) : Unit = {
     val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
-    val tree = cc.buildNodeSubtree(node, threshSteps, 0, progAbort) // actually build the tree! (0 = min component size)
+    val tree = cc.buildNodeSubtree(node, threshSteps, 0, onProgress) // actually build the tree! (0 = min component size)
   }
 
-  private def splitNode(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
+  private def splitNode(node:DocTreeNode, onProgress: Double => Unit) : Unit = {
     if (node.docs.size >= largeNodeSize) {
-      splitKMeans(node, progAbort)
+      splitKMeans(node, onProgress)
       if (node.children.isEmpty)
-        splitCC(node, progAbort)    // fall back to splitting w/ connected components if k-means can't split it
+        splitCC(node, onProgress)    // fall back to splitting w/ connected components if k-means can't split it
     } else {
       //println("---- splitting CC with " +  node.docs.size + " items ----")
-      splitCC(node, progAbort)
+      splitCC(node, onProgress)
     }
   }
 
-  def BuildTree(root:DocTreeNode,progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    splitNode(root, progAbort)
+  def BuildTree(root:DocTreeNode, onProgress: Double => Unit): DocTreeNode = {
+    splitNode(root, onProgress)
     root
   }
 

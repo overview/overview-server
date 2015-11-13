@@ -22,8 +22,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.DocumentCloud
+        state=DocumentSetCreationJobState.InProgress
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
       ret must beEqualTo(Seq(DocumentSetCreationJobImportJob(documentSetCreationJob)))
@@ -33,19 +32,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.Cancelled,
-        jobType=DocumentSetCreationJobType.DocumentCloud
-      )
-      factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEqualTo(Seq())
-    }
-
-    "ignore a DocumentSetCreationJob of type Recluster" in new IndexByUserScope {
-      val documentSet = factory.documentSet()
-      val documentSetCreationJob = factory.documentSetCreationJob(
-        documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.Recluster
+        state=DocumentSetCreationJobState.Cancelled
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
       ret must beEqualTo(Seq())
@@ -55,7 +42,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(documentSetId=documentSet.id)
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
-      ret must beEqualTo(Seq())
+      ret must beEqualTo(Seq(DocumentSetCreationJobImportJob(documentSetCreationJob)))
     }
 
     "ignore a DocumentSet that belongs to a different user" in new IndexByUserScope {
@@ -119,8 +106,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
     "return a DocumentSetCreationJob job" in new IndexByDocumentSetScope {
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.DocumentCloud
+        state=DocumentSetCreationJobState.InProgress
       )
       ret must beEqualTo(Seq(DocumentSetCreationJobImportJob(documentSetCreationJob)))
     }
@@ -128,17 +114,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
     "ignore a DocumentSetCreationJob that is not InProgress" in new IndexByDocumentSetScope {
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.Cancelled,
-        jobType=DocumentSetCreationJobType.DocumentCloud
-      )
-      ret must beEqualTo(Seq())
-    }
-
-    "ignore a DocumentSetCreationJob of type Recluster" in new IndexByDocumentSetScope {
-      val documentSetCreationJob = factory.documentSetCreationJob(
-        documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.Recluster
+        state=DocumentSetCreationJobState.Cancelled
       )
       ret must beEqualTo(Seq())
     }
@@ -147,8 +123,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSet2 = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet2.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.DocumentCloud
+        state=DocumentSetCreationJobState.InProgress
       )
       ret must beEqualTo(Seq())
     }
@@ -201,8 +176,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.DocumentCloud
+        state=DocumentSetCreationJobState.InProgress
       )
       factory.documentSetUser(documentSet.id, "user@example.org")
       ret must beEqualTo(Seq(
@@ -214,8 +188,7 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.DocumentCloud
+        state=DocumentSetCreationJobState.InProgress
       )
       factory.documentSetUser(documentSet.id, "owner@example.org")
       factory.documentSetUser(documentSet.id, "user@example.org", DocumentSetUser.Role(false))
@@ -228,28 +201,16 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.DocumentCloud
+        state=DocumentSetCreationJobState.InProgress
       )
       ret.nonEmpty must beEqualTo(true)
-    }
-
-    "ignore a DocumentSetCreationJob of type Recluster" in new IndexWithDocumentSetsAndOwnersScope {
-      val documentSet = factory.documentSet()
-      val documentSetCreationJob = factory.documentSetCreationJob(
-        documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.InProgress,
-        jobType=DocumentSetCreationJobType.Recluster
-      )
-      ret must beEqualTo(Seq())
     }
 
     "ignore a DocumentSetCreationJob that is not InProgress" in new IndexWithDocumentSetsAndOwnersScope {
       val documentSet = factory.documentSet()
       val documentSetCreationJob = factory.documentSetCreationJob(
         documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.Cancelled,
-        jobType=DocumentSetCreationJobType.DocumentCloud
+        state=DocumentSetCreationJobState.Cancelled
       )
       ret must beEqualTo(Seq())
     }

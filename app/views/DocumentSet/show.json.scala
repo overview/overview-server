@@ -6,7 +6,7 @@ import org.joda.time.DateTimeZone
 import play.api.i18n.Messages
 import play.api.libs.json.{Json, JsValue}
 
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,Tag,Tree,View}
+import com.overviewdocs.models.{DocumentSet,Tag,Tree,View}
 
 object show {
   private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)
@@ -27,13 +27,12 @@ object show {
     documentSet: DocumentSet,
     trees: Iterable[Tree],
     _views: Iterable[View],
-    viewJobs: Iterable[DocumentSetCreationJob],
     tags: Iterable[Tag]
   )(implicit messages: Messages): JsValue = Json.obj(
     "name" -> documentSet.title,
     "nDocuments" -> documentSet.documentCount,
     "metadataSchema" -> documentSet.metadataSchema.toJson,
-    "views" -> views.json.View.index(trees, _views, viewJobs),
+    "views" -> views.json.View.index(trees, _views),
     "tags" -> tags.map(writeTag)
   )
 }

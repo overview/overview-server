@@ -60,7 +60,11 @@ class WeightedLexer(val stopWords: Set[String], val weightedTerms: Map[String,Te
   // multiply the weights of the matched patterns if more than one
   // Otherwise standard processing strips punctuation, lowecases, checks termAcceptable
   // Throws out invalid terms.
-  private def processTerm(term: String) : Option[WeightedTermString] ={
+  private def processTerm(unboundedTerm: String) : Option[WeightedTermString] ={
+    // Copy the string with new, to avoid chewing up memory. (String.split keeps ref to original bytes)
+    // Also, truncate it.
+    val term = new String(unboundedTerm.take(maxTokenLength))
+
     var weight: TermWeight = 1
     var matched: Boolean = false
 
@@ -82,40 +86,13 @@ class WeightedLexer(val stopWords: Set[String], val weightedTerms: Map[String,Te
     }
   }
 
-  // Clips term to maximum length (avoids pathalogical cases)
-  // also copies it with new (avoids substring references created by .split chewing up all our memory)
-  private def limitTermLength(wt:WeightedTermString) = {
-    WeightedTermString(new String(wt.term.take(maxTokenLength)), wt.weight)
-  }
-
   /** Given some text, builds a list of weighted terms. */
   def makeTerms(textIn: String): Seq[WeightedTermString] = {
     if (!weightedTermRegexes.isDefined) {
       throw new DisplayedError("bad_important_words_pattern")
     }
 
-    // If we start paying attention to Asian languages, switch this to use
-    // ICUTokenizer, which is in a separate package. We're mimicking our
-    // ElasticSearch behavior here.
-    //
-    // https://www.elastic.co/guide/en/elasticsearch/guide/current/icu-tokenizer.html
-    val normalizedText = Normalizer.normalize(textIn, Normalizer.Form.NFKC)
-    val reader = new StringReader(normalizedText)
-    val tokenizer = new StandardTokenizer(reader)
-    var charTermAttribute = tokenizer.addAttribute(classOf[CharTermAttribute])
-
-    val ret = new ArrayBuffer[WeightedTermString]
-
-    // Docs say reset. http://lucene.apache.org/core/4_8_0/core/index.html?org/apache/lucene/analysis/TokenStream.html
-    tokenizer.reset()
-    while (tokenizer.incrementToken()) {
-      processTerm(charTermAttribute.toString).foreach { weightedTerm =>
-        ret.append(limitTermLength(weightedTerm))
-      }
-    }
-    tokenizer.end()
-    tokenizer.close()
-
-    ret
+    // Assume the input is a bunch of tokens
+    textIn.split(' ').flatMap(processTerm)
   }
 }

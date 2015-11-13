@@ -41,6 +41,41 @@ define [
       @keyboardController = options.keyboardController
 
       @$el = $(options.el)
+      @view = options.view
+      @keyboardController = options.keyboardController
+      @state = options.state
+
+      @render()
+
+    render: ->
+      if @view.get('progress') != 1
+        @renderProgress()
+      else if !@view.get('rootNodeId')
+        @renderError()
+      else
+        @renderTree()
+
+    renderProgress: ->
+      @listenToOnce(@view, 'change:progress', @render)
+      @$el.html(_.template("""
+        <div class="tree-progress">
+          <% if (!view.get('progress')) { %>
+            <progress></progress>
+          <% } else { %>
+            <progress value="<%- view.get('progress') %>"></progress>
+          <% } %>
+          <p class="description"><%- view.get('progressDescription') %></p>
+        </div>
+      """)(view: @view))
+
+    renderError: ->
+      @$el.html(_.template("""
+        <div class="tree-error">
+          <p class="description"><%- view.get('progressDescription') %></p>
+        </div>
+      """)(view: @view))
+
+    renderTree: ->
       @$el.html('<div id="tree-app-tree"></div><div id="tree-app-zoom-slider"></div>')
 
       els =
@@ -51,22 +86,22 @@ define [
       animator = new Animator(interpolator)
       focus = new AnimatedFocus({}, { animator: animator })
 
-      @onDemandTree = new OnDemandTree(options.state, options.view)
+      @onDemandTree = new OnDemandTree(@state, @view)
       treeLayout = new TreeLayout()
-      animatedTree = new AnimatedTree(@onDemandTree, options.state, animator, treeLayout, 1, 1)
+      animatedTree = new AnimatedTree(@onDemandTree, @state, animator, treeLayout, 1, 1)
 
       @focusView = new FocusView(el: els.zoom, model: focus)
-      @treeView = new TreeView(els.tree, options.state, animatedTree, focus)
+      @treeView = new TreeView(els.tree, @state, animatedTree, focus)
 
       @focusController = new FocusController
         animatedTree: animatedTree
         focus: focus
         treeView: @treeView
         focusView: @focusView
-        state: options.state
+        state: @state
 
       @treeController = new TreeController
-        state: options.state
+        state: @state
         focus: focus
         tree: @onDemandTree
         view: @treeView
@@ -74,16 +109,16 @@ define [
       @treeKeyBindings = new TreeKeyBindings(@treeController)
       @keyboardController.register(@treeKeyBindings)
 
-      @listenTo @treeView, 'refresh', ->
+      @listenTo @treeView, 'refresh', =>
         # Kill this ViewApp and build a new one
-        options.state.setView(null)
-        options.state.setView(options.view)
+        @state.setView(null)
+        @state.setView(@view)
 
     remove: ->
       @stopListening()
-      @keyboardController.unregister(@treeKeyBindings)
-      @focusView.remove()
-      @treeView.stopListening()#@treeView.remove()
-      @focusController.stopListening()
-      @treeController.stopListening()
+      @keyboardController?.unregister(@treeKeyBindings)
+      @focusView?.remove()
+      @treeView?.stopListening()#@treeView.remove()
+      @focusController?.stopListening()
+      @treeController?.stopListening()
       @$el.remove()

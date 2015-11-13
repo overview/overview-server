@@ -38,6 +38,8 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentSetId
   ))
 
+  override def danglingNode(rootNodeId: Long) = run(q.insertDanglingNode += podoFactory.danglingNode(rootNodeId))
+
   override def document(
     id: Long,
     documentSetId: Long,
@@ -194,29 +196,35 @@ object DbFactory extends Factory with HasBlockingDatabase {
   ) = run(q.insertPlugin += podoFactory.plugin(id, name, description, url, autocreate, autocreateOrder))
 
   override def tree(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    rootNodeId: Long = 0L,
-    jobId: Long = 0L,
-    title: String = "title",
-    documentCount: Int = 10,
-    lang: String = "en",
-    description: String = "description",
-    suppliedStopWords: String = "supplied stop words",
-    importantWords: String = "important words",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
+    id: Long,
+    documentSetId: Long,
+    rootNodeId: Option[Long],
+    title: String,
+    documentCount: Option[Int],
+    lang: String,
+    description: String,
+    suppliedStopWords: String,
+    importantWords: String,
+    createdAt: Timestamp,
+    tagId: Option[Long],
+    progress: Double,
+    progressDescription: String,
+    cancelled: Boolean
   ) = run(q.insertTree += podoFactory.tree(
     id,
     documentSetId,
     rootNodeId,
-    jobId,
     title,
     documentCount,
     lang,
     description,
     suppliedStopWords,
     importantWords,
-    createdAt
+    createdAt,
+    tagId,
+    progress,
+    progressDescription,
+    cancelled
   ))
 
   override def store(
@@ -348,37 +356,36 @@ object DbFactory extends Factory with HasBlockingDatabase {
     jobType: DocumentSetCreationJobType.Value,
     retryAttempts: Int,
     lang: String,
-    suppliedStopWords: String,
-    importantWords: String,
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
     contentsOid: Option[Long],
     sourceDocumentSetId: Option[Long],
-    treeTitle: Option[String],
-    treeDescription: Option[String],
-    tagId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
     statusDescription: String,
     canBeCancelled: Boolean
   ) = run(q.insertDocumentSetCreationJob += podoFactory.documentSetCreationJob(
-    id, documentSetId, jobType, retryAttempts, lang, suppliedStopWords, importantWords, splitDocuments,
-    documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
-    treeTitle, treeDescription, tagId, state, fractionComplete, statusDescription, canBeCancelled
-  ))
-
-  override def documentSetCreationJobNode(
-    documentSetCreationJobId: Long,
-    nodeId: Long
-  ) = run(q.insertDocumentSetCreationJobNode += podoFactory.documentSetCreationJobNode(
-    documentSetCreationJobId,
-    nodeId
+    id,
+    documentSetId,
+    jobType,
+    retryAttempts,
+    lang,
+    splitDocuments,
+    documentcloudUsername,
+    documentcloudPassword,
+    contentsOid,
+    sourceDocumentSetId,
+    state,
+    fractionComplete,
+    statusDescription,
+    canBeCancelled
   ))
 
   object q {
     // Compile queries once, instead of once per test
     val insertApiToken = (ApiTokens returning ApiTokens)
+    val insertDanglingNode = (DanglingNodes returning DanglingNodes)
     val insertDocument = (Documents returning Documents)
     val insertDocumentSet = (DocumentSets returning DocumentSets)
     val insertDocumentTag = (DocumentTags returning DocumentTags)
@@ -400,6 +407,5 @@ object DbFactory extends Factory with HasBlockingDatabase {
     val insertUploadedFile = (UploadedFiles returning UploadedFiles)
     val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors)
     val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs)
-    val insertDocumentSetCreationJobNode = (DocumentSetCreationJobNodes returning DocumentSetCreationJobNodes)
   }
 }

@@ -25,7 +25,6 @@ define [
       'click .toggle-popover': '_onClickPopover'
       'click li[data-id]>a': '_onClick'
       'click a[data-plugin-url]': '_onClickNewView'
-      'click button.cancel': '_onClickCancel'
       'click button.delete': '_onClickDelete'
       'click a.rename': '_onClickRename'
       'click a.close': '_onClickClose'
@@ -96,16 +95,14 @@ define [
 
           <% if (Object.keys(view.creationData).length) { %>
             <% view.creationData.forEach(function(d) { %>
-              <% if (d[0] != 'rootNodeId' && d[0] != 'jobId' && d[0] != 'nDocuments') { %>
+              <% if (d[0] != 'rootNodeId' && d[0] != 'nDocuments') { %>
                 <dt><%- t('view.' + d[0] + '.dt') %></dt>
                 <dd><%- t('view.' + d[0] + '.dd', d[1]) %></dd>
               <% } %>
             <% }); %>
           <% } %>
         </dl>
-        <% if (view.type == 'job' || view.type == 'error') { %>
-          <button type="button" class="cancel btn btn-danger"><%- t('cancelJob') %></button>
-        <% } else if (view.type == 'view' || view.type == 'tree') { %>
+        <% if (view.type == 'view' || view.type == 'tree') { %>
           <button type="button" class="delete btn btn-danger"><%- t('view.delete') %></button>
         <% } %>
         <a class="close close-bottom" href="#"><%- t('view.close.bottom') %></a>

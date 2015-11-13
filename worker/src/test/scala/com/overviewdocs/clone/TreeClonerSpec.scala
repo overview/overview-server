@@ -17,10 +17,9 @@ class TreeClonerSpec extends DbSpecification {
       val sourceTree = factory.tree(
         id = 1L << 32,
         documentSetId = sourceDocumentSet.id,
-        rootNodeId = sourceRootNode.id,
-        jobId=0L,
+        rootNodeId = Some(sourceRootNode.id),
         title="title",
-        documentCount=100,
+        documentCount=Some(100),
         lang="lang",
         suppliedStopWords="stopwords",
         importantWords="importantwords"
@@ -34,10 +33,9 @@ class TreeClonerSpec extends DbSpecification {
     "clone the tree of a document set" in new TreeCloneContext {
       cloneTree.get.id must beEqualTo(2L << 32)
       cloneTree.get.documentSetId must beEqualTo(cloneDocumentSet.id)
-      cloneTree.get.rootNodeId must beEqualTo(cloneRootNode.id)
-      cloneTree.get.jobId must beEqualTo(0L)
+      cloneTree.get.rootNodeId must beSome(cloneRootNode.id)
       cloneTree.get.title must beEqualTo("title")
-      cloneTree.get.documentCount must beEqualTo(100)
+      cloneTree.get.documentCount must beSome(100)
       cloneTree.get.lang must beEqualTo("lang")
       cloneTree.get.suppliedStopWords must beEqualTo("stopwords")
       cloneTree.get.importantWords must beEqualTo("importantwords")
