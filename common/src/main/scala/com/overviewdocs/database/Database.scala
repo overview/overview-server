@@ -101,7 +101,7 @@ class Database(val dataSource: DataSource) {
     * Usage:
     *
     * ```
-    * database.option(sqlu"SELECT id FROM document".as[Long])
+    * database.option(sql"SELECT id FROM document".as[Long])
     */
   def option[T](action: DBIO[Seq[T]]): Future[Option[T]] = {
     run(action).map(_.headOption)(slickDatabase.ioExecutionContext)
