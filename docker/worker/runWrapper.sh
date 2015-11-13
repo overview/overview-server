@@ -1,6 +1,0 @@
-#!/bin/sh
-
-export DATABASE_SERVER_NAME=${DB_PORT_5432_TCP_ADDR} 
-export DATABASE_PORT=${DB_PORT_5432_TCP_PORT} 
-   
-exec $@
