@@ -7,4 +7,33 @@
     height: 100%;
     border: none;
   }
+
+  .tree-progress {
+    .display-flex();
+    .flex-direction-column();
+    .flex-justify-content(center);
+
+    height: 100%;
+    text-align: center;
+
+    progress {
+      margin: 1em 1em 0;
+      width: auto;
+    }
+
+    .description {
+      .text-muted();
+    }
+  }
+
+  .tree-error {
+    .display-flex();
+    .flex-direction-column();
+    .flex-justify-content(center);
+
+    margin: 0 1em;
+    height: 100%;
+    text-align: center;
+    color: @brand-danger;
+  }
 }

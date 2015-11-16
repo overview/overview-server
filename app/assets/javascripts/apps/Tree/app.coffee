@@ -61,6 +61,7 @@ define [
     renderProgress: ->
       @$el.html(_.template("""
         <div class="tree-progress">
+          <p class="preamble"><%- t('progress.preamble') %></p>
           <% if (!view.get('progress')) { %>
             <progress></progress>
           <% } else { %>
