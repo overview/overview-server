@@ -74,7 +74,7 @@ trait DocumentSetDeleter extends HasDatabase {
       node_ids AS (SELECT id FROM node WHERE root_id IN (SELECT id FROM root_node_ids)),
       delete1 AS (DELETE FROM node_document WHERE node_id IN (SELECT id FROM node_ids)),
       delete2 AS (DELETE FROM node WHERE id IN (SELECT id FROM node_ids))
-      DELETE FROM tree WHERE root_node_id IN (SELECT id FROM root_node_ids)
+      DELETE FROM tree WHERE document_set_id = $documentSetId
     """
   }
   

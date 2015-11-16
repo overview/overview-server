@@ -33,6 +33,25 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === job.id)) must beNone
     }
 
+    "delete trees" in new BasicDocumentSetScope {
+      val node = factory.node()
+      val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=Some(node.id))
+
+      deleteDocumentSet
+
+      import database.api._
+      blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
+    }
+
+    "delete trees that have no nodes" in new BasicDocumentSetScope {
+      val tree = factory.tree(documentSetId=documentSet.id)
+
+      deleteDocumentSet
+
+      import database.api._
+      blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
+    }
+
     "delete csv uploads" in new CsvUploadScope {
       deleteDocumentSet
 
