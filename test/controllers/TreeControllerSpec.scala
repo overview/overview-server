@@ -44,13 +44,12 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
             createdAt=new java.sql.Timestamp(0L),
             tagId=None,
             progress=0.0,
-            progressDescription="",
-            cancelled=false
+            progressDescription=""
           ))
         }
       }
 
-      h.status(result) must beEqualTo(h.NO_CONTENT)
+      h.status(result) must beEqualTo(h.CREATED)
       there was one(mockBackend).create(argThat(isTheRightTree))
     }
 
@@ -70,7 +69,7 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
         t.description must beEqualTo("controllers.TreeController.treeDescription.fromTag,foo")
       }}
 
-      h.status(result) must beEqualTo(h.NO_CONTENT)
+      h.status(result) must beEqualTo(h.CREATED)
       there was one(mockBackend).create(argThat(hasDescription))
     }
 
@@ -84,7 +83,7 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
         t.description must beEqualTo("")
       }}
 
-      h.status(result) must beEqualTo(h.NO_CONTENT)
+      h.status(result) must beEqualTo(h.CREATED)
       there was one(mockBackend).create(argThat(hasDescription))
     }
   }
