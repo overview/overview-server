@@ -174,7 +174,7 @@ object ApplicationBuild extends Build {
       TwirlKeys.templateImports += "views.Magic._",
       RoutesKeys.routesImport += "extensions.Binders._",
       RjsKeys.modules := Seq(
-        WebJs.JS.Object("name" -> "bundle/admin/ImportJob/index"),
+        WebJs.JS.Object("name" -> "bundle/admin/Job/index"),
         WebJs.JS.Object("name" -> "bundle/admin/Plugin/index"),
         WebJs.JS.Object("name" -> "bundle/admin/User/index"),
         WebJs.JS.Object("name" -> "bundle/ApiToken/index"),

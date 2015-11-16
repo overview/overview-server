@@ -3,8 +3,8 @@ package controllers.backend
 import scala.concurrent.Future
 
 import com.overviewdocs.database.TreeIdGenerator
-import com.overviewdocs.models.Tree
-import com.overviewdocs.models.tables.Trees
+import com.overviewdocs.models.{DocumentSet,DocumentSetUser,Tree}
+import com.overviewdocs.models.tables.{DocumentSets,DocumentSetUsers,Trees}
 
 trait TreeBackend extends Backend {
   /** Creates a Tree.
@@ -23,6 +23,13 @@ trait TreeBackend extends Backend {
     * This is a no-op if the Tree does not exist.
     */
   def destroy(id: Long): Future[Unit]
+
+  /** Lists all trees with progress != 1.0, with their owner emails.
+    *
+    * A Tree must haave a DocumentSet by definition, but it needn't have an
+    * owner. So the email address may be None.
+    */
+  def indexIncompleteWithDocumentSetAndOwnerEmail: Future[Seq[(Tree,DocumentSet,Option[String])]]
 }
 
 trait DbTreeBackend extends TreeBackend with DbBackend {
@@ -32,6 +39,16 @@ trait DbTreeBackend extends TreeBackend with DbBackend {
   lazy val byIdCompiled = Compiled { (id: Rep[Long]) => Trees.filter(_.id === id) }
   lazy val attributesByIdCompiled = Compiled { (id: Rep[Long]) =>
     for (t <- Trees if t.id === id) yield (t.title)
+  }
+
+  lazy val indexIncompleteComplied = {
+    Trees
+      .filter(_.progress =!= 1.0)
+      .join(DocumentSets)
+        .on(_.documentSetId === _.id)
+      .joinLeft(DocumentSetUsers)
+        .on((t, dsu) => t._1.documentSetId === dsu.documentSetId && dsu.role === DocumentSetUser.Role(true))
+      .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
   }
 
   override def create(attributes: Tree.CreateAttributes) = {
@@ -48,6 +65,10 @@ trait DbTreeBackend extends TreeBackend with DbBackend {
       attributesByIdCompiled(id).update(attributes.title)
         .andThen(byIdCompiled(id).result.headOption)
     }
+  }
+
+  override def indexIncompleteWithDocumentSetAndOwnerEmail = {
+    database.seq(indexIncompleteComplied)
   }
 
   override def destroy(id: Long) = {

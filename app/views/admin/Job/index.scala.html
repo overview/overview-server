@@ -1,0 +1,44 @@
+@(
+  user: User
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
+
+@javascripts = {
+  @requireJsBundle("admin/Job/index")
+}
+
+@defining(scopedMessages("views.admin.ImportJob.index")) { m =>
+  @main(optionalUser=Some(user), title=m("title"), h1=m("h1"), bodyClass="admin-job-index", javascripts=javascripts) {
+    <div id="import-jobs">
+      <h2>Import jobs</h2>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th class="email">@m("th.email")</th>
+            <th class="progress">@m("th.progress")</th>
+            <th class="document-set-id">@m("th.id")</th>
+            <th class="document-set-title">@m("th.title")</th>
+            <th class="delete"></th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div id="tree-jobs">
+      <h2>Tree jobs</h2>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th class="email">@m("th.email")</th>
+            <th class="progress">@m("th.progress")</th>
+            <th class="document-set-id">@m("th.id")</th>
+            <th class="document-set-title">@m("th.title")</th>
+            <th class="delete"></th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  }
+}
