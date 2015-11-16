@@ -67,9 +67,7 @@ object JobHandler extends HasBlockingDatabase {
   private def handleTrees: Unit = {
     blockingDatabase.seq(Trees.filter(_.progress =!= 1.0))
       .foreach { tree =>
-        logger.info("Processing tree {}", tree)
-        val runner = new com.overviewdocs.clustering.Runner(tree)
-        runner.runBlocking
+        new com.overviewdocs.clustering.Runner(tree).runBlocking
       }
   }
 

@@ -38,15 +38,13 @@ import com.overviewdocs.persistence.{DocumentUpdater,NodeWriter}
   * Remember: ProcessIO has no concept of error. Use the corresponding Process
   * for that logic.
   *
-  * @param documentSetId Document set to query for documents.
-  * @param maybeTagId Tag ID to filter document list, if applicable.
-  * @param treeId Tree ID (used to calculate node IDs).
+  * @param treeId Tree ID (used to calculate node IDs and report progress).
+  * @param catDocuments Source documents to cluster.
   * @param onProgress Function to call when we have progress updates.
   */
 class ClusteringProcessIOBuilder(
-  documentSetId: Long,
-  maybeTagId: Option[Long],
   treeId: Long,
+  documents: CatDocuments,
   onProgress: (Double, String) => Unit
 ) extends HasBlockingDatabase {
   private sealed trait InputState
@@ -60,7 +58,7 @@ class ClusteringProcessIOBuilder(
   private val NNodesRegex = """(\d+) NODES""".r
   private val NodeRegex = """(\d+),(\d*),([tf]),([^,]*),([\d ]+)""".r
 
-  private val rootNodeId: Long = (documentSetId << 32L) | ((treeId & 0xfff) << 20L)
+  private val rootNodeId: Long = (treeId & 0xffffffff00000000L) | ((treeId & 0xfff) << 20L)
 
   private def onInputProgress(nWritten: Int, nTotal: Int): Unit = {
     onProgress(0.4 * nWritten / nTotal, "reading")
@@ -105,16 +103,15 @@ class ClusteringProcessIOBuilder(
   }
 
   private def withStdin(stream: OutputStream): Unit = {
-    val cat = new CatDocuments(documentSetId, maybeTagId)
     var n = 0
-    val nTotal: Int = cat.length
+    val nTotal: Int = documents.length
     val nPerProgress: Int = math.max(1, nTotal / 100)
     val writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)
 
     onInputProgress(0, nTotal)
 
     try {
-      cat.foreach { document =>
+      documents.foreach { document =>
         writer.write(s"${document.id},${document.tokens.mkString(" ")}\n")
         n += 1
         if (n % nPerProgress == 0) onInputProgress(n, nTotal)

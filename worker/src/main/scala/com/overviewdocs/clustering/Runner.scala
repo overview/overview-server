@@ -7,6 +7,7 @@ import scala.sys.process.Process
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.models.Tree
 import com.overviewdocs.models.tables.Trees
+import com.overviewdocs.util.Logger
 
 /** Runs Main.scala and inserts the results into the database.
   *
@@ -27,6 +28,8 @@ import com.overviewdocs.models.tables.Trees
 class Runner(val tree: Tree) extends HasBlockingDatabase {
   import database.api._
 
+  private val logger = Logger.forClass(getClass)
+
   private lazy val updateQuery = {
     Trees
       .filter(_.id === tree.id)
@@ -34,11 +37,18 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
   }
 
   private def reportSuccess: Unit = {
+    logger.info("Tree {}: success", tree.id)
     blockingDatabase.runUnit(updateQuery.update((1.0, "success")))
   }
 
   private def reportError: Unit = {
+    logger.info("Tree {}: error", tree.id)
     blockingDatabase.runUnit(updateQuery.update((1.0, "error")))
+  }
+
+  private def reportTooFewDocuments: Unit = {
+    logger.info("Tree {}: not enough documents", tree.id)
+    blockingDatabase.runUnit(updateQuery.update((1.0, "notEnoughDocuments")))
   }
 
   /** Writes progress to the `tree` table.
@@ -50,8 +60,15 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
   }
 
   def runBlocking: Unit = {
+    logger.info("Processing tree {}", tree)
+    val documents = new CatDocuments(tree.documentSetId, tree.tagId)
+
+    if (documents.length < 2) {
+      reportTooFewDocuments
+      return
+    }
+
     var hackyMaybeProcess: Option[Process] = None
-    val cancelled: Boolean = false
 
     def onProgress(fraction: Double, message: String): Unit = {
       if (!reportProgress(fraction, message)) {
@@ -61,7 +78,7 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
       }
     }
 
-    val processIO = new ClusteringProcessIOBuilder(tree.documentSetId, tree.tagId, tree.id, onProgress).toProcessIO
+    val processIO = new ClusteringProcessIOBuilder(tree.id, documents, onProgress).toProcessIO
     val process: Process = Process(command).run(processIO)
     hackyMaybeProcess = Some(process)
 

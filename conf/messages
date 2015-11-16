@@ -17,8 +17,6 @@ controllers.ConfirmationController.show.success=Welcome! To get started, try clo
 
 controllers.DocumentSetController.clone.failure=We were not able to clone the document set.
 controllers.DocumentSetController.deleteDocumentSet.success=You have deleted your document set.
-controllers.DocumentSetController.deleteTree.success=You have cancelled creating a new tree.
-controllers.DocumentSetController.deleteTree.failure=Nothing happened. Overview can''t cancel tree creation quite yet; please wait and your tree will be created.
 
 controllers.PasswordController.create.success=We have sent an email to {0} with instructions.
 controllers.PasswordController.update.success=You have updated your password, and you are now logged in.
@@ -547,6 +545,7 @@ views.Tree.progressDescription.error=Overview failed to cluster these documents.
 views.Tree.progressDescription.reading=Reading documents…
 views.Tree.progressDescription.saving=Saving…
 views.Tree.progressDescription.success=
+views.Tree.progressDescription.notEnoughDocuments=Tree view unavailable: Overview needs 2 or more documents to build a tree.
 
 views.ImportJob._documentSetCreationJob.job_state_description.=Starting
 views.ImportJob._documentSetCreationJob.job_state_description.bad_important_words_pattern=Invalid pattern in Important Words
@@ -561,7 +560,6 @@ views.ImportJob._documentSetCreationJob.job_state_description.processing_upload=
 views.ImportJob._documentSetCreationJob.job_state_description.retrieving_documents=Reading file {0}/{1}
 views.ImportJob._documentSetCreationJob.job_state_description.saving_document_tree=Saving document tree
 views.ImportJob._documentSetCreationJob.job_state_description.worker_error=Import failed (system error)
-views.ImportJob._documentSetCreationJob.job_state_description.not_enough_documents_error=Need at least {1} documents to create a document set, but only {0} imported.
 views.ImportJob._documentSetCreationJob.job_state_description.not_implemented_error=Cloning document sets with uploaded files is not yet implemented
 views.ImportJob._documentSetCreationJob.job_state_description.source_documentset_deleted=Copying failed because the original document set was deleted
 
