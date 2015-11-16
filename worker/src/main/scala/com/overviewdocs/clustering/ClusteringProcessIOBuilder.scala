@@ -110,18 +110,14 @@ class ClusteringProcessIOBuilder(
 
     onInputProgress(0, nTotal)
 
-    try {
-      documents.foreach { document =>
-        writer.write(s"${document.id},${document.tokens.mkString(" ")}\n")
-        n += 1
-        if (n % nPerProgress == 0) onInputProgress(n, nTotal)
-      }
-
-      writer.close
-      stream.close
-    } catch {
-      case _: IOException => {}          // the process died
+    documents.foreach { document =>
+      writer.write(s"${document.id},${document.tokens.mkString(" ")}\n")
+      n += 1
+      if (n % nPerProgress == 0) onInputProgress(n, nTotal)
     }
+
+    writer.close
+    stream.close
   }
 
   private def withStdout(stream: InputStream): Unit = {
@@ -215,6 +211,16 @@ class ClusteringProcessIOBuilder(
          * such that cancellation at any time leaves things consistent.
          * Therefore, an interrupt is completely useless ... but we can
          * probably ignore. (Assume Slick handles InterruptedException cleanly.)
+         */
+      }
+      case _: IOException => {
+        /*
+         * Multithreading garbage: BufferedInputStream.read() can throw
+         * "IOException: stream closed" if the stream is opened in another
+         * thread.
+         *
+         * Again, this is an annoying exception that originates from Scala's
+         * sys.process package.
          */
       }
     }
