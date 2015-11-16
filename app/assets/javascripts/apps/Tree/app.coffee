@@ -12,10 +12,13 @@ define [
   './controllers/TreeController'
   './views/FocusView'
   './views/TreeView'
+  'i18n'
 ], (_, $, Backbone, \
     OnDemandTree, PropertyInterpolator, Animator, AnimatedFocus, AnimatedTree, TreeLayout, \
     FocusController, TreeController, \
-    FocusView, TreeView) ->
+    FocusView, TreeView, i18n) ->
+
+  t = i18n.namespaced('views.Tree.show')
 
   class TreeKeyBindings
     constructor: (@treeController) ->
@@ -56,7 +59,6 @@ define [
         @renderTree()
 
     renderProgress: ->
-      @listenToOnce(@view, 'change:progress', @render)
       @$el.html(_.template("""
         <div class="tree-progress">
           <% if (!view.get('progress')) { %>
@@ -65,8 +67,27 @@ define [
             <progress value="<%- view.get('progress') %>"></progress>
           <% } %>
           <p class="description"><%- view.get('progressDescription') %></p>
+          <div class="delete">
+            <span class="label"><%- t('cancel.label') %></span>
+            <button class="btn btn-danger delete"><%- t('cancel') %></button>
+          </div>
         </div>
-      """)(view: @view))
+      """)(view: @view, t: t))
+
+      @listenTo @view, 'change:progress', (__, progress) =>
+        if progress == 1.0
+          @stopListening(@view)
+          @render()
+        else
+          @$el.find('progress').prop('value', progress.toString())
+          @$el.find('.description').text(@view.get('progressDescription'))
+
+      @$el.find('button.delete').click (ev) =>
+        ev.preventDefault()
+        @view.set(deleting: true)
+        @view.destroy
+          wait: true
+          success: => @state.setView(@state.documentSet.views.at(0) || null)
 
     renderError: ->
       @$el.html(_.template("""

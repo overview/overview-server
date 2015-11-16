@@ -484,6 +484,9 @@ views.FileImport.edit.h1=Add files to document set
 views.FileImport.edit.addingTo_html=Adding to document set: <strong>{0}</strong>
 views.FileImport.edit.help1=Overview can read many file formats, including PDF, Word, HTML and text.
 
+views.Tree.show.cancel.label=Taking too long? Uninterested?
+views.Tree.show.cancel=Delete Tree
+
 views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words: {0}
 views.Tree.show.DocumentList.loading=…
