@@ -38,11 +38,11 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
       SELECT
         d.title,
         p.page_number,
-        COALESCE(p.data_location, 'pagebytea:' || p.id),
+        p.data_location,
         p.data_size
-      FROM document d
+      FROM selection
+      INNER JOIN document d ON selection.document_id = d.id AND d.page_id IS NOT NULL
       INNER JOIN page p ON d.page_id = p.id
-      WHERE EXISTS (SELECT 1 FROM selection WHERE document_id = d.id)
     """.as[(Option[String], Int, String, Long)]
 
     database.run(q).map { seq =>
@@ -53,18 +53,10 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
   private def fileViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]] = {
     val q = sql"""
       WITH #${selectionSql(documentIds)}
-      , ids AS (
-        SELECT id AS document_id, file_id
-        FROM document
-        WHERE id IN (SELECT document_id FROM selection)
-          AND file_id IS NOT NULL
-          AND page_id IS NULL
-      )
-      SELECT
-        (SELECT title FROM document WHERE id = ids.document_id),
-        (SELECT view_location FROM file WHERE id = ids.file_id),
-        (SELECT view_size FROM file WHERE id = ids.file_id)
-      FROM ids
+      SELECT d.title, f.view_location, f.view_size
+      FROM selection
+      INNER JOIN document d ON selection.document_id = d.id AND d.file_id IS NOT NULL AND d.page_id IS NULL
+      INNER JOIN file f ON d.file_id = f.id
     """.as[(Option[String], String, Long)]
 
     database.run(q).map { seq =>
@@ -75,11 +67,9 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
   private def textViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]] = {
     val q = sql"""
       WITH #${selectionSql(documentIds)}
-      SELECT title, supplied_id, id, page_number, octet_length(text)
-      FROM document
-      WHERE EXISTS (SELECT 1 FROM selection WHERE document_id = document.id)
-        AND file_id IS NULL
-        AND text IS NOT NULL
+      SELECT d.title, d.supplied_id, d.id, d.page_number, octet_length(text)
+      FROM selection
+      INNER JOIN document d ON selection.document_id = d.id AND d.file_id IS NULL AND d.text IS NOT NULL
     """.as[(Option[String], Option[String], Long, Option[Int], Long)]
 
     database.run(q).map { seq =>
