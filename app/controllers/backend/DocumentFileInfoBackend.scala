@@ -53,11 +53,18 @@ trait DbDocumentFileInfoBackend extends DocumentFileInfoBackend with DbBackend {
   private def fileViewInfos(documentIds: Seq[Long]): Future[Seq[DocumentViewInfo]] = {
     val q = sql"""
       WITH #${selectionSql(documentIds)}
-      SELECT document.title, file.view_location, file.view_size
-      FROM document
-      INNER JOIN file ON document.file_id = file.id
-      WHERE EXISTS (SELECT 1 FROM selection WHERE document_id = document.id)
-        AND document.page_id IS NULL
+      , ids AS (
+        SELECT id AS document_id, file_id
+        FROM document
+        WHERE id IN (SELECT document_id FROM selection)
+          AND file_id IS NOT NULL
+          AND page_id IS NULL
+      )
+      SELECT
+        (SELECT title FROM document WHERE id = ids.document_id),
+        (SELECT view_location FROM file WHERE id = ids.file_id),
+        (SELECT view_size FROM file WHERE id = ids.file_id)
+      FROM ids
     """.as[(Option[String], String, Long)]
 
     database.run(q).map { seq =>
