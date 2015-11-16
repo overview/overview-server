@@ -208,8 +208,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     createdAt: Timestamp,
     tagId: Option[Long],
     progress: Double,
-    progressDescription: String,
-    cancelled: Boolean
+    progressDescription: String
   ) = run(q.insertTree += podoFactory.tree(
     id,
     documentSetId,
@@ -223,8 +222,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     createdAt,
     tagId,
     progress,
-    progressDescription,
-    cancelled
+    progressDescription
   ))
 
   override def store(

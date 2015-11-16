@@ -274,8 +274,7 @@ object PodoFactory extends Factory {
     createdAt: Timestamp,
     tagId: Option[Long],
     progress: Double,
-    progressDescription: String,
-    cancelled: Boolean
+    progressDescription: String
   ) = Tree(
     id=getId(id),
     documentSetId=getId(documentSetId),
@@ -289,8 +288,7 @@ object PodoFactory extends Factory {
     createdAt=createdAt,
     tagId=tagId,
     progress=progress,
-    progressDescription=progressDescription,
-    cancelled=cancelled
+    progressDescription=progressDescription
   )
 
   override def view(

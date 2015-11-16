@@ -15,8 +15,7 @@ case class Tree(
   val createdAt: Timestamp,
   val tagId: Option[Long],
   val progress: Double,
-  val progressDescription: String,
-  val cancelled: Boolean
+  val progressDescription: String
 ) {
   def update(attributes: Tree.UpdateAttributes) = copy(title=attributes.title)
 }
@@ -38,8 +37,7 @@ object Tree {
     val createdAt: Timestamp = new Timestamp(new java.util.Date().getTime),
     val tagId: Option[Long] = None,
     val progress: Double = 0.0,
-    val progressDescription: String = "",
-    val cancelled: Boolean = false
+    val progressDescription: String = ""
   ) {
     def toTreeWithId(id: Long): Tree = Tree(
       id,
@@ -54,8 +52,7 @@ object Tree {
       createdAt,
       tagId,
       progress,
-      progressDescription,
-      cancelled
+      progressDescription
     )
   }
 }

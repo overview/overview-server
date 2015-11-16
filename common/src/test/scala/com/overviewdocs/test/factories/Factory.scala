@@ -143,8 +143,7 @@ trait Factory {
     createdAt: Timestamp = now,
     tagId: Option[Long] = None,
     progress: Double = 1.0,
-    progressDescription: String = "",
-    cancelled: Boolean = false
+    progressDescription: String = ""
   ): Tree
 
   def view(

@@ -16,7 +16,8 @@ import com.overviewdocs.models.tables.Trees
   * child process crashes.
   *
   * Progress reports go straight to the database; at the same time, we'll poll
-  * for `tree.cancelled`. If the tree is cancelled, we kill the child process.
+  * to see whether the tree was deleted. If the tree is missing, we kill the
+  * child process.
   *
   * The tree is written by writing to the `node` table and then setting
   * `tree.root_node_id` as the final operation. If this process is interrupted,
@@ -26,9 +27,9 @@ import com.overviewdocs.models.tables.Trees
 class Runner(val tree: Tree) extends HasBlockingDatabase {
   import database.api._
 
-  private def updateQuery = {
+  private lazy val updateQuery = {
     Trees
-      .filter(t => t.id === tree.id && !t.cancelled)
+      .filter(_.id === tree.id)
       .map(t => (t.progress, t.progressDescription))
   }
 
@@ -40,20 +41,22 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
     blockingDatabase.runUnit(updateQuery.update((1.0, "error")))
   }
 
+  /** Writes progress to the `tree` table.
+    *
+    * Returns false iff the tree has been deleted.
+    */
+  private def reportProgress(fraction: Double, message: String): Boolean = {
+    blockingDatabase.run(updateQuery.update((fraction, message))) == 1
+  }
+
   def runBlocking: Unit = {
     var hackyMaybeProcess: Option[Process] = None
     val cancelled: Boolean = false
 
     def onProgress(fraction: Double, message: String): Unit = {
-      if (blockingDatabase.run(sqlu"""
-        UPDATE tree
-        SET progress = $fraction, progress_description = $message
-        WHERE id = ${tree.id}
-          AND cancelled = FALSE
-      """) == 0) {
-        // Either the tree was deleted or cancelled == true. Either way, this
-        // clustering job cannot produce any value, so we should kill it if it
-        // hasn't crashed already.
+      if (!reportProgress(fraction, message)) {
+        // The tree was deleted. This clustering job cannot create any value, so
+        // we should kill it ASAP.
         hackyMaybeProcess.foreach(_.destroy)
       }
     }
@@ -64,7 +67,7 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
 
     process.exitValue match {
       case 0 => reportSuccess
-      case _ => reportError
+      case _ => reportError // if tree was deleted, this error vanishes
     }
   }
 

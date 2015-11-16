@@ -19,7 +19,6 @@ class TreesImpl(tag: Tag) extends Table[Tree](tag, "tree") {
   def tagId = column[Option[Long]]("tag_id")
   def progress = column[Double]("progress")
   def progressDescription = column[String]("progress_description")
-  def cancelled = column[Boolean]("cancelled")
 
   def * = (
     id,
@@ -34,8 +33,7 @@ class TreesImpl(tag: Tag) extends Table[Tree](tag, "tree") {
     createdAt,
     tagId,
     progress,
-    progressDescription,
-    cancelled
+    progressDescription
   ) <> ((Tree.apply _).tupled, Tree.unapply)
 }
 

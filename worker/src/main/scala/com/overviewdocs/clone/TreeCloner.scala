@@ -20,8 +20,7 @@ object TreeCloner extends InDatabaseCloner {
         created_at,
         tag_id,
         progress,
-        progress_description,
-        cancelled
+        progress_description
       )
       SELECT
         ($cloneDocumentSetId << 32) | ($DocumentSetIdMask & id),
@@ -36,8 +35,7 @@ object TreeCloner extends InDatabaseCloner {
         CLOCK_TIMESTAMP(),
         NULL,
         progress,
-        progress_description,
-        cancelled
+        progress_description
       FROM tree
       WHERE document_set_id = $sourceDocumentSetId
     """)
