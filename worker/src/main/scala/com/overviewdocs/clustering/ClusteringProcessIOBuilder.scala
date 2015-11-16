@@ -120,7 +120,6 @@ class ClusteringProcessIOBuilder(
       writer.close
       stream.close
     } catch {
-      case _: InterruptedException => {} // the process died
       case _: IOException => {}          // the process died
     }
   }
@@ -206,5 +205,24 @@ class ClusteringProcessIOBuilder(
     }
   }
 
-  def toProcessIO: ProcessIO = new ProcessIO(withStdin, withStdout, withStderr)
+  private def ignoreInterrupt[A](f: A => Unit): A => Unit = { arg =>
+    try {
+      f(arg)
+    } catch {
+      case _: InterruptedException => {
+        /*
+         * Scala process.destroy() interrupts all threads. Our code is designed
+         * such that cancellation at any time leaves things consistent.
+         * Therefore, an interrupt is completely useless ... but we can
+         * probably ignore. (Assume Slick handles InterruptedException cleanly.)
+         */
+      }
+    }
+  }
+
+  def toProcessIO: ProcessIO = new ProcessIO(
+    ignoreInterrupt(withStdin),
+    ignoreInterrupt(withStdout),
+    ignoreInterrupt(withStderr)
+  )
 }
