@@ -7,7 +7,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future,blocking}
 import scala.sys.process.{Process,ProcessIO}
 
-import com.overviewdocs.util.Logger
+import com.overviewdocs.util.{Configuration,Logger}
 
 /** Finds page info from a PDF.
   *
@@ -157,6 +157,7 @@ trait PdfSplitter {
 
   private def command(in: Path, maybeOutPattern: Option[Path]): Seq[String] = Seq(
     PdfSplitter.javaPath,
+    "-Xmx" + Configuration.getString("pdf_memory"),
     "-cp", PdfSplitter.classPath,
     "com.overviewdocs.helpers.SplitPdfAndExtractText",
     in.toString

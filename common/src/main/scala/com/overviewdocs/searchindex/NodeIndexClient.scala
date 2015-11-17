@@ -39,8 +39,8 @@ class NodeIndexClient(clusterName: String, hosts: String) extends ElasticSearchI
 
 object NodeIndexClient {
   lazy val singleton = {
-    val hosts = Configuration.searchIndex.getString("hosts")
-    val clusterName = Configuration.searchIndex.getString("cluster_name")
+    val hosts = Configuration.getString("search_index.hosts")
+    val clusterName = Configuration.getString("search_index.cluster_name")
 
     new NodeIndexClient(clusterName, hosts)
   }

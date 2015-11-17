@@ -44,8 +44,8 @@ class TransportIndexClient(clusterName: String, hosts: String) extends ElasticSe
 
 object TransportIndexClient {
   lazy val singleton = {
-    val clusterName = Configuration.searchIndex.getString("cluster_name")
-    val hosts = Configuration.searchIndex.getString("hosts")
+    val clusterName = Configuration.getString("search_index.cluster_name")
+    val hosts = Configuration.getString("search_index.hosts")
 
     new TransportIndexClient(clusterName, hosts)
   }

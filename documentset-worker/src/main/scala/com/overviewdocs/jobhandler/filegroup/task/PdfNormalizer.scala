@@ -4,7 +4,7 @@ import java.nio.file.{Path,Paths}
 import scala.concurrent.{ExecutionContext,Future,blocking}
 import scala.sys.process.{Process,ProcessLogger}
 
-import com.overviewdocs.util.Logger
+import com.overviewdocs.util.{Configuration,Logger}
 
 /** Makes a PDF into a searchable PDF using pdfocr.
   *
@@ -72,6 +72,7 @@ trait PdfNormalizer {
 
   private def command(in: Path, out: Path, lang: String): Seq[String] = Seq(
     PdfNormalizer.javaPath,
+    "-Xmx" + Configuration.getString("pdf_memory"),
     "-cp", PdfNormalizer.classPath,
     "com.overviewdocs.helpers.MakeSearchablePdf",
     in.toString,
