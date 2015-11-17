@@ -21,15 +21,14 @@ class QueryProcessorSpec extends Specification with NoTimeConversions with Mocki
 
     abstract class QueryContext extends ActorSystemContext with Before {
       val query = "query string"
-      val pageSize = Configuration.getInt("page_size")
-      
+
       var progressReportCount: Int = 0
       
       override def before = {} // without this method, actor creation fails
 
       def reportProgress(part: Int, total: Int): Unit = progressReportCount += 1
 
-      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=$pageSize&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
+      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=50&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
 
       def emptyProcessDocument(d: Document, text: String): Unit = {}
       def createQueryProcessor(credentials: Option[Credentials] = None, maxDocuments: Int = 1000): Actor =
@@ -42,31 +41,6 @@ class QueryProcessorSpec extends Specification with NoTimeConversions with Mocki
       
       queryProcessor ! GetPage(pageNum)
       expectMsg(AddToFront(Request(pageQuery(pageNum, query))))
-    }
-
-    "request non-default query page" in new QueryContext {
-      object NonStandardConfig extends Configuration {
-        private val defaultConfiguration = Configuration // the object
-
-        def getString(key: String) : String = {
-          if (key == "documentcloud_url") {
-            "https://foo.bar"
-          } else {
-            defaultConfiguration.getString(key)
-          }
-        }
-
-        def getInt(key: String) : Int = defaultConfiguration.getInt(key)
-      }
-
-      override def createQueryProcessor(credentials: Option[Credentials] = None, maxDocuments: Int = 1000): Actor =
-        new QueryProcessor(query, credentials, testActor, configuration = NonStandardConfig)
-
-      val pageNum = 5
-      val queryProcessor = TestActorRef(createQueryProcessor())
-      
-      queryProcessor ! GetPage(pageNum)
-      expectMsg(AddToFront(Request(s"https://foo.bar/api/search.json?per_page=$pageSize&page=$pageNum&q=query+string")))
     }
 
     "send authenticated request if credentials are provided" in new QueryContext {
