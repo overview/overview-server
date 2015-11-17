@@ -3,106 +3,61 @@ package controllers
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.Enumerator
+import play.api.mvc.Result
 import scala.concurrent.Future
 
-import controllers.backend.DocumentFileInfoBackend
-import models.archive.{Archive,ArchiveEntry,DocumentViewInfo}
+import com.overviewdocs.test.factories.{PodoFactory=>factory}
+import controllers.auth.AuthorizedRequest
+import controllers.backend.ArchiveEntryBackend
+import models.archive.{ArchiveFactory,ZipArchive}
+import models.{ArchiveEntry,InMemorySelection,Selection}
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
-  "DocumentSetArchiveController" should {
-
-    "set content-type" in new BaseScope {
-      header(h.CONTENT_TYPE) must beSome(contentType)
-    }
-
-    "set content-length to archive size" in new BaseScope {
-      header(h.CONTENT_LENGTH) must beSome(s"$archiveSize")
-    }
-
-    "set content-disposition to some cool name" in new BaseScope {
-      header(h.CONTENT_DISPOSITION) must beSome(s"""attachment; filename="$fileName"""")
-    }
-
-    "send archive as content" in new BaseScope {
-      h.contentAsBytes(result) must be equalTo archiveData
-    }
-
-    "redirect if archiving is not supported" in new BaseScope {
-      override def numberOfDocuments = 0
-      h.status(result) must beEqualTo(h.SEE_OTHER)
-      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.unsupported")
-    }
-
-    "flash warning if there are too many documents" in new BaseScope {
-      override def numberOfDocuments = 11
-      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.tooManyEntries")
-    }
-
-    "flash warning if archive is too large" in new BaseScope {
-      override def controller = new TooLargeArchiveController(viewInfos)
-      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.archiveTooLarge")
-    }
-  }
-
   trait BaseScope extends Scope {
-    import scala.concurrent.ExecutionContext.Implicits.global
+    val mockArchiveEntryBackend = smartMock[ArchiveEntryBackend]
+    val mockArchiveFactory = smartMock[ArchiveFactory]
+    val selection = InMemorySelection(Seq(2L)) // override for a different selection
+    def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
 
-    val documentSetId = 23
-    val fileName = "documents.zip"
-    val request = fakeAuthorizedRequest
-    val archiveSize = 1989
-    val archiveData = Array.fill(archiveSize)(0xda.toByte)
+    val controller = new DocumentSetArchiveController {
+      override protected val archiveEntryBackend = mockArchiveEntryBackend
+      override protected val archiveFactory = mockArchiveFactory
+      override def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]) = buildSelection
+    }
+  }
 
-    val contentType = "application/x-zip-compressed"
-
-    def numberOfDocuments = 5
-    def viewInfos: Seq[DocumentViewInfo] = Seq.fill(numberOfDocuments) {
-      val entry = smartMock[ArchiveEntry]
-      val viewInfo = smartMock[DocumentViewInfo]
-      viewInfo.archiveEntry returns entry
-      viewInfo
+  "DocumentSetArchiveController" should {
+    "stream an archive" in new BaseScope {
+      val mockArchive = smartMock[ZipArchive]
+      val entries = Seq(ArchiveEntry(2L, "foo".getBytes("ascii"), 123L))
+      mockArchiveEntryBackend.showMany(1L, Seq(2L)) returns Future.successful(entries)
+      mockArchiveFactory.createZip(1L, entries) returns Right(mockArchive)
+      mockArchive.size returns 6L
+      mockArchive.stream returns Enumerator("abcdef".getBytes("ascii"))
+      val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
+      h.header("Content-Type", result) must beSome("application/zip")
+      h.header("Content-Length", result) must beSome("6")
+      h.header("Content-Disposition", result) must beSome("attachment; filename=\"filename.zip\"")
+      new String(h.contentAsBytes(result), "ascii") must beEqualTo("abcdef")
     }
 
-    def controller: DocumentSetArchiveController =
-      new TestDocumentSetArchiveController(documentSetId, archiveData, viewInfos)
+    "redirect with flash if unable to create an archive" in new BaseScope {
+      val entries = Seq(ArchiveEntry(2L, "foo".getBytes("ascii"), 123L))
+      mockArchiveEntryBackend.showMany(1L, Seq(2L)) returns Future.successful(entries)
+      mockArchiveFactory.createZip(1L, entries) returns Left("nope")
+      val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
+      h.status(result) must beEqualTo(h.SEE_OTHER)
+      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.nope")
+    }
 
-    def result = controller.archive(documentSetId, fileName)(request)
-
-    def header(key: String): Option[String] = h.header(key, result)
-  }
-
-  class TestDocumentSetArchiveController(
-      documentSetId: Long,
-      archiveData: Array[Byte],
-      documentViewInfos: Seq[DocumentViewInfo]
-  ) extends DocumentSetArchiveController with TestController {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    override val MaxNumberOfEntries = 10
-
-    val archiver = smartMock[Archiver]
-    val archive = smartMock[Archive]
-
-    archive.size returns archiveData.length
-    archive.stream returns Enumerator(archiveData)
-
-    val backend = smartMock[DocumentFileInfoBackend]
-    backend.indexDocumentViewInfos(any) returns Future.successful(documentViewInfos)
-
-    archiver.createArchive(any) returns archive
-  }
-
-  class TooLargeArchiveController(documentViewInfos: Seq[DocumentViewInfo])
-  extends DocumentSetArchiveController with TestController {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    val archiver = smartMock[Archiver]
-    val archive = smartMock[Archive]
-
-    archive.size returns MaxArchiveSize + 1
-    archiver.createArchive(any) returns archive
-
-    val backend = smartMock[DocumentFileInfoBackend]
-    backend.indexDocumentViewInfos(any) returns Future.successful(documentViewInfos)
+    "fail fast with >65535 files" in new BaseScope {
+      // Errors normally come from ArchiveFactory. But we can take a shortcut
+      // to avoid an expensive query.
+      override val selection = InMemorySelection(Seq.tabulate(65536)(_.toLong))
+      val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
+      h.status(result) must beEqualTo(h.SEE_OTHER)
+      h.flash(result).data must contain("warning" -> controller.messagesApi("controllers.DocumentSetArchiveController.tooManyEntries"))
+      there was no(mockArchiveFactory).createZip(any, any)
+    }
   }
 }

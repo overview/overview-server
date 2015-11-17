@@ -8,10 +8,9 @@ authentication.password.secure=Please use a password at least seven characters l
 
 controllers.admin.UserController.delete.failure=Document sets owned by {0} must be removed before the user can be deleted.
 
-controllers.DocumentSetArchiveController.archiveTooLarge=Your document set is too large to be exported as a zip archive.
-controllers.DocumentSetArchiveController.tooManyEntries=There are too many documents in your document set to allow zip archive creation.
-controllers.DocumentSetArchiveController.unsupported=Zip archives are currently not supported for your document set. Please try again later.
-
+controllers.DocumentSetArchiveController.archiveTooLarge=Overview can't create such a large zipfile.
+controllers.DocumentSetArchiveController.tooManyEntries=Overview can't create a zipfile out of so many files.
+controllers.DocumentSetArchiveController.empty=This zipfile would be empty, so we skipped downloading it.
 
 controllers.ConfirmationController.show.success=Welcome! To get started, try cloning one of the example document sets.
 
