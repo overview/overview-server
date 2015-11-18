@@ -23,7 +23,11 @@ object DistanceFn {
     var b_idx = 0
     var dot = 0.0
 
-    while (a_idx < a.length && b_idx < b.length) {
+    // Optimize frequently-accessed values
+    val a_length = a.length
+    var b_length = b.length
+
+    while (a_idx < a_length && b_idx < b_length) {
       val a_term = a.terms(a_idx)
       val b_term = b.terms(b_idx)
 
