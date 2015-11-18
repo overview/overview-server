@@ -35,13 +35,6 @@ class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected va
     if (node.children.size == 1)    // if all docs went into single node, make this a leaf, we are done
       node.children.clear           // (either "really" only one cluster, or clustering alg problem, but let's never infinite loop)
   }
-
-  def makeALeafForEachDoc(node:DocTreeNode) = {
-    if (node.docs.size > 1)
-      node.docs foreach { id =>
-        node.children += new DocTreeNode(Set(id))
-    }
-  }
 }
 
 

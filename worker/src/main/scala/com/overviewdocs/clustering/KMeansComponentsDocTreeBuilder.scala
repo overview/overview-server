@@ -96,15 +96,6 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
       node.children.clear           // (either "really" only one cluster, or clustering alg problem, but let's never infinite loop)
   }
 
-  def makeALeafForEachDoc(node:DocTreeNode) = {
-    if (node.docs.size > 1)
-      node.docs foreach { id =>
-        node.children += new DocTreeNode(Set(id))
-    println("Opps, Leafed!")
-
-    }
-  }
-
   // Split the given node, which must contain the documents from all given components.
   private def splitNode(node:DocTreeNode, level:Integer, onProgress: Double => Unit) : Unit = {
     onProgress(0)
