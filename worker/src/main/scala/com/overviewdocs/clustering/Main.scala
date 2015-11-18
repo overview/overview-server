@@ -1,5 +1,7 @@
 package com.overviewdocs.clustering
 
+import java.io.{BufferedReader,InputStreamReader}
+import java.nio.charset.StandardCharsets
 import scala.collection.mutable
 
 import com.overviewdocs.nlp.DocumentVectorTypes.{DocumentID,DocumentSetVectors,DocumentVector}
@@ -76,12 +78,21 @@ object Main extends App {
 
   val indexer = new DocumentSetIndexer(lang, suppliedStopWords, importantWords)
 
-  scala.io.Source.stdin.getLines.foreach { line =>
-    val i = line.indexOf(',')
-    val documentId = line.substring(0, i).toLong
-    val tokens = line.substring(i + 1)
-    indexer.addDocument(documentId, tokens)
+  val stdin = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))
+  def indexOneLine: Boolean = {
+    Option(stdin.readLine) match {
+      case None => false
+      case Some(line) => {
+        val i = line.indexOf(',')
+        val documentId = line.substring(0, i).toLong
+        val tokensString = line.substring(i + 1)
+        indexer.addDocument(documentId, tokensString)
+        true
+      }
+    }
   }
+  while (indexOneLine) {}
+  stdin.close
 
   var lastProgress = 0.0
   private def onProgress(progress: Double): Unit = {
