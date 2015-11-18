@@ -4,7 +4,7 @@ import java.nio.file.{Path,Paths}
 import java.util.Locale
 import org.overviewproject.pdfocr.PdfOcr
 import org.overviewproject.pdfocr.exceptions._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure,Success}
 
 object MakeSearchablePdf extends App {
   /** Converts a PDF into a searchable PDF, using pdfocr.
@@ -45,21 +45,26 @@ object MakeSearchablePdf extends App {
       true
     }
 
-    try {
-      scala.concurrent.Await.result(
-        PdfOcr.makeSearchablePdf(inPath, outPath, locales, onProgress),
-        scala.concurrent.duration.Duration.Inf
-      )
-    } catch {
-      case _: PdfInvalidException => {
-        System.out.print("Error in PDF file\n")
-        return
-      }
-      case _: PdfEncryptedException => {
-        System.out.println("PDF file is password-protected\n")
-        return
-      }
+    implicit val ec = CrashyExecutionContext()
+
+    def success(message: String): Unit = {
+      System.out.print(message + "\n")
+      ec.shutdown
     }
+
+    def failure(ex: Throwable): Unit = {
+      ex.printStackTrace()
+      Runtime.getRuntime.halt(1)
+    }
+
+    PdfOcr.makeSearchablePdf(inPath, outPath, locales, onProgress).onComplete {
+      case Success(_) => ec.shutdown
+      case Failure(_: PdfInvalidException) => success("Error in PDF file")
+      case Failure(_: PdfEncryptedException) => success("PDF file is password-protected")
+      case Failure(ex) => failure(ex)
+    }
+
+    ec.awaitTermination(999999, java.util.concurrent.TimeUnit.DAYS)
   }
 
   if (args.length != 3) {

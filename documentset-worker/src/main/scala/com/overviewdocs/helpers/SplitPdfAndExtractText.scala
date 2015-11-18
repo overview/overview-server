@@ -4,7 +4,6 @@ import java.nio.file.{Files,Path,Paths,StandardOpenOption}
 import org.overviewproject.pdfocr.pdf.PdfDocument
 import org.overviewproject.pdfocr.exceptions._
 import scala.concurrent.{Await,Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 import com.overviewdocs.util.Textify
@@ -59,6 +58,8 @@ object SplitPdfAndExtractText extends App {
     *                       files will be written.
     */
   def run(inPath: Path, maybeOutPathPattern: Option[Path]): Unit = {
+    implicit val ec = CrashyExecutionContext()
+
     val pdfDocument: PdfDocument = try {
       await(PdfDocument.load(inPath))
     } catch {
