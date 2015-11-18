@@ -1,8 +1,9 @@
 package com.overviewdocs.clustering
 
+import java.io.{BufferedReader,IOException,InputStreamReader,PrintWriter,OutputStreamWriter}
+import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import scala.concurrent.{ExecutionContext,Future,blocking}
-import scala.sys.process.Process
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.models.Tree
@@ -55,8 +56,67 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
     *
     * Returns false iff the tree has been deleted.
     */
-  private def reportProgress(fraction: Double, message: String): Boolean = {
-    blockingDatabase.run(updateQuery.update((fraction, message))) == 1
+  private def reportInputProgress(nWritten: Int, nTotal: Int): Boolean = {
+    blockingDatabase.run(updateQuery.update((0.3 * nWritten / nTotal), "reading")) == 1
+  }
+
+  private def feedDocumentsToChild(documents: CatDocuments, child: Process): Unit = {
+    val nTotal: Int = documents.length
+    val nPerProgress: Int = math.max(1, nTotal / 30)
+    var nWritten: Int = 0
+
+    try {
+      val stdin = child.getOutputStream()
+      val stdinWriter = new PrintWriter(new OutputStreamWriter(stdin, StandardCharsets.UTF_8), true)
+
+      documents.foreach { document =>
+        stdinWriter.println(s"${document.id},${document.tokens.mkString(" ")}")
+        nWritten += 1
+        if (nWritten % nPerProgress == 0) reportInputProgress(nWritten, nTotal)
+      }
+      stdinWriter.close
+    } catch {
+      case _: IOException => {
+        // The child process stopped listening -- i.e., it died.
+        // That means it'll return an exit code other than zero, so we don't
+        // need to do anything special.
+      }
+    }
+  }
+
+  private def handleOutputFromChild(child: Process): Unit = {
+    def onClusterProgress(fraction: Double, message: String): Unit = {
+      if (blockingDatabase.run(updateQuery.update((0.3 + fraction * 0.69, message))) == 0) {
+        // The tree table entry is gone. To the user, this means "cancel". To
+        // us, it means this process is now chugging for nothing.
+        child.destroyForcibly
+      }
+    }
+
+    try {
+      val stdout = child.getInputStream()
+      val stdoutReader = new BufferedReader(new InputStreamReader(stdout, StandardCharsets.UTF_8))
+
+      val clusteringResponseHandler = new ClusteringResponseHandler(tree.id, onClusterProgress)
+
+      def step: Boolean = {
+        Option(stdoutReader.readLine) match {
+          case None => false
+          case Some(line) => clusteringResponseHandler.onLine(line); true
+        }
+      }
+
+      while (step) {}
+
+      stdoutReader.close
+      clusteringResponseHandler.finish
+    } catch {
+      case _: IOException => {
+        // The stream was closed by something else (i.e., the child). We don't
+        // much care what happens, because we assume the child's exit code will
+        // be non-zero.
+      }
+    }
   }
 
   def runBlocking: Unit = {
@@ -68,21 +128,14 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
       return
     }
 
-    var hackyMaybeProcess: Option[Process] = None
+    val process: Process = new ProcessBuilder(command: _*)
+      .redirectError(ProcessBuilder.Redirect.INHERIT) // Print errors on stderr. Logstash will email us.
+      .start()
 
-    def onProgress(fraction: Double, message: String): Unit = {
-      if (!reportProgress(fraction, message)) {
-        // The tree was deleted. This clustering job cannot create any value, so
-        // we should kill it ASAP.
-        hackyMaybeProcess.foreach(_.destroy)
-      }
-    }
+    feedDocumentsToChild(documents, process)
+    handleOutputFromChild(process)
 
-    val processIO = new ClusteringProcessIOBuilder(tree.id, documents, onProgress).toProcessIO
-    val process: Process = Process(command).run(processIO)
-    hackyMaybeProcess = Some(process)
-
-    process.exitValue match {
+    process.waitFor match {
       case 0 => reportSuccess
       case _ => reportError // if tree was deleted, this error vanishes
     }
