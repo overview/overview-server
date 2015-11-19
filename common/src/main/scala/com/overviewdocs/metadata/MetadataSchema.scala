@@ -1,6 +1,8 @@
 package com.overviewdocs.metadata
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import play.api.libs.json.{JsArray,JsNumber,JsObject,JsString,JsValue,Json}
+import scala.util.{Failure,Success,Try}
 
 /** Schema that describes a Document's metadata.
   *
@@ -24,6 +26,19 @@ case class MetadataSchema(version: Int, fields: Seq[MetadataField]) {
 
 object MetadataSchema {
   def fromJson(json: JsValue): MetadataSchema = MetadataSchema.Json.parse(json)
+
+  /** Given a JSON String, returns a MetadataSchema that will absorb as much
+    * data as possible from that JSON string.
+    *
+    * If the JSON is invalid or not an Object, returns an empty schema.
+    *
+    * This method should be a last resort: it works with Strings, but when we
+    * get new types beyond standard JSON ones, it won't work.
+    */
+  def inferFromMetadataJson(jsObject: JsObject): MetadataSchema = {
+    val fields = jsObject.keys.map(key => MetadataField(key, MetadataFieldType.String))
+    MetadataSchema(1, fields.toSeq)
+  }
 
   def empty: MetadataSchema = MetadataSchema(1, Seq())
 

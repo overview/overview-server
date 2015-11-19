@@ -3,7 +3,7 @@ package com.overviewdocs.metadata
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject,Json}
 
 class MetadataSchemaSpec extends Specification with JsonMatchers {
   trait BaseScope extends Scope
@@ -64,6 +64,28 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
       import MetadataSchema.Json.reads
       val result = Json.parse("""{"version":1,"fields":[{"name":"foo","type":"String"}]}""").as[MetadataSchema]
       result must beEqualTo(MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String))))
+    }
+  }
+
+  "::inferFromMetadataJson" should {
+    trait InferScope extends BaseScope {
+      def from(jsonString: String) = MetadataSchema.inferFromMetadataJson(Json.parse(jsonString).as[JsObject])
+    }
+
+    "give version 1" in new InferScope {
+      from("""{"foo":"bar"}""").version must beEqualTo(1)
+    }
+
+    "parse String fields" in new InferScope {
+      val result = from("""{"foo":"bar","moo":"mar"}""")
+      result.fields must containTheSameElementsAs(Seq(
+        MetadataField("foo", MetadataFieldType.String),
+        MetadataField("moo", MetadataFieldType.String)
+      ))
+    }
+
+    "parse empty JSON" in new InferScope {
+      from("{}") must beEqualTo(MetadataSchema.empty)
     }
   }
 

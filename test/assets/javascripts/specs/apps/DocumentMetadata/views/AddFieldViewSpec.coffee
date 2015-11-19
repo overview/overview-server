@@ -13,9 +13,8 @@ define [
         submit: 'submit'
         reset: 'reset'
 
-      @documentSet = new Backbone.Model(metadataFields: [ 'foo', 'bar' ])
-      @documentSet.patchMetadataFields = sinon.spy()
-      @subject = new AddFieldView(documentSet: @documentSet)
+      @model = new Backbone.Model(fields: [ 'foo', 'bar' ])
+      @subject = new AddFieldView(model: @model)
 
     afterEach ->
       @subject.stopListening()
@@ -55,17 +54,17 @@ define [
       it 'should not submit an empty value, even if the browser is not HTML5-compliant', ->
         @subject.$('input').val(' ')
         @subject.$el.trigger('submit')
-        expect(@documentSet.patchMetadataFields).not.to.have.been.called
+        expect(@model.get('fields')).to.deep.eq([ 'foo', 'bar' ])
 
       it 'should do nothing when adding an existing field', ->
         @subject.$('input').val('foo')
         @subject.$el.trigger('submit')
-        expect(@documentSet.patchMetadataFields).not.to.have.been.called
+        expect(@model.get('fields')).to.deep.eq([ 'foo', 'bar' ])
 
       it 'should add a metadata field', ->
         @subject.$('input').val('baz')
         @subject.$el.trigger('submit')
-        expect(@documentSet.patchMetadataFields).to.have.been.calledWith([ 'foo', 'bar', 'baz' ])
+        expect(@model.get('fields')).to.deep.eq([ 'foo', 'bar', 'baz' ])
 
       it 'should reset the form after adding a metadata field', ->
         @subject.$('input').val('baz')

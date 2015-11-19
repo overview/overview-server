@@ -17,11 +17,21 @@ define [
     className: 'document-metadata'
 
     initialize: (options) ->
-      throw 'Must specify options.documentSet, a Backbone.Model with metadataFields' if !options.documentSet
+      throw 'Must specify options.fields, an Array of Strings to start with' if !options.fields
+      throw 'Must specify options.saveFields, a NodeJS-style async function accepting an Array of Strings' if !options.saveFields
 
-      @documentSet = options.documentSet
+      @model = new Backbone.Model
+        fields: options.fields
+        json: {}
+
+      @listenTo @model, 'change:fields', (__, newFields) ->
+        options.saveFields newFields, (err) ->
+          throw err if err? # We don't handle errors.
+
       @document = null
-      @documentMetadataFetched = false
+
+      @listenTo @model, 'change:json', (__, newJson) =>
+        @document?.save({ metadata: newJson }, patch: true)
 
       globalExpanded = options.expanded if options.expanded? # help unit tests start with a clean slate
       @$el.addClass('expanded') if globalExpanded
@@ -48,12 +58,35 @@ define [
         @$el.append(@$title)
         @$el.append(@jsonView.el)
         @$el.append(@addFieldView.el)
+
+        @jsonView.delegateEvents()
+        @addFieldView.delegateEvents()
       else if @document?
         @$el.append(@$title)
         @$el.append(@$loading)
 
       @
 
+    # Specifies that we want to edit JSON, but not for any particular document.
+    #
+    # You can call `getJson()` to access the JSON.
+    setNoDocument: ->
+      @document = null
+      @jsonView?.remove()
+      @addFieldView?.remove()
+
+      @model.set(json: {})
+      @jsonView = new JsonView(model: @model)
+      @addFieldView = new AddFieldView(model: @model)
+      @render()
+
+    # Specifies that we want to edit a Document's metadata.
+    #
+    # Shows a spinner, loads the document metadata, and then presents an edit
+    # interface. Any edit will trigger a
+    # `document.save({ metadata: {...} }, patch: true)`.
+    #
+    # setDocument(null) will hide the interface.
     setDocument: (document) ->
       @jsonView?.remove()
       @jsonView = null
@@ -65,7 +98,6 @@ define [
       @addFieldView = null
 
       @document = document
-      @documentMetadataFetched = false
 
       if @document?
         Backbone.ajax
@@ -74,9 +106,9 @@ define [
           dataType: 'json'
           success: (data) =>
             return if @document != document # stale response
-            @document.set(metadata: data.metadata)
-            @jsonView = new JsonView(documentSet: @documentSet, document: @document)
-            @addFieldView = new AddFieldView(documentSet: @documentSet)
+            @model.set(json: data.metadata)
+            @jsonView = new JsonView(model: @model)
+            @addFieldView = new AddFieldView(model: @model)
 
             @render()
 
@@ -84,6 +116,29 @@ define [
 
     _onClickExpand: (e) ->
       e.preventDefault()
+      e.stopPropagation() # Prevent redirect confirmation when in MassUpload dialog
       globalExpanded = !globalExpanded
       @$el.toggleClass('expanded', globalExpanded)
       e.target.blur() # Workaround: the link stays underlined as it animates away on Firefox and Chrome
+
+  DocumentMetadataApp.forDocumentSet = (documentSet, options={}) ->
+    new DocumentMetadataApp(_.extend({
+      fields: documentSet.get('metadataFields')
+
+      saveFields: (fields, done) ->
+        documentSet.patchMetadataFields fields,
+          success: done(null)
+          error: (model, response, options) ->
+            console.warn(response)
+            done(new Error("Failed to save metadata fields"))
+    }, options))
+
+  DocumentMetadataApp.forNoDocumentSet = (options={}) ->
+    app = new DocumentMetadataApp(_.extend({
+      fields: [],
+      saveFields: (fields, done) -> done(null)
+    }, options))
+    app.setNoDocument()
+    app
+
+  DocumentMetadataApp

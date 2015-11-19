@@ -3,7 +3,7 @@ package controllers.api
 import java.util.UUID
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.{Enumerator,Iteratee}
-import play.api.libs.json.{JsObject,Json}
+import play.api.libs.json.Json
 import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -159,7 +159,8 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       def formData = Json.obj(
         "name" -> "DocumentSet name",
         "lang" -> "sv",
-        "split_documents" -> false
+        "split_documents" -> false,
+        "metadata_json" -> """{"foo":"bar"}"""
       )
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(factory.fileGroup(id=234L)))
@@ -174,7 +175,13 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
     "call addToDocumentSet" in new StartClusteringScope {
       status(result)
-      there was one(mockFileGroupBackend).addToDocumentSet(234L, documentSetId, "sv", false, JsObject(Seq()))
+      there was one(mockFileGroupBackend).addToDocumentSet(
+        234L,
+        documentSetId,
+        "sv",
+        false,
+        Json.obj("foo" -> "bar")
+      )
     }
 
     "send a message to the JobQueue" in new StartClusteringScope {

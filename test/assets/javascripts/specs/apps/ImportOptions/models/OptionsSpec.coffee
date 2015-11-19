@@ -4,23 +4,6 @@ define [
   describe 'apps/ImportOptions/models/Options', ->
     subject = undefined
 
-    it 'should not allow both excludeOptions and onlyOptions', ->
-      expect(->
-        new Options {},
-          supportedLanguages: [{code:'en',name:'English'}]
-          defaultLanguageCode: 'en'
-          excludeOptions: [ 'split_documents' ]
-          onlyOptions: [ 'lang' ]
-      ).to.throw()
-
-    it 'should throw when trying to exclude a non-option', ->
-      expect(->
-        new Options {},
-          supportedLanguages: [{code:'en',name:'English'}]
-          defaultLanguageCode: 'en'
-          excludeOptions: [ 'splitdocuments' ]
-      ).to.throw()
-
     it 'should throw when trying to include a non-option', ->
       expect(->
         new Options {},
@@ -29,17 +12,14 @@ define [
           onlyOptions: [ 'splitdocuments' ]
       ).to.throw()
 
-    describe 'with excludeOptions', ->
-      ctorOptions =
-        supportedLanguages: [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
+    it 'should add a `documentSet` from initialize()', ->
+      documentSet = new Backbone.Model(id: 1)
+      subject = new Options {},
         defaultLanguageCode: 'en'
-        excludeOptions: [ 'split_documents' ]
-
-      beforeEach ->
-        subject = new Options({}, ctorOptions)
-
-      it 'should define an included option', -> expect(subject.has('lang')).to.be.true
-      it 'should not define an excluded option', -> expect(subject.has('split_documents')).to.be.false
+        supportedLanguages: [{code:'en',name:'English'}]
+        onlyOptions: [ 'metadata_json' ]
+        documentSet: documentSet
+      expect(subject.documentSet).to.eq(documentSet)
 
     describe 'with onlyOptions', ->
       ctorOptions =
@@ -55,6 +35,7 @@ define [
       ctorOptions =
         supportedLanguages: [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         defaultLanguageCode: 'en'
+        onlyOptions: [ 'name', 'tree_title', 'tag_id', 'split_documents', 'lang', 'supplied_stop_words', 'important_words', 'metadata_json' ]
 
       beforeEach ->
         subject = new Options({}, ctorOptions)
@@ -82,3 +63,6 @@ define [
 
       describe 'important_words', ->
         it 'should begin as empty string', -> expect(subject.get('important_words')).to.eq('')
+
+      describe 'metadata_json', ->
+        it 'should begin as empty', -> expect(subject.get('metadata_json')).to.eq('{}')

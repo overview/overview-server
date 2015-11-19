@@ -4,12 +4,13 @@ import java.util.UUID
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.{Enumerator,Iteratee}
-import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
 
 import com.overviewdocs.messages.DocumentSetCommands
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{DocumentSet,FileGroup,GroupedFileUpload}
 import com.overviewdocs.models.DocumentSetCreationJobType._
 import com.overviewdocs.models.DocumentSetCreationJobState._
@@ -123,7 +124,8 @@ class MassUploadControllerSpec extends ControllerSpecification {
       def formData = Seq(
         "name" -> "DocumentSet name",
         "lang" -> "sv",
-        "split_documents" -> "false"
+        "split_documents" -> "false",
+        "metadata_json" -> """{"foo":"bar"}"""
       )
       val documentSet = factory.documentSet(id=1L)
       val fileGroup = factory.fileGroup(id=2L)
@@ -147,6 +149,9 @@ class MassUploadControllerSpec extends ControllerSpecification {
       there was one(mockDocumentSetBackend).create(
         beLike[DocumentSet.CreateAttributes] { case attributes =>
           attributes.title must beEqualTo("DocumentSet name")
+          attributes.metadataSchema must beEqualTo(
+            MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+          )
         },
         beLike[String] { case s => s must beEqualTo(user.email) }
       )
@@ -154,7 +159,13 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "call addToDocumentSet" in new StartClusteringScope {
       h.status(result)
-      there was one(mockFileGroupBackend).addToDocumentSet(fileGroup.id, documentSet.id, "sv", false, JsObject(Seq()))
+      there was one(mockFileGroupBackend).addToDocumentSet(
+        fileGroup.id,
+        documentSet.id,
+        "sv",
+        false,
+        Json.obj("foo" -> "bar")
+      )
     }
 
     "send a message via the JobQueueSender" in new StartClusteringScope {
@@ -181,7 +192,8 @@ class MassUploadControllerSpec extends ControllerSpecification {
       def formData = Seq(
         "name" -> "DocumentSet name",
         "lang" -> "sv",
-        "split_documents" -> "false"
+        "split_documents" -> "false",
+        "metadata_json" -> """{"foo":"bar"}"""
       )
       val documentSet = factory.documentSet(id=1L)
       val fileGroup = factory.fileGroup(id=2L)
@@ -201,7 +213,13 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "call addToDocumentSet" in new StartClusteringExistingDocumentSetScope {
       h.status(result)
-      there was one(mockFileGroupBackend).addToDocumentSet(fileGroup.id, documentSet.id, "sv", false, JsObject(Seq()))
+      there was one(mockFileGroupBackend).addToDocumentSet(
+        fileGroup.id,
+        documentSet.id,
+        "sv",
+        false,
+        Json.obj("foo" -> "bar")
+      )
     }
 
     "send a message via the JobQueueSender" in new StartClusteringExistingDocumentSetScope {

@@ -8,29 +8,23 @@ define [ 'backbone' ], (Backbone) ->
       name: ''
       tag_id: ''
       tree_title: ''
+      metadata_json: '{}'
 
     initialize: (attributes, options) ->
       throw 'Must set options.defaultLanguageCode' if !options.defaultLanguageCode
       throw 'Must set options.supportedLanguages' if !options.supportedLanguages
-      throw 'Can only set one of options.excludeOptions or options.onlyOptions' if options.excludeOptions? && options.onlyOptions?
+      throw 'Must set options.onlyOptions, an Array of Strings' if !options.onlyOptions
 
-      if options.excludeOptions?
-        for key in options.excludeOptions
-          if key of @attributes
-            delete @attributes[key]
-          else
-            throw "Invalid excludeOptions value '#{key}'"
+      o = {}
+      for k in options.onlyOptions
+        if k of @defaults
+          o[k] = null
+        else
+          throw "Invalid onlyOptions value '#{k}'"
 
-      if options.onlyOptions?
-        o = {}
-        for k in options.onlyOptions
-          if k of @defaults
-            o[k] = null
-          else
-            throw "Invalid onlyOptions value '#{k}'"
-
-        for k, __ of @defaults
-          delete @attributes[k] if k not of o
+      for k, __ of @defaults
+        delete @attributes[k] if k not of o
 
       @supportedLanguages = options.supportedLanguages
+      @documentSet = options.documentSet
       @set('lang', options.defaultLanguageCode) if @attributes.lang?

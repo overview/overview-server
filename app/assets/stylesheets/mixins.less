@@ -135,3 +135,37 @@
   -webkit-flex-wrap: @value;
   flex-wrap: @value;
 }
+
+.metadata-json() {
+  .form-group {
+    position: relative;
+  }
+
+  label {
+    padding-right: 0; // not the grid gutter that comes by default
+    line-height: @line-height-small; // XXX nix when Bootstrap fixes https://github.com/twbs/bootstrap/issues/16824
+    vertical-align: bottom;
+    border-top: 1px solid transparent; // No idea why! The label text is too high otherwise, even though the boxes line up properly. Chrome 44.0.2403.81 (beta)
+  }
+
+  button.delete {
+    position: absolute;
+    top: 0;
+    right: @grid-gutter-width / 2;
+    border: 1px solid transparent; // mimic the input
+    padding: @padding-small-vertical @padding-small-horizontal;
+    background: transparent;
+    color: @brand-danger;
+  }
+}
+
+.add-metadata-field() {
+  font-size: @font-size-small;
+
+  &.expanded .expand { display: none; }
+  &:not(.expanded) .details { display: none; }
+
+  .details {
+    text-align: center;
+  }
+}

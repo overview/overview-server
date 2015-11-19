@@ -2,7 +2,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   DialogTemplate = _.template("""
-    <form class="import-options modal fade" method="get" action="">
+    <div class="import-options modal fade" method="get" action="">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -11,12 +11,12 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
           </div>
           <div class="modal-body"></div>
           <div class="modal-footer">
-            <button class="btn btn-default" type="reset"><%- t('dialog.cancel') %></button>
-            <button class="btn btn-primary" type="submit"><%- t('dialog.submit') %></button>
+            <button form="import-options-form" class="btn btn-default" type="reset"><%- t('dialog.cancel') %></button>
+            <button form="import-options-form" class="btn btn-primary" type="submit"><%- t('dialog.submit') %></button>
           </div>
         </div>
       </div>
-    </form>
+    </div>
   """)
 
   # Produces document-set import options, either inline in a form or
@@ -40,7 +40,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
   # ======
   #
   # If you want to add document-set import options to an existing form, simply
-  # append the `.el` value, which is an HTML fieldset element.
+  # append the `.fieldsetEl` value, which is an HTML fieldset element.
   #
   # Dialog
   # ======
@@ -67,7 +67,6 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
   # Optional:
   #
   # * `onlyOptions`: An Array of options to include, such as `split_documents`.
-  # * `excludeOptions`: An Array of options to exclude, such as `split_documents`.
   # * `tagListUrl`: a URL that returns JSON { tags: [ { ... } ] }, used for `tag_id` option
   class App
     constructor: (@options) ->
@@ -79,6 +78,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
         model: @model
         tagListUrl: @options.tagListUrl
       @el = @view.el
+      @fieldsetEl = @view.$('fieldset')[0]
 
     # Creates a dialog, populating it with the app
     @_showDialog: (app) ->
@@ -88,8 +88,9 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
 
       focus = -> $dialog.find(':input:visible:eq(0)').focus()
 
+      $dialog.find('form.import-options').on('reset', -> $dialog.modal('hide'))
+
       $dialog
-        .on('reset', -> $dialog.modal('hide'))
         .on('hidden.bs.modal', -> $dialog.remove())
         .appendTo('body')
         .modal()
@@ -121,7 +122,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
 
       $dialog = @_showDialog(app)
 
-      $dialog.validate
+      $dialog.find('form.import-options').validate
         submitHandler: (form) ->
           # Fix integration tests: Firefox in background does not emit onChange
           # https://code.google.com/p/selenium/issues/detail?id=157#c44

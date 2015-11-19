@@ -48,7 +48,6 @@ define [
         'views.DocumentSet._massUploadForm.explanation': 'explanation'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
 
-
       @sandbox.spy(UploadCollectionView.prototype, 'render')
 
       model = new Backbone.Model
@@ -59,6 +58,7 @@ define [
         model: model
         uploadCollectionViewClass: UploadCollectionView
         supportedLanguages: [ {code: "en", name: "English"} ]
+        documentSet: 'a-document-set'
         defaultLanguageCode: 'en'
       $.extend model,
         addFiles: sinon.spy()
@@ -124,9 +124,10 @@ define [
             view.$('.choose-options').click()
             expect(ImportOptionsApp.addHiddenInputsThroughDialog).to.have.been.calledWith(
               sinon.match.has('childNodes'),
-              onlyOptions: [ 'name', 'lang', 'split_documents' ]
+              onlyOptions: [ 'name', 'lang', 'split_documents', 'metadata_json' ]
               supportedLanguages: sinon.match.array
               defaultLanguageCode: 'en'
+              documentSet: 'a-document-set'
               callback: sinon.match.func
             )
 

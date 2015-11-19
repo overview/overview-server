@@ -25,6 +25,7 @@ define [
         supportedLanguages: options.supportedLanguages
         defaultLanguageCode: options.defaultLanguageCode
         onlyOptions: options.onlyOptions
+        documentSet: options.documentSet
 
       view.render()
 

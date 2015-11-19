@@ -27,6 +27,16 @@ define [
         'views.DocumentSet.index.ImportOptions.tag.loading': 'tag.loading'
         'views.DocumentSet.index.ImportOptions.tag.error': 'tag.error'
         'views.DocumentSet.index.ImportOptions.tag.allDocuments': 'tag.allDocuments'
+        'views.DocumentSet.show.DocumentMetadata.App.title': 'metadata.title'
+        'views.DocumentSet.show.DocumentMetadata.App.loading': 'metadata.loading'
+        'views.DocumentSet.show.DocumentMetadata.JsonView.help_html': 'metadata.help_html'
+        'views.DocumentSet.show.DocumentMetadata.AddFieldView.expand': 'metadata.expand'
+        'views.DocumentSet.show.DocumentMetadata.AddFieldView.label': 'metadata.label'
+        'views.DocumentSet.show.DocumentMetadata.AddFieldView.placeholder': 'metadata.placeholder'
+        'views.DocumentSet.show.DocumentMetadata.AddFieldView.submit': 'metadata.submit'
+        'views.DocumentSet.show.DocumentMetadata.AddFieldView.reset': 'metadata.reset'
+        'views.DocumentSet.show.DocumentMetadata.JsonView.delete': 'metadata.delete'
+        'views.DocumentSet.show.DocumentMetadata.JsonView.confirmDelete': 'metadata.confirmDelete'
 
     afterEach ->
       @sandbox.restore()
@@ -45,6 +55,7 @@ define [
         expect(view.$('[name=name]').length).to.eq(0)
         expect(view.$('[name=tree_title]').length).to.eq(0)
         expect(view.$('[name=tag_id]').length).to.eq(0)
+        expect(view.$('[name=metadata_json]').length).to.eq(0)
 
     describe 'with all options', ->
       beforeEach ->
@@ -56,6 +67,8 @@ define [
           supplied_stop_words: ''
           important_words: ''
           tag_id: ''
+          metadata_json: '{}'
+        model.documentSet = new Backbone.Model(id: 1, metadataFields: [ 'metadataFoo' ])
         model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         view = new OptionsView
           model: model
@@ -119,3 +132,6 @@ define [
         $input = view.$('select[name=tag_id]')
         expect($input.length).to.eq(1)
         expect($input.val()).to.eq('')
+
+      it 'should edit existing DocumentSet metadata', ->
+        expect(view.$('[name=metadataFoo]')).to.exist

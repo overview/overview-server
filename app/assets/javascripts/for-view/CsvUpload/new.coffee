@@ -25,7 +25,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
       onlyOptions: [ 'lang' ]
       supportedLanguages: window.supportedLanguages
       defaultLanguageCode: window.defaultLanguageCode
-    $form.find('.ok').prepend(importOptionsApp.el)
+    $form.find('.ok').prepend(importOptionsApp.fieldsetEl)
     given_url = $form.attr('action')
     url_prefix = given_url.split(/\//)[0..-2].join('/') + '/'
 
@@ -278,7 +278,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
           $(window).off('beforeunload.document-set-index-upload')
           $submitForm = $('<form method="post" style="display:none;"><input type="submit" value="submit"/></form>')
             .attr('action', "#{upload.url}/finish")
-            .append(importOptionsApp.el)
+            .append(importOptionsApp.fieldsetEl)
             .append($form.find('[name=csrfToken]').clone())
             .appendTo('body')
           $submitForm[0].submit()

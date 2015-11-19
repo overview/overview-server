@@ -7,6 +7,7 @@ import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
 import com.overviewdocs.messages.DocumentSetCommands
+import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{DocumentSet,GroupedFileUpload}
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
@@ -118,7 +119,13 @@ trait MassUploadController extends Controller {
           case None => Future.successful(NotFound)
           case Some(fileGroupId) => {
             for {
-              documentSet <- documentSetBackend.create(DocumentSet.CreateAttributes(name), request.user.email)
+              documentSet <- documentSetBackend.create(
+                DocumentSet.CreateAttributes(
+                  name,
+                  metadataSchema=MetadataSchema.inferFromMetadataJson(metadataJson)
+                ),
+                request.user.email
+              )
               fileGroup <- fileGroupBackend.addToDocumentSet(
                 fileGroupId,
                 documentSet.id,

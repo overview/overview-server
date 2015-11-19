@@ -5,6 +5,10 @@ define [
 ], (_, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.DocumentMetadata.AddFieldView')
 
+  # A form for creating a new metadata field.
+  #
+  # On submit, the form resets and adds the desired field to the model (if it's
+  # not a duplicate).
   class AddFieldView extends Backbone.View
     tagName: 'form'
     className: 'add-metadata-field'
@@ -26,14 +30,14 @@ define [
       'reset': '_onReset'
 
     initialize: (options) ->
-      throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet
-
-      @documentSet = options.documentSet
+      throw 'Must pass model, a Backbone.Model with a `fields` attribute' if !@model?
 
       @render()
 
     render: ->
       @$el.html(@template(t: t))
+      @$input = @$('input')
+      @
 
     _collapse: ->
       @$('input').val('')
@@ -41,8 +45,9 @@ define [
 
     _onClickExpand: (e) ->
       e.preventDefault()
+      e.stopPropagation() # Prevent redirect confirmation when in MassUpload dialog
       @$el.toggleClass('expanded')
-      @$('input')[0].focus() if @$el.hasClass('expanded')
+      @$input[0].focus() if @$el.hasClass('expanded')
 
     _onKeydown: (e) ->
       if e.which == 27 # Escape
@@ -50,18 +55,18 @@ define [
         e.preventDefault()
         @_collapse()
 
-    _onReset: (e) -> @_collapse()
+    _onReset: (e) ->
+      @$input.val('')
+      @_collapse()
 
     _onSubmit: (e) ->
       e.preventDefault()
 
-      fields = @documentSet.get('metadataFields').slice(0)
+      name = @$input.val().trim()
 
-      $input = @$('input')
-
-      name = $input.val().trim()
-      if name && name not in fields
+      if name && name not in @model.get('fields')
+        fields = @model.get('fields').slice(0)
         fields.push(name)
-        @documentSet.patchMetadataFields(fields)
+        @model.set(fields: fields)
 
       @_collapse()

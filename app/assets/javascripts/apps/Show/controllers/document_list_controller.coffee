@@ -121,7 +121,7 @@ define [
         selection: @listSelection
         documentList: @state.get('documentList')
         documentDisplayApp: DocumentDisplayApp
-        documentMetadataApp: new DocumentMetadataApp(documentSet: @documentSet)
+        documentMetadataApp: DocumentMetadataApp.forDocumentSet(@documentSet)
         tags: @tags
         el: @cursorEl
 

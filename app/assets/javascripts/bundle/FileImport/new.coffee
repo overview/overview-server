@@ -38,6 +38,7 @@ requirejs.config
     'mass-upload': 'vendor/mass-upload'
     md5: 'vendor/md5'
     sha1: 'vendor/git-sha1'
+    tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
 
 require [

@@ -7,6 +7,8 @@ define [
 
   DefaultValue = ''
 
+  # Displays the model's `json` and lets the user edit it. Lists the model's
+  # `fields` and lets the user remove them.
   class JsonView extends Backbone.View
     tagName: 'form'
     className: 'metadata-json form-horizontal'
@@ -34,13 +36,10 @@ define [
       ''')
 
     initialize: (options) ->
-      throw 'Must specify options.documentSet, a Backbone.Model with metadataFields' if !options.documentSet
-      throw 'Must specify options.document, a Backbone.Model with metadata' if !options.document
+      throw 'Must specify model, a Backbone.Model with `fields` and `json` attributes' if !@model
 
-      @documentSet = options.documentSet
-      @document = options.document
+      @listenTo(@model, 'change:fields', @render)
 
-      @listenTo(@documentSet, 'change:metadataFields', @render)
       @render()
 
     render: ->
@@ -48,17 +47,17 @@ define [
       # user's stuff during render
       alreadyRendered = {} # Hash of fieldName => HTMLEntity
       children = @$el.children().toArray()
-      for fieldName, i in (@_renderedMetadataFields ? [])
+      for fieldName, i in (@_renderedFields ? [])
         alreadyRendered[fieldName] = children[i]
 
-      @_renderedMetadataFields = @documentSet.get('metadataFields')
-      metadata = @document.get('metadata') ? {}
-      els = @_renderedMetadataFields
+      @_renderedFields = @model.get('fields')
+      json = @model.get('json') ? {}
+      els = @_renderedFields
         .map (f) =>
           if f of alreadyRendered
             alreadyRendered[f]
           else
-            $(@templates.row({ fieldName: f, t: t, value: metadata[f] ? DefaultValue }))[0]
+            $(@templates.row({ fieldName: f, t: t, value: json[f] ? DefaultValue }))[0]
 
       if els.length
         @$el.empty().append(els)
@@ -91,15 +90,15 @@ define [
       confirm = e.currentTarget.getAttribute('data-confirm')
       if window.confirm(confirm)
         fieldName = e.currentTarget.getAttribute('data-field-name')
-        newFields = @documentSet.get('metadataFields').filter((n) -> n != fieldName)
-        @documentSet.patchMetadataFields(newFields)
+        fields = @model.get('fields').filter((n) -> n != fieldName)
+        @model.set(fields: fields)
       e.preventDefault()
 
-    # Sends a PATCH for this document's "metadata"
+    # Updates the model's `json` with the form values
     _saveChanges: ->
-      metadata = {}
+      json = {}
       for input in @$('input')
         $input = $(input)
-        metadata[$input.attr('name')] = $input.val()
+        json[$input.attr('name')] = $input.val()
 
-      @document.save({ metadata: metadata }, patch: true)
+      @model.set(json: json)

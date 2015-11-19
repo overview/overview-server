@@ -54,11 +54,11 @@ define [
     # `.save({ metadataFields: [ 'foo' ] }, patch: true)`. But in this case,
     # `metadataFields` is a derived value: we need to send the server a
     # `metadataSchema` JSON.
-    patchMetadataFields: (fields) ->
+    patchMetadataFields: (fields, options={}) ->
       return if _.isEqual(fields, @get('metadataFields'))
 
       schema =
         version: 1
         fields: fields.map((name) -> name: name, type: 'String')
       @set(metadataFields: fields)
-      @sync('patch', @, attrs: { metadataSchema: schema })
+      @sync('patch', @, _.extend(attrs: { metadataSchema: schema }, options))
