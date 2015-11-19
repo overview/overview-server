@@ -19,6 +19,15 @@ module.exports = importFiles = (browser) ->
     debug('open()')
     browser
       .get('/imports/file')
+      .shortcuts.importFiles.waitUntilImportPageLoaded()
+
+  # Waits for the import page to finish loading.
+  #
+  # Assumes you have navigated to the import page.
+  waitUntilImportPageLoaded: ->
+    debug_('scheduling waitUntilImportPageLoaded()')
+    debug('waitUntilImportPageLoaded()')
+    browser
       .shortcuts.jquery.waitUntilReady()
       .waitUntilBlockReturnsTrue 'app is initialized and file input is clickable', 'fast', ->
         $('.invisible-file-input')
