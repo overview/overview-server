@@ -1,33 +1,30 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
-import java.util.Date
+import java.time.Instant
 import play.api.libs.json.JsObject
 
 import com.overviewdocs.models.{Document,DocumentDisplayMethod}
 
-case class DocumentWithoutIds(
-  val url: Option[String],
-  val suppliedId: String,
-  val title: String,
+/** Something we'll pass to WriteDocuments. */
+case class IncompleteDocument(
+  val filename: String,
   val pageNumber: Option[Int],
-  val keywords: Seq[String],
-  val createdAt: Date,
   val fileId: Option[Long],
   val pageId: Option[Long],
   val displayMethod: DocumentDisplayMethod.Value,
   val isFromOcr: Boolean,
-  val metadataJson: JsObject,
-  val text: String
+  val text: String,
+  val createdAt: Instant
 ) {
-  def toDocument(documentSetId: Long, id: Long): Document = Document(
+  def toDocument(documentSetId: Long, id: Long, metadataJson: JsObject): Document = Document(
     id=id,
     documentSetId=documentSetId,
-    url=url,
-    suppliedId=suppliedId,
-    title=title,
+    url=None,
+    suppliedId=filename,
+    title=filename,
     pageNumber=pageNumber,
-    keywords=keywords,
-    createdAt=createdAt,
+    keywords=Seq(),
+    createdAt=new java.util.Date(createdAt.toEpochMilli),
     fileId=fileId,
     pageId=pageId,
     displayMethod=displayMethod,

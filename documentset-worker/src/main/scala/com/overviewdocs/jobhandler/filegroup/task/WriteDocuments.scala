@@ -4,6 +4,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 import java.util.concurrent.TimeUnit
+import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.database.HasDatabase
@@ -14,7 +15,8 @@ import com.overviewdocs.util.BulkDocumentWriter
 /** Writes [[Document]]s to the database. */
 class WriteDocuments(
   val documentSetId: Long,
-  val documentsWithoutIds: Seq[DocumentWithoutIds],
+  val documentsWithoutIds: Seq[IncompleteDocument],
+  val metadataJson: JsObject,
   val documentIdSupplier: ActorRef
 )(implicit ec: ExecutionContext)
 extends HasDatabase {
@@ -23,8 +25,8 @@ extends HasDatabase {
     _ <- writeDocuments(documentsWithoutIds.zip(ids).map((makeDocument _).tupled))
   } yield ()
 
-  private def makeDocument(documentWithoutIds: DocumentWithoutIds, id: Long): Document = {
-    documentWithoutIds.toDocument(documentSetId, id)
+  private def makeDocument(documentWithoutIds: IncompleteDocument, id: Long): Document = {
+    documentWithoutIds.toDocument(documentSetId, id, metadataJson)
   }
 
   private def getIds: Future[Seq[Long]] = {
@@ -52,9 +54,10 @@ extends HasDatabase {
 object WriteDocuments {
   def apply(
     documentSetId: Long,
-    documentsWithoutIds: Seq[DocumentWithoutIds],
+    documentsWithoutIds: Seq[IncompleteDocument],
+    metadataJson: JsObject,
     documentIdSupplier: ActorRef
   )(implicit ec: ExecutionContext): Future[Unit] = {
-    new WriteDocuments(documentSetId, documentsWithoutIds, documentIdSupplier).execute
+    new WriteDocuments(documentSetId, documentsWithoutIds, metadataJson, documentIdSupplier).execute
   }
 }

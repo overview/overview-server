@@ -2,6 +2,7 @@ package com.overviewdocs.jobhandler.filegroup
 
 import akka.actor.ActorRef
 import java.time.Instant
+import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.database.{HasDatabase,TreeIdGenerator}
@@ -61,7 +62,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
           case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
           case Right(documentsWithoutIds) => {
             if (onProgress(0.9)) {
-              writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds)
+              writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds, fileGroup.metadataJson)
             } else {
               Future.successful(())
             }
@@ -100,7 +101,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     file: File,
     splitByPage: Boolean,
     onProgress: Double => Boolean
-  )(implicit ec: ExecutionContext): Future[Either[String,Seq[task.DocumentWithoutIds]]] = {
+  )(implicit ec: ExecutionContext): Future[Either[String,Seq[task.IncompleteDocument]]] = {
     logger.debug("Reading documents from {}", file)
     splitByPage match {
       case true => task.CreateDocumentDataForPages(file, onProgress)
@@ -110,10 +111,11 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
 
   private def writeDocuments(
     documentSetId: Long,
-    documentsWithoutIds: Seq[task.DocumentWithoutIds]
+    documentsWithoutIds: Seq[task.IncompleteDocument],
+    metadataJson: JsObject
   )(implicit ec: ExecutionContext): Future[Unit] = {
     logger.debug("Writing {} documents into DocumentSet {}", documentsWithoutIds.length, documentSetId)
-    task.WriteDocuments(documentSetId, documentsWithoutIds, documentIdSupplier)
+    task.WriteDocuments(documentSetId, documentsWithoutIds, metadataJson, documentIdSupplier)
   }
 
   private def writeDocumentProcessingError(

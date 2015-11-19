@@ -2,6 +2,7 @@ package com.overviewdocs.jobhandler.filegroup.task
 
 import java.io.ByteArrayInputStream
 import java.nio.file.{Files=>JFiles}
+import java.time.Instant
 import org.overviewproject.pdfocr.pdf.{PdfDocument,PdfPage}
 import play.api.libs.json.JsObject
 import scala.collection.mutable
@@ -22,7 +23,7 @@ class CreateDocumentDataForPages(
   private def onSplitProgress(pageNumber: Int, nPages: Int): Boolean = onProgress(0.5 * pageNumber / nPages)
   private def onWriteProgress(pageNumber: Int, nPages: Int): Boolean = onProgress(0.5 + 0.5 * pageNumber / nPages)
 
-  def execute: Future[Either[String,Seq[DocumentWithoutIds]]] = {
+  def execute: Future[Either[String,Seq[IncompleteDocument]]] = {
     BlobStorage.withBlobInTempFile(file.viewLocation) { file =>
       PdfSplitter.splitPdf(file.toPath, true, onSplitProgress)
     }
@@ -47,8 +48,8 @@ class CreateDocumentDataForPages(
     * it as possible. (These stranded Files can be deleted, recovering the
     * extra space.)
     */
-  private def writePagesAndBuildDocuments(pageInfos: Seq[PdfSplitter.PageInfo]): Future[Either[String,Seq[DocumentWithoutIds]]] = {
-    val ret = mutable.ArrayBuffer[DocumentWithoutIds]()
+  private def writePagesAndBuildDocuments(pageInfos: Seq[PdfSplitter.PageInfo]): Future[Either[String,Seq[IncompleteDocument]]] = {
+    val ret = mutable.ArrayBuffer[IncompleteDocument]()
     val it = pageInfos.iterator
 
     def step: Future[Boolean] = { // true if completed, false if user cancelled
@@ -58,8 +59,8 @@ class CreateDocumentDataForPages(
         if (!onWriteProgress(ret.length, pageInfos.length)) {
           Future.successful(false)
         } else {
-          writePageAndBuildDocument(it.next).flatMap { documentWithoutIds =>
-            ret.+=(documentWithoutIds)
+          writePageAndBuildDocument(it.next).flatMap { incompleteDocument =>
+            ret.+=(incompleteDocument)
             step
           }
         }
@@ -72,7 +73,7 @@ class CreateDocumentDataForPages(
     })
   }
 
-  private def writePageAndBuildDocument(pageInfo: PdfSplitter.PageInfo): Future[DocumentWithoutIds] = {
+  private def writePageAndBuildDocument(pageInfo: PdfSplitter.PageInfo): Future[IncompleteDocument] = {
     for {
       location <- BlobStorage.create(BlobBucketId.PageData, pageInfo.pdfPath.get)
       nBytes <- Future(blocking(JFiles.size(pageInfo.pdfPath.get)))
@@ -84,18 +85,14 @@ class CreateDocumentDataForPages(
         pageInfo.text,
         pageInfo.isFromOcr
       )))
-    } yield DocumentWithoutIds(
-      url=None,
-      suppliedId=file.name,
-      title=file.name,
+    } yield IncompleteDocument(
+      filename=file.name,
       pageNumber=Some(pageInfo.pageNumber),
-      keywords=Seq(),
-      createdAt=new java.util.Date(),
+      createdAt=Instant.now,
       fileId=Some(file.id),
       pageId=Some(pageId),
       displayMethod=DocumentDisplayMethod.page,
       isFromOcr=pageInfo.isFromOcr,
-      metadataJson=JsObject(Seq()),
       text=pageInfo.text
     )
   }
@@ -107,7 +104,7 @@ object CreateDocumentDataForPages {
   def apply(
     file: File,
     onProgress: Double => Boolean
-  )(implicit ec: ExecutionContext): Future[Either[String,Seq[DocumentWithoutIds]]] = {
+  )(implicit ec: ExecutionContext): Future[Either[String,Seq[IncompleteDocument]]] = {
     new CreateDocumentDataForPages(file, onProgress).execute
   }
 }
