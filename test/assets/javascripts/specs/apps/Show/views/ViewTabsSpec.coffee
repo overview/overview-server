@@ -205,14 +205,15 @@ define [
         expect(@view.$('li.view').length).to.eq(3)
         expect(@view.$('li:eq(1)')).to.have.attr('data-id': 'view-3')
 
-    describe 'starting with a View and a Job', ->
+    describe 'starting with a View and an incomplete Tree', ->
       beforeEach ->
-        @job = new View
-          type: 'job'
+        @tree = new View
+          type: 'tree'
           id: 1
-          longId: 'job-1'
+          longId: 'tree-1'
           title: 'foo'
-          progress: { fraction: 0.32, state: 'IN_PROGRESS', description: 'doing_x' }
+          progress: 0.32,
+          progressDescription: 'doing_x'
           creationData: [[ 'thing1', 'value1' ], [ 'thing2', 'value2' ]]
         @view = new View
           type: 'view'
@@ -225,7 +226,7 @@ define [
         @state = new State(view: @view)
         @state.nDocuments = 1234
 
-        @viewList = new ViewList([@job, @view])
+        @viewList = new ViewList([@tree, @view])
         @view = new ViewTabs(collection: @viewList, plugins: @plugins, state: @state)
         $('body').append(@view.el)
 
@@ -234,26 +235,26 @@ define [
         $('.popover').remove()
         @view?.off()
 
-      it 'should give the job class "job"', -> expect(@view.$('li:eq(0)')).to.have.class('job')
+      it 'should give the tree class "tree"', -> expect(@view.$('li:eq(0)')).to.have.class('tree')
       it 'should give the view class "view"', -> expect(@view.$('li:eq(1)')).to.have.class('view')
-      it 'should not show nDocuments for the job', -> expect($('li:eq(0) abbr.count')).not.to.exist
+      it 'should not show nDocuments for the tree', -> expect($('li:eq(0) abbr.count')).not.to.exist
 
-      it 'should emit click on a job', ->
+      it 'should emit click on a tree', ->
         spy = sinon.spy()
         @view.on('click', spy)
         @view.$('a:eq(0)').click()
-        expect(spy).to.have.been.calledWith(@job)
+        expect(spy).to.have.been.calledWith(@tree)
 
-      it 'should switch to viewing the job', ->
-        @state.set(view: @job)
+      it 'should switch to viewing the tree', ->
+        @state.set(view: @tree)
         expect(@view.$('li:eq(0)')).to.have.class('active')
 
-      it 'should give the job progress', ->
+      it 'should give the tree progress', ->
         $progress = @view.$('li:eq(0) progress')
         expect($progress.length).to.eq(1)
         expect($progress).to.have.attr(value: 0.32)
 
-      it 'should show a popover when clicking on the job', ->
+      it 'should show a popover when clicking on the tree', ->
         @view.$('li:eq(0) span.view-info-icon').click()
         $popover = @view.$('li:eq(0) .popover.in')
         expect($popover).to.be.visible
@@ -263,14 +264,16 @@ define [
         @view.$('li:eq(0) span.view-info-icon').click()
         expect(@view.$('.popover.in')).not.to.be.visible
 
-      it 'should have a cancel button in the job popover', ->
+      it 'should have a delete button in the tree popover', ->
         @view.$('li:eq(0) span.view-info-icon').click()
-        $button = @view.$('li:eq(0) .popover.in button.cancel')
+        $button = @view.$('li:eq(0) .popover.in button.delete')
         expect($button.length).to.eq(1)
         spy = sinon.spy()
-        @view.on('cancel', spy)
+        @view.on('delete-view', spy)
+        @sandbox.stub(window, 'confirm').returns(true)
         $button.click()
-        expect(spy).to.have.been.calledWith(@job)
+        expect(window.confirm).to.have.been.calledWith('view.delete.confirm')
+        expect(spy).to.have.been.calledWith(@tree)
 
       it 'should position the popover centered under the element', ->
         $li = @view.$('li:eq(0)')
@@ -301,17 +304,9 @@ define [
         expect($popover.find('.arrow').position().left).to.eq(89)
 
       it 'should update progress', ->
-        @job.set(progress: { fraction: 0.4, state: 'IN_PROGRESS', description: 'retrieving_documents:1141:4691' })
+        @tree.set(progress: 0.4)
         expect(@view.$('li:eq(0) progress')).to.have.attr('value', '0.4')
 
-      it 'should switch from job to view', ->
-        @job.set(type: 'view', createdAt: new Date())
-        $li = @view.$('li:eq(0)')
-        expect($li.find('a')).to.contain('foo')
-        expect($li).not.to.have.class('job')
-        expect($li).to.have.class('view')
-
-      it 'should keep "active" class when switching from job to view', ->
-        @state.set(view: @job)
-        @job.set(type: 'view', createdAt: new Date())
-        expect(@view.$('li:eq(0)')).to.have.class('active')
+      it 'should remove progress when it is 100%', ->
+        @tree.set(progress: 1.0)
+        expect(@view.$('li:eq(0) progress')).not.to.exist

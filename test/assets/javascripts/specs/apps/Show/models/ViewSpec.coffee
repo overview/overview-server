@@ -11,8 +11,8 @@ define [
     it 'should have a default type in its id', -> expect(new View(id: 3).id).not.to.eq('undefined-3')
 
     it 'should parse the rootNodeId', ->
-      view = new View({ id: 3, creationData: [ [ 'foo', 'bar' ], [ 'rootNodeId', '123456' ] ] }, parse: true)
-      expect(view.get('rootNodeId')).to.eq(123456)
+      view = new View({ id: 3, type: 'tree', rootNodeId: '123456', creationData: [[ 'foo', 'bar' ]] }, parse: true)
+      expect(view.get('rootNodeId')).to.eq('123456')
 
     it 'should scope a non-Node queryParams', ->
       view = new View(id: 3, rootNodeId: 123)

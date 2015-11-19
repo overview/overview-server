@@ -40,8 +40,8 @@ define [
               <span class="count"><%- t('nDocuments', view.nDocuments) %></span>
             <% } %>
             <span class="toggle-popover view-info-icon icon icon-info-circle"></span>
-            <% if (view.type == 'job' || view.type == 'error') { %>
-              <progress value="<%- view.progress.fraction %>"></progress>
+            <% if (view.type == 'tree' && view.progress != 1.0) { %>
+              <progress value="<%- view.progress %>"></progress>
             <% } %>
           </a>
 
@@ -102,9 +102,7 @@ define [
             <% }); %>
           <% } %>
         </dl>
-        <% if (view.type == 'view' || view.type == 'tree') { %>
-          <button type="button" class="delete btn btn-danger"><%- t('view.delete') %></button>
-        <% } %>
+        <button type="button" class="delete btn btn-danger"><%- t('view.delete') %></button>
         <a class="close close-bottom" href="#"><%- t('view.close.bottom') %></a>
         ''')
 
@@ -206,7 +204,12 @@ define [
       $li = @$("li:eq(#{index})")
 
       if model.hasChanged('progress')
-        $li.find('progress').attr('value', model.attributes.progress?.fraction || '')
+        progress = model.get('progress')
+        $progress = $li.find('progress')
+        if (progress == 1.0)
+          $progress.remove()
+        else
+          $progress.attr('value', progress)
 
       if model.hasChanged('type')
         html = @_modelToHtml(model)
@@ -267,12 +270,6 @@ define [
         when 'about:tree' then @trigger('click-new-tree')
         when 'about:custom' then @trigger('click-new-view')
         else @trigger('click-new-view', url: url, title: $('span.name', e.currentTarget).text())
-
-    _onClickCancel: (e) ->
-      e.preventDefault()
-      dataId = $(e.currentTarget).closest('[data-id]').attr('data-id')
-      job = @collection.get(dataId)
-      @trigger('cancel', job)
 
     _onClickDelete: (e) ->
       e.preventDefault()
