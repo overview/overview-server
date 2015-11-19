@@ -1,6 +1,7 @@
 package com.overviewdocs.models
 
 import java.time.Instant
+import play.api.libs.json.JsObject
 
 case class FileGroup(
   id: Long,
@@ -14,7 +15,8 @@ case class FileGroup(
   nBytes: Option[Long],
   nFilesProcessed: Option[Int],
   nBytesProcessed: Option[Long],
-  estimatedCompletionTime: Option[Instant]
+  estimatedCompletionTime: Option[Instant],
+  metadataJson: JsObject
 )
 
 object FileGroup {

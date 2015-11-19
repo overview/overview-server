@@ -1,5 +1,6 @@
 package controllers.backend
 
+import play.api.libs.json.JsObject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.FileGroup
@@ -15,7 +16,13 @@ trait FileGroupBackend extends Backend {
     *
     * Returns an error if the database write fails.
     */
-  def addToDocumentSet(id: Long, documentSetId: Long, lang: String, splitDocuments: Boolean): Future[Option[FileGroup]]
+  def addToDocumentSet(
+    id: Long,
+    documentSetId: Long,
+    lang: String,
+    splitDocuments: Boolean,
+    metadataJson: JsObject
+  ): Future[Option[FileGroup]]
 
   /** Finds or creates a FileGroup.
     *
@@ -71,7 +78,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
       .filter(_.deleted === false)
   }
 
-  lazy val inserter = (FileGroups.map(g => (g.userEmail, g.apiToken, g.deleted)) returning FileGroups)
+  lazy val inserter = (FileGroups.map(g => (g.userEmail, g.apiToken, g.metadataJson, g.deleted)) returning FileGroups)
 
   lazy val countsByIdCompiled = Compiled { (id: Rep[Long]) =>
     GroupedFileUploads
@@ -84,7 +91,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     FileGroups
       .filter(_.id === id)
       .filter(_.deleted === false)
-      .map { g => (g.addToDocumentSetId, g.lang, g.splitDocuments, g.nFiles, g.nBytes, g.nFilesProcessed, g.nBytesProcessed) }
+      .map { g => (g.addToDocumentSetId, g.lang, g.splitDocuments, g.nFiles, g.nBytes, g.nFilesProcessed, g.nBytesProcessed, g.metadataJson) }
   }
 
   lazy val updateDeletedByIdCompiled = Compiled { (id: Rep[Long]) =>
@@ -98,7 +105,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     database.run {
       incompleteByAttributesCompiled(attributes.userEmail, attributes.apiToken).result.headOption
         .flatMap(_ match {
-          case None => inserter.+=((attributes.userEmail, attributes.apiToken, false))
+          case None => inserter.+=((attributes.userEmail, attributes.apiToken, JsObject(Seq()), false))
           case Some(fileGroup) => DBIO.successful(fileGroup)
         })
     }
@@ -112,7 +119,13 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     database.option(incompleteByAttributesCompiled(userEmail, apiToken))
   }
 
-  override def addToDocumentSet(id: Long, documentSetId: Long, lang: String, splitDocuments: Boolean) = {
+  override def addToDocumentSet(
+    id: Long,
+    documentSetId: Long,
+    lang: String,
+    splitDocuments: Boolean,
+    metadataJson: JsObject
+  ) = {
     for {
       counts <- database.option(countsByIdCompiled(id))
       _ <- database.runUnit(addToDocumentSetByIdCompiled(id).update((
@@ -122,7 +135,8 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
         counts.map(_._1).orElse(Some(0)),
         counts.map(_._2).orElse(Some(0L)),
         Some(0),
-        Some(0L)
+        Some(0L),
+        metadataJson
       )))
       maybeFileGroup <- database.option(byIdCompiled(id))
     } yield maybeFileGroup

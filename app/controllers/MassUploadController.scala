@@ -112,14 +112,20 @@ trait MassUploadController extends Controller {
     MassUploadControllerForm.new_.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
-        val (name, lang, splitDocuments) = values
+        val (name, lang, splitDocuments, metadataJson) = values
 
         fileGroupBackend.find(request.user.email, None).map(_.map(_.id)).flatMap(_ match {
           case None => Future.successful(NotFound)
           case Some(fileGroupId) => {
             for {
               documentSet <- documentSetBackend.create(DocumentSet.CreateAttributes(name), request.user.email)
-              fileGroup <- fileGroupBackend.addToDocumentSet(fileGroupId, documentSet.id, lang, splitDocuments).map(_.get)
+              fileGroup <- fileGroupBackend.addToDocumentSet(
+                fileGroupId,
+                documentSet.id,
+                lang,
+                splitDocuments,
+                metadataJson
+              ).map(_.get)
             } yield {
               jobQueueSender.send(DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup))
               Redirect(routes.DocumentSetController.show(documentSet.id))
@@ -139,11 +145,19 @@ trait MassUploadController extends Controller {
     MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
+        val (lang, splitDocuments, metadataJson) = values
+
         fileGroupBackend.find(request.user.email, None).flatMap(_ match {
           case None => Future.successful(NotFound)
           case Some(fileGroup) => {
             for {
-              newFileGroup <- fileGroupBackend.addToDocumentSet(fileGroup.id, id, values._1, values._2).map(_.get)
+              newFileGroup <- fileGroupBackend.addToDocumentSet(
+                fileGroup.id,
+                id,
+                lang,
+                splitDocuments,
+                metadataJson
+              ).map(_.get)
             } yield {
               jobQueueSender.send(DocumentSetCommands.AddDocumentsFromFileGroup(newFileGroup))
               Redirect(routes.DocumentSetController.show(id))

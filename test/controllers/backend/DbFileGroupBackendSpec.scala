@@ -1,5 +1,7 @@
 package controllers.backend
 
+import play.api.libs.json.{JsObject,JsString}
+
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.FileGroups
 
@@ -180,15 +182,21 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
 
   "#addToDocumentSet" should {
     trait AddToDocumentSetScope extends BaseScope {
-      def addToDocumentSet(id: Long, documentSetId: Long, lang: String, splitDocuments: Boolean): Option[FileGroup] = {
-        await(backend.addToDocumentSet(id, documentSetId, lang, splitDocuments))
+      def addToDocumentSet(
+        id: Long,
+        documentSetId: Long,
+        lang: String,
+        splitDocuments: Boolean,
+        metadataJson: JsObject
+      ): Option[FileGroup] = {
+        await(backend.addToDocumentSet(id, documentSetId, lang, splitDocuments, metadataJson))
       }
     }
 
     "update a FileGroup" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true)
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq("foo" -> JsString("bar"))))
 
       val savedList = findFileGroups("user@example.org", None, true)
       savedList.length must beEqualTo(1)
@@ -198,12 +206,13 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
       saved.lang must beSome("fr")
       saved.splitDocuments must beSome(true)
       saved.estimatedCompletionTime must beNone
+      saved.metadataJson must beEqualTo(JsObject(Seq("foo" -> JsString("bar"))))
     }
 
     "return the FileGroup it updates in the database" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      val returned = addToDocumentSet(fileGroup.id, documentSet.id, "fr", true)
+      val returned = addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
       returned must beEqualTo(findFileGroups("user@example.org", None, true).headOption)
     }
 
@@ -212,7 +221,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       factory.groupedFileUpload(fileGroupId=fileGroup.id, size=1000L)
       factory.groupedFileUpload(fileGroupId=fileGroup.id, size=234L)
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true)
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
 
       val saved = findFileGroups("user@example.org", None, true).head
       saved.nFiles must beSome(2)
@@ -224,7 +233,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     "set nFiles=0 and nBytes=0" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true)
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
 
       val saved = findFileGroups("user@example.org", None, true).head
       saved.nFiles must beSome(0)
@@ -236,14 +245,14 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     "skip a missing FileGroup" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id + 1, documentSet.id, "fr", true)
+      addToDocumentSet(fileGroup.id + 1, documentSet.id, "fr", true, JsObject(Seq()))
       findFileGroups("user@example.org", None, false) must beEqualTo(Seq(fileGroup))
     }
 
     "skip a deleted FileGroup" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, deleted=true)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true)
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
       findFileGroups("user@example.org", None, false) must beEqualTo(Seq(fileGroup))
     }
   }

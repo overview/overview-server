@@ -3,7 +3,7 @@ package controllers.api
 import java.util.UUID
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.{Enumerator,Iteratee}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject,Json}
 import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -163,7 +163,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       )
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(factory.fileGroup(id=234L)))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any) returns Future.successful(Some(
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(
         factory.fileGroup(id=234L, addToDocumentSetId=Some(123L))
       ))
     }
@@ -174,7 +174,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
     "call addToDocumentSet" in new StartClusteringScope {
       status(result)
-      there was one(mockFileGroupBackend).addToDocumentSet(234L, documentSetId, "sv", false)
+      there was one(mockFileGroupBackend).addToDocumentSet(234L, documentSetId, "sv", false, JsObject(Seq()))
     }
 
     "send a message to the JobQueue" in new StartClusteringScope {
@@ -187,7 +187,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     "return NotFound if user has no FileGroup in progress" in new StartClusteringScope {
       mockFileGroupBackend.find(any, any) returns Future.successful(None)
       status(result) must beEqualTo(NOT_FOUND)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }

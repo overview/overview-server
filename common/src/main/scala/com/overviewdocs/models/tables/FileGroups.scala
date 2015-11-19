@@ -1,5 +1,6 @@
 package com.overviewdocs.models.tables
 
+import play.api.libs.json.JsObject
 import java.time.Instant
 
 import com.overviewdocs.database.Slick.api._
@@ -18,8 +19,23 @@ class FileGroupsImpl(tag: Tag) extends Table[FileGroup](tag, "file_group") {
   def nFilesProcessed = column[Option[Int]]("n_files_processed")
   def nBytesProcessed = column[Option[Long]]("n_bytes_processed")
   def estimatedCompletionTime = column[Option[Instant]]("estimated_completion_time")
+  def metadataJson = column[JsObject]("metadata_json_text") // assumes a certaian DocumentSet.metadataSchema
   
-  def * = (id, userEmail, apiToken, deleted, addToDocumentSetId, lang, splitDocuments, nFiles, nBytes, nFilesProcessed, nBytesProcessed, estimatedCompletionTime) <> ((FileGroup.apply _).tupled, FileGroup.unapply)
+  def * = (
+    id,
+    userEmail,
+    apiToken,
+    deleted,
+    addToDocumentSetId,
+    lang,
+    splitDocuments,
+    nFiles,
+    nBytes,
+    nFilesProcessed,
+    nBytesProcessed,
+    estimatedCompletionTime,
+    metadataJson
+  ) <> ((FileGroup.apply _).tupled, FileGroup.unapply)
 }
 
 object FileGroups extends TableQuery(new FileGroupsImpl(_))

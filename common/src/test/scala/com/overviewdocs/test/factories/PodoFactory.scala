@@ -155,7 +155,8 @@ object PodoFactory extends Factory {
     nBytes: Option[Long],
     nFilesProcessed: Option[Int],
     nBytesProcessed: Option[Long],
-    estimatedCompletionTime: Option[Instant]
+    estimatedCompletionTime: Option[Instant],
+    metadataJson: JsObject
   ) = FileGroup(
     getId(id),
     userEmail,
@@ -168,7 +169,8 @@ object PodoFactory extends Factory {
     nBytes,
     nFilesProcessed,
     nBytesProcessed,
-    estimatedCompletionTime
+    estimatedCompletionTime,
+    metadataJson
   )
 
   override def groupedFileUpload(

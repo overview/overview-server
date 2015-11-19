@@ -4,6 +4,7 @@ import java.util.UUID
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.{Enumerator,Iteratee}
+import play.api.libs.json.JsObject
 import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
@@ -130,7 +131,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val user = User(id=123L, email="start-user@example.org")
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
       mockDocumentSetBackend.create(any, any) returns Future.successful(documentSet)
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
@@ -153,7 +154,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "call addToDocumentSet" in new StartClusteringScope {
       h.status(result)
-      there was one(mockFileGroupBackend).addToDocumentSet(fileGroup.id, documentSet.id, "sv", false)
+      there was one(mockFileGroupBackend).addToDocumentSet(fileGroup.id, documentSet.id, "sv", false, JsObject(Seq()))
     }
 
     "send a message via the JobQueueSender" in new StartClusteringScope {
@@ -165,7 +166,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
       h.status(result) must beEqualTo(h.NOT_FOUND)
       there was no(mockDocumentSetBackend).create(any, any)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }
@@ -188,7 +189,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val user = User(id=123L, email="start-user@example.org")
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
       lazy val result = controller.startClusteringExistingDocumentSet(documentSet.id)(request)
@@ -200,7 +201,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
     "call addToDocumentSet" in new StartClusteringExistingDocumentSetScope {
       h.status(result)
-      there was one(mockFileGroupBackend).addToDocumentSet(fileGroup.id, documentSet.id, "sv", false)
+      there was one(mockFileGroupBackend).addToDocumentSet(fileGroup.id, documentSet.id, "sv", false, JsObject(Seq()))
     }
 
     "send a message via the JobQueueSender" in new StartClusteringExistingDocumentSetScope {
@@ -212,7 +213,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
       h.status(result) must beEqualTo(h.NOT_FOUND)
       there was no(mockDocumentSetBackend).create(any, any)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }

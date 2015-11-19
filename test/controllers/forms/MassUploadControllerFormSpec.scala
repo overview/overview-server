@@ -3,6 +3,7 @@ package controllers.forms
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.data.FormError
+import play.api.libs.json.Json
 
 class MassUploadControllerFormSpec extends Specification {
   "#new_" should {
@@ -13,8 +14,13 @@ class MassUploadControllerFormSpec extends Specification {
     }
 
     "return all the fields" in new NewScope {
-      val form = parse("name" -> "foo", "lang" -> "en", "split_documents" -> "true")
-      form.value must beSome("foo", "en", true)
+      val form = parse(
+        "name" -> "foo",
+        "lang" -> "en",
+        "split_documents" -> "true",
+        "metadata_json" -> "{ \"foo\": \"bar\" }"
+      )
+      form.value must beSome("foo", "en", true, Json.obj("foo" -> "bar"))
     }
 
     "fail on unsupported language" in new NewScope {
@@ -34,7 +40,7 @@ class MassUploadControllerFormSpec extends Specification {
 
     "set defaults" in new NewScope {
       val form = parse("name" -> "foo", "lang" -> "en")
-      form.value must beSome("foo", "en", false)
+      form.value must beSome("foo", "en", false, Json.obj())
     }
   }
 }

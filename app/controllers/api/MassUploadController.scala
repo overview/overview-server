@@ -108,13 +108,19 @@ trait MassUploadController extends ApiController {
       values => {
         val userEmail: String = request.apiToken.createdBy
         val documentSetId: Long = request.apiToken.documentSetId.get // FIXME type-unsafe .get. Change the URL.
-        val (lang, splitDocuments) = values
+        val (lang, splitDocuments, metadataJson) = values
 
         fileGroupBackend.find(userEmail, Some(request.apiToken.token)).map(_.map(_.id)).flatMap(_ match {
           case None => Future.successful(NotFound)
           case Some(fileGroupId) => {
             for {
-              fileGroup <- fileGroupBackend.addToDocumentSet(fileGroupId, documentSetId, lang, splitDocuments).map(_.get)
+              fileGroup <- fileGroupBackend.addToDocumentSet(
+                fileGroupId,
+                documentSetId,
+                lang,
+                splitDocuments,
+                metadataJson
+              ).map(_.get)
             } yield {
               jobQueueSender.send(DocumentSetCommands.AddDocumentsFromFileGroup(fileGroup))
               Created

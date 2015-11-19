@@ -91,7 +91,8 @@ trait Factory {
     nBytes: Option[Long] = None,
     nFilesProcessed: Option[Int] = None,
     nBytesProcessed: Option[Long] = None,
-    estimatedCompletionTime: Option[Instant] = None
+    estimatedCompletionTime: Option[Instant] = None,
+    metadataJson: JsObject = JsObject(Seq())
   ): FileGroup
 
   def groupedFileUpload(

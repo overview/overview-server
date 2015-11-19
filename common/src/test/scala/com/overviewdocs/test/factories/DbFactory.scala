@@ -130,7 +130,8 @@ object DbFactory extends Factory with HasBlockingDatabase {
     nBytes: Option[Long],
     nFilesProcessed: Option[Int],
     nBytesProcessed: Option[Long],
-    estimatedCompletionTime: Option[Instant]
+    estimatedCompletionTime: Option[Instant],
+    metadataJson: JsObject
   ) = run(q.insertFileGroup += podoFactory.fileGroup(
     id,
     userEmail,
@@ -143,7 +144,8 @@ object DbFactory extends Factory with HasBlockingDatabase {
     nBytes,
     nFilesProcessed,
     nBytesProcessed,
-    estimatedCompletionTime
+    estimatedCompletionTime,
+    metadataJson
   ))
 
   override def groupedFileUpload(
