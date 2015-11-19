@@ -12,7 +12,7 @@ define [
       @url = options.url
       @csrfToken = options.csrfToken
       @uniqueCheckUrlPrefix = options.uniqueCheckUrlPrefix
-      @blobHasher = BlobHasher
+      @blobHasher = new BlobHasher
 
       _.bindAll(@, 'doListFiles', 'doUploadFile', 'doDeleteFile', 'onUploadConflictingFile')
 
