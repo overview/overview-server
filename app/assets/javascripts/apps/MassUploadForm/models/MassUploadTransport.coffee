@@ -4,18 +4,25 @@ define [
   'util/BlobHasher'
   'util/net/upload'
 ], ($, _, BlobHasher, NetUpload) ->
-  (options) ->
-    url = options.url
-    csrfToken = options.csrfToken
-    blobHasher = new BlobHasher
+  class MassUploadTransport
+    constructor: (options) ->
+      throw 'Must set options.url, a String' if !options.url
+      throw 'Must set options.csrfToken, a String' if !options.csrfToken
+
+      @url = options.url
+      @csrfToken = options.csrfToken
+      @uniqueCheckUrlPrefix = options.uniqueCheckUrlPrefix
+      @blobHasher = BlobHasher
+
+      _.bindAll(@, 'doListFiles', 'doUploadFile', 'doDeleteFile', 'onUploadConflictingFile')
 
     # Calls callback(null, true) when the server already has this sha1
     # Calls callback(null, false) when the server does not
     # Calls callback(err) when there is an HTTP error (other than a 404)
-    sha1ForBlobExists = (blob, callback) ->
-      return callback(null, false) if !options.uniqueCheckUrlPrefix
+    sha1ForBlobExists: (blob, callback) ->
+      return callback(null, false) if !@uniqueCheckUrlPrefix
 
-      blobHasher.sha1 blob, (err, hashBuffer) ->
+      @blobHasher.sha1 blob, (err, hashBuffer) =>
         return callback(err) if err?
 
         hashArray = new Uint8Array(hashBuffer)
@@ -24,7 +31,7 @@ define [
 
         $.ajax
           type: 'HEAD'
-          url: "#{options.uniqueCheckUrlPrefix}/#{sha1}"
+          url: "#{@uniqueCheckUrlPrefix}/#{sha1}"
           success: -> callback(null, true)
           error: (jqxhr, textStatus, errorThrown) ->
             if jqxhr.status == 404
@@ -34,7 +41,7 @@ define [
               callback(new Error("HTTP uniqueness query failed."))
 
     doListFiles: (progress, done) ->
-      $.get(url)
+      $.get(@url)
         .progress (jQueryProgressEvent) ->
           progress(_.pick(jQueryProgressEvent, 'total', 'loaded'))
         .done (json) ->
@@ -59,7 +66,7 @@ define [
         aborted = true
         netUpload?.abort()
 
-      sha1ForBlobExists file, (err, exists) ->
+      @sha1ForBlobExists file, (err, exists) =>
         if aborted
           done(null)
         else if err?
@@ -68,7 +75,7 @@ define [
           upload.set(skippedBecauseAlreadyInDocumentSet: true)
           done(null)
         else
-          netUpload = new NetUpload(file, "#{url}/", {csrfToken: csrfToken})
+          netUpload = new NetUpload(file, "#{@url}/", {csrfToken: @csrfToken})
           netUpload
             .progress((e) -> progress(total: e.total, loaded: e.loaded))
             .done(-> done(null))
@@ -80,3 +87,5 @@ define [
     doDeleteFile: ->
 
     onUploadConflictingFile: ->
+
+  (options) -> new MassUploadTransport(options)

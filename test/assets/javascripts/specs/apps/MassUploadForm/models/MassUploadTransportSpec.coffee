@@ -102,42 +102,34 @@ define [
             url: '/files'
             csrfToken: 'a_token'
             uniqueCheckUrlPrefix: '/exists'
-          @abort = @transport.doUploadFile(@upload, @progressSpy, @doneSpy)
-          undefined
 
-        it 'checks the server for a matching sha1', (done) ->
-          setTimeout(=>
-            expect(@netUploadSpy).not.to.have.been.called
-            expect(@sandbox.server.requests).to.have.length(1)
-            expect(@sandbox.server.requests[0].url).to.eq('/exists/c7567e8b39e2428e38bf9c9226ac68de4c67dc39')
-            done()
-          , 1)
+        it 'checks the server for a matching sha1', ->
+          @sandbox.stub(@transport, 'sha1ForBlobExists')
+          @transport.doUploadFile(@upload, @progressSpy, @doneSpy)
+          expect(@netUploadSpy).not.to.have.been.called
+          expect(@transport.sha1ForBlobExists).to.have.been.calledWith(@file)
 
-        it 'uploads when the file passes the uniqueness check', (done) ->
-          setTimeout(=>
-            @sandbox.server.requests[0].respond(404, {}, 'file does not exist')
-            expect(@netUploadSpy).to.have.been.called
-            expect(@doneSpy).not.to.have.been.called
-            done()
-          , 1)
+        it 'uploads when the file passes the uniqueness check', ->
+          @sandbox.stub(@transport, 'sha1ForBlobExists').callsArgWith(1, null, false)
+          @transport.doUploadFile(@upload, @progressSpy, @doneSpy)
+          expect(@netUploadSpy).to.have.been.called
+          expect(@doneSpy).not.to.have.been.called
 
-        it 'succeeds without uploading when the server has the file already', (done) ->
-          setTimeout(=>
-            @sandbox.server.requests[0].respond(204, {}, 'file exists')
-            expect(@netUploadSpy).not.to.have.been.called
-            expect(@upload.get('skippedBecauseAlreadyInDocumentSet')).to.eq(true)
-            expect(@doneSpy).to.have.been.calledWith(null)
-            done()
-          , 1)
+        it 'succeeds without uploading when the server has the file already', ->
+          @sandbox.stub(@transport, 'sha1ForBlobExists').callsArgWith(1, null, true)
+          @transport.doUploadFile(@upload, @progressSpy, @doneSpy)
+          expect(@netUploadSpy).not.to.have.been.called
+          expect(@upload.get('skippedBecauseAlreadyInDocumentSet')).to.eq(true)
+          expect(@doneSpy).to.have.been.calledWith(null)
 
-        it 'skips uploading when aborting during existence check', (done) ->
-          @abort()
-          setTimeout(=>
-            @sandbox.server.requests[0].respond(404, {}, 'file does not exist')
-            expect(@netUploadSpy).not.to.have.been.called
-            expect(@doneSpy).to.have.been.calledWith(null)
-            done()
-          , 1)
+        it 'skips uploading when aborting during existence check', ->
+          callback = null
+          @transport.sha1ForBlobExists = (blob, cb) -> callback = cb
+          abort = @transport.doUploadFile(@upload, @progressSpy, @doneSpy)
+          abort()
+          callback(null, true)
+          expect(@netUploadSpy).not.to.have.been.called
+          expect(@doneSpy).to.have.been.calledWith(null)
 
     describe 'doDeleteFile', ->
       it 'exists, but does not do anything for now', ->
