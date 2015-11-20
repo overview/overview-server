@@ -1,4 +1,13 @@
-define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 'jquery.validate', 'bootstrap-modal' ], ($, _, Options, OptionsView, i18n) ->
+define [
+  'jquery'
+  'underscore'
+  './models/Options'
+  './views/Options'
+  'i18n'
+  'elements/button-with-form-attribute'
+  'jquery.validate'
+  'bootstrap-modal'
+], ($, _, Options, OptionsView, i18n) ->
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   DialogTemplate = _.template("""
