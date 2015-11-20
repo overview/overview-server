@@ -315,22 +315,12 @@ views.DocumentSet.index.no_document_sets=You have no document sets ready for vie
 views.DocumentSet.index.ImportOptions.dialog.cancel=Cancel
 views.DocumentSet.index.ImportOptions.dialog.submit=Import documents
 views.DocumentSet.index.ImportOptions.dialog.title=Import options
-views.DocumentSet.index.ImportOptions.important_words.help=Use these words to organize the documents. Case sensitive regular expressions, separated by spaces.
-views.DocumentSet.index.ImportOptions.important_words.label_html=Important words (optional) (<a href="https://blog.overviewdocs.com/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.lang.label=Language of documents
 views.DocumentSet.index.ImportOptions.name.label=Document set name
 views.DocumentSet.index.ImportOptions.split_documents.label_html=What counts as a document (<a href="https://blog.overviewdocs.com/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.split_documents.false=Each file is one document
 views.DocumentSet.index.ImportOptions.split_documents.true=Each page is one document
-views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate these words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.
-views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html=Words to ignore (optional) (<a href="https://blog.overviewdocs.com/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
-views.DocumentSet.index.ImportOptions.tag_id.label=Only include documents with tag
-views.DocumentSet.index.ImportOptions.tag.loading=Loading tags…
-views.DocumentSet.index.ImportOptions.tag.error=Error loading tags
-views.DocumentSet.index.ImportOptions.tag.allDocuments=All documents
-views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 documents|1#1 document|1<{1,number,integer} documents})
 views.DocumentSet.index.ImportOptions.title=Import options
-views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 
 views.DocumentSet.show.DocumentListParamsSelector.ObjectsOrDocumentSetView.all=%s all documents
 views.DocumentSet.show.DocumentListParamsSelector.ObjectsOrDocumentSetView.term=Searching

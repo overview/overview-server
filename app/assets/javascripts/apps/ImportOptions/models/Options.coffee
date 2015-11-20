@@ -2,12 +2,8 @@ define [ 'backbone' ], (Backbone) ->
   Backbone.Model.extend
     defaults:
       split_documents: false
-      supplied_stop_words: ''
-      important_words: ''
       lang: ''
       name: ''
-      tag_id: ''
-      tree_title: ''
       metadata_json: '{}'
 
     initialize: (attributes, options) ->

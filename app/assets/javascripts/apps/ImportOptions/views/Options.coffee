@@ -1,10 +1,9 @@
 define [
   'underscore'
   'backbone'
-  './TagIdInput'
   '../../DocumentMetadata/App'
   'i18n'
-], (_, Backbone, TagIdInput, DocumentMetadataApp, i18n) ->
+], (_, Backbone, DocumentMetadataApp, i18n) ->
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   # Presents an Options in a write-only manner.
@@ -16,29 +15,12 @@ define [
 
     events:
       'change [name=name]': '_onChangeName'
-      'change [name=tree_title]': '_onChangeTreeTitle'
       'change [name=split_documents]': '_onChangeSplitDocuments'
       'change [name=lang]': '_onChangeLang'
-      'change [name=supplied_stop_words]': '_onChangeSuppliedStopWords'
-      'change [name=important_words]': '_onChangeImportantWords'
 
     template: _.template("""
       <form id="import-options-form" class="import-options">
         <fieldset>
-          <% if ('tree_title' in options) { %>
-            <div class="form-group">
-              <label for="import-options-tree-title"><%- t('tree_title.label') %></label>
-              <input
-                id="import-options-tree-title"
-                name="tree_title"
-                class="form-control"
-                required="required"
-                type="text"
-                value="<%- options.tree_title %>"
-                />
-            </div>
-          <% } %>
-
           <% if ('name' in options) { %>
             <div class="form-group">
               <label for="import-options-name"><%- t('name.label') %></label>
@@ -50,14 +32,6 @@ define [
                 type="text"
                 value="<%- options.name %>"
                 />
-            </div>
-          <% } %>
-
-          <% if ('tag_id' in options) { %>
-            <div class="form-group">
-              <label for="import-options-tag-id"><%- t('tag_id.label') %></label>
-              <div class="tag-id">
-              </div>
             </div>
           <% } %>
 
@@ -92,32 +66,6 @@ define [
             </div>
           <% } %>
 
-          <% if ('supplied_stop_words' in options) { %>
-            <div class="form-group">
-              <label for="import-options-supplied-stop-words"><%= t('supplied_stop_words.label_html') %></label>
-              <textarea
-                id="import-options-supplied-stop-words"
-                name="supplied_stop_words"
-                class="form-control"
-                rows="3"
-                ><%- options.supplied_stop_words %></textarea>
-              <p class="help-block"><%- t('supplied_stop_words.help') %></p>
-            </div>
-          <% } %>
-
-          <% if ('important_words' in options) { %>
-            <div class="form-group">
-              <label for="import-options-important-words"><%= t('important_words.label_html') %></label>
-              <textarea
-                id="import-options-important-words"
-                name="important_words"
-                class="form-control"
-                rows="3"
-                ><%- options.important_words %></textarea>
-              <p class="help-block"><%- t('important_words.help') %></p>
-            </div>
-          <% } %>
-
           <% if ('metadata_json' in options) { %>
             <input type="hidden" name="metadata_json" value="<%- options.metadata_json %>"/>
           <% } %>
@@ -143,15 +91,6 @@ define [
         options: @model.attributes
       @$el.html(html)
 
-      $tagId = @$('.tag-id')
-      if $tagId.length
-        childView = new TagIdInput
-          model: @model
-          el: $tagId.get(0)
-          tagListUrl: @options.tagListUrl
-        @childViews.push(childView)
-        childView.render()
-
       if 'metadata_json' of @model.attributes
         childView = if @model.documentSet
           DocumentMetadataApp.forDocumentSet(@model.documentSet)
@@ -176,14 +115,5 @@ define [
     _onChangeLang: (e) ->
       @model.set('lang', Backbone.$(e.target).val())
 
-    _onChangeSuppliedStopWords: (e) ->
-      @model.set('supplied_stop_words', Backbone.$(e.target).val())
-
     _onChangeName: (e) ->
       @model.set('name', Backbone.$(e.target).val())
-
-    _onChangeTreeTitle: (e) ->
-      @model.set('tree_title', Backbone.$(e.target).val())
-
-    _onChangeImportantWords: (e) ->
-      @model.set('important_words', Backbone.$(e.target).val())

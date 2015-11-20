@@ -35,7 +35,7 @@ define [
       ctorOptions =
         supportedLanguages: [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         defaultLanguageCode: 'en'
-        onlyOptions: [ 'name', 'tree_title', 'tag_id', 'split_documents', 'lang', 'supplied_stop_words', 'important_words', 'metadata_json' ]
+        onlyOptions: [ 'name', 'split_documents', 'lang', 'metadata_json' ]
 
       beforeEach ->
         subject = new Options({}, ctorOptions)
@@ -46,23 +46,11 @@ define [
       describe 'name', ->
         it 'should begin empty', -> expect(subject.get('name')).to.eq('')
 
-      describe 'tree_title', ->
-        it 'should begin empty', -> expect(subject.get('tree_title')).to.eq('')
-
-      describe 'tag_id', ->
-        it 'should begin as the empty string', -> expect(subject.get('tag_id')).to.eq('')
-
       describe 'split_documents', ->
         it 'should begin false', -> expect(subject.get('split_documents')).to.be.false
 
       describe 'lang', ->
         it 'should begin as defaultLanguageCode', -> expect(subject.get('lang')).to.eq('en')
-
-      describe 'supplied_stop_words', ->
-        it 'should begin as empty string', -> expect(subject.get('supplied_stop_words')).to.eq('')
-
-      describe 'important_words', ->
-        it 'should begin as empty string', -> expect(subject.get('important_words')).to.eq('')
 
       describe 'metadata_json', ->
         it 'should begin as empty', -> expect(subject.get('metadata_json')).to.eq('{}')
