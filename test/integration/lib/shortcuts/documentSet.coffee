@@ -45,7 +45,7 @@ module.exports = (browser) ->
       browser.click(tag: 'option', contains: options.tag, wait: true) # wait because tags come in an AJAX response
 
     browser
-      .click(button: 'Import documents')
+      .click(button: 'Create Tree')
       .shortcuts.documentSet.waitUntilStable()
 
   # Renames a view
