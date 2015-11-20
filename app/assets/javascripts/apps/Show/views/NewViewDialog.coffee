@@ -105,9 +105,9 @@ define [
 
       @$el.modal('show')
       @$el.find('input:eq(0)').focus().select()
-      @$el.one 'shown.bs.modal', ->
+      @$el.one 'shown.bs.modal', =>
         @$el.find('input:eq(0)').focus().select()
-      @$el.on('hidden.bs.modal', @remove.bind(@))
+      @$el.on('hidden.bs.modal', => @remove())
 
     attrs: ->
       title: @$els.title.val()

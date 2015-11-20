@@ -4,9 +4,10 @@ define [
   'backbone'
   '../collections/Plugins'
   '../views/ViewTabs'
+  '../views/NewTreeDialog'
   '../views/NewViewDialog'
-  'apps/ImportOptions/app'
-], (_, $, Backbone, Plugins, ViewTabs, NewViewDialog, OptionsApp) ->
+  'i18n'
+], (_, $, Backbone, Plugins, ViewTabs, NewTreeDialog, NewViewDialog, i18n) ->
   class ViewsController
     _.extend(@::, Backbone.Events)
 
@@ -42,32 +43,20 @@ define [
       view.save(attrs)
 
     _onClickNewTree: ->
-      m = /\/documentsets\/([^\/]+)/.exec(document.location.pathname)
-      tagListUrl = "/documentsets/#{m[1]}/tags"
-      submitUrl = "/documentsets/#{m[1]}/trees"
-
-      $dialog = OptionsApp.createNewTreeDialog
+      dialog = new NewTreeDialog
         supportedLanguages: window.supportedLanguages
         defaultLanguageCode: window.defaultLanguageCode
-        onlyOptions: [ 'tree_title', 'tag_id', 'lang', 'supplied_stop_words', 'important_words' ]
-        tagListUrl: tagListUrl
-        url: submitUrl
-        csrfToken: window.csrfToken
-      $dialog.on 'submit', (e) =>
-        e.preventDefault()
-        data = $dialog.serializeArray()
-        $dialog.find('form').prop('disabled', true)
-        $dialog.find('[type=submit]').html('<i class="icon icon-spinner icon-spin"></i>')
-
-        @state.transactionQueue.ajax
-          type: 'post'
-          url: submitUrl
-          data: data
-          success: (tree) =>
-            $dialog.modal('hide')
-            console.log(tree)
-            @views.add([ tree ])
-            @views.pollUntilStable()
+        tags: @state.documentSet.tags
+        submit: (queryString) =>
+          data = "#{queryString}&#{window.csrfTokenQueryString}"
+          @state.transactionQueue.ajax
+            type: 'post'
+            url: "/documentsets/#{@state.documentSet.id}/trees"
+            data: data
+            success: (tree) =>
+              dialog.$el.modal('hide')
+              @views.add([ tree ])
+              @views.pollUntilStable()
 
     _onClickNewView: (options) ->
       addView = (attrs) =>

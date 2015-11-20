@@ -372,6 +372,19 @@ views.DocumentSet.show.ExportDialog.spreadsheet_help_html=Choose Excel formats i
 views.DocumentSet.show.ExportDialog.download=Download
 views.DocumentSet.show.ExportDialog.formats.ZipArchive=Zip archive
 
+views.DocumentSet.show.NewTreeDialog.important_words.help=Use these words to organize the documents. Case sensitive regular expressions, separated by spaces.
+views.DocumentSet.show.NewTreeDialog.important_words.label_html=Important words (optional) (<a href="https://blog.overviewdocs.com/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
+views.DocumentSet.show.NewTreeDialog.lang.label=Language of documents
+views.DocumentSet.show.NewTreeDialog.reset=Cancel
+views.DocumentSet.show.NewTreeDialog.submit=Create Tree
+views.DocumentSet.show.NewTreeDialog.supplied_stop_words.help=Separate these words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.
+views.DocumentSet.show.NewTreeDialog.supplied_stop_words.label_html=Words to ignore (optional) (<a href="https://blog.overviewdocs.com/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
+views.DocumentSet.show.NewTreeDialog.tag.allDocuments=All documents
+views.DocumentSet.show.NewTreeDialog.tag_id.label=Only include documents with tag
+views.DocumentSet.show.NewTreeDialog.tag.name=“{0}”
+views.DocumentSet.show.NewTreeDialog.title=New Tree
+views.DocumentSet.show.NewTreeDialog.tree_title.label=Name
+
 views.DocumentSet.show.NewViewDialog.title=New visualization
 views.DocumentSet.show.NewViewDialog.cancel=Cancel
 views.DocumentSet.show.NewViewDialog.submit=Create visualization

@@ -130,6 +130,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
 
           submit()
           $dialog.modal('hide')
+          false # Prevent HTML-default submit
 
       undefined
 
