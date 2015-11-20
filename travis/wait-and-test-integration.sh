@@ -8,5 +8,5 @@
 # runner to poll port 9000 and only run the shell script when the server is up,
 # but that would take more work.
 
-sleep 30
+sleep 75
 (cd "$(dirname "$0")/../test/integration" && npm run-script test-with-jenkins)
