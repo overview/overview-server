@@ -31,7 +31,7 @@ define [ 'jquery' ], ($) ->
     else
       formId = ev.currentTarget.getAttribute('form')
       method = ev.currentTarget.getAttribute('type')
-      if method not of [ 'submit', 'reset' ]
+      if method not in [ 'submit', 'reset' ]
         throw '<button> type must be "submit" or "reset"'
       $('#' + formId)[type]()
     undefined
