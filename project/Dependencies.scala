@@ -32,12 +32,7 @@ object Dependencies {
     val openCsv = "com.opencsv" % "opencsv" % "3.4"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4" // for Query
-    // pdfocr is a SNAPSHOT right now, and as such it doesn't deploy reliably.
-    // (Yes, we control pdfocr. But its dependency, pdfbox-2.0.0, is a SNAPSHOT
-    // too. RC1 has a bug that reliably crashes when scanning for fonts.)
-    // TODO release pdfocr and depend on a released version. Then delete all
-    // the jarfiles in documentset-worker/lib/
-    //val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.1-SNAPSHOT" // TODO release it, then use it
+    val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.1"
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.10.1"
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
     val playMailer = "com.typesafe.play" %% "play-mailer" % "3.0.1"
@@ -125,7 +120,7 @@ object Dependencies {
     deps.javaxMail,
     deps.logback,
     deps.mimeTypes,
-    //deps.pdfocr,
+    deps.pdfocr,
     deps.janino % "test" // See logback-test.xml
   )
 
