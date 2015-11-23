@@ -29,8 +29,8 @@ define [ 'jquery' ], ($) ->
     if browserSupportsFormAttribute()
       # Do nothing
     else
-      formId = e.currentTarget.getAttribute('form')
-      method = e.currentTarget.getAttribute('type')
+      formId = ev.currentTarget.getAttribute('form')
+      method = ev.currentTarget.getAttribute('type')
       if method not of [ 'submit', 'reset' ]
         throw '<button> type must be "submit" or "reset"'
       $('#' + formId)[type]()
