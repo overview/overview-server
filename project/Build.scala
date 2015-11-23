@@ -23,9 +23,7 @@ object ApplicationBuild extends Build {
 
   val ourResolvers = Seq(
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
-    // TODO see Dependencies.scala; make pdfocr not a snapshot, and delete these commented lines
-    //"Apache snapshot repository" at "https://repository.apache.org/content/groups/snapshots", // pdfocr
-    //"Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots", // pdfocr
+    "jbig2 repository" at "http://jbig2-imageio.googlecode.com/svn/maven-repository",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
     "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
   )
