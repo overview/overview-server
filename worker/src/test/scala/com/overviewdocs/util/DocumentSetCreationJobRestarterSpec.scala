@@ -32,7 +32,7 @@ class DocumentSetCreationJobRestarterSpec extends Specification with Mockito {
     val jobId = 1l
     val documentSetId = 10l
     val job = DocumentSetCreationJob(jobId, documentSetId, DocumentCloud, retryAttempts, "en", false,
-      Some("user"), Some("password"), None, None, InProgress, 0.5, "", true)
+      Some("user"), Some("password"), None, InProgress, 0.5, "", true)
 
     val jobRestarter = new TestDocumentSetCreationJobRestarter(job)      
     protected def retryAttempts = 0

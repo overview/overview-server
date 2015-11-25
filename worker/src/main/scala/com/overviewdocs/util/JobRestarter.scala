@@ -48,7 +48,6 @@ object JobRestarter extends HasBlockingDatabase {
 
   private def createRestarter(job: DocumentSetCreationJob): Option[JobRestarter] = job.jobType match {
     case DocumentCloud => Some(DocumentSetCreationJobRestarter(job, TransportIndexClient.singleton))
-    case CsvUpload     => Some(DocumentSetCreationJobRestarter(job, TransportIndexClient.singleton))
     case _             => None
   }
 

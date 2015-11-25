@@ -139,9 +139,8 @@ object JobHandler extends HasBlockingDatabase {
 
     def documentSetInfo(documentSet: Option[DocumentSet]): String = documentSet.map { ds =>
       val query = ds.query.map(q => s"Query: $q").getOrElse("")
-      val uploadId = ds.uploadedFileId.map(u => s"UploadId: $u").getOrElse("")
 
-      s"Creating DocumentSet: ${job.documentSetId} Title: ${ds.title} $query $uploadId Splitting: ${job.splitDocuments}".trim
+      s"Creating DocumentSet: ${job.documentSetId} Title: ${ds.title} $query Splitting: ${job.splitDocuments}".trim
     }.getOrElse(s"Creating DocumentSet: Could not load document set id: ${job.documentSetId}")
 
     logger.info(documentSetInfo(documentSet))

@@ -6,7 +6,6 @@
  */
 package com.overviewdocs.util
 
-import com.overviewdocs.csv.CsvImportDocumentProducer
 import com.overviewdocs.http.{Credentials, DocumentCloudDocumentProducer}
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobType}
 import com.overviewdocs.util.Progress.ProgressAbortFn
@@ -43,8 +42,6 @@ object DocumentProducerFactory {
         } yield Credentials(username, password)
 
         new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, progAbort)
-      case DocumentSetCreationJobType.CsvUpload =>
-        new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, MaxDocuments, progAbort)
     }
   }
 }
