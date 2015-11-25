@@ -133,7 +133,7 @@ object UploadController extends UploadController with HasDatabase {
       csvImport <- inserter.+=(CsvImport.CreateAttributes(
         documentSetId=documentSet.id,
         filename=uploadedFile.filename,
-        charset=uploadedFile.maybeCharset.getOrElse(StandardCharsets.UTF_8),
+        charsetName=uploadedFile.maybeCharset.map(_.name).getOrElse("utf-8"),
         lang=lang,
         loid=upload.contentsOid,
         nBytes=upload.totalSize

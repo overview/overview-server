@@ -1,6 +1,5 @@
 package com.overviewdocs.test.factories
 
-import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import java.time.Instant
@@ -39,7 +38,7 @@ trait Factory {
     id: Long = 0L,
     documentSetId: Long = 0L,
     filename: String = "import.csv",
-    charset: Charset = Charset.forName("utf-8"),
+    charsetName: String = "utf-8",
     lang: String = "en",
     loid: Long = 0L,
     nBytes: Long = 1L,

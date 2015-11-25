@@ -1,6 +1,5 @@
 package com.overviewdocs.test.factories
 
-import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.{Date,UUID}
@@ -67,7 +66,7 @@ object PodoFactory extends Factory {
     id: Long,
     documentSetId: Long,
     filename: String,
-    charset: Charset,
+    charsetName: String,
     lang: String,
     loid: Long,
     nBytes: Long,
@@ -80,7 +79,7 @@ object PodoFactory extends Factory {
     getId(id),
     getId(documentSetId),
     filename,
-    charset,
+    charsetName,
     lang,
     loid,
     nBytes,

@@ -1,6 +1,5 @@
 package com.overviewdocs.test.factories
 
-import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.{Date,UUID}
@@ -43,7 +42,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     id: Long,
     documentSetId: Long,
     filename: String,
-    charset: Charset,
+    charsetName: String,
     lang: String,
     loid: Long,
     nBytes: Long,
@@ -56,7 +55,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     id,
     documentSetId,
     filename,
-    charset,
+    charsetName,
     lang,
     loid,
     nBytes,

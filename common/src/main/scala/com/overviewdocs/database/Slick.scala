@@ -22,8 +22,6 @@ trait MyPostgresDriver extends PostgresDriver
     with NetImplicits
     with SimpleArrayPlainImplicits {
 
-    implicit val charsetType = MappedColumnType.base[Charset, String](_.name, Charset.forName)
-
     implicit val jsonTextColumnType = MappedColumnType.base[JsObject, String](
       Json.stringify,
       Json.parse(_).as[JsObject])

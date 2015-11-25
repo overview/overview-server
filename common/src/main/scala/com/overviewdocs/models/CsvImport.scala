@@ -7,7 +7,7 @@ case class CsvImport(
   id: Long,
   documentSetId: Long,
   filename: String,
-  charset: Charset,
+  charsetName: String, // Charset isn't serializable
   lang: String,
   loid: Long,
   nBytes: Long,
@@ -16,13 +16,15 @@ case class CsvImport(
   cancelled: Boolean,
   estimatedCompletionTime: Option[Instant],
   createdAt: Instant
-)
+) {
+  def charset: Charset = Charset.forName(charsetName)
+}
 
 object CsvImport {
   case class CreateAttributes(
     documentSetId: Long,
     filename: String,
-    charset: Charset,
+    charsetName: String,
     lang: String,
     loid: Long,
     nBytes: Long,

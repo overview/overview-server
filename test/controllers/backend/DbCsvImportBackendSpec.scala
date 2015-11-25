@@ -1,7 +1,5 @@
 package controllers.backend
 
-import java.nio.charset.Charset
-
 import com.overviewdocs.models.CsvImport
 import com.overviewdocs.models.tables.CsvImports
 
@@ -19,7 +17,7 @@ class DbCsvImportBackendSpec extends DbBackendSpecification {
       val csvImport: CsvImport = await(backend.create(CsvImport.CreateAttributes(
         documentSetId=documentSet.id,
         filename="filename.csv",
-        charset=Charset.forName("windows-1252"),
+        charsetName="windows-1252",
         lang="fr",
         loid=123L,
         nBytes=1000L
@@ -39,7 +37,7 @@ class DbCsvImportBackendSpec extends DbBackendSpecification {
       val csvImport: CsvImport = await(backend.create(CsvImport.CreateAttributes(
         documentSetId=documentSet.id,
         filename="filename.csv",
-        charset=Charset.forName("windows-1252"),
+        charsetName="windows-1252",
         lang="fr",
         loid=123L,
         nBytes=1000L
