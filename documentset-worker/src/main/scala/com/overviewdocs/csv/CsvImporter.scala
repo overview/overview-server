@@ -8,11 +8,18 @@ import scala.concurrent.Future
 import com.overviewdocs.database.{HasDatabase,LargeObject}
 import com.overviewdocs.models.{CsvImport,DocumentProcessingError}
 import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags}
+import com.overviewdocs.searchindex.{IndexClient,TransportIndexClient}
 import com.overviewdocs.util.SortedDocumentIdsRefresher
 
 /** Processes a CSV Import. */
 class CsvImporter(
   csvImport: CsvImport,
+
+  /** Search index client.
+    *
+    * We call addDocumentSet() on this when done.
+    */
+  indexClient: IndexClient = TransportIndexClient.singleton,
 
   /** Number of bytes to process at a time.
     *
@@ -73,6 +80,7 @@ class CsvImporter(
   /** Update document set counts and ensure it's searchable. */
   private def finish(error: Option[String]): Future[Unit] = {
     for {
+      _ <- indexClient.addDocumentSet(csvImport.documentSetId)
       _ <- updateDocumentSetCount
       _ <- SortedDocumentIdsRefresher.refreshDocumentSet(csvImport.documentSetId)
       _ <- deleteCsvImport(error)

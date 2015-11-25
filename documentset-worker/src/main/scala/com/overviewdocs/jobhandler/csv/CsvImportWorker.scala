@@ -12,10 +12,13 @@ class CsvImportWorker(broker: ActorRef) extends Actor {
   override def preStart = ready
 
   override def receive = {
-    case DocumentSetCommands.AddDocumentsFromCsvImport(csvImport) => {
-      val importer = new CsvImporter(csvImport)
+    case command: DocumentSetCommands.AddDocumentsFromCsvImport => {
+      val importer = new CsvImporter(command.csvImport)
       importer.run.onComplete {
-        case Success(()) => ready
+        case Success(()) => {
+          broker ! CsvImportWorkBroker.WorkerDone(command)
+          ready
+        }
         case Failure(ex) => self ! ex
       }
     }
