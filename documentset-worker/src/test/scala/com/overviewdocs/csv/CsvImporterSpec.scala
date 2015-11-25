@@ -5,7 +5,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 
 import com.overviewdocs.models.{CsvImport,Document,DocumentProcessingError}
-import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,Tags}
+import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,Tags,Trees}
 import com.overviewdocs.database.LargeObject
 import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.test.DbSpecification
@@ -125,6 +125,14 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     there was one(indexClient).addDocumentSet(documentSet.id)
   }
 
+  "create a Tree" in new BaseScope {
+    await(csvImporter(csvImport("text\n.".getBytes("utf-8")).copy(lang="fr")).run)
+
+    import database.api._
+    blockingDatabase.option(Trees).map(t => (t.documentSetId, t.lang))
+      .must(beSome((documentSet.id, "fr")))
+  }
+
   "update progress in the middle" in new BaseScope {
     val ci = csvImport("text\none potato\ntwo potato\nthree potato".getBytes("utf-8"))
     val importer = csvImporter(ci)
@@ -216,6 +224,11 @@ class CsvImporterSpec extends DbSpecification with Mockito {
   "call indexClient.addDocumentSet() on cancel" in new BaseScope {
     cancelAnImport
     there was one(indexClient).addDocumentSet(documentSet.id)
+  }
+
+  "create a Tree on cancel" in new BaseScope {
+    cancelAnImport
+    blockingDatabase.option(Trees) must beSome
   }
 
   "add a DocumentProcessingError when CSV is malformed" in new BaseScope {

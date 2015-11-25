@@ -5,9 +5,9 @@ import java.nio.charset.{CharsetDecoder,CoderResult,CodingErrorAction}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import com.overviewdocs.database.{HasDatabase,LargeObject}
-import com.overviewdocs.models.{CsvImport,DocumentProcessingError}
-import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags}
+import com.overviewdocs.database.{HasDatabase,LargeObject,TreeIdGenerator}
+import com.overviewdocs.models.{CsvImport,DocumentProcessingError,Tree}
+import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags,Trees}
 import com.overviewdocs.searchindex.{IndexClient,TransportIndexClient}
 import com.overviewdocs.util.SortedDocumentIdsRefresher
 
@@ -84,6 +84,7 @@ class CsvImporter(
       _ <- updateDocumentSetCount
       _ <- SortedDocumentIdsRefresher.refreshDocumentSet(csvImport.documentSetId)
       _ <- deleteCsvImport(error)
+      _ <- createTree
     } yield ()
   }
 
@@ -218,5 +219,17 @@ class CsvImporter(
       _ <- database.largeObjectManager.unlink(csvImport.loid)
       _ <- byId(csvImport.id).delete
     } yield ()).transactionally)
+  }
+
+  private def createTree: Future[Unit] = {
+    import database.api._
+
+    for {
+      treeId <- TreeIdGenerator.next(csvImport.documentSetId)
+      _ <- database.runUnit(Trees.+=(Tree.CreateAttributes(
+        documentSetId=csvImport.documentSetId,
+        lang=csvImport.lang
+      ).toTreeWithId(treeId)))
+    } yield ()
   }
 }
