@@ -15,23 +15,14 @@ trait DocumentSetDeleter extends HasDatabase {
     val indexFuture = indexClient.removeDocumentSet(documentSetId)
 
     database.run(for {
-      uploadedFileId <- findUploadedFileId(documentSetId)
       _ <- deleteViews(documentSetId)
       _ <- deleteUserAddedData(documentSetId)
       _ <- deleteTrees(documentSetId)
       _ <- deleteJobs(documentSetId)
+      _ <- deleteCsvImports(documentSetId)
       _ <- DBIO.from(indexFuture) // Ensure it's out of ElasticSearch before deleting DocumentSet, so restart resumes the index-delete
       _ <- deleteCore(documentSetId)
-      _ <- deleteUploadedFile(uploadedFileId)
     } yield ())
-  }
-
-  private def findUploadedFileId(documentSetId: Long): DBIO[Option[Long]] = {
-    DocumentSets
-      .filter(_.id === documentSetId)
-      .map(_.uploadedFileId)
-      .result.headOption // DBIO[Option[Option[Long]]]
-      .map(_.flatten)
   }
 
   private def deleteJobs(documentSetId: Long): DBIO[Unit] = {
@@ -39,6 +30,16 @@ trait DocumentSetDeleter extends HasDatabase {
       .filter(j => j.documentSetId === documentSetId || j.sourceDocumentSetId === documentSetId)
       .delete
     for { _ <- q } yield ()
+  }
+
+  private def deleteCsvImports(documentSetId: Long): DBIO[Unit] = {
+    val q = CsvImports.filter(_.documentSetId === documentSetId)
+
+    (for {
+      loids: Seq[Long] <- q.map(_.loid).result.map(_.flatten)
+      _ <- DBIO.seq(loids.map(database.largeObjectManager.unlink _): _*)
+      _ <- q.delete
+    } yield ()).transactionally
   }
 
   // The minimal set of components, common to all document sets
@@ -76,14 +77,6 @@ trait DocumentSetDeleter extends HasDatabase {
       delete2 AS (DELETE FROM node WHERE id IN (SELECT id FROM node_ids))
       DELETE FROM tree WHERE document_set_id = $documentSetId
     """
-  }
-  
-  private def deleteUploadedFile(maybeUploadedFileId: Option[Long]): DBIO[Unit] = {
-    val delete = maybeUploadedFileId match {
-      case None => DBIO.successful(0)
-      case Some(uploadedFileId) => UploadedFiles.filter(_.id === uploadedFileId).delete
-    }
-    delete.map(_ => ()) // delete returns an Int
   }
 
   // Decrement reference counts on Files

@@ -13,7 +13,6 @@ case class DocumentSet(
   documentCount: Int,
   documentProcessingErrorCount: Int,
   importOverflowCount: Int,
-  uploadedFileId: Option[Long],
   metadataSchema: MetadataSchema,
   deleted: Boolean
 )
@@ -28,7 +27,6 @@ object DocumentSet {
     documentCount: Int = 0,
     documentProcessingErrorCount: Int = 0,
     importOverflowCount: Int = 0,
-    uploadedFileId: Option[Long] = None,
     metadataSchema: MetadataSchema = MetadataSchema.empty,
     deleted: Boolean = false
   )

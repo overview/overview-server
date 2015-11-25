@@ -4,7 +4,6 @@ object DocumentSetCreationJobType extends Enumeration {
   type DocumentSetCreationJobType = Value
   
   val DocumentCloud = Value(1)
-  val CsvUpload = Value(2)
   val Clone = Value(3)
 }
 
@@ -27,7 +26,6 @@ case class DocumentSetCreationJob(
   splitDocuments: Boolean,
   documentcloudUsername: Option[String],
   documentcloudPassword: Option[String],
-  contentsOid: Option[Long],
   sourceDocumentSetId: Option[Long],
   state: DocumentSetCreationJobState.Value,
   fractionComplete: Double,
@@ -44,7 +42,6 @@ object DocumentSetCreationJob {
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
-    contentsOid: Option[Long],
     sourceDocumentSetId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,

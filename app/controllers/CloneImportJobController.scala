@@ -36,33 +36,19 @@ object CloneImportJobController extends CloneImportJobController with HasDatabas
 
   private def clone(originalDocumentSet: DocumentSet, userEmail: String): Future[DocumentSet] = {
     database.run(for {
-      maybeUploadedFileId <- maybeCloneUploadedFileId(originalDocumentSet.uploadedFileId)
-      documentSet <- DBIO.from(documentSetBackend.create(cloneAttributes(originalDocumentSet, maybeUploadedFileId), userEmail))
+      documentSet <- DBIO.from(documentSetBackend.create(cloneAttributes(originalDocumentSet), userEmail))
       _ <- JobInserter.+=(buildJob(documentSet, originalDocumentSet.id))
     } yield documentSet)
   }
 
-  private def maybeCloneUploadedFileId(maybeFileId: Option[Long]): DBIO[Option[Long]] = {
-    maybeFileId match {
-      case None => DBIO.successful(None)
-      case Some(originalUploadedFileId) => for {
-        originalUploadedFile <- UploadedFiles.filter(_.id === originalUploadedFileId).result.head
-        cloneFileId <- UploadedFileInserter.+=(originalUploadedFile.toCreateAttributes)
-      } yield Some(cloneFileId)
-    }
-  }
-
-  private def cloneAttributes(documentSet: DocumentSet, maybeUploadedFileId: Option[Long]) = {
-    DocumentSet.CreateAttributes(
-      title=documentSet.title,
-      query=documentSet.query,
-      documentCount=documentSet.documentCount,
-      documentProcessingErrorCount=documentSet.documentProcessingErrorCount,
-      importOverflowCount=documentSet.importOverflowCount,
-      uploadedFileId=maybeUploadedFileId,
-      metadataSchema=documentSet.metadataSchema
-    )
-  }
+  private def cloneAttributes(documentSet: DocumentSet) = DocumentSet.CreateAttributes(
+    title=documentSet.title,
+    query=documentSet.query,
+    documentCount=documentSet.documentCount,
+    documentProcessingErrorCount=documentSet.documentProcessingErrorCount,
+    importOverflowCount=documentSet.importOverflowCount,
+    metadataSchema=documentSet.metadataSchema
+  )
 
   private def buildJob(documentSet: DocumentSet, sourceDocumentSetId: Long) = DocumentSetCreationJob.CreateAttributes(
     documentSetId=documentSet.id,
@@ -72,7 +58,6 @@ object CloneImportJobController extends CloneImportJobController with HasDatabas
     splitDocuments=false,       // doesn't matter for clone
     documentcloudUsername=None, // doesn't matter for clone
     documentcloudPassword=None, // doesn't matter for clone
-    contentsOid=None,           // doesn't matter for clone
     sourceDocumentSetId=Some(sourceDocumentSetId),
     state=DocumentSetCreationJobState.NotStarted,
     fractionComplete=0,

@@ -1,6 +1,6 @@
 package com.overviewdocs.messages
 
-import com.overviewdocs.models.FileGroup
+import com.overviewdocs.models.{CsvImport,FileGroup}
 
 /** Background tasks that must be serialized on a document set.
   *
@@ -32,6 +32,15 @@ object DocumentSetCommands {
     override val documentSetId = fileGroup.addToDocumentSetId.get
   }
 
+  /** Parse what's left of a CsvImport, add the resulting Documents to the
+    * DocumentSet, and lo_unlink() the file.
+    *
+    * Stored as a CsvImport.
+    */
+  case class AddDocumentsFromCsvImport(csvImport: CsvImport) extends Command {
+    override val documentSetId = csvImport.documentSetId
+  }
+
   /** Delete a DocumentSet and all associated information.
     *
     * Stored in the database as document_set.deleted.
@@ -49,6 +58,11 @@ object DocumentSetCommands {
     * Stored in the database as document_set_creation_job.state = Cancelled
     */
   case class CancelJob(documentSetId: Long, jobId: Long) extends CancelCommand
+
+  /** Completes all computations surrounding an AddDocumentsFromCsvImport job
+    * as soon as possible and lo_unlink()s the data.
+    */
+  case class CancelAddDocumentsFromCsvImport(documentSetId: Long, csvImportId: Long) extends CancelCommand
 
   /** Completes all computations surrounding an AddDocumentsFromFileGroup job
     * as soon as possible, then deletes the AddDocumentsFromFileGroup.

@@ -39,6 +39,7 @@ class FileUploadIterateeSpec extends test.helpers.InAppSpecification with Mockit
       def save: DummyUpload = this
       def truncate: DummyUpload = { this.copy(bytesUploaded = 0, data = Array[Byte]()) }
       def delete {}
+      def underlying = ???
     }
 
     /**

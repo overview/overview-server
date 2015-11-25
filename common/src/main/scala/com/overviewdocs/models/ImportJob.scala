@@ -29,6 +29,26 @@ sealed trait ImportJob {
   val estimatedCompletionTime: Option[Instant]
 }
 
+case class CsvImportJob(csvImport: CsvImport) extends ImportJob {
+  override val documentSetId = csvImport.documentSetId
+
+  override val progress = {
+    if (csvImport.nBytes == 0) {
+      Some(1.0)
+    } else {
+      Some(csvImport.nBytesProcessed.toDouble / csvImport.nBytes)
+    }
+  }
+
+  override val description = progress match {
+    case Some(0.0) => Some(("models.CsvImportJob.starting", Seq()))
+    case Some(1.0) => Some(("models.CsvImportJob.cleaning", Seq()))
+    case _ => Some(("models.CsvImportJob.processing", Seq(csvImport.nBytesProcessed, csvImport.nBytes)))
+  }
+
+  override val estimatedCompletionTime = csvImport.estimatedCompletionTime
+}
+
 case class DocumentSetCreationJobImportJob(documentSetCreationJob: DocumentSetCreationJob) extends ImportJob {
   override val documentSetId = documentSetCreationJob.documentSetId
   override val progress = Some(documentSetCreationJob.fractionComplete)

@@ -52,11 +52,27 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
     }
 
-    "delete csv uploads" in new CsvUploadScope {
+    "delete csv imports" in new BasicDocumentSetScope {
+      val csvImport = factory.csvImport(documentSetId=documentSet.id)
       deleteDocumentSet
 
-      findDocumentSet(documentSet.id) must beEmpty
-      findUploadedFile must beEmpty
+      import database.api._
+      blockingDatabase.option(CsvImports.filter(_.id === csvImport.id)) must beNone
+    }
+
+    "delete large objects while clearing CsvImports" in new BasicDocumentSetScope {
+      import database.api._
+      val loid: Long = blockingDatabase.run(database.largeObjectManager.create.transactionally)
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, loid=Some(loid))
+
+      deleteDocumentSet
+
+      {
+        blockingDatabase.run((for {
+          lo <- database.largeObjectManager.open(loid, LargeObject.Mode.Read)
+          bytes <- lo.read(1)
+        } yield bytes).transactionally)
+      } must throwA[Exception]
     }
 
     "delete user added data" in new BasicDocumentSetScope {
@@ -77,12 +93,6 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
     "decrement reference count when uploaded files are split into pages" in new SplitFileUploadScope {
       deleteDocumentSet
 
-      fileReferenceCount must beSome(0)
-    }
-
-    "only decrement reference count to 0" in new InterruptedDeleteScope {
-      deleteDocumentSet
-      
       fileReferenceCount must beSome(0)
     }
     
@@ -163,23 +173,5 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       pages.map(p => factory.document(documentSetId = documentSet.id, fileId = Some(file.id),
         pageId = Some(p.id), pageNumber = Some(p.pageNumber)))
     }
-  }
-
-  trait CsvUploadScope extends BasicDocumentSetScope {
-
-    override def createDocumentSet = {
-      val uploadedFile = factory.uploadedFile(size = 100l)
-      factory.documentSet(uploadedFileId = Some(uploadedFile.id))
-    }
-
-    def findUploadedFile: Option[UploadedFile] = {
-      import database.api._
-      blockingDatabase.option(UploadedFiles)
-    }
-
-  }
-
-  trait InterruptedDeleteScope extends FileUploadScope {
-    override def refCount = 0
   }
 }

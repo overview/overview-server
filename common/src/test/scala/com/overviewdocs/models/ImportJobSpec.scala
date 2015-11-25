@@ -6,6 +6,45 @@ import org.specs2.mutable.Specification
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class ImportJobSpec extends Specification {
+  "CsvImportJob" should {
+    "give progress=0 at the beginning" in {
+      CsvImportJob(factory.csvImport(nBytes=2L, nBytesProcessed=0L)).progress must beSome(0.0)
+    }
+
+    "give progress=0.5 in the middle" in {
+      CsvImportJob(factory.csvImport(nBytes=2L, nBytesProcessed=1L)).progress must beSome(0.5)
+    }
+
+    "give progress=1.0 at the end" in {
+      CsvImportJob(factory.csvImport(nBytes=2L, nBytesProcessed=2L)).progress must beSome(1.0)
+    }
+
+    "give progress=1.0 on empty file" in {
+      CsvImportJob(factory.csvImport(nBytes=0L, nBytesProcessed=0L)).progress must beSome(1.0)
+    }
+
+    "give description of 'starting'" in {
+      CsvImportJob(factory.csvImport(nBytes=1L, nBytesProcessed=0L))
+        .description must beSome(("models.CsvImportJob.starting", Seq()))
+    }
+
+    "give description of 'processing'" in {
+      CsvImportJob(factory.csvImport(nBytes=2L, nBytesProcessed=1L))
+        .description must beSome(("models.CsvImportJob.processing", Seq(1L, 2L)))
+    }
+
+    "give description of 'cleaning' when progress=1.0" in {
+      CsvImportJob(factory.csvImport(nBytes=2L, nBytesProcessed=2L))
+        .description must beSome(("models.CsvImportJob.cleaning", Seq()))
+    }
+
+    "pass through CsvImport.estimatedCompletionTime" in {
+      val instant = Instant.now
+      CsvImportJob(factory.csvImport(estimatedCompletionTime=Some(instant)))
+        .estimatedCompletionTime must beSome(instant)
+    }
+  }
+
   "FileGroupImportJob" should {
     val baseFileGroup = factory.fileGroup(
       addToDocumentSetId=Some(1L),

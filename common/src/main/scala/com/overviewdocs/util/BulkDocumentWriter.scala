@@ -45,14 +45,26 @@ trait BulkDocumentWriter {
   /** Actual flush operation. */
   protected def flushImpl(documents: Iterable[Document]): Future[Unit]
 
-  private def needsFlush: Boolean = {
+  def needsFlush: Boolean = {
     currentBuffer.length >= maxNDocuments || currentNBytes >= maxNBytes
+  }
+
+  /** Adds a document; never flushes.
+    *
+    * The caller should call needsFlush after and flush if necessary.
+    */
+  def add(document: Document): Unit = synchronized {
+    currentBuffer.append(document)
+    currentNBytes += document.title.length + document.suppliedId.length + document.text.length + document.url.map(_.length).getOrElse(0)
   }
 
   /** Adds a document, and potentially flushes everything. */
   def addAndFlushIfNeeded(document: Document): Future[Unit] = synchronized {
-    currentBuffer.append(document)
-    currentNBytes += document.title.length + document.suppliedId.length + document.text.length + document.url.getOrElse("").length
+    add(document)
+    flushIfNeeded
+  }
+
+  private def flushIfNeeded: Future[Unit] = {
     if (needsFlush) {
       flush
     } else {
@@ -197,6 +209,10 @@ object BulkDocumentWriter extends HasDatabase {
 
   def forSearchIndex: BulkDocumentWriter = new BulkDocumentWriter {
     override def flushImpl(documents: Iterable[Document]) = flushDocumentsToSearchIndex(documents)
+  }
+
+  def forDatabase: BulkDocumentWriter = new BulkDocumentWriter {
+    override def flushImpl(documents: Iterable[Document]) = flushDocumentsToDatabase(database, documents)
   }
 
   private lazy val indexClient = TransportIndexClient.singleton

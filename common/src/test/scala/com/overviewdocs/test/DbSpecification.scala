@@ -93,7 +93,8 @@ class DbSpecification extends Specification {
       q22 AS (DELETE FROM plugin),
       q23 AS (DELETE FROM "session"),
       q24 AS (DELETE FROM "user"),
-      q25 AS (DELETE FROM document_set)
+      q25 AS (DELETE FROM csv_import),
+      q26 AS (DELETE FROM document_set)
       SELECT 1;
     """, connection)
   }

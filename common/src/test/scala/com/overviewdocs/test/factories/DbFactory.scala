@@ -1,5 +1,6 @@
 package com.overviewdocs.test.factories
 
+import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.{Date,UUID}
@@ -36,6 +37,34 @@ object DbFactory extends Factory with HasBlockingDatabase {
     createdBy,
     description,
     documentSetId
+  ))
+
+  override def csvImport(
+    id: Long,
+    documentSetId: Long,
+    filename: String,
+    charset: Charset,
+    lang: String,
+    loid: Option[Long],
+    nBytes: Long,
+    nBytesProcessed: Long,
+    nDocuments: Int,
+    cancelled: Boolean,
+    estimatedCompletionTime: Option[Instant],
+    createdAt: Instant
+  ) = run(q.insertCsvImport += podoFactory.csvImport(
+    id,
+    documentSetId,
+    filename,
+    charset,
+    lang,
+    loid,
+    nBytes,
+    nBytesProcessed,
+    nDocuments,
+    cancelled,
+    estimatedCompletionTime,
+    createdAt
   ))
 
   override def danglingNode(rootNodeId: Long) = run(q.insertDanglingNode += podoFactory.danglingNode(rootNodeId))
@@ -81,7 +110,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentCount: Int,
     documentProcessingErrorCount: Int,
     importOverflowCount: Int,
-    uploadedFileId: Option[Long],
     metadataSchema: MetadataSchema,
     deleted: Boolean
   ) = run(q.insertDocumentSet += podoFactory.documentSet(
@@ -93,7 +121,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentCount,
     documentProcessingErrorCount,
     importOverflowCount,
-    uploadedFileId,
     metadataSchema,
     deleted
   ))
@@ -359,7 +386,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
-    contentsOid: Option[Long],
     sourceDocumentSetId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
@@ -374,7 +400,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     splitDocuments,
     documentcloudUsername,
     documentcloudPassword,
-    contentsOid,
     sourceDocumentSetId,
     state,
     fractionComplete,
@@ -385,6 +410,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
   object q {
     // Compile queries once, instead of once per test
     val insertApiToken = (ApiTokens returning ApiTokens)
+    val insertCsvImport = (CsvImports returning CsvImports)
     val insertDanglingNode = (DanglingNodes returning DanglingNodes)
     val insertDocument = (Documents returning Documents)
     val insertDocumentSet = (DocumentSets returning DocumentSets)

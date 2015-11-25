@@ -24,6 +24,8 @@ trait OverviewUploadedFile {
   def withContentInfo(contentDisposition: String, contentType: String): OverviewUploadedFile
   def save: OverviewUploadedFile
   def delete
+
+  def underlying: UploadedFile
 }
 
 object OverviewUploadedFile extends HasBlockingDatabase {
@@ -79,5 +81,7 @@ object OverviewUploadedFile extends HasBlockingDatabase {
       val q = UploadedFiles.filter(_.id === id).delete
       blockingDatabase.run(q)
     }
+
+    override def underlying = uploadedFile
   }
 }

@@ -58,7 +58,6 @@ object DocumentCloudImportJobController extends DocumentCloudImportJobController
         splitDocuments=job.splitDocuments,
         documentcloudUsername=job.credentials.map(_.username),
         documentcloudPassword=job.credentials.map(_.password),
-        contentsOid=None,
         sourceDocumentSetId=None,
         state=DocumentSetCreationJobState.NotStarted,
         fractionComplete=0,

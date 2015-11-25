@@ -14,7 +14,6 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
   def splitDocuments = column[Boolean]("split_documents")
   def documentcloudUsername = column[Option[String]]("documentcloud_username")
   def documentcloudPassword = column[Option[String]]("documentcloud_password")
-  def contentsOid = column[Option[Long]]("contents_oid")
   def sourceDocumentSetId = column[Option[Long]]("source_document_set_id")
   def state = column[DocumentSetCreationJobState.Value]("state")(stateColumnType)
   def fractionComplete = column[Double]("fraction_complete")
@@ -23,13 +22,13 @@ class DocumentSetCreationJobsImpl(tag: Tag) extends Table[DocumentSetCreationJob
 
   def * =
     (id, documentSetId, jobType, retryAttempts, lang, splitDocuments,
-      documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
+      documentcloudUsername, documentcloudPassword, sourceDocumentSetId,
       state, fractionComplete, statusDescription, canBeCancelled) <>
       ((DocumentSetCreationJob.apply _).tupled, DocumentSetCreationJob.unapply)
 
   def createAttributes =
     (documentSetId, jobType, retryAttempts, lang, splitDocuments,
-      documentcloudUsername, documentcloudPassword, contentsOid, sourceDocumentSetId,
+      documentcloudUsername, documentcloudPassword, sourceDocumentSetId,
       state, fractionComplete, statusDescription, canBeCancelled) <>
       (DocumentSetCreationJob.CreateAttributes.tupled, DocumentSetCreationJob.CreateAttributes.unapply)
 }

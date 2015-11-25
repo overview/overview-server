@@ -1,5 +1,6 @@
 package com.overviewdocs.test.factories
 
+import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.{Date,UUID}
@@ -62,6 +63,34 @@ object PodoFactory extends Factory {
     documentSetId
   )
 
+  override def csvImport(
+    id: Long,
+    documentSetId: Long,
+    filename: String,
+    charset: Charset,
+    lang: String,
+    loid: Option[Long],
+    nBytes: Long,
+    nBytesProcessed: Long,
+    nDocuments: Int,
+    cancelled: Boolean,
+    estimatedCompletionTime: Option[Instant],
+    createdAt: Instant
+  ) = CsvImport(
+    getId(id),
+    getId(documentSetId),
+    filename,
+    charset,
+    lang,
+    loid,
+    nBytes,
+    nBytesProcessed,
+    nDocuments,
+    cancelled,
+    estimatedCompletionTime,
+    createdAt
+  )
+
   override def danglingNode(rootNodeId: Long) = DanglingNode(getId(rootNodeId))
 
   override def document(
@@ -105,7 +134,6 @@ object PodoFactory extends Factory {
     documentCount: Int,
     documentProcessingErrorCount: Int,
     importOverflowCount: Int,
-    uploadedFileId: Option[Long],
     metadataSchema: MetadataSchema,
     deleted: Boolean
   ) = DocumentSet(
@@ -117,7 +145,6 @@ object PodoFactory extends Factory {
     documentCount,
     documentProcessingErrorCount,
     importOverflowCount,
-    uploadedFileId,
     metadataSchema,
     deleted
   )
@@ -391,7 +418,6 @@ object PodoFactory extends Factory {
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
-    contentsOid: Option[Long],
     sourceDocumentSetId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
@@ -406,7 +432,6 @@ object PodoFactory extends Factory {
     splitDocuments,
     documentcloudUsername,
     documentcloudPassword,
-    contentsOid,
     sourceDocumentSetId,
     state,
     fractionComplete,

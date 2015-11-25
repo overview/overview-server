@@ -4,14 +4,20 @@ import java.io.StringReader
 import org.specs2.specification.Scope
 import com.overviewdocs.test.Specification
 
-class CsvImportSourceSpec extends Specification {
-  "CsvImportSource" should {
+class CsvDocumentProducerSpec extends Specification {
+  "CsvDocumentProducer" should {
     trait BaseScope extends Scope {
-      val input: String
-      def textify(s: String) = """[\u0000\ufffe]""".r.replaceAllIn(s, "")
-      lazy val reader = new StringReader(input)
-      lazy val csvImportSource = new CsvImportSource(textify, reader)
-      lazy val documents = csvImportSource.toSeq
+      val input: String = ""
+      val producer = new CsvDocumentProducer
+      lazy val documents = {
+        val arrays = input.split("\n").map(_.split(","))
+        arrays.foreach(producer.addCsvRow)
+        producer.getProducedDocuments
+      }
+      def metadataColumnNames = {
+        documents // parse input
+        producer.metadataColumnNames
+      }
     }
 
     "find a text column named `text`" in new BaseScope {
@@ -26,57 +32,57 @@ class CsvImportSourceSpec extends Specification {
 
     "fail with an empty CSV file" in new BaseScope {
       override val input=""
-      documents.length must throwA[RuntimeException]
+      documents.length must beEqualTo(0)
     }
 
     "handle a just-newlines CSV file" in new BaseScope {
       override val input="\n\n"
-      documents.length must throwA[RuntimeException]
+      documents.length must beEqualTo(0)
     }
 
     "find a suppliedId column named `id`" in new BaseScope {
       override val input = "text,id\nline0,id0\nline1,id1"
       documents.map(_.suppliedId) must beEqualTo(Seq("id0", "id1"))
-      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
+      documents.map(_.metadata) must beEqualTo(Seq(Seq(), Seq()))
     }
 
     "find a url column named `url`" in new BaseScope {
       override val input = "text,url\nline0,url0\nline1,url1"
-      documents.map(_.url) must beEqualTo(Seq(Some("url0"), Some("url1")))
-      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
+      documents.map(_.url) must beEqualTo(Seq("url0", "url1"))
+      documents.map(_.metadata) must beEqualTo(Seq(Seq(), Seq()))
     }
 
     "find a title column named `title`" in new BaseScope {
       override val input = "text,title\nline0,title0\nline1,title1"
       documents.map(_.title) must beEqualTo(Seq("title0", "title1"))
-      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
+      documents.map(_.metadata) must beEqualTo(Seq(Seq(), Seq()))
     }
 
     "find a column named `tags`" in new BaseScope {
-      override val input = """|text,tags
-                            |line0,"foo,bar"
-                            |line1,"bar,baz"""".stripMargin
-      documents.map(_.tags) must beEqualTo(Seq(Set("foo", "bar"), Set("bar", "baz")))
-      documents.map(_.metadata) must beEqualTo(Seq(Map(), Map()))
+      producer.addCsvRow(Array("text", "tags"))
+      producer.addCsvRow(Array("line0", "foo,bar"))
+      producer.addCsvRow(Array("line1", "bar,baz"))
+      producer.getProducedDocuments.map(_.tags) must beEqualTo(Seq(Set("foo", "bar"), Set("bar", "baz")))
+      producer.getProducedDocuments.map(_.metadata) must beEqualTo(Seq(Seq(), Seq()))
     }
 
     "handle uppercase suppliedId, text, tags and url headers" in new BaseScope {
       override val input = "TEXT,ID,URL,TITLE,TAGS\ntext0,id0,url0,title0,tag0"
-      documents.head must beEqualTo(CsvImportDocument("text0", "id0", Some("url0"), "title0", Set("tag0"), Map.empty))
+      documents.head must beEqualTo(CsvDocument("id0", "url0", "title0", Set("tag0"), "text0", Seq()))
     }
 
     "textify all fields" in new BaseScope {
       // As a side-effect, this tests that the byte-order marker is stripped
-      override val input = """|\ufffetext,title\u0000
+      override val input = """|\ufffetext,title
                               |foo\u0000bar,bar\ufffebaz""".stripMargin
       val doc = documents.head
-      doc.text must beEqualTo("foobar")
+      doc.text must beEqualTo("foo bar")
       doc.title must beEqualTo("barbaz")
     }
 
     "fail if there is no `text` on the first line" in new BaseScope {
       override val input = "foo\nbar"
-      documents.head must throwA[Exception]
+      documents.head.text must beEqualTo("")
     }
 
     "leave suppliedId empty when header has no `id`" in new BaseScope {
@@ -84,9 +90,9 @@ class CsvImportSourceSpec extends Specification {
       documents.head.suppliedId must beEqualTo("")
     }
 
-    "leave url None when header has no `url`" in new BaseScope {
+    "leave url empty when header has no `url`" in new BaseScope {
       override val input = "text\nfoo"
-      documents.head.url must beNone
+      documents.head.url must beEqualTo("")
     }
 
     "leave title empty when header has no `title`" in new BaseScope {
@@ -123,26 +129,30 @@ class CsvImportSourceSpec extends Specification {
     }
 
     "ignore repeated tags" in new BaseScope {
-      override val input = """|text,tags
-                              |text0,"foo,bar,foo"""".stripMargin
-      documents.head.tags must beEqualTo(Set("foo", "bar"))
+      producer.addCsvRow(Array("text", "tags"))
+      producer.addCsvRow(Array("text0", "foo,bar,foo"))
+      producer.getProducedDocuments.head.tags must beEqualTo(Set("foo", "bar"))
     }
 
     "ignore empty tags" in new BaseScope {
+      producer.addCsvRow(Array("text", "tags"))
+      producer.addCsvRow(Array("text0", "foo,,bar"))
+      producer.addCsvRow(Array("text1", ","))
+      producer.addCsvRow(Array("text2", ""))
       override val input = """|text,tags
                               |text0,"foo,,bar"
                               |text1,","""".stripMargin
-      documents.map(_.tags) must beEqualTo(Seq(Set("foo", "bar"), Set.empty))
+      producer.getProducedDocuments.map(_.tags) must beEqualTo(Seq(Set("foo", "bar"), Set.empty, Set.empty))
     }
 
     "treat non-id/text/url/title/tags as metadata" in new BaseScope {
       override val input = """|foo,bar,id,text,url,title,tags
                               |foo0,bar0
                               |foo1,bar1""".stripMargin
-      csvImportSource.metadataColumnNames must beEqualTo(Seq("foo", "bar"))
+      metadataColumnNames must beEqualTo(Seq("foo", "bar"))
       documents.map(_.metadata) must beEqualTo(Seq(
-        Map("foo" -> "foo0", "bar" -> "bar0"),
-        Map("foo" -> "foo1", "bar" -> "bar1")
+        Seq("foo" -> "foo0", "bar" -> "bar0"),
+        Seq("foo" -> "foo1", "bar" -> "bar1")
       ))
     }
 
@@ -150,26 +160,26 @@ class CsvImportSourceSpec extends Specification {
       override val input = """|text,f,f
                               |text0,foo,bar
                               |text1,moo,mar""".stripMargin
-      csvImportSource.metadataColumnNames must beEqualTo(Seq("f"))
-      documents.map(_.metadata) must beEqualTo(Seq(Map("f" -> "foo"), Map("f" -> "moo")))
+      metadataColumnNames must beEqualTo(Seq("f"))
+      documents.map(_.metadata) must beEqualTo(Seq(Seq("f" -> "foo"), Seq("f" -> "moo")))
     }
 
     "ignore an empty-name metadata field" in new BaseScope {
       override val input = "text,f,\ntext,foo"
-      csvImportSource.metadataColumnNames must beEqualTo(Seq("f"))
-      documents.map(_.metadata) must beEqualTo(Seq(Map("f" -> "foo")))
+      metadataColumnNames must beEqualTo(Seq("f"))
+      documents.map(_.metadata) must beEqualTo(Seq(Seq("f" -> "foo")))
     }
 
     "treat contents/snippet as metadata when there is `text`" in new BaseScope {
       override val input = "contents,snippet,text\nfoo,bar"
-      csvImportSource.metadataColumnNames must beEqualTo(Seq("contents", "snippet"))
-      documents.head.metadata must beEqualTo(Map("contents" -> "foo", "snippet" -> "bar"))
+      metadataColumnNames must beEqualTo(Seq("contents", "snippet"))
+      documents.head.metadata must beEqualTo(Seq("contents" -> "foo", "snippet" -> "bar"))
     }
 
     "treat empty metadata as empty string" in new BaseScope {
       override val input = "text,foo,bar\ntext0,"
-      csvImportSource.metadataColumnNames must beEqualTo(Seq("foo", "bar"))
-      documents.head.metadata must beEqualTo(Map("foo" -> "", "bar" -> ""))
+      metadataColumnNames must beEqualTo(Seq("foo", "bar"))
+      documents.head.metadata must beEqualTo(Seq("foo" -> "", "bar" -> ""))
     }
   }
 }

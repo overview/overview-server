@@ -1,6 +1,7 @@
 package com.overviewdocs.database
 
 import com.github.tminglei.slickpg._
+import java.nio.charset.Charset
 import java.time.Instant
 import play.api.libs.json.{ JsObject, Json }
 import slick.driver.{ JdbcTypesComponent, PostgresDriver }
@@ -20,6 +21,8 @@ trait MyPostgresDriver extends PostgresDriver
     with ArrayImplicits
     with NetImplicits
     with SimpleArrayPlainImplicits {
+
+    implicit val charsetType = MappedColumnType.base[Charset, String](_.name, Charset.forName)
 
     implicit val jsonTextColumnType = MappedColumnType.base[JsObject, String](
       Json.stringify,

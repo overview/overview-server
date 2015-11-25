@@ -1,5 +1,6 @@
 package com.overviewdocs.test.factories
 
+import java.nio.charset.Charset
 import java.sql.Timestamp
 import java.util.{Date,UUID}
 import java.time.Instant
@@ -30,7 +31,24 @@ trait Factory {
     createdAt: Timestamp = now,
     createdBy: String = "user@example.org",
     description: String = "description",
-    documentSetId: Option[Long] = None): ApiToken
+    documentSetId: Option[Long] = None
+  ): ApiToken
+
+  /** Creates a CsvImport with the given parameters. */
+  def csvImport(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    filename: String = "import.csv",
+    charset: Charset = Charset.forName("utf-8"),
+    lang: String = "en",
+    loid: Option[Long] = None,
+    nBytes: Long = 1L,
+    nBytesProcessed: Long = 0L,
+    nDocuments: Int = 0,
+    cancelled: Boolean = false,
+    estimatedCompletionTime: Option[Instant] = None,
+    createdAt: Instant = Instant.now
+  ): CsvImport
 
   def danglingNode(rootNodeId: Long = 0L): DanglingNode
 
@@ -61,9 +79,9 @@ trait Factory {
     documentCount: Int = 4,
     documentProcessingErrorCount: Int = 3,
     importOverflowCount: Int = 2,
-    uploadedFileId: Option[Long] = None,
     metadataSchema: MetadataSchema = MetadataSchema.empty,
-    deleted: Boolean = false): DocumentSet
+    deleted: Boolean = false
+  ): DocumentSet
 
   def documentSetUser(
     documentSetId: Long = 0L,
@@ -225,7 +243,6 @@ trait Factory {
     splitDocuments: Boolean = false,
     documentcloudUsername: Option[String] = None,
     documentcloudPassword: Option[String] = None,
-    contentsOid: Option[Long] = None,
     sourceDocumentSetId: Option[Long] = Some(1L),
     state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.NotStarted,
     fractionComplete: Double = 0.0,

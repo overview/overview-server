@@ -33,6 +33,8 @@ trait OverviewUpload {
 
   /** Delete upload info */
   def delete
+
+  def underlying: Upload
 }
 
 object OverviewUpload extends HasBlockingDatabase {
@@ -40,6 +42,10 @@ object OverviewUpload extends HasBlockingDatabase {
 
   lazy val inserter = (Uploads.map(_.createAttributes) returning Uploads)
   lazy val updater = Compiled { (id: Rep[Long]) => Uploads.map(_.updateAttributes) }
+
+  def apply(upload: Upload, uploadedFile: UploadedFile): OverviewUpload = {
+    new OverviewUploadImpl(upload, OverviewUploadedFile(uploadedFile))
+  }
 
   /** Create a new instance and write it to the database. ICK ICK ICK. */
   def apply(userId: Long, guid: UUID, contentDisposition: String, contentType: String, totalSize: Long, oid: Long): OverviewUpload = {
@@ -86,6 +92,8 @@ object OverviewUpload extends HasBlockingDatabase {
     def truncate: OverviewUpload = new OverviewUploadImpl(upload.copy(lastActivity = now), uploadedFile.withSize(0l))
 
     def delete { blockingDatabase.delete(Uploads.filter(_.id === upload.id)) }
+
+    override def underlying = upload
   }
 
   private def now: Timestamp = new Timestamp(System.currentTimeMillis)

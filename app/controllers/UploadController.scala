@@ -1,5 +1,6 @@
 package controllers
 
+import java.nio.charset.StandardCharsets
 import java.sql.Connection
 import java.util.UUID
 import play.api.Play.current
@@ -9,21 +10,21 @@ import play.api.mvc.{ Action, BodyParser, Request, RequestHeader, Result }
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType}
-import com.overviewdocs.models.tables.{DocumentSetCreationJobs,Uploads}
+import com.overviewdocs.messages.DocumentSetCommands
+import com.overviewdocs.models.{CsvImport,DocumentSet,Upload,UploadedFile}
+import com.overviewdocs.models.tables.{CsvImports,Uploads,UploadedFiles}
 import controllers.auth.Authorities.anyUser
-import controllers.auth.{AuthorizedAction, AuthorizedBodyParser,Authority,SessionFactory}
+import controllers.auth.{AuthorizedAction,AuthorizedBodyParser,Authority,SessionFactory}
 import controllers.backend.DocumentSetBackend
 import controllers.forms.UploadControllerForm
-import controllers.util.FileUploadIteratee
+import controllers.util.{FileUploadIteratee,JobQueueSender}
 import models.upload.OverviewUpload
 import models.User
 
-/**
- * Handles a file upload, storing the file in a LargeObject, updating the upload table,
- * and starting a DocumentSetCreationJob. Most of the work related to the upload happens
- * in FileUploadIteratee.
- */
+/** Handles a file upload, storing the file in a LargeObject.
+  * 
+  * Most of the work related to the upload happens in FileUploadIteratee.
+  */
 trait UploadController extends Controller {
   protected val documentSetBackend: DocumentSetBackend
 
@@ -36,14 +37,12 @@ trait UploadController extends Controller {
     }
   }
 
-  /** Turn an Upload into a DocumentSet and DocumentSetCreationJob. */
+  /** Turn an Upload into a DocumentSet and CsvImport. */
   def startClustering(guid: UUID) = AuthorizedAction(anyUser).async { request =>
     UploadControllerForm().bindFromRequest()(request).fold(
       form => Future.successful(BadRequest),
-      { form =>
-        val lang = form._1
-        val stopWords = form._2.getOrElse("")
-        val importantWords = form._3.getOrElse("")
+      { data =>
+        val lang: String = data
 
         findUpload(request.user.id, guid) match {
           case None => Future.successful(NotFound)
@@ -51,14 +50,11 @@ trait UploadController extends Controller {
             if (!isUploadComplete(upload)) {
               Future.successful(Conflict)
             } else {
-              val attributes = DocumentSet.CreateAttributes(
-                title=upload.uploadedFile.filename,
-                uploadedFileId=Some(upload.uploadedFile.id)
-              )
+              val attributes = DocumentSet.CreateAttributes(title=upload.uploadedFile.filename)
 
               for {
                 documentSet <- documentSetBackend.create(attributes, request.user.email)
-                _ <- createJobAndDeleteUpload(documentSet, request.user, upload, lang, stopWords, importantWords)
+                _ <- createCsvImport(documentSet, upload.underlying, upload.uploadedFile.underlying, lang)
               } yield Redirect(routes.DocumentSetController.show(documentSet.id))
             }
           }
@@ -97,13 +93,14 @@ trait UploadController extends Controller {
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
 
-  protected def createJobAndDeleteUpload(
+  /** Creates a CsvImport in the database, notifies the worker, and removes the
+    * UploadedFile that created it.
+    */
+  protected def createCsvImport(
     documentSet: DocumentSet,
-    user: User,
-    upload: OverviewUpload,
-    lang: String,
-    suppliedStopWords: String,
-    importantWords: String
+    upload: Upload,
+    uploadedfile: UploadedFile,
+    lang: String
   ): Future[Unit]
 }
 
@@ -120,36 +117,36 @@ object UploadController extends UploadController with HasDatabase {
     OverviewUpload.find(userId, guid)
   }
 
-  override protected def createJobAndDeleteUpload(
+  override protected def createCsvImport(
     documentSet: DocumentSet,
-    user: User,
-    upload: OverviewUpload,
-    lang: String,
-    suppliedStopWords: String,
-    importantWords: String
+    upload: Upload,
+    uploadedFile: UploadedFile,
+    lang: String
   ) = {
     import database.api._
 
-    val t = (for {
-      _ <- DocumentSetCreationJobs.map(_.createAttributes).+=(DocumentSetCreationJob.CreateAttributes(
+    val inserter = CsvImports
+      .map(_.createAttributes)
+      .returning(CsvImports)
+
+    val transaction = (for {
+      csvImport <- inserter.+=(CsvImport.CreateAttributes(
         documentSetId=documentSet.id,
-        jobType=DocumentSetCreationJobType.CsvUpload,
-        retryAttempts=0,
+        filename=uploadedFile.filename,
+        charset=uploadedFile.maybeCharset.getOrElse(StandardCharsets.UTF_8),
         lang=lang,
-        splitDocuments=false,
-        documentcloudUsername=None,
-        documentcloudPassword=None,
-        contentsOid=Some(upload.contentsOid),
-        sourceDocumentSetId=None,
-        state=DocumentSetCreationJobState.NotStarted,
-        fractionComplete=0,
-        statusDescription="",
-        canBeCancelled=true
+        loid=Some(upload.contentsOid),
+        nBytes=upload.totalSize
       ))
       _ <- Uploads.filter(_.id === upload.id).delete
-    } yield ()).transactionally
+      _ <- UploadedFiles.filter(_.id === uploadedFile.id).delete
+    } yield csvImport).transactionally
 
-    database.runUnit(t)
+    for {
+      csvImport <- database.run(transaction)
+    } yield {
+      JobQueueSender.send(DocumentSetCommands.AddDocumentsFromCsvImport(csvImport))
+    }
   }
 }
  

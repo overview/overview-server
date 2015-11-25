@@ -6,11 +6,12 @@ import scala.concurrent.Future
 import com.overviewdocs.messages.DocumentSetCommands
 import controllers.auth.Authorities.adminUser
 import controllers.auth.AuthorizedAction
-import controllers.backend.{FileGroupBackend,ImportJobBackend,TreeBackend}
+import controllers.backend.{CsvImportBackend,FileGroupBackend,ImportJobBackend,TreeBackend}
 import controllers.util.JobQueueSender
 import controllers.Controller
 
 trait JobController extends Controller {
+  protected val csvImportBackend: CsvImportBackend
   protected val fileGroupBackend: FileGroupBackend
   protected val importJobBackend: ImportJobBackend
   protected val jobQueueSender: JobQueueSender
@@ -25,6 +26,15 @@ trait JobController extends Controller {
 
   def index = AuthorizedAction(adminUser) { implicit request =>
     Ok(views.html.admin.Job.index(request.user))
+  }
+
+  def destroyCsvImport(documentSetId: Long, id: Long) = AuthorizedAction(adminUser).async { implicit request =>
+    for {
+      _ <- csvImportBackend.cancel(documentSetId, id)
+    } yield {
+      jobQueueSender.send(DocumentSetCommands.CancelAddDocumentsFromCsvImport(documentSetId, id))
+      NoContent
+    }
   }
 
   def destroyFileGroup(documentSetId: Long, id: Long) = AuthorizedAction(adminUser).async { implicit request =>
@@ -46,6 +56,7 @@ trait JobController extends Controller {
 }
 
 object JobController extends JobController {
+  override protected val csvImportBackend = CsvImportBackend
   override protected val fileGroupBackend = FileGroupBackend
   override protected val importJobBackend = ImportJobBackend
   override protected val jobQueueSender = JobQueueSender

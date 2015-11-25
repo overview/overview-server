@@ -2,7 +2,7 @@ package controllers.backend
 
 import java.time.Instant
 
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetCreationJobImportJob,DocumentSetUser,FileGroupImportJob,ImportJob}
+import com.overviewdocs.models.{CsvImportJob,DocumentSet,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetCreationJobImportJob,DocumentSetUser,FileGroupImportJob,ImportJob}
 
 class DbImportJobBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
@@ -50,6 +50,30 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSetCreationJob = factory.documentSetCreationJob(documentSetId=documentSet.id)
       factory.documentSetUser(documentSet.id, "user2@example.org")
       ret must beEqualTo(Seq())
+    }
+
+    "return a CsvImportJob" in new IndexByUserScope {
+      val documentSet = factory.documentSet()
+      val csvImport = factory.csvImport(
+        documentSetId=documentSet.id,
+        nBytes=1L
+      )
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      ret must beEqualTo(Seq(CsvImportJob(csvImport)))
+    }
+
+    "ignore a completed CsvImportJob" in new IndexByUserScope {
+      val documentSet = factory.documentSet()
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, nBytesProcessed=1L)
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      ret must beEmpty
+    }
+
+    "return (yes, RETURN) a cancelled CsvImportJob" in new IndexByUserScope {
+      val documentSet = factory.documentSet()
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, cancelled=true)
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      ret must beEqualTo(Seq(CsvImportJob(csvImport)))
     }
 
     "return a FileGroup job" in new IndexByUserScope {
@@ -126,6 +150,21 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.InProgress
       )
       ret must beEqualTo(Seq())
+    }
+
+    "return a CsvImportJob" in new IndexByDocumentSetScope {
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L)
+      ret must beEqualTo(Seq(CsvImportJob(csvImport)))
+    }
+
+    "ignore a completed CsvImportJob" in new IndexByDocumentSetScope {
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, nBytesProcessed=1L)
+      ret must beEmpty
+    }
+
+    "return (yes, RETURN) a cancelled CsvImportJob" in new IndexByDocumentSetScope {
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, cancelled=true)
+      ret must beEqualTo(Seq(CsvImportJob(csvImport)))
     }
 
     "return a FileGroup job" in new IndexByDocumentSetScope {
@@ -213,6 +252,27 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.Cancelled
       )
       ret must beEqualTo(Seq())
+    }
+
+    "return a CsvImportJob" in new IndexWithDocumentSetsAndOwnersScope {
+      val documentSet = factory.documentSet()
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L)
+      ret must beEqualTo(Seq((CsvImportJob(csvImport), documentSet, Some("user@example.org"))))
+    }
+
+    "ignore a completed CsvImportJob" in new IndexWithDocumentSetsAndOwnersScope {
+      val documentSet = factory.documentSet()
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, nBytesProcessed=1L)
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      ret must beEmpty
+    }
+
+    "return (yes, RETURN) a cancelled CsvImportJob" in new IndexWithDocumentSetsAndOwnersScope {
+      val documentSet = factory.documentSet()
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, cancelled=true)
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      ret must beEqualTo(Seq((CsvImportJob(csvImport), documentSet, Some("user@example.org"))))
     }
 
     "return a FileGroup job" in new IndexWithDocumentSetsAndOwnersScope {

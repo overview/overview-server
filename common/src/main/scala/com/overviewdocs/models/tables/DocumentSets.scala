@@ -15,7 +15,6 @@ class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set")
   def documentCount = column[Int]("document_count")
   def documentProcessingErrorCount = column[Int]("document_processing_error_count")
   def importOverflowCount = column[Int]("import_overflow_count")
-  def uploadedFileId = column[Option[Long]]("uploaded_file_id")
   def metadataSchema = column[MetadataSchema]("metadata_schema")
   def deleted = column[Boolean]("deleted")
 
@@ -28,7 +27,6 @@ class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set")
     documentCount,
     documentProcessingErrorCount,
     importOverflowCount,
-    uploadedFileId,
     metadataSchema,
     deleted
   ) <> ((DocumentSet.apply _).tupled, DocumentSet.unapply)
@@ -41,7 +39,6 @@ class DocumentSetsImpl(tag: Tag) extends Table[DocumentSet](tag, "document_set")
     documentCount,
     documentProcessingErrorCount,
     importOverflowCount,
-    uploadedFileId,
     metadataSchema,
     deleted
   ) <> (
