@@ -21,7 +21,7 @@ class DbCsvImportBackendSpec extends DbBackendSpecification {
         filename="filename.csv",
         charset=Charset.forName("windows-1252"),
         lang="fr",
-        loid=Some(123L),
+        loid=123L,
         nBytes=1000L
       )))
 
@@ -29,7 +29,7 @@ class DbCsvImportBackendSpec extends DbBackendSpecification {
       csvImport.filename must beEqualTo("filename.csv")
       csvImport.charset.name must beEqualTo("windows-1252")
       csvImport.lang must beEqualTo("fr")
-      csvImport.loid must beSome(123L)
+      csvImport.loid must beEqualTo(123L)
       csvImport.nBytes must beEqualTo(1000L)
       csvImport.nBytesProcessed must beEqualTo(0L)
       csvImport.cancelled must beEqualTo(false)
@@ -41,7 +41,7 @@ class DbCsvImportBackendSpec extends DbBackendSpecification {
         filename="filename.csv",
         charset=Charset.forName("windows-1252"),
         lang="fr",
-        loid=Some(123L),
+        loid=123L,
         nBytes=1000L
       )))
       val dbCsvImport = blockingDatabase.option(CsvImports)

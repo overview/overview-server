@@ -148,7 +148,7 @@ class CsvImporter(
     import database.api._
 
     database.run((for {
-      lo <- database.largeObjectManager.open(csvImport.loid.get, LargeObject.Mode.Read)
+      lo <- database.largeObjectManager.open(csvImport.loid, LargeObject.Mode.Read)
       _ <- lo.seek(nBytesProcessed)
       bytes <- lo.read(bufferSize)
     } yield bytes).transactionally)
@@ -207,7 +207,7 @@ class CsvImporter(
     import database.api._
     database.runUnit((for {
       _ <- maybeCreateDocumentProcessingError(error)
-      _ <- database.largeObjectManager.unlink(csvImport.loid.get)
+      _ <- database.largeObjectManager.unlink(csvImport.loid)
       _ <- byId(csvImport.id).delete
     } yield ()).transactionally)
   }

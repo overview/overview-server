@@ -12,7 +12,7 @@ class CsvImportsImpl(tag: Tag) extends Table[CsvImport](tag, "csv_import") {
   def filename = column[String]("filename")
   def charset = column[Charset]("charset")
   def lang = column[String]("lang")
-  def loid = column[Option[Long]]("loid")
+  def loid = column[Long]("loid")
   def nBytes = column[Long]("n_bytes")
   def nBytesProcessed = column[Long]("n_bytes_processed")
   def nDocuments = column[Int]("n_documents")

@@ -45,7 +45,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     filename: String,
     charset: Charset,
     lang: String,
-    loid: Option[Long],
+    loid: Long,
     nBytes: Long,
     nBytesProcessed: Long,
     nDocuments: Int,

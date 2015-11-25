@@ -53,19 +53,13 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
     }
 
     "delete csv imports" in new BasicDocumentSetScope {
-      val csvImport = factory.csvImport(documentSetId=documentSet.id)
-      deleteDocumentSet
-
       import database.api._
-      blockingDatabase.option(CsvImports.filter(_.id === csvImport.id)) must beNone
-    }
 
-    "delete large objects while clearing CsvImports" in new BasicDocumentSetScope {
-      import database.api._
       val loid: Long = blockingDatabase.run(database.largeObjectManager.create.transactionally)
-      val csvImport = factory.csvImport(documentSetId=documentSet.id, loid=Some(loid))
-
+      val csvImport = factory.csvImport(documentSetId=documentSet.id, loid=loid)
       deleteDocumentSet
+
+      blockingDatabase.option(CsvImports.filter(_.id === csvImport.id)) must beNone
 
       {
         blockingDatabase.run((for {
@@ -135,7 +129,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
     factory.documentSetUser(documentSetId = documentSet.id)
     factory.documentProcessingError(documentSetId = documentSet.id)
 
-    def deleteDocumentSet = await { deleter.delete(documentSet.id) } must not(throwA[Exception])
+    def deleteDocumentSet: Unit = await(deleter.delete(documentSet.id))
 
     def findDocumentSet(documentSetId: Long): Option[DocumentSet] = {
       import database.api._

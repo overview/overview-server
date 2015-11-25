@@ -41,7 +41,7 @@ trait Factory {
     filename: String = "import.csv",
     charset: Charset = Charset.forName("utf-8"),
     lang: String = "en",
-    loid: Option[Long] = None,
+    loid: Long = 0L,
     nBytes: Long = 1L,
     nBytesProcessed: Long = 0L,
     nDocuments: Int = 0,

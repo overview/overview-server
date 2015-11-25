@@ -1,0 +1,2 @@
+DELETE FROM csv_import WHERE loid IS NULL;
+ALTER TABLE csv_import ALTER COLUMN loid SET NOT NULL;

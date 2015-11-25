@@ -69,7 +69,7 @@ object PodoFactory extends Factory {
     filename: String,
     charset: Charset,
     lang: String,
-    loid: Option[Long],
+    loid: Long,
     nBytes: Long,
     nBytesProcessed: Long,
     nDocuments: Int,

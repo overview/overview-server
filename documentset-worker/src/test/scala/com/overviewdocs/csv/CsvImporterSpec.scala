@@ -41,7 +41,7 @@ class CsvImporterSpec extends DbSpecification {
       factory.csvImport(
         documentSetId=documentSet.id,
         filename="foo.csv",
-        loid=Some(loid),
+        loid=loid,
         nBytes=bytes.length
       )
     }
@@ -52,7 +52,7 @@ class CsvImporterSpec extends DbSpecification {
       val ci = factory.csvImport(
         documentSetId=documentSet.id,
         filename="foo.csv",
-        loid=Some(loid),
+        loid=loid,
         nBytes=bytes.length,
         cancelled=true
       )
@@ -89,7 +89,7 @@ class CsvImporterSpec extends DbSpecification {
   "delete the large object" in new BaseScope {
     val bytes = "text\n.".getBytes("utf-8")
     val loid = writeLo(bytes)
-    val ci = factory.csvImport(documentSetId=documentSet.id, loid=Some(loid), nBytes=bytes.length)
+    val ci = factory.csvImport(documentSetId=documentSet.id, loid=loid, nBytes=bytes.length)
     val importer = new CsvImporter(ci)
     await(importer.run)
 

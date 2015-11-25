@@ -135,7 +135,7 @@ object UploadController extends UploadController with HasDatabase {
         filename=uploadedFile.filename,
         charset=uploadedFile.maybeCharset.getOrElse(StandardCharsets.UTF_8),
         lang=lang,
-        loid=Some(upload.contentsOid),
+        loid=upload.contentsOid,
         nBytes=upload.totalSize
       ))
       _ <- Uploads.filter(_.id === upload.id).delete

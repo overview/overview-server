@@ -36,7 +36,7 @@ trait DocumentSetDeleter extends HasDatabase {
     val q = CsvImports.filter(_.documentSetId === documentSetId)
 
     (for {
-      loids: Seq[Long] <- q.map(_.loid).result.map(_.flatten)
+      loids: Seq[Long] <- q.map(_.loid).result
       _ <- DBIO.seq(loids.map(database.largeObjectManager.unlink _): _*)
       _ <- q.delete
     } yield ()).transactionally
