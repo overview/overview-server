@@ -30,8 +30,8 @@ define [
     onChange: (model) ->
       $tr = @$el.find("tr[data-id='#{model.id}']")
       $tr.find('progress')
-        .prop('value', model.progress)
-        .attr('title', model.progressDescription)
+        .prop('value', model.get('progress'))
+        .attr('title', model.get('progressDescription'))
 
   class App extends Backbone.View
     events:
