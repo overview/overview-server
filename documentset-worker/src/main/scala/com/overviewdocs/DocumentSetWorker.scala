@@ -10,9 +10,10 @@ import com.overviewdocs.background.filecleanup.{ DeletedFileCleaner, FileCleaner
 import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
 import com.overviewdocs.database.{DB,DocumentSetDeleter,HasDatabase}
 import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
+import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
 import com.overviewdocs.messages.DocumentSetCommands
-import com.overviewdocs.models.tables.{DocumentSets,FileGroups}
+import com.overviewdocs.models.tables.{CsvImports,DocumentSets,FileGroups}
 import com.overviewdocs.util.Logger
 
 class DocumentSetWorkerKiller extends Actor {
@@ -95,11 +96,19 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
     "AddDocumentsWorkBroker"
   )
 
+  private val csvImportWorkBroker = context.actorOf(CsvImportWorkBroker.props, "CsvImportWorkBroker")
+
   context.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-1")
   context.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-2")
+  context.actorOf(CsvImportWorker.props(csvImportWorkBroker), "CsvImportWorker-1")
 
   context.actorOf(
-    DocumentSetCommandWorker.props(documentSetMessageBroker, addDocumentsWorkBroker, DocumentSetDeleter),
+    DocumentSetCommandWorker.props(
+      documentSetMessageBroker,
+      addDocumentsWorkBroker,
+      csvImportWorkBroker,
+      DocumentSetDeleter
+    ),
     "DocumentSetCommandWorker"
   )
 
@@ -112,9 +121,20 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
     */
   private def resumeCommands(implicit ec: ExecutionContext): Unit = {
     for {
+      _ <- resumeCsvImportCommands
       _ <- resumeAddDocumentsCommands
       _ <- resumeDeleteDocumentSetCommands // We add first, because an add, cancelled, nixes a GroupedFileUpload
     } yield ()
+  }
+
+  private def resumeCsvImportCommands(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    database.seq(CsvImports).map(_.foreach { csvImport =>
+      val command = DocumentSetCommands.AddDocumentsFromCsvImport(csvImport)
+      logger.info("Resuming {}...", command)
+      documentSetMessageBroker ! command
+    })
   }
 
   private def resumeAddDocumentsCommands(implicit ec: ExecutionContext): Future[Unit] = {

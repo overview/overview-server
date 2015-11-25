@@ -9,6 +9,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Future,Promise}
 
 import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.test.ActorSystemContext
@@ -23,8 +24,9 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
     trait BaseScope extends ActorSystemContext {
       val broker = TestProbe()
       val addDocumentsWorkBroker = TestProbe()
+      val csvImportWorkBroker = TestProbe()
       val documentSetDeleter = smartMock[DocumentSetDeleter]
-      val subject = TestActorRef(DocumentSetCommandWorker.props(broker.ref, addDocumentsWorkBroker.ref, documentSetDeleter))
+      val subject = TestActorRef(DocumentSetCommandWorker.props(broker.ref, addDocumentsWorkBroker.ref, csvImportWorkBroker.ref, documentSetDeleter))
     }
 
     "send WorkerReady on start" in new BaseScope {
@@ -47,6 +49,26 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         // This is one-half of the spec; the other half is in AddDocumentsWorkBroker
         addDocumentsWorkBroker.expectMsg(
           AddDocumentsWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(2L))
+        )
+      }
+    }
+
+    "AddDocumentsFromCsvImport" should {
+      "send WorkerReady immediately" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        subject ! DocumentSetCommands.AddDocumentsFromCsvImport(factory.csvImport(documentSetId=1L))
+        broker.expectMsg(WorkerReady)
+      }
+
+      "queue ack message for when command completes" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        val command = DocumentSetCommands.AddDocumentsFromCsvImport(factory.csvImport(id=2L, documentSetId=1L))
+        subject ! command
+        // This is one-half of the spec; the other half is in CsvImportWorkBroker
+        csvImportWorkBroker.expectMsg(
+          CsvImportWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(1L))
         )
       }
     }

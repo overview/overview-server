@@ -5,6 +5,7 @@ import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Failure,Success}
 
 import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.Logger
@@ -21,6 +22,7 @@ import com.overviewdocs.util.Logger
 class DocumentSetCommandWorker(
   val broker: ActorRef,
   val addDocumentsWorkBroker: ActorRef,
+  val csvImportWorkBroker: ActorRef,
   val documentSetDeleter: DocumentSetDeleter
 ) extends Actor
 {
@@ -38,6 +40,15 @@ class DocumentSetCommandWorker(
     logger.info("Handling DocumentSet command: {}", command)
 
     command match {
+      case addDocuments: AddDocumentsFromCsvImport => {
+        // AddDocuments is a special case, because it gets its own scheduler.
+        // The DocumentSetCommandWorker will return right away; that way, the
+        // downstream CsvImportWorkBroker can juggle all import jobs at once,
+        // while this DocumentSetCommandWorker can work on other commands.
+        val message = CsvImportWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
+        csvImportWorkBroker ! message
+        sendReady
+      }
       case addDocuments: AddDocumentsFromFileGroup => {
         // AddDocuments is a special case, because it gets its own scheduler.
         // The DocumentSetCommandWorker will return right away; that way, the
@@ -80,7 +91,17 @@ class DocumentSetCommandWorker(
 }
 
 object DocumentSetCommandWorker {
-  def props(broker: ActorRef, addDocumentsWorkBroker: ActorRef, documentSetDeleter: DocumentSetDeleter): Props = {
-    Props(new DocumentSetCommandWorker(broker, addDocumentsWorkBroker, documentSetDeleter))
+  def props(
+    broker: ActorRef,
+    addDocumentsWorkBroker: ActorRef,
+    csvImportWorkBroker: ActorRef, 
+    documentSetDeleter: DocumentSetDeleter
+  ): Props = {
+    Props(new DocumentSetCommandWorker(
+      broker,
+      addDocumentsWorkBroker,
+      csvImportWorkBroker,
+      documentSetDeleter
+    ))
   }
 }

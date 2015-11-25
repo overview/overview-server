@@ -59,11 +59,6 @@ object DocumentSetCommands {
     */
   case class CancelJob(documentSetId: Long, jobId: Long) extends CancelCommand
 
-  /** Completes all computations surrounding an AddDocumentsFromCsvImport job
-    * as soon as possible and lo_unlink()s the data.
-    */
-  case class CancelAddDocumentsFromCsvImport(documentSetId: Long, csvImportId: Long) extends CancelCommand
-
   /** Completes all computations surrounding an AddDocumentsFromFileGroup job
     * as soon as possible, then deletes the AddDocumentsFromFileGroup.
     *
