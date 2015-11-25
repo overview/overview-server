@@ -25,7 +25,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
 
     CsvImports
       .filter(_.documentSetId in documentSetIds)
-      .filter(ci => ci.nBytesProcessed < ci.nBytes)
   }
 
   private lazy val fileGroupsByUserEmail = Compiled { userEmail: Rep[String] =>
@@ -46,7 +45,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   private lazy val csvImportsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
     CsvImports
       .filter(_.documentSetId === documentSetId)
-      .filter(ci => ci.nBytesProcessed < ci.nBytes)
   }
 
   private lazy val fileGroupsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
@@ -62,7 +60,6 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
 
   private lazy val csvImportsWithDocumentSetsAndOwners = {
     CsvImports
-      .filter(ci => ci.nBytesProcessed < ci.nBytes)
       .join(DocumentSets)
         .on(_.documentSetId === _.id)
       .joinLeft(DocumentSetUsers.filter(_.role === DocumentSetUser.Role(true)))

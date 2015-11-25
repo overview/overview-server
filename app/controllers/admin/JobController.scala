@@ -31,10 +31,7 @@ trait JobController extends Controller {
   def destroyCsvImport(documentSetId: Long, id: Long) = AuthorizedAction(adminUser).async { implicit request =>
     for {
       _ <- csvImportBackend.cancel(documentSetId, id)
-    } yield {
-      jobQueueSender.send(DocumentSetCommands.CancelAddDocumentsFromCsvImport(documentSetId, id))
-      NoContent
-    }
+    } yield NoContent
   }
 
   def destroyFileGroup(documentSetId: Long, id: Long) = AuthorizedAction(adminUser).async { implicit request =>

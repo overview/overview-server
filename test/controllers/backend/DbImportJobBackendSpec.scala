@@ -62,13 +62,6 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       ret must beEqualTo(Seq(CsvImportJob(csvImport)))
     }
 
-    "ignore a completed CsvImportJob" in new IndexByUserScope {
-      val documentSet = factory.documentSet()
-      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, nBytesProcessed=1L)
-      factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEmpty
-    }
-
     "return (yes, RETURN) a cancelled CsvImportJob" in new IndexByUserScope {
       val documentSet = factory.documentSet()
       val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, cancelled=true)
@@ -155,11 +148,6 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
     "return a CsvImportJob" in new IndexByDocumentSetScope {
       val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L)
       ret must beEqualTo(Seq(CsvImportJob(csvImport)))
-    }
-
-    "ignore a completed CsvImportJob" in new IndexByDocumentSetScope {
-      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, nBytesProcessed=1L)
-      ret must beEmpty
     }
 
     "return (yes, RETURN) a cancelled CsvImportJob" in new IndexByDocumentSetScope {
@@ -259,13 +247,6 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       factory.documentSetUser(documentSet.id, "user@example.org")
       val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L)
       ret must beEqualTo(Seq((CsvImportJob(csvImport), documentSet, Some("user@example.org"))))
-    }
-
-    "ignore a completed CsvImportJob" in new IndexWithDocumentSetsAndOwnersScope {
-      val documentSet = factory.documentSet()
-      val csvImport = factory.csvImport(documentSetId=documentSet.id, nBytes=1L, nBytesProcessed=1L)
-      factory.documentSetUser(documentSet.id, "user@example.org")
-      ret must beEmpty
     }
 
     "return (yes, RETURN) a cancelled CsvImportJob" in new IndexWithDocumentSetsAndOwnersScope {
