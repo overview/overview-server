@@ -116,6 +116,48 @@ object DbFactory extends Factory with HasBlockingDatabase {
     text
   ))
 
+  override def documentCloudImport(
+    id: Int,
+    documentSetId: Long,
+    query: String,
+    username: String,
+    password: String,
+    splitPages: Boolean,
+    lang: String,
+    nIdListsFetched: Int,
+    nIdListsTotal: Option[Int],
+    nFetched: Int,
+    nTotal: Option[Int],
+    cancelled: Boolean,
+    createdAt: Instant
+  ) = run(q.insertDocumentCloudImport += podoFactory.documentCloudImport(
+    id,
+    documentSetId,
+    query,
+    username,
+    password,
+    splitPages,
+    lang,
+    nIdListsFetched,
+    nIdListsTotal,
+    nFetched,
+    nTotal,
+    cancelled,
+    createdAt
+  ))
+
+  override def documentCloudImportIdList(
+    id: Int,
+    documentCloudImportId: Int,
+    pageNumber: Int,
+    idsString: String
+  ) = run(q.insertDocumentCloudImportIdList += podoFactory.documentCloudImportIdList(
+    id,
+    documentCloudImportId,
+    pageNumber,
+    idsString
+  ))
+
   override def documentSet(
     id: Long,
     title: String,
@@ -392,34 +434,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     headers
   ))
 
-  override def documentSetCreationJob(
-    id: Long,
-    documentSetId: Long,
-    jobType: DocumentSetCreationJobType.Value,
-    retryAttempts: Int,
-    lang: String,
-    splitDocuments: Boolean,
-    documentcloudUsername: Option[String],
-    documentcloudPassword: Option[String],
-    state: DocumentSetCreationJobState.Value,
-    fractionComplete: Double,
-    statusDescription: String,
-    canBeCancelled: Boolean
-  ) = run(q.insertDocumentSetCreationJob += podoFactory.documentSetCreationJob(
-    id,
-    documentSetId,
-    jobType,
-    retryAttempts,
-    lang,
-    splitDocuments,
-    documentcloudUsername,
-    documentcloudPassword,
-    state,
-    fractionComplete,
-    statusDescription,
-    canBeCancelled
-  ))
-
   object q {
     // Compile queries once, instead of once per test
     val insertApiToken = (ApiTokens returning ApiTokens)
@@ -427,6 +441,8 @@ object DbFactory extends Factory with HasBlockingDatabase {
     val insertCsvImport = (CsvImports returning CsvImports)
     val insertDanglingNode = (DanglingNodes returning DanglingNodes)
     val insertDocument = (Documents returning Documents)
+    val insertDocumentCloudImport = (DocumentCloudImports returning DocumentCloudImports)
+    val insertDocumentCloudImportIdList = (DocumentCloudImportIdLists returning DocumentCloudImportIdLists)
     val insertDocumentSet = (DocumentSets returning DocumentSets)
     val insertDocumentTag = (DocumentTags returning DocumentTags)
     val insertDocumentSetUser = (DocumentSetUsers returning DocumentSetUsers)
@@ -446,6 +462,5 @@ object DbFactory extends Factory with HasBlockingDatabase {
     val insertUpload = (Uploads returning Uploads)
     val insertUploadedFile = (UploadedFiles returning UploadedFiles)
     val insertDocumentProcessingError =  (DocumentProcessingErrors returning DocumentProcessingErrors)
-    val insertDocumentSetCreationJob = (DocumentSetCreationJobs returning DocumentSetCreationJobs)
   }
 }

@@ -149,6 +149,48 @@ object PodoFactory extends Factory {
     text
   )
 
+  override def documentCloudImport(
+    id: Int,
+    documentSetId: Long,
+    query: String,
+    username: String,
+    password: String,
+    splitPages: Boolean,
+    lang: String,
+    nIdListsFetched: Int,
+    nIdListsTotal: Option[Int],
+    nFetched: Int,
+    nTotal: Option[Int],
+    cancelled: Boolean,
+    createdAt: Instant
+  ) = DocumentCloudImport(
+    getId(id),
+    getId(documentSetId),
+    query,
+    username,
+    password,
+    splitPages,
+    lang,
+    nIdListsFetched,
+    nIdListsTotal,
+    nFetched,
+    nTotal,
+    cancelled,
+    createdAt
+  )
+
+  override def documentCloudImportIdList(
+    id: Int,
+    documentCloudImportId: Int,
+    pageNumber: Int,
+    idsString: String
+  ) = DocumentCloudImportIdList(
+    id,
+    documentCloudImportId,
+    pageNumber,
+    idsString
+  )
+
   override def documentSet(
     id: Long,
     title: String,
@@ -432,32 +474,4 @@ object PodoFactory extends Factory {
     statusCode: Option[Int],
     headers: Option[String]
   ) = DocumentProcessingError(getId(id), documentSetId, textUrl, message, statusCode, headers)
-
-  override def documentSetCreationJob(
-    id: Long,
-    documentSetId: Long,
-    jobType: DocumentSetCreationJobType.Value,
-    retryAttempts: Int,
-    lang: String,
-    splitDocuments: Boolean,
-    documentcloudUsername: Option[String],
-    documentcloudPassword: Option[String],
-    state: DocumentSetCreationJobState.Value,
-    fractionComplete: Double,
-    statusDescription: String,
-    canBeCancelled: Boolean
-  ) = DocumentSetCreationJob(
-    getId(id),
-    documentSetId,
-    jobType,
-    retryAttempts,
-    lang,
-    splitDocuments,
-    documentcloudUsername,
-    documentcloudPassword,
-    state,
-    fractionComplete,
-    statusDescription,
-    canBeCancelled
-  )
 }

@@ -92,6 +92,31 @@ trait Factory {
     deleted: Boolean = false
   ): DocumentSet
 
+  /** Creates a DocumentCloudImport with the given parameters. */
+  def documentCloudImport(
+    id: Int = 0,
+    documentSetId: Long = 0L,
+    query: String = "query",
+    username: String = "",
+    password: String = "",
+    splitPages: Boolean = false,
+    lang: String = "en",
+    nIdListsFetched: Int = 0,
+    nIdListsTotal: Option[Int] = None,
+    nFetched: Int = 0,
+    nTotal: Option[Int] = None,
+    cancelled: Boolean = false,
+    createdAt: Instant = Instant.now
+  ): DocumentCloudImport
+
+  /** Creates a DocumentCloudImportIdList with the given parameters. */
+  def documentCloudImportIdList(
+    id: Int = 0,
+    documentCloudImportId: Int = 0,
+    pageNumber: Int = 0,
+    idsString: String = "123-foo,1\n234-bar,2"
+  ): DocumentCloudImportIdList
+
   def documentSetUser(
     documentSetId: Long = 0L,
     userEmail: String = "user@example.com",
@@ -242,21 +267,6 @@ trait Factory {
     statusCode: Option[Int] = None,
     headers: Option[String] = None
   ): DocumentProcessingError
-
-  def documentSetCreationJob(
-    id: Long = 0L,
-    documentSetId: Long = 0L,
-    jobType: DocumentSetCreationJobType.Value = DocumentSetCreationJobType.Clone,
-    retryAttempts: Int = 0,
-    lang: String = "en",
-    splitDocuments: Boolean = false,
-    documentcloudUsername: Option[String] = None,
-    documentcloudPassword: Option[String] = None,
-    state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.NotStarted,
-    fractionComplete: Double = 0.0,
-    statusDescription: String = "",
-    canBeCancelled: Boolean = true
-  ): DocumentSetCreationJob
 
   private def now: Timestamp = new Timestamp(scala.compat.Platform.currentTime)
 }

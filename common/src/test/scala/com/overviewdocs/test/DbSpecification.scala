@@ -88,14 +88,15 @@ class DbSpecification extends Specification {
       q17 AS (DELETE FROM "view"),
       q18 AS (DELETE FROM document_set_user),
       q19 AS (DELETE FROM document_processing_error),
-      q20 AS (DELETE FROM document_set_creation_job),
-      q21 AS (DELETE FROM api_token),
-      q22 AS (DELETE FROM plugin),
-      q23 AS (DELETE FROM "session"),
-      q24 AS (DELETE FROM "user"),
-      q25 AS (DELETE FROM csv_import),
-      q26 AS (DELETE FROM clone_job),
-      q27 AS (DELETE FROM document_set)
+      q20 AS (DELETE FROM document_cloud_import_id_list),
+      q21 AS (DELETE FROM document_cloud_import),
+      q22 AS (DELETE FROM api_token),
+      q23 AS (DELETE FROM plugin),
+      q24 AS (DELETE FROM "session"),
+      q25 AS (DELETE FROM "user"),
+      q26 AS (DELETE FROM csv_import),
+      q27 AS (DELETE FROM clone_job),
+      q28 AS (DELETE FROM document_set)
       SELECT 1;
     """, connection)
   }
