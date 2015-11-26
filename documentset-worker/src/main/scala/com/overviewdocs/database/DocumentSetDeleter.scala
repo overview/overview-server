@@ -20,6 +20,7 @@ trait DocumentSetDeleter extends HasDatabase {
       _ <- deleteTrees(documentSetId)
       _ <- deleteJobs(documentSetId)
       _ <- deleteCsvImports(documentSetId)
+      _ <- deleteCloneJobs(documentSetId)
       _ <- DBIO.from(indexFuture) // Ensure it's out of ElasticSearch before deleting DocumentSet, so restart resumes the index-delete
       _ <- deleteCore(documentSetId)
     } yield ())
@@ -27,7 +28,7 @@ trait DocumentSetDeleter extends HasDatabase {
 
   private def deleteJobs(documentSetId: Long): DBIO[Unit] = {
     val q = DocumentSetCreationJobs
-      .filter(j => j.documentSetId === documentSetId || j.sourceDocumentSetId === documentSetId)
+      .filter(j => j.documentSetId === documentSetId)
       .delete
     for { _ <- q } yield ()
   }
@@ -40,6 +41,10 @@ trait DocumentSetDeleter extends HasDatabase {
       _ <- DBIO.seq(loids.map(database.largeObjectManager.unlink _): _*)
       _ <- q.delete
     } yield ()).transactionally
+  }
+
+  private def deleteCloneJobs(documentSetId: Long): DBIO[Unit] = {
+    CloneJobs.filter(_.destinationDocumentSetId === documentSetId).delete.map(_ => ())
   }
 
   // The minimal set of components, common to all document sets

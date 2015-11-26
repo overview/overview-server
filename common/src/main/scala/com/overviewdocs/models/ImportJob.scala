@@ -29,6 +29,28 @@ sealed trait ImportJob {
   val estimatedCompletionTime: Option[Instant]
 }
 
+case class CloneImportJob(cloneJob: CloneJob) extends ImportJob {
+  override val documentSetId = cloneJob.destinationDocumentSetId
+
+  override val progress = (cloneJob.cancelled, cloneJob.stepNumber) match {
+    case (true, _) => None
+    case (_, 0) => Some(0.0) // start
+    case (_, 1) => Some(0.4) // copied documents
+    case (_, 2) => Some(0.5) // indexed documents
+    case (_, 3) => Some(0.55) // copied document_processing_errors
+    case (_, 4) => Some(0.7) // copied tags
+    case (_, 5) => Some(1.0) // copied trees
+    case _ => None
+  }
+
+  override val description = Some((cloneJob.cancelled, cloneJob.stepNumber) match {
+    case (true, _) | (_, 5) => ("models.CloneImportJob.cleaning", Seq())
+    case _ => ("models.CloneImportJob.processing", Seq())
+  })
+
+  override val estimatedCompletionTime = None
+}
+
 case class CsvImportJob(csvImport: CsvImport) extends ImportJob {
   override val documentSetId = csvImport.documentSetId
 

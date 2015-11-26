@@ -6,6 +6,32 @@ import org.specs2.mutable.Specification
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class ImportJobSpec extends Specification {
+  "CloneImportJob" should {
+    "give progress=0 at step 0" in {
+      CloneImportJob(factory.cloneJob()).progress must beSome(0.0)
+    }
+
+    "give progress=1.0 at step 5" in {
+      CloneImportJob(factory.cloneJob(stepNumber=5)).progress must beSome(1.0)
+    }
+
+    "give progress=None when cancelled" in {
+      CloneImportJob(factory.cloneJob(stepNumber=1, cancelled=true)).progress must beNone
+    }
+
+    "give description=processing" in {
+      CloneImportJob(factory.cloneJob()).description must beSome(("models.CloneImportJob.processing"), Seq())
+    }
+
+    "give description=cleaning at step 5" in {
+      CloneImportJob(factory.cloneJob(stepNumber=5)).description must beSome(("models.CloneImportJob.cleaning"), Seq())
+    }
+
+    "give description=cleaning when cancelled" in {
+      CloneImportJob(factory.cloneJob(cancelled=true)).description must beSome(("models.CloneImportJob.cleaning"), Seq())
+    }
+  }
+
   "CsvImportJob" should {
     "give progress=0 at the beginning" in {
       CsvImportJob(factory.csvImport(nBytes=2L, nBytesProcessed=0L)).progress must beSome(0.0)

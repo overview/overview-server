@@ -33,6 +33,16 @@ trait Factory {
     documentSetId: Option[Long] = None
   ): ApiToken
 
+  /** Creates a CloneJob with the given parameters. */
+  def cloneJob(
+    id: Int = 0,
+    sourceDocumentSetId: Long = 0L,
+    destinationDocumentSetId: Long = 0L,
+    stepNumber: Short = 0.toShort,
+    cancelled: Boolean = false,
+    createdAt: Instant = Instant.now
+  ): CloneJob
+
   /** Creates a CsvImport with the given parameters. */
   def csvImport(
     id: Long = 0L,
@@ -242,7 +252,6 @@ trait Factory {
     splitDocuments: Boolean = false,
     documentcloudUsername: Option[String] = None,
     documentcloudPassword: Option[String] = None,
-    sourceDocumentSetId: Option[Long] = Some(1L),
     state: DocumentSetCreationJobState.Value = DocumentSetCreationJobState.NotStarted,
     fractionComplete: Double = 0.0,
     statusDescription: String = "",

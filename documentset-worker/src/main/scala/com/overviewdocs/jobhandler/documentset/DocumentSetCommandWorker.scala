@@ -4,6 +4,7 @@ import akka.actor.{Actor,ActorRef,Props}
 import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Failure,Success}
 
+import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
@@ -23,6 +24,7 @@ class DocumentSetCommandWorker(
   val broker: ActorRef,
   val addDocumentsWorkBroker: ActorRef,
   val csvImportWorkBroker: ActorRef,
+  val cloner: Cloner,
   val documentSetDeleter: DocumentSetDeleter
 ) extends Actor
 {
@@ -68,6 +70,15 @@ class DocumentSetCommandWorker(
         // Don't send "ready": we don't know or care whether this worker has
         // actually been doing anything.
       }
+      case command: CloneDocumentSet => {
+        cloner.run(command.cloneJob).onComplete {
+          case Success(()) => {
+            sendDone(command.documentSetId)
+            sendReady
+          }
+          case Failure(ex) => self ! ex
+        }
+      }
       case DeleteDocumentSet(documentSetId) => {
         documentSetDeleter.delete(documentSetId).onComplete {
           case Success(()) => {
@@ -95,12 +106,14 @@ object DocumentSetCommandWorker {
     broker: ActorRef,
     addDocumentsWorkBroker: ActorRef,
     csvImportWorkBroker: ActorRef, 
+    cloner: Cloner,
     documentSetDeleter: DocumentSetDeleter
   ): Props = {
     Props(new DocumentSetCommandWorker(
       broker,
       addDocumentsWorkBroker,
       csvImportWorkBroker,
+      cloner,
       documentSetDeleter
     ))
   }

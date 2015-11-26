@@ -14,7 +14,6 @@ import scala.concurrent.{Await,Future,blocking}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
-import com.overviewdocs.clone.DocumentSetCloner
 import com.overviewdocs.database.{DB,DanglingNodeDeleter,HasBlockingDatabase,TreeIdGenerator}
 import com.overviewdocs.persistence.NodeWriter
 import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tree}
@@ -111,7 +110,6 @@ object JobHandler extends HasBlockingDatabase {
       """)
 
       j.jobType match {
-        case DocumentSetCreationJobType.Clone => handleCloneJob(j)
         case _ => handleCreationJob(j, progFn)
       }
 
@@ -160,10 +158,6 @@ object JobHandler extends HasBlockingDatabase {
         logger.info("Created DocumentSet {}. cluster {}ms; total {}ms", ds.id, t3 - t2, t3 - t1)
       }
     }
-  }
-
-  private def handleCloneJob(job: DocumentSetCreationJob): Unit = {
-    DocumentSetCloner.run(job)
   }
 
   // If source document set has been deleted during the cloning process

@@ -110,7 +110,6 @@ object Dependencies {
   val workerDependencies = Seq(
     deps.javaxMail,
     deps.openCsv,
-    deps.playStreams,
     deps.janino % "test" // See logback-test.xml
   )
   
@@ -120,6 +119,7 @@ object Dependencies {
     deps.javaxMail,
     deps.logback,
     deps.mimeTypes,
+    deps.playStreams,
     deps.pdfocr,
     deps.janino % "test" // See logback-test.xml
   )

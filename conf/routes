@@ -55,6 +55,7 @@ GET    /imports/documentcloud-project        controllers.DocumentCloudProjectCon
 POST   /imports/documentcloud                controllers.DocumentCloudImportJobController.create()
 GET    /imports/documentcloud/new/:query     controllers.DocumentCloudImportJobController._new(query: String)
 POST   /imports/clone/:sourceDocumentSetId   controllers.CloneImportJobController.create(sourceDocumentSetId: Long)
+DELETE /imports/clone/:dsId/:cloneJobId      controllers.CloneImportJobController.delete(dsId: Long, cloneJobId: Int)
 
 # Routes that relate to a DocumentSet
 GET    /documentsets                      controllers.DocumentSetController.index(page: Int ?= 1)
@@ -128,6 +129,7 @@ DELETE /admin/users/:email controllers.admin.UserController.delete(email: String
 
 GET    /admin/jobs.json                 controllers.admin.JobController.indexJson()
 GET    /admin/jobs                      controllers.admin.JobController.index()
+DELETE /admin/jobs/clone/:dsId/:id      controllers.admin.JobController.destroyCloneJob(dsId: Long, id: Int)
 DELETE /admin/jobs/csv-import/:dsId/:id controllers.admin.JobController.destroyCsvImport(dsId: Long, id: Long)
 DELETE /admin/jobs/file-group/:dsId/:id controllers.admin.JobController.destroyFileGroup(dsId: Long, id: Long)
 DELETE /admin/jobs/dscj/:id             controllers.admin.JobController.destroyDscj(id: Long)

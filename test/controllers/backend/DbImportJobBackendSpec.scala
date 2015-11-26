@@ -2,7 +2,7 @@ package controllers.backend
 
 import java.time.Instant
 
-import com.overviewdocs.models.{CsvImportJob,DocumentSet,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetCreationJobImportJob,DocumentSetUser,FileGroupImportJob,ImportJob}
+import com.overviewdocs.models.{CloneImportJob,CsvImportJob,DocumentSet,DocumentSetCreationJobState,DocumentSetCreationJobType,DocumentSetCreationJobImportJob,DocumentSetUser,FileGroupImportJob,ImportJob}
 
 class DbImportJobBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbScope {
@@ -50,6 +50,25 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
       val documentSetCreationJob = factory.documentSetCreationJob(documentSetId=documentSet.id)
       factory.documentSetUser(documentSet.id, "user2@example.org")
       ret must beEqualTo(Seq())
+    }
+
+    "return a CloneImportJob" in new IndexByUserScope {
+      val cloneJob = factory.cloneJob(
+        sourceDocumentSetId=factory.documentSet().id,
+        destinationDocumentSetId=factory.documentSet().id
+      )
+      factory.documentSetUser(cloneJob.destinationDocumentSetId, "user@example.org")
+      ret must beEqualTo(Seq(CloneImportJob(cloneJob)))
+    }
+
+    "return (yes, RETURN) a cancelled CloneImportJob" in new IndexByUserScope {
+      val cloneJob = factory.cloneJob(
+        sourceDocumentSetId=factory.documentSet().id,
+        destinationDocumentSetId=factory.documentSet().id,
+        cancelled=true
+      )
+      factory.documentSetUser(cloneJob.destinationDocumentSetId, "user@example.org")
+      ret must beEqualTo(Seq(CloneImportJob(cloneJob)))
     }
 
     "return a CsvImportJob" in new IndexByUserScope {
@@ -143,6 +162,23 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.InProgress
       )
       ret must beEqualTo(Seq())
+    }
+
+    "return a CloneImportJob" in new IndexByDocumentSetScope {
+      val cloneJob = factory.cloneJob(
+        sourceDocumentSetId=factory.documentSet().id,
+        destinationDocumentSetId=documentSet.id
+      )
+      ret must beEqualTo(Seq(CloneImportJob(cloneJob)))
+    }
+
+    "return (yes, RETURN) a cancelled CloneImportJob" in new IndexByDocumentSetScope {
+      val cloneJob = factory.cloneJob(
+        sourceDocumentSetId=factory.documentSet().id,
+        destinationDocumentSetId=documentSet.id,
+        cancelled=true
+      )
+      ret must beEqualTo(Seq(CloneImportJob(cloneJob)))
     }
 
     "return a CsvImportJob" in new IndexByDocumentSetScope {
@@ -240,6 +276,27 @@ class DbImportJobBackendSpec extends DbBackendSpecification {
         state=DocumentSetCreationJobState.Cancelled
       )
       ret must beEqualTo(Seq())
+    }
+
+    "return a CloneImportJob" in new IndexWithDocumentSetsAndOwnersScope {
+      val documentSet = factory.documentSet()
+      val cloneJob = factory.cloneJob(
+        sourceDocumentSetId=factory.documentSet().id,
+        destinationDocumentSetId=documentSet.id
+      )
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      ret must beEqualTo(Seq((CloneImportJob(cloneJob), documentSet, Some("user@example.org"))))
+    }
+
+    "return (yes, RETURN) a cancelled CloneImportJob" in new IndexWithDocumentSetsAndOwnersScope {
+      val documentSet = factory.documentSet()
+      val cloneJob = factory.cloneJob(
+        sourceDocumentSetId=factory.documentSet().id,
+        destinationDocumentSetId=documentSet.id,
+        cancelled=true
+      )
+      factory.documentSetUser(documentSet.id, "user@example.org")
+      ret must beEqualTo(Seq((CloneImportJob(cloneJob), documentSet, Some("user@example.org"))))
     }
 
     "return a CsvImportJob" in new IndexWithDocumentSetsAndOwnersScope {

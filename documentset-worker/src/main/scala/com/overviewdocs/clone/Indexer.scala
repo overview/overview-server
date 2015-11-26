@@ -10,7 +10,11 @@ import com.overviewdocs.util.BulkDocumentWriter
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
 
-object DocumentSetIndexer extends HasDatabase {
+trait Indexer {
+  def indexDocuments(documentSetId: Long): Future[Unit]
+}
+
+object Indexer extends Indexer with HasDatabase {
   import database.api._
   import database.executionContext
 

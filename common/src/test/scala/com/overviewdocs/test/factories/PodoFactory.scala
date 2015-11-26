@@ -19,6 +19,15 @@ import com.overviewdocs.models._
 object PodoFactory extends Factory {
   private val random = new Random()
 
+  /** Generate a non-conflicting ID, if the passed parameter is 0. */
+  private def getId(idOr0: Int): Int = {
+    if (idOr0 == 0L) {
+      math.abs(random.nextInt)
+    } else {
+      idOr0
+    }
+  }
+
   /** Generate a non-conflicting ID, if the passed parameter is 0L. */
   private def getId(idOr0: Long): Long = {
     if (idOr0 == 0L) {
@@ -60,6 +69,22 @@ object PodoFactory extends Factory {
     createdBy,
     description,
     documentSetId
+  )
+
+  override def cloneJob(
+    id: Int,
+    sourceDocumentSetId: Long,
+    destinationDocumentSetId: Long,
+    stepNumber: Short,
+    cancelled: Boolean,
+    createdAt: Instant
+  ) = CloneJob(
+    getId(id),
+    getId(sourceDocumentSetId),
+    getId(destinationDocumentSetId),
+    stepNumber,
+    cancelled,
+    createdAt
   )
 
   override def csvImport(
@@ -417,7 +442,6 @@ object PodoFactory extends Factory {
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
-    sourceDocumentSetId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
     statusDescription: String,
@@ -431,7 +455,6 @@ object PodoFactory extends Factory {
     splitDocuments,
     documentcloudUsername,
     documentcloudPassword,
-    sourceDocumentSetId,
     state,
     fractionComplete,
     statusDescription,

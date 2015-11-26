@@ -8,6 +8,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Future,Promise}
 
+import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
@@ -26,7 +27,14 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       val addDocumentsWorkBroker = TestProbe()
       val csvImportWorkBroker = TestProbe()
       val documentSetDeleter = smartMock[DocumentSetDeleter]
-      val subject = TestActorRef(DocumentSetCommandWorker.props(broker.ref, addDocumentsWorkBroker.ref, csvImportWorkBroker.ref, documentSetDeleter))
+      val cloner = smartMock[Cloner]
+      val subject = TestActorRef(DocumentSetCommandWorker.props(
+        broker.ref,
+        addDocumentsWorkBroker.ref,
+        csvImportWorkBroker.ref,
+        cloner,
+        documentSetDeleter
+      ))
     }
 
     "send WorkerReady on start" in new BaseScope {
@@ -70,6 +78,29 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         csvImportWorkBroker.expectMsg(
           CsvImportWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(1L))
         )
+      }
+    }
+
+    "CloneDocumentSet" should {
+      "call cloner.run" in new BaseScope {
+        val cloneJob = factory.cloneJob()
+        cloner.run(any) returns Future.successful(())
+        subject ! DocumentSetCommands.CloneDocumentSet(cloneJob)
+        there was one(cloner).run(cloneJob)
+      }
+
+      "return to the broker when complete" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        val promise = Promise[Unit]()
+        cloner.run(any) returns promise.future
+        subject ! DocumentSetCommands.CloneDocumentSet(factory.cloneJob(destinationDocumentSetId=3L))
+
+        broker.expectNoMsg(Duration.Zero)
+
+        promise.success(())
+        broker.expectMsg(WorkerDoneDocumentSetCommand(3L))
+        broker.expectMsg(WorkerReady)
       }
     }
 

@@ -8,12 +8,13 @@ import scala.language.postfixOps
 
 import com.overviewdocs.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
 import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
+import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.{DB,DocumentSetDeleter,HasDatabase}
 import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
 import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
 import com.overviewdocs.messages.DocumentSetCommands
-import com.overviewdocs.models.tables.{CsvImports,DocumentSets,FileGroups}
+import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentSets,FileGroups}
 import com.overviewdocs.util.Logger
 
 class DocumentSetWorkerKiller extends Actor {
@@ -107,6 +108,7 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
       documentSetMessageBroker,
       addDocumentsWorkBroker,
       csvImportWorkBroker,
+      Cloner,
       DocumentSetDeleter
     ),
     "DocumentSetCommandWorker"
@@ -121,10 +123,21 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
     */
   private def resumeCommands(implicit ec: ExecutionContext): Unit = {
     for {
+      _ <- resumeCloneJobCommands
       _ <- resumeCsvImportCommands
       _ <- resumeAddDocumentsCommands
       _ <- resumeDeleteDocumentSetCommands // We add first, because an add, cancelled, nixes a GroupedFileUpload
     } yield ()
+  }
+
+  private def resumeCloneJobCommands(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    database.seq(CloneJobs).map(_.foreach { cloneJob =>
+      val command = DocumentSetCommands.CloneDocumentSet(cloneJob)
+      logger.info("Resuming {}...", command)
+      documentSetMessageBroker ! command
+    })
   }
 
   private def resumeCsvImportCommands(implicit ec: ExecutionContext): Future[Unit] = {

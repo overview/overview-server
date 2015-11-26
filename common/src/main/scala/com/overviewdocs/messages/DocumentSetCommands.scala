@@ -1,6 +1,6 @@
 package com.overviewdocs.messages
 
-import com.overviewdocs.models.{CsvImport,FileGroup}
+import com.overviewdocs.models.{CloneJob,CsvImport,FileGroup}
 
 /** Background tasks that must be serialized on a document set.
   *
@@ -39,6 +39,14 @@ object DocumentSetCommands {
     */
   case class AddDocumentsFromCsvImport(csvImport: CsvImport) extends Command {
     override val documentSetId = csvImport.documentSetId
+  }
+
+  /** Copy user data from one DocumentSet to another.
+    *
+    * Stored as CloneJob.
+    */
+  case class CloneDocumentSet(cloneJob: CloneJob) extends Command {
+    override val documentSetId = cloneJob.destinationDocumentSetId
   }
 
   /** Delete a DocumentSet and all associated information.

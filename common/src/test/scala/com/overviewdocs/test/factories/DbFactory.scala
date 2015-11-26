@@ -38,6 +38,22 @@ object DbFactory extends Factory with HasBlockingDatabase {
     documentSetId
   ))
 
+  override def cloneJob(
+    id: Int,
+    sourceDocumentSetId: Long,
+    destinationDocumentSetId: Long,
+    stepNumber: Short,
+    cancelled: Boolean,
+    createdAt: Instant
+  ) = run(q.insertCloneJob += podoFactory.cloneJob(
+    id,
+    sourceDocumentSetId,
+    destinationDocumentSetId,
+    stepNumber,
+    cancelled,
+    createdAt
+  ))
+
   override def csvImport(
     id: Long,
     documentSetId: Long,
@@ -385,7 +401,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     splitDocuments: Boolean,
     documentcloudUsername: Option[String],
     documentcloudPassword: Option[String],
-    sourceDocumentSetId: Option[Long],
     state: DocumentSetCreationJobState.Value,
     fractionComplete: Double,
     statusDescription: String,
@@ -399,7 +414,6 @@ object DbFactory extends Factory with HasBlockingDatabase {
     splitDocuments,
     documentcloudUsername,
     documentcloudPassword,
-    sourceDocumentSetId,
     state,
     fractionComplete,
     statusDescription,
@@ -409,6 +423,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
   object q {
     // Compile queries once, instead of once per test
     val insertApiToken = (ApiTokens returning ApiTokens)
+    val insertCloneJob = (CloneJobs returning CloneJobs)
     val insertCsvImport = (CsvImports returning CsvImports)
     val insertDanglingNode = (DanglingNodes returning DanglingNodes)
     val insertDocument = (Documents returning Documents)

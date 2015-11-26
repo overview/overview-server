@@ -12,19 +12,19 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
 
   "DocumentSetDeleter" should {
 
-    "delete documents, document_set_user, and document_set" in new BasicDocumentSetScope {
+    "delete documents, document_set_user, and document_set" in new BaseScope {
       deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
     }
 
-    "delete the DocumentSet from ElasticSearch" in new BasicDocumentSetScope {
+    "delete the DocumentSet from ElasticSearch" in new BaseScope {
       deleteDocumentSet
 
       there was one(mockIndexClient).removeDocumentSet(documentSet.id)
     }
 
-    "delete jobs" in new BasicDocumentSetScope {
+    "delete jobs" in new BaseScope {
       val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
 
       deleteDocumentSet
@@ -33,7 +33,16 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === job.id)) must beNone
     }
 
-    "delete trees" in new BasicDocumentSetScope {
+    "delete clone_jobs" in new BaseScope {
+      val job = factory.cloneJob(destinationDocumentSetId=documentSet.id)
+
+      deleteDocumentSet
+
+      import database.api._
+      blockingDatabase.option(CloneJobs.filter(_.id === job.id)) must beNone
+    }
+
+    "delete trees" in new BaseScope {
       val node = factory.node()
       val tree = factory.tree(documentSetId=documentSet.id, rootNodeId=Some(node.id))
 
@@ -43,7 +52,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
     }
 
-    "delete trees that have no nodes" in new BasicDocumentSetScope {
+    "delete trees that have no nodes" in new BaseScope {
       val tree = factory.tree(documentSetId=documentSet.id)
 
       deleteDocumentSet
@@ -52,7 +61,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(Trees.filter(_.id === tree.id)) must beNone
     }
 
-    "delete csv imports" in new BasicDocumentSetScope {
+    "delete csv imports" in new BaseScope {
       import database.api._
 
       val loid: Long = blockingDatabase.run(database.largeObjectManager.create.transactionally)
@@ -69,7 +78,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       } must throwA[Exception]
     }
 
-    "delete user added data" in new BasicDocumentSetScope {
+    "delete user added data" in new BaseScope {
       val tag = factory.tag(documentSetId = documentSet.id)
       documents.foreach(d => factory.documentTag(d.id, tag.id))
 
@@ -90,7 +99,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       fileReferenceCount must beSome(0)
     }
     
-    "delete tree data" in new BasicDocumentSetScope {
+    "delete tree data" in new BaseScope {
       val node = factory.node(id = 1l, rootId = 1l)
 
       factory.nodeDocument(node.id, documents.head.id)
@@ -101,7 +110,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       findDocumentSet(documentSet.id) must beEmpty
     }
 
-    "delete view data" in new BasicDocumentSetScope {
+    "delete view data" in new BaseScope {
       val apiToken = factory.apiToken(documentSetId = Some(documentSet.id))
       val store = factory.store(apiToken = apiToken.token)
       val storeObject = factory.storeObject(storeId = store.id)
@@ -114,7 +123,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
     }
   }
 
-  trait BasicDocumentSetScope extends DbScope {
+  trait BaseScope extends DbScope {
     def numberOfDocuments = 3
 
     val mockIndexClient = smartMock[IndexClient]
@@ -146,7 +155,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
     def createDocument: Document = factory.document(documentSetId = documentSet.id)
   }
 
-  trait FileUploadScope extends BasicDocumentSetScope {
+  trait FileUploadScope extends BaseScope {
     def refCount = 1
     
     override def createDocument = {
@@ -158,7 +167,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
 
   }
 
-  trait SplitFileUploadScope extends BasicDocumentSetScope {
+  trait SplitFileUploadScope extends BaseScope {
 
     override def createDocuments = {
       val file = factory.file()

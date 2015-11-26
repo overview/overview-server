@@ -2,9 +2,10 @@
   importJob: com.overviewdocs.models.ImportJob
 )(implicit messages: Messages)
 
-@import com.overviewdocs.models.{CsvImportJob,ImportJob,FileGroupImportJob}
+@import com.overviewdocs.models.{CloneImportJob,CsvImportJob,ImportJob,FileGroupImportJob}
 
 @cancelUrl = @{importJob match {
+  case CloneImportJob(cloneJob) => Some(routes.CloneImportJobController.delete(cloneJob.destinationDocumentSetId, cloneJob.id))
   case CsvImportJob(csvImport) => Some(routes.CsvUploadController.delete(csvImport.documentSetId, csvImport.id))
   case FileGroupImportJob(fileGroup) => Some(routes.FileImportController.delete(fileGroup.id))
   case _ => None
