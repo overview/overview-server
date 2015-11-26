@@ -15,7 +15,6 @@ CREATE TABLE csv_import (
 COMMENT ON COLUMN csv_import.loid IS 'We may set this to NULL after processing, to save space.';
 
 CREATE INDEX ON csv_import (document_set_id);
-CREATE INDEX pending_csv_imports ON csv_import (id) WHERE n_bytes_processed < n_bytes;
 
 INSERT INTO csv_import (
   document_set_id,
