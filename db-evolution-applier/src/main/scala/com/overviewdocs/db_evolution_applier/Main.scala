@@ -104,6 +104,7 @@ object Main {
     val flyway = new Flyway
     flyway.setDataSource(dataSource)
     flyway.setLocations("migration")
+    flyway.setValidateOnMigrate(false)
 
     val nPendingMigrations = flyway.info.pending.length
     if (nPendingMigrations > 0) {
