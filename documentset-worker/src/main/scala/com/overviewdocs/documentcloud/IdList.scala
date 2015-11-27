@@ -7,7 +7,10 @@ import com.overviewdocs.util.Textify
 
 case class IdList(
   rows: Seq[IdListRow]
-)
+) {
+  def nDocuments: Int = rows.length
+  def nPages: Int = rows.foldLeft(0)((s, r) => s + r.nPages)
+}
 
 object IdList {
   /** Turn an IdList into a String.

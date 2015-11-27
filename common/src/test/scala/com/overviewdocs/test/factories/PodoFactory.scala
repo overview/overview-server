@@ -183,12 +183,16 @@ object PodoFactory extends Factory {
     id: Int,
     documentCloudImportId: Int,
     pageNumber: Int,
-    idsString: String
+    idsString: String,
+    nDocuments: Int,
+    nPages: Int
   ) = DocumentCloudImportIdList(
     id,
     documentCloudImportId,
     pageNumber,
-    idsString
+    idsString,
+    nDocuments,
+    nPages
   )
 
   override def documentSet(

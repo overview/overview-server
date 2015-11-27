@@ -113,5 +113,12 @@ class IdListSpec extends Specification {
         )
       )), 5))
     }
+
+    "calculate nPages" in {
+      IdList(Seq(
+        IdListRow("", "", 5, "", "", ""),
+        IdListRow("", "", 2, "", "", "")
+      )).nPages must beEqualTo(7)
+    }
   }
 }

@@ -21,7 +21,9 @@ CREATE TABLE document_cloud_import_id_list (
   id SERIAL PRIMARY KEY,
   document_cloud_import_id INT NOT NULL REFERENCES document_cloud_import (id),
   page_number INT NOT NULL,
-  ids_string VARCHAR NOT NULL
+  ids_string VARCHAR NOT NULL,
+  n_documents INT NOT NULL,
+  n_pages INT NOT NULL
 );
 CREATE INDEX ON document_cloud_import_id_list (document_cloud_import_id);
  

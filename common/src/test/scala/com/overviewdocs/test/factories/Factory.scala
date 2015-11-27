@@ -114,7 +114,9 @@ trait Factory {
     id: Int = 0,
     documentCloudImportId: Int = 0,
     pageNumber: Int = 0,
-    idsString: String = "123-foo,1\n234-bar,2"
+    idsString: String = "123-foo,1\n234-bar,2",
+    nDocuments: Int = 0,
+    nPages: Int = 0
   ): DocumentCloudImportIdList
 
   def documentSetUser(

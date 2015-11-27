@@ -150,12 +150,16 @@ object DbFactory extends Factory with HasBlockingDatabase {
     id: Int,
     documentCloudImportId: Int,
     pageNumber: Int,
-    idsString: String
+    idsString: String,
+    nDocuments: Int,
+    nPages: Int
   ) = run(q.insertDocumentCloudImportIdList += podoFactory.documentCloudImportIdList(
     id,
     documentCloudImportId,
     pageNumber,
-    idsString
+    idsString,
+    nDocuments,
+    nPages
   ))
 
   override def documentSet(

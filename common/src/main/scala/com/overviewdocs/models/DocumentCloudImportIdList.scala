@@ -21,13 +21,27 @@ case class DocumentCloudImportIdList(
     *
     * See com.overviewdocs.documentcloud.IdList for encoding logic.
     */
-  idsString: String
+  idsString: String,
+
+  /** The number of DocumentCloud documents in this list.
+    *
+    * We cache this so we can avoid a RAM hit when summing.
+    */
+  nDocuments: Int,
+
+  /** The number of DocumentCloud pages in this list.
+    *
+    * We cache this so we can avoid a RAM hit when summing.
+    */
+  nPages: Int
 )
 
 object DocumentCloudImportIdList {
   case class CreateAttributes(
     documentCloudImportId: Int,
     pageNumber: Int,
-    idsString: String
+    idsString: String,
+    nDocuments: Int,
+    nPages: Int
   )
 }
