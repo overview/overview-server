@@ -115,12 +115,6 @@ object JobHandler extends HasBlockingDatabase {
 
       logger.info(s"Cleaning up job ${j.documentSetId}")
       blockingDatabase.runUnit(sqlu"""
-        WITH a AS (
-          SELECT lo_unlink(contents_oid)
-          FROM document_set_creation_job
-          WHERE document_set_id = ${job.documentSetId}
-            AND contents_oid IS NOT NULL
-        )
         DELETE FROM document_set_creation_job WHERE id = ${job.id}
       """)
     } catch {
