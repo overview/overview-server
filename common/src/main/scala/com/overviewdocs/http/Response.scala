@@ -24,5 +24,5 @@ case class Response(
     */
   bodyBytes: Array[Byte]
 ) {
-  val body: String = new String(bodyBytes, "utf-8")
+  def body: String = new String(bodyBytes, "utf-8")
 }

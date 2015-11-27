@@ -13,6 +13,9 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
   "DocumentSetDeleter" should {
 
     "delete documents, document_set_user, and document_set" in new BaseScope {
+      factory.documentSetUser(documentSetId = documentSet.id)
+      factory.documentProcessingError(documentSetId = documentSet.id)
+
       deleteDocumentSet
 
       findDocumentSet(documentSet.id) must beEmpty
@@ -24,13 +27,14 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       there was one(mockIndexClient).removeDocumentSet(documentSet.id)
     }
 
-    "delete jobs" in new BaseScope {
-      val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
+    "delete document_cloud_imports" in new BaseScope {
+      val dci = factory.documentCloudImport(documentSetId=documentSet.id)
+      factory.documentCloudImportIdList(documentCloudImportId=dci.id)
 
       deleteDocumentSet
 
-      import database.api._
-      blockingDatabase.option(DocumentSetCreationJobs.filter(_.id === job.id)) must beNone
+      blockingDatabase.option(DocumentCloudImports) must beNone
+      blockingDatabase.option(DocumentCloudImportIdLists) must beNone
     }
 
     "delete clone_jobs" in new BaseScope {
@@ -132,11 +136,8 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       override protected val indexClient = mockIndexClient
     }
 
-    val documentSet = createDocumentSet
+    val documentSet = factory.documentSet()
     val documents = createDocuments
-
-    factory.documentSetUser(documentSetId = documentSet.id)
-    factory.documentProcessingError(documentSetId = documentSet.id)
 
     def deleteDocumentSet: Unit = await(deleter.delete(documentSet.id))
 
@@ -150,7 +151,6 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
       blockingDatabase.option(Files.map(_.referenceCount))
     }
 
-    def createDocumentSet: DocumentSet = factory.documentSet()
     def createDocuments: Seq[Document] = Seq.fill(numberOfDocuments)(createDocument)
     def createDocument: Document = factory.document(documentSetId = documentSet.id)
   }

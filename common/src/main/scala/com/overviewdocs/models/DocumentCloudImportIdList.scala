@@ -9,14 +9,20 @@ case class DocumentCloudImportIdList(
   /** 0-based page of search results. */
   pageNumber: Int,
 
-  /** IDs from DocumentCloud: our to-fetch list.
+  /** IDs from DocumentCloud: our to-fetch list, encoded as a String.
     *
-    * CSV format: "123-foo-bar,1\n234-bar-baz,2". First column is ID from
-    * DocumentCloud; second column is number of pages.
+    * It contains:
+    *
+    * * `documentCloudId`
+    * * `title`
+    * * `nPages`
+    * * `fullTextUrl`
+    * * `pageTextUrlTemplate` (replace `{page}` with page number)
+    *
+    * See com.overviewdocs.documentcloud.IdList for encoding logic.
     */
   idsString: String
-) {
-}
+)
 
 object DocumentCloudImportIdList {
   case class CreateAttributes(

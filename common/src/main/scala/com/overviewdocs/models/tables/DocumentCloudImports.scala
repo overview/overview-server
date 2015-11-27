@@ -5,7 +5,8 @@ import java.time.Instant
 import com.overviewdocs.database.Slick.api._
 import com.overviewdocs.models.DocumentCloudImport
 
-class DocumentCloudImportsImpl(tag: Tag) extends Table[DocumentCloudImport](tag, "csv_import") {
+class DocumentCloudImportsImpl(tag: Tag)
+extends Table[DocumentCloudImport](tag, "document_cloud_import") {
   def id = column[Int]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
   def query = column[String]("query")

@@ -18,19 +18,16 @@ trait DocumentSetDeleter extends HasDatabase {
       _ <- deleteViews(documentSetId)
       _ <- deleteUserAddedData(documentSetId)
       _ <- deleteTrees(documentSetId)
-      _ <- deleteJobs(documentSetId)
-      _ <- deleteCsvImports(documentSetId)
       _ <- deleteCloneJobs(documentSetId)
+      _ <- deleteCsvImports(documentSetId)
+      _ <- deleteDocumentCloudImports(documentSetId)
       _ <- DBIO.from(indexFuture) // Ensure it's out of ElasticSearch before deleting DocumentSet, so restart resumes the index-delete
       _ <- deleteCore(documentSetId)
     } yield ())
   }
 
-  private def deleteJobs(documentSetId: Long): DBIO[Unit] = {
-    val q = DocumentSetCreationJobs
-      .filter(j => j.documentSetId === documentSetId)
-      .delete
-    for { _ <- q } yield ()
+  private def deleteCloneJobs(documentSetId: Long): DBIO[Unit] = {
+    CloneJobs.filter(_.destinationDocumentSetId === documentSetId).delete.map(_ => ())
   }
 
   private def deleteCsvImports(documentSetId: Long): DBIO[Unit] = {
@@ -43,8 +40,19 @@ trait DocumentSetDeleter extends HasDatabase {
     } yield ()).transactionally
   }
 
-  private def deleteCloneJobs(documentSetId: Long): DBIO[Unit] = {
-    CloneJobs.filter(_.destinationDocumentSetId === documentSetId).delete.map(_ => ())
+  private def deleteDocumentCloudImports(documentSetId: Long): DBIO[Int] = {
+    sqlu"""
+      WITH imports AS (
+        SELECT id
+        FROM document_cloud_import
+        WHERE document_set_id = $documentSetId
+      ), delete1 AS (
+        DELETE FROM document_cloud_import_id_list
+        WHERE document_cloud_import_id IN (SELECT id FROM imports)
+      )
+      DELETE FROM document_cloud_import
+      WHERE id IN (SELECT id FROM imports)
+    """
   }
 
   // The minimal set of components, common to all document sets
