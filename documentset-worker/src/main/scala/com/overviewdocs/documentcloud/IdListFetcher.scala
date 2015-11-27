@@ -10,30 +10,19 @@ import com.overviewdocs.models.tables.{DocumentCloudImports,DocumentCloudImportI
 /** Writes DocumentCloudIdLists to the database and returns the number of them
   * once they are all written.
   */
-class IdListFetcher(dcImport: DocumentCloudImport, server: DocumentCloudServer)
+class IdListFetcher(
+  dcImport: DocumentCloudImport,
+  server: DocumentCloudServer,
+  val listSize: Int = 1000
+)
 extends HasDatabase {
   import database.api._
 
-  sealed trait Result
-
-  /** We finished gathering IdLists. */
-  case class Success(nLists: Int, nDocuments: Int, nPages: Int) extends Result
-
-  /** Either the user cancelled or we got an HTTP error.
-    *
-    * We stopped processing. The caller should write this message somewhere and
-    * delete the entire import.
-    */
-  case class Stop(message: String) extends Result
+  assert(listSize > 0)
 
   private val CancelledMessage = "This import was cancelled"
 
-  private var error: Option[String] = if (dcImport.cancelled) {
-    Some(CancelledMessage)
-  } else {
-    None
-  }
-
+  private var error: Option[String] = None // we always check in DB
   private var nTotal: Option[Int] = dcImport.nIdListsTotal
   private var nFetched: Int = 0   // set in resume()
   private var nDocuments: Int = 0 // set in resume()
@@ -59,12 +48,15 @@ extends HasDatabase {
     */
   private def fetchNextIdListAndUpdateNTotal: Future[Either[String,IdList]] = {
     if (nTotal.isEmpty) {
-      server.getIdList0(dcImport.query, dcImport.username, dcImport.password).map(_ match {
+      server.getIdList0(dcImport.query, dcImport.username, dcImport.password).flatMap(_ match {
         case Right((idList, nDocumentsTotal)) => {
-          nTotal = Some(nDocumentsTotal / 1000) // TODO put page size somewhere
-          Right(idList)
+          nTotal = Some(math.max(1, (nDocumentsTotal + listSize - 1) / listSize))
+          // Update nTotal in the database *before* writing any ID lists.
+          // Otherwise, if you try to resume but nTotal isn't set, you'll
+          // try to re-insert page 0 (which will crash).
+          reportProgressAndCheckContinue.map(_ => Right(idList))
         }
-        case Left(error) => Left(error)
+        case Left(error) => Future.successful(Left(error))
       })
     } else {
       server.getIdList(dcImport.query, dcImport.username, dcImport.password, nFetched)
@@ -83,8 +75,8 @@ extends HasDatabase {
     )
 
     nFetched += 1
-    nDocuments += nDocuments
-    nPages += nPages
+    nDocuments += idList.nDocuments
+    nPages += idList.nPages
 
     database.runUnit(inserter.+=(attributes))
   }
@@ -100,17 +92,18 @@ extends HasDatabase {
       case Right(idList) => {
         for {
           _ <- writeIdListAndUpdateState(idList)
-          _ <- reportProgressAndCheckContinue
         } yield ()
       }
     })
   }
 
   private def continue: Future[Unit] = {
-    if (error.nonEmpty || Some(nFetched) == nTotal) {
-      Future.successful(())
-    } else {
-      step.flatMap(_ => continue)
+    reportProgressAndCheckContinue.flatMap { _ =>
+      if (error.nonEmpty || Some(nFetched) == nTotal) {
+        Future.successful(())
+      } else {
+        step.flatMap(_ => continue)
+      }
     }
   }
 
@@ -135,15 +128,29 @@ extends HasDatabase {
     }
   }
 
-  private def run: Future[Result] = {
+  private def result: IdListFetcher.Result = error match {
+    case Some(message) => IdListFetcher.Stop(message)
+    case None => IdListFetcher.Success(nFetched, nDocuments, nPages)
+  }
+
+  def run: Future[IdListFetcher.Result] = {
     for {
       _ <- loadStateFromDatabase
       _ <- continue
     } yield result
   }
+}
 
-  private def result: Result = error match {
-    case Some(message) => Stop(message)
-    case None => Success(nFetched, nDocuments, nPages)
-  }
+object IdListFetcher {
+  sealed trait Result
+
+  /** We finished gathering IdLists. */
+  case class Success(nLists: Int, nDocuments: Int, nPages: Int) extends Result
+
+  /** Either the user cancelled or we got an HTTP error.
+    *
+    * We stopped processing. The caller should write this message somewhere and
+    * delete the entire import.
+    */
+  case class Stop(message: String) extends Result
 }
