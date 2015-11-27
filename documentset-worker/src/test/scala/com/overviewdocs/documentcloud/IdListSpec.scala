@@ -84,5 +84,34 @@ class IdListSpec extends Specification {
     "fail to parse JSON that is missing something" in {
       IdList.parseDocumentCloudSearchResult(Json.obj()) must beNone
     }
+
+    "Textify a title so encode/decode will always succeed" in {
+      IdList.parseDocumentCloudSearchResult(Json.obj(
+        "total" -> 5,
+        "documents" -> Json.arr(
+          Json.obj(
+            "id" -> "123-foo-bar",
+            "title" -> "Foo\u001f\u001eBar",
+            "access" -> "public",
+            "pages" -> 5,
+            "resources" -> Json.obj(
+              "text" -> "https://assets.documentcloud.org/a.txt",
+              "page" -> Json.obj(
+                "text" -> "https://assets.documentcloud.org/a-p{page}.txt"
+              )
+            )
+          )
+        )
+      )) must beSome((IdList(Seq(
+        IdListRow(
+          "123-foo-bar",
+          "Foo  Bar",
+          5,
+          "https://assets.documentcloud.org/a.txt",
+          "https://assets.documentcloud.org/a-p{page}.txt",
+          "public"
+        )
+      )), 5))
+    }
   }
 }

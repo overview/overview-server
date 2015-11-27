@@ -3,6 +3,8 @@ package com.overviewdocs.documentcloud
 import play.api.libs.json.JsValue
 import scala.collection.mutable
 
+import com.overviewdocs.util.Textify
+
 case class IdList(
   rows: Seq[IdListRow]
 )
@@ -62,7 +64,7 @@ object IdList {
     import play.api.libs.json._
     (
       (__ \ "id").read[String] and
-      (__ \ "title").read[String] and
+      (__ \ "title").read[String].map(Textify.apply _) and
       (__ \ "pages").read[Int] and
       (__ \ "resources" \ "text").read[String] and
       (__ \ "resources" \ "page" \ "text").read[String] and
