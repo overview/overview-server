@@ -237,32 +237,6 @@ class AuthoritiesSpec extends DbSpecification {
         await(auth.userOwningDocument(document.id)(badUser)) must beFalse
       }
     }
-
-    "userOwningJob" should {
-      "return true when the user owns the job" in new UserScope {
-        val documentSet = factory.documentSet()
-        val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
-        factory.documentSetUser(documentSet.id, goodUser.email)
-        await(auth.userOwningJob(job.id)(goodUser)) must beTrue
-      }
-
-      "return false when another user owns the job" in new UserScope {
-        val documentSet = factory.documentSet()
-        val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
-        factory.documentSetUser(documentSet.id, goodUser.email)
-        await(auth.userOwningJob(job.id)(badUser)) must beFalse
-      }
-
-      "return false when the user owns a different job" in new UserScope {
-        val documentSet = factory.documentSet()
-        val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
-        val otherDocumentSet = factory.documentSet()
-        val otherJob = factory.documentSetCreationJob(documentSetId=otherDocumentSet.id)
-        factory.documentSetUser(documentSet.id, goodUser.email)
-        factory.documentSetUser(otherDocumentSet.id, badUser.email)
-        await(auth.userOwningJob(job.id)(badUser)) must beFalse
-      }
-    }
   }
 
   "with a DocumentSet ApiToken" should {
@@ -404,13 +378,6 @@ class AuthoritiesSpec extends DbSpecification {
         val apiToken2 = factory.apiToken(documentSetId=Some(documentSet2.id), token="token2")
         val document2 = factory.document(documentSetId=documentSet2.id)
         await(auth.userOwningDocument(document2.id)(apiToken)) must beFalse
-      }
-    }
-
-    "userOwningJob" should {
-      "return false" in new ApiTokenScope {
-        val job = factory.documentSetCreationJob(documentSetId=documentSet.id)
-        await(auth.userOwningJob(job.id)(apiToken)) must beFalse
       }
     }
   }

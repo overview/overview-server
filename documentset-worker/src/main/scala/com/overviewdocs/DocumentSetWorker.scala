@@ -15,7 +15,7 @@ import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
 import com.overviewdocs.jobhandler.documentcloud.{DocumentCloudImportWorkBroker,DocumentCloudImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
 import com.overviewdocs.messages.DocumentSetCommands
-import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentSets,FileGroups}
+import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentCloudImports,DocumentSets,FileGroups}
 import com.overviewdocs.util.Logger
 
 class DocumentSetWorkerKiller extends Actor {
@@ -129,6 +129,7 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
     for {
       _ <- resumeCloneJobCommands
       _ <- resumeCsvImportCommands
+      _ <- resumeDocumentCloudImportCommands
       _ <- resumeAddDocumentsCommands
       _ <- resumeDeleteDocumentSetCommands // We add first, because an add, cancelled, nixes a GroupedFileUpload
     } yield ()
@@ -149,6 +150,16 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
 
     database.seq(CsvImports).map(_.foreach { csvImport =>
       val command = DocumentSetCommands.AddDocumentsFromCsvImport(csvImport)
+      logger.info("Resuming {}...", command)
+      documentSetMessageBroker ! command
+    })
+  }
+
+  private def resumeDocumentCloudImportCommands(implicit ec: ExecutionContext): Future[Unit] = {
+    import database.api._
+
+    database.seq(DocumentCloudImports).map(_.foreach { dcImport =>
+      val command = DocumentSetCommands.AddDocumentsFromDocumentCloud(dcImport)
       logger.info("Resuming {}...", command)
       documentSetMessageBroker ! command
     })

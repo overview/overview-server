@@ -99,9 +99,6 @@ class DocumentSetCommandWorker(
           case Failure(ex) => self ! ex
         }
       }
-      case CancelJob(documentSetId, jobId) => {
-        // no-op ... for now!
-      }
     }
   }
 

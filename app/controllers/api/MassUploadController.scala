@@ -97,8 +97,7 @@ trait MassUploadController extends ApiController {
     })
   }
 
-  /** Marks the FileGroup as <tt>completed</tt> and kicks off a
-    * DocumentSetCreationJob.
+  /** Marks the FileGroup as <tt>completed</tt> and pokes the worker.
     *
     * TODO refactor into MassUploadControllerMethods
     */

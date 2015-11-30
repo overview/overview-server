@@ -2,8 +2,8 @@ package controllers.backend
 
 import scala.concurrent.Future
 
-import com.overviewdocs.models.{CloneImportJob,CloneJob,CsvImport,CsvImportJob,DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobImportJob,DocumentSetCreationJobState,DocumentSetUser,FileGroup,FileGroupImportJob,ImportJob}
-import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentSetCreationJobs,DocumentSetUsers,DocumentSets,DocumentSetsImpl,FileGroups,FileGroupsImpl}
+import com.overviewdocs.models.{CloneImportJob,CloneJob,CsvImport,CsvImportJob,DocumentSet,DocumentCloudImport,DocumentCloudImportJob,DocumentSetUser,FileGroup,FileGroupImportJob,ImportJob}
+import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentCloudImports,DocumentSetUsers,DocumentSets,FileGroups}
 
 trait ImportJobBackend extends Backend {
   /** All ImportJobs for the user. */
@@ -20,54 +20,40 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
   import database.api._
   import database.executionContext
 
-  private lazy val cloneJobsByUserEmail = Compiled { userEmail: Rep[String] =>
-    val documentSetIds = DocumentSetUsers.filter(_.userEmail === userEmail).map(_.documentSetId)
+  private def userDocumentSetIds(userEmail: Rep[String]) = {
+    DocumentSetUsers.filter(_.userEmail === userEmail).map(_.documentSetId)
+  }
 
-    CloneJobs
-      .filter(_.destinationDocumentSetId in documentSetIds)
+  private lazy val cloneJobsByUserEmail = Compiled { userEmail: Rep[String] =>
+    CloneJobs.filter(_.destinationDocumentSetId in userDocumentSetIds(userEmail))
   }
 
   private lazy val csvImportsByUserEmail = Compiled { userEmail: Rep[String] =>
-    val documentSetIds = DocumentSetUsers.filter(_.userEmail === userEmail).map(_.documentSetId)
+    CsvImports.filter(_.documentSetId in userDocumentSetIds(userEmail))
+  }
 
-    CsvImports
-      .filter(_.documentSetId in documentSetIds)
+  private lazy val documentCloudImportsByUserEmail = Compiled { userEmail: Rep[String] =>
+    DocumentCloudImports.filter(_.documentSetId in userDocumentSetIds(userEmail))
   }
 
   private lazy val fileGroupsByUserEmail = Compiled { userEmail: Rep[String] =>
-    val documentSetIds = DocumentSetUsers.filter(_.userEmail === userEmail).map(_.documentSetId)
-
-    FileGroups
-      .filter(_.addToDocumentSetId in documentSetIds)
-  }
-
-  private lazy val dscjsByUserEmail = Compiled { userEmail: Rep[String] =>
-    val documentSetIds = DocumentSetUsers.filter(_.userEmail === userEmail).map(_.documentSetId)
-
-    DocumentSetCreationJobs
-      .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .filter(_.documentSetId in documentSetIds)
+    FileGroups.filter(_.addToDocumentSetId in userDocumentSetIds(userEmail))
   }
 
   private lazy val cloneJobsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
-    CloneJobs
-      .filter(_.destinationDocumentSetId === documentSetId)
+    CloneJobs.filter(_.destinationDocumentSetId === documentSetId)
   }
 
   private lazy val csvImportsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
-    CsvImports
-      .filter(_.documentSetId === documentSetId)
+    CsvImports.filter(_.documentSetId === documentSetId)
+  }
+
+  private lazy val documentCloudImportsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
+    DocumentCloudImports.filter(_.documentSetId === documentSetId)
   }
 
   private lazy val fileGroupsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
-    FileGroups
-      .filter(_.addToDocumentSetId === documentSetId)
-  }
-
-  private lazy val dscjsByDocumentSetId = Compiled { documentSetId: Rep[Long] =>
-    DocumentSetCreationJobs
-      .filter(_.documentSetId === documentSetId)
-      .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
+    FileGroups.filter(_.addToDocumentSetId === documentSetId)
   }
 
   private lazy val cloneJobsWithDocumentSetsAndOwners = {
@@ -88,6 +74,15 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
       .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
   }
 
+  private lazy val documentCloudImportsWithDocumentSetsAndOwners = {
+    DocumentCloudImports
+      .join(DocumentSets)
+        .on(_.documentSetId === _.id)
+      .joinLeft(DocumentSetUsers.filter(_.role === DocumentSetUser.Role(true)))
+        .on(_._1.documentSetId === _.documentSetId)
+      .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
+  }
+
   private lazy val fileGroupsWithDocumentSetsAndOwners = {
     FileGroups
       .filter(_.addToDocumentSetId.nonEmpty)
@@ -98,27 +93,17 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
       .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
   }
 
-  private lazy val dscjsWithDocumentSetsAndOwners = {
-    DocumentSetCreationJobs
-      .filter(_.state =!= DocumentSetCreationJobState.Cancelled)
-      .join(DocumentSets)
-        .on(_.documentSetId === _.id)
-      .joinLeft(DocumentSetUsers.filter(_.role === DocumentSetUser.Role(true)))
-        .on(_._1.documentSetId === _.documentSetId)
-      .map(t => (t._1._1, t._1._2, t._2.map(_.userEmail)))
-  }
-
   override def indexByUser(userEmail: String) = {
     for {
       jobs1 <- database.seq(cloneJobsByUserEmail(userEmail))
       jobs2 <- database.seq(csvImportsByUserEmail(userEmail))
-      jobs3 <- database.seq(fileGroupsByUserEmail(userEmail))
-      jobs4 <- database.seq(dscjsByUserEmail(userEmail))
+      jobs3 <- database.seq(documentCloudImportsByUserEmail(userEmail))
+      jobs4 <- database.seq(fileGroupsByUserEmail(userEmail))
     } yield {
       jobs1.map(CloneImportJob.apply _)
         .++(jobs2.map(CsvImportJob.apply _))
-        .++(jobs3.map(FileGroupImportJob.apply _))
-        .++(jobs4.map(DocumentSetCreationJobImportJob.apply _))
+        .++(jobs3.map(DocumentCloudImportJob.apply _))
+        .++(jobs4.map(FileGroupImportJob.apply _))
     }
   }
 
@@ -126,13 +111,13 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
     for {
       jobs1 <- database.seq(cloneJobsByDocumentSetId(documentSetId))
       jobs2 <- database.seq(csvImportsByDocumentSetId(documentSetId))
-      jobs3 <- database.seq(fileGroupsByDocumentSetId(documentSetId))
-      jobs4 <- database.seq(dscjsByDocumentSetId(documentSetId))
+      jobs3 <- database.seq(documentCloudImportsByDocumentSetId(documentSetId))
+      jobs4 <- database.seq(fileGroupsByDocumentSetId(documentSetId))
     } yield {
       jobs1.map(CloneImportJob.apply _)
         .++(jobs2.map(CsvImportJob.apply _))
-        .++(jobs3.map(FileGroupImportJob.apply _))
-        .++(jobs4.map(DocumentSetCreationJobImportJob.apply _))
+        .++(jobs3.map(DocumentCloudImportJob.apply _))
+        .++(jobs4.map(FileGroupImportJob.apply _))
     }
   }
 
@@ -140,13 +125,13 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
     for {
       jobs1 <- database.seq(cloneJobsWithDocumentSetsAndOwners)
       jobs2 <- database.seq(csvImportsWithDocumentSetsAndOwners)
-      jobs3 <- database.seq(fileGroupsWithDocumentSetsAndOwners)
-      jobs4 <- database.seq(dscjsWithDocumentSetsAndOwners)
+      jobs3 <- database.seq(documentCloudImportsWithDocumentSetsAndOwners)
+      jobs4 <- database.seq(fileGroupsWithDocumentSetsAndOwners)
     } yield {
       jobs1.map(t => (CloneImportJob(t._1), t._2, t._3))
         .++(jobs2.map(t => (CsvImportJob(t._1), t._2, t._3)))
-        .++(jobs3.map(t => (FileGroupImportJob(t._1), t._2, t._3)))
-        .++(jobs4.map(t => (DocumentSetCreationJobImportJob(t._1), t._2, t._3)))
+        .++(jobs3.map(t => (DocumentCloudImportJob(t._1), t._2, t._3)))
+        .++(jobs4.map(t => (FileGroupImportJob(t._1), t._2, t._3)))
     }
   }
 }

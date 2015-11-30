@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import com.overviewdocs.database.{HasDatabase,TreeIdGenerator}
 import com.overviewdocs.models.{DocumentCloudImport,Tree}
 import com.overviewdocs.models.tables.{DocumentCloudImports,DocumentProcessingErrors,Trees}
+import com.overviewdocs.util.RecalculateDocumentSetCaches
 
 trait Main extends HasDatabase {
   private val fetcher = new Fetcher
@@ -28,6 +29,7 @@ trait Main extends HasDatabase {
       result <- new IdListFetcher(dcImport).run
       dcImport2 <- updateDocumentCloudImport(dcImport, result)
       _ <- fetchDocuments(dcImport2)
+      _ <- RecalculateDocumentSetCaches.run(dcImport.documentSetId)
       _ <- cleanUp(dcImport.id)
       _ <- createTree(dcImport)
     } yield ()
@@ -68,7 +70,7 @@ trait Main extends HasDatabase {
       val nTotal = if (dcImport.splitPages) nPages else nDocuments
       for {
         _ <- writeTotal(dcImport.id, nTotal)
-      } yield dcImport.copy(nTotal=Some(nTotal))
+      } yield dcImport.copy(nIdListsTotal=Some(nLists), nTotal=Some(nTotal))
     }
   }
 
@@ -97,6 +99,7 @@ trait Main extends HasDatabase {
     }
 
     val writer = new DocumentWriter(dcImport, updateProgressAndMaybeCancel)
+    writer.flushPeriodically
 
     val doneFetching = Future.sequence(Seq(
       fetcher.run(headerProducer, writer),

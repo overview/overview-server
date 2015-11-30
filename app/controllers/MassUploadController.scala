@@ -104,8 +104,8 @@ trait MassUploadController extends Controller {
     })
   }
 
-  /** Marks the FileGroup as <tt>completed</tt> and kicks off a
-    * DocumentSetCreationJob.
+  /** Creates a DocumentSet, marks the FileGroup as <tt>completed</tt> and pokes
+    * the worker.
     *
     * TODO refactor into MassUploadControllerMethods
     */
@@ -143,8 +143,7 @@ trait MassUploadController extends Controller {
     )
   }
 
-  /** Starts adding documents from the given `id` to the Marks the FileGroup as <tt>completed</tt> and kicks off a
-    * DocumentSetCreationJob.
+  /** Marks the FileGroup as <tt>completed</tt> and pokes the worker.
     *
     * Does <em>not</em> create a DocumentSet.
     */

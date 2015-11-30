@@ -2,8 +2,6 @@ package controllers
 
 import play.api.mvc.Result
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.Json
-import play.api.libs.ws.WS
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
@@ -11,8 +9,8 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSet,userOwningView}
 import controllers.backend.{ApiTokenBackend,StoreBackend,ViewBackend}
 import controllers.forms.{ViewForm,ViewUpdateAttributesForm}
-import com.overviewdocs.models.{ApiToken,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,Tree,View}
-import com.overviewdocs.models.tables.{DocumentSetCreationJobs,Trees}
+import com.overviewdocs.models.{ApiToken,Tree,View}
+import com.overviewdocs.models.tables.{Trees}
 
 trait ViewController extends Controller {
   def indexJson(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async {

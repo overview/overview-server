@@ -64,27 +64,15 @@ object DocumentSetCommands {
     */
   case class DeleteDocumentSet(documentSetId: Long) extends Command
 
-  /** Complete all computations surrounding a DocumentSetCreationJob as soon as
-    * possible, and then delete the DocumentSetCreationJob.
+  /** Complete all computations surrounding an AddDocumentsFromFileGroup as soon
+    * as possible.
     *
     * This Command is different from the rest: it is *not serialized*. As soon
     * as the broker receives this Command, it will forward a cancel message to
     * all workers and purge the associated Job from its own memory (if it's
     * pending).
     *
-    * Stored in the database as document_set_creation_job.state = Cancelled
-    */
-  case class CancelJob(documentSetId: Long, jobId: Long) extends CancelCommand
-
-  /** Completes all computations surrounding an AddDocumentsFromFileGroup job
-    * as soon as possible, then deletes the AddDocumentsFromFileGroup.
-    *
-    * This Command is different from the rest: it is *not serialized*. As soon
-    * as the broker receives this Command, it will forward a cancel message to
-    * all workers and purge the associated Job from its own memory (if it's
-    * pending).
-    *
-    * Stored in the database as file_group.deleted = true.
+    * Stored in the database as file_group.deleted
     */
   case class CancelAddDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long) extends CancelCommand
 }

@@ -12,8 +12,6 @@ import scala.concurrent.Future
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{DocumentSet,FileGroup,GroupedFileUpload}
-import com.overviewdocs.models.DocumentSetCreationJobType._
-import com.overviewdocs.models.DocumentSetCreationJobState._
 import controllers.auth.{AuthorizedRequest}
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
 import controllers.util.JobQueueSender

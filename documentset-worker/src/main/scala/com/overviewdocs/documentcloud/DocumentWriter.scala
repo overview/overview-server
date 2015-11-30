@@ -28,7 +28,7 @@ class DocumentWriter(
   dcImport: DocumentCloudImport,
   updateProgress: Int => Future[Unit],
   bulkDocumentWriter: BulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex,
-  delayInMs: Int = 1000
+  delayInMs: Int = 500
 ) extends HasDatabase {
   /** Array of (documentCloudId,message) */
   private val errors = mutable.Buffer[(String,String)]()
@@ -97,15 +97,19 @@ class DocumentWriter(
   private lazy val errorInserter = DocumentProcessingErrors.map(_.createAttributes)
 
   private def writeErrors(errors: Array[(String,String)]): Future[Unit] = {
-    import database.api._
+    if (errors.length == 0) {
+      Future.successful(())
+    } else {
+      import database.api._
 
-    database.runUnit(errorInserter.++=(errors.map(t => DocumentProcessingError.CreateAttributes(
-      documentSetId=dcImport.documentSetId,
-      textUrl=t._1,
-      message=t._2,
-      statusCode=None,
-      headers=None
-    ))))
+      database.runUnit(errorInserter.++=(errors.map(t => DocumentProcessingError.CreateAttributes(
+        documentSetId=dcImport.documentSetId,
+        textUrl=t._1,
+        message=t._2,
+        statusCode=None,
+        headers=None
+      ))))
+    }
   }
 
   private def timerTask(f: => Unit): TimerTask = new TimerTask {

@@ -3,7 +3,7 @@ package views.json.admin.Job
 import play.api.i18n.Messages
 import play.api.libs.json.{JsArray,JsString,JsValue,Json}
 
-import com.overviewdocs.models.{CloneImportJob,CsvImportJob,DocumentSet,DocumentSetCreationJobImportJob,FileGroupImportJob,ImportJob,Tree}
+import com.overviewdocs.models.{CloneImportJob,CsvImportJob,DocumentSet,DocumentCloudImportJob,FileGroupImportJob,ImportJob,Tree}
 
 object index {
   def apply(
@@ -19,10 +19,10 @@ object index {
   private def indexJobs(jobs: Seq[(ImportJob,DocumentSet,Option[String])])(implicit messages: Messages): JsValue = {
     val jsons: Seq[JsValue] = jobs.map(job => Json.obj(
       "id" -> JsString(job._1 match {
-        // Client needs stable IDs
+        // stable IDs, so the client can update stuff
         case CsvImportJob(ci) => s"csv-import-${ci.id}"
         case CloneImportJob(cj) => s"clone-${cj.id}"
-        case DocumentSetCreationJobImportJob(j) => s"dscj-${j.id}"
+        case DocumentCloudImportJob(dci) => s"documentcloud-${dci.id}"
         case FileGroupImportJob(fg) => s"file-group-${job._2.id}-${fg.id}"
       }),
       "documentSetId" -> job._2.id,
@@ -33,7 +33,7 @@ object index {
       "deleteUrl" -> JsString(job._1 match {
         case CloneImportJob(cj) => controllers.admin.routes.JobController.destroyCloneJob(cj.destinationDocumentSetId, cj.id).toString
         case CsvImportJob(ci) => controllers.admin.routes.JobController.destroyCsvImport(ci.documentSetId, ci.id).toString
-        case DocumentSetCreationJobImportJob(j) => controllers.admin.routes.JobController.destroyDscj(j.id).toString
+        case DocumentCloudImportJob(dci) => controllers.admin.routes.JobController.destroyDocumentCloudImport(dci.documentSetId, dci.id).toString
         case FileGroupImportJob(fg) => controllers.admin.routes.JobController.destroyFileGroup(job._2.id, fg.id).toString
       })
     ))

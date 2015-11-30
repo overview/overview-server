@@ -87,11 +87,6 @@ trait Authorities extends HasDatabase {
     override def apply(apiToken: ApiToken) = check(q.maybeDocumentSetDocument(apiToken.documentSetId, id))
   }
 
-  def userOwningJob(id: Long) = new Authority {
-    override def apply(user: User) = check(q.userJob(user.email, id))
-    override def apply(apiToken: ApiToken) = Future.successful(false)
-  }
-
   private def check(f: RunnableCompiled[Query[ConstColumn[Boolean],Boolean,Seq],Seq[Boolean]]): Future[Boolean] = {
     database.option(f)
       .map(_.getOrElse(false))(database.executionContext)
@@ -180,13 +175,6 @@ object Authorities extends Authorities {
         .filter(_.id === documentId)
         .filter(_.documentSetId === maybeDocumentSetId)
         .map(_ => (true))
-    }
-
-    lazy val userJob = Compiled { (email: Rep[String], jobId: Rep[Long]) =>
-      for {
-        job <- DocumentSetCreationJobs if job.id === jobId
-        dsu <- DocumentSetUsers if dsu.documentSetId === job.documentSetId && dsu.userEmail === email
-      } yield (true)
     }
   }
 }

@@ -9,7 +9,7 @@ import com.overviewdocs.database.{HasDatabase,LargeObject,TreeIdGenerator}
 import com.overviewdocs.models.{CsvImport,DocumentProcessingError,Tree}
 import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags,Trees}
 import com.overviewdocs.searchindex.{IndexClient,TransportIndexClient}
-import com.overviewdocs.util.SortedDocumentIdsRefresher
+import com.overviewdocs.util.RecalculateDocumentSetCaches
 
 /** Processes a CSV Import. */
 class CsvImporter(
@@ -81,8 +81,7 @@ class CsvImporter(
   private def finish(error: Option[String]): Future[Unit] = {
     for {
       _ <- indexClient.addDocumentSet(csvImport.documentSetId)
-      _ <- updateDocumentSetCount
-      _ <- SortedDocumentIdsRefresher.refreshDocumentSet(csvImport.documentSetId)
+      _ <- RecalculateDocumentSetCaches.run(csvImport.documentSetId)
       _ <- deleteCsvImport(error)
       _ <- createTree
     } yield ()

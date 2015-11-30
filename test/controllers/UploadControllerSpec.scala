@@ -80,7 +80,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
       lazy val result = controller.startClustering(guid)(request)
     }
 
-    "create a DocumentSetCreationJob and delete the upload" in new StartClusteringScope {
+    "create a CsvImport and delete the upload" in new StartClusteringScope {
       override val maybeUpload = Some(dummyUpload(1L, 1L))
       h.status(result) must beEqualTo(h.SEE_OTHER)
       there was one(controller.documentSetBackend).create(
@@ -93,14 +93,14 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
       controller.lang must beSome("en")
     }
 
-    "not create a DocumentSetCreationJob if upload is not complete" in new StartClusteringScope {
+    "not create a CsvImport if upload is not complete" in new StartClusteringScope {
       override val maybeUpload = Some(dummyUpload(1L, 2L))
       h.status(result) must beEqualTo(h.CONFLICT)
       there was no(controller.documentSetBackend).create(any, any)
       controller.jobStarted must beFalse
     }
 
-    "not create a DocumentSetCreationJob if the form is invalid" in new StartClusteringScope {
+    "not create a CsvImport if the form is invalid" in new StartClusteringScope {
       override val maybeUpload = Some(dummyUpload(1L, 1L))
       override val formBody = Seq()
       h.status(result) must beEqualTo(h.BAD_REQUEST)

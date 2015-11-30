@@ -8,8 +8,8 @@ import scala.concurrent.Future
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.metadata.MetadataSchema
-import com.overviewdocs.models.{DocumentSet,DocumentSetCreationJob,DocumentSetCreationJobState,DocumentSetCreationJobType,ImportJob,Tag,Tree}
-import com.overviewdocs.models.tables.{DocumentSets,DocumentSetCreationJobs,Tags,Trees}
+import com.overviewdocs.models.{DocumentSet,ImportJob,Tag,Tree}
+import com.overviewdocs.models.tables.{DocumentSets,Tags,Trees}
 import controllers.auth.{AuthorizedAction,Authorities}
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
 import controllers.forms.DocumentSetUpdateForm
@@ -26,14 +26,6 @@ trait DocumentSetController extends Controller {
     val realPage = if (requestedPage <= 0) 1 else requestedPage
     val pageRequest = PageRequest((realPage - 1) * indexPageSize, indexPageSize)
 
-    /*
-     * There is a race if a DocumentSetCreationJob disappears between queries.
-     * We prefer to display the DocumentSet twice in that case, rather than
-     * zero times. (Slick doesn't support "FOR UPDATE" yet. This race is rare:
-     * it used to be common for brief jobs when we redirected users to the
-     * index page upon job creation; now we redirect them to the show page so
-     * there are usually only long-running jobs or no jobs on the index page.)
-     */
     for {
       jobs: Seq[ImportJob] <- importJobBackend.indexByUser(request.user.email)
       documentSets: Page[DocumentSet] <- backend.indexPageByOwner(request.user.email, pageRequest)
@@ -113,7 +105,6 @@ trait DocumentSetController extends Controller {
 
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     storage.deleteDocumentSet(id)
-    storage.cancelJob(id)
     jobQueue.send(DocumentSetCommands.DeleteDocumentSet(id))
     Redirect(routes.DocumentSetController.index()).flashing("event" -> "document-set-delete")
   }
@@ -169,8 +160,6 @@ object DocumentSetController extends DocumentSetController {
 
     def deleteDocumentSet(documentSetId: Long): Unit
 
-    def cancelJob(documentSetId: Long): Unit
-
     /** All Views for the document set. */
     def findTrees(documentSetId: Long) : Iterable[Tree]
 
@@ -180,14 +169,6 @@ object DocumentSetController extends DocumentSetController {
 
   object DatabaseStorage extends Storage with HasBlockingDatabase {
     import database.api._
-
-    override def cancelJob(documentSetId: Long): Unit = {
-      blockingDatabase.runUnit(
-        DocumentSetCreationJobs
-          .filter(_.documentSetId === documentSetId)
-          .map(_.state).update(DocumentSetCreationJobState.Cancelled)
-      )
-    }
 
     override def deleteDocumentSet(documentSetId: Long) = {
       blockingDatabase.runUnit(
@@ -204,7 +185,7 @@ object DocumentSetController extends DocumentSetController {
         import database.api._
         import slick.jdbc.GetResult
 
-        // TODO get rid of Trees and DocumentSetCreationJobs. Then Slick queries
+        // TODO get rid of Trees. Then Slick queries
         // would make more sense than straight SQL.
         blockingDatabase.run(sql"""
           WITH ids AS (

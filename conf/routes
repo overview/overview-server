@@ -54,6 +54,7 @@ DELETE /imports/file/:fileGroupId            controllers.FileImportController.de
 GET    /imports/documentcloud-project        controllers.DocumentCloudProjectController.index()
 POST   /imports/documentcloud                controllers.DocumentCloudImportJobController.create()
 GET    /imports/documentcloud/new/:query     controllers.DocumentCloudImportJobController._new(query: String)
+DELETE /imports/documentcloud/:dsId/:dciId   controllers.DocumentCloudImportJobController.delete(dsId: Long, dciId: Int)
 POST   /imports/clone/:sourceDocumentSetId   controllers.CloneImportJobController.create(sourceDocumentSetId: Long)
 DELETE /imports/clone/:dsId/:cloneJobId      controllers.CloneImportJobController.delete(dsId: Long, cloneJobId: Int)
 
@@ -127,13 +128,13 @@ GET    /admin/users/:email controllers.admin.UserController.show(email: String)
 PUT    /admin/users/:email controllers.admin.UserController.update(email: String)
 DELETE /admin/users/:email controllers.admin.UserController.delete(email: String)
 
-GET    /admin/jobs.json                 controllers.admin.JobController.indexJson()
-GET    /admin/jobs                      controllers.admin.JobController.index()
-DELETE /admin/jobs/clone/:dsId/:id      controllers.admin.JobController.destroyCloneJob(dsId: Long, id: Int)
-DELETE /admin/jobs/csv-import/:dsId/:id controllers.admin.JobController.destroyCsvImport(dsId: Long, id: Long)
-DELETE /admin/jobs/file-group/:dsId/:id controllers.admin.JobController.destroyFileGroup(dsId: Long, id: Long)
-DELETE /admin/jobs/dscj/:id             controllers.admin.JobController.destroyDscj(id: Long)
-DELETE /admin/jobs/trees/:id            controllers.admin.JobController.destroyTree(id: Long)
+GET    /admin/jobs.json                    controllers.admin.JobController.indexJson()
+GET    /admin/jobs                         controllers.admin.JobController.index()
+DELETE /admin/jobs/clone/:dsId/:id         controllers.admin.JobController.destroyCloneJob(dsId: Long, id: Int)
+DELETE /admin/jobs/csv-import/:dsId/:id    controllers.admin.JobController.destroyCsvImport(dsId: Long, id: Long)
+DELETE /admin/jobs/file-group/:dsId/:id    controllers.admin.JobController.destroyFileGroup(dsId: Long, id: Long)
+DELETE /admin/jobs/documentcloud/:dsId/:id controllers.admin.JobController.destroyDocumentCloudImport(dsId: Long, id: Int)
+DELETE /admin/jobs/trees/:id               controllers.admin.JobController.destroyTree(id: Long)
 
 GET    /admin/plugins controllers.admin.PluginController.index()
 
