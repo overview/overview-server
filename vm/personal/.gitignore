@@ -1,9 +1,0 @@
-# Essentially, we ignore all but Makefile and preseed.cfg
-*.done
-*.iso
-*.ova
-*.vdi
-dist.zip
-vm-files.tar.gz
-boot.iso-fs/
-overview-*/
