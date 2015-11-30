@@ -187,8 +187,8 @@ object PodoFactory extends Factory {
     nDocuments: Int,
     nPages: Int
   ) = DocumentCloudImportIdList(
-    id,
-    documentCloudImportId,
+    getId(id),
+    getId(documentCloudImportId),
     pageNumber,
     idsString,
     nDocuments,

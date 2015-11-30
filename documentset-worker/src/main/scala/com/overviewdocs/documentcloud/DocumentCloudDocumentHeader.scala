@@ -3,19 +3,29 @@ package com.overviewdocs.documentcloud
 import play.api.libs.json.JsObject
 
 import com.overviewdocs.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.util.Configuration
 
+/** A yet-to-be-fetched Document.
+  *
+  * We precompute document IDs, so that when we resume we can skip
+  * already-fetched documents with a mere ID check.
+  */
 case class DocumentCloudDocumentHeader(
-  suppliedId: String,
+  /** ID we're going to write to our database. */
+  id: Long,
+
+  documentSetId: Long,
+  documentCloudId: String,
   title: String,
   pageNumber: Option[Int],
-  url: String,
+  textUrl: String,
   access: String
 ) {
-  def toDocument(id: Long, documentSetId: Long, text: String): Document = Document(
+  def toDocument(text: String): Document = Document(
     id,
     documentSetId,
-    Some(url),
-    suppliedId,
+    Some(DocumentCloudDocumentHeader.baseUrl + "/documents/" + documentCloudId + pageNumber.fold("")(n => s"#p${n}")),
+    documentCloudId,
     title,
     pageNumber,
     Seq(),
@@ -27,4 +37,8 @@ case class DocumentCloudDocumentHeader(
     JsObject(Seq()),
     text
   )
+}
+
+object DocumentCloudDocumentHeader {
+  private val baseUrl = Configuration.getString("documentcloud_url")
 }
