@@ -121,4 +121,4 @@ object SplitPdfAndExtractText extends App {
 }
 
 // sbt command to run this program:
-// ./sbt 'documentset-worker/run-main com.overviewdocs.helpers.SplitPdfAndExtractText in.pdf out{}.pdf'
+// ./sbt 'worker/run-main com.overviewdocs.helpers.SplitPdfAndExtractText in.pdf out{}.pdf'

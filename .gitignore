@@ -28,9 +28,6 @@ test/assets/javascripts/test-js
 /node_modules/
 bin
 
-documentset-worker/database/
-
-
 test/assets/javascripts/autotest/karma_html/PhantomJS 1.9.2 (Mac OS X)/index.html
 
 npm-debug.log

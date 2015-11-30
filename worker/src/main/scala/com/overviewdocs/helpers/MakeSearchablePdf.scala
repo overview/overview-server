@@ -79,4 +79,4 @@ object MakeSearchablePdf extends App {
 }
 
 // sbt command to run this program:
-// ./sbt 'documentset-worker/run-main com.overviewdocs.helpers.MakeSearchablePdf in.pdf out.pdf en'
+// ./sbt 'worker/run-main com.overviewdocs.helpers.MakeSearchablePdf in.pdf out.pdf en'

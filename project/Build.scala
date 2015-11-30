@@ -142,21 +142,11 @@ object ApplicationBuild extends Build {
     .settings(libraryDependencies += "com.github.scopt" %% "scopt" % "3.3.0")
     .dependsOn(common % "test->test;compile->compile")
 
-  lazy val documentSetWorker = project("documentset-worker")
-    .settings(
-      unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
-      libraryDependencies ++= Dependencies.documentSetWorkerDependencies,
-      javaOptions in Test += "-Dconfig.resource=test.conf",
-      mainClass in Compile := Some("com.overviewdocs.DocumentSetWorker")
-    )
-    .dependsOn(common % "test->test;compile->compile")
-
   lazy val worker = project("worker")
     .settings(
-      unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
       libraryDependencies ++= Dependencies.workerDependencies,
       javaOptions in Test += "-Dconfig.resource=test.conf",
-      mainClass in Compile := Some("JobHandler")
+      mainClass in Compile := Some("com.overviewdocs.Worker")
     )
     .dependsOn(common % "test->test;compile->compile")
 
@@ -207,12 +197,11 @@ object ApplicationBuild extends Build {
     .dependsOn(common % "test->test;compile->compile;test->compile")
 
   lazy val all = Project("all", file("all"))
-    .aggregate(main, worker, documentSetWorker, common)
+    .aggregate(main, worker, common)
     .settings(
       aggregate in Test := false,
       test in Test <<= (test in Test in main)
         dependsOn (test in Test in worker)
-        dependsOn (test in Test in documentSetWorker)
         dependsOn (test in Test in common)
         dependsOn (run in Runtime in testDbEvolutionApplier).toTask("")
     )

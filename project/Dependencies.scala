@@ -20,7 +20,6 @@ object Dependencies {
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.4.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
-    val javaxMail = "javax.mail" % "mail" % "1.4.7"
     val jna = "net.java.dev.jna" % "jna" % "4.2.1" // for ElasticSearch, partially to ignore a warning
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
@@ -106,17 +105,10 @@ object Dependencies {
     deps.mockito,
     deps.specs2
   )
-
-  val workerDependencies = Seq(
-    deps.javaxMail,
-    deps.openCsv,
-    deps.janino % "test" // See logback-test.xml
-  )
   
-  val documentSetWorkerDependencies = Seq(
+  val workerDependencies = Seq(
     deps.akkaAgent,
     deps.akkaRemote,
-    deps.javaxMail,
     deps.logback,
     deps.mimeTypes,
     deps.playStreams,

@@ -5,7 +5,6 @@ import scala.io.Source
 
 package object commands {
   trait UsefulCommands {
-    def documentSetWorker: Command
     def searchIndex: Command
     def redis: Command
     def webServer: Command
@@ -54,18 +53,12 @@ package object commands {
       )
     )
 
-    override def documentSetWorker = new JvmCommandWithAppendableClasspath(
-      Flags.DatabaseEnv,
-      Seq(),
-      Seq("com.overviewdocs.DocumentSetWorker")
-    )
-
     override def redis = new ShCommand(Seq(), Seq("./deps/redis/dev.sh"))
 
     override def worker = new JvmCommandWithAppendableClasspath(
       Flags.DatabaseEnv,
-      Seq("-Xmx2g"),
-      Seq("JobHandler")
+      Seq(),
+      Seq("com.overviewdocs.Worker")
     ).with32BitSafe
 
     override def runEvolutions = new JvmCommand(
@@ -116,13 +109,6 @@ package object commands {
       new JvmCommand(env, fullJvmArgs, args)
     }
 
-    override def documentSetWorker = cmd(
-      "documentset-worker",
-      Flags.DatabaseEnv,
-      Seq(),
-      Seq("com.overviewdocs.DocumentSetWorker")
-    )
-
     override def searchIndex = cmd(
       "search-index",
       Seq(),
@@ -161,7 +147,7 @@ package object commands {
     override def worker = cmd(
       "worker",
       Flags.DatabaseEnv,
-      Seq("-Xmx2g"),
+      Seq(),
       Seq("JobHandler")
     ).with32BitSafe
 

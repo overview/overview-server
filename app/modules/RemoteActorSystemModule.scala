@@ -6,7 +6,7 @@ import javax.inject._
 import play.api.inject.ApplicationLifecycle
 import scala.concurrent.Future
 
-/** Provides a RemoteActorSystem, to communicate with documentset-worker.
+/** Provides a RemoteActorSystem, to communicate with worker.
   *
   * We have three behaviors:
   *
@@ -19,13 +19,13 @@ import scala.concurrent.Future
   */
 @Singleton
 class RemoteActorSystemModule @Inject() (lifecycle: ApplicationLifecycle) {
-  private lazy val config = ConfigFactory.load.getConfig("documentset-worker")
+  private lazy val config = ConfigFactory.load.getConfig("worker")
   private lazy val hostname = config.getString("message_broker_hostname")
   private lazy val port = config.getInt("message_broker_port")
-  private lazy val rootPath = s"akka.tcp://WorkerActorSystem@${hostname}:${port}/user/supervised"
+  private lazy val rootPath = s"akka.tcp://worker@${hostname}:${port}/user"
 
   lazy val remoteActorSystem: ActorSystem = {
-    val ret = ActorSystem.create("documentset-worker", config)
+    val ret = ActorSystem.create("worker", config)
 
     lifecycle.addStopHook { () =>
       ret.terminate
@@ -35,7 +35,7 @@ class RemoteActorSystemModule @Inject() (lifecycle: ApplicationLifecycle) {
     ret
   }
 
-  lazy val documentSetWorkerActor: ActorSelection = {
+  lazy val workerActor: ActorSelection = {
     remoteActorSystem.actorSelection(rootPath + "/DocumentSetMessageBroker")
   }
 }

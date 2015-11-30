@@ -47,7 +47,7 @@ fi
 # inside from a previous build and complain about "Duplicate mappings"
 rm -rf "$OVERVIEW_DIR"/dist
 
-./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; runner/stage; db-evolution-applier/stage; overview-server/stage; worker/stage; documentset-worker/stage; search-index/stage'
+./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; runner/stage; db-evolution-applier/stage; overview-server/stage; worker/stage; search-index/stage'
 
 BASE="$OUTPUT_DIRECTORY"
 STAGE="target/universal/stage"
@@ -63,7 +63,7 @@ pushd "$OVERVIEW_DIR"/dist
 # generates expect to be in a "bin" directory -- they look for "../lib" and
 # it's really easy if we just go with that.
 mkdir lib
-for project in runner worker documentset-worker search-index; do
+for project in runner worker search-index; do
   mkdir $project
   ls ../$project/$STAGE/lib > $project/classpath.txt
   ln -f ../$project/$STAGE/lib/* lib/
