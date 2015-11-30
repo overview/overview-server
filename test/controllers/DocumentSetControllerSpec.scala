@@ -7,7 +7,7 @@ import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.{DocumentSet,ImportJob}
+import com.overviewdocs.models.{CsvImportJob,DocumentSet,ImportJob}
 import com.overviewdocs.test.factories.PodoFactory
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentSetBackend,ImportJobBackend,ViewBackend}
@@ -203,14 +203,17 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       }
 
       "show a progressbar if there is an ImportJob" in new ValidShowScope {
-        val job = smartMock[ImportJob]
+        val job = smartMock[CsvImportJob]
         job.progress returns Some(0.123)
         job.description returns Some(("a-description", Seq()))
-        job.estimatedCompletionTime returns Some(java.time.Instant.now())
+        job.estimatedCompletionTime returns Some(java.time.Instant.now)
+        // Then the "cancel" button... icky test :(
+        job.csvImport returns factory.csvImport(documentSetId=1L, id=2L)
         mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq(job))
         h.contentAsString(result) must beMatching("""(?s).*progress.*value="0\.123".*""")
         h.contentAsString(result) must contain("a-description")
         h.contentAsString(result) must contain("time_display.shouldFinishIn.zero")
+        h.contentAsString(result) must contain("/imports/csv/1/2")
       }
     }
 
