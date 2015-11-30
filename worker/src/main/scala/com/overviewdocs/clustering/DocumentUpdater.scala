@@ -1,4 +1,4 @@
-package com.overviewdocs.persistence
+package com.overviewdocs.clustering
 
 import scala.collection.mutable
 import slick.dbio.{DBIOAction,Effect,NoStream,SynchronousDatabaseAction}

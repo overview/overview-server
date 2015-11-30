@@ -1,4 +1,4 @@
-package com.overviewdocs.persistence
+package com.overviewdocs.clustering
 
 import com.overviewdocs.models.{Node,NodeDocument}
 import com.overviewdocs.models.tables.{Nodes,NodeDocuments}

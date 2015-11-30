@@ -2,7 +2,6 @@ package com.overviewdocs.clustering
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.models.tables.{DanglingNodes,Trees}
-import com.overviewdocs.persistence.{DocumentUpdater,NodeWriter}
 
 /** Modifies the database according to the output of Main.scala.
   *

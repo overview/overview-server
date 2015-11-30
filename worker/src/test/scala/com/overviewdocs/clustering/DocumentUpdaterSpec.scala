@@ -1,4 +1,4 @@
-package com.overviewdocs.persistence
+package com.overviewdocs.clustering
 
 import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.test.DbSpecification
