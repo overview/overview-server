@@ -28,7 +28,8 @@ trait DocumentCloudImportJobController extends Controller {
       record => {
         for {
           documentSet <- documentSetBackend.create(DocumentSet.CreateAttributes(
-            title=record.title
+            title=record.title,
+            query=Some(record.query)
           ), request.user.email)
           dcImport <- storage.insertImport(DocumentCloudImport.CreateAttributes(
             documentSetId=documentSet.id,
