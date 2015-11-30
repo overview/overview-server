@@ -13,7 +13,7 @@ package com.overviewdocs.nlp
 import scala.collection.mutable.Set
 import scala.reflect.ClassTag
 
-import com.overviewdocs.util.{Logger, LoopedIterator }
+import com.overviewdocs.util.Logger
 
 // Defines interface and most basic operations for k-means clustering variants
 // T is element type, C is centroid type

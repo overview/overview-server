@@ -14,16 +14,10 @@
  */
 package com.overviewdocs.nlp
 
-import java.io.StringReader
-import java.text.Normalizer
 import java.util.regex.Pattern
-import org.apache.lucene.analysis.standard.StandardTokenizer // Built in to ElasticSearch
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute // Built in to ElasticSearch
-import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Exception
 
 import com.overviewdocs.nlp.DocumentVectorTypes.TermWeight
-import com.overviewdocs.util.DisplayedError
 
 case class WeightedTermString(term: String, weight: TermWeight)
 case class WeightedTermRegex(pattern: Pattern, weight: TermWeight)
@@ -88,9 +82,7 @@ class WeightedLexer(val stopWords: Set[String], val weightedTerms: Map[String,Te
 
   /** Given some text, builds a list of weighted terms. */
   def makeTerms(textIn: String): Seq[WeightedTermString] = {
-    if (!weightedTermRegexes.isDefined) {
-      throw new DisplayedError("bad_important_words_pattern")
-    }
+    if (!weightedTermRegexes.isDefined) throw new Exception("bad_important_words_pattern")
 
     // Assume the input is a bunch of tokens
     textIn.split(' ').flatMap(processTerm)

@@ -15,11 +15,10 @@ import scala.collection.mutable.{Map, HashMap}
 import scala.math.Numeric
 
 import com.overviewdocs.nlp.DocumentVectorTypes._
-import com.overviewdocs.util.{Logger, DisplayedError}
+import com.overviewdocs.util.Logger
 
 // Error object
-case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer)
-  extends DisplayedError("not_enough_documents_error", numDocs.toString, docsNeeded.toString)
+case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer) extends Exception
 
 // Base class and basic concept for DocumentVectorGenerator:  add documents one at a time, then compute the vectors when done
 abstract class DocumentVectorGenerator {

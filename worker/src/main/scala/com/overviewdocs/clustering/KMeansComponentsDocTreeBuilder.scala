@@ -11,12 +11,10 @@
 
 package com.overviewdocs.clustering
 
-import scala.collection.mutable.{Set, ArrayBuffer}
+import scala.collection.mutable
 
 import com.overviewdocs.nlp.DocumentVectorTypes._
 import com.overviewdocs.nlp.IterativeKMeansDocuments
-import com.overviewdocs.util.ToMutableSet._
-
 
 class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
   protected def makeNestedProgress(onProgress: Double => Unit, start: Double, end: Double): Double => Unit = {
@@ -33,8 +31,8 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
 
   // Create a new node from a set of components
   private def newNode(components:Iterable[DocumentComponent]) : DocTreeNode = {
-    val componentsSet = components.toMutableSet  // first convert to set, then use that to get docs, as the Iterable may be slow (e.g. a view)
-    val docs = Set(componentsSet.view.toSeq.flatMap(_.docs):_*)
+    val componentsSet = mutable.Set().++(components)  // first convert to set, then use that to get docs, as the Iterable may be slow (e.g. a view)
+    val docs = mutable.Set(componentsSet.view.toSeq.flatMap(_.docs):_*)
     val n = new DocTreeNode(docs)
     n.components = componentsSet
     n
@@ -54,18 +52,18 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
       for (i <- 0 until k) {
         val docsInNode = kmDocs.elementsInCluster(i, stableDocs, assignments)  // document IDs assigned to cluster i, lazily produced
         if (docsInNode.size > 0)
-          node.children += new DocTreeNode(Set(docsInNode:_*))
+          node.children += new DocTreeNode(mutable.Set(docsInNode:_*))
       }
 
     } else {
       // Two or more components
       // First split out all sufficiently large components into their own children. Count these against the arity.
-      val smallComponents = ArrayBuffer[DocumentComponent]()
+      val smallComponents = mutable.ArrayBuffer[DocumentComponent]()
       var maxArity = k
 
       components foreach { component =>
         if (component.nDocs > minComponentFractionForOwnNode * node.docs.size) {
-          val child = new DocTreeNode(Set(component.docs:_*))
+          val child = new DocTreeNode(mutable.Set(component.docs:_*))
           // child.description = "B "  // component split off by itself
           node.children += child
           maxArity -= 1
@@ -119,7 +117,7 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
     onProgress(1)
   }
 
-  private def makeComponents(docs:Iterable[DocumentID]) : Set[DocumentComponent] = {
+  private def makeComponents(docs:Iterable[DocumentID]) : mutable.Set[DocumentComponent] = {
     val threshold = 0.5                       // docs more similar than this will be in same component
     val numDocsWhereSamplingHelpful = 5000
     val numSampledEdgesPerDoc = 500
@@ -129,7 +127,7 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
     if (docVecs.size > numDocsWhereSamplingHelpful)
       cc.sampleCloseEdges(numSampledEdgesPerDoc, threshold) // use sampled edges if the docset is large
 
-    val components = Set[DocumentComponent]()
+    val components = mutable.Set[DocumentComponent]()
     cc.foreachComponent(docs, threshold) {
       components += new DocumentComponent(_, docVecs)
     }

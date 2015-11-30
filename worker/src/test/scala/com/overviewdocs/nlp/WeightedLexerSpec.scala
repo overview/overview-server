@@ -1,7 +1,7 @@
 package com.overviewdocs.nlp
+
 import com.overviewdocs.nlp.DocumentVectorTypes.TermWeight
 import org.specs2.mutable.Specification
-import com.overviewdocs.util.DisplayedError
 
 class WeightedLexerSpec extends Specification {
   val stopWords = Set("no", "i", "you", "the", "are")
@@ -42,12 +42,12 @@ class WeightedLexerSpec extends Specification {
       wl.makeTerms(sentence) must beEqualTo(terms)
     }
     
-    "throw DisplayedError if regex is invalid" in {
+    "throw if regex is invalid" in {
       val sentence = "cats are cats all over the world"
         
       val badWl = new WeightedLexer(stopWords, Map("**" -> 100))
       
-      badWl.makeTerms(sentence) must throwA[DisplayedError]
+      badWl.makeTerms(sentence) must throwA[Exception]
     }
   }
 }

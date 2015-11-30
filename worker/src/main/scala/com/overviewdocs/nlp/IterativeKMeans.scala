@@ -16,7 +16,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
 
-import com.overviewdocs.util.{Logger, LoopedIterator, Ranges}
+import com.overviewdocs.util.Logger
 
 // T is element type, C is centroid type
 abstract class IterativeKMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,C] {
@@ -60,20 +60,6 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag] extends KMeansBase[T,
     while (left > 0) {
       samples += elements(i % elements.size)  // wrap around end
       i += skip
-      left -= 1
-    }
-    samples
-  }
-
-  // when the seq is not indexed, use this
-  def subSampleSeq(elements:Seq[T], start:Int, skip:Int, n:Int) : Seq[T] = {
-    val samples = new ArrayBuffer[T](n)
-    val iter = new LoopedIterator[T](elements.iterator)
-    iter.drop(start)
-    var left = n
-    while (left > 0) {
-      samples += iter.next
-      iter.drop(skip)
       left -= 1
     }
     samples
