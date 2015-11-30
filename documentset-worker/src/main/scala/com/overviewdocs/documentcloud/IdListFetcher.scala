@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.{DocumentCloudImport,DocumentCloudImportIdList}
 import com.overviewdocs.models.tables.{DocumentCloudImports,DocumentCloudImportIdLists}
+import com.overviewdocs.util.Configuration
 
 /** Writes DocumentCloudIdLists to the database and returns the number of them
   * once they are all written.
@@ -13,7 +14,7 @@ import com.overviewdocs.models.tables.{DocumentCloudImports,DocumentCloudImportI
 class IdListFetcher(
   dcImport: DocumentCloudImport,
   server: DocumentCloudServer = DocumentCloudServer,
-  val listSize: Int = 1000
+  val listSize: Int = Configuration.getInt("documentcloud_id_list_page_size")
 )
 extends HasDatabase {
   import database.api._
