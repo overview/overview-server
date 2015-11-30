@@ -141,7 +141,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     * 3. Deletes unprocessed GroupedFileUploads. (When the command is cancelled,
     *    GroupedFileUploads that haven't been visited will still be there.)
     * 5. Deletes the FileGroup.
-    * 6. Creates a clustering DocumentSetCreationJob.
+    * 6. Creates a Tree.
     */
   def finishJob(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
     logger.debug("Completing {}", fileGroup)

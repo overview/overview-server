@@ -16,6 +16,7 @@ import com.overviewdocs.util.{Configuration,Textify}
 trait DocumentCloudServer {
   protected val httpClient: http.Client = new http.NingClient
   protected val apiBaseUrl: String = Configuration.getString("documentcloud_url") + "/api"
+  protected val perPage: String = Configuration.getString("documentcloud_id_list_page_size")
 
   private trait GetResult
   private trait GetResultNoRedirect extends GetResult {
@@ -169,7 +170,7 @@ trait DocumentCloudServer {
     password: String,
     pageNumberBase0: Int
   ): Future[Either[String,(IdList,Int)]] = {
-    val url = s"${queryUrl(query)}&page=${pageNumberBase0 + 1}&per_page=1000"
+    val url = s"${queryUrl(query)}&page=${pageNumberBase0 + 1}&per_page=${perPage}"
 
     httpGetNoRedirect(url, username, password, false).map(_ match {
       case GetResult.Bytes(bytes) => parseIdList(bytes)

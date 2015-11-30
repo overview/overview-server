@@ -106,7 +106,7 @@ class DocumentCloudServerSpec extends Specification with Mockito {
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
 
-      captor.value.url must beEqualTo("https://www.documentcloud.org/api/search.json?q=foo%2Bbar+%3D+baz&page=1&per_page=1000")
+      captor.value.url must beEqualTo("https://www.documentcloud.org/api/search.json?q=foo%2Bbar+%3D+baz&page=1&per_page=500")
     }
   }
 
@@ -118,7 +118,7 @@ class DocumentCloudServerSpec extends Specification with Mockito {
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
 
-      captor.value.url must beEqualTo("https://www.documentcloud.org/api/search.json?q=foo%2Bbar+%3D+baz&page=4&per_page=1000")
+      captor.value.url must beEqualTo("https://www.documentcloud.org/api/search.json?q=foo%2Bbar+%3D+baz&page=4&per_page=500")
     }
   }
 

@@ -3,9 +3,9 @@ package com.overviewdocs.documentcloud
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.models.DocumentCloudImport
-import com.overviewdocs.models.tables.{DocumentCloudImports,DocumentProcessingErrors}
+import com.overviewdocs.database.{HasDatabase,TreeIdGenerator}
+import com.overviewdocs.models.{DocumentCloudImport,Tree}
+import com.overviewdocs.models.tables.{DocumentCloudImports,DocumentProcessingErrors,Trees}
 
 trait Main extends HasDatabase {
   private val fetcher = new Fetcher
@@ -21,6 +21,7 @@ trait Main extends HasDatabase {
     *    `document_cloud_import.n_fetched` periodically.
     * 4. Deletes the `document_cloud_import` and
     *    `document_cloud_import_id_list`s.
+    * 5. Creates a Tree.
     */
   def run(dcImport: DocumentCloudImport): Future[Unit] = {
     for {
@@ -28,6 +29,7 @@ trait Main extends HasDatabase {
       dcImport2 <- updateDocumentCloudImport(dcImport, result)
       _ <- fetchDocuments(dcImport2)
       _ <- cleanUp(dcImport.id)
+      _ <- createTree(dcImport)
     } yield ()
   }
 
@@ -119,6 +121,18 @@ trait Main extends HasDatabase {
       )
       DELETE FROM document_cloud_import WHERE id = $dcImportId
     """)
+  }
+
+  def createTree(dcImport: DocumentCloudImport): Future[Unit] = {
+    import database.api._
+
+    for {
+      treeId <- TreeIdGenerator.next(dcImport.documentSetId)
+      _ <- database.runUnit(Trees.+=(Tree.CreateAttributes(
+        documentSetId=dcImport.documentSetId,
+        lang=dcImport.lang
+      ).toTreeWithId(treeId)))
+    } yield ()
   }
 }
 

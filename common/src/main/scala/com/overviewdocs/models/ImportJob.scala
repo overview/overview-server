@@ -71,16 +71,26 @@ case class CsvImportJob(csvImport: CsvImport) extends ImportJob {
   override val estimatedCompletionTime = csvImport.estimatedCompletionTime
 }
 
-case class DocumentSetCreationJobImportJob(documentSetCreationJob: DocumentSetCreationJob) extends ImportJob {
-  override val documentSetId = documentSetCreationJob.documentSetId
-  override val progress = Some(documentSetCreationJob.fractionComplete)
-  override val description = {
-    val strings = documentSetCreationJob.statusDescription.split(':').toSeq
-    strings.headOption match {
-      case None => None
-      case Some(key) => Some((s"views.ImportJob._documentSetCreationJob.job_state_description.$key", strings.tail))
-    }
+case class DocumentCloudImportJob(documentCloudImport: DocumentCloudImport) extends ImportJob {
+  override val documentSetId = documentCloudImport.documentSetId
+
+  private def dci = documentCloudImport
+  private def desc(key: String, args: Any*) = (s"models.DocumentCloudImportJob.$key", args)
+
+  override val progress = (dci.nIdListsFetched, dci.nIdListsTotal, dci.nFetched, dci.nTotal) match {
+    case (_, None, _, _) => None
+    case (num, Some(denom), _, None) if denom > 0 => Some(0.05 * num / denom)
+    case (_, _, num, Some(denom)) if denom > 0 => Some(0.05 + 0.95 * num / denom)
+    case (_, _, _, _) => None
   }
+
+  override val description = (dci.nIdListsFetched, dci.nIdListsTotal, dci.nFetched, dci.nTotal) match {
+    case (_, None, _, _) => Some(desc("starting"))
+    case (_, _, _, None) => Some(desc("listing"))
+    case (_, _, a, Some(b)) if a == b => Some(desc("cleaning"))
+    case (_, _, a, Some(b)) => Some(desc("copying", a, b))
+  }
+
   override val estimatedCompletionTime = None
 }
 

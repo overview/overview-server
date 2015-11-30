@@ -7,7 +7,7 @@ import play.api.libs.json.{ JsObject, Json }
 import slick.driver.{ JdbcTypesComponent, PostgresDriver }
 
 import com.overviewdocs.metadata.MetadataSchema
-import com.overviewdocs.models.{DocumentSetCreationJobState, DocumentSetCreationJobType, DocumentSetUser, UserRole}
+import com.overviewdocs.models.{DocumentSetUser,UserRole}
 import com.overviewdocs.models.DocumentDisplayMethod
 
 trait MyPostgresDriver extends PostgresDriver
@@ -41,14 +41,6 @@ trait MyPostgresDriver extends PostgresDriver
       _.isOwner match { case true => 1; case false => 2 },
       DocumentSetUser.Role.apply
     )
-
-    implicit val jobTypeColumnType = MappedColumnType.base[DocumentSetCreationJobType.Value, Int](
-      _.id,
-      DocumentSetCreationJobType.apply)
-
-    implicit val stateColumnType = MappedColumnType.base[DocumentSetCreationJobState.Value, Int](
-      _.id,
-      DocumentSetCreationJobState.apply)
 
     implicit val metadataSchemaTypeMapper = MappedColumnType.base[MetadataSchema, String](
       ms => ms.toJson.toString,

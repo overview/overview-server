@@ -71,6 +71,47 @@ class ImportJobSpec extends Specification {
     }
   }
 
+  "DocumentCloudImportJob" should {
+    def job(nIdListsFetched: Int, nIdListsTotal: Option[Int], nFetched: Int, nTotal: Option[Int]) = {
+      DocumentCloudImportJob(factory.documentCloudImport(
+        nIdListsFetched=nIdListsFetched,
+        nIdListsTotal=nIdListsTotal,
+        nFetched=nFetched,
+        nTotal=nTotal
+      ))
+    }
+
+    def desc(key: String, args: Any*) = ((s"models.DocumentCloudImportJob.$key", args))
+
+    "give progress=None at the beginning" in {
+      job(0, None, 0, None).progress must beNone
+    }
+
+    "give progress=0.05 after ID lists are fetched" in {
+      job(1, Some(1), 0, None).progress must beSome(0.05)
+    }
+
+    "give progress=1.0 at the end" in {
+      job(1, Some(1), 2, Some(2)).progress must beSome(1.0)
+    }
+
+    "give description of 'starting'" in {
+      job(0, None, 0, None).description must beSome(desc("starting"))
+    }
+
+    "give description of 'listing'" in {
+      job(1, Some(10), 0, None).description must beSome(desc("listing"))
+    }
+
+    "give description of 'copying'" in {
+      job(1, Some(1), 1, Some(2)).description must beSome(desc("copying", 1, 2))
+    }
+
+    "give description of 'cleaning' when progress=1.0" in {
+      job(1, Some(1), 1, Some(1)).description must beSome(desc("cleaning"))
+    }
+  }
+
   "FileGroupImportJob" should {
     val baseFileGroup = factory.fileGroup(
       addToDocumentSetId=Some(1L),
