@@ -12,6 +12,7 @@ import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.{DB,DocumentSetDeleter,HasDatabase}
 import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
 import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
+import com.overviewdocs.jobhandler.documentcloud.{DocumentCloudImportWorkBroker,DocumentCloudImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentSets,FileGroups}
@@ -98,16 +99,19 @@ class ActorCareTaker(fileGroupJobQueueName: String, fileRemovalQueueName: String
   )
 
   private val csvImportWorkBroker = context.actorOf(CsvImportWorkBroker.props, "CsvImportWorkBroker")
+  private val documentCloudImportWorkBroker = context.actorOf(DocumentCloudImportWorkBroker.props, "DocumentCloudImportWorkBroker")
 
   context.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-1")
   context.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-2")
   context.actorOf(CsvImportWorker.props(csvImportWorkBroker), "CsvImportWorker-1")
+  context.actorOf(DocumentCloudImportWorker.props(documentCloudImportWorkBroker), "DocumentCloudWorker-1")
 
   context.actorOf(
     DocumentSetCommandWorker.props(
       documentSetMessageBroker,
       addDocumentsWorkBroker,
       csvImportWorkBroker,
+      documentCloudImportWorkBroker,
       Cloner,
       DocumentSetDeleter
     ),

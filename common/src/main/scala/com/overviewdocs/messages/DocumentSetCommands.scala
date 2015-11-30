@@ -1,6 +1,6 @@
 package com.overviewdocs.messages
 
-import com.overviewdocs.models.{CloneJob,CsvImport,FileGroup}
+import com.overviewdocs.models.{CloneJob,CsvImport,DocumentCloudImport,FileGroup}
 
 /** Background tasks that must be serialized on a document set.
   *
@@ -26,7 +26,7 @@ object DocumentSetCommands {
   /** Empty all GroupedFileUploads from the given FileGroup, add the resulting
     * Documents to the DocumentSet, then delete the FileGroup.
     *
-    * Stored as a DocumentSetCreationJob.
+    * Stored as a FileGroup.
     */
   case class AddDocumentsFromFileGroup(fileGroup: FileGroup) extends Command {
     override val documentSetId = fileGroup.addToDocumentSetId.get
@@ -39,6 +39,15 @@ object DocumentSetCommands {
     */
   case class AddDocumentsFromCsvImport(csvImport: CsvImport) extends Command {
     override val documentSetId = csvImport.documentSetId
+  }
+
+  /** Create Documents out of documents/pages on DocumentCloud, then delete the
+    * DocumentCloudImport.
+    *
+    * Stored as DocumentCloudImport.
+    */
+  case class AddDocumentsFromDocumentCloud(documentCloudImport: DocumentCloudImport) extends Command {
+    override val documentSetId = documentCloudImport.documentSetId
   }
 
   /** Copy user data from one DocumentSet to another.

@@ -121,3 +121,5 @@ trait Main extends HasDatabase {
     """)
   }
 }
+
+object Main extends Main

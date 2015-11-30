@@ -7,6 +7,7 @@ import scala.util.{Failure,Success}
 import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
+import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.Logger
@@ -24,6 +25,7 @@ class DocumentSetCommandWorker(
   val broker: ActorRef,
   val addDocumentsWorkBroker: ActorRef,
   val csvImportWorkBroker: ActorRef,
+  val documentCloudImportWorkBroker: ActorRef,
   val cloner: Cloner,
   val documentSetDeleter: DocumentSetDeleter
 ) extends Actor
@@ -49,6 +51,15 @@ class DocumentSetCommandWorker(
         // while this DocumentSetCommandWorker can work on other commands.
         val message = CsvImportWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
         csvImportWorkBroker ! message
+        sendReady
+      }
+      case addDocuments: AddDocumentsFromDocumentCloud => {
+        // AddDocuments is a special case, because it gets its own scheduler.
+        // The DocumentSetCommandWorker will return right away; that way, the
+        // downstream DocumentCloudWorkBroker can juggle all import jobs at
+        // once, while this DocumentSetCommandWorker can work on other commands.
+        val message = DocumentCloudImportWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
+        documentCloudImportWorkBroker ! message
         sendReady
       }
       case addDocuments: AddDocumentsFromFileGroup => {
@@ -106,6 +117,7 @@ object DocumentSetCommandWorker {
     broker: ActorRef,
     addDocumentsWorkBroker: ActorRef,
     csvImportWorkBroker: ActorRef, 
+    documentCloudImportWorkBroker: ActorRef,
     cloner: Cloner,
     documentSetDeleter: DocumentSetDeleter
   ): Props = {
@@ -113,6 +125,7 @@ object DocumentSetCommandWorker {
       broker,
       addDocumentsWorkBroker,
       csvImportWorkBroker,
+      documentCloudImportWorkBroker,
       cloner,
       documentSetDeleter
     ))

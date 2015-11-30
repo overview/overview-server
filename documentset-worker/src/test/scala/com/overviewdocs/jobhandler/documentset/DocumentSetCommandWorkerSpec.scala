@@ -11,6 +11,7 @@ import scala.concurrent.{Future,Promise}
 import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
+import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.test.ActorSystemContext
@@ -26,12 +27,14 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       val broker = TestProbe()
       val addDocumentsWorkBroker = TestProbe()
       val csvImportWorkBroker = TestProbe()
+      val documentCloudImportWorkBroker = TestProbe()
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val cloner = smartMock[Cloner]
       val subject = TestActorRef(DocumentSetCommandWorker.props(
         broker.ref,
         addDocumentsWorkBroker.ref,
         csvImportWorkBroker.ref,
+        documentCloudImportWorkBroker.ref,
         cloner,
         documentSetDeleter
       ))
@@ -77,6 +80,26 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         // This is one-half of the spec; the other half is in CsvImportWorkBroker
         csvImportWorkBroker.expectMsg(
           CsvImportWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(1L))
+        )
+      }
+    }
+
+    "AddDocumentsFromDocumentCloud" should {
+      "send WorkerReady immediately" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        subject ! DocumentSetCommands.AddDocumentsFromDocumentCloud(factory.documentCloudImport(documentSetId=1L))
+        broker.expectMsg(WorkerReady)
+      }
+
+      "queue ack message for when command completes" in new BaseScope {
+        broker.expectMsg(WorkerReady)
+
+        val command = DocumentSetCommands.AddDocumentsFromDocumentCloud(factory.documentCloudImport(id=2, documentSetId=1L))
+        subject ! command
+        // This is one-half of the spec; the other half is in DocumentCloudImportWorkBroker
+        documentCloudImportWorkBroker.expectMsg(
+          DocumentCloudImportWorkBroker.DoWorkThenAck(command, broker.ref, WorkerDoneDocumentSetCommand(1L))
         )
       }
     }
