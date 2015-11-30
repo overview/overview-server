@@ -10,9 +10,6 @@
 
 package com.overviewdocs.clustering
 
-import com.overviewdocs.persistence.{ DocumentWriter, NodeWriter }
-import com.overviewdocs.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
-import com.overviewdocs.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
 import com.overviewdocs.nlp.WeightedLexer
 import com.overviewdocs.nlp.BigramDocumentVectorGenerator
 import com.overviewdocs.nlp.DocumentVectorTypes._

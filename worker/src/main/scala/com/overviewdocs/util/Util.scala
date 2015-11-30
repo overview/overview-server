@@ -15,20 +15,6 @@ import com.typesafe.config.ConfigFactory
 import scala.language.implicitConversions  // for toMutableSet
 import scala.util.control.Exception._
 
-// Singleton Akka actor system object. One per process, managing all actors.
-object WorkerActorSystem {
-  def withActorSystem(f: ActorSystem => Unit) {
-    val context = ActorSystem("WorkerActorSystem", ConfigFactory.parseString("""
-      akka {
-        jvm-exit-on-fatal-error: on
-      }
-    """))
-    ultimately(context.shutdown) {
-      f(context)
-    }
-  }
-}
-
 // Iterator that loops infinitely over an underlying (presumably finite) iterator
 // Resets when it hits the end by calling makeIter. Can be empty if makeIter returns empty iter.
 class LoopedIterator[T](makeIter: => Iterator[T]) extends Iterator[T] {
@@ -79,43 +65,6 @@ trait TranslatableMessage {
   override def toString = (keyName +: params) mkString(":")
 }
 
-// Base class for objects that can be used for progress reporting
-sealed class DocumentSetCreationJobStateDescription(val keyName: String, val params: String*) extends TranslatableMessage {
-  def sameStateAs(that: DocumentSetCreationJobStateDescription): Boolean = keyName == that.keyName
-}
-
-object DocumentSetCreationJobStateDescription {
-  private type Description = DocumentSetCreationJobStateDescription
-
-  case class Retrieving(docNum: Int, total: Int) extends Description("retrieving_documents", docNum.toString, total.toString)
-  case object Clustering extends Description("clustering")
-  case object Saving extends Description("saving_document_tree")
-  case object Done extends Description("job_complete")
-  case class ClusteringLevel(n: Int) extends Description("clustering_level", n.toString)
-  case class Parsing(parsed: Long, total: Long) extends Description("parsing_data", parsed.toString, total.toString)
-}
-
 // Base class for errors that the worker can produce, each of which has a translatable message
 class DisplayedError(val keyName:String, val params:String*) extends Exception with TranslatableMessage  {
 }
-
-
-object Progress {
-  import DocumentSetCreationJobStateDescription._
-  // Little class that represents progress
-  case class Progress(fraction: Double, status: DocumentSetCreationJobStateDescription, hasError: Boolean = false)
-
-  // Callback function to inform of progress, and returns true if operation should abort
-  type ProgressAbortFn = Progress => Boolean
-
-  // Turns a sub-task progress into overall task progress
-  def makeNestedProgress(inner: ProgressAbortFn, startFraction: Double, endFraction: Double): ProgressAbortFn = {
-    (progress) => inner(Progress(startFraction + (endFraction - startFraction) * progress.fraction, progress.status, progress.hasError))
-  }
-
-  // stub that you can pass in when you don't case about progress reporting
-  def NoProgressReporting(p: Progress): Boolean = { false }
-}
-
-
-

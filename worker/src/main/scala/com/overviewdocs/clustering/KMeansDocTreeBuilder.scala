@@ -10,7 +10,6 @@
 package com.overviewdocs.clustering
 
 import scala.collection.mutable.Set
-import com.overviewdocs.util.DocumentSetCreationJobStateDescription.ClusteringLevel
 import com.overviewdocs.nlp.DocumentVectorTypes._
 import com.overviewdocs.nlp.IterativeKMeansDocuments
 
