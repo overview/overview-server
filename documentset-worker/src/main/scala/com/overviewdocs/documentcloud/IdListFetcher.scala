@@ -12,7 +12,7 @@ import com.overviewdocs.models.tables.{DocumentCloudImports,DocumentCloudImportI
   */
 class IdListFetcher(
   dcImport: DocumentCloudImport,
-  server: DocumentCloudServer,
+  server: DocumentCloudServer = DocumentCloudServer,
   val listSize: Int = 1000
 )
 extends HasDatabase {

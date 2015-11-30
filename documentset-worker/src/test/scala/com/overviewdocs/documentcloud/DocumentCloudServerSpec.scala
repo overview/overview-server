@@ -16,7 +16,17 @@ class DocumentCloudServerSpec extends Specification with Mockito {
     }
 
     def stubAnyResponse = {
-      mockHttpClient.get(any)(any) returns Future.failed(new Exception("we don't care"))
+      mockHttpClient.get(any)(any) returns Future.successful(http.Response(200, Map(), Array()))
+    }
+
+    def stubBytes(bytes: Array[Byte]) = {
+      mockHttpClient.get(any)(any) returns Future.successful(http.Response(200, Map(), bytes))
+    }
+
+    def stubRedirectThenBytes(url: String, bytes: Array[Byte]) = {
+      mockHttpClient.get(any)(any)
+        .returns(Future.successful(http.Response(302, Map("Location" -> Seq(url)), Array())))
+        .thenReturns(Future.successful(http.Response(200, Map(), bytes)))
     }
   }
 
@@ -130,23 +140,23 @@ class DocumentCloudServerSpec extends Specification with Mockito {
     }
 
     "request a public document" in new BaseScope {
-      stubAnyResponse
-      subject.getText("http://foo", "", "", "public")
+      stubBytes("foo".getBytes("utf-8"))
+      subject.getText("http://foo", "", "", "public") must beRight("foo").await
 
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
 
-      captor.value.followRedirects must beFalse
+      captor.value must beEqualTo(http.Request("http://foo", None, true))
     }
 
     "request a private document" in new BaseScope {
-      stubAnyResponse
-      subject.getText("http://foo", "", "", "private")
+      stubRedirectThenBytes("http://bar", "bar".getBytes("utf-8"))
+      subject.getText("http://foo", "username", "password", "private") must beRight("bar").await
 
       val captor = capture[http.Request]
-      there was one(mockHttpClient).get(captor)(any)
+      there were two(mockHttpClient).get(captor)(any)
 
-      captor.value.followRedirects must beTrue
+      captor.value must beEqualTo(http.Request("http://bar", None, true))
     }
   }
 }

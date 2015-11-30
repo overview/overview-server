@@ -14,8 +14,22 @@ import com.overviewdocs.util.{Configuration,Textify}
 
 /** Interface to a DocumentCloud HTTP server. */
 trait DocumentCloudServer {
-  protected val httpClient: http.Client
+  protected val httpClient: http.Client = new http.NingClient
   protected val apiBaseUrl: String = Configuration.getString("documentcloud_url") + "/api"
+
+  private trait GetResult
+  private trait GetResultNoRedirect extends GetResult {
+    def toEither: Either[String,Array[Byte]]
+  }
+  private object GetResult {
+    case class Bytes(bytes: Array[Byte]) extends GetResult with GetResultNoRedirect {
+      override def toEither = Right(bytes)
+    }
+    case class Error(message: String) extends GetResult with GetResultNoRedirect {
+      override def toEither = Left(message)
+    }
+    case class Redirect(url: String) extends GetResult
+  }
 
   /** DocumentCloud only returns UTF-8.
     *
@@ -71,25 +85,42 @@ trait DocumentCloudServer {
     username: String,
     password: String,
     followRedirects: Boolean
-  ): Future[Either[String,Array[Byte]]] = {
-    val promise = Promise[Either[String,Array[Byte]]]()
+  ): Future[GetResult] = {
+    val promise = Promise[GetResult]()
 
     httpClient.get(http.Request(url, maybeCredentials(username, password), followRedirects)).onComplete {
       case Success(response) if response.statusCode == 200 => {
-        promise.success(Right(response.bodyBytes))
+        promise.success(GetResult.Bytes(response.bodyBytes))
+      }
+      case Success(response) if response.statusCode == 302 && response.headers.getOrElse("Location", Seq()).nonEmpty => {
+        promise.success(GetResult.Redirect(response.headers("Location")(0)))
       }
       case Success(response) => {
-        promise.success(Left(s"DocumentCloud responded with ${http.StatusCodes.describe(response.statusCode)}"))
+        promise.success(GetResult.Error(s"DocumentCloud responded with ${http.StatusCodes.describe(response.statusCode)}"))
       }
       case Failure(_: TimeoutException) => {
-        promise.success(Left("Request to DocumentCloud timed out"))
+        promise.success(GetResult.Error("Request to DocumentCloud timed out"))
       }
       case Failure(ex) => {
-        promise.success(Left(ex.getMessage))
+        // todo throw?
+        ex.printStackTrace
+        promise.success(GetResult.Error(ex.getMessage))
       }
     }
 
     promise.future
+  }
+
+  private def httpGetNoRedirect(
+    url: String,
+    username: String,
+    password: String,
+    followRedirects: Boolean
+  ): Future[GetResultNoRedirect] = {
+    httpGet(url, username, password, followRedirects).map(_ match {
+      case GetResult.Redirect(_) => GetResult.Error(s"DocumentCloud responded with ${http.StatusCodes.describe(302)}")
+      case r: GetResultNoRedirect => r
+    })
   }
 
   /** Conducts a `/search.json` query on the server; returns the first page of
@@ -140,9 +171,9 @@ trait DocumentCloudServer {
   ): Future[Either[String,(IdList,Int)]] = {
     val url = s"${queryUrl(query)}&page=${pageNumberBase0 + 1}&per_page=1000"
 
-    httpGet(url, username, password, false).map(_ match {
-      case Right(bytes) => parseIdList(bytes)
-      case Left(error) => Left(error)
+    httpGetNoRedirect(url, username, password, false).map(_ match {
+      case GetResult.Bytes(bytes) => parseIdList(bytes)
+      case GetResult.Error(error) => Left(error)
     })
   }
 
@@ -167,8 +198,19 @@ trait DocumentCloudServer {
     password: String,
     access: String
   ): Future[Either[String,String]] = {
-    httpGet(url, username, password, access != "public").map { response =>
-      response.right.map(bytes => Textify(bytes, DocumentCloudCharset))
+    val response1Future: Future[GetResult] = if (access == "public") {
+      httpGet(url, "", "", true)
+    } else {
+      httpGet(url, username, password, false)
     }
+
+    val bytesFuture: Future[Either[String,Array[Byte]]] = response1Future.flatMap(_ match {
+      case GetResult.Redirect(url2) => httpGetNoRedirect(url2, "", "", true).map(_.toEither)
+      case r: GetResultNoRedirect => Future.successful(r.toEither)
+    })
+
+    bytesFuture.map(_.right.map(bytes => Textify(bytes, DocumentCloudCharset)))
   }
 }
+
+object DocumentCloudServer extends DocumentCloudServer

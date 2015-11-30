@@ -3,7 +3,7 @@ package com.overviewdocs.documentcloud
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class Fetcher(server: DocumentCloudServer) {
+class Fetcher(server: DocumentCloudServer = DocumentCloudServer) {
   /** Fetches documents from DocumentCloud and writes them to a writer.
     *
     * You're free to run this concurrently: that is, set up many fetches on the
