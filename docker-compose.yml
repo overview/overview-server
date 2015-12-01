@@ -1,0 +1,59 @@
+# Servers Overview relies upon.
+#
+# Usage: `docker-compose start` to create a dev/test environment.
+#
+# Services:
+#   * :9010 -> Postgres
+#   * :9020 -> Redis
+#   * :9200,:9300 -> ElasticSearch (dev environment)
+#   * :9201,:9301 -> ElasticSearch (test environment)
+
+# Volumes...
+
+overview-dev-database-data:
+  container_name: overview-dev-database-data
+  image: busybox
+  volumes:
+    - /var/lib/postgresql/data
+  command: /bin/true
+
+overview-dev-searchindex-data:
+  container_name: overview-dev-searchindex-data
+  image: busybox
+  volumes:
+    - /usr/share/elasticsearch/data
+  command: /bin/true
+
+# Servers...
+
+overview-dev-redis:
+  container_name: overview-dev-redis 
+  image: redis:2.8
+  ports:
+    - "9020:6379"
+
+overview-dev-database:
+  container_name: overview-dev-database
+  image: overview/database
+  volumes_from:
+    - overview-dev-database-data
+  ports:
+    - "9010:5432"
+
+overview-dev-searchindex:
+  container_name: overview-dev-searchindex
+  image: overview/searchindex
+  volumes_from:
+    - overview-dev-searchindex-data
+  ports:
+    - "9200:9200" # for debugging
+    - "9300:9300"
+
+# We run an entirely separate cluster for test SearchIndex; we'll delete all
+# indices in every test.
+overview-test-searchindex:
+  container_name: overview-test-searchindex
+  image: overview/searchindex
+  ports:
+    - "9201:9200" # for debugging
+    - "9301:9300"

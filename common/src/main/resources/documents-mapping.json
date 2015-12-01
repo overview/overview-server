@@ -1,13 +1,11 @@
 {
   "document": {
-    "_id": { "path": "id" },
-    "analyzer": "overview_text_analyzer",
     "properties": {
-      "id":              { "type": "long", "store": "yes" },
+      "_all":            { "type": "string", "analyzer": "overview_text_analyzer" },
       "document_set_id": { "type": "long" },
-      "text":            { "type": "string" },
+      "text":            { "type": "string", "analyzer": "overview_text_analyzer" },
       "supplied_id":     { "type": "string" },
-      "title":           { "type": "string" }
+      "title":           { "type": "string", "analyzer": "overview_text_analyzer" }
     }
   }
 }

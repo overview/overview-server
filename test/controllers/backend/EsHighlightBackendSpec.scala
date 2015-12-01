@@ -1,14 +1,12 @@
 package controllers.backend
 
-import org.specs2.mutable.After
-
 import com.overviewdocs.query.{Field,PhraseQuery}
-import com.overviewdocs.searchindex.{Highlight,InMemoryIndexClient}
+import com.overviewdocs.searchindex.{Highlight,TransportIndexClient}
 
 class EsHighlightBackendSpec extends NullBackendSpecification {
-  trait BaseScope extends NullScope with After {
-    val testIndexClient = new InMemoryIndexClient
-    override def after = testIndexClient.close
+  trait BaseScope extends NullScope {
+    val testIndexClient = TransportIndexClient.singleton
+    await(testIndexClient.deleteAllIndices)
 
     val backend = new TestNullBackend with EsHighlightBackend {
       override val indexClient = testIndexClient
@@ -18,7 +16,6 @@ class EsHighlightBackendSpec extends NullBackendSpecification {
   "#index" should {
     trait IndexScope extends BaseScope {
       await(testIndexClient.addDocumentSet(1L))
-      await(testIndexClient.refresh)
     }
 
     "return an empty list when there is no document" in new IndexScope {

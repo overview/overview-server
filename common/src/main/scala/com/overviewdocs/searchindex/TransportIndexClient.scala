@@ -1,8 +1,9 @@
 package com.overviewdocs.searchindex
 
+import java.net.InetSocketAddress
 import org.elasticsearch.client.Client
 import org.elasticsearch.client.transport.TransportClient
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.transport.InetSocketTransportAddress
 import scala.concurrent.Future
 
@@ -16,13 +17,10 @@ import com.overviewdocs.util.Configuration
   * Pass a `hosts` string like `"10.0.0.1:9300,10.0.0.2:9300"`, for instance.
   */
 class TransportIndexClient(clusterName: String, hosts: String) extends ElasticSearchIndexClient {
-  def internalClientFuture: Future[Client] = clientFuture
-
   lazy private val transportClient: TransportClient = {
-    val settings = ImmutableSettings.settingsBuilder
-      .put("cluster.name", clusterName)
+    val settings = Settings.settingsBuilder.put("cluster.name", clusterName)
 
-    val ret = new TransportClient(settings)
+    val ret = TransportClient.builder.settings(settings).build
 
     hosts
       .trim
@@ -32,7 +30,8 @@ class TransportIndexClient(clusterName: String, hosts: String) extends ElasticSe
       .foreach { (ipAndPort: Seq[String]) =>
         val ip = ipAndPort(0)
         val port = ipAndPort(1).toInt
-        ret.addTransportAddress(new InetSocketTransportAddress(ip, port))
+        val socketAddress = new InetSocketAddress(ip, port)
+        ret.addTransportAddress(new InetSocketTransportAddress(socketAddress))
       }
 
     ret

@@ -14,8 +14,7 @@ object Dependencies {
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
     val commonsIo = "commons-io" % "commons-io" % "2.4"
     val config = "com.typesafe" % "config" % "1.3.0"
-    val elasticSearch = "org.elasticsearch" % "elasticsearch" % "1.7.3"
-    val elasticSearchIcu = "org.elasticsearch" % "elasticsearch-analysis-icu" % "2.7.0" // find version at https://github.com/elastic/elasticsearch-analysis-icu
+    val elasticSearch = "org.elasticsearch" % "elasticsearch" % "2.1.0"
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.4.1"
@@ -26,6 +25,7 @@ object Dependencies {
     val junit = "junit" % "junit-dep" % "4.11"
     val logback = "ch.qos.logback" % "logback-classic" % "1.1.3"
     val log4jBridge = "org.slf4j" % "log4j-over-slf4j" % "1.7.12" // for ElasticSearch
+    val luceneIcu = "org.apache.lucene" % "lucene-analyzers-icu" % "5.3.1"
     val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
     val openCsv = "com.opencsv" % "opencsv" % "3.4"
@@ -56,7 +56,6 @@ object Dependencies {
     deps.slick,
     filters,
     ws,
-    deps.log4jBridge % "test",
     deps.joddWot % "test",
     deps.playTest % "test"
   )
@@ -76,12 +75,12 @@ object Dependencies {
     deps.awsS3,
     deps.commonsIo,
     deps.elasticSearch exclude("log4j", "log4j"),
-    deps.elasticSearchIcu exclude("log4j", "log4j"),
     deps.guava, // Textify
     deps.hikariCp,
     deps.jna, // Make ElasticSearch client happy
     deps.log4jBridge, // ElasticSearch
     deps.logback,
+    deps.luceneIcu, // Document.tokens
     deps.parserCombinators,
     deps.pgSlick,
     deps.playJson,
@@ -114,12 +113,6 @@ object Dependencies {
     deps.playStreams,
     deps.pdfocr,
     deps.janino % "test" // See logback-test.xml
-  )
-
-  val searchIndexDependencies = Seq(
-    deps.elasticSearch,
-    deps.elasticSearchIcu,
-    deps.jna // actually useful here
   )
 
   val runnerDependencies = Seq(

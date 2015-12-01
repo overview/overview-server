@@ -3,7 +3,7 @@ package com.overviewdocs.models
 import java.io.StringReader
 import java.util.Date
 import java.text.Normalizer
-import org.apache.lucene.analysis.standard.StandardTokenizer // Built in to ElasticSearch
+import org.apache.lucene.analysis.icu.segmentation.ICUTokenizer // It's what ElasticSearch uses
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute // Built in to ElasticSearch
 import play.api.libs.json.JsObject
 import scala.collection.mutable.ArrayBuffer
@@ -58,8 +58,8 @@ case class Document(
     // ElasticSearch behavior here.
     //
     // https://www.elastic.co/guide/en/elasticsearch/guide/current/icu-tokenizer.html
-    val reader = new StringReader(normalizedText)
-    val tokenizer = new StandardTokenizer(reader)
+    val tokenizer = new ICUTokenizer()
+    tokenizer.setReader(new StringReader(normalizedText))
     var charTermAttribute = tokenizer.addAttribute(classOf[CharTermAttribute])
 
     val ret = new ArrayBuffer[String]

@@ -1,7 +1,7 @@
 package com.overviewdocs.searchindex
 
 import org.elasticsearch.client.Client
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.node.{Node,NodeBuilder}
 import scala.concurrent.Future
 
@@ -18,7 +18,7 @@ class NodeIndexClient(clusterName: String, hosts: String) extends ElasticSearchI
   def internalClientFuture: Future[Client] = clientFuture
 
   lazy private val node: Node = {
-    val settings = ImmutableSettings.settingsBuilder
+    val settings = Settings.settingsBuilder
       .put("node.http.enabled", false)
       .put("node.gateway.type", "none")
       .put("discovery.zen.ping.unicast.hosts", hosts)

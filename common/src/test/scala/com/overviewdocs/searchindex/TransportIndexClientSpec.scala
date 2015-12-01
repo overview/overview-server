@@ -1,10 +1,10 @@
 package com.overviewdocs.searchindex
 
 import java.util.concurrent.ExecutionException
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.index.query.QueryBuilders
-import org.elasticsearch.indices.IndexMissingException
-import org.specs2.mutable.{After,Specification}
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 import play.api.libs.json.JsObject
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
@@ -12,45 +12,43 @@ import scala.concurrent.duration.Duration
 import com.overviewdocs.models.{Document,DocumentDisplayMethod}
 import com.overviewdocs.query.{Field,FuzzyTermQuery,PhraseQuery,PrefixQuery}
 
-class InMemoryIndexClientSpec extends Specification {
+class TransportIndexClientSpec extends Specification {
   import scala.concurrent.ExecutionContext.Implicits.global
   sequential
 
-  trait BaseScope extends After {
-    class TestInMemoryIndexClient extends InMemoryIndexClient {
-      def publicClientFuture = clientFuture
-      def preInitClient = await(connect)
-    }
-    lazy val indexClient = new TestInMemoryIndexClient()
+  def await[T](future: Future[T]): T = Await.result(future, Duration.Inf)
 
-    private val awaitDuration = Duration(2, "s")
-    def await[T](future: Future[T]): T = Await.result(future, Duration.Inf)
+  trait BaseScope extends Scope {
+    val indexClient = TransportIndexClient.singleton
+    val syncIndexClient = await(indexClient.connect) // implementation detail: connect just returns at a lazy val
+
+    await(indexClient.deleteAllIndices)
 
     def createIndex(name: String) = {
-      val settings = ImmutableSettings.settingsBuilder
-        .put("index.store.type", "memory")
+      val settings = Settings.settingsBuilder
+        .put("index.translog.durability", "async") // don't fsync
         .put("index.number_of_shards", 1)
         .put("index.number_of_replicas", 0)
 
-      indexClient.preInitClient.admin.indices.prepareCreate(name)
+      syncIndexClient.admin.indices.prepareCreate(name)
         .setSettings(settings)
         .addMapping("document", """{ "document": { "properties": { "document_set_id": { "type": "long" } } } }""")
         .execute.get
     }
 
     def createAlias(index: String, alias: String) = {
-      indexClient.preInitClient.admin.indices.prepareAliases
+      syncIndexClient.admin.indices.prepareAliases
         .addAlias("documents_v2", "documents")
         .execute.get
     }
 
     def aliasExists(index: String, alias: String) = {
-      val exists = indexClient.preInitClient
+      val exists = syncIndexClient
         .admin.indices.prepareAliasesExist(alias)
         .execute.get.isExists
 
       if (exists) {
-        val aliases = indexClient.preInitClient
+        val aliases = syncIndexClient
           .admin.indices.prepareGetAliases(alias)
           .execute.get.getAliases
 
@@ -76,8 +74,6 @@ class InMemoryIndexClientSpec extends Specification {
       metadataJson=JsObject(Seq()),
       text=s"foo$id bar baz"
     )
-
-    override def after = indexClient.close
   }
 
   "InMemorySearchIndex" should {
@@ -114,19 +110,17 @@ class InMemoryIndexClientSpec extends Specification {
 
         aliasExists("documents_v1", "documents_234") must beEqualTo(true)
 
-        val resultsFuture = indexClient.publicClientFuture.map { client =>
-          client.prepareSearch("documents_234")
-            .setTypes("document")
-            .setQuery(QueryBuilders.matchAllQuery)
-            .setSize(2)
-            .addField("id")
-            .execute().get()
-        }
+        val results = syncIndexClient.prepareSearch("documents_234")
+          .setTypes("document")
+          .setQuery(QueryBuilders.matchAllQuery)
+          .setSize(2)
+          .addField("id")
+          .execute().get()
 
-        val ids = await(resultsFuture)
+        val ids = results
           .getHits
           .getHits
-          .map(_.field("id").value[Object].toString.toLong)
+          .map(_.id.toLong)
           .toSeq
           
         ids must beEqualTo(Seq(123L))
@@ -214,19 +208,17 @@ class InMemoryIndexClientSpec extends Specification {
         await(indexClient.removeDocumentSet(234L))
         await(indexClient.refresh)
 
-        val resultsFuture = indexClient.publicClientFuture.map { client =>
-          client.prepareSearch("documents")
-            .setTypes("document")
-            .setQuery(QueryBuilders.matchAllQuery)
-            .setSize(2)
-            .addField("id")
-            .execute().get()
-        }
+        val results = syncIndexClient.prepareSearch("documents")
+          .setTypes("document")
+          .setQuery(QueryBuilders.matchAllQuery)
+          .setSize(2)
+          .addField("_id")
+          .execute().get()
 
-        val ids = await(resultsFuture)
+        val ids = results
           .getHits
           .getHits
-          .map(_.field("id").value[Object].toString.toLong)
+          .map(_.id.toLong)
           .toSeq
           
         ids must beEqualTo(Seq(124L))

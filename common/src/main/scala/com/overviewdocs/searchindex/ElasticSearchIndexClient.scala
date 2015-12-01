@@ -5,11 +5,11 @@ import org.elasticsearch.action.{ActionListener,ActionRequest,ActionRequestBuild
 import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.search.{SearchResponse,SearchType}
 import org.elasticsearch.client.Client
-import org.elasticsearch.common.settings.ImmutableSettings
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.common.unit.{Fuzziness,TimeValue}
-import org.elasticsearch.index.query.{FilterBuilders,QueryBuilder,QueryBuilders}
-import org.elasticsearch.indices.IndexMissingException
-import org.elasticsearch.rest.action.admin.indices.alias.delete.AliasesMissingException
+import org.elasticsearch.index.query.{QueryBuilder,QueryBuilders}
+import org.elasticsearch.index.IndexNotFoundException
+import org.elasticsearch.rest.action.admin.indices.alias.delete.AliasesNotFoundException
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
@@ -118,8 +118,8 @@ trait ElasticSearchIndexClient extends IndexClient {
     source.getLines.mkString("\n")
   }
 
-  protected lazy val Settings = loadTextResource("/documents-settings.json")
-  protected lazy val Mapping = loadTextResource("/documents-mapping.json")
+  protected lazy val SettingsJson = loadTextResource("/documents-settings.json")
+  protected lazy val MappingJson = loadTextResource("/documents-mapping.json")
 
   def close: Future[Unit] = {
     if (connected) {
@@ -140,7 +140,7 @@ trait ElasticSearchIndexClient extends IndexClient {
     * That's because production ElasticSearch throws RemoteTransportExceptions
     * and in-memory (e.g., un-test) ElasticSearch doesn't.
     */
-  private def execute[Response <: ActionResponse](req: ActionRequestBuilder[_,Response,_,_]): Future[Response] = {
+  private def execute[Response <: ActionResponse](req: ActionRequestBuilder[_,Response,_]): Future[Response] = {
     val promise = Promise[Response]()
 
     req.execute(new ActionListener[Response] {
@@ -177,17 +177,17 @@ trait ElasticSearchIndexClient extends IndexClient {
       .flatMap(_ => createDefaultAlias(client))
   }
 
-  protected val defaultIndexSettings = ImmutableSettings.EMPTY
+  protected val defaultIndexSettings = Settings.EMPTY
 
   private def createDefaultIndex(client: Client): Future[Unit] = {
-    val settings = ImmutableSettings.builder
+    val settings = Settings.builder
       .put(defaultIndexSettings.getAsMap)
-      .loadFromSource(Settings)
+      .loadFromSource(SettingsJson)
       .build
 
     val req = client.admin.indices.prepareCreate(DefaultIndexName)
       .setSettings(settings)
-      .addMapping(DocumentTypeName, Mapping)
+      .addMapping(DocumentTypeName, MappingJson)
 
     execute(req).map(_ => Unit)
   }
@@ -200,7 +200,7 @@ trait ElasticSearchIndexClient extends IndexClient {
   private def addDocumentSetImpl(client: Client, id: Long): Future[Unit] = {
     getAllDocumentsIndexName(client)
       .flatMap { indexName =>
-        val filter = FilterBuilders.termFilter(DocumentSetIdField, id)
+        val filter = QueryBuilders.termQuery(DocumentSetIdField, id)
         val alias = client.admin.indices.prepareAliases()
           .addAlias(indexName, aliasName(id), filter)
 
@@ -220,7 +220,7 @@ trait ElasticSearchIndexClient extends IndexClient {
 
       execute(unalias)
         .map(_ => ())
-        .recover { case e: AliasesMissingException => Unit }
+        .recover { case e: AliasesNotFoundException => Unit }
     }
 
     def deleteDocuments(ids: Seq[Long]): Future[Unit] = {
@@ -258,10 +258,9 @@ trait ElasticSearchIndexClient extends IndexClient {
 
     documents.foreach { document =>
       bulkBuilder.add(
-        client.prepareIndex(AllDocumentsAlias, DocumentTypeName)
+        client.prepareIndex(AllDocumentsAlias, DocumentTypeName, document.id.toString)
           .setSource(Json.obj(
             "document_set_id" -> document.documentSetId,
-            "id" -> document.id,
             "text" -> document.text,
             "title" -> document.title,
             "supplied_id" -> document.suppliedId
@@ -334,6 +333,7 @@ trait ElasticSearchIndexClient extends IndexClient {
       .addHighlightedField("text")
       .setHighlighterQuery(byQ)
       .setHighlighterNumOfFragments(0)
+      .setHighlighterRequireFieldMatch(false)
       .setHighlighterPreTags(HighlightBegin.toString)
       .setHighlighterPostTags(HighlightEnd.toString)
 
@@ -393,19 +393,16 @@ trait ElasticSearchIndexClient extends IndexClient {
       case PhraseQuery(field, phrase) => {
         QueryBuilders
           .matchPhraseQuery(repr(field), phrase)
-          .rewrite("constant_score_auto")
       }
       case PrefixQuery(field, prefix) => {
         QueryBuilders
           .matchPhrasePrefixQuery(repr(field), prefix)
           .maxExpansions(MaxTermExpansions)
-          .rewrite("constant_score_auto")
       }
       case ProximityQuery(field, phrase, slop) => {
         QueryBuilders
           .matchPhraseQuery(repr(field), phrase)
           .slop(slop)
-          .rewrite("constant_score_auto")
       }
       case FuzzyTermQuery(field, term, fuzziness) => {
         /*
@@ -417,32 +414,21 @@ trait ElasticSearchIndexClient extends IndexClient {
         QueryBuilders.matchQuery(repr(field), term)
           .fuzziness(Fuzziness.build(fuzziness.getOrElse("AUTO")))
           .maxExpansions(MaxTermExpansions)
-          .rewrite("constant_score_auto")
       }
     }
   }
 
   private def searchForIdsImpl(client: Client, documentSetId: Long, q: Query, scrollSize: Int): Future[Seq[Long]] = {
     val req = client.prepareSearch(aliasName(documentSetId))
-      .setSearchType(SearchType.SCAN)
       .setScroll(new TimeValue(ScrollTimeout))
       .setTypes(DocumentTypeName)
       .setQuery(QueryBuilders.constantScoreQuery(q.toElasticSearchQuery))
       .setSize(scrollSize)
-      .addField("id") // We started using _id on 2015-01-12 but some end-users
-                      // might not have reindexed yet. So we index and store
-                      // "id" instead.
+      .addField("_id")
 
     def responseToLongs(response: SearchResponse): Seq[Long] = {
       throwIfError(response)
-
-      // Casting to String then Long because ElasticSearch sends JSON and
-      // forgets the type. It's sometimes Integer, sometimes Long.
-      // https://groups.google.com/forum/#!searchin/elasticsearch/getsource$20integer$20long/elasticsearch/jxIY22TmA8U/PyqZPPyYQ0gJ
-      response.getHits
-        .getHits
-        .map(_.field("id").value[Object].toString.toLong)
-        .toSeq
+      response.getHits.getHits.map(_.id.toLong).toSeq
     }
 
     def step(accumulator: Seq[Seq[Long]], response: SearchResponse): Future[Seq[Long]] = {
@@ -469,12 +455,12 @@ trait ElasticSearchIndexClient extends IndexClient {
         if (response.getHits.totalHits == 0) {
           Future.successful(Seq())
         } else {
-          requestScroll(response.getScrollId()).flatMap(step(Seq(), _))
+          requestScroll(response.getScrollId()).flatMap(step(Seq(responseToLongs(response)), _))
         }
       }
       .recover {
-        case e: IndexMissingException =>
-          Logger.forClass(getClass).warn("IndexMissingException on index {}", aliasName(documentSetId))
+        case e: IndexNotFoundException =>
+          Logger.forClass(getClass).warn("IndexNotFoundException on index {}", aliasName(documentSetId))
           Seq()
       }
   }
@@ -490,10 +476,21 @@ trait ElasticSearchIndexClient extends IndexClient {
     }
   }
 
+  private def deleteAllIndicesImpl(client: Client): Future[Unit] = {
+    val req = client.admin.indices.prepareDelete("_all")
+    execute(req).map(_ => Unit)
+  }
+
   override def addDocumentSet(id: Long) = clientFuture.flatMap(addDocumentSetImpl(_, id))
   override def removeDocumentSet(id: Long) = clientFuture.flatMap(removeDocumentSetImpl(_, id))
   override def addDocuments(documents: Iterable[Document]) = clientFuture.flatMap(addDocumentsImpl(_, documents))
   override def refresh = clientFuture.flatMap(refreshImpl(_))
+
+  /** Wipe out everything.
+    *
+    * Useful for unit tests.
+    */
+  def deleteAllIndices = clientFuture.flatMap(deleteAllIndicesImpl(_))
 
   override def highlight(documentSetId: Long, documentId: Long, q: Query) = {
     clientFuture.flatMap(highlightImpl(_, documentSetId, documentId, q))

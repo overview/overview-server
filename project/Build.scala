@@ -7,6 +7,7 @@ import com.typesafe.sbt.SbtNativePackager.autoImport._
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.web.SbtWeb
 import com.typesafe.sbt.web.SbtWeb.autoImport._
+import java.io.IOException
 import play.Play.autoImport._
 import play.sbt.PlayImport._
 import play.sbt.routes.RoutesKeys
@@ -20,6 +21,24 @@ object ApplicationBuild extends Build {
 
   val ourScalaVersion = "2.11.7"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8")
+
+  lazy val dockerIp: String = {
+    import scala.sys.process._
+
+    val ret = try {
+      "docker-machine ip".!!.trim
+    } catch {
+      case _: IOException => try {
+        Seq("docker", "inspect", "-f", "{{ .NetworkSettings.Gateway }}", "overview-dev-database").!!.trim
+      } catch {
+        case _: IOException => ""
+      }
+    }
+
+    if (ret.isEmpty) throw new Error("Please run `docker-compose start` first")
+
+    ret
+  }
 
   val ourResolvers = Seq(
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
@@ -40,12 +59,20 @@ object ApplicationBuild extends Build {
 
   val devJavaOpts = Seq(
     "-Ddb.default.dataSource.databaseName=overview-dev",
-    "-Ddb.default.dataSource.portNumber=9010"
+    "-Ddb.default.dataSource.portNumber=9010",
+    s"-Ddb.default.dataSource.serverName=$dockerIp",
+    s"-Dsearch_index.hosts=$dockerIp:9300",
+    s"-Dredis.host=$dockerIp",
+    "-Dredis.port=9020"
   )
 
   val testJavaOpts = Seq(
     "-Ddb.default.dataSource.databaseName=overview-test",
     "-Ddb.default.dataSource.portNumber=9010",
+    s"-Ddb.default.dataSource.serverName=$dockerIp",
+    s"-Dsearch_index.hosts=$dockerIp:9301",
+    s"-Dredis.host=$dockerIp",
+    "-Dredis.port=9020",
     "-Dlogback.configurationFile=logback-test.xml"
   )
 
@@ -80,22 +107,6 @@ object ApplicationBuild extends Build {
   def project(name: String) = Project(name, file(name))
     .settings(ourGlobalSettings: _*)
     .enablePlugins(JavaAppPackaging)
-
-  lazy val searchIndex = project("search-index")
-    .settings(
-      libraryDependencies ++= Dependencies.searchIndexDependencies,
-      javaOptions in run <++= (baseDirectory) map { (d) =>
-        Seq(
-          "-Des.path.home=" + d,
-          "-Xms1g", "-Xmx1g", "-Xss256k",
-          "-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC",
-          "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly",
-          "-Djava.awt.headless=true",
-          "-Delasticsearch",
-          "-Des.foreground=yes"
-        )
-      }
-    )
 
   lazy val runner = project("runner")
     .settings(libraryDependencies ++= Dependencies.runnerDependencies)
@@ -179,7 +190,6 @@ object ApplicationBuild extends Build {
         WebJs.JS.Object("name" -> "bundle/Welcome/show")
       ),
       javaOptions in Test ++= Seq(
-        "-Dconfig.resource=application-test.conf",
         "-Dlogger.resource=logback-test.xml"
       ),
       sources in doc in Compile := List(),
