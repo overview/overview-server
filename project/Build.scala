@@ -28,19 +28,15 @@ object ApplicationBuild extends Build {
   lazy val dockerIp: String = {
     import scala.sys.process._
 
-    val ret = try {
+    try {
       "docker-machine ip".!!.trim
     } catch {
       case _: IOException => try {
         Seq("docker", "inspect", "-f", "{{ .NetworkSettings.Gateway }}", "overview-dev-database").!!.trim
       } catch {
-        case _: IOException => ""
+        case _: IOException => "localhost" // gotta be something: in `./build`, need to not-crash
       }
     }
-
-    if (ret.isEmpty) throw new Error("Please run `docker-compose start` first")
-
-    ret
   }
 
   val ourResolvers = Seq(
