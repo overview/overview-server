@@ -19,3 +19,5 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.0.6")
 addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.7")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.3")
+
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")

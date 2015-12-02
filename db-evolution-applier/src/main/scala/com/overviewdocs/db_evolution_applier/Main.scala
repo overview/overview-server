@@ -22,8 +22,8 @@ object Main {
         |  default {
         |    dataSource {
         |      serverName="localhost"
-        |      portNumber="9010" # overridden in production.conf
-        |      databaseName="overview-dev"
+        |      portNumber="5432"
+        |      databaseName="overview"
         |      user="overview"
         |      password="overview"
         |      serverName=${?DATABASE_SERVER_NAME}

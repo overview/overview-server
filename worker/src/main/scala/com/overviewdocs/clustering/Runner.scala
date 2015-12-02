@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.models.Tree
 import com.overviewdocs.models.tables.Trees
-import com.overviewdocs.util.{Configuration,Logger}
+import com.overviewdocs.util.{Configuration,Logger,JavaCommand}
 
 /** Runs Main.scala and inserts the results into the database.
   *
@@ -141,16 +141,9 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
     }
   }
 
-  private def command: Seq[String] = Seq(
-    Runner.javaPath,
+  private def command: Seq[String] = JavaCommand(
     "-Xmx" + Configuration.getString("clustering_memory"),
-    "-cp", Runner.classPath,
     "com.overviewdocs.clustering.Main",
     tree.lang, tree.suppliedStopWords, tree.importantWords
   )
-}
-
-object Runner {
-  private val javaPath: String = Paths.get(System.getProperty("java.home")).resolve("bin").resolve("java").toString
-  private val classPath: String = System.getProperty("java.class.path")
 }

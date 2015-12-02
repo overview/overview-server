@@ -15,7 +15,7 @@
 # 3. Run ./run there
 
 set -e
-set -x
+#set -x
 
 ZIP=$(which zip)
 OVERVIEW_DIR="$(cd "$(dirname "$0")"; pwd)" # absolute-ish path
@@ -47,12 +47,10 @@ fi
 # inside from a previous build and complain about "Duplicate mappings"
 rm -rf "$OVERVIEW_DIR"/dist
 
-./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; runner/stage; db-evolution-applier/stage; overview-server/stage; worker/stage; search-index/stage'
+./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; db-evolution-applier/stage; overview-server/stage; worker/stage'
 
 BASE="$OUTPUT_DIRECTORY"
 STAGE="target/universal/stage"
-
-set -x
 
 mkdir -p "$OVERVIEW_DIR"/dist
 pushd "$OVERVIEW_DIR"/dist
@@ -62,50 +60,28 @@ pushd "$OVERVIEW_DIR"/dist
 # We put these in a "lib" directory because the runner scripts that sbt
 # generates expect to be in a "bin" directory -- they look for "../lib" and
 # it's really easy if we just go with that.
-mkdir lib
-for project in runner worker search-index; do
-  mkdir $project
-  ls ../$project/$STAGE/lib > $project/classpath.txt
-  ln -f ../$project/$STAGE/lib/* lib/
-  [[ -d ../$project/$STAGE/bin ]] && cp -f ../$project/$STAGE/bin/* $project/
-done
 
-# The "frontend" project is special because of its path
+mkdir lib
+
+mkdir worker
+ls ../worker/$STAGE/lib > worker/classpath.txt
+ln -f ../worker/$STAGE/lib/* lib/
+[[ -d ../worker/$STAGE/bin ]] && cp -f ../worker/$STAGE/bin/* worker/
+
 mkdir frontend
 ln -f ../$STAGE/lib/* lib/
 ls ../$STAGE/lib > frontend/classpath.txt
 cp -f ../$STAGE/bin/* frontend/
 
-# So is db-evolution-applier. See note about icky hack in Build.scala
 mkdir db-evolution-applier
 ln -f ../db-evolution-applier/target/db-evolution-applier/universal/stage/lib/* lib/
 ls ../db-evolution-applier/target/db-evolution-applier/universal/stage/lib > db-evolution-applier/classpath.txt
 cp -f ../db-evolution-applier/target/db-evolution-applier/universal/stage/bin/* db-evolution-applier/
 
-# Extra files
-cp -a ../search-index/config search-index
-
-# Add Redis source
-(cd ../deps/redis/redis-* && make clean)
-cp -a ../deps .
-
 # Add the other files
 for file in README.md LICENSE; do
   cp ../$file .
 done
-cp ../dist-files/* .
-
-# Remove TOTALLY USELESS files.
-#
-# Each file here needs an explanation!
-#
-# A. what does it do?
-# B. why didn't it get removed sometime before this script?
-
-# A. Helps processed find the search-index instance on AWS.
-# B. Needed on AWS, therefore needed in Build.scala.
-# FIXME search-index crashes without aws-java-sdk; it doesn't even use it
-#rm lib/com.amazonaws.aws-java-sdk-1.3.32.jar
 
 TEMP_DIR=$(mktemp -d --suffix=overview-server-build)
 ln -s "$OVERVIEW_DIR"/dist "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
@@ -114,5 +90,6 @@ rm -f "$OVERVIEW_DIR"/"$OUTPUT_ZIP"
 (cd "$TEMP_DIR" && "$ZIP" --quiet -r "$OVERVIEW_DIR"/"$OUTPUT_ZIP" "$OUTPUT_DIRECTORY")
 
 popd # "$OVERVIEW_DIR"/dist
+rm -r "$OVERVIEW_DIR"/dist
 rm "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
 rmdir "$TEMP_DIR"

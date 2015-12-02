@@ -10,18 +10,5 @@ docker run -i -t \
   --rm busybox \
   sh -c 'until $(echo | nc overview-dev-database 5432 2>/dev/null); do sleep 1; done'
 
-echo "Compiling and applying latest schema..."
-./sbt '; common/compile; worker/compile; compile; db-evolution-applier/run'
-
-echo "Starting worker..."
-# Funky sbt syntax puts blob-storage in the right place
-./sbt '; project worker; run' &
-PID1=$!
-
-echo "Starting web server..."
-./sbt run
-
-set +e
-
-kill $PID1
-wait $PID1
+echo "Starting..."
+./sbt '; all/compile; db-evolution-applier/run; project worker; re-start; project overview-server; run'

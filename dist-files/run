@@ -1,6 +1,0 @@
-#!/bin/bash
-
-DIR="$(dirname "$0")"
-OPTIONS="-Doverview-server.props.overview.multi_user=false"
-
-(cd "$DIR" && runner/runner "$OPTIONS" "$@")

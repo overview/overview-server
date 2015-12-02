@@ -14,6 +14,7 @@ import play.sbt.routes.RoutesKeys
 import play.twirl.sbt.Import._
 import sbt._
 import sbt.Keys._
+import spray.revolver.RevolverPlugin._
 
 object ApplicationBuild extends Build {
   val appName     = "overview-server"
@@ -21,6 +22,8 @@ object ApplicationBuild extends Build {
 
   val ourScalaVersion = "2.11.7"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8")
+
+  val rootDirectory: String = sys.props("user.dir")
 
   lazy val dockerIp: String = {
     import scala.sys.process._
@@ -63,7 +66,8 @@ object ApplicationBuild extends Build {
     s"-Ddb.default.dataSource.serverName=$dockerIp",
     s"-Dsearch_index.hosts=$dockerIp:9300",
     s"-Dredis.host=$dockerIp",
-    "-Dredis.port=9020"
+    "-Dredis.port=9020",
+    "-DblobStorage.file.baseDirectory=$rootDirectory/dev"
   )
 
   val testJavaOpts = Seq(
@@ -73,7 +77,8 @@ object ApplicationBuild extends Build {
     s"-Dsearch_index.hosts=$dockerIp:9301",
     s"-Dredis.host=$dockerIp",
     "-Dredis.port=9020",
-    "-Dlogback.configurationFile=logback-test.xml"
+    "-Dlogback.configurationFile=logback-test.xml",
+    "-DblobStorage.file.baseDirectory=$rootDirectory/test"
   )
 
   val ourTestOptions = Seq(
@@ -81,11 +86,6 @@ object ApplicationBuild extends Build {
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
     Tests.Argument("junitxml", "console")
   )
-
-  val printClasspathTask = TaskKey[Unit]("print-classpath")
-  val printClasspath = printClasspathTask <<= (fullClasspath in Runtime) map { classpath =>
-    println(classpath.map(_.data).mkString(":"))
-  }
 
   val ourGlobalSettings: Seq[Setting[_]] = (
     Defaults.coreDefaultSettings
@@ -95,11 +95,9 @@ object ApplicationBuild extends Build {
       javaOptions ++= allJavaOpts ++ devJavaOpts,
       javaOptions in Test ++= testJavaOpts,
       fork := true, // so javaOptions gets set
-      baseDirectory in (Compile, run) := file("."),
       parallelExecution in Test := false,
       aggregate in Test := false,
       testOptions in Test ++= ourTestOptions,
-      printClasspath,
       sources in doc in Compile := List()
     )
   )
@@ -107,9 +105,6 @@ object ApplicationBuild extends Build {
   def project(name: String) = Project(name, file(name))
     .settings(ourGlobalSettings: _*)
     .enablePlugins(JavaAppPackaging)
-
-  lazy val runner = project("runner")
-    .settings(libraryDependencies ++= Dependencies.runnerDependencies)
 
   def dbEvolutionApplierProject(name: String) = Project(name, file("db-evolution-applier"))
     .settings(ourGlobalSettings: _*)
@@ -154,6 +149,7 @@ object ApplicationBuild extends Build {
     .dependsOn(common % "test->test;compile->compile")
 
   lazy val worker = project("worker")
+    .settings(Revolver.settings)
     .settings(
       libraryDependencies ++= Dependencies.workerDependencies,
       javaOptions in Test += "-Dconfig.resource=test.conf",
