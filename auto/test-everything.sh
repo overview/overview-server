@@ -41,8 +41,8 @@ PIDS="$PIDS $!"
 
 echo "Waiting for server to start..." >&2
 until $(echo | nc localhost 9000 2>/dev/null); do sleep 1; done
-echo "Waiting an additional 20s for system to calm down..." >&2
-sleep 20
+echo "Waiting an additional 60s for system to calm down..." >&2
+sleep 60
 
 (cd "$DIR"/test/integration && npm run-script test-with-jenkins) || true
 
