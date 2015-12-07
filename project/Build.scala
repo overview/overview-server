@@ -28,13 +28,14 @@ object ApplicationBuild extends Build {
   lazy val dockerIp: String = {
     import scala.sys.process._
 
+    // We only evaluate these commands if we're *running*. If we're just
+    // compiling, we'll never run these commands. (If we do, we'll get an
+    // exception, as is proper -- it's a bug elsewhere in Build.scala.)
     try {
       "docker-machine ip".!!.trim
     } catch {
-      case _: IOException => try {
+      case _: IOException => {
         Seq("docker", "inspect", "-f", "{{ .NetworkSettings.Gateway }}", "overview-dev-database").!!.trim
-      } catch {
-        case _: IOException => "localhost" // gotta be something: in `./build`, need to not-crash
       }
     }
   }
@@ -56,7 +57,7 @@ object ApplicationBuild extends Build {
     "-Duser.timezone=UTC"
   )
 
-  val devJavaOpts = Seq(
+  lazy val devJavaOpts = allJavaOpts ++ Seq(
     "-Ddb.default.dataSource.databaseName=overview-dev",
     "-Ddb.default.dataSource.portNumber=9010",
     s"-Ddb.default.dataSource.serverName=$dockerIp",
@@ -66,7 +67,7 @@ object ApplicationBuild extends Build {
     s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/dev"
   )
 
-  val testJavaOpts = Seq(
+  lazy val testJavaOpts = allJavaOpts ++ Seq(
     "-Ddb.default.dataSource.databaseName=overview-test",
     "-Ddb.default.dataSource.portNumber=9010",
     s"-Ddb.default.dataSource.serverName=$dockerIp",
@@ -88,7 +89,7 @@ object ApplicationBuild extends Build {
     ++ Seq(
       logBuffered := false, // so Runner gets data sooner
       scalacOptions ++= ourScalacOptions,
-      javaOptions ++= allJavaOpts ++ devJavaOpts,
+      javaOptions in Compile ++= devJavaOpts,
       javaOptions in Test ++= testJavaOpts,
       fork := true, // so javaOptions gets set
       parallelExecution in Test := false,
@@ -117,7 +118,7 @@ object ApplicationBuild extends Build {
   // db-evolution-applier to run on the test database in one sbt command and on
   // the dev database in another. This is my ugly hack.
   lazy val testDbEvolutionApplier = dbEvolutionApplierProject("test-db-evolution-applier")
-    .settings(javaOptions ++= testJavaOpts)
+    .settings(javaOptions in Compile ++= testJavaOpts)
 
   // Project definitions
   lazy val common = project("common")
@@ -148,7 +149,6 @@ object ApplicationBuild extends Build {
     .settings(Revolver.settings)
     .settings(
       libraryDependencies ++= Dependencies.workerDependencies,
-      javaOptions in Test += "-Dconfig.resource=test.conf",
       mainClass in Compile := Some("com.overviewdocs.Worker")
     )
     .dependsOn(common % "test->test;compile->compile")
@@ -181,9 +181,7 @@ object ApplicationBuild extends Build {
         WebJs.JS.Object("name" -> "bundle/SharedDocumentSet/index"),
         WebJs.JS.Object("name" -> "bundle/Welcome/show")
       ),
-      javaOptions in Test ++= Seq(
-        "-Dlogger.resource=logback-test.xml"
-      ),
+      javaOptions in Test += "-Dlogger.resource=logback-test.xml",
       sources in doc in Compile := List(),
       includeFilter in (Assets, LessKeys.less) := "main.less",
       includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
