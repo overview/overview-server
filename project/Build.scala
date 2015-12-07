@@ -63,7 +63,7 @@ object ApplicationBuild extends Build {
     s"-Dsearch_index.hosts=$dockerIp:9300",
     s"-Dredis.host=$dockerIp",
     "-Dredis.port=9020",
-    "-DblobStorage.file.baseDirectory=$rootDirectory/dev"
+    s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/dev"
   )
 
   val testJavaOpts = Seq(
@@ -74,7 +74,7 @@ object ApplicationBuild extends Build {
     s"-Dredis.host=$dockerIp",
     "-Dredis.port=9020",
     "-Dlogback.configurationFile=logback-test.xml",
-    "-DblobStorage.file.baseDirectory=$rootDirectory/test"
+    s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/test"
   )
 
   val ourTestOptions = Seq(

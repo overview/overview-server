@@ -11,4 +11,4 @@ docker run -i -t \
   sh -c 'until $(echo | nc overview-dev-database 5432 2>/dev/null); do sleep 1; done'
 
 echo "Starting..."
-./sbt '; all/compile; db-evolution-applier/run; project worker; re-start; project overview-server; run'
+./sbt '; all/compile; db-evolution-applier/run; worker/re-start; run'
