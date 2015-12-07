@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DIR=$(dirname "$0")/..
+DIR="$(dirname "$0")"/..
 
 cd "$DIR"
 
@@ -12,7 +12,7 @@ set -x
 # The dev servers aren't exactly the same as production, but they're close
 # enough. In particular, ElasticSearch is the "dev" one -- so this script
 # conflicts with the dev environment!
-docker-compose start
+docker-compose up -d
 
 export DATABASE_PORT=9010
 export OVERVIEW_MULTI_USER=true
