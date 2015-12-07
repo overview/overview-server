@@ -149,6 +149,7 @@ object ApplicationBuild extends Build {
     .settings(Revolver.settings)
     .settings(
       libraryDependencies ++= Dependencies.workerDependencies,
+      javaOptions in Test += "-Dconfig.resource=test.conf",
       mainClass in Compile := Some("com.overviewdocs.Worker")
     )
     .dependsOn(common % "test->test;compile->compile")
