@@ -34,21 +34,21 @@ import com.overviewdocs.nlp.DocumentVectorTypes.{DocumentID,DocumentSetVectors,D
   *
   * The final such message will be `clustering 1.0`
   *
-  * After that come document keywords, which will look like this:
+  * After that come document keywords, which are tab-separated like this:
   *
   *     5 DOCUMENTS
-  *     234,term1_term3 term5
-  *     123,term1_term2 term3
+  *     234	term1_term3 term5
+  *     123	term1_term2 term3
   *     ...
   *
   * These will be output in an arbitrary order; we guarantee the number of
   * output documents is equal to the number of input documents.
   *
-  * Then come nodes, which will look like this:
+  * Then come nodes, which come tab-separated like this:
   *
   *     2 NODES
-  *     0,,f,term1_term2 term4,123 234 ...
-  *     1,0,t,term1_term3 term5,123 ...
+  *     0		f	term1_term2 term4	123 234 ...
+  *     1	0	t	term1_term3 term5	123 ...
   *
   * That's a CSV with the following columns:
   *
@@ -83,7 +83,7 @@ object Main extends App {
     Option(stdin.readLine) match {
       case None => false
       case Some(line) => {
-        val i = line.indexOf(',')
+        val i = line.indexOf('\t')
         val documentId = line.substring(0, i).toLong
         val tokensString = line.substring(i + 1)
         indexer.addDocument(documentId, tokensString)
@@ -110,7 +110,7 @@ object Main extends App {
   private def writeDocuments(documentVectors: DocumentSetVectors): Unit = {
     System.out.println(s"${documentVectors.size} DOCUMENTS")
     documentVectors.foreach { case (id: DocumentID, vector: DocumentVector) =>
-      System.out.println(s"$id,${SuggestedTags.suggestedTagsForDocument(vector, documentVectors)}")
+      System.out.println(s"$id\t${SuggestedTags.suggestedTagsForDocument(vector, documentVectors)}")
     }
   }
 
@@ -126,13 +126,13 @@ object Main extends App {
 
       val sb = new StringBuilder()
         .append(nodeId)
-        .append(',')
+        .append('\t')
         .append(parentId.map(_.toString).getOrElse(""))
-        .append(',')
+        .append('\t')
         .append(if (node.children.isEmpty) 't' else 'f')
-        .append(',')
+        .append('\t')
         .append(node.description)
-        .append(',')
+        .append('\t')
         .append(node.docs.toArray.sorted.mkString(" "))
 
       System.out.println(sb.toString)

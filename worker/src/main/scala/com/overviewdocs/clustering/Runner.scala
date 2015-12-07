@@ -70,7 +70,7 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
       val stdinWriter = new PrintWriter(new OutputStreamWriter(stdin, StandardCharsets.UTF_8), true)
 
       documents.foreach { document =>
-        stdinWriter.println(s"${document.id},${document.tokens.mkString(" ")}")
+        stdinWriter.println(s"${document.id}\t${document.tokens.mkString(" ")}")
         nWritten += 1
         if (nWritten % nPerProgress == 0) reportInputProgress(nWritten, nTotal)
       }

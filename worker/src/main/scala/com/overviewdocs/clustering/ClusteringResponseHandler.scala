@@ -26,9 +26,9 @@ class ClusteringResponseHandler(treeId: Long, onProgress: (Double, String) => Un
 
   private val ProgressRegex = """([01]\.\d+)""".r
   private val NDocumentsRegex = """(\d+) DOCUMENTS""".r
-  private val DocumentRegex = """(\d+),(.*)""".r
+  private val DocumentRegex = """(\d+)\t(.*)""".r
   private val NNodesRegex = """(\d+) NODES""".r
-  private val NodeRegex = """(\d+),(\d*),([tf]),([^,]*),([\d ]+)""".r
+  private val NodeRegex = """(\d+)\t(\d*)\t([tf])\t([^\t]*)\t([\d ]+)""".r
 
   private var state: State = Progress
   private val rootNodeId: Long = (treeId & 0xffffffff00000000L) | ((treeId & 0xfff) << 20L)
