@@ -3,6 +3,12 @@ body.document-set-show-progress {
   .display-flex();
   .flex-direction-column();
 
+  #flash {
+    // Flash is meta info only; it's invisible. Don't let it affect flexbox
+    // layout.
+    position: absolute;
+  }
+
   &>.container {
     .flex(1 1 auto);
     .display-flex();
