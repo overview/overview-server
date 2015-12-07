@@ -378,8 +378,8 @@ trait ElasticSearchIndexClient extends IndexClient {
       case AllQuery => QueryBuilders.matchAllQuery
       case AndQuery(left, right) => {
         QueryBuilders.boolQuery
-          .must(left.toElasticSearchQuery)
-          .must(right.toElasticSearchQuery)
+          .filter(left.toElasticSearchQuery)
+          .filter(right.toElasticSearchQuery)
       }
       case OrQuery(left, right) => {
         QueryBuilders.boolQuery
