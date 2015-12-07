@@ -8,7 +8,7 @@ package com.overviewdocs.csv
 
 import scala.collection.mutable
 
-import com.overviewdocs.util.Textify
+import com.overviewdocs.util.{Configuration,Textify}
 
 /** Accepts parsed CSV data as input; handles the header specially, then
   * translates each row into a CsvDocument.
@@ -84,8 +84,12 @@ class CsvDocumentProducer {
       fetch(row, urlIndex),
       fetch(row, titleIndex),
       fetch(row, tagsIndex).split(",").map(_.trim).filterNot(_.isEmpty).toSet,
-      fetch(row, textIndex),
+      Textify.truncateToNChars(fetch(row, textIndex), CsvDocumentProducer.MaxNCharsPerDocument),
       metadataIndices.map(index => columnNames(index) -> fetch(row, Some(index)))
     )
   }
+}
+
+object CsvDocumentProducer {
+  private val MaxNCharsPerDocument = Configuration.getInt("max_n_chars_per_document")
 }

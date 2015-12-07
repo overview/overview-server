@@ -3,7 +3,7 @@ package com.overviewdocs.documentcloud
 import play.api.libs.json.JsObject
 
 import com.overviewdocs.models.{Document,DocumentDisplayMethod}
-import com.overviewdocs.util.Configuration
+import com.overviewdocs.util.{Configuration,Textify}
 
 /** A yet-to-be-fetched Document.
   *
@@ -24,7 +24,7 @@ case class DocumentCloudDocumentHeader(
   def toDocument(text: String): Document = Document(
     id,
     documentSetId,
-    Some(DocumentCloudDocumentHeader.baseUrl + "/documents/" + documentCloudId + pageNumber.fold("")(n => s"#p${n}")),
+    Some(DocumentCloudDocumentHeader.BaseUrl + "/documents/" + documentCloudId + pageNumber.fold("")(n => s"#p${n}")),
     documentCloudId,
     title,
     pageNumber,
@@ -35,10 +35,11 @@ case class DocumentCloudDocumentHeader(
     DocumentDisplayMethod.auto,
     false,
     JsObject(Seq()),
-    text
+    Textify.truncateToNChars(text, DocumentCloudDocumentHeader.MaxNCharsPerDocument)
   )
 }
 
 object DocumentCloudDocumentHeader {
-  private val baseUrl = Configuration.getString("documentcloud_url")
+  private val BaseUrl = Configuration.getString("documentcloud_url")
+  private val MaxNCharsPerDocument = Configuration.getInt("max_n_chars_per_document")
 }

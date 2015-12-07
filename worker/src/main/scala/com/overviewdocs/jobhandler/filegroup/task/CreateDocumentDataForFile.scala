@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.{DocumentDisplayMethod,File}
-import com.overviewdocs.util.Textify
+import com.overviewdocs.util.{Configuration,Textify}
 
 class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(implicit ec: ExecutionContext) {
   private def onSplitterProgress(nPages: Int, pageNumber: Int): Boolean = onProgress(nPages.toDouble / pageNumber)
@@ -17,6 +17,8 @@ class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(impli
       PdfSplitter.splitPdf(jFile.toPath, false, onSplitterProgress)
     }
       .map(_.right.map { pageInfos =>
+        val text = pageInfos.map(_.text).mkString("\n\n")
+
         Seq(IncompleteDocument(
           filename=file.name,
           pageNumber=None,
@@ -25,7 +27,7 @@ class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(impli
           pageId=None,
           displayMethod=DocumentDisplayMethod.pdf,
           isFromOcr=pageInfos.map(_.isFromOcr).contains(true),
-          text=pageInfos.map(_.text).mkString("\n\n")
+          text=Textify.truncateToNChars(text, CreateDocumentDataForFile.MaxNCharsPerDocument)
         ))
       })
   }
@@ -38,4 +40,6 @@ object CreateDocumentDataForFile {
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[IncompleteDocument]]] = {
     new CreateDocumentDataForFile(file, onProgress).execute
   }
+
+  private val MaxNCharsPerDocument = Configuration.getInt("max_n_chars_per_document")
 }

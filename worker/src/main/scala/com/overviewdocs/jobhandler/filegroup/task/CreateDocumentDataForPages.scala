@@ -12,7 +12,7 @@ import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.{DocumentDisplayMethod,File,Page}
 import com.overviewdocs.models.tables.Pages
-import com.overviewdocs.util.Textify
+import com.overviewdocs.util.{Configuration,Textify}
 
 class CreateDocumentDataForPages(
   file: File,
@@ -82,7 +82,7 @@ class CreateDocumentDataForPages(
         pageInfo.pageNumber,
         location,
         nBytes,
-        pageInfo.text,
+        Textify.truncateToNChars(pageInfo.text, CreateDocumentDataForPages.MaxNCharsPerDocument),
         pageInfo.isFromOcr
       )))
     } yield IncompleteDocument(
@@ -93,7 +93,7 @@ class CreateDocumentDataForPages(
       pageId=Some(pageId),
       displayMethod=DocumentDisplayMethod.page,
       isFromOcr=pageInfo.isFromOcr,
-      text=pageInfo.text
+      text=Textify.truncateToNChars(pageInfo.text, CreateDocumentDataForPages.MaxNCharsPerDocument)
     )
   }
 
@@ -107,4 +107,6 @@ object CreateDocumentDataForPages {
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[IncompleteDocument]]] = {
     new CreateDocumentDataForPages(file, onProgress).execute
   }
+
+  private val MaxNCharsPerDocument = Configuration.getInt("max_n_chars_per_document")
 }

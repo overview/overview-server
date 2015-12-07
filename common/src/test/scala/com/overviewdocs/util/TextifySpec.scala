@@ -61,5 +61,23 @@ class TextifySpec extends Specification {
       val s = Textify(Array(0xed, 0xbe, 0x80).map(_.toByte), Charsets.UTF_8)
       s must beMatching("^(�|���)$".r)
     }
+
+    "#truncate" should {
+      "not truncate when not needed" in {
+        Textify.truncateToNChars("foo𐐷𐐷bar", 10) must beEqualTo("foo𐐷𐐷bar")
+      }
+
+      "truncate at the proper character" in {
+        Textify.truncateToNChars("foo𐐷𐐷bar", 9) must beEqualTo("foo𐐷𐐷ba")
+      }
+
+      "truncate before a high surrogate" in {
+        Textify.truncateToNChars("foo𐐷𐐷bar", 6) must beEqualTo("foo𐐷") // which has nChars=5
+      }
+
+      "truncate after a low surrogate" in {
+        Textify.truncateToNChars("foo𐐷𐐷bar", 5) must beEqualTo("foo𐐷") // which has nChars=5
+      }
+    }
   }
 }

@@ -86,4 +86,22 @@ object Textify {
     * * Unifies newlines: \r, \r\n and \u0085 become \n.
     */
   def apply(rawBytes: Array[Byte], charset: Charset) : String = apply(new String(rawBytes, charset))
+
+  /** Truncates a String by number of codepoints.
+    *
+    * Do not use String.substring() directly, since it may end the String with
+    * a high surrogate.
+    *
+    * If you call this with `maxNChars=1`, the return value may be an empty
+    * String.
+    */
+  def truncateToNChars(s: String, maxNChars: Int): String = {
+    if (s.length <= maxNChars) {
+      s
+    } else if (Character.isHighSurrogate(s.charAt(maxNChars - 1))) {
+      s.substring(0, maxNChars - 1)
+    } else {
+      s.substring(0, maxNChars)
+    }
+  }
 }
