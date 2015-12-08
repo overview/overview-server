@@ -18,6 +18,7 @@ object Dependencies {
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.4.1"
+    val icu4j = "com.ibm.icu" % "icu4j" % "56.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val jna = "net.java.dev.jna" % "jna" % "4.2.1" // for ElasticSearch, partially to ignore a warning
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
@@ -25,7 +26,6 @@ object Dependencies {
     val junit = "junit" % "junit-dep" % "4.11"
     val logback = "ch.qos.logback" % "logback-classic" % "1.1.3"
     val log4jBridge = "org.slf4j" % "log4j-over-slf4j" % "1.7.12" // for ElasticSearch
-    val luceneIcu = "org.apache.lucene" % "lucene-analyzers-icu" % "5.3.1"
     val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
     val openCsv = "com.opencsv" % "opencsv" % "3.4"
@@ -77,10 +77,10 @@ object Dependencies {
     deps.elasticSearch exclude("log4j", "log4j"),
     deps.guava, // Textify
     deps.hikariCp,
+    deps.icu4j, // Document.tokens
     deps.jna, // Make ElasticSearch client happy
     deps.log4jBridge, // ElasticSearch
     deps.logback,
-    deps.luceneIcu, // Document.tokens
     deps.parserCombinators,
     deps.pgSlick,
     deps.playJson,

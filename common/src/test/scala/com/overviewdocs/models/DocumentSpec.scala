@@ -66,6 +66,10 @@ class DocumentSpec extends Specification {
       document.tokens must beEqualTo(Seq("foo", "bar", "baz"))
     }
 
+    "tokenize an empty string" in {
+      documentWithText("").tokens must beEqualTo(Seq())
+    }
+
     "handle iffy tokens" in {
       // We don't test *everything* here; we just prove our tokenizer isn't simple
       val document = documentWithText("Mr. Foo's 'bar' ... 1.5")
@@ -75,6 +79,11 @@ class DocumentSpec extends Specification {
     "normalize to NFKC" in {
       val document = documentWithText("caf\u0065\u0301⁵")
       document.tokens must beEqualTo(Seq("caf\u00e95"))
+    }
+
+    "handle multiple scripts in one document" in {
+      val document = documentWithText("bar marバーマルบาร์ มี.ค.바 월moo")
+      document.tokens must beEqualTo(Seq("bar", "mar", "バー", "マル", "บาร์", "มี.ค", "바", "월", "moo"))
     }
   }
 }
