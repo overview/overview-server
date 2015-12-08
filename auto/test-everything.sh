@@ -15,7 +15,7 @@ set -x
 # Beware when running this script in a dev environment: it will clear all
 # your data!
 docker-compose kill
-docker-compose rm -v
+docker-compose rm -v -f
 docker-compose up -d
 
 export DATABASE_PORT=9010
@@ -38,7 +38,7 @@ auto/setup-integration-tests.sh
 # Now that we've built, run integration tests with the resulting jars
 echo "Resetting servers..."
 docker-compose kill
-docker-compose rm -v
+docker-compose rm -v -f
 docker-compose up -d
 sleep 20
 
