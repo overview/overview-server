@@ -10,8 +10,12 @@ set -x
 # Start our dependencies early, so they're sure to be up when we need 'em
 #
 # The dev servers aren't exactly the same as production, but they're close
-# enough. In particular, ElasticSearch is the "dev" one -- so this script
-# conflicts with the dev environment!
+# enough.
+#
+# Beware when running this script in a dev environment: it will clear all
+# your data!
+docker-compose kill
+docker-compose rm -v
 docker-compose up -d
 
 export DATABASE_PORT=9010
@@ -32,6 +36,13 @@ auto/setup-integration-tests.sh
 ./sbt all/test || true # Jenkins will pick up test-result XML
 
 # Now that we've built, run integration tests with the resulting jars
+echo "Resetting servers..."
+docker-compose kill
+docker-compose rm -v
+docker-compose up -d
+sleep 20
+
+echo "Launching Overview..."
 unzip -o -q overview-server.zip
 overview-server/db-evolution-applier/db-evolution-applier
 overview-server/frontend/overview-server &
