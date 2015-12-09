@@ -51,7 +51,7 @@ case class Document(
   }
 
   /** Text, normalized as NFKC. */
-  private def normalizedText: String = Normalizer.normalize(text, Normalizer.Form.NFKC)
+  def normalizedText: String = Normalizer.normalize(text, Normalizer.Form.NFKC)
 
   /** Returns NFKC-normalized tokens split according to Unicode tr29. */
   override def tokens: Seq[String] = {

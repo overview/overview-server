@@ -146,9 +146,9 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
   def finishJob(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
     logger.debug("Completing {}", fileGroup)
     import com.overviewdocs.background.filegroupcleanup.FileGroupRemover
-    import com.overviewdocs.searchindex.TransportIndexClient
+    import com.overviewdocs.searchindex.ElasticSearchIndexClient
     for {
-      _ <- TransportIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation
+      _ <- ElasticSearchIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation
       _ <- RecalculateDocumentSetCaches.run(fileGroup.addToDocumentSetId.get)
       _ <- FileGroupRemover().remove(fileGroup.id)
       _ <- AddDocumentsImpl.createTree(fileGroup)

@@ -5,7 +5,7 @@ import play.api.libs.streams.Streams
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.searchindex.TransportIndexClient
+import com.overviewdocs.searchindex.ElasticSearchIndexClient
 import com.overviewdocs.util.BulkDocumentWriter
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
@@ -22,7 +22,7 @@ object Indexer extends Indexer with HasDatabase {
     val bulkWriter = BulkDocumentWriter.forSearchIndex
 
     for {
-      _ <- TransportIndexClient.singleton.addDocumentSet(documentSetId)
+      _ <- ElasticSearchIndexClient.singleton.addDocumentSet(documentSetId)
       _ <- indexEachDocument(documentSetId, bulkWriter)
       _ <- bulkWriter.flush
     } yield ()

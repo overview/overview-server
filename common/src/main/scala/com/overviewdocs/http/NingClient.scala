@@ -61,9 +61,14 @@ class NingClient extends Client {
 
   private val client = new AsyncHttpClient(config)
 
-  override def get(request: Request)(implicit ec: ExecutionContext) = {
+  override def get(request: Request)(implicit ec: ExecutionContext) = send("GET", request)
+  override def post(request: Request)(implicit ec: ExecutionContext) = send("POST", request)
+  override def put(request: Request)(implicit ec: ExecutionContext) = send("PUT", request)
+  override def delete(request: Request)(implicit ec: ExecutionContext) = send("DELETE", request)
+
+  def send(method: String, request: Request)(implicit ec: ExecutionContext) = {
     val builder = new RequestBuilder()
-      .setMethod("GET")
+      .setMethod(method)
       .setUrl(request.url)
       .setFollowRedirects(request.followRedirects)
 
@@ -76,6 +81,10 @@ class NingClient extends Client {
         .build
 
       builder.setRealm(realm)
+    }
+
+    request.maybeBody.foreach { body =>
+      builder.setBody(body)
     }
 
     val ningRequest = builder.build

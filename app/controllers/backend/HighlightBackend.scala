@@ -3,7 +3,7 @@ package controllers.backend
 import scala.concurrent.Future
 
 import com.overviewdocs.query.Query
-import com.overviewdocs.searchindex.{Highlight,IndexClient,TransportIndexClient}
+import com.overviewdocs.searchindex.{Highlight,IndexClient,ElasticSearchIndexClient}
 
 /** Finds highlights of a search term in a document.
   */
@@ -28,5 +28,5 @@ trait EsHighlightBackend extends HighlightBackend {
 }
 
 object HighlightBackend extends EsHighlightBackend {
-  override val indexClient = com.overviewdocs.searchindex.TransportIndexClient.singleton
+  override val indexClient = com.overviewdocs.searchindex.ElasticSearchIndexClient.singleton
 }

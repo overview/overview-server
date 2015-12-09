@@ -1,24 +1,20 @@
 package com.overviewdocs.searchindex
 
-import org.elasticsearch.ElasticsearchWrapperException
-import org.elasticsearch.action.{ActionListener,ActionRequest,ActionRequestBuilder,ActionResponse}
-import org.elasticsearch.action.delete.DeleteRequest
-import org.elasticsearch.action.search.{SearchResponse,SearchType}
-import org.elasticsearch.client.Client
-import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.common.unit.{Fuzziness,TimeValue}
-import org.elasticsearch.index.query.{QueryBuilder,QueryBuilders}
-import org.elasticsearch.index.IndexNotFoundException
-import org.elasticsearch.rest.action.admin.indices.alias.delete.AliasesNotFoundException
-import play.api.libs.json.Json
+import java.nio.charset.StandardCharsets
+import java.util.regex.Pattern
+import play.api.libs.json.{JsObject,JsValue,Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
 
+import com.overviewdocs.http
 import com.overviewdocs.models.Document
-import com.overviewdocs.query.{AllQuery,Query}
-import com.overviewdocs.util.Logger
+import com.overviewdocs.query.{AllQuery,Field,Query}
+import com.overviewdocs.util.{Configuration,Logger}
 
 /** ElasticSearch index client.
+  *
+  * We connect via HTTP. We don't use the ElasticSearch client library because
+  * it adds more complexity than it removes.
   *
   * Within ElasticSearch, we use these indices and aliases:
   *
@@ -62,37 +58,71 @@ import com.overviewdocs.util.Logger
   * This process will handle resumes and writes that happen during indexing.
   * Only when the <tt>documents_N</tt> alias points to only
   * <tt>documents_v2</tt> is document set <tt>N</tt> complete.
+  *
+  * @param HTTP hosts to connect to: e.g., `"localhost:9200,192.168.1.2:9200"`
   */
-trait ElasticSearchIndexClient extends IndexClient {
-  protected val AllDocumentsAlias = "documents"
-  protected val DefaultIndexName = "documents_v1"
+class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
+  private val logger = Logger.forClass(getClass)
+
   private val MaxTermExpansions = 1000 // https://groups.google.com/d/topic/overview-dev/CzPGxoOXdCI/discussion
+  private lazy val SettingsJson = loadJsonResource("/documents-settings.json")
+  private lazy val MappingJson = loadJsonResource("/documents-mapping.json")
 
-  @volatile private var connected = false
-
-  /** Calls connect(), then adds necessary data structures to ElasticSearch
-    * if they aren't already there.
-    *
-    * After accessing this variable, you can assume:
-    *
-    * * There is a "documents_v1" index, with a "document" mapping.
-    * * There is a "documents" alias to the "documents_v1" index.
-    */
-  protected lazy val clientFuture: Future[Client] = {
-    connected = true
-    connect
+  class UnexpectedResponse(message: String) extends Exception(message)
+  object UnexpectedResponse {
+    def apply(json: JsValue): UnexpectedResponse = new UnexpectedResponse(json.toString)
   }
 
-  /** Returns an ElasticSearch client handle.
-    *
-    * This should call ensureInitialized() before resolving.
-    */
-  protected def connect: Future[Client]
+  private[searchindex] val httpClient: http.Client = new http.NingClient
 
-  /** Releases all resources created during connect. */
-  protected def disconnect: Future[Unit]
+  private case class Request(path: String, maybeBody: Option[JsValue]) {
+    def toHttpRequest: http.Request = http.Request(
+      hostUrl(path),
+      maybeBody=maybeBody.map(_.toString.getBytes(StandardCharsets.UTF_8))
+    )
+  }
+  private case class Response(statusCode: Int, json: JsValue)
+  private object Response {
+    def fromHttpResponse(httpResponse: http.Response): Response = {
+      Response(httpResponse.statusCode, Json.parse(httpResponse.bodyBytes))
+    }
+  }
 
-  private val DocumentSetIdField = "document_set_id"
+  private[searchindex] def hostUrl(path: String): String = s"http://${hosts.head}$path"
+  private def GET(path: String): Future[Response] = GET(Request(path, None))
+  private def GET(path: String, body: JsValue): Future[Response] = GET(Request(path, Some(body)))
+  private def GET(request: Request): Future[Response] = {
+    httpClient.get(request.toHttpRequest).map(Response.fromHttpResponse _)
+  }
+  private def POST(path: String): Future[Response] = POST(Request(path, None))
+  private def POST(path: String, body: JsValue): Future[Response] = POST(Request(path, Some(body)))
+  private def POST(request: Request): Future[Response] = {
+    httpClient.post(request.toHttpRequest).map(Response.fromHttpResponse _)
+  }
+  private def POST(path: String, body: String): Future[Response] = {
+    val httpRequest = http.Request(url=hostUrl(path), maybeBody=Some(body.getBytes(StandardCharsets.UTF_8)))
+    httpClient.post(httpRequest).map(Response.fromHttpResponse _)
+  }
+  private def PUT(path: String, body: JsValue): Future[Response] = {
+    val request = Request(path, Some(body))
+    httpClient.put(request.toHttpRequest).map(Response.fromHttpResponse _)
+  }
+  private def DELETE(path: String): Future[Response] = {
+    val request = Request(path, None)
+    httpClient.delete(request.toHttpRequest).map(Response.fromHttpResponse _)
+  }
+  private def DELETE(path: String, body: JsValue): Future[Response] = {
+    val request = Request(path, Some(body))
+    httpClient.delete(request.toHttpRequest).map(Response.fromHttpResponse _)
+  }
+  private def expectOk(response: Response): Unit = response match {
+    case Response(200, _) | Response(201, _) => ()
+    case Response(_, json) => throw UnexpectedResponse(json)
+  }
+  private def expectOkOrNotFound(response: Response): Unit = response match {
+    case Response(200, _) | Response(201, _) | Response(404, _) => ()
+    case Response(_, json) => throw UnexpectedResponse(json)
+  }
 
   /** Number of documents to receive per shard per page.
     *
@@ -107,178 +137,130 @@ trait ElasticSearchIndexClient extends IndexClient {
     * number, the less time shards will maintain data structures for each
     * query.
     */
-  private val ScrollTimeout: Int = 60000
+  private val ScrollTimeout: Int = 30000
 
-  protected val DocumentTypeName = "document"
-  protected def aliasName(documentSetId: Long) = s"documents_$documentSetId"
+  private def aliasName(documentSetId: Long) = s"documents_$documentSetId"
 
-  private def loadTextResource(path: String): String = {
+  private def loadJsonResource(path: String): JsValue = {
     val inputStream = getClass.getResourceAsStream(path)
-    val source = scala.io.Source.fromInputStream(inputStream)
-    source.getLines.mkString("\n")
+    val ret = Json.parse(inputStream)
+    inputStream.close
+    ret
   }
 
-  protected lazy val SettingsJson = loadTextResource("/documents-settings.json")
-  protected lazy val MappingJson = loadTextResource("/documents-mapping.json")
-
-  def close: Future[Unit] = {
-    if (connected) {
-      disconnect
-    } else {
-      Future.successful(Unit)
-    }
-  }
-
-  /** Executes an ElasticSearch request asynchronously.
-    *
-    * Returns a Future. If the request succeeds, calls onSuccess(response) and
-    * the future resolves to the return value. If onSuccess() throws an
-    * exception, the Future fails. If the ElasticSearch execution fails, the
-    * Future fails.
-    *
-    * On failure, this method will unwrap an ElasticsearchWrapperException.
-    * That's because production ElasticSearch throws RemoteTransportExceptions
-    * and in-memory (e.g., un-test) ElasticSearch doesn't.
-    */
-  private def execute[Response <: ActionResponse](req: ActionRequestBuilder[_,Response,_]): Future[Response] = {
-    val promise = Promise[Response]()
-
-    req.execute(new ActionListener[Response] {
-      override def onResponse(result: Response) = promise.success(result)
-      override def onFailure(t: Throwable) = promise.failure(t)
-    })
-
-    promise.future
-      .transform(identity, _ match {
-        // Unwrap ElasticsearchWrapperException
-        case w: ElasticsearchWrapperException => w.getCause()
-        case t: Throwable => t
-      })
-  }
-
-  /** Returns the name of the index that contains all new documents.
+  /** Returns the name of the index where we write new documents.
     *
     * If there is no <tt>documents</tt> alias in ElasticSearch, this method
     * will create a new <tt>documents_v1</tt> index and <tt>documents</tt>
     * alias and return <tt>"documents_v1"</tt>>
     */
-  private def getAllDocumentsIndexName(client: Client): Future[String] = {
-    val exists = client.admin.indices.prepareAliasesExist(AllDocumentsAlias)
-    val get = client.admin.indices.prepareGetAliases(AllDocumentsAlias)
-
-    execute(exists).map(_.isExists).flatMap(_ match {
-      case true => execute(get).map(_.getAliases.keys.toArray.head.asInstanceOf[String])
-      case false => createDefaultIndexAndAlias(client).map(_ => DefaultIndexName)
+  private def getAllDocumentsIndexName: Future[String] = {
+    GET("/_alias/documents").flatMap(_ match {
+      case Response(200, json) => Future.successful(json.as[JsObject].keys.head)
+      case Response(404, _) => createDefaultIndexWithAlias
+      case Response(_, json) => throw UnexpectedResponse(json)
     })
   }
 
-  private def createDefaultIndexAndAlias(client: Client): Future[Unit] = {
-    createDefaultIndex(client)
-      .flatMap(_ => createDefaultAlias(client))
+  /** Creates a "documents_v1" index with a "documents" alias.
+    */
+  private def createDefaultIndexWithAlias: Future[String] = {
+    PUT("/documents_v1", Json.obj(
+      "mappings" -> MappingJson,
+      "settings" -> SettingsJson,
+      "aliases" -> Json.obj("documents" -> Json.obj())
+    )).map(expectOk).map(_ => "documents_v1")
   }
 
-  protected val defaultIndexSettings = Settings.EMPTY
-
-  private def createDefaultIndex(client: Client): Future[Unit] = {
-    val settings = Settings.builder
-      .put(defaultIndexSettings.getAsMap)
-      .loadFromSource(SettingsJson)
-      .build
-
-    val req = client.admin.indices.prepareCreate(DefaultIndexName)
-      .setSettings(settings)
-      .addMapping(DocumentTypeName, MappingJson)
-
-    execute(req).map(_ => Unit)
+  override def addDocumentSet(id: Long): Future[Unit] = {
+    for {
+      indexName <- getAllDocumentsIndexName
+      response <- PUT(s"/$indexName/_alias/documents_${id}", Json.obj(
+        "filter" -> Json.obj(
+          "term" -> Json.obj(
+            "document_set_id" -> id
+          )
+        )
+      )).map(expectOk)
+    } yield ()
   }
 
-  private def createDefaultAlias(client: Client): Future[Unit] = {
-    execute(client.admin.indices.prepareAliases.addAlias(DefaultIndexName, AllDocumentsAlias))
-      .map(_ => Unit)
-  }
-
-  private def addDocumentSetImpl(client: Client, id: Long): Future[Unit] = {
-    getAllDocumentsIndexName(client)
-      .flatMap { indexName =>
-        val filter = QueryBuilders.termQuery(DocumentSetIdField, id)
-        val alias = client.admin.indices.prepareAliases()
-          .addAlias(indexName, aliasName(id), filter)
-
-        execute(alias).map(_.isAcknowledged)
-      }
-      .map(_ => Unit)
-  }
-
-  private def removeDocumentSetImpl(client: Client, documentSetId: Long): Future[Unit] = {
+  override def removeDocumentSet(id: Long): Future[Unit] = {
     // Note: if we're reindexing into documents_v2 while we call this method,
     // the documents won't be deleted from documents_v1. But that's okay, since
     // we're going to delete documents_v1 _entirely_ soon, and there won't be
     // any alias pointing towards it.
-    def deleteAlias: Future[Unit] = {
-      val unalias = client.admin.indices.prepareAliases()
-        .removeAlias("_all", aliasName(documentSetId))
-
-      execute(unalias)
-        .map(_ => ())
-        .recover { case e: AliasesNotFoundException => Unit }
-    }
-
-    def deleteDocuments(ids: Seq[Long]): Future[Unit] = {
-      if (ids.isEmpty) {
-        Future.successful(())
-      } else {
-        val bulkBuilder = client.prepareBulk()
-
-        ids.foreach { id =>
-          bulkBuilder.add(new DeleteRequest(AllDocumentsAlias, DocumentTypeName, id.toString))
-        }
-
-        execute(bulkBuilder).map(_ => ())
-      }
-    }
+    //
+    // (remember: "documents_v2" is an *index*, "documents" is an *alias*)
 
     for {
-      _ <- addDocumentSetImpl(client, documentSetId) // Add so the search works
-      idsToDelete <- searchForIdsImpl(client, documentSetId, AllQuery, DefaultScrollSize)
-      _ <- deleteDocuments(idsToDelete)
-      _ <- deleteAlias
-    } yield Unit
+      _ <- refresh // In case we're deleting immediately after some adds
+      documentIds <- searchForIds(id, AllQuery)
+      indexName <- getAllDocumentsIndexName
+      _ <- deleteDocuments(indexName, documentIds)
+      _ <- DELETE(s"/_all/_alias/documents_$id").map(expectOkOrNotFound)
+    } yield ()
   }
 
-  private def addDocumentsImpl(client: Client, documents: Iterable[Document]): Future[Unit] = {
-    val bulkBuilder = client.prepareBulk()
+  private def deleteDocuments(indexName: String, documentIds: Seq[Long]): Future[Unit] = {
+    if (documentIds.isEmpty) return Future.successful(())
+
+    val commands: Seq[String] = documentIds.map { documentId =>
+      Json.obj("delete" -> Json.obj(
+        "_index" -> indexName,
+        "_type" -> "document",
+        "_id" -> documentId
+      )).toString + "\n"
+    }
+    POST("/_bulk", commands.mkString).map(_ match {
+      case Response(statusCode, json) if statusCode >= 200 && statusCode < 300 => {
+        import play.api.libs.json._
+        if ((json \ "errors").as[Boolean] != false) {
+          throw UnexpectedResponse(json)
+        }
+      }
+      case Response(404, _) => {} // the index doesn't exist
+      case Response(_, json) => throw UnexpectedResponse(json)
+    })
+  }
+
+  override def addDocuments(documents: Iterable[Document]): Future[Unit] = {
+    if (documents.isEmpty) return Future.successful(())
 
     /*
-     * We write to the all-documents alias, not the docset alias. That's a
-     * side-effect of the design, but if we change the design, we must keep
-     * that property: "It is an error to index to an alias which points to more
-     * than one index."
+     * We write to the all-documents alias, not the docset alias. This is
+     * important during reindexing: "It is an error to index to an alias which
+     * points to more than one index."
      * http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html
      */
 
-    documents.foreach { document =>
-      bulkBuilder.add(
-        client.prepareIndex(AllDocumentsAlias, DocumentTypeName, document.id.toString)
-          .setSource(Json.obj(
-            "document_set_id" -> document.documentSetId,
-            "text" -> document.text,
-            "title" -> document.title,
-            "supplied_id" -> document.suppliedId
-          ).toString)
-          .request
-      )
+    val commands: Iterable[String] = documents.map { document =>
+      Json.obj(
+        "index" -> Json.obj(
+          "_index" -> "documents",
+          "_type" -> "document",
+          "_id" -> document.id.toString
+        )
+      ).toString + "\n" + Json.obj(
+        "document_set_id" -> document.documentSetId,
+        "text" -> document.normalizedText,
+        "title" -> document.title,
+        "supplied_id" -> document.suppliedId
+      ).toString + "\n"
     }
 
-    execute(bulkBuilder).map { response =>
-      if (response.hasFailures) {
-        throw new Exception(response.buildFailureMessage)
-      } else {
-        Unit
+    POST("/_bulk", commands.mkString).map(_ match {
+      case Response(statusCode, json) if statusCode >= 200 && statusCode < 300 => {
+        import play.api.libs.json._
+        if ((json \ "errors").as[Boolean] != false) {
+          throw UnexpectedResponse(json)
+        }
       }
-    }
+      case Response(_, json) => throw UnexpectedResponse(json)
+    })
   }
 
-  private def highlightImpl(client: Client, documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {
+  override def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {
     val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
     val HighlightEnd: Char = '\u0002'
 
@@ -325,182 +307,205 @@ trait ElasticSearchIndexClient extends IndexClient {
       */
     def findHighlights(textWithHighlights: String): Seq[Highlight] = findHighlightsRec(textWithHighlights, 0, 0, Nil)
 
-    val byQ = QueryBuilders.constantScoreQuery(q.toElasticSearchQuery)
-    val byId = QueryBuilders.idsQuery(DocumentTypeName).ids(documentId.toString)
-
-    val req = client.prepareSearch(aliasName(documentSetId))
-      .setQuery(byId)
-      .addHighlightedField("text")
-      .setHighlighterQuery(byQ)
-      .setHighlighterNumOfFragments(0)
-      .setHighlighterRequireFieldMatch(false)
-      .setHighlighterPreTags(HighlightBegin.toString)
-      .setHighlighterPostTags(HighlightEnd.toString)
-
-    execute(req).map { response =>
-      throwIfError(response)
-      response.getHits.hits.headOption match {
-        case Some(hit) => {
-          Option(hit.highlightFields.get("text")) match {
-            case Some(field) => {
-              val textWithHighlights = field.fragments.apply(0).string
-              findHighlights(textWithHighlights)
-            }
-            case None => Seq()
-          }
+    GET(s"/documents_$documentSetId/_search", Json.obj(
+      "query" -> Json.obj("ids" -> Json.obj("type" -> "document", "values" -> Json.arr(documentId.toString))),
+      "highlight" -> Json.obj(
+        "number_of_fragments" -> 0,
+        "require_field_match" -> false, // Confusing: we use *filters*, not *queries*, so true matches nothing
+        "fields" -> Json.obj(
+          "text" -> Json.obj(
+            "highlight_query" -> repr(q),
+            "pre_tags" -> Json.arr(HighlightBegin.toString),
+            "post_tags" -> Json.arr(HighlightEnd.toString),
+            "number_of_fragments" -> 0
+          )
+        )
+      )
+    )).map(_ match {
+      case Response(statusCode, json) if statusCode >= 200 && statusCode < 300 => {
+        import play.api.libs.json._
+        val path = ((JsPath \ "hits" \ "hits")(0) \ "highlight" \ "text")(0)
+        path.asSingleJson(json).asOpt[String] match {
+          case Some(fragments) => findHighlights(fragments)
+          case None => Seq()
         }
-        case None => Seq()
       }
-    }
+      case Response(_, json) => throw UnexpectedResponse(json)
+    })
   }
 
-  private def throwIfError(response: SearchResponse): Unit = {
-    response.getShardFailures.headOption match {
-      case None => ()
-      case Some(failure) => throw new Exception(failure.reason)
-    }
+  private def repr(field: Field): String = field match {
+    case Field.All => "_all"
+    case Field.Title => "title"
+    case Field.Text => "text"
   }
 
-  protected implicit class QueryForElasticSearch(query: Query) {
+  private def constantScore(keyvals: (String,Json.JsValueWrapper)*): JsValue = {
+    Json.obj("constant_score" -> Json.obj("filter" -> Json.obj(keyvals: _*)))
+  }
+
+  private def repr(query: Query): JsValue = {
     import com.overviewdocs.query._
-
-    private def repr(field: Field): String = field match {
-      case Field.All => "_all"
-      case Field.Title => "title"
-      case Field.Text => "text"
-    }
-
-    /*
-     * This ought to be toElasticSearch*Filter*, not *Query*, but a
-     * constant-score query throws off the highlighter.
-     */
-    def toElasticSearchQuery: QueryBuilder = query match {
-      case AllQuery => QueryBuilders.matchAllQuery
-      case AndQuery(left, right) => {
-        QueryBuilders.boolQuery
-          .filter(left.toElasticSearchQuery)
-          .filter(right.toElasticSearchQuery)
-      }
-      case OrQuery(left, right) => {
-        QueryBuilders.boolQuery
-          .should(left.toElasticSearchQuery)
-          .should(right.toElasticSearchQuery)
-      }
-      case NotQuery(inner) => {
-        QueryBuilders.boolQuery
-          .mustNot(inner.toElasticSearchQuery)
-      }
-      case PhraseQuery(field, phrase) => {
-        QueryBuilders
-          .matchPhraseQuery(repr(field), phrase)
-      }
-      case PrefixQuery(field, prefix) => {
-        QueryBuilders
-          .matchPhrasePrefixQuery(repr(field), prefix)
-          .maxExpansions(MaxTermExpansions)
-      }
-      case ProximityQuery(field, phrase, slop) => {
-        QueryBuilders
-          .matchPhraseQuery(repr(field), phrase)
-          .slop(slop)
-      }
-      case FuzzyTermQuery(field, term, fuzziness) => {
-        /*
-         * ElasticSearch's FuzzyQueryBuilder does not support a `rewrite`
-         * parameter, even though it's a MultiTermQueryBuilder. That's
-         * https://github.com/elastic/elasticsearch/issues/11130
-         */
-        //QueryBuilders.fuzzyQuery(repr(field), term)
-        QueryBuilders.matchQuery(repr(field), term)
-          .fuzziness(Fuzziness.build(fuzziness.getOrElse("AUTO")))
-          .maxExpansions(MaxTermExpansions)
-      }
+    query match {
+      case AllQuery => Json.obj("match_all" -> Json.obj())
+      case AndQuery(left, right) => Json.obj("bool" ->
+        Json.obj("filter" -> Json.arr(repr(left), repr(right)))
+      )
+      case OrQuery(left, right) => constantScore(
+        "bool" -> Json.obj("should" -> Json.arr(repr(left), repr(right)))
+      )
+      case NotQuery(inner) => Json.obj("bool" -> Json.obj("must_not" -> repr(inner)))
+      case PhraseQuery(field, phrase) => constantScore(
+        "match_phrase" -> Json.obj(repr(field) -> phrase)
+      )
+      case PrefixQuery(field, prefix) => constantScore(
+        "match_phrase_prefix" -> Json.obj(
+          repr(field) -> Json.obj(
+            "query" -> prefix,
+            "max_expansions" -> MaxTermExpansions
+          )
+        )
+      )
+      case ProximityQuery(field, phrase, slop) => constantScore(
+        "match_phrase" -> Json.obj(
+          repr(field) -> Json.obj(
+            "query" -> phrase,
+            "slop" -> slop
+          )
+        )
+      )
+      case FuzzyTermQuery(field, term, fuzziness) => constantScore(
+        "match" -> Json.obj(
+          repr(field) -> Json.obj(
+            "query" -> term,
+            "fuzziness" -> fuzziness.fold("AUTO")(_.toString),
+            "max_expansions" -> MaxTermExpansions
+          )
+        )
+      )
     }
   }
 
-  private def searchForIdsImpl(client: Client, documentSetId: Long, q: Query, scrollSize: Int): Future[Seq[Long]] = {
-    val req = client.prepareSearch(aliasName(documentSetId))
-      .setScroll(new TimeValue(ScrollTimeout))
-      .setTypes(DocumentTypeName)
-      .setQuery(QueryBuilders.constantScoreQuery(q.toElasticSearchQuery))
-      .setSize(scrollSize)
-      .addField("_id")
+  private case class SearchResult(scrollId: String, total: Int, ids: Seq[Long])
+  private object SearchResult {
+    private val ScrollIdPattern = Pattern.compile(""""_scroll_id":"([^"]+)"""")
+    private val TotalPattern = Pattern.compile(""""hits":\{"total":(\d+)""")
+    private val IdPattern = Pattern.compile(""""_id":"(\d+)"""")
 
-    def responseToLongs(response: SearchResponse): Seq[Long] = {
-      throwIfError(response)
-      response.getHits.getHits.map(_.id.toLong).toSeq
-    }
+    /** Parses JSON ... without all the messy objects.
+      *
+      * (This seems easier to me than writing type-safe JSON.)
+      */
+    def parse(bytes: Array[Byte], maxNIds: Int): SearchResult = {
+      val string = new String(bytes, StandardCharsets.US_ASCII)
 
-    def step(accumulator: Seq[Seq[Long]], response: SearchResponse): Future[Seq[Long]] = {
-      val newLongs = responseToLongs(response)
-      val newAccumulator = accumulator :+ newLongs
-      if (newLongs.isEmpty) {
-        Future.successful(newAccumulator.flatten)
-      } else {
-        requestScroll(response.getScrollId()).flatMap(step(newAccumulator, _))
+      val scrollIdMatcher = ScrollIdPattern.matcher(string)
+      val matchedScrollId = scrollIdMatcher.find(); assert(matchedScrollId, "parsing _scroll_id from ElasticSearch")
+      val scrollId: String = scrollIdMatcher.group(1)
+
+      val totalMatcher = TotalPattern.matcher(string)
+      val matchedTotal = totalMatcher.find(); assert(matchedTotal, "parsing total from ElasticSearch")
+      val total: Int = totalMatcher.group(1).toInt
+
+      val ids: Array[Long] = new Array(math.min(total, maxNIds))
+      var i: Int = 0
+      val idMatcher = IdPattern.matcher(string)
+      while (idMatcher.find) {
+        ids(i) = idMatcher.group(1).toLong
+        i += 1
       }
-    }
 
-    def requestScroll(scrollId: String): Future[SearchResponse] = {
-      val scrollReq = client
-        .prepareSearchScroll(scrollId)
-        .setScroll(new TimeValue(ScrollTimeout))
-
-      execute(scrollReq)
-    }
-
-    execute(req)
-      .flatMap { response =>
-        throwIfError(response)
-        if (response.getHits.totalHits == 0) {
-          Future.successful(Seq())
-        } else {
-          requestScroll(response.getScrollId()).flatMap(step(Seq(responseToLongs(response)), _))
-        }
-      }
-      .recover {
-        case e: IndexNotFoundException =>
-          Logger.forClass(getClass).warn("IndexNotFoundException on index {}", aliasName(documentSetId))
-          Seq()
-      }
-  }
-
-  private def refreshImpl(client: Client): Future[Unit] = {
-    val req = client.admin.indices.prepareRefresh(AllDocumentsAlias)
-
-    execute(req).map { response =>
-      response.getShardFailures.headOption match {
-        case None => Unit
-        case Some(failure) => throw new Exception(failure.reason)
-      }
+      SearchResult(scrollId, total, ids)
     }
   }
 
-  private def deleteAllIndicesImpl(client: Client): Future[Unit] = {
-    val req = client.admin.indices.prepareDelete("_all")
-    execute(req).map(_ => Unit)
-  }
-
-  override def addDocumentSet(id: Long) = clientFuture.flatMap(addDocumentSetImpl(_, id))
-  override def removeDocumentSet(id: Long) = clientFuture.flatMap(removeDocumentSetImpl(_, id))
-  override def addDocuments(documents: Iterable[Document]) = clientFuture.flatMap(addDocumentsImpl(_, documents))
-  override def refresh = clientFuture.flatMap(refreshImpl(_))
-
-  /** Wipe out everything.
+  /** Request the first batch of document IDs that match `q`.
     *
-    * Useful for unit tests.
+    * If `retval._2.length < scrollSize`, then you do not need any further
+    * requests.
     */
-  def deleteAllIndices = clientFuture.flatMap(deleteAllIndicesImpl(_))
+  private def startSearch(documentSetId: Long, q: Query, scrollSize: Int): Future[SearchResult] = {
+    httpClient.get(http.Request(
+      url=hostUrl(s"/documents_$documentSetId/document/_search?scroll=${ScrollTimeout}ms"),
+      maybeBody=Some(Json.obj(
+        "query" -> repr(q),
+        "size" -> scrollSize,
+        "sort" -> "_doc",
+        "fields" -> Json.arr("_id")
+      ).toString.getBytes(StandardCharsets.UTF_8))
+    )).map(_ match {
+      case http.Response(200, _, bytes) => SearchResult.parse(bytes, scrollSize)
+      case http.Response(404, _, _) => SearchResult("", 0, Seq())
+      case http.Response(_, _, bytes) => throw UnexpectedResponse(Json.parse(bytes))
+    })
+  }
 
-  override def highlight(documentSetId: Long, documentId: Long, q: Query) = {
-    clientFuture.flatMap(highlightImpl(_, documentSetId, documentId, q))
+  /** Request a subsequent batch of document IDs with the same `scrollId`.
+    *
+    * Add up all the document IDs of all the documents; when the total number of
+    * IDs exceeds `total`, you need no further requests.
+    */
+  private def continueSearch(scrollId: String, scrollSize: Int): Future[SearchResult] = {
+    httpClient.get(http.Request(
+      url=hostUrl(s"/_search/scroll"),
+      maybeBody=Some(Json.obj(
+        "scroll" -> s"${ScrollTimeout}ms",
+        "scroll_id" -> scrollId
+      ).toString.getBytes(StandardCharsets.UTF_8))
+    )).map(_ match {
+      case http.Response(200, _, bytes) => SearchResult.parse(bytes, scrollSize)
+      case http.Response(_, _, bytes) => throw UnexpectedResponse(Json.parse(bytes))
+    })
+  }
+
+  /** Recursively, asynchronously calls continueSearch() until it receives
+    * the last page of results, then returns all the IDs.
+    */
+  private def completeSearch(results: Seq[SearchResult]): Future[Seq[Long]] = {
+    val nTotal: Int = results.head.total
+    val scrollSize: Int = results.head.ids.length
+    val nReceived: Int = scrollSize * (results.length - 1) + results.last.ids.length
+    if (nReceived < nTotal) {
+      continueSearch(results.head.scrollId, scrollSize).flatMap { resultN: SearchResult => completeSearch(results ++ Seq(resultN)) }
+    } else {
+      Future.successful(results.map(_.ids).flatten)
+    }
+  }
+
+  private def endSearch(scrollId: String): Future[Unit] = {
+    if (scrollId == "") {
+      // If the document set does not exist, ElasticSearch will return a 404,
+      // without a scrollId. So we set scrollId="" when that happens.
+      Future.successful(())
+    } else {
+      DELETE("/_search/scroll", Json.obj("scroll_id" -> Json.arr(scrollId))).map(expectOk)
+    }
+  }
+
+  def searchForIds(documentSetId: Long, q: Query, scrollSize: Int): Future[Seq[Long]] = {
+    for {
+      result1 <- startSearch(documentSetId, q, scrollSize)
+      ids <- completeSearch(Seq(result1))
+      _ <- endSearch(result1.scrollId)
+    } yield ids
+  }
+
+  override def refresh: Future[Unit] = {
+    POST("/documents/_refresh").map(expectOk)
+  }
+
+  override def deleteAllIndices: Future[Unit] = {
+    DELETE("/_all").map(expectOk)
   }
 
   override def searchForIds(documentSetId: Long, q: Query) = {
-    clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q, DefaultScrollSize))
+    searchForIds(documentSetId, q, DefaultScrollSize)
   }
+}
 
-  def searchForIds(documentSetId: Long, q: Query, scrollSize: Int) = {
-    clientFuture.flatMap(searchForIdsImpl(_, documentSetId, q, scrollSize))
+object ElasticSearchIndexClient {
+  lazy val singleton = {
+    val hosts: Seq[String] = Configuration.getString("search_index.hosts").split(",")
+    new ElasticSearchIndexClient(hosts)
   }
 }

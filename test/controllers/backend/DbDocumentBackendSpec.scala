@@ -11,7 +11,7 @@ import models.{Selection,SelectionRequest}
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
-import com.overviewdocs.searchindex.{TransportIndexClient,IndexClient}
+import com.overviewdocs.searchindex.{ElasticSearchIndexClient,IndexClient}
 import com.overviewdocs.util.SortedDocumentIdsRefresher
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
@@ -29,7 +29,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   }
 
   trait BaseScopeWithIndex extends BaseScope {
-    val testIndexClient = TransportIndexClient.singleton
+    val testIndexClient = ElasticSearchIndexClient.singleton
     await(testIndexClient.deleteAllIndices)
     val backend = new DbDocumentBackend {
       override val indexClient: IndexClient = testIndexClient

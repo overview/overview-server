@@ -347,5 +347,5 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
 }
 
 object DocumentBackend extends DbDocumentBackend {
-  override protected val indexClient = com.overviewdocs.searchindex.TransportIndexClient.singleton
+  override protected val indexClient = com.overviewdocs.searchindex.ElasticSearchIndexClient.singleton
 }

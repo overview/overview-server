@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import com.overviewdocs.database.{HasDatabase,LargeObject,TreeIdGenerator}
 import com.overviewdocs.models.{CsvImport,DocumentProcessingError,Tree}
 import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags,Trees}
-import com.overviewdocs.searchindex.{IndexClient,TransportIndexClient}
+import com.overviewdocs.searchindex.{IndexClient,ElasticSearchIndexClient}
 import com.overviewdocs.util.RecalculateDocumentSetCaches
 
 /** Processes a CSV Import. */
@@ -19,7 +19,7 @@ class CsvImporter(
     *
     * We call addDocumentSet() on this when done.
     */
-  indexClient: IndexClient = TransportIndexClient.singleton,
+  indexClient: IndexClient = ElasticSearchIndexClient.singleton,
 
   /** Number of bytes to process at a time.
     *

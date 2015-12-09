@@ -1,61 +1,95 @@
 package com.overviewdocs.searchindex
 
-import java.util.concurrent.ExecutionException
-import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.index.query.QueryBuilders
-import org.specs2.mutable.Specification
+import org.specs2.mutable.{After,Specification}
 import org.specs2.specification.Scope
 import play.api.libs.json.JsObject
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 
+import com.overviewdocs.http
 import com.overviewdocs.models.{Document,DocumentDisplayMethod}
 import com.overviewdocs.query.{Field,FuzzyTermQuery,PhraseQuery,PrefixQuery}
+import com.overviewdocs.util.Configuration
 
-class TransportIndexClientSpec extends Specification {
-  import scala.concurrent.ExecutionContext.Implicits.global
+class ElasticSearchIndexClientSpec extends Specification {
   sequential
-
   def await[T](future: Future[T]): T = Await.result(future, Duration.Inf)
 
-  trait BaseScope extends Scope {
-    val indexClient = TransportIndexClient.singleton
-    val syncIndexClient = await(indexClient.connect) // implementation detail: connect just returns at a lazy val
-
+  trait BaseScope extends Scope with After {
+    val indexClient = new ElasticSearchIndexClient(Configuration.getString("search_index.hosts").split(","))
     await(indexClient.deleteAllIndices)
 
-    def createIndex(name: String) = {
-      val settings = Settings.settingsBuilder
-        .put("index.translog.durability", "async") // don't fsync
-        .put("index.number_of_shards", 1)
-        .put("index.number_of_replicas", 0)
+    override def after: Unit = indexClient.httpClient.shutdown
 
-      syncIndexClient.admin.indices.prepareCreate(name)
-        .setSettings(settings)
-        .addMapping("document", """{ "document": { "properties": { "document_set_id": { "type": "long" } } } }""")
-        .execute.get
+    def hostUrl(s: String): String = indexClient.hostUrl(s)
+
+    def POST(path: String, data: String): http.Response = {
+      val response = await(indexClient.httpClient.post(http.Request(
+        url=hostUrl(path), maybeBody=Some(data.getBytes("utf-8"))
+      )))
+      assert(response.statusCode >= 200 && response.statusCode < 300)
+      response
     }
 
-    def createAlias(index: String, alias: String) = {
-      syncIndexClient.admin.indices.prepareAliases
-        .addAlias("documents_v2", "documents")
-        .execute.get
+    def PUT(path: String, data: String): http.Response = {
+      val response = await(indexClient.httpClient.put(http.Request(
+        url=hostUrl(path), maybeBody=Some(data.getBytes("utf-8"))
+      )))
+      assert(response.statusCode >= 200 && response.statusCode < 300)
+      response
     }
 
-    def aliasExists(index: String, alias: String) = {
-      val exists = syncIndexClient
-        .admin.indices.prepareAliasesExist(alias)
-        .execute.get.isExists
+    def GET(path: String): http.Response = {
+      await(indexClient.httpClient.get(http.Request(url=hostUrl(path))))
+    }
 
-      if (exists) {
-        val aliases = syncIndexClient
-          .admin.indices.prepareGetAliases(alias)
-          .execute.get.getAliases
+    def GET(path: String, data: String): http.Response = {
+      await(indexClient.httpClient.get(http.Request(
+        url=hostUrl(path),
+        maybeBody=Some(data.getBytes("utf-8"))
+      )))
+    }
 
-        aliases.containsKey(index)
-      } else {
-        false
-      }
+    def createIndex(name: String): Unit = {
+      PUT(s"/$name/", """{
+        "settings": {
+          "index": {
+            "translog_durability": "async",
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+          }
+        },
+        "mappings": {
+          "document": {
+            "properties": {
+              "document_set_id": { "type": "long" }
+            }
+          }
+        }
+      }""")
+    }
+
+    def createAlias(index: String, alias: String): Unit = {
+      PUT(s"/$index/_alias/$alias", "{}")
+    }
+
+    def aliasExists(index: String, alias: String): Boolean = {
+      val response = GET(s"/$index/_alias/$alias")
+      response.statusCode != 404 && response.body != "{}"
+    }
+
+    def idsInIndex(indexOrAlias: String): Seq[Long] = {
+      import play.api.libs.json._
+
+      val response = GET(s"/$indexOrAlias/_search", """{
+        "query": { "match_all": {} },
+        "fields": [ "_id" ]
+      }""")
+      response.statusCode must beEqualTo(200)
+
+      val path = (JsPath \ "hits" \ "hits" \\ "_id")
+      path(Json.parse(response.bodyBytes)).flatMap(_.asOpt[String]).map(_.toLong)
     }
 
     def buildDocument(id: Long, documentSetId: Long) = Document(
@@ -82,16 +116,7 @@ class TransportIndexClientSpec extends Specification {
         await(indexClient.addDocumentSet(234L))
 
         aliasExists("documents_v1", "documents") must beEqualTo(true)
-      }
-
-      "not create documents_v1 if there is a documents alias" in new BaseScope {
-        createIndex("documents_v2")
-        createAlias("documents_v2", "documents")
-
-        await(indexClient.addDocumentSet(234L))
-
-        aliasExists("documents_v1", "documents_234") must beEqualTo(false)
-        aliasExists("documents_v1", "documents") must beEqualTo(false)
+        aliasExists("documents_v1", "documents_234") must beEqualTo(true)
       }
 
       "use documents_vN if it is what the documents alias points to" in new BaseScope {
@@ -100,7 +125,10 @@ class TransportIndexClientSpec extends Specification {
 
         await(indexClient.addDocumentSet(234L))
 
+        aliasExists("documents_v1", "documents_234") must beEqualTo(false)
+        aliasExists("documents_v1", "documents") must beEqualTo(false)
         aliasExists("documents_v2", "documents_234") must beEqualTo(true)
+        aliasExists("documents_v2", "documents") must beEqualTo(true) // we just created this above :)
       }
 
       "create an alias that filters by document set" in new BaseScope {
@@ -109,21 +137,7 @@ class TransportIndexClientSpec extends Specification {
         await(indexClient.refresh())
 
         aliasExists("documents_v1", "documents_234") must beEqualTo(true)
-
-        val results = syncIndexClient.prepareSearch("documents_234")
-          .setTypes("document")
-          .setQuery(QueryBuilders.matchAllQuery)
-          .setSize(2)
-          .addField("id")
-          .execute().get()
-
-        val ids = results
-          .getHits
-          .getHits
-          .map(_.id.toLong)
-          .toSeq
-          
-        ids must beEqualTo(Seq(123L))
+        idsInIndex("documents_234") must beEqualTo(Seq(123L))
       }
 
       "be a no-op when the alias already exists" in new BaseScope {
@@ -197,31 +211,17 @@ class TransportIndexClientSpec extends Specification {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.removeDocumentSet(234L))
 
-        // On to the test
-        await(indexClient.removeDocumentSet(234L)) must not(throwA[Exception])
+        await(indexClient.removeDocumentSet(234L)) // maybe throw an exception -- give nice stack trace
+        aliasExists("documents_v1", "documents_234") must beEqualTo(false)
       }
 
       "delete associated documents" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 235L))))
-        await(indexClient.refresh)
         await(indexClient.removeDocumentSet(234L))
         await(indexClient.refresh)
 
-        val results = syncIndexClient.prepareSearch("documents")
-          .setTypes("document")
-          .setQuery(QueryBuilders.matchAllQuery)
-          .setSize(2)
-          .addField("_id")
-          .execute().get()
-
-        val ids = results
-          .getHits
-          .getHits
-          .map(_.id.toLong)
-          .toSeq
-          
-        ids must beEqualTo(Seq(124L))
+        idsInIndex("documents") must beEqualTo(Seq(124L))
       }
     }
 

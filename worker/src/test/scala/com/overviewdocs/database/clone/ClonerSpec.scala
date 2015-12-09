@@ -10,6 +10,8 @@ import com.overviewdocs.test.DbSpecification
 import com.overviewdocs.test.factories.{DbFactory=>factory}
 
 class ClonerSpec extends DbSpecification with Mockito {
+  sequential
+
   "Cloner" should {
     trait BaseScope extends DbScope {
       val sourceDocumentSet = factory.documentSet(id=123L)

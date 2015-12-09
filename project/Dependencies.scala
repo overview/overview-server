@@ -14,13 +14,11 @@ object Dependencies {
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
     val commonsIo = "commons-io" % "commons-io" % "2.4"
     val config = "com.typesafe" % "config" % "1.3.0"
-    val elasticSearch = "org.elasticsearch" % "elasticsearch" % "2.1.0"
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.4.1"
     val icu4j = "com.ibm.icu" % "icu4j" % "56.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
-    val jna = "net.java.dev.jna" % "jna" % "4.2.1" // for ElasticSearch, partially to ignore a warning
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
     val junit = "junit" % "junit-dep" % "4.11"
@@ -74,11 +72,9 @@ object Dependencies {
     deps.asyncHttpClient,
     deps.awsS3,
     deps.commonsIo,
-    deps.elasticSearch exclude("log4j", "log4j"),
     deps.guava, // Textify
     deps.hikariCp,
     deps.icu4j, // Document.tokens
-    deps.jna, // Make ElasticSearch client happy
     deps.log4jBridge, // ElasticSearch
     deps.logback,
     deps.parserCombinators,

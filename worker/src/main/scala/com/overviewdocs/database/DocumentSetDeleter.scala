@@ -4,7 +4,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.overviewdocs.models.tables._
-import com.overviewdocs.searchindex.{IndexClient,TransportIndexClient}
+import com.overviewdocs.searchindex.{IndexClient,ElasticSearchIndexClient}
 
 trait DocumentSetDeleter extends HasDatabase {
   protected val indexClient: IndexClient
@@ -135,5 +135,5 @@ trait DocumentSetDeleter extends HasDatabase {
 }
 
 object DocumentSetDeleter extends DocumentSetDeleter {
-  override protected val indexClient = TransportIndexClient.singleton
+  override protected val indexClient = ElasticSearchIndexClient.singleton
 }

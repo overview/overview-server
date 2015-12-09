@@ -5,8 +5,8 @@
 # Services:
 #   * :9010 -> Postgres
 #   * :9020 -> Redis
-#   * :9200,:9300 -> ElasticSearch (dev environment)
-#   * :9201,:9301 -> ElasticSearch (test environment)
+#   * :9200 -> ElasticSearch (dev environment)
+#   * :9201 -> ElasticSearch (test environment)
 
 # Volumes...
 
@@ -46,8 +46,7 @@ overview-dev-searchindex:
   volumes_from:
     - overview-dev-searchindex-data
   ports:
-    - "9200:9200" # for debugging
-    - "9300:9300"
+    - "9200:9200"
 
 # We run an entirely separate cluster for test SearchIndex; we'll delete all
 # indices in every test.
@@ -55,5 +54,4 @@ overview-test-searchindex:
   container_name: overview-test-searchindex
   image: overview/searchindex
   ports:
-    - "9201:9200" # for debugging
-    - "9301:9300"
+    - "9201:9200"

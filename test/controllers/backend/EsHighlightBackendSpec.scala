@@ -1,11 +1,11 @@
 package controllers.backend
 
 import com.overviewdocs.query.{Field,PhraseQuery}
-import com.overviewdocs.searchindex.{Highlight,TransportIndexClient}
+import com.overviewdocs.searchindex.{Highlight,ElasticSearchIndexClient}
 
 class EsHighlightBackendSpec extends NullBackendSpecification {
   trait BaseScope extends NullScope {
-    val testIndexClient = TransportIndexClient.singleton
+    val testIndexClient = ElasticSearchIndexClient.singleton
     await(testIndexClient.deleteAllIndices)
 
     val backend = new TestNullBackend with EsHighlightBackend {

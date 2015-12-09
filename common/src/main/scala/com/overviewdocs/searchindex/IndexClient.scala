@@ -68,5 +68,11 @@ trait IndexClient {
   def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]]
 
   /** Guarantees all past added documents are searchable. */
-  def refresh(): Future[Unit]
+  def refresh: Future[Unit]
+
+  /** Wipes the database -- BE CAREFUL!
+    *
+    * Useful in test suites.
+    */
+  def deleteAllIndices: Future[Unit]
 }
