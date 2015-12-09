@@ -53,7 +53,7 @@ module.exports = (browser) ->
     debug_("scheduling renameView(#{oldTitle}, #{newTitle})")
     debug("renameView(#{oldTitle}, #{newTitle})")
     browser
-      .click([ { link: oldTitle }, { class: 'toggle-popover' } ])
+      .click([ { link: oldTitle }, { class: 'toggle-popover' } ], wait: true) # wait because we saw an error once on Jenkins
       .click(link: 'rename', wait: true) # wait for popover to appear
       .sendKeys(newTitle, css: 'input[name=title]', wait: true) # wait for form to appear
       .shortcuts.jquery.listenForAjaxComplete()

@@ -17,8 +17,8 @@ describe 'Recluster', ->
         @browser
           .shortcuts.documentSet.renameView('view1', 'view3')
           .assertExists(link: 'view3', wait: true)
-          .click([ { link: 'view3' }, { class: 'toggle-popover' } ])
-          .assertExists(tag: 'dd', class: 'title', contains: 'view3')
+          .click([ { link: 'view3' }, { class: 'toggle-popover' } ], wait: true) # wait because we saw an error once on Jenkins
+          .assertExists(tag: 'dd', class: 'title', contains: 'view3', wait: true)
           .refresh()
           .shortcuts.documentSet.waitUntilStable()
           .assertExists(link: 'view3') # stays even after page load
