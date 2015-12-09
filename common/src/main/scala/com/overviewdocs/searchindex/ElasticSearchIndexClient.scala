@@ -506,6 +506,9 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
 object ElasticSearchIndexClient {
   lazy val singleton = {
     val hosts: Seq[String] = Configuration.getString("search_index.hosts").split(",")
+    hosts.filter(_.contains(":9300")).foreach { host =>
+      throw new Exception(s"You have configured Overview to connect to ElasticSearch at http://$host. ElasticSearch serves its own protocol on port 9300; it serves HTTP on port 9200. Change your configuration to 9200.")
+    }
     new ElasticSearchIndexClient(hosts)
   }
 }
