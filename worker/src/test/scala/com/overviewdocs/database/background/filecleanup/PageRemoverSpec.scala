@@ -3,57 +3,43 @@ package com.overviewdocs.background.filecleanup
 import scala.concurrent.{ Await, Future, Promise, TimeoutException }
 import scala.concurrent.duration._
 import org.specs2.mock.Mockito
-import org.specs2.time.NoTimeConversions
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.tables.Pages
 import com.overviewdocs.test.DbSpecification
 
-class PageRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
-
+class PageRemoverSpec extends DbSpecification with Mockito {
   "PageRemover" should {
+    trait BaseScope extends DbScope {
+      val file = factory.file(referenceCount = 0)
+      factory.page(fileId=file.id, pageNumber=1, dataLocation="test:1")
+      factory.page(fileId=file.id, pageNumber=2, dataLocation="test:2")
 
-    "delete blobs" in new PageScope {
-      blobsDeleted.success(())
-      await(remover.removeFilePages(file.id))
+      val mockBlobStorage = smartMock[BlobStorage]
 
-      val locations = pages.map(_.dataLocation)
+      val subject = new PageRemover {
+        override protected val blobStorage = mockBlobStorage
+      }
+    }
+
+    "delete blobs" in new BaseScope {
+      mockBlobStorage.deleteMany(any) returns Future.successful(())
+      await(subject.removeFilePages(file.id))
+
       there was one(mockBlobStorage).deleteMany(argThat(beLike[Seq[String]] { case actual: Seq[String] =>
-        actual must containTheSameElementsAs(locations)
+        actual must containTheSameElementsAs(Seq("test:1", "test:2"))
       }))
     }
 
-    "delete pages after blobs are deleted" in new PageScope {
-      val r = remover.removeFilePages(file.id)
+    "delete blobs first, then their pages" in new BaseScope {
+      val blobsDeleted = Promise[Unit]()
+      mockBlobStorage.deleteMany(any) returns blobsDeleted.future
+      val done = subject.removeFilePages(file.id)
 
-      Await.result(r, 10 millis) must throwA[TimeoutException]
-
-      import database.api._
-
-      blockingDatabase.length(Pages.filter(_.fileId === file.id)) must beEqualTo(numberOfPages)
-
+      blockingDatabase.length(Pages) must beEqualTo(2)
       blobsDeleted.success(())
-      await(r)
-
-      blockingDatabase.length(Pages.filter(_.fileId === file.id)) must beEqualTo(0)
+      await(done)
+      blockingDatabase.length(Pages) must beEqualTo(0)
     }
-  }
-
-  trait PageScope extends DbScope {
-    val numberOfPages = 3
-    val file = factory.file(referenceCount = 0)
-    val pages = Seq.tabulate(numberOfPages)(n =>
-      factory.page(fileId = file.id, pageNumber = n + 1, dataLocation = s"test:$n"))
-
-    val mockBlobStorage = smartMock[BlobStorage]
-    val blobsDeleted = Promise[Unit]()
-
-    mockBlobStorage.deleteMany(any) returns blobsDeleted.future
-
-    val remover = new TestPageRemover(mockBlobStorage)
-  }
-
-  class TestPageRemover(bs: BlobStorage) extends PageRemover {
-    override protected val blobStorage = bs
   }
 }
