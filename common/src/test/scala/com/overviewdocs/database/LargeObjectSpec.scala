@@ -1,19 +1,17 @@
 package com.overviewdocs.database
 
+import org.specs2.mutable.After
 import slick.dbio.DBIO
 
 import com.overviewdocs.test.DbSpecification
 
 class LargeObjectSpec extends DbSpecification {
   "LargeObject" should {
-    trait BaseScope extends DbScope {
+    trait BaseScope extends DbScope with After {
       val loManager = database.largeObjectManager
       val oid = run(loManager.create)
 
-      override def after = {
-        run(loManager.unlink(oid))
-        super.after
-      }
+      override def after = run(loManager.unlink(oid))
 
       def run[T](action: DBIO[T]): T = {
         import database.api._

@@ -1,5 +1,6 @@
 package com.overviewdocs.database
 
+import org.specs2.mutable.After
 import java.sql.SQLException
 import slick.dbio.DBIO
 
@@ -7,14 +8,11 @@ import com.overviewdocs.test.DbSpecification
 
 class LargeObjectManagerSpec extends DbSpecification {
   "LargeObjectManager" should {
-    trait BaseScope extends DbScope {
+    trait BaseScope extends DbScope with After {
       val loManager = database.largeObjectManager
       val oid = run(loManager.create)
 
-      override def after = {
-        run(loManager.unlink(oid).asTry)
-        super.after
-      }
+      override def after = run(loManager.unlink(oid).asTry)
 
       def run[T](action: DBIO[T]): T = {
         import database.api._

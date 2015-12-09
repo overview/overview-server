@@ -15,13 +15,13 @@ class OverviewUploadSpec extends DbSpecification {
       val contentType = "text/csv"
       val totalSize = 42l
       val chunk: Array[Byte] = Array(0x12, 0x13, 0x14)
-      var userId = 1l
+      var userId = 1L
 
-      implicit val implicitPgConnection = pgConnection
+      import database.api._
 
-      sql("""
+      blockingDatabase.runUnit(sqlu"""
         INSERT INTO "user" (id, email, role, password_hash, confirmed_at, email_subscriber, tree_tooltips_enabled)
-        VALUES (1, 'admin@overview-project.org', 2, '$2a$07$ZNI3MdA1MK7Td2w1EKpl5u38nll/MvlaRfZn0S8HLerNuP2hoD5JW', TIMESTAMP '1970-01-01 00:00:00', FALSE, FALSE);
+        VALUES (1, 'admin@overview-project.org', 2, '', TIMESTAMP '1970-01-01 00:00:00', FALSE, FALSE);
       """)
 
       def withLargeObject[A](block: Long => A): A = {

@@ -1,9 +1,11 @@
 package com.overviewdocs.database
 
+import org.specs2.mutable.After
+
 import com.overviewdocs.test.DbSpecification
 
 class LargeObjectInputStreamSpec extends DbSpecification {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbScope with After {
     import database.api._
 
     val loManager = blockingDatabase.largeObjectManager
@@ -27,10 +29,7 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       oidsToDelete.remove(oid)
     }
 
-    override def after: Unit = {
-      oidsToDelete.toSeq.foreach(unlink _)
-      super.after
-    }
+    override def after: Unit = oidsToDelete.toSeq.foreach(unlink _)
   }
 
   "read one byte at a time" in new BaseScope {
