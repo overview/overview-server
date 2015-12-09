@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.models.CloneJob
 import com.overviewdocs.models.tables.CloneJobs
-import com.overviewdocs.util.SortedDocumentIdsRefresher
+import com.overviewdocs.util.AddDocumentsCommon
 
 /** Clones document sets.
   */
@@ -86,34 +86,37 @@ trait Cloner extends HasDatabase {
 
   private def finish(cloneJob: CloneJob): Future[Unit] = {
     for {
-      _ <- SortedDocumentIdsRefresher.refreshDocumentSet(cloneJob.destinationDocumentSetId)
+      _ <- AddDocumentsCommon.afterAddDocuments(cloneJob.destinationDocumentSetId)
       _ <- database.run(byId(cloneJob.id).delete)
     } yield ()
   }
 
   private def cloneDocuments(cloneJob: CloneJob): Future[Unit] = {
-    database.runUnit(sqlu"""
-      WITH all_file_ids AS (
-        INSERT INTO document (
-          id, document_set_id,
-          description, documentcloud_id, text, url, supplied_id, title,
-          created_at, file_id, page_id, page_number, metadata_json_text
+    for {
+      _ <- AddDocumentsCommon.beforeAddDocuments(cloneJob.destinationDocumentSetId)
+      _ <- database.runUnit(sqlu"""
+        WITH all_file_ids AS (
+          INSERT INTO document (
+            id, document_set_id,
+            description, documentcloud_id, text, url, supplied_id, title,
+            created_at, file_id, page_id, page_number, metadata_json_text
+          )
+          SELECT 
+             ${cloneJob.destinationDocumentSetId << 32} | (${0xffffffffL} & id),
+             ${cloneJob.destinationDocumentSetId},
+             description, documentcloud_id, text, url, supplied_id, title,
+             created_at, file_id, page_id, page_number, metadata_json_text
+          FROM document
+          WHERE document_set_id = ${cloneJob.sourceDocumentSetId}
+          RETURNING file_id AS id
         )
-        SELECT 
-           ${cloneJob.destinationDocumentSetId << 32} | (${0xffffffffL} & id),
-           ${cloneJob.destinationDocumentSetId},
-           description, documentcloud_id, text, url, supplied_id, title,
-           created_at, file_id, page_id, page_number, metadata_json_text
-        FROM document
-        WHERE document_set_id = ${cloneJob.sourceDocumentSetId}
-        RETURNING file_id AS id
-      )
-      , distinct_file_ids AS (SELECT DISTINCT id AS id FROM all_file_ids WHERE id IS NOT NULL)
-      , for_update AS (SELECT id FROM file WHERE id IN (SELECT id FROM distinct_file_ids) FOR UPDATE)
-      UPDATE file
-      SET reference_count = reference_count + 1
-      WHERE id IN (SELECT id FROM distinct_file_ids)
-    """)
+        , distinct_file_ids AS (SELECT DISTINCT id AS id FROM all_file_ids WHERE id IS NOT NULL)
+        , for_update AS (SELECT id FROM file WHERE id IN (SELECT id FROM distinct_file_ids) FOR UPDATE)
+        UPDATE file
+        SET reference_count = reference_count + 1
+        WHERE id IN (SELECT id FROM distinct_file_ids)
+      """)
+    } yield ()
   }
 
   private def cloneDocumentProcessingErrors(cloneJob: CloneJob): Future[Unit] = {

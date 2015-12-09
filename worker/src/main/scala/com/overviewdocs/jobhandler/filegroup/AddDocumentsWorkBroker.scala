@@ -6,7 +6,7 @@ import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.messages.DocumentSetCommands.AddDocumentsFromFileGroup
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
-import com.overviewdocs.util.Logger
+import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 class AddDocumentsWorkBroker(progressReporter: ActorRef) extends Actor {
   private val logger = Logger.forClass(getClass)
@@ -28,7 +28,10 @@ class AddDocumentsWorkBroker(progressReporter: ActorRef) extends Actor {
   import AddDocumentsWorkBroker._
 
   protected def loadWorkGeneratorForCommand(command: AddDocumentsFromFileGroup)(implicit ec: ExecutionContext): Future[AddDocumentsWorkGenerator] = {
-    AddDocumentsWorkGenerator.loadForCommand(command)(ec)
+    for {
+      _ <- AddDocumentsCommon.beforeAddDocuments(command.documentSetId) // TODO put this somewhere nicer, like AddDocumentsImpl
+      generator <- AddDocumentsWorkGenerator.loadForCommand(command)(ec)
+    } yield generator
   }
 
   def receive = {

@@ -1,7 +1,5 @@
 package models.export.format
 
-import com.opencsv.CSVReader
-import java.io.{ByteArrayOutputStream,StringReader}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.{Enumerator,Iteratee}
@@ -24,9 +22,8 @@ class CsvFormatSpec extends Specification with FutureAwaits with DefaultAwaitTim
     lazy val parsedCsv: Seq[Array[String]] = {
       import scala.collection.JavaConverters.asScalaBufferConverter
       // Drop the UTF-8 BOM when reading, so we can do string comparisons
-      val csv = new CSVReader(new StringReader(new String(bytes.drop(3), "utf-8")))
-      val rowsList = csv.readAll
-      asScalaBufferConverter(rowsList).asScala
+      val csvString = new String(bytes.drop(3), "utf-8")
+      csvString.split("\r?\n").map(_.split(","))
     }
   }
 

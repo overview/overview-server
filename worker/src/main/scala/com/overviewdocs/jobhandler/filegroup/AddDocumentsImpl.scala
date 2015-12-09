@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext,Future,blocking}
 import com.overviewdocs.database.{HasDatabase,TreeIdGenerator}
 import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload,Tree}
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads,Trees}
-import com.overviewdocs.util.{Logger,RecalculateDocumentSetCaches}
+import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
   */
@@ -148,8 +148,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     import com.overviewdocs.background.filegroupcleanup.FileGroupRemover
     import com.overviewdocs.searchindex.ElasticSearchIndexClient
     for {
-      _ <- ElasticSearchIndexClient.singleton.addDocumentSet(fileGroup.addToDocumentSetId.get) // FIXME move this to creation
-      _ <- RecalculateDocumentSetCaches.run(fileGroup.addToDocumentSetId.get)
+      _ <- AddDocumentsCommon.afterAddDocuments(fileGroup.addToDocumentSetId.get)
       _ <- FileGroupRemover().remove(fileGroup.id)
       _ <- AddDocumentsImpl.createTree(fileGroup)
     } yield {

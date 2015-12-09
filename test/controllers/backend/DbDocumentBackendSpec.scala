@@ -12,12 +12,9 @@ import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
 import com.overviewdocs.searchindex.{ElasticSearchIndexClient,IndexClient}
-import com.overviewdocs.util.SortedDocumentIdsRefresher
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {
-    val refresher = SortedDocumentIdsRefresher
-
     import database.api._
     def findDocument(id: Long): Option[Document] = blockingDatabase.option(Documents.filter(_.id === id))
   }
@@ -38,15 +35,23 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
 
   trait CommonIndexScope extends BaseScopeWithIndex {
     val documentSet = factory.documentSet()
+    await(testIndexClient.addDocumentSet(documentSet.id))
     val doc1 = factory.document(documentSetId=documentSet.id, title="c", text="foo bar baz oneandtwo oneandthree")
     val doc2 = factory.document(documentSetId=documentSet.id, title="a", text="moo mar maz oneandtwo twoandthree")
     val doc3 = factory.document(documentSetId=documentSet.id, title="b", text="noo nar naz oneandthree twoandthree")
     val documents = Seq(doc1, doc2, doc3)
 
-    await(testIndexClient.addDocumentSet(documentSet.id))
     await(testIndexClient.addDocuments(documents))
-    await(testIndexClient.refresh())
-    await(refresher.refreshDocumentSet(documentSet.id))
+    await(testIndexClient.refresh)
+
+    private val sortedIds = s"{${doc2.id},${doc3.id},${doc1.id}}"
+
+    import database.api._
+    blockingDatabase.runUnit(sqlu"""
+      UPDATE document_set
+      SET sorted_document_ids = $sortedIds::BIGINT[]
+      WHERE id = ${documentSet.id}
+    """)
   }
 
   "DbDocumentBackendSpec" should {

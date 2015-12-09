@@ -9,17 +9,12 @@ import com.overviewdocs.database.{HasDatabase,LargeObject,TreeIdGenerator}
 import com.overviewdocs.models.{CsvImport,DocumentProcessingError,Tree}
 import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags,Trees}
 import com.overviewdocs.searchindex.{IndexClient,ElasticSearchIndexClient}
-import com.overviewdocs.util.RecalculateDocumentSetCaches
+import com.overviewdocs.util.AddDocumentsCommon
 
 /** Processes a CSV Import. */
 class CsvImporter(
   csvImport: CsvImport,
-
-  /** Search index client.
-    *
-    * We call addDocumentSet() on this when done.
-    */
-  indexClient: IndexClient = ElasticSearchIndexClient.singleton,
+  addDocumentsCommon: AddDocumentsCommon = AddDocumentsCommon,
 
   /** Number of bytes to process at a time.
     *
@@ -71,8 +66,15 @@ class CsvImporter(
     * * We may add a document processing error to the database.
     */
   def run: Future[Unit] = {
+    for {
+      _ <- addDocumentsCommon.beforeAddDocuments(csvImport.documentSetId)
+      _ <- continue
+    } yield ()
+  }
+
+  private def continue: Future[Unit] = {
     step(bufferSize).flatMap(_ match {
-      case NextStep.Continue => run
+      case NextStep.Continue => continue
       case NextStep.Finish(error) => finish(error)
     })
   }
@@ -80,8 +82,7 @@ class CsvImporter(
   /** Update document set counts and ensure it's searchable. */
   private def finish(error: Option[String]): Future[Unit] = {
     for {
-      _ <- indexClient.addDocumentSet(csvImport.documentSetId)
-      _ <- RecalculateDocumentSetCaches.run(csvImport.documentSetId)
+      _ <- addDocumentsCommon.afterAddDocuments(csvImport.documentSetId)
       _ <- deleteCsvImport(error)
       _ <- createTree
     } yield ()

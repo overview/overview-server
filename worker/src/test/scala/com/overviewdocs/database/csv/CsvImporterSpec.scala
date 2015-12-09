@@ -9,14 +9,16 @@ import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingEr
 import com.overviewdocs.database.LargeObject
 import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.util.AddDocumentsCommon
 
 // A bit of an integration test
 class CsvImporterSpec extends DbSpecification with Mockito {
   trait BaseScope extends DbScope {
     import database.api._
     val loids = mutable.Buffer[Long]()
-    val indexClient = smartMock[IndexClient]
-    indexClient.addDocumentSet(any) returns Future.successful(())
+    val addDocumentsCommon = smartMock[AddDocumentsCommon]
+    addDocumentsCommon.beforeAddDocuments(any) returns Future.successful(())
+    addDocumentsCommon.afterAddDocuments(any) returns Future.successful(())
 
     def writeLo(bytes: Array[Byte]): Long = {
       val ret = blockingDatabase.run((for {
@@ -42,7 +44,7 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     def dbTags = blockingDatabase.seq(Tags.sortBy(_.id))
 
     def csvImporter(csvImport: CsvImport, bufferSize: Int = 1000): CsvImporter = {
-      new CsvImporter(csvImport, indexClient, bufferSize)
+      new CsvImporter(csvImport, addDocumentsCommon, bufferSize)
     }
 
     def csvImport(bytes: Array[Byte]): CsvImport = {
@@ -75,24 +77,10 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     dbDocuments.map((d => (d.suppliedId, d.text))) must beEqualTo(Seq(("Hello", " world!")))
   }
 
-  "update document cache in DocumentSet" in new BaseScope {
-    val importer = csvImporter(csvImport("text\n1\n2".getBytes("utf-8")))
-    await(importer.run)
-    dbDocuments.length must beEqualTo(2)
-
-    import database.api._
-    blockingDatabase.option(sql"SELECT document_count, sorted_document_ids FROM document_set".as[(Int,Seq[Long])])
-      .must(beSome((2, Seq(documentSet.id << 32L, (documentSet.id << 32L) + 1))))
-  }
-
   "work with an empty CSV" in new BaseScope {
     val importer = csvImporter(csvImport(Array[Byte]()))
     await(importer.run)
     dbDocuments must beEmpty
-
-    import database.api._
-    blockingDatabase.option(sql"SELECT document_count, sorted_document_ids FROM document_set".as[(Int,Seq[Long])])
-      .must(beSome((0, Seq())))
   }
 
   "delete the large object" in new BaseScope {
@@ -120,9 +108,14 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     blockingDatabase.option(CsvImports) must beNone
   }
 
-  "call indexClient.addDocumentSet()" in new BaseScope {
+  "call AddDocumentsCommon.beforeAddDocuments()" in new BaseScope {
     await(csvImporter(csvImport("text\n.".getBytes("utf-8"))).run)
-    there was one(indexClient).addDocumentSet(documentSet.id)
+    there was one(addDocumentsCommon).beforeAddDocuments(documentSet.id)
+  }
+
+  "call AddDocumentsCommon.afterAddDocuments()" in new BaseScope {
+    await(csvImporter(csvImport("text\n.".getBytes("utf-8"))).run)
+    there was one(addDocumentsCommon).afterAddDocuments(documentSet.id)
   }
 
   "create a Tree" in new BaseScope {
@@ -221,9 +214,9 @@ class CsvImporterSpec extends DbSpecification with Mockito {
     )
   }
 
-  "call indexClient.addDocumentSet() on cancel" in new BaseScope {
+  "call AddDocumentsCommon.afterAddDocuments() on cancel" in new BaseScope {
     cancelAnImport
-    there was one(indexClient).addDocumentSet(documentSet.id)
+    there was one(addDocumentsCommon).afterAddDocuments(documentSet.id)
   }
 
   "create a Tree on cancel" in new BaseScope {

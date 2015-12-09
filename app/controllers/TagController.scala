@@ -1,8 +1,6 @@
 package controllers
 
-import com.opencsv.CSVWriter
 import play.api.libs.concurrent.Execution.Implicits._
-import java.io.StringWriter
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
@@ -32,18 +30,17 @@ trait TagController extends Controller {
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
+  private def quote(value: String): String = "\"" + value.replace("\"", "\"\"") + "\""
   def indexCsv(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       tagsWithCounts <- tagBackend.indexWithCounts(documentSetId)
     } yield {
-      val stringWriter = new StringWriter()
-      val csvWriter = new CSVWriter(stringWriter)
-      csvWriter.writeNext(Array("id", "name", "count", "color"))
-      tagsWithCounts.foreach({ case (tag, count) =>
-        csvWriter.writeNext(Array(tag.id.toString, tag.name, count.toString, tag.color))
-      })
-      csvWriter.close()
-      Ok(stringWriter.toString())
+      val sb = new StringBuilder("id,name,count,color\r\n")
+      tagsWithCounts.foreach { tuple =>
+        val (tag: Tag, count: Int) = tuple
+        sb.append(s"${tag.id},${quote(tag.name)},$count,${tag.color}\r\n")
+      }
+      Ok(sb.toString)
         .as("text/csv")
         .withHeaders(
           CACHE_CONTROL -> "max-age=0",
