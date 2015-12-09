@@ -26,7 +26,6 @@ object Dependencies {
     val log4jBridge = "org.slf4j" % "log4j-over-slf4j" % "1.7.12" // for ElasticSearch
     val mimeTypes = "org.overviewproject" % "mime-types" % "0.0.2"
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
-    val openCsv = "com.opencsv" % "opencsv" % "3.4"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4" // for Query
     val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.2"
@@ -34,36 +33,12 @@ object Dependencies {
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
     val playMailer = "com.typesafe.play" %% "play-mailer" % "4.0.0-M1"
     val playPluginsUtil = "com.typesafe.play.plugins" %% "play-plugins-util" % "2.3.0"
-    val playStreams = "com.typesafe.play" %% "play-streams-experimental" % play.core.PlayVersion.current
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
     val postgresql = "org.postgresql" % "postgresql" % "9.4-1205-jdbc42"
     val redis = "net.debasishg" %% "redisreact" % "0.8"
-    val scalaArm = "com.jsuereth" %% "scala-arm" % "1.4"
-    val scallop = "org.rogach" %% "scallop" % "0.9.5"
     val slick = "com.typesafe.slick" %% "slick" % "3.1.0"
     val specs2 = "org.specs2" %% "specs2" % "2.3.13"
   }
-
-  val serverDependencies = Seq(
-    deps.bcrypt,
-    deps.openCsv,
-    deps.owaspEncoder,
-    deps.playMailer,
-    deps.playPluginsUtil,
-    deps.playStreams,
-    deps.slick,
-    filters,
-    ws,
-    deps.joddWot % "test",
-    deps.playTest % "test"
-  )
-
-  val dbEvolutionApplierDependencies = Seq(
-    deps.config,
-    deps.flywayDb,
-    deps.logback,
-    deps.postgresql
-  )
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
   val commonDependencies = Seq(
@@ -91,14 +66,23 @@ object Dependencies {
     deps.specs2 % "test"
   )
 
-  val commonTestDependencies = Seq(
-    deps.akka,
-    deps.akkaTestkit,
-    deps.junit,
-    deps.junitInterface,
+  val dbEvolutionApplierDependencies = Seq(
+    deps.config,
+    deps.flywayDb,
     deps.logback,
-    deps.mockito,
-    deps.specs2
+    deps.postgresql
+  )
+
+  val serverDependencies = Seq(
+    deps.bcrypt,
+    deps.owaspEncoder,
+    deps.playMailer,
+    deps.playPluginsUtil,
+    deps.slick,
+    filters,
+    ws,
+    deps.joddWot % "test",
+    deps.playTest % "test"
   )
   
   val workerDependencies = Seq(
@@ -106,16 +90,7 @@ object Dependencies {
     deps.akkaRemote,
     deps.logback,
     deps.mimeTypes,
-    deps.playStreams,
     deps.pdfocr,
     deps.janino % "test" // See logback-test.xml
-  )
-
-  val runnerDependencies = Seq(
-    deps.postgresql,
-    deps.scalaArm,
-    deps.scallop,
-    deps.mockito % "test",
-    deps.specs2 % "test"
   )
 }
