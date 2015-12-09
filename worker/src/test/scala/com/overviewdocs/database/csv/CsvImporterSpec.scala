@@ -4,8 +4,9 @@ import org.specs2.mock.Mockito
 import scala.collection.mutable
 import scala.concurrent.Future
 
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{CsvImport,Document,DocumentProcessingError}
-import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,Tags,Trees}
+import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags,Trees}
 import com.overviewdocs.database.LargeObject
 import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.test.DbSpecification
@@ -116,6 +117,14 @@ class CsvImporterSpec extends DbSpecification with Mockito {
   "call AddDocumentsCommon.afterAddDocuments()" in new BaseScope {
     await(csvImporter(csvImport("text\n.".getBytes("utf-8"))).run)
     there was one(addDocumentsCommon).afterAddDocuments(documentSet.id)
+  }
+
+  "add the metadata columns to the DocumentSet" in new BaseScope {
+    await(csvImporter(csvImport("text,foo,bar\n1,2,3".getBytes("utf-8"))).run)
+    blockingDatabase.option(DocumentSets).map(_.metadataSchema) must beSome(MetadataSchema(1, Seq(
+      MetadataField("foo", MetadataFieldType.String),
+      MetadataField("bar", MetadataFieldType.String)
+    )))
   }
 
   "create a Tree" in new BaseScope {

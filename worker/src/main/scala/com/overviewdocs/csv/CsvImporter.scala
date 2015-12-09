@@ -6,6 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.database.{HasDatabase,LargeObject,TreeIdGenerator}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{CsvImport,DocumentProcessingError,Tree}
 import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags,Trees}
 import com.overviewdocs.searchindex.{IndexClient,ElasticSearchIndexClient}
@@ -79,10 +80,13 @@ class CsvImporter(
     })
   }
 
-  /** Update document set counts and ensure it's searchable. */
+  /** Update document set counts and metadata schema; delete CSV from database;
+    * create Tree.
+    */
   private def finish(error: Option[String]): Future[Unit] = {
     for {
       _ <- addDocumentsCommon.afterAddDocuments(csvImport.documentSetId)
+      _ <- writeMetadataSchema
       _ <- deleteCsvImport(error)
       _ <- createTree
     } yield ()
@@ -219,6 +223,23 @@ class CsvImporter(
       _ <- database.largeObjectManager.unlink(csvImport.loid)
       _ <- byId(csvImport.id).delete
     } yield ()).transactionally)
+  }
+
+  private def writeMetadataSchema: Future[Unit] = {
+    import database.api._
+
+    val metadataSchema = MetadataSchema(1,
+      csvDocumentProducer.metadataColumnNames.map { name =>
+        MetadataField(name, MetadataFieldType.String)
+      }
+    )
+
+    database.runUnit(
+      DocumentSets
+        .filter(_.id === csvImport.documentSetId)
+        .map(_.metadataSchema)
+        .update(metadataSchema)
+    )
   }
 
   private def createTree: Future[Unit] = {
