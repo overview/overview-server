@@ -1,16 +1,14 @@
 package com.overviewdocs.clone
 
-import play.api.libs.iteratee.{Enumerator,Iteratee}
-import play.api.libs.streams.Streams
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.searchindex.ElasticSearchIndexClient
-import com.overviewdocs.util.BulkDocumentWriter
+import com.overviewdocs.searchindex.{ElasticSearchIndexClient,IndexClient}
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
 
 trait Indexer {
+  protected val indexClient: IndexClient
   def indexDocuments(documentSetId: Long): Future[Unit]
 }
 
@@ -18,20 +16,34 @@ object Indexer extends Indexer with HasDatabase {
   import database.api._
   import database.executionContext
 
-  def indexDocuments(documentSetId: Long): Future[Unit] = {
-    val bulkWriter = BulkDocumentWriter.forSearchIndex
+  override protected val indexClient = ElasticSearchIndexClient.singleton
 
+  private val NDocumentsPerBatch = 30 // ~1MB/document max
+
+  def indexDocuments(documentSetId: Long): Future[Unit] = {
     for {
-      _ <- ElasticSearchIndexClient.singleton.addDocumentSet(documentSetId)
-      _ <- indexEachDocument(documentSetId, bulkWriter)
-      _ <- bulkWriter.flush
+      _ <- indexClient.addDocumentSet(documentSetId)
+      _ <- indexEachDocument(documentSetId)
     } yield ()
   }
 
-  private def indexEachDocument(documentSetId: Long, bulkWriter: BulkDocumentWriter): Future[Unit] = {
-    val publisher = database.slickDatabase.stream(Documents.filter(_.documentSetId === documentSetId).result)
-    val enumerator = Streams.publisherToEnumerator(publisher)
-    val iteratee = Iteratee.foldM(()) { (s: Unit, document: Document) => bulkWriter.addAndFlushIfNeeded(document) }
-    enumerator.run(iteratee)
+  private def indexRemainingBatches(idsIt: Iterator[Seq[Long]]): Future[Unit] = {
+    if (idsIt.hasNext) {
+      val ids: Seq[Long] = idsIt.next
+      val step: Future[Unit] = for {
+        documents <- database.seq(Documents.filter(_.id inSet ids))
+        _ <- indexClient.addDocuments(documents)
+      }  yield ()
+      step.flatMap(_ => indexRemainingBatches(idsIt))
+    } else {
+      Future.successful(())
+    }
+  }
+
+  private def indexEachDocument(documentSetId: Long): Future[Unit] = {
+    database.seq(Documents.filter(_.documentSetId === documentSetId).map(_.id)).flatMap { allIds =>
+      val idsIt = allIds.grouped(NDocumentsPerBatch)
+      indexRemainingBatches(idsIt)
+    }
   }
 }
