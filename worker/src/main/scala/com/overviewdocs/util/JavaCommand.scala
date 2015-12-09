@@ -13,5 +13,11 @@ object JavaCommand {
   }
   private val javaPath: String = Paths.get(System.getProperty("java.home")).resolve("bin").resolve("java").toString
 
-  def apply(args: String*): Seq[String] = Seq(javaPath, "-cp", classPath) ++ args
+  def apply(args: String*): Seq[String] = Seq(
+    javaPath,
+    "-Dfile.encoding=UTF-8",
+    "-Duser.timezone=UTC",
+    "-cp",
+    classPath
+  ) ++ args
 }
