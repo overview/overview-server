@@ -215,10 +215,6 @@ class AuthoritiesSpec extends DbSpecification {
       }
     }
 
-    "userOwningStoreObject" should {
-      // it just returns false
-    }
-
     "userOwningDocument" should {
       "return true when the user owns the document set" in new UserScope {
         val documentSet = factory.documentSet()

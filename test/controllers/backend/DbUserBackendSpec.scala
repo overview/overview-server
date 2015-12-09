@@ -36,7 +36,7 @@ class DbUserBackendSpec extends DbBackendSpecification {
       insertUser(User(3L, "user3@example.org", lastActivityAt=None))
       insertUser(User(4L, "user4@example.org", lastActivityAt=Some(new Timestamp(2000L))))
 
-      backend.indexPage(PageRequest(0, 4)).map(_.items.map(_.id)) must beEqualTo(Seq(2L, 4L, 1L, 3L)).await
+      await(backend.indexPage(PageRequest(0, 4))).items.map(_.id) must beEqualTo(Seq(2L, 4L, 1L, 3L))
     }
 
     "return just a page" in new IndexPageScope {
@@ -44,8 +44,8 @@ class DbUserBackendSpec extends DbBackendSpecification {
       insertUser(User(2L, "user2@example.org"))
       insertUser(User(3L, "user3@example.org"))
 
-      backend.indexPage(PageRequest(0, 2)).map(_.items.map(_.id)) must beEqualTo(Seq(1L, 2L)).await
-      backend.indexPage(PageRequest(2, 2)).map(_.items.map(_.id)) must beEqualTo(Seq(3L)).await
+      await(backend.indexPage(PageRequest(0, 2))).items.map(_.id) must beEqualTo(Seq(1L, 2L))
+      await(backend.indexPage(PageRequest(2, 2))).items.map(_.id) must beEqualTo(Seq(3L))
     }
   }
 
@@ -107,10 +107,10 @@ class DbUserBackendSpec extends DbBackendSpecification {
     }
 
     "return a User" in new CreateScope {
-      backend.create(attributes) must beLike[User] { case user =>
+      await(backend.create(attributes)) must beLike[User] { case user =>
         user.email must beEqualTo("user-123@example.org")
         user.passwordHash must beMatching("""^password-hash\s+""".r)
-      }.await
+      }
     }
 
     "write the User to the database" in new CreateScope {

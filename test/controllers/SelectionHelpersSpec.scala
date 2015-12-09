@@ -9,12 +9,13 @@ import play.api.mvc.{Request,Result}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
 
+import com.overviewdocs.query.{Field,PhraseQuery}
+import com.overviewdocs.util.AwaitMethod
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,Selection,SelectionRequest}
-import com.overviewdocs.query.{Field,PhraseQuery}
 import test.helpers.MockMessagesApi
 
-class SelectionHelpersSpec extends Specification with Mockito {
+class SelectionHelpersSpec extends Specification with Mockito with AwaitMethod {
   "selectionRequest" should {
     trait SelectionScope extends Scope {
       trait F {
@@ -158,21 +159,21 @@ class SelectionHelpersSpec extends Specification with Mockito {
     "use SelectionBackend#find() if selectionId is set" in new RequestToSelectionScope {
       mockSelectionBackend.find(any, any) returns Future.successful(Some(selection))
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("selectionId" -> selectionId)
-      controller.go(request) must beEqualTo(Right(selection)).await
+      await(controller.go(request)) must beEqualTo(Right(selection))
       there was one(mockSelectionBackend).find(documentSetId, UUID.fromString(selectionId))
     }
 
     "return NotFound if selectionId is set and invalid" in new RequestToSelectionScope {
       mockSelectionBackend.find(any, any) returns Future.successful(None)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("selectionId" -> selectionId)
-      controller.go(request).map(_.left.map(_.header.status)) must beLeft(404).await
+      await(controller.go(request)).left.map(_.header.status) must beLeft(404)
     }
 
     "uses SelectionBackend#create() if refresh=true" in new RequestToSelectionScope {
       val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.create(any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
-      controller.go(request) must beEqualTo(Right(selection)).await
+      await(controller.go(request)) must beEqualTo(Right(selection))
       there was one(mockSelectionBackend).create(userEmail, selectionRequest)
     }
 
@@ -180,13 +181,13 @@ class SelectionHelpersSpec extends Specification with Mockito {
       val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
       mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
-      controller.go(request) must beEqualTo(Right(selection)).await
+      await(controller.go(request)) must beEqualTo(Right(selection))
       there was one(mockSelectionBackend).findOrCreate(userEmail, selectionRequest, None)
     }
 
     "return BadRequest on invalid search phrase" in new RequestToSelectionScope {
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "(foo AND")
-      controller.go(request).map(_.left.map(_.header.status)) must beLeft(400).await
+      await(controller.go(request)).left.map(_.header.status) must beLeft(400)
     }
   }
 }

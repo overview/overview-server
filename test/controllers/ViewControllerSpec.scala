@@ -91,7 +91,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         ))
         h.status(result) must beEqualTo(h.CREATED)
         val json = h.contentAsString(result)
-        json must /("id" -> 123L)
+        json must /("id" -> 123)
         json must /("url" -> "http://localhost:9001")
         json must /("apiToken" -> "api-token")
         json must /("title" -> "title")
@@ -122,7 +122,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         val json = h.contentAsString(result)
 
         json must /#(0) /("type" -> "tree")
-        json must /#(0) /("id" -> 1.0)
+        json must /#(0) /("id" -> 1)
         json must /#(0) /("title" -> "title1")
         json must /#(0) /("createdAt" -> "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ".r)
         json must /#(0) /("creationData") /#(2) /("lang")
@@ -131,12 +131,12 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       }
 
       "show a view" in new IndexJsonScope {
-        val view = factory.view()
+        val view = factory.view(id=2L)
         mockViewBackend.index(documentSetId) returns Future.successful(Seq(view))
 
         val json = h.contentAsString(result)
         json must /#(0) /("type" -> "view")
-        json must /#(0) /("id" -> view.id)
+        json must /#(0) /("id" -> 2)
         json must /#(0) /("title" -> view.title)
         json must /#(0) /("url" -> view.url)
       }

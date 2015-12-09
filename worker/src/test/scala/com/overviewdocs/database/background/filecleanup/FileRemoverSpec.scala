@@ -1,85 +1,52 @@
 package com.overviewdocs.background.filecleanup
 
-import java.util.concurrent.TimeoutException
 import org.specs2.mock.Mockito
-import org.specs2.time.NoTimeConversions
-import scala.concurrent.{ Await, Future, Promise }
-import scala.concurrent.duration._
+import scala.concurrent.Future
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.tables.Files
 import com.overviewdocs.test.DbSpecification
 
-class FileRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
-
+class FileRemoverSpec extends DbSpecification with Mockito {
   "FileRemover" should {
+    trait BaseScope extends DbScope {
+      val mockBlobStorage = smartMock[BlobStorage]
+      val mockPageRemover = smartMock[PageRemover]
 
-    "remove pages" in new FileScope {
-      deleteFile
+      mockBlobStorage.delete(any) returns Future.successful(())
+      mockBlobStorage.deleteMany(any) returns Future.successful(())
+      mockPageRemover.removeFilePages(any) returns Future.successful(())
 
-      there was one(pageRemover).removeFilePages(file.id)
+      val subject = new FileRemover {
+        override val blobStorage = mockBlobStorage
+        override val pageRemover = mockPageRemover
+      }
     }
 
-    "delete file content" in new FileScope {
-      deleteFile
-
-      there was one(blobStorage).delete(contentsLoc)
+    "remove pages" in new BaseScope {
+      val file = factory.file(referenceCount=0, contentsLocation="loc:1", viewLocation="loc:1")
+      await(subject.deleteFile(file.id))
+      there was one(mockPageRemover).removeFilePages(file.id)
     }
 
-    "delete content and view if different" in new FileWithViewScope {
-      deleteFile
-
-      there was one(blobStorage).deleteMany(Seq(contentsLoc, viewLoc))
+    "delete file content" in new BaseScope {
+      val file = factory.file(referenceCount=0, contentsLocation="loc:1", viewLocation="loc:1")
+      await(subject.deleteFile(file.id))
+      there was one(mockBlobStorage).delete("loc:1")
     }
 
-    "delete file" in new FileScope {
-      deleteFile
+    "delete content and view if different" in new BaseScope {
+      val file = factory.file(referenceCount=0, contentsLocation="loc:1", viewLocation="loc:2")
+      await(subject.deleteFile(file.id))
+      there was one(mockBlobStorage).deleteMany(Seq("loc:1", "loc:2"))
+    }
+
+    "delete file" in new BaseScope {
+      val file = factory.file(referenceCount=0)
+      await(subject.deleteFile(file.id))
 
       import database.api._
       blockingDatabase.option(Files.filter(_.id === file.id)) must beNone
     }
   }
-
-  trait FileScope extends DbScope {
-    def contentsLoc = "contents:location"
-    val file = createFile
-
-    val blobStorage = smartMock[BlobStorage]
-    val pageRemover = smartMock[PageRemover]
-
-    val blobDelete = Promise[Unit]()
-    blobStorage.delete(any) returns blobDelete.future
-
-    pageRemover.removeFilePages(file.id) returns Future.successful(())
-
-    val fileRemover = new TestFileRemover(blobStorage, pageRemover)
-
-    protected def createFile = factory.file(referenceCount = 0,
-        contentsLocation = contentsLoc, viewLocation = contentsLoc)
-
-    protected def deleteFile = {
-      val r = fileRemover.deleteFile(file.id)
-      Await.result(r, 10 millis) must throwA[TimeoutException]
-
-      completeDelete
-      await(r)
-    }
-
-    protected def completeDelete = blobDelete.success(())
-  }
-
-  trait FileWithViewScope extends FileScope {
-    def viewLoc = "view:location"
-    override def createFile = factory.file(referenceCount = 0,
-      contentsLocation = contentsLoc, viewLocation = viewLoc)
-
-    val blobDeleteMany = Promise[Unit]()
-
-    blobStorage.deleteMany(any) returns blobDeleteMany.future
-
-    override protected def completeDelete = blobDeleteMany.success(())
-
-  }
-
-  class TestFileRemover(val blobStorage: BlobStorage, val pageRemover: PageRemover) extends FileRemover
 }

@@ -30,7 +30,7 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
 
       "return a Selection with the returned document IDs" in new CreateScope {
         override def resultIds = Seq(1L, 2L, 3L)
-        result.getAllDocumentIds must beEqualTo(Seq(1L, 2L, 3L)).await
+        await(result.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L))
       }
 
       "return a different Selection each time" in new CreateScope {

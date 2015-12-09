@@ -17,7 +17,6 @@ class showSpec extends Specification with JsonMatchers {
 
     def doc1AndIds = (doc1, Seq[Long](), Seq[Long]())
     def doc2AndIds = (doc2, Seq[Long](), Seq[Long]())
-
     def docsAndIds = Seq(doc1AndIds, doc2AndIds)
 
     def resultPage = Page(docsAndIds)
@@ -54,7 +53,7 @@ class showSpec extends Specification with JsonMatchers {
 
     "handle a null page_number" in new BaseScope {
       override def doc1 = factory.document(pageNumber=None)
-      result must /("documents") /#(0) /("page_number" -> null)
+      result must contain(""""page_number":null""")
     }
 
     "handle a page_number" in new BaseScope {

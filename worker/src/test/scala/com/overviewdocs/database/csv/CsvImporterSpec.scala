@@ -16,6 +16,8 @@ import com.overviewdocs.util.AddDocumentsCommon
 class CsvImporterSpec extends DbSpecification with Mockito {
   trait BaseScope extends DbScope {
     import database.api._
+    protected implicit val ec = database.executionContext
+
     val loids = mutable.Buffer[Long]()
     val addDocumentsCommon = smartMock[AddDocumentsCommon]
     addDocumentsCommon.beforeAddDocuments(any) returns Future.successful(())

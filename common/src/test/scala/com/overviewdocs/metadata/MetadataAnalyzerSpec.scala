@@ -1,36 +1,37 @@
 package com.overviewdocs.metadata
 
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
 import play.api.libs.json.{JsObject,Json}
 import play.api.libs.iteratee.{Enumerator,Iteratee}
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class MetadataAnalyzerSpec extends Specification {
+import com.overviewdocs.util.AwaitMethod
+
+class MetadataAnalyzerSpec extends Specification with AwaitMethod {
   "#uniqueFieldNames" should {
-    def go(inputMetadataJsons: JsObject*): Future[Seq[String]] = {
+    def go(inputMetadataJsons: JsObject*): Seq[String] = await {
       Enumerator(inputMetadataJsons: _*)
         .through(MetadataAnalyzer.uniqueFieldNames)
         .run(Iteratee.getChunks)
     }
 
     "list one JsObject's field names" in {
-      go(Json.obj("foo" -> "bar", "baz" -> 3)) must beEqualTo(Seq("foo", "baz")).await
+      go(Json.obj("foo" -> "bar", "baz" -> 3)) must beEqualTo(Seq("foo", "baz"))
     }
 
     "remove duplicates" in {
-      go(Json.obj("foo" -> "bar"), Json.obj("foo" -> "bar")) must beEqualTo(Seq("foo")).await
+      go(Json.obj("foo" -> "bar"), Json.obj("foo" -> "bar")) must beEqualTo(Seq("foo"))
     }
 
     "remove multiple duplicates" in {
       go(
         Json.obj("foo" -> "bar", "bar" -> "baz"),
         Json.obj("bar" -> "baz", "baz" -> "foo", "foo" -> "meep")
-      ) must beEqualTo(Seq("foo", "bar", "baz")).await
+      ) must beEqualTo(Seq("foo", "bar", "baz"))
     }
 
     "return each unique entry" in {
-      go(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")) must beEqualTo(Seq("foo", "bar")).await
+      go(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")) must beEqualTo(Seq("foo", "bar"))
     }
 
     "work with three inputs" in {
@@ -38,7 +39,7 @@ class MetadataAnalyzerSpec extends Specification {
         Json.obj("foo" -> "bar", "bar" -> "baz"),
         Json.obj("bar" -> "foo", "baz" -> "bar"),
         Json.obj("fee" -> "mee")
-      ) must beEqualTo(Seq("foo", "bar", "baz", "fee")).await
+      ) must beEqualTo(Seq("foo", "bar", "baz", "fee"))
     }
   }
 }

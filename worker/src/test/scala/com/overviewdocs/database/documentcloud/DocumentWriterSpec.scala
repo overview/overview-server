@@ -23,6 +23,8 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     }
 
     val subject = new DocumentWriter(dcImport, updateProgress, bulkDocumentWriter, 1)
+
+    def stop = await(subject.stop)
   }
 
   "DocumentWriter" should {
@@ -30,7 +32,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
       subject.flushPeriodically
       val document = PodoFactory.document(documentSetId=documentSet.id)
       subject.addDocument(document)
-      subject.stop must beEqualTo(()).await
+      stop must beEqualTo(())
 
       there was one(bulkDocumentWriter).add(document)
       there was atLeastOne(bulkDocumentWriter).flush
@@ -39,7 +41,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     "write errors" in new BaseScope {
       subject.flushPeriodically
       subject.addError("dc1", "some problem")
-      subject.stop must beEqualTo(()).await
+      stop must beEqualTo(())
 
       import database.api._
       blockingDatabase.seq(DocumentProcessingErrors.map(_.createAttributes)) must beEqualTo(Seq(
@@ -50,7 +52,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     "update progress on error" in new BaseScope {
       subject.flushPeriodically
       subject.addError("dc1", "some problem")
-      subject.stop must beEqualTo(()).await
+      stop must beEqualTo(())
 
       lastProgress must beEqualTo(1)
     }
@@ -58,7 +60,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     "update progress on write" in new BaseScope {
       subject.flushPeriodically
       subject.addDocument(PodoFactory.document(documentSetId=documentSet.id))
-      subject.stop must beEqualTo(()).await
+      stop must beEqualTo(())
 
       lastProgress must beEqualTo(1)
     }
@@ -66,7 +68,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     "update progress on skip" in new BaseScope {
       subject.flushPeriodically
       subject.skip(10)
-      subject.stop must beEqualTo(()).await
+      stop must beEqualTo(())
 
       lastProgress must beEqualTo(10)
     }
@@ -76,7 +78,7 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
       subject.skip(10)
       subject.addDocument(PodoFactory.document(documentSetId=documentSet.id))
       subject.addError("a", "b")
-      subject.stop must beEqualTo(()).await
+      stop must beEqualTo(())
 
       lastProgress must beEqualTo(12)
     }

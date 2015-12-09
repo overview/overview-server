@@ -1,7 +1,7 @@
 package test.helpers
 
 import org.specs2.mutable.Specification
-import org.specs2.specification.{Fragments, Step}
+import org.specs2.specification.BeforeAfterAll
 import play.api.test.FakeApplication
 import play.api.Play.{start,stop}
 
@@ -9,11 +9,9 @@ import play.api.Play.{start,stop}
   *
   * You need this for every test of every class that uses Play's globals.
   */
-trait InAppSpecification extends Specification {
-  sequential
+trait InAppSpecification extends Specification with BeforeAfterAll {
+  private lazy val app = FakeApplication()
 
-  override def map(fs: => Fragments) = {
-    val app = FakeApplication()
-    Step(start(app)) ^ super.map(fs) ^ Step(stop(app))
-  }
+  override def beforeAll = start(app)
+  override def afterAll = stop(app)
 }

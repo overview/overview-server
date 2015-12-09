@@ -1,15 +1,15 @@
 package com.overviewdocs.background.filegroupcleanup
 
 import org.specs2.mock.Mockito
-import org.specs2.time.NoTimeConversions
 import scala.concurrent.{ Await, Promise, TimeoutException }
 import scala.concurrent.duration._
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.tables.GroupedFileUploads
 import com.overviewdocs.test.DbSpecification
+import com.overviewdocs.util.AwaitMethod
 
-class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with NoTimeConversions {
+class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with AwaitMethod {
 
   "GroupedFileUploadRemover" should {
 
@@ -25,13 +25,11 @@ class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with NoT
     "complete when content deletion completes" in new GroupedFileUploadScope {
       val r = remover.removeFileGroupUploads(fileGroup.id)
 
-      Await.result(r, 10 millis) must throwA[TimeoutException]
       r.isCompleted must beFalse
 
       deleteMany.success(())
 
-      await(r)
-      r.isCompleted must beTrue
+      await(r) must beEqualTo(())
     }
 
     "delete GroupedFileUpload" in new GroupedFileUploadScope {

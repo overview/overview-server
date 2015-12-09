@@ -1,18 +1,15 @@
 package com.overviewdocs.background.filegroupcleanup
 
-import scala.concurrent.duration._
-import akka.actor.{ ActorRef, Props }
+import akka.actor.{ActorRef,Props}
 import akka.testkit.TestProbe
+import org.specs2.mutable.{Before,Specification}
+import scala.concurrent.duration.Duration
 
-import org.specs2.mutable.Specification
-import org.specs2.mutable.Before
-import org.specs2.time.NoTimeConversions
+import com.overviewdocs.background.filegroupcleanup.FileGroupCleanerProtocol._
+import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
 import com.overviewdocs.test.ActorSystemContext
 
-import com.overviewdocs.background.filegroupcleanup.FileGroupRemovalRequestQueueProtocol._
-import com.overviewdocs.background.filegroupcleanup.FileGroupCleanerProtocol._
-
-class FileGroupRemovalRequestQueueSpec extends Specification with NoTimeConversions {
+class FileGroupRemovalRequestQueueSpec extends Specification {
   sequential
 
   
@@ -29,7 +26,7 @@ class FileGroupRemovalRequestQueueSpec extends Specification with NoTimeConversi
       requestQueue ! RemoveFileGroup(nextFileGroupId)
       
       fileGroupCleaner.expectMsg(Clean(fileGroupId))
-      fileGroupCleaner.expectNoMsg(10 millis)
+      fileGroupCleaner.expectNoMsg(Duration.Zero)
       
       requestQueue.tell(CleanComplete(fileGroupId), fileGroupCleaner.ref)
       

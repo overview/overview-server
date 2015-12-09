@@ -7,8 +7,9 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import com.overviewdocs.http
+import com.overviewdocs.util.AwaitMethod
 
-class DocumentCloudServerSpec extends Specification with Mockito {
+class DocumentCloudServerSpec extends Specification with Mockito with AwaitMethod {
   trait BaseScope extends Scope {
     val mockHttpClient = smartMock[http.Client]
     val subject = new DocumentCloudServer {
@@ -33,22 +34,22 @@ class DocumentCloudServerSpec extends Specification with Mockito {
   "#getIdList0" should {
     "fail with timeout" in new BaseScope {
       mockHttpClient.get(any)(any) returns Future.failed(new TimeoutException("No response received after 1234"))
-      subject.getIdList0("foo", "", "") must beEqualTo(Left("Request to DocumentCloud timed out")).await
+      await(subject.getIdList0("foo", "", "")) must beEqualTo(Left("Request to DocumentCloud timed out"))
     }
 
     "fail with HTTP error code" in new BaseScope {
       mockHttpClient.get(any)(any) returns Future.successful(http.Response(403, Map(), "blah".getBytes("utf-8")))
-      subject.getIdList0("foo", "", "") must beEqualTo(Left("DocumentCloud responded with HTTP 403 Forbidden")).await
+      await(subject.getIdList0("foo", "", "")) must beEqualTo(Left("DocumentCloud responded with HTTP 403 Forbidden"))
     }
 
     "fail with invalid JSON" in new BaseScope {
       mockHttpClient.get(any)(any) returns Future.successful(http.Response(200, Map(), "{".getBytes("utf-8")))
-      subject.getIdList0("foo", "", "") must beEqualTo(Left("DocumentCloud responded with invalid JSON")).await
+      await(subject.getIdList0("foo", "", "")) must beEqualTo(Left("DocumentCloud responded with invalid JSON"))
     }
 
     "fail with parse error" in new BaseScope {
       mockHttpClient.get(any)(any) returns Future.successful(http.Response(200, Map(), "{}".getBytes("utf-8")))
-      subject.getIdList0("foo", "", "") must beEqualTo(Left("Overview failed to parse DocumentCloud's JSON")).await
+      await(subject.getIdList0("foo", "", "")) must beEqualTo(Left("Overview failed to parse DocumentCloud's JSON"))
     }
 
     "succeed" in new BaseScope {
@@ -67,7 +68,7 @@ class DocumentCloudServerSpec extends Specification with Mockito {
           }
         }]
       }""".getBytes("utf-8")))
-      subject.getIdList0("foo", "", "") must beRight((IdList(Seq(
+      await(subject.getIdList0("foo", "", "")) must beRight((IdList(Seq(
         IdListRow(
           "123-foo",
           "Foo Bar",
@@ -76,12 +77,12 @@ class DocumentCloudServerSpec extends Specification with Mockito {
           "https://assets.documentcloud.org/foo-p{page}.txt",
           "public"
         )
-      )), 5)).await
+      )), 5))
     }
 
     "request without auth" in new BaseScope {
       stubAnyResponse
-      subject.getIdList0("foo", "", "")
+      await(subject.getIdList0("foo", "", ""))
 
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
@@ -91,7 +92,7 @@ class DocumentCloudServerSpec extends Specification with Mockito {
 
     "request with auth" in new BaseScope {
       stubAnyResponse
-      subject.getIdList0("foo", "adam", "hooper")
+      await(subject.getIdList0("foo", "adam", "hooper"))
 
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
@@ -101,7 +102,7 @@ class DocumentCloudServerSpec extends Specification with Mockito {
 
     "escape the query" in new BaseScope {
       stubAnyResponse
-      subject.getIdList0("foo+bar = baz", "", "")
+      await(subject.getIdList0("foo+bar = baz", "", ""))
 
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
@@ -113,7 +114,7 @@ class DocumentCloudServerSpec extends Specification with Mockito {
   "#getIdList" should {
     "add a (base-0) page to the query" in new BaseScope {
       stubAnyResponse
-      subject.getIdList("foo+bar = baz", "", "", 3)
+      await(subject.getIdList("foo+bar = baz", "", "", 3))
 
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
@@ -125,23 +126,23 @@ class DocumentCloudServerSpec extends Specification with Mockito {
   "#getText" should {
     "fail with timeout" in new BaseScope {
       mockHttpClient.get(any)(any) returns Future.failed(new TimeoutException("No response received after 1234"))
-      subject.getText("http://foo", "", "", "public") must beLeft("Request to DocumentCloud timed out").await
+      await(subject.getText("http://foo", "", "", "public")) must beLeft("Request to DocumentCloud timed out")
     }
 
     "fail with HTTP error" in new BaseScope {
       mockHttpClient.get(any)(any) returns Future.successful(http.Response(403, Map(), "blah".getBytes("utf-8")))
-      subject.getText("http://foo", "", "", "public") must beEqualTo(Left("DocumentCloud responded with HTTP 403 Forbidden")).await
+      await(subject.getText("http://foo", "", "", "public")) must beEqualTo(Left("DocumentCloud responded with HTTP 403 Forbidden"))
     }
 
     "parse UTF-8 and strip invalid characters" in new BaseScope {
       // basically, we're testing that we call Textify()
       mockHttpClient.get(any)(any) returns Future.successful(http.Response(200, Map(), Array(0x1f, 'f', 0xc3, 0xa7).map(_.toByte)))
-      subject.getText("http://foo", "", "", "public") must beEqualTo(Right(" fç")).await
+      await(subject.getText("http://foo", "", "", "public")) must beEqualTo(Right(" fç"))
     }
 
     "request a public document" in new BaseScope {
       stubBytes("foo".getBytes("utf-8"))
-      subject.getText("http://foo", "", "", "public") must beRight("foo").await
+      await(subject.getText("http://foo", "", "", "public")) must beRight("foo")
 
       val captor = capture[http.Request]
       there was one(mockHttpClient).get(captor)(any)
@@ -151,7 +152,7 @@ class DocumentCloudServerSpec extends Specification with Mockito {
 
     "request a private document" in new BaseScope {
       stubRedirectThenBytes("http://bar", "bar".getBytes("utf-8"))
-      subject.getText("http://foo", "username", "password", "private") must beRight("bar").await
+      await(subject.getText("http://foo", "username", "password", "private")) must beRight("bar")
 
       val captor = capture[http.Request]
       there were two(mockHttpClient).get(captor)(any)

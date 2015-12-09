@@ -1,8 +1,7 @@
 package com.overviewdocs.csv
 
-import java.io.StringReader
+import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import com.overviewdocs.test.Specification
 
 class CsvDocumentProducerSpec extends Specification {
   "CsvDocumentProducer" should {

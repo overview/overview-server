@@ -27,7 +27,7 @@ class showSpec extends views.ViewSpecification with Mockito {
 
     "show null progress" in new BaseScope {
       importJob.progress returns None
-      json must /("progress" -> null)
+      json must contain(""""progress":null""")
     }
 
     "show description when it exists" in new BaseScope {
@@ -36,7 +36,7 @@ class showSpec extends views.ViewSpecification with Mockito {
 
     "show null description" in new BaseScope {
       importJob.description returns None
-      json must /("description" -> null)
+      json must contain(""""description":null""")
     }
 
     "show completion time" in new BaseScope {
@@ -45,7 +45,7 @@ class showSpec extends views.ViewSpecification with Mockito {
 
     "show null completion time" in new BaseScope {
       importJob.estimatedCompletionTime returns None
-      json must /("estimatedCompletionTime" -> null)
+      json must contain(""""estimatedCompletionTime":null""")
     }
   }
 }

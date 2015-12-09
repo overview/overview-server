@@ -47,7 +47,7 @@ class DocumentSetControllerSpec extends ApiControllerSpecification {
 
     "return a DocumentSet" in new CreateScope {
       val json = contentAsString(result)
-      json must /("documentSet") /("id" -> documentSet.id)
+      json must /("documentSet") /("id" -> documentSet.id.toInt)
       json must /("documentSet") /("title" -> documentSet.title)
     }
 

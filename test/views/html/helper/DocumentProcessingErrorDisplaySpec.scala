@@ -1,12 +1,9 @@
 package views.html.helper
 
-import com.overviewdocs.test.Specification
+import org.specs2.mutable.Specification
 
 class DocumentProcessingErrorDisplaySpec extends Specification {
-  
-  
   "ErrorStatusMessage" should {
-
     "show complete URL if less than 65 characters" in {
       val url = "short url"
       DocumentProcessingErrorDisplay.url(url) must be equalTo url
@@ -18,7 +15,5 @@ class DocumentProcessingErrorDisplaySpec extends Specification {
      
      DocumentProcessingErrorDisplay.url(url) must be equalTo "\u2026" + urlShown
    } 
-   
   }
-
 }

@@ -81,8 +81,8 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
         )))
         val json = contentAsString(result)
 
-        json must /("indexedLong" -> null)
-        json must /("indexedString" -> null)
+        json must contain(""""indexedLong":null""")
+        json must contain(""""indexedString":null""")
       }
     }
 
@@ -161,8 +161,8 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
           factory.storeObject(indexedString=Some("bar"), json=Json.obj("foo" -> "bar"))
         ))
         val json = contentAsString(result)
-        json must /#(0) /("id" -> 1L)
-        json must /#(0) /("indexedLong" -> 1L)
+        json must /#(0) /("id" -> 1)
+        json must /#(0) /("indexedLong" -> 1)
         json must /#(1) /("indexedString" -> "bar")
         json must /#(1) /("json") /("foo" -> "bar")
       }
@@ -227,7 +227,7 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
         val storeObject = factory.storeObject(indexedLong=Some(4L), indexedString=Some("foo"), json=Json.obj("foo" -> "baz"))
         mockObjectBackend.update(any[Long], any[StoreObject.UpdateAttributes]) returns Future(Some(storeObject))
         val json = contentAsString(result)
-        json must /("indexedLong" -> 4L)
+        json must /("indexedLong" -> 4)
         json must /("indexedString" -> "foo")
         json must /("json") /("foo" -> "baz")
       }

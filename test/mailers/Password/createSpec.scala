@@ -4,8 +4,8 @@ import org.specs2.mock.Mockito
 
 import models.User
 
-class createSpec extends mailers.MailerSpecification {
-  trait OurContext extends MailerScope with Mockito {
+class createSpec extends mailers.MailerSpecification with Mockito {
+  trait OurContext extends MailerScope {
     trait UserType extends models.OverviewUser with models.ResetPasswordRequest
     val user = User(email="email@example.org", resetPasswordToken=Some("0123456789abcdef"))
 

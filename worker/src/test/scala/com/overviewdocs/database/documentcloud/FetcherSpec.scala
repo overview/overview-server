@@ -6,8 +6,9 @@ import org.specs2.specification.Scope
 import scala.concurrent.Future
 
 import com.overviewdocs.models.Document
+import com.overviewdocs.util.AwaitMethod
 
-class FetcherSpec extends Specification with Mockito {
+class FetcherSpec extends Specification with Mockito with AwaitMethod {
   import HeaderProducer._
 
   trait BaseScope extends Scope {
@@ -18,7 +19,7 @@ class FetcherSpec extends Specification with Mockito {
     val writer = smartMock[DocumentWriter]
 
     val subject = new Fetcher(server)
-    def run = subject.run(producer, writer) must beEqualTo(()).await
+    def run = await(subject.run(producer, writer)) must beEqualTo(())
     def F[A](a: A): Future[A] = Future.successful(a)
   }
 

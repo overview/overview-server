@@ -8,6 +8,8 @@ class LargeObjectInputStreamSpec extends DbSpecification {
   trait BaseScope extends DbScope with After {
     import database.api._
 
+    protected implicit val ec = database.executionContext
+
     val loManager = blockingDatabase.largeObjectManager
 
     val oidsToDelete = scala.collection.mutable.Set.empty[Long]

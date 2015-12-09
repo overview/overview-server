@@ -1,18 +1,17 @@
 package com.overviewdocs.background.filecleanup
 
-import scala.concurrent.duration.DurationInt
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.TestProbe
+import org.specs2.mutable.Before
+import org.specs2.mutable.Specification
+import scala.concurrent.duration.Duration
+
 import com.overviewdocs.background.filecleanup.DeletedFileCleanerProtocol._
 import com.overviewdocs.background.filecleanup.FileRemovalRequestQueueProtocol.RemoveFiles
 import com.overviewdocs.test.ActorSystemContext
-import org.specs2.mutable.Before
-import org.specs2.mutable.Specification
-import org.specs2.time.NoTimeConversions
 
-
-class FileRemovalRequestQueueSpec extends Specification with NoTimeConversions {
+class FileRemovalRequestQueueSpec extends Specification {
   sequential
 
   "FileRemovalRequestQueue" should {
@@ -31,7 +30,7 @@ class FileRemovalRequestQueueSpec extends Specification with NoTimeConversions {
        fileRemover.expectMsg(RemoveDeletedFiles)
        fileRemover.reply(FileRemovalComplete)
 
-       fileRemover.expectNoMsg(10 millis)
+       fileRemover.expectNoMsg(Duration.Zero)
     }
     
     "send a request received after a previous one completes" in new QueueScope {

@@ -72,7 +72,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
       "return the Selection" in new CreateScope {
         override def resultIds = Seq(1L, 2L, 3L)
         val selection = create
-        selection.getAllDocumentIds must beEqualTo(resultIds).await
+        await(selection.getAllDocumentIds) must beEqualTo(resultIds)
       }
     }
 

@@ -1,17 +1,17 @@
 package com.overviewdocs.background.filecleanup
 
-import org.specs2.mutable.Specification
-import com.overviewdocs.test.ActorSystemContext
-import org.specs2.mutable.Before
-import org.specs2.mock.Mockito
 import akka.actor._
 import akka.testkit.TestActorRef
-import scala.concurrent.Promise
-import scala.concurrent.duration._
 import FileCleanerProtocol._
-import org.specs2.time.NoTimeConversions
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Before
+import org.specs2.mutable.Specification
+import scala.concurrent.duration.Duration
+import scala.concurrent.Promise
 
-class FileCleanerSpec extends Specification with Mockito with NoTimeConversions {
+import com.overviewdocs.test.ActorSystemContext
+
+class FileCleanerSpec extends Specification with Mockito {
   sequential
 
   "FileCleaner" should {
@@ -27,7 +27,7 @@ class FileCleanerSpec extends Specification with Mockito with NoTimeConversions 
 
     "notify requester when done" in new FileCleaningScope {
       fileCleaner ! Clean(fileId)
-      expectNoMsg(10 millis)
+      expectNoMsg(Duration.Zero)
       deleteFile.success(())
 
       expectMsg(CleanComplete(fileId))

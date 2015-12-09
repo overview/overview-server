@@ -37,7 +37,10 @@ object Dependencies {
     val postgresql = "org.postgresql" % "postgresql" % "9.4-1205-jdbc42"
     val redis = "net.debasishg" %% "redisreact" % "0.8"
     val slick = "com.typesafe.slick" %% "slick" % "3.1.0"
-    val specs2 = "org.specs2" %% "specs2" % "2.3.13"
+    val specs2Core = "org.specs2" %% "specs2-core" % "3.6.6"
+    val specs2Junit = "org.specs2" %% "specs2-junit" % "3.6.6" // for XML reporting, for Jenkins
+    val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % "3.6.6"
+    val specs2Mock = "org.specs2" %% "specs2-mock" % "3.6.6"
   }
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
@@ -63,7 +66,10 @@ object Dependencies {
     deps.junitInterface % "test",
     deps.junit % "test",
     deps.mockito % "test",
-    deps.specs2 % "test"
+    deps.specs2Core % "test",
+    deps.specs2Junit % "test",
+    deps.specs2MatcherExtra % "test",
+    deps.specs2Mock % "test"
   )
 
   val dbEvolutionApplierDependencies = Seq(

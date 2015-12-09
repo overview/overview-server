@@ -7,9 +7,9 @@ class showHtmlSpec extends views.ViewSpecification {
     "contain id and html" in new JsonViewSpecificationScope {
       val documentSet = factory.documentSet()
       override def result = showHtml(documentSet, Set(), 1)
-      json must /("id" -> documentSet.id)
+      json must /("id" -> documentSet.id.toInt)
       json must beMatching(""".*"html":"[^<]*<.*>[^>]*".*""")
-      json must not contain ("state")
+      json must not contain("state")
     }
   }
 }

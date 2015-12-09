@@ -1,20 +1,18 @@
 package com.overviewdocs.background.filecleanup
 
-import akka.actor.{ ActorRef, Props }
-import akka.testkit.TestActor
-import akka.testkit.TestProbe
-import scala.concurrent.duration._
+import akka.actor.{ActorRef,Props}
+import akka.testkit.{TestActor,TestProbe}
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
-import org.specs2.mock.Mockito
+import scala.concurrent.duration.Duration
+import scala.concurrent.Future
+
 import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.background.filecleanup.DeletedFileCleanerProtocol._
 import com.overviewdocs.background.filecleanup.FileCleanerProtocol._
-import scala.concurrent.Future
-import org.specs2.time.NoTimeConversions
 
-
-class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConversions {
+class DeletedFileCleanerSpec extends Specification with Mockito {
   sequential
 
   "DeletedFileCleaner" should {
@@ -29,7 +27,7 @@ class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConve
       deletedFileCleaner ! RemoveDeletedFiles
       
       cleaner.expectMsg(Clean(0))
-      cleaner.expectNoMsg(10 millis)
+      cleaner.expectNoMsg(Duration.Zero)
       
       deletedFileCleaner ! CleanComplete(0)
       cleaner.expectMsg(Clean(1))
@@ -61,7 +59,7 @@ class DeletedFileCleanerSpec extends Specification with Mockito with NoTimeConve
       cleaner.reply(CleanComplete(1))
       
       expectMsg(FileRemovalComplete)
-      cleaner.expectNoMsg(10 millis)
+      cleaner.expectNoMsg(Duration.Zero)
     }
     
     "notify requester that file removal is complete when no deleted files are found" in new NoDeletedFileScope {

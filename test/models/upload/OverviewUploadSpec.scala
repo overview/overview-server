@@ -58,6 +58,7 @@ class OverviewUploadSpec extends DbSpecification {
         val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, loid)
 
         import database.api._
+        implicit val ec = database.executionContext
         blockingDatabase.run((for {
           lo <- database.largeObjectManager.open(loid, LargeObject.Mode.Write)
           _ <- lo.write(chunk)

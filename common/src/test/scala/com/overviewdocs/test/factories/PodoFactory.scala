@@ -134,7 +134,7 @@ object PodoFactory extends Factory {
     text: String
   ) = Document(
     getId(id),
-    getId(documentSetId),
+    get32BitId(documentSetId),
     url,
     suppliedId,
     title,

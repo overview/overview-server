@@ -128,6 +128,7 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
 
       def readBytes: Array[Byte] = {
         import database.api._
+        implicit val dc = database.executionContext
         blockingDatabase.run((for {
           lo <- blockingDatabase.largeObjectManager.open(groupedFileUpload.contentsOid, LargeObject.Mode.Read)
           bytes <- lo.read(9999)

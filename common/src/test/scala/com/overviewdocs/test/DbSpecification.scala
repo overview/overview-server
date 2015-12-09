@@ -1,20 +1,19 @@
 package com.overviewdocs.test
 
-import org.specs2.mutable.{After,Around}
+import org.specs2.mutable.{After,Around,Specification}
 import org.specs2.specification.Scope
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future,blocking}
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.test.factories.{DbFactory,PodoFactory}
+import com.overviewdocs.util.AwaitMethod
 
 /**
  * Tests that access the database should extend DbSpecification.
  */
-class DbSpecification extends Specification {
+class DbSpecification extends Specification with AwaitMethod {
   sequential
-
-  protected def await[A](f: Future[A]) = blocking(Await.result(f, Duration.Inf))
 
   /** Context for test accessing the database.
     *

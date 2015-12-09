@@ -67,10 +67,10 @@ class SessionControllerSpec extends ControllerSpecification {
       }
     }
 
-    "create" should {
+    //"create" should {
       // We have DB logic in our Form (and our Form is what does the actual
       // authentication), so dependency injection is a lost cause. We'll save
       // this for integration tests -- it should be easy to catch errors.
-    }
+    //}
   }
 }

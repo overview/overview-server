@@ -8,6 +8,8 @@ import com.overviewdocs.test.DbSpecification
 class LargeObjectSpec extends DbSpecification {
   "LargeObject" should {
     trait BaseScope extends DbScope with After {
+      protected implicit val ec = database.executionContext
+
       val loManager = database.largeObjectManager
       val oid = run(loManager.create)
 

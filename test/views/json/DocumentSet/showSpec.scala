@@ -1,7 +1,6 @@
 package views.json.DocumentSet
 
 import java.util.Date
-import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
@@ -26,14 +25,14 @@ class showSpec extends views.ViewSpecification {
         factory.tag(id=15L, name="tag2")
       )
 
-      json must /("tags") */("id" -> 5L)
+      json must /("tags") */("id" -> 5)
       json must /("tags") */("name" -> "tag1")
-      json must /("tags") */("id" -> 15L)
+      json must /("tags") */("id" -> 15)
     }
 
     "show nDocuments" in new BaseScope {
       override val documentSet = factory.documentSet(documentCount=10)
-      json must /("nDocuments" -> 10L)
+      json must /("nDocuments" -> 10)
     }
 
     "contain trees" in new BaseScope {
@@ -48,7 +47,7 @@ class showSpec extends views.ViewSpecification {
       ))
 
       json must /("views") */("type" -> "tree")
-      json must /("views") */("id" -> 2L)
+      json must /("views") */("id" -> 2)
       json must /("views") */("title" -> "title")
       json must /("views") */("createdAt" -> "1970-01-01T00:00:01Z")
       json must /("views") */("creationData") /#(2) /#(0) / "lang"
@@ -66,7 +65,7 @@ class showSpec extends views.ViewSpecification {
       ))
 
       json must /("views") */("type" -> "view")
-      json must /("views") */("id" -> 1L)
+      json must /("views") */("id" -> 1)
       json must /("views") */("title" -> "foo")
       json must /("views") */("createdAt" -> "1970-01-01T00:00:01Z")
       json must /("views") */("url" -> "http://localhost:9001")

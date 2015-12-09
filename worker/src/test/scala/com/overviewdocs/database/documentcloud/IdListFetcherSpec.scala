@@ -17,6 +17,8 @@ class IdListFetcherSpec extends DbSpecification with Mockito {
     val row = IdListRow("id","title",2,"full","template{page}","access")
     def encodedRows(n: Int) = Seq.fill(n)("id\u001ftitle\u001f2\u001ffull\u001ftemplate{page}\u001faccess").mkString("\u001e")
 
+    def run = await(subject.run)
+
     import database.api._
 
     def dbImport = blockingDatabase.option(DocumentCloudImports).get
@@ -26,7 +28,7 @@ class IdListFetcherSpec extends DbSpecification with Mockito {
   "IdListFetcher" should {
     "succeed if DocumentCloud reports 0 documents" in new BaseScope {
       server.getIdList0(any, any, any) returns Future.successful(Right((IdList(Seq()), 0)))
-      subject.run must beEqualTo(IdListFetcher.Success(1, 0, 0)).await
+      run must beEqualTo(IdListFetcher.Success(1, 0, 0))
       dbImport.nIdListsTotal must beSome(1)
       dbImport.nIdListsFetched must beEqualTo(1)
       dbLists must beEqualTo(Seq(
@@ -36,7 +38,7 @@ class IdListFetcherSpec extends DbSpecification with Mockito {
 
     "succeed with one page" in new BaseScope {
       server.getIdList0(any, any, any) returns Future.successful(Right((IdList(Seq.fill(3)(row)), 3)))
-      subject.run must beEqualTo(IdListFetcher.Success(1, 3, 6)).await
+      run must beEqualTo(IdListFetcher.Success(1, 3, 6))
       dbImport.nIdListsTotal must beSome(1)
       dbImport.nIdListsFetched must beEqualTo(1)
       dbLists must beEqualTo(Seq(
@@ -47,7 +49,7 @@ class IdListFetcherSpec extends DbSpecification with Mockito {
     "succeed with two pages" in new BaseScope {
       server.getIdList0(any, any, any) returns Future.successful(Right((IdList(Seq.fill(3)(row)), 4)))
       server.getIdList(any, any, any, any) returns Future.successful(Right(IdList(Seq(row))))
-      subject.run must beEqualTo(IdListFetcher.Success(2, 4, 8)).await
+      run must beEqualTo(IdListFetcher.Success(2, 4, 8))
       dbImport.nIdListsTotal must beSome(2)
       dbImport.nIdListsFetched must beEqualTo(2)
       dbLists must beEqualTo(Seq(
@@ -63,7 +65,7 @@ class IdListFetcherSpec extends DbSpecification with Mockito {
       )
       factory.documentCloudImportIdList(1, dcImport.id, 0, encodedRows(3), 3, 6)
       factory.documentCloudImportIdList(2, dcImport.id, 1, encodedRows(1), 1, 2)
-      subject.run must beEqualTo(IdListFetcher.Success(2, 4, 8)).await
+      run must beEqualTo(IdListFetcher.Success(2, 4, 8))
       dbImport.nIdListsFetched must beEqualTo(2)
     }
 
@@ -74,7 +76,7 @@ class IdListFetcherSpec extends DbSpecification with Mockito {
       )
       factory.documentCloudImportIdList(1, dcImport.id, 0, encodedRows(3), 3, 6)
       server.getIdList(any, any, any, any) returns Future.successful(Right(IdList(Seq(row))))
-      subject.run must beEqualTo(IdListFetcher.Success(2, 4, 8)).await
+      run must beEqualTo(IdListFetcher.Success(2, 4, 8))
       dbImport.nIdListsTotal must beSome(2)
       dbImport.nIdListsFetched must beEqualTo(2)
       dbLists(1) must beEqualTo(
@@ -84,13 +86,13 @@ class IdListFetcherSpec extends DbSpecification with Mockito {
 
     "report an error" in new BaseScope {
       server.getIdList0(any, any, any) returns Future.successful(Left("error"))
-      subject.run must beEqualTo(IdListFetcher.Stop("error")).await
+      run must beEqualTo(IdListFetcher.Stop("error"))
     }
 
     "report an error halfway through" in new BaseScope {
       server.getIdList0(any, any, any) returns Future.successful(Right((IdList(Seq.fill(3)(row)), 9)))
       server.getIdList(any, any, any, any) returns Future.successful(Left("error"))
-      subject.run must beEqualTo(IdListFetcher.Stop("error")).await
+      run must beEqualTo(IdListFetcher.Stop("error"))
       dbLists.length must beEqualTo(1)
     }
   }

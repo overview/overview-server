@@ -64,6 +64,7 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
     }
 
     "tell impl to cancel via progress-update callback" in new BaseScope {
+      import scala.concurrent.ExecutionContext.Implicits.global
       var progressRetval: Boolean = _
       val promise = Promise[Unit]()
       val upload = makeUpload

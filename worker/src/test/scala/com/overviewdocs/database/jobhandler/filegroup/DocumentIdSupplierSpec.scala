@@ -1,17 +1,16 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import org.specs2.mutable.Specification
-import com.overviewdocs.test.ActorSystemContext
-import org.specs2.mutable.Before
-import akka.actor.{ ActorRef, Props }
+import akka.actor.{ActorRef,Props}
 import akka.pattern.ask
-import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
-import org.specs2.time.NoTimeConversions
-import scala.concurrent.duration._
-import org.specs2.mock.Mockito
 import akka.testkit.TestProbe
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
 
-class DocumentIdSupplierSpec extends Specification with NoTimeConversions {
+import com.overviewdocs.jobhandler.filegroup.DocumentIdSupplierProtocol._
+import com.overviewdocs.test.ActorSystemContext
+import com.overviewdocs.util.AwaitMethod
+
+class DocumentIdSupplierSpec extends Specification with Mockito with AwaitMethod {
   sequential
 
   "DocumentIdSupplier" should {
@@ -19,31 +18,31 @@ class DocumentIdSupplierSpec extends Specification with NoTimeConversions {
     "reply to request for ids" in new DocumentIdSupplierScope {
       implicit val t = timeout
     
-      val response = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
+      val response = await(documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds)))
 
-      response must be_==(IdRequestResponse(documentIds)).await
+      response must be_==(IdRequestResponse(documentIds))
     }
 
     "reply to multiple request for the same documentset" in new DocumentIdSupplierScope {
       implicit val t = timeout
           
-      val response = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
-      val nextResponse = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
+      await(documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds)))
+      val nextResponse = await(documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds)))
 
-      nextResponse must be_==(IdRequestResponse(nextDocumentIds)).await
+      nextResponse must be_==(IdRequestResponse(nextDocumentIds))
     }
 
     "reply to requests for different documentsets" in new DocumentIdSupplierScope {
       implicit val t = timeout
     
-      val response = documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds))
-      val responseToo = documentIdSupplier.ask(RequestIds(documentSetIdToo, numberOfIds))
+      await(documentIdSupplier.ask(RequestIds(documentSetId, numberOfIds)))
+      val responseToo = await(documentIdSupplier.ask(RequestIds(documentSetIdToo, numberOfIds)))
 
-      responseToo must be_==(IdRequestResponse(documentIdsToo)).await
+      responseToo must be_==(IdRequestResponse(documentIdsToo))
     }
   }
   
-  abstract class DocumentIdSupplierScope extends ActorSystemContext with Before with Mockito {
+  trait DocumentIdSupplierScope extends ActorSystemContext {
     val documentSetId = 1l
     val numberOfIds = 3
 
@@ -53,11 +52,7 @@ class DocumentIdSupplierSpec extends Specification with NoTimeConversions {
     val documentSetIdToo = 2l
     val documentIdsToo = Seq(7l, 8l)
 
-    var documentIdSupplier: ActorRef = _
-
-    override def before = {
-      documentIdSupplier = system.actorOf(Props(new TestDocumentIdSupplier))
-    }
+    val documentIdSupplier: ActorRef = system.actorOf(Props(new TestDocumentIdSupplier))
 
     class TestDocumentIdSupplier extends DocumentIdSupplier {
       override protected def createDocumentIdGenerator(dsId: Long) = {

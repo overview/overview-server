@@ -128,6 +128,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
   }
 
   trait BaseScope extends DbScope {
+    implicit protected val ec = database.executionContext
     def numberOfDocuments = 3
 
     val mockIndexClient = smartMock[IndexClient]
