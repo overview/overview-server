@@ -124,22 +124,6 @@ object ApplicationBuild extends Build {
   lazy val common = project("common")
     .settings(libraryDependencies ++= Dependencies.commonDependencies)
 
-  lazy val upgrade20150119MoveFiles = Project("upgrade-2015-01-19-move-files", file("upgrade/2015-01-19-move-files"))
-    .settings(ourGlobalSettings: _*)
-    .settings(
-      resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
-      includeFilter in (Compile, resourceDirectory) := "application.conf"
-    )
-    .dependsOn(common % "test->test;compile->compile")
-
-  lazy val upgrade20150615NixUnusedPages = Project("upgrade-2015-06-15-nix-unused-pages", file("upgrade/2015-06-15-nix-unused-pages"))
-    .settings(ourGlobalSettings: _*)
-    .settings(
-      resourceDirectory in Compile := (baseDirectory.value / ".." / ".." / "conf"),
-      includeFilter in (Compile, resourceDirectory) := "application.conf"
-    )
-    .dependsOn(common % "test->test;compile->compile")
-
   lazy val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
     .settings(ourGlobalSettings: _*)
     .settings(libraryDependencies += "com.github.scopt" %% "scopt" % "3.3.0")
