@@ -34,8 +34,8 @@
     "mocha-jenkins-reporter": "^0.1.8",
     "q": "~1.0.0",
     "request": "^2.53.0",
-    "selenium-server-standalone-jar": "~2.45.0",
-    "selenium-webdriver": "^2.45.1",
+    "selenium-server-standalone-jar": "^2.48.2",
+    "selenium-webdriver": "^2.48.2",
     "tough-cookie": "^0.12.1",
     "wd": "~0.3.11"
   }

@@ -26,6 +26,7 @@ describe 'FileUpload', ->
       it 'should add metadata to the imported file', ->
         @browser
           .click(tag: 'h3', contains: 'Cat1.docx')
+          .sleep(1000) # FIXME debug, figure out why we need this, then remove it
           .click(link: 'Fields', wait: true) # wait for document to appear
           .getAttribute({ tag: 'input', name: 'foo', wait: true }, 'value') # wait for metadata to appear
             .then((value) -> expect(value).to.eq('bar'))
@@ -49,6 +50,7 @@ describe 'FileUpload', ->
         @browser
           .click(tag: 'h3', contains: 'Cat1.docx')
           .click(link: 'Fields', wait: true) # wait for document to appear
+          .sleep(1000)
           .getAttribute({ tag: 'input', name: 'foo', wait: true }, 'value') # wait for metadata to appear
             .then((value) -> expect(value).to.eq('bar'))
         @browser
@@ -61,7 +63,9 @@ describe 'FileUpload', ->
         # navigating to the second, and waiting for it to load.
         @browser
           .click(link: 'Back to list')
+          .sleep(1000) # FIXME debug, figure out why we need this, then remove it
           .click(tag: 'h3', contains: 'Cat2.txt', wait: 'fast')
+          .sleep(1000) # FIXME debug, figure out why we need this, then remove it
           .getAttribute({ tag: 'input', name: 'foo', wait: true }, 'value') # wait for metadata to appear
             .then((value) -> expect(value).to.eq(''))
         @browser
@@ -77,12 +81,13 @@ describe 'FileUpload', ->
         @browser
           .shortcuts.importFiles.open()
           .shortcuts.importFiles.addFiles([
+            'FileUpload/Cat0.pdf'
             'FileUpload/Cat1.docx'
             'FileUpload/Cat2.txt'
             'FileUpload/Cat3.rtf'
             'FileUpload/Cat4.html'
             'FileUpload/Jules1.doc'
-            #'FileUpload/Jules2.pptx' # XXX this triggers a Selenium bug: the upload fails
+            'FileUpload/Jules2.pptx'
             'FileUpload/Jules3.xlsx'
           ])
           .shortcuts.importFiles.finish(name: 'FileUpload')
@@ -93,16 +98,17 @@ describe 'FileUpload', ->
 
       shouldBehaveLikeATree
         documents: [
+          { type: 'pdf', title: 'Cat0.pdf' }
           { type: 'pdf', title: 'Cat1.docx' }
           { type: 'pdf', title: 'Cat2.txt' }
           { type: 'pdf', title: 'Cat3.rtf' }
           { type: 'pdf', title: 'Cat4.html' }
           { type: 'pdf', title: 'Jules1.doc' }
-          #{ type: 'pdf', title: 'Jules2.pptx' }
+          { type: 'pdf', title: 'Jules2.pptx' }
           { type: 'pdf', title: 'Jules3.xlsx' }
         ]
         searches: [
-          { query: 'chase', nResults: 4 }
+          { query: 'chase', nResults: 5 }
         ]
 
     describe 'after splitting a file into pages', ->
