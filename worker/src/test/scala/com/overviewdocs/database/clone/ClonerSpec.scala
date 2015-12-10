@@ -168,6 +168,11 @@ class ClonerSpec extends DbSpecification with Mockito {
       factory.documentTag(doc1.id, tag1.id)
       factory.documentTag(doc2.id, tag1.id)
       factory.documentTag(doc2.id, tag2.id)
+
+      // Ensure the auto-created tags have IDs greater than 2
+      import database.api._
+      blockingDatabase.runUnit(sqlu"ALTER SEQUENCE tag_id_seq RESTART 3")
+
       go
       val newIds = dbTags.map(_.id)
       dbDocumentTags must containTheSameElementsAs(Seq(
