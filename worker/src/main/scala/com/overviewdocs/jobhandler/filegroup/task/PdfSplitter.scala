@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Path,Paths}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future,blocking}
-import scala.sys.process.{Process,ProcessIO}
 
 import com.overviewdocs.util.{Configuration,Logger,JavaCommand}
 
@@ -57,11 +56,7 @@ trait PdfSplitter {
     val pageInfos = mutable.ArrayBuffer[PdfSplitter.PageInfo]()
     @volatile var error: Option[String] = None
 
-    // There's no good reason we have to introduce a race just to be able to
-    // kill the process while logging. Sigh.
-    @volatile var ickyScalaApiWorkaround: Option[Process] = None
-
-    def dataToPageInfo(bytes: Array[Byte]): Unit = {
+    def dataToPageInfo(bytes: Array[Byte], abort: => Unit): Unit = {
       val str = new String(bytes, StandardCharsets.UTF_8)
       str match {
         case PageInfoRegex(pageNumber, nPages, isFromOcr, text) => {
@@ -74,7 +69,7 @@ trait PdfSplitter {
           ))
           if (!onProgress(pageNumber.toInt, nPages.toInt)) {
             error = Some("You cancelled an import job")
-            ickyScalaApiWorkaround.foreach(_.destroy)
+            abort
           }
         }
         case _ => {
@@ -83,9 +78,7 @@ trait PdfSplitter {
       }
     }
 
-    def processOutput(stream: InputStream): Unit = {
-      // This gets its own Thread.
-
+    def processOutput(stream: InputStream, abort: => Unit): Unit = {
       val buf: Array[Byte] = new Array(10 * 1024) // 10kb covers most pages' text.
       var nextPageBuffer = mutable.ArrayBuffer[Byte]() // When complete, all but the final `\f` will be in here.
       while (true) {
@@ -107,7 +100,7 @@ trait PdfSplitter {
 
           if (i > -1 && i < bufSize) {
             nextPageBuffer.++=(buf.slice(prevI, i))
-            dataToPageInfo(nextPageBuffer.toArray)
+            dataToPageInfo(nextPageBuffer.toArray, abort)
             nextPageBuffer.clear
             prevI = i + 1 // after \f comes \n, but we can't skip it here: it might be in the next buf
           } else {
@@ -118,24 +111,17 @@ trait PdfSplitter {
       }
     }
 
-    def processError(stream: InputStream): Unit = {
-      val reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
-      while (true) {
-        Option(reader.readLine) match {
-          case Some(line) => System.err.println(line) // So Logstash will pick up on it
-          case None => {
-            stream.close
-            return
-          }
-        }
+    Future(blocking {
+      val process = new ProcessBuilder(cmd: _*)
+        .redirectError(ProcessBuilder.Redirect.INHERIT) // so Logger sees it
+        .start
+      process.getOutputStream.close
+      processOutput(process.getInputStream, process.destroyForcibly _)
+      process.waitFor
+    }).flatMap { retval =>
+      if (retval != 0 && error.isEmpty) {
+        error = Some("PDF is valid, but a bug in Overview means we can't load it")
       }
-    }
-
-    val process: Process = Process(cmd).run(new ProcessIO(_.close, processOutput, processError))
-    ickyScalaApiWorkaround = Some(process)
-
-    Future(blocking(process.exitValue)).flatMap { retval =>
-      if (retval != 0 && error.isEmpty) error = Some("PDF is valid, but a bug in Overview means we can't load it")
 
       val ret = error.toLeft(pageInfos.toSeq)
 

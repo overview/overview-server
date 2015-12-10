@@ -1,8 +1,9 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
+import java.io.{BufferedReader,IOException,InputStreamReader,StringReader}
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Path,Paths}
 import scala.concurrent.{ExecutionContext,Future,blocking}
-import scala.sys.process.{Process,ProcessLogger}
 
 import com.overviewdocs.util.{Configuration,Logger,JavaCommand}
 
@@ -39,35 +40,80 @@ trait PdfNormalizer {
   )(implicit ec: ExecutionContext): Future[Either[String,Unit]] = {
     val cmd = command(in, out, lang)
     @volatile var error: Option[String] = None
+
     logger.info("MakeSearchablePdf {} -> {} ({})", in.toString, out.toString, lang)
 
-    // There's no good reason we have to introduce a race just to be able to
-    // kill the process while logging. Sigh.
-    @volatile var ickyScalaApiWorkaround: Option[Process] = None
+    // This gets its own thread
+    def handleOutputFromChild(child: Process): Unit = {
+      val stream = child.getInputStream
 
-    def onOut(line: String): Unit = line match {
-      case ProgressRegex(numerator, denominator) => {
-        if (!onProgress(numerator.toInt, denominator.toInt)) {
-          error = Some("You cancelled an import job")
-          ickyScalaApiWorkaround.foreach(_.destroy)
+      val reader = new BufferedReader(try {
+        new InputStreamReader(stream, StandardCharsets.UTF_8)
+      } catch {
+        case _: IOException => {
+          // The child is dead already!
+          new StringReader("The process didn't start") // an error message we'll read
+        }
+      })
+
+      def nextLine: Option[String] = {
+        try {
+          Option(reader.readLine)
+        } catch {
+          case _: IOException => {
+            // The stream was closed by something else (i.e., the child). We
+            // don't much care what happens: either the child already output an
+            // error and we read it, or the exit code is non-zero and we *will*
+            // write an error.
+            None
+          }
         }
       }
-      case s: String if s.trim.length > 0 && error.isEmpty => {
-        error = Some(s.trim)
+
+      def step: Boolean = {
+        nextLine match {
+          case None => false
+          case Some(line) => line match {
+            case ProgressRegex(numerator, denominator) => {
+              if (!onProgress(numerator.toInt, denominator.toInt)) {
+                error = Some("You cancelled an import job")
+                child.destroyForcibly
+              }
+              true
+            }
+            case s: String if s.trim.length > 0 && error.isEmpty => {
+              error = Some(s.trim)
+              true // Eat from the child, so it can exit
+            }
+            case _ => true
+          }
+        }
       }
-      case _ => {}
+      while (error.isEmpty && step) {}
+
+      try {
+        stream.close
+      } catch {
+        case _: IOException => {}
+      }
     }
 
-    def onErr(line: String): Unit = System.err.println(line) // So Logstash will pick up on it
+    Future(blocking {
+      val process: Process = new ProcessBuilder(cmd: _*)
+        .redirectError(ProcessBuilder.Redirect.INHERIT) // Output errors where Logger can see them
+        .start
 
-    val process: Process = Process(cmd).run(ProcessLogger(onOut, onErr))
-    ickyScalaApiWorkaround = Some(process)
+      process.getOutputStream.close
+      handleOutputFromChild(process)
+      process.waitFor
+    })
+      .map { retval =>
+        if (retval != 0 && error.isEmpty) {
+          error = Some("PDF is valid, but a bug in Overview means we can't load it")
+        }
 
-    Future(blocking(process.exitValue)).map { retval =>
-      if (retval != 0 && error.isEmpty) error = Some("PDF is valid, but a bug in Overview means we can't load it")
-
-      error.toLeft(())
-    }
+        error.toLeft(())
+      }
   }
 
   private def command(in: Path, out: Path, lang: String): Seq[String] = JavaCommand(
