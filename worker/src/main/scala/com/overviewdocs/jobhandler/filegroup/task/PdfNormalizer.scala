@@ -1,8 +1,8 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
-import java.io.{BufferedReader,IOException,InputStreamReader,StringReader}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Path,Paths}
+import java.nio.file.Path
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
 import com.overviewdocs.util.{Configuration,Logger,JavaCommand}
@@ -16,6 +16,7 @@ trait PdfNormalizer {
   protected val logger: Logger
 
   private val ProgressRegex = """^(\d+)/(\d+)$""".r
+  private val Newline = '\n'.toByte
 
   /** Runs the actual conversion.
     *
@@ -43,58 +44,60 @@ trait PdfNormalizer {
 
     logger.info("MakeSearchablePdf {} -> {} ({})", in.toString, out.toString, lang)
 
-    // This gets its own thread
-    def handleOutputFromChild(child: Process): Unit = {
+    def processOutput(child: Process): Unit = {
+      // Don't use a BufferedReader: on Oracle JVM its read() can block after
+      // the child exits.
+      //
+      // Reproduce the error, if you insist upon adding a BufferedReader:
+      //
+      // 1. Start a Docker VM
+      // 2. Run worker in there
+      // 3. Feed it a file that needs OCR.
+
       val stream = child.getInputStream
 
-      val reader = new BufferedReader(try {
-        new InputStreamReader(stream, StandardCharsets.UTF_8)
-      } catch {
-        case _: IOException => {
-          // The child is dead already!
-          new StringReader("The process didn't start") // an error message we'll read
-        }
-      })
-
-      def nextLine: Option[String] = {
-        try {
-          Option(reader.readLine)
-        } catch {
-          case _: IOException => {
-            // The stream was closed by something else (i.e., the child). We
-            // don't much care what happens: either the child already output an
-            // error and we read it, or the exit code is non-zero and we *will*
-            // write an error.
-            None
+      def handleLine(line: String): Unit = line match {
+        case ProgressRegex(numerator, denominator) => {
+          if (!onProgress(numerator.toInt, denominator.toInt)) {
+            error = Some("You cancelled an import job")
+            child.destroyForcibly // and keep processing....
           }
         }
+        case s: String if error.isEmpty && s.length > 0 => error = Some(s)
+        case _ => {}
       }
 
-      def step: Boolean = {
-        nextLine match {
-          case None => false
-          case Some(line) => line match {
-            case ProgressRegex(numerator, denominator) => {
-              if (!onProgress(numerator.toInt, denominator.toInt)) {
-                error = Some("You cancelled an import job")
-                child.destroyForcibly
-              }
-              true
-            }
-            case s: String if s.trim.length > 0 && error.isEmpty => {
-              error = Some(s.trim)
-              true // Eat from the child, so it can exit
-            }
-            case _ => true
+      val buf: Array[Byte] = new Array(1000) // an error message might be a bit long
+      val nextLine = mutable.ArrayBuffer[Byte]() // will contain everything up to `\n`
+
+      while (true) {
+        val bufSize = stream.read(buf)
+
+        if (bufSize == -1) {
+          // We're at the end of the file. If there's any text in
+          // nextLinePieces, then the file *didn't* end in `\n`, and that's
+          // an error.
+          nextLine.++=(buf.take(bufSize))
+          val text = new String(nextLine.toArray, StandardCharsets.UTF_8).trim
+          if (text.nonEmpty && error.isEmpty) error = Some(text)
+          stream.close
+          return
+        }
+
+        var prevI: Int = 0
+        while (prevI < bufSize) {
+          val i = buf.indexOf(Newline, prevI)
+
+          if (i > -1 && i < bufSize) {
+            nextLine.++=(buf.slice(prevI, i))
+            handleLine(new String(nextLine.toArray, StandardCharsets.UTF_8))
+            nextLine.clear
+            prevI = i + 1
+          } else {
+            nextLine.++=(buf.slice(prevI, bufSize))
+            prevI = bufSize // break out of inner loop
           }
         }
-      }
-      while (error.isEmpty && step) {}
-
-      try {
-        stream.close
-      } catch {
-        case _: IOException => {}
       }
     }
 
@@ -102,18 +105,16 @@ trait PdfNormalizer {
       val process: Process = new ProcessBuilder(cmd: _*)
         .redirectError(ProcessBuilder.Redirect.INHERIT) // Output errors where Logger can see them
         .start
-
       process.getOutputStream.close
-      handleOutputFromChild(process)
+      processOutput(process)
       process.waitFor
-    })
-      .map { retval =>
-        if (retval != 0 && error.isEmpty) {
-          error = Some("PDF is valid, but a bug in Overview means we can't load it")
-        }
-
-        error.toLeft(())
+    }).map { retval =>
+      if (retval != 0 && error.isEmpty) {
+        error = Some("PDF is valid, but a bug in Overview means we can't load it")
       }
+
+      error.toLeft(())
+    }
   }
 
   private def command(in: Path, out: Path, lang: String): Seq[String] = JavaCommand(

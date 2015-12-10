@@ -14,7 +14,7 @@ object MakeSearchablePdf extends App {
     * it actually doesn't: `BufferedImage`s, used when exporting to Tesseract,
     * can be arbitrarily large.)
     *
-    * Outputs progress to stdout as newline-separated fractions. For example:
+    * Outputs progress to stdout as UNIX-newline-separated fractions. For example:
     *
     *   0/10
     *   1/10
@@ -31,8 +31,8 @@ object MakeSearchablePdf extends App {
     * standard output as a String. (Yes, standard *output*: in this context,
     * an invalid PDF isn't an error.) For instance:
     *
-    *   0/10 t Page 1\f
-    *   1/10 f Paage 2\f
+    *   0/10 t Page 1
+    *   1/10 f Paage 2
     *   Invalid PDF file
     *
     * @param inPath Where on the filesystem to find the input file.
