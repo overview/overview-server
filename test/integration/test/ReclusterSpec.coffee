@@ -8,7 +8,9 @@ describe 'Recluster', ->
   asUserWithDocumentSet 'Recluster/documents.csv', ->
     describe 'after a recluster', ->
       before ->
-        @browser.shortcuts.documentSet.recluster('view1')
+        @browser
+          .shortcuts.documentSet.hideTour()
+          .shortcuts.documentSet.recluster('view1')
 
       after ->
         @browser.shortcuts.documentSet.destroyView('view1')
@@ -17,7 +19,7 @@ describe 'Recluster', ->
         @browser
           .shortcuts.documentSet.renameView('view1', 'view3')
           .assertExists(link: 'view3', wait: true)
-          .click([ { link: 'view3' }, { class: 'toggle-popover' } ], wait: true) # wait because we saw an error once on Jenkins
+          .click([ { link: 'view3' }, { class: 'toggle-popover' } ])
           .assertExists(tag: 'dd', class: 'title', contains: 'view3', wait: true)
           .refresh()
           .shortcuts.documentSet.waitUntilStable()

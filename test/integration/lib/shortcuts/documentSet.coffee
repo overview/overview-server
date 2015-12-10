@@ -29,6 +29,12 @@ module.exports = (browser) ->
       .alert().accept()
     browser
 
+  # Hides the "Tour" dialog forevermore for this user
+  hideTour: ->
+    debug_("scheduling hideTour()")
+    debug("hideTour()")
+    browser.click(css: '.popover-title a.skip')
+
   # Creates a new Tree view with the given name.
   #
   # options.tag sets an optional tag name. If unset, all documents will be
