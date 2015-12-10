@@ -1,7 +1,5 @@
 package com.overviewdocs.upgrade.reindex_documents
 
-import play.api.libs.json.{JsValue,Json}
-
 /** Reindex all documents, while Overview is running.
   *
   * Usage:

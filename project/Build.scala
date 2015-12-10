@@ -126,8 +126,8 @@ object ApplicationBuild extends Build {
 
   lazy val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
     .settings(ourGlobalSettings: _*)
-    .settings(libraryDependencies += "com.github.scopt" %% "scopt" % "3.3.0")
-    .dependsOn(common % "test->test;compile->compile")
+    .enablePlugins(JavaAppPackaging)
+    .settings(libraryDependencies ++= Dependencies.reindexDependencies)
 
   lazy val worker = project("worker")
     .settings(Revolver.settings)
