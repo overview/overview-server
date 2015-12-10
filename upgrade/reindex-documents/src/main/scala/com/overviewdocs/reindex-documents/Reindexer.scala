@@ -1,24 +1,48 @@
 package com.overviewdocs.upgrade.reindex_documents
 
-import org.elasticsearch.client.Client
-import org.elasticsearch.client.transport.TransportClient
-import org.elasticsearch.common.settings.ImmutableSettings
-import org.elasticsearch.common.transport.InetSocketTransportAddress
-import org.elasticsearch.index.query.FilterBuilders
+import com.ning.http.client.AsyncHttpClient
+import com.fasterxml.jackson.core.{JsonFactory,JsonGenerator}
+import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
+import scala.collection.mutable
 
 class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
-  val DocumentsAlias = "documents"
-  val DocumentTypeName = "document"
-  val DocumentSetIdField = "document_set_id"
-  val BatchSize = 250
+  private val DocumentsAlias = "documents"
+  private val DocumentTypeName = "document"
+  private val DocumentSetIdField = "document_set_id"
+  private val BatchSize = 250
+  private val IndexRegex = """^(documents_v\d+)$""".r
+  private val AliasRegex = """^documents_(\d+)$""".r
 
-  lazy val client = {
-    val settings = ImmutableSettings.settingsBuilder
-      .put("cluster.name", clusterName)
+  private val jsonFactory = (new JsonFactory).configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
 
-    val ret = new TransportClient(settings)
-    ret.addTransportAddress(new InetSocketTransportAddress(url.host, url.port))
-    ret
+  if (IndexRegex.findFirstIn(indexName).isEmpty) {
+    throw new Exception(s"Invalid index name `$indexName`. It must look like `documents_v2`: that is, 'documents_v' plus digits.")
+  }
+
+  private val httpClient = new AsyncHttpClient()
+
+  def close: Unit = httpClient.close
+
+  private def POST(path: String): Unit = {
+    val response = httpClient.preparePost(url + path).execute.get
+    if (response.getStatusCode != 200) {
+      throw new Exception("Error from server: " + response.getResponseBody)
+    }
+  }
+
+  private def POST(path: String, body: Array[Byte]): Unit = {
+    val response = httpClient.preparePost(url + path).setBody(body).execute.get
+    if (response.getStatusCode != 200) {
+      throw new Exception("Error from server: " + response.getResponseBody)
+    }
+  }
+
+  private def POST(path: String, body: String): Unit = {
+    val response = httpClient.preparePost(url + path).setBody(body).execute.get
+    if (response.getStatusCode != 200) {
+      throw new Exception("Error from server: " + response.getResponseBody)
+    }
   }
 
   /** Point "documents_N" to the new index, leaving existing aliases intact.
@@ -28,13 +52,12 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
     * two indices per alias.
     */
   def addDocumentSetAliases(database: Database): Unit = {
-    def idToFilter(id: Long) = FilterBuilders.termFilter(DocumentSetIdField, id)
-
-    val builder = client.admin.indices.prepareAliases
-    database.getDocumentSetIds.foreach { documentSetId: Long =>
-      builder.addAlias(indexName, aliasName(documentSetId), idToFilter(documentSetId))
+    val jsons: Seq[String] = database.getDocumentSetIds.map { case (id, _) =>
+      s"""{"add":{"index":"$indexName","alias":"documents_$id","filter":{"term":{"document_set_id":$id}}}}"""
     }
-    builder.execute.get
+
+    val request: String = s"""{"actions":[${jsons.mkString(",")}]}"""
+    POST("/_aliases", request)
   }
 
   /** Sets the Documents alias to point to indexName.
@@ -43,34 +66,32 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
     * to the alias will fail.
     */
   def updateDocumentsAlias: Unit = {
-    val existingIndices = indicesForAlias(DocumentsAlias)
-
-    val indicesToRemove = existingIndices - indexName
-    val indicesToAdd = Set(indexName) -- existingIndices
-
-    if (indicesToRemove.nonEmpty || indicesToAdd.nonEmpty) {
-      val builder = client.admin.indices.prepareAliases
-      indicesToRemove.foreach(i => builder.removeAlias(i, DocumentsAlias))
-      indicesToAdd.foreach(i => builder.addAlias(i, DocumentsAlias))
-      builder.execute.get
-    }
+    POST("/_aliases", s"""{"actions":[
+      { "remove": { "index": "_all", "alias": "documents" } },
+      { "add": { "index": "$indexName", "alias": "documents" } }
+    ]}""")
   }
 
   def reindexAllDocumentSets(database: Database): Unit = {
     System.err.println("Loading document set IDs...")
     val documentSetIds = database.getDocumentSetIds
-    System.err.println(s"Starting/resuming reindex of ${documentSetIds.length} document sets")
-    documentSetIds.foreach { id => reindexDocumentSet(id, database) }
+    System.err.println(s"Starting reindex of ${documentSetIds.length} document sets...")
+    documentSetIds.foreach { case (id, nDocuments) =>
+      reindexDocumentSet(id, nDocuments, database)
+    }
     System.err.println("Reindexed all document sets")
   }
 
-  def reindexDocumentSet(documentSetId: Long, database: Database): Unit = {
-    System.err.println(s"Starting reindex of document set ${documentSetId}...")
+  def reindexDocumentSet(documentSetId: Long, nDocuments: Int, database: Database): Unit = {
+    System.err.print(s"Reindexing ${nDocuments} documents in document set ${documentSetId}")
 
     database.forEachBatchOfDocumentsInSet(documentSetId, BatchSize) { documents: Seq[Document] =>
-      System.err.println(s"Indexing ${documents.length} documents...")
+      System.err.print(".")
+      System.err.flush
       indexDocuments(documents)
     }
+
+    System.err.println
 
     System.err.println("Removing old aliases...")
     removeOldDocumentSetAliases(documentSetId)
@@ -78,38 +99,29 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
     System.err.println(s"Done reindexing document set ${documentSetId}")
   }
 
-  private def indicesForAlias(alias: String): Set[String] = {
-    client.admin.indices
-      .prepareGetAliases(alias)
-      .execute.get
-      .getAliases.keys.toArray.map(_.toString).toSet
-  }
-
-  private def aliasName(documentSetId: Long): String = "documents_" + documentSetId
-
-  private def removeOldDocumentSetAliases(documentSetId: Long): Unit = {
-    val alias = aliasName(documentSetId)
-    val otherIndices = indicesForAlias(alias) - indexName
-
-    if (otherIndices.nonEmpty) {
-      val builder = client.admin.indices.prepareAliases
-      otherIndices.foreach(index => builder.removeAlias(index, alias))
-      builder.execute.get
-    }
+  private def removeOldDocumentSetAliases(id: Long): Unit = {
+    POST("/_aliases", s"""{"actions":[
+      { "remove": { "index": "_all", "alias": "documents_$id" } },
+      { "add": {"index":"$indexName","alias":"documents_$id","filter":{"term":{"document_set_id":$id}}}}
+    ]}""")
   }
 
   private def indexDocuments(documents: Seq[Document]): Unit = {
-    var builder = client.prepareBulk
+    val baos = new ByteArrayOutputStream
 
     documents.foreach { document =>
-      builder.add(
-        client
-          .prepareIndex(indexName, DocumentTypeName)
-          .setSource(document.toJsonString)
-          .request
-      )
+      baos.write(s"""{"index":{"_index":"$indexName","_type":"document","_id":"${document.id}"}}\n""".getBytes(StandardCharsets.UTF_8))
+      val j = jsonFactory.createGenerator(baos)
+      j.writeStartObject
+      j.writeNumberField("document_set_id", document.documentSetId)
+      j.writeStringField("supplied_id", document.suppliedId)
+      j.writeStringField("title", document.title)
+      j.writeStringField("text", document.text)
+      j.writeEndObject
+      j.close
+      baos.write('\n'.toByte)
     }
 
-    builder.execute.get
+    POST("/_bulk", baos.toByteArray)
   }
 }

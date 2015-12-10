@@ -1,7 +1,7 @@
 package com.overviewdocs.upgrade.reindex_documents
 
 case class ElasticSearchUrl(host: String, port: Int) {
-  override def toString = Seq(host, port.toString).mkString(":")
+  override def toString = s"http://$host:$port"
 }
 
 object ElasticSearchUrl {

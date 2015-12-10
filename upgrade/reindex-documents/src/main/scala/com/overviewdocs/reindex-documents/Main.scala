@@ -10,7 +10,6 @@ import play.api.libs.json.{JsValue,Json}
   *   reindex-documents                                          \
   *     --database-url "postgres://user:pass@localhost/overview" \
   *     --elasticsearch-url "localhost:9200"                     \
-  *     --elasticsearch-cluster "overview"                       \
   *     --index-name "documents_v2"                              \
   * </pre>
   *
@@ -19,12 +18,12 @@ import play.api.libs.json.{JsValue,Json}
   *
   * When the command is finished, there will be a new index (named
   * <tt>documents_v2</tt> in this example), and the <tt>documents</tt> alias
-  * will point to it. The old index can be deleted.
+  * will point to it. You should delete the old index(es) manually.
   *
   * If the command is interrupted, simply run it again.
   *
-  * There may be duplicate documents for a second or two while this is running,
-  * in one document set at a time.
+  * During operation, both the old and new indexes may contain the same
+  * documents. That will only happen in one document set at a time.
   *
   * The logic is in
   * common/src/main/scala/org/overviewproject/searchindex/ElasticSearchIndexClient.scala
@@ -50,12 +49,7 @@ object Main extends App {
 
     opt[ElasticSearchUrl]("elasticsearch-url")
       .action { (x, c) => c.copy(elasticsearchUrl = x) }
-      .text("ElasticSearch URL like \"localhost:9200\"")
-      .required()
-
-    opt[String]("elasticsearch-cluster")
-      .action { (x, c) => c.copy(elasticsearchCluster = x) }
-      .text("ElasticSearch cluster name, like \"overview\"")
+      .text("ElasticSearch HTTP URL like \"localhost:9200\"")
       .required()
 
     opt[String]("index-name")
@@ -72,4 +66,7 @@ object Main extends App {
   reindexer.addDocumentSetAliases(database)
   reindexer.updateDocumentsAlias
   reindexer.reindexAllDocumentSets(database)
+
+  reindexer.close
+  database.close
 }

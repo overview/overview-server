@@ -1,48 +1,37 @@
 package com.overviewdocs.upgrade.reindex_documents
 
-import slick.driver.PostgresDriver.simple._
-import slick.jdbc.{GetResult,StaticQuery => Q}
-
-class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
-  def id = column[Long]("id", O.PrimaryKey)
-  def documentSetId = column[Long]("document_set_id")
-  def text = column[Option[String]]("text")
-  def title = column[Option[String]]("title")
-  def suppliedId = column[Option[String]]("supplied_id")
-
-  // Our DB has NULLs it shouldn't have, so we have syntax we shouldn't.
-  def * = (id, documentSetId, text, title, suppliedId)
-    .<>[Document,Tuple5[Long,Long,Option[String],Option[String],Option[String]]](
-      (t: Tuple5[Long,Long,Option[String],Option[String],Option[String]]) => Document(
-        t._1,
-        t._2,
-        t._3.getOrElse(""),
-        t._4.getOrElse(""),
-        t._5.getOrElse("")
-      ), (d: Document) => Some(d.id, d.documentSetId, Some(d.text), Some(d.title), Some(d.suppliedId)))
-}
-object Documents extends TableQuery(new DocumentsImpl(_))
+import scala.concurrent.{Await,Future,blocking}
+import scala.concurrent.duration.Duration
+import slick.driver.PostgresDriver.api._
 
 class Database(url: PostgresUrl) {
   lazy val db = Database.forURL(url.toJdbcUrl)
-  lazy val session = db.createSession
+  private def await[T](f: Future[T]): T = blocking(Await.result(f, Duration.Inf))
 
-  lazy val documentsByDocumentSetId = Compiled { (documentSetId: Column[Long]) =>
-    Documents.filter(_.documentSetId === documentSetId)
+  def close: Unit = db.shutdown
+
+  def getDocumentSetIds: Seq[(Long,Int)] = {
+    await(db.run(sql"SELECT id, document_count FROM document_set ORDER BY id".as[(Long,Int)]))
   }
 
-  def getDocumentSetIds: Seq[Long] = {
-    Q.queryNA[Long]("SELECT id FROM document_set ORDER BY id").list(session)
+  private def getDocumentIds(documentSetId: Long): Seq[Long] = {
+    await(db.run(sql"SELECT UNNEST(sorted_document_ids) FROM document_set WHERE id = $documentSetId".as[Long]))
+  }
+
+  private def getDocuments(ids: Seq[Long]): Seq[Document] = {
+    await(db.run(sql"""
+      SELECT id, document_set_id, COALESCE(text, ''), COALESCE(title, ''), COALESCE(supplied_id, '')
+      FROM document
+      WHERE id IN (#${ids.mkString(",")})
+    """.as[(Long,Long,String,String,String)])).map((Document.apply _).tupled)
   }
 
   def forEachBatchOfDocumentsInSet(documentSetId: Long, nPerBatch: Int)(f: Seq[Document] => Unit): Unit = {
-    val query = documentsByDocumentSetId(documentSetId)
-
-    session.withTransaction { // for setFetchSize win
-      SlickQueryBatcher.batch(query, nPerBatch)
-        .iterator(session)
-        .grouped(nPerBatch)
-        .foreach(f)
+    getDocumentIds(documentSetId).grouped(nPerBatch).foreach { ids =>
+      if (ids.nonEmpty) {
+        val documents = getDocuments(ids)
+        f(documents)
+      }
     }
   }
 }
