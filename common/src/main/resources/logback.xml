@@ -7,6 +7,7 @@
 
   <logger name="com.ning.http.client" level="WARN"/><!-- Noisy Ning -->
   <logger name="org.apache.pdfbox" level="ERROR"/><!-- We know, we know: some PDFs are invalid -->
+  <logger name="org.apache.fontbox" level="ERROR"/><!-- We know, we know: some PDFs are invalid -->
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />
