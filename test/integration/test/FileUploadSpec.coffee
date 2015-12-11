@@ -42,7 +42,7 @@ describe 'FileUpload', ->
           .click(link: 'Add new field', wait: true) # wait for dialog to appear
           .sendKeys('moo', tag: 'input', id: 'document-metadata-add-field')
           .click(css: '#document-metadata-add-field + button')
-          .sendKeys('mar', tag: 'input', name: 'moo')
+          .sendKeys('mar', tag: 'input', name: 'moo', wait: true) # wait for JS to add field (Jenkins found an error once)
           .click(button: 'Import documents')
           .shortcuts.importFiles.waitUntilRedirectToDocumentSet('metadata-test')
 

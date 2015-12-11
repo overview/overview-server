@@ -30,9 +30,7 @@ module.exports = likeATree = (opts) ->
       it "should search for #{search.query}", ->
         @browser
           .sendKeys(search.query, css: '#document-list-params .search input[name=query]')
-          .shortcuts.jquery.listenForAjaxComplete()
           .click(css: '#document-list-params .search button')
-          .shortcuts.jquery.waitUntilAjaxComplete() # waits for something to change
           .assertExists(tag: 'h3', contains: "#{search.nResults} document", wait: 'pageLoad')
 
     opts.ignoredWords?.forEach (word) ->
