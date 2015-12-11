@@ -32,7 +32,7 @@ object MakeSearchablePdf extends App {
     * an invalid PDF isn't an error.) For instance:
     *
     *   0/10 t Page 1
-    *   1/10 f Paage 2
+    *   1/10 f Page 2
     *   Invalid PDF file
     *
     * @param inPath Where on the filesystem to find the input file.

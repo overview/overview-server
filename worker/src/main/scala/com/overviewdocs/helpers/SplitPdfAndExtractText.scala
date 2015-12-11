@@ -47,8 +47,8 @@ object SplitPdfAndExtractText extends App {
     * standard output as a String. (Yes, standard *output*: in this context,
     * an invalid PDF isn't an error.) For instance:
     *
-    *   0/10
-    *   1/10
+    *   0/10 ...
+    *   1/10 ...
     *   Invalid PDF file
     *
     * @param inPath Where on the filesystem to find the input file.
@@ -99,7 +99,7 @@ object SplitPdfAndExtractText extends App {
         return
       }
       case _: PdfEncryptedException => {
-        System.out.println("PDF file is password-protected\n")
+        System.out.print("PDF file is password-protected\n")
         pdfDocument.close
         return
       }

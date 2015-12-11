@@ -55,6 +55,8 @@ trait PdfNormalizer {
       // 3. Feed it a file that needs OCR.
 
       val stream = child.getInputStream
+      val buf: Array[Byte] = new Array(1000) // an error message might be a bit long
+      val nextLine = mutable.ArrayBuffer[Byte]() // will contain everything up to `\n`
 
       def handleLine(line: String): Unit = line match {
         case ProgressRegex(numerator, denominator) => {
@@ -67,16 +69,12 @@ trait PdfNormalizer {
         case _ => {}
       }
 
-      val buf: Array[Byte] = new Array(1000) // an error message might be a bit long
-      val nextLine = mutable.ArrayBuffer[Byte]() // will contain everything up to `\n`
-
       while (true) {
         val bufSize = stream.read(buf)
 
         if (bufSize == -1) {
-          // We're at the end of the file. If there's any text in
-          // nextLinePieces, then the file *didn't* end in `\n`, and that's
-          // an error.
+          // We're at the end of the file. If there's any text in nextLine, then
+          // the file didn't end in `\n`; that's an error.
           nextLine.++=(buf.take(bufSize))
           val text = new String(nextLine.toArray, StandardCharsets.UTF_8).trim
           if (text.nonEmpty && error.isEmpty) error = Some(text)

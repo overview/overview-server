@@ -56,39 +56,39 @@ trait PdfSplitter {
     val pageInfos = mutable.ArrayBuffer[PdfSplitter.PageInfo]()
     @volatile var error: Option[String] = None
 
-    def dataToPageInfo(bytes: Array[Byte], abort: => Unit): Unit = {
-      val str = new String(bytes, StandardCharsets.UTF_8)
-      str match {
-        case PageInfoRegex(pageNumber, nPages, isFromOcr, text) => {
-          pageInfos.+=(PdfSplitter.PageInfo(
-            pageNumber.toInt,
-            nPages.toInt,
-            isFromOcr == "t",
-            text,
-            maybeOutPattern.map(p => p.resolveSibling(p.getFileName.toString.replace("{}", pageNumber)))
-          ))
-          if (!onProgress(pageNumber.toInt, nPages.toInt)) {
-            error = Some("You cancelled an import job")
-            abort
+    def processOutput(child: Process): Unit = {
+      def dataToPageInfo(bytes: Array[Byte]): Unit = {
+        val str = new String(bytes, StandardCharsets.UTF_8)
+        str match {
+          case PageInfoRegex(pageNumber, nPages, isFromOcr, text) => {
+            pageInfos.+=(PdfSplitter.PageInfo(
+              pageNumber.toInt,
+              nPages.toInt,
+              isFromOcr == "t",
+              text,
+              maybeOutPattern.map(p => p.resolveSibling(p.getFileName.toString.replace("{}", pageNumber)))
+            ))
+            if (!onProgress(pageNumber.toInt, nPages.toInt)) {
+              error = Some("You cancelled an import job")
+              child.destroyForcibly
+            }
+          }
+          case _ => {
+            throw new IllegalArgumentException(s"Invalid data from splitter: $str")
           }
         }
-        case _ => {
-          throw new IllegalArgumentException(s"Invalid data from splitter: $str")
-        }
       }
-    }
 
-    def processOutput(stream: InputStream, abort: => Unit): Unit = {
       val buf: Array[Byte] = new Array(10 * 1024) // 10kb covers most pages' text.
-      var nextPageBuffer = mutable.ArrayBuffer[Byte]() // When complete, all but the final `\f` will be in here.
+      var nextPageBytes = mutable.ArrayBuffer[Byte]() // When complete, all but the final `\f` will be in here.
       while (true) {
         val bufSize = stream.read(buf)
         if (bufSize == -1) {
           // We're at the end of the file. If there's any text in
-          // nextPageBuffer, that means we didn't find `\f`. So the text is an
+          // nextPageBytes, that means we didn't find `\f`. So the text is an
           // error message.
-          nextPageBuffer.++=(buf.take(bufSize))
-          val text = new String(nextPageBuffer.toArray, StandardCharsets.UTF_8).trim
+          nextPageBytes.++=(buf.take(bufSize))
+          val text = new String(nextPageBytes.toArray, StandardCharsets.UTF_8).trim
           if (text.nonEmpty && error.isEmpty) error = Some(text)
           stream.close
           return
@@ -99,12 +99,12 @@ trait PdfSplitter {
           val i = buf.indexOf(FormFeed, prevI)
 
           if (i > -1 && i < bufSize) {
-            nextPageBuffer.++=(buf.slice(prevI, i))
-            dataToPageInfo(nextPageBuffer.toArray, abort)
-            nextPageBuffer.clear
+            nextPageBytes.++=(buf.slice(prevI, i))
+            dataToPageInfo(nextPageBytes.toArray)
+            nextPageBytes.clear
             prevI = i + 1 // after \f comes \n, but we can't skip it here: it might be in the next buf
           } else {
-            nextPageBuffer.++=(buf.slice(prevI, bufSize))
+            nextPageBytes.++=(buf.slice(prevI, bufSize))
             prevI = bufSize // break out of the inner while loop
           }
         }
