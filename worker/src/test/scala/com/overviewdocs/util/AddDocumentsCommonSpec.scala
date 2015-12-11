@@ -2,6 +2,7 @@ package com.overviewdocs.util
 
 import org.specs2.mock.Mockito
 import play.api.libs.json.JsObject
+import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.metadata.MetadataSchema
@@ -15,6 +16,8 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
     val subject = new AddDocumentsCommon {
       override protected val indexClient = mockIndexClient
     }
+
+    mockIndexClient.refresh returns Future.successful(())
   }
 
   "#afterAddDocuments" should {
@@ -23,6 +26,12 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
 
       def doBefore(documentSetId: Long): Unit = await(subject.beforeAddDocuments(documentSetId))
       def doAfter(documentSetId: Long): Unit = await(subject.afterAddDocuments(documentSetId))
+    }
+
+    "refresh the search index" in new AfterScope {
+      db.createDocumentSet(1L) // dummy
+      doAfter(1L)
+      there was one(mockIndexClient).refresh
     }
 
     "do nothing if the document set does not exist" in new AfterScope {
