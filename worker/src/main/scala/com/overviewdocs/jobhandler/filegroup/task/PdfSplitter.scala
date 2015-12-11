@@ -1,6 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
-import java.io.{BufferedReader,InputStream,InputStreamReader}
+import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Path,Paths}
 import scala.collection.mutable
@@ -79,8 +79,10 @@ trait PdfSplitter {
         }
       }
 
+      val stream: InputStream = child.getInputStream
       val buf: Array[Byte] = new Array(10 * 1024) // 10kb covers most pages' text.
       var nextPageBytes = mutable.ArrayBuffer[Byte]() // When complete, all but the final `\f` will be in here.
+
       while (true) {
         val bufSize = stream.read(buf)
         if (bufSize == -1) {
@@ -116,7 +118,7 @@ trait PdfSplitter {
         .redirectError(ProcessBuilder.Redirect.INHERIT) // so Logger sees it
         .start
       process.getOutputStream.close
-      processOutput(process.getInputStream, process.destroyForcibly _)
+      processOutput(process)
       process.waitFor
     }).flatMap { retval =>
       if (retval != 0 && error.isEmpty) {
