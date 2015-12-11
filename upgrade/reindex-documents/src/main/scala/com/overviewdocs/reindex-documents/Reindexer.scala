@@ -10,7 +10,7 @@ class Reindexer(url: ElasticSearchUrl, clusterName: String, indexName: String) {
   private val DocumentsAlias = "documents"
   private val DocumentTypeName = "document"
   private val DocumentSetIdField = "document_set_id"
-  private val BatchSize = 250
+  private val BatchSize = 100
   private val IndexRegex = """^(documents_v\d+)$""".r
   private val AliasRegex = """^documents_(\d+)$""".r
 
