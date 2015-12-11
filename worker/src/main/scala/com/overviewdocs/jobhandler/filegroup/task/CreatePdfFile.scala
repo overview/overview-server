@@ -51,7 +51,7 @@ class CreatePdfFile(
 
       val buf = new Array[Byte](CopyBufferSize)
       def step: Future[Unit] = {
-        Future(blocking(loStream.read(buf))).flatMap { nBytes =>
+        Future(blocking(digestStream.read(buf))).flatMap { nBytes =>
           if (nBytes == -1) {
             Future.successful(())
           } else {
