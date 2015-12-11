@@ -1,7 +1,7 @@
 package com.overviewdocs.blobstorage
 
-import java.io.{File,InputStream}
-import java.nio.file.Files
+import java.io.File
+import java.nio.file.{Files,Path}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -130,24 +130,24 @@ class BlobStorageSpec extends Specification with Mockito {
       "find the location prefix from config" in new BaseScope {
         mockConfig.getPreferredPrefix(any[BlobBucketId]) returns "s3:foo"
         mockStrategyFactory.forLocation(anyString) returns mock[BlobStorageStrategy]
-        TestBlobStorage.create(BlobBucketId.PageData, mock[InputStream], 100)
+        TestBlobStorage.create(BlobBucketId.PageData, mock[Path])
         there was one(mockConfig).getPreferredPrefix(BlobBucketId.PageData)
       }
 
       "find the strategy from the location prefix" in new BaseScope {
         mockConfig.getPreferredPrefix(any[BlobBucketId]) returns "s3:foo"
         mockStrategyFactory.forLocation(anyString) returns mock[BlobStorageStrategy]
-        TestBlobStorage.create(BlobBucketId.PageData, mock[InputStream], 100)
+        TestBlobStorage.create(BlobBucketId.PageData, mock[Path])
         there was one(mockStrategyFactory).forLocation("s3:foo")
       }
 
       "call create() with the location prefix and strategy" in new BaseScope {
         val mockStrategy = mock[BlobStorageStrategy]
-        val mockInputStream = mock[InputStream]
+        val mockFile = mock[Path]
         mockConfig.getPreferredPrefix(any[BlobBucketId]) returns "s3:foo"
         mockStrategyFactory.forLocation(anyString) returns mockStrategy
-        TestBlobStorage.create(BlobBucketId.PageData, mockInputStream, 100)
-        there was one(mockStrategy).create("s3:foo", mockInputStream, 100)
+        TestBlobStorage.create(BlobBucketId.PageData, mockFile)
+        there was one(mockStrategy).create("s3:foo", mockFile)
       }
     }
   }

@@ -2,14 +2,13 @@ package com.overviewdocs.blobstorage
 
 import java.io.{ File, IOException, InputStream }
 import java.nio.file.{ Files, Path }
-import org.specs2.mutable.After
 import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import scala.concurrent.Future
 import java.nio.charset.StandardCharsets
 import scala.io.Source
 
 class FileStrategySpec extends StrategySpecification {
-  trait FileBaseScope extends BaseScope with After {
+  trait FileBaseScope extends BaseScope {
     val tmpDir: Path = Files.createTempDirectory("overview-file-strategy-spec")
 
     def rimraf(path: Path): Unit = {
@@ -33,6 +32,7 @@ class FileStrategySpec extends StrategySpecification {
       if (tmpDir.toFile.exists) { // We delete it before this sometimes
         rimraf(tmpDir)
       }
+      super.after
     }
 
     val mockConfig = mock[BlobStorageConfig]
@@ -47,43 +47,19 @@ class FileStrategySpec extends StrategySpecification {
         (f("file:bucket:") must throwA[IllegalArgumentException])
 
     }
-  }
 
-  trait BucketScope extends FileBaseScope {
     // Create bucket1
     val bucket = "bucket1"
     val bucketFile = new File(tmpDir.toString, bucket)
     bucketFile.mkdir()
   }
 
-  trait FileContent {
-    val content = "this is the content"
-    val contentStream = utf8InputStream(content)
-  }
-
-  trait ExistingFileScope extends BucketScope with FileContent {
+  trait ExistingFileScope extends FileBaseScope {
     // Create key1
     val key = "key1"
     val keyFile = new File(bucketFile.toString, key)
 
-    Files.copy(contentStream, keyFile.toPath)
-    contentStream.close()
-  }
-
-  trait CreateScope extends BucketScope with FileContent {
-    val locationRegex = s"^file:$bucket:([-\\w]+)$$".r
-
-    def fileAtLocation(location: String): File = location match {
-      case locationRegex(key) => new File(bucketFile, key)
-    }
-
-    def fileContent(file: File): String = {
-      val source = Source.fromFile(file)
-      val content = source.getLines.mkString
-      source.close()
-      content
-    }
-
+    Files.write(keyFile.toPath, "data1".getBytes("utf-8"))
   }
 
   "#get" should {
@@ -112,7 +88,7 @@ class FileStrategySpec extends StrategySpecification {
       val future = TestFileStrategy.get(s"file:$bucket:$key")
       val enumerator = await(future)
       val byteArray = consume(enumerator)
-      new String(byteArray, "utf-8") must beEqualTo(content)
+      new String(byteArray, "utf-8") must beEqualTo("data1")
     }
   }
 
@@ -145,37 +121,43 @@ class FileStrategySpec extends StrategySpecification {
   }
 
   "#create" should {
+    trait CreateScope extends FileBaseScope {
+      val locationRegex = s"^file:$bucket:([-\\w]+)$$".r
+
+      val toCreate: Path = tempFile("foo")
+
+      def fileAtLocation(location: String): Path = location match {
+        case locationRegex(key) => new File(bucketFile, key).toPath
+      }
+    }
+
     "throw an exception when create location does not look like file:BUCKET:KEY" in new CreateScope {
-      invalidLocationThrowsException(TestFileStrategy.create(_, contentStream, content.length))
+      invalidLocationThrowsException(TestFileStrategy.create(_, toCreate))
     }
 
     "return location" in new CreateScope {
-      val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
+      val future = TestFileStrategy.create(s"file:$bucket", toCreate)
       val location = await(future)
 
       location must beMatching(locationRegex)
     }
 
-    "write the stream to the file" in new CreateScope {
-      val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
-      val location = await(future)
+    "write to the file" in new CreateScope {
+      val location = await(TestFileStrategy.create(s"file:$bucket", toCreate))
+      val path = fileAtLocation(location)
 
-      val file = fileAtLocation(location)
-
-      file.exists must beTrue
-
-      fileContent(file) must be equalTo (content)
+      path.toFile.exists must beTrue
+      new String(Files.readAllBytes(path), "utf-8") must beEqualTo("foo")
+      path must not(beEqualTo(toCreate))
     }
 
     "create any missing directories in path" in new CreateScope {
       rimraf(tmpDir)
 
-      val future = TestFileStrategy.create(s"file:$bucket", contentStream, content.length)
+      val future = TestFileStrategy.create(s"file:$bucket", toCreate)
       val location = await(future)
 
-      fileAtLocation(location).exists must beTrue
+      fileAtLocation(location).toFile.exists must beTrue
     }
-
   }
-
 }

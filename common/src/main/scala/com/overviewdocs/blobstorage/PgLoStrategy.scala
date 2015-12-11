@@ -1,9 +1,10 @@
 package com.overviewdocs.blobstorage
 
 import java.io.{IOException,InputStream}
+import java.nio.file.{Files,Path}
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future,blocking}
 
 import com.overviewdocs.database.{HasDatabase,LargeObject}
 
@@ -110,38 +111,34 @@ trait PgLoStrategy extends BlobStorageStrategy with HasDatabase {
     continue(groups)
   }
 
-  override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = {
+  override def create(locationPrefix: String, dataPath: Path): Future[String] = {
     if (locationPrefix != "pglo") throw new IllegalArgumentException("locationPrefix must be pglo; got: " + locationPrefix);
 
     val buffer = new Array[Byte](BufferSize)
+    val loManager = database.largeObjectManager
 
-    def copyRemainingChunks(oid: Long, nBytesWritten: Long, nBytesRemaining: Long): Future[Unit] = {
-      if (nBytesRemaining == 0) {
+    def copyRemainingChunks(oid: Long, nBytesWritten: Long, remainingData: InputStream): Future[Unit] = {
+      val nBytesRead = remainingData.read(buffer, 0, buffer.length)
+
+      if (nBytesRead == -1) {
+        remainingData.close
         Future.successful(())
       } else {
-        val bytesRead = inputStream.read(buffer, 0, buffer.length)
-        if (bytesRead == -1) {
-          throw new IOException("Expected input stream to have more bytes than it actually does")
-        } else if (bytesRead > nBytesRemaining) {
-          throw new IOException("Expected input stream to have fewer bytes than it actually does")
-        }
-
         val step: DBIO[Unit] = for {
-          lo <- database.largeObjectManager.open(oid, LargeObject.Mode.Write)
+          lo <- loManager.open(oid, LargeObject.Mode.Write)
           _ <- lo.seek(nBytesWritten)
-          _ <- lo.write(buffer, 0, bytesRead)
+          _ <- lo.write(buffer, 0, nBytesRead)
         } yield ()
 
-        for {
-          _ <- database.run(step.transactionally)
-          _ <- copyRemainingChunks(oid, nBytesWritten + bytesRead, nBytesRemaining - bytesRead)
-        } yield ()
+        database.run(step.transactionally)
+          .flatMap(_ => copyRemainingChunks(oid, nBytesWritten + nBytesRead, remainingData))
       }
     }
 
     for {
-      oid <- database.run(database.largeObjectManager.create.transactionally)
-      _ <- copyRemainingChunks(oid, 0, nBytes)
+      inputStream <- Future(blocking(Files.newInputStream(dataPath)))
+      oid <- database.run(loManager.create.transactionally)
+      _ <- copyRemainingChunks(oid, 0, inputStream)
     } yield "pglo:" + oid
   }
 }

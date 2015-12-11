@@ -1,6 +1,6 @@
 package com.overviewdocs.blobstorage
 
-import java.io.InputStream
+import java.nio.file.Path
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
@@ -8,7 +8,7 @@ class BlobStorageStrategySpec extends StrategySpecification {
   trait BlankStrategy extends BlobStorageStrategy {
     override def get(location: String): Future[Enumerator[Array[Byte]]] = ???
     override def delete(location: String): Future[Unit] = ???
-    override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = ???
+    override def create(locationPrefix: String, dataPath: Path): Future[String] = ???
   }
 
   "#deleteMany" should {

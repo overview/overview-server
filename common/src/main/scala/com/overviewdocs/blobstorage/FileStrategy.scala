@@ -1,6 +1,7 @@
 package com.overviewdocs.blobstorage
 
 import java.io.{ File, InputStream, IOException }
+import java.nio.file.Path
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,blocking}
@@ -41,14 +42,14 @@ trait FileStrategy extends BlobStorageStrategy {
     } }
   }
 
-  override def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String] = {
+  override def create(locationPrefix: String, dataPath: Path): Future[String] = {
     val locationString = createNewLocationString(locationPrefix)
     val location = stringToLocation(locationString)
 
     Future {
-      val filePath = keyFile(location).toPath()
-      Files.createDirectories(filePath.getParent)
-      Files.copy(inputStream, filePath)
+      val outPath = keyFile(location).toPath()
+      Files.createDirectories(outPath.getParent)
+      Files.copy(dataPath, outPath)
 
       locationString
     }

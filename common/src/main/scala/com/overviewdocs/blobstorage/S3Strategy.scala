@@ -4,8 +4,8 @@ import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client}
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
-import java.io.{IOException,InputStream}
-import java.nio.file.Files
+import java.io.IOException
+import java.nio.file.{Files,Path}
 import java.util.UUID
 import play.api.libs.iteratee.Enumerator
 import scala.collection.JavaConversions.iterableAsScalaIterable
@@ -137,20 +137,18 @@ trait S3Strategy extends BlobStorageStrategy {
     })
   }
 
-  override def create(locationPrefixString: String, inputStream: InputStream, nBytes: Long): Future[String] = {
+  override def create(locationPrefixString: String, dataPath: Path): Future[String] = {
     /*
      * We generate a random filename and upload to it.
      */
     import scala.concurrent.ExecutionContext.Implicits.global
 
+    val promise = Promise[String]()
+
     val locationPrefix = stringToLocationPrefix(locationPrefixString)
     val key = UUID.randomUUID.toString
 
-    val metadata = new ObjectMetadata()
-    metadata.setContentLength(nBytes)
-
-    val promise = Promise[String]()
-    val upload = transferManager.upload(locationPrefix.bucket, key, inputStream, metadata)
+    val upload = transferManager.upload(locationPrefix.bucket, key, dataPath.toFile)
 
     def complete: Unit = {
       val result = Try(blocking {

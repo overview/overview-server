@@ -1,7 +1,9 @@
 package com.overviewdocs.blobstorage
 
 import java.io.{ByteArrayInputStream,IOException,InputStream}
+import java.nio.file.Files
 import org.postgresql.util.PSQLException
+import org.specs2.mutable.After
 import play.api.libs.iteratee.Iteratee
 import scala.concurrent.Future
 import scala.util.{Failure,Success}
@@ -12,7 +14,7 @@ import com.overviewdocs.test.DbSpecification
 class PgLoStrategySpec extends DbSpecification with StrategySpecification {
   override def await[T](future: Future[T]): T = super[StrategySpecification].await(future) // gotta pick one
 
-  trait PgLoBaseScope extends DbScope {
+  trait PgLoBaseScope extends DbScope with TempFileMethods with After {
     import database.api._
     protected implicit val ec = database.executionContext
 
@@ -47,6 +49,8 @@ class PgLoStrategySpec extends DbSpecification with StrategySpecification {
         case Failure(t) => throw t
       }
     }
+
+    override def after = unlinkTempFiles
   }
 
   "#get" should {
@@ -136,15 +140,14 @@ class PgLoStrategySpec extends DbSpecification with StrategySpecification {
 
   "#create" should {
     trait CreateScope extends PgLoBaseScope {
-      val data = "foo bar baz moo mar maz".getBytes("utf-8")
-      val dataAsStream = new ByteArrayInputStream(data)
-      def go = TestStrategy.create("pglo", dataAsStream, data.length)
+      val dataPath = tempFile("foo bar baz moo mar maz")
+      def go = TestStrategy.create("pglo", dataPath)
     }
 
     "throw an exception when location prefix is not pglo" in new CreateScope {
-      TestStrategy.create("pglop", dataAsStream, data.length) must throwA[IllegalArgumentException]
-      TestStrategy.create("pglo:", dataAsStream, data.length) must throwA[IllegalArgumentException]
-      TestStrategy.create("pgl", dataAsStream, data.length) must throwA[IllegalArgumentException]
+      TestStrategy.create("pglop", dataPath) must throwA[IllegalArgumentException]
+      TestStrategy.create("pglo:", dataPath) must throwA[IllegalArgumentException]
+      TestStrategy.create("pgl", dataPath) must throwA[IllegalArgumentException]
     }
 
     "return a valid location" in new CreateScope {
@@ -154,14 +157,12 @@ class PgLoStrategySpec extends DbSpecification with StrategySpecification {
     "store the file" in new CreateScope {
       val location = await(go)
       val loid = location.split(":")(1).toLong
-      readLargeObject(loid) must beEqualTo(data)
+      readLargeObject(loid) must beEqualTo("foo bar baz moo mar maz".getBytes("utf-8"))
     }
 
     "fail when storing the file fails" in new CreateScope {
-      val evilStream = new InputStream {
-        override def read = throw new IOException("this method intentionally left broken")
-      }
-      await(TestStrategy.create("pglo", evilStream, 10)) must throwA[IOException]
+      Files.delete(dataPath)
+      await(TestStrategy.create("pglo", dataPath)) must throwA[IOException]
     }
   }
 }

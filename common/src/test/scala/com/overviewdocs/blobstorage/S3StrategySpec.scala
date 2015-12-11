@@ -27,7 +27,7 @@ class S3StrategySpec extends StrategySpecification {
 
   class MockTransferManager extends TransferManager {
     case class LastDownload(bucket: String, key: String, file: File)
-    case class LastUpload(bucket: String, key: String, inputStream: InputStream, metadata: ObjectMetadata)
+    case class LastUpload(bucket: String, key: String, file: File)
 
     var lastDownload: Option[LastDownload] = None
     var lastUpload: Option[LastUpload] = None
@@ -56,8 +56,8 @@ class S3StrategySpec extends StrategySpecification {
       ret
     }
 
-    override def upload(bucket: String, key: String, inputStream: InputStream, metadata: ObjectMetadata) = {
-      lastUpload = Some(LastUpload(bucket, key, inputStream, metadata))
+    override def upload(bucket: String, key: String, file: File) = {
+      lastUpload = Some(LastUpload(bucket, key, file))
       val ret = mock[Upload]
       ret.addProgressListener(any[ProgressListener]) answers { (pl) => lastProgressListener = Some(pl.asInstanceOf[ProgressListener]) }
       ret.waitForException answers { (_) => lastException.get }
@@ -218,16 +218,16 @@ class S3StrategySpec extends StrategySpecification {
 
   "#create" should {
     "fail when the location prefix is invalid" in new S3BaseScope {
-      TestStrategy.create("foo:bar", utf8InputStream("content 1"), 9) must throwA[IllegalArgumentException]
-      TestStrategy.create("s3:foo:", utf8InputStream("content 1"), 9) must throwA[IllegalArgumentException]
-      TestStrategy.create("s3:", utf8InputStream("content 1"), 9) must throwA[IllegalArgumentException]
+      TestStrategy.create("foo:bar", tempFile("content 1")) must throwA[IllegalArgumentException]
+      TestStrategy.create("s3:foo:", tempFile("content 1")) must throwA[IllegalArgumentException]
+      TestStrategy.create("s3:", tempFile("content 1")) must throwA[IllegalArgumentException]
     }
 
     "create random UUID filenames" in new S3BaseScope {
       val LocationRegex = "^s3:foo:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
-      val name1Future = TestStrategy.create("s3:foo", utf8InputStream("content 1"), 9)
+      val name1Future = TestStrategy.create("s3:foo", tempFile("content 1"))
       mockTransferManager.succeed
-      val name2Future = TestStrategy.create("s3:foo", utf8InputStream("content 1"), 9)
+      val name2Future = TestStrategy.create("s3:foo", tempFile("content 1"))
       mockTransferManager.succeed
       await(name1Future) must beMatching(LocationRegex)
       await(name2Future) must beMatching(LocationRegex)
@@ -237,25 +237,24 @@ class S3StrategySpec extends StrategySpecification {
     "send the uploads to S3" in new S3BaseScope {
       val UuidRegex = "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
 
-      val inputStream = utf8InputStream("content 1")
-      val future = TestStrategy.create("s3:foo", inputStream, 9)
+      val toCreate = tempFile("content 1")
+      val future = TestStrategy.create("s3:foo", toCreate)
       mockTransferManager.lastUpload must beSome
       mockTransferManager.lastUpload.get.bucket must beEqualTo("foo")
       mockTransferManager.lastUpload.get.key must beMatching(UuidRegex)
-      mockTransferManager.lastUpload.get.inputStream must beEqualTo(inputStream)
-      mockTransferManager.lastUpload.get.metadata.getContentLength must beEqualTo(9)
+      mockTransferManager.lastUpload.get.file must beEqualTo(toCreate.toFile)
     }
 
     "succeed when the upload succeeds" in new S3BaseScope {
       val LocationRegex = "^s3:foo:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$".r
-      val future = TestStrategy.create("s3:foo", utf8InputStream("content"), 7)
+      val future = TestStrategy.create("s3:foo", tempFile("content 1"))
       mockTransferManager.succeed
       await(future) must beMatching(LocationRegex)
     }
 
     "fail when the upload fails" in new S3BaseScope {
       val ex = new AmazonS3Exception("boo")
-      val future = TestStrategy.create("s3:foo", utf8InputStream("content"), 7)
+      val future = TestStrategy.create("s3:foo", tempFile("content 1"))
       mockTransferManager.fail(ex)
       await(future) must throwA(ex)
     }

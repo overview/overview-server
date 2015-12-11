@@ -1,6 +1,6 @@
 package com.overviewdocs.blobstorage
 
-import java.io.InputStream
+import java.nio.file.Path
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
@@ -66,9 +66,8 @@ trait BlobStorageStrategy {
   /** Writes a file and returns its identifier.
     *
     * @param locationPrefix Something like <tt>"s3:bucket"</tt> or <tt>"pglo"</tt>
-    * @param inputStream Content to write
-    * @param nBytes Number of bytes in the input stream
+    * @param dataPath File on the filesystem containing the data
     * @return A location string for use in get() and delete()
     */
-  def create(locationPrefix: String, inputStream: InputStream, nBytes: Long): Future[String]
+  def create(locationPrefix: String, dataPath: Path): Future[String]
 }
