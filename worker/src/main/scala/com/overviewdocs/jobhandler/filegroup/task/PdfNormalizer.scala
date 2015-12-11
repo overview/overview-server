@@ -1,5 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
+import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import scala.collection.mutable
@@ -104,7 +105,17 @@ trait PdfNormalizer {
         .redirectError(ProcessBuilder.Redirect.INHERIT) // Output errors where Logger can see them
         .start
       process.getOutputStream.close
-      processOutput(process)
+
+      try {
+        processOutput(process)
+      } catch {
+        case _: IOException => {
+          // The stream was closed by something else (i.e., the child). We don't
+          // much care what happens, because we assume the child's exit code will
+          // be non-zero.
+        }
+      }
+
       process.waitFor
     }).map { retval =>
       if (retval != 0 && error.isEmpty) {

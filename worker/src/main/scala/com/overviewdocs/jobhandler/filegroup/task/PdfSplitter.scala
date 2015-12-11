@@ -1,6 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
-import java.io.InputStream
+import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Path,Paths}
 import scala.collection.mutable
@@ -79,7 +79,7 @@ trait PdfSplitter {
         }
       }
 
-      val stream: InputStream = child.getInputStream
+      val stream = child.getInputStream
       val buf: Array[Byte] = new Array(10 * 1024) // 10kb covers most pages' text.
       var nextPageBytes = mutable.ArrayBuffer[Byte]() // When complete, all but the final `\f` will be in here.
 
@@ -118,7 +118,17 @@ trait PdfSplitter {
         .redirectError(ProcessBuilder.Redirect.INHERIT) // so Logger sees it
         .start
       process.getOutputStream.close
-      processOutput(process)
+
+      try {
+        processOutput(process)
+      } catch {
+        case _: IOException => {
+          // The stream was closed by something else (i.e., the child). We don't
+          // much care what happens, because we assume the child's exit code will
+          // be non-zero.
+        }
+      }
+
       process.waitFor
     }).flatMap { retval =>
       if (retval != 0 && error.isEmpty) {
