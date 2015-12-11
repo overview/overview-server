@@ -72,11 +72,14 @@ module.exports = (browser) ->
     debug("renameDocument(#{oldTitle}, #{newTitle})")
     browser
       .click(tag: 'h3', contains: oldTitle)
+      .sleep(500) # animation
       .click(css: 'header .edit-title', wait: true) # wait for popover to appear
       .sendKeys(newTitle, css: 'input[name=title]')
       .shortcuts.jquery.listenForAjaxComplete()
       .click(button: 'Save')
       .shortcuts.jquery.waitUntilAjaxComplete()
+      .click(link: 'Back to list')
+      .sleep(500) # animation
 
   search: (q) ->
     debug_("scheduling search(#{q})")
