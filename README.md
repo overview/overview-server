@@ -14,10 +14,7 @@ Overview is an open source visual document mining system. It was originally desi
 
 ## Developing Overview
 
-- [Setting up a development environment](https://github.com/overview/overview-server/wiki/Setting-up-a-development-Environment)
-- [Writing new visualizations and plugins](https://github.com/overview/overview-server/wiki/Overview-API-Overview)
-- [The API](http://docs.overviewproject.apiary.io/)
-- [Project wiki](https://github.com/overview/overview-server/wiki)
+- [How to develop Overview or new Plugins](https://github.com/overview/overview-server/wiki#developing)
 - [Developer forum / Mailing list](https://groups.google.com/forum/?fromgroups#!forum/overview-dev)
 
 ## Contact us!
@@ -26,5 +23,5 @@ Overview is an open source visual document mining system. It was originally desi
 - email info@overviewdocs.com
 - Or post in the [user forum](https://groups.google.com/forum/?fromgroups=#!forum/overview-users)
 
-This software is Copyright 2011-2014 The Associated Press, and distributed under the
+This software is Copyright 2011-2016 Jonathan Stray, and distributed under the
 terms of the GNU Affero General Public License. See the LICENSE file for details.
