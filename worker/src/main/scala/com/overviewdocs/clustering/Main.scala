@@ -84,6 +84,11 @@ object Main extends App {
       case None => false
       case Some(line) => {
         val i = line.indexOf('\t')
+
+        if (i == -1) {
+          throw new RuntimeException("We expected stdin to have a tab on every line. This line didn't: `" + line + "`");
+        }
+
         val documentId = line.substring(0, i).toLong
         val tokensString = line.substring(i + 1)
         indexer.addDocument(documentId, tokensString)
