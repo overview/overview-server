@@ -11,6 +11,6 @@ object DumpDocuments extends App {
   val documents = new CatDocuments(args(0).toLong, None)
 
   documents.foreach { document =>
-    System.out.write(s"${document.id},${document.tokens.mkString(" ")}\n".getBytes("utf-8"))
+    System.out.write(s"${document.id}\t${document.tokens.mkString(" ")}\n".getBytes("utf-8"))
   }
 }
