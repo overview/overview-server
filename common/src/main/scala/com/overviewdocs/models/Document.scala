@@ -93,14 +93,12 @@ object Document {
     */
   private def currentCodepointAndIncrement(charIterator: StringCharacterIterator): Int = {
     val c1 = charIterator.current
-    val ret = _finishCodepoint(c1, charIterator)
     charIterator.next
-    ret
-  }
 
-  private def _finishCodepoint(c1: Char, charIterator: StringCharacterIterator): Int = {
     if (Character.isHighSurrogate(c1)) {
-      Character.toCodePoint(c1, charIterator.next)
+      val c2 = charIterator.current
+      charIterator.next
+      Character.toCodePoint(c1, c2)
     } else {
       c1.toInt
     }
@@ -200,9 +198,11 @@ object Document {
     override def setText(it: StringCharacterIterator) = bi.setText(it)
   }
 
+  private val EmptyStringCharacterIterator: StringCharacterIterator = new StringCharacterIterator("")
+
   private class BIWrapper(bi: BreakIterator) extends OurBreakIterator {
     private var status: Int = 0
-    private var textIt: StringCharacterIterator = new StringCharacterIterator("")
+    private var textIt: StringCharacterIterator = EmptyStringCharacterIterator
 
     override def getRuleStatus = status
     override def current = bi.current
@@ -221,9 +221,7 @@ object Document {
     }
 
     private def calcStatus(current: Int, next: Int): Int = {
-      if (current == BreakIterator.DONE || next == BreakIterator.DONE) {
-        return BreakIterator.WORD_NONE;
-      }
+      textIt.setIndex(current) // why do we even _have_ textIt?
 
       while (textIt.getIndex < next) {
         val codepoint = currentCodepointAndIncrement(textIt)

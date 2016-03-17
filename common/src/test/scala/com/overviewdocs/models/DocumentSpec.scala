@@ -85,5 +85,13 @@ class DocumentSpec extends Specification {
       val document = documentWithText("bar marバーマルบาร์ มี.ค.바 월moo")
       document.tokens must beEqualTo(Seq("bar", "mar", "バー", "マル", "บาร์", "มี.ค", "바", "월", "moo"))
     }
+
+    "handle codepoint position, not character position, when switching between CJK and Latin" in {
+      val document = documentWithText("时间: 10\n年")
+      System.out.println("test start")
+      val tokens = document.tokens
+      System.out.println("test end")
+      document.tokens must beEqualTo(Seq("时间", "10", "年"))
+    }
   }
 }
