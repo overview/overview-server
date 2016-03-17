@@ -70,7 +70,7 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
       val stdinWriter = new PrintWriter(new OutputStreamWriter(stdin, StandardCharsets.UTF_8), true)
 
       documents.foreach { document =>
-        stdinWriter.println(s"${document.id}\t${document.tokens.mkString(" ")}")
+        stdinWriter.println(s"${document.id}\t${document.tokens.filter(_.length < maxTokenLength).mkString(" ")}")
         nWritten += 1
         if (nWritten % nPerProgress == 0) reportInputProgress(nWritten, nTotal)
       }
@@ -140,6 +140,8 @@ class Runner(val tree: Tree) extends HasBlockingDatabase {
       case _ => reportError // if tree was deleted, this error vanishes
     }
   }
+
+  private val maxTokenLength: Int = Configuration.getInt("max_clustering_token_length")
 
   private def command: Seq[String] = JavaCommand(
     "-Xmx" + Configuration.getString("clustering_memory"),
