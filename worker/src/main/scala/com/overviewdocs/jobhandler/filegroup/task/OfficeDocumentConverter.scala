@@ -1,6 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
-import java.nio.file.Path
+import java.nio.file.{Files,Path}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext,Future,blocking}
@@ -49,16 +49,24 @@ trait OfficeDocumentConverter {
     Future(blocking {
       outputPath.toFile.delete // Probably a no-op
 
-      val taskId = taskIdPool.acquireId
-      val cmd = command(in, taskId)
+      val taskId: Int = taskIdPool.acquireId
+      val tmpProfileDir: Path = TempDirectory.path.resolve(s"soffice-profile-${taskId}")
+      val cmd: Seq[String] = command(in, tmpProfileDir)
 
       logger.info("Running Office command: {}", cmd.mkString(" "))
 
       val process = new ProcessBuilder(cmd: _*).inheritIO.start
 
       if (!process.waitFor(timeout.length, timeout.unit)) {
-        process.destroyForcibly.waitFor
+        process.destroyForcibly.waitFor // blocking -- laziness!
+
         outputPath.toFile.delete // if it exists
+
+        // After we kill LibreOffice, its profile directory is wrecked. Delete
+        // it; otherwise future invocations will time out. (This might be as
+        // simple as a lockfile, I dunno ... but who cares?)
+        rm_rf_sync(tmpProfileDir)
+
         taskIdPool.releaseId(taskId)
         throw new OfficeDocumentConverter.LibreOfficeTimedOutException
       }
@@ -79,6 +87,22 @@ trait OfficeDocumentConverter {
     })
   }
 
+  /** Like "rm -rf": delete a file/directory and all sub-files/directories.
+    *
+    * This is synchronous, because we're lazy.
+    */
+  private def rm_rf_sync(path: Path): Unit = {
+    import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+
+    if (Files.isDirectory(path)) {
+      iterableAsScalaIterableConverter(Files.newDirectoryStream(path)).asScala
+        .toSeq // [adamhooper 2016-03-23] I _think_ if we don't do this, iteration misses stuff on Linux
+        .foreach(rm_rf_sync _)
+    }
+
+    Files.deleteIfExists(path)
+  }
+
   /** Removes the last ".xxx" from a filename.
     *
     * This mimics LibreOffice:
@@ -95,7 +119,7 @@ trait OfficeDocumentConverter {
     }
   }
 
-  private def command(in: Path, taskId: Int): Seq[String] = Seq(
+  private def command(in: Path, profileDir: Path): Seq[String] = Seq(
     libreOfficeLocation,
     "--headless",
     "--nologo",
@@ -104,7 +128,7 @@ trait OfficeDocumentConverter {
     "--nolockcheck",
     "--convert-to", "pdf",
     "--outdir", TempDirectory.path.toString,
-    s"-env:UserInstallation=file://${TempDirectory.path.toString}/soffice-profile-${taskId}",
+    s"-env:UserInstallation=file://${profileDir.toString}",
     in.toString
   )
 }
