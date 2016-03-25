@@ -9,6 +9,7 @@ import com.overviewdocs.blobstorage.{BlobBucketId,BlobStorage}
 import com.overviewdocs.database.{HasBlockingDatabase,LargeObjectInputStream}
 import com.overviewdocs.models.{File,GroupedFileUpload}
 import com.overviewdocs.models.tables.Files
+import com.overviewdocs.util.TempFiles
 
 /** Creates a [[File]] from a LibreOffice-readable document.
   *
@@ -37,19 +38,13 @@ class CreateOfficeFile(upload: GroupedFileUpload)(implicit ec: ExecutionContext)
   protected val blobStorage: BlobStorage = BlobStorage
 
   protected def withTempFiles[A](f: (Path, Path) => Future[A]): Future[A] = {
-    val extension = upload.name.split('.').tail.lastOption.getOrElse(".tmp")
+    val extension: String = TempFiles.filenameToSuffix(upload.name)
 
-    val paths: (Path, Path) = blocking {
-      (
-        JFiles.createTempFile("create-file-with-view-", s".$extension"),
-        JFiles.createTempFile("create-file-with-view-", ".pdf")
-      )
-    }
-
-    f(paths._1, paths._2).andThen { case _ => blocking {
-      JFiles.delete(paths._1)
-      JFiles.delete(paths._2)
-    }}
+    TempFiles.withTempFileWithSuffix(extension, { path1 =>
+      TempFiles.withTempFileWithSuffix(".pdf", { path2 =>
+        f(path1, path2)
+      })
+    })
   }
 
   def execute: Future[Either[String,File]] = {
