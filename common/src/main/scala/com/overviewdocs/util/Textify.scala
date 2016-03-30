@@ -5,40 +5,29 @@ import com.google.common.base.CharMatcher
 import java.nio.charset.Charset
 
 object Textify {
-  private val surrogateCharRegex = "[\ud800-\udfff]".r
-
   private object Escaper extends UnicodeEscaper {
     private val Newline = Array[Char]('\n')
     private val Space = Array[Char](' ')
     private val Empty = Array[Char]()
 
-    override protected def escape(cp: Int) : Array[Char] = {
+    override protected def escape(cp: Int): Array[Char] = {
       cp match {
         case 0x9 => null
         case 0xa => null
         case 0xd => null
         case 0x85 => Newline
         case i if Character.isISOControl(i) => Space
-        case i if (i & 0xfffe) == 0xfffe => Empty
-        case i if (i >= 0xfdd0 && i < 0xfdf0) => Empty
+        case i if !Character.isDefined(i) => Empty
         case _ => null
       }
     }
 
-    override protected def nextEscapeIndex(csq: CharSequence, start: Int, end: Int) : Int = {
+    override protected def nextEscapeIndex(csq: CharSequence, start: Int, end: Int): Int = {
       Range(start, end).find({ i : Int =>
         val c = csq.charAt(i)
 
-        c != 0x9 &&
-          c != 0xa &&
-          c != 0xd &&
-          (
-            c.isControl ||
-            c.isSurrogate || // easy handling of UTF-16 encoding: let Guava handle the confusion
-            c == 0xfffe ||
-            c == 0xffff ||
-            (c >= 0xfdd0 && c < 0xfdf0)
-          )
+        // Be fast and simple, rather than exact
+        c.isControl || c.isSurrogate || !Character.isDefined(c)
       }).getOrElse(end)
     }
   }
@@ -67,7 +56,7 @@ object Textify {
     * * Solitary surrogates (the byte sequences that represent multi-byte
     *   characters) cannot occur in Java Strings, so they are not handled.
     */
-  def apply(rawText: String) : String = {
+  def apply(rawText: String): String = {
     val escaped = Escaper.escape(rawText)
     unifyNewlines(escaped)
   }
@@ -85,7 +74,9 @@ object Textify {
     * * Deletes noncharacters (so U+FFFE, the byte-order marker, disappears).
     * * Unifies newlines: \r, \r\n and \u0085 become \n.
     */
-  def apply(rawBytes: Array[Byte], charset: Charset) : String = apply(new String(rawBytes, charset))
+  def apply(rawBytes: Array[Byte], charset: Charset): String = {
+    apply(new String(rawBytes, charset))
+  }
 
   /** Truncates a String by number of codepoints.
     *

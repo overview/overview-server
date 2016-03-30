@@ -35,7 +35,6 @@ class TextifySpec extends Specification {
     t("foo\ufdd0\ufdd1\ufdd2\ufdd3\ufdd4\ufdd5\ufdd6\ufdd7\ufdd8\ufdd9\ufdda\ufddb\ufddc\ufddd\ufdde\ufddf\ufde0\ufde1\ufde2\ufde3\ufde4\ufde5\ufde6\ufde7\ufde8\ufde9\ufdea\ufdeb\ufdec\ufded\ufdee\ufdefbar",
       "foobar",
       "remove Unicode non-characters (U+FDD0 .. U+FDEF)")
-    t("foo\ufdcf\ufdf0bar", "foo\ufdcf\ufdf0bar", "not remove actual characters near U+FDD0 .. U+FDEF")
     t("foo\ufffdbar", "foo\ufffdbar", "not remove U+FFFD")
 
     "remove Unicode non-characters (U+FFFE, U+FFFF, U+1FFFE, U+1FFFF, ...)" in {
@@ -46,6 +45,8 @@ class TextifySpec extends Specification {
       }
       Textify("foo" + sb.toString + "bar") must beEqualTo("foobar")
     }
+
+    b(Charsets.UTF_8, "foo\u0000b\u0000ar".getBytes(Charsets.UTF_8), "foo b ar", "nix NULL bytes")
 
     b(Charsets.UTF_8, "κόσμε".getBytes(Charsets.UTF_8), "κόσμε",
       "parse valid UTF-8")
