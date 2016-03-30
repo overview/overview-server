@@ -2,6 +2,15 @@
 
 docker-compose start
 
+# [adam, 2016-03-30] Okay, obviously exporting environment variables is the
+# wrong thing to do. Please replace this code with something better. But at
+# least this turns ./dev from a script that doesn't work to a script that does
+# something vaguely similar to what the caller expects.
+export BLOB_STORAGE_FILE_BASE_DIRECTORY="$(dirname "$0")/blob-storage"
+export DATABASE_PORT=9010
+export DATABASE_NAME=overview-dev
+export DATABASE_SERVER_NAME=$(test $OVERVIEW_ADDRESS && echo $OVERVIEW_ADDRESS || docker-machine ip default 2>/dev/null || docker inspect -f '{{ .NetworkSettings.Gateway }}' overview-dev-database)
+
 echo "Waiting for database..."
 # Gotta use "sh", not "/bin/sh", or Windows 10 gives error:
 # stat: C:/Program Files/Git/usr/bin/sh: no such file or directory
