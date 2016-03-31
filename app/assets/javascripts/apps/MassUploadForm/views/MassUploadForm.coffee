@@ -3,9 +3,8 @@ define [
   'backbone'
   'i18n'
   'apps/ImportOptions/app'
-  'apps/MassUploadForm/views/UploadView'
   'apps/MassUploadForm/views/UploadProgressView'
-], (_, Backbone, i18n, ImportOptionsApp, UploadView, UploadProgressView) ->
+], (_, Backbone, i18n, ImportOptionsApp, UploadProgressView) ->
   t = i18n.namespaced('views.DocumentSet._massUploadForm')
 
   class MassUploadForm extends Backbone.View
@@ -89,8 +88,7 @@ define [
       @_progressView.render()
 
       @_uploadCollectionView = new @options.uploadCollectionViewClass(
-        collection: @collection,
-        uploadViewClass: UploadView
+        collection: @collection
         el: @_$els.uploads
       )
       @_uploadCollectionView.render()

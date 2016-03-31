@@ -5,31 +5,42 @@ body.file-import-new {
 
   div.uploads {
     overflow: auto;
+    position: relative;
     height: 23em;
     margin: 1em 0;
     background: @body-bg-dark;
-    box-shadow: inset 0 -18px 40px -30px black;
     border: 1px solid @shade-muted;
     padding: 0.5em;
 
     ul {
-      list-style: none;
       margin: 0;
       padding: 0;
-    }
-
-    li {
-      line-height: 1.5em;
-      height: 1.5em;
-      padding: 0 1em;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      list-style: none;
       overflow: hidden;
     }
 
-    li.empty-upload {
+    li {
+      display: block;
+      line-height: 1.5em;
+      height: 1.5em;
+      padding: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      i {
+        width: 1em;
+        text-align: center;
+      }
+    }
+
+    .empty-upload {
       color: @shade-muted;
-      height: inherit;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       text-align: center;
       margin: 0;
       font-size: 2em;
@@ -115,12 +126,12 @@ body.file-import-new {
     .text-muted;
   }
 
-  .filename, .message {
-    padding-left: 1em;
+  .filename {
+    padding-left: .25em;
   }
 
-  .uploading {
-    font-weight: bold;
+  .message {
+    padding-left: 1em;
   }
 
   .uploaded {
