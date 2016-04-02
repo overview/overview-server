@@ -11,7 +11,7 @@ import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
 import com.overviewdocs.jobhandler.documentcloud.{DocumentCloudImportWorkBroker,DocumentCloudImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
 import com.overviewdocs.messages.DocumentSetCommands
-import com.overviewdocs.util.Logger
+import com.overviewdocs.util.{Configuration,Logger}
 
 class WorkerActorEnvironment {
   private val logger = Logger.forClass(getClass)
@@ -53,8 +53,11 @@ class WorkerActorEnvironment {
   private val csvImportWorkBroker = system.actorOf(CsvImportWorkBroker.props, "CsvImportWorkBroker")
   private val documentCloudImportWorkBroker = system.actorOf(DocumentCloudImportWorkBroker.props, "DocumentCloudImportWorkBroker")
 
-  system.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-1")
-  system.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), "AddDocumentsWorker-2")
+  Seq.tabulate(Configuration.getInt("n_document_converters")) { i =>
+    val name = "AddDocumentsWorker-" + i
+    system.actorOf(AddDocumentsWorker.props(addDocumentsWorkBroker, addDocumentsImpl), name)
+  }
+
   system.actorOf(CsvImportWorker.props(csvImportWorkBroker), "CsvImportWorker-1")
   system.actorOf(DocumentCloudImportWorker.props(documentCloudImportWorkBroker), "DocumentCloudWorker-1")
 
