@@ -10,6 +10,6 @@ define [ 'jquery', 'apps/DocumentCloudImportForm/app', 'apps/ImportOptions/app' 
       defaultLanguageCode: window.defaultLanguageCode
 
     importApp = new ImportApp query, submitUrl,
-      extraOptionsEl: optionsApp.el
+      extraOptionsEl: optionsApp.fieldsetEl
 
     el.appendChild(importApp.el)
