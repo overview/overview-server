@@ -1,0 +1,29 @@
+overview-word-cloud:
+  container_name: overview-word-cloud
+  image: overview/overview-word-cloud
+  ports:
+    - "3000:3000"
+
+overview-entity-filter:
+  container_name: overview-entity-filter
+  image: overview/overview-entity-filter
+  ports:
+    - "3001:3000"
+
+overview-grep:
+  container_name: overview-grep
+  image: overview/overview-grep
+  ports:
+    - "3002:3000"
+
+overview-file-browser:
+  container_name: overview-file-browser
+  image: overview/overview-file-browser
+  ports:
+    - "3003:3000"
+
+overview-multi-search:
+  container_name: overview-multi-search
+  image: overview/overview-multi-search
+  ports:
+    - "3004:3000"
