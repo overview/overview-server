@@ -129,12 +129,16 @@ object ApplicationBuild extends Build {
     .enablePlugins(JavaAppPackaging)
     .settings(libraryDependencies ++= Dependencies.reindexDependencies)
 
+  // Worker config includes setup for worker/re-start used by ./dev
+  // We must set the javaOptions in Revolver.reStart or everything fails when
+  // developing under docker-machine as search_index.hosts is not set correctly
   lazy val worker = project("worker")
     .settings(Revolver.settings)
     .settings(
       libraryDependencies ++= Dependencies.workerDependencies,
       javaOptions in Test += "-Dconfig.resource=test.conf",
-      mainClass in Compile := Some("com.overviewdocs.Worker")
+      mainClass in Compile := Some("com.overviewdocs.Worker"),
+      javaOptions in Revolver.reStart ++= devJavaOpts
     )
     .dependsOn(common % "test->test;compile->compile")
 
