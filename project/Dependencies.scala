@@ -29,7 +29,7 @@ object Dependencies {
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4" // for Query
-    val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.2"
+    val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.3"
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.10.1"
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
     val playMailer = "com.typesafe.play" %% "play-mailer" % "4.0.0-M1"
