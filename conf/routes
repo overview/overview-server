@@ -33,6 +33,7 @@ GET    /documents/:id.pdf                         controllers.DocumentController
 GET    /documents/:id                             controllers.DocumentController.show(id: Long)
 GET    /documentsets/:documentSetId/documents/:id controllers.DocumentController.showJson(documentSetId: Long, id: Long)
 PATCH  /documentsets/:documentSetId/documents/:id controllers.DocumentController.update(documentSetId: Long, id: Long)
+GET    /localfiles/*filename  						controllers.DocumentController.showFile(filename: String)
 
 HEAD   /uploads/:uuid        controllers.UploadController.show(uuid: java.util.UUID)
 POST   /uploads/:uuid        controllers.UploadController.create(uuid: java.util.UUID)

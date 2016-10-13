@@ -45,9 +45,18 @@ case class Document(
     fileId.isDefined
   )
 
+  // URL used for document display. This is ultitmately fed to pdf.js viewer if pdf
   override def viewUrl: Option[String] = {
-    url
-      .orElse(fileId.map(_ => s"/documents/${id}.pdf"))
+    url match {
+      case None =>  
+        fileId.map(_ => s"/documents/${id}.pdf")    // pdf in blobStorage
+
+      case url if url.get.startsWith("local://") =>
+        Some("/localfiles/" + url.get.stripPrefix("local://"))   // pdf file in local storage
+
+      case _ =>
+        url                                   // something else, e.g. Twitter
+    }    
   }
 
   /** Text, normalized as NFKC. */

@@ -37,7 +37,14 @@ define [], ->
           name: 'PDF'
           regex: /// ^/documents/(\d+).pdf$ ///
           capture: [ 'id' ]
-          url: (o) -> "/documents/#{o.id}.pdf"
+          url: (o) -> "/documents/#{o.id}.pdf"        # unused, comes from Document.viewUrl for pdf.js
+          }
+        {
+          id: 'pdf'
+          name: 'PDF file served from server local storage'
+          regex: /// ^local://(.+) ///
+          capture: [ 'fileName' ]
+          url: (o) -> "/localfiles/#{o.fileName}"     # unused, comes from Document.viewUrl for pdf.js
         }
         {
           id: 'https'

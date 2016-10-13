@@ -69,7 +69,9 @@ define [
       id = @document?.id
       url = @document?.url
 
-      urlProperties = @urlPropertiesExtractor.urlToProperties(url) if url?
+      if url
+        urlProperties = @urlPropertiesExtractor.urlToProperties(url)
+        urlProperties.id = id     # needed as not captured from url for local://
 
       if !id?
         @_removeTextViews()
