@@ -1,5 +1,6 @@
 package controllers
 
+import com.overviewdocs.searchindex.Snippet
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import scala.concurrent.Future
@@ -18,13 +19,16 @@ trait DocumentListController extends Controller with SelectionHelpers {
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     val pr = pageRequest(request, MaxPageSize)
 
-    requestToSelection(documentSetId, request).flatMap(_ match {
+    requestToSelectionWithQuery(documentSetId, request.user.email, request).flatMap(_ match {
       case Left(result) => Future.successful(result)
-      case Right(selection) => {
+      case Right((selection, sr)) => {
         for {
           page <- documentBackend.index(selection, pr, false)
 
-          snippets <- highlightBackend.index(documentSetId, page.items.map(_.id), selectionRequest(documentSetId, request).right.get.q.get)
+          snippets <- sr.q match {
+            case None => Future.successful(Map.empty[Long, Seq[Snippet]])
+            case Some(q) => highlightBackend.index(documentSetId, page.items.map(_.id), q)
+          }
 
           // In serial so as not to bombard Postgres
           nodeIds <- documentNodeBackend.indexMany(page.items.map(_.id))

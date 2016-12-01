@@ -75,7 +75,12 @@ trait SelectionHelpers { self: Controller =>
     * Paths 2 and 3 will always return a Right. Path 1 may return a
     * Left(NotFound), if the selection ID has expired.
     */
-  protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,Selection]] = {
+    protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,Selection]] = {
+      requestToSelectionWithQuery(documentSetId, userEmail, request).map(_.right.map(_._1))
+    }
+  //_.right.map { case (s, _) => s })
+
+    protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,(Selection, SelectionRequest)]] = {
     val rd = RequestData(request)
 
     rd.getUUID(selectionIdKey) match {
@@ -91,14 +96,15 @@ trait SelectionHelpers { self: Controller =>
               case Some(true) => selectionBackend.create(userEmail, sr)
               case _ => selectionBackend.findOrCreate(userEmail, sr, None)
             }
-            selectionFuture.map(Right(_))
+            selectionFuture.map(Right(_, sr))
           }
         }
       }
     }
   }
 
-  protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]): Future[Either[Result,Selection]] = {
+  protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]): Future[Either[Result, Selection]] = {
     requestToSelection(documentSetId, request.user.email, request)
   }
 }
+
