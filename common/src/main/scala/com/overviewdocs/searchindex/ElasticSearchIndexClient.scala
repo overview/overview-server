@@ -68,6 +68,9 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
   private lazy val SettingsJson = loadJsonResource("/documents-settings.json")
   private lazy val MappingJson = loadJsonResource("/documents-mapping.json")
 
+  private val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
+  private val HighlightEnd: Char = '\u0002'
+
   class UnexpectedResponse(message: String) extends Exception(message)
   object UnexpectedResponse {
     def apply(json: JsValue): UnexpectedResponse = new UnexpectedResponse(json.toString)
@@ -263,16 +266,22 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     })
   }
 
-
-  override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]] =  {
-    val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
-    val HighlightEnd: Char = '\u0002'
+  /** Finds Highlights in the given text.
+    *
+    * The given text has highlights delimited by <tt>\u0001</tt> and
+    * <tt>\u0002</tt>. We return Highlights that <em>ignore</em> those values:
+    * that means the indices we return in the Highlights are less than or
+    * equal to the indices in the input text.
+    *
+    * @param textWithHighlights Text we're searching in
+    */
+  private def findHighlights(textWithHighlights: String): Seq[Highlight] = {
 
     /** Searches for "\u0001" and "\u0002" and uses them to create a Highlight.
       *
       * @param textWithHighlights Text we're searching in
-      * @param cur Index into text
-      * @param n How many highlights came before this one
+      * @param cur                Index into text
+      * @param n                  How many highlights came before this one
       */
     def findHighlight(textWithHighlights: String, cur: Int, n: Int): Option[Highlight] = {
       val begin = textWithHighlights.indexOf(HighlightBegin, cur)
@@ -288,9 +297,9 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     /** Recursively finds Highlights in the given text.
       *
       * @param textWithHighlights Text we're searching in
-      * @param cur Index into the text
-      * @param n Number of highlights we've found already
-      * @param acc Return value we're building
+      * @param cur                Index into the text
+      * @param n                  Number of highlights we've found already
+      * @param acc                Return value we're building
       */
     @scala.annotation.tailrec
     def findHighlightsRec(textWithHighlights: String, cur: Int, n: Int, acc: List[Highlight]): List[Highlight] = {
@@ -300,23 +309,17 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
       }
     }
 
+    findHighlightsRec(textWithHighlights, 0, 0, Nil)
+  }
 
-    /** Finds Highlights in the given text.
-      *
-      * The given text has highlights delimited by <tt>\u0001</tt> and
-      * <tt>\u0002</tt>. We return Highlights that <em>ignore</em> those values:
-      * that means the indices we return in the Highlights are less than or
-      * equal to the indices in the input text.
-      *
-      * @param textWithHighlights Text we're searching in
-      */
+  override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]] =  {
 
-//   '{"query":{"ids":{"type":"document","values":["4294967298","4294967297"]}},"highlight":
+
+    //   '{"query":{"ids":{"type":"document","values":["4294967298","4294967297"]}},"highlight":
 //      {"number_of_fragments":1,"require_field_match":false,"fields":{"text":{"highlight_query":{"constant_score":
 //      {"filter":{"match_phrase":{"_all":"this"}}}},"pre_tags":["\u0001"],"post_tags":["\u0002"],"number_of_fragments":5}}}}'
 //
 
-    def findHighlights(textWithHighlights: String): Seq[Highlight] = findHighlightsRec(textWithHighlights, 0, 0, Nil)
 
     // ?filter_path=hits.hits.highlight.text
     GET(s"/documents_$documentSetId/_search", Json.obj(
@@ -356,52 +359,6 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
   }
 
   override def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {
-    val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
-    val HighlightEnd: Char = '\u0002'
-
-    /** Searches for "\u0001" and "\u0002" and uses them to create a Highlight.
-      *
-      * @param textWithHighlights Text we're searching in
-      * @param cur Index into text
-      * @param n How many highlights came before this one
-      */
-    def findHighlight(textWithHighlights: String, cur: Int, n: Int): Option[Highlight] = {
-      val begin = textWithHighlights.indexOf(HighlightBegin, cur)
-      if (begin == -1) {
-        None
-      } else {
-        val end = textWithHighlights.indexOf(HighlightEnd, begin)
-        if (end == -1) throw new Exception(s"Found begin without end starting at index ${begin} in text: ${textWithHighlights}")
-        Some(Highlight(begin - n * 2, end - n * 2 - 1))
-      }
-    }
-
-    /** Recursively finds Highlights in the given text.
-      *
-      * @param textWithHighlights Text we're searching in
-      * @param cur Index into the text
-      * @param n Number of highlights we've found already
-      * @param acc Return value we're building
-      */
-    @scala.annotation.tailrec
-    def findHighlightsRec(textWithHighlights: String, cur: Int, n: Int, acc: List[Highlight]): List[Highlight] = {
-      findHighlight(textWithHighlights, cur, n) match {
-        case None => acc.reverse
-        case Some(highlight) => findHighlightsRec(textWithHighlights, highlight.end + n * 2 + 2, n + 1, highlight :: acc)
-      }
-    }
-
-
-    /** Finds Highlights in the given text.
-      *
-      * The given text has highlights delimited by <tt>\u0001</tt> and
-      * <tt>\u0002</tt>. We return Highlights that <em>ignore</em> those values:
-      * that means the indices we return in the Highlights are less than or
-      * equal to the indices in the input text.
-      *
-      * @param textWithHighlights Text we're searching in
-      */
-    def findHighlights(textWithHighlights: String): Seq[Highlight] = findHighlightsRec(textWithHighlights, 0, 0, Nil)
 
     GET(s"/documents_$documentSetId/_search", Json.obj(
       "query" -> Json.obj("ids" -> Json.obj("type" -> "document", "values" -> Json.arr(documentId.toString))),

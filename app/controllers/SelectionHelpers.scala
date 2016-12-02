@@ -87,19 +87,17 @@ trait SelectionHelpers { self: Controller =>
         case Left(error) => Future.successful(Left(error))
         case Right(sr) => {
           rd.getUUID(selectionIdKey) match {
-            case Some(selectionId) => {
+            case Some(selectionId) =>
               selectionBackend.find(documentSetId, selectionId).map {
                 case Some(selection) => Right(selection, Some(sr))
                 case None => Left(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")))
               }
-            }
-            case None => {
+            case None =>
               val selectionFuture = rd.getBoolean(refreshKey) match {
                 case Some(true) => selectionBackend.create(userEmail, sr)
                 case _ => selectionBackend.findOrCreate(userEmail, sr, None)
               }
               selectionFuture.map(Right(_, Some(sr)))
-            }
           }
         }
       }
