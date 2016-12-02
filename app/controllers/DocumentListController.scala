@@ -25,7 +25,7 @@ trait DocumentListController extends Controller with SelectionHelpers {
         for {
           page <- documentBackend.index(selection, pr, false)
 
-          snippets <- sr.q match {
+          snippets <- sr.flatMap(_.q) match {
             case None => Future.successful(Map.empty[Long, Seq[Snippet]])
             case Some(q) => highlightBackend.index(documentSetId, page.items.map(_.id), q)
           }

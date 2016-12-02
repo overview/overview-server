@@ -80,13 +80,15 @@ trait SelectionHelpers { self: Controller =>
     }
   //_.right.map { case (s, _) => s })
 
-    protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,(Selection, SelectionRequest)]] = {
+    protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
     val rd = RequestData(request)
 
     rd.getUUID(selectionIdKey) match {
       case Some(selectionId) => {
-        selectionBackend.find(documentSetId, selectionId)
-          .map(_.toRight(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired."))))
+        selectionBackend.find(documentSetId, selectionId) {
+          case Some(selection) => Right(selection, None)
+          case None => NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")
+        }
       }
       case None => {
         selectionRequest(documentSetId, request) match {
@@ -96,7 +98,7 @@ trait SelectionHelpers { self: Controller =>
               case Some(true) => selectionBackend.create(userEmail, sr)
               case _ => selectionBackend.findOrCreate(userEmail, sr, None)
             }
-            selectionFuture.map(Right(_, sr))
+            selectionFuture.map(Right(_, Some(sr)))
           }
         }
       }
