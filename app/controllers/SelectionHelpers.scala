@@ -81,28 +81,28 @@ trait SelectionHelpers { self: Controller =>
   //_.right.map { case (s, _) => s })
 
     protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
-    val rd = RequestData(request)
+      val rd = RequestData(request)
 
-    rd.getUUID(selectionIdKey) match {
-      case Some(selectionId) => {
-        selectionBackend.find(documentSetId, selectionId) {
-          case Some(selection) => Right(selection, None)
-          case None => NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")
-        }
-      }
-      case None => {
-        selectionRequest(documentSetId, request) match {
-          case Left(error) => Future.successful(Left(error))
-          case Right(sr) => {
-            val selectionFuture = rd.getBoolean(refreshKey) match {
-              case Some(true) => selectionBackend.create(userEmail, sr)
-              case _ => selectionBackend.findOrCreate(userEmail, sr, None)
+      selectionRequest(documentSetId, request) match {
+        case Left(error) => Future.successful(Left(error))
+        case Right(sr) => {
+          rd.getUUID(selectionIdKey) match {
+            case Some(selectionId) => {
+              selectionBackend.find(documentSetId, selectionId).map {
+                case Some(selection) => Right(selection, Some(sr))
+                case None => Left(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")))
+              }
             }
-            selectionFuture.map(Right(_, Some(sr)))
+            case None => {
+              val selectionFuture = rd.getBoolean(refreshKey) match {
+                case Some(true) => selectionBackend.create(userEmail, sr)
+                case _ => selectionBackend.findOrCreate(userEmail, sr, None)
+              }
+              selectionFuture.map(Right(_, Some(sr)))
+            }
           }
         }
       }
-    }
   }
 
   protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]): Future[Either[Result, Selection]] = {

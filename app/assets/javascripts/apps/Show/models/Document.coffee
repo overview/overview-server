@@ -43,6 +43,7 @@ define [
       description: json.description
       pageNumber: json.page_number || null
       url: json.url || null
+      snippets: json.snippets || []
       tagids: json.tagids || []
       nodeids: json.nodeids || []
 

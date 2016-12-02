@@ -12,6 +12,7 @@ define [
     model: _.template("""<li <%= liAttributes %>
       class="document" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
         <h3><%- title %></h3>
+        <p class="snippets">Snippets</p>
         <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
