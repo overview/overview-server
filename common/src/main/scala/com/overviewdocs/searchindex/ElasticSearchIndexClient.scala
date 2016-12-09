@@ -314,18 +314,10 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
 
   override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]] =  {
 
-
-    //   '{"query":{"ids":{"type":"document","values":["4294967298","4294967297"]}},"highlight":
-//      {"number_of_fragments":1,"require_field_match":false,"fields":{"text":{"highlight_query":{"constant_score":
-//      {"filter":{"match_phrase":{"_all":"this"}}}},"pre_tags":["\u0001"],"post_tags":["\u0002"],"number_of_fragments":5}}}}'
-//
-
-
-    // ?filter_path=hits.hits.highlight.text
     GET(s"/documents_$documentSetId/_search", Json.obj(
       "query" -> Json.obj("ids" -> Json.obj("type" -> "document", "values" -> documentIds.map(_.toString))),
+      "size"-> documentIds.length,
       "highlight" -> Json.obj(
-        "number_of_fragments" -> 0,
         "require_field_match" -> false, // Confusing: we use *filters*, not *queries*, so true matches nothing
         "fields" -> Json.obj(
           "text" -> Json.obj(
