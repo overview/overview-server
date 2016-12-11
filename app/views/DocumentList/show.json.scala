@@ -16,7 +16,8 @@ object show {
       "page_number" -> document.pageNumber,
       "url" -> document.viewUrl,
       "nodeids" -> nodeIds,
-      "tagids" -> tagIds
+      "tagids" -> tagIds,
+      "thumbnailUrl" -> document.thumbnailLocation.map(_ => s"/documents/${document.id}.png")
     )
   }
 

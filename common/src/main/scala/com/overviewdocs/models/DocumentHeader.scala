@@ -20,6 +20,7 @@ trait DocumentHeader {
   val displayMethod: DocumentDisplayMethod
   val isFromOcr: Boolean
   val metadataJson: JsObject
+  val thumbnailLocation: Option[String]
   val text: String
 
   def viewUrl: Option[String] = url

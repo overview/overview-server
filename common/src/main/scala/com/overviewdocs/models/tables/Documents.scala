@@ -36,7 +36,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def displayMethod = column[Option[DocumentDisplayMethod.Value]]("display_method")
   def isFromOcr = column[Option[Boolean]]("is_from_ocr")
   def metadataJson = column[Option[JsObject]]("metadata_json_text") // add DocumentSet.metadataSchema to make a Metadata
-
+  def thumbnailLocation = column[Option[String]]("thumbnail_location")
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
    * can only handle this with a column[Option[_]] -- no type mappers allowed.
@@ -57,9 +57,10 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     displayMethod,
     isFromOcr,
     metadataJson,
+    thumbnailLocation,
     text
-  ).<>[Document,Tuple15[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String]]](
-    (t: Tuple15[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String]]) => Document.apply(
+  ).<>[Document,Tuple16[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[String]]](
+    (t: Tuple16[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[String]]) => Document.apply(
       t._1,
       t._2,
       t._3,
@@ -73,7 +74,8 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       t._12.getOrElse(DocumentDisplayMethod.auto),
       t._13.getOrElse(false),           // isFromOcr
       t._14.getOrElse(JsObject(Seq())), // metadataJson
-      t._15.getOrElse("")               // text
+      t._15,                            // thumbnail
+      t._16.getOrElse("")               // text
     ),
     { d: Document => Some(
       d.id,
@@ -90,6 +92,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       Some(d.displayMethod),
       Some(d.isFromOcr),
       Some(d.metadataJson),
+      d.thumbnailLocation,
       Some(d.text)
     )}
   )

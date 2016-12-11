@@ -20,7 +20,8 @@ case class DocumentInfo(
   override val createdAt: Date,
   override val displayMethod: DocumentDisplayMethod.Value,
   override val isFromOcr: Boolean,
-  val hasFileView: Boolean
+  val hasFileView: Boolean,
+  override val thumbnailLocation: Option[String]
 ) extends DocumentHeader {
   override val metadataJson = JsObject(Seq())
   override val text = ""

@@ -1,12 +1,16 @@
 package com.overviewdocs.helpers
 
-import java.nio.file.{Files,Path,Paths,StandardOpenOption}
+import java.io.File
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import javax.imageio.ImageIO
+
 import org.overviewproject.pdfocr.pdf.PdfDocument
 import org.overviewproject.pdfocr.exceptions._
-import scala.concurrent.{Await,Future}
-import scala.concurrent.duration.Duration
 
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 import com.overviewdocs.util.Textify
+import org.apache.pdfbox.rendering.{ImageType, PDFRenderer}
 
 object SplitPdfAndExtractText extends App {
   /** Converts a PDF into a number of PDFs, one per page, using pdfocr.
@@ -57,7 +61,7 @@ object SplitPdfAndExtractText extends App {
     *                       instance: `/tmp/p{}.pdf`. Leave blank and no PDF
     *                       files will be written.
     */
-  def run(inPath: Path, maybeOutPathPattern: Option[Path]): Unit = {
+  def run(inPath: Path, pageFilenamePattern: String, createPdfs: Boolean): Unit = {
     implicit val ec = CrashyExecutionContext()
 
     val pdfDocument: PdfDocument = try {
@@ -78,20 +82,34 @@ object SplitPdfAndExtractText extends App {
     val it = pdfDocument.pages
 
     try {
+
+      val renderer = new PDFRenderer(pdfDocument.pdDocument)
+
       while (it.hasNext) {
         currentPageNumber += 1
         val pdfPage = await(it.next)
         val isFromOcr: Boolean = pdfPage.isFromOcr
         val text: String = Textify(pdfPage.toText)
 
-        maybeOutPathPattern.foreach { pattern =>
+        if(createPdfs) {
           val pageBytes: Array[Byte] = pdfPage.toPdf
-          val outPath = pattern.resolveSibling(pattern.getFileName.toString.replace("{}", currentPageNumber.toString))
+          val outPath = inPath.resolveSibling(pageFilenamePattern.replace("{}", currentPageNumber.toString))
           Files.write(outPath, pageBytes, StandardOpenOption.CREATE)
+        }
+
+        // If we have split pdf or if the current page is the first page of an unsplit pdf, then create thumbnail preview
+        if (createPdfs || currentPageNumber == 1) {
+          val renderer = new PDFRenderer(pdfDocument.pdDocument)
+
+          val outputScale = Math.min(1, 500/Math.max(pdfPage.pdPage.getBBox.getHeight, pdfPage.pdPage.getBBox.getWidth))
+          val bufferedImage = renderer.renderImage(currentPageNumber-1, outputScale, ImageType.RGB);
+          val outPath = inPath.resolveSibling(pageFilenamePattern.replace("{}", currentPageNumber + "-thumbnail")) + ".png"
+          ImageIO.write(bufferedImage, "png" , new File(outPath))
         }
 
         System.out.print(s"$currentPageNumber/$nPages ${if (isFromOcr) 't' else 'f'} $text\f\n")
       }
+
     } catch {
       case _: PdfInvalidException => {
         System.out.print("Error in PDF file\n")
@@ -110,14 +128,17 @@ object SplitPdfAndExtractText extends App {
 
   private def await[A](future: Future[A]): A = Await.result(future, Duration.Inf)
 
-  if (args.length != 1 && args.length != 2) {
-    System.err.println("Example usage: SplitPdf in.pdf [out-p{}.pdf]")
+  if (args.length != 2 && args.length != 3) {
+    System.err.println("Example usage: SplitPdf in.pdf out-p{}.pdf [--create-pdfs]")
   }
 
-  val inPath = Paths.get(args(0))
-  val outPath = args.lastOption.map(s => Paths.get(s))
+  // always writing individual pages?
 
-  run(inPath, outPath)
+  val inPath = Paths.get(args(0))
+  val outPath: String = args(1)
+  val createPdfs: Boolean = args.length == 3 && args(2) == "--create-pdfs"
+
+  run(inPath, outPath, createPdfs)
 }
 
 // sbt command to run this program:
