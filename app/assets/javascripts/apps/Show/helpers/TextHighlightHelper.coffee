@@ -28,8 +28,5 @@ define [ 'i18n' ], (i18n) ->
       nodes.push(finalText)
 
     nodes = nodes.join('').trim()
-    # nodes = nodes[0].replace(/\r?\n|\r/g, "");
 
-    console.log( nodes)
-    #
     return nodes

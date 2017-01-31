@@ -94,7 +94,6 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
   private[searchindex] def hostUrl(path: String): String = s"http://${hosts.head}$path"
   private def GET(path: String): Future[Response] = GET(Request(path, None))
   private def GET(path: String, body: JsValue): Future[Response] = {
-    System.err.println(body.toString())
     GET(Request(path, Some(body)))
   }
   private def GET(request: Request): Future[Response] = {
