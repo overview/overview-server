@@ -102,7 +102,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     splitByPage: Boolean,
     onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[task.IncompleteDocument]]] = {
-    logger.debug("Reading documents from {}", file)
+    logger.debug("Reading documents from {}", file)// thumbnail for first page
     splitByPage match {
       case true => task.CreateDocumentDataForPages(file, onProgress)
       case false => task.CreateDocumentDataForFile(file, onProgress)

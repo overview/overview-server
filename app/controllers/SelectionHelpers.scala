@@ -78,8 +78,7 @@ trait SelectionHelpers { self: Controller =>
     protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,Selection]] = {
       requestToSelectionWithQuery(documentSetId, userEmail, request).map(_.right.map(_._1))
     }
-  //_.right.map { case (s, _) => s })
-
+ 
     protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
       val rd = RequestData(request)
 
