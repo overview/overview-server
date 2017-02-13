@@ -131,6 +131,7 @@ object PodoFactory extends Factory {
     displayMethod: DocumentDisplayMethod.Value,
     isFromOcr: Boolean,
     metadataJson: JsObject,
+    thumbnailLocation: Option[String],
     text: String
   ) = Document(
     getId(id),
@@ -146,6 +147,7 @@ object PodoFactory extends Factory {
     displayMethod,
     isFromOcr,
     metadataJson,
+    thumbnailLocation,
     text
   )
 

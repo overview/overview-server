@@ -76,6 +76,7 @@ trait Factory {
     displayMethod: DocumentDisplayMethod.Value = DocumentDisplayMethod.auto,
     isFromOcr: Boolean = false,
     metadataJson: JsObject = JsObject(Seq()),
+    thumbnailLocation: Option[String] = None,
     text: String = ""): Document
 
   /** Creates a new DocumentSet with the given parameters. */

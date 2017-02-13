@@ -101,7 +101,7 @@ object SplitPdfAndExtractText extends App {
         if (createPdfs || currentPageNumber == 1) {
           val renderer = new PDFRenderer(pdfDocument.pdDocument)
 
-          val outputScale = Math.min(1, 500/Math.max(pdfPage.pdPage.getBBox.getHeight, pdfPage.pdPage.getBBox.getWidth))
+          val outputScale = Math.min(1, 700/Math.max(pdfPage.pdPage.getBBox.getHeight, pdfPage.pdPage.getBBox.getWidth))
           val bufferedImage = renderer.renderImage(currentPageNumber-1, outputScale, ImageType.RGB);
           val outPath = inPath.resolveSibling(pageFilenamePattern.replace("{}", currentPageNumber + "-thumbnail")) + ".png"
           ImageIO.write(bufferedImage, "png" , new File(outPath))

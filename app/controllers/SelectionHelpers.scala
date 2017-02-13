@@ -1,14 +1,13 @@
 package controllers
 
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.i18n.Messages
-import play.api.mvc.{Request,Result}
-import scala.concurrent.Future
-
+import com.overviewdocs.query.{Query, QueryParser}
 import controllers.auth.AuthorizedRequest
 import controllers.backend.SelectionBackend
-import models.{Selection,SelectionRequest}
-import com.overviewdocs.query.{Query,QueryParser,SyntaxError}
+import models.{Selection, SelectionRequest}
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.mvc.{Request, Result}
+
+import scala.concurrent.Future
 
 trait SelectionHelpers { self: Controller =>
   protected val selectionBackend: SelectionBackend = SelectionBackend

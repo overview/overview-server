@@ -45,6 +45,7 @@ define [
       url: json.url || null
       tagids: json.tagids || []
       nodeids: json.nodeids || []
+      thumbnailUrl: json.thumbnailUrl || null
 
     initialize: (attributes, options) ->
       super(attributes, options)
