@@ -105,6 +105,7 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
         DocumentDisplayMethod.auto,
         false,
         JsObject(Seq()),
+        None,
         ""
       )
       blockingDatabase.run((Documents returning Documents).+=(ret))
