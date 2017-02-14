@@ -95,11 +95,9 @@ define [
     # return `null`.
     _getQueryStringCached: ->
       if @get('selectionId')
-        console.log("get query", @get('selectionId'))
-        qparam = if @params.q then "q=#{@params.q()}&" else ""
-        "#{qparam}selectionId=#{@get('selectionId')}"
+        q = if @params.q then "q=#{@params.q}&" else ""
+        "#{q}selectionId=#{@get('selectionId')}"
       else
-        console.log('none')
         null
 
     # Tags all documents, without sending a server request.
