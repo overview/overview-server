@@ -78,6 +78,7 @@ object SplitPdfAndExtractText extends App {
     val it = pdfDocument.pages
 
     try {
+
       while (it.hasNext) {
         currentPageNumber += 1
         val pdfPage = await(it.next)
@@ -88,6 +89,7 @@ object SplitPdfAndExtractText extends App {
           val pageBytes: Array[Byte] = pdfPage.toPdf
           val outPath = pattern.resolveSibling(pattern.getFileName.toString.replace("{}", currentPageNumber.toString))
           Files.write(outPath, pageBytes, StandardOpenOption.CREATE)
+
         }
 
         System.out.print(s"$currentPageNumber/$nPages ${if (isFromOcr) 't' else 'f'} $text\f\n")

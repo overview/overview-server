@@ -95,7 +95,8 @@ define [
     # return `null`.
     _getQueryStringCached: ->
       if @get('selectionId')
-        "selectionId=#{@get('selectionId')}"
+        q = if @params.q then "q=#{@params.q}&" else ""
+        "#{q}selectionId=#{@get('selectionId')}"
       else
         null
 

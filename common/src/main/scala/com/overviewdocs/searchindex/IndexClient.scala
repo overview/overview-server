@@ -67,6 +67,8 @@ trait IndexClient {
     */
   def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]]
 
+  def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]]
+
   /** Guarantees all past added documents are searchable. */
   def refresh: Future[Unit]
 

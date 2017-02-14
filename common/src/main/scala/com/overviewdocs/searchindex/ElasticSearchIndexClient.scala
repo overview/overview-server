@@ -68,6 +68,9 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
   private lazy val SettingsJson = loadJsonResource("/documents-settings.json")
   private lazy val MappingJson = loadJsonResource("/documents-mapping.json")
 
+  private val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
+  private val HighlightEnd: Char = '\u0002'
+
   class UnexpectedResponse(message: String) extends Exception(message)
   object UnexpectedResponse {
     def apply(json: JsValue): UnexpectedResponse = new UnexpectedResponse(json.toString)
@@ -90,7 +93,9 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
 
   private[searchindex] def hostUrl(path: String): String = s"http://${hosts.head}$path"
   private def GET(path: String): Future[Response] = GET(Request(path, None))
-  private def GET(path: String, body: JsValue): Future[Response] = GET(Request(path, Some(body)))
+  private def GET(path: String, body: JsValue): Future[Response] = {
+    GET(Request(path, Some(body)))
+  }
   private def GET(request: Request): Future[Response] = {
     httpClient.get(request.toHttpRequest).map(Response.fromHttpResponse _)
   }
@@ -260,15 +265,22 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     })
   }
 
-  override def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {
-    val HighlightBegin: Char = '\u0001' // something that can't be in any text ever
-    val HighlightEnd: Char = '\u0002'
+  /** Finds Highlights in the given text.
+    *
+    * The given text has highlights delimited by <tt>\u0001</tt> and
+    * <tt>\u0002</tt>. We return Highlights that <em>ignore</em> those values:
+    * that means the indices we return in the Highlights are less than or
+    * equal to the indices in the input text.
+    *
+    * @param textWithHighlights Text we're searching in
+    */
+  private def findHighlights(textWithHighlights: String): Seq[Highlight] = {
 
     /** Searches for "\u0001" and "\u0002" and uses them to create a Highlight.
       *
       * @param textWithHighlights Text we're searching in
-      * @param cur Index into text
-      * @param n How many highlights came before this one
+      * @param cur                Index into text
+      * @param n                  How many highlights came before this one
       */
     def findHighlight(textWithHighlights: String, cur: Int, n: Int): Option[Highlight] = {
       val begin = textWithHighlights.indexOf(HighlightBegin, cur)
@@ -284,9 +296,9 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     /** Recursively finds Highlights in the given text.
       *
       * @param textWithHighlights Text we're searching in
-      * @param cur Index into the text
-      * @param n Number of highlights we've found already
-      * @param acc Return value we're building
+      * @param cur                Index into the text
+      * @param n                  Number of highlights we've found already
+      * @param acc                Return value we're building
       */
     @scala.annotation.tailrec
     def findHighlightsRec(textWithHighlights: String, cur: Int, n: Int, acc: List[Highlight]): List[Highlight] = {
@@ -296,16 +308,48 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
       }
     }
 
-    /** Finds Highlights in the given text.
-      *
-      * The given text has highlights delimited by <tt>\u0001</tt> and
-      * <tt>\u0002</tt>. We return Highlights that <em>ignore</em> those values:
-      * that means the indices we return in the Highlights are less than or
-      * equal to the indices in the input text.
-      *
-      * @param textWithHighlights Text we're searching in
-      */
-    def findHighlights(textWithHighlights: String): Seq[Highlight] = findHighlightsRec(textWithHighlights, 0, 0, Nil)
+    findHighlightsRec(textWithHighlights, 0, 0, Nil)
+  }
+
+  override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]] =  {
+
+    GET(s"/documents_$documentSetId/_search", Json.obj(
+      "query" -> Json.obj("ids" -> Json.obj("type" -> "document", "values" -> documentIds.map(_.toString))),
+      "size"-> documentIds.length,
+      "highlight" -> Json.obj(
+        "require_field_match" -> false, // Confusing: we use *filters*, not *queries*, so true matches nothing
+        "fields" -> Json.obj(
+          "text" -> Json.obj(
+            "highlight_query" -> repr(q),
+            "pre_tags" -> Json.arr(HighlightBegin.toString),
+            "post_tags" -> Json.arr(HighlightEnd.toString),
+            "number_of_fragments" -> 2
+          )
+        )
+      )
+    )).map(_ match {
+      case Response(statusCode, json) if statusCode >= 200 && statusCode < 300 => {
+        import play.api.libs.json._
+
+        val hits = (json \ "hits" \ "hits").as[JsArray]
+
+        hits.value.map { hit =>
+          val documentId = (hit \ "_id").as[String].toLong
+
+          val texts = (hit \ "highlight" \ "text").as[JsArray]
+          val snippets =
+            texts.value
+              .map(_.as[String])
+              .map(text => Snippet(text.replaceAll(s"$HighlightBegin|$HighlightEnd", ""), findHighlights(text)))
+
+          documentId -> snippets
+        }.toMap
+      }
+      case Response(_, json) => throw UnexpectedResponse(json)
+    })
+  }
+
+  override def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {
 
     GET(s"/documents_$documentSetId/_search", Json.obj(
       "query" -> Json.obj("ids" -> Json.obj("type" -> "document", "values" -> Json.arr(documentId.toString))),
@@ -334,7 +378,7 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     })
   }
 
-  private def repr(field: Field): String = field match {
+    private def repr(field: Field): String = field match {
     case Field.All => "_all"
     case Field.Title => "title"
     case Field.Text => "text"

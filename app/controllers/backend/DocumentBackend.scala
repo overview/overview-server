@@ -88,7 +88,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
 
   protected val indexClient: IndexClient
 
-  override def index(selection: Selection, pageRequest: PageRequest, includeText: Boolean) = {
+  override def index(selection: Selection, pageRequest: PageRequest, includeText: Boolean): Future[Page[DocumentHeader]] = {
     selection.getDocumentIds(pageRequest)
       .flatMap { (page: Page[Long]) =>
         if (page.pageInfo.total == 0) {

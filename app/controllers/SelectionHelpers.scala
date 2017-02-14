@@ -75,30 +75,35 @@ trait SelectionHelpers { self: Controller =>
     * Paths 2 and 3 will always return a Right. Path 1 may return a
     * Left(NotFound), if the selection ID has expired.
     */
-  protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,Selection]] = {
-    val rd = RequestData(request)
+    protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,Selection]] = {
+      requestToSelectionWithQuery(documentSetId, userEmail, request).map(_.right.map(_._1))
+    }
+ 
+    protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
+      val rd = RequestData(request)
 
-    rd.getUUID(selectionIdKey) match {
-      case Some(selectionId) => {
-        selectionBackend.find(documentSetId, selectionId)
-          .map(_.toRight(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired."))))
-      }
-      case None => {
-        selectionRequest(documentSetId, request) match {
-          case Left(error) => Future.successful(Left(error))
-          case Right(sr) => {
-            val selectionFuture = rd.getBoolean(refreshKey) match {
-              case Some(true) => selectionBackend.create(userEmail, sr)
-              case _ => selectionBackend.findOrCreate(userEmail, sr, None)
-            }
-            selectionFuture.map(Right(_))
+      selectionRequest(documentSetId, request) match {
+        case Left(error) => Future.successful(Left(error))
+        case Right(sr) => {
+          rd.getUUID(selectionIdKey) match {
+            case Some(selectionId) =>
+              selectionBackend.find(documentSetId, selectionId).map {
+                case Some(selection) => Right(selection, Some(sr))
+                case None => Left(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")))
+              }
+            case None =>
+              val selectionFuture = rd.getBoolean(refreshKey) match {
+                case Some(true) => selectionBackend.create(userEmail, sr)
+                case _ => selectionBackend.findOrCreate(userEmail, sr, None)
+              }
+              selectionFuture.map(Right(_, Some(sr)))
           }
         }
       }
-    }
   }
 
-  protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]): Future[Either[Result,Selection]] = {
+  protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]): Future[Either[Result, Selection]] = {
     requestToSelection(documentSetId, request.user.email, request)
   }
 }
+

@@ -12,7 +12,17 @@ define [
     model: _.template("""<li <%= liAttributes %>
       class="document" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
         <h3><%- title %></h3>
-        <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
+        <% if (attrs.snippets.length > 0) { %>
+          <ul class="highlights">
+            <% _.each (attrs.snippets, function(snippet) {  %>
+              <li class="highlights">
+                <div> ...<%= snippet %>...</div>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
+        <% }%>
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
             <li class="tag" data-cid="<%- tag.cid %>">
@@ -99,11 +109,11 @@ define [
 
     _renderModelHtml: (model) ->
       tags = @options.tags.filter((x) -> model.hasTag(x))
-
       templates.model
         title: DocumentHelper.title(model.attributes)
         model: model
         attrs: model.attributes
+        snippets: model.attributes.snippets
         tags: tags
         t: t
         liAttributes: @options.liAttributes || ''

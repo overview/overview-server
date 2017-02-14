@@ -24,9 +24,7 @@ trait HighlightController extends Controller {
       case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("com.overviewdocs.query.SyntaxError"))))
       case Right(query) => {
         highlightBackend.index(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
-          val json = JsArray(highlights.map { highlight =>
-            JsArray(Seq(JsNumber(highlight.begin), JsNumber(highlight.end)))
-          })
+          val json = Highlight.asJson(highlights)
           Ok(json).withHeaders(CACHE_CONTROL -> "no-cache")
         }
       }
