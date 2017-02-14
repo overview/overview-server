@@ -23,7 +23,8 @@ object show {
           "text" -> snippet.text,
           "highlights" -> Highlight.asJson(snippet.highlights)
         )
-      }
+      },
+      "thumbnailUrl" -> document.thumbnailLocation.map(_ => s"/documents/${document.id}.png")
     )
   }
 

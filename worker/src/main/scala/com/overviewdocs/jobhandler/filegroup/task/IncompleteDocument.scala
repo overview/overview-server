@@ -9,6 +9,7 @@ import com.overviewdocs.models.{Document,DocumentDisplayMethod}
 case class IncompleteDocument(
   val filename: String,
   val pageNumber: Option[Int],
+  val thumbnailLocation: Option[String],
   val fileId: Option[Long],
   val pageId: Option[Long],
   val displayMethod: DocumentDisplayMethod.Value,
@@ -19,6 +20,7 @@ case class IncompleteDocument(
   def toDocument(documentSetId: Long, id: Long, metadataJson: JsObject): Document = Document(
     id=id,
     documentSetId=documentSetId,
+    thumbnailLocation=thumbnailLocation,
     url=None,
     suppliedId=filename,
     title=filename,

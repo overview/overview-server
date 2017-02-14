@@ -35,6 +35,7 @@ case class DocumentCloudDocumentHeader(
     DocumentDisplayMethod.auto,
     false,
     JsObject(Seq()),
+    None, // bellzTODO: Should we support thumbnails on documentcloud documents
     Textify.truncateToNChars(text, DocumentCloudDocumentHeader.MaxNCharsPerDocument)
   )
 }

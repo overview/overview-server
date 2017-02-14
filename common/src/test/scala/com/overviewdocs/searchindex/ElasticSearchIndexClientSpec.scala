@@ -106,7 +106,8 @@ class ElasticSearchIndexClientSpec extends Specification {
       displayMethod=DocumentDisplayMethod.auto,
       isFromOcr=false,
       metadataJson=JsObject(Seq()),
-      text=s"foo$id bar baz"
+      text=s"foo$id bar baz",
+      thumbnailLocation=Some("path/of/file")
     )
   }
 
@@ -163,6 +164,7 @@ class ElasticSearchIndexClientSpec extends Specification {
             DocumentDisplayMethod.auto,
             false,
             JsObject(Seq()),
+            None,
             text
           )
         }

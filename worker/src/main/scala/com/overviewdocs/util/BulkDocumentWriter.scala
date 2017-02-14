@@ -136,7 +136,7 @@ trait BulkDocumentWriter {
     // Tuples
     // Tracks models/tables/Documents.scala and models/Document.scala
     documents.foreach { document =>
-      dataOut.writeShort(14) // Number of fields
+      dataOut.writeShort(15) // Number of fields
 
       writeLong(document.id)
       writeLong(document.documentSetId)
@@ -152,6 +152,7 @@ trait BulkDocumentWriter {
       writeString(document.text)
       writeString(document.displayMethod.toString)
       writeBoolean(document.isFromOcr)
+      writeStringOption(document.thumbnailLocation)
     }
 
     // File trailer
@@ -182,7 +183,8 @@ trait BulkDocumentWriter {
             metadata_json_text,
             text,
             display_method,
-            is_from_ocr
+            is_from_ocr,
+            thumbnail_location
           )
           FROM STDIN
           BINARY

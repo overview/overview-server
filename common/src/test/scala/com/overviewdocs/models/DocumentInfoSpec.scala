@@ -14,7 +14,8 @@ class DocumentInfoSpec extends Specification {
     new java.util.Date(0L),
     DocumentDisplayMethod.auto,
     false,
-    hasFileView
+    hasFileView,
+    None
   )
 
   "#viewUrl" should {

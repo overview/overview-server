@@ -31,6 +31,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
   def fileId = column[Option[Long]]("file_id")
   def displayMethod = column[Option[DocumentDisplayMethod.Value]]("display_method")
   def isFromOcr = column[Option[Boolean]]("is_from_ocr")
+  def thumbnailLocation = column[Option[String]]("thumbnail_location")
 
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
@@ -49,9 +50,10 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     createdAt,
     fileId,
     displayMethod,
-    isFromOcr
-  ).<>[DocumentInfo, Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean]]](
-    (t: Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean]]) => DocumentInfo.apply(
+    isFromOcr,
+    thumbnailLocation
+  ).<>[DocumentInfo, Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean], Option[String]]](
+    (t: Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean], Option[String]]) => DocumentInfo.apply(
       t._1,
       t._2,
       t._3,
@@ -62,7 +64,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       t._9,
       t._11.getOrElse(DocumentDisplayMethod.auto),
       t._12.getOrElse(false),          // isFromOcr
-      t._10.isDefined
+      t._10.isDefined,
+      t._13
     ),
     { d: DocumentInfo => Some(
       d.id,
@@ -76,7 +79,8 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       d.createdAt,
       None,
       Some(d.displayMethod),
-      Some(d.isFromOcr)
+      Some(d.isFromOcr),
+      d.thumbnailLocation
     )}
   )
 }

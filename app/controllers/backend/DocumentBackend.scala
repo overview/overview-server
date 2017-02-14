@@ -77,6 +77,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     override val isFromOcr = false
     override val metadataJson = JsObject(Seq())
     override val text = ""
+    override val thumbnailLocation = None
   }
 
   private val UniversalIdSet: Set[Long] = new Set[Long] {

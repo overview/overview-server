@@ -10,7 +10,14 @@ define [
     # We put < and > at the exact beginning and end of screen so we can iterate
     # over DOM children without bothering with text nodes
     model: _.template("""<li <%= liAttributes %>
-      class="document" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
+      class="document <%= typeof(attrs.thumbnailUrl)!== 'undefined' ?  'with-thumbnail' : '' %>" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
+        <div class="thumbnail">
+          <img src="<%= attrs.thumbnailUrl %>" alt="" />
+        </div>
+        <div class="hover">
+          <img src="<%= attrs.thumbnailUrl %>" alt="" />
+        </div>
+        <div>
         <h3><%- title %></h3>
         <% if (attrs.snippets.length > 0) { %>
           <ul class="highlights">
@@ -23,15 +30,16 @@ define [
         <% } else { %>
           <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
         <% }%>
-        <ul class="tags">
-          <% _.each(tags, function(tag) { %>
-            <li class="tag" data-cid="<%- tag.cid %>">
-              <div class="<%= tag.getClass() %>" style="<%= tag.getStyle() %>">
-                <span class="name"><%- tag.get('name') %></span>
-              </div>
-            </li>
-          <% }); %>
-        </ul>
+         <ul class="tags">
+            <% _.each(tags, function(tag) { %>
+              <li class="tag" data-cid="<%- tag.cid %>">
+                <div class="<%= tag.getClass() %>" style="<%= tag.getStyle() %>">
+                  <span class="name"><%- tag.get('name') %></span>
+                </div>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
       </li
     >""")
 

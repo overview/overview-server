@@ -44,14 +44,15 @@ trait PdfSplitter {
     createPdfs: Boolean,
     onProgress: (Int, Int) => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,Seq[PdfSplitter.PageInfo]]] = {
-    val maybeOutPattern: Option[Path] = if (createPdfs) {
-      Some(TempDirectory.path.resolve(in.getFileName.toString + "-p{}"))
+    val pageFilenamePattern = in.getFileName + "-p{}"
+    val maybeOutPattern = if (createPdfs) {
+      Some(pageFilenamePattern)
     } else {
       None
     }
 
-    val cmd = command(in, maybeOutPattern)
-    logger.info("SplitPdfAndExtractText {} {}", in, maybeOutPattern)
+    val cmd = command(in, pageFilenamePattern, createPdfs)
+    logger.info(cmd.mkString(" "))
 
     val pageInfos = mutable.ArrayBuffer[PdfSplitter.PageInfo]()
     @volatile var error: Option[String] = None
@@ -61,12 +62,17 @@ trait PdfSplitter {
         val str = new String(bytes, StandardCharsets.UTF_8)
         str match {
           case PageInfoRegex(pageNumber, nPages, isFromOcr, text) => {
+            // create preview for page ?
             pageInfos.+=(PdfSplitter.PageInfo(
               pageNumber.toInt,
               nPages.toInt,
               isFromOcr == "t",
               text,
-              maybeOutPattern.map(p => p.resolveSibling(p.getFileName.toString.replace("{}", pageNumber)))
+              maybeOutPattern.map(p => in.resolveSibling(p.replace("{}", pageNumber))),
+              if (createPdfs || pageNumber == "1")
+                Some(in.resolveSibling(pageFilenamePattern.replace("{}", pageNumber + "-thumbnail") + ".png"))
+              else
+                None
             ))
             if (!onProgress(pageNumber.toInt, nPages.toInt)) {
               error = Some("You cancelled an import job")
@@ -140,12 +146,14 @@ trait PdfSplitter {
       ret match {
         case Right(_) => Future.successful(ret)
         case Left(_) => {
-          val nextPath: Option[Path] = maybeOutPattern.map(p => p.resolveSibling(p.getFileName.toString.replace("{}", (pageInfos.length + 1).toString)))
+          val nextPdfPath: Option[Path] = maybeOutPattern.map(p => in.resolveSibling(p.replace("{}", (pageInfos.length + 1).toString)))
+          val nextThumbnailPath: Option[Path] = maybeOutPattern.map(p => in.resolveSibling(p.replace("{}", (pageInfos.length + 1) + "-thumbnail") + ".png"))
 
-          val pdfPaths = pageInfos.flatMap(_.pdfPath) ++ nextPath
+          val paths = pageInfos.flatMap(_.pdfPath) ++ nextPdfPath ++ pageInfos.flatMap(_.thumbnailPath) ++ nextThumbnailPath
 
+          println(paths)
           Future(blocking {
-            pdfPaths.foreach(_.toFile.delete)
+            paths.foreach(_.toFile.delete())
             ret
           })
         }
@@ -153,11 +161,12 @@ trait PdfSplitter {
     }
   }
 
-  private def command(in: Path, maybeOutPattern: Option[Path]): Seq[String] = JavaCommand(
+  private def command(in: Path, pageFilenamePattern: String, createPdfs: Boolean): Seq[String] = JavaCommand(
     "-Xmx" + Configuration.getString("pdf_memory"),
     "com.overviewdocs.helpers.SplitPdfAndExtractText",
-    in.toString
-  ) ++ maybeOutPattern.map(_.toString)
+    in.toString,
+    pageFilenamePattern
+  ) ++ (if(createPdfs) Seq("--create-pdfs") else Nil)
 }
 
 object PdfSplitter extends PdfSplitter {
@@ -165,24 +174,29 @@ object PdfSplitter extends PdfSplitter {
     */
   case class PageInfo(
     /** Page number, starting at 1. */
-    val pageNumber: Int,
+    pageNumber: Int,
 
     /** Total number of pages. */
-    val nPages: Int,
+    nPages: Int,
 
     /** If true, pdfocr may have generated some of this text via Tesseract. */
-    val isFromOcr: Boolean,
+    isFromOcr: Boolean,
 
     /** The text contents of the page.
       *
       * These have already have Textify() called on them, by
       * SplitPdfAndExtractText.
       */
-    val text: String,
+    text: String,
 
     /** If set, a file on the filesystem containing a PDF version of this page.
       */
-    val pdfPath: Option[Path]
+    pdfPath: Option[Path],
+
+    /** If set, a file on the filesystem containing a PNG thumbnail version of this page.
+      */
+    thumbnailPath: Option[Path]
+
   )
 
   override protected val logger = Logger.forClass(getClass)

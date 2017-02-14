@@ -29,6 +29,7 @@ case class Document(
   override val displayMethod: DocumentDisplayMethod.Value,
   override val isFromOcr: Boolean,
   override val metadataJson: JsObject,
+  override val thumbnailLocation: Option[String],
   override val text: String
 ) extends DocumentHeader {
   def toDocumentInfo: DocumentInfo = DocumentInfo(
@@ -42,7 +43,8 @@ case class Document(
     createdAt,
     displayMethod,
     isFromOcr,
-    fileId.isDefined
+    fileId.isDefined,
+    thumbnailLocation
   )
 
   // URL used for document display. This is ultitmately fed to pdf.js viewer if pdf

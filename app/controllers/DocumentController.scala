@@ -88,6 +88,21 @@ trait DocumentController extends Controller {
     })
   }
 
+  def showPng(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+   documentBackend.show(documentId).flatMap(_.flatMap(_.thumbnailLocation) match {
+     case None => Future.successful(NotFound)
+     case Some(thumbnailLocation) => {
+       blobStorage.get(thumbnailLocation).map({ (body: Enumerator[Array[Byte]]) =>
+         Ok
+           .feed(body)
+           .withHeaders(
+             CONTENT_TYPE -> "image/png"
+           )
+       })
+     }
+   })
+  }
+
   def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
       case None => NotFound

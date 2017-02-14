@@ -50,6 +50,7 @@ define [
       snippets: highlights
       tagids: json.tagids || []
       nodeids: json.nodeids || []
+      thumbnailUrl: json.thumbnailUrl || null
 
     initialize: (attributes, options) ->
       super(attributes, options)

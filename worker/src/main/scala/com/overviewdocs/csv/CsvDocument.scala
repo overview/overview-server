@@ -26,6 +26,7 @@ case class CsvDocument(
     DocumentDisplayMethod.auto,
     false,
     JsObject(metadata.map(t => t._1 -> JsString(t._2))),
+    None,
     text
   )
 }

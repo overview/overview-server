@@ -33,6 +33,7 @@ class CreateDocumentDataForPages(
           for {
             result <- writePagesAndBuildDocuments(pageInfos)
             _ <- Future(blocking(pageInfos.flatMap(_.pdfPath).foreach(JFiles.delete _)))
+            _ <- Future(blocking(pageInfos.flatMap(_.thumbnailPath).foreach(JFiles.delete _)))
           } yield result
         }
       })
@@ -74,8 +75,17 @@ class CreateDocumentDataForPages(
   }
 
   private def writePageAndBuildDocument(pageInfo: PdfSplitter.PageInfo): Future[IncompleteDocument] = {
+    System.out.println("Create document data for pages: write page and build document")
+    System.out.println(pageInfo.thumbnailPath)
     for {
       location <- BlobStorage.create(BlobBucketId.PageData, pageInfo.pdfPath.get)
+
+      // upload thumbnail preview to s3
+      thumbnailLocation <- pageInfo.thumbnailPath match{
+        case Some(path) => BlobStorage.create(BlobBucketId.PageData, path).map(Some(_))
+        case None => Future.successful(None)
+      }
+
       nBytes <- Future(blocking(JFiles.size(pageInfo.pdfPath.get)))
       pageId <- database.run(pageInserter.+=(Page.CreateAttributes(
         file.id,
@@ -88,6 +98,7 @@ class CreateDocumentDataForPages(
     } yield IncompleteDocument(
       filename=file.name,
       pageNumber=Some(pageInfo.pageNumber),
+      thumbnailLocation=thumbnailLocation,
       createdAt=Instant.now,
       fileId=Some(file.id),
       pageId=Some(pageId),
