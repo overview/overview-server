@@ -1,13 +1,14 @@
 package views.json.DocumentList
 
 import java.util.UUID
+
+import com.overviewdocs.searchindex.Snippet
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.json.Json
-
 import models.pagination.Page
-import com.overviewdocs.test.factories.{PodoFactory=>factory}
+import com.overviewdocs.test.factories.{PodoFactory => factory}
 
 class showSpec extends Specification with JsonMatchers {
   trait BaseScope extends Scope {
@@ -15,8 +16,8 @@ class showSpec extends Specification with JsonMatchers {
     def doc1 = factory.document()
     def doc2 = factory.document()
 
-    def doc1AndIds = (doc1, Seq[Long](), Seq[Long]())
-    def doc2AndIds = (doc2, Seq[Long](), Seq[Long]())
+    def doc1AndIds = (doc1, Seq[Long](), Seq[Long](), Seq[Snippet]())
+    def doc2AndIds = (doc2, Seq[Long](), Seq[Long](), Seq[Snippet]())
     def docsAndIds = Seq(doc1AndIds, doc2AndIds)
 
     def resultPage = Page(docsAndIds)
@@ -62,12 +63,12 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "set node IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, Seq[Long](5L, 6L, 7L), Seq[Long]())
+      override def doc1AndIds = (doc1, Seq[Long](5L, 6L, 7L), Seq[Long](), Seq[Snippet]())
       result must /("documents") /#(0) /("nodeids") /#(1) /(6)
     }
 
     "set tag IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, Seq[Long](), Seq[Long](5L, 6L, 7L))
+      override def doc1AndIds = (doc1, Seq[Long](), Seq[Long](5L, 6L, 7L), Seq[Snippet]())
       result must /("documents") /#(0) /("tagids") /#(1) /(6)
     }
 
