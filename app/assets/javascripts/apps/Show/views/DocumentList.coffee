@@ -10,7 +10,7 @@ define [
     # We put < and > at the exact beginning and end of screen so we can iterate
     # over DOM children without bothering with text nodes
     model: _.template("""<li <%= liAttributes %>
-      class="document <%= typeof(attrs.thumbnailUrl)!== 'undefined' ?  'with-thumbnail' : '' %>" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
+      class="document <%= typeof(attrs.thumbnailUrl) !== "undefined" && attrs.thumbnailUrl !== null ?  'with-thumbnail' : '' %>" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
         <div class="thumbnail">
           <img src="<%= attrs.thumbnailUrl %>" alt="" />
         </div>
