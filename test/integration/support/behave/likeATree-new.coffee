@@ -22,7 +22,7 @@ module.exports = likeATree = (opts) ->
         @browser
           .click(tag: 'h3', contains: document.title)
           .assertExists(tag: 'h2', contains: document.title, wait: true) # wait for animation
-          .find(tag: 'div', class: 'keywords', contains: 'Key words: ', wait: true) # again, wait for animation
+          .find(tag: 'div', class: 'keywords', contains: 'Key words:', wait: true) # again, wait for animation
 
         extra()
 
