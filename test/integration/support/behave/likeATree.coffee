@@ -43,7 +43,7 @@ module.exports = (opts) ->
         .elementBy(tag: 'h3', contains: document.title).should.eventually.exist
         .elementBy(tag: 'h3', contains: document.title).click()
         .waitForElementBy(tag: 'h2', contains: document.title, visible: true) # animate
-        .elementBy(tag: 'div', class: 'keywords', contains: 'Key words: ').should.eventually.exist
+        .elementBy(tag: 'div', class: 'keywords', contains: 'Key words:').should.eventually.exist
         .then(extra)
 
   opts.searches?.forEach (search) ->
