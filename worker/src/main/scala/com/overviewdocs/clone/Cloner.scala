@@ -99,13 +99,13 @@ trait Cloner extends HasDatabase {
           INSERT INTO document (
             id, document_set_id,
             description, documentcloud_id, text, url, supplied_id, title,
-            created_at, file_id, page_id, page_number, metadata_json_text
+            created_at, file_id, page_id, page_number, metadata_json_text, thumbnail_location
           )
           SELECT 
              ${cloneJob.destinationDocumentSetId << 32} | (${0xffffffffL} & id),
              ${cloneJob.destinationDocumentSetId},
              description, documentcloud_id, text, url, supplied_id, title,
-             created_at, file_id, page_id, page_number, metadata_json_text
+             created_at, file_id, page_id, page_number, metadata_json_text, thumbnail_location
           FROM document
           WHERE document_set_id = ${cloneJob.sourceDocumentSetId}
           RETURNING file_id AS id
