@@ -265,7 +265,7 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     })
   }
 
-  /** Finds Highlights in the given text.
+  /** Finds external_links in the given text.
     *
     * The given text has highlights delimited by <tt>\u0001</tt> and
     * <tt>\u0002</tt>. We return Highlights that <em>ignore</em> those values:
@@ -336,11 +336,15 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
         hits.value.map { hit =>
           val documentId = (hit \ "_id").as[String].toLong
 
-          val texts = (hit \ "highlight" \ "text").as[JsArray]
-          val snippets =
-            texts.value
-              .map(_.as[String])
-              .map(text => Snippet(text.replaceAll(s"$HighlightBegin|$HighlightEnd", ""), findHighlights(text)))
+          val snippets = (hit \ "highlight").toOption match {
+            case Some(highlight) =>
+              val texts = (highlight \ "text").as[JsArray]
+              texts.value
+                .map(_.as[String])
+                .map((text:String) => Snippet(text.replaceAll(s"$HighlightBegin|$HighlightEnd", ""), findHighlights(text)))
+
+            case None => Nil
+          }
 
           documentId -> snippets
         }.toMap
