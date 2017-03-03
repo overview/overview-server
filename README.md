@@ -9,7 +9,7 @@ Overview is an open source visual document mining system. It was originally desi
 
 - Try Overview on [the public Overview website](https://overviewdocs.com)
 - Follow the [project blog](http://blog.overviewdocs.com)
-- Install Overview [on your own computer](https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview)
+- Install Overview [on your own computer](https://github.com/overview/overview-local)
 - [News stories](https://github.com/overview/overview-server/wiki/News-stories) completed with Overview
 
 ## Developing Overview
