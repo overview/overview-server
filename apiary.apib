@@ -200,20 +200,16 @@ This deletes all uploaded files. After this, you can upload new files from scrat
 
 + Response 204
 
-## Finish uploading files [/files/finish?documentSetId={documentSetId}]
+## Finish uploading files [/files/finish]
 
-+ Parameters
-    + documentSetId (number,optional,`1`) ... The DocumentSet ID.
 
 ### Add files to document set [POST]
 
-HACK: For no good reason, the `documentSetId` is part of the URL and the rest of the form parameters are passed as JSON.
+You can authenticate with either Document Set-specific API token or a Document-Set Creation API Token. See the section on [API Tokens](#introduction/api-tokens) for more details.
 
-If you're adding documents to an existing document set, set `documentSetId` and use a Document Set-specific API token. Otherwise, leave `documentSetId` unset and use a Document-Set Creation API Token. See the section on [API Tokens](#introduction/api-tokens) for more details.
+The body is json. Only `lang` is required. 
 
-Some of the request parameters are weird; here's a run-down:
-
-* `lang` is the two-letter langauge code that will be applied to all new documents.
+* `lang` is the two-letter langauge code that will be applied to all new documents. Required. 
 * `split_documents` is `false` by default, meaning each File becomes a Document. If `true`, each File will be split by page boundaries, and each Page will become a Document. (Files that don't have pages, such as `.txt` files, will never be split.)
 * `supplied_stop_words` is a space-separated list of stopwords for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
 * `important_words` is a space-separated list of important words for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
@@ -228,6 +224,13 @@ Some of the request parameters are weird; here's a run-down:
         }
 
 + Response 201
+
+## Check if file already uploaded [/document-sets/files/{sha1}]
+
+### Check if file already uploaded [HEAD]
+
+This tests whether a file with the specified sha1 40-byte hex string has previously been added to the document set connected to the API token. Files are only processed and added to a document set after /files/finish, so this cannot be used to test for unprocessed files. Returns status 204 if the file already exists, 404 otherwise.
+
 
 # Group Tags
 A **Tag** is a label that can apply to documents.

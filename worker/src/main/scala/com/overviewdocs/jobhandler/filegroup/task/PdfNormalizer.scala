@@ -119,7 +119,7 @@ trait PdfNormalizer {
       process.waitFor
     }).map { retval =>
       if (retval != 0 && error.isEmpty) {
-        error = Some("PDF is valid, but a bug in Overview means we can't load it")
+        error = Some("Internal error loading PDF")  // MakeSearchablePdf had some problem; bad configuration?
       }
 
       error.toLeft(())
