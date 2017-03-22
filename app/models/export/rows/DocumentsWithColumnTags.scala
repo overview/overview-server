@@ -1,3 +1,4 @@
+// Generates a CSV export of a document set with each tag in its own column
 package models.export.rows
 
 import play.api.libs.iteratee.Enumerator
