@@ -139,11 +139,10 @@ class ContentDispositionSpec extends Specification {
     }
 
 
-    "A UTF-8 filename encountered in production that broke the parser" in new ContentDispositionContext with DispositionParameter {
-//      val name = "Abertura inquérito Trump LSH.pdf"
-//      override lazy val dispParams: String = """attachment; filename*=utf-8''Abertura%20inqu%C3%A9rito%20Trump%20LSH.pdf"""
-      val name = "元気なですか？.pdf"
-      override lazy val dispParams: String = """attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf"""
+    // this filename was encountered in production, and broke the parser
+    "A UTF-8 filename with lowercase 'utf-8'" in new ContentDispositionContext with DispositionParameter {
+      val name = "Abertura inquérito Trump LSH.pdf"
+      override lazy val dispParams: String = """attachment; filename*=utf-8''Abertura%20inqu%C3%A9rito%20Trump%20LSH.pdf"""
 
       ContentDisposition(contentDisposition).filename must beSome(name)
     }
