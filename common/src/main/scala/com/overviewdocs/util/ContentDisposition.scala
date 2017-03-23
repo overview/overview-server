@@ -55,7 +55,7 @@ case class ContentDisposition(contentDisposition: String) {
 
       // a String value like "blah.txt", from "UTF-8''blah.txt"
       def extValue : Parser[String]
-        = literal("UTF-8''") ~> valueChars // no language or charset choices
+        = regex("""(UTF-8|utf-8)''""".r) ~> valueChars // no language or charset choices
 
       // a percent-decoded string of Bytes, then UTF-8-decoded
       def valueChars : Parser[String]
