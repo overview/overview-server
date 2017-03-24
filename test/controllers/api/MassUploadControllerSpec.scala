@@ -66,14 +66,16 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
   "#create" should {
     trait CreateScope extends BaseScope {
-      val baseRequest = FakeRequest().withHeaders("Content-Length" -> "20")
+      val baseRequest = FakeRequest().withHeaders(
+        "Content-Length" -> "20", 
+        "Content-Disposition" -> "attachment; filename=foo.pdf")
       lazy val request = new ApiAuthorizedRequest(baseRequest, apiToken)
       val enumerator: Enumerator[Array[Byte]] = Enumerator()
       lazy val action: EssentialAction = controller.create(UUID.randomUUID)
       lazy val result = enumerator.run(action(request))
     }
 
-    "return a Result if ApiTokenFactory returns a Left[Result]" in new CreateScope {
+    "return 400 if api token authorization fails" in new CreateScope {
       mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Left(Results.BadRequest))
       status(result) must beEqualTo(BAD_REQUEST)
     }
@@ -88,6 +90,39 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
       status(result) must beEqualTo(CREATED)
     }
+
+    "return 400 for missing content-length" in new CreateScope {
+      val badRequest = FakeRequest().withHeaders("Content-Disposition" -> "attachment; filename=foo.pdf")
+      override lazy val request = new ApiAuthorizedRequest(badRequest, apiToken)
+      mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
+
+      status(result) must beEqualTo(BAD_REQUEST)
+    }
+
+    "return 400 for missing content-disposition" in new CreateScope {
+      val badRequest = FakeRequest().withHeaders("Content-Length" -> "20")
+      override lazy val request = new ApiAuthorizedRequest(badRequest, apiToken)
+      mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
+
+      status(result) must beEqualTo(BAD_REQUEST)
+    }
+
+    "return 400 for unparseable content-disposition" in new CreateScope {
+      val badRequest = FakeRequest().withHeaders("Content-Length" -> "20", "Content-Disposition" -> "fsgfdgdf")
+      override lazy val request = new ApiAuthorizedRequest(badRequest, apiToken)
+      mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
+
+      status(result) must beEqualTo(BAD_REQUEST)
+    }
+
+    "return 400 for empty filename" in new CreateScope {
+      val badRequest = FakeRequest().withHeaders("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=")
+      override lazy val request = new ApiAuthorizedRequest(badRequest, apiToken)
+      mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
+
+      status(result) must beEqualTo(BAD_REQUEST)
+    }
+
   }
 
   "#show" should {

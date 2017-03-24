@@ -1,3 +1,4 @@
+// MassUploadController is factored into this file so that both client and API access route to same code
 package controllers.util
 
 import java.util.UUID
@@ -83,17 +84,25 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
     }
 
     override def apply(request: RequestHeader): Iteratee[Array[Byte],Result] = {
-      val futureIteratee: Future[Iteratee[Array[Byte],Result]] = RequestInfo.fromRequest(request) match {
-        case None => Future.successful(badRequest("Request must have Content-Range or Content-Length header"))
-        case Some(info) => {
-          for {
-            fileGroup <- findOrCreateFileGroup
-            groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
-          } yield createIteratee(groupedFileUpload, info)
-        }
+      val infoOpt = RequestInfo.fromRequest(request)
+      
+      // Ensure we got the right headers, and a valid filename (parse-able and not empty)
+      if (infoOpt==None) {
+        return badRequest("Request must have Content-Range or Content-Length header")
+      } 
+      val info = infoOpt.get
+      if (info.filename=="") {
+        // Blank filename will actually cause exception in MIME type detection, ask me how I know
+        return badRequest("Invalid or missing Content-Disposition filename")
       }
 
-      Iteratee.flatten(futureIteratee)
+      val futureIteratee: Future[Iteratee[Array[Byte],Result]] = 
+        for {
+          fileGroup <- findOrCreateFileGroup
+          groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
+        } yield createIteratee(groupedFileUpload, info)
+
+      return Iteratee.flatten(futureIteratee)
     }
   }
 }
