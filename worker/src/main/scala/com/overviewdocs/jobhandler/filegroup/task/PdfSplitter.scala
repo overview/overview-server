@@ -24,7 +24,7 @@ trait PdfSplitter {
     * Returns a Future[Right[Seq[PdfSplitter.PageInfo]]] on success and a
     * Future[Left[String]] if there's a failure we can handle gracefully --
     * for instance: "PDF is encrypted" or "this file is not a PDF". Or the
-    * catch-all, "PDF is valid, but a bug in Overview means we can't load it."
+    * catch-all, "Problem parsing PDF"
     *
     * If called with `createPdfs`, each `PageInfo` will include a `Path` to a
     * newly-created file on the filesystem. Delete each file when you're done
@@ -138,7 +138,8 @@ trait PdfSplitter {
       process.waitFor
     }).flatMap { retval =>
       if (retval != 0 && error.isEmpty) {
-        error = Some("PDF is valid, but a bug in Overview means we can't load it")
+        // could be a crash in PDFBox, missing tesseract on path, or some other problem...
+        error = Some("Problem parsing PDF")  
       }
 
       val ret = error.toLeft(pageInfos.toSeq)
