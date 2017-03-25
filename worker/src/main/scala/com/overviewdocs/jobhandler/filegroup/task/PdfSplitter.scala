@@ -80,7 +80,8 @@ trait PdfSplitter {
             }
           }
           case _ => {
-            throw new IllegalArgumentException(s"Invalid data from splitter: $str")
+            error = Some(s"Invalid data from splitter: $str")
+            child.destroyForcibly
           }
         }
       }
