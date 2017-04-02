@@ -498,9 +498,9 @@ views.Tree.progressDescription.saving=Saving…
 views.Tree.progressDescription.success=
 views.Tree.progressDescription.notEnoughDocuments=Tree view unavailable: Overview needs 2 or more documents to build a tree.
 
-views.Tree.show.cancel.label=Taking too long? Uninterested?
-views.Tree.show.cancel=Delete Tree
-views.Tree.show.progress.preamble=Overview is clustering documents to build a Tree. You can click around in the meantime.
+views.Tree.show.cancel.label=
+views.Tree.show.cancel=Cancel
+views.Tree.show.progress.preamble=Building tree...
 
 views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words:{0}
