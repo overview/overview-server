@@ -81,6 +81,25 @@ trait Authorities extends HasDatabase {
     override def apply(apiToken: ApiToken) = userOwningDocumentSet(id)(apiToken)
   }
 
+  // Can user export this document set?
+  // True if user can view or export not restricted to admin only
+  def userCanExportDocumentSet(id: Long) = new Authority {
+    override def apply(user: User) = {
+      if (AuthConfig.isAdminOnlyExport) {
+        if (user.role == UserRole.Administrator) {
+          userViewingDocumentSet(id).apply(user)
+        } else {
+          Future.successful(false)
+        }
+      } else {
+        userViewingDocumentSet(id).apply(user)
+      }
+    }
+
+    // Export allowed if document token available; we protect token creation if adminOnlyExport
+    override def apply(apiToken: ApiToken) = userOwningDocumentSet(id)(apiToken)    
+  }
+
   /** Allows any user with any role for the given Document ID. */
   def userOwningDocument(id: Long) = new Authority {
     override def apply(user: User) = check(q.userDocument(user.email, id))

@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.userViewingDocumentSet
+import controllers.auth.Authorities.userCanExportDocumentSet
 import controllers.backend.ArchiveEntryBackend
 import models.ArchiveEntry
 import models.archive.{ArchiveFactory,ZipArchive}
@@ -15,7 +15,7 @@ trait DocumentSetArchiveController extends Controller with SelectionHelpers {
   protected val archiveEntryBackend: ArchiveEntryBackend
   protected val archiveFactory: ArchiveFactory
 
-  def archive(documentSetId: Long, filename: String) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def archive(documentSetId: Long, filename: String) = AuthorizedAction(userCanExportDocumentSet(documentSetId)).async { implicit request =>
     requestToSelection(documentSetId, request).flatMap(_ match {
       case Left(result) => Future.successful(result)
       case Right(selection) => {

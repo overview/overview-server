@@ -128,6 +128,20 @@ class AuthoritiesSpec extends DbSpecification {
       }
     }
 
+    "userCanExportDocumentSet" should {
+      "return true when not admin_only_export and user owns document set" in new UserScope {
+        val documentSet = factory.documentSet()
+        factory.documentSetUser(documentSet.id, goodUser.email)
+        await(auth.userViewingDocumentSet(documentSet.id)(goodUser)) must beTrue
+      }
+
+      "return false when not admin_only_export and another user owns the document set" in new UserScope {
+        val documentSet = factory.documentSet()
+        factory.documentSetUser(documentSet.id, goodUser.email)
+        await(auth.userViewingDocumentSet(documentSet.id)(badUser)) must beFalse
+      }
+    }
+
     "userOwningTag" should {
       "return true when the user owns the document set and tag" in new UserScope {
         val documentSet = factory.documentSet()
