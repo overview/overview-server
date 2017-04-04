@@ -6,26 +6,40 @@ import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.metadata.MetadataSchema
-import com.overviewdocs.models.DocumentDisplayMethod
+import com.overviewdocs.models.{DocumentDisplayMethod}
 import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.test.DbSpecification
 
 class AddDocumentsCommonSpec extends DbSpecification with Mockito {
   trait BaseScope extends DbScope {
+    val db = new DbMethods
+
+    def doBefore(documentSetId: Long): Unit = await(subject.beforeAddDocuments(documentSetId))
+    def doAfter(documentSetId: Long): Unit = await(subject.afterAddDocuments(documentSetId))
+
     val mockIndexClient = smartMock[IndexClient]
     val subject = new AddDocumentsCommon {
       override protected val indexClient = mockIndexClient
     }
 
+    mockIndexClient.addDocumentSet(any) returns Future.successful(())
     mockIndexClient.refresh returns Future.successful(())
+  }
+
+  "#beforeAddDocuments" should {
+     "clear DocumentProcessingErrors in" in new BaseScope {
+      db.createDocumentSet(1L) // dummy
+      db.createDocumentProcessingError(1L)
+      db.getNumDocumentProcessingErrors(1L) must beEqualTo(1) // tests the test!
+      doBefore(1L)
+      db.createDocument(1L, 2L, "", "", None)
+      doAfter(1L)                                             // finish off for a quasi-integration test
+      db.getNumDocumentProcessingErrors(1L) must beEqualTo(0)
+    }
   }
 
   "#afterAddDocuments" should {
     trait AfterScope extends BaseScope {
-      val db = new DbMethods
-
-      def doBefore(documentSetId: Long): Unit = await(subject.beforeAddDocuments(documentSetId))
-      def doAfter(documentSetId: Long): Unit = await(subject.afterAddDocuments(documentSetId))
     }
 
     "refresh the search index" in new AfterScope {
@@ -79,10 +93,11 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
     }
   }
 
+  // Utilitity functions we need for these tests. Rather a lot unfortunately.
   class DbMethods extends HasBlockingDatabase {
     import database.api._
-    import com.overviewdocs.models.tables.{Documents,DocumentSets}
-    import com.overviewdocs.models.{Document,DocumentSet}
+    import com.overviewdocs.models.tables.{Documents,DocumentSets,DocumentProcessingErrors}
+    import com.overviewdocs.models.{Document,DocumentSet,DocumentProcessingError}
     import slick.jdbc.GetResult
 
     def createDocumentSet(id: Long): DocumentSet = {
@@ -109,6 +124,15 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
         ""
       )
       blockingDatabase.run((Documents returning Documents).+=(ret))
+    }
+
+    def createDocumentProcessingError(documentSetId: Long) : Unit = {
+      val ret =  DocumentProcessingError(10L, documentSetId, "made up file", "made up error", None, None)
+      blockingDatabase.run((DocumentProcessingErrors returning DocumentProcessingErrors).+=(ret))
+    }
+
+    def getNumDocumentProcessingErrors(documentSetId: Long) : Long = {
+      blockingDatabase.length(DocumentProcessingErrors.filter(_.documentSetId === documentSetId))
     }
 
     def setSortedDocumentIds(documentSetId: Long, ids: Seq[Long]): Unit = {

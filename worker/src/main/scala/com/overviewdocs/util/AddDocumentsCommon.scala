@@ -12,9 +12,17 @@ trait AddDocumentsCommon extends HasDatabase {
   import database.api._
 
   /** Adds the document set to the search index, if it isn't already present.
+      Also clears the document processing errors list.
     */
   def beforeAddDocuments(documentSetId: Long): Future[Unit] = {
-    indexClient.addDocumentSet(documentSetId)
+    // for/yeild on futures means run in parallel if possible
+    for {
+      _ <- database.runUnit(sqlu"""
+        DELETE FROM document_processing_error
+        WHERE document_set_id = ${documentSetId}
+      """)
+      _ <- indexClient.addDocumentSet(documentSetId)
+    } yield ()
   }
 
   /** Updates `document_set.document_count`, `.document_processing_error_count`

@@ -129,6 +129,8 @@ class AuthoritiesSpec extends DbSpecification {
     }
 
     "userCanExportDocumentSet" should {
+      // TODO: this tests only default (admin_only_export = false)
+      // Need configuration dependency injection to really test this
       "return true when not admin_only_export and user owns document set" in new UserScope {
         val documentSet = factory.documentSet()
         factory.documentSetUser(documentSet.id, goodUser.email)
