@@ -32,7 +32,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
         wantJsonResponse
       )
 
-      val headers: Seq[(String,String)] = Seq("Content-Length" -> "20")
+      val headers: Seq[(String,String)] = Seq("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=foobar.txt")
       lazy val request = FakeRequest().withHeaders(headers: _*)
       val enumerator: Enumerator[Array[Byte]] = Enumerator()
       lazy val result = enumerator.run(action(request))
@@ -52,7 +52,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
     }
 
     "return BadRequest if uploading past uploadedSize" in new CreateScope {
-      override val headers = Seq("Content-Range" -> "bytes 12-19/20")
+      override val headers = Seq("Content-Range" -> "bytes 12-19/20", "Content-Disposition" -> "attachment; filename=foobar.txt")
       h.status(result) must beEqualTo(h.BAD_REQUEST)
       h.contentAsString(result) must beEqualTo("Tried to resume past last uploaded byte. Resumed at byte 12, but only 10 bytes have been uploaded.")
     }
@@ -97,13 +97,13 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
     }
 
     "create a GroupedUploadIteratee using Content-Length" in new CreateScope {
-      override val headers = Seq("Content-Length" -> "20")
+      override val headers = Seq("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=foobar.txt")
       h.status(result)
       there was one(mockUploadIterateeFactory).apply(groupedFileUpload, 0L)
     }
 
     "create a GroupedUploadIteratee using Content-Range" in new CreateScope {
-      override val headers = Seq("Content-Range" -> "bytes 10-19/20")
+      override val headers = Seq("Content-Range" -> "bytes 10-19/20", "Content-Disposition" -> "attachment; filename=foobar.txt")
       h.status(result)
       there was one(mockUploadIterateeFactory).apply(groupedFileUpload, 10L)
     }
