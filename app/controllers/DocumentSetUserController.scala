@@ -1,3 +1,4 @@
+// Document set 
 package controllers
 
 import play.api.libs.concurrent.Execution.Implicits._
@@ -5,7 +6,7 @@ import play.api.data.validation.{Constraints,Invalid,Valid}
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.userOwningDocumentSet
+import controllers.auth.Authorities.{userOwningDocumentSet,userCanExportDocumentSet}
 import controllers.backend.{DocumentSetBackend,DocumentSetUserBackend}
 
 trait DocumentSetUserController extends Controller {
@@ -28,7 +29,7 @@ trait DocumentSetUserController extends Controller {
     * * BadRequest if the form (email and role) is invalid.
     * * NotFound if the user tries to update an owner.
     */
-  def update(documentSetId: Long, userEmail: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def update(documentSetId: Long, userEmail: String) = AuthorizedAction(userCanExportDocumentSet(documentSetId)).async { implicit request =>
     Constraints.emailAddress(userEmail) match {
       case Invalid(err) => Future.successful(BadRequest(err.head.message))
       case Valid => {
