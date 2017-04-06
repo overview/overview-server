@@ -1,7 +1,9 @@
 @(
   loginForm: Form[PotentialExistingUser],
   userForm: Form[PotentialNewUser],
-  is32BitJava: Boolean
+  is32BitJava: Boolean,
+  banner: Option[String],
+  allowRegistration: Boolean
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
@@ -17,36 +19,39 @@
     <article>
       <div class="container">
         <div class="row">
-          <div class="col-md-6">
-            <div class="splash">
-              <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
-              <p class="text">@m("p1")</p>
-              <p class="learn"><a href="/help">@m("learn")</a></p>
+          @if(banner.isEmpty) {
+            <div class="col-md-6">
+              <div class="splash">
+                <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
+                <p class="text">@m("p1")</p>
+                <p class="learn"><a href="https://blog.overviewdocs.com">@m("learn")</a></p>
+              </div>
             </div>
-          </div>
-          <div class="col-md-6">
-            <div class="intro-video-wrapper">
-              <iframe class="intro-video"
-                src="https://player.vimeo.com/video/129776851?byline=0&amp;portrait=0&amp;color=ffffff"
-                width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+            <div class="col-md-6">
+              <div class="intro-video-wrapper">
+                <iframe class="intro-video"
+                  src="https://player.vimeo.com/video/129776851?byline=0&amp;portrait=0&amp;color=ffffff"
+                  width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+              </div>
             </div>
-          </div>
+          } else {
+            <h1 align="center">@Html(banner.get)</h1>
+          }
         </div>
       </div>
     </article>
 
     <footer>
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-lg-6">
-            @views.html.Session._form(loginForm)
-          </div>
-
-          <div class="col-lg-6">
-            @views.html.User._form(userForm)
-          </div>
+      @if(allowRegistration) {
+        <div class="col-lg-6">
+          @views.html.Session._form(loginForm)
         </div>
-      </div>
+        <div class="col-lg-6">
+          @views.html.User._form(userForm)
+        </div>
+      } else {
+        @views.html.Session._form(loginForm)
+      }
     </footer>
   }
 }

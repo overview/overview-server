@@ -1,34 +1,43 @@
 package controllers
 
+import play.api.Play
 import play.api.data.Form
 import play.api.mvc.{Action,RequestHeader}
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.database.exceptions.Conflict
 import com.overviewdocs.models.UserRole
+import controllers.auth.AuthResults
 import models.{PotentialNewUser,PotentialExistingUser,User}
 import models.tables.Users
+
 
 trait UserController extends Controller {
   private val loginForm: Form[PotentialExistingUser] = controllers.forms.LoginForm()
   private val userForm: Form[PotentialNewUser] = controllers.forms.UserForm()
   private val m = views.Magic.scopedMessages("controllers.UserController")
-
+  protected val authorizedToCreateUsers = true  // test value; object below overrides with real auth config
   protected val backendStuff: UserController.BackendStuff
+
 
   def _new = SessionController._new
 
   def create = Action { implicit request =>
-    userForm.bindFromRequest().fold(
-      formWithErrors => BadRequest(views.html.Session._new(loginForm, formWithErrors)),
-      potentialNewUser => {
-        backendStuff.findUserByEmail(potentialNewUser.email) match {
-          case Some(u) => handleExistingUser(u)
-          case None => handleNewUser(potentialNewUser)
-        }
-        Redirect(routes.ConfirmationController.index(potentialNewUser.email))
-          .flashing("event" -> "user-create")
-      })
+
+    if (!authorizedToCreateUsers) {
+      AuthResults.authorizationFailed(request)  // returns 403
+    } else {
+      userForm.bindFromRequest().fold(
+        formWithErrors => BadRequest(views.html.Session._new(loginForm, formWithErrors)),
+        potentialNewUser => {
+          backendStuff.findUserByEmail(potentialNewUser.email) match {
+            case Some(u) => handleExistingUser(u)
+            case None => handleNewUser(potentialNewUser)
+          }
+          Redirect(routes.ConfirmationController.index(potentialNewUser.email))
+            .flashing("event" -> "user-create")
+        })
+    }
   }
 
   private def handleNewUser(potentialUser: PotentialNewUser)(implicit request: RequestHeader): Unit = {
@@ -72,6 +81,10 @@ object UserController extends UserController {
     def createUser(user: PotentialNewUser): User
 
     def findUserByEmail(email: String): Option[User]
+  }
+
+  override protected val authorizedToCreateUsers : Boolean = {
+    Play.current.configuration.getBoolean("overview.allow_registration").getOrElse(false)
   }
 
   override protected val backendStuff = new BackendStuff with HasBlockingDatabase {
