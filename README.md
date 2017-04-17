@@ -3,7 +3,7 @@ overview-server
 
 [![Build Status](http://jenkins-ci.overviewdocs.com/job/overview-server/badge/icon)](http://jenkins-ci.overviewdocs.com/job/overview-server/)
 
-Overview is an open source visual document mining system. It was originally designed for investigative journalists, but is now also used for qualitative research, e-discovery, digital humanities, etc.
+Overview is an open source document mining system that will bulk ingest many document formats and provides search, visualization, analysis and collaboration tools. It was originally designed for investigative journalists, but is now also used for many kinds of research, e-discovery and legal applications, digital humanities, etc.
 
 ## Using Overview
 
