@@ -6,5 +6,5 @@ DIR="$(dirname "$0")/../test/assets/javascripts/autotest"
 if command -v xvfb-run >/dev/null 2>&1; then
   (cd "$DIR" && xvfb-run npm run-script test-continuously)
 else
-  (cd "$DIR" && npm test)
+  (cd "$DIR" && npm run-script test-continuously)
 fi

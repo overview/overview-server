@@ -51,7 +51,7 @@ define [
 
     describe 'with lots of files', ->
       beforeEach ->
-        # 20 files; 30px per file; 200px visible
+        # 20 files; 16px per file; 200px visible
         view.$el.css
           height: '200px'
           overflow: 'auto'
@@ -65,7 +65,7 @@ define [
         view.$el.remove()
 
       it 'should set the <ul> height appropriately', ->
-        expect(view.$('ul').height()).to.eq(360)
+        expect(view.$('ul').height()).to.eq(320)
 
       it 'should empty on reset', ->
         collection.reset()
