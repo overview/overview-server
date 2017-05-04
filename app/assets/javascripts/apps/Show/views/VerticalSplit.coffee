@@ -50,6 +50,7 @@ define [ 'backbone' ], (Backbone) ->
       overlay.style.right = 0
       overlay.style.width = '100%'
       overlay.style.height = '100%'
+      overlay.style.cursor = 'ew-resize'
       overlay.style.zIndex = Number.MAX_SAFE_INTEGER
       document.body.appendChild(overlay)
 

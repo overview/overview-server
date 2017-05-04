@@ -30,6 +30,24 @@
 #tree-app-vertical-split {
   .flex(0 0 auto);
   width: 1rem;
+  cursor: ew-resize;
+  position: relative;
+
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    bottom: 0;
+    background-color: @body-bg;
+    transition: background-color 100ms ease-in-out;
+  }
+
+  &:hover::before {
+    background-color: #efefef;
+  }
 }
 
 #tree-app-right {
