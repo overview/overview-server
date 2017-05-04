@@ -28,7 +28,7 @@ class DocumentWriter(
   dcImport: DocumentCloudImport,
   updateProgress: Int => Future[Unit],
   bulkDocumentWriter: BulkDocumentWriter = BulkDocumentWriter.forDatabaseAndSearchIndex,
-  delayInMs: Int = 500
+  delayInMs: Int = 300
 ) extends HasDatabase {
   /** Array of (documentCloudId,message) */
   private val errors = mutable.Buffer[(String,String)]()
@@ -38,6 +38,7 @@ class DocumentWriter(
 
   /** A caller told us to stop flushing. */
   private var stopped: Boolean = false
+  private var started: Boolean = false
 
   private val timer: Timer = new Timer(s"DocumentWriter for DocumentCloudImport ${dcImport.id}", true)
   private val donePromise = Promise[Unit]()
@@ -57,8 +58,11 @@ class DocumentWriter(
   }
 
   /** Starts a Timer that calls flush() periodically until we call done(). */
-  def flushPeriodically: Unit = {
-    timer.schedule(flushTask, delayInMs)
+  def flushPeriodically: Unit = synchronized {
+    if (!started) {
+      started = true
+      timer.schedule(flushTask, delayInMs)
+    }
   }
 
   /** Stops the Timer and calls flush(). */
@@ -77,22 +81,57 @@ class DocumentWriter(
     (bulkDocumentWriter.flush, theseErrors, nWritten)
   }
 
-  private def flushTask: TimerTask = timerTask {
+  private def doFlush = synchronized {
     val (bulkFlushFuture, theseErrors, thisNWritten) = snapshot
 
     for {
       _ <- bulkFlushFuture
       _ <- writeErrors(theseErrors)
       _ <- updateProgress(thisNWritten)
-    } yield {
-      if (stopped) {
-        timer.cancel
-        donePromise.success(())
-      } else {
-        timer.schedule(flushTask, delayInMs)
-      }
+    } yield ()
+  }
+
+  private def startFlush = synchronized {
+    if (stopped) {
+      afterFlush
+    } else {
+      for {
+        _ <- doFlush
+      } yield afterFlush
     }
   }
+
+  private def afterFlush = synchronized {
+    if (stopped) {
+      timer.cancel
+
+      // 1. schedule flush
+      // 2. add docs
+      // 3. start scheduled flush
+      // 4. add docs
+      // 5. stop, for explicit flush => schedules another flush task, but will
+      //    we run it? We just called timer.cancel
+      //
+      // The solution is a couple of guarantees:
+      //
+      // 1. We can only arrive here in between timer tasks. That means we've
+      //    definitely written all docs other than the ones in our buffers.
+      // 2. We can't schedule timer tasks other than through this method. That
+      //    means we definitely won't run any more tasks.
+      //
+      // ... but we haven't guaranteed our buffers are clear, so we need to do
+      // that here.
+      for {
+        _ <- doFlush
+      } yield {
+        donePromise.success(())
+      }
+    } else {
+      timer.schedule(flushTask, delayInMs)
+    }
+  }
+
+  private def flushTask: TimerTask = timerTask { startFlush }
 
   private lazy val errorInserter = DocumentProcessingErrors.map(_.createAttributes)
 
