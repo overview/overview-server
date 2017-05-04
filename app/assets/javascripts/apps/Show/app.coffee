@@ -14,6 +14,7 @@ define [
   './views/TransactionQueueErrorMonitor'
   './views/ExportDialog'
   './views/Mode'
+  './views/VerticalSplit'
   './views/DocumentListTitle'
   '../Tree/app'
   '../View/app'
@@ -26,7 +27,7 @@ define [
     TourController, \
     TransactionQueueErrorMonitor, \
     ExportDialog, \
-    ModeView, \
+    ModeView, VerticalSplitView, \
     DocumentListTitleView, \
     TreeApp, ViewApp, DocumentListParamsSelectorApp) ->
 
@@ -105,23 +106,23 @@ define [
 
     _buildHtml: ->
       html = """
-        <div id="tree-app-left">
-          <div id="document-list-params"></div>
-          <div id="tree-app-views"></div>
-          <div id="tree-app-view"></div>
-        </div>
-        <div id="tree-app-right">
-          <div id="document-list-container">
-            <div class="header">
-              <div id="document-list-title"></div>
-              <div id="tree-app-tag-this"></div>
-            </div>
-            <div id="document-list"></div>
-          </div>
-          <div id="document-current"></div>
-        </div>
-        <div id="transaction-queue-error-monitor">
-        </div>
+        <div id="tree-app-left"
+          ><div id="document-list-params"></div
+          ><div id="tree-app-views"></div
+          ><div id="tree-app-view"></div
+        ></div
+        ><div id="tree-app-vertical-split"></div
+        ><div id="tree-app-right"
+          ><div id="document-list-container"
+            ><div class="header"
+              ><div id="document-list-title"></div
+              ><div id="tree-app-tag-this"></div
+            ></div
+            ><div id="document-list"></div
+          ></div
+          ><div id="document-current"></div
+        ></div
+        ><div id="transaction-queue-error-monitor"></div>
       """
 
       $(@el).html(html)
@@ -174,6 +175,7 @@ define [
       els.views.appendChild(controller.el)
 
       new ModeView(el: @el, state: @state)
+      new VerticalSplitView(el: @el, storage: window.localStorage, storageKey: 'ui.vertical-split.w1')
 
       @_listenForRefocus()
       @_listenForResize(els.document)

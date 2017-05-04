@@ -14,23 +14,20 @@ define [
         <div class="thumbnail">
           <img src="<%= attrs.thumbnailUrl %>" alt="" />
         </div>
-        <div class="hover">
-          <img src="<%= attrs.thumbnailUrl %>" alt="" />
-        </div>
-        <div>
-        <h3><%- title %></h3>
-        <% if (attrs.snippets.length > 0) { %>
-          <ul class="highlights">
-            <% _.each (attrs.snippets, function(snippet) {  %>
-              <li class="highlights">
-                <div> ...<%= snippet %>...</div>
-              </li>
-            <% }); %>
-          </ul>
-        <% } else { %>
-          <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
-        <% }%>
-         <ul class="tags">
+        <div class="details">
+          <h3><%- title %></h3>
+          <% if (attrs.snippets.length > 0) { %>
+            <ul class="highlights">
+              <% _.each (attrs.snippets, function(snippet) {  %>
+                <li class="highlights">
+                  <div> ...<%= snippet %>...</div>
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
+          <% }%>
+          <ul class="tags">
             <% _.each(tags, function(tag) { %>
               <li class="tag" data-cid="<%- tag.cid %>">
                 <div class="<%= tag.getClass() %>" style="<%= tag.getStyle() %>">
@@ -78,6 +75,8 @@ define [
 
     events:
       'mousedown': '_onMousedownCancelSelect'
+      'mouseenter .thumbnail img': '_onMouseenterThumbnail'
+      'mouseleave .thumbnail img': '_onMouseleaveThumbnail'
       'click .document': '_onClickDocument'
 
     initialize: ->
@@ -91,9 +90,14 @@ define [
       @listenTo(@options.selection, 'change:cursorIndex', (model, value) => @_renderCursorIndex(value))
       @$el.on('scroll', => @_updateMaxViewedIndex())
 
+      @hoverThumbnail = null
       @setModel(@model) # calls @render()
       @_renderSelectedIndices(@options.selection.get('selectedIndices'))
       @_renderCursorIndex(@options.selection.get('cursorIndex'))
+
+    remove: ->
+      document.body.remove(@hoverThumbnail) if @hoverThumbnail
+      Backbone.View.prototype.remove.call(@)
 
     _listenToModel: ->
       @listenTo @model,
@@ -255,6 +259,29 @@ define [
 
     _onMousedownCancelSelect: (e) ->
       e.preventDefault() if e.ctrlKey || e.metaKey || e.shiftKey
+
+    _onMouseenterThumbnail: (ev) ->
+      document.body.removeChild(@hoverThumbnail) if @hoverThumbnail
+
+      img = @hoverThumbnail = document.createElement('img')
+      img.id = 'document-list-thumbnail-tooltip'
+      document.body.appendChild(img)
+
+      anchor = ev.target.getBoundingClientRect()
+      img.style.top = anchor.top + 'px'
+      img.style.right = (window.innerWidth - anchor.left) + 'px'
+
+      img.onload = ->
+        pos1 = img.getBoundingClientRect()
+        if pos1.bottom > window.innerHeight - 10
+          img.style.top = (window.innerHeight - 10 - pos1.height) + 'px'
+        img.style.opacity = 1
+
+      img.src = ev.target.src
+
+    _onMouseleaveThumbnail: (ev) ->
+      document.body.removeChild(@hoverThumbnail) if @hoverThumbnail
+      @hoverThumbnail = null
 
     _onClickDocument: (e) ->
       e.preventDefault()

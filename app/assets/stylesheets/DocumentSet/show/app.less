@@ -27,12 +27,16 @@
   }
 }
 
+#tree-app-vertical-split {
+  .flex(0 0 auto);
+  width: 1rem;
+}
+
 #tree-app-right {
   .flex(1 1 auto);
   width: 1px; // equal to tree-app-left
   position: relative;
 
-  margin-left: 1em;
   overflow: hidden;
 
   // Nudge ever so slightly to the right. Otherwise Chrome rounds down and a
@@ -40,6 +44,12 @@
   // left of the edge of the screen. It's no big deal if a pixel of the
   // scrollbar gets cut off, but it *is* a big deal if we violate Fitts' law.
   right: -.5px;
+}
+
+#transaction-queue-error-monitor {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 #document-list-container {

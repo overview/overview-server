@@ -18,6 +18,9 @@
   }
 
   li.document {
+    .display-flex();
+    .flex-direction-row();
+
     cursor: pointer;
     margin: .75em .1em;
     .overview-toplevel-box;
@@ -28,6 +31,24 @@
     transition-duration: .5s;
     transition-delay: .5s;
     border: 1px solid @body-bg;
+
+    .thumbnail { // legacy: not all documents have thumbnails
+      .flex(0 0);
+
+      img {
+        width: 75px;
+        margin-right: 1rem;
+      }
+    }
+
+    div.details {
+      -webkit-flex: 1 1 0;
+      flex: 1 1 0;
+
+      .description {
+        word-wrap: break-word;
+      }
+    }
 
     &:hover {
       background: @body-bg-dark;
@@ -45,49 +66,6 @@
       font-weight: bold;
       background: @body-bg-dark;
       border-color: @brand-primary;
-    }
-  }
-
-  li.with-thumbnail {
-    display: -webkit-flex;
-    display: flex;
-    -webkit-flex-direction: row;
-    flex-direction: row;
-
-    div {
-      -webkit-flex: 1 0 0;
-      flex: 1 0 0;
-
-      .description {
-        width: 508px;
-        word-wrap: break-word;
-      }
-    }
-
-    .hover {
-      display: none;
-    }
-
-    .thumbnail {
-      -webkit-flex: 75px 0 0;
-      flex: 75px 0 0;
-      margin-right: 10px;
-
-      img {
-        width: 75px;
-        border: 1px solid @shade;
-      }
-    }
-
-    .thumbnail:hover + .hover{
-      position: fixed;
-      top: 4em;
-      border: 1px solid @shade;
-      width: auto;
-      display: block;
-      z-index: 999;
-      left: 50%;
-      transform: translateX(-100%);
     }
   }
 
@@ -159,4 +137,18 @@
 
 #document-list.hover li.cursor {
   background: @well-bg;
+}
+
+#document-list-thumbnail-tooltip {
+  display: inline-block;
+  position: absolute;
+  opacity: 0;
+
+  height: auto;
+  max-height: 90%;
+  margin-right: 2rem;
+  z-index: 2; // above plugins
+  background: @body-bg;
+  pointer-events: none;
+  box-shadow: 0 0 5px @shade, 0 0 5px @shade;
 }

@@ -131,7 +131,6 @@ define [
           else throw "Invalid placement #{options.placement}"
 
         if positionCss.top < 0
-          console.log(positionCss)
           $arrow = $popover.find('.arrow')
           $arrow.css('margin-top': (positionCss.top + parseInt($arrow.css('margin-top'), 10)) + 'px')
           positionCss.top = 0
