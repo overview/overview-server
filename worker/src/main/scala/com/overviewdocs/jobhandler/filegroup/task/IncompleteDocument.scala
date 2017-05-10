@@ -3,7 +3,7 @@ package com.overviewdocs.jobhandler.filegroup.task
 import java.time.Instant
 import play.api.libs.json.JsObject
 
-import com.overviewdocs.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNoteCollection}
 
 /** Something we'll pass to WriteDocuments. */
 case class IncompleteDocument(
@@ -32,6 +32,7 @@ case class IncompleteDocument(
     displayMethod=displayMethod,
     isFromOcr=isFromOcr,
     metadataJson=metadataJson,
+    pdfNotes=PdfNoteCollection(Array()),
     text=text
   )
 }

@@ -10,7 +10,7 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.models.{Document,File,Page}
+import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait DocumentScope extends Scope {
@@ -110,6 +110,25 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
       }
     }
 
+    "showPdfNotes()" should {
+      trait ShowPdfNotesScope extends DocumentScope {
+        lazy val result = controller.showPdfNotes(requestedDocumentId)(request)
+      }
+
+      "return NotFound when document is not found" in new ShowPdfNotesScope {
+        h.status(result) must beEqualTo(h.NOT_FOUND)
+      }
+
+      "return notes" in new ShowPdfNotesScope {
+        override def foundDocument = Some(factory.document(pdfNotes=PdfNoteCollection(Array(
+          PdfNote(1, 2.0, 3.0, 4.0, 5.0, "foo")
+        ))))
+
+        h.status(result) must beEqualTo(h.OK)
+        h.contentAsString(result) must beEqualTo("""[{"pageIndex":1,"x":2,"y":3,"width":4,"height":5,"text":"foo"}]""")
+      }
+    }
+
     "update()" should {
       trait UpdateScope extends DocumentScope {
         val documentSetId = 123L
@@ -166,6 +185,48 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         h.contentAsString(result) must /("code" -> "illegal-arguments")
         h.contentAsString(result) must /("message" -> "You must pass a JSON Object with a \"metadata\" property or a \"title\" property")
         there was no(mockDocumentBackend).updateTitle(any, any, any)
+      }
+    }
+
+    "updatePdfNotes" should {
+      trait UpdatePdfNotesScope extends DocumentScope {
+        val documentId = 124L
+
+        mockDocumentBackend.updatePdfNotes(any, any) returns Future.successful(())
+
+        def input: JsValue = Json.arr()
+        lazy val result = controller.updatePdfNotes(documentId)(fakeAuthorizedRequest.withJsonBody(input))
+      }
+
+      "return 400 on non-JSON input" in new UpdatePdfNotesScope {
+        // no data
+        override lazy val result = controller.updatePdfNotes(documentId)(fakeAuthorizedRequest)
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+        h.contentAsString(result) must /("code" -> "illegal-arguments")
+        h.contentAsString(result) must /("message" -> "You must pass a JSON Array of {pageIndex,x,y,width,height,text} Objects")
+        there was no(mockDocumentBackend).updateMetadataJson(any, any, any)
+      }
+
+      "return 400 when input is invalid" in new UpdatePdfNotesScope {
+        override val input = Json.obj()
+        h.status(result) must beEqualTo(h.BAD_REQUEST)
+      }
+
+      "set new pdfNotes in the backend" in new UpdatePdfNotesScope {
+        val noteJson = Json.obj(
+          "pageIndex" -> 1,
+          "x" -> 2.0,
+          "y" -> 3.0,
+          "width" -> 4.0,
+          "height" -> 5.0,
+          "text" -> "Foo"
+        )
+
+        override def input = Json.arr(noteJson)
+        h.status(result) must beEqualTo(h.NO_CONTENT)
+        there was one(mockDocumentBackend).updatePdfNotes(124L, PdfNoteCollection(Array(
+          PdfNote(1, 2.0, 3.0, 4.0, 5.0, "Foo")
+        )))
       }
     }
   }

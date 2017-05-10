@@ -24,6 +24,7 @@ case class DocumentInfo(
   override val thumbnailLocation: Option[String]
 ) extends DocumentHeader {
   override val metadataJson = JsObject(Seq())
+  override val pdfNotes = PdfNoteCollection(Array())
   override val text = ""
 
   override def viewUrl: Option[String] = {

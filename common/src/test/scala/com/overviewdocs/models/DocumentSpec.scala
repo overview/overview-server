@@ -20,6 +20,7 @@ class DocumentSpec extends Specification {
       false,
       JsObject(Seq()),
       None,
+      PdfNoteCollection(Array()),
       ""
     )
 
@@ -60,6 +61,7 @@ class DocumentSpec extends Specification {
       false,
       JsObject(Seq()),
       None,
+      PdfNoteCollection(Array()),
       text
     )
 

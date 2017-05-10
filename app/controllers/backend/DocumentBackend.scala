@@ -5,7 +5,7 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
-import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,PdfNoteCollection}
 import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,Tags}
 import com.overviewdocs.query.{Query=>SearchQuery}
 import com.overviewdocs.searchindex.IndexClient
@@ -57,6 +57,12 @@ trait DocumentBackend {
     * DocumentSet.
     */
   def updateMetadataJson(documentSetId: Long, documentId: Long, metadataJson: JsObject): Future[Unit]
+
+  /** Updates a Document's pdfNotes.
+   *
+   * Is a no-op if the Document does not exist.
+   */
+  def updatePdfNotes(documentId: Long, pdfNotes: PdfNoteCollection): Future[Unit]
 }
 
 trait DbDocumentBackend extends DocumentBackend with DbBackend {
@@ -77,6 +83,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     override val isFromOcr = false
     override val metadataJson = JsObject(Seq())
     override val text = ""
+    override val pdfNotes = PdfNoteCollection(Array())
     override val thumbnailLocation = None
   }
 
@@ -201,6 +208,10 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
 
   override def updateMetadataJson(documentSetId: Long, documentId: Long, metadataJson: JsObject) = {
     database.runUnit(updateMetadataJsonCompiled(documentSetId, documentId).update(Some(metadataJson)))
+  }
+
+  override def updatePdfNotes(documentId: Long, pdfNotes: PdfNoteCollection) = {
+    database.runUnit(updatePdfNotesCompiled(documentId).update(Some(pdfNotes)))
   }
 
   protected def sortedIds(documentSetId: Long): DBIO[Seq[Seq[Long]]] = {
@@ -340,6 +351,14 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
       .filter(_.documentSetId === documentSetId)
       .filter(_.id === documentId)
       .map(_.metadataJson)
+  }
+
+  private lazy val updatePdfNotesCompiled = Compiled { (documentId: Rep[Long]) =>
+    import DocumentsImpl._
+
+    Documents
+      .filter(_.id === documentId)
+      .map(_.pdfNotes)
   }
 
   private lazy val byId = Compiled { (documentId: Rep[Long]) =>

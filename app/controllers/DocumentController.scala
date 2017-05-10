@@ -5,7 +5,7 @@ import java.io.InputStream
 import java.io.{File => JFile} 
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.{JsObject,JsString}
+import play.api.libs.json.{JsObject,JsString,Json,Reads,Writes}
 import play.api.mvc.ResponseHeader
 import play.api.mvc.Result
 import play.api.{Play,Logger}
@@ -15,7 +15,7 @@ import controllers.auth.Authorities.{anyUser,userOwningDocument,userOwningDocume
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import com.overviewdocs.blobstorage.BlobStorage
-import com.overviewdocs.models.{Document,File,Page}
+import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 trait DocumentController extends Controller {
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
@@ -134,6 +134,35 @@ trait DocumentController extends Controller {
           "illegal-arguments",
           "You must pass a JSON Object with a \"metadata\" property or a \"title\" property"
         )))
+      }
+    }
+  }
+
+  def showPdfNotes(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+    val pdfNoteWrites = Json.writes[PdfNote]
+    val pdfNoteSeqWrites = Writes.seq(pdfNoteWrites)
+
+    documentBackend.show(documentId).map(_ match {
+      case None => NotFound
+      case Some(document) => {
+        Ok(pdfNoteSeqWrites.writes(document.pdfNotes.pdfNotes.toSeq))
+      }
+    })
+  }
+
+  def updatePdfNotes(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+    val pdfNoteReads = Json.reads[PdfNote]
+    val pdfNoteSeqFormat = Reads.seq(pdfNoteReads)
+
+    request.body.asJson.flatMap(_.asOpt(pdfNoteSeqFormat)) match {
+      case None => Future.successful(BadRequest(jsonError(
+        "illegal-arguments",
+        "You must pass a JSON Array of {pageIndex,x,y,width,height,text} Objects"
+      )))
+      case Some(notes) => {
+        val pdfNotes = PdfNoteCollection(notes.toArray)
+        documentBackend.updatePdfNotes(documentId, pdfNotes)
+          .map(_ => NoContent)
       }
     }
   }
