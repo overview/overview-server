@@ -301,7 +301,6 @@
   top: 0;    /* JS will set this */
   height: 0; /* JS will set this */
   width: 0;  /* JS will set this */
-  background: rgba(0, 0, 0, 0.05);
 }
 
 .editNoteBackground .bgRight {
@@ -309,7 +308,6 @@
   top: 0;    /* JS will set this. */
   height: 0; /* JS will set this. */
   left: 0;   /* JS will set this. */
-  background: rgba(0, 0, 0, 0.05);
 }
 
 .editNotePopup {
