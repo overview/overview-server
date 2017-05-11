@@ -266,7 +266,11 @@
 }
 
 .editNoteTool {
-  /* it's just an empty div. */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; /* JS will overwrite with px. div#viewer has an incomplete width
+                  because div.pages have huge, negative margin-right. */
 }
 
 .editNoteBackground {
