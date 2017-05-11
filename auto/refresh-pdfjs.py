@@ -31,7 +31,11 @@ def error(message):
     sys.exit(1)
 
 def get_overview_dirname():
-    return os.path.dirname(os.path.dirname(__file__))
+    ret = os.path.dirname(os.path.dirname(__file__))
+    if ret == '':
+        return '.'
+    else:
+        return ret
 
 def check_pdfjs_dirname_is_pdfjs_dir(pdfjs_dirname):
     if not os.path.exists('%s/pdfjs.config' % pdfjs_dirname):
