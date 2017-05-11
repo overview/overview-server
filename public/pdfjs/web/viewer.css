@@ -241,8 +241,8 @@
 
 .noteLayer section {
   position: absolute;
-  border: 2px solid yellow;
-  background: rgba(255, 255, 0, .2);
+  border: 3px solid rgb(243, 243, 94);
+  background: rgba(255, 255, 0, .15);
   box-shadow: 0 0 3px yellow;
   cursor: pointer;
 }
@@ -331,7 +331,7 @@
   border: 1px solid gray;
   border-bottom: none;
   background: white;
-  padding: 1rem;
+  padding: 0; /* Buttons will have all padding, so they're easier to click */
   display: flex;
 }
 
@@ -453,12 +453,6 @@
   margin-top: 1rem;
 }
 
-.editNoteToolbar h4 {
-  font: inherit;
-  font-weight: bold;
-  margin-right: 2rem;
-}
-
 /* Make buttons look like links, with icons. */
 .editNoteToolbar button {
   display: inline-block;
@@ -473,10 +467,9 @@
 .editNoteToolbar button {
   display: block;
   position: relative;
-  margin-left: 1rem;
-  margin-right: 1rem;
+  padding: 1rem;
   line-height: 1;
-  height: 16px;
+  height: calc(16px + 2rem);
   top: 1px; /* looks better -- all text happens to have no descenders */
 }
 
@@ -489,68 +482,55 @@
 }
 
 .editNoteToolbar button.editNotePrevious {
-  padding: 0 8px 0 24px;
+  padding-left: calc(1rem + 19px);
+}
+
+.editNoteToolbar button::before,
+.editNoteToolbar button::after {
+  /* shared properties. Will be ignored unless there is a 'content' */
+  display: inline-block;
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: calc(1rem - 1px);
+  background-size: 100%;
 }
 
 .editNoteToolbar button.editNotePrevious::before {
   content: '';
-  display: inline-block;
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  left: 0;
-  top: -4px;
+  left: 1rem;
   background-image: url(images/toolbarButton-previousNote@2x.png);
-  background-size: 100%;
 }
 
 .editNoteToolbar button.editNoteNext {
-  padding: 0 24px 0 8px;
+  padding-right: calc(1rem + 19px);
 }
 
 .editNoteToolbar button.editNoteNext::after {
   content: '';
-  display: inline-block;
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  right: 0;
-  top: -4px;
+  right: 1rem;
   background-image: url(images/toolbarButton-nextNote@2x.png);
-  background-size: 100%;
 }
 
 .editNoteToolbar button.editNoteDelete {
-  padding: 0 8px 0 24px;
+  padding-left: calc(1rem + 19px);
   color: #ff3333;
 }
 
 .editNoteToolbar button.editNoteDelete::before {
   content: '';
-  display: inline-block;
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  left: 4px;
-  top: -2px;
+  left: 1rem;
   background-image: url(images/editNoteButton-delete@2x.png);
-  background-size: 100%;
 }
 
 .editNoteToolbar button.editNoteClose {
-  padding: 0 24px 0 8px;
-  margin-right: -4px;
+  padding-right: calc(1rem + 19px);
 }
 
 .editNoteToolbar button.editNoteClose::before {
   content: '✖';
-  display: inline-block;
-  position: absolute;
   font-size: 20px;
-  width: 16px;
-  height: 16px;
-  right: 4px;
-  top: -2px;
+  right: 1rem;
 }
 
 .pdfViewer .canvasWrapper {
