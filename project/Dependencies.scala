@@ -39,10 +39,10 @@ object Dependencies {
     val redis = "net.debasishg" %% "redisreact" % "0.8"
     val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
     val slick = "com.typesafe.slick" %% "slick" % "3.1.0"
-    val specs2Core = "org.specs2" %% "specs2-core" % "3.6.6"
-    val specs2Junit = "org.specs2" %% "specs2-junit" % "3.6.6" // for XML reporting, for Jenkins
-    val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % "3.6.6"
-    val specs2Mock = "org.specs2" %% "specs2-mock" % "3.6.6"
+    val specs2Core = "org.specs2" %% "specs2-core" % "3.8.9"
+    val specs2Junit = "org.specs2" %% "specs2-junit" % "3.8.9" // for XML reporting, for Jenkins
+    val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % "3.8.9"
+    val specs2Mock = "org.specs2" %% "specs2-mock" % "3.8.9"
   }
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
