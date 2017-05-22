@@ -4,10 +4,10 @@ import play.sbt.PlayImport.{filters,ws}
 object Dependencies {
   private object deps {
     // shared dependencies
-    val akka = "com.typesafe.akka" %% "akka-actor" % "2.4.0"
-    val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.4.0"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.4.0"
-    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.4.0"
+    val akka = "com.typesafe.akka" %% "akka-actor" % "2.5.1"
+    val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.5.1"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.1"
+    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.5.1"
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.10.32"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.10.32"
