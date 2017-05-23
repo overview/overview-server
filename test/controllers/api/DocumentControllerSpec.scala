@@ -274,9 +274,6 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         override lazy val request = fakeRequest("GET", "/?stream=true")
 
         status(result) must beEqualTo(OK)
-        header("Content-Length", result) must beNone
-        header("Transfer-Encoding", result) must beSome("chunked")
-        header("Content-Type", result) must beSome("application/json")
 
         val json = contentAsString(result)
         json must /("pagination") /("total" -> 2)

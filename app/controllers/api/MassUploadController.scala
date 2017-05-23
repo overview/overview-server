@@ -1,8 +1,10 @@
 package controllers.api
 
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import java.util.UUID
+import play.api.libs.streams.Accumulator
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
 
@@ -21,7 +23,7 @@ trait MassUploadController extends ApiController {
   protected val jobQueueSender: JobQueueSender
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
   protected val apiTokenFactory: ApiTokenFactory
-  protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
+  protected val uploadSinkFactory: (GroupedFileUpload,Long) => Sink[ByteString,Future[Unit]]
 
   def index = ApiAuthorizedAction(anyUser).async { request =>
     for {
@@ -32,20 +34,20 @@ trait MassUploadController extends ApiController {
 
   /** Starts or resumes a file upload. */
   def create(guid: UUID) = EssentialAction { request =>
-    val futureIteratee: Future[Iteratee[Array[Byte],Result]] = apiTokenFactory.loadAuthorizedApiToken(request, anyUser).map(_ match {
-      case Left(result) => Iteratee.ignore.map(_ => result)
+    val futureAccumulator: Future[Accumulator[ByteString,Result]] = apiTokenFactory.loadAuthorizedApiToken(request, anyUser).map(_ match {
+      case Left(result) => Accumulator(Sink.ignore).map(_ => result)
       case Right(apiToken) => MassUploadControllerMethods.Create(
         apiToken.createdBy,
         Some(apiToken.token),
         guid,
         fileGroupBackend,
         groupedFileUploadBackend,
-        uploadIterateeFactory,
+        uploadSinkFactory,
         true
       )(request)
     })
 
-    Iteratee.flatten(futureIteratee)
+    Accumulator.flatten(futureAccumulator)(play.api.Play.current.materializer)
   }
 
   /** Responds to a HEAD request.
@@ -158,5 +160,5 @@ object MassUploadController extends MassUploadController {
   override protected val jobQueueSender = JobQueueSender
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
   override protected val apiTokenFactory = ApiTokenFactory
-  override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
+  override protected val uploadSinkFactory = GroupedFileUploadIteratee.apply _
 }

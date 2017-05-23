@@ -5,22 +5,15 @@ import akka.util.Timeout
 import com.redis.RedisClient
 import javax.inject._
 import play.api.inject.ApplicationLifecycle
-import play.api.{Mode,Play}
+import play.api.Configuration
 import scala.concurrent.Future
 
-trait RedisConfiguration {
-  val host: String
-  val port: Int
-}
-
-object RedisConfiguration extends RedisConfiguration {
-  private def getString(key: String): String =
-    Play.current.configuration
+class RedisConfiguration(private val config: Configuration) {
+  private def getString(key: String): String = config
       .getString(key)
       .getOrElse(throw new Exception(s"Missing configuration value $key"))
 
-  private def getInt(key: String): Int =
-    Play.current.configuration
+  private def getInt(key: String): Int = config
       .getInt(key)
       .getOrElse(throw new Exception(s"Missing configuration value $key"))
 
@@ -34,10 +27,9 @@ object RedisConfiguration extends RedisConfiguration {
   * Play applications.
   */
 object RedisModuleGlobalState {
-  lazy val connect: (ActorSystem, RedisClient) = {
-    // Assume Play.current is set -- how else did we call this?
-    val config = RedisConfiguration
+  var config: RedisConfiguration = _
 
+  lazy val connect: (ActorSystem, RedisClient) = {
     implicit val sys = ActorSystem("RedisModule")
     implicit val ec = sys.dispatcher
     implicit val timeout = Timeout(5, java.util.concurrent.TimeUnit.SECONDS)
@@ -60,16 +52,14 @@ object RedisModuleGlobalState {
   *   is easiest.
   */
 @Singleton
-class RedisModule @Inject() (lifecycle: ApplicationLifecycle) {
+class RedisModule @Inject() (lifecycle: ApplicationLifecycle, configuration: Configuration) {
   lazy val client: RedisClient = {
+    RedisModuleGlobalState.config = new RedisConfiguration(configuration)
     val (actorSystem, ret) = RedisModuleGlobalState.connect
 
-    // Assume Play is running -- otherwise, who called this code?
-    if (Play.current.mode == Mode.Dev) {
-      lifecycle.addStopHook { () =>
-        actorSystem.terminate
-        Future.successful(())
-      }
+    lifecycle.addStopHook { () =>
+      actorSystem.terminate
+      Future.successful(())
     }
 
     ret

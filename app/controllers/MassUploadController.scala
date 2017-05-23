@@ -1,8 +1,9 @@
 package controllers
 
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
@@ -23,7 +24,7 @@ trait MassUploadController extends Controller {
   protected val fileGroupBackend: FileGroupBackend
   protected val jobQueueSender: JobQueueSender
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
-  protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
+  protected val uploadSinkFactory: (GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]
 
   /** Calls MassUploadControllerMethods.Create(), returning the result as body.
     *
@@ -37,7 +38,7 @@ trait MassUploadController extends Controller {
         guid,
         fileGroupBackend,
         groupedFileUploadBackend,
-        uploadIterateeFactory,
+        uploadSinkFactory,
         false
       )(request)
         .map(result => Right(result)) // Doesn't matter which it is...
@@ -202,5 +203,5 @@ object MassUploadController extends MassUploadController {
   override protected val fileGroupBackend = FileGroupBackend
   override protected val jobQueueSender = JobQueueSender
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
-  override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
+  override protected val uploadSinkFactory = GroupedFileUploadIteratee.apply _
 }

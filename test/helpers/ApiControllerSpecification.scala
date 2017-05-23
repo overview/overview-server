@@ -2,20 +2,19 @@ package controllers.api
 
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action,AnyContent,AnyContentAsEmpty,AnyContentAsJson,Headers,Request,Result}
 import play.api.http.{HeaderNames,Status}
 import play.api.test.{DefaultAwaitTimeout,FakeRequest,ResultExtractors,FutureAwaits}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext,Future}
 
 import controllers.auth.{ApiAuthorizedAction,ApiAuthorizedRequest}
 import com.overviewdocs.models.ApiToken
 import com.overviewdocs.test.factories.{Factory,PodoFactory}
 
 trait ApiControllerSpecification
-  extends Specification
+  extends test.helpers.InAppSpecification // for materializer -- needed for akka.stream
   with Mockito
   with JsonMatchers
   with HeaderNames
@@ -29,7 +28,7 @@ trait ApiControllerSpecification
   }
 
   trait ApiControllerScope extends Scope {
-    implicit protected val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+    implicit protected val executionContext: ExecutionContext = play.api.libs.concurrent.Execution.defaultContext
 
     val factory: Factory = PodoFactory
 

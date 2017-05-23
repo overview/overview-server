@@ -38,7 +38,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       h.header("Content-Type", result) must beSome("application/zip")
       h.header("Content-Length", result) must beSome("6")
       h.header("Content-Disposition", result) must beSome("attachment; filename=\"filename.zip\"")
-      new String(h.contentAsBytes(result), "ascii") must beEqualTo("abcdef")
+      new String(h.contentAsBytes(result).toArray, "ascii") must beEqualTo("abcdef")
     }
 
     "redirect with flash if unable to create an archive" in new BaseScope {

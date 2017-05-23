@@ -1,5 +1,6 @@
 package controllers.api
 
+import akka.stream.scaladsl.{Concat,Source}
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsArray,JsBoolean,JsNull,JsNumber,JsObject,JsString,JsValue,Json}
@@ -35,14 +36,11 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
   }
 
   private def _streamDocumentsInner(documentSet: DocumentSet, selection: Selection, pageRequest: PageRequest, fields: Set[Field], documentCount: Int): Result = {
-    import play.api.libs.iteratee._
-
     val start = pageRequest.offset
     val end = scala.math.min(start + pageRequest.limit, documentCount)
     val batchSize = DocumentController.StreamingPageLimit
 
     def fetchPage(pageStart: Int): Future[String] = {
-      import play.api.libs.iteratee.Execution.defaultExecutionContext
       documentBackend.index(selection, PageRequest(pageStart, batchSize), Field.needFullDocuments(fields))
         .map { (documents) =>
           val initialComma = if (pageStart != start && documents.items.nonEmpty) "," else ""
@@ -51,7 +49,7 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
         }
     }
 
-    val jsObjectChunks = Enumerator.unfoldM[Int,String](start) { (pageStart) =>
+    val jsObjectChunks = Source.unfoldAsync[Int,String](start) { (pageStart) =>
       if (pageStart < end) {
         fetchPage(pageStart).map(Some(pageStart + batchSize, _))
       } else {
@@ -59,11 +57,14 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
       }
     }
 
-    val content = Enumerator(s"""{"selectionId":"${selection.id.toString}","pagination":{"offset":${pageRequest.offset},"limit":${pageRequest.limit},"total":${documentCount}},"items":[""")
-      .andThen(jsObjectChunks)
-      .andThen(Enumerator("]}"))
+    val prelude = Source.single(
+      s"""{"selectionId":"${selection.id.toString}","pagination":{"offset":${pageRequest.offset},"limit":${pageRequest.limit},"total":${documentCount}},"items":["""
+    )
+    val postlude = Source.single("]}")
 
-    Ok.chunked(content)
+    val source: Source[String, _] = prelude ++ jsObjectChunks ++ postlude
+
+    Ok.chunked(source)
       .as("application/json")
   }
 

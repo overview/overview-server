@@ -2,7 +2,6 @@ browser = require('../lib/BrowserBuilder')
 
 Url =
   adminUserIndex: '/admin/users'
-  deleteUser: (email) -> "/admin/users/#{encodeURIComponent(email)}?X-HTTP-Method-Override=DELETE"
   login: '/login'
 
 module.exports =

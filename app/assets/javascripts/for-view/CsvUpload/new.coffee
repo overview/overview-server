@@ -237,11 +237,16 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
 
       if file?
         charset = $form.find('[name=charset]').val()
+        csrfToken = $form.find('[name=csrfToken]').val()
 
         upload = new Upload(
           file,
           url_prefix,
-          _.extend({ contentType: "text/csv; charset=#{charset}" }, upload_options))
+          _.extend({
+            contentType: "text/csv; charset=#{charset}",
+            csrfToken: csrfToken
+          }, upload_options)
+        )
 
         progress_elem = $modal.find('progress')[0]
         bytes_uploaded = 0

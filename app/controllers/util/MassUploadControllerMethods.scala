@@ -1,9 +1,11 @@
 // MassUploadController is factored into this file so that both client and API access route to same code
 package controllers.util
 
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Iteratee
+import play.api.libs.streams.Accumulator
 import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
 
@@ -18,7 +20,7 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
     guid: UUID,
     fileGroupBackend: FileGroupBackend, 
     groupedFileUploadBackend: GroupedFileUploadBackend,
-    uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit],
+    uploadSinkFactory: (GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]],
     wantJsonResponse: Boolean
   ) extends EssentialAction {
     private case class RequestInfo(filename: String, contentType: String, start: Long, total: Long)
@@ -51,12 +53,12 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
       }
     }
 
-    private def badRequest(message: String): Iteratee[Array[Byte],Result] = {
+    private def badRequest(message: String): Accumulator[ByteString,Result] = {
       val result: Result = wantJsonResponse match {
         case true => BadRequest(jsonError("illegal-arguments", message))
         case false => BadRequest(message)
       }
-      Iteratee.ignore.map(_ => result)
+      Accumulator(Sink.ignore).map(_ => result)
     }
 
     private def findOrCreateFileGroup: Future[FileGroup] = {
@@ -75,15 +77,15 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
       groupedFileUploadBackend.findOrCreate(attributes)
     }
 
-    private def createIteratee(upload: GroupedFileUpload, info: RequestInfo): Iteratee[Array[Byte],Result] = {
+    private def createAccumulator(upload: GroupedFileUpload, info: RequestInfo): Accumulator[ByteString,Result] = {
       if (info.start > upload.uploadedSize) {
         badRequest(s"Tried to resume past last uploaded byte. Resumed at byte ${info.start}, but only ${upload.uploadedSize} bytes have been uploaded.")
       } else {
-        uploadIterateeFactory(upload, info.start).map(_ => Created)
+        Accumulator(uploadSinkFactory(upload, info.start)).map(_ => Created)
       }
     }
 
-    override def apply(request: RequestHeader): Iteratee[Array[Byte],Result] = {
+    override def apply(request: RequestHeader): Accumulator[ByteString,Result] = {
       val infoOpt = RequestInfo.fromRequest(request)
       
       // Ensure we got the right headers, and a valid filename (parse-able and not empty)
@@ -96,13 +98,13 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
         return badRequest("Invalid or missing Content-Disposition filename")
       }
 
-      val futureIteratee: Future[Iteratee[Array[Byte],Result]] = 
+      val futureAccumulator: Future[Accumulator[ByteString,Result]] = 
         for {
           fileGroup <- findOrCreateFileGroup
           groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
-        } yield createIteratee(groupedFileUpload, info)
+        } yield createAccumulator(groupedFileUpload, info)
 
-      return Iteratee.flatten(futureIteratee)
+      Accumulator.flatten(futureAccumulator)(play.api.Play.current.materializer)
     }
   }
 }

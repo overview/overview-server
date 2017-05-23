@@ -11,6 +11,7 @@ trait AuthorizedBodyParser {
   protected val sessionFactory: SessionFactory
 
   private def await[A](f: => Future[A]): A = scala.concurrent.blocking {
+    // Lazy-coder alert: not figuring out all the Accumulator stuff....
     scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
   }
 

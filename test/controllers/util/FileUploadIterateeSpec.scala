@@ -1,5 +1,7 @@
 package controllers.util
 
+import akka.stream.scaladsl.{Source,StreamConverters}
+import akka.util.ByteString
 import java.io.ByteArrayInputStream
 import java.sql.{SQLException, Timestamp}
 import java.util.UUID
@@ -89,28 +91,21 @@ class FileUploadIterateeSpec extends test.helpers.InAppSpecification with Mockit
     }
 
     trait UploadContext extends Scope {
-      val chunk = new Array[Byte](100)
-      Random.nextBytes(chunk)
+      val digits100 = ByteString(Seq.fill(4)(Seq.range('a'.toByte, 'z'.toByte)).flatten.toArray)
 
       val userId = 1l
       val guid = UUID.randomUUID
       val uploadIteratee: TestIteratee
 
-      def input = new ByteArrayInputStream(chunk)
-
-      // implement enumerator in sub-classes to setup specific context
-      def enumerator: Enumerator[Array[Byte]]
+      val source: Source[ByteString, _] = Source.single(digits100) // 1 chunk, by default
+      val bufferSize: Int = 20
 
       def request: RequestHeader
-      // Drive the iteratee with the enumerator to generate a result
-      def result: Either[Result, OverviewUpload] = {
+      // Drive the iteratee with the source to generate a result
+      lazy val result: Either[Result, OverviewUpload] = {
         implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
 
-        val resultFuture = for {
-          doneIt <- enumerator(uploadIteratee.store(userId, guid, request, 15))
-          result: Either[Result, OverviewUpload] <- doneIt.run
-        } yield result
-
+        val resultFuture = uploadIteratee.store(userId, guid, request, bufferSize).run(source)
         Await.result(resultFuture, scala.concurrent.duration.Duration.Inf)
       }
 
@@ -160,14 +155,6 @@ class FileUploadIterateeSpec extends test.helpers.InAppSpecification with Mockit
       def headers = Seq(("Content-Range", "0-999/1000"))
     }
 
-    trait ShortUploadHeader extends UploadHeader {
-      def headers = Seq(
-        ("Content-Range", "0-29/50"),
-        (CONTENT_DISPOSITION, contentDisposition),
-        (CONTENT_LENGTH, "100")
-      )
-    }
-
     trait BadHeader {
       def request: RequestHeader = FakeRequest()
     }
@@ -187,94 +174,87 @@ class FileUploadIterateeSpec extends test.helpers.InAppSpecification with Mockit
       )
     }
 
-    // Enumerators
-    trait SingleChunk {
-      self: UploadContext =>
-      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)(Execution.defaultContext)
-    }
-
-    trait MultipleChunks {
-      self: UploadContext =>
-      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)(Execution.defaultContext)
-    }
-
-    trait LastChunkWillNotFillBuffer {
-      self: UploadContext =>
-      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 8)(Execution.defaultContext)
-    }
-
-    "process Enumerator with one chunk only" in new GoodUpload with SingleChunk with GoodHeader {
+    "process Enumerator with one chunk only" in new GoodUpload with GoodHeader {
       result must beRight
-      upload.uploadedFile.size must be equalTo (chunk.size)
-      uploadIteratee.uploadedData must be equalTo (chunk)
+      upload.uploadedFile.size must beEqualTo(100)
+      uploadIteratee.uploadedData must beEqualTo(digits100.toArray)
     }
 
-    "process Enumerator with multiple chunks" in new GoodUpload with MultipleChunks with GoodHeader {
-      upload.uploadedFile.size must be equalTo (chunk.size)
-      uploadIteratee.uploadedData must be equalTo (chunk)
+    "process multiple chunks" in new GoodUpload with GoodHeader {
+      override val bufferSize = 20
+      override val source = Source.fromIterator(() => digits100.grouped(20))
+      result
+      uploadIteratee.uploadedData must beEqualTo(digits100.toArray)
+      uploadIteratee.appendCount must beEqualTo(5)
     }
 
-    "buffer incoming data" in new GoodUpload with MultipleChunks with GoodHeader {
-      upload.uploadedFile.size must be equalTo (chunk.size)
-      uploadIteratee.appendCount must be equalTo (5)
+    "buffer incoming data" in new GoodUpload with GoodHeader {
+      override val bufferSize = 25
+      override val source = Source.fromIterator(() => digits100.grouped(5))
+      result
+      upload.uploadedFile.size must beEqualTo(100)
+      uploadIteratee.appendCount must beEqualTo(4)
     }
 
-    "process last chunk of data if buffer not full at end of upload" in new GoodUpload with LastChunkWillNotFillBuffer with GoodHeader {
-      upload.uploadedFile.size must be equalTo (chunk.size)
+    "process last chunk of data if buffer not full at end of upload" in new GoodUpload with GoodHeader {
+      override val bufferSize = 34 // 1st, 2nd: 34 bytes; 3rd: 32 bytes
+      override val source = Source.fromIterator(() => digits100.grouped(34))
+      result
+      upload.uploadedFile.size must beEqualTo(100)
+      uploadIteratee.appendCount must beEqualTo(3)
     }
 
-    "truncate upload if restarted at byte 0" in new GoodUpload with SingleChunk with GoodHeader {
+    "truncate upload if restarted at byte 0" in new GoodUpload with GoodHeader {
+      uploadIteratee.createUpload(userId, guid, "foo", "bar", 10)
       val initialUpload = upload
       val restartedUpload = upload
 
-      restartedUpload.uploadedFile.size must be equalTo (chunk.size)
-      uploadIteratee.uploadedData must be equalTo (chunk)
+      result
+
+      restartedUpload.uploadedFile.size must beEqualTo(100)
+      uploadIteratee.uploadedData must beEqualTo(digits100.toArray)
       uploadIteratee.uploadTruncated must beTrue
     }
 
-    "set contentDisposition to raw value of Content-Dispositon" in new GoodUpload with SingleChunk with GoodHeader {
-      upload.uploadedFile.contentDisposition must be equalTo (contentDisposition)
+    "set contentDisposition to raw value of Content-Dispositon" in new GoodUpload with GoodHeader {
+      upload.uploadedFile.contentDisposition must beEqualTo(contentDisposition)
     }
     
-    "set contentType to raw value of Content-Type" in new GoodUpload with SingleChunk with GoodHeader {
-      upload.uploadedFile.contentType must be equalTo (contentType)
+    "set contentType to raw value of Content-Type" in new GoodUpload with GoodHeader {
+      upload.uploadedFile.contentType must beEqualTo(contentType)
     }
 
-    "set content* to empty string if no header is found" in new GoodUpload with SingleChunk with NoOptionalContentHeader {
-      upload.uploadedFile.contentDisposition must be equalTo ("")
-      upload.uploadedFile.contentType must be equalTo ("")
+    "set content* to empty string if no header is found" in new GoodUpload with NoOptionalContentHeader {
+      upload.uploadedFile.contentDisposition must beEqualTo("")
+      upload.uploadedFile.contentType must beEqualTo("")
     }
 
-    "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {
-      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
+    "return BAD_REQUEST if headers are bad" in new GoodUpload with BadHeader {
+      result must beLeft.like { case r => r.header.status must beEqualTo(BAD_REQUEST) }
     }
 
-    "return BAD_REQUEST and cancel upload if CONTENT_RANGE starts at the wrong byte" in new GoodUpload with SingleChunk with InProgressHeader {
+    "return BAD_REQUEST and cancel upload if CONTENT_RANGE starts at the wrong byte" in new GoodUpload with InProgressHeader {
       uploadIteratee.createUpload(userId, guid, "foo", "bar", 1000)
 
-      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
+      result must beLeft.like { case r => r.header.status must beEqualTo(BAD_REQUEST) }
       uploadIteratee.uploadCancelled must beTrue
     }
 
-    "throw exception if cancel fails" in new FailingCancel with SingleChunk with InProgressHeader {
+    "throw exception if cancel fails" in new FailingCancel with InProgressHeader {
       uploadIteratee.createUpload(userId, guid, "foo", "bar", 1000)
 
       result must throwA[SQLException]
     }
 
-    "return Upload on valid restart" in new GoodUpload with SingleChunk with InProgressHeader {
+    "return Upload on valid restart" in new GoodUpload with InProgressHeader {
       val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", "bar", 1000)
-      uploadIteratee.appendChunk(initialUpload, chunk)
+      uploadIteratee.appendChunk(initialUpload, digits100.toArray)
 
-      result must beRight.like { case u => u.uploadedFile.size must be equalTo (200) }
+      result must beRight.like { case u => u.uploadedFile.size must beEqualTo(200) }
     }
 
-    "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with SingleChunk with MalformedHeader {
-      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
-    }
-
-    "return BAD_REQUEST if upload is longer than expected" in new GoodUpload with SingleChunk with ShortUploadHeader {
-      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
+    "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with MalformedHeader {
+      result must beLeft.like { case r => r.header.status must beEqualTo(BAD_REQUEST) }
     }
   }
 }
