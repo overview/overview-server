@@ -209,6 +209,7 @@ You can authenticate with either Document Set-specific API token or a Document-S
 
 The body is json. Only `lang` is required. 
 
+* `ocr` is `true` by default, meaning when a page has no text we will run Tesseract to extract text from images. If `false`, processing will be faster.
 * `lang` is the two-letter langauge code that will be applied to all new documents. Required. 
 * `split_documents` is `false` by default, meaning each File becomes a Document. If `true`, each File will be split by page boundaries, and each Page will become a Document. (Files that don't have pages, such as `.txt` files, will never be split.)
 * `supplied_stop_words` is a space-separated list of stopwords for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
@@ -217,6 +218,7 @@ The body is json. Only `lang` is required.
 + Request (application/json)
 
         {
+            "ocr": true,
             "lang": "en",
             "split_documents": false,
             "supplied_stop_words": "",
@@ -231,6 +233,7 @@ The body is json. Only `lang` is required.
 
 This tests whether a file with the specified sha1 40-byte hex string has previously been added to the document set connected to the API token. Files are only processed and added to a document set after /files/finish, so this cannot be used to test for unprocessed files. Returns status 204 if the file already exists, 404 otherwise.
 
++ Response 204
 
 # Group Tags
 A **Tag** is a label that can apply to documents.
