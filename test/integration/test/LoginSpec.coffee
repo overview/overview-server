@@ -1,55 +1,57 @@
 testMethods = require('../support/testMethods')
-asUser = require('../support/asUser')
+asUser = require('../support/asUser-new')
 
 # In order to let users store their own information
 # We need to let users identify themselves
 describe 'Login', ->
-  testMethods.usingPromiseChainMethods
-    shouldBeLoggedInAs: (email) ->
-      @elementByCss('.logged-in strong').text().should.eventually.equal(email)
+  asUser.usingTemporaryUser ->
+    before ->
+      @browser.shortcuts.login = ((browser) ->
+        assertLoggedInAs: (email) ->
+          browser
+            .assertExists(tag: 'div', class: 'logged-in', contains: email, wait: 'pageLoad')
 
-    shouldHaveFailedToLogIn: ->
-      @
-        .url().should.eventually.match(/\/login\b/)
-        .elementByCss('.session-form').text().should.eventually.contain('Wrong email address or password')
+        assertLogInFailed: ->
+          browser
+            .assertExists(tag: 'h1', contains: 'Log in', wait: 'pageLoad')
+            .assertExists(class: 'error', contains: 'Wrong email address or password')
 
-    shouldBeLoggedOut: ->
-      @elementByCss('.session-form').should.eventually.exist
+        assertLoggedOut: ->
+          browser
+            .assertExists(class: 'session-form', wait: 'pageLoad')
 
-    tryLogIn: (email, password) ->
-      @waitForElementByCss('.session-form')
-        .elementByCss('.session-form [name=email]').type(email)
-        .elementByCss('.session-form [name=password]').type(password)
-        .elementByCss('.session-form [type=submit]').click()
+        tryLogIn: (email, password) ->
+          browser
+            .sendKeys(email, css: '.session-form [name=email]')
+            .sendKeys(password, css: '.session-form [name=password]')
+            .click(css: '.session-form [type=submit]')
 
-    logOut: ->
-      @elementByXPath("//a[@href='/logout']").click()
-        .waitForElementByCss('.session-form')
+        logOut: ->
+          browser
+            .click(link: 'Log out')
+            .assertExists(class: 'session-form', wait: 'pageLoad')
+      )(@browser)
 
-  asUser.usingTemporaryUser(title: 'Login')
+      # We'll start this test suite logged out.
+      @browser.shortcuts.login.logOut()
 
-  before ->
-    # We'll start this test suite logged out.
-    @userBrowser.logOut()
+    it 'should log in', ->
+      @browser
+        .shortcuts.login.tryLogIn(@userEmail, @userEmail)
+        .shortcuts.login.assertLoggedInAs(@userEmail)
+        .shortcuts.login.logOut()
 
-  it 'should log in', ->
-    @userBrowser
-      .tryLogIn(@userEmail, @userEmail)
-      .waitForElementByCss('.logged-in')
-      .shouldBeLoggedInAs(@userEmail)
-      .logOut()
+    it 'should log out', ->
+      # This is easy -- we logged out in the before hook ;)
+      @browser
+        .shortcuts.login.assertLoggedOut()
 
-  it 'should log out', ->
-    # This is easy -- we did this in the before hook ;)
-    @userBrowser
-      .shouldBeLoggedOut()
+    it 'should not log in with wrong password', ->
+      @browser
+        .shortcuts.login.tryLogIn(@userEmail, 'bad-password')
+        .shortcuts.login.assertLogInFailed()
 
-  it 'should not log in with wrong password', ->
-    @userBrowser
-      .tryLogIn(@userEmail, 'bad-password')
-      .shouldHaveFailedToLogIn()
-
-  it 'should not log in with the wrong username', ->
-    @userBrowser
-      .tryLogIn('x-' + @userEmail, @userEmail)
-      .shouldHaveFailedToLogIn()
+    it 'should not log in with the wrong username', ->
+      @browser
+        .shortcuts.login.tryLogIn("x-#{@userEmail}", @userEmail)
+        .shortcuts.login.assertLogInFailed()

@@ -1,112 +1,119 @@
 testMethods = require('../support/testMethods')
-asUser = require('../support/asUser')
+asUser = require('../support/asUser-new')
 
 Url =
   login: '/login'
   resetPassword: (token) -> "/reset-password/#{token}"
 
+NewPassword = 'pedEdcitVac8'
+
 # In order to let users store their own information
 # We need to let users identify themselves
 # Even after they forget their passwords
 describe 'ResetPassword', ->
-  newPassword = 'pedEdcitVac8'
+  asUser.usingTemporaryUser ->
+    before ->
+      @browser.loadShortcuts('jquery')
 
-  testMethods.usingPromiseChainMethods
-    shouldBeLoggedInAs: (email) ->
-      @elementByCss('.logged-in strong').text().should.eventually.equal(email)
+      @browser.shortcuts.resetPassword = ((browser) ->
+        assertLoggedInAs: (email) ->
+          browser
+            .assertExists(tag: 'div', class: 'logged-in', contains: email, wait: 'pageLoad')
 
-    shouldHaveFailedToLogIn: ->
-      @
-        .url().should.eventually.match(/\/login\b/)
-        .elementByCss('.session-form').text().should.eventually.contain('Wrong email address or password')
+        assertLogInFailed: ->
+          browser
+            .assertExists(tag: 'h1', contains: 'Log in', wait: 'pageLoad')
+            .assertExists(class: 'error', contains: 'Wrong email address or password')
 
-    shouldBeLoggedOut: ->
-      @elementByCss('.session-form').should.eventually.exist
+        assertLoggedOut: ->
+          browser
+            .assertExists(class: 'session-form', wait: 'pageLoad')
 
-    startResetPassword: (email) ->
-      @
-        .waitForElementBy(tag: 'a', contains: 'Reset').click()
-        .waitForElementByCss('body.password-new input[name=email]', 5000).type(email)
-        .elementByCss('[type=submit]').click()
+        startResetPassword: (email) ->
+          browser
+            .click(link: 'Reset', wait: 'pageLoad')
+            .sendKeys(email, css: 'body.password-new input[name=email]', wait: 'pageLoad')
+            .click(css: 'input[value="Email instructions to this address"]')
 
-    shouldShowResetPasswordForm: ->
-      @
-        .url().should.eventually.match(/\/reset-password\//)
-        .elementByCssOrNull('[name=password]').should.eventually.exist
-        .elementByCssOrNull('[name=password2]').should.eventually.exist
+        assertShowsResetPasswordForm: ->
+          browser
+            .assertExists(css: '[name=password]', wait: 'pageLoad')
+            .assertExists(css: '[name=password2]')
 
-    fillPasswordsAndClickSubmit: (password1, password2) ->
-      @
-        .elementByCss('[name=password]').type(password1)
-        .elementByCss('[name=password2]').type(password2)
-        .elementByCss('input.btn-primary').click()
+        fillPasswordsAndClickSubmit: (password1, password2) ->
+          browser
+            .sendKeys(password1, css: '[name=password]')
+            .sendKeys(password2, css: '[name=password2]')
+            .click(css: 'input.btn-primary')
 
-    tryLogIn: (email, password) ->
-      @waitForElementByCss('.session-form')
-        .elementByCss('.session-form [name=email]').type(email)
-        .elementByCss('.session-form [name=password]').type(password)
-        .elementByCss('.session-form [type=submit]').click()
+        tryLogIn: (email, password) ->
+          browser
+            .sendKeys(email, css: '.session-form [name=email]')
+            .sendKeys(password, css: '.session-form [name=password]')
+            .click(css: '.session-form [type=submit]')
 
-    logOut: ->
-      @elementByXPath("//a[@href='/logout']").click()
-        .waitForElementByCss('.session-form')
+        logOut: ->
+          browser
+            .click(link: 'Log out')
+            .assertExists(class: 'session-form', wait: 'pageLoad')
+      )(@browser)
 
-  asUser.usingTemporaryUser(title: 'ResetPassword')
+      # We'll start this test suite logged out
+      @browser.shortcuts.resetPassword.logOut()
 
-  # We'll start this test suite logged out
-  before ->
-    @userBrowser.logOut()
-
-  describe 'When the user tries to reset a password', ->
-    beforeEach ->
-      @userBrowser
-        .get(Url.login)
-        .startResetPassword(@userEmail)
-
-    it 'should alert the user to check his or her email', ->
-      @userBrowser
-        .waitForElementByCss('.alert-success')
-          .text().should.eventually.contain('sent')
-
-    it 'should do the same thing even on a second attempt', ->
-      @userBrowser
-        .get(Url.login)
-        .startResetPassword(@userEmail)
-        .waitForElementByCss('.alert-success')
-          .text().should.eventually.contain('sent')
-
-    describe 'when the user clicks the token from the email', ->
+    describe 'When the user tries to reset a password', ->
       beforeEach ->
-        @adminSession.showUser(email: @userEmail)
-          .then((x) -> JSON.parse(x).reset_password_token)
-          .then (token) =>
-            @userBrowser.get(Url.resetPassword(token)).waitForJqueryReady()
+        @browser
+          .get(Url.login)
+          .shortcuts.resetPassword.startResetPassword(@userEmail)
 
-      it 'should show a reset-password form', ->
-        @userBrowser
-          .shouldShowResetPasswordForm()
+      it 'should alert the user to check his or her email', ->
+        @browser
+          .assertExists(css: '.alert-success', contains: 'sent', wait: 'pageLoad')
 
-      it 'should not click through if the passwords are not set', ->
-        @userBrowser
-          .fillPasswordsAndClickSubmit('', '')
-          .shouldShowResetPasswordForm()
+      it 'should do the same thing even on a second attempt', ->
+        @browser
+          .get(Url.login)
+          .shortcuts.resetPassword.startResetPassword(@userEmail)
+          .assertExists(css: '.alert-success', contains: 'sent', wait: 'pageLoad')
 
-      it 'should not click through if the passwords do not match', ->
-        @userBrowser
-          .fillPasswordsAndClickSubmit(newPassword, @userEmail)
-          .shouldShowResetPasswordForm()
+      describe 'when the user clicks the token from the email', ->
+        beforeEach ->
+          @adminSession.showUser(email: @userEmail)
+            .then((x) -> JSON.parse(x).reset_password_token)
+            .then (token) =>
+              @browser.get(Url.resetPassword(token))
+                .shortcuts.jquery.waitUntilReady()
 
-      it 'should not click through if the password is too short', ->
-        @userBrowser
-          .fillPasswordsAndClickSubmit('short', 'short')
-          .shouldShowResetPasswordForm()
+        it 'should show a reset-password form', ->
+          @browser
+            .shortcuts.resetPassword.assertShowsResetPasswordForm()
 
-      it 'should flash success, log you in and reset the password', ->
-        @userBrowser
-          .fillPasswordsAndClickSubmit(newPassword, newPassword)
-          .elementByCss('.alert-success').text().should.eventually.contain('You have updated your password')
-          .shouldBeLoggedInAs(@userEmail)
-          .logOut()
-          .tryLogIn(@userEmail, @userEmail).shouldBeLoggedOut() # old password doesn't work
-          .tryLogIn(@userEmail, newPassword).shouldBeLoggedInAs(@userEmail) # new one does
-          .logOut()
+        it 'should not click through if the passwords are not set', ->
+          @browser
+            .shortcuts.resetPassword.fillPasswordsAndClickSubmit('', '')
+            .shortcuts.resetPassword.assertShowsResetPasswordForm()
+
+        it 'should not click through if the passwords do not match', ->
+          @browser
+            .shortcuts.resetPassword.fillPasswordsAndClickSubmit(NewPassword, @userEmail)
+            .shortcuts.resetPassword.assertShowsResetPasswordForm()
+
+        it 'should not click through if the password is too short', ->
+          @browser
+            .shortcuts.resetPassword.fillPasswordsAndClickSubmit('short', 'short')
+            .shortcuts.resetPassword.assertShowsResetPasswordForm()
+
+        it 'should flash success, log you in and reset the password', ->
+          @browser
+            .shortcuts.resetPassword.fillPasswordsAndClickSubmit(NewPassword, NewPassword)
+            .assertExists(class: 'alert-success', contains: 'You have updated your password', wait: 'pageLoad')
+            .shortcuts.resetPassword.assertLoggedInAs(@userEmail)
+            .shortcuts.resetPassword.logOut()
+            # old password doesn't work
+            .shortcuts.resetPassword.tryLogIn(@userEmail, @userEmail)
+            .shortcuts.resetPassword.assertLogInFailed()
+            # new password works
+            .shortcuts.resetPassword.tryLogIn(@userEmail, NewPassword)
+            .shortcuts.resetPassword.assertLoggedInAs(@userEmail)
+            .shortcuts.resetPassword.logOut()

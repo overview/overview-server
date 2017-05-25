@@ -61,5 +61,6 @@ module.exports = importCsv = (browser) ->
     debug_("scheduling waitUntilRedirectToDocumentSet(#{filename})")
     debug("waitUntilRedirectToDocumentSet(#{filename})")
     title = filename.split('/').pop()
-    browser.driver.wait(Until.titleIs(title), TIMEOUTS.slow)
+
+    browser.call -> browser.driver.wait(Until.titleIs(title), TIMEOUTS.slow)
     browser.shortcuts.documentSet.waitUntilStable()

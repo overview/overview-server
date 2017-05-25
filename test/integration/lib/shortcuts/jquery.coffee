@@ -14,7 +14,7 @@ module.exports = (browser) ->
     debug_('scheduling waitUntilReady()')
     debug('waitUntilReady()')
     timeout = TIMEOUTS.fast
-    browser.waitUntilBlockReturnsTrue('jQuery to load', 'pageLoad', -> $?.isReady)
+    browser.waitUntilBlockReturnsTrue('jQuery to load', 'pageLoad', -> window.$? && $.isReady)
 
   # Mark, used for waitUntilAjaxComplete().
   listenForAjaxComplete: ->

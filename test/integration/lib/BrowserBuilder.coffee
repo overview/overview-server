@@ -19,7 +19,7 @@ Constants =
 
 options =
   desiredCapabilities:
-    browserName: 'firefox'
+    browserName: 'chrome'
     version: ''
     platform: 'ANY'
     build: process.env.BUILD_TAG
@@ -27,7 +27,7 @@ options =
   seleniumLocation:
     host: 'localhost'
     port: 4444
-    url: 'http://localhost:4444/wd/hub'
+    url: 'http://localhost:4444' # no Selenium Hub: just a straight web driver
 
 if 'SAUCE_USER_NAME' of process.env
   x = options.seleniumLocation
@@ -35,6 +35,7 @@ if 'SAUCE_USER_NAME' of process.env
   x.port = process.env.SELENIUM_PORT
   x.user = process.env.SAUCE_USER_NAME
   x.pwd = process.env.SAUCE_API_KEY
+  x.url = 'http://localhost:4444/wd/hub'
 
 wd.addPromiseChainMethod 'acceptingNextAlert', ->
   @executeFunction ->
@@ -249,7 +250,7 @@ module.exports =
   createBrowser: ->
     driver = new webdriver.Builder()
       .usingServer(options.seleniumLocation.url)
-      .forBrowser('firefox')
+      .forBrowser('chrome')
       .withCapabilities(options.desiredCapabilities)
       .setLoggingPrefs(driver: 'ALL', server: 'ALL', browser: 'ALL')
       .build()

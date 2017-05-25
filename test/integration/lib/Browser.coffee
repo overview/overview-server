@@ -36,11 +36,6 @@ module.exports = class Browser
     # As of 2015-05-27, ~99% of our users are >= 1024x768
     @driver.manage().window().setSize(1024, 768)
 
-    # The first get() sometimes returns way too soon. I imagine that's because
-    # the browser hasn't finished initializing, and there's some silly race in
-    # the WebDriver. Let's see if a sleep() fixes the problem.
-    @driver.sleep(1000) # 1s is small next to the duration of a test suite.
-
     @debug("Browser constructed")
     throw 'Must pass options.baseUrl, a URL like "http://localhost:9000"' if !@options.baseUrl?
 
@@ -109,13 +104,16 @@ module.exports = class Browser
     elementPromise = if locator.wait
       timeout = TIMEOUTS[locator.wait]
       throw new Error("wait option must be #{Object.keys(TIMEOUTS).join(' or ')}") if !timeout?
-      @_findByWithTimeout(locateBy, timeout)
+      @driver.call => @_findByWithTimeout(locateBy, timeout)
     else
-      @_findBy(locateBy)
+      @driver.call => @_findBy(locateBy)
 
     elementPromise.then((el) -> new Element(el))
 
   # Just like webdriver's findElement(), but it filters out invisible elements.
+  #
+  # The caller should wrap this in @driver.call() to insert this call
+  # in the correct position in the WebDriver "flow". (Stupid "flow"....)
   _findBy: (locateBy) ->
     firstDisplayedEl = (els, index=0) ->
       # WebDriver's Promise.future sometimes ... erm ... gives up and moves on
@@ -130,27 +128,30 @@ module.exports = class Browser
           else
             firstDisplayedEl(els, index + 1)
 
-    @driver.call =>
-      @driver.findElements(locateBy).then(firstDisplayedEl)
+    @driver.findElements(locateBy).then(firstDisplayedEl)
 
+  # Calls _findBy() in a loop, until timeout expires.
+  #
+  # The caller should wrap this in @driver.call() to insert this call
+  # in the correct position in the WebDriver "flow". (Stupid "flow"....)
   _findByWithTimeout: (locateBy, timeout) ->
-    start = null
+    start = new Date()
 
-    step = =>
-      @_findBy(locateBy)
-        .thenCatch (err) ->
-          # A "then" on a WebDriver promise puts it at the head of the
-          # promise chain
-          if err instanceof LocateError
-            if (new Date()) - start < timeout
-              step()
+    new Promise (resolve, reject) =>
+      # A "then" on a WebDriver promise puts it at the head of the
+      # promise chain
+      step = =>
+        @_findBy(locateBy)
+          .then(resolve)
+          .catch (err) ->
+            if err instanceof LocateError
+              if (new Date()) - start < timeout
+                process.nextTick(step)
+              else
+                reject(new WaitingLocateError("Could not find visible element matching #{locateBy} within #{timeout}ms"))
             else
-              throw new WaitingLocateError("Could not find visible element matching #{locateBy} within #{timeout}ms")
-          else
-            throw err
+              reject(err)
 
-    @driver.call ->
-      start = new Date()
       step()
 
   # Tests that the element exists, optionally waiting for it.
@@ -162,38 +163,65 @@ module.exports = class Browser
     @find(locator)
     @
 
+  # Tests that the element does _not_ exist
+  assertNotExists: (locator) ->
+    debug("scheduling assertNotExists(#{JSON.stringify(locator)})")
+    @debug("assertNotExists(#{JSON.stringify(locator)})")
+    @find(locator)
+      .then(-> throw new Error("Element matching #{locator} was found; expected not to find it"))
+      .catch (err) =>
+        if err instanceof LocateError
+          null # success
+        else
+          throw err
+    @
+
   # Alias for find(locator).click()
   click: (locator) ->
     debug("scheduling click(#{JSON.stringify(locator)})")
     @debug("click(#{JSON.stringify(locator)})")
-    @driver.call => @find(locator).then((el) -> el.click())
+    @find(locator).then((el) -> el.click())
     @
 
   # Alias for find(locator).sendKeys(keys)
   sendKeys: (keys, locator) ->
+    throw new Error("Why no keys?") if !keys?
     debug("scheduling sendKeys(#{keys}, #{JSON.stringify(locator)})")
     @debug("sendKeys(#{keys}, #{JSON.stringify(locator)})")
-    @driver.call => @find(locator).then((el) -> el.sendKeys(keys))
+    @find(locator).then((el) -> el.sendKeys(keys))
     @
 
   # Alias for find(locator).clear()
   clear: (locator) ->
     debug("scheduling clear(#{JSON.stringify(locator)})")
     @debug("clear(#{JSON.stringify(locator)})")
-    @driver.call => @find(locator).then((el) -> el.clear())
+    @find(locator).then((el) -> el.clear())
     @
 
   # Alias for find(locator).getText()
   getText: (locator) ->
     debug("scheduling getText(#{JSON.stringify(locator)})")
     @debug("getText(#{JSON.stringify(locator)})")
-    @driver.call => @find(locator).then((el) -> el.getText())
+    @find(locator).then((el) -> el.getText())
 
   # Alias for find(locator).getAttribute(attribute)
   getAttribute: (locator, attribute) ->
     debug("scheduling getAttribute(#{JSON.stringify(locator)},#{JSON.stringify(attribute)})")
     @debug("getAttribute(#{JSON.stringify(locator)},#{JSON.stringify(attribute)})")
-    @driver.call => @find(locator).then((el) -> el.getAttribute(attribute))
+    @find(locator).then((el) -> el.getAttribute(attribute))
+
+  # Alias for find(locator).isSelected()
+  isSelected: (locator) ->
+    debug("scheduling isSelected(#{JSON.stringify(locator)})")
+    @debug("isSelected(#{JSON.stringify(locator)})")
+    @find(locator).then((el) -> el.isSelected())
+
+  # Sets the current frame (e.g., to an iframe)
+  switchToFrame: (frame) ->
+    debug("scheduling setFrame(#{JSON.stringify(frame)})")
+    @debug("setFrame(#{JSON.stringify(frame)})")
+    @driver.call => @driver.switchTo().frame(frame)
+    @
 
   # Returns the "alert" interface. Usage:
   #
@@ -244,26 +272,34 @@ module.exports = class Browser
   #
   # Re-runs the JavaScript every 50ms.
   waitUntilBlockReturnsTrue: (message, timeout, block) ->
-    debug("scheduling waitForJavascriptBlock(#{message}, #{timeout})")
-    @debug("waitForJavascriptBlock(#{message}, #{timeout})")
+    debug("scheduling waitForJavascriptBlock(#{message}, #{timeout} -- #{block})")
+    @debug("waitForJavascriptBlock(#{message}, #{timeout}) -- #{block}")
     timeout = TIMEOUTS[timeout]
-    start = null
-    interval = 50 # ms
+    throw new Error("timeout must be #{Object.keys(TIMEOUTS).join(' or ')}") if !timeout?
 
-    startTry = =>
-      @driver.executeScript(block)
-        .then (retval) ->
-          now = new Date()
-          debug("#{retval} after #{now - start}ms")
-          if !retval
-            if now - start < timeout
-              startTry()
-            else
-              throw new Error("Timed out waiting for #{message}")
+    @driver.call =>
+      new Promise (resolve, reject) =>
+        start = new Date()
+        lastRetval = {} # we log return values, but not duplicates
 
-    @driver.call ->
-      start = new Date()
-      startTry()
+        startTry = =>
+          @driver.executeScript(block)
+            .then (retval) ->
+              now = new Date()
+
+              if !lastRetval.hasOwnProperty('value') || retval != lastRetval.value
+                debug("#{retval} after #{now - start}ms")
+              lastRetval.value = retval
+
+              if retval
+                resolve()
+              else if now - start < timeout
+                process.nextTick(startTry)
+              else
+                reject(new Error("Timed out waiting for #{message}"))
+
+        startTry()
+
     @
 
   # Schedules a synchronous JavaScript function on client; returns a Promise of
@@ -274,7 +310,7 @@ module.exports = class Browser
   execute: (func, args...) ->
     debug('scheduling execute()')
     @debug('execute()')
-    @driver.executeScript(func, args...)
+    @driver.call => @driver.executeScript(func, args...)
     @
 
   # Browses to a new web page. Returns the Browser.
@@ -285,14 +321,14 @@ module.exports = class Browser
   get: (path) ->
     debug("scheduling get(#{path})")
     @debug("get(#{path})")
-    @driver.get(@options.baseUrl + path)
+    @driver.call => @driver.get(@options.baseUrl + path)
     @
 
   # Refreshes the page. Returns the Browser.
   refresh: ->
     debug('scheduling refresh()')
     @debug("refresh()")
-    @driver.navigate().refresh()
+    @driver.call => @driver.navigate().refresh()
     @
 
   # Make Browser a Promise, so you can `return browser` in async unit tests.
@@ -305,19 +341,19 @@ module.exports = class Browser
   then: (onSuccess, onError) ->
     debug('scheduling queue flush')
     @debug('(queue flushed)')
-    @driver.call(onSuccess).thenCatch(onError)
+    @driver.call(onSuccess).catch(onError)
 
   # Returns the current URL as a Promise.
   getUrl: ->
     debug('scheduling getUrl()')
     @debug('getUrl()')
-    @driver.getCurrentUrl()
+    @driver.call => @driver.getCurrentUrl()
 
   # Frees all resources associated with this Browser.
   close: ->
     debug('scheduling close()')
     @debug('close()')
-    @driver.quit()
+    @driver.call => @driver.quit()
     @
 
   # Schedules a wait.
@@ -326,5 +362,5 @@ module.exports = class Browser
   sleep: (ms) ->
     debug("scheduling sleep(#{ms})")
     @debug("sleep(#{ms})")
-    @driver.sleep(ms)
+    @driver.call => @driver.sleep(ms)
     @

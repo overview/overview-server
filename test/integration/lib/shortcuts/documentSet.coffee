@@ -3,7 +3,6 @@ debug_ = require('debug')('shortcuts/documentSet')
 
 clientTests =
   noJobsInProgress: -> $?.isReady && !$('progress').length # needs jQuery check because page refreshes
-  documentListLoaded: -> !!$('#document-list:not(.loading)').length
   pluginDataLoaded: -> !!$('a[data-plugin-url="about:tree"]').length
 
 # Shortcuts for doing stuff while on the DocumentSet page.
@@ -28,6 +27,32 @@ module.exports = (browser) ->
       .click(button: 'Delete')
       .alert().accept()
     browser
+
+  # Set "public" on or off.
+  #
+  # After completion, the server will have set "public" on or off on the given
+  # document set.
+  setPublic: (bool) ->
+    debug_("scheduling setPublic(#{bool})")
+    debug("scheduling setPublic(#{bool})")
+
+    browser
+      .click(css: 'nav .dropdown-toggle a')
+      .click(css: 'a.show-sharing-settings')
+      .switchToFrame(0) # ick -- we use an iframe here.
+      .shortcuts.jquery.waitUntilReady()
+      # Within the iframe is a JS app. We need to wait for it to finish loading:
+      .isSelected({ css: '[name=public]', wait: 'pageLoad' }, 'checked')
+        .then (checked) =>
+          if checked != bool
+            browser
+              .shortcuts.jquery.listenForAjaxComplete()
+              .click(css: '[name=public]')
+              .shortcuts.jquery.waitUntilAjaxComplete()
+        .then =>
+          browser
+            .switchToFrame(null)
+            .click(css: '#sharing-options-modal button.close')
 
   # Hides the "Tour" dialog forevermore for this user
   hideTour: ->
@@ -92,8 +117,7 @@ module.exports = (browser) ->
   waitUntilDocumentListLoaded: ->
     debug_('scheduling waitUntilDocumentListLoaded()')
     debug('waitUntilDocumentListLoaded()')
-    browser.waitUntilBlockReturnsTrue('document list to load', 'pageLoad', clientTests.documentListLoaded)
-    browser
+    browser.assertExists(css: '#document-list:not(.loading)', wait: 'pageLoad')
 
   # Waits until the document set page is completely stable.
   #
@@ -108,7 +132,7 @@ module.exports = (browser) ->
 
     browser.shortcuts.jquery.waitUntilReady()
     browser.waitUntilBlockReturnsTrue('jobs to complete', 'slow', clientTests.noJobsInProgress)
-    browser.waitUntilBlockReturnsTrue('document list to load', 'pageLoad', clientTests.documentListLoaded)
+    browser.assertExists(css: '#document-list:not(.loading)', wait: 'pageLoad')
     browser.waitUntilBlockReturnsTrue('plugin data to load', 'pageLoad', clientTests.pluginDataLoaded)
 
     browser

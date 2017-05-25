@@ -73,5 +73,5 @@ module.exports = importFiles = (browser) ->
   waitUntilRedirectToDocumentSet: (name) ->
     debug_("scheduling waitUntilRedirectToDocumentSet(#{name})")
     debug("waitUntilRedirectToDocumentSet(#{name})")
-    browser.driver.wait(Until.titleIs(name), TIMEOUTS.slow)
+    browser.call -> browser.driver.wait(Until.titleIs(name), TIMEOUTS.slow)
     browser.shortcuts.documentSet.waitUntilStable()

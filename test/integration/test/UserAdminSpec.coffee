@@ -9,31 +9,37 @@ Url =
 userToTrXPath = (email) -> "//tr[contains(td[@class='email'], '#{email}')]"
 
 describe 'UserAdmin', ->
-  testMethods.usingPromiseChainMethods
-    waitForUserLoaded: (email) ->
-      @
-        .waitForElementByXPath(userToTrXPath(email))
-
-    deleteUser: (email) ->
-      @
-        .waitForUserLoaded(email)
-        .listenForJqueryAjaxComplete()
-        .acceptingNextAlert()
-        .elementByXPath("#{userToTrXPath(email)}//a[@class='delete']").click()
-        .waitForJqueryAjaxComplete()
-
   before ->
-    @adminBrowser = browser.create('UserAdmin')
-      .get(Url.index) # log in. XXX make this more generic
-      .elementByCss('.session-form [name=email]').type(browser.adminLogin.email)
-      .elementByCss('.session-form [name=password]').type(browser.adminLogin.password)
-      .elementByCss('.session-form [type=submit]').click()
-      .waitForUserLoaded(browser.adminLogin.email)
+    @adminSession = browser.createUserAdminSession()
+
+    @adminBrowser = browser.createBrowser()
+    @adminBrowser.loadShortcuts('jquery')
+
+    @adminBrowser.shortcuts.userAdmin = ((browser) ->
+      waitForUserLoaded: (email) ->
+        browser
+          .assertExists(xpath: userToTrXPath(email), wait: 'pageLoad')
+
+      deleteUser: (email) ->
+        browser
+          .assertExists(xpath: userToTrXPath(email), wait: 'fast')
+          .shortcuts.jquery.listenForAjaxComplete()
+          .click(xpath: "#{userToTrXPath(email)}//a[@class='delete']")
+          .alert().accept()
+          .shortcuts.jquery.waitUntilAjaxComplete()
+    )(@adminBrowser)
+
+    @adminBrowser
+      # log in. XXX make this more generic
+      .get(Url.index)
+      .sendKeys(@adminSession.options.login.email, css: '.session-form [name=email]')
+      .sendKeys(@adminSession.options.login.password, css: '.session-form [name=password]')
+      .click(css: '.session-form [type=submit]')
+      .shortcuts.userAdmin.waitForUserLoaded(browser.adminLogin.email)
 
   after ->
-    @adminBrowser
-      .deleteAllCookies()
-      .quit()
+    @adminBrowser.call => @adminBrowser.driver.manage().deleteAllCookies()
+      .close()
 
   describe 'index', ->
     describe 'creating a new user', ->
@@ -46,55 +52,54 @@ describe 'UserAdmin', ->
         trXPath = "//tr[contains(td[@class='email'], '#{userEmail}')]"
 
         @adminBrowser
-          .elementByCss('.new-user input[name=email]').type(userEmail)
-          .elementByCss('.new-user input[name=password]').type(userPassword)
-          .elementByCss('.new-user input[type=submit]').click()
+          .sendKeys(userEmail, css: '.new-user input[name=email]')
+          .sendKeys(userPassword, css: '.new-user input[name=password]')
+          .click(css: '.new-user input[type=submit]')
 
       it 'should show the user', ->
         @adminBrowser
-          .waitForUserLoaded(userEmail)
-          .deleteUser(userEmail)
+          .shortcuts.userAdmin.waitForUserLoaded(userEmail)
+          .shortcuts.userAdmin.deleteUser(userEmail)
 
       it 'should delete the user', ->
         @adminBrowser
-          .waitForUserLoaded(userEmail)
-          .deleteUser(userEmail)
-          .elementByXPathOrNull(trXPath).should.eventually.be.null
+          .shortcuts.userAdmin.waitForUserLoaded(userEmail)
+          .shortcuts.userAdmin.deleteUser(userEmail)
+          .assertNotExists(xpath: trXPath)
           .get(Url.index) # refresh
-          .waitForElementByCss('table.users tbody tr')
-          .elementByXPathOrNull("#{trXPath}").should.eventually.be.null
+          .assertExists(css: 'table.users tbody tr', wait: 'pageLoad')
+          .assertNotExists(xpath: trXPath)
 
       it 'should promote and demote the user', ->
         @adminBrowser
-          .waitForUserLoaded(userEmail)
-          .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('no')
-          .listenForJqueryAjaxComplete()
-          .elementByXPath("#{trXPath}//a[@class='promote']").click()
-          .waitForJqueryAjaxComplete()
-          .sleep(10) # let ajax callbacks execute
-          .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('yes')
+          .shortcuts.userAdmin.waitForUserLoaded(userEmail)
+          .assertExists(xpath: "#{trXPath}//td[@class='is-admin'][contains(.,'no')]")
+          .shortcuts.jquery.listenForAjaxComplete()
+          .click(xpath: "#{trXPath}//a[@class='promote']")
+          .shortcuts.jquery.waitUntilAjaxComplete()
+          .assertExists(xpath: "#{trXPath}//td[@class='is-admin'][contains(.,'yes')]")
           .get(Url.index) # refresh
-          .waitForUserLoaded(userEmail)
-          .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('yes')
-          .listenForJqueryAjaxComplete()
-          .elementByXPath("#{trXPath}//a[@class='demote']").click()
-          .waitForJqueryAjaxComplete()
-          .sleep(10) # let ajax callbacks execute
-          .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('no')
+          .shortcuts.userAdmin.waitForUserLoaded(userEmail)
+          .assertExists(xpath: "#{trXPath}//td[@class='is-admin'][contains(.,'yes')]")
+          .shortcuts.jquery.listenForAjaxComplete()
+          .click(xpath: "#{trXPath}//a[@class='demote']")
+          .shortcuts.jquery.waitUntilAjaxComplete()
+          .assertExists(xpath: "#{trXPath}//td[@class='is-admin'][contains(.,'no')]")
           .get(Url.index) # refresh
-          .waitForUserLoaded(userEmail)
-          .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('no')
-          .deleteUser(userEmail)
+          .shortcuts.userAdmin.waitForUserLoaded(userEmail)
+          .assertExists(xpath: "#{trXPath}//td[@class='is-admin'][contains(.,'no')]")
+          .shortcuts.userAdmin.deleteUser(userEmail)
 
       it 'should create a user who can log in', ->
-        browser.create('UserAdmin - user')
+        b = browser.createBrowser()
+        b
           .get(Url.login)
-          .elementByCss('.session-form [name=email]').type(userEmail)
-          .elementByCss('.session-form [name=password]').type(userPassword)
-          .elementByCss('.session-form [type=submit]').click()
-          .title().should.eventually.equal('Example document sets')
-          .deleteAllCookies()
-          .quit()
+          .sendKeys(userEmail, css: '.session-form [name=email]')
+          .sendKeys(userPassword, css: '.session-form [name=password]')
+          .click(css: '.session-form [type=submit]')
+          .assertExists(tag: 'h1', contains: 'Example document sets', wait: 'pageLoad')
+          .call -> b.driver.manage().deleteAllCookies()
+          .close()
           .then =>
             @adminBrowser
-              .deleteUser(userEmail)
+              .shortcuts.userAdmin.deleteUser(userEmail)

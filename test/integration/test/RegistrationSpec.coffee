@@ -8,89 +8,98 @@ Url =
   confirm: (token) -> "/confirm/#{token}"
 
 describe 'Registration', ->
-  testMethods.usingPromiseChainMethods
-    tryLogIn: (email, password) ->
-      @waitForElementByCss('.session-form')
-        .elementByCss('.session-form [name=email]').type(email)
-        .elementByCss('.session-form [name=password]').type(password)
-        .elementByCss('.session-form [type=submit]').click()
-
-    tryRegister: (email, password, password2) ->
-      @waitForElementByCss('.user-form')
-        .elementByCss('.user-form [name=email]').type(email)
-        .elementByCss('.user-form [name=password]').type(password)
-        .elementByCss('.user-form [name=password2]').type(password2)
-        .elementByCss('.user-form [type=submit]').click()
-
-    shouldBeLoggedInAs: (email) ->
-      @elementByCss('.logged-in strong').text().should.eventually.equal(email)
-
-    shouldHaveFailedToLogIn: ->
-      @
-        .url().should.eventually.match(/\/login\b/)
-        .elementByCss('.session-form').text().should.eventually.contain('Wrong email address or password')
-
-    logOut: ->
-      @elementByXPath("//a[@href='/logout']").click()
-        .waitForElementByCss('.session-form')
-
   before ->
     @userEmail = faker.internet.email()
     @validPassword = 'icrucGofbap4'
 
-    @userBrowser = browser.create('Registration - user')
+    @browser = browser.createBrowser()
     @adminSession = browser.createUserAdminSession('Registration')
 
-  after -> @userBrowser.deleteAllCookies().quit()
+    @browser.shortcuts.registration = ((browser) ->
+      tryLogIn: (email, password) ->
+        browser
+          .assertExists(class: 'session-form', wait: 'pageLoad')
+          .sendKeys(email, css: '.session-form [name=email]')
+          .sendKeys(password, css: '.session-form [name=password]')
+          .click(css: '.session-form [type=submit]')
+
+      tryRegister: (email, password, password2) ->
+        browser
+          .assertExists(class: 'user-form', wait: 'pageLoad')
+          .sendKeys(email, css: '.user-form [name=email]')
+          .sendKeys(password, css: '.user-form [name=password]')
+          .sendKeys(password2, css: '.user-form [name=password2]')
+          .click(css: '.user-form [type=submit]')
+
+      assertLoggedInAs: (email) ->
+        browser
+          .assertExists(tag: 'div', class: 'logged-in', contains: email, wait: 'pageLoad')
+
+      assertLogInFailed: ->
+        browser
+          .assertExists(tag: 'h1', contains: 'Log in', wait: 'pageLoad')
+          .assertExists(class: 'error', contains: 'Wrong email address or password')
+
+      logOut: ->
+        browser
+          .click(link: 'Log out')
+          .assertExists(class: 'session-form', wait: 'pageLoad')
+    )(@browser)
+
+
+  after ->
+    @browser
+      .call => @browser.driver.manage().deleteAllCookies()
+      .close()
 
   it 'should not register a bad email format', ->
-    @userBrowser
+    @browser
       .get(Url.login)
-      .tryRegister('@' + @userEmail, @validPassword, @validPassword)
-      .elementByCss('.user-form [name=email]:invalid').should.eventually.exist
+      .shortcuts.registration.tryRegister('@' + @userEmail, @validPassword, @validPassword)
+      .assertExists(css: '.user-form [name=email]:invalid')
 
   it 'should not register a weak password', ->
-    @userBrowser
+    @browser
       .get(Url.login)
-      .tryRegister(@userEmail, 'weak', 'weak')
-      .elementByCss('.user-form .control-group.error [name=password]').should.eventually.exist
-      .elementByCss('.user-form .control-group.error p.help-block').should.eventually.exist
+      .shortcuts.registration.tryRegister(@userEmail, 'weak', 'weak')
+      .assertExists(css: '.user-form .control-group.error [name=password]')
+      .assertExists(css: '.user-form .control-group.error p.help-block')
 
   it 'should not register mismatched passwords', ->
-    @userBrowser
+    @browser
       .get(Url.login)
-      .tryRegister(@userEmail, @validPassword, @validPassword + '1')
-      .elementByCss('.user-form .control-group.error [name=password2]').should.eventually.exist
-      .elementByCss('.user-form .control-group.error p.help-block').should.eventually.exist
+      .shortcuts.registration.tryRegister(@userEmail, @validPassword, @validPassword + '1')
+      .assertExists(css: '.user-form .control-group.error [name=password2]')
+      .assertExists(css: '.user-form .control-group.error p.help-block')
 
   it 'should show an error when clicking an invalid token link', ->
-    @userBrowser
+    @browser
       .get(Url.confirm('abcdef'))
-      .elementBy(tag: 'h1', contains: 'Broken confirmation link').should.eventually.exist
-      .elementByCss('a[href="/reset-password"]').should.eventually.exist
+      .assertExists(tag: 'h1', contains: 'Broken confirmation link')
+      .assertExists(css: 'a[href="/reset-password"]')
 
   describe 'when the user already exists', ->
     before -> @adminSession.createUser(email: @userEmail, password: @validPassword)
     after -> @adminSession.deleteUser(email: @userEmail)
 
     before ->
-      @userBrowser
+      @browser
         .get(Url.login)
-        .tryRegister(@userEmail, @validPassword + '1', @validPassword + '1')
+        .shortcuts.registration.tryRegister(@userEmail, @validPassword + '1', @validPassword + '1')
 
     it 'should prompt the user to check his or her email', ->
-      @userBrowser
-        .elementBy(tag: 'h1', contains: 'Check your email').should.eventually.exist
+      @browser
+        .assertExists(tag: 'h1', contains: 'Check your email', wait: 'pageLoad')
 
     it 'should not change the password', ->
       # This would be a huge security hole!
-      @userBrowser
+      @browser
         .get(Url.login)
-        .tryLogIn(@userEmail, @validPassword)
-        .shouldBeLoggedInAs(@userEmail)
-        .logOut()
-        .tryLogIn(@userEmail, @validPassword + '1')
-        .shouldHaveFailedToLogIn()
+        .shortcuts.registration.tryLogIn(@userEmail, @validPassword)
+        .shortcuts.registration.assertLoggedInAs(@userEmail)
+        .shortcuts.registration.logOut()
+        .shortcuts.registration.tryLogIn(@userEmail, @validPassword + '1')
+        .shortcuts.registration.assertLogInFailed()
 
     it 'should not give the user a confirmation token', ->
       @adminSession
@@ -100,46 +109,50 @@ describe 'Registration', ->
   describe 'when the user tries to register', ->
     before ->
       @getConfirmationToken = =>
-        @adminSession
-          .showUser(email: @userEmail)
-          .then((u) -> JSON.parse(u).confirmation_token)
+        @browser.then => # flush commands
+          @adminSession
+            .showUser(email: @userEmail)
+            .then((u) -> JSON.parse(u).confirmation_token)
 
     beforeEach ->
-      @userBrowser
+      @browser
         .get(Url.login)
-        .tryRegister(@userEmail, @validPassword, @validPassword)
+        .shortcuts.registration.tryRegister(@userEmail, @validPassword, @validPassword)
 
     afterEach ->
       @adminSession.deleteUser(email: @userEmail)
 
     it 'should prompt the user to check his or her email', ->
-      @userBrowser
-        .elementBy(tag: 'h1', contains: 'Check your email').should.eventually.exist
+      @browser
+        .assertExists(tag: 'h1', contains: 'Check your email', wait: 'pageLoad')
 
     it 'should set a confirmation token on the user', ->
       @getConfirmationToken().should.eventually.match(/\w+/)
 
     it 'should not let the user log in before confirming', ->
-      @userBrowser
+      @browser
         .get('/login')
-        .tryLogIn(@userEmail, @validPassword)
-        .elementByCss('.control-group.error .help-block').text().should.eventually.contain('click the link in the confirmation email')
+        .shortcuts.registration.tryLogIn(@userEmail, @validPassword)
+        .assertExists(class: 'error', contains: 'click the link in the confirmation email', wait: 'pageLoad')
 
     it 'should recognize the user if the password is incorrect', ->
-      @userBrowser
+      @browser
         .get('/login')
-        .tryLogIn(@userEmail, @validPassword + '1')
-        .elementByCss('.control-group.error .help-block').text().should.eventually.contain('Wrong email address or password')
+        .shortcuts.registration.tryLogIn(@userEmail, @validPassword + '1')
+        .shortcuts.registration.assertLogInFailed()
 
     describe 'after clicking the confirmation link', ->
       beforeEach ->
         @getConfirmationToken().then (token) =>
-          @userBrowser.get(Url.confirm(token))
+          @browser.get(Url.confirm(token))
+
+      afterEach ->
+        @browser.shortcuts.registration.logOut()
 
       it 'should log you in and tell you all is well', ->
-        @userBrowser
-          .shouldBeLoggedInAs(@userEmail)
-          .elementBy(class: 'alert-success', contains: 'Welcome').should.eventually.exist
+        @browser
+          .shortcuts.registration.assertLoggedInAs(@userEmail)
+          .assertExists(class: 'alert-success', contains: 'Welcome')
 
       it 'should disable the confirmation token', ->
         @getConfirmationToken().should.eventually.not.exist

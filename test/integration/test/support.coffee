@@ -1,9 +1,7 @@
 # This file ought to be in support/testSuite.coffee, but Mocha shuns it there
 child_process = require('child_process')
-jar = require('selenium-server-standalone-jar')
+chromedriver = require('chromedriver')
 net = require('net')
-
-java = 'java'
 
 # Tries to connect() to a given port on localhost. Calls done() (and drops the
 # connection) when the connect() succeeds. Retries otherwise.
@@ -22,11 +20,11 @@ waitForConnect = (port, done) ->
 # on port 4444.
 startSelenium = (cb) ->
   child = child_process.spawn(
-    java,
+    chromedriver.path,
     [
-      '-Dselenium.LOGGER.level=WARNING',
-      '-jar', jar.path
-    ]
+      '--port=4444',
+      #'--verbose',
+    ],
   )
 
   child.stdout.pipe(process.stdout)

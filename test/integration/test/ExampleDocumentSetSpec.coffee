@@ -1,8 +1,5 @@
-asUser = require('../support/asUser')
-shouldBehaveLikeATree = require('../support/behave/likeATree')
-testMethods = require('../support/testMethods')
-wd = require('wd')
-
+asUser = require('../support/asUser-new')
+shouldBehaveLikeATree = require('../support/behave/likeATree-new')
 
 Url =
   index: '/documentsets'
@@ -13,131 +10,70 @@ Url =
 userToTrXPath = (email) -> "//tr[contains(td[@class='email'], '#{email}')]"
 
 describe 'ExampleDocumentSets', ->
-  testMethods.usingPromiseChainMethods
-    waitForUserLoaded: (email) ->
-      @
-        .waitForElementByXPath(userToTrXPath(email))
-
-    openCsvUploadPage: ->
-      @
-        .get(Url.csvUpload)
-        .waitForJqueryReady()
-
-    chooseFile: (path) ->
-      fullPath = "#{__dirname}/../files/#{path}"
-      @
-        .elementByCss('input[type=file]').sendKeys(fullPath)
-
-    cloneExample: ->
-      @
-        .waitForJqueryReady()
-        .waitForElementBy(tag: 'button', contains: 'Clone').click()
-        .waitForUrl(Url.show, 10000)
-
-    toggleExampleDocumentSet: ->
-      checkbox = { tag: 'label', contains: 'Set as example document set', visible: true }
-
-      @
-        .waitForJqueryReady()
-        .elementByCss('nav .dropdown-toggle a').click()
-        .elementByCss('.dropdown-menu .show-sharing-settings').click()
-        .frame('share-document-set')
-        .waitForElementBy(checkbox)
-        .listenForJqueryAjaxComplete()
-        .elementBy(checkbox).click()
-        .waitForJqueryAjaxComplete()
-        .frame(null)
-        .elementByCss('#sharing-options-modal a[data-dismiss=modal]').click()
-
-    waitForRequirements: ->
-      @
-        .waitForFunctionToReturnTrueInBrowser(-> $('.requirements li.ok').length == 4 || $('.requirements li.bad').length > 0)
-
-    doUpload: ->
-      @
-        .elementBy(tag: 'button', contains: 'Upload').click()
-        .waitForUrl(Url.show, 10000)
-
-    chooseAndDoUpload: (path) ->
-      @
-        .chooseFile(path)
-        .waitForRequirements()
-        .doUpload()
-
-    deleteTopUpload: ->
-      @
-        .get(Url.index)
-        .elementByCss('.actions .dropdown-toggle').click()
-        .acceptingNextAlert()
-        .elementByCss('.dropdown-menu .delete-document-set').click()
-
-    waitForJobsToComplete: ->
-      @.waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('progress').length == 0), 15000)
-
-  asUser.usingTemporaryUser(title: 'ExampleDocumentSets', adminBrowser: true)
-
-  describe 'after being set as an example', ->
-    before ->
-      @adminBrowser
-        .openCsvUploadPage()
-        .chooseAndDoUpload('CsvUpload/basic.csv')
-        .waitForJobsToComplete()
-        .toggleExampleDocumentSet()
-        .then =>
-          @userBrowser
-            .get(Url.publicDocumentSets)
-            .cloneExample()
-
-    after ->
-      Q.all([
-        @userBrowser.deleteTopUpload()
-        @adminBrowser.deleteTopUpload()
-      ])
-
-    it 'should be cloneable',  ->
-      @userBrowser
-        .get(Url.index)
-        .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
-
-    it 'should be removed from the example list when unset as an example', ->
-      @adminBrowser.toggleExampleDocumentSet()
-        .then =>
-          @userBrowser
-            .get(Url.publicDocumentSets)
-            .waitForElementBy(tag: 'p', contains: 'There are currently no example document sets.').should.eventually.exist
-        .then =>
-          @adminBrowser.toggleExampleDocumentSet() # return to original state
-
-    describe 'the cloned example', ->
+  asUser.usingTemporaryUser ->
+    asUser.usingAdminBrowser ->
       before ->
-        @userBrowser
-          .get(Url.index)
-          .waitForElementBy(tag: 'a', contains: 'basic.csv').click()
-          .waitForElementBy(tag: 'canvas')
+        @adminBrowser
+          .loadShortcuts('importCsv')
+          .loadShortcuts('documentSet')
+          .loadShortcuts('documentSets')
 
-      shouldBehaveLikeATree
-        documents: [
-          { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
-        ]
-        searches: [
-          { query: 'document', nResults: 4 }
-        ]
-
-    it 'should keep clone after original is deleted', ->
-      @adminBrowser
-        .openCsvUploadPage()
-        .chooseAndDoUpload('CsvUpload/basic.csv')
-        .waitForJobsToComplete()
-        .toggleExampleDocumentSet()
-        .then =>
-          @userBrowser
-            .get(Url.publicDocumentSets)
-            .cloneExample()
-        .then =>
+      describe 'after being set as an example', ->
+        before ->
           @adminBrowser
-            .deleteTopUpload()
-        .then =>
-          @userBrowser
+            .shortcuts.importCsv.startUpload('CsvUpload/basic.csv')
+            .shortcuts.importCsv.waitUntilRedirectToDocumentSet('basic.csv')
+            .shortcuts.documentSet.waitUntilStable()
+            .shortcuts.documentSet.setPublic(true)
+            .then =>
+              @browser.shortcuts.documentSets.clone('basic.csv')
+
+        after ->
+          Q.all([
+            @browser.shortcuts.documentSets.destroy('basic.csv')
+            @adminBrowser.shortcuts.documentSets.destroy('basic.csv')
+          ])
+
+        it 'should be cloneable',  ->
+          @browser
             .get(Url.index)
-            .waitForElementBy(tag: 'a', contains: 'basic.csv').should.eventually.exist
-            .deleteTopUpload()
+            .assertExists(tag: 'h3', contains: 'basic.csv', wait: 'pageLoad')
+
+        it 'should be removed from the example list when unset as an example', ->
+          @adminBrowser.shortcuts.documentSet.setPublic(false)
+            .then =>
+              @browser
+                .get(Url.publicDocumentSets)
+                .assertExists(tag: 'p', contains: 'There are currently no example document sets.', wait: 'pageLoad')
+            .then =>
+              @adminBrowser.shortcuts.documentSet.setPublic(true)
+
+        describe 'the cloned example', ->
+          before ->
+            @browser
+              .shortcuts.documentSets.open('basic.csv')
+
+          shouldBehaveLikeATree
+            documents: [
+              { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
+            ]
+            searches: [
+              { query: 'document', nResults: 4 }
+            ]
+
+      it 'should keep clone after original is deleted', ->
+        @adminBrowser
+          .shortcuts.importCsv.startUpload('CsvUpload/basic.csv')
+          .shortcuts.importCsv.waitUntilRedirectToDocumentSet('basic.csv')
+          .shortcuts.documentSet.waitUntilStable()
+          .shortcuts.documentSet.setPublic(true)
+          .then =>
+            @browser.shortcuts.documentSets.clone('basic.csv')
+          .then =>
+            @adminBrowser.shortcuts.documentSets.destroy('basic.csv')
+          .then =>
+            @browser
+              .get(Url.index)
+              .assertExists(tag: 'a', contains: 'basic.csv', wait: 'pageLoad')
+          .then =>
+            @browser.shortcuts.documentSets.destroy('basic.csv')

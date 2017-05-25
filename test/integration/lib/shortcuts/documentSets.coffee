@@ -1,6 +1,9 @@
 TIMEOUTS = require('../TIMEOUTS')
 debug_ = require('debug')('shortcuts/documentSets')
 
+Urls =
+  publicDocumentSets: '/public-document-sets'
+
 # Shortcuts for manipulating the collection of DocumentSets for a user.
 #
 # Assumptions shared by all methods:
@@ -42,3 +45,16 @@ module.exports = (browser) ->
       .click([ li, { class: 'dropdown-toggle' } ])
       .click([ li, { link: 'Delete' } ])
       .alert().accept()
+
+  # Clones a document set with the given name, producing a new one.
+  #
+  # After calling this method, the document set will be on the screen with its
+  # default view, and all AJAX requests will be finished.
+  clone: (name) ->
+    debug_("scheduling clone(#{name})")
+    debug("scheduling clone(#{name})")
+    browser
+      .get(Urls.publicDocumentSets)
+      .shortcuts.jquery.waitUntilReady()
+      .click([ { class: 'document-set', contains: name }, { tag: 'button', contains: 'Clone' } ])
+      .shortcuts.documentSet.waitUntilStable()
