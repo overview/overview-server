@@ -9,4 +9,12 @@ require [
       text = $a.attr('data-confirm')
 
       if window.confirm(text)
-        window.location = "/documentsets/#{documentSetId}?X-HTTP-Method-Override=DELETE"
+        $.ajax({
+          url: "/documentsets/#{documentSetId}"
+          type: 'DELETE'
+          data: {
+            csrfToken: window.csrfToken
+          }
+          success: () => window.location = '/documentsets'
+          error: (xhr) => console.warn("ERROR during delete", xhr)
+        })
