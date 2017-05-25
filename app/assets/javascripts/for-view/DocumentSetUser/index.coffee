@@ -15,3 +15,4 @@ define [
       isPublic: isPublic
       documentSetId: documentSetId
       isAdmin: admin
+      csrfToken: window.parent.csrfToken
