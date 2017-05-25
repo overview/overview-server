@@ -114,7 +114,7 @@ trait MassUploadController extends Controller {
     MassUploadControllerForm.new_.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
-        val (name, lang, splitDocuments, metadataJson) = values
+        val (name, lang, splitDocuments, ocr, metadataJson) = values
 
         fileGroupBackend.find(request.user.email, None).map(_.map(_.id)).flatMap(_ match {
           case None => Future.successful(NotFound)
@@ -132,6 +132,7 @@ trait MassUploadController extends Controller {
                 documentSet.id,
                 lang,
                 splitDocuments,
+                ocr,
                 metadataJson
               ).map(_.get)
             } yield {
@@ -152,7 +153,7 @@ trait MassUploadController extends Controller {
     MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
-        val (lang, splitDocuments, metadataJson) = values
+        val (lang, splitDocuments, ocr, metadataJson) = values
 
         fileGroupBackend.find(request.user.email, None).flatMap(_ match {
           case None => Future.successful(NotFound)
@@ -163,6 +164,7 @@ trait MassUploadController extends Controller {
                 id,
                 lang,
                 splitDocuments,
+                ocr,
                 metadataJson
               ).map(_.get)
             } yield {

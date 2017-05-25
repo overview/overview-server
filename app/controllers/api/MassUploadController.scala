@@ -109,7 +109,7 @@ trait MassUploadController extends ApiController {
       values => {
         val userEmail: String = request.apiToken.createdBy
         val documentSetId: Long = request.apiToken.documentSetId.get // FIXME type-unsafe .get. Change the URL.
-        val (lang, splitDocuments, metadataJson) = values
+        val (lang, splitDocuments, ocr, metadataJson) = values
 
         fileGroupBackend.find(userEmail, Some(request.apiToken.token)).map(_.map(_.id)).flatMap(_ match {
           case None => Future.successful(NotFound)
@@ -120,6 +120,7 @@ trait MassUploadController extends ApiController {
                 documentSetId,
                 lang,
                 splitDocuments,
+                ocr,
                 metadataJson
               ).map(_.get)
             } yield {

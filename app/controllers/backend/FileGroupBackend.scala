@@ -21,6 +21,7 @@ trait FileGroupBackend extends Backend {
     documentSetId: Long,
     lang: String,
     splitDocuments: Boolean,
+    ocr: Boolean,
     metadataJson: JsObject
   ): Future[Option[FileGroup]]
 
@@ -91,7 +92,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     FileGroups
       .filter(_.id === id)
       .filter(_.deleted === false)
-      .map { g => (g.addToDocumentSetId, g.lang, g.splitDocuments, g.nFiles, g.nBytes, g.nFilesProcessed, g.nBytesProcessed, g.metadataJson) }
+      .map { g => (g.addToDocumentSetId, g.lang, g.splitDocuments, g.ocr, g.nFiles, g.nBytes, g.nFilesProcessed, g.nBytesProcessed, g.metadataJson) }
   }
 
   lazy val updateDeletedByIdCompiled = Compiled { (id: Rep[Long]) =>
@@ -124,6 +125,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     documentSetId: Long,
     lang: String,
     splitDocuments: Boolean,
+    ocr: Boolean,
     metadataJson: JsObject
   ) = {
     for {
@@ -132,6 +134,7 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
         Some(documentSetId),
         Some(lang),
         Some(splitDocuments),
+        Some(ocr),
         counts.map(_._1).orElse(Some(0)),
         counts.map(_._2).orElse(Some(0L)),
         Some(0),
