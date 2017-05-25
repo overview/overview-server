@@ -29,7 +29,7 @@ module.exports = importFiles = (browser) ->
     debug('waitUntilImportPageLoaded()')
     browser
       .shortcuts.jquery.waitUntilReady()
-      .waitUntilBlockReturnsTrue 'app is initialized and file input is clickable', 'fast', ->
+      .waitUntilBlockReturnsTrue 'app is initialized and file input is clickable', 'pageLoad', ->
         $('.invisible-file-input')
           .css(opacity: 1) # Selenium needs to see it to click on it
           .length          # If the file input is missing, the app isn't loaded; run this whole block again

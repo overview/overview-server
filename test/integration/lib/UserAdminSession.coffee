@@ -1,6 +1,6 @@
 faker = require('faker')
 request = require('request')
-Promise = require('bluebird')
+wdPromise = require('selenium-webdriver/lib/promise')
 
 module.exports = class UserAdminSession
   constructor: (@options) ->
@@ -9,12 +9,12 @@ module.exports = class UserAdminSession
       timeout: @options.timeout
       jar: request.jar()
 
-    @promise = Promise.resolve(null)
+    @promise = wdPromise.fulfilled(null)
 
     @_login()
 
   r: (options) ->
-    new Promise (resolve, reject) =>
+    wdPromise.createPromise (resolve, reject) =>
       @request options, (err, response, body) =>
         if err?
           reject(err)

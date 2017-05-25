@@ -1,4 +1,3 @@
-testMethods = require('../support/testMethods')
 asUser = require('../support/asUser-new')
 
 Url =

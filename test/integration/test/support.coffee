@@ -14,18 +14,22 @@ waitForConnect = (port, done) ->
   socket.connect(port)
   undefined
 
-# Runs child process for selenium-server-standalone
+# Runs web browser listening for WebDriver on port 4444
 #
-# Calls the callback with the child process once Selenium starts listening
-# on port 4444.
+# Calls cb once the webdriver is listening
 startSelenium = (cb) ->
   child = child_process.spawn(
     chromedriver.path,
     [
       '--port=4444',
-      #'--verbose',
+      #'--verbose', # uncomment this for overwhelming data
     ],
   )
+
+  # For some verbosity:
+  #logging = require('selenium-webdriver').logging
+  #logging.installConsoleHandler()
+  #logging.getLogger('').setLevel(logging.Level.ALL)
 
   child.stdout.pipe(process.stdout)
   child.stderr.pipe(process.stderr)
@@ -34,10 +38,15 @@ startSelenium = (cb) ->
 
   waitForConnect(4444, done)
 
+runningSelenium = null
+
 before (done) ->
   if 'SAUCE_USERNAME' of process.env
     process.nextTick(done)
   else
     startSelenium (selenium) ->
-      process.on('exit', -> selenium.kill())
+      runningSelenium = selenium
       process.nextTick(done)
+
+after ->
+  runningSelenium?.kill()

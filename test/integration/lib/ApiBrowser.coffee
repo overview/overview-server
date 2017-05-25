@@ -1,6 +1,6 @@
-Promise = require('bluebird')
 debug = require('debug')('Browser')
 request = require('request')
+wdPromise = require('selenium-webdriver/lib/promise')
 
 # A wrapper around request.
 #
@@ -18,7 +18,7 @@ module.exports = class ApiBrowser
         sendImmediately: true
 
   _r: (options) ->
-    new Promise (resolve, reject) =>
+    wdPromise.createPromise (resolve, reject) =>
       @_request options, (err, response, body) =>
         if err?
           reject(err)

@@ -1,4 +1,3 @@
-testMethods = require('../support/testMethods')
 asUser = require('../support/asUser-new')
 
 # In order to let users store their own information

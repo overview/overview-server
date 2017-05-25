@@ -104,9 +104,9 @@ module.exports = class Browser
     elementPromise = if locator.wait
       timeout = TIMEOUTS[locator.wait]
       throw new Error("wait option must be #{Object.keys(TIMEOUTS).join(' or ')}") if !timeout?
-      @driver.call => @_findByWithTimeout(locateBy, timeout)
+      @_findByWithTimeout(locateBy, timeout)
     else
-      @driver.call => @_findBy(locateBy)
+      @_findBy(locateBy)
 
     elementPromise.then((el) -> new Element(el))
 
@@ -137,22 +137,22 @@ module.exports = class Browser
   _findByWithTimeout: (locateBy, timeout) ->
     start = new Date()
 
-    new Promise (resolve, reject) =>
-      # A "then" on a WebDriver promise puts it at the head of the
-      # promise chain
-      step = =>
-        @_findBy(locateBy)
-          .then(resolve)
-          .catch (err) ->
-            if err instanceof LocateError
-              if (new Date()) - start < timeout
-                process.nextTick(step)
-              else
-                reject(new WaitingLocateError("Could not find visible element matching #{locateBy} within #{timeout}ms"))
+    # A "then" on a WebDriver promise puts it at the head of the
+    # promise chain
+    step = =>
+      @_findBy(locateBy)
+        .catch (err) =>
+          if err instanceof LocateError
+            if (new Date()) - start < timeout
+              # Don't use nextTick() or setTimeout()! They break
+              # selenium-webdriver assumptions
+              return @driver.flow_.execute(step) # a Promise
             else
-              reject(err)
+              throw new WaitingLocateError("Could not find visible element matching #{locateBy} within #{timeout}ms")
+          else
+            throw err
 
-      step()
+    step()
 
   # Tests that the element exists, optionally waiting for it.
   #
@@ -220,7 +220,7 @@ module.exports = class Browser
   switchToFrame: (frame) ->
     debug("scheduling setFrame(#{JSON.stringify(frame)})")
     @debug("setFrame(#{JSON.stringify(frame)})")
-    @driver.call => @driver.switchTo().frame(frame)
+    @driver.switchTo().frame(frame)
     @
 
   # Returns the "alert" interface. Usage:
@@ -237,21 +237,21 @@ module.exports = class Browser
     @debug('alert()')
 
     exists: =>
-      @driver.call => @driver.switchTo().alert().then((-> true), (-> false))
+      @driver.switchTo().alert().then((-> true), (-> false))
 
     getText: =>
-      @driver.call => @driver.switchTo().alert().getText()
+      @driver.switchTo().alert().getText()
 
     sendKeys: (keys) =>
-      @driver.call => @driver.switchTo().alert().sendKeys(keys)
+      @driver.switchTo().alert().sendKeys(keys)
       @
 
     accept: =>
-      @driver.call => @driver.switchTo().alert().accept()
+      @driver.switchTo().alert().accept()
       @
 
     cancel: =>
-      @driver.call => @driver.switchTo().alert().cancel()
+      @driver.switchTo().alert().cancel()
       @
 
   # Schedules a function. Returns the browser, for chaining.
@@ -278,27 +278,28 @@ module.exports = class Browser
     throw new Error("timeout must be #{Object.keys(TIMEOUTS).join(' or ')}") if !timeout?
 
     @driver.call =>
-      new Promise (resolve, reject) =>
-        start = new Date()
-        lastRetval = {} # we log return values, but not duplicates
+      start = new Date()
+      lastRetval = {} # we log return values, but not duplicates
 
-        startTry = =>
-          @driver.executeScript(block)
-            .then (retval) ->
-              now = new Date()
+      step = =>
+        @driver.executeScript(block)
+          .then (retval) =>
+            now = new Date()
 
-              if !lastRetval.hasOwnProperty('value') || retval != lastRetval.value
-                debug("#{retval} after #{now - start}ms")
-              lastRetval.value = retval
+            if !lastRetval.hasOwnProperty('value') || retval != lastRetval.value
+              debug("#{retval} after #{now - start}ms")
+            lastRetval.value = retval
 
-              if retval
-                resolve()
-              else if now - start < timeout
-                process.nextTick(startTry)
-              else
-                reject(new Error("Timed out waiting for #{message}"))
+            if retval
+              return retval
+            else if now - start < timeout
+              # Don't use nextTick() or setTimeout()! They break
+              # selenium-webdriver assumptions
+              return @driver.flow_.execute(step) # a Promise
+            else
+              throw new Error("Timed out waiting for #{message}")
 
-        startTry()
+      step()
 
     @
 
@@ -310,7 +311,7 @@ module.exports = class Browser
   execute: (func, args...) ->
     debug('scheduling execute()')
     @debug('execute()')
-    @driver.call => @driver.executeScript(func, args...)
+    @driver.executeScript(func, args...)
     @
 
   # Browses to a new web page. Returns the Browser.
@@ -321,14 +322,14 @@ module.exports = class Browser
   get: (path) ->
     debug("scheduling get(#{path})")
     @debug("get(#{path})")
-    @driver.call => @driver.get(@options.baseUrl + path)
+    @driver.get(@options.baseUrl + path)
     @
 
   # Refreshes the page. Returns the Browser.
   refresh: ->
     debug('scheduling refresh()')
     @debug("refresh()")
-    @driver.call => @driver.navigate().refresh()
+    @driver.navigate().refresh()
     @
 
   # Make Browser a Promise, so you can `return browser` in async unit tests.
@@ -340,20 +341,24 @@ module.exports = class Browser
   # subsequent tests.
   then: (onSuccess, onError) ->
     debug('scheduling queue flush')
-    @debug('(queue flushed)')
-    @driver.call(onSuccess).catch(onError)
+    @driver
+      .call(-> debug('queue flushed'))
+      .then(
+        () -> process.nextTick(onSuccess),
+        (err) -> process.nextTick(onError, err)
+      )
 
   # Returns the current URL as a Promise.
   getUrl: ->
     debug('scheduling getUrl()')
     @debug('getUrl()')
-    @driver.call => @driver.getCurrentUrl()
+    @driver.getCurrentUrl()
 
   # Frees all resources associated with this Browser.
   close: ->
     debug('scheduling close()')
     @debug('close()')
-    @driver.call => @driver.quit()
+    @driver.quit()
     @
 
   # Schedules a wait.
@@ -362,5 +367,5 @@ module.exports = class Browser
   sleep: (ms) ->
     debug("scheduling sleep(#{ms})")
     @debug("sleep(#{ms})")
-    @driver.call => @driver.sleep(ms)
+    @driver.sleep(ms)
     @

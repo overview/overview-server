@@ -59,6 +59,7 @@ module.exports =
         @adminSession = browser.createUserAdminSession('asUser.usingTemporaryUser')
         @adminSession.createTemporaryUser()
           .then (user) =>
+            console.log('START')
             @userEmail = user.email
             @browser = userBrowser = browser.createBrowser()
             @browser

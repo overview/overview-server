@@ -1,6 +1,5 @@
 browser = require('../lib/BrowserBuilder')
 faker = require('faker')
-testMethods = require('../support/testMethods')
 
 Url =
   index: '/admin/users'

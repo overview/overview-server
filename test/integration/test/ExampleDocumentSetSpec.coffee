@@ -29,10 +29,8 @@ describe 'ExampleDocumentSets', ->
               @browser.shortcuts.documentSets.clone('basic.csv')
 
         after ->
-          Q.all([
-            @browser.shortcuts.documentSets.destroy('basic.csv')
-            @adminBrowser.shortcuts.documentSets.destroy('basic.csv')
-          ])
+          @browser.shortcuts.documentSets.destroy('basic.csv')
+            .then => @adminBrowser.shortcuts.documentSets.destroy('basic.csv')
 
         it 'should be cloneable',  ->
           @browser
