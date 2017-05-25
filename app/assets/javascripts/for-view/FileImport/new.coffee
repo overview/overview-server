@@ -11,7 +11,7 @@ define [
       csrfToken: window.csrfToken
       supportedLanguages: window.supportedLanguages
       defaultLanguageCode: window.defaultLanguageCode
-      onlyOptions: [ 'name', 'lang', 'split_documents', 'metadata_json' ]
+      onlyOptions: [ 'name', 'lang', 'split_documents', 'ocr', 'metadata_json' ]
 
     go = ->
       app = new MassUploadApp(options)
@@ -21,7 +21,7 @@ define [
     # use this simple if-statement.
     isReallyEdit = !/\/finish$/.test($form.attr('action'))
     if isReallyEdit
-      options.onlyOptions = [ 'lang', 'split_documents', 'metadata_json' ]
+      options.onlyOptions = [ 'lang', 'split_documents', 'ocr', 'metadata_json' ]
       documentSetId = $form.attr('action').split('/').pop()
       options.uniqueCheckUrlPrefix = "/documentsets/#{documentSetId}/files"
       options.documentSet = new DocumentSet(id: documentSetId)

@@ -1,5 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
+import java.io.IOException
 import java.nio.file.{Files=>JFiles,Path}
 import java.security.{DigestInputStream,MessageDigest}
 import java.util.Locale
@@ -17,7 +18,7 @@ import com.overviewdocs.models.tables.Files
   * Does this:
   *
   * 1. Downloads the file from Postgres LargeObject and calculates its sha1.
-  * 2. Makes a searchable copy, using PdfOcr.
+  * 2. Makes a searchable copy, using PdfOcr (or if ocr == false, just copies).
   * 3. Uploads both copies to BlobStorage.
   * 4. Returns the File.
   *
@@ -32,6 +33,7 @@ import com.overviewdocs.models.tables.Files
   */
 class CreatePdfFile(
   upload: GroupedFileUpload,
+  ocr: Boolean,
   lang: String,
   onProgress: Double => Boolean
 )(implicit ec: ExecutionContext) extends HasBlockingDatabase {
@@ -93,9 +95,22 @@ class CreatePdfFile(
     withTempFiles { (rawPath, pdfPath) =>
       for {
         sha1 <- downloadLargeObjectAndCalculateSha1(rawPath)
-        pdfResult <- PdfNormalizer.makeSearchablePdf(rawPath, pdfPath, lang, progressCallback)
+        pdfResult <- makeSearchablePdf(rawPath, pdfPath)
         result <- writeFileOnSuccess(pdfResult, rawPath, sha1, pdfPath)
       } yield result
+    }
+  }
+
+  private def makeSearchablePdf(inPath: Path, outPath: Path): Future[Either[String,Unit]] = {
+    if (ocr) {
+      PdfNormalizer.makeSearchablePdf(inPath, outPath, lang, progressCallback)
+    } else {
+      Future(blocking(try {
+        JFiles.copy(inPath, outPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        Right(())
+      } catch {
+        case e: IOException => Left(e.toString)
+      }))
     }
   }
 
@@ -132,9 +147,10 @@ class CreatePdfFile(
 object CreatePdfFile {
   def apply(
     upload: GroupedFileUpload,
+    ocr: Boolean,
     lang: String,
     onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
-    new CreatePdfFile(upload, lang, onProgress).execute
+    new CreatePdfFile(upload, ocr, lang, onProgress).execute
   }
 }

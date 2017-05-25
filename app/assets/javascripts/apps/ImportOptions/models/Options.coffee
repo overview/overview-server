@@ -2,6 +2,7 @@ define [ 'backbone' ], (Backbone) ->
   Backbone.Model.extend
     defaults:
       split_documents: false
+      ocr: true,
       lang: ''
       name: ''
       metadata_json: '{}'

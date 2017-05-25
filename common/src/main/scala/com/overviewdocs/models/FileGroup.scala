@@ -11,6 +11,7 @@ case class FileGroup(
   addToDocumentSetId: Option[Long],
   lang: Option[String],
   splitDocuments: Option[Boolean],
+  ocr: Option[Boolean],
   nFiles: Option[Int],
   nBytes: Option[Long],
   nFilesProcessed: Option[Int],

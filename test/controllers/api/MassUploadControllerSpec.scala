@@ -200,7 +200,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       )
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(factory.fileGroup(id=234L)))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(
         factory.fileGroup(id=234L, addToDocumentSetId=Some(123L))
       ))
     }
@@ -216,6 +216,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
         documentSetId,
         "sv",
         false,
+        true,
         Json.obj("foo" -> "bar")
       )
     }
@@ -230,7 +231,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     "return NotFound if user has no FileGroup in progress" in new StartClusteringScope {
       mockFileGroupBackend.find(any, any) returns Future.successful(None)
       status(result) must beEqualTo(NOT_FOUND)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }

@@ -133,7 +133,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val user = User(id=123L, email="start-user@example.org")
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
       mockDocumentSetBackend.create(any, any) returns Future.successful(documentSet)
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
@@ -164,6 +164,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
         documentSet.id,
         "sv",
         false,
+        true,
         Json.obj("foo" -> "bar")
       )
     }
@@ -177,7 +178,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
       h.status(result) must beEqualTo(h.NOT_FOUND)
       there was no(mockDocumentSetBackend).create(any, any)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }
@@ -201,7 +202,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val user = User(id=123L, email="start-user@example.org")
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
       lazy val result = controller.startClusteringExistingDocumentSet(documentSet.id)(request)
@@ -218,6 +219,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
         documentSet.id,
         "sv",
         false,
+        true,
         Json.obj("foo" -> "bar")
       )
     }
@@ -231,7 +233,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
       h.status(result) must beEqualTo(h.NOT_FOUND)
       there was no(mockDocumentSetBackend).create(any, any)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }

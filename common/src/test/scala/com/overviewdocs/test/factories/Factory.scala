@@ -142,6 +142,7 @@ trait Factory {
     addToDocumentSetId: Option[Long] = None,
     lang: Option[String] = None,
     splitDocuments: Option[Boolean] = None,
+    ocr: Option[Boolean] = None,
     nFiles: Option[Int] = None,
     nBytes: Option[Long] = None,
     nFilesProcessed: Option[Int] = None,

@@ -35,7 +35,7 @@ define [
       ctorOptions =
         supportedLanguages: [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         defaultLanguageCode: 'en'
-        onlyOptions: [ 'name', 'split_documents', 'lang', 'metadata_json' ]
+        onlyOptions: [ 'name', 'split_documents', 'ocr', 'lang', 'metadata_json' ]
 
       beforeEach ->
         subject = new Options({}, ctorOptions)
@@ -48,6 +48,9 @@ define [
 
       describe 'split_documents', ->
         it 'should begin false', -> expect(subject.get('split_documents')).to.be.false
+
+      describe 'ocr', ->
+        it 'should begin true', -> expect(subject.get('ocr')).to.be.true
 
       describe 'lang', ->
         it 'should begin as defaultLanguageCode', -> expect(subject.get('lang')).to.eq('en')
