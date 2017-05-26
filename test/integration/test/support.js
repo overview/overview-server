@@ -54,20 +54,23 @@ function runBrowser(cb) {
 
 let runningBrowser = null
 
+function killRunningBrowser() {
+  if (runningBrowser !== null) {
+    runningBrowser.kill()
+    runningBrowser = null
+  }
+}
+
 before(function(done) {
   if (process.env.SAUCE_USERNAME) {
     process.nextTick(done)
   } else {
     runBrowser(browser => {
       runningBrowser = browser
+      process.on('exit', killRunningBrowser) // in case Mocha exits before the after() hook is called
       process.nextTick(done)
     })
   }
 })
 
-after(function() {
-  if (runningBrowser) {
-    runningBrowser.kill()
-    runningBrowser = null
-  }
-})
+after(killRunningBrowser)
