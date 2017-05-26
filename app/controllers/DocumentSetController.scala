@@ -106,7 +106,7 @@ trait DocumentSetController extends Controller {
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     storage.deleteDocumentSet(id)
     jobQueue.send(DocumentSetCommands.DeleteDocumentSet(id))
-    Redirect(routes.DocumentSetController.index()).flashing("event" -> "document-set-delete")
+    Accepted.flashing("event" -> "document-set-delete")
   }
 
   def update(id: Long) = AuthorizedAction(adminUser).async { implicit request =>

@@ -121,7 +121,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     constructor: (@file, url_prefix, options={}) ->
       @filename = @file.webkitRelativePath || @file.name
       @url = "#{url_prefix}#{generate_uuid(@filename, @file)}"
-      @url += "?csrfToken=#{encodeURIComponent(options.csrfToken)}" if options.csrfToken?
+      @csrfToken = options.csrfToken || null
       @state = states.WAITING
       # uploaded_offset is accurate when leaving STARTING and entering UPLOADING.
       # We send a computed `loaded` variable when notifying progress() callbacks
@@ -253,7 +253,11 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
       create_xhr = () =>
         @options.xhr_factory (loaded, total) =>
           return if !jqxhr? or jqxhr isnt @uploading_jqxhr
-          @deferred.notify({ state: 'uploading', loaded: @uploaded_offset + loaded, total: @uploaded_offset + total })
+          @deferred.notify({
+            state: 'uploading',
+            loaded: @uploaded_offset + loaded,
+            total: @uploaded_offset + total
+          })
 
       headers = {}
 
@@ -268,7 +272,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
         headers['Content-Range'] = "bytes #{@uploaded_offset}-#{sendOffset}/#{@file.size}"
 
       @uploading_jqxhr = ajax({
-        url: @url
+        url: @url + (@csrfToken && "?csrfToken=#{@csrfToken}" || "")
         type: 'POST'
         processData: false
         data: blob

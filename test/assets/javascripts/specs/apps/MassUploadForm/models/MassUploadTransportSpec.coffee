@@ -72,7 +72,7 @@ define [
           expect(@netUpload.file).to.eq(@file)
 
         it 'includes the CSRF token in the url', ->
-          expect(@netUpload.url).to.match(/[\?&]csrfToken=a_token/)
+          expect(@netUpload.csrfToken).to.eq('a_token')
 
         it 'calls the progress callback while uploading', ->
           @netUpload.deferred.notify({ state: 'uploading', total: 10, loaded: 5})

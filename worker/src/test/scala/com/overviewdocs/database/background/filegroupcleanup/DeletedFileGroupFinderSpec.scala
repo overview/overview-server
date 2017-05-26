@@ -24,6 +24,7 @@ class DeletedFileGroupFinderSpec extends DbSpecification {
         addToDocumentSetId=Some(documentSet.id),
         lang=Some("en"),
         splitDocuments=Some(true),
+        ocr=Some(true),
         nFiles=Some(1),
         nBytes=Some(100L),
         nFilesProcessed=Some(0),

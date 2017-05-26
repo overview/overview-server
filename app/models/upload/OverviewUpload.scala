@@ -93,6 +93,8 @@ object OverviewUpload extends HasBlockingDatabase {
 
     def delete { blockingDatabase.delete(Uploads.filter(_.id === upload.id)) }
 
+    override def toString: String = s"OverviewUploadImpl(${upload},${uploadedFile})"
+
     override def underlying = upload
   }
 

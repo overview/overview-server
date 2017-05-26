@@ -1,11 +1,12 @@
 package controllers
 
+import akka.util.ByteString
 import java.nio.charset.StandardCharsets
 import java.sql.Connection
 import java.util.UUID
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Iteratee
+import play.api.libs.streams.Accumulator
 import play.api.mvc.{ Action, BodyParser, Request, RequestHeader, Result }
 import scala.concurrent.Future
 
@@ -84,13 +85,15 @@ trait UploadController extends Controller {
   }
 
   /** Gets the guid and user info to the body parser handling the file upload */
-  def authorizedFileUploadBodyParser(guid: UUID) = AuthorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
-
-  def fileUploadBodyParser(user: User, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
-    fileUploadIteratee(user.id, guid, request)
+  def authorizedFileUploadBodyParser(guid: UUID) = AuthorizedBodyParser(anyUser) { user =>
+    fileUploadBodyParser(user, guid)
   }
 
-  protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
+  def fileUploadBodyParser(user: User, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
+    fileUploadAccumulator(user.id, guid, request)
+  }
+
+  protected def fileUploadAccumulator(userId: Long, guid: UUID, requestHeader: RequestHeader): Accumulator[ByteString, Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
 
   /** Creates a CsvImport in the database, notifies the worker, and removes the
@@ -110,8 +113,9 @@ trait UploadController extends Controller {
 object UploadController extends UploadController with HasDatabase {
   override protected val documentSetBackend = DocumentSetBackend
 
-  override protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
+  override protected def fileUploadAccumulator(userId: Long, guid: UUID, requestHeader: RequestHeader): Accumulator[ByteString, Either[Result, OverviewUpload]] = {
     FileUploadIteratee.store(userId, guid, requestHeader)
+  }
 
   override protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = {
     OverviewUpload.find(userId, guid)

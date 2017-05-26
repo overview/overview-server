@@ -1,7 +1,7 @@
 package com.overviewdocs.nlp
 
-import java.io.InputStream
-import java.io.ByteArrayInputStream
+import scala.io
+
 import com.overviewdocs.util.Logger
 
 object StopWordSet {

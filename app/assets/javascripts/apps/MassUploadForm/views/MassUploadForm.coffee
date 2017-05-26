@@ -139,7 +139,7 @@ define [
       e.preventDefault()
       ImportOptionsApp.addHiddenInputsThroughDialog(
         @el,
-        onlyOptions: @options.onlyOptions || [ 'name', 'lang', 'split_documents', 'metadata_json' ]
+        onlyOptions: @options.onlyOptions || [ 'name', 'lang', 'split_documents', 'ocr', 'metadata_json' ]
         supportedLanguages: @options.supportedLanguages
         defaultLanguageCode: @options.defaultLanguageCode
         documentSet: @options.documentSet

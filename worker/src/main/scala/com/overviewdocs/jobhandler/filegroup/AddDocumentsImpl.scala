@@ -54,7 +54,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
     def onProgress1(progress1: Double): Boolean = onProgress(progress1 * 0.5)
     def onProgress2(progress2: Double): Boolean = onProgress(0.5 + progress2 * 0.4)
 
-    writeFile(upload, fileGroup.lang.get, onProgress1).flatMap(_ match {
+    writeFile(upload, fileGroup.ocr.get, fileGroup.lang.get, onProgress1).flatMap(_ match {
       case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
       case Right(file) => {
         onProgress(0.5)
@@ -84,12 +84,13 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
 
   private def writeFile(
     upload: GroupedFileUpload,
+    ocr: Boolean,
     lang: String,
     onProgress: Double => Boolean
   )(implicit ec: ExecutionContext): Future[Either[String,File]] = {
     logger.debug("Creating File for {}", upload)
     detectDocumentType(upload).flatMap(_ match {
-      case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, lang, onProgress)
+      case DocumentTypeDetector.PdfDocument => task.CreatePdfFile(upload, ocr, lang, onProgress)
       case DocumentTypeDetector.OfficeDocument => task.CreateOfficeFile(upload)
       case DocumentTypeDetector.UnsupportedDocument(mimeType) => Future.successful(Left(
         s"Overview doesn't support documents of type $mimeType"

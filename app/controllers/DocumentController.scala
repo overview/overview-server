@@ -78,8 +78,8 @@ trait DocumentController extends Controller {
         documentToBodyAndLength(document).map({ (body: Enumerator[Array[Byte]], length: Long) =>
           Ok
             .feed(body)
+            .as("application/pdf")
             .withHeaders(
-              CONTENT_TYPE -> "application/pdf",
               CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""",
               CONTENT_LENGTH -> length.toString
             )
@@ -95,9 +95,7 @@ trait DocumentController extends Controller {
        blobStorage.get(thumbnailLocation).map({ (body: Enumerator[Array[Byte]]) =>
          Ok
            .feed(body)
-           .withHeaders(
-             CONTENT_TYPE -> "image/png"
-           )
+           .as("image/png")
        })
      }
    })

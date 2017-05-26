@@ -18,9 +18,10 @@ class MassUploadControllerFormSpec extends Specification {
         "name" -> "foo",
         "lang" -> "en",
         "split_documents" -> "true",
+        "ocr" -> "true",
         "metadata_json" -> "{ \"foo\": \"bar\" }"
       )
-      form.value must beSome("foo", "en", true, Json.obj("foo" -> "bar"))
+      form.value must beSome("foo", "en", true, true, Json.obj("foo" -> "bar"))
     }
 
     "fail on unsupported language" in new NewScope {
@@ -40,7 +41,7 @@ class MassUploadControllerFormSpec extends Specification {
 
     "set defaults" in new NewScope {
       val form = parse("name" -> "foo", "lang" -> "en")
-      form.value must beSome("foo", "en", false, Json.obj())
+      form.value must beSome("foo", "en", false, true, Json.obj())
     }
   }
 }

@@ -1,7 +1,9 @@
 package controllers.util
 
+import akka.stream.scaladsl.{Source,Sink}
+import akka.util.ByteString
 import java.util.UUID
-import play.api.libs.iteratee.{Enumerator,Iteratee}
+import play.api.libs.iteratee.{Iteratee}
 import play.api.test.FakeRequest
 import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
@@ -20,7 +22,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
       val wantJsonResponse = false
       val mockFileGroupBackend = smartMock[FileGroupBackend]
       val mockUploadBackend = smartMock[GroupedFileUploadBackend]
-      val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
+      val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]]
 
       lazy val action = MassUploadControllerMethods.Create(
         "user@example.org",
@@ -34,15 +36,15 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
 
       val headers: Seq[(String,String)] = Seq("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=foobar.txt")
       lazy val request = FakeRequest().withHeaders(headers: _*)
-      val enumerator: Enumerator[Array[Byte]] = Enumerator()
-      lazy val result = enumerator.run(action(request))
+      val source: Source[ByteString,_] = Source.empty
+      lazy val result = action(request).run(source)
 
       val fileGroup = factory.fileGroup()
       val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
 
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
       mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
-      mockUploadIterateeFactory(any, any) returns Iteratee.ignore[Array[Byte]]
+      mockUploadIterateeFactory(any, any) returns Sink.fold(())((_, _) => ())
     }
 
     "return BadRequest if missing Content-Length and Content-Range" in new CreateScope {
@@ -109,9 +111,13 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
     }
 
     "feed data to the enumerator" in new CreateScope {
-      val buf = new ArrayBuffer[Byte]
-      override val enumerator = Enumerator("12345".getBytes("utf-8"), "23456".getBytes("utf-8"))
-      mockUploadIterateeFactory(any, any) returns Iteratee.foreach(bytes => buf.appendAll(bytes))
+      var buf = ByteString.empty
+      override val source = Source(
+        ByteString("12345".getBytes("utf-8")) ::
+        ByteString("23456".getBytes("utf-8")) :: Nil
+      )
+      // Sink pipes everything to buf and returns Future[Unit]
+      mockUploadIterateeFactory(any, any) returns Sink.fold(())((_, b) => { buf ++= b; () })
       h.status(result)
       buf.toArray must beEqualTo("1234523456".getBytes("utf-8"))
     }

@@ -1,10 +1,12 @@
 package controllers
 
+import akka.stream.scaladsl.{Source,Sink}
+import akka.util.ByteString
 import java.util.UUID
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.libs.json.Json
+import play.api.libs.streams.Accumulator
 import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
@@ -23,13 +25,13 @@ class MassUploadControllerSpec extends ControllerSpecification {
     val mockFileGroupBackend = smartMock[FileGroupBackend]
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockJobQueueSender = smartMock[JobQueueSender]
-    val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
+    val mockUploadSinkFactory = mock[(GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]]
 
     val controller = new MassUploadController with TestController {
       override val documentSetBackend = mockDocumentSetBackend
       override val fileGroupBackend = mockFileGroupBackend
       override val groupedFileUploadBackend = mockUploadBackend
-      override val uploadIterateeFactory = mockUploadIterateeFactory
+      override val uploadSinkFactory = mockUploadSinkFactory
       override val jobQueueSender = mockJobQueueSender
     }
 
@@ -42,9 +44,9 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val session = Session(123L, "127.0.0.1")
       val baseRequest = FakeRequest().withHeaders("Content-Length" -> "20")
       lazy val request = new AuthorizedRequest(baseRequest, session, user)
-      val enumerator: Enumerator[Array[Byte]] = Enumerator()
+      val source = Source.empty[ByteString]
       lazy val action: EssentialAction = controller.create(UUID.randomUUID)
-      lazy val result = enumerator.run(action(request))
+      lazy val result = action(request).run(source)
     }
 
     "return Ok" in new CreateScope {
@@ -52,7 +54,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
       mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
-      mockUploadIterateeFactory(any, any) returns Iteratee.ignore[Array[Byte]]
+      mockUploadSinkFactory(any, any) returns Sink.fold(())((_, _) => ())
 
       h.status(result) must beEqualTo(h.CREATED)
     }.pendingUntilFixed("AuthorizedBodyParser doesn't allow stubbing")
@@ -72,7 +74,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(any, any) returns Future(fileGroup)
       mockUploadBackend.find(any, any) returns Future(groupedFileUpload)
 
-      val request = new AuthorizedRequest(FakeRequest(), Session(userId, "127.0.0.1"), user)
+      val request = fakeAuthorizedRequest(user)
       lazy val result = controller.show(guid)(request)
     }
 
@@ -131,7 +133,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val user = User(id=123L, email="start-user@example.org")
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
       mockDocumentSetBackend.create(any, any) returns Future.successful(documentSet)
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
@@ -162,6 +164,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
         documentSet.id,
         "sv",
         false,
+        true,
         Json.obj("foo" -> "bar")
       )
     }
@@ -175,7 +178,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
       h.status(result) must beEqualTo(h.NOT_FOUND)
       there was no(mockDocumentSetBackend).create(any, any)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }
@@ -199,7 +202,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val user = User(id=123L, email="start-user@example.org")
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
 
       lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
       lazy val result = controller.startClusteringExistingDocumentSet(documentSet.id)(request)
@@ -216,6 +219,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
         documentSet.id,
         "sv",
         false,
+        true,
         Json.obj("foo" -> "bar")
       )
     }
@@ -229,7 +233,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(user.email, None) returns Future.successful(None)
       h.status(result) must beEqualTo(h.NOT_FOUND)
       there was no(mockDocumentSetBackend).create(any, any)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }

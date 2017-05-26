@@ -1,8 +1,9 @@
 package controllers
 
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import java.util.UUID
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
@@ -23,7 +24,7 @@ trait MassUploadController extends Controller {
   protected val fileGroupBackend: FileGroupBackend
   protected val jobQueueSender: JobQueueSender
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
-  protected val uploadIterateeFactory: (GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]
+  protected val uploadSinkFactory: (GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]
 
   /** Calls MassUploadControllerMethods.Create(), returning the result as body.
     *
@@ -37,7 +38,7 @@ trait MassUploadController extends Controller {
         guid,
         fileGroupBackend,
         groupedFileUploadBackend,
-        uploadIterateeFactory,
+        uploadSinkFactory,
         false
       )(request)
         .map(result => Right(result)) // Doesn't matter which it is...
@@ -113,7 +114,7 @@ trait MassUploadController extends Controller {
     MassUploadControllerForm.new_.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
-        val (name, lang, splitDocuments, metadataJson) = values
+        val (name, lang, splitDocuments, ocr, metadataJson) = values
 
         fileGroupBackend.find(request.user.email, None).map(_.map(_.id)).flatMap(_ match {
           case None => Future.successful(NotFound)
@@ -131,6 +132,7 @@ trait MassUploadController extends Controller {
                 documentSet.id,
                 lang,
                 splitDocuments,
+                ocr,
                 metadataJson
               ).map(_.get)
             } yield {
@@ -151,7 +153,7 @@ trait MassUploadController extends Controller {
     MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
-        val (lang, splitDocuments, metadataJson) = values
+        val (lang, splitDocuments, ocr, metadataJson) = values
 
         fileGroupBackend.find(request.user.email, None).flatMap(_ match {
           case None => Future.successful(NotFound)
@@ -162,6 +164,7 @@ trait MassUploadController extends Controller {
                 id,
                 lang,
                 splitDocuments,
+                ocr,
                 metadataJson
               ).map(_.get)
             } yield {
@@ -202,5 +205,5 @@ object MassUploadController extends MassUploadController {
   override protected val fileGroupBackend = FileGroupBackend
   override protected val jobQueueSender = JobQueueSender
   override protected val groupedFileUploadBackend = GroupedFileUploadBackend
-  override protected val uploadIterateeFactory = GroupedFileUploadIteratee.apply _
+  override protected val uploadSinkFactory = GroupedFileUploadIteratee.apply _
 }

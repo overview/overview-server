@@ -72,10 +72,18 @@ define [
   #
   # * `supportedLanguages`: An Array of `{ code: "en", name: "English" }` values
   # * `defaultLanguageCode`: A language code like `"en"`
-  #
-  # Optional:
-  #
   # * `onlyOptions`: An Array of options to include, such as `split_documents`.
+  #
+  # Valid options for the `onlyOptions` Array:
+  #
+  # * `name`: desired name of document set
+  # * `split_documents`: each "page" of input (think, Microsoft Word WYSIWYG
+  #                      rendering) becomes a document. False means each input
+  #                      "file" becomes a document.
+  # * `ocr`: when true run Tesseract on pages that don't have much text.
+  # * `lang`: language to use when indexing. Overview currently ignores this
+  #           value, except when generating a Tree visualization.
+  # * `metadata_json`: JSON fields to add to DocumentSet metadata schema.
   class App
     constructor: (@options) ->
       throw 'Must pass supportedLanguages, an Array of { code: "en", name: "English" } values' if !@options.supportedLanguages?

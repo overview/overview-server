@@ -1,5 +1,4 @@
---compilers coffee:coffee-script/register
+--harmony-async-await
 --timeout 60s
 --slow 3s
 --reporter spec
---require support/testSuite

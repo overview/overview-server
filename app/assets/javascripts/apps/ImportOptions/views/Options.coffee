@@ -16,6 +16,7 @@ define [
     events:
       'change [name=name]': '_onChangeName'
       'change [name=split_documents]': '_onChangeSplitDocuments'
+      'change [name=ocr]': '_onChangeOcr'
       'change [name=lang]': '_onChangeLang'
 
     template: _.template("""
@@ -48,6 +49,24 @@ define [
                 <label>
                   <input type="radio" name="split_documents" <%= options.split_documents ? 'checked="checked"' : '' %> value="true" />
                   <%- t('split_documents.true') %>
+                </label>
+              </div>
+            </div>
+          <% } %>
+
+          <% if ('ocr' in options) { %>
+            <div class="form-group">
+              <label class="control-label"><%= t('ocr.label_html') %></label>
+              <div class="radio">
+                <label>
+                  <input type="radio" name="ocr" <%= options.ocr ? 'checked="checked"' : '' %> value="true" />
+                  <%- t('ocr.true') %>
+                </label>
+              </div>
+              <div class="radio">
+                <label>
+                  <input type="radio" name="ocr" <%= options.ocr ? '' : 'checked="checked"' %> value="false" />
+                  <%- t('ocr.false') %>
                 </label>
               </div>
             </div>
@@ -111,6 +130,10 @@ define [
     _onChangeSplitDocuments: (e) ->
       val = @$("[name=split_documents]:checked").val()
       @model.set('split_documents', val == 'true')
+
+    _onChangeOcr: (e) ->
+      val = @$("[name=ocr]:checked").val()
+      @model.set('ocr', val == 'true')
 
     _onChangeLang: (e) ->
       @model.set('lang', Backbone.$(e.target).val())

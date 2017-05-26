@@ -15,6 +15,9 @@ define [
         'views.DocumentSet.index.ImportOptions.split_documents.false': 'split_documents.false'
         'views.DocumentSet.index.ImportOptions.split_documents.true': 'split_documents.true'
         'views.DocumentSet.index.ImportOptions.split_documents.too_few_documents': 'split_documents.too_few_documents'
+        'views.DocumentSet.index.ImportOptions.ocr.label_html': 'ocr.label_html'
+        'views.DocumentSet.index.ImportOptions.ocr.false': 'ocr.false'
+        'views.DocumentSet.index.ImportOptions.ocr.true': 'ocr.true'
         'views.DocumentSet.index.ImportOptions.lang.label': 'lang.label'
         'views.DocumentSet.index.ImportOptions.name.label': 'name.label'
         'views.DocumentSet.index.ImportOptions.click_for_help': 'click_for_help'
@@ -41,6 +44,7 @@ define [
 
       it 'should not render the excluded options', ->
         expect(view.$('[name=split_documents]').length).to.eq(0)
+        expect(view.$('[name=ocr]').length).to.eq(0)
         expect(view.$('[name=name]').length).to.eq(0)
         expect(view.$('[name=metadata_json]').length).to.eq(0)
 
@@ -49,6 +53,7 @@ define [
         model = new Backbone.Model
           name: ''
           split_documents: false
+          ocr: true
           lang: 'en'
           metadata_json: '{}'
         model.documentSet = new Backbone.Model(id: 1, metadataFields: [ 'metadataFoo' ])
@@ -59,6 +64,9 @@ define [
 
       it 'should start with the radio matching split_documents', ->
         expect(view.$('[name=split_documents]:checked').val()).to.eq(model.get('split_documents') && 'true' || 'false')
+
+      it 'should start with the radio matching ocr', ->
+        expect(view.$('[name=ocr]:checked').val()).to.eq(model.get('ocr') && 'true' || 'false')
 
       it 'should set split_documents to true on the model', ->
         $input = view.$('[name=split_documents]')
@@ -71,6 +79,18 @@ define [
         $input.prop('checked', false)
         $input.change()
         expect(model.get('split_documents')).to.be.false
+
+      it 'should set ocr to true on the model', ->
+        $input = view.$('[name=ocr]')
+        $input.val('true')
+        $input.change()
+        expect(model.get('ocr')).to.be.true
+
+      it 'should set ocr to false on the model', ->
+        $input = view.$('[name=ocr]')
+        $input.prop('checked', false)
+        $input.change()
+        expect(model.get('ocr')).to.be.false
 
       it 'should start with lang matching lang', ->
         expect(view.$('[name=lang]').val()).to.eq(model.get('lang'))

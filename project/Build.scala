@@ -8,7 +8,7 @@ import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.web.SbtWeb
 import com.typesafe.sbt.web.SbtWeb.autoImport._
 import java.io.IOException
-import play.Play.autoImport._
+import play.sbt.routes.RoutesCompiler.autoImport._
 import play.sbt.PlayImport._
 import play.sbt.routes.RoutesKeys
 import play.twirl.sbt.Import._
@@ -149,6 +149,7 @@ object ApplicationBuild extends Build {
     .settings(ourGlobalSettings: _*)
     .settings(
       version := appVersion,
+      routesGenerator := StaticRoutesGenerator,
       PlayKeys.externalizeResources := false, // so `stage` doesn't nix all assets
       libraryDependencies ++= Dependencies.serverDependencies,
       TwirlKeys.templateImports += "views.Magic._",

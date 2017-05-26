@@ -64,7 +64,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       }
 
       "set contents" in new DocumentsWithStringTagsScope {
-        h.contentAsBytes(result) must beEqualTo(contents)
+        h.contentAsBytes(result).toArray must beEqualTo(contents)
       }
 
       "not send as chunked" in new DocumentsWithStringTagsScope {
@@ -91,7 +91,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       }
 
       "set contents" in new DocumentsWithColumnTagsScope {
-        h.contentAsBytes(result) must beEqualTo(contents)
+        h.contentAsBytes(result).toArray must beEqualTo(contents)
       }
 
       "not send as chunked" in new DocumentsWithColumnTagsScope {

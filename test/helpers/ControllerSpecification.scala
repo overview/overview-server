@@ -6,6 +6,7 @@ import org.specs2.mutable.Specification
 import play.api.libs.json.JsValue
 import play.api.mvc.{AnyContent, AnyContentAsFormUrlEncoded, AnyContentAsJson, Headers, Request}
 import play.api.test.{FakeHeaders, FakeRequest}
+import scala.concurrent.ExecutionContext
 
 import controllers.auth.{AuthorizedRequest, OptionallyAuthorizedRequest}
 import models.{Session, User}
@@ -20,7 +21,7 @@ trait ControllerSpecification extends test.helpers.InAppSpecification with Mocki
   // InAppSpecification because controllers sometimes set session variables,
   // which require the global crypto config
 
-  protected implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
+  protected implicit val executionContext: ExecutionContext = play.api.libs.concurrent.Execution.defaultContext
 
   class AugmentedRequest[T, A <: Request[T], AWithJsonBody <: Request[AnyContentAsJson], AWithFormBody <: Request[AnyContentAsFormUrlEncoded]](
     request: A,

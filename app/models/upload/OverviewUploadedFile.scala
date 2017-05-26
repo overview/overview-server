@@ -82,6 +82,8 @@ object OverviewUploadedFile extends HasBlockingDatabase {
       blockingDatabase.run(q)
     }
 
+    override def toString: String = uploadedFile.toString
+
     override def underlying = uploadedFile
   }
 }

@@ -1,10 +1,12 @@
 package controllers
 
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import java.sql.Timestamp
 import java.util.UUID
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.{Done,Input,Iteratee}
+import play.api.libs.streams.Accumulator
 import play.api.mvc.{AnyContent,Request,RequestHeader,Result}
 import play.api.test.{FakeHeaders,FakeRequest,FakeApplication}
 import scala.concurrent.Future
@@ -26,8 +28,9 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
     var stopWords: Option[String] = None
     var importantWords: Option[String] = None
 
-    override def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
-      Done(Right(mock[OverviewUpload]), Input.EOF)
+    override def fileUploadAccumulator(userId: Long, guid: UUID, requestHeader: RequestHeader) = {
+      Accumulator(Sink.ignore).map(_ => Right(mock[OverviewUpload]))
+    }
 
     override def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
 

@@ -1,8 +1,9 @@
 package controllers.api
 
+import akka.stream.scaladsl.{Sink,Source}
+import akka.util.ByteString
 import java.util.UUID
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.libs.json.Json
 import play.api.mvc.{EssentialAction,Results}
 import play.api.test.FakeRequest
@@ -21,14 +22,14 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockApiTokenFactory = smartMock[ApiTokenFactory]
     val mockJobQueueSender = smartMock[JobQueueSender]
-    val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Iteratee[Array[Byte],Unit]]
+    val mockUploadSinkFactory = mock[(GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]]
 
     lazy val controller = new MassUploadController with TestController {
       override val fileGroupBackend = mockFileGroupBackend
       override val groupedFileUploadBackend = mockUploadBackend
       override val apiTokenFactory = mockApiTokenFactory
       override val jobQueueSender = mockJobQueueSender
-      override val uploadIterateeFactory = mockUploadIterateeFactory
+      override val uploadSinkFactory = mockUploadSinkFactory
     }
 
     val factory = com.overviewdocs.test.factories.PodoFactory
@@ -70,9 +71,9 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
         "Content-Length" -> "20", 
         "Content-Disposition" -> "attachment; filename=foo.pdf")
       lazy val request = new ApiAuthorizedRequest(baseRequest, apiToken)
-      val enumerator: Enumerator[Array[Byte]] = Enumerator()
+      val source = Source.empty[ByteString]
       lazy val action: EssentialAction = controller.create(UUID.randomUUID)
-      lazy val result = enumerator.run(action(request))
+      lazy val result = action(request).run(source)
     }
 
     "return 400 if api token authorization fails" in new CreateScope {
@@ -86,7 +87,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
       mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
-      mockUploadIterateeFactory(any, any) returns Iteratee.ignore[Array[Byte]]
+      mockUploadSinkFactory(any, any) returns Sink.fold(())((_, _) => ())
 
       status(result) must beEqualTo(CREATED)
     }
@@ -199,7 +200,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       )
 
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(factory.fileGroup(id=234L)))
-      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any) returns Future.successful(Some(
+      mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(
         factory.fileGroup(id=234L, addToDocumentSetId=Some(123L))
       ))
     }
@@ -215,6 +216,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
         documentSetId,
         "sv",
         false,
+        true,
         Json.obj("foo" -> "bar")
       )
     }
@@ -229,7 +231,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     "return NotFound if user has no FileGroup in progress" in new StartClusteringScope {
       mockFileGroupBackend.find(any, any) returns Future.successful(None)
       status(result) must beEqualTo(NOT_FOUND)
-      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any)
+      there was no(mockFileGroupBackend).addToDocumentSet(any, any, any, any, any, any)
       there was no(mockJobQueueSender).send(any)
     }
   }

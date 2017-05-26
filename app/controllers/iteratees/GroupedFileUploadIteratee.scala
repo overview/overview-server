@@ -1,6 +1,9 @@
 package controllers.iteratees
 
-import play.api.libs.iteratee.{Enumeratee,Iteratee,Traversable}
+import akka.stream.scaladsl.{Flow,Keep,Sink}
+import akka.util.ByteString
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import controllers.backend.GroupedFileUploadBackend
 import com.overviewdocs.models.GroupedFileUpload
@@ -9,24 +12,14 @@ trait GroupedFileUploadIteratee {
   protected val groupedFileUploadBackend: GroupedFileUploadBackend
   protected val bufferSize: Int
 
-  def apply(upload: GroupedFileUpload, position: Long): Iteratee[Array[Byte],Unit] = {
-    bufferedIteratee(upload, position)
-  }
-
-  /** buffers input and then passes it to a writeBytesIteratee. */
-  private def bufferedIteratee(upload: GroupedFileUpload, position: Long): Iteratee[Array[Byte],Unit] = {
-    val consumeOneChunk = Traversable.takeUpTo[Array[Byte]](bufferSize).transform(Iteratee.consume())
-    val consumeChunks: Enumeratee[Array[Byte], Array[Byte]] = Enumeratee.grouped(consumeOneChunk)
-    consumeChunks.transform(writeBytesIteratee(upload, position))
-  }
-
-  /** writes input to the specified GroupedFileUpload's Large Object */
-  private def writeBytesIteratee(upload: GroupedFileUpload, initialPosition: Long): Iteratee[Array[Byte],Unit] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    Iteratee.foldM(initialPosition)({ (position: Long, bytes: Array[Byte]) =>
-      groupedFileUploadBackend.writeBytes(upload.id, position, bytes)
+  def apply(upload: GroupedFileUpload, initialPosition: Long): Sink[ByteString,Future[Unit]] = {
+    val buffer = Flow.fromGraph(new Chunker(bufferSize).named("Chunker"))
+    val write = Sink.foldAsync(initialPosition)({ (position: Long, bytes: ByteString) =>
+      groupedFileUploadBackend.writeBytes(upload.id, position, bytes.toArray)
         .map(_ => position + bytes.length)
-    }).map(_ => ())
+    })
+
+    buffer.toMat(write)((_, _) => Future.successful(()))
   }
 }
 

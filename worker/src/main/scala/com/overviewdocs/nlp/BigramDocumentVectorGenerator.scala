@@ -15,6 +15,7 @@ package com.overviewdocs.nlp
 
 import java.io.{BufferedWriter,OutputStreamWriter}
 import scala.collection.mutable.{Map,IndexedSeq,ArrayBuffer}
+import scala.io
 
 import com.overviewdocs.nlp.DocumentVectorTypes._
 import com.overviewdocs.util.{TempFile,FlatteningHashMap,KeyValueFlattener}

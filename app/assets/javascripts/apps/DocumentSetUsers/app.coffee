@@ -94,6 +94,7 @@ define [
       $.ajax
         type: 'DELETE'
         url: "/documentsets/#{@options.documentSetId}/users/#{encodeURIComponent(email)}"
+        data: { csrfToken: @options.csrfToken }
         error: (xhr, textStatus, errorThrown) -> console.warn(errorThrown)
 
     _onChangePublic: ->
@@ -101,7 +102,7 @@ define [
       $.ajax
         type: 'PUT'
         url: "/documentsets/#{@options.documentSetId}"
-        data: { public: isPublic }
+        data: { public: isPublic, csrfToken: @options.csrfToken }
         error: (xhr, textStatus, errorThrown) -> console.warn(errorThrown)
 
     _onSubmit: (e) ->
@@ -120,4 +121,5 @@ define [
       $.ajax
         type: 'PUT'
         url: "/documentsets/#{@options.documentSetId}/users/#{encodeURIComponent(email)}"
+        data: { csrfToken: @options.csrfToken }
         error: (xhr, textStatus, errorThrown) -> console.warn(errorThrown)

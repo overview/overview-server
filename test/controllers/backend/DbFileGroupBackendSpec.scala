@@ -56,6 +56,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
         addToDocumentSetId=Some(documentSet.id),
         lang=Some("fr"),
         splitDocuments=Some(true),
+        ocr=Some(true),
         nFiles=Some(1),
         nBytes=Some(2L),
         nFilesProcessed=Some(0),
@@ -114,6 +115,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
         addToDocumentSetId=Some(documentSet.id),
         lang=Some("fr"),
         splitDocuments=Some(true),
+        ocr=Some(true),
         nFiles=Some(1),
         nBytes=Some(2L),
         nFilesProcessed=Some(0),
@@ -146,6 +148,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
         addToDocumentSetId=Some(documentSet.id),
         lang=Some("fr"),
         splitDocuments=Some(true),
+        ocr=Some(true),
         nFiles=Some(1),
         nBytes=Some(2L),
         nFilesProcessed=Some(0),
@@ -187,16 +190,17 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
         documentSetId: Long,
         lang: String,
         splitDocuments: Boolean,
+        ocr: Boolean,
         metadataJson: JsObject
       ): Option[FileGroup] = {
-        await(backend.addToDocumentSet(id, documentSetId, lang, splitDocuments, metadataJson))
+        await(backend.addToDocumentSet(id, documentSetId, lang, splitDocuments, ocr, metadataJson))
       }
     }
 
     "update a FileGroup" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq("foo" -> JsString("bar"))))
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, true, JsObject(Seq("foo" -> JsString("bar"))))
 
       val savedList = findFileGroups("user@example.org", None, true)
       savedList.length must beEqualTo(1)
@@ -212,7 +216,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     "return the FileGroup it updates in the database" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      val returned = addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
+      val returned = addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, true, JsObject(Seq()))
       returned must beEqualTo(findFileGroups("user@example.org", None, true).headOption)
     }
 
@@ -221,7 +225,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
       val documentSet = factory.documentSet()
       factory.groupedFileUpload(fileGroupId=fileGroup.id, size=1000L)
       factory.groupedFileUpload(fileGroupId=fileGroup.id, size=234L)
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, true, JsObject(Seq()))
 
       val saved = findFileGroups("user@example.org", None, true).head
       saved.nFiles must beSome(2)
@@ -233,7 +237,7 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     "set nFiles=0 and nBytes=0" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, true, JsObject(Seq()))
 
       val saved = findFileGroups("user@example.org", None, true).head
       saved.nFiles must beSome(0)
@@ -245,14 +249,14 @@ class DbFileGroupBackendSpec extends DbBackendSpecification {
     "skip a missing FileGroup" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id + 1, documentSet.id, "fr", true, JsObject(Seq()))
+      addToDocumentSet(fileGroup.id + 1, documentSet.id, "fr", true, true, JsObject(Seq()))
       findFileGroups("user@example.org", None, false) must beEqualTo(Seq(fileGroup))
     }
 
     "skip a deleted FileGroup" in new AddToDocumentSetScope {
       val fileGroup = factory.fileGroup(userEmail="user@example.org", apiToken=None, deleted=true)
       val documentSet = factory.documentSet()
-      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, JsObject(Seq()))
+      addToDocumentSet(fileGroup.id, documentSet.id, "fr", true, true, JsObject(Seq()))
       findFileGroups("user@example.org", None, false) must beEqualTo(Seq(fileGroup))
     }
   }

@@ -14,6 +14,7 @@ class FileGroupsImpl(tag: Tag) extends Table[FileGroup](tag, "file_group") {
   def addToDocumentSetId = column[Option[Long]]("add_to_document_set_id")
   def lang = column[Option[String]]("lang")
   def splitDocuments = column[Option[Boolean]]("split_documents")
+  def ocr = column[Option[Boolean]]("ocr")
   def nFiles = column[Option[Int]]("n_files")
   def nBytes = column[Option[Long]]("n_bytes")
   def nFilesProcessed = column[Option[Int]]("n_files_processed")
@@ -29,6 +30,7 @@ class FileGroupsImpl(tag: Tag) extends Table[FileGroup](tag, "file_group") {
     addToDocumentSetId,
     lang,
     splitDocuments,
+    ocr,
     nFiles,
     nBytes,
     nFilesProcessed,

@@ -327,6 +327,9 @@ views.DocumentSet.index.ImportOptions.name.label=Document set name
 views.DocumentSet.index.ImportOptions.split_documents.label_html=What counts as a document (<a href="https://blog.overviewdocs.com/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.split_documents.false=Each file is one document
 views.DocumentSet.index.ImportOptions.split_documents.true=Each page is one document
+views.DocumentSet.index.ImportOptions.ocr.label_html=Scanned documents (<a href="https://blog.overviewdocs.com/2015/10/13/overview-and-optical-character-recognition/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
+views.DocumentSet.index.ImportOptions.ocr.true=Convert to text if needed (OCR)
+views.DocumentSet.index.ImportOptions.ocr.false=Assume documents are already text (faster import)
 views.DocumentSet.index.ImportOptions.title=Import options
 
 views.DocumentSet.show.DocumentListParamsSelector.ObjectsOrDocumentSetView.all=%s all documents

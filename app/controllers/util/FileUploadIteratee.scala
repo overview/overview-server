@@ -1,14 +1,18 @@
 package controllers.util
 
+import akka.stream.scaladsl.{Flow,Keep,Sink}
+import akka.util.ByteString
 import java.util.UUID
 import org.postgresql.PGConnection
 import play.api.http.HeaderNames.{ CONTENT_DISPOSITION, CONTENT_TYPE, CONTENT_RANGE }
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.{ Done, Input, Iteratee }
+import play.api.libs.streams.Accumulator
 import play.api.mvc.{ RequestHeader, Result }
 import play.api.mvc.Results.BadRequest
+import scala.concurrent.Future
 
 import com.overviewdocs.database.{HasBlockingDatabase,LargeObject}
+import controllers.iteratees.Chunker
 import models.upload.OverviewUpload
 
 /**
@@ -42,51 +46,44 @@ trait FileUploadIteratee {
   /**
    * Checks the validity of the requests and processes the upload.
    */
-  def store(userId: Long, guid: UUID, requestHeader: RequestHeader, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
-
+  def store(userId: Long, guid: UUID, requestHeader: RequestHeader, bufferSize: Int = DefaultBufferSize): Accumulator[ByteString, Either[Result, OverviewUpload]] = {
     val uploadRequest = UploadRequest(requestHeader).toRight(BadRequest)
 
     uploadRequest.fold(
-      errorStatus => Done(Left(errorStatus), Input.Empty),
-      request => handleUploadRequest(userId, guid, request, bufferSize))
+      errorStatus => Accumulator(Sink.ignore).map(_ => Left(errorStatus)),
+      request => handleUploadRequest(userId, guid, request, bufferSize)
+    )
   }
 
   /**
-   * @return an Iteratee for processing an upload request specified by info
-   * The Iteratee will continue to consume the uploaded data even if an
+   * @return an Accumulator for processing an upload request specified by info
+   * The Accumulator will continue to consume the uploaded data even if an
    * error is encountered, but will not ignore the data received after the
    * error occurs.
    */
-  private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest, bufferSize: Int): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
-    val initialUpload = findValidUploadRestart(userId, guid, request)
+  private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest, bufferSize: Int): Accumulator[ByteString, Either[Result, OverviewUpload]] = {
+    // TODO make this step async
+    val initialUpload: Either[Result, OverviewUpload] = findValidUploadRestart(userId, guid, request)
       .getOrElse(Right(createUpload(userId, guid, request.contentDisposition, request.contentType, request.contentLength)))
 
-    var buffer = Array[Byte]()
+    val buffer = Flow.fromGraph(new Chunker(bufferSize).named("Chunker"))
+    val write: Sink[ByteString, Future[Either[Result, OverviewUpload]]] =
+      Sink.foldAsync(initialUpload)({ (upload: Either[Result, OverviewUpload], chunk: ByteString) =>
+        Future.successful(upload.right.map(u => appendChunk(u, chunk.toArray)))
+      })
 
-    Iteratee.fold[Array[Byte], Either[Result, OverviewUpload]](initialUpload) { (upload, chunk) =>
-      val validUpload = upload.right.flatMap(validUploadWithChunk(_, chunk).toRight(BadRequest))
-      validUpload.right.flatMap { u =>
-        if ((buffer.size + chunk.size) >= bufferSize) {
-          val bufferedChunk = buffer ++ chunk
-          buffer = Array[Byte]()
-          Right(appendChunk(u, bufferedChunk))
-        } else {
-          buffer ++= chunk
-          Right(u)
-        }
-      }
-    } map { u =>
-      if (buffer.size > 0) u.right.map(appendChunk(_, buffer))
-      else u
-    }
+    val sink = buffer.toMat(write)(Keep.right)
+
+    Accumulator(sink)
   }
 
   /**
    * If adding the chunk to the upload does not exceed the expected
    * size of the upload, @return Some(upload), None otherwise
    */
-  private def validUploadWithChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] =
+  private def validUploadWithChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = {
     Some(upload).filter(u => u.uploadedFile.size + chunk.size <= u.size)
+  }
 
   /**
    * If the upload exists, verify the validity of the restart.
