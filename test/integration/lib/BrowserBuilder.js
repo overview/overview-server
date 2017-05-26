@@ -53,7 +53,7 @@ module.exports = {
       .usingServer(options.seleniumLocation.url)
       .forBrowser('chrome')
       .withCapabilities(options.desiredCapabilities)
-      .setLoggingPrefs({ driver: 'ALL', server: 'ALL', browser: 'ALL' })
+      .setLoggingPrefs({ browser: 'ALL' })
       .build()
 
     driver.setFileDetector(new FileDetector())
