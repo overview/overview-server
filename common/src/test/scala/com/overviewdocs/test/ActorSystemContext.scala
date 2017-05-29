@@ -15,5 +15,5 @@ trait ActorSystemContext
   implicit lazy val system: ActorSystem = ActorSystem()
   implicit val timeout: Timeout = Timeout(21474835000L, java.util.concurrent.TimeUnit.MILLISECONDS)
 
-  override def after = TestKit.shutdownActorSystem(system)
+  override def after = shutdown(system)
 }
