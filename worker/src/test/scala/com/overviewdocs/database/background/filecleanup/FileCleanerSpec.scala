@@ -4,10 +4,9 @@ import akka.actor._
 import akka.testkit.TestActorRef
 import FileCleanerProtocol._
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import scala.concurrent.duration.Duration
-import scala.concurrent.Promise
+import scala.concurrent.{Future,Promise}
 
 import com.overviewdocs.test.ActorSystemContext
 
@@ -15,53 +14,44 @@ class FileCleanerSpec extends Specification with Mockito {
   sequential
 
   "FileCleaner" should {
+    trait FileCleaningScope extends ActorSystemContext {
+      val mockFileRemover = smartMock[FileRemover]
 
-    "start cleaning" in new FileCleaningScope {
-      fileCleaner ! Clean(fileId)
-      deleteFile.success(())
-      
-      expectMsg(CleanComplete(fileId))
-      
-      there was one(mockFileRemover).deleteFile(fileId)
+      class TestFileCleaner extends FileCleaner {
+        override protected val fileRemover = mockFileRemover
+      }
+
+      lazy val fileCleaner: TestActorRef[TestFileCleaner] = TestActorRef(Props(new TestFileCleaner))
+    }
+
+    "call FileCleaner.deleteFile" in new FileCleaningScope {
+      mockFileRemover.deleteFile(any) returns Future.successful(())
+      fileCleaner ! Clean(1L)
+
+      expectMsg(CleanComplete(1L))
+
+      there was one(mockFileRemover).deleteFile(1L)
     }
 
     "notify requester when done" in new FileCleaningScope {
-      fileCleaner ! Clean(fileId)
+      val promise = Promise[Unit]()
+      mockFileRemover.deleteFile(any) returns promise.future
+
+      fileCleaner ! Clean(1L)
       expectNoMsg(Duration.Zero)
-      deleteFile.success(())
+      promise.success(())
 
-      expectMsg(CleanComplete(fileId))
+      expectMsg(CleanComplete(1L))
     }
-    
+
     "notify requester on failure" in new FileCleaningScope {
-      fileCleaner ! Clean(fileId)
-      val error = new Exception("something baaad is happening in Oz")
-      deleteFile.failure(error)
-      
-      expectMsg(CleanComplete(fileId))
+      mockFileRemover.deleteFile(any) returns Future.failed(new Exception("something"))
+
+      fileCleaner ! Clean(1L)
+
+      expectMsg(CleanComplete(1L))
     }
   }
-
-  abstract class FileCleaningScope extends ActorSystemContext with Before {
-    val fileId = 10l
-    var deleteFile: Promise[Unit] = _
-    var fileCleaner: TestActorRef[TestFileCleaner] = _
-    
-    def mockFileRemover = fileCleaner.underlyingActor.mockFileRemover
-    
-    override def before = {
-      deleteFile = Promise[Unit]()
-      fileCleaner = TestActorRef(Props(new TestFileCleaner))
-      
-      fileCleaner.underlyingActor.mockFileRemover.deleteFile(any) returns deleteFile.future
-    }
-  }
-
-  class TestFileCleaner extends FileCleaner {
-    override protected val fileRemover = smartMock[FileRemover]
-    def mockFileRemover = fileRemover
-  }
-
 }
 
 
