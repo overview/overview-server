@@ -69,36 +69,28 @@ class DeletedFileCleanerSpec extends Specification with Mockito {
 
   }
 
-  abstract class DeletedFileScope extends ActorSystemContext with Before {
+  trait DeletedFileScope extends ActorSystemContext {
     def fileIds = Vector(0L, 1L)
-    var deletedFileCleaner: ActorRef = _
-    var cleaner: TestProbe = _
-    
-    override def before = {
-      cleaner = TestProbe()
-      deletedFileCleaner = system.actorOf(Props(new TestDeletedFileCleaner(cleaner.ref, fileIds)))
-    }
+
+    lazy val cleaner = TestProbe()
+    lazy val deletedFileCleaner = system.actorOf(Props(new TestDeletedFileCleaner(cleaner.ref, fileIds)))
   }
   
-  abstract class NoDeletedFileScope extends DeletedFileScope {
+  trait NoDeletedFileScope extends DeletedFileScope {
     override def fileIds = Vector.empty
   }
   
-  abstract class CompletingCleanerScope extends DeletedFileScope {
-    
-    override def before = {
-      super.before
-      cleaner.setAutoPilot(new CompletingCleaner)
-    }
-    
-    class CompletingCleaner extends TestActor.AutoPilot {
-      def run(sender: ActorRef, msg: Any): TestActor.AutoPilot =
-        msg match {
+  trait CompletingCleanerScope extends DeletedFileScope {
+    override lazy val cleaner = {
+      val ret = TestProbe()
+      ret.setAutoPilot(new TestActor.AutoPilot {
+      def run(sender: ActorRef, msg: Any): TestActor.AutoPilot = msg match {
         case Clean(id) => { 
           sender.tell(CleanComplete(id), testActor)
           TestActor.KeepRunning 
         }
-      }
+      }})
+      ret
     }
   }
 
