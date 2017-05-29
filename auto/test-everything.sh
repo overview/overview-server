@@ -51,7 +51,7 @@ overview-server/worker/worker &
 PIDS="$PIDS $!"
 
 echo "Waiting for server to start..." >&2
-until $(echo | nc localhost 9000 -w 0 2>/dev/null); do sleep 1; done
+until $(echo | nc localhost 9000 -w 1 2>/dev/null); do sleep 1; done
 echo "Waiting an additional 60s for system to calm down..." >&2
 sleep 60
 
