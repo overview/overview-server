@@ -65,7 +65,7 @@ define [
         view.$el.remove()
 
       it 'should set the <ul> height appropriately', ->
-        expect(view.$('ul').height()).to.eq(320)
+        expect(view.$('ul').height()).to.eq(20 * view.$('li:eq(0)').height())
 
       it 'should empty on reset', ->
         collection.reset()
