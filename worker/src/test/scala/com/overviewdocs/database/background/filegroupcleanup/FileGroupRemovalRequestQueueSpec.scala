@@ -2,7 +2,7 @@ package com.overviewdocs.background.filegroupcleanup
 
 import akka.actor.{ActorRef,Props}
 import akka.testkit.TestProbe
-import org.specs2.mutable.{Before,Specification}
+import org.specs2.mutable.Specification
 import scala.concurrent.duration.Duration
 
 import com.overviewdocs.background.filegroupcleanup.FileGroupCleanerProtocol._
@@ -12,43 +12,30 @@ import com.overviewdocs.test.ActorSystemContext
 class FileGroupRemovalRequestQueueSpec extends Specification {
   sequential
 
-  
+  trait FileGroupRemovalRequestQueueScope extends ActorSystemContext {
+    lazy val cleaner = TestProbe()
+
+    class TestFileGroupRemovalRequestQueue extends FileGroupRemovalRequestQueue {
+      override protected val fileGroupCleaner: ActorRef = cleaner.ref
+    }
+
+    lazy val requestQueue = system.actorOf(Props(new TestFileGroupRemovalRequestQueue))
+  }
+
   "FileGroupRemovalRequestQueue" should {
-    
     "start file removal when request is received" in new FileGroupRemovalRequestQueueScope {
-      requestQueue ! RemoveFileGroup(fileGroupId)
-      
-      fileGroupCleaner.expectMsg(Clean(fileGroupId))
+      requestQueue ! RemoveFileGroup(1L)
+      cleaner.expectMsg(Clean(1L))
     }
-    
+
     "send next request in queue when previous requests completes" in new FileGroupRemovalRequestQueueScope {
-      requestQueue ! RemoveFileGroup(fileGroupId)
-      requestQueue ! RemoveFileGroup(nextFileGroupId)
-      
-      fileGroupCleaner.expectMsg(Clean(fileGroupId))
-      fileGroupCleaner.expectNoMsg(Duration.Zero)
-      
-      requestQueue.tell(CleanComplete(fileGroupId), fileGroupCleaner.ref)
-      
-      fileGroupCleaner.expectMsg(Clean(nextFileGroupId))
+      requestQueue ! RemoveFileGroup(1L)
+      requestQueue ! RemoveFileGroup(2L)
+      cleaner.expectMsg(Clean(1L))
+      cleaner.expectNoMsg(Duration.Zero)
+
+      requestQueue.tell(CleanComplete(1L), cleaner.ref)
+      cleaner.expectMsg(Clean(2L))
     }
-  }
-  
-  abstract class FileGroupRemovalRequestQueueScope extends ActorSystemContext with Before {
-    val fileGroupId = 1l
-    val nextFileGroupId = 2l
-    
-    var requestQueue: ActorRef = _
-    var fileGroupCleaner: TestProbe = _
-    
-    override def before = {
-      fileGroupCleaner = TestProbe()
-      requestQueue = system.actorOf(Props(new TestFileGroupRemovalRequestQueue(fileGroupCleaner.ref)))
-    }
-  }
-  
-  
-  class TestFileGroupRemovalRequestQueue(cleaner: ActorRef) extends FileGroupRemovalRequestQueue {
-    override protected val fileGroupCleaner = cleaner
   }
 }
