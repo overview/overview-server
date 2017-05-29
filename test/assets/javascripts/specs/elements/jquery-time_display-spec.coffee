@@ -9,7 +9,7 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
 
     beforeEach ->
       @sandbox = sinon.sandbox.create()
-      @sandbox.stub(i18n, 'translate', -> 'translated time')
+      @sandbox.stub(i18n, 'translate').returns('translated time')
       $el = $('<time datetime="2014-02-22T23:45:37Z">foo</time>')
 
     afterEach ->

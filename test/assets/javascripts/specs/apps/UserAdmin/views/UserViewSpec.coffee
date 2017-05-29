@@ -95,13 +95,13 @@ define [
       expect(view.$('a.delete').length).to.eq(0)
 
     it 'should not delete when user does not confirm', ->
-      @sandbox.stub(window, 'confirm', -> false)
+      @sandbox.stub(window, 'confirm').returns(false)
       view.$('a.delete').click()
       expect(window.confirm).to.have.been.calledWith('confirm.delete,user@example.org')
       expect(view.model.has('deleting')).to.eq(false)
 
     it 'should delete when user confirms', ->
-      @sandbox.stub(window, 'confirm', -> true)
+      @sandbox.stub(window, 'confirm').returns(true)
       view.$('a.delete').click()
       expect(view.model.has('deleting')).to.eq(true)
 

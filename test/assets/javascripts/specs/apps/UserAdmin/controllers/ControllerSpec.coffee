@@ -55,7 +55,7 @@ define [ 'backbone', 'apps/UserAdmin/controllers/Controller' ], (Backbone, Contr
     it 'should remove a user from the collection when delete is done', ->
       user = new MockUser(email: 'user@example.org', is_admin: false)
       users.add(user)
-      @sandbox.stub(Backbone, 'sync', (__, __1, options) -> options.success())
+      @sandbox.stub(Backbone, 'sync').callsFake((__, __1, options) -> options.success())
       user.set(deleting: true)
       expect(users.length).to.eq(0)
 

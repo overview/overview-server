@@ -14,7 +14,7 @@ define [
 
     beforeEach ->
       @sandbox = sinon.sandbox.create()
-      @sandbox.stub($.fn, 'spectrum', -> this) # spectrum is slow. Be fast.
+      @sandbox.stub($.fn, 'spectrum').returnsThis() # spectrum is slow. Be fast.
 
       i18n.reset_messages
         'views.Tree.show.tag_list.preamble': 'preamble'

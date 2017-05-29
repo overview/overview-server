@@ -17,7 +17,7 @@ define [
 
     beforeEach ->
       @sandbox = sinon.sandbox.create()
-      @sandbox.stub($.fn, 'modal', -> this)
+      @sandbox.stub($.fn, 'modal').returnsThis()
       @sandbox.stub(Backbone, 'ajax')
       @sandbox.stub(Backbone, 'sync') # just in case
 

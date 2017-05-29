@@ -133,7 +133,7 @@ define [
 
           describe 'after selecting options', ->
             it 'disables the "set options" button', ->
-              @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
+              @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog').callsFake((el, options) -> options.callback())
               view.$('.choose-options').click()
               expect(view.$('button.choose-options')).to.be.disabled
               expect(view.$('.upload-prompt button.select-files')).to.be.disabled
@@ -261,7 +261,7 @@ define [
             addSomeFiles()
             model.set(status: 'waiting')
 
-            @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
+            @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog').callsFake((el, options) -> options.callback())
             view.$('.choose-options').click()
             $('body').append(view.el)
 
@@ -313,7 +313,7 @@ define [
         model.set(status: 'waiting')
 
         # choose options
-        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
+        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog').callsFake((el, options) -> options.callback())
         view.$('.choose-options').click()
 
         expect($.fn.submit).to.have.been.called
@@ -323,7 +323,7 @@ define [
         model.set(status: 'uploading')
 
         # choose options
-        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
+        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog').callsFake((el, options) -> options.callback())
         view.$('.choose-options').click()
 
         # finish uploading
@@ -332,7 +332,7 @@ define [
         expect($.fn.submit).to.have.been.called
 
       it 'does not submit the form until the upload is finished', ->
-        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
+        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog').callsFake((el, options) -> options.callback())
         view.$('.choose-options').click()
 
         expect($.fn.submit).not.to.have.been.called
