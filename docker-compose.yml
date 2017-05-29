@@ -8,50 +8,39 @@
 #   * :9200 -> ElasticSearch (dev environment)
 #   * :9201 -> ElasticSearch (test environment)
 
-# Volumes...
+version: "3"
 
-overview-dev-database-data:
-  container_name: overview-dev-database-data
-  image: busybox
-  volumes:
-    - /var/lib/postgresql/data
-  command: /bin/true
+volumes:
+  overview-dev-database-data:
+  overview-dev-searchindex-data:
 
-overview-dev-searchindex-data:
-  container_name: overview-dev-searchindex-data
-  image: busybox
-  volumes:
-    - /usr/share/elasticsearch/data
-  command: /bin/true
+services:
+  overview-dev-redis:
+    container_name: overview-dev-redis 
+    image: redis:2.8
+    ports:
+      - "9020:6379"
 
-# Servers...
+  overview-dev-database:
+    container_name: overview-dev-database
+    image: overview/database
+    volumes:
+      - overview-dev-database-data:/var/lib/postgresql/data
+    ports:
+      - "9010:5432"
 
-overview-dev-redis:
-  container_name: overview-dev-redis 
-  image: redis:2.8
-  ports:
-    - "9020:6379"
+  overview-dev-searchindex:
+    container_name: overview-dev-searchindex
+    image: overview/searchindex
+    volumes:
+      - overview-dev-searchindex-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
 
-overview-dev-database:
-  container_name: overview-dev-database
-  image: overview/database
-  volumes_from:
-    - overview-dev-database-data
-  ports:
-    - "9010:5432"
-
-overview-dev-searchindex:
-  container_name: overview-dev-searchindex
-  image: overview/searchindex
-  volumes_from:
-    - overview-dev-searchindex-data
-  ports:
-    - "9200:9200"
-
-# We run an entirely separate cluster for test SearchIndex; we'll delete all
-# indices in every test.
-overview-test-searchindex:
-  container_name: overview-test-searchindex
-  image: overview/searchindex
-  ports:
-    - "9201:9200"
+  # We run an entirely separate cluster for test SearchIndex; we'll delete all
+  # indices in every test.
+  overview-test-searchindex:
+    container_name: overview-test-searchindex
+    image: overview/searchindex
+    ports:
+      - "9201:9200"

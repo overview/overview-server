@@ -17,6 +17,7 @@ echo "Waiting for database..."
 # Gotta use "sh", not "/bin/sh", or Windows 10 gives error:
 # stat: C:/Program Files/Git/usr/bin/sh: no such file or directory
 docker run -i -t \
+  --network overviewserver_default \
   --link overview-dev-database \
   --rm busybox \
   sh -c 'until $(echo | nc overview-dev-database 5432 2>/dev/null); do sleep 1; done'
