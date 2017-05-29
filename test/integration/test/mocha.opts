@@ -1,4 +1,4 @@
 --harmony-async-await
---timeout 60s
+--timeout 90s
 --slow 3s
 --reporter spec
