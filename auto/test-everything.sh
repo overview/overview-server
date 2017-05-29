@@ -20,6 +20,8 @@ docker-compose up -d
 
 export DATABASE_PORT=9010
 export OVERVIEW_MULTI_USER=true
+export BLOB_STORAGE_FILE_BASE_DIRECTORY="$DIR/blob-storage"
+mkdir -p "$BLOB_STORAGE_FILE_BASE_DIRECTORY"
 # All other defaults are good
 
 auto/setup-coffee-tests.sh
