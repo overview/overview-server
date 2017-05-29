@@ -17,10 +17,9 @@ import org.postgresql.PGConnection
  * Reads Hikari connection configuration from Typesafe Config, in `db.default`.
  */
 object DB {
-  lazy val dataSource: HikariDataSource = {
-    val hikariConfig = DatabaseConfiguration.fromConfig
-    new HikariDataSource(hikariConfig)
-  }
+  val hikariConfig = DatabaseConfiguration.fromConfig
+
+  lazy val dataSource: HikariDataSource = new HikariDataSource(hikariConfig)
 
   /**
    * @return a connection. Caller is responsible for closing connection.

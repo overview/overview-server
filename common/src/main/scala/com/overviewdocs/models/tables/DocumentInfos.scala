@@ -52,7 +52,7 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     displayMethod,
     isFromOcr,
     thumbnailLocation
-  ).<>[DocumentInfo, Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean], Option[String]]](
+  ).<>(
     (t: Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean], Option[String]]) => DocumentInfo.apply(
       t._1,
       t._2,

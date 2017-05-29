@@ -59,7 +59,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     metadataJson,
     thumbnailLocation,
     text
-  ).<>[Document,Tuple16[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[String]]](
+  ).<>(
     (t: Tuple16[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[String]]) => Document.apply(
       t._1,
       t._2,

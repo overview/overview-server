@@ -16,7 +16,7 @@ object Dependencies {
     val config = "com.typesafe" % "config" % "1.3.0"
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "2.4.1"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "2.6.2"
     val icu4j = "com.ibm.icu" % "icu4j" % "56.1"
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.6.4" // for reindex
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
@@ -30,15 +30,15 @@ object Dependencies {
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4" // for Query
     val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.4"
-    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.14.6"
+    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.15.0"
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
     val playMailer = "com.typesafe.play" %% "play-mailer" % "4.0.0-M1"
     val playPluginsUtil = "com.typesafe.play.plugins" %% "play-plugins-util" % "2.3.0"
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
-    val postgresql = "org.postgresql" % "postgresql" % "9.4-1205-jdbc42"
+    val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
     val redis = "net.debasishg" %% "redisreact" % "0.8"
     val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
-    val slick = "com.typesafe.slick" %% "slick" % "3.1.0"
+    val slick = "com.typesafe.slick" %% "slick" % "3.2.0"
     val specs2Core = "org.specs2" %% "specs2-core" % "3.8.9"
     val specs2Junit = "org.specs2" %% "specs2-junit" % "3.8.9" // for XML reporting, for Jenkins
     val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % "3.8.9"

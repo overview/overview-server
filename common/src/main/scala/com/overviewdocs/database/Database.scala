@@ -28,9 +28,9 @@ import com.overviewdocs.database.Slick.api._
   * The constructor is private to force use of the singleton object returned by
   * `Database()`.
   */
-class Database(val dataSource: DataSource) {
+class Database(val dataSource: DataSource, val maxConnections: Int) {
   /** Exposes the Slick Database. */
-  val slickDatabase = DatabaseFactory.forDataSource(dataSource)
+  val slickDatabase = DatabaseFactory.forDataSource(dataSource, Some(maxConnections))
 
   /** Exposes the Slick Database API.
     *
@@ -197,7 +197,7 @@ class Database(val dataSource: DataSource) {
 
 
 object Database {
-  private lazy val database = new Database(DB.dataSource)
+  private lazy val database = new Database(DB.dataSource, DB.hikariConfig.getMaximumPoolSize)
   
   def apply(): Database = database
 }

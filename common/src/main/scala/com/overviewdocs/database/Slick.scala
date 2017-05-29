@@ -4,20 +4,19 @@ import com.github.tminglei.slickpg._
 import java.nio.charset.Charset
 import java.time.Instant
 import play.api.libs.json.{ JsObject, Json }
-import slick.driver.{ JdbcTypesComponent, PostgresDriver }
 
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{DocumentSetUser,UserRole}
 import com.overviewdocs.models.DocumentDisplayMethod
 
-trait MyPostgresDriver extends PostgresDriver
+trait MyPostgresProfile extends ExPostgresProfile
   with PgArraySupport
   with PgNetSupport
   with PgEnumSupport
 {
-  override val api = new APIPlus {}
+  override val api = APIPlus
 
-  trait APIPlus extends API
+  object APIPlus extends API
     with ArrayImplicits
     with NetImplicits
     with SimpleArrayPlainImplicits {
@@ -69,4 +68,4 @@ trait MyPostgresDriver extends PostgresDriver
  *   import com.overviewdocs.database.Slick.api._
  *   ... do stuff like at http://slick.typesafe.com/doc/3.0.0
  */
-object Slick extends MyPostgresDriver
+object Slick extends MyPostgresProfile
