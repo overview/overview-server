@@ -73,7 +73,7 @@ class DocumentSetShortcuts {
 
     debug(`recluster(${name}, ${JSON.stringify(options)})`)
     await this.b.click({ link: 'Add view' })
-    await this.b.click('a[data-plugin-url="about:tree"]')
+    await this.b.click({ css: 'a[data-plugin-url="about:tree"]', wait: true }) // wait for menu to appear
     await this.b.sendKeys(name, { css: 'input[name=tree_title]', wait: true }) // wait because modal fades in
 
     if (options.tag) {
