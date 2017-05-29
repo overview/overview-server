@@ -2,60 +2,49 @@ package com.overviewdocs.background.filegroupcleanup
 
 import org.specs2.mutable.Specification
 import com.overviewdocs.test.ActorSystemContext
-import org.specs2.mutable.Before
 import org.specs2.mock.Mockito
-import scala.concurrent.Promise
+import scala.concurrent.{Future,Promise}
+import scala.concurrent.duration.Duration
 import akka.actor.Props
 import akka.testkit.TestActorRef
 
-import FileGroupCleanerProtocol._
+import FileGroupCleanerProtocol.{Clean,CleanComplete}
 
 class FileGroupCleanerSpec extends Specification with Mockito {
   sequential
 
+  trait FileGroupCleanerScope extends ActorSystemContext {
+    val mockFileGroupRemover = smartMock[FileGroupRemover]
+
+    class TestFileGroupCleaner extends FileGroupCleaner {
+      override protected val fileGroupRemover = mockFileGroupRemover
+    }
+
+    lazy val fileGroupCleaner = TestActorRef(Props(new TestFileGroupCleaner))
+  }
+
   "FileGroupCleaner" should {
-    
     "start cleaning" in new FileGroupCleanerScope {
-      fileGroupCleaner ! Clean(fileGroupId)
-      
-      there was one(mockFileGroupRemover).remove(fileGroupId)
+      mockFileGroupRemover.remove(any) returns Future.successful(())
+      fileGroupCleaner ! Clean(1L)
+      there was one(mockFileGroupRemover).remove(1L)
     }
-    
+
     "notify requester when done" in new FileGroupCleanerScope {
-      fileGroupCleaner ! Clean(fileGroupId)
-      
-      fileGroupRemoved.success(())
-      
-      expectMsg(CleanComplete(fileGroupId))
+      val promise = Promise[Unit]()
+      mockFileGroupRemover.remove(any) returns promise.future
+
+      fileGroupCleaner ! Clean(1L)
+      expectNoMsg(Duration.Zero)
+
+      promise.success(())
+      expectMsg(CleanComplete(1L))
     }
-    
+
     "notify requester on failure" in new FileGroupCleanerScope {
-      fileGroupCleaner ! Clean(fileGroupId)
-      
-      fileGroupRemoved.failure(new Exception("fail"))
-      
-      expectMsg(CleanComplete(fileGroupId))
+      mockFileGroupRemover.remove(any) returns Future.failed(new Exception("fail"))
+      fileGroupCleaner ! Clean(1L)
+      expectMsg(CleanComplete(1L))
     }
-  }
-  
-  abstract class FileGroupCleanerScope extends ActorSystemContext with Before {
-    
-    val fileGroupId = 10l
-    var fileGroupRemoved: Promise[Unit] = _
-    var fileGroupCleaner: TestActorRef[TestFileGroupCleaner] = _
-    
-    def mockFileGroupRemover = fileGroupCleaner.underlyingActor.mockFileGroupRemover
-    
-    override def before = {
-      fileGroupCleaner = TestActorRef(Props(new TestFileGroupCleaner))
-      fileGroupRemoved = Promise()
-      mockFileGroupRemover.remove(any) returns fileGroupRemoved.future
-    }
-  }
-  
-  class TestFileGroupCleaner extends FileGroupCleaner {
-    override protected val fileGroupRemover = smartMock[FileGroupRemover]
-    def mockFileGroupRemover = fileGroupRemover
-    
   }
 }
