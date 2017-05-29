@@ -2,75 +2,63 @@ package com.overviewdocs.jobhandler.filegroup.task
 
 import java.nio.file.Path
 import java.nio.file.Paths
-
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Before
-
 import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 
 class DirectoryCleanerSpec extends Specification with Mockito {
+
+  trait DirectoryCleanerContext extends Scope {
+    class TestDirectoryCleaner extends DirectoryCleaner {
+      val mockFileSystem = smartMock[FileSystem]
+
+      override val fileSystem = mockFileSystem
+
+      def initFileSystem(directoryContents: Map[Path, Seq[Path]]) = {
+        directoryContents.foreach { case (dir, contents) =>
+          mockFileSystem.listContents(dir) returns contents
+          mockFileSystem.isDirectory(dir) returns true
+        }
+      }
+    }
+
+    val directoryCleaner = new TestDirectoryCleaner
+  }
 
   "DirectorCleaner" should {
 
     "deletes the directory, then creates it" in new DirectoryCleanerContext {
+      val directory = Paths.get("dirname")
+      directoryCleaner.initFileSystem(Map((directory -> Seq())))
       directoryCleaner.createCleanDirectory(directory)
 
-      there was one(directoryCleaner.fileSystem).createDirectory(directory)
-      there was one(directoryCleaner.fileSystem).deleteIfExists(directory)
+      there was one(directoryCleaner.mockFileSystem).createDirectory(directory)
+      there was one(directoryCleaner.mockFileSystem).deleteIfExists(directory)
     }
 
-    "deletes directory contents recursively" in new DirectoryWithContent {
+    "deletes directory contents recursively" in new DirectoryCleanerContext {
+      val directory = Paths.get("dirname")
+      val file = Paths.get("file")
+      val subdir = Paths.get("subdir")
+      val subdirFile = Paths.get("file in subdir")
+
+      directoryCleaner.initFileSystem(Map(
+        (directory -> Seq(file, subdir)),
+        (subdir -> Seq(subdirFile))
+      ))
+
       directoryCleaner.createCleanDirectory(directory)
 
-      there was one(directoryCleaner.fileSystem).deleteIfExists(file)
-      there was one(directoryCleaner.fileSystem).deleteIfExists(subdirFile) andThen
-        one(directoryCleaner.fileSystem).deleteIfExists(subdir) andThen
-        one(directoryCleaner.fileSystem).deleteIfExists(directory)
+      there was one(directoryCleaner.mockFileSystem).deleteIfExists(file)
+      there was one(directoryCleaner.mockFileSystem).deleteIfExists(subdirFile) andThen
+        one(directoryCleaner.mockFileSystem).deleteIfExists(subdir) andThen
+        one(directoryCleaner.mockFileSystem).deleteIfExists(directory)
     }
     
-    "doesn't delete non-existing directory" in new NoDirectoryContext {
+    "doesn't delete non-existing directory" in new DirectoryCleanerContext {
+      val directory = Paths.get("dirname")
       directoryCleaner.createCleanDirectory(directory) must not(throwA[Exception])
     }
-
-  }
-
-  trait DirectoryCleanerContext extends Before {
-
-    val directory = Paths.get("dirname")
-    val directoryCleaner = new TestDirectoryCleaner
-
-    protected def dirContents: Map[Path, Seq[Path]] = Map((directory -> Seq.empty))
-
-    override def before = directoryCleaner.initFileSystem(dirContents)
-
-  }
-
-  trait DirectoryWithContent extends DirectoryCleanerContext {
-    val file = Paths.get("file")
-    val subdir = Paths.get("subdir")
-    val subdirFile = Paths.get("file in subdir")
-
-    override protected def dirContents = Map(
-      (directory -> Seq(file, subdir)),
-      (subdir -> Seq(subdirFile)))
-
-  }
-  
-  trait NoDirectoryContext extends DirectoryCleanerContext {
-    override protected def dirContents = Map.empty
-  }
-
-  class TestDirectoryCleaner extends DirectoryCleaner {
-
-    override val fileSystem = smartMock[FileSystem]
-
-    def initFileSystem(directoryContents: Map[Path, Seq[Path]]) =
-      directoryContents.foreach {
-        case (dir, contents) =>
-          fileSystem.listContents(dir) returns contents
-          fileSystem.isDirectory(dir) returns true
-
-      }
 
   }
 }
