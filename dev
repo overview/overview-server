@@ -13,14 +13,34 @@ export DATABASE_PORT=9010
 export DATABASE_NAME=overview-dev
 export DATABASE_SERVER_NAME=$(test $OVERVIEW_ADDRESS && echo $OVERVIEW_ADDRESS || docker-machine ip default 2>/dev/null || docker inspect -f '{{ .NetworkSettings.Gateway }}' overview-dev-database)
 
-echo "Waiting for database..."
-# Gotta use "sh", not "/bin/sh", or Windows 10 gives error:
-# stat: C:/Program Files/Git/usr/bin/sh: no such file or directory
-docker run -i -t \
-  --network overviewserver_default \
-  --link overview-dev-database \
-  --rm busybox \
-  sh -c 'until $(echo | nc overview-dev-database 5432 2>/dev/null); do sleep 1; done'
+wait_for_database() {
+  # Gotta use "sh", not "/bin/sh", or Windows 10 gives error:
+  # stat: C:/Program Files/Git/usr/bin/sh: no such file or directory
+  docker run -i -t \
+    --network overviewserver_default \
+    --link overview-dev-database \
+    --rm busybox \
+    sh -c 'until $(echo | nc overview-dev-database 5432 2>/dev/null); do sleep 1; done'
+}
+
+echo "Waiting for database to spin up..."
+wait_for_database
+
+# Configure Postgres -- overwriting existing config.
+#
+# Two cases to remember:
+# 1. When we run ./dev for the first time, Postgres will run initdb. Initdb
+#    will FAIL if we wrote a config file to the database directory. See
+#    https://github.com/docker-library/postgres/issues/105
+# 2. When we run ./dev for the millionth time, we may have adjusted some server
+#    settings.
+echo "Configuring database and waiting for it to restart..."
+cat "$(dirname "$0")"/dev-config/pg-setup.sql | \
+  docker exec -i overview-dev-database \
+    psql -U postgres postgres
+
+docker-compose restart overview-dev-database
+wait_for_database
 
 echo "Starting..."
 ./sbt '; all/compile; db-evolution-applier/run; worker/re-start; run'
