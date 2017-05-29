@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 docker-compose start
 
 # [adam, 2016-03-30] Okay, obviously exporting environment variables is the
