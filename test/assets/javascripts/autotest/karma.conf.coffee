@@ -9,7 +9,7 @@ module.exports = (config) ->
     autoWatch: true
     basePath: base
     browsers: [ 'Electron' ]
-    frameworks: [ 'mocha', 'requirejs' ]
+    frameworks: [ 'mocha', 'requirejs', 'chai', 'chai-as-promised', 'chai-jquery', 'sinon-chai' ]
     preprocessors: { '**/*.coffee': ['coffee'] }
     reporters: [ 'dots', 'junit' ]
     reportSlowerThan: 40 # TODO upgrade to PhantomJS 2 when it comes out, and change this to 10
@@ -29,10 +29,5 @@ module.exports = (config) ->
       { pattern: "#{src}/**/*.js", included: false }
       { pattern: "#{src}/**/*.coffee", included: false }
       { pattern: "#{spec}/**/*.coffee", included: false }
-      { pattern: "#{modules}/chai/chai.js", included: false }
-      { pattern: "#{modules}/chai-jquery/chai-jquery.js", included: false }
-      { pattern: "#{modules}/chai-as-promised/lib/chai-as-promised.js", included: false }
-      { pattern: "#{modules}/sinon/pkg/sinon.js", included: false }
-      { pattern: "#{modules}/sinon-chai/lib/**/*.js", included: false }
       "#{framework}/requirejs_config.coffee"
     ]

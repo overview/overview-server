@@ -35,7 +35,7 @@ define [
         'views.Tree.show.Tour.tipNumber': 'tipNumber,{0},{1}'
 
       @sandbox = sinon.sandbox.create(useFakeServer: true)
-      @sandbox.server.autoRespond = true
+      @sandbox.server.respondImmediately = true
 
     afterEach ->
       @sandbox.restore()

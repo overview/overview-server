@@ -4,6 +4,15 @@ define [
   describe 'models/TransactionQueue', ->
     beforeEach ->
       @sandbox = sinon.sandbox.create(useFakeServer: true)
+      @sandbox.server.respondImmediately = false
+      @sandbox.server.autoRespond = false
+      # when sinon XHR gets a request, it'll install fake setTimeout, even
+      # though we really don't want it. That means we can't use setTimeout()
+      # throughout this file.
+      @realSetTimeout = window.setTimeout
+      @nextTick = (fn) =>
+        @realSetTimeout.call(window, fn, 0)
+
       @sandbox.stub(console, 'log')
       @tq = new TransactionQueue()
       @tq.on('all', @allSpy = sinon.spy())
@@ -19,7 +28,7 @@ define [
         @success2 = sinon.spy()
         @options2 = sinon.stub().returns(url: '/bar', success: @success2)
         @promise2 = @tq.ajax(@options2)
-        setTimeout(done, 0) # let promises catch up
+        @nextTick(done) # wait for promises to catch up
 
       it 'should be unresolved', ->
         expect(@promise1).not.to.be.fulfilled
@@ -56,12 +65,11 @@ define [
 
           it 'should handle the next ajax call', (done) ->
             @tq.ajax(url: '/baz')
-            setTimeout(=>
+            @nextTick =>
               req = @sandbox.server.requests[2]
               expect(req).to.exist
               expect(req.url).to.eq('/baz')
               done()
-            , 0)
 
       describe 'on server error', ->
         beforeEach ->
@@ -91,7 +99,7 @@ define [
           # We can't use status 0 for the _test_ because that's a success for
           # file: protocol requests. So our code needs to handle status <= 0.
           @sandbox.server.requests[0].respond(-1, { 'Content-Type': 'application/json' }, '""')
-          setTimeout(done, 0)
+          @nextTick(done)
 
         it 'should not call success', -> expect(@success1).not.to.have.been.called
         it 'should not queue the next request', -> expect(@sandbox.server.requests.length).to.eq(1)
@@ -110,7 +118,7 @@ define [
           beforeEach (done) ->
             retry = @allSpy.args[0][2]
             retry()
-            setTimeout(done, 0)
+            @nextTick(done)
 
           it 'should neither resolve nor reject the promise', ->
             expect(@promise1).not.to.be.fulfilled
@@ -128,7 +136,7 @@ define [
 
     describe 'with a custom error handler', ->
       beforeEach ->
-        @sandbox.server.autoRespond = true
+        @sandbox.server.respondImmediately = true
         @sandbox.server.respondWith([ 500, { 'Content-Type': 'application/json' }, '{ "foo": "bar" }' ])
 
       it 'should let the custom handler invoke the original handler', ->

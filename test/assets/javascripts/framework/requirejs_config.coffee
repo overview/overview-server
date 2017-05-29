@@ -66,25 +66,13 @@ requirejs.config
     MassUpload: 'vendor/mass-upload'
     'chai': '../../../test/assets/javascripts/autotest/node_modules/chai/chai'
     'sinon': '../../../test/assets/javascripts/autotest/node_modules/sinon/pkg/sinon'
-    'sinon-chai': '../../../test/assets/javascripts/autotest/node_modules/sinon-chai/lib/sinon-chai'
-    'chai-as-promised': '../../../test/assets/javascripts/autotest/node_modules/chai-as-promised/lib/chai-as-promised'
-    'chai-jquery': '../../../test/assets/javascripts/autotest/node_modules/chai-jquery/chai-jquery'
 
   # ask Require.js to load these files (all our tests)
   deps: tests,
 
   # start test run, once Require.js is done
   callback: ->
-    require [
-      'chai'
-      'sinon'
-      'sinon-chai'
-      'chai-jquery'
-      'chai-as-promised'
-    ], (chai, sinon, sinonChai, chaiJquery, chaiAsPromised) ->
+    require [ 'chai', 'sinon' ], (chai, sinon) ->
       window.expect = chai.expect
-      #window.sinon = sinon -- this happens on its own
-      chai.use(chaiAsPromised) # first, so other chai plugins will work
-      chai.use(sinonChai)
-      chai.use(chaiJquery)
+      window.sinon = sinon
       window.__karma__.start()
