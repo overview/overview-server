@@ -79,7 +79,7 @@ object ApplicationBuild extends Build {
   )
 
   val ourTestOptions = Seq(
-    //Tests.Argument(TestFrameworks.Specs2, "xonly"),
+    Tests.Argument(TestFrameworks.Specs2, "xonly"),
     Tests.Argument(TestFrameworks.Specs2, "showtimes"),
     Tests.Argument("junitxml", "console")
   )
