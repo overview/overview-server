@@ -19,6 +19,7 @@ class EsHighlightBackendSpec extends NullBackendSpecification {
     }
 
     "return an empty list when there is no document" in new IndexScope {
+      await(testIndexClient.refresh)
       await(backend.index(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq())
     }
 
