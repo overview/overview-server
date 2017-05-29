@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node ./node_modules/.bin/mocha",
-    "test-with-jenkins": "JUNIT_REPORT_PATH=test-results.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_NAME='Integration tests' xvfb-run node /node_modules/.bin/mocha --reporter mocha-jenkins-reporter || true"
+    "test-with-jenkins": "JUNIT_REPORT_PATH=test-results.xml JUNIT_REPORT_STACK=1 JUNIT_REPORT_NAME='Integration tests' xvfb-run node ./node_modules/.bin/mocha --reporter mocha-jenkins-reporter || true"
   },
   "repository": {
     "type": "git",
