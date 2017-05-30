@@ -10,8 +10,7 @@ import scala.concurrent.ExecutionContext
 class CorsFilter @Inject() (implicit val mat: Materializer, ec: ExecutionContext) extends EssentialFilter {
   private val Headers = Seq(
     "Access-Control-Allow-Origin" -> "*",
-    "Access-Control-Allow-Headers" -> "origin, authorization, content-type, accept",
-    "Access-Control-Allow-Credentials" -> "true"
+    "Access-Control-Allow-Headers" -> "origin, authorization, content-type, accept"
   )
 
   def apply(nextFilter: EssentialAction) = new EssentialAction {
