@@ -280,6 +280,7 @@ object PodoFactory extends Factory {
     guid: UUID,
     contentType: String,
     name: String,
+    documentMetadataJson: Option[JsObject],
     size: Long,
     uploadedSize: Long,
     contentsOid: Long
@@ -289,6 +290,7 @@ object PodoFactory extends Factory {
     getId(guid),
     contentType,
     name,
+    documentMetadataJson,
     size,
     uploadedSize,
     contentsOid

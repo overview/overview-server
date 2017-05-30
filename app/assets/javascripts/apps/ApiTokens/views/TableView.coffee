@@ -23,7 +23,7 @@ define [
             <tr>
               <td class="token">
                 <% if (token.get('token')) { %>
-                  <%- token.get('token') %>
+                  <span><%- token.get('token') %></span><!-- span makes it easy for integration tests to detect -->
                 <% } else { %>
                   <i class="icon icon-spinner icon-spin"/>
                 <% } %>

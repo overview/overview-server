@@ -1,6 +1,7 @@
 package com.overviewdocs.models
 
 import java.util.UUID
+import play.api.libs.json.JsObject
 
 /** An in-progress upload.
   *
@@ -17,6 +18,7 @@ case class GroupedFileUpload(
   guid: UUID,
   contentType: String,
   name: String,
+  documentMetadataJson: Option[JsObject],
   size: Long,
   uploadedSize: Long,
   contentsOid: Long
@@ -28,6 +30,7 @@ object GroupedFileUpload {
     guid: UUID,
     contentType: String,
     name: String,
+    documentMetadataJson: Option[JsObject],
     size: Long
   )
 }

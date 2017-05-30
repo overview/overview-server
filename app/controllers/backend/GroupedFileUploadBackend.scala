@@ -61,6 +61,7 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend with DbBackend
     gfu.guid,
     gfu.contentType,
     gfu.name,
+    gfu.documentMetadataJson,
     gfu.size,
     gfu.uploadedSize,
     gfu.contentsOid
@@ -88,6 +89,7 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend with DbBackend
         attributes.guid,
         attributes.contentType,
         attributes.name,
+        attributes.documentMetadataJson,
         attributes.size,
         0L,
         oid

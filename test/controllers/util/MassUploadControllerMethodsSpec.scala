@@ -4,6 +4,7 @@ import akka.stream.scaladsl.{Source,Sink}
 import akka.util.ByteString
 import java.util.UUID
 import play.api.libs.iteratee.{Iteratee}
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
@@ -34,7 +35,8 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
         wantJsonResponse
       )
 
-      val headers: Seq[(String,String)] = Seq("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=foobar.txt")
+      val validHeaders: Seq[(String,String)] = Seq("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=foobar.txt")
+      val headers: Seq[(String,String)] = validHeaders
       lazy val request = FakeRequest().withHeaders(headers: _*)
       val source: Source[ByteString,_] = Source.empty
       lazy val result = action(request).run(source)
@@ -48,7 +50,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
     }
 
     "return BadRequest if missing Content-Length and Content-Range" in new CreateScope {
-      override val headers = Seq()
+      override val headers = Seq("Content-Disposition" -> "attachment; filename=foo.txt")
       h.status(result) must beEqualTo(h.BAD_REQUEST)
       h.contentAsString(result) must beEqualTo("Request must have Content-Range or Content-Length header")
     }
@@ -66,7 +68,19 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
       h.contentAsString(result) must /("code" -> "illegal-arguments")
     }
 
-    "create a GroupedFileUpload using Content-Length, Content-Type and Content-Disposition" in new CreateScope {
+    "return BadRequest if Overview-Document-Metadata-JSON is not valid JSON" in new CreateScope {
+      override val headers = validHeaders ++ Seq("Overview-Document-Metadata-JSON" -> "bla}")
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
+      h.contentAsString(result) must beEqualTo("Overview-Document-Metadata-JSON must be ASCII-encoded JSON Object")
+    }
+
+    "return BadRequest if Overview-Document-Metadata-JSON is a valid JSON value but not an Object" in new CreateScope {
+      override val headers = validHeaders ++ Seq("Overview-Document-Metadata-JSON" -> "[ 2 ]")
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
+      h.contentAsString(result) must beEqualTo("Overview-Document-Metadata-JSON must be ASCII-encoded JSON Object")
+    }
+
+    "create a GroupedFileUpload using Content-Length, Content-Type, and Content-Disposition" in new CreateScope {
       override val headers = Seq(
         "Content-Length" -> "20",
         "Content-Type" -> "application/foo",
@@ -78,6 +92,25 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
         guid,
         "application/foo",
         "foobar.txt",
+        None,
+        20L
+      ))
+    }
+
+    "decode Overview-Document-Metadata-JSON" in new CreateScope {
+      override val headers = Seq(
+        "Content-Length" -> "20",
+        "Content-Type" -> "application/foo",
+        "Content-Disposition" -> "attachment; filename=foobar.txt",
+        "Overview-Document-Metadata-JSON" -> "{ \"foo\":\"bar\" }"
+      )
+      h.status(result)
+      there was one(mockUploadBackend).findOrCreate(GroupedFileUpload.CreateAttributes(
+        fileGroup.id,
+        guid,
+        "application/foo",
+        "foobar.txt",
+        Some(Json.obj("foo" -> "bar")),
         20L
       ))
     }
@@ -94,6 +127,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
         guid,
         "application/foo",
         "元気なですか？.pdf",
+        None,
         20L
       ))
     }

@@ -9,18 +9,21 @@ module.exports = class ApiBrowser {
     if (!options.apiToken) throw new Error('Must pass options.apiToken, an API token')
     if (!options.baseUrl) throw new Error('Must pass options.baseUrl, a URL like "http://localhost:9000/api/v1"')
 
-    this._request = request.defaults({
+    this.request = request.defaults({
       baseUrl: options.baseUrl,
       auth: {
         user: options.apiToken,
         password: 'x-auth-token',
         sendImmediately: true,
       },
+      headers: {
+        'X-Requested-With': 'integration-test ApiBrowser', // bypass CSRF checks
+      }
     })
   }
 
   async _r(options) {
-    const body = await this._request(options)
+    const body = await this.request(options)
     return options.json ? body : JSON.parse(body)
   }
 

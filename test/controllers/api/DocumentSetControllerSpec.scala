@@ -4,6 +4,7 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.{ApiTokenBackend,DocumentSetBackend}
+import com.overviewdocs.metadata.{MetadataSchema,MetadataField,MetadataFieldType}
 import com.overviewdocs.models.DocumentSet
 
 class DocumentSetControllerSpec extends ApiControllerSpecification {
@@ -32,6 +33,34 @@ class DocumentSetControllerSpec extends ApiControllerSpecification {
       there was one(mockBackend).create(
         beLike[DocumentSet.CreateAttributes] { case attributes =>
           val expect = DocumentSet.CreateAttributes(title="foo-title").copy(createdAt=attributes.createdAt)
+          attributes must beEqualTo(expect)
+        },
+        beLike[String] { case s => s must beEqualTo(req.apiToken.createdBy) }
+      )
+    }
+
+    "add metadataSchema" in new CreateScope {
+      override lazy val req = fakeJsonRequest(Json.obj(
+        "title" -> "foo-title",
+        "metadataSchema" -> Json.obj(
+          "version" -> 1,
+          "fields" -> Json.arr(
+            Json.obj("name" -> "foo", "type" -> "String"),
+            Json.obj("name" -> "bar", "type" -> "String")
+          )
+        )
+      ))
+      status(result) must beEqualTo(CREATED)
+
+      there was one(mockBackend).create(
+        beLike[DocumentSet.CreateAttributes] { case attributes =>
+          val expect = DocumentSet.CreateAttributes(
+            title="foo-title",
+            metadataSchema=MetadataSchema(1, Seq(
+              MetadataField("foo", MetadataFieldType.String),
+              MetadataField("bar", MetadataFieldType.String)
+            ))
+          ).copy(createdAt=attributes.createdAt)
           attributes must beEqualTo(expect)
         },
         beLike[String] { case s => s must beEqualTo(req.apiToken.createdBy) }

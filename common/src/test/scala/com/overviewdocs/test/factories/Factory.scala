@@ -157,6 +157,7 @@ trait Factory {
     guid: UUID = new UUID(0L, 0L),
     contentType: String = "application/octet-stream",
     name: String = "filename.abc",
+    documentMetadataJson: Option[JsObject] = None,
     size: Long = 1024L,
     uploadedSize: Long = 1024L,
     contentsOid: Long = 0L

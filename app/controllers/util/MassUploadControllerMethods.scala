@@ -4,10 +4,12 @@ package controllers.util
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import java.util.UUID
+import play.api.libs.json.{JsObject,Json}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
+import scala.util.Try
 
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
@@ -23,15 +25,33 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
     uploadSinkFactory: (GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]],
     wantJsonResponse: Boolean
   ) extends EssentialAction {
-    private case class RequestInfo(filename: String, contentType: String, start: Long, total: Long)
+    private case class RequestInfo(
+      filename: String,
+      contentType: String,
+      metadataJson: Option[JsObject],
+      start: Long,
+      total: Long
+    )
     
     private object RequestInfo {
-      def fromRequest(request: RequestHeader): Option[RequestInfo] = {
+      def fromRequest(request: RequestHeader): Either[String, RequestInfo] = {
         val contentType = request.headers.get(CONTENT_TYPE).getOrElse("")
         val contentDisposition = request.headers.get(CONTENT_DISPOSITION)
         val filename: String = contentDisposition.flatMap(ContentDisposition(_).filename).getOrElse("")
 
-        def one(start: Long, total: Long) = RequestInfo(filename, contentType, start, total)
+        if (filename == "") return Left("Invalid or missing Content-Disposition filename")
+
+        val metadataJson: Option[JsObject] = request.headers.get("Overview-Document-Metadata-JSON") match {
+          case None => None
+          case Some(text) => {
+            Try(Json.parse(text).as[JsObject]).toOption match {
+              case None => return Left("Overview-Document-Metadata-JSON must be ASCII-encoded JSON Object")
+              case Some(jsObject) => Some(jsObject)
+            }
+          }
+        }
+
+        def one(start: Long, total: Long) = RequestInfo(filename, contentType, metadataJson, start, total)
 
         // A string matching "(\d{0,18})" cannot throw an exception when converted to Long.
         val rangeResults = request.headers.get(CONTENT_RANGE).flatMap { contentRanges =>
@@ -49,7 +69,7 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
           }
         }
 
-        (rangeResults ++ lengthResults).headOption
+        (rangeResults ++ lengthResults).headOption.toRight("Request must have Content-Range or Content-Length header")
       }
     }
 
@@ -72,6 +92,7 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
         guid,
         info.contentType,
         info.filename,
+        info.metadataJson,
         info.total
       )
       groupedFileUploadBackend.findOrCreate(attributes)
@@ -86,25 +107,18 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
     }
 
     override def apply(request: RequestHeader): Accumulator[ByteString,Result] = {
-      val infoOpt = RequestInfo.fromRequest(request)
-      
-      // Ensure we got the right headers, and a valid filename (parse-able and not empty)
-      if (infoOpt==None) {
-        return badRequest("Request must have Content-Range or Content-Length header")
-      } 
-      val info = infoOpt.get
-      if (info.filename=="") {
-        // Blank filename will actually cause exception in MIME type detection, ask me how I know
-        return badRequest("Invalid or missing Content-Disposition filename")
+      RequestInfo.fromRequest(request) match {
+        case Left(message) => badRequest(message)
+        case Right(info) => {
+          val futureAccumulator: Future[Accumulator[ByteString,Result]] = 
+            for {
+              fileGroup <- findOrCreateFileGroup
+              groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
+            } yield createAccumulator(groupedFileUpload, info)
+
+          Accumulator.flatten(futureAccumulator)(play.api.Play.current.materializer)
+        }
       }
-
-      val futureAccumulator: Future[Accumulator[ByteString,Result]] = 
-        for {
-          fileGroup <- findOrCreateFileGroup
-          groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
-        } yield createAccumulator(groupedFileUpload, info)
-
-      Accumulator.flatten(futureAccumulator)(play.api.Play.current.materializer)
     }
   }
 }

@@ -246,6 +246,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     guid: UUID,
     contentType: String,
     name: String,
+    documentMetadataJson: Option[JsObject],
     size: Long,
     uploadedSize: Long,
     contentsOid: Long
@@ -255,6 +256,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     guid,
     contentType,
     name,
+    documentMetadataJson,
     size,
     uploadedSize,
     contentsOid

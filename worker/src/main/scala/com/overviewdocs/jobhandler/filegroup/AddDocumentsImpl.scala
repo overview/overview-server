@@ -62,7 +62,11 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef) {
           case Left(message) => writeDocumentProcessingError(fileGroup.addToDocumentSetId.get, upload, message)
           case Right(documentsWithoutIds) => {
             if (onProgress(0.9)) {
-              writeDocuments(fileGroup.addToDocumentSetId.get, documentsWithoutIds, fileGroup.metadataJson)
+              writeDocuments(
+                fileGroup.addToDocumentSetId.get,
+                documentsWithoutIds,
+                upload.documentMetadataJson.getOrElse(fileGroup.metadataJson)
+              )
             } else {
               Future.successful(())
             }

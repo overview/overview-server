@@ -1,6 +1,7 @@
 package controllers.backend
 
 import java.util.UUID
+import play.api.libs.json.Json
 
 import com.overviewdocs.database.LargeObject
 import com.overviewdocs.models.GroupedFileUpload
@@ -75,6 +76,7 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
         guid,
         "application/octet-stream",
         "foo",
+        None,
         123L
       )
       def findOrCreate(attributes: GroupedFileUpload.CreateAttributes): GroupedFileUpload = await(backend.findOrCreate(attributes))
@@ -106,11 +108,18 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
         guid,
         "application/octet-stream",
         "foo",
+        None,
         123L,
         0L,
         returnValue.contentsOid
       ))
       returnValue.contentsOid must beGreaterThan(0L)
+    }
+
+    "create with documentMetadataJson" in new FindOrCreateScope {
+      val returnValue = findOrCreate(baseAttributes.copy(documentMetadataJson=Some(Json.obj("foo" -> "bar"))))
+      val dbValue = findGroupedFileUpload(returnValue.id)
+      dbValue.flatMap(_.documentMetadataJson) must beSome(Json.obj("foo" -> "bar"))
     }
   }
 
@@ -119,7 +128,7 @@ class DbGroupedFileUploadBackendSpec extends DbBackendSpecification {
       val fileGroup = factory.fileGroup()
       // Use #findOrCreate(), because it gives us a new loid
       val groupedFileUpload = await(backend.findOrCreate(GroupedFileUpload.CreateAttributes(
-        fileGroup.id, UUID.randomUUID, "application/octet-stream", "foo.abc", 123L
+        fileGroup.id, UUID.randomUUID, "application/octet-stream", "foo.abc", None, 123L
       )))
 
       def writeBytes(position: Long, bytes: Array[Byte]): Unit = {
