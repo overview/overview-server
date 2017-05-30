@@ -14,9 +14,14 @@ class TreeWorker extends Runnable with HasBlockingDatabase {
     }
   }
 
+  import database.api._
+
+  private lazy val pendingTreesCompiled = Compiled {
+    Trees.filter(_.progress =!= 1.0)
+  }
+
   private def handleTrees: Unit = {
-    import database.api._
-    blockingDatabase.seq(Trees.filter(_.progress =!= 1.0))
+    blockingDatabase.seq(pendingTreesCompiled)
       .foreach { tree => new Runner(tree).runBlocking }
   }
 }
