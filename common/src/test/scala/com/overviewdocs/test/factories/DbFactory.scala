@@ -99,6 +99,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     isFromOcr: Boolean,
     metadataJson: JsObject,
     thumbnailLocation: Option[String],
+    pdfNotes: PdfNoteCollection,
     text: String
   ) = run(q.insertDocument += podoFactory.document(
     id,
@@ -115,6 +116,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     isFromOcr,
     metadataJson,
     thumbnailLocation,
+    pdfNotes,
     text
   ))
 

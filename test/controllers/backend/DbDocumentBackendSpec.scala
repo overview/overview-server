@@ -8,7 +8,7 @@ import slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{Selection,SelectionRequest}
-import com.overviewdocs.models.Document
+import com.overviewdocs.models.{Document,PdfNote,PdfNoteCollection}
 import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
 import com.overviewdocs.searchindex.{ElasticSearchIndexClient,IndexClient}
@@ -381,6 +381,25 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       "not update metadataJson with the wrong document set ID" in new UpdateMetadataJsonScope {
         await(backend.updateMetadataJson(documentSet.id + 1L, document.id, Json.obj("foo" -> "baz")))
         findDocument(document.id).map(_.metadataJson) must beSome(Json.obj("foo" -> "bar"))
+      }
+    }
+
+    "#updatePdfNotes" should {
+      trait UpdatePdfNotesScope extends BaseScopeNoIndex {
+        val documentSet = factory.documentSet()
+        val pdfNotes1 = PdfNoteCollection(Array(
+          PdfNote(1, 2.0, 3.0, 4.0, 5.0, "Foo")
+        ))
+        val pdfNotes2 = PdfNoteCollection(Array(
+          PdfNote(1, 2.0, 3.0, 4.0, 5.0, "Foo"),
+          PdfNote(2, 3.0, 4.0, 5.0, 6.0, "Bar")
+        ))
+        val document = factory.document(documentSetId=documentSet.id, pdfNotes=pdfNotes1)
+      }
+
+      "update pdfNotes" in new UpdatePdfNotesScope {
+        await(backend.updatePdfNotes(document.id, pdfNotes2))
+        findDocument(document.id).map(_.pdfNotes) must beSome(pdfNotes2)
       }
     }
   }

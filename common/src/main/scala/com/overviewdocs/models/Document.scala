@@ -30,6 +30,7 @@ case class Document(
   override val isFromOcr: Boolean,
   override val metadataJson: JsObject,
   override val thumbnailLocation: Option[String],
+  override val pdfNotes: PdfNoteCollection,
   override val text: String
 ) extends DocumentHeader {
   def toDocumentInfo: DocumentInfo = DocumentInfo(

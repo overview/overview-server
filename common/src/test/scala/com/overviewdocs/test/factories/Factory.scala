@@ -77,6 +77,7 @@ trait Factory {
     isFromOcr: Boolean = false,
     metadataJson: JsObject = JsObject(Seq()),
     thumbnailLocation: Option[String] = None,
+    pdfNotes: PdfNoteCollection = PdfNoteCollection(Array()),
     text: String = ""): Document
 
   /** Creates a new DocumentSet with the given parameters. */

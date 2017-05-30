@@ -21,6 +21,7 @@ trait DocumentHeader {
   val isFromOcr: Boolean
   val metadataJson: JsObject
   val thumbnailLocation: Option[String]
+  val pdfNotes: PdfNoteCollection
   val text: String
 
   def viewUrl: Option[String] = url

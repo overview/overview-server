@@ -27,7 +27,7 @@ define [
 
     templates:
       documentCloud: _.template("""
-        <iframe src="<%- url.url + '?sidebar=' + (preferences.get('sidebar') ? 'true' : 'false') + (url.page || '') %>"></iframe>
+        <iframe id="document-contents" src="<%- url.url + '?sidebar=' + (preferences.get('sidebar') ? 'true' : 'false') + (url.page || '') %>"></iframe>
       """)
 
       twitter: _.template("""
@@ -40,13 +40,13 @@ define [
       """)
 
       https: _.template("""
-        <iframe src="<%- url.url %>"></iframe>
+        <iframe id="document-contents" src="<%- url.url %>"></iframe>
       """)
 
       # Note we don't use the url here, just the document id. 
       # /documents/id serves up a pdf.js viewer, and actual pdf file url comes from Document.viewUrl
       pdf: _.template("""
-        <iframe src="/documents/<%- url.id %><%= preferences.get('sidebar') ? '#pagemode=thumbs' : '' %>"></iframe>
+        <iframe id="document-contents" src="/documents/<%- url.id %><%= preferences.get('sidebar') ? '#pagemode=thumbs' : '' %>"></iframe>
       """)
 
     render: ->

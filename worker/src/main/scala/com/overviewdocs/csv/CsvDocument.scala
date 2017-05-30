@@ -2,7 +2,7 @@ package com.overviewdocs.csv
 
 import play.api.libs.json.{JsObject,JsString}
 
-import com.overviewdocs.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNoteCollection}
 
 case class CsvDocument(
   suppliedId: String,
@@ -27,6 +27,7 @@ case class CsvDocument(
     false,
     JsObject(metadata.map(t => t._1 -> JsString(t._2))),
     None,
+    PdfNoteCollection(Array()),
     text
   )
 }

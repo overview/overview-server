@@ -1,9 +1,0 @@
-This is a build of pdf.js, from https://github.com/mozilla/pdf.js
-
-To freshen it:
-
-1. git clone https://github.com/mozilla/pdf.js.git
-2. npm install
-3. node make generic
-4. cp -a build/generic/* ~/src/overview-server/public/pdfjs/
-5. sed -i 's/PDFViewerApplication.open(file);/\/\/Wait for HTML <script> to call PDFViewerApplication.open()/' web/viewer.js

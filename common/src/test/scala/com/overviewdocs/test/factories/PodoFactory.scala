@@ -132,6 +132,7 @@ object PodoFactory extends Factory {
     isFromOcr: Boolean,
     metadataJson: JsObject,
     thumbnailLocation: Option[String],
+    pdfNotes: PdfNoteCollection,
     text: String
   ) = Document(
     getId(id),
@@ -148,6 +149,7 @@ object PodoFactory extends Factory {
     isFromOcr,
     metadataJson,
     thumbnailLocation,
+    pdfNotes,
     text
   )
 

@@ -1,10 +1,11 @@
 package com.overviewdocs.models.tables
 
 import java.util.Date
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject,Json}
+import scala.util.Try
 
 import com.overviewdocs.database.Slick.api._
-import com.overviewdocs.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNote,PdfNoteCollection}
 
 object DocumentsImpl {
   implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](
@@ -15,6 +16,18 @@ object DocumentsImpl {
   implicit val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
     d => new java.sql.Timestamp(d.getTime),
     d => new Date(d.getTime)
+  )
+
+  implicit val pdfNoteFormat = Json.format[PdfNote]
+
+  implicit val pdfNotesColumnType = MappedColumnType.base[PdfNoteCollection, String](
+    (d: PdfNoteCollection) => Json.toJson(d.pdfNotes).toString,
+    { (d: String) =>
+      Try(Json.parse(d)).toOption.flatMap(_.asOpt[Seq[PdfNote]]) match {
+        case Some(array) => PdfNoteCollection(array.toArray)
+        case None => PdfNoteCollection(Array())
+      }
+    }
   )
 }
 
@@ -37,6 +50,8 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
   def isFromOcr = column[Option[Boolean]]("is_from_ocr")
   def metadataJson = column[Option[JsObject]]("metadata_json_text") // add DocumentSet.metadataSchema to make a Metadata
   def thumbnailLocation = column[Option[String]]("thumbnail_location")
+  def pdfNotes = column[Option[PdfNoteCollection]]("pdf_notes_json_text")(pdfNotesColumnType.optionType)
+
   /*
    * Unfortunately, our database allows NULL in some places it shouldn't. Slick
    * can only handle this with a column[Option[_]] -- no type mappers allowed.
@@ -58,9 +73,10 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     isFromOcr,
     metadataJson,
     thumbnailLocation,
+    pdfNotes,
     text
   ).<>(
-    (t: Tuple16[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[String]]) => Document.apply(
+    (t: Tuple17[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[PdfNoteCollection],Option[String]]) => Document.apply(
       t._1,
       t._2,
       t._3,
@@ -72,10 +88,11 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       t._10,
       t._11,
       t._12.getOrElse(DocumentDisplayMethod.auto),
-      t._13.getOrElse(false),           // isFromOcr
-      t._14.getOrElse(JsObject(Seq())), // metadataJson
-      t._15,                            // thumbnail
-      t._16.getOrElse("")               // text
+      t._13.getOrElse(false),                      // isFromOcr
+      t._14.getOrElse(JsObject(Seq())),            // metadataJson
+      t._15,                                       // thumbnail
+      t._16.getOrElse(PdfNoteCollection(Array())), // pdfNotes
+      t._17.getOrElse("")                          // text
     ),
     { d: Document => Some(
       d.id,
@@ -93,6 +110,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       Some(d.isFromOcr),
       Some(d.metadataJson),
       d.thumbnailLocation,
+      Some(d.pdfNotes),
       Some(d.text)
     )}
   )

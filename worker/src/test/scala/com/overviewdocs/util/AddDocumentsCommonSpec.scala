@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.metadata.MetadataSchema
-import com.overviewdocs.models.{DocumentDisplayMethod}
+import com.overviewdocs.models.{DocumentDisplayMethod,PdfNoteCollection}
 import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.test.DbSpecification
 
@@ -121,6 +121,7 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
         false,
         JsObject(Seq()),
         None,
+        PdfNoteCollection(Array()),
         ""
       )
       blockingDatabase.run((Documents returning Documents).+=(ret))

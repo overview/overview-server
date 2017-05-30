@@ -8,7 +8,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.overviewdocs.http
-import com.overviewdocs.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNoteCollection}
 import com.overviewdocs.query.{Field,FuzzyTermQuery,PhraseQuery,PrefixQuery}
 import com.overviewdocs.util.Configuration
 
@@ -107,6 +107,7 @@ class ElasticSearchIndexClientSpec extends Specification {
       isFromOcr=false,
       metadataJson=JsObject(Seq()),
       text=s"foo$id bar baz",
+      pdfNotes=PdfNoteCollection(Array()),
       thumbnailLocation=Some("path/of/file")
     )
   }
@@ -165,6 +166,7 @@ class ElasticSearchIndexClientSpec extends Specification {
             false,
             JsObject(Seq()),
             None,
+            PdfNoteCollection(Array()),
             text
           )
         }

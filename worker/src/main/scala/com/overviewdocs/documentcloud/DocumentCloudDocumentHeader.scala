@@ -2,7 +2,7 @@ package com.overviewdocs.documentcloud
 
 import play.api.libs.json.JsObject
 
-import com.overviewdocs.models.{Document,DocumentDisplayMethod}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNoteCollection}
 import com.overviewdocs.util.{Configuration,Textify}
 
 /** A yet-to-be-fetched Document.
@@ -13,7 +13,6 @@ import com.overviewdocs.util.{Configuration,Textify}
 case class DocumentCloudDocumentHeader(
   /** ID we're going to write to our database. */
   id: Long,
-
   documentSetId: Long,
   documentCloudId: String,
   title: String,
@@ -36,6 +35,7 @@ case class DocumentCloudDocumentHeader(
     false,
     JsObject(Seq()),
     None, // bellzTODO: Should we support thumbnails on documentcloud documents
+    PdfNoteCollection(Array()),
     Textify.truncateToNChars(text, DocumentCloudDocumentHeader.MaxNCharsPerDocument)
   )
 }

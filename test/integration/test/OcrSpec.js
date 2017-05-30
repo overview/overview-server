@@ -2,7 +2,7 @@
 
 const asUser = require('../support/asUser')
 
-// In order to let users analyze document test
+// In order to let users analyze document text
 // We need to read text that comes from images
 describe('Ocr', function() {
   asUser.usingTemporaryUser(function() {
