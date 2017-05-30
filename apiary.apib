@@ -44,6 +44,14 @@ This API endpoint will list all the tags on the Document Set.
 
 You can use this token to create new document sets for yourself. See the section on [Files](#reference/files) for details.
 
+### Avoiding CSRF Protection
+
+These API requests can be made with a regular web browser, from any web page on the Internet -- including evil web pages. Overview has Cross-Site Request Forgery (CSRF) protection to make sure evil web pages can't use the credentials you give Overview when you log in. CSRF protection might cause you a `403 Unauthorized` response ... unless you prove you aren't an HTTP `<form>`.
+
+Add a special request header, `X-Requested-With`, to your HTTP request. It can be anything: for instance, `X-Requested-With: My Great Overview Plugin`
+
+Most of the time, other headers (such as `Content-Type: application/json`) will implicitly prove you aren't an HTTP `<form>`. But some requests -- like `POST /files/:guid` -- need `X-Requested-With`.
+
 ## Rules of API requests
 
 * Requests and responses are always in [JSON](http://json.org).
@@ -93,10 +101,21 @@ You need only provide a JSON Object with a `title` property to create an empty D
 
 The method will return the `documentSet` properties along with an `apiToken` you can use to add documents.
 
++ Parameters
+    + title (required,string,`"my documents"`) ... The title of the document set.
+    + metadataSchema (optional,object) ... The format of metadata you will receive when listing documents. If unset, all document metadata appear to be empty. (You can set this later.)
+
 + Request (application/json)
 
         {
-            "title": "My fresh new document set"
+            "title": "My fresh new document set",
+            "metadataSchema": {
+                "version": 1,
+                "fields": [
+                    { "name": "foo", "type": "String" },
+                    { "name": "bar", "type": "String" }
+                ]
+            }
         }
 
 + Response 201 (application/json)
@@ -104,7 +123,14 @@ The method will return the `documentSet` properties along with an `apiToken` you
         {
             "documentSet": {
                 "id": 123,
-                "title": "My fresh new document set"
+                "title": "My fresh new document set",
+                "metadataSchema": {
+                    "version": 1,
+                    "fields": [
+                        { "name": "foo", "type": "String" },
+                        { "name": "bar", "type": "String" }
+                    ]
+                }
             },
             "apiToken": {
                 "token": "a-fresh-token-for-docset-123"
@@ -169,6 +195,7 @@ Be sure to set the following headers:
 * `Content-Type`: Includes the file's MIME type. See the [Content-Type specification](http://www.w3.org/Protocols/rfc1341/4_Content-Type.html) for details. Overview stores this but does not read it; `application/octet-stream` should be fine. This cannot be changed after the first upload attempt.
 * `Content-Length` (to upload from scratch): File size. This cannot be changed after the first upload attempt.
 * `Content-Range` (to resume an upload): Bytes in this request. For instance: `Content-Range: bytes 10-1233/1234` will skip the first 10 bytes and go to the end of the file. Yes, that off-by-one is weird; that's described in the [Content-Range specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16)
+* `Overview-Document-Metadata-JSON` (optional): Metadata JSON Object, _ASCII-encoded_. The document (or documents) created by this File will have the given metadata JSON. Set `metadataSchema` on the DocumentSet to see the metadata when listing documents.
 
 As the `Content-Range` makes clear, Overview supports resuming interrupted uploads. If Overview tells you that `loaded = 10240`, then you can set `Content-Range: bytes 10240-xxxxx/yyyyy` and seek the file to the `10240`th byte to resume upload at byte `10240`. Beware off-by-one error, and definitely test this feature if you are writing your own client.
 
@@ -214,6 +241,7 @@ The body is json. Only `lang` is required.
 * `split_documents` is `false` by default, meaning each File becomes a Document. If `true`, each File will be split by page boundaries, and each Page will become a Document. (Files that don't have pages, such as `.txt` files, will never be split.)
 * `supplied_stop_words` is a space-separated list of stopwords for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
 * `important_words` is a space-separated list of important words for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
+* `metadata_json` is a String representation of a JavaScript Object that will be added to every document. Be sure to set `metadataSchema` on the DocumentSet so you can read the values. `metadata_json` will be ignored for every file you uploaded with `Overview-Document-Metadata-JSON`.
 
 + Request (application/json)
 
@@ -222,7 +250,8 @@ The body is json. Only `lang` is required.
             "lang": "en",
             "split_documents": false,
             "supplied_stop_words": "",
-            "important_words": ""
+            "important_words": "",
+            "metadata_json": "{\"foo\":\"bar\"}"
         }
 
 + Response 201
