@@ -64,7 +64,7 @@ trait BlobStorage {
     val source = get(location)
     for {
       file <- BlobStorage.createTempFile(location, source)
-      result <- callCallbackSafely(file).andThen { case _ => /*blocking(file.delete)*/ }
+      result <- callCallbackSafely(file).andThen { case _ => blocking(file.delete) }
     } yield result
   }
 
