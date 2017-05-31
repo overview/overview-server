@@ -60,7 +60,7 @@ trait BlobStorage {
     for {
       enumerator <- get(location)
       file <- enumerator.run(BlobStorage.enumerateeToFile)
-      result <- callCallbackSafely(file).andThen { case _ => blocking(file.delete) }
+      result <- callCallbackSafely(file).andThen { case _ => /*blocking(file.delete)*/ }
     } yield result
   }
 
