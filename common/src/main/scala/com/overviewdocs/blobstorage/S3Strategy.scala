@@ -72,7 +72,7 @@ trait S3Strategy extends BlobStorageStrategy {
       override def progressChanged(event: ProgressEvent) = event.getEventType match {
         case ProgressEventType.TRANSFER_COMPLETED_EVENT => {
           val ret = Enumerator.fromFile(file)
-          file.delete
+          //file.delete // FIXME UNCOMMENT THIS!
           promise.success(ret)
         }
         case ProgressEventType.TRANSFER_FAILED_EVENT | ProgressEventType.CLIENT_REQUEST_FAILED_EVENT => {
