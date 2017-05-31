@@ -3,7 +3,7 @@ package com.overviewdocs.blobstorage
 import akka.NotUsed
 import akka.actor.ActorRefFactory
 import akka.stream.{ActorMaterializer,IOResult}
-import akka.stream.scaladsl.{FileIO,Keep,Source,Sink}
+import akka.stream.scaladsl.{FileIO,Source,Sink}
 import akka.util.ByteString
 import java.io.{File,InputStream}
 import java.nio.file.{Files,Path}
@@ -64,7 +64,7 @@ trait BlobStorage {
     val source = get(location)
     for {
       file <- BlobStorage.createTempFile(location, source)
-      result <- callCallbackSafely(file).andThen { case _ => blocking(file.delete) }
+      result <- callCallbackSafely(file).andThen { case _ => /*blocking(file.delete)*/ }
     } yield result
   }
 
@@ -143,13 +143,12 @@ object BlobStorage extends BlobStorage {
   override protected val strategyFactory = StrategyFactory
 
   private def createTempFile(location: String, source: Source[ByteString, _])(implicit system: ActorRefFactory) : Future[File] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    val path: Path = Files.createTempFile("blob-storage-" + location, null)
+    import system.dispatcher
 
     implicit val materializer = ActorMaterializer.create(system)
 
-    source.toMat(FileIO.toPath(path))(Keep.right)
-      .run()(materializer)
-      .map(_.status.map(_ => path.toFile).get)(system.dispatcher)
+    val path: Path = Files.createTempFile("blob-storage-" + location, null)
+    source.runWith(FileIO.toPath(path))
+      .map(_.status.map(_ => path.toFile).get)
   }
 }
