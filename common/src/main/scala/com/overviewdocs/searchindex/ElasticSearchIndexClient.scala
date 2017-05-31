@@ -199,7 +199,7 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     // (remember: "documents_v2" is an *index*, "documents" is an *alias*)
 
     for {
-      _ <- refresh // In case we're deleting immediately after some adds
+      _ <- refresh(id) // In case we're deleting immediately after some adds
       documentIds <- searchForIds(id, AllQuery)
       indexName <- getAllDocumentsIndexName
       _ <- deleteDocuments(indexName, documentIds)
@@ -229,8 +229,11 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     })
   }
 
-  override def addDocuments(documents: Iterable[Document]): Future[Unit] = {
+  override def addDocuments(documentSetId: Long, documents: Iterable[Document]): Future[Unit] = {
     if (documents.isEmpty) return Future.successful(())
+    if (documents.exists(d => d.documentSetId != documentSetId)) {
+      return Future.failed(new IllegalArgumentException("You supplied documents in the wrong document set"))
+    }
 
     /*
      * We write to the all-documents alias, not the docset alias. This is
@@ -538,7 +541,7 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     } yield ids
   }
 
-  override def refresh: Future[Unit] = {
+  override def refresh(documentSetId: Long): Future[Unit] = {
     POST("/documents/_refresh").map(expectOk)
   }
 

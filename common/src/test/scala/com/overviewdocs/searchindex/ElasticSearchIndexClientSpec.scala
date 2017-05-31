@@ -135,8 +135,11 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "create an alias that filters by document set" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 235L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocumentSet(235L))
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L))))
+        await(indexClient.addDocuments(235L, Seq(buildDocument(124L, 235L))))
+        await(indexClient.refresh(234L))
+        await(indexClient.refresh(235L))
 
         aliasExists("documents_v1", "documents_234") must beEqualTo(true)
         idsInIndex("documents_234") must beEqualTo(Seq(123L))
@@ -172,7 +175,7 @@ class ElasticSearchIndexClientSpec extends Specification {
         }
 
         await(indexClient.addDocumentSet(1L))
-        await(indexClient.refresh)
+        await(indexClient.refresh(1L))
       }
 
       "return an empty list when there is no document" in new HighlightScope {
@@ -180,20 +183,20 @@ class ElasticSearchIndexClientSpec extends Specification {
       }
 
       "return an empty list when the term is not in the document" in new HighlightScope {
-        await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="bar boo baz"))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(1L, Seq(factory.document(documentSetId=1L, id=2L, text="bar boo baz"))))
+        await(indexClient.refresh(1L))
         await(indexClient.highlight(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq())
       }
 
       "return a highlight" in new HighlightScope {
-        await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar"))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(1L, Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar"))))
+        await(indexClient.refresh(1L))
         await(indexClient.highlight(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq(Highlight(4, 7)))
       }
 
       "return multiple highlights" in new HighlightScope {
-        await(indexClient.addDocuments(Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar foo"))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(1L, Seq(factory.document(documentSetId=1L, id=2L, text="boo foo bar foo"))))
+        await(indexClient.refresh(1L))
         await(indexClient.highlight(1L, 2L, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq(
           Highlight(4, 7),
           Highlight(12, 15)
@@ -221,9 +224,12 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "delete associated documents" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 235L))))
+        await(indexClient.addDocumentSet(235L))
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L))))
+        await(indexClient.addDocuments(235L, Seq(buildDocument(124L, 235L))))
         await(indexClient.removeDocumentSet(234L))
-        await(indexClient.refresh)
+        await(indexClient.refresh(234L))
+        await(indexClient.refresh(235L))
 
         idsInIndex("documents") must beEqualTo(Seq(124L))
       }
@@ -232,8 +238,8 @@ class ElasticSearchIndexClientSpec extends Specification {
     "#searchForIds" should {
       "find a document" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "foo123")))
 
         ids must beEqualTo(Seq(123L))
@@ -242,8 +248,8 @@ class ElasticSearchIndexClientSpec extends Specification {
       "not find a document in a different document set" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
         await(indexClient.addDocumentSet(235L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L))))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(235L, PhraseQuery(Field.All, "foo123")))
 
         ids must beEqualTo(Seq())
@@ -251,8 +257,8 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "not find a document when the query does not match" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L))))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "foo124")))
 
         ids must beEqualTo(Seq())
@@ -261,8 +267,8 @@ class ElasticSearchIndexClientSpec extends Specification {
       "find a term indexed from NFC and searched from NFD" in new BaseScope {
         val document = buildDocument(123L, 234L).copy(text="\u00c5oo")
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(document)))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(document)))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.Text, "\u0041\u030aoo")))
 
         ids must containTheSameElementsAs(Seq(123L))
@@ -271,8 +277,8 @@ class ElasticSearchIndexClientSpec extends Specification {
       "find a term indexed from NFD and searched from NFKC" in new BaseScope {
         val document = buildDocument(123L, 234L).copy(text="ﬁoo")
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(document)))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(document)))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.Text, "fioo")))
 
         ids must containTheSameElementsAs(Seq(123L))
@@ -281,8 +287,8 @@ class ElasticSearchIndexClientSpec extends Specification {
       "find a term indexed from NFD and searched from NFKC, when using default analyzer" in new BaseScope {
         val document = buildDocument(123L, 234L).copy(text="ﬁoo")
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(document)))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(document)))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "fioo")))
 
         ids must containTheSameElementsAs(Seq(123L))
@@ -290,8 +296,8 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "find multiple documents" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "bar")))
 
         ids must containTheSameElementsAs(Seq(123L, 124L))
@@ -299,8 +305,8 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "find multiple pages of documents" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh(234L))
         val ids = await(indexClient.searchForIds(234L, PhraseQuery(Field.All, "bar"), scrollSize=1))
 
         ids must containTheSameElementsAs(Seq(123L, 124L))
@@ -308,8 +314,8 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "handle FuzzyTermQuery" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh(234L))
 
         val ids = await(indexClient.searchForIds(234L, FuzzyTermQuery(Field.All, "bbb", Some(2)), scrollSize=1))
         ids must containTheSameElementsAs(Seq(123L, 124L))
@@ -317,8 +323,8 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "handle field query" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
-        await(indexClient.refresh)
+        await(indexClient.addDocuments(234L, Seq(buildDocument(123L, 234L), buildDocument(124L, 234L))))
+        await(indexClient.refresh(234L))
 
         val ids1 = await(indexClient.searchForIds(234L, PhraseQuery(Field.Text, "moo123"), scrollSize=1))
         ids1 must beEmpty
@@ -329,11 +335,11 @@ class ElasticSearchIndexClientSpec extends Specification {
 
       "handle prefix query on title" in new BaseScope {
         await(indexClient.addDocumentSet(234L))
-        await(indexClient.addDocuments(Seq(
+        await(indexClient.addDocuments(234L, Seq(
           buildDocument(123L, 234L).copy(title="foo/bar/baz.txt"),
           buildDocument(124L, 234L).copy(title="foo/baz.txt")
         )))
-        await(indexClient.refresh)
+        await(indexClient.refresh(234L))
 
         val ids1 = await(indexClient.searchForIds(234L, PrefixQuery(Field.Title, "foo/bar/"), scrollSize=1))
         ids1 must beEqualTo(Seq(123L))

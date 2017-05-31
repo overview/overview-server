@@ -50,7 +50,7 @@ trait IndexClient {
     * _eventually_ searchable. To make them searchable right away, call
     * refresh().
     */
-  def addDocuments(documents: Iterable[Document]): Future[Unit]
+  def addDocuments(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
 
   /** Returns IDs for matching documents.
     *
@@ -70,7 +70,7 @@ trait IndexClient {
   def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]]
 
   /** Guarantees all past added documents are searchable. */
-  def refresh: Future[Unit]
+  def refresh(documentSetId: Long): Future[Unit]
 
   /** Wipes the database -- BE CAREFUL!
     *
