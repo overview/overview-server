@@ -212,8 +212,10 @@ object AddDocumentsImpl extends HasDatabase {
   def deleteUpload(upload: GroupedFileUpload)(implicit ec: ExecutionContext): Future[Unit] = {
     import database.api._
 
+    System.err.println("DELETING LARGE OBJECT " + upload.contentsOid)
+
     val action = for {
-      _ <- database.largeObjectManager.unlink(upload.contentsOid)
+      //_ <- database.largeObjectManager.unlink(upload.contentsOid)
       _ <- compiledGroupedFileUpload(upload.id).delete
     } yield ()
     database.run(action.transactionally)
