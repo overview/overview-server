@@ -1,8 +1,11 @@
 package controllers
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.{File => JFile} 
+import play.api.http.HttpEntity
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{JsObject,JsString,Json,Reads,Writes}
@@ -51,8 +54,7 @@ trait DocumentController extends Controller {
         Logger.info("File length: " + length.toString)
 
         Future.successful(
-          Ok
-            .feed(stream)
+          Ok.feed(stream)
             .withHeaders(
               CONTENT_TYPE -> "application/pdf",
               CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""",
@@ -75,13 +77,12 @@ trait DocumentController extends Controller {
       case None => Future.successful(NotFound)
       case Some(document) => {
         val filename = document.title
-        documentToBodyAndLength(document).map({ (body: Enumerator[Array[Byte]], length: Long) =>
-          Ok
-            .feed(body)
-            .as("application/pdf")
+        documentToBodyAndLength(document).map({ (body: Source[ByteString, _], length: Long) =>
+          Ok.sendEntity(HttpEntity.Streamed(body, Some(length), Some("application/pdf")))
             .withHeaders(
-              CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""",
-              CONTENT_LENGTH -> length.toString
+              CONTENT_TYPE -> "application/pdf",
+              CONTENT_LENGTH -> length.toString,
+              CONTENT_DISPOSITION -> s"""inline ; filename="$filename""""
             )
         }.tupled)
       }
@@ -89,16 +90,14 @@ trait DocumentController extends Controller {
   }
 
   def showPng(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
-   documentBackend.show(documentId).flatMap(_.flatMap(_.thumbnailLocation) match {
-     case None => Future.successful(NotFound)
-     case Some(thumbnailLocation) => {
-       blobStorage.get(thumbnailLocation).map({ (body: Enumerator[Array[Byte]]) =>
-         Ok
-           .feed(body)
-           .as("image/png")
-       })
-     }
-   })
+    documentBackend.show(documentId).map(_.flatMap(_.thumbnailLocation) match {
+      case None => NotFound
+      case Some(thumbnailLocation) => {
+        val body = blobStorage.get(thumbnailLocation)
+        Ok.sendEntity(HttpEntity.Streamed(body, None, Some("image/png")))
+          .withHeaders(CONTENT_TYPE -> "image/png")
+      }
+    })
   }
 
   def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
@@ -165,33 +164,33 @@ trait DocumentController extends Controller {
     }
   }
 
-  private def emptyBodyAndLength: Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
-    Future.successful((Enumerator.empty, 0))
+  private def emptyBodyAndLength: Future[Tuple2[Source[ByteString, _], Long]] = {
+    Future.successful((Source.empty, 0))
   }
 
-  private def pageIdToBodyAndLength(pageId: Long): Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
+  private def pageIdToBodyAndLength(pageId: Long): Future[Tuple2[Source[ByteString, _], Long]] = {
     pageBackend.show(pageId).flatMap(_ match {
       case Some(page) => pageToBodyAndLength(page)
       case None => emptyBodyAndLength
     })
   }
 
-  private def pageToBodyAndLength(page: Page): Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
-    blobStorage.get(page.dataLocation).map((_, page.dataSize))
+  private def pageToBodyAndLength(page: Page): Future[Tuple2[Source[ByteString, _], Long]] = {
+    Future.successful((blobStorage.get(page.dataLocation), page.dataSize))
   }
 
-  private def fileIdToBodyAndLength(fileId: Long): Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
+  private def fileIdToBodyAndLength(fileId: Long): Future[Tuple2[Source[ByteString, _], Long]] = {
     fileBackend.show(fileId).flatMap(_ match {
       case Some(file) => fileToBodyAndLength(file)
       case None => emptyBodyAndLength
     })
   }
 
-  private def fileToBodyAndLength(file: File): Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
-    blobStorage.get(file.viewLocation).map((_, file.viewSize))
+  private def fileToBodyAndLength(file: File): Future[Tuple2[Source[ByteString, _], Long]] = {
+    Future.successful((blobStorage.get(file.viewLocation), file.viewSize))
   }
 
-  private def documentToBodyAndLength(document: Document): Future[Tuple2[Enumerator[Array[Byte]], Long]] = {
+  private def documentToBodyAndLength(document: Document): Future[Tuple2[Source[ByteString, _], Long]] = {
     document.pageId match {
       case Some(pageId) => pageIdToBodyAndLength(pageId)
       case None => {

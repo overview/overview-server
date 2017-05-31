@@ -1,8 +1,12 @@
 package com.overviewdocs.blobstorage
 
+import akka.NotUsed
+import akka.actor.ActorRefFactory
+import akka.stream.{ActorMaterializer,IOResult}
+import akka.stream.scaladsl.{FileIO,Keep,Source,Sink}
+import akka.util.ByteString
 import java.io.{File,InputStream}
 import java.nio.file.{Files,Path}
-import play.api.libs.iteratee.{Enumerator,Iteratee}
 import scala.concurrent.{Future,blocking}
 import scala.util.{Failure,Success,Try}
 
@@ -29,13 +33,13 @@ trait BlobStorage {
     * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
     * <tt>"pglo:123456"</tt>.
     *
-    * This method checks <tt>location</tt> for syntax synchronously. The Future
+    * This method checks <tt>location</tt> for syntax synchronously. The Source
     * it returns may fail if there is a network error or permissions problem.
     *
     * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
-  def get(location: String): Future[Enumerator[Array[Byte]]] = {
+  def get(location: String): Source[ByteString, NotUsed] = {
     strategyFactory.forLocation(location).get(location)
   }
 
@@ -47,7 +51,7 @@ trait BlobStorage {
     * If the caller is killed (or crashes) while executing the callback, the
     * temporary file will not be deleted.
     */
-  def withBlobInTempFile[A](location: String)(callback: File => Future[A]): Future[A] = {
+  def withBlobInTempFile[A](location: String)(callback: File => Future[A])(implicit system: ActorRefFactory): Future[A] = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     def callCallbackSafely(file: File): Future[A] = {
@@ -57,10 +61,10 @@ trait BlobStorage {
       }
     }
 
+    val source = get(location)
     for {
-      enumerator <- get(location)
-      file <- enumerator.run(BlobStorage.enumerateeToFile)
-      result <- callCallbackSafely(file).andThen { case _ => /*blocking(file.delete)*/ }
+      file <- BlobStorage.createTempFile(location, source)
+      result <- callCallbackSafely(file).andThen { case _ => blocking(file.delete) }
     } yield result
   }
 
@@ -138,16 +142,14 @@ object BlobStorage extends BlobStorage {
   override protected val config = BlobStorageConfig
   override protected val strategyFactory = StrategyFactory
 
-  private def enumerateeToFile: Iteratee[Array[Byte], File] = {
+  private def createTempFile(location: String, source: Source[ByteString, _])(implicit system: ActorRefFactory) : Future[File] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    val path = Files.createTempFile("blob-storage", null)
-    val outputStream = blocking(Files.newOutputStream(path))
-    Iteratee.foreach((input: Array[Byte]) => blocking(outputStream.write(input)))
-      .map { _ => blocking(outputStream.close); path.toFile }
-      .recover { case t: Throwable =>
-        Files.delete(path)
-        throw t
-        new File(".") // compile
-      }
+    val path: Path = Files.createTempFile("blob-storage-" + location, null)
+
+    implicit val materializer = ActorMaterializer.create(system)
+
+    source.toMat(FileIO.toPath(path))(Keep.right)
+      .run()(materializer)
+      .map(_.status.map(_ => path.toFile).get)(system.dispatcher)
   }
 }

@@ -1,6 +1,8 @@
 package com.overviewdocs.blobstorage
 
-import java.io.{ File, InputStream, IOException }
+import akka.stream.scaladsl.{FileIO,Source}
+import akka.util.ByteString
+import java.io.File
 import java.nio.file.Path
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,12 +28,11 @@ trait FileStrategy extends BlobStorageStrategy {
   private def createNewLocationString(locationPrefix: String) = 
     s"$locationPrefix:${UUID.randomUUID}"
   
-  override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
+  override def get(locationString: String): Source[ByteString, akka.NotUsed] = {
     val location = stringToLocation(locationString)
-    Future {
-      val file = keyFile(location)
-      Enumerator.fromFile(file)
-    }
+    val file = keyFile(location)
+    FileIO.fromPath(file.toPath)
+      .mapMaterializedValue(_ => akka.NotUsed)
   }
 
   override def delete(locationString: String): Future[Unit] = {

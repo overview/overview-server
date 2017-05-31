@@ -1,5 +1,7 @@
 package controllers.backend
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import play.api.libs.iteratee.Enumerator
@@ -25,7 +27,7 @@ trait ArchiveEntryBackend extends Backend {
     * * Else, if fileId is set, return the bytes at file.viewLocation
     * * Else, return the document text encoded as UTF-8
     */
-  def streamBytes(documentSetId: Long, documentId: Long): Enumerator[Array[Byte]]
+  def streamBytes(documentSetId: Long, documentId: Long): Source[ByteString, akka.NotUsed]
 }
 
 trait DbArchiveEntryBackend extends ArchiveEntryBackend with DbBackend {
@@ -147,13 +149,14 @@ trait DbArchiveEntryBackend extends ArchiveEntryBackend with DbBackend {
       WHERE document_set_id = $documentSetId AND id = $documentId
     """.as[(Boolean,String)]
 
-    val future: Future[Enumerator[Array[Byte]]] = database.option(q).flatMap(_ match {
+    val future = database.option(q).map(_ match {
       case Some((true, location)) => blobStorage.get(location)
-      case Some((false, text)) => Future.successful(Enumerator(text.getBytes("utf-8")))
-      case None => Future.successful(Enumerator.empty)
+      case Some((false, text)) => Source.single(ByteString(text.getBytes("utf-8")))
+      case None => Source.empty
     })
 
-    Enumerator.flatten(future)
+    Source.fromFutureSource(future)
+      .mapMaterializedValue(_ => akka.NotUsed)
   }
 }
 

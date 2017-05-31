@@ -1,5 +1,9 @@
 package controllers.backend
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Source,Sink}
+import akka.util.ByteString
 import org.specs2.mock.Mockito
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import scala.concurrent.Future
@@ -62,12 +66,19 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
   "#streamBytes" should {
     trait StreamBytesScope extends BaseScope {
       def mockBytes(location: String, s: String): Unit = {
-        mockBlobStorage.get(location) returns Future.successful(Enumerator(s.getBytes("utf-8")))
+        mockBlobStorage.get(location) returns Source.single(ByteString(s.getBytes("utf-8")))
       }
 
       def consume(documentSetId: Long, documentId: Long): String = {
-        val enumerator: Enumerator[Array[Byte]] = backend.streamBytes(documentSetId, documentId)
-        val bytes: Array[Byte] = await(enumerator.run(Iteratee.consume()))
+        implicit val system = ActorSystem()
+        implicit val mat = ActorMaterializer.create(system)
+        import system.dispatcher
+
+        val source = backend.streamBytes(documentSetId, documentId)
+        val sink = Sink.fold[ByteString, ByteString](ByteString())(_ ++ _)
+        val bytes: Array[Byte] = await(source.runWith(sink).map(_.toArray))
+
+        system.terminate
         new String(bytes, "utf-8")
       }
     }

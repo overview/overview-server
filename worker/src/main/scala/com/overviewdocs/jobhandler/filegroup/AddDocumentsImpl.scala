@@ -1,6 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef,ActorRefFactory}
 import java.time.Instant
 import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext,Future,blocking}
@@ -12,7 +12,7 @@ import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
   */
-class AddDocumentsImpl(documentIdSupplier: ActorRef) {
+class AddDocumentsImpl(documentIdSupplier: ActorRef)(implicit system: ActorRefFactory) {
   private val logger = Logger.forClass(getClass)
 
   /** Processes one GroupedFileUpload.

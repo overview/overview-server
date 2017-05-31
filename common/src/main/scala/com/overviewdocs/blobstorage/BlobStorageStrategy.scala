@@ -1,7 +1,8 @@
 package com.overviewdocs.blobstorage
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import java.nio.file.Path
-import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
 /** Stores blobs with a specific implementation.
@@ -12,13 +13,13 @@ trait BlobStorageStrategy {
     * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
     * <tt>"pglo:123456"</tt>.
     *
-    * This method checks <tt>location</tt> for syntax synchronously. The Future
+    * This method checks <tt>location</tt> for syntax synchronously. The Source
     * it returns may fail if there is a network error or permissions problem.
     *
     * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
     * @throws InvalidArgumentException if <tt>location</tt> is invalid
     */
-  def get(location: String): Future[Enumerator[Array[Byte]]]
+  def get(location: String): Source[ByteString, akka.NotUsed]
 
   /** Deletes a blob.
     *

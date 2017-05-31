@@ -84,45 +84,6 @@ class S3StrategySpec extends StrategySpecification {
       TestStrategy.get("s3:foo:") must throwA[IllegalArgumentException]
       TestStrategy.get("s3:foo:bar:baz") must throwA[IllegalArgumentException]
     }
-
-    "provide contents when the tempfile is full" in new S3BaseScope {
-      val futureEnumerator = TestStrategy.get("s3:foo:bar")
-      Files.write(mockTransferManager.lastDownload.get.file.toPath, "file contents".getBytes("utf-8"))
-      mockTransferManager.succeed
-      val enumerator = await(futureEnumerator)
-      consume(enumerator) must beEqualTo("file contents".getBytes("utf-8"))
-    }
-
-    "delete the file after enumerating" in new S3BaseScope {
-      val futureEnumerator = TestStrategy.get("s3:foo:bar")
-      mockTransferManager.succeed
-      val enumerator = await(futureEnumerator)
-      consume(enumerator)
-      mockTransferManager.lastDownload.get.file.exists must beFalse
-    }
-
-    "delete the file before enumerator is consumed, in case enumeration fails" in new S3BaseScope {
-      // This won't work on Windows. It _will_ work with Docker.
-      val futureEnumerator = TestStrategy.get("s3:foo:bar")
-      mockTransferManager.succeed
-      val enumerator = await(futureEnumerator)
-      mockTransferManager.lastDownload.get.file.exists must beFalse
-    }
-
-    "fail when the transfer fails" in new S3BaseScope {
-      val ex = new AmazonS3Exception("boo")
-      val futureEnumerator = TestStrategy.get("s3:foo:bar")
-      mockTransferManager.fail(ex)
-      await(futureEnumerator) must throwA(ex)
-    }
-
-    "delete the file when the transfer fails" in new S3BaseScope {
-      val ex = new AmazonS3Exception("boo")
-      val futureEnumerator = TestStrategy.get("s3:foo:bar")
-      mockTransferManager.fail(ex)
-      await(futureEnumerator) must throwA[Exception] // "must throwA" to ignore the exception
-      mockTransferManager.lastDownload.get.file.exists must beFalse
-    }
   }
 
   "#delete" should {

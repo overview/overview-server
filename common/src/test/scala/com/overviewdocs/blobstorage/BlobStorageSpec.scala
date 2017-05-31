@@ -1,9 +1,12 @@
 package com.overviewdocs.blobstorage
 
+import akka.actor.ActorSystem
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import java.io.File
 import java.nio.file.{Files,Path}
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
+import org.specs2.mutable.{After,Specification}
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{Await,Future}
@@ -38,10 +41,13 @@ class BlobStorageSpec extends Specification with Mockito {
     }
 
     "#withBlobInTempFile" should {
-      trait WithBlobInTempFileScope extends BaseScope {
+      trait WithBlobInTempFileScope extends BaseScope with After {
+        implicit val system = ActorSystem("WithBlobInTempFileScope")
         val mockStrategy = mock[BlobStorageStrategy]
         mockStrategyFactory.forLocation("bucket:id") returns mockStrategy
-        mockStrategy.get("bucket:id") returns Future.successful(Enumerator("blob".getBytes("utf-8")))
+        mockStrategy.get("bucket:id") returns Source.single(ByteString("blob".getBytes("utf-8")))
+
+        override def after = system.terminate
       }
 
       "supply a readable File to the callback" in new WithBlobInTempFileScope {

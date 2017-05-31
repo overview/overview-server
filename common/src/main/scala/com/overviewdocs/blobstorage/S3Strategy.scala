@@ -1,5 +1,7 @@
 package com.overviewdocs.blobstorage
 
+import akka.stream.scaladsl.{Source,StreamConverters}
+import akka.util.ByteString
 import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client}
 import com.amazonaws.services.s3.transfer.TransferManager
 import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
@@ -38,52 +40,17 @@ trait S3Strategy extends BlobStorageStrategy {
     case _ => throw new IllegalArgumentException("Invalid location prefix: '" + s + '"')
   }
 
-  override def get(locationString: String): Future[Enumerator[Array[Byte]]] = {
-    /*
-     * We'll download to a temporary file, then create an Enumerator from it.
-     *
-     * Why? Well ... AWS offers an interface to grab an InputStream, but that's
-     * a blocking interface so it doesn't help much. And we can't listen to the
-     * number of bytes read in a ProgressEvent: TransferManager downloads
-     * chunks of a file in parallel, so we can't know how many bytes of the
-     * file are _sequentially_ readable.
-     *
-     * There are a few spots this method blocks, because we think the
-     * consequences are minor and the time savings are substantial:
-     *
-     * - We determine a download filename by creating it.
-     * - We delete the download file using File.delete()
-     * - We use Enumerator.fromFile() (this one isn't our bad, really....)
-     *
-     * We also assume the OS allows deleting an open file.
-     */
-    import scala.concurrent.ExecutionContext.Implicits.global
+  override def get(locationString: String): Source[ByteString, akka.NotUsed] = {
     val location = stringToLocation(locationString)
 
-    // This is blocking, but /tmp ought to be very fast
-    val filePath = Files.createTempFile("overview-s3-transfer-", ".tmp")
-    val file = filePath.toFile
-
-    val download = transferManager.download(location.bucket, location.key, file)
-
-    val promise = Promise[Enumerator[Array[Byte]]]()
-
-    download.addProgressListener(new ProgressListener {
-      override def progressChanged(event: ProgressEvent) = event.getEventType match {
-        case ProgressEventType.TRANSFER_COMPLETED_EVENT => {
-          val ret = Enumerator.fromFile(file)
-          //file.delete // FIXME UNCOMMENT THIS!
-          promise.success(ret)
-        }
-        case ProgressEventType.TRANSFER_FAILED_EVENT | ProgressEventType.CLIENT_REQUEST_FAILED_EVENT => {
-          file.delete
-          promise.failure(blocking(download.waitForException()))
-        }
-        case _ => ()
-      }
+    import scala.concurrent.ExecutionContext.Implicits.global
+    val futureSource = Future(blocking {
+      val s3Object = s3.getObject(location.bucket, location.key)
+      val inputStream = s3Object.getObjectContent()
+      StreamConverters.fromInputStream(() => inputStream)
     })
-
-    promise.future
+    Source.fromFutureSource(futureSource)
+      .mapMaterializedValue(_ => akka.NotUsed)
   }
 
   override def delete(location: String): Future[Unit] = deleteMany(Seq(location))

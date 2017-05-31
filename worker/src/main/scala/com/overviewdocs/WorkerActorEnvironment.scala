@@ -42,7 +42,7 @@ class WorkerActorEnvironment {
   private val fileRemovalQueue = system.actorOf(FileRemovalRequestQueue(deletedFileRemover), "FileRemovalQueue")
 
   private val documentIdSupplier = system.actorOf(DocumentIdSupplier(), "DocumentIdSupplier")
-  private val addDocumentsImpl = new AddDocumentsImpl(documentIdSupplier)
+  private val addDocumentsImpl = new AddDocumentsImpl(documentIdSupplier)(system)
   private val progressReporter = system.actorOf(ProgressReporter.props(addDocumentsImpl), "ProgressReporter")
 
   private val addDocumentsWorkBroker = system.actorOf(
