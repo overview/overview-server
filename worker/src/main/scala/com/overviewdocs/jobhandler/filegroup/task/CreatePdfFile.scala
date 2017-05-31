@@ -79,8 +79,8 @@ class CreatePdfFile(
     }).flatMap { case (rawPath, pdfPath) =>
       def delete: Future[Unit] = {
         Future(blocking {
-          //JFiles.delete(rawPath)
-          //JFiles.delete(pdfPath)
+          JFiles.delete(rawPath)
+          JFiles.delete(pdfPath)
           ()
         })
       }
