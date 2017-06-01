@@ -83,4 +83,20 @@ object LuceneIndexClient {
       }
     }
   }
+
+  lazy val onDiskSingleton: LuceneIndexClient = new LuceneIndexClient {
+    import com.typesafe.config.ConfigFactory
+    import java.nio.file.Paths
+
+    private val baseDirectory = ConfigFactory.load().getString("search.baseDirectory")
+    private val threadPool = java.util.concurrent.Executors.newFixedThreadPool(4) // Hard-coded!
+    override protected implicit val ec: ExecutionContext = ExecutionContext.fromExecutorService(threadPool)
+
+    override protected def openIndex(documentSetId: Long) = {
+      val rootPath = Paths.get(baseDirectory, documentSetId.toString)
+      val lockFactory = new org.apache.lucene.store.SingleInstanceLockFactory
+      val directory = org.apache.lucene.store.FSDirectory.open(rootPath, lockFactory)
+      new DocumentSetLuceneIndex(directory)
+    }
+  }
 }

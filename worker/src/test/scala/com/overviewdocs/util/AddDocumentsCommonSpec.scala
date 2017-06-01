@@ -23,7 +23,7 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
     }
 
     mockIndexClient.addDocumentSet(any) returns Future.successful(())
-    mockIndexClient.refresh returns Future.successful(())
+    mockIndexClient.refresh(any) returns Future.successful(())
   }
 
   "#beforeAddDocuments" should {
@@ -45,7 +45,7 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
     "refresh the search index" in new AfterScope {
       db.createDocumentSet(1L) // dummy
       doAfter(1L)
-      there was one(mockIndexClient).refresh
+      there was one(mockIndexClient).refresh(1L)
     }
 
     "do nothing if the document set does not exist" in new AfterScope {

@@ -20,6 +20,7 @@ dist
 .idea
 *.sc
 /blob-storage/
+/search/
 /node_modules/
 /bin/
 npm-debug.log

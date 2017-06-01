@@ -218,7 +218,13 @@ object BulkDocumentWriter extends HasDatabase {
   }
 
   private lazy val indexClient = ElasticSearchIndexClient.singleton
+
   private def flushDocumentsToSearchIndex(documents: Iterable[Document]): Future[Unit] = {
-    indexClient.addDocuments(documents)
+    val byDocumentSetId: Map[Long, Iterable[Document]] = documents.groupBy(_.documentSetId)
+    // Run all the commits at once. Probably not ideal.
+    val futures: Iterable[Future[Unit]] = byDocumentSetId.map { case (dsId, docs) =>
+      indexClient.addDocuments(dsId, docs)
+    }
+    Future.sequence(futures).map(_ => ())
   }
 }

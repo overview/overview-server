@@ -11,19 +11,19 @@ import com.overviewdocs.query.Query
   * * Ephemeral: If the message is lost, it's lost.
   */
 object DocumentSetReadCommands {
-  sealed trait Command { val documentSetId: Long }
+  sealed trait ReadCommand { val documentSetId: Long }
 
   /** Find a list of _all_ documents matching the search terms.
     *
     * This can get quite large. TODO turn the return value into a bitset?
     */
-  case class Search(documentSetId: Long, query: Query) extends Command
+  case class Search(documentSetId: Long, query: Query) extends ReadCommand
 
   /** Find positions of every phrase in the document matching the query.
     */
-  case class Highlight(documentSetId: Long, documentId: Long, query: Query) extends Command
+  case class Highlight(documentSetId: Long, documentId: Long, query: Query) extends ReadCommand
 
   /** Find a few phrases from each document matching the query.
     */
-  case class Highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) extends Command
+  case class Highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) extends ReadCommand
 }

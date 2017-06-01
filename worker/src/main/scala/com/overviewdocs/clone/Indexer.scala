@@ -27,14 +27,14 @@ object Indexer extends Indexer with HasDatabase {
     } yield ()
   }
 
-  private def indexRemainingBatches(idsIt: Iterator[Seq[Long]]): Future[Unit] = {
+  private def indexRemainingBatches(documentSetId: Long, idsIt: Iterator[Seq[Long]]): Future[Unit] = {
     if (idsIt.hasNext) {
       val ids: Seq[Long] = idsIt.next
       val step: Future[Unit] = for {
         documents <- database.seq(Documents.filter(_.id inSet ids))
-        _ <- indexClient.addDocuments(documents)
+        _ <- indexClient.addDocuments(documentSetId, documents)
       }  yield ()
-      step.flatMap(_ => indexRemainingBatches(idsIt))
+      step.flatMap(_ => indexRemainingBatches(documentSetId, idsIt))
     } else {
       Future.successful(())
     }
@@ -43,7 +43,7 @@ object Indexer extends Indexer with HasDatabase {
   private def indexEachDocument(documentSetId: Long): Future[Unit] = {
     database.seq(Documents.filter(_.documentSetId === documentSetId).map(_.id)).flatMap { allIds =>
       val idsIt = allIds.grouped(NDocumentsPerBatch)
-      indexRemainingBatches(idsIt)
+      indexRemainingBatches(documentSetId, idsIt)
     }
   }
 }

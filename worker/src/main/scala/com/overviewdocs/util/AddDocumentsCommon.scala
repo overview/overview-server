@@ -41,7 +41,7 @@ trait AddDocumentsCommon extends HasDatabase {
             )
         WHERE id = ${documentSetId}
       """)
-      _ <- indexClient.refresh
+      _ <- indexClient.refresh(documentSetId)
     } yield ()
   }
 }

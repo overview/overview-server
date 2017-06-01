@@ -9,10 +9,15 @@ import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
-import com.overviewdocs.messages.DocumentSetCommands
+import com.overviewdocs.messages.{DocumentSetReadCommands,DocumentSetCommands}
 import com.overviewdocs.util.Logger
 
-/** Processes DocumentSetCommands, one at a time.
+/** Processes DocumentSetCommands and DocumentSetReadCommands.
+  *
+  * FIXME we really want reader-writer locks. The best approach is probably to
+  * use one Actor per open DocumentSet. In the meantime, we serialize
+  * DocumentSetCommands and just run DocumentSetReadCommands as soon as we
+  * receive them.
   *
   * The message-passing world looks like this:
   *
@@ -26,18 +31,32 @@ class DocumentSetCommandWorker(
   val addDocumentsWorkBroker: ActorRef,
   val csvImportWorkBroker: ActorRef,
   val documentCloudImportWorkBroker: ActorRef,
+  val indexer: ActorRef,
   val cloner: Cloner,
   val documentSetDeleter: DocumentSetDeleter
 ) extends Actor
 {
   import DocumentSetCommands._
+  import DocumentSetReadCommands._
 
   private val logger = Logger.forClass(getClass)
 
   override def preStart = sendReady
 
   override def receive = {
+    case command: ReadCommand => runRead(command)(context.dispatcher)
     case command: Command => run(command)(context.dispatcher)
+  }
+
+  private def runRead(command: ReadCommand)(implicit ec: ExecutionContext): Unit = {
+    logger.info("Handling DocumentSetRead command: {}", command)
+
+    // FIXME use reader/writer locks, per DocumentSet. Probably one Actor per
+    // DocumentSet, Stashing messages.
+    //
+    // In the meantime, There Are Ways to cause terrible performance.
+
+    indexer.tell(command, sender)
   }
 
   private def run(command: Command)(implicit ec: ExecutionContext): Unit = {
@@ -115,6 +134,7 @@ object DocumentSetCommandWorker {
     addDocumentsWorkBroker: ActorRef,
     csvImportWorkBroker: ActorRef, 
     documentCloudImportWorkBroker: ActorRef,
+    indexer: ActorRef,
     cloner: Cloner,
     documentSetDeleter: DocumentSetDeleter
   ): Props = {
@@ -123,6 +143,7 @@ object DocumentSetCommandWorker {
       addDocumentsWorkBroker,
       csvImportWorkBroker,
       documentCloudImportWorkBroker,
+      indexer,
       cloner,
       documentSetDeleter
     ))

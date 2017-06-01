@@ -58,24 +58,25 @@ object ApplicationBuild extends Build {
   )
 
   lazy val devJavaOpts = allJavaOpts ++ Seq(
-    "-Ddb.default.dataSource.databaseName=overview-dev",
-    "-Ddb.default.dataSource.portNumber=9010",
+    s"-Ddb.default.dataSource.databaseName=overview-dev",
+    s"-Ddb.default.dataSource.portNumber=9010",
     s"-Ddb.default.dataSource.serverName=$dockerIp",
     s"-Dsearch_index.hosts=$dockerIp:9200",
     s"-Dredis.host=$dockerIp",
-    "-Dredis.port=9020",
-    s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/dev"
+    s"-Dredis.port=9020",
+    s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/dev",
+    s"-Dsearch.baseDirectory=$rootDirectory/search/dev"
   )
 
   lazy val testJavaOpts = allJavaOpts ++ Seq(
-    "-Ddb.default.dataSource.databaseName=overview-test",
-    "-Ddb.default.dataSource.portNumber=9010",
+    s"-Ddb.default.dataSource.databaseName=overview-test",
+    s"-Ddb.default.dataSource.portNumber=9010",
     s"-Ddb.default.dataSource.serverName=$dockerIp",
-    s"-Dsearch_index.hosts=$dockerIp:9201",
     s"-Dredis.host=$dockerIp",
-    "-Dredis.port=9020",
-    "-Dlogback.configurationFile=logback-test.xml",
-    s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/test"
+    s"-Dredis.port=9020",
+    s"-Dlogback.configurationFile=logback-test.xml",
+    s"-DblobStorage.file.baseDirectory=$rootDirectory/blob-storage/test",
+    s"-Dsearch.baseDirectory=$rootDirectory/search/test"
   )
 
   val ourTestOptions = Seq(
