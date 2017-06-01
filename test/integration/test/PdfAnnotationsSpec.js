@@ -41,16 +41,6 @@ describe('PdfAnnotations', function() {
         .perform()
 
       await b.assertExists('#viewer .noteLayer section', { wait: true })
-
-      await b.switchToFrame(null)
-    })
-
-    it('should add text to an annotation', async function() {
-      const b = this.browser
-
-      await b.switchToFrame('document-contents')
-
-      await b.click('#viewer .noteLayer section')
       await b.assertExists('.editNoteTool', { wait: true })
       await b.sendKeys('Hello, world!', '.editNoteTool textarea')
       await b.click('.editNoteTool button.editNoteSave')

@@ -1466,19 +1466,45 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-zoomIn.png);
 }
 
+.toolbarButton.addNote::before,
+.toolbarButton.nextNote::before,
+.toolbarButton.previousNote::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-size: 100%;
+}
+
 .toolbarButton.addNote::before {
-  content: url(images/toolbarButton-addNote@2x.png);
-  zoom: 0.5;
+  background-image: url(images/toolbarButton-addNote@2x.png);
+}
+
+@media (min-width: 780px) {
+  /* Display the "Add Note" (and "Click and drag...") inline */
+  .toolbarButton.addNote::before {
+    position: absolute;
+    left: auto;
+    right: 4px;
+  }
+
+  .toolbarButton.addNote {
+    width: auto;
+  }
+
+  .toolbarButton.addNote span {
+    width: auto;
+    height: auto;
+    padding-right: 22px;
+  }
 }
 
 .toolbarButton.nextNote::before {
-  content: url(images/toolbarButton-nextNote@2x.png);
-  zoom: 0.5;
+  background-image: url(images/toolbarButton-nextNote@2x.png);
 }
 
 .toolbarButton.previousNote::before {
-  content: url(images/toolbarButton-previousNote@2x.png);
-  zoom: 0.5;
+  background-image: url(images/toolbarButton-previousNote@2x.png);
 }
 
 .toolbarButton.presentationMode::before,
