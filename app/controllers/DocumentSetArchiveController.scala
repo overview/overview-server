@@ -1,5 +1,8 @@
 package controllers
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import play.api.http.HttpEntity
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Result
 import scala.concurrent.Future
@@ -39,11 +42,10 @@ trait DocumentSetArchiveController extends Controller with SelectionHelpers {
   private def streamArchive(archive: ZipArchive, filename: String): Result = {
     val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
-    Ok
-      .feed(archive.stream)
+    Ok.sendEntity(HttpEntity.Streamed(archive.stream, Some(archive.size), Some("application/zip")))
       .withHeaders(
+        CONTENT_LENGTH -> archive.size.toString,
         CONTENT_TYPE -> "application/zip",
-        CONTENT_LENGTH -> s"${archive.size}",
         CONTENT_DISPOSITION -> contentDisposition
       )
   }

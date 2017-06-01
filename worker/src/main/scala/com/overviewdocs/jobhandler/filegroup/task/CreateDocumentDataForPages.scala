@@ -1,5 +1,6 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
+import akka.actor.ActorRefFactory
 import java.io.ByteArrayInputStream
 import java.nio.file.{Files=>JFiles}
 import java.time.Instant
@@ -17,7 +18,8 @@ import com.overviewdocs.util.{Configuration,Textify}
 class CreateDocumentDataForPages(
   file: File,
   onProgress: Double => Boolean
-)(implicit ec: ExecutionContext) extends HasDatabase {
+)(implicit system: ActorRefFactory) extends HasDatabase {
+  import system.dispatcher
   import database.api._
 
   private def onSplitProgress(pageNumber: Int, nPages: Int): Boolean = onProgress(0.5 * pageNumber / nPages)
@@ -115,7 +117,7 @@ object CreateDocumentDataForPages {
   def apply(
     file: File,
     onProgress: Double => Boolean
-  )(implicit ec: ExecutionContext): Future[Either[String,Seq[IncompleteDocument]]] = {
+  )(implicit system: ActorRefFactory): Future[Either[String,Seq[IncompleteDocument]]] = {
     new CreateDocumentDataForPages(file, onProgress).execute
   }
 

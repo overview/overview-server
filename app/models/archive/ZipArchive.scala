@@ -1,10 +1,13 @@
 package models.archive
 
+import akka.stream.scaladsl.{Sink,Source}
+import akka.util.ByteString
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import java.nio.{ByteBuffer,ByteOrder}
 import java.util.HashSet
 import java.util.zip.CRC32
+import scala.collection.immutable
 import scala.collection.mutable
 import scala.concurrent.Future
 
@@ -39,7 +42,7 @@ class ZipArchive(
     * rename files, so we know how many bytes each filename will contain, so we
     * can calculate the entire size of the output zipfile with minimal math.
     */
-  val archiveEntries: Seq[ArchiveEntry] = {
+  val archiveEntries: immutable.Seq[ArchiveEntry] = {
     // Use WrappedArray[Byte] instead of Array[Byte] so hashCode() will work.
     // Use Java HashSet because it lets us set initial capacity. 0.75 is the HashMap default load factor.
     val usedFilenamesUtf8 = new HashSet[mutable.WrappedArray[Byte]](
@@ -48,6 +51,7 @@ class ZipArchive(
     )
     archiveEntriesWithDuplicates
       .filter(e => usedFilenamesUtf8.add(e.filenameUtf8)) // clever: Set.add() returns false on dup
+      .to[immutable.Seq]
   }
 
   val size: Long = {
@@ -67,30 +71,54 @@ class ZipArchive(
 
   private val timestamp = DosDate.now
 
-  def stream: Enumerator[Array[Byte]] = {
-    streamLocalFiles
-      .andThen(streamCentralDirectory)
-      .andThen(Enumerator(endOfCentralDirectory))
+  def stream: Source[ByteString, akka.NotUsed] = {
+    // https://github.com/akka/akka/issues/18683
+    // https://github.com/akka/akka/issues/23044
+    // streamCentralDirectory() depends on crcs being full. And by the time
+    // we're streaming the central directory into our output, they are. But
+    // Akka's "Stream.concat" erroneously fetches the first element before
+    // realizing it's supposed to wait -- even with Source.lazily().
+    //
+    // Our workaround: assume Akka will only fetch a single element. Compute
+    // that CRC before continuing.
+
+    val loadFirstCrcForAkkaBug18683: Future[Unit] = archiveEntries.headOption match {
+      case None => Future.successful(())
+      case Some(archiveEntry) => computeCrc(archiveEntry).map(crc => crcs(archiveEntry.documentId) = crc)
+    }
+
+    val futureSource = loadFirstCrcForAkkaBug18683.map(_ =>
+      streamLocalFiles
+        .concat(Source.lazily({ () =>
+          // wait lazily for crcs to be computed
+          streamCentralDirectory
+            .concat(Source.single(ByteString(endOfCentralDirectory)))
+        }))
+    )
+
+    Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 
-  private def streamLocalFiles: Enumerator[Array[Byte]] = {
-    Enumerator.enumerate(archiveEntries).flatMap(streamLocalFile _)
+  private def streamLocalFiles: Source[ByteString, akka.NotUsed] = {
+    Source(archiveEntries).flatMapConcat(streamLocalFile _)
   }
 
   /** Stream an ArchiveEntry, and set this.crcs(archiveEntry.documentId) as a
     * side-effect.
     */
-  private def streamLocalFile(archiveEntry: ArchiveEntry): Enumerator[Array[Byte]] = {
+  private def streamLocalFile(archiveEntry: ArchiveEntry): Source[ByteString, akka.NotUsed] = {
     val future = for {
       crc <- computeCrc(archiveEntry)
     } yield {
       crcs(archiveEntry.documentId) = crc
-      val headerBytes = localFileHeader(archiveEntry)
-      Enumerator(headerBytes)
-        .andThen(backend.streamBytes(documentSetId, archiveEntry.documentId))
+      val headerBytes = ByteString(localFileHeader(archiveEntry))
+
+      Source.single(headerBytes)
+        .concat(backend.streamBytes(documentSetId, archiveEntry.documentId))
     }
 
-    Enumerator.flatten(future)
+    Source.fromFutureSource(future)
+      .mapMaterializedValue( _ =>  akka.NotUsed)
   }
 
   private def localFileHeader(archiveEntry: ArchiveEntry): Array[Byte] = {
@@ -119,19 +147,19 @@ class ZipArchive(
     buf.array
   }
 
-  private def streamCentralDirectory: Enumerator[Array[Byte]] = {
+  private def streamCentralDirectory: Source[ByteString, akka.NotUsed] = {
     streamCentralDirectoryFileHeaders
   }
 
-  private def streamCentralDirectoryFileHeaders: Enumerator[Array[Byte]] = {
+  private def streamCentralDirectoryFileHeaders: Source[ByteString, akka.NotUsed] = {
     // Iterate in the same order as we streamed the files, so we can write all
     // the offsets.
     val startIterator = archiveEntries.iterator
-    Enumerator.unfold((startIterator, 0)) { case (iterator: Iterator[ArchiveEntry], curOffset: Int) =>
+    Source.unfold((startIterator, 0)) { case (iterator: Iterator[ArchiveEntry], curOffset: Int) =>
       if (iterator.hasNext) {
         val archiveEntry = iterator.next
         val localFileSize = LocalFileHeaderSize + archiveEntry.filenameUtf8.length + archiveEntry.nBytes
-        val bytes = centralDirectoryFileHeader(archiveEntry, curOffset)
+        val bytes = ByteString(centralDirectoryFileHeader(archiveEntry, curOffset))
         Some(((iterator, curOffset + localFileSize.toInt), bytes))
       } else {
         None
@@ -202,10 +230,10 @@ class ZipArchive(
     */
   private def computeCrc(archiveEntry: ArchiveEntry): Future[Int] = {
     val crc32 = new CRC32()
-    val enumerator: Enumerator[Array[Byte]] = backend.streamBytes(documentSetId, archiveEntry.documentId)
-    val iteratee = Iteratee.foreach { (bytes: Array[Byte]) => crc32.update(bytes) }
+    val source: Source[ByteString, _] = backend.streamBytes(documentSetId, archiveEntry.documentId)
+    val sink = Sink.foreach { (bytes: ByteString) => crc32.update(bytes.toArray) }
     for {
-      _ <- enumerator.run(iteratee)
+      _ <- source.runWith(sink)(play.api.Play.current.materializer)
     } yield crc32.getValue.toInt
   }
 }

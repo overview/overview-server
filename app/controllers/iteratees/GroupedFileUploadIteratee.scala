@@ -19,7 +19,8 @@ trait GroupedFileUploadIteratee {
         .map(_ => position + bytes.length)
     })
 
-    buffer.toMat(write)((_, _) => Future.successful(()))
+    buffer.toMat(write)(Keep.right)
+      .mapMaterializedValue(_.map(_ => ()))
   }
 }
 

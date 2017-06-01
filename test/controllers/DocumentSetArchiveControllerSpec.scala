@@ -1,8 +1,9 @@
 package controllers
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
 import play.api.mvc.Result
 import scala.concurrent.Future
 
@@ -33,7 +34,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       mockArchiveEntryBackend.showMany(1L, Seq(2L)) returns Future.successful(entries)
       mockArchiveFactory.createZip(1L, entries) returns Right(mockArchive)
       mockArchive.size returns 6L
-      mockArchive.stream returns Enumerator("abcdef".getBytes("ascii"))
+      mockArchive.stream returns Source.single(ByteString("abcdef".getBytes("ascii")))
       val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
       h.header("Content-Type", result) must beSome("application/zip")
       h.header("Content-Length", result) must beSome("6")

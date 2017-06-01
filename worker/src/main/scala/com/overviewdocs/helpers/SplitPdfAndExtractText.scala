@@ -67,8 +67,9 @@ object SplitPdfAndExtractText extends App {
     val pdfDocument: PdfDocument = try {
       await(PdfDocument.load(inPath))
     } catch {
-      case _: PdfInvalidException => {
+      case ex: PdfInvalidException => {
         System.out.print("Error in PDF file\n")
+        ex.printStackTrace(System.err)
         return
       }
       case _: PdfEncryptedException => {
@@ -112,8 +113,9 @@ object SplitPdfAndExtractText extends App {
       }
 
     } catch {
-      case _: PdfInvalidException => {
+      case ex: PdfInvalidException => {
         System.out.print("Error in PDF file\n")
+        ex.printStackTrace(System.err) // TODO remove! Debugging on production
         pdfDocument.close
         return
       }

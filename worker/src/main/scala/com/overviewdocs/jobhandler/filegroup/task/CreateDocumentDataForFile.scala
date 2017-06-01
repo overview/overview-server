@@ -1,17 +1,19 @@
 package com.overviewdocs.jobhandler.filegroup.task
 
+import akka.actor.ActorRefFactory
 import java.time.Instant
-
+import java.nio.file.{Files=>JFiles}
 import org.overviewproject.pdfocr.pdf.PdfDocument
 import play.api.libs.json.JsObject
-
-import java.nio.file.{Files=>JFiles}
 import scala.concurrent.{ExecutionContext, Future}
+
 import com.overviewdocs.blobstorage.{BlobBucketId, BlobStorage}
 import com.overviewdocs.models.{DocumentDisplayMethod, File}
 import com.overviewdocs.util.{Configuration, Textify}
 
-class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(implicit ec: ExecutionContext) {
+class CreateDocumentDataForFile(file: File, onProgress: Double => Boolean)(implicit system: ActorRefFactory) {
+  import system.dispatcher
+
   private def onSplitterProgress(nPages: Int, pageNumber: Int): Boolean = onProgress(nPages.toDouble / pageNumber)
 
   def execute: Future[Either[String,Seq[IncompleteDocument]]] = {
@@ -56,7 +58,7 @@ object CreateDocumentDataForFile {
   def apply(
     file: File,
     onProgress: Double => Boolean
-  )(implicit ec: ExecutionContext): Future[Either[String,Seq[IncompleteDocument]]] = {
+  )(implicit system: ActorRefFactory): Future[Either[String,Seq[IncompleteDocument]]] = {
     new CreateDocumentDataForFile(file, onProgress).execute
   }
 

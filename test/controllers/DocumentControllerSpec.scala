@@ -1,8 +1,9 @@
 package controllers
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import org.specs2.matcher.JsonMatchers
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{JsValue,Json}
 import play.api.mvc.AnyContent
 import scala.concurrent.Future
@@ -38,12 +39,12 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
     def foundDocument: Option[Document] = None
     def foundFile: Option[File] = None
     def foundPage: Option[Page] = None
-    def foundBlob: Enumerator[Array[Byte]] = Enumerator.empty
+    def foundBlob: Source[ByteString, akka.NotUsed] = Source.empty
 
     mockDocumentBackend.show(requestedDocumentId) returns Future { foundDocument }
     mockFileBackend.show(fileId) returns Future { foundFile }
     mockPageBackend.show(pageId) returns Future { foundPage }
-    mockBlobStorage.get(validLocation) returns Future { foundBlob }
+    mockBlobStorage.get(validLocation) returns foundBlob
   }
 
   "DocumentController" should {
@@ -102,7 +103,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
       "return page content from blob storage" in new ShowPdfScope {
         override def foundDocument = Some(factory.document(fileId=Some(fileId), pageId=Some(pageId)))
         override def foundPage = Some(factory.page(dataLocation=validLocation, dataSize=9))
-        override def foundBlob = Enumerator("page data".getBytes("utf-8"))
+        override def foundBlob = Source.single(ByteString("page data".getBytes("utf-8")))
 
         h.status(result) must beEqualTo(h.OK)
         h.header("Content-Length", result) must beSome("9")
