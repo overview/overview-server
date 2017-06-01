@@ -11,7 +11,7 @@ import models.{Selection,SelectionRequest}
 import com.overviewdocs.models.{Document,PdfNote,PdfNoteCollection}
 import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
-import com.overviewdocs.searchindex.{ElasticSearchIndexClient,IndexClient}
+import com.overviewdocs.searchindex.LuceneIndexClient
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {
@@ -25,21 +25,28 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   }
 
   trait BaseScopeWithIndex extends BaseScope {
-    val testIndexClient = ElasticSearchIndexClient.singleton
-    await(testIndexClient.deleteAllIndices)
-    val backend = new DbDocumentBackend(testIndexClient)
+    // More integration-test-ish
+    val indexClient = LuceneIndexClient.createInMemoryLuceneIndexClient
+    val searchBackend = new SearchBackend {
+      override def search(documentSetId: Long, query: Query) = {
+        indexClient.searchForIds(documentSetId, query)
+      }
+
+      override def refreshDocument(documentSetId: Long, documentId: Long) = ???
+    }
+    val backend = new DbDocumentBackend(searchBackend)
   }
 
   trait CommonIndexScope extends BaseScopeWithIndex {
     val documentSet = factory.documentSet()
-    await(testIndexClient.addDocumentSet(documentSet.id))
+    await(indexClient.addDocumentSet(documentSet.id))
     val doc1 = factory.document(documentSetId=documentSet.id, title="c", text="foo bar baz oneandtwo oneandthree")
     val doc2 = factory.document(documentSetId=documentSet.id, title="a", text="moo mar maz oneandtwo twoandthree")
     val doc3 = factory.document(documentSetId=documentSet.id, title="b", text="noo nar naz oneandthree twoandthree")
     val documents = Seq(doc1, doc2, doc3)
 
-    await(testIndexClient.addDocuments(documents))
-    await(testIndexClient.refresh)
+    await(indexClient.addDocuments(documentSet.id, documents))
+    await(indexClient.refresh(documentSet.id))
 
     private val sortedIds = s"{${doc2.id},${doc3.id},${doc1.id}}"
 
@@ -341,9 +348,10 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     }
 
     "#updateTitle" should {
-      trait UpdateTitleScope extends BaseScopeWithIndex {
+      trait UpdateTitleScope extends BaseScopeNoIndex {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id, title="foo")
+        searchBackend.refreshDocument(any, any) returns Future.successful(())
       }
 
       "update title" in new UpdateTitleScope {
@@ -357,10 +365,8 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       "update the search index" in new UpdateTitleScope {
-        await(testIndexClient.addDocumentSet(documentSet.id))
         await(backend.updateTitle(documentSet.id, document.id, "bar"))
-        await(testIndexClient.searchForIds(documentSet.id, PhraseQuery(Field.All, "foo"))) must beEqualTo(Seq())
-        await(testIndexClient.searchForIds(documentSet.id, PhraseQuery(Field.All, "bar"))) must beEqualTo(Seq(document.id))
+        there was one(searchBackend).refreshDocument(documentSet.id, document.id)
       }
     }
 

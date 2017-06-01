@@ -6,18 +6,19 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
-import controllers.backend.TagDocumentBackend
+import controllers.backend.{TagDocumentBackend,SelectionBackend}
 import models.{InMemorySelection,Selection}
 
 class TagDocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val selection = InMemorySelection(Seq(2L, 3L, 4L)) // override for a different Selection
-    def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
     val mockTagDocumentBackend = smartMock[TagDocumentBackend]
-    val controller = new TagDocumentController with TestController {
-      override val tagDocumentBackend = mockTagDocumentBackend
-      override def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]) = buildSelection
-    }
+    val mockSelectionBackend = smartMock[SelectionBackend]
+    mockSelectionBackend.findOrCreate(any, any, any) returns Future(selection)
+    val controller = new TagDocumentController(
+      mockTagDocumentBackend,
+      mockSelectionBackend
+    )
   }
 
   "#count" should {

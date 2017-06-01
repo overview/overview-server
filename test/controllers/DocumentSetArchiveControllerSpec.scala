@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 import controllers.auth.AuthorizedRequest
-import controllers.backend.ArchiveEntryBackend
+import controllers.backend.{ArchiveEntryBackend,SelectionBackend}
 import models.archive.{ArchiveFactory,ZipArchive}
 import models.{ArchiveEntry,InMemorySelection,Selection}
 
@@ -17,14 +17,15 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
   trait BaseScope extends Scope {
     val mockArchiveEntryBackend = smartMock[ArchiveEntryBackend]
     val mockArchiveFactory = smartMock[ArchiveFactory]
-    val selection = InMemorySelection(Seq(2L)) // override for a different selection
-    def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
+    def selection = InMemorySelection(Seq(2L)) // override for a different selection
+    val mockSelectionBackend = smartMock[SelectionBackend]
+    mockSelectionBackend.findOrCreate(any, any, any) returns Future { selection }
 
-    val controller = new DocumentSetArchiveController {
-      override protected val archiveEntryBackend = mockArchiveEntryBackend
-      override protected val archiveFactory = mockArchiveFactory
-      override def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]) = buildSelection
-    }
+    val controller = new DocumentSetArchiveController(
+      mockArchiveEntryBackend,
+      mockArchiveFactory,
+      mockSelectionBackend
+    )
   }
 
   "DocumentSetArchiveController" should {
@@ -54,7 +55,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     "fail fast with >65535 files" in new BaseScope {
       // Errors normally come from ArchiveFactory. But we can take a shortcut
       // to avoid an expensive query.
-      override val selection = InMemorySelection(Seq.tabulate(65536)(_.toLong))
+      override def selection = InMemorySelection(Seq.tabulate(65536)(_.toLong))
       val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.SEE_OTHER)
       h.flash(result).data must contain("warning" -> controller.messagesApi("controllers.DocumentSetArchiveController.tooManyEntries"))

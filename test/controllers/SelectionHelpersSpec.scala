@@ -22,6 +22,7 @@ class SelectionHelpersSpec extends Specification with Mockito with AwaitMethod {
         def f(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest]
       }
       val controller = new Controller with SelectionHelpers with F with TestController {
+        override val selectionBackend = smartMock[SelectionBackend]
         override def messagesApi = new MockMessagesApi()
         override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)
       }

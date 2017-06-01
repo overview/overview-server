@@ -4,7 +4,7 @@ import play.api.libs.json.{JsNull,JsObject,JsValue,Json}
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedRequest
-import controllers.backend.{StoreBackend,DocumentStoreObjectBackend}
+import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
 import models.{Selection,SelectionRequest}
 import com.overviewdocs.models.{Store,DocumentStoreObject}
 
@@ -13,11 +13,14 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
     val selection = smartMock[Selection]
     val mockStoreBackend = smartMock[StoreBackend]
     val mockObjectBackend = smartMock[DocumentStoreObjectBackend]
-    val controller = new DocumentStoreObjectController with TestController {
-      override val storeBackend = mockStoreBackend
-      override val documentStoreObjectBackend = mockObjectBackend
-      override def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]) = Future.successful(Right(selection))
-    }
+    val mockSelectionBackend = mock[SelectionBackend]
+    mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
+
+    val controller = new DocumentStoreObjectController(
+      mockStoreBackend,
+      mockObjectBackend,
+      mockSelectionBackend
+    )
   }
 
   "DocumentStoreObjectController" should {

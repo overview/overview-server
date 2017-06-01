@@ -12,12 +12,14 @@ import models.{InMemorySelection,Selection}
 class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val selection = InMemorySelection(Seq(2L, 3L, 4L)) // override for a different Selection
-    def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
     val mockDocumentNodeBackend = smartMock[DocumentNodeBackend]
-    val controller = new DocumentNodeController with TestController {
-      override val documentNodeBackend = mockDocumentNodeBackend
-      override def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]) = buildSelection
-    }
+    val mockSelectionBackend = smartMock[SelectionBackend]
+    mockSelectionBackend.findOrCreate(any, any, any) returns Future(selection)
+
+    val controller = new DocumentNodeController(
+      mockDocumentNodeBackend,
+      mockSelectionBackend
+    )
   }
 
   "#countByNode" should {

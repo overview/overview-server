@@ -15,17 +15,17 @@ import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
   trait DocumentScope extends Scope {
-    val mockDocumentBackend = mock[DocumentBackend]
-    val mockFileBackend = mock[FileBackend]
-    val mockPageBackend = mock[PageBackend]
-    val mockBlobStorage = mock[BlobStorage]
+    val mockDocumentBackend = smartMock[DocumentBackend]
+    val mockFileBackend = smartMock[FileBackend]
+    val mockPageBackend = smartMock[PageBackend]
+    val mockBlobStorage = smartMock[BlobStorage]
 
-    val controller = new DocumentController with TestController {
-      override val blobStorage = mockBlobStorage
-      override val documentBackend = mockDocumentBackend
-      override val fileBackend = mockFileBackend
-      override val pageBackend = mockPageBackend
-    }
+    val controller = new DocumentController(
+      mockDocumentBackend,
+      mockBlobStorage,
+      mockFileBackend,
+      mockPageBackend
+    )
 
     val factory = com.overviewdocs.test.factories.PodoFactory
 

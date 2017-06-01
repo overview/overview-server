@@ -11,13 +11,11 @@ class HighlightControllerSpec extends ControllerSpecification {
   trait HighlightScope extends Scope {
     val mockHighlightBackend = mock[HighlightBackend]
 
-    val controller = new HighlightController with TestController {
-      override val highlightBackend = mockHighlightBackend
-    }
+    val controller = new HighlightController(mockHighlightBackend)
 
     def foundHighlights: Seq[Highlight] = Seq()
 
-    mockHighlightBackend.index(any[Long], any[Long], any[Query]) returns Future { foundHighlights }
+    mockHighlightBackend.highlight(any[Long], any[Long], any[Query]) returns Future { foundHighlights }
   }
 
   "#index" should {
@@ -41,7 +39,7 @@ class HighlightControllerSpec extends ControllerSpecification {
 
     "call HighlightBackend.index" in new IndexScope {
       h.status(result)
-      there was one(mockHighlightBackend).index(1L, 2L, PhraseQuery(Field.All, "foo"))
+      there was one(mockHighlightBackend).highlight(1L, 2L, PhraseQuery(Field.All, "foo"))
     }
 
     "return BadRequest when the query string is bad" in new IndexScope {

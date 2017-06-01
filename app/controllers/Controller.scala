@@ -10,7 +10,7 @@ import models.pagination.PageRequest
 import models.{IdList,SelectionRequest}
 
 trait Controller extends PlayController with I18nSupport {
-  override def messagesApi: MessagesApi = {
+  override def messagesApi: MessagesApi = { // FIXME delete this, make all Controllers @Inject()
     import play.api.Play.current
     import play.api.i18n.Messages.Implicits.applicationMessagesApi
     applicationMessagesApi(current)

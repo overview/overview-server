@@ -73,3 +73,14 @@ trait LuceneIndexClient extends IndexClient {
     getIndex(documentSetId).map(_.refresh)
   }
 }
+
+object LuceneIndexClient {
+  def createInMemoryLuceneIndexClient(implicit executionContext: ExecutionContext): LuceneIndexClient = {
+    new LuceneIndexClient {
+      override protected implicit val ec: ExecutionContext = executionContext
+      override protected def openIndex(documentSetId: Long) = {
+        new DocumentSetLuceneIndex(new org.apache.lucene.store.RAMDirectory)
+      }
+    }
+  }
+}

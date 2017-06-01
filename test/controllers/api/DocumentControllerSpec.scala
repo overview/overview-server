@@ -5,7 +5,7 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedRequest
-import controllers.backend.{DocumentBackend,DocumentSetBackend}
+import controllers.backend.{DocumentBackend,DocumentSetBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.{InMemorySelection,Selection}
 import com.overviewdocs.models.DocumentHeader
@@ -17,15 +17,17 @@ class DocumentControllerSpec extends ApiControllerSpecification {
     val documentSet = factory.documentSet(metadataSchema = MetadataSchema(1, Seq(
       MetadataField("foo", MetadataFieldType.String)
     )))
-    def buildSelection: Future[Either[Result,Selection]] = Future(Right(selection)) // override for edge cases
-    val mockDocumentBackend = smartMock[DocumentBackend]
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
     mockDocumentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
-    val controller = new DocumentController with TestController {
-      override val documentBackend = mockDocumentBackend
-      override val documentSetBackend = mockDocumentSetBackend
-      override def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]) = buildSelection
-    }
+    val mockDocumentBackend = smartMock[DocumentBackend]
+    val mockSelectionBackend = smartMock[SelectionBackend]
+    mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
+
+    val controller = new DocumentController(
+      mockDocumentSetBackend,
+      mockDocumentBackend,
+      mockSelectionBackend
+    )
   }
 
   "DocumentController" should {

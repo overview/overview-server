@@ -6,10 +6,10 @@ import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json
 import scala.concurrent.Future
 
-import controllers.backend.{DocumentBackend,DocumentSetBackend,DocumentTagBackend,TagBackend}
+import controllers.backend.{DocumentBackend,DocumentSetBackend,DocumentTagBackend,TagBackend,SelectionBackend}
+import models.{Selection,InMemorySelection}
 import models.export.rows.Rows
-import models.export.format.Format
-import com.overviewdocs.util.TempFile
+import models.export.format.CsvFormat
 
 class DocumentSetExportControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -17,13 +17,17 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
     val mockDocumentTagBackend = smartMock[DocumentTagBackend]
     val mockTagBackend = smartMock[TagBackend]
+    val mockSelectionBackend = smartMock[SelectionBackend]
+    def selection: Selection = ???
+    mockSelectionBackend.findOrCreate(any, any, any) returns Future { selection }
 
-    val controller = new DocumentSetExportController with TestController {
-      override val documentBackend = mockDocumentBackend
-      override val documentSetBackend = mockDocumentSetBackend
-      override val documentTagBackend = mockDocumentTagBackend
-      override val tagBackend = mockTagBackend
-    }
+    val controller = new DocumentSetExportController(
+      mockDocumentBackend,
+      mockDocumentSetBackend,
+      mockDocumentTagBackend,
+      mockTagBackend,
+      mockSelectionBackend
+    )
 
     def request = fakeAuthorizedRequest
 
@@ -34,8 +38,15 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
     trait ExportScope extends BaseScope {
       val documentSet = factory.documentSet()
 
-      val doc1 = (factory.document(), Seq(5L, 6L))
-      val doc2 = (factory.document(), Seq(5L))
+      val doc1 = factory.document(id=1L, suppliedId="11", title="doc1", text="text1", url=None)
+      val doc2 = factory.document(id=2L, suppliedId="22", title="doc2", text="text2", url=None)
+
+      override def selection = InMemorySelection(Seq(1L, 2L))
+      mockDocumentBackend.index(any, any) returns Future.successful(Seq(doc1, doc2))
+      mockDocumentTagBackend.indexMany(any) returns Future.successful(Map(
+        1L -> Seq(5L, 6L),
+        2L -> Seq(5L)
+      ))
 
       val tags = Seq(
         factory.tag(id=5L, name="tag five"),
@@ -43,15 +54,14 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
         factory.tag(id=7L, name="tag seven")
       )
 
-      val contents = "id,name\n1,foo".getBytes
       val filename = "foobar.csv"
 
       mockDocumentSetBackend.show(45L) returns Future.successful(Some(documentSet))
       mockTagBackend.index(45L) returns Future.successful(tags)
 
-      val format = smartMock[Format]
-      format.contentType returns "text/csv; charset=\"utf-8\""
-      format.bytes(any) returns Enumerator(contents)
+      // Integration-test-ish: we'll actually output a CSV to test all our
+      // queries work
+      val format = CsvFormat
     }
 
     "#documentsWithStringTags" should {
@@ -64,7 +74,8 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       }
 
       "set contents" in new DocumentsWithStringTagsScope {
-        h.contentAsBytes(result).toArray must beEqualTo(contents)
+        val contents = "\ufeffid,title,text,url,tags\r\n11,doc1,text1,,\"tag five,tag six\"\r\n22,doc2,text2,,tag five\r\n"
+        h.contentAsString(result) must beEqualTo(contents)
       }
 
       "not send as chunked" in new DocumentsWithStringTagsScope {
@@ -91,7 +102,8 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       }
 
       "set contents" in new DocumentsWithColumnTagsScope {
-        h.contentAsBytes(result).toArray must beEqualTo(contents)
+        val contents = "\ufeffid,title,text,url,tag five,tag six,tag seven\r\n11,doc1,text1,,1,1,\r\n22,doc2,text2,,1,,\r\n"
+        h.contentAsString(result) must beEqualTo(contents)
       }
 
       "not send as chunked" in new DocumentsWithColumnTagsScope {
