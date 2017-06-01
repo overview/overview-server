@@ -1,7 +1,7 @@
 package com.overviewdocs.background.filegroupcleanup
 
 import org.specs2.mock.Mockito
-import scala.concurrent.{ Await, Promise, TimeoutException }
+import scala.concurrent.{ Await, Future, Promise, TimeoutException }
 import scala.concurrent.duration._
 
 import com.overviewdocs.blobstorage.BlobStorage
@@ -14,12 +14,10 @@ class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with Awa
   "GroupedFileUploadRemover" should {
 
     "delete content" in new GroupedFileUploadScope {
-      deleteMany.success(())
+      pgUnlinkResult.success(())
       await(remover.removeFileGroupUploads(fileGroup.id))
 
-      there was one(mockBlobStorage).deleteMany(argThat(beLike[Seq[String]] { case (actual: Seq[String]) =>
-        actual must containTheSameElementsAs(contentLocations)
-      }))
+      remover.lastDeletedOids must containTheSameElementsAs(contentOids)
     }
 
     "complete when content deletion completes" in new GroupedFileUploadScope {
@@ -27,13 +25,13 @@ class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with Awa
 
       r.isCompleted must beFalse
 
-      deleteMany.success(())
+      pgUnlinkResult.success(())
 
       await(r) must beEqualTo(())
     }
 
     "delete GroupedFileUpload" in new GroupedFileUploadScope {
-      deleteMany.success(())
+      pgUnlinkResult.success(())
       await(remover.removeFileGroupUploads(fileGroup.id))
       
       import database.api._
@@ -50,16 +48,15 @@ class GroupedFileUploadRemoverSpec extends DbSpecification with Mockito with Awa
     val uploads = contentOids.map(coid =>
       factory.groupedFileUpload(fileGroupId = fileGroup.id, contentsOid = coid))
 
-    val deleteMany = Promise[Unit]()
-    
-    val mockBlobStorage = smartMock[BlobStorage]
-    mockBlobStorage.deleteMany(any) returns deleteMany.future
-    
-    val remover = new TestGroupedFileUploadRemover(mockBlobStorage)
-  }
+    val pgUnlinkResult = Promise[Unit]()
+    class TestGroupedFileUploadRemover extends GroupedFileUploadRemover {
+      var lastDeletedOids: Seq[Long] = Seq()
+      override protected def deleteLargeObjectsByOids(oids: Seq[Long]): Future[Unit] = {
+        lastDeletedOids = oids
+        pgUnlinkResult.future
+      }
+    }
 
-  class TestGroupedFileUploadRemover(storage: BlobStorage) extends GroupedFileUploadRemover {
-    override protected val blobStorage = storage
+    val remover = new TestGroupedFileUploadRemover
   }
-
 }
