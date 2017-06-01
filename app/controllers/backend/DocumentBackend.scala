@@ -1,6 +1,8 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
 import play.api.libs.json.JsObject
+import javax.inject.Inject
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -12,6 +14,7 @@ import com.overviewdocs.util.Logger
 import models.pagination.{Page,PageRequest}
 import models.{Selection,SelectionRequest}
 
+@ImplementedBy(classOf[DbDocumentBackend])
 trait DocumentBackend {
   /** Lists all Documents for the given parameters. */
   def index(
@@ -64,7 +67,10 @@ trait DocumentBackend {
   def updatePdfNotes(documentId: Long, pdfNotes: PdfNoteCollection): Future[Unit]
 }
 
-trait DbDocumentBackend extends DocumentBackend with DbBackend {
+class DbDocumentBackend @Inject() (
+  val searchBackend: SearchBackend
+) extends DocumentBackend with DbBackend {
+
   import database.api._
 
   protected lazy val logger = Logger.forClass(getClass)
@@ -92,8 +98,6 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     override def +(elem: Long) = this
     override def -(elem: Long) = throw new UnsupportedOperationException()
   }
-
-  protected val searchBackend: SearchBackend
 
   override def index(selection: Selection, pageRequest: PageRequest, includeText: Boolean): Future[Page[DocumentHeader]] = {
     selection.getDocumentIds(pageRequest)

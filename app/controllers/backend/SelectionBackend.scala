@@ -1,14 +1,18 @@
 package controllers.backend
 
 import akka.util.Timeout
+import com.google.inject.ImplementedBy
+import com.redis.RedisClient
 import com.redis.protocol.StringCommands
 import java.nio.ByteBuffer
 import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
 import models.{InMemorySelection,Selection,SelectionRequest}
 import models.pagination.{Page,PageInfo,PageRequest}
+import modules.RedisModule
 
 /** A store of Selections.
   *
@@ -23,7 +27,10 @@ import models.pagination.{Page,PageInfo,PageRequest}
   * back to a previously-cached selection, you'll get the cached selection
   * back.
   */
+@ImplementedBy(classOf[RedisSelectionBackend])
 trait SelectionBackend extends Backend {
+  protected val documentBackend: DocumentBackend
+
   /** Converts a SelectionRequest to a new Selection.
     *
     * This involves calling findDocumentIds and caching the result.
@@ -44,10 +51,15 @@ trait SelectionBackend extends Backend {
   def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]): Future[Selection]
 
   /** Does the grunt work for the create() method. */
-  protected def findDocumentIds(request: SelectionRequest): Future[Seq[Long]]
+  protected def findDocumentIds(request: SelectionRequest): Future[Seq[Long]] = {
+    documentBackend.indexIds(request)
+  }
 }
 
-trait NullSelectionBackend extends SelectionBackend {
+class NullSelectionBackend @Inject() (
+  override val documentBackend: DocumentBackend
+) extends SelectionBackend {
+
   override def create(userEmail: String, request: SelectionRequest) = {
     findDocumentIds(request).map(InMemorySelection(_))
   }
@@ -74,7 +86,12 @@ trait NullSelectionBackend extends SelectionBackend {
   *
   * Selections all expire. find() and findOrCreate() reset the expiry time.
   */
-trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
+class RedisSelectionBackend @Inject() (
+  override val documentBackend: DocumentBackend,
+  val redisModule: RedisModule
+) extends SelectionBackend {
+  protected val redis: RedisClient = redisModule.client
+
   private[backend] val ExpiresInSeconds: Int = 60 * 60 // Used in unit tests, too
   private val SizeOfLong = 8
 
@@ -202,8 +219,4 @@ trait RedisSelectionBackend extends SelectionBackend { self: RedisBackend =>
 
     selection3
   }
-}
-
-object SelectionBackend extends RedisBackend with RedisSelectionBackend {
-  override def findDocumentIds(request: SelectionRequest) = DocumentBackend.indexIds(request)
 }

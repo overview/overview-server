@@ -1,5 +1,6 @@
 package controllers
 
+import javax.inject.Inject
 import play.api.i18n.Messages
 import play.api.libs.json.{JsArray,JsNumber,JsValue}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,8 +12,9 @@ import controllers.backend.HighlightBackend
 import com.overviewdocs.query.QueryParser
 import com.overviewdocs.searchindex.Highlight
 
-trait HighlightController extends Controller {
-  protected val highlightBackend: HighlightBackend
+class HighlightController @Inject() (
+  val highlightBackend: HighlightBackend
+) extends Controller {
 
   /** Lists highlights: .e.g, `[[2,4],[6,8]]`
     *
@@ -23,15 +25,11 @@ trait HighlightController extends Controller {
     QueryParser.parse(queryString) match {
       case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("com.overviewdocs.query.SyntaxError"))))
       case Right(query) => {
-        highlightBackend.index(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
+        highlightBackend.highlight(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
           val json = Highlight.asJson(highlights)
           Ok(json).withHeaders(CACHE_CONTROL -> "no-cache")
         }
       }
     }
   }
-}
-
-object HighlightController extends HighlightController {
-  override protected val highlightBackend = HighlightBackend
 }

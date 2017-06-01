@@ -22,10 +22,10 @@ import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentController @Inject() (
-  documentBackend: DocumentBackend,
-  blobStorage: BlobStorage,
-  fileBackend: FileBackend,
-  pageBackend: PageBackend
+  val documentBackend: DocumentBackend,
+  val blobStorage: BlobStorage,
+  val fileBackend: FileBackend,
+  val pageBackend: PageBackend
 ) extends Controller {
 
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>

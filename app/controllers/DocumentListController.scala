@@ -1,19 +1,21 @@
 package controllers
 
-import com.overviewdocs.searchindex.Snippet
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
 import scala.concurrent.Future
+
+import com.overviewdocs.searchindex.Snippet
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{DocumentBackend, DocumentNodeBackend, DocumentTagBackend, HighlightBackend}
+import controllers.backend.{DocumentBackend, DocumentNodeBackend, DocumentTagBackend, HighlightBackend, SelectionBackend}
 
-trait DocumentListController extends Controller with SelectionHelpers {
-  protected val documentBackend: DocumentBackend
-  protected val documentNodeBackend: DocumentNodeBackend
-  protected val documentTagBackend: DocumentTagBackend
-  protected val highlightBackend: HighlightBackend
-
+class DocumentListController @Inject() (
+  val documentBackend: DocumentBackend,
+  val documentNodeBackend: DocumentNodeBackend,
+  val documentTagBackend: DocumentTagBackend,
+  val highlightBackend: HighlightBackend,
+  val selectionBackend: SelectionBackend
+) extends Controller with SelectionHelpers {
   private val MaxPageSize = 100
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
@@ -27,7 +29,7 @@ trait DocumentListController extends Controller with SelectionHelpers {
 
           snippets <- sr.flatMap(_.q) match {
             case None => Future.successful(Map.empty[Long, Seq[Snippet]])
-            case Some(q) => highlightBackend.index(documentSetId, page.items.map(_.id), q)
+            case Some(q) => highlightBackend.highlights(documentSetId, page.items.map(_.id), q)
           }
 
           // In serial so as not to bombard Postgres
@@ -45,11 +47,4 @@ trait DocumentListController extends Controller with SelectionHelpers {
       }
     })
   }
-}
-
-object DocumentListController extends DocumentListController {
-  override val documentBackend = DocumentBackend
-  override val documentNodeBackend = DocumentNodeBackend
-  override val documentTagBackend = DocumentTagBackend
-  override val highlightBackend = HighlightBackend
 }

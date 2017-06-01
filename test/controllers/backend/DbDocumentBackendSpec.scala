@@ -20,17 +20,14 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   }
 
   trait BaseScopeNoIndex extends BaseScope {
-    val backend = new DbDocumentBackend {
-      override val indexClient = smartMock[IndexClient]
-    }
+    val searchBackend = mock[SearchBackend]
+    val backend = new DbDocumentBackend(searchBackend)
   }
 
   trait BaseScopeWithIndex extends BaseScope {
     val testIndexClient = ElasticSearchIndexClient.singleton
     await(testIndexClient.deleteAllIndices)
-    val backend = new DbDocumentBackend {
-      override val indexClient: IndexClient = testIndexClient
-    }
+    val backend = new DbDocumentBackend(testIndexClient)
   }
 
   trait CommonIndexScope extends BaseScopeWithIndex {

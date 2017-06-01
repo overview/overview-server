@@ -40,11 +40,8 @@ trait RedisBackendSpecification
   // HACK: We'll keep the same RedisClient between tests, because we know how
   // RedisModule works. (RedisBackendSpecification and RedisModule could use
   // some cleanup.)
-  lazy val redis = Play.current.injector.instanceOf[RedisModule].client
-
-  class TestRedisBackend extends RedisBackend {
-    override protected lazy val redis: RedisClient = self.redis
-  }
+  lazy val redisModule = Play.current.injector.instanceOf[RedisModule]
+  lazy val redis = redisModule.client
 
   trait RedisScope extends Scope {
     lazy val factory: Factory = PodoFactory

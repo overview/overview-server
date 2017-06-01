@@ -1,5 +1,6 @@
 package controllers
 
+import javax.inject.Inject
 import play.api.mvc.Result
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.{Enumeratee,Enumerator,Iteratee}
@@ -8,7 +9,7 @@ import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
 import controllers.auth.Authorities.userViewingDocumentSet
-import controllers.backend.{DocumentBackend,DocumentSetBackend,DocumentTagBackend,TagBackend}
+import controllers.backend.{DocumentBackend,DocumentSetBackend,DocumentTagBackend,TagBackend,SelectionBackend}
 import com.overviewdocs.database.HasDatabase
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{Document,DocumentSet,Tag}
@@ -18,12 +19,14 @@ import models.export.rows._
 import models.export.format.Format
 import models.Selection
 
-trait DocumentSetExportController extends Controller with SelectionHelpers {
+class DocumentSetExportController @Inject() (
+  val documentBackend: DocumentBackend,
+  val documentSetBackend: DocumentSetBackend,
+  val documentTagBackend: DocumentTagBackend,
+  val tagBackend: TagBackend,
+  val selectionBackend: SelectionBackend
+) extends Controller with SelectionHelpers {
   private val BatchSize = 100
-  protected val documentBackend: DocumentBackend
-  protected val documentSetBackend: DocumentSetBackend
-  protected val documentTagBackend: DocumentTagBackend
-  protected val tagBackend: TagBackend
 
   private def serveExport(
     format: Format,
@@ -102,11 +105,4 @@ trait DocumentSetExportController extends Controller with SelectionHelpers {
         .through(unbatch[(Document,Seq[Long])])
     }
   }
-}
-
-object DocumentSetExportController extends DocumentSetExportController {
-  override protected val documentBackend = DocumentBackend
-  override protected val documentSetBackend = DocumentSetBackend
-  override protected val documentTagBackend= DocumentTagBackend
-  override protected val tagBackend = TagBackend
 }

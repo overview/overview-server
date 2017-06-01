@@ -1,5 +1,6 @@
 package controllers
 
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsObject,JsNumber}
 import play.api.mvc.Result
@@ -7,10 +8,12 @@ import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
 import controllers.auth.Authorities.{userViewingDocumentSet,userOwningTag}
-import controllers.backend.TagDocumentBackend
+import controllers.backend.{TagDocumentBackend,SelectionBackend}
 
-trait TagDocumentController extends Controller with SelectionHelpers {
-  protected val tagDocumentBackend: TagDocumentBackend
+class TagDocumentController @Inject() (
+  val tagDocumentBackend: TagDocumentBackend,
+  val selectionBackend: SelectionBackend
+) extends Controller with SelectionHelpers {
 
   def count(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { request =>
     requestToSelection(documentSetId, request).flatMap(_ match {
@@ -50,8 +53,4 @@ trait TagDocumentController extends Controller with SelectionHelpers {
       } yield NoContent
     })
   }
-}
-
-object TagDocumentController extends TagDocumentController {
-  override protected val tagDocumentBackend = TagDocumentBackend
 }

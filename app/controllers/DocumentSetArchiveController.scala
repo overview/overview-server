@@ -2,6 +2,7 @@ package controllers
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import javax.inject.Inject
 import play.api.http.HttpEntity
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Result
@@ -10,13 +11,15 @@ import scala.concurrent.Future
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userCanExportDocumentSet
-import controllers.backend.ArchiveEntryBackend
+import controllers.backend.{ArchiveEntryBackend,SelectionBackend}
 import models.ArchiveEntry
 import models.archive.{ArchiveFactory,ZipArchive}
 
-trait DocumentSetArchiveController extends Controller with SelectionHelpers {
-  protected val archiveEntryBackend: ArchiveEntryBackend
-  protected val archiveFactory: ArchiveFactory
+class DocumentSetArchiveController @Inject() (
+  val archiveEntryBackend: ArchiveEntryBackend,
+  val archiveFactory: ArchiveFactory,
+  val selectionBackend: SelectionBackend
+) extends Controller with SelectionHelpers {
 
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userCanExportDocumentSet(documentSetId)).async { implicit request =>
     requestToSelection(documentSetId, request).flatMap(_ match {
@@ -55,9 +58,4 @@ trait DocumentSetArchiveController extends Controller with SelectionHelpers {
 
     Redirect(routes.DocumentSetController.index()).flashing("warning" -> m(warning))
   }
-}
-
-object DocumentSetArchiveController extends DocumentSetArchiveController {
-  override protected val archiveEntryBackend = ArchiveEntryBackend
-  override protected val archiveFactory = ArchiveFactory
 }

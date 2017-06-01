@@ -28,15 +28,15 @@ POST   /reset-password/:token controllers.PasswordController.update(token)
 DELETE /tour controllers.TourController.delete()
 
 # TODO add documentSetId to these routes
-GET    /documents/:id.txt                         controllers.DocumentController.showText(id: Long)
-GET    /documents/:id.pdf                         controllers.DocumentController.showPdf(id: Long)
-GET    /documents/:id/notes                       controllers.DocumentController.showPdfNotes(id: Long)
-PUT    /documents/:id/notes                       controllers.DocumentController.updatePdfNotes(id: Long)
-GET    /documents/:id.png                         controllers.DocumentController.showPng(id: Long)
-GET    /documents/:id                             controllers.DocumentController.show(id: Long)
-GET    /documentsets/:documentSetId/documents/:id controllers.DocumentController.showJson(documentSetId: Long, id: Long)
-PATCH  /documentsets/:documentSetId/documents/:id controllers.DocumentController.update(documentSetId: Long, id: Long)
-GET    /localfiles/*filename  						controllers.DocumentController.showFile(filename: String)
+GET    /documents/:id.txt                         @controllers.DocumentController.showText(id: Long)
+GET    /documents/:id.pdf                         @controllers.DocumentController.showPdf(id: Long)
+GET    /documents/:id/notes                       @controllers.DocumentController.showPdfNotes(id: Long)
+PUT    /documents/:id/notes                       @controllers.DocumentController.updatePdfNotes(id: Long)
+GET    /documents/:id.png                         @controllers.DocumentController.showPng(id: Long)
+GET    /documents/:id                             @controllers.DocumentController.show(id: Long)
+GET    /documentsets/:documentSetId/documents/:id @controllers.DocumentController.showJson(documentSetId: Long, id: Long)
+PATCH  /documentsets/:documentSetId/documents/:id @controllers.DocumentController.update(documentSetId: Long, id: Long)
+GET    /localfiles/*filename  						@controllers.DocumentController.showFile(filename: String)
 
 HEAD   /uploads/:uuid        controllers.UploadController.show(uuid: java.util.UUID)
 POST   /uploads/:uuid        controllers.UploadController.create(uuid: java.util.UUID)
@@ -84,12 +84,12 @@ GET    /documentsets/:id/users        controllers.DocumentSetUserController.inde
 PUT    /documentsets/:id/users/:email controllers.DocumentSetUserController.update(id: Long, email: String)
 DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.delete(id: Long, email: String)
 
-GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long)
+GET    /documentsets/:id/documents @controllers.DocumentListController.index(id: Long)
 
-GET    /documentsets/:id/documents/:documentId/highlights controllers.HighlightController.index(id: Long, documentId: Long, q: String)
+GET    /documentsets/:id/documents/:documentId/highlights @controllers.HighlightController.index(id: Long, documentId: Long, q: String)
 
-GET    /documentsets/:id/export/documents-with-string-tags/:format/:filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
-GET    /documentsets/:id/export/documents-with-column-tags/:format/:filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
+GET    /documentsets/:id/export/documents-with-string-tags/:format/:filename @controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
+GET    /documentsets/:id/export/documents-with-column-tags/:format/:filename @controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
 POST   /documentsets/:id/trees         controllers.TreeController.create(id: Long)
 PUT    /documentsets/:id/trees/:treeId controllers.TreeController.update(id: Long, treeId: Long)
@@ -104,9 +104,9 @@ DELETE /documentsets/:id/tags/:tagId        controllers.TagController.destroy(id
 GET    /documentsets/:id/tags.csv           controllers.TagController.indexCsv(id: Long)
 GET    /documentsets/:id/tags               controllers.TagController.indexJson(id: Long)
 
-GET    /documentsets/:id/tags/count         controllers.TagDocumentController.count(id: Long)
-POST   /documentsets/:id/tags/:tagId/add    controllers.TagDocumentController.createMany(id: Long, tagId: Long)
-POST   /documentsets/:id/tags/:tagId/remove controllers.TagDocumentController.destroyMany(id: Long, tagId: Long)
+GET    /documentsets/:id/tags/count         @controllers.TagDocumentController.count(id: Long)
+POST   /documentsets/:id/tags/:tagId/add    @controllers.TagDocumentController.createMany(id: Long, tagId: Long)
+POST   /documentsets/:id/tags/:tagId/remove @controllers.TagDocumentController.destroyMany(id: Long, tagId: Long)
 
 GET    /documentsets/:id/views         controllers.ViewController.indexJson(id: Long)
 POST   /documentsets/:id/views         controllers.ViewController.create(id: Long)
@@ -114,7 +114,7 @@ PUT    /documentsets/:id/views/:viewId controllers.ViewController.update(id: Lon
 DELETE /documentsets/:id/views/:viewId controllers.ViewController.destroy(id: Long, viewId: Long)
 
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
-POST   /documentsets/:id/document-nodes/count-by-node controllers.DocumentNodeController.countByNode(id: Long)
+POST   /documentsets/:id/document-nodes/count-by-node @controllers.DocumentNodeController.countByNode(id: Long)
 
 GET    /documentsets/:id/error-list controllers.DocumentProcessingErrorController.index(id: Long)
 
@@ -122,7 +122,7 @@ GET    /public-document-sets controllers.PublicDocumentSetController.index()
 GET    /shared-document-sets controllers.SharedDocumentSetController.index()
 
 
-GET    /documentsets/:id/archive/view/:filename          controllers.DocumentSetArchiveController.archive(id: Long, filename: String)
+GET    /documentsets/:id/archive/view/:filename          @controllers.DocumentSetArchiveController.archive(id: Long, filename: String)
 
 # Admin section
 GET    /admin/users        controllers.admin.UserController.index()
@@ -162,8 +162,8 @@ DELETE /api/v1/files        controllers.api.MassUploadController.cancel()
 
 HEAD   /api/v1/document-sets/files/$sha1<[0-9a-fA-f]{40}> controllers.api.DocumentSetHashController.head(sha1: Array[Byte])
 
-GET /api/v1/document-sets/:docsetId/documents     controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
-GET /api/v1/document-sets/:docsetId/documents/:id controllers.api.DocumentController.show(docsetId: Long, id: Long)
+GET /api/v1/document-sets/:docsetId/documents     @controllers.api.DocumentController.index(docsetId: Long, fields: String ?= "")
+GET /api/v1/document-sets/:docsetId/documents/:id @controllers.api.DocumentController.show(docsetId: Long, id: Long)
 
 GET /api/v1/store/state controllers.api.StoreStateController.show()
 PUT /api/v1/store/state controllers.api.StoreStateController.update()
@@ -175,9 +175,9 @@ PUT    /api/v1/store/objects/:id             controllers.api.StoreObjectControll
 DELETE /api/v1/store/objects/:id             controllers.api.StoreObjectController.destroy(id: Long)
 DELETE /api/v1/store/objects                 controllers.api.StoreObjectController.destroyMany()
 
-GET    /api/v1/store/document-objects/count-by-object controllers.api.DocumentStoreObjectController.countByObject()
-POST   /api/v1/store/document-objects                 controllers.api.DocumentStoreObjectController.createMany()
-DELETE /api/v1/store/document-objects                 controllers.api.DocumentStoreObjectController.destroyMany()
+GET    /api/v1/store/document-objects/count-by-object @controllers.api.DocumentStoreObjectController.countByObject()
+POST   /api/v1/store/document-objects                 @controllers.api.DocumentStoreObjectController.createMany()
+DELETE /api/v1/store/document-objects                 @controllers.api.DocumentStoreObjectController.destroyMany()
 
 # Map static resources from the /public folder to the /assets URL path
 GET    /assets/*file            controllers.Assets.at(path="/public", file)

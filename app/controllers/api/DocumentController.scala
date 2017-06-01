@@ -2,6 +2,7 @@ package controllers.api
 
 import akka.stream.scaladsl.{Concat,Source}
 import java.util.UUID
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsArray,JsBoolean,JsNull,JsNumber,JsObject,JsString,JsValue,Json}
 import play.api.mvc.Result
@@ -9,16 +10,18 @@ import scala.concurrent.Future
 
 import controllers.auth.{ApiAuthorizedAction,ApiAuthorizedRequest}
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.{DocumentBackend,DocumentSetBackend}
+import controllers.backend.{DocumentBackend,DocumentSetBackend,SelectionBackend}
 import models.pagination.PageRequest
 import models.{Selection,SelectionRequest}
 import com.overviewdocs.metadata.Metadata
 import com.overviewdocs.models.{DocumentSet,DocumentHeader}
 
-trait DocumentController extends ApiController with ApiSelectionHelpers {
+class DocumentController @Inject() (
+  val documentSetBackend: DocumentSetBackend,
+  val documentBackend: DocumentBackend,
+  val selectionBackend: SelectionBackend
+) extends ApiController with ApiSelectionHelpers {
   import DocumentController.Field
-  protected val documentSetBackend: DocumentSetBackend
-  protected val documentBackend: DocumentBackend
 
   private def _indexDocuments(documentSet: DocumentSet, selection: Selection, pageRequest: PageRequest, fields: Set[Field]): Future[Result] = {
     for {
@@ -129,10 +132,7 @@ trait DocumentController extends ApiController with ApiSelectionHelpers {
   }
 }
 
-object DocumentController extends DocumentController {
-  override protected val documentBackend = DocumentBackend
-  override protected val documentSetBackend = DocumentSetBackend
-
+object DocumentController {
   private val MaxPageLimit = 1000
   private val MaxTextPageLimit = 20
   private val StreamingPageLimit = 20

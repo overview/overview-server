@@ -1,17 +1,20 @@
 package controllers.api
 
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsArray,JsNull,JsObject,JsNumber,JsPath,JsSuccess,JsValue,Json,Reads}
 import scala.concurrent.Future
 
 import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.anyUser
-import controllers.backend.{StoreBackend,DocumentStoreObjectBackend}
+import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
 import com.overviewdocs.models.DocumentStoreObject
 
-trait DocumentStoreObjectController extends ApiController with ApiSelectionHelpers {
-  protected val storeBackend: StoreBackend
-  protected val documentStoreObjectBackend: DocumentStoreObjectBackend
+class DocumentStoreObjectController @Inject() (
+  val storeBackend: StoreBackend,
+  val documentStoreObjectBackend: DocumentStoreObjectBackend,
+  val selectionBackend: SelectionBackend
+) extends ApiController with ApiSelectionHelpers {
 
   def createMany = ApiAuthorizedAction(anyUser).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsNull)
@@ -66,10 +69,7 @@ trait DocumentStoreObjectController extends ApiController with ApiSelectionHelpe
   }
 }
 
-object DocumentStoreObjectController extends DocumentStoreObjectController {
-  override protected val storeBackend = StoreBackend
-  override protected val documentStoreObjectBackend = DocumentStoreObjectBackend
-
+object DocumentStoreObjectController {
   private val nullReads: Reads[Option[JsObject]] = new Reads[Option[JsObject]] {
     override def reads(json: JsValue) = JsSuccess(None)
   }

@@ -10,7 +10,8 @@ import play.api.mvc.{Request, Result}
 import scala.concurrent.Future
 
 trait SelectionHelpers { self: Controller =>
-  protected val selectionBackend: SelectionBackend = SelectionBackend
+  protected val selectionBackend: SelectionBackend
+
   private val selectionIdKey: String = "selectionId" // query string parameter
   private val refreshKey: String = "refresh" // query string parameter
 

@@ -1,15 +1,18 @@
 package controllers
 
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsObject,JsNumber,JsValue}
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userViewingDocumentSet
-import controllers.backend.DocumentNodeBackend
+import controllers.backend.{DocumentNodeBackend,SelectionBackend}
 
-trait DocumentNodeController extends Controller with SelectionHelpers {
-  protected val documentNodeBackend: DocumentNodeBackend
+class DocumentNodeController @Inject() (
+  val documentNodeBackend: DocumentNodeBackend,
+  val selectionBackend: SelectionBackend
+) extends Controller with SelectionHelpers {
 
   def countByNode(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { request =>
     def formatCounts(counts: Map[Long,Int]): JsValue = {
@@ -28,8 +31,4 @@ trait DocumentNodeController extends Controller with SelectionHelpers {
       }
     })
   }
-}
-
-object DocumentNodeController extends DocumentNodeController {
-  override protected val documentNodeBackend = DocumentNodeBackend
 }

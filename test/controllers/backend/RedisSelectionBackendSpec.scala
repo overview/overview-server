@@ -12,11 +12,9 @@ import models.pagination.{Page,PageInfo,PageRequest}
 class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   trait BaseScope extends RedisScope {
     def resultIds: Seq[Long] = Seq()
-    val finder = mock[(SelectionRequest) => Future[Seq[Long]]]
-    val backend = new TestRedisBackend with RedisSelectionBackend {
-      override def findDocumentIds(request: SelectionRequest) = finder(request)
-    }
-    finder.apply(any[SelectionRequest]) returns Future(resultIds)
+    val documentBackend = mock[DocumentBackend]
+    documentBackend.indexIds(any[SelectionRequest]) returns Future.successful(resultIds)
+    val backend = new RedisSelectionBackend(documentBackend, redisModule)
     val documentSetId = 123L
   }
 
@@ -86,7 +84,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
       "when Selection is not present" should {
         "return None" in new FindScope {
           go must beNone
-          there was no(finder).apply(any)
+          there was no(documentBackend).indexIds(any)
         }
       }
 
@@ -115,7 +113,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           maybeSelection match {
             case Some(selection) => {
               await(selection.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L, 4L, 5L))
-              there was no(finder).apply(any)
+              there was no(documentBackend).indexIds(any)
             }
             case _ =>
           }
@@ -140,14 +138,14 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Seq(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
-          there was one(finder).apply(request)
+          there was one(documentBackend).indexIds(request)
         }
 
         "return a slice of the Selection" in new FindOrCreateScope {
           override def resultIds = Seq(1L, 2L, 3L, 4L, 5L)
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(1, 3)))
-          there was one(finder).apply(request)
+          there was one(documentBackend).indexIds(request)
           documentIds must beEqualTo(Page(Seq(2L, 3L, 4L), PageInfo(PageRequest(1, 3), 5)))
         }
       }
@@ -173,7 +171,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "return the Selection" in new SelectionExistsScope {
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L, 4L, 5L))
-          there was no(finder).apply(any)
+          there was no(documentBackend).indexIds(any)
         }
       }
 
@@ -203,13 +201,13 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "return the Selection" in new SelectionExistsScope {
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L, 4L, 5L))
-          there was no(finder).apply(any)
+          there was no(documentBackend).indexIds(any)
         }
 
         "return a slice of the Selection" in new SelectionExistsScope {
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(1, 3)))
-          there was no(finder).apply(any)
+          there was no(documentBackend).indexIds(any)
           documentIds must beEqualTo(Page(Seq(2L, 3L, 4L), PageInfo(PageRequest(1, 3), 5)))
         }
       }
@@ -231,7 +229,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Seq(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
-          there was one(finder).apply(request)
+          there was one(documentBackend).indexIds(request)
         }
       }
     }

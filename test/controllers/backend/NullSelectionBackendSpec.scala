@@ -10,11 +10,9 @@ import models.{Selection,SelectionRequest}
 class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
   trait BaseScope extends NullScope {
     def resultIds: Seq[Long] = Seq()
-    val finder = mock[(SelectionRequest) => Future[Seq[Long]]]
-    val backend = new NullSelectionBackend {
-      override def findDocumentIds(request: SelectionRequest) = finder(request)
-    }
-    finder.apply(any[SelectionRequest]) returns Future(resultIds)
+    val documentBackend = mock[DocumentBackend]
+    val backend = new NullSelectionBackend(documentBackend)
+    documentBackend.indexIds(any[SelectionRequest]) returns Future.successful(resultIds)
 
     val userEmail: String = "user@example.org"
     val documentSetId: Long = 1L
@@ -37,14 +35,14 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
         create.id must not(beEqualTo(create.id))
       }
 
-      "pass the SelectionRequest to the finder" in new CreateScope {
+      "pass the SelectionRequest to the documentBackend" in new CreateScope {
         create
-        there was one(finder).apply(request)
+        there was one(documentBackend).indexIds(request)
       }
 
       "pass a failure back" in new CreateScope {
         val t = new Throwable("moo")
-        finder.apply(any[SelectionRequest]) returns Future.failed(t)
+        documentBackend.indexIds(any[SelectionRequest]) returns Future.failed(t)
         create must throwA[Throwable](message="moo")
       }
     }
