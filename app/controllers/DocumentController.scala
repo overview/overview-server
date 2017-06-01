@@ -3,6 +3,7 @@ package controllers
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.{File => JFile} 
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{JsObject,JsString,Json,Reads,Writes}
@@ -17,7 +18,13 @@ import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
-trait DocumentController extends Controller {
+class DocumentController @Inject() (
+  documentBackend: DocumentBackend,
+  blobStorage: BlobStorage,
+  fileBackend: FileBackend,
+  pageBackend: PageBackend
+) extends Controller {
+
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
       case Some(document) => {
@@ -202,16 +209,4 @@ trait DocumentController extends Controller {
       }
     }
   }
-
-  protected val documentBackend: DocumentBackend
-  protected val blobStorage: BlobStorage
-  protected val fileBackend: FileBackend
-  protected val pageBackend: PageBackend
-}
-
-object DocumentController extends DocumentController {
-  override val blobStorage = BlobStorage
-  override val documentBackend = DocumentBackend
-  override val fileBackend = FileBackend
-  override val pageBackend = PageBackend
 }

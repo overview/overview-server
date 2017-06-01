@@ -64,6 +64,14 @@ object DocumentSetCommands {
     */
   case class DeleteDocumentSet(documentSetId: Long) extends Command
 
+  /** Update the search index with new information about a Document.
+    *
+    * Stored in the database as the actual document.title. BUG: if we restart
+    * our server, we won't know to reindex the document. A full reindex is a
+    * workaround, or another rename.
+    */
+  case class ReindexDocument(documentSetId: Long, documentId: Long) extends Command
+
   /** Complete all computations surrounding an AddDocumentsFromFileGroup as soon
     * as possible.
     *

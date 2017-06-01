@@ -8,7 +8,6 @@ import scala.concurrent.Future
 import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,PdfNoteCollection}
 import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,Tags}
 import com.overviewdocs.query.{Query=>SearchQuery}
-import com.overviewdocs.searchindex.IndexClient
 import com.overviewdocs.util.Logger
 import models.pagination.{Page,PageRequest}
 import models.{Selection,SelectionRequest}
@@ -94,7 +93,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
     override def -(elem: Long) = throw new UnsupportedOperationException()
   }
 
-  protected val indexClient: IndexClient
+  protected val searchBackend: SearchBackend
 
   override def index(selection: Selection, pageRequest: PageRequest, includeText: Boolean): Future[Page[DocumentHeader]] = {
     selection.getDocumentIds(pageRequest)
@@ -133,9 +132,9 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
   }
 
   /** Returns IDs that match a given search phrase, unsorted. */
-  private def indexByQ(documentSetId: Long, q: SearchQuery): Future[Set[Long]] = {
-    logger.logExecutionTimeAsync("finding document IDs matching '{}'", q.toString) {
-      indexClient.searchForIds(documentSetId, q).map(_.toSet)
+  private def indexByQ(documentSetId: Long, query: SearchQuery): Future[Set[Long]] = {
+    logger.logExecutionTimeAsync("finding document IDs matching '{}'", query.toString) {
+      searchBackend.search(documentSetId, query).map(_.toSet)
     }
   }
 
@@ -194,15 +193,7 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
   override def updateTitle(documentSetId: Long, documentId: Long, title: String) = {
     for {
       _ <- database.runUnit(updateTitleCompiled(documentSetId, documentId).update(Some(title)))
-      _ <- database.option(byDocumentSetIdAndId(documentSetId, documentId)).flatMap(_ match {
-        case Some(document) => {
-          for {
-            _ <- indexClient.addDocuments(Seq(document.copy(title=title)))
-            _ <- indexClient.refresh
-          } yield ()
-        }
-        case _ => Future.successful(())
-      })
+      _ <- searchBackend.refreshDocument(documentSetId, documentId)
     } yield ()
   }
 
@@ -364,8 +355,4 @@ trait DbDocumentBackend extends DocumentBackend with DbBackend {
   private lazy val byId = Compiled { (documentId: Rep[Long]) =>
     Documents.filter(_.id === documentId)
   }
-}
-
-object DocumentBackend extends DbDocumentBackend {
-  override protected val indexClient = com.overviewdocs.searchindex.ElasticSearchIndexClient.singleton
 }

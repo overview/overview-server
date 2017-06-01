@@ -1,37 +1,70 @@
 package controllers.backend
 
+import akka.actor.{ActorSelection,ActorSystem}
+import com.google.inject.ImplementedBy
+import com.typesafe.config.ConfigFactory
+import javax.inject.{Inject,Singleton}
 import scala.concurrent.Future
+
+import com.overviewdocs.messages.DocumentSetReadCommands
 import com.overviewdocs.query.Query
-import com.overviewdocs.searchindex.{ElasticSearchIndexClient, Highlight, IndexClient, Snippet}
+import com.overviewdocs.searchindex.{LuceneIndexClient, Highlight, Snippet}
+import modules.RemoteActorSystemModule
 
 /** Finds highlights of a search term in a document.
   */
+@ImplementedBy(classOf[RemoteActorHighlightBackend])
 trait HighlightBackend extends Backend {
   /** Lists all highlights of a given term in the document.
     *
-    * @param documentSetId Document set ID (specifies where document is stored)
+    * @param documentSetId DocumentSet ID
     * @param documentId Document ID
-    * @param q Search string
+    * @param query Parsed search query
     */
-  def index(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]]
+  def highlight(documentSetId: Long, documentId: Long, query: Query): Future[Seq[Highlight]]
 
-  def index(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]]
+  /** Lists short phrases matching the given query in each document.
+    *
+    * @param documentSetId DocumentSet ID
+    * @param documentIds Document ID
+    * @param query Parsed search query
+    */
+  def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query): Future[Map[Long, Seq[Snippet]]]
 }
 
-/** ElasticSearch-backed highlight backend.
+/** In-process HighlightBackend. Useful for testing.
+  *
+  * On production, this backend will break: our search index is written in a
+  * separate process.
   */
-trait EsHighlightBackend extends HighlightBackend {
-  val indexClient: IndexClient
-
-  override def index(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]] = {
-    indexClient.highlights(documentSetId, documentIds, q)
+class LuceneHighlightBackend(val luceneIndexClient: LuceneIndexClient) extends HighlightBackend {
+  override def highlight(documentSetId: Long, documentId: Long, query: Query) = {
+    luceneIndexClient.highlight(documentSetId, documentId, query)
   }
 
-  override def index(documentSetId: Long, documentId: Long, q: Query) = {
-    indexClient.highlight(documentSetId, documentId, q)
+  override def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) = {
+    luceneIndexClient.highlights(documentSetId, documentIds, query)
   }
 }
 
-object HighlightBackend extends EsHighlightBackend {
-  override val indexClient = com.overviewdocs.searchindex.ElasticSearchIndexClient.singleton
+/** Akka RemoteActor-backed search backend.
+  */
+@Singleton
+class RemoteActorHighlightBackend @Inject() (remoteActorSystemModule: RemoteActorSystemModule)
+extends HighlightBackend {
+  import akka.pattern.ask
+  import akka.util.Timeout
+  import scala.concurrent.duration._
+
+  private implicit val system = remoteActorSystemModule.remoteActorSystem
+  private implicit val timeout = Timeout(30.seconds)
+  private val workerActor = remoteActorSystemModule.workerActor
+
+  override def highlight(documentSetId: Long, documentId: Long, query: Query) = {
+    workerActor.ask(DocumentSetReadCommands.Highlight(documentSetId, documentId, query)).mapTo[Seq[Highlight]]
+  }
+
+  override def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) = {
+    workerActor.ask(DocumentSetReadCommands.Highlights(documentSetId, documentIds, query)).mapTo[Map[Long, Seq[Snippet]]]
+  }
 }
