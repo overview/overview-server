@@ -9,6 +9,7 @@ import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
+import com.overviewdocs.searchindex.Indexer
 import com.overviewdocs.messages.{DocumentSetReadCommands,DocumentSetCommands}
 import com.overviewdocs.util.Logger
 
@@ -37,26 +38,28 @@ class DocumentSetCommandWorker(
 ) extends Actor
 {
   import DocumentSetCommands._
-  import DocumentSetReadCommands._
+  import DocumentSetReadCommands.ReadCommand
 
   private val logger = Logger.forClass(getClass)
 
   override def preStart = sendReady
 
   override def receive = {
-    case command: ReadCommand => runRead(command)(context.dispatcher)
+    case DocumentSetMessageBroker.ReadCommand(command, replyTo) => runRead(command, replyTo)
     case command: Command => run(command)(context.dispatcher)
   }
 
-  private def runRead(command: ReadCommand)(implicit ec: ExecutionContext): Unit = {
-    logger.info("Handling DocumentSetRead command: {}", command)
+  private def runRead(command: ReadCommand, replyTo: ActorRef): Unit = {
+    logger.info("Handling DocumentSetRead command {}, will reply to {}", command, replyTo)
 
     // FIXME use reader/writer locks, per DocumentSet. Probably one Actor per
     // DocumentSet, Stashing messages.
     //
     // In the meantime, There Are Ways to cause terrible performance.
 
-    indexer.tell(command, sender)
+    indexer.tell(command, replyTo)
+    sendDone(command.documentSetId)
+    sendReady
   }
 
   private def run(command: Command)(implicit ec: ExecutionContext): Unit = {
@@ -89,6 +92,11 @@ class DocumentSetCommandWorker(
         // commands.
         val message = AddDocumentsWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
         addDocumentsWorkBroker ! message
+        sendReady
+      }
+      case command: ReindexDocument => {
+        val message = Indexer.DoWorkThenAck(command, broker, done(command.documentSetId))
+        indexer ! message
         sendReady
       }
       case CancelAddDocumentsFromFileGroup(documentSetId, fileGroupId) => {
@@ -125,7 +133,10 @@ class DocumentSetCommandWorker(
 
   private def sendDone(documentSetId: Long): Unit = broker ! done(documentSetId)
 
-  private def sendReady: Unit = broker ! DocumentSetMessageBroker.WorkerReady
+  private def sendReady: Unit = {
+    logger.info("Done with this command")
+    broker ! DocumentSetMessageBroker.WorkerReady
+  }
 }
 
 object DocumentSetCommandWorker {

@@ -5,14 +5,11 @@
 # Services:
 #   * :9010 -> Postgres
 #   * :9020 -> Redis
-#   * :9200 -> ElasticSearch (dev environment)
-#   * :9201 -> ElasticSearch (test environment)
 
 version: "3"
 
 volumes:
   overview-dev-database-data:
-  overview-dev-searchindex-data:
 
 services:
   overview-dev-redis:
@@ -28,19 +25,3 @@ services:
       - overview-dev-database-data:/var/lib/postgresql/data
     ports:
       - "9010:5432"
-
-  overview-dev-searchindex:
-    container_name: overview-dev-searchindex
-    image: overview/searchindex
-    volumes:
-      - overview-dev-searchindex-data:/usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-
-  # We run an entirely separate cluster for test SearchIndex; we'll delete all
-  # indices in every test.
-  overview-test-searchindex:
-    container_name: overview-test-searchindex
-    image: overview/searchindex
-    ports:
-      - "9201:9200"

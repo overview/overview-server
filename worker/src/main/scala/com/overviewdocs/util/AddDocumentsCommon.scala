@@ -4,7 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.searchindex.{ElasticSearchIndexClient,IndexClient}
+import com.overviewdocs.searchindex.{LuceneIndexClient,IndexClient}
 
 trait AddDocumentsCommon extends HasDatabase {
   protected val indexClient: IndexClient
@@ -47,5 +47,5 @@ trait AddDocumentsCommon extends HasDatabase {
 }
 
 object AddDocumentsCommon extends AddDocumentsCommon {
-  override protected val indexClient = ElasticSearchIndexClient.singleton
+  override protected val indexClient = LuceneIndexClient.onDiskSingleton
 }

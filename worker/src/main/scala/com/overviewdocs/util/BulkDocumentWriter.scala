@@ -10,7 +10,7 @@ import scala.concurrent.Future
 import com.overviewdocs.database.{Database,HasDatabase}
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
-import com.overviewdocs.searchindex.ElasticSearchIndexClient
+import com.overviewdocs.searchindex.LuceneIndexClient
 
 /** Writes documents to the database and/or search index in bulk.
   *
@@ -217,7 +217,7 @@ object BulkDocumentWriter extends HasDatabase {
     override def flushImpl(documents: Iterable[Document]) = flushDocumentsToDatabase(database, documents)
   }
 
-  private lazy val indexClient = ElasticSearchIndexClient.singleton
+  private lazy val indexClient = LuceneIndexClient.onDiskSingleton // TODO use actor
 
   private def flushDocumentsToSearchIndex(documents: Iterable[Document]): Future[Unit] = {
     val byDocumentSetId: Map[Long, Iterable[Document]] = documents.groupBy(_.documentSetId)

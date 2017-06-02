@@ -96,7 +96,9 @@ object LuceneIndexClient {
       val rootPath = Paths.get(baseDirectory, documentSetId.toString)
       val lockFactory = new org.apache.lucene.store.SingleInstanceLockFactory
       val directory = org.apache.lucene.store.FSDirectory.open(rootPath, lockFactory)
-      new DocumentSetLuceneIndex(directory)
+      val ret = new DocumentSetLuceneIndex(directory)
+      ret.refresh // if it's a new index, write it to disk so we can read from it
+      ret
     }
   }
 }

@@ -9,7 +9,6 @@ import com.overviewdocs.database.{HasDatabase,LargeObject,TreeIdGenerator}
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{CsvImport,DocumentProcessingError,Tree}
 import com.overviewdocs.models.tables.{CsvImports,Documents,DocumentProcessingErrors,DocumentSets,Tags,Trees}
-import com.overviewdocs.searchindex.{IndexClient,ElasticSearchIndexClient}
 import com.overviewdocs.util.AddDocumentsCommon
 
 /** Processes a CSV Import. */

@@ -18,12 +18,12 @@ import scala.concurrent.Future
 import controllers.auth.Authorities.{anyUser,userOwningDocument,userOwningDocumentSet,userViewingDocumentSet}
 import controllers.auth.AuthorizedAction
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.blobstorage.InjectedBlobStorage
 import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentController @Inject() (
   val documentBackend: DocumentBackend,
-  val blobStorage: BlobStorage,
+  val blobStorage: InjectedBlobStorage,
   val fileBackend: FileBackend,
   val pageBackend: PageBackend
 ) extends Controller {

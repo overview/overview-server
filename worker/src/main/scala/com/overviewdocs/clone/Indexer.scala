@@ -3,7 +3,7 @@ package com.overviewdocs.clone
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
-import com.overviewdocs.searchindex.{ElasticSearchIndexClient,IndexClient}
+import com.overviewdocs.searchindex.{LuceneIndexClient,IndexClient}
 import com.overviewdocs.models.Document
 import com.overviewdocs.models.tables.Documents
 
@@ -16,7 +16,7 @@ object Indexer extends Indexer with HasDatabase {
   import database.api._
   import database.executionContext
 
-  override protected val indexClient = ElasticSearchIndexClient.singleton
+  override protected val indexClient = LuceneIndexClient.onDiskSingleton // TODO use actor
 
   private val NDocumentsPerBatch = 30 // ~1MB/document max
 

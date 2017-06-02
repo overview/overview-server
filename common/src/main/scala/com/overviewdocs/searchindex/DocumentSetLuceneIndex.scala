@@ -1,13 +1,16 @@
 package com.overviewdocs.searchindex
 
+import java.io.IOException
+import java.nio.file.{Files,FileVisitResult,Path,SimpleFileVisitor}
+import java.nio.file.attribute.BasicFileAttributes
 import org.apache.lucene.analysis.icu.ICUNormalizer2Filter
 import org.apache.lucene.analysis.{Analyzer,TokenStream}
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.analysis.standard.StandardTokenizer
-import org.apache.lucene.document.{Document=>LuceneDocument,Field=>LuceneField,FieldType,StoredField,StringField,TextField}
-import org.apache.lucene.index.{DirectoryReader,FieldInfo,IndexOptions,IndexReader,IndexWriter,IndexWriterConfig,StoredFieldVisitor,Term}
-import org.apache.lucene.search.{IndexSearcher,SimpleCollector,Query=>LuceneQuery}
-import org.apache.lucene.store.Directory
+import org.apache.lucene.document.{Document=>LuceneDocument,Field=>LuceneField,FieldType,NumericDocValuesField,StringField,TextField}
+import org.apache.lucene.index.{DirectoryReader,FieldInfo,IndexOptions,IndexReader,IndexWriter,IndexWriterConfig,LeafReaderContext,NumericDocValues,Term}
+import org.apache.lucene.search.{ConstantScoreQuery,IndexSearcher,SimpleCollector,Query=>LuceneQuery}
+import org.apache.lucene.store.{Directory,FSDirectory}
 import org.apache.lucene.util.QueryBuilder
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery
 import scala.collection.mutable.{ArrayBuffer,BitSet}
@@ -45,7 +48,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
 
   private def documentToLuceneDocument(document: Document): LuceneDocument = {
     val ret = new LuceneDocument()
-    ret.add(new StoredField("id", document.id))
+    ret.add(new NumericDocValuesField("id", document.id))
     ret.add(new LuceneField("title", document.title, textFieldType))
     ret.add(new LuceneField("text", document.text, textFieldType))
     ret.add(new LuceneField("_all", document.title + "\n\n\n" + document.text, textFieldType))
@@ -55,6 +58,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
   def addDocuments(documents: Iterable[Document]): Unit = {
     val luceneDocuments = documents.map(d => documentToLuceneDocument(d))
     indexWriter.addDocuments(JavaConversions.asJavaIterable(luceneDocuments))
+    commit
   }
 
   def close: Unit = indexWriter.close
@@ -62,63 +66,55 @@ class DocumentSetLuceneIndex(val directory: Directory) {
   def delete: Unit = {
     refresh
     indexReader.close
-    ???
+    indexWriter.close
+
+    directory match {
+      case fsDirectory: FSDirectory => deletePathRecursively(fsDirectory.getDirectory)
+    }
+  }
+
+  private def deletePathRecursively(root: Path): Unit = {
+    Files.walkFileTree(root, new SimpleFileVisitor[Path] {
+      override def visitFile(file: Path, attrs: BasicFileAttributes) = {
+        Files.delete(file)
+        FileVisitResult.CONTINUE
+      }
+      override def postVisitDirectory(dir: Path, e: IOException) = {
+        if (e != null) throw e
+        Files.delete(dir)
+        FileVisitResult.CONTINUE
+      }
+    })
   }
 
   def searchForIds(q: Query): Seq[Long] = {
-    // 1. Find Lucene-internal IDs. (These are transient.)
-    //
-    // We collect _all_ the IDs. 10M documents means luceneIds has size 1.25MB
-    val luceneIds = new BitSet(indexReader.maxDoc)
-    var size = 0
+    val ret = ArrayBuffer.empty[Long]
 
     indexSearcher.search(queryToLuceneQuery(q), new SimpleCollector {
+      var leafDocumentIds: NumericDocValues = _
+
       override def needsScores: Boolean = false
-      override def collect(luceneId: Int): Unit = {
-        luceneIds += luceneId
-        size += 1
+
+      override def doSetNextReader(context: LeafReaderContext): Unit = {
+        leafDocumentIds = context.reader.getNumericDocValues("id")
+        assert(leafDocumentIds != null)
+      }
+
+      override def collect(docId: Int): Unit = {
+        val documentId = leafDocumentIds.get(docId)
+        System.err.println("Search for doc " + docId + " turned up id " + documentId)
+        ret.+=(documentId)
       }
     })
 
-    // 2. Read all documents to find Overview Document IDs
-    //
-    // We choose to use an Array because we know the size.
-    //
-    // In the degenerate case of every document matching, 10M documents gives
-    // size 80MB. Let's hope it doesn't often come to that. (Memory won't be
-    // as much of a problem as the I/O bottleneck.)
-    val overviewIds = new Array[Long](size)
-    var nWritten: Int = 0
-    val accumulateOverviewIds = new StoredFieldVisitor {
-      override def needsField(fieldInfo: FieldInfo) = {
-        if (fieldInfo.name == "id") {
-          StoredFieldVisitor.Status.YES
-        } else {
-          StoredFieldVisitor.Status.NO
-        }
-      }
-
-      override def longField(fieldInfo: FieldInfo, value: Long): Unit = {
-        overviewIds(nWritten) = value
-        nWritten += 1
-      }
-    }
-
-    val reader = indexReader
-    luceneIds.foreach { luceneId =>
-      reader.document(luceneId, accumulateOverviewIds)
-    }
-
-    assert(nWritten == size)
-
-    overviewIds
+    ret
   }
 
   def highlight(documentId: Long, q: Query): Seq[Highlight] = Seq() // TODO
 
   def highlights(documentIds: Seq[Long], q: Query): Map[Long, Seq[Snippet]] = Map() // TODO
 
-  def refresh: Unit = {
+  private def commit: Unit = {
     indexWriter.commit
 
     _directoryReader match {
@@ -137,6 +133,8 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     }
   }
 
+  def refresh: Unit = commit
+
   private def fieldToLuceneField(f: Field): String = {
     f match {
       case Field.All => "_all"
@@ -145,7 +143,11 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     }
   }
 
-  private def queryToLuceneQuery(q: Query): LuceneQuery = {
+  private def queryToLuceneQuery(query: Query): LuceneQuery = {
+    new ConstantScoreQuery(queryToLuceneQueryInner(query))
+  }
+
+  private def queryToLuceneQueryInner(q: Query): LuceneQuery = {
     import com.overviewdocs.query
     import org.apache.lucene.search
 
@@ -153,19 +155,19 @@ class DocumentSetLuceneIndex(val directory: Directory) {
       case query.AllQuery => new search.MatchAllDocsQuery
       case query.AndQuery(p1, p2) => {
         new search.BooleanQuery.Builder()
-          .add(queryToLuceneQuery(p1), search.BooleanClause.Occur.FILTER)
-          .add(queryToLuceneQuery(p2), search.BooleanClause.Occur.FILTER)
+          .add(queryToLuceneQueryInner(p1), search.BooleanClause.Occur.FILTER)
+          .add(queryToLuceneQueryInner(p2), search.BooleanClause.Occur.FILTER)
           .build
       }
       case query.OrQuery(p1, p2) => {
         new search.BooleanQuery.Builder()
-          .add(queryToLuceneQuery(p1), search.BooleanClause.Occur.SHOULD)
-          .add(queryToLuceneQuery(p2), search.BooleanClause.Occur.SHOULD)
+          .add(queryToLuceneQueryInner(p1), search.BooleanClause.Occur.SHOULD)
+          .add(queryToLuceneQueryInner(p2), search.BooleanClause.Occur.SHOULD)
           .build
       }
       case query.NotQuery(p) => {
         new search.BooleanQuery.Builder()
-          .add(queryToLuceneQuery(p), search.BooleanClause.Occur.MUST_NOT)
+          .add(queryToLuceneQueryInner(p), search.BooleanClause.Occur.MUST_NOT)
           .build
       }
       case query.PhraseQuery(field, phrase) => {

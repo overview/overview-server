@@ -10,6 +10,7 @@ import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,Documen
 import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
 import com.overviewdocs.jobhandler.documentcloud.{DocumentCloudImportWorkBroker,DocumentCloudImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
+import com.overviewdocs.searchindex.Indexer
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.{Configuration,Logger}
 
@@ -52,6 +53,7 @@ class WorkerActorEnvironment {
 
   private val csvImportWorkBroker = system.actorOf(CsvImportWorkBroker.props, "CsvImportWorkBroker")
   private val documentCloudImportWorkBroker = system.actorOf(DocumentCloudImportWorkBroker.props, "DocumentCloudImportWorkBroker")
+  private val indexer = system.actorOf(Indexer.props, "Indexer")
 
   Seq.tabulate(Configuration.getInt("n_document_converters")) { i =>
     val name = "AddDocumentsWorker-" + i
@@ -67,6 +69,7 @@ class WorkerActorEnvironment {
       addDocumentsWorkBroker,
       csvImportWorkBroker,
       documentCloudImportWorkBroker,
+      indexer,
       Cloner,
       DocumentSetDeleter
     ),

@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentBackend,FileBackend,PageBackend}
-import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.blobstorage.InjectedBlobStorage
 import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
@@ -18,7 +18,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
     val mockDocumentBackend = smartMock[DocumentBackend]
     val mockFileBackend = smartMock[FileBackend]
     val mockPageBackend = smartMock[PageBackend]
-    val mockBlobStorage = smartMock[BlobStorage]
+    val mockBlobStorage = smartMock[InjectedBlobStorage]
 
     val controller = new DocumentController(
       mockDocumentBackend,

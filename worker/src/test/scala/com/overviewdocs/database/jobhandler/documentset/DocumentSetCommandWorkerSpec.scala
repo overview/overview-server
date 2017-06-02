@@ -13,6 +13,7 @@ import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
+import com.overviewdocs.searchindex.Indexer
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.test.ActorSystemContext
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
@@ -28,6 +29,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       val addDocumentsWorkBroker = TestProbe()
       val csvImportWorkBroker = TestProbe()
       val documentCloudImportWorkBroker = TestProbe()
+      val indexer = TestProbe()
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val cloner = smartMock[Cloner]
       val subject = TestActorRef(DocumentSetCommandWorker.props(
@@ -35,6 +37,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         addDocumentsWorkBroker.ref,
         csvImportWorkBroker.ref,
         documentCloudImportWorkBroker.ref,
+        indexer.ref,
         cloner,
         documentSetDeleter
       ))
@@ -146,6 +149,14 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         promise.success(())
         broker.expectMsg(WorkerDoneDocumentSetCommand(1L))
         broker.expectMsg(WorkerReady)
+      }
+    }
+
+    "ReindexDocument" should {
+      "forward to indexer" in new BaseScope {
+        val command = DocumentSetCommands.ReindexDocument(1L, 2L)
+        subject ! command
+        indexer.expectMsgPF(Duration.Zero) { case Indexer.DoWorkThenAck(command1, _, _) => () }
       }
     }
 

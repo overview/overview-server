@@ -1,9 +1,12 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import models.Selection
 
+@ImplementedBy(classOf[DbDocumentNodeBackend])
 trait DocumentNodeBackend extends Backend {
   /** Gives a list of Node IDs for each Document.
     *
@@ -26,7 +29,7 @@ trait DocumentNodeBackend extends Backend {
   def countByNode(selection: Selection, nodeIds: Seq[Long]): Future[Map[Long,Int]]
 }
 
-trait DbDocumentNodeBackend extends DocumentNodeBackend with DbBackend {
+class DbDocumentNodeBackend @Inject() extends DocumentNodeBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -71,5 +74,3 @@ trait DbDocumentNodeBackend extends DocumentNodeBackend with DbBackend {
     } yield result
   }
 }
-
-object DocumentNodeBackend extends DbDocumentNodeBackend

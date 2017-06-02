@@ -3,7 +3,7 @@ package com.overviewdocs.jobhandler.documentset
 import akka.actor.{Actor,ActorRef,Props}
 import scala.collection.mutable
 
-import com.overviewdocs.messages.DocumentSetCommands
+import com.overviewdocs.messages.{DocumentSetCommands,DocumentSetReadCommands}
 import com.overviewdocs.util.Logger
 
 /** Ensures DocumentSetCommands are processed in serial, FIFO-ordered, per
@@ -17,6 +17,7 @@ class DocumentSetMessageBroker extends Actor {
   private class DocumentSetInfo(val documentSetId: Long) {
     var worker: Option[ActorRef] = None
     val commands = mutable.Queue[DocumentSetCommands.Command]()
+    val readCommands = mutable.Queue[DocumentSetMessageBroker.ReadCommand]()
   }
 
   private val logger = Logger.forClass(getClass)
@@ -46,9 +47,28 @@ class DocumentSetMessageBroker extends Actor {
         sendIfAvailable
       }
     }
+    case command: DocumentSetReadCommands.ReadCommand => {
+      logger.info("Received ReadCommand: {}", command)
+      val wrappedCommand = DocumentSetMessageBroker.ReadCommand(command, sender)
+      // TODO reader-writer locks. Right now, reads lock each other out.
+      // This was copy-pasted from DocumentSetCommands.Command's handler. We
+      // could really use some rearchitecture (one Actor per DocumentSet) here!
+      // FIXME this is all UNTESTED
+      if (documentSets.contains(command.documentSetId)) {
+        // We don't care whether this is in readyDocumentSets or not: one more
+        // command doesn't change the logic.
+        documentSets(command.documentSetId).readCommands.enqueue(wrappedCommand)
+      } else {
+        val info = new DocumentSetInfo(command.documentSetId)
+        info.readCommands.enqueue(wrappedCommand)
+        documentSets(info.documentSetId) = info
+        readyDocumentSets.enqueue(info)
+        sendIfAvailable
+      }
+    }
     case DocumentSetMessageBroker.WorkerDoneDocumentSetCommand(documentSetId) => {
       val info = documentSets(documentSetId)
-      if (info.commands.nonEmpty) {
+      if (info.commands.nonEmpty || info.readCommands.nonEmpty) {
         info.worker = None
         readyDocumentSets.enqueue(info)
         sendIfAvailable
@@ -72,7 +92,8 @@ class DocumentSetMessageBroker extends Actor {
     if (readyDocumentSets.nonEmpty && readyWorkers.nonEmpty) {
       val worker = readyWorkers.dequeue
       val info = readyDocumentSets.dequeue
-      val command = info.commands.dequeue
+      val command = info.commands.dequeueFirst(_ => true).getOrElse { info.readCommands.dequeue }
+      logger.info("Sending command {}", command)
       info.worker = Some(worker)
       worker ! command
     }
@@ -98,4 +119,6 @@ object DocumentSetMessageBroker {
     * its next command can be processed.
     */
   case class WorkerDoneDocumentSetCommand(documentSetId: Long) extends WorkerMessage
+
+  case class ReadCommand(command: DocumentSetReadCommands.ReadCommand, replyTo: ActorRef)
 }
