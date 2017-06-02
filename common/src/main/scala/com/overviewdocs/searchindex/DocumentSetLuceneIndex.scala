@@ -3,15 +3,16 @@ package com.overviewdocs.searchindex
 import java.io.IOException
 import java.nio.file.{Files,FileVisitResult,Path,SimpleFileVisitor}
 import java.nio.file.attribute.BasicFileAttributes
+import java.nio.ByteBuffer
 import org.apache.lucene.analysis.icu.ICUNormalizer2Filter
 import org.apache.lucene.analysis.{Analyzer,TokenStream}
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.analysis.standard.StandardTokenizer
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.{Document=>LuceneDocument,Field=>LuceneField,FieldType,NumericDocValuesField,StringField,TextField}
 import org.apache.lucene.index.{DirectoryReader,FieldInfo,IndexOptions,IndexReader,IndexWriter,IndexWriterConfig,LeafReaderContext,NumericDocValues,Term}
 import org.apache.lucene.search.{ConstantScoreQuery,IndexSearcher,SimpleCollector,Query=>LuceneQuery}
 import org.apache.lucene.store.{Directory,FSDirectory}
-import org.apache.lucene.util.QueryBuilder
+import org.apache.lucene.util.{BytesRef,QueryBuilder}
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery
 import scala.collection.mutable.{ArrayBuffer,BitSet}
 import scala.collection.JavaConversions
@@ -42,6 +43,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
   private val textFieldType: FieldType = {
     val ret = new FieldType
     ret.setTokenized(true)
+    ret.setStored(true)
     ret.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
     ret
   }
@@ -87,6 +89,37 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     })
   }
 
+  def searchForLuceneIds(documentIds: Seq[Long]): Seq[Int] = {
+    val query: LuceneQuery = {
+      import org.apache.lucene.document.NumericDocValuesField
+      import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
+
+      val builder = new BooleanQuery.Builder()
+      for (documentId <- documentIds) {
+        builder.add(NumericDocValuesField.newExactQuery("id", documentId), BooleanClause.Occur.SHOULD)
+      }
+      new ConstantScoreQuery(builder.build)
+    }
+
+    val ret = ArrayBuffer.empty[Int]
+
+    indexSearcher.search(query, new SimpleCollector {
+      var leafDocBase: Int = _
+
+      override def needsScores: Boolean = false
+
+      override def doSetNextReader(context: LeafReaderContext): Unit = {
+        leafDocBase = context.docBase
+      }
+
+      override def collect(docId: Int): Unit = {
+        ret.+=(leafDocBase + docId)
+      }
+    })
+
+    ret
+  }
+
   def searchForIds(q: Query): Seq[Long] = {
     val ret = ArrayBuffer.empty[Long]
 
@@ -102,7 +135,6 @@ class DocumentSetLuceneIndex(val directory: Directory) {
 
       override def collect(docId: Int): Unit = {
         val documentId = leafDocumentIds.get(docId)
-        System.err.println("Search for doc " + docId + " turned up id " + documentId)
         ret.+=(documentId)
       }
     })
@@ -110,7 +142,14 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret
   }
 
-  def highlight(documentId: Long, q: Query): Seq[Highlight] = Seq() // TODO
+  def highlight(documentId: Long, query: Query): Seq[Highlight] = {
+    val highlighter = new LuceneSingleDocumentHighlighter(indexSearcher, analyzer)
+
+    val luceneQuery = indexSearcher.rewrite(queryToLuceneQuery(query))
+
+    searchForLuceneIds(Seq(documentId))
+      .flatMap(docId => highlighter.highlightFieldAsHighlights("text", luceneQuery, docId))
+  }
 
   def highlights(documentIds: Seq[Long], q: Query): Map[Long, Seq[Snippet]] = Map() // TODO
 
