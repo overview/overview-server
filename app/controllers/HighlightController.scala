@@ -8,11 +8,12 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.backend.HighlightBackend
+import controllers.backend.{DocumentBackend,HighlightBackend}
 import com.overviewdocs.query.QueryParser
 import com.overviewdocs.searchindex.Highlight
 
 class HighlightController @Inject() (
+  val documentBackend: DocumentBackend,
   val highlightBackend: HighlightBackend
 ) extends Controller {
 
@@ -26,7 +27,7 @@ class HighlightController @Inject() (
       case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("com.overviewdocs.query.SyntaxError"))))
       case Right(query) => {
         highlightBackend.highlight(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
-          val json = Highlight.asJson(highlights)
+          val json = JsArray(Seq())
           Ok(json).withHeaders(CACHE_CONTROL -> "no-cache")
         }
       }

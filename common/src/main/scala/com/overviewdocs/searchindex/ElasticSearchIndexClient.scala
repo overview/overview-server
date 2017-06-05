@@ -278,7 +278,6 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
     * @param textWithHighlights Text we're searching in
     */
   private def findHighlights(textWithHighlights: String): Seq[Highlight] = {
-
     /** Searches for "\u0001" and "\u0002" and uses them to create a Highlight.
       *
       * @param textWithHighlights Text we're searching in
@@ -315,45 +314,46 @@ class ElasticSearchIndexClient(val hosts: Seq[String]) extends IndexClient {
   }
 
   override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]] =  {
-
-    GET(s"/documents_$documentSetId/_search", Json.obj(
-      "query" -> Json.obj("ids" -> Json.obj("type" -> "document", "values" -> documentIds.map(_.toString))),
-      "size"-> documentIds.length,
-      "highlight" -> Json.obj(
-        "require_field_match" -> false, // Confusing: we use *filters*, not *queries*, so true matches nothing
-        "fields" -> Json.obj(
-          "text" -> Json.obj(
-            "highlight_query" -> repr(q),
-            "pre_tags" -> Json.arr(HighlightBegin.toString),
-            "post_tags" -> Json.arr(HighlightEnd.toString),
-            "number_of_fragments" -> 2
-          )
-        )
-      )
-    )).map(_ match {
-      case Response(statusCode, json) if statusCode >= 200 && statusCode < 300 => {
-        import play.api.libs.json._
-
-        val hits = (json \ "hits" \ "hits").as[JsArray]
-
-        hits.value.map { hit =>
-          val documentId = (hit \ "_id").as[String].toLong
-
-          val snippets = (hit \ "highlight").toOption match {
-            case Some(highlight) =>
-              val texts = (highlight \ "text").as[JsArray]
-              texts.value
-                .map(_.as[String])
-                .map((text:String) => Snippet(text.replaceAll(s"$HighlightBegin|$HighlightEnd", ""), findHighlights(text)))
-
-            case None => Nil
-          }
-
-          documentId -> snippets
-        }.toMap
-      }
-      case Response(_, json) => throw UnexpectedResponse(json)
-    })
+    Future.successful(Map())
+//
+//    GET(s"/documents_$documentSetId/_search", Json.obj(
+//      "query" -> Json.obj("ids" -> Json.obj("type" -> "document", "values" -> documentIds.map(_.toString))),
+//      "size"-> documentIds.length,
+//      "highlight" -> Json.obj(
+//        "require_field_match" -> false, // Confusing: we use *filters*, not *queries*, so true matches nothing
+//        "fields" -> Json.obj(
+//          "text" -> Json.obj(
+//            "highlight_query" -> repr(q),
+//            "pre_tags" -> Json.arr(HighlightBegin.toString),
+//            "post_tags" -> Json.arr(HighlightEnd.toString),
+//            "number_of_fragments" -> 2
+//          )
+//        )
+//      )
+//    )).map(_ match {
+//      case Response(statusCode, json) if statusCode >= 200 && statusCode < 300 => {
+//        import play.api.libs.json._
+//
+//        val hits = (json \ "hits" \ "hits").as[JsArray]
+//
+//        hits.value.map { hit =>
+//          val documentId = (hit \ "_id").as[String].toLong
+//
+//          val snippets = (hit \ "highlight").toOption match {
+//            case Some(highlight) =>
+//              val texts = (highlight \ "text").as[JsArray]
+//              texts.value
+//                .map(_.as[String])
+//                .map((text:String) => Snippet(text.replaceAll(s"$HighlightBegin|$HighlightEnd", ""), findHighlights(text)))
+//
+//            case None => Nil
+//          }
+//
+//          documentId -> snippets
+//        }.toMap
+//      }
+//      case Response(_, json) => throw UnexpectedResponse(json)
+//    })
   }
 
   override def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {

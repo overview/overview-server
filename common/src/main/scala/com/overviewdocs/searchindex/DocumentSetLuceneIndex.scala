@@ -89,7 +89,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     })
   }
 
-  def searchForLuceneIds(documentIds: Seq[Long]): Seq[Int] = {
+  def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {
     val query: LuceneQuery = {
       import org.apache.lucene.document.NumericDocValuesField
       import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
@@ -101,19 +101,23 @@ class DocumentSetLuceneIndex(val directory: Directory) {
       new ConstantScoreQuery(builder.build)
     }
 
-    val ret = ArrayBuffer.empty[Int]
+    val ret = new ArrayBuffer[(Long,Int)](documentIds.length)
 
     indexSearcher.search(query, new SimpleCollector {
       var leafDocBase: Int = _
+      var leafDocumentIds: NumericDocValues = _
 
       override def needsScores: Boolean = false
 
       override def doSetNextReader(context: LeafReaderContext): Unit = {
         leafDocBase = context.docBase
+        leafDocumentIds = context.reader.getNumericDocValues("id")
       }
 
       override def collect(docId: Int): Unit = {
-        ret.+=(leafDocBase + docId)
+        val overviewId = leafDocumentIds.get(docId)
+        val luceneId = leafDocBase + docId
+        ret.+=((overviewId, luceneId))
       }
     })
 
@@ -148,10 +152,23 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     val luceneQuery = indexSearcher.rewrite(queryToLuceneQuery(query))
 
     searchForLuceneIds(Seq(documentId))
-      .flatMap(docId => highlighter.highlightFieldAsHighlights("text", luceneQuery, docId))
+      .flatMap({ case (_, luceneId) =>
+        highlighter.highlightFieldAsHighlights("text", luceneQuery, luceneId)
+      })
   }
 
-  def highlights(documentIds: Seq[Long], q: Query): Map[Long, Seq[Snippet]] = Map() // TODO
+  def highlights(documentIds: Seq[Long], query: Query): Map[Long, Seq[Snippet]] = {
+    val highlighter = new LuceneMultiDocumentHighlighter(indexSearcher, analyzer)
+
+    val luceneQuery = indexSearcher.rewrite(queryToLuceneQuery(query))
+
+    searchForLuceneIds(documentIds)
+      .map({ case (overviewId, luceneId) =>
+        (overviewId, highlighter.highlightFieldAsSnippets("text", luceneQuery, luceneId).toSeq)
+      })
+      .filter(_._2.nonEmpty)
+      .toMap
+  }
 
   private def commit: Unit = {
     indexWriter.commit

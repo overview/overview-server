@@ -18,12 +18,7 @@ object show {
       "url" -> document.viewUrl,
       "nodeids" -> nodeIds,
       "tagids" -> tagIds,
-      "snippets" -> snippets.map { snippet =>
-        Json.obj(
-          "text" -> snippet.text,
-          "highlights" -> Highlight.asJson(snippet.highlights)
-        )
-      },
+      "snippets" -> Json.arr(),
       "thumbnailUrl" -> document.thumbnailLocation.map(_ => s"/documents/${document.id}.png")
     )
   }

@@ -2,8 +2,8 @@ package views.json.DocumentList
 
 import java.util.UUID
 
-import com.overviewdocs.searchindex.Snippet
-import org.specs2.matcher.JsonMatchers
+import com.overviewdocs.searchindex.{Highlight,Snippet}
+import org.specs2.matcher.{JsonMatchers,Matcher}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.json.Json
@@ -23,6 +23,10 @@ class showSpec extends Specification with JsonMatchers {
     def resultPage = Page(docsAndIds)
 
     def result = show(selectionId, resultPage).toString
+
+    def haveSnippets(snippets: Matcher[String]*): Matcher[String] = {
+      /("snippets").andHave(eachOf(snippets: _*))
+    }
   }
 
   "DocumentList view generated Json" should {
@@ -75,6 +79,24 @@ class showSpec extends Specification with JsonMatchers {
     "set a URL" in new BaseScope {
       override def doc1 = factory.document(url=Some("http://example.org"))
       result must /("documents") /#(0) /("url" -> "http://example.org")
+    }
+
+    "show a start snippet" in new BaseScope {
+      override def doc1AndIds = (doc1.copy(text="This is a start snippet"), Seq(), Seq(), Seq(Snippet(0, 10, Seq(Highlight(5, 7)))))
+
+      result must haveSnippets(beEqualTo("This <em>is</em> a…"))
+    }
+
+    "show an end snippet" in new BaseScope {
+      override def doc1AndIds = (doc1.copy(text="This is an end snippet"), Seq(), Seq(), Seq(Snippet(8, 22, Seq(Highlight(16, 19)))))
+
+      result must haveSnippets(beEqualTo("…an <em>end</em> snippet"))
+    }
+
+    "HTML-escape snippets" in new BaseScope {
+      override def doc1AndIds = (doc1.copy(text="1 < <2"), Seq(), Seq(), Seq(Snippet(0, 6, Seq(Highlight(4, 6)))))
+
+      result must haveSnippets(beEqualTo("1 &lt; <em>&lt;2</em>"))
     }
   }
 }

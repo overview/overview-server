@@ -123,6 +123,41 @@ class DocumentSetLuceneIndexSpec extends Specification {
         index.addDocuments(Seq(buildDocument(1L).copy(text="this is a hard, hard, hard query")))
         index.highlight(1L, PhraseQuery(Field.Text, "hard, hard")) must containTheSameElementsAs(Seq(Highlight(10,14), Highlight(16,20), Highlight(22,26)))
       }
+
+      "return utf-16 indexes" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L).copy(text="\ud86d\udfa9 foo")))
+        index.highlight(1L, PhraseQuery(Field.Text, "foo")) must containTheSameElementsAs(Seq(Highlight(3, 6)))
+      }
+    }
+
+    "#highlights" should {
+      "return empty result on document it cannot match" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L).copy(text="i am cow hear me moo")))
+        index.highlights(Seq(1L), PhraseQuery(Field.Text, "cow")) must beEqualTo(Map(
+          1L -> Seq(Snippet(0, 20, Seq(Highlight(5, 8))))
+        ))
+      }
+
+      "map documents to each othher correctly" in new BaseScope {
+        index.addDocuments(Seq(
+          buildDocument(1L).copy(text="i am cow hear me moo"),
+          buildDocument(2L).copy(text="i am cow hear me moo moo moo")
+        ))
+        index.highlights(Seq(1L, 2L), PhraseQuery(Field.Text, "cow")) must beEqualTo(Map(
+          1L -> Seq(Snippet(0, 20, Seq(Highlight(5, 8)))),
+          2L -> Seq(Snippet(0, 28, Seq(Highlight(5, 8))))
+        ))
+      }
+
+      "omit documents with no matches" in new BaseScope {
+        index.addDocuments(Seq(
+          buildDocument(1L).copy(text="i am cow hear me moo"),
+          buildDocument(2L).copy(text="i am dog hear me woof")
+        ))
+        index.highlights(Seq(1L, 2L), PhraseQuery(Field.Text, "cow")) must beEqualTo(Map(
+          1L -> Seq(Snippet(0, 20, Seq(Highlight(5, 8))))
+        ))
+      }
     }
   }
 }

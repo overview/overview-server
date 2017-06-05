@@ -23,24 +23,37 @@ object LuceneSingleDocumentHighlighter {
   val passageFormatter = new PassageFormatter {
     /** Return an Array[Highlight] */
     override def format(passages: Array[Passage], content: String) = {
-      val ret = ArrayBuffer.empty[Highlight]
+      val highlights = ArrayBuffer.empty[Highlight]
 
       for (passage <- passages) {
         passage.getMatchStarts.zip(passage.getMatchEnds).map { case ((start: Int, end: Int)) =>
           if (start != end) {
-            ret.lastOption match {
-              case Some(highlight) if highlight.end >= start => {
-                // According to Lucene's DefaultPassageFormatter.java:
-                // "it's possible to have overlapping terms"
-                ret(ret.length - 1) = Highlight(highlight.begin, end)
-              }
-              case _ => ret.append(Highlight(start, end))
-            }
+            highlights.append(Highlight(start, end))
           }
         }
       }
 
-      ret.toArray
+      val sorted = highlights.sorted(math.Ordering.by({ x: Highlight => (x.begin, x.end) }))
+
+      // According to Lucene's DefaultPassageFormatter.java:
+      // "it's possible to have overlapping terms". Let's remove duplicates.
+      mergeOverlappingHighlights(sorted).toArray
+    }
+
+    def mergeOverlappingHighlights(highlights: Seq[Highlight]): ArrayBuffer[Highlight] = {
+      val ret = new ArrayBuffer[Highlight](highlights.length)
+
+      for (highlight <- highlights) {
+        ret.lastOption match {
+          case Some(lastHighlight) if lastHighlight.end >= highlight.begin => {
+            // Replace previous highlight, so it merges with this one
+            ret(ret.length - 1) = Highlight(lastHighlight.begin, Seq(highlight.end, lastHighlight.end).max)
+          }
+          case _ => ret.append(highlight)
+        }
+      }
+
+      ret
     }
   }
 }
