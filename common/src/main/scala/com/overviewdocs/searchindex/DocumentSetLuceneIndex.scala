@@ -44,7 +44,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     val ret = new FieldType
     ret.setTokenized(true)
     ret.setStored(true)
-    ret.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
+    ret.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS)
     ret
   }
 
@@ -124,6 +124,38 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret
   }
 
+  /** Converts '_all' field to '_text' field (for highlighting). */
+  private def fieldAllToText(field: Field): Field = field match {
+    case Field.All => Field.Text
+    case _ => field
+  }
+
+  /** Converts '_all' queries to 'text' queries (for highlighting).
+    *
+    * (There's no value to highlighting the "_all" field, so we only highlight
+    * "text" instead.)
+    */
+  private def queryAllToText(query: Query): Query = {
+    import com.overviewdocs.{query=>Q}
+
+    query match {
+      case Q.AllQuery => Q.AllQuery
+      case Q.AndQuery(p1, p2) => Q.AndQuery(queryAllToText(p1), queryAllToText(p2))
+      case Q.OrQuery(p1, p2) => Q.OrQuery(queryAllToText(p1), queryAllToText(p2))
+      case Q.NotQuery(p) => Q.NotQuery(queryAllToText(p))
+      case Q.PhraseQuery(field, phrase) => Q.PhraseQuery(fieldAllToText(field), phrase)
+      case Q.PrefixQuery(field, prefix) => Q.PrefixQuery(fieldAllToText(field), prefix)
+      case Q.ProximityQuery(field, phrase, slop) => Q.ProximityQuery(fieldAllToText(field), phrase, slop)
+      case Q.FuzzyTermQuery(field, term, fuzziness) => Q.FuzzyTermQuery(fieldAllToText(field), term, fuzziness)
+    }
+  }
+
+  private def queryToLuceneHighlightQuery(query: Query): LuceneQuery = {
+    val luceneQuery = queryToLuceneQuery(queryAllToText(query))
+
+    indexSearcher.rewrite(luceneQuery)
+  }
+
   def searchForIds(q: Query): Seq[Long] = {
     val ret = ArrayBuffer.empty[Long]
 
@@ -146,10 +178,9 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret
   }
 
-  def highlight(documentId: Long, query: Query): Seq[Highlight] = {
+  def highlight(documentId: Long, query: Query): Seq[Utf16Highlight] = {
     val highlighter = new LuceneSingleDocumentHighlighter(indexSearcher, analyzer)
-
-    val luceneQuery = indexSearcher.rewrite(queryToLuceneQuery(query))
+    val luceneQuery = queryToLuceneHighlightQuery(query)
 
     searchForLuceneIds(Seq(documentId))
       .flatMap({ case (_, luceneId) =>
@@ -157,14 +188,16 @@ class DocumentSetLuceneIndex(val directory: Directory) {
       })
   }
 
-  def highlights(documentIds: Seq[Long], query: Query): Map[Long, Seq[Snippet]] = {
+  def highlights(documentIds: Seq[Long], query: Query): Map[Long, Seq[Utf16Snippet]] = {
     val highlighter = new LuceneMultiDocumentHighlighter(indexSearcher, analyzer)
+    val luceneQuery = queryToLuceneHighlightQuery(query)
 
-    val luceneQuery = indexSearcher.rewrite(queryToLuceneQuery(query))
+    System.err.println(luceneQuery.toString)
 
     searchForLuceneIds(documentIds)
       .map({ case (overviewId, luceneId) =>
-        (overviewId, highlighter.highlightFieldAsSnippets("text", luceneQuery, luceneId).toSeq)
+        val utf16Snippets: Array[Utf16Snippet] = highlighter.highlightFieldAsSnippets("text", luceneQuery, luceneId)
+        (overviewId, utf16Snippets.toSeq)
       })
       .filter(_._2.nonEmpty)
       .toMap

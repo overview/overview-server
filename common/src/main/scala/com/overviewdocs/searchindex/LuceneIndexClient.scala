@@ -61,11 +61,11 @@ trait LuceneIndexClient extends IndexClient {
     getIndex(id).map(_.searchForIds(q))
   }
 
-  override def highlight(documentSetId: Long, documentId: Long, q: Query): Future[Seq[Highlight]] = {
+  override def highlight(documentSetId: Long, documentId: Long, q: Query) = {
     getIndex(documentSetId).map(_.highlight(documentId, q))
   }
 
-  override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query): Future[Map[Long, Seq[Snippet]]] = {
+  override def highlights(documentSetId: Long, documentIds: Seq[Long], q: Query) = {
     getIndex(documentSetId).map(_.highlights(documentIds, q))
   }
 

@@ -10,14 +10,14 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend,HighlightBackend}
 import com.overviewdocs.query.QueryParser
-import com.overviewdocs.searchindex.Highlight
+import com.overviewdocs.searchindex.{Highlight,Utf16Highlight}
 
 class HighlightController @Inject() (
   val documentBackend: DocumentBackend,
   val highlightBackend: HighlightBackend
 ) extends Controller {
 
-  /** Lists highlights: .e.g, `[[2,4],[6,8]]`
+  /** Lists highlights: .e.g, `[[2,4],[6,8]]` as UTF-16 offsets
     *
     * Security consideration: the backend must filter by document set ID,
     * because that's how we authorize this action.
@@ -26,8 +26,14 @@ class HighlightController @Inject() (
     QueryParser.parse(queryString) match {
       case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("com.overviewdocs.query.SyntaxError"))))
       case Right(query) => {
-        highlightBackend.highlight(documentSetId, documentId, query).map { highlights: Seq[Highlight] => 
-          val json = JsArray(Seq())
+        val highlightsFuture = highlightBackend.highlight(documentSetId, documentId, query)
+        for {
+          highlights: Seq[Highlight] <- highlightsFuture
+        } yield {
+          // JavaScript text is UTF-16. It'll be grabbing the text on its own,
+          // so we don't need to convert highlights to utf-8.
+          val utf16Highlights = highlights.map(_.asInstanceOf[Utf16Highlight])
+          val json = JsArray(utf16Highlights.map(h => JsArray(Seq(JsNumber(h.begin), JsNumber(h.end)))))
           Ok(json).withHeaders(CACHE_CONTROL -> "no-cache")
         }
       }

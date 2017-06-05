@@ -5,7 +5,7 @@ import scala.concurrent.Future
 
 import controllers.backend.{DocumentBackend,HighlightBackend}
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
-import com.overviewdocs.searchindex.Highlight
+import com.overviewdocs.searchindex.Utf16Highlight
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
 class HighlightControllerSpec extends ControllerSpecification {
@@ -15,7 +15,7 @@ class HighlightControllerSpec extends ControllerSpecification {
 
     val controller = new HighlightController(mockDocumentBackend, mockHighlightBackend)
 
-    def foundHighlights: Seq[Highlight] = Seq()
+    def foundHighlights: Seq[Utf16Highlight] = Seq()
     def foundText: String = "This is the document text"
 
     mockHighlightBackend.highlight(any[Long], any[Long], any[Query]) returns Future { foundHighlights }
@@ -30,16 +30,16 @@ class HighlightControllerSpec extends ControllerSpecification {
     }
 
     "return a JSON response with Highlights" in new IndexScope {
-      override def foundHighlights = Seq(Highlight(2, 4), Highlight(6, 8))
+      override def foundHighlights = Seq(Utf16Highlight(2, 4), Utf16Highlight(6, 8))
       h.status(result) must beEqualTo(h.OK)
       h.contentAsString(result) must beEqualTo("[[2,4],[6,8]]")
     }
 
-    "return UTF-8 offsets" in new IndexScope {
+    "return UTF-16 offsets" in new IndexScope {
       override def foundText = "café latte"
-      override def foundHighlights = Seq(Highlight(0, 4), Highlight(6, 11))
+      override def foundHighlights = Seq(Utf16Highlight(0, 4), Utf16Highlight(5, 10))
       h.status(result) must beEqualTo(h.OK)
-      h.contentAsString(result) must beEqualTo("[[0,5],[7,12]]")
+      h.contentAsString(result) must beEqualTo("[[0,4],[5,10]]")
     }
 
     "return an empty response" in new IndexScope {

@@ -151,7 +151,6 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef)(implicit system: ActorRefFa
   def finishJob(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
     logger.debug("Completing {}", fileGroup)
     import com.overviewdocs.background.filegroupcleanup.FileGroupRemover
-    import com.overviewdocs.searchindex.ElasticSearchIndexClient
     for {
       _ <- AddDocumentsCommon.afterAddDocuments(fileGroup.addToDocumentSetId.get)
       _ <- FileGroupRemover().remove(fileGroup.id)

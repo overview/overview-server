@@ -25,7 +25,7 @@ class DocumentListController @Inject() (
       case Left(result) => Future.successful(result)
       case Right((selection, sr)) => {
         for {
-          page <- documentBackend.index(selection, pr, false)
+          page <- documentBackend.index(selection, pr, true)
 
           snippets <- sr.flatMap(_.q) match {
             case None => Future.successful(Map.empty[Long, Seq[Snippet]])

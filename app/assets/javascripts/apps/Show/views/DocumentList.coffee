@@ -16,14 +16,8 @@ define [
         </div>
         <div class="details">
           <h3><%- title %></h3>
-          <% if (attrs.snippets.length > 0) { %>
-            <ul class="highlights">
-              <% _.each (attrs.snippets, function(snippet) {  %>
-                <li class="highlights">
-                  <div> ...<%= snippet %>...</div>
-                </li>
-              <% }); %>
-            </ul>
+          <% if (attrs.snippet) { %>
+            <p class="snippets"><%- snippet %></p>
           <% } else { %>
             <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
           <% }%>
@@ -125,7 +119,7 @@ define [
         title: DocumentHelper.title(model.attributes)
         model: model
         attrs: model.attributes
-        snippets: model.attributes.snippets
+        snippet: model.attributes.snippet
         tags: tags
         t: t
         liAttributes: @options.liAttributes || ''
