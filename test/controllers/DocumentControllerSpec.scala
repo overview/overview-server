@@ -88,7 +88,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
       "return no content when document has no file or page" in new ShowPdfScope {
         override def foundDocument = Some(factory.document(fileId=None, pageId=None))
         h.status(result) must beEqualTo(h.OK)
-        h.header("Content-Length", result) must beSome("0")
+        result.value.get.get.body.contentLength must beSome(0)
         h.contentAsString(result) must beEqualTo("")
       }
 
@@ -96,7 +96,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         override def foundDocument = Some(factory.document(fileId=Some(fileId), pageId=Some(pageId)))
         override def foundPage = None
         h.status(result) must beEqualTo(h.OK)
-        h.header("Content-Length", result) must beSome("0")
+        result.value.get.get.body.contentLength must beSome(0)
         h.contentAsString(result) must beEqualTo("")
       }
 
@@ -106,7 +106,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         override def foundBlob = Source.single(ByteString("page data".getBytes("utf-8")))
 
         h.status(result) must beEqualTo(h.OK)
-        h.header("Content-Length", result) must beSome("9")
+        result.value.get.get.body.contentLength must beSome(9)
         h.contentAsString(result) must beEqualTo("page data")
       }
     }

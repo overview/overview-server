@@ -37,8 +37,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       mockArchive.size returns 6L
       mockArchive.stream returns Source.single(ByteString("abcdef".getBytes("ascii")))
       val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
-      h.header("Content-Type", result) must beSome("application/zip")
-      h.header("Content-Length", result) must beSome("6")
+      h.contentType(result) must beSome("application/zip")
+      result.value.get.get.body.contentLength must beSome(6)
       h.header("Content-Disposition", result) must beSome("attachment; filename=\"filename.zip\"")
       new String(h.contentAsBytes(result).toArray, "ascii") must beEqualTo("abcdef")
     }

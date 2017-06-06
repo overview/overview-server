@@ -47,8 +47,6 @@ class DocumentSetArchiveController @Inject() (
 
     Ok.sendEntity(HttpEntity.Streamed(archive.stream, Some(archive.size), Some("application/zip")))
       .withHeaders(
-        CONTENT_LENGTH -> archive.size.toString,
-        CONTENT_TYPE -> "application/zip",
         CONTENT_DISPOSITION -> contentDisposition
       )
   }

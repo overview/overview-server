@@ -87,8 +87,6 @@ class DocumentController @Inject() (
         documentToBodyAndLength(document).map({ (body: Source[ByteString, _], length: Long) =>
           Ok.sendEntity(HttpEntity.Streamed(body, Some(length), Some("application/pdf")))
             .withHeaders(
-              CONTENT_TYPE -> "application/pdf",
-              CONTENT_LENGTH -> length.toString,
               CONTENT_DISPOSITION -> s"""inline ; filename="$filename""""
             )
         }.tupled)
@@ -102,7 +100,6 @@ class DocumentController @Inject() (
       case Some(thumbnailLocation) => {
         val body = blobStorage.get(thumbnailLocation)
         Ok.sendEntity(HttpEntity.Streamed(body, None, Some("image/png")))
-          .withHeaders(CONTENT_TYPE -> "image/png")
       }
     })
   }
