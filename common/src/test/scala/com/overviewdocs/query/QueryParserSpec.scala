@@ -67,4 +67,6 @@ class QueryParserSpec extends Specification {
   testGood("fo*", "PREF([fo])", "allow two-character prefix")
   testGood("title:/path/subpath/*", "title:PREF([/path/subpath/])", "allow field+prefix query")
   testGood("foo* bar", "[foo* bar]", "ignore prefix operator in the middle of a phrase")
+  testGood("NOT*", "PREF([NOT])", "parse NOT* as a phrase")
+  testGood("NOT fo*", "NOT(PREF([fo]))", "parse NOT x* as one would expect")
 }
