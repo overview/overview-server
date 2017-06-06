@@ -46,11 +46,17 @@ trait IndexClient {
     *
     * Any documents with the same ID in the search index will be overwritten.
     *
-    * After this method succeeds, the documents are guaranteed to be
-    * _eventually_ searchable. To make them searchable right away, call
-    * refresh().
+    * After this method succeeds, the documents are searchable right away. (It
+    * writes to disk and calls fsync before completing.)
     */
   def addDocuments(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
+
+  /** Adds Documents, without necessarily writing to disk.
+    *
+    * Call refresh(documentSetId) to make sure the documents are stored and
+    * searchable.
+    */
+  def addDocumentsWithoutFsync(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
 
   /** Returns IDs for matching documents.
     *

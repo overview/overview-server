@@ -33,6 +33,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
 
   private val indexWriterConfig = new IndexWriterConfig(analyzer)
     .setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND)
+    .setCommitOnClose(true) // for when we're evicted from MruLuceneIndexCache
   private val indexWriter = new IndexWriter(directory, indexWriterConfig)
   private var _directoryReader: Option[DirectoryReader] = None
   private var _indexReader: Option[IndexReader] = None
@@ -43,7 +44,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
   private val textFieldType: FieldType = {
     val ret = new FieldType
     ret.setTokenized(true)
-    ret.setStored(true)
+    ret.setStored(false)
     ret.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS)
     ret
   }
@@ -53,7 +54,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret.add(new NumericDocValuesField("id", document.id))
     ret.add(new LuceneField("title", document.title, textFieldType))
     ret.add(new LuceneField("text", document.text, textFieldType))
-    ret.add(new LuceneField("_all", document.title + "\n\n\n" + document.text, textFieldType))
+    //ret.add(new LuceneField("_all", document.title + "\n\n\n" + document.text, textFieldType))
     ret
   }
 
@@ -61,6 +62,12 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     val luceneDocuments = documents.map(d => documentToLuceneDocument(d))
     indexWriter.addDocuments(JavaConversions.asJavaIterable(luceneDocuments))
     commit
+  }
+
+  def addDocumentsWithoutFsync(documents: Iterable[Document]): Unit = synchronized {
+    documents
+      .map(d => documentToLuceneDocument(d))
+      .foreach(d => indexWriter.addDocument(d))
   }
 
   def close: Unit = synchronized {

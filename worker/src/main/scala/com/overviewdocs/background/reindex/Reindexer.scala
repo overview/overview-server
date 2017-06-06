@@ -69,6 +69,7 @@ class DbLuceneReindexer(
       _ <- indexClient.removeDocumentSet(job.documentSetId)
       _ <- indexClient.addDocumentSet(job.documentSetId)
       _ <- streamDocumentsFromDatabaseToIndex(job.documentSetId)
+      _ <- indexClient.refresh(job.documentSetId)
       _ <- deleteJob(job.id)
     } yield ()
   }
@@ -89,7 +90,9 @@ class DbLuceneReindexer(
   }
 
   private def getDocumentsSource(documentSetId: Long): Source[immutable.Seq[Document], akka.NotUsed] = {
-    val publisher: Publisher[Document] = database.slickDatabase.stream(documentsCompiled(documentSetId).result)
+    val query = documentsCompiled(documentSetId)
+    val result = query.result.transactionally.withStatementParameters(fetchSize=50)
+    val publisher: Publisher[Document] = database.slickDatabase.stream(result)
     Source.fromPublisher(publisher)
       .groupedWeightedWithin(nBufferBytes, writeInterval)(_.nBytesInMemoryEstimate)
   }
@@ -99,7 +102,7 @@ class DbLuceneReindexer(
   }
 
   private def indexBatch(documentSetId: Long, documents: immutable.Seq[Document]): Future[Unit] = {
-    indexClient.addDocuments(documentSetId, documents)
+    indexClient.addDocumentsWithoutFsync(documentSetId, documents)
   }
 }
 
