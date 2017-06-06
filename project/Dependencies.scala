@@ -5,14 +5,12 @@ object Dependencies {
   private object deps {
     // shared dependencies
     val akka = "com.typesafe.akka" %% "akka-actor" % "2.5.1"
-    val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.5.1"
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.1"
     val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.5.1"
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.10.32"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.10.32"
     val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
-    val commonsIo = "commons-io" % "commons-io" % "2.4"
     val config = "com.typesafe" % "config" % "1.3.0"
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
@@ -38,7 +36,6 @@ object Dependencies {
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
     val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
     val redis = "net.debasishg" %% "redisreact" % "0.8"
-    val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
     val slick = "com.typesafe.slick" %% "slick" % "3.2.0"
     val specs2Core = "org.specs2" %% "specs2-core" % "3.8.9"
     val specs2Junit = "org.specs2" %% "specs2-junit" % "3.8.9" // for XML reporting, for Jenkins
@@ -52,7 +49,6 @@ object Dependencies {
     deps.akkaRemote,
     deps.asyncHttpClient,
     deps.awsS3,
-    deps.commonsIo,
     deps.guava, // Textify
     deps.hikariCp,
     deps.icu4j, // Document.tokens
@@ -94,8 +90,6 @@ object Dependencies {
   )
   
   val workerDependencies = Seq(
-    deps.akkaAgent,
-    deps.akkaRemote,
     deps.logback,
     deps.lucene,
     deps.luceneAnalyzersIcu,
