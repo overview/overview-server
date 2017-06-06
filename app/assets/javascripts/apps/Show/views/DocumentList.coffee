@@ -10,14 +10,14 @@ define [
     # We put < and > at the exact beginning and end of screen so we can iterate
     # over DOM children without bothering with text nodes
     model: _.template("""<li <%= liAttributes %>
-      class="document <%= typeof(attrs.thumbnailUrl) !== "undefined" && attrs.thumbnailUrl !== null ?  'with-thumbnail' : '' %>" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
-        <div class="thumbnail">
-          <img src="<%= attrs.thumbnailUrl %>" alt="" />
-        </div>
+      class="document <%= attrs.thumbnailUrl ?  'with-thumbnail' : '' %>" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
+        <% if (attrs.thumbnailUrl) { %>
+          <div class="thumbnail"><img src="<%= attrs.thumbnailUrl %>" alt="" /></div>
+        <% } %>
         <div class="details">
           <h3><%- title %></h3>
           <% if (attrs.snippet) { %>
-            <p class="snippets"><%- snippet %></p>
+            <p class="snippets"><%= attrs.snippet %></p>
           <% } else { %>
             <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
           <% }%>
@@ -119,7 +119,6 @@ define [
         title: DocumentHelper.title(model.attributes)
         model: model
         attrs: model.attributes
-        snippet: model.attributes.snippet
         tags: tags
         t: t
         liAttributes: @options.liAttributes || ''

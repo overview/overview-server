@@ -3,6 +3,7 @@ package modules
 import akka.actor.{ActorSelection,ActorSystem}
 import com.typesafe.config.ConfigFactory
 import javax.inject._
+import play.api.Environment
 import play.api.inject.ApplicationLifecycle
 import scala.concurrent.Future
 
@@ -18,14 +19,14 @@ import scala.concurrent.Future
   * * In test, we never ever reference this ActorSystem.
   */
 @Singleton
-class RemoteActorSystemModule @Inject() (lifecycle: ApplicationLifecycle) {
+class RemoteActorSystemModule @Inject() (environment: Environment, lifecycle: ApplicationLifecycle) {
   private lazy val config = ConfigFactory.load.getConfig("worker")
   private lazy val hostname = config.getString("message_broker_hostname")
   private lazy val port = config.getInt("message_broker_port")
   private lazy val rootPath = s"akka.tcp://worker@${hostname}:${port}/user"
 
   lazy val remoteActorSystem: ActorSystem = {
-    val ret = ActorSystem.create("worker", config)
+    val ret = ActorSystem.create("worker", config, environment.classLoader)
 
     lifecycle.addStopHook { () =>
       ret.terminate

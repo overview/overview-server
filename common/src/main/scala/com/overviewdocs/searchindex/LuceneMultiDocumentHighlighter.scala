@@ -1,5 +1,6 @@
 package com.overviewdocs.searchindex
 
+import java.util.Locale
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.search.{IndexSearcher,Query}
 import org.apache.lucene.search.uhighlight._
@@ -8,9 +9,22 @@ import scala.collection.mutable.ArrayBuffer
 class LuceneMultiDocumentHighlighter(indexSearcher: IndexSearcher, analyzer: Analyzer)
 extends UnifiedHighlighter(indexSearcher, analyzer)
 {
-  private val MaxPassages = 3
+  private val MaxPassages = 2
+  private val MaxPassageSize = 80
 
   setFormatter(LuceneMultiDocumentHighlighter.passageFormatter)
+
+  override protected def getBreakIterator(field: String) = {
+    val original = super.getBreakIterator(field)
+    BoundedBreakIteratorScanner.getSentence(Locale.ROOT, MaxPassageSize)
+  }
+
+  /** Don't produce summaries when there are no matches. */
+  override protected def getMaxNoHighlightPassages(field: String) = {
+    // The BoundedBreakIteratorScanner has no next(), and that means attempting
+    // to summarize a document with this highlighter would crash.
+    0
+  }
 
   /** Returns Snippets marking document matches.
     *
@@ -20,7 +34,6 @@ extends UnifiedHighlighter(indexSearcher, analyzer)
     val map = highlightFieldsAsObjects(Array(field), query, Array(docId), Array(MaxPassages))
     val fieldResults: Array[Object] = map.getOrDefault(field, Array.empty)
     val docResults: Array[Utf16Snippet] = fieldResults.headOption.map(_.asInstanceOf[Array[Utf16Snippet]]).getOrElse(Array.empty)
-    System.err.println(docResults.headOption.toString)
     if (docResults == null) return Array.empty // Lucene breaking my heart
     docResults
       //.filter(_.highlights.nonEmpty)
@@ -35,9 +48,6 @@ object LuceneMultiDocumentHighlighter {
 
       for (passage <- passages) {
         val highlights = ArrayBuffer.empty[Utf16Highlight]
-        System.err.println("passage: " + passage.getStartOffset + "," + passage.getEndOffset)
-        System.err.println("match starts (" + passage.getNumMatches + "): " + passage.getMatchStarts.toSeq.mkString(","))
-        System.err.println("match ends: " + passage.getMatchStarts.toSeq.mkString(","))
         passage.getMatchStarts.zip(passage.getMatchEnds).take(passage.getNumMatches).map { case ((start: Int, end: Int)) =>
           highlights.lastOption match {
             case Some(highlight) if highlight.end >= start => {

@@ -4,7 +4,7 @@ import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.concurrent.Future
 
-import com.overviewdocs.searchindex.Snippet
+import com.overviewdocs.searchindex.Utf16Snippet
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend, DocumentNodeBackend, DocumentTagBackend, HighlightBackend, SelectionBackend}
@@ -28,7 +28,7 @@ class DocumentListController @Inject() (
           page <- documentBackend.index(selection, pr, true)
 
           snippets <- sr.flatMap(_.q) match {
-            case None => Future.successful(Map.empty[Long, Seq[Snippet]])
+            case None => Future.successful(Map.empty[Long, Seq[Utf16Snippet]])
             case Some(q) => highlightBackend.highlights(documentSetId, page.items.map(_.id), q)
           }
 

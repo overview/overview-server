@@ -192,8 +192,6 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     val highlighter = new LuceneMultiDocumentHighlighter(indexSearcher, analyzer)
     val luceneQuery = queryToLuceneHighlightQuery(query)
 
-    System.err.println(luceneQuery.toString)
-
     searchForLuceneIds(documentIds)
       .map({ case (overviewId, luceneId) =>
         val utf16Snippets: Array[Utf16Snippet] = highlighter.highlightFieldAsSnippets("text", luceneQuery, luceneId)

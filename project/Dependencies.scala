@@ -4,7 +4,6 @@ import play.sbt.PlayImport.{filters,ws}
 object Dependencies {
   private object deps {
     // shared dependencies
-    val alpakkaS3 = "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "0.9"
     val akka = "com.typesafe.akka" %% "akka-actor" % "2.5.1"
     val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.5.1"
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.1"
@@ -50,7 +49,6 @@ object Dependencies {
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
   val commonDependencies = Seq(
-    deps.alpakkaS3,
     deps.akka,
     deps.akkaRemote,
     deps.asyncHttpClient,

@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.messages.DocumentSetReadCommands
 import com.overviewdocs.query.Query
-import com.overviewdocs.searchindex.{LuceneIndexClient, Highlight, Snippet}
+import com.overviewdocs.searchindex.{LuceneIndexClient,Utf16Highlight,Utf16Snippet}
 import modules.RemoteActorSystemModule
 
 /** Finds highlights of a search term in a document.
@@ -21,7 +21,7 @@ trait HighlightBackend extends Backend {
     * @param documentId Document ID
     * @param query Parsed search query
     */
-  def highlight(documentSetId: Long, documentId: Long, query: Query): Future[Seq[Highlight]]
+  def highlight(documentSetId: Long, documentId: Long, query: Query): Future[Seq[Utf16Highlight]]
 
   /** Lists short phrases matching the given query in each document.
     *
@@ -29,7 +29,7 @@ trait HighlightBackend extends Backend {
     * @param documentIds Document ID
     * @param query Parsed search query
     */
-  def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query): Future[Map[Long, Seq[Snippet]]]
+  def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query): Future[Map[Long, Seq[Utf16Snippet]]]
 }
 
 /** In-process HighlightBackend. Useful for testing.
@@ -61,10 +61,10 @@ extends HighlightBackend {
   private val workerActor = remoteActorSystemModule.workerActor
 
   override def highlight(documentSetId: Long, documentId: Long, query: Query) = {
-    workerActor.ask(DocumentSetReadCommands.Highlight(documentSetId, documentId, query)).mapTo[Seq[Highlight]]
+    workerActor.ask(DocumentSetReadCommands.Highlight(documentSetId, documentId, query)).mapTo[Seq[Utf16Highlight]]
   }
 
   override def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) = {
-    workerActor.ask(DocumentSetReadCommands.Highlights(documentSetId, documentIds, query)).mapTo[Map[Long, Seq[Snippet]]]
+    workerActor.ask(DocumentSetReadCommands.Highlights(documentSetId, documentIds, query)).mapTo[Map[Long, Seq[Utf16Snippet]]]
   }
 }

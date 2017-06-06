@@ -1,8 +1,7 @@
 define [
   'underscore'
   'backbone'
-  '../helpers/TextHighlightHelper'
-], (_, Backbone, TextHighlightHelper) ->
+], (_, Backbone) ->
   # A Document from the server.
   #
   # A Document has a title and description.
@@ -26,7 +25,7 @@ define [
       documentSetId: null
       title: ''
       description: ''
-      snippets: []
+      snippet: ''
       pageNumber: null
       url: null
       metadata: null # We normally *don't* load metadata -- hence null
@@ -38,16 +37,13 @@ define [
       tagIds = {}
       tagIds[tagId] = true for tagId in (json.tagids || [])
 
-      # this happens exactly once
-      highlights = _.map(json.snippets, (item) -> TextHighlightHelper.addHighlights(item.text, item.highlights))
-
       id: json.id
       documentSetId: json.documentSetId
       title: json.title
       description: json.description
       pageNumber: json.page_number || null
       url: json.url || null
-      snippets: highlights
+      snippet: json.snippet || null
       tagids: json.tagids || []
       nodeids: json.nodeids || []
       thumbnailUrl: json.thumbnailUrl || null
