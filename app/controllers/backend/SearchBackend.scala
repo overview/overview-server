@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.messages.{DocumentSetCommands,DocumentSetReadCommands}
 import com.overviewdocs.query.Query
-import com.overviewdocs.searchindex.{LuceneIndexClient,Highlight,Snippet}
+import com.overviewdocs.searchindex.{Highlight,Snippet}
 import modules.RemoteActorSystemModule
 
 /** Queries a search index.

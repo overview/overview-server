@@ -11,42 +11,24 @@ import models.{Selection,SelectionRequest}
 import com.overviewdocs.models.{Document,PdfNote,PdfNoteCollection}
 import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
-import com.overviewdocs.searchindex.LuceneIndexClient
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbScope {
     import database.api._
     def findDocument(id: Long): Option[Document] = blockingDatabase.option(Documents.filter(_.id === id))
-  }
 
-  trait BaseScopeNoIndex extends BaseScope {
-    val searchBackend = mock[SearchBackend]
+    val searchBackend = smartMock[SearchBackend]
+    searchBackend.refreshDocument(any, any) returns Future.successful(())
+
     val backend = new DbDocumentBackend(searchBackend)
   }
 
-  trait BaseScopeWithIndex extends BaseScope {
-    // More integration-test-ish
-    val indexClient = LuceneIndexClient.createInMemoryLuceneIndexClient
-    val searchBackend = new SearchBackend {
-      override def search(documentSetId: Long, query: Query) = {
-        indexClient.searchForIds(documentSetId, query)
-      }
-
-      override def refreshDocument(documentSetId: Long, documentId: Long) = ???
-    }
-    val backend = new DbDocumentBackend(searchBackend)
-  }
-
-  trait CommonIndexScope extends BaseScopeWithIndex {
+  trait CommonIndexScope extends BaseScope {
     val documentSet = factory.documentSet()
-    await(indexClient.addDocumentSet(documentSet.id))
     val doc1 = factory.document(documentSetId=documentSet.id, title="c", text="foo bar baz oneandtwo oneandthree")
     val doc2 = factory.document(documentSetId=documentSet.id, title="a", text="moo mar maz oneandtwo twoandthree")
     val doc3 = factory.document(documentSetId=documentSet.id, title="b", text="noo nar naz oneandthree twoandthree")
     val documents = Seq(doc1, doc2, doc3)
-
-    await(indexClient.addDocuments(documentSet.id, documents))
-    await(indexClient.refresh(documentSet.id))
 
     private val sortedIds = s"{${doc2.id},${doc3.id},${doc1.id}}"
 
@@ -61,7 +43,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
   "DbDocumentBackendSpec" should {
     "#index (selection)" should {
       trait IndexScope extends CommonIndexScope {
-        val selection = mock[Selection]
+        val selection = smartMock[Selection]
         val pageRequest = PageRequest(0, 1000)
         val includeText = false
         selection.getDocumentIds(pageRequest) returns Future.successful(Page(Seq(doc2.id, doc3.id, doc1.id), PageInfo(pageRequest, 3)))
@@ -102,7 +84,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     }
 
     "#index (document IDs)" should {
-      trait IndexScope extends BaseScopeNoIndex {
+      trait IndexScope extends BaseScope {
         val documentSet = factory.documentSet()
         def index(documentIds: Seq[Long]) = await(backend.index(documentSet.id, documentIds))
       }
@@ -162,6 +144,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
 
       "search by q" in new IndexIdsScope {
         override val q = Some(PhraseQuery(Field.All, "moo"))
+        searchBackend.search(documentSet.id, q.get) returns Future.successful(Seq(doc2.id))
         ret must beEqualTo(Seq(doc2.id))
       }
 
@@ -264,6 +247,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
 
         override val tagIds = Seq(tag.id)
         override val q = Some(PhraseQuery(Field.All, "oneandthree"))
+        searchBackend.search(documentSet.id, q.get) returns Future.successful(Seq(doc1.id, doc3.id))
         ret must beEqualTo(Seq(doc1.id))
       }
 
@@ -309,7 +293,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     }
 
     "#show" should {
-      trait ShowScope extends BaseScopeNoIndex {
+      trait ShowScope extends BaseScope {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id, title="title", text="text")
 
@@ -348,10 +332,9 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     }
 
     "#updateTitle" should {
-      trait UpdateTitleScope extends BaseScopeNoIndex {
+      trait UpdateTitleScope extends BaseScope {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id, title="foo")
-        searchBackend.refreshDocument(any, any) returns Future.successful(())
       }
 
       "update title" in new UpdateTitleScope {
@@ -371,7 +354,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     }
 
     "#updateMetadataJson" should {
-      trait UpdateMetadataJsonScope extends BaseScopeNoIndex {
+      trait UpdateMetadataJsonScope extends BaseScope {
         val documentSet = factory.documentSet()
         val document = factory.document(documentSetId=documentSet.id, metadataJson=Json.obj("foo" -> "bar"))
       }
@@ -388,7 +371,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     }
 
     "#updatePdfNotes" should {
-      trait UpdatePdfNotesScope extends BaseScopeNoIndex {
+      trait UpdatePdfNotesScope extends BaseScope {
         val documentSet = factory.documentSet()
         val pdfNotes1 = PdfNoteCollection(Array(
           PdfNote(1, 2.0, 3.0, 4.0, 5.0, "Foo")

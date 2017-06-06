@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.messages.DocumentSetReadCommands
 import com.overviewdocs.query.Query
-import com.overviewdocs.searchindex.{LuceneIndexClient,Utf16Highlight,Utf16Snippet}
+import com.overviewdocs.searchindex.{Utf16Highlight,Utf16Snippet}
 import modules.RemoteActorSystemModule
 
 /** Finds highlights of a search term in a document.
@@ -30,21 +30,6 @@ trait HighlightBackend extends Backend {
     * @param query Parsed search query
     */
   def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query): Future[Map[Long, Seq[Utf16Snippet]]]
-}
-
-/** In-process HighlightBackend. Useful for testing.
-  *
-  * On production, this backend will break: our search index is written in a
-  * separate process.
-  */
-class LuceneHighlightBackend(val luceneIndexClient: LuceneIndexClient) extends HighlightBackend {
-  override def highlight(documentSetId: Long, documentId: Long, query: Query) = {
-    luceneIndexClient.highlight(documentSetId, documentId, query)
-  }
-
-  override def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) = {
-    luceneIndexClient.highlights(documentSetId, documentIds, query)
-  }
 }
 
 /** Akka RemoteActor-backed search backend.
