@@ -56,9 +56,6 @@ object Dependencies {
     deps.guava, // Textify
     deps.hikariCp,
     deps.icu4j, // Document.tokens
-    deps.lucene,
-    deps.luceneAnalyzersIcu,
-    deps.luceneHighlighter,
     deps.logback,
     deps.parserCombinators,
     deps.pgSlick,
@@ -100,6 +97,9 @@ object Dependencies {
     deps.akkaAgent,
     deps.akkaRemote,
     deps.logback,
+    deps.lucene,
+    deps.luceneAnalyzersIcu,
+    deps.luceneHighlighter,
     deps.mimeTypes,
     deps.pdfocr,
     deps.janino % "test" // See logback-test.xml
