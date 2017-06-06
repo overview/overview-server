@@ -125,11 +125,6 @@ object ApplicationBuild extends Build {
   lazy val common = project("common")
     .settings(libraryDependencies ++= Dependencies.commonDependencies)
 
-  lazy val reindexDocuments = Project("reindex-documents", file("upgrade/reindex-documents"))
-    .settings(ourGlobalSettings: _*)
-    .enablePlugins(JavaAppPackaging)
-    .settings(libraryDependencies ++= Dependencies.reindexDependencies)
-
   // Worker config includes setup for worker/re-start used by ./dev
   // We must set the javaOptions in Revolver.reStart or everything fails when
   // developing under docker-machine as search_index.hosts is not set correctly

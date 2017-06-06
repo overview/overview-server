@@ -18,7 +18,6 @@ object Dependencies {
     val guava = "com.google.guava" % "guava" % "18.0"
     val hikariCp = "com.zaxxer" % "HikariCP" % "2.6.2"
     val icu4j = "com.ibm.icu" % "icu4j" % "56.1"
-    val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.6.4" // for reindex
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
     val junitInterface = "com.novocode" % "junit-interface" % "0.9"
@@ -83,14 +82,6 @@ object Dependencies {
     deps.flywayDb,
     deps.logback,
     deps.postgresql
-  )
-
-  val reindexDependencies = Seq(
-    deps.asyncHttpClient,
-    deps.jacksonCore,
-    deps.postgresql,
-    deps.scopt,
-    deps.slick
   )
 
   val serverDependencies = Seq(
