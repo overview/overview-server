@@ -21,14 +21,23 @@ class ReindexActor(reindexer: Reindexer) extends Actor {
 
   private val logger = Logger.forClass(getClass)
 
+  private case object Start
   private case object ReindexNextDocumentSet
   private case object NoMoreDocumentSets
 
-  override def preStart = self ! ReindexNextDocumentSet
+  override def preStart = self ! Start
 
   override def receive = {
+    case Start => clearRunningJobs
     case ReindexNextDocumentSet => reindexOrStop
     case NoMoreDocumentSets => context.stop(self)
+  }
+
+  private def clearRunningJobs: Unit = {
+    reindexer.clearRunningJobs.onComplete {
+      case Success(_) => self ! ReindexNextDocumentSet
+      case Failure(ex) => self ! ex
+    }
   }
 
   private def reindexOrStop: Unit = {
