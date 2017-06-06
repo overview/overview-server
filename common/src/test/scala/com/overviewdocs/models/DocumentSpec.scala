@@ -92,9 +92,7 @@ class DocumentSpec extends Specification {
 
     "handle codepoint position, not character position, when switching between CJK and Latin" in {
       val document = documentWithText("时间: 10\n年")
-      System.out.println("test start")
       val tokens = document.tokens
-      System.out.println("test end")
       document.tokens must beEqualTo(Seq("时间", "10", "年"))
     }
   }
