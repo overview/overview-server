@@ -41,4 +41,12 @@ class MruLuceneIndexCache(
   }
 
   def get(documentSetId: Long): Future[DocumentSetLuceneIndex] = Future(getSync(documentSetId))
+
+  /** Removes all reference to an index.
+    *
+    * Call this after calling index.delete.
+    */
+  def remove(documentSetId: Long): Unit = synchronized {
+    active.-=(documentSetId)
+  }
 }

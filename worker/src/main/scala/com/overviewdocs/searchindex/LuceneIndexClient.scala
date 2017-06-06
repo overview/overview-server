@@ -50,7 +50,9 @@ trait LuceneIndexClient extends IndexClient {
   }
 
   override def removeDocumentSet(id: Long): Future[Unit] = {
-    getIndex(id).map(_.delete)
+    getIndex(id)
+      .map(_.delete)
+      .map(_ => cache.remove(id))
   }
 
   override def addDocuments(id: Long, documents: Iterable[Document]): Future[Unit] = {

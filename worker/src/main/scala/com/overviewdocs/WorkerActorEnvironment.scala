@@ -4,6 +4,7 @@ import akka.actor.{ActorRef,ActorSystem,UnhandledMessage}
 
 import com.overviewdocs.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
 import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
+import com.overviewdocs.background.reindex.ReindexActor
 import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
@@ -40,6 +41,7 @@ class WorkerActorEnvironment {
   // File removal background worker      
   private val fileCleaner = system.actorOf(FileCleaner(), "FileCleaner")
   private val deletedFileRemover = system.actorOf(DeletedFileCleaner(fileCleaner), "DeletedFileCleaner")
+  private val reindexer = system.actorOf(ReindexActor.props, "ReindexActor")
   private val fileRemovalQueue = system.actorOf(FileRemovalRequestQueue(deletedFileRemover), "FileRemovalQueue")
 
   private val documentIdSupplier = system.actorOf(DocumentIdSupplier(), "DocumentIdSupplier")

@@ -66,7 +66,8 @@ class DbSpecification extends Specification with AwaitMethod {
         q24 AS (DELETE FROM "session"),
         q25 AS (DELETE FROM "user"),
         q26 AS (DELETE FROM csv_import),
-        q27 AS (DELETE FROM clone_job)
+        q27 AS (DELETE FROM clone_job),
+        q28 AS (DELETE FROM document_set_reindex_job)
         DELETE FROM document_set
       """)
     }

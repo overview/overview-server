@@ -65,6 +65,25 @@ case class Document(
   /** Text, normalized as NFKC. */
   def normalizedText: String = Normalizer.normalize(text, Normalizer.Form.NFKC)
 
+  /** The approximate cost of this Document in memory.
+    *
+    * This is useful as a cost function for buffers when streaming.
+    */
+  def nBytesInMemoryEstimate: Int = {
+    val nFromOverhead = 100 // kinda vague here, because meh
+    val nFromStrings = 2 * ( // UTF-16
+      title.length
+      + url.map(_.length).getOrElse(0)
+      + suppliedId.length
+      + title.length
+      + thumbnailLocation.map(_.length).getOrElse(0)
+      + text.length
+    )
+    val nFromMetadata = 20 * metadataJson.keys.size // also vague
+
+    nFromOverhead + nFromStrings + nFromMetadata
+  }
+
   /** Returns NFKC-normalized tokens split according to Unicode tr29. */
   override def tokens: Seq[String] = {
     val ret = mutable.ArrayBuffer[String]()

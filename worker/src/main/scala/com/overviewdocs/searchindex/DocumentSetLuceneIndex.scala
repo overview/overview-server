@@ -25,7 +25,7 @@ import com.overviewdocs.models.Document
   * These operations may block on I/O. Such is Lucene.
   *
   * These operations are not concurrent: do not call more than one of these
-  * methods at a time.
+  * methods at a time. They're synchronized, just in case.
   */
 class DocumentSetLuceneIndex(val directory: Directory) { 
   private val analyzer = new DocumentSetLuceneIndex.OverviewAnalyzer
@@ -57,15 +57,17 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret
   }
 
-  def addDocuments(documents: Iterable[Document]): Unit = {
+  def addDocuments(documents: Iterable[Document]): Unit = synchronized {
     val luceneDocuments = documents.map(d => documentToLuceneDocument(d))
     indexWriter.addDocuments(JavaConversions.asJavaIterable(luceneDocuments))
     commit
   }
 
-  def close: Unit = indexWriter.close
+  def close: Unit = synchronized {
+    indexWriter.close
+  }
 
-  def delete: Unit = {
+  def delete: Unit = synchronized {
     refresh
     indexReader.close
     indexWriter.close
@@ -89,7 +91,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     })
   }
 
-  def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {
+  private def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {
     val query: LuceneQuery = {
       import org.apache.lucene.document.NumericDocValuesField
       import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
@@ -156,7 +158,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     indexSearcher.rewrite(luceneQuery)
   }
 
-  def searchForIds(q: Query): Seq[Long] = {
+  def searchForIds(q: Query): Seq[Long] = synchronized {
     val ret = ArrayBuffer.empty[Long]
 
     indexSearcher.search(queryToLuceneQuery(q), new SimpleCollector {
@@ -178,7 +180,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret
   }
 
-  def highlight(documentId: Long, query: Query): Seq[Utf16Highlight] = {
+  def highlight(documentId: Long, query: Query): Seq[Utf16Highlight] = synchronized {
     val highlighter = new LuceneSingleDocumentHighlighter(indexSearcher, analyzer)
     val luceneQuery = queryToLuceneHighlightQuery(query)
 
@@ -188,7 +190,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
       })
   }
 
-  def highlights(documentIds: Seq[Long], query: Query): Map[Long, Seq[Utf16Snippet]] = {
+  def highlights(documentIds: Seq[Long], query: Query): Map[Long, Seq[Utf16Snippet]] = synchronized {
     val highlighter = new LuceneMultiDocumentHighlighter(indexSearcher, analyzer)
     val luceneQuery = queryToLuceneHighlightQuery(query)
 
@@ -220,7 +222,9 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     }
   }
 
-  def refresh: Unit = commit
+  def refresh: Unit = synchronized {
+    commit
+  }
 
   private def fieldToLuceneField(f: Field): String = {
     f match {
