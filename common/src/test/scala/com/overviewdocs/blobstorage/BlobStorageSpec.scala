@@ -8,7 +8,6 @@ import java.nio.file.{Files,Path}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{After,Specification}
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{Await,Future}
 import scala.concurrent.duration.Duration
 

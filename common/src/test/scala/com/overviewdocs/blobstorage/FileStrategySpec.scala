@@ -2,7 +2,6 @@ package com.overviewdocs.blobstorage
 
 import java.io.{ File, IOException, InputStream }
 import java.nio.file.{ Files, Path }
-import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import scala.concurrent.Future
 import java.nio.charset.StandardCharsets
 import scala.io.Source

@@ -47,7 +47,6 @@ object Dependencies {
   val commonDependencies = Seq(
     deps.akka,
     deps.akkaRemote,
-    deps.asyncHttpClient,
     deps.awsS3,
     deps.guava, // Textify
     deps.hikariCp,
@@ -90,6 +89,7 @@ object Dependencies {
   )
   
   val workerDependencies = Seq(
+    deps.asyncHttpClient,
     deps.logback,
     deps.lucene,
     deps.luceneAnalyzersIcu,

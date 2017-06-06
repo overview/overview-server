@@ -9,7 +9,6 @@ import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
 import java.io.IOException
 import java.nio.file.{Files,Path}
 import java.util.UUID
-import play.api.libs.iteratee.Enumerator
 import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.concurrent.{Future,Promise,blocking}
 import scala.util.Try
