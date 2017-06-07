@@ -1,5 +1,6 @@
 package com.overviewdocs.searchindex
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.query.Query
@@ -95,7 +96,10 @@ object LuceneIndexClient {
     import java.nio.file.Paths
 
     private val baseDirectory = ConfigFactory.load().getString("search.baseDirectory")
-    private val threadPool = java.util.concurrent.Executors.newFixedThreadPool(4) // Hard-coded!
+    private val threadPool = java.util.concurrent.Executors.newFixedThreadPool(
+      Seq(4, Runtime.getRuntime.availableProcessors).min,
+      new ThreadFactoryBuilder().setNameFormat("lucene-on-disk-pool-%d").build
+    )
     override protected implicit val ec: ExecutionContext = ExecutionContext.fromExecutorService(threadPool)
 
     override protected def openIndex(documentSetId: Long) = {

@@ -33,6 +33,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
 
   private val indexWriterConfig = new IndexWriterConfig(analyzer)
     .setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND)
+    .setRAMBufferSizeMB(48) // "sweet spot" in https://issues.apache.org/jira/browse/LUCENE-843
     .setCommitOnClose(true) // for when we're evicted from MruLuceneIndexCache
   private val indexWriter = new IndexWriter(directory, indexWriterConfig)
   private var _directoryReader: Option[DirectoryReader] = None
@@ -41,33 +42,41 @@ class DocumentSetLuceneIndex(val directory: Directory) {
   private def indexReader = _directoryReader.getOrElse(DirectoryReader.open(directory))
   private def indexSearcher = _indexSearcher.getOrElse(new IndexSearcher(indexReader))
 
-  private val textFieldType: FieldType = {
+  private def textFieldType(willHighlight: Boolean): FieldType = {
     val ret = new FieldType
     ret.setTokenized(true)
-    ret.setStored(false)
-    ret.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS)
-    ret
-  }
-
-  private def documentToLuceneDocument(document: Document): LuceneDocument = {
-    val ret = new LuceneDocument()
-    ret.add(new NumericDocValuesField("id", document.id))
-    ret.add(new LuceneField("title", document.title, textFieldType))
-    ret.add(new LuceneField("text", document.text, textFieldType))
-    //ret.add(new LuceneField("_all", document.title + "\n\n\n" + document.text, textFieldType))
+    if (willHighlight) {
+      ret.setStored(true)
+      ret.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS)
+    } else {
+      ret.setStored(false)
+      ret.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS) // phrase query needs positions
+    }
     ret
   }
 
   def addDocuments(documents: Iterable[Document]): Unit = synchronized {
-    val luceneDocuments = documents.map(d => documentToLuceneDocument(d))
-    indexWriter.addDocuments(JavaConversions.asJavaIterable(luceneDocuments))
+    addDocumentsWithoutFsync(documents)
     commit
   }
 
   def addDocumentsWithoutFsync(documents: Iterable[Document]): Unit = synchronized {
-    documents
-      .map(d => documentToLuceneDocument(d))
-      .foreach(d => indexWriter.addDocument(d))
+    // Instantiate objects once: saves GC. As per
+    // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
+    val idField = new NumericDocValuesField("id", 0L)
+    val titleField = new LuceneField("title", "", textFieldType(false))
+    val textField = new LuceneField("text", "", textFieldType(true))
+    val luceneDocument = new LuceneDocument()
+    luceneDocument.add(idField)
+    luceneDocument.add(titleField)
+    luceneDocument.add(textField)
+
+    for (document <- documents) {
+      idField.setLongValue(document.id)
+      titleField.setStringValue(document.title)
+      textField.setStringValue(document.text)
+      indexWriter.addDocument(luceneDocument)
+    }
   }
 
   def close: Unit = synchronized {
@@ -133,35 +142,8 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret
   }
 
-  /** Converts '_all' field to '_text' field (for highlighting). */
-  private def fieldAllToText(field: Field): Field = field match {
-    case Field.All => Field.Text
-    case _ => field
-  }
-
-  /** Converts '_all' queries to 'text' queries (for highlighting).
-    *
-    * (There's no value to highlighting the "_all" field, so we only highlight
-    * "text" instead.)
-    */
-  private def queryAllToText(query: Query): Query = {
-    import com.overviewdocs.{query=>Q}
-
-    query match {
-      case Q.AllQuery => Q.AllQuery
-      case Q.AndQuery(p1, p2) => Q.AndQuery(queryAllToText(p1), queryAllToText(p2))
-      case Q.OrQuery(p1, p2) => Q.OrQuery(queryAllToText(p1), queryAllToText(p2))
-      case Q.NotQuery(p) => Q.NotQuery(queryAllToText(p))
-      case Q.PhraseQuery(field, phrase) => Q.PhraseQuery(fieldAllToText(field), phrase)
-      case Q.PrefixQuery(field, prefix) => Q.PrefixQuery(fieldAllToText(field), prefix)
-      case Q.ProximityQuery(field, phrase, slop) => Q.ProximityQuery(fieldAllToText(field), phrase, slop)
-      case Q.FuzzyTermQuery(field, term, fuzziness) => Q.FuzzyTermQuery(fieldAllToText(field), term, fuzziness)
-    }
-  }
-
   private def queryToLuceneHighlightQuery(query: Query): LuceneQuery = {
-    val luceneQuery = queryToLuceneQuery(queryAllToText(query))
-
+    val luceneQuery = queryToLuceneQuery(query)
     indexSearcher.rewrite(luceneQuery)
   }
 
@@ -233,16 +215,41 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     commit
   }
 
-  private def fieldToLuceneField(f: Field): String = {
-    f match {
-      case Field.All => "_all"
-      case Field.Text => "text"
-      case Field.Title => "title"
+  private def fieldToLuceneQuery(field: Field, buildLuceneQuery: String => LuceneQuery): LuceneQuery = {
+    import org.apache.lucene.search
+
+    field match {
+      case Field.All => new search.BooleanQuery.Builder()
+        .add(buildLuceneQuery("text"), search.BooleanClause.Occur.SHOULD)
+        .add(buildLuceneQuery("title"), search.BooleanClause.Occur.SHOULD)
+        .build
+      case Field.Text => buildLuceneQuery("text")
+      case Field.Title => buildLuceneQuery("title")
     }
   }
 
   private def queryToLuceneQuery(query: Query): LuceneQuery = {
     new ConstantScoreQuery(queryToLuceneQueryInner(query))
+  }
+
+  private def createPrefixQuery(field: String, prefix: String): LuceneQuery = {
+    val ret = new MultiPhrasePrefixQuery // TODO set maxExpansions
+
+    // run the analyzer
+    val tokenStream = analyzer.tokenStream(field, prefix)
+    val termAttribute = tokenStream.getAttribute(classOf[CharTermAttribute])
+
+    val terms = ArrayBuffer.empty[Term]
+
+    tokenStream.reset
+    while (tokenStream.incrementToken) {
+      val token = termAttribute.toString
+      ret.add(new Term(field, token))
+    }
+    tokenStream.end
+    tokenStream.close
+
+    ret
   }
 
   private def queryToLuceneQueryInner(q: Query): LuceneQuery = {
@@ -269,38 +276,23 @@ class DocumentSetLuceneIndex(val directory: Directory) {
           .build
       }
       case query.PhraseQuery(field, phrase) => {
-        queryBuilder.createPhraseQuery(fieldToLuceneField(field), phrase)
+        fieldToLuceneQuery(field, fieldName => queryBuilder.createPhraseQuery(fieldName, phrase))
       }
       case query.PrefixQuery(field, prefix) => {
-        val ret = new MultiPhrasePrefixQuery // TODO set maxExpansions
-
-        // run the analyzer
-        val tokenStream = analyzer.tokenStream(fieldToLuceneField(field), prefix)
-        val termAttribute = tokenStream.getAttribute(classOf[CharTermAttribute])
-
-        val luceneField = fieldToLuceneField(field)
-        val terms = ArrayBuffer.empty[Term]
-
-        tokenStream.reset
-        while (tokenStream.incrementToken) {
-          val token = termAttribute.toString
-          ret.add(new Term(luceneField, token))
-        }
-        tokenStream.end
-        tokenStream.close
-
-        ret
+        fieldToLuceneQuery(field, fieldName => createPrefixQuery(fieldName, prefix))
       }
       case query.ProximityQuery(field, phrase, slop) => {
-        queryBuilder.createPhraseQuery(fieldToLuceneField(field), phrase, slop)
+        fieldToLuceneQuery(field, fieldName => queryBuilder.createPhraseQuery(fieldName, phrase, slop))
       }
       case query.FuzzyTermQuery(field, term, fuzziness) => {
-        val luceneTerm = new Term(fieldToLuceneField(field), term)
-        // TODO set maxExpansions
-        fuzziness match {
-          case None => new search.FuzzyQuery(luceneTerm)
-          case Some(fuzz) => new search.FuzzyQuery(luceneTerm, fuzz)
-        }
+        fieldToLuceneQuery(field, { fieldName =>
+          val luceneTerm = new Term(fieldName, term)
+          // TODO set maxExpansions
+          fuzziness match {
+            case None => new search.FuzzyQuery(luceneTerm)
+            case Some(fuzz) => new search.FuzzyQuery(luceneTerm, fuzz)
+          }
+        })
       }
     }
   }
