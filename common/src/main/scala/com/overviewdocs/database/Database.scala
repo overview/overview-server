@@ -69,7 +69,7 @@ class Database(val dataSource: DataSource, val maxConnections: Int) {
   def run[T](action: DBIO[T]): Future[T] = wrapExceptions(slickDatabase.run(action))
 
   /** Like `run()`, but ignores the return value. */
-  def runUnit[T](action: DBIO[T]): Future[Unit] = run(action).map(_ => ())(slickDatabase.ioExecutionContext)
+  def runUnit[T](action: DBIO[T]): Future[Unit] = run(action).map(_ => ())
 
   /** Returns all the results from a query as a Seq.
     *
@@ -104,7 +104,7 @@ class Database(val dataSource: DataSource, val maxConnections: Int) {
     * database.option(sql"SELECT id FROM document".as[Long])
     */
   def option[T](action: DBIO[Seq[T]]): Future[Option[T]] = {
-    run(action).map(_.headOption)(slickDatabase.ioExecutionContext)
+    run(action).map(_.headOption)
   }
 
   /** Returns an Option with the first row from the query, if there is one.
@@ -191,7 +191,7 @@ class Database(val dataSource: DataSource, val maxConnections: Int) {
   /** Re-casts Future failures to Conflict or ParentMissing when appropriate.
     */
   def wrapExceptions[T](future: Future[T]): Future[T] = {
-    future.transform(identity, wrapException)(slickDatabase.ioExecutionContext)
+    future.transform(identity, wrapException)
   }
 }
 
