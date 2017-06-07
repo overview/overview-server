@@ -14,7 +14,6 @@ object Dependencies {
     val config = "com.typesafe" % "config" % "1.3.0"
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "2.6.2"
     val icu4j = "com.ibm.icu" % "icu4j" % "56.1"
     val janino = "org.codehaus.janino" % "janino" % "2.7.8" // Runtime Java compiler -- for logback-test.xml
     val joddWot = "org.jodd" % "jodd-wot" % "3.3.8"
@@ -33,10 +32,12 @@ object Dependencies {
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
     val playMailer = "com.typesafe.play" %% "play-mailer" % "4.0.0-M1"
     val playPluginsUtil = "com.typesafe.play.plugins" %% "play-plugins-util" % "2.3.0"
+    val playSlick = "com.typesafe.play" %% "play-slick" % "2.1.0"
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
     val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
     val redis = "net.debasishg" %% "redisreact" % "0.8"
     val slick = "com.typesafe.slick" %% "slick" % "3.2.0"
+    val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.2.0"
     val specs2Core = "org.specs2" %% "specs2-core" % "3.8.9"
     val specs2Junit = "org.specs2" %% "specs2-junit" % "3.8.9" // for XML reporting, for Jenkins
     val specs2MatcherExtra = "org.specs2" %% "specs2-matcher-extra" % "3.8.9"
@@ -49,7 +50,6 @@ object Dependencies {
     deps.akkaRemote,
     deps.awsS3,
     deps.guava, // Textify
-    deps.hikariCp,
     deps.icu4j, // Document.tokens
     deps.logback,
     deps.parserCombinators,
@@ -58,6 +58,7 @@ object Dependencies {
     deps.postgresql,
     deps.redis,
     deps.slick,
+    deps.slickHikariCp,
     deps.akkaTestkit % "test",
     deps.janino % "test", // See logback-test.xml
     deps.junitInterface % "test",
@@ -81,7 +82,7 @@ object Dependencies {
     deps.owaspEncoder,
     deps.playMailer,
     deps.playPluginsUtil,
-    deps.slick,
+    deps.playSlick,
     filters,
     ws,
     deps.joddWot % "test",

@@ -3,10 +3,12 @@ package com.overviewdocs.database
 import java.sql.SQLException
 import javax.sql.DataSource
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 import slick.dbio.DBIO
 import slick.jdbc.JdbcBackend.{Database=>DatabaseFactory}
 import slick.lifted.RunnableCompiled
+import slick.util.AsyncExecutor
 
 import com.overviewdocs.database.Slick.api._
 
@@ -28,10 +30,7 @@ import com.overviewdocs.database.Slick.api._
   * The constructor is private to force use of the singleton object returned by
   * `Database()`.
   */
-class Database(val dataSource: DataSource, val maxConnections: Int) {
-  /** Exposes the Slick Database. */
-  val slickDatabase = DatabaseFactory.forDataSource(dataSource, Some(maxConnections))
-
+class Database(val slickDatabase: slick.jdbc.JdbcBackend.Database) {
   /** Exposes the Slick Database API.
     *
     * This saves typing over "com.overviewdocs.database.Slick.api".
@@ -197,7 +196,7 @@ class Database(val dataSource: DataSource, val maxConnections: Int) {
 
 
 object Database {
-  private lazy val database = new Database(DB.dataSource, DB.hikariConfig.getMaximumPoolSize)
+  private lazy val database = new Database(DatabaseFactory.forConfig("db.default"))
   
   def apply(): Database = database
 }
