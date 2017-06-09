@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,PdfNoteCollection}
 import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,Tags}
 import com.overviewdocs.query.{Query=>SearchQuery}
+import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
 import models.pagination.{Page,PageRequest}
 import models.{Selection,SelectionRequest}
@@ -25,12 +26,6 @@ trait DocumentBackend {
 
   /** Lists all requested Documents, in the requested order. */
   def index(documentSetId: Long, documentIds: Seq[Long]): Future[Seq[Document]]
-
-  /** Lists all Document IDs for the given parameters.
-    *
-    * Will only fail is a server is down.
-    */
-  def indexIds(selectionRequest: SelectionRequest): Future[Seq[Long]]
 
   /** Returns a single Document.
     *
@@ -68,12 +63,10 @@ trait DocumentBackend {
 }
 
 class DbDocumentBackend @Inject() (
-  val searchBackend: SearchBackend
+  val searchBackend: SearchBackend // TODO make writes go through worker, then NIX THIS! WHEE!
 ) extends DocumentBackend with DbBackend {
 
   import database.api._
-
-  protected lazy val logger = Logger.forClass(getClass)
 
   private val NullDocumentHeader = new DocumentHeader {
     override val id = 0L
@@ -90,13 +83,6 @@ class DbDocumentBackend @Inject() (
     override val text = ""
     override val pdfNotes = PdfNoteCollection(Array())
     override val thumbnailLocation = None
-  }
-
-  private val UniversalIdSet: Set[Long] = new Set[Long] {
-    override def contains(key: Long) = true
-    override def iterator = throw new UnsupportedOperationException()
-    override def +(elem: Long) = this
-    override def -(elem: Long) = throw new UnsupportedOperationException()
   }
 
   override def index(selection: Selection, pageRequest: PageRequest, includeText: Boolean): Future[Page[DocumentHeader]] = {
@@ -128,64 +114,6 @@ class DbDocumentBackend @Inject() (
     }
   }
 
-  /** Returns all a DocumentSet's Document IDs, sorted. */
-  private def indexAllIds(documentSetId: Long): Future[Seq[Long]] = {
-    logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}]", documentSetId) {
-      database.option(sortedIds(documentSetId)).map(_.getOrElse(Seq()))
-    }
-  }
-
-  /** Returns IDs that match a given search phrase, unsorted. */
-  private def indexByQ(documentSetId: Long, query: SearchQuery): Future[Set[Long]] = {
-    logger.logExecutionTimeAsync("finding document IDs matching '{}'", query.toString) {
-      searchBackend.search(documentSetId, query).map(_.toSet)
-    }
-  }
-
-  /** Returns IDs that match the given tags/objects/etc (everything but
-    * search pharse), unsorted.
-    */
-  private def indexByDB(request: SelectionRequest): Future[Set[Long]] = {
-    logger.logExecutionTimeAsync("finding document IDs matching '{}'", request.toString) {
-      implicit val getLong = slick.jdbc.GetResult(r => r.nextLong)
-      database.run(sql"#${idsBySelectionRequestSql(request)}".as[Long]).map(_.toSet)
-    }
-  }
-
-  /** Returns a subset of the DocumentSet's Document IDs, sorted. */
-  private def indexSelectedIds(request: SelectionRequest): Future[Seq[Long]] = {
-    val idsByQFuture = request.q match {
-      case None => Future.successful(UniversalIdSet)
-      case Some(q) => indexByQ(request.documentSetId, q)
-    }
-
-    val idsByDBFuture: Future[Set[Long]] = if (request.copy(q=None).isAll) {
-      Future.successful(UniversalIdSet)
-    } else {
-      indexByDB(request)
-    }
-
-    for {
-      allSortedIds <- indexAllIds(request.documentSetId)
-      idsByQ <- idsByQFuture
-      idsByDB <- idsByDBFuture
-    } yield {
-      logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
-        allSortedIds
-          .filter(idsByQ.contains(_))
-          .filter(idsByDB.contains(_))
-      }
-    }
-  }
-
-  override def indexIds(request: SelectionRequest) = {
-    if (request.isAll) {
-      indexAllIds(request.documentSetId)
-    } else {
-      indexSelectedIds(request)
-    }
-  }
-
   override def show(documentSetId: Long, documentId: Long) = {
     database.option(byDocumentSetIdAndId(documentSetId, documentId))
   }
@@ -207,98 +135,6 @@ class DbDocumentBackend @Inject() (
 
   override def updatePdfNotes(documentId: Long, pdfNotes: PdfNoteCollection) = {
     database.runUnit(updatePdfNotesCompiled(documentId).update(Some(pdfNotes)))
-  }
-
-  protected def sortedIds(documentSetId: Long): DBIO[Seq[Seq[Long]]] = {
-    // The ORM is unaware of DocumentSet.sortedDocumentIds
-    sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
-  }
-
-  protected def idsBySelectionRequestSql(request: SelectionRequest): String = {
-    // Don't have to worry about SQL injection: every SelectionRequest
-    // parameter is an ID. (Or it's "q", which this method ignores.)
-    val sb = new StringBuilder(s"""SELECT id FROM document WHERE document_set_id = ${request.documentSetId}""")
-
-    if (request.documentIds.nonEmpty) {
-      sb.append(s"""
-        AND id IN (${request.documentIds.mkString(",")})""")
-    }
-
-    if (request.nodeIds.nonEmpty) {
-      sb.append(s"""
-        AND EXISTS (
-          SELECT 1 FROM node_document WHERE document_id = document.id
-          AND node_id IN (${request.nodeIds.mkString(",")})
-        )""")
-    }
-
-    if (request.storeObjectIds.nonEmpty) {
-      sb.append(s"""
-        AND EXISTS (
-          SELECT 1 FROM document_store_object WHERE document_id = document.id
-          AND store_object_id IN (${request.storeObjectIds.mkString(",")})
-        )""")
-    }
-
-    if (request.tagIds.nonEmpty || request.tagged.nonEmpty) {
-      val taggedSql = "EXISTS (SELECT 1 FROM document_tag WHERE document_id = document.id)"
-
-      request.tagOperation match {
-        case SelectionRequest.TagOperation.Any => {
-          val parts = Buffer[String]()
-
-          if (request.tagIds.nonEmpty) {
-            parts.append(s"""EXISTS (
-              SELECT 1
-              FROM document_tag
-              WHERE document_id = document.id
-                AND tag_id IN (${request.tagIds.mkString(",")})
-            )""")
-          }
-
-          request.tagged match {
-            case Some(true) => parts.append(taggedSql)
-            case Some(false) => parts.append("NOT " + taggedSql)
-            case None =>
-          }
-
-          sb.append(s" AND (${parts.mkString(" OR ")})")
-        }
-
-        case SelectionRequest.TagOperation.All => {
-          for (tagId <- request.tagIds) {
-            sb.append(s"""
-              AND EXISTS (SELECT 1 FROM document_tag WHERE document_id = document.id AND tag_id = $tagId)""")
-          }
-
-          request.tagged match {
-            case Some(true) => sb.append("\nAND " + taggedSql)
-            case Some(false) => sb.append("\nAND NOT " + taggedSql)
-            case None =>
-          }
-        }
-
-        case SelectionRequest.TagOperation.None => {
-          if (request.tagIds.nonEmpty) {
-            sb.append(s"""
-              AND NOT EXISTS (
-                SELECT 1
-                FROM document_tag
-                WHERE document_id = document.id
-                  AND tag_id IN (${request.tagIds.mkString(",")})
-              )""")
-          }
-
-          request.tagged match {
-            case Some(true) => sb.append("\nAND NOT " + taggedSql)
-            case Some(false) => sb.append("\nAND " + taggedSql)
-            case None =>
-          }
-        }
-      }
-    }
-
-    sb.toString
   }
 
   protected object InfosByIds {

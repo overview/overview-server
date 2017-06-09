@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.redis.RedisClient
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
+import org.specs2.specification.{Scope,After}
 import play.api.Play
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext.Implicits._
@@ -29,23 +29,22 @@ import modules.RedisModule
   *   }
   * }
   */
-trait RedisBackendSpecification
-  extends test.helpers.InAppSpecification // for play.api.Play.current, for Redis configuration
-{ self =>
+trait RedisBackendSpecification extends test.helpers.InAppSpecification { self =>
   sequential
 
   implicit val duration: FiniteDuration = FiniteDuration(2, "seconds")
   implicit val timeout: Timeout = Timeout(duration)
 
-  // HACK: We'll keep the same RedisClient between tests, because we know how
-  // RedisModule works. (RedisBackendSpecification and RedisModule could use
-  // some cleanup.)
-  lazy val redisModule = Play.current.injector.instanceOf[RedisModule]
-  lazy val redis = redisModule.client
-
-  trait RedisScope extends Scope {
+  trait RedisScope extends Scope with After {
+    lazy val redisModule = new RedisModule(app.actorSystem, app.configuration)
+    lazy val redis = redisModule.client
     lazy val factory: Factory = PodoFactory
     def await[A](f: Future[A]) = Await.result(f, duration)
     await(redis.flushdb)
+
+    override def after = {
+      System.err.println("Quit!")
+      await(redis.close)
+    }
   }
 }

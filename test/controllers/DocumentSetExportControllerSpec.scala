@@ -7,7 +7,7 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.{DocumentBackend,DocumentSetBackend,DocumentTagBackend,TagBackend,SelectionBackend}
-import models.{Selection,InMemorySelection}
+import models.InMemorySelection
 import models.export.rows.Rows
 import models.export.format.CsvFormat
 
@@ -18,7 +18,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
     val mockDocumentTagBackend = smartMock[DocumentTagBackend]
     val mockTagBackend = smartMock[TagBackend]
     val mockSelectionBackend = smartMock[SelectionBackend]
-    def selection: Selection = ???
+    def selection: InMemorySelection = ???
     mockSelectionBackend.findOrCreate(any, any, any) returns Future { selection }
 
     val controller = new DocumentSetExportController(
@@ -41,7 +41,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       val doc1 = factory.document(id=1L, suppliedId="11", title="doc1", text="text1", url=None)
       val doc2 = factory.document(id=2L, suppliedId="22", title="doc2", text="text2", url=None)
 
-      override def selection = InMemorySelection(Seq(1L, 2L))
+      override def selection = InMemorySelection(Array(1L, 2L))
       mockDocumentBackend.index(any, any) returns Future.successful(Seq(doc1, doc2))
       mockDocumentTagBackend.indexMany(any) returns Future.successful(Map(
         1L -> Seq(5L, 6L),

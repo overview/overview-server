@@ -1,6 +1,6 @@
 package controllers.backend
 
-import akka.util.Timeout
+import akka.util.{ByteString,Timeout}
 import com.google.inject.ImplementedBy
 import com.redis.RedisClient
 import com.redis.protocol.StringCommands
@@ -10,18 +10,18 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
-import models.{InMemorySelection,Selection,SelectionRequest}
+import models.{InMemorySelection,Selection,SelectionRequest,SelectionWarning}
 import models.pagination.{Page,PageInfo,PageRequest}
 import modules.RedisModule
 
 /** A store of Selections.
   *
-  * A Selection is a list of document IDs. It is created via the
-  * findDocumentIds() method, with a SelectionRequest. We persist
-  * Selections so we can paginate over them. (We can't paginate using just the
-  * query params, because findDocumentIds() doesn't necessarily return the same
-  * list of document IDs on each call. See
-  * https://www.pivotaltracker.com/story/show/92354552.)
+  * A Selection is a list of document IDs. It is first created via
+  * DocumentSelectionBackend.createSelection(), but it may later be persisted.
+  *
+  * We persist Selections so we can paginate over them. (We can't paginate using
+  * query params, because queries run at different times will give different
+  * results -- and because querying is slower than reloading a Selection.)
   *
   * Think of this as a cache. If you findOrCreate() on a request that refers
   * back to a previously-cached selection, you'll get the cached selection
@@ -29,7 +29,7 @@ import modules.RedisModule
   */
 @ImplementedBy(classOf[RedisSelectionBackend])
 trait SelectionBackend extends Backend {
-  protected val documentBackend: DocumentBackend
+  protected val documentSelectionBackend: DocumentSelectionBackend
 
   /** Converts a SelectionRequest to a new Selection.
     *
@@ -49,19 +49,14 @@ trait SelectionBackend extends Backend {
     * 3. Otherwise, call create().
     */
   def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]): Future[Selection]
-
-  /** Does the grunt work for the create() method. */
-  protected def findDocumentIds(request: SelectionRequest): Future[Seq[Long]] = {
-    documentBackend.indexIds(request)
-  }
 }
 
 class NullSelectionBackend @Inject() (
-  override val documentBackend: DocumentBackend
+  override val documentSelectionBackend: DocumentSelectionBackend
 ) extends SelectionBackend {
 
   override def create(userEmail: String, request: SelectionRequest) = {
-    findDocumentIds(request).map(InMemorySelection(_))
+    documentSelectionBackend.createSelection(request)
   }
 
   override def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]) = {
@@ -83,11 +78,13 @@ class NullSelectionBackend @Inject() (
   *   return the same Selection.
   * * `selection:[documentSetId]:by-id:[id]:document-ids`: A (String) byte
   *   array of 64-bit document IDs.
+  * * `selection:[documentSetId]:by-id:[id]:warnings`: A Serialized
+  *   List[SelectionWarning].
   *
   * Selections all expire. find() and findOrCreate() reset the expiry time.
   */
 class RedisSelectionBackend @Inject() (
-  override val documentBackend: DocumentBackend,
+  override val documentSelectionBackend: DocumentSelectionBackend,
   val redisModule: RedisModule
 ) extends SelectionBackend {
   protected val redis: RedisClient = redisModule.client
@@ -103,7 +100,11 @@ class RedisSelectionBackend @Inject() (
     s"selection:${documentSetId}:by-id:${selectionId}:document-ids"
   }
 
-  case class RedisSelection(val documentSetId: Long, override val id: UUID) extends Selection {
+  private def buildWarningsKey(documentSetId: Long, selectionId: UUID) = {
+    s"selection:${documentSetId}:by-id:${selectionId}:warnings"
+  }
+
+  case class RedisSelection(val documentSetId: Long, override val id: UUID, override val warnings: List[SelectionWarning]) extends Selection {
     private def throwMissingError = throw new Exception("document IDs disappeared even though we _just_ reset their expire time")
 
     private val key = documentIdsKey(documentSetId, id)
@@ -133,9 +134,8 @@ class RedisSelectionBackend @Inject() (
       } yield Page(longs, PageInfo(page, total.toInt))
     }
 
-    override def getAllDocumentIds: Future[Seq[Long]] = {
+    override def getAllDocumentIds: Future[Array[Long]] = {
       getDocumentIdsArray(0, Int.MaxValue / SizeOfLong)
-        .map(_.toSeq)
     }
   }
 
@@ -148,75 +148,87 @@ class RedisSelectionBackend @Inject() (
   // This isn't a legitimate exception; expanding timeout to 60s.
   private implicit val timeout: Timeout = Timeout(60, java.util.concurrent.TimeUnit.SECONDS)
 
-  private def encodeDocumentIds(documentIds: Seq[Long]): Array[Byte] = {
+  private def encodeDocumentIds(documentIds: Array[Long]): Array[Byte] = {
     val buffer = ByteBuffer.allocate(documentIds.length * SizeOfLong)
     documentIds.foreach(buffer.putLong)
     buffer.array
   }
 
-  private def findAndExpireByHash(userEmail: String, request: SelectionRequest): Future[Option[Selection]] = {
+  private def findAndExpireSelectionIdByHash(userEmail: String, request: SelectionRequest): Future[Option[UUID]] = {
     val hashKey = requestHashKey(userEmail, request)
-    redis
-      .eval("""
-        local selection_id = redis.call("GET", KEYS[1])
-        if selection_id == false then
-          return nil
-        else
-          redis.call("EXPIRE", KEYS[1], ARGV[2])
-          local selection_key = "selection:" .. ARGV[1] .. ":by-id:" .. selection_id .. ":document-ids"
-          if redis.call("EXPIRE", selection_key, ARGV[2]) == 0 then
-            return nil
-          else
-            return selection_id
-          end
-        end
-      """, List(hashKey), List(request.documentSetId.toString, ExpiresInSeconds.toString))
-      .map(_ match {
-        case List(id: String) => Some(RedisSelection(request.documentSetId, UUID.fromString(id)))
-        case _ => None
-      })
+
+    val resultFuture = redis.withTransaction { c =>
+      c.get(hashKey)
+      c.expire(hashKey, ExpiresInSeconds)
+    }
+
+    resultFuture.map(_ match {
+      case (Some(uuidString: String), true) => Some(UUID.fromString(uuidString))
+      case _ => None
+    })
   }
 
-  private def findAndExpireById(documentSetId: Long, selectionId: UUID): Future[Option[Selection]] = {
-    val idKey = documentIdsKey(documentSetId, selectionId)
-    for { isSet <- redis.expire(idKey, ExpiresInSeconds) }
-    yield if (isSet) Some(RedisSelection(documentSetId, selectionId)) else None
+  private def findAndExpireSelectionById(documentSetId: Long, id: UUID): Future[Option[Selection]] = {
+    val idsKey = documentIdsKey(documentSetId, id)
+    val warningsKey = buildWarningsKey(documentSetId, id)
+
+    val resultFuture = redis.withTransaction { c =>
+      c.expire(idsKey, ExpiresInSeconds)
+      c.expire(warningsKey, ExpiresInSeconds)
+      c.get(warningsKey)
+    }
+
+    resultFuture.map(_ match {
+      case (true, true, Some(warningsString: ByteString)) => {
+        Some(RedisSelection(documentSetId, id, parseWarnings(warningsString)))
+      }
+      case _ => None
+    })
+  }
+
+  private def parseWarnings(byteString: ByteString): List[SelectionWarning] = Nil
+
+  private def encodeWarnings(warnings: List[SelectionWarning]): ByteString = ByteString.empty
+
+  private def writeSelection(userEmail: String, request: SelectionRequest, selection: InMemorySelection): Future[Unit] = {
+    val byUserHashKey = requestHashKey(userEmail, request)
+    val byIdKey = documentIdsKey(request.documentSetId, selection.id)
+    val warningsKey = buildWarningsKey(request.documentSetId, selection.id)
+
+    redis.withTransaction { c =>
+      c.set(byUserHashKey, selection.id.toString, StringCommands.EX(ExpiresInSeconds))
+      c.set(byIdKey, encodeDocumentIds(selection.documentIds), StringCommands.EX(ExpiresInSeconds))
+      c.set(warningsKey, encodeWarnings(selection.warnings), StringCommands.EX(ExpiresInSeconds))
+    }.map(_ => ())
   }
 
   override def create(userEmail: String, request: SelectionRequest) = {
-    val selectionId = UUID.randomUUID()
-    val byUserHashKey = requestHashKey(userEmail, request)
-    val byIdKey = documentIdsKey(request.documentSetId, selectionId)
-
     for {
-      documentIds <- findDocumentIds(request)
-      _ <- redis.set(byUserHashKey, selectionId.toString, StringCommands.EX(ExpiresInSeconds))
-      _ <- redis.set(byIdKey, encodeDocumentIds(documentIds), StringCommands.EX(ExpiresInSeconds))
-    } yield RedisSelection(request.documentSetId, selectionId)
+      selection <- documentSelectionBackend.createSelection(request)
+      _ <- writeSelection(userEmail, request, selection)
+    } yield selection // return InMemorySelection, not a RedisSelection -- it's faster
   }
 
   override def find(documentSetId: Long, selectionId: UUID) = {
-    findAndExpireById(documentSetId, selectionId)
+    findAndExpireSelectionById(documentSetId, selectionId)
   }
 
   override def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]) = {
-    val selection1: Future[Option[Selection]] = maybeSelectionId match {
-      case Some(selectionId) => findAndExpireById(request.documentSetId, selectionId)
-      case None => Future.successful(None)
-    }
+    for {
+      // 1. Get selection ID if at all possible
+      selectionId: Option[UUID] <- (maybeSelectionId
+        .map(id => Future.successful(Some(id)))
+        .getOrElse(findAndExpireSelectionIdByHash(userEmail, request)))
 
-    val selection2: Future[Option[Selection]] = selection1
-      .flatMap(_ match {
-        case Some(selection) => Future.successful(Some(selection))
-        case None => findAndExpireByHash(userEmail, request)
-      })
+      // 2. Read Selection from Redis if we have an ID
+      selectionById: Option[Selection] <- (selectionId
+        .map(id => findAndExpireSelectionById(request.documentSetId, id))
+        .getOrElse(Future.successful(None)))
 
-    val selection3: Future[Selection] = selection2
-      .flatMap(_ match {
-        case Some(selection: Selection) => Future.successful(selection)
-        case None => create(userEmail, request)
-      })
-
-    selection3
+      // 3. Return the selection, or create a new one if we couldn't find one
+      selection: Selection <- (selectionById
+        .map(s => Future.successful(s))
+        .getOrElse(create(userEmail, request)))
+    } yield selection
   }
 }

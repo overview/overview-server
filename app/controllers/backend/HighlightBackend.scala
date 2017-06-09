@@ -17,6 +17,10 @@ import modules.RemoteActorSystemModule
 trait HighlightBackend extends Backend {
   /** Lists all highlights of a given term in the document.
     *
+    * The query may be well-formed but be inappropriate for the given document
+    * (e.g., a boolean query on too many terms). In that case, the server will
+    * respond with a Left.
+    *
     * @param documentSetId DocumentSet ID
     * @param documentId Document ID
     * @param query Parsed search query
@@ -24,6 +28,10 @@ trait HighlightBackend extends Backend {
   def highlight(documentSetId: Long, documentId: Long, query: Query): Future[Seq[Utf16Highlight]]
 
   /** Lists short phrases matching the given query in each document.
+    *
+    * The query may be well-formed but be inappropriate for the given document
+    * (e.g., a boolean query on too many terms). In that case, the server will
+    * respond with a Left.
     *
     * @param documentSetId DocumentSet ID
     * @param documentIds Document ID

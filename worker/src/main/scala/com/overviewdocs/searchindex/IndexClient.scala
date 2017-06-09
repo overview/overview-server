@@ -63,7 +63,7 @@ trait IndexClient {
     * @param documentSetId Document set ID
     * @param q Search string
     */
-  def searchForIds(documentSetId: Long, q: Query): Future[Seq[Long]]
+  def searchForIds(documentSetId: Long, q: Query): Future[SearchResult]
 
   /** Finds all highlights of a given query in a document.
     *

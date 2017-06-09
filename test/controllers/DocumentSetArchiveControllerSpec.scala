@@ -11,13 +11,13 @@ import com.overviewdocs.test.factories.{PodoFactory=>factory}
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{ArchiveEntryBackend,SelectionBackend}
 import models.archive.{ArchiveFactory,ZipArchive}
-import models.{ArchiveEntry,InMemorySelection,Selection}
+import models.{ArchiveEntry,InMemorySelection}
 
 class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mockito {
   trait BaseScope extends Scope {
     val mockArchiveEntryBackend = smartMock[ArchiveEntryBackend]
     val mockArchiveFactory = smartMock[ArchiveFactory]
-    def selection = InMemorySelection(Seq(2L)) // override for a different selection
+    def selection = InMemorySelection(Array(2L)) // override for a different selection
     val mockSelectionBackend = smartMock[SelectionBackend]
     mockSelectionBackend.findOrCreate(any, any, any) returns Future { selection }
 
@@ -55,7 +55,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     "fail fast with >65535 files" in new BaseScope {
       // Errors normally come from ArchiveFactory. But we can take a shortcut
       // to avoid an expensive query.
-      override def selection = InMemorySelection(Seq.tabulate(65536)(_.toLong))
+      override def selection = InMemorySelection(Seq.tabulate(65536)(_.toLong).toArray)
       val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.SEE_OTHER)
       h.flash(result).data must contain("warning" -> controller.messagesApi("controllers.DocumentSetArchiveController.tooManyEntries"))

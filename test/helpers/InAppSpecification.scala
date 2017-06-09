@@ -13,7 +13,7 @@ import play.api.Play.{start,stop}
   * Globals are deprecated, but implicit Materializer is useful.
   */
 trait InAppSpecification extends Specification with BeforeAfterAll {
-  private lazy val app = InAppSpecification.app
+  protected lazy val app = InAppSpecification.app
   protected implicit def materializer: Materializer = app.materializer
 
   override def beforeAll = start(app)

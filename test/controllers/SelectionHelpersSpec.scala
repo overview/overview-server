@@ -12,7 +12,7 @@ import scala.concurrent.Future
 import com.overviewdocs.query.{Field,PhraseQuery}
 import com.overviewdocs.util.AwaitMethod
 import controllers.backend.SelectionBackend
-import models.{InMemorySelection,Selection,SelectionRequest}
+import models.{InMemorySelection,SelectionRequest}
 import test.helpers.MockMessagesApi
 
 class SelectionHelpersSpec extends Specification with Mockito with AwaitMethod {
@@ -146,7 +146,7 @@ class SelectionHelpersSpec extends Specification with Mockito with AwaitMethod {
       // This implicitly tests selectionRequest(). Meh.
       val documentSetId: Long = 123L
       val userEmail: String = "user@example.org"
-      val selection = InMemorySelection(Seq(1L, 2L, 3L))
+      val selection = InMemorySelection(Array(1L, 2L, 3L))
       val selectionId = "9cf4d95a-39bd-4463-85a3-cac272a20bc2"
       val mockSelectionBackend = smartMock[SelectionBackend]
 

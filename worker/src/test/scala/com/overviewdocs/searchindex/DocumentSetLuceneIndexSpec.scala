@@ -13,9 +13,11 @@ class DocumentSetLuceneIndexSpec extends Specification {
   sequential
 
   trait BaseScope extends Scope {
+    val documentSetId: Long = 0L
     val directory = new RAMDirectory
+    val maxExpansionsPerTerm: Int = 1024
 
-    def openIndex = new DocumentSetLuceneIndex(directory)
+    def openIndex = new DocumentSetLuceneIndex(documentSetId, directory, maxExpansionsPerTerm)
     lazy val index = openIndex
 
     def buildDocument(id: Long) = Document(
@@ -37,7 +39,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
       thumbnailLocation=Some("path/of/file")
     )
 
-    def search(q: Query): String = index.searchForIds(q).mkString(",")
+    def search(q: Query): String = index.searchForIds(q).toSeq.mkString(",")
   }
 
   "DocumentSetLuceneIndex" should {
@@ -106,27 +108,51 @@ class DocumentSetLuceneIndexSpec extends Specification {
         search(PrefixQuery(Field.Title, "foo/bar/")) must beEqualTo("1")
         search(PrefixQuery(Field.Title, "foo/")) must beEqualTo("1,2")
       }
+
+      "truncate prefix searches that query for too many terms" in new BaseScope {
+        override val maxExpansionsPerTerm = 4
+        index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
+        val result = index.searchForIds(PrefixQuery(Field.Text, "duck goose"))
+        result.size must beEqualTo(maxExpansionsPerTerm)
+        result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose", 4)))
+      }
+
+      "indicate the searched (not given) field in TooManyExpansions warning" in new BaseScope {
+        override val maxExpansionsPerTerm = 4
+        index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
+        val result = index.searchForIds(PrefixQuery(Field.All, "duck goose"))
+        result.size must beEqualTo(maxExpansionsPerTerm)
+        result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose", 4)))
+      }
+
+      "not truncate single-term prefix searches, no matter how many terms the query for" in new BaseScope {
+        override val maxExpansionsPerTerm = 4
+        index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
+        val result = index.searchForIds(PrefixQuery(Field.Text, "goose"))
+        result.size must beEqualTo(5)
+        result.warnings must beEmpty
+      }
     }
 
     "#highlight" should {
       "return empty result on document it cannot match" in new BaseScope {
         index.addDocuments(Seq(buildDocument(1L).copy(text="i am cow hear me moo")))
-        index.highlight(1L, PhraseQuery(Field.Text, "dog")) must beEmpty
+        index.highlight(1L, PhraseQuery(Field.Text, "dog")) must beEqualTo(Seq())
       }
 
       "match a word" in new BaseScope {
         index.addDocuments(Seq(buildDocument(1L).copy(text="i am cow hear me moo")))
-        index.highlight(1L, PhraseQuery(Field.Text, "cow")) must containTheSameElementsAs(Seq(Utf16Highlight(5, 8)))
+        index.highlight(1L, PhraseQuery(Field.Text, "cow")) must beEqualTo(Seq(Utf16Highlight(5, 8)))
       }
 
       "match overlapping words" in new BaseScope {
         index.addDocuments(Seq(buildDocument(1L).copy(text="this is a hard, hard, hard query")))
-        index.highlight(1L, PhraseQuery(Field.Text, "hard, hard")) must containTheSameElementsAs(Seq(Utf16Highlight(10,14), Utf16Highlight(16,20), Utf16Highlight(22,26)))
+        index.highlight(1L, PhraseQuery(Field.Text, "hard, hard")) must beEqualTo(Seq(Utf16Highlight(10,14), Utf16Highlight(16,20), Utf16Highlight(22,26)))
       }
 
       "return utf-16 indexes" in new BaseScope {
         index.addDocuments(Seq(buildDocument(1L).copy(text="\ud86d\udfa9 foo")))
-        index.highlight(1L, PhraseQuery(Field.Text, "foo")) must containTheSameElementsAs(Seq(Utf16Highlight(3, 6)))
+        index.highlight(1L, PhraseQuery(Field.Text, "foo")) must beEqualTo(Seq(Utf16Highlight(3, 6)))
       }
     }
 

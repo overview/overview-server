@@ -7,13 +7,15 @@ import scala.concurrent.Future
 import controllers.auth.ApiAuthorizedRequest
 import controllers.backend.{DocumentBackend,DocumentSetBackend,SelectionBackend}
 import models.pagination.{Page,PageInfo,PageRequest}
-import models.{InMemorySelection,Selection}
+import models.{InMemorySelection,Selection,SelectionWarning}
 import com.overviewdocs.models.DocumentHeader
 import com.overviewdocs.metadata.{MetadataSchema,MetadataField,MetadataFieldType}
+import com.overviewdocs.query.Field
+import com.overviewdocs.searchindex.SearchWarning
 
 class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
-    lazy val selection = InMemorySelection(Seq()) // override for a different Selection
+    lazy val selection = InMemorySelection(Array.empty) // override for a different Selection
     val documentSet = factory.documentSet(metadataSchema = MetadataSchema(1, Seq(
       MetadataField("foo", MetadataFieldType.String)
     )))
@@ -89,15 +91,32 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
       "return an Array of IDs when fields=id" in new IndexScope {
         override val fields = "id"
-        override lazy val selection = InMemorySelection(Seq(1L, 2L, 3L))
+        override lazy val selection = InMemorySelection(Array(1L, 2L, 3L))
         status(result) must beEqualTo(OK)
         contentType(result) must beSome("application/json")
         contentAsString(result) must beEqualTo("[1,2,3]")
       }
 
       "return the selectionId" in new IndexScope {
-        override lazy val selection = InMemorySelection(Seq(1L, 2L, 3L))
+        override lazy val selection = InMemorySelection(Array(1L, 2L, 3L))
         contentAsString(result) must /("selectionId" -> selection.id.toString)
+      }
+
+      "return warnings" in new IndexScope {
+        override lazy val selection = InMemorySelection(Array(1L, 2L), List(
+          SelectionWarning.SearchIndexWarning(SearchWarning.TooManyExpansions(Field.Text, "foo*", 3)),
+          SelectionWarning.SearchIndexWarning(SearchWarning.TooManyExpansions(Field.Title, "bar*", 5))
+        ))
+
+        val json = contentAsString(result)
+        json must /("warnings") /#(0) /("type" -> "TooManyExpansions")
+        json must /("warnings") /#(0) /("field" -> "text")
+        json must /("warnings") /#(0) /("term" -> "foo*")
+        json must /("warnings") /#(0) /("nExpansions" -> 3)
+        json must /("warnings") /#(1) /("type" -> "TooManyExpansions")
+        json must /("warnings") /#(1) /("field" -> "title")
+        json must /("warnings") /#(1) /("term" -> "bar*")
+        json must /("warnings") /#(1) /("nExpansions" -> 5)
       }
 
       trait IndexFieldsScope extends IndexScope {
@@ -113,7 +132,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
           ),
           factory.document(title="", keywords=Seq(), suppliedId="", url=None)
         )
-        override lazy val selection = InMemorySelection(documents.map(_.id))
+        override lazy val selection = InMemorySelection(Array(documents.map(_.id): _*))
         mockDocumentBackend.index(any, any, any) returns Future(
           Page(documents, PageInfo(PageRequest(0, 100), documents.length))
         )

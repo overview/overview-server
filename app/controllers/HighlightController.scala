@@ -26,9 +26,8 @@ class HighlightController @Inject() (
     QueryParser.parse(queryString) match {
       case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("com.overviewdocs.query.SyntaxError"))))
       case Right(query) => {
-        val highlightsFuture = highlightBackend.highlight(documentSetId, documentId, query)
         for {
-          highlights: Seq[Highlight] <- highlightsFuture
+          highlights <- highlightBackend.highlight(documentSetId, documentId, query)
         } yield {
           // JavaScript text is UTF-16. It'll be grabbing the text on its own,
           // so we don't need to convert highlights to utf-8.

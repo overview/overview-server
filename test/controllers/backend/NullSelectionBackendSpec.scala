@@ -5,14 +5,17 @@ import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
-import models.{Selection,SelectionRequest}
+import com.overviewdocs.query.Field
+import com.overviewdocs.searchindex.SearchWarning
+import models.{InMemorySelection,Selection,SelectionRequest,SelectionWarning}
 
 class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
   trait BaseScope extends NullScope {
-    def resultIds: Seq[Long] = Seq()
-    val documentBackend = mock[DocumentBackend]
-    val backend = new NullSelectionBackend(documentBackend)
-    documentBackend.indexIds(any[SelectionRequest]) returns Future.successful(resultIds)
+    def resultIds: Array[Long] = Array.empty
+    def warnings: List[SelectionWarning] = Nil
+    val dsBackend = mock[DocumentSelectionBackend]
+    val backend = new NullSelectionBackend(dsBackend)
+    dsBackend.createSelection(any[SelectionRequest]) returns Future.successful(InMemorySelection(resultIds, warnings))
 
     val userEmail: String = "user@example.org"
     val documentSetId: Long = 1L
@@ -27,22 +30,27 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
       }
 
       "return a Selection with the returned document IDs" in new CreateScope {
-        override def resultIds = Seq(1L, 2L, 3L)
-        await(result.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L))
+        override def resultIds = Array(1L, 2L, 3L)
+        await(result.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L))
+      }
+
+      "return warnings" in new CreateScope {
+        override def warnings = SelectionWarning.SearchIndexWarning(SearchWarning.TooManyExpansions(Field.Text, "foo", 2)) :: Nil
+        result.warnings must beEqualTo(warnings)
       }
 
       "return a different Selection each time" in new CreateScope {
         create.id must not(beEqualTo(create.id))
       }
 
-      "pass the SelectionRequest to the documentBackend" in new CreateScope {
+      "pass the SelectionRequest to the dsBackend" in new CreateScope {
         create
-        there was one(documentBackend).indexIds(request)
+        there was one(dsBackend).createSelection(request)
       }
 
       "pass a failure back" in new CreateScope {
         val t = new Throwable("moo")
-        documentBackend.indexIds(any[SelectionRequest]) returns Future.failed(t)
+        dsBackend.createSelection(any[SelectionRequest]) returns Future.failed(t)
         create must throwA[Throwable](message="moo")
       }
     }

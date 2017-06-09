@@ -64,7 +64,7 @@ trait LuceneIndexClient extends IndexClient {
     getIndex(id).map(_.addDocumentsWithoutFsync(documents))
   }
 
-  override def searchForIds(id: Long, q: Query): Future[Seq[Long]] = {
+  override def searchForIds(id: Long, q: Query) = {
     getIndex(id).map(_.searchForIds(q))
   }
 
@@ -86,7 +86,7 @@ object LuceneIndexClient {
     new LuceneIndexClient {
       override protected implicit val ec: ExecutionContext = executionContext
       override protected def openIndex(documentSetId: Long) = {
-        new DocumentSetLuceneIndex(new org.apache.lucene.store.RAMDirectory)
+        new DocumentSetLuceneIndex(documentSetId, new org.apache.lucene.store.RAMDirectory)
       }
     }
   }
@@ -106,7 +106,7 @@ object LuceneIndexClient {
       val rootPath = Paths.get(baseDirectory, documentSetId.toString)
       val lockFactory = new org.apache.lucene.store.SingleInstanceLockFactory
       val directory = org.apache.lucene.store.FSDirectory.open(rootPath, lockFactory)
-      val ret = new DocumentSetLuceneIndex(directory)
+      val ret = new DocumentSetLuceneIndex(documentSetId, directory)
       ret.refresh // if it's a new index, write it to disk so we can read from it
       ret
     }

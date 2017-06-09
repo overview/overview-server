@@ -7,11 +7,11 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import controllers.backend.{DocumentNodeBackend,SelectionBackend}
-import models.{InMemorySelection,Selection}
+import models.InMemorySelection
 
 class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
-    val selection = InMemorySelection(Seq(2L, 3L, 4L)) // override for a different Selection
+    val selection = InMemorySelection(Array(2L, 3L, 4L)) // override for a different Selection
     val mockDocumentNodeBackend = smartMock[DocumentNodeBackend]
     val mockSelectionBackend = smartMock[SelectionBackend]
     mockSelectionBackend.findOrCreate(any, any, any) returns Future(selection)

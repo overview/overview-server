@@ -2,7 +2,7 @@ package controllers.backend
 
 import play.api.libs.json.{JsObject,Json}
 
-import models.{InMemorySelection,Selection,SelectionRequest}
+import models.InMemorySelection
 import com.overviewdocs.database.exceptions
 import com.overviewdocs.models.DocumentStoreObject
 import com.overviewdocs.models.tables.DocumentStoreObjects
@@ -70,7 +70,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
         val dso12 = factory.documentStoreObject(documentId=doc1.id, storeObjectId=so2.id)
         val dso21 = factory.documentStoreObject(documentId=doc2.id, storeObjectId=so1.id)
 
-        val selection: Selection = InMemorySelection(Seq(doc1.id, doc2.id, doc3.id))
+        val selection: InMemorySelection = InMemorySelection(Array(doc1.id, doc2.id, doc3.id))
 
         lazy val result: Map[Long,Int] = await(backend.countByObject(store.id, selection))
       }
@@ -85,7 +85,7 @@ class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
       }
 
       "filter by the Selection only includes a subset" in new CountByObjectScope {
-        override val selection = InMemorySelection(Seq(doc2.id))
+        override val selection = InMemorySelection(Array(doc2.id))
         result(so1.id) must beEqualTo(1)
         result.isDefinedAt(so2.id) must beFalse
         result.isDefinedAt(so3.id) must beFalse

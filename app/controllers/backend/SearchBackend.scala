@@ -6,7 +6,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.messages.{DocumentSetCommands,DocumentSetReadCommands}
 import com.overviewdocs.query.Query
-import com.overviewdocs.searchindex.{Highlight,Snippet}
+import com.overviewdocs.searchindex.SearchResult
 import modules.RemoteActorSystemModule
 
 /** Queries a search index.
@@ -21,10 +21,14 @@ trait SearchBackend extends Backend {
 
   /** Lists all document IDs that match the given query.
     *
+    * The query may be well-formed but be inappropriate for the given document
+    * (e.g., a boolean query on too many terms). In that case, the server will
+    * respond with a Left.
+    *
     * @param documentSetId DocumentSet ID.
     * @param query Parsed search query.
     */
-  def search(documentSetId: Long, query: Query): Future[Seq[Long]]
+  def search(documentSetId: Long, query: Query): Future[SearchResult]
 }
 
 /** Akka RemoteActor-backed search backend.
@@ -42,7 +46,7 @@ extends SearchBackend {
   private val workerActor = remoteActorSystemModule.workerActor
 
   override def search(documentSetId: Long, query: Query) = {
-    workerActor.ask(DocumentSetReadCommands.Search(documentSetId, query)).mapTo[Seq[Long]]
+    workerActor.ask(DocumentSetReadCommands.Search(documentSetId, query)).mapTo[SearchResult]
   }
 
   override def refreshDocument(documentSetId: Long, documentId: Long) = {

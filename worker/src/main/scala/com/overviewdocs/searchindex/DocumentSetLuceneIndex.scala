@@ -10,14 +10,13 @@ import org.apache.lucene.analysis.standard.StandardTokenizer
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.{Document=>LuceneDocument,Field=>LuceneField,FieldType,NumericDocValuesField,StringField,TextField}
 import org.apache.lucene.index.{DirectoryReader,FieldInfo,IndexOptions,IndexReader,IndexWriter,IndexWriterConfig,LeafReaderContext,NumericDocValues,Term}
-import org.apache.lucene.search.{ConstantScoreQuery,IndexSearcher,SimpleCollector,Query=>LuceneQuery}
+import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery,FuzzyQuery,IndexSearcher,MatchAllDocsQuery,MatchNoDocsQuery,MultiPhraseQuery,MultiTermQuery,PhraseQuery,PrefixQuery,SimpleCollector,Query=>LuceneQuery}
 import org.apache.lucene.store.{Directory,FSDirectory}
 import org.apache.lucene.util.{BytesRef,QueryBuilder}
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery
-import scala.collection.mutable.{ArrayBuffer,BitSet}
-import scala.collection.JavaConversions
+import scala.collection.{mutable,immutable}
 
-import com.overviewdocs.query.{Field,Query}
+import com.overviewdocs.query.{Field,FieldInSearchIndex,Query}
 import com.overviewdocs.models.Document
 
 /** A Lucene index for a given document set.
@@ -27,7 +26,7 @@ import com.overviewdocs.models.Document
   * These operations are not concurrent: do not call more than one of these
   * methods at a time. They're synchronized, just in case.
   */
-class DocumentSetLuceneIndex(val directory: Directory) { 
+class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1024) { 
   private val analyzer = new DocumentSetLuceneIndex.OverviewAnalyzer
   private val queryBuilder = new QueryBuilder(analyzer)
 
@@ -119,7 +118,7 @@ class DocumentSetLuceneIndex(val directory: Directory) {
       new ConstantScoreQuery(builder.build)
     }
 
-    val ret = new ArrayBuffer[(Long,Int)](documentIds.length)
+    val ret = new mutable.ArrayBuffer[(Long,Int)](documentIds.length)
 
     indexSearcher.search(query, new SimpleCollector {
       var leafDocBase: Int = _
@@ -142,15 +141,11 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     ret
   }
 
-  private def queryToLuceneHighlightQuery(query: Query): LuceneQuery = {
-    val luceneQuery = queryToLuceneQuery(query)
-    indexSearcher.rewrite(luceneQuery)
-  }
+  def searchForIds(query: Query): SearchResult = synchronized {
+    val (luceneQuery, warnings) = queryToLuceneQuery(query)
+    val lowerIds = new mutable.BitSet
 
-  def searchForIds(q: Query): Seq[Long] = synchronized {
-    val ret = ArrayBuffer.empty[Long]
-
-    indexSearcher.search(queryToLuceneQuery(q), new SimpleCollector {
+    indexSearcher.search(luceneQuery, new SimpleCollector {
       var leafDocumentIds: NumericDocValues = _
 
       override def needsScores: Boolean = false
@@ -162,26 +157,32 @@ class DocumentSetLuceneIndex(val directory: Directory) {
 
       override def collect(docId: Int): Unit = {
         val documentId = leafDocumentIds.get(docId)
-        ret.+=(documentId)
+        assert(documentId >> 32 == documentSetId)
+        lowerIds.add(documentId.toInt) // truncate to lower 32 bits
       }
     })
 
-    ret
+    SearchResult(
+      documentSetId=documentSetId.toInt,
+      lowerIds=immutable.BitSet.fromBitMaskNoCopy(lowerIds.toBitMask),
+      warnings=warnings
+    )
   }
 
   def highlight(documentId: Long, query: Query): Seq[Utf16Highlight] = synchronized {
-    val highlighter = new LuceneSingleDocumentHighlighter(indexSearcher, analyzer)
-    val luceneQuery = queryToLuceneHighlightQuery(query)
+    val (luceneQuery, warnings) = queryToLuceneQuery(query)
 
+    val highlighter = new LuceneSingleDocumentHighlighter(indexSearcher, analyzer)
     searchForLuceneIds(Seq(documentId))
       .flatMap({ case (_, luceneId) =>
         highlighter.highlightFieldAsHighlights("text", luceneQuery, luceneId)
       })
   }
 
-  def highlights(documentIds: Seq[Long], query: Query): Map[Long, Seq[Utf16Snippet]] = synchronized {
+  def highlights(documentIds: Seq[Long], query: Query): Map[Long,Seq[Utf16Snippet]] = synchronized {
+    val (luceneQuery, warnings) = queryToLuceneQuery(query)
+
     val highlighter = new LuceneMultiDocumentHighlighter(indexSearcher, analyzer)
-    val luceneQuery = queryToLuceneHighlightQuery(query)
 
     searchForLuceneIds(documentIds)
       .map({ case (overviewId, luceneId) =>
@@ -215,84 +216,182 @@ class DocumentSetLuceneIndex(val directory: Directory) {
     commit
   }
 
-  private def fieldToLuceneQuery(field: Field, buildLuceneQuery: String => LuceneQuery): LuceneQuery = {
-    import org.apache.lucene.search
-
+  private def fieldToLuceneQuery(field: Field, buildLuceneQuery: FieldInSearchIndex => (LuceneQuery, List[SearchWarning])): (LuceneQuery, List[SearchWarning]) = {
     field match {
-      case Field.All => new search.BooleanQuery.Builder()
-        .add(buildLuceneQuery("text"), search.BooleanClause.Occur.SHOULD)
-        .add(buildLuceneQuery("title"), search.BooleanClause.Occur.SHOULD)
-        .build
-      case Field.Text => buildLuceneQuery("text")
-      case Field.Title => buildLuceneQuery("title")
+      case Field.All => {
+        val (q1, w1) = buildLuceneQuery(Field.Text)
+        val (q2, w2) = buildLuceneQuery(Field.Title)
+        val innerLuceneQuery = new BooleanQuery.Builder()
+          .add(q1, BooleanClause.Occur.SHOULD)
+          .add(q2, BooleanClause.Occur.SHOULD)
+          .build
+        (innerLuceneQuery, w1 ::: w2)
+      }
+      case fieldInSearchIndex: FieldInSearchIndex => buildLuceneQuery(fieldInSearchIndex)
     }
   }
 
-  private def queryToLuceneQuery(query: Query): LuceneQuery = {
-    new ConstantScoreQuery(queryToLuceneQueryInner(query))
+  private def queryToLuceneQuery(query: Query): (LuceneQuery, List[SearchWarning]) = {
+    val (innerQuery, warnings) = queryToLuceneQueryInner(query)
+    val luceneQuery = new ConstantScoreQuery(innerQuery)
+
+    (luceneQuery, warnings)
   }
 
-  private def createPrefixQuery(field: String, prefix: String): LuceneQuery = {
-    val ret = new MultiPhrasePrefixQuery // TODO set maxExpansions
+  private def buildPrefixQuery(field: FieldInSearchIndex, prefix: String): (LuceneQuery, List[SearchWarning]) = {
+    val fieldName = fieldToName(field)
+    val terms: Seq[String] = phraseToTermStrings(field, prefix)
 
-    // run the analyzer
-    val tokenStream = analyzer.tokenStream(field, prefix)
+    assert(terms.nonEmpty)
+
+    if (terms.size == 1) {
+      (new PrefixQuery(new Term(fieldName, terms.head)), Nil)
+    } else {
+      val builder = new MultiPhraseQuery.Builder
+      terms.take(terms.length - 1).foreach { term =>
+        builder.add(new Term(fieldName, term))
+      }
+
+      val (expandedTerms, warnings) = expandPrefixTerm(field, terms.last)
+
+      var luceneQuery: LuceneQuery = null
+
+      if (expandedTerms.isEmpty) {
+        // Copied from ElasticSearch:
+        // if the terms does not exist we could return a MatchNoDocsQuery but this would break the unified highlighter
+        // which rewrites query with an empty reader.
+        luceneQuery = new BooleanQuery.Builder()
+          .add(builder.build, BooleanClause.Occur.MUST)
+          .add(new MatchNoDocsQuery(fieldName + ":" + terms.last + "* does not appear in the search index"), BooleanClause.Occur.MUST)
+          .build
+      } else {
+        builder.add(expandedTerms)
+        luceneQuery = builder.build
+      }
+
+      (luceneQuery, warnings)
+    }
+  }
+
+  /** Returns all the terms in the Lucene indexed field that start with the
+    * given String.
+    */
+  private def expandPrefixTerm(field: FieldInSearchIndex, prefix: String): (Array[Term], List[SearchWarning]) = {
+    val fieldName = fieldToName(field)
+    val prefixBytes = new Term(fieldName, prefix).bytes()
+    val ret = mutable.ArrayBuffer.empty[Term]
+
+    // The rest of this method comes from ElasticSearch
+    // org/elasticsearch/common/lucene/search/MultiPhrasePrefixQuery.java with
+    // slight Scala modifications. It's Apache-licensed; see ElasticSearch
+    // project for copyright details.
+    import scala.collection.JavaConversions
+    import org.apache.lucene.index.TermsEnum
+    import org.apache.lucene.util.StringHelper;
+
+    // SlowCompositeReaderWrapper could be used... but this would merge all terms from each segment into one terms
+    // instance, which is very expensive. Therefore I think it is better to iterate over each leaf individually.
+    val leaves = indexReader.leaves
+    for (leaf <- JavaConversions.collectionAsScalaIterable(leaves)) {
+      val _terms = leaf.reader.terms(fieldName)
+      if (_terms != null) {
+        val termsEnum = _terms.iterator()
+        val seekStatus = termsEnum.seekCeil(prefixBytes)
+
+        if (TermsEnum.SeekStatus.END != seekStatus) {
+          var term = termsEnum.term()
+          while (term != null && StringHelper.startsWith(term, prefixBytes)) {
+            if (ret.size >= maxExpansionsPerTerm) {
+              return (ret.toArray, SearchWarning.TooManyExpansions(field, prefix, maxExpansionsPerTerm) :: Nil)
+            }
+
+            ret.append(new Term(fieldName, BytesRef.deepCopyOf(term)))
+
+            term = termsEnum.next()
+          }
+        }
+      }
+    }
+
+    (ret.toArray, Nil)
+  }
+
+  private def buildBooleanQuery(p1: Query, p2: Query, occur: BooleanClause.Occur): (LuceneQuery, List[SearchWarning]) = {
+    val (q1, warnings1) = queryToLuceneQueryInner(p1)
+    val (q2, warnings2) = queryToLuceneQueryInner(p2)
+
+    val ret = new BooleanQuery.Builder()
+      .add(q1, occur)
+      .add(q2, occur)
+      .build
+
+    (ret, warnings1 ::: warnings2)
+  }
+
+  private def fieldToName(field: FieldInSearchIndex): String = field match {
+    case Field.Text => "text"
+    case Field.Title => "title"
+  }
+
+  private def buildFuzzyQuery(field: FieldInSearchIndex, term: String, fuzz: Option[Int]) = {
+    val luceneTerm = new Term(fieldToName(field), term)
+    val luceneQuery = fuzz match {
+      case None => new FuzzyQuery(luceneTerm)
+      case Some(fuzz) => new FuzzyQuery(luceneTerm, fuzz)
+    }
+
+    luceneQuery.setRewriteMethod(MultiTermQuery.CONSTANT_SCORE_REWRITE)
+
+    (luceneQuery, Nil)
+  }
+
+  private def phraseToTermStrings(field: FieldInSearchIndex, phrase: String): Seq[String] = {
+    val tokenStream = analyzer.tokenStream(fieldToName(field), phrase)
     val termAttribute = tokenStream.getAttribute(classOf[CharTermAttribute])
 
-    val terms = ArrayBuffer.empty[Term]
+    val terms = mutable.ArrayBuffer.empty[String]
 
     tokenStream.reset
     while (tokenStream.incrementToken) {
-      val token = termAttribute.toString
-      ret.add(new Term(field, token))
+      terms.append(termAttribute.toString)
     }
     tokenStream.end
     tokenStream.close
 
-    ret
+    terms
   }
 
-  private def queryToLuceneQueryInner(q: Query): LuceneQuery = {
+  private def buildPhraseQuery(field: FieldInSearchIndex, phrase: String, slop: Int) = {
+    val terms = phraseToTermStrings(field, phrase)
+
+    (new PhraseQuery(slop, fieldToName(field), terms: _*), Nil)
+  }
+
+  private def queryToLuceneQueryInner(q: Query): (LuceneQuery, List[SearchWarning]) = {
     import com.overviewdocs.query
-    import org.apache.lucene.search
 
     q match {
-      case query.AllQuery => new search.MatchAllDocsQuery
-      case query.AndQuery(p1, p2) => {
-        new search.BooleanQuery.Builder()
-          .add(queryToLuceneQueryInner(p1), search.BooleanClause.Occur.FILTER)
-          .add(queryToLuceneQueryInner(p2), search.BooleanClause.Occur.FILTER)
-          .build
-      }
-      case query.OrQuery(p1, p2) => {
-        new search.BooleanQuery.Builder()
-          .add(queryToLuceneQueryInner(p1), search.BooleanClause.Occur.SHOULD)
-          .add(queryToLuceneQueryInner(p2), search.BooleanClause.Occur.SHOULD)
-          .build
-      }
+      case query.AllQuery => (new MatchAllDocsQuery, Nil)
+      case query.AndQuery(p1, p2) => buildBooleanQuery(p1, p2, BooleanClause.Occur.FILTER)
+      case query.OrQuery(p1, p2) => buildBooleanQuery(p1, p2, BooleanClause.Occur.SHOULD)
       case query.NotQuery(p) => {
-        new search.BooleanQuery.Builder()
-          .add(queryToLuceneQueryInner(p), search.BooleanClause.Occur.MUST_NOT)
+        val (innerQuery, warnings) = queryToLuceneQueryInner(p)
+        val luceneNotQuery = new BooleanQuery.Builder()
+          .add(innerQuery, BooleanClause.Occur.MUST_NOT)
           .build
+        (luceneNotQuery, warnings)
       }
       case query.PhraseQuery(field, phrase) => {
-        fieldToLuceneQuery(field, fieldName => queryBuilder.createPhraseQuery(fieldName, phrase))
+        fieldToLuceneQuery(field, f => buildPhraseQuery(f, phrase, 0))
       }
       case query.PrefixQuery(field, prefix) => {
-        fieldToLuceneQuery(field, fieldName => createPrefixQuery(fieldName, prefix))
+        fieldToLuceneQuery(field, f => buildPrefixQuery(f, prefix))
       }
       case query.ProximityQuery(field, phrase, slop) => {
-        fieldToLuceneQuery(field, fieldName => queryBuilder.createPhraseQuery(fieldName, phrase, slop))
+        fieldToLuceneQuery(field, f => buildPhraseQuery(f, phrase, slop))
       }
       case query.FuzzyTermQuery(field, term, fuzziness) => {
-        fieldToLuceneQuery(field, { fieldName =>
-          val luceneTerm = new Term(fieldName, term)
-          // TODO set maxExpansions
-          fuzziness match {
-            case None => new search.FuzzyQuery(luceneTerm)
-            case Some(fuzz) => new search.FuzzyQuery(luceneTerm, fuzz)
-          }
-        })
+        fieldToLuceneQuery(field, f => buildFuzzyQuery(f, term, fuzziness))
       }
     }
   }
