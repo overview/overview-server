@@ -43,4 +43,14 @@ describe('Search', function() {
     // TODO test in PDF mode. Would be easier if our framework let us start off
     // with a PDF document set
   })
+
+  asUserWithDocumentSet('Search/manyTermsWithSamePrefix.csv', function() {
+    it('should warn when a prefix search has a truncated term list', async function() {
+      await this.browser.sendKeys('phrase OR (phrase foo*)', '#document-list-params .search input[name=query]')
+      await this.browser.click('#document-list-params .search button')
+
+      const text = await this.browser.getText({ css: '#document-list ul.warnings', wait: 'pageLoad' })
+      expect(text).to.eq('This list may be incomplete. “foo*” matched too many words from your document set; we limited our search to 1,000 words.')
+    })
+  })
 })

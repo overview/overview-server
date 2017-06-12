@@ -2,19 +2,23 @@ package views.json.DocumentList
 
 import java.util.UUID
 
-import com.overviewdocs.searchindex.{Utf16Highlight,Utf16Snippet}
+import com.overviewdocs.query.Field
+import com.overviewdocs.searchindex.{SearchWarning,Utf16Highlight,Utf16Snippet}
+import com.overviewdocs.test.factories.{PodoFactory => factory}
 import org.specs2.matcher.{JsonMatchers,Matcher}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.json.Json
+import models.{InMemorySelection,SelectionWarning}
 import models.pagination.Page
-import com.overviewdocs.test.factories.{PodoFactory => factory}
 
 class showSpec extends Specification with JsonMatchers {
   trait BaseScope extends Scope {
     val selectionId = UUID.fromString("933c0b0b-fd89-4ed3-ad4a-731bbb04da43")
     def doc1 = factory.document()
     def doc2 = factory.document()
+    def warnings: List[SelectionWarning] = List()
+    def selection = InMemorySelection(selectionId, Array(doc1.id, doc2.id), warnings)
 
     def doc1AndIds = (doc1, Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
     def doc2AndIds = (doc2, Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
@@ -22,7 +26,7 @@ class showSpec extends Specification with JsonMatchers {
 
     def resultPage = Page(docsAndIds)
 
-    def result = show(selectionId, resultPage).toString
+    def result = show(selection, resultPage).toString
   }
 
   "DocumentList view generated Json" should {
@@ -35,6 +39,14 @@ class showSpec extends Specification with JsonMatchers {
 
     "contain selection_id" in new BaseScope {
       result must contain(""""selection_id":"933c0b0b-fd89-4ed3-ad4a-731bbb04da43"""")
+    }
+
+    "contain warnings" in new BaseScope {
+      override def warnings = List(SelectionWarning.SearchIndexWarning(SearchWarning.TooManyExpansions(Field.Text, "bar*", 10)))
+      result must /("warnings") /#(0) /("type" -> "TooManyExpansions")
+      result must /("warnings") /#(0) /("field" -> "text")
+      result must /("warnings") /#(0) /("term" -> "bar*")
+      result must /("warnings") /#(0) /("nExpansions" -> 10)
     }
 
     "contain documents" in new BaseScope {

@@ -42,7 +42,8 @@ class DocumentListController @Inject() (
             tagIds.getOrElse(document.id, Seq()),
             snippets.getOrElse(document.id, Seq())
           )}
-          Ok(views.json.DocumentList.show(selection.id, pageOfItems))
+          Ok(views.json.DocumentList.show(selection, pageOfItems))
+
         }
       }
     })

@@ -52,6 +52,7 @@ define [
   class DocumentList extends Backbone.Model
     defaults:
       error: null
+      warnings: []
       length: null
       loading: false
       nPagesFetched: 0
@@ -288,6 +289,7 @@ define [
         loading: false
         length: data.total_items
         selectionId: data.selection_id
+        warnings: data.warnings
         nPagesFetched: @get('nPagesFetched') + 1
 
     _receiveError: (xhr) ->

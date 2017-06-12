@@ -114,7 +114,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
         index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
         val result = index.searchForIds(PrefixQuery(Field.Text, "duck goose"))
         result.documentIds.size must beEqualTo(maxExpansionsPerTerm)
-        result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose", 4)))
+        result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose*", 4)))
       }
 
       "indicate the searched (not given) field in TooManyExpansions warning" in new BaseScope {
@@ -122,7 +122,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
         index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
         val result = index.searchForIds(PrefixQuery(Field.All, "duck goose"))
         result.documentIds.size must beEqualTo(maxExpansionsPerTerm)
-        result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose", 4)))
+        result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose*", 4)))
       }
 
       "not truncate single-term prefix searches, no matter how many terms the query for" in new BaseScope {

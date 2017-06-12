@@ -6,6 +6,8 @@ import play.twirl.api.{Html,HtmlFormat}
 import scala.collection.immutable
 
 import models.pagination.Page
+import models.{Selection,SelectionWarning}
+import views.json.api.selectionWarnings
 import com.overviewdocs.models.DocumentHeader
 import com.overviewdocs.searchindex.{Highlight,Snippet}
 
@@ -39,9 +41,10 @@ object show {
     HtmlFormat.fill(htmls.to[immutable.Seq]).body
   }
 
-  def apply(selectionId: UUID, documents: Page[(DocumentHeader,Seq[Long],Seq[Long],Seq[Snippet])]) = {
+  def apply(selection: Selection, documents: Page[(DocumentHeader,Seq[Long],Seq[Long],Seq[Snippet])]) = {
     Json.obj(
-      "selection_id" -> selectionId.toString,
+      "selection_id" -> selection.id.toString,
+      "warnings" -> selectionWarnings(selection.warnings),
       "total_items" -> documents.pageInfo.total,
       "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq
     )

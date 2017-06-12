@@ -35,6 +35,7 @@ define [
     >""")
 
     collection: _.template("""
+      <ul class="warnings"><%= _.map(warnings, renderWarning).join('') %></ul>
       <ul class="documents" <%= ulAttributes %>><%= _.map(collection.models, renderModel).join('') %></ul>
       <div class="loading"><%- t('loading') %></div>
     """)
@@ -53,7 +54,7 @@ define [
   #
   # The following options must be passed:
   #
-  # * collection
+  # * model (a DocumentList)
   # * tags
   # * selection (a Backbone.Model with 'cursorIndex' and 'selectedIndices')
   #
@@ -95,6 +96,7 @@ define [
 
     _listenToModel: ->
       @listenTo @model,
+        'change:warnings': @render
         'change:error': @render
         'change:loading': @_renderLoading
 
@@ -123,12 +125,22 @@ define [
         t: t
         liAttributes: @options.liAttributes || ''
 
+    _renderWarningHtml: (warning) ->
+      i18nKey = "warning.#{warning.type}"
+      switch warning.type
+        when 'TooManyExpansions' then "<li>#{t(i18nKey, warning.field, warning.term, warning.nExpansions)}</li>"
+        else
+          console.warn("Unhandled warning: #{JSON.stringify(warning)}")
+          ""
+
     render: ->
       html = if @model.get('error')
         templates.error(error: @model.get('error'), t: t)
       else
         templates.collection({
           collection: @collection
+          warnings: @model.get('warnings') || []
+          renderWarning: (warning) => @_renderWarningHtml(warning)
           t: t
           renderModel: (model) => @_renderModelHtml(model)
           ulAttributes: @options.ulAttributes || ''

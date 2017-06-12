@@ -510,6 +510,7 @@ views.Tree.show.DocumentList.description=Key words:{0}
 views.Tree.show.DocumentList.loading=…
 views.Tree.show.DocumentList.placeholder=…
 views.Tree.show.DocumentList.tag.remove=Remove tag from document
+views.Tree.show.DocumentList.warning.TooManyExpansions=This list may be incomplete. “{1}” matched too many words from your document set; we limited our search to {2,number,integer} words.
 
 views.Tree.show.DocumentListCursor.position_html=Document <strong>{0,number,integer}</strong> of <strong>{1,number,integer}</strong>
 views.Tree.show.DocumentListCursor.backToList=Back to list

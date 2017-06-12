@@ -26,7 +26,7 @@ import com.overviewdocs.models.{Document,DocumentIdSet}
   * These operations are not concurrent: do not call more than one of these
   * methods at a time. They're synchronized, just in case.
   */
-class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1024) {
+class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1000) {
   private val analyzer = new DocumentSetLuceneIndex.OverviewAnalyzer
   private val queryBuilder = new QueryBuilder(analyzer)
 
@@ -301,7 +301,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
           var term = termsEnum.term()
           while (term != null && StringHelper.startsWith(term, prefixBytes)) {
             if (ret.size >= maxExpansionsPerTerm) {
-              return (ret.toArray, SearchWarning.TooManyExpansions(field, prefix, maxExpansionsPerTerm) :: Nil)
+              return (ret.toArray, SearchWarning.TooManyExpansions(field, prefix + "*", maxExpansionsPerTerm) :: Nil)
             }
 
             ret.append(new Term(fieldName, BytesRef.deepCopyOf(term)))

@@ -38,6 +38,7 @@ define [
     it 'should have nPagesFetched=0', -> expect(@list.get('nPagesFetched')).to.eq(0)
     it 'should have tagCount=0,atLeast', -> expect(@list.getTagCount(new Tag())).to.deep.eq(n: 0, howSure: 'atLeast')
     it 'should have selectionId=null', -> expect(@list.get('selectionId')).to.be.null
+    it 'should have warnings=[]', -> expect(@list.get('warnings')).to.deep.eq([])
 
     it 'should have tagCount=0,exact when not-the-tag is the params', ->
       tag = new Tag(name: 'a tag')
@@ -58,6 +59,7 @@ define [
       it 'should have nPagesFetched=0', -> expect(@list.get('nPagesFetched')).to.eq(0)
       it 'should have isComplete=false', -> expect(@list.isComplete()).to.be.false
       it 'should have selectionId=null', -> expect(@list.get('selectionId')).to.be.null
+      it 'should have warnings=[]', -> expect(@list.get('warnings')).to.deep.eq([])
 
       it 'should request /documents', ->
         expect(@sandbox.server.requests.length).to.eq(1)
@@ -118,6 +120,9 @@ define [
               { documentSetId: 1, id: 2, tagids: [ 5 ] }
               { documentSetId: 1, id: 3 }
             ]
+            warnings: [
+              { type: 'TooManyExpansions', field: 'text', term: 'foo*', nExpansions: 1000 }
+            ]
             total_items: 3
             selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
           ))
@@ -130,6 +135,7 @@ define [
         it 'should have isComplete=true', -> expect(@list.isComplete()).to.be.true
         it 'should have tagCount=n,exact', -> expect(@list.getTagCount(@tag)).to.deep.eq(n: 2, howSure: 'exact')
         it 'should fire tag-counts-changed', -> expect(@tagCountsChangedSpy).to.have.been.called.once
+        it 'should set warnings=[]', -> expect(@list.get('warnings')).to.deep.eq([{ type: 'TooManyExpansions', field: 'text', term: 'foo*', nExpansions: 1000 } ])
 
         it 'should have the right url on every document', ->
           expect(@docs.at(1).url()).to.eq('/documentsets/1/documents/2')
