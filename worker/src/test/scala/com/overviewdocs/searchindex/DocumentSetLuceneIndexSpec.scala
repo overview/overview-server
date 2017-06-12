@@ -4,7 +4,7 @@ import org.apache.lucene.store.RAMDirectory
 import org.apache.lucene.index.{IndexWriter,IndexWriterConfig}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 
 import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNoteCollection}
 import com.overviewdocs.query.{Field,FuzzyTermQuery,Query,PhraseQuery,PrefixQuery}
@@ -15,9 +15,10 @@ class DocumentSetLuceneIndexSpec extends Specification {
   trait BaseScope extends Scope {
     val documentSetId: Long = 0L
     val directory = new RAMDirectory
-    val maxExpansionsPerTerm: Int = 1024
+    val maxExpansionsPerTerm: Int = 1000
+    val maxNMetadataFields: Int = 100
 
-    def openIndex = new DocumentSetLuceneIndex(documentSetId, directory, maxExpansionsPerTerm)
+    def openIndex = new DocumentSetLuceneIndex(documentSetId, directory, maxExpansionsPerTerm, maxNMetadataFields)
     lazy val index = openIndex
 
     def buildDocument(id: Long) = Document(
@@ -33,7 +34,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
       pageId=None,
       displayMethod=DocumentDisplayMethod.auto,
       isFromOcr=false,
-      metadataJson=JsObject(Seq()),
+      metadataJson=Json.obj(),
       text=s"foo$id bar baz",
       pdfNotes=PdfNoteCollection(Array()),
       thumbnailLocation=Some("path/of/file")
@@ -43,6 +44,30 @@ class DocumentSetLuceneIndexSpec extends Specification {
   }
 
   "DocumentSetLuceneIndex" should {
+    "#addDocuments" should {
+      "index metadata fields and maintain field count" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L)))
+        index.nMetadataFields must beEqualTo(0)
+        index.addDocuments(Seq(buildDocument(2L).copy(metadataJson=Json.obj("foo" -> "bar"))))
+        index.nMetadataFields must beEqualTo(1)
+        index.addDocuments(Seq(buildDocument(3L).copy(metadataJson=Json.obj("foo" -> "bar"))))
+        index.nMetadataFields must beEqualTo(1)
+        index.addDocuments(Seq(buildDocument(4L).copy(metadataJson=Json.obj("bar" -> "baz"))))
+        index.nMetadataFields must beEqualTo(2)
+        index.addDocuments(Seq(buildDocument(5L).copy(metadataJson=Json.obj("foo" -> "baz", "bar" -> "baz"))))
+        index.nMetadataFields must beEqualTo(2)
+        index.metadataFields.keys must beEqualTo(Set("foo", "bar"))
+      }
+
+      "silently refuse to index >maxNMetadataFields fields" in new BaseScope {
+        override val maxNMetadataFields = 2
+        index.addDocuments(Seq(buildDocument(1L).copy(metadataJson=Json.obj("foo" -> "bar", "bar" -> "baz"))))
+        index.addDocuments(Seq(buildDocument(2L).copy(metadataJson=Json.obj("baz" -> "foo"))))
+        index.nMetadataFields must beEqualTo(2)
+        index.metadataFields.keys must beEqualTo(Set("foo", "bar"))
+      }
+    }
+
     "#searchForIds" should {
       "find a document" in new BaseScope {
         index.addDocuments(Seq(buildDocument(12345L), buildDocument(23456L)))

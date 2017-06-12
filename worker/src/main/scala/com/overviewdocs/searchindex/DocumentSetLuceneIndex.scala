@@ -14,6 +14,7 @@ import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery,F
 import org.apache.lucene.store.{Directory,FSDirectory}
 import org.apache.lucene.util.{BytesRef,QueryBuilder}
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery
+import play.api.libs.json.{JsNull,JsString}
 import scala.collection.{mutable,immutable}
 
 import com.overviewdocs.query.{Field,FieldInSearchIndex,Query}
@@ -26,7 +27,7 @@ import com.overviewdocs.models.{Document,DocumentIdSet}
   * These operations are not concurrent: do not call more than one of these
   * methods at a time. They're synchronized, just in case.
   */
-class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1000) {
+class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1000, val maxNMetadataFields: Int = 100) {
   private val analyzer = new DocumentSetLuceneIndex.OverviewAnalyzer
   private val queryBuilder = new QueryBuilder(analyzer)
 
@@ -40,6 +41,35 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   private var _indexSearcher: Option[IndexSearcher] = None
   private def indexReader = _directoryReader.getOrElse(DirectoryReader.open(directory))
   private def indexSearcher = _indexSearcher.getOrElse(new IndexSearcher(indexReader))
+  private[searchindex] lazy val metadataFields: mutable.Map[String,LuceneField] = readMetadataFields
+
+  private def readMetadataFields: mutable.Map[String,LuceneField] = {
+    val ret = mutable.Map.empty[String,LuceneField]
+    import scala.collection.JavaConversions
+
+    val leaves = try {
+      JavaConversions.iterableAsScalaIterable(indexReader.leaves)
+    } catch {
+      case e: org.apache.lucene.index.IndexNotFoundException => {
+        // The index has never been saved. That means no metadata.
+        return ret
+      }
+    }
+
+    for (leaf <- leaves) {
+      for (fieldInfo <- JavaConversions.iterableAsScalaIterable(leaf.reader.getFieldInfos)) {
+        if (fieldInfo.name.startsWith("metadata:")) {
+          val fieldName = fieldInfo.name.substring("metadata:".size)
+          // Assume all metadata fields were stored with the same options
+          ret.put(fieldName, buildMetadataLuceneField(fieldName))
+        }
+      }
+    }
+
+    ret
+  }
+
+  def nMetadataFields: Int = metadataFields.size
 
   private def textFieldType(willHighlight: Boolean): FieldType = {
     val ret = new FieldType
@@ -54,6 +84,22 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     ret
   }
 
+  private def buildMetadataLuceneField(fieldName: String): LuceneField = {
+    new LuceneField("metadata:" + fieldName, "", textFieldType(false))
+  }
+
+  private def getMetadataFieldIfAllowed(name: String): Option[LuceneField] = {
+    metadataFields.get(name) match {
+      case Some(field) => Some(field)
+      case None if metadataFields.size < maxNMetadataFields => {
+        val field = buildMetadataLuceneField(name)
+        metadataFields.put(name, field)
+        Some(field)
+      }
+      case _ => None
+    }
+  }
+
   def addDocuments(documents: Iterable[Document]): Unit = synchronized {
     addDocumentsWithoutFsync(documents)
     commit
@@ -66,14 +112,34 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     val titleField = new LuceneField("title", "", textFieldType(false))
     val textField = new LuceneField("text", "", textFieldType(true))
     val luceneDocument = new LuceneDocument()
-    luceneDocument.add(idField)
-    luceneDocument.add(titleField)
-    luceneDocument.add(textField)
 
     for (document <- documents) {
+      luceneDocument.clear
+
+      // Index id,title,text: same on every doc
       idField.setLongValue(document.id)
       titleField.setStringValue(document.title)
       textField.setStringValue(document.text)
+      luceneDocument.add(idField)
+      luceneDocument.add(titleField)
+      luceneDocument.add(textField)
+
+      // Index metadata: different on every doc
+      for ((key, value) <- document.metadataJson.value) {
+        getMetadataFieldIfAllowed(key) match {
+          case Some(metadataField) => {
+            val stringValue: String = value match {
+              case JsString(s) => s
+              case JsNull => ""
+              case _ => value.toString
+            }
+            metadataField.setStringValue(stringValue)
+            luceneDocument.add(metadataField)
+          }
+          case None => // too many fields! Skip this one
+        }
+      }
+
       indexWriter.addDocument(luceneDocument)
     }
   }
