@@ -17,7 +17,4 @@ package com.overviewdocs.database
 trait HasDatabase {
   /** The database. */
   protected lazy val database: Database = Database()
-
-  /** Exposes the Slick Database API. */
-  protected val databaseApi = com.overviewdocs.database.Slick.api
 }
