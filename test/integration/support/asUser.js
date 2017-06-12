@@ -67,6 +67,7 @@ module.exports = {
         this.adminSession = browser.createUserAdminSession('asUser.usingTemporaryUser')
         const user = await this.adminSession.createTemporaryUser()
 
+        this.user = user
         this.userEmail = user.email
         const b = this.browser = await browser.createBrowser()
         await b.get('/login')
@@ -76,6 +77,7 @@ module.exports = {
       })
 
       after(async function() {
+        await this.adminSession.deleteUser(this.user)
         const b = this.browser
         await b.driver.manage().deleteAllCookies()
         await b.close()
