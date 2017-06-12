@@ -17,7 +17,7 @@ import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery
 import scala.collection.{mutable,immutable}
 
 import com.overviewdocs.query.{Field,FieldInSearchIndex,Query}
-import com.overviewdocs.models.Document
+import com.overviewdocs.models.{Document,DocumentIdSet}
 
 /** A Lucene index for a given document set.
   *
@@ -26,7 +26,7 @@ import com.overviewdocs.models.Document
   * These operations are not concurrent: do not call more than one of these
   * methods at a time. They're synchronized, just in case.
   */
-class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1024) { 
+class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1024) {
   private val analyzer = new DocumentSetLuceneIndex.OverviewAnalyzer
   private val queryBuilder = new QueryBuilder(analyzer)
 
@@ -163,9 +163,8 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     })
 
     SearchResult(
-      documentSetId=documentSetId.toInt,
-      lowerIds=immutable.BitSet.fromBitMaskNoCopy(lowerIds.toBitMask),
-      warnings=warnings
+      DocumentIdSet(documentSetId.toInt, immutable.BitSet.fromBitMaskNoCopy(lowerIds.toBitMask)),
+      warnings
     )
   }
 

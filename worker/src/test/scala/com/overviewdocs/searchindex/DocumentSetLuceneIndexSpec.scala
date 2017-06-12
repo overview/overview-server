@@ -39,7 +39,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
       thumbnailLocation=Some("path/of/file")
     )
 
-    def search(q: Query): String = index.searchForIds(q).toSeq.mkString(",")
+    def search(q: Query): String = index.searchForIds(q).documentIds.toSeq.mkString(",")
   }
 
   "DocumentSetLuceneIndex" should {
@@ -113,7 +113,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
         override val maxExpansionsPerTerm = 4
         index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
         val result = index.searchForIds(PrefixQuery(Field.Text, "duck goose"))
-        result.size must beEqualTo(maxExpansionsPerTerm)
+        result.documentIds.size must beEqualTo(maxExpansionsPerTerm)
         result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose", 4)))
       }
 
@@ -121,7 +121,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
         override val maxExpansionsPerTerm = 4
         index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
         val result = index.searchForIds(PrefixQuery(Field.All, "duck goose"))
-        result.size must beEqualTo(maxExpansionsPerTerm)
+        result.documentIds.size must beEqualTo(maxExpansionsPerTerm)
         result.warnings must beEqualTo(List(SearchWarning.TooManyExpansions(Field.Text, "goose", 4)))
       }
 
@@ -129,7 +129,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
         override val maxExpansionsPerTerm = 4
         index.addDocuments(Seq.tabulate(5) { i => buildDocument(i.toLong).copy(text=s"duck duck goose${i}") })
         val result = index.searchForIds(PrefixQuery(Field.Text, "goose"))
-        result.size must beEqualTo(5)
+        result.documentIds.size must beEqualTo(5)
         result.warnings must beEmpty
       }
     }
