@@ -2,14 +2,15 @@ package controllers.backend
 
 import akka.util.{ByteString,Timeout}
 import com.google.inject.ImplementedBy
-import com.redis.RedisClient
-import com.redis.protocol.StringCommands
+import redis.RedisClient
 import java.nio.ByteBuffer
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
+import scala.util.{Try,Success,Failure}
 
+import com.overviewdocs.util.Logger
 import models.{InMemorySelection,Selection,SelectionRequest,SelectionWarning}
 import models.pagination.{Page,PageInfo,PageRequest}
 import modules.RedisModule
@@ -89,6 +90,8 @@ class RedisSelectionBackend @Inject() (
 ) extends SelectionBackend {
   protected val redis: RedisClient = redisModule.client
 
+  private val logger: Logger = Logger.forClass(getClass)
+
   private[backend] val ExpiresInSeconds: Int = 60 * 60 // Used in unit tests, too
   private val SizeOfLong = 8
 
@@ -157,49 +160,70 @@ class RedisSelectionBackend @Inject() (
   private def findAndExpireSelectionIdByHash(userEmail: String, request: SelectionRequest): Future[Option[UUID]] = {
     val hashKey = requestHashKey(userEmail, request)
 
-    val resultFuture = redis.withTransaction { c =>
-      c.get(hashKey)
-      c.expire(hashKey, ExpiresInSeconds)
-    }
-
-    resultFuture.map(_ match {
-      case (Some(uuidString: String), true) => Some(UUID.fromString(uuidString))
-      case _ => None
-    })
+    for {
+      _ <- redis.expire(hashKey, ExpiresInSeconds)
+      maybeUuidString: Option[String] <- redis.get[String](hashKey)
+    } yield maybeUuidString.map(UUID.fromString)
   }
 
   private def findAndExpireSelectionById(documentSetId: Long, id: UUID): Future[Option[Selection]] = {
     val idsKey = documentIdsKey(documentSetId, id)
     val warningsKey = buildWarningsKey(documentSetId, id)
 
-    val resultFuture = redis.withTransaction { c =>
-      c.expire(idsKey, ExpiresInSeconds)
-      c.expire(warningsKey, ExpiresInSeconds)
-      c.get(warningsKey)
-    }
-
-    resultFuture.map(_ match {
-      case (true, true, Some(warningsString: ByteString)) => {
-        Some(RedisSelection(documentSetId, id, parseWarnings(warningsString)))
+    for {
+      idsExist <- redis.expire(idsKey, ExpiresInSeconds)
+      _ <- redis.expire(warningsKey, ExpiresInSeconds)
+      maybeWarningsString: Option[ByteString] <- redis.get(warningsKey)
+    } yield (idsExist, maybeWarningsString) match {
+      case (true, Some(warningsString)) => {
+        parseWarnings(warningsString) match {
+          case Success(warnings) => Some(RedisSelection(documentSetId, id, warnings))
+          case Failure(_) => None
+        }
       }
       case _ => None
-    })
+    }
   }
 
-  private def parseWarnings(byteString: ByteString): List[SelectionWarning] = Nil
+  private def parseWarnings(byteString: ByteString): Try[List[SelectionWarning]] = {
+    // TODO protobufs? Anything but java serializers.
+    val stream = new java.io.ByteArrayInputStream(byteString.toArray)
+    try {
+      Success(new java.io.ObjectInputStream(stream).readObject().asInstanceOf[List[SelectionWarning]])
+    } catch {
+      case e: Exception => {
+        // Normally, catch-all exceptions are bad. But we want the exact same
+        // behavior for all potential exceptions:
+        // * ClassNotFoundException
+        // * InvalidClassException
+        // * StreamCorruptedException
+        // * OptionalDataException
+        // * IOException
+        // * ClassCastException
+        //
+        // ... which is to pretend Redis is corrupted
+        logger.warn("Error parsing selection warnings from Redis: {}", e)
+        Failure(e)
+      }
+    }
+  }
 
-  private def encodeWarnings(warnings: List[SelectionWarning]): ByteString = ByteString.empty
+  private def encodeWarnings(warnings: List[SelectionWarning]): ByteString = {
+    val stream = new java.io.ByteArrayOutputStream
+    new java.io.ObjectOutputStream(stream).writeObject(warnings)
+    ByteString(stream.toByteArray)
+  }
 
   private def writeSelection(userEmail: String, request: SelectionRequest, selection: InMemorySelection): Future[Unit] = {
     val byUserHashKey = requestHashKey(userEmail, request)
     val byIdKey = documentIdsKey(request.documentSetId, selection.id)
     val warningsKey = buildWarningsKey(request.documentSetId, selection.id)
 
-    redis.withTransaction { c =>
-      c.set(byUserHashKey, selection.id.toString, StringCommands.EX(ExpiresInSeconds))
-      c.set(byIdKey, encodeDocumentIds(selection.documentIds), StringCommands.EX(ExpiresInSeconds))
-      c.set(warningsKey, encodeWarnings(selection.warnings), StringCommands.EX(ExpiresInSeconds))
-    }.map(_ => ())
+    for {
+      _ <- redis.setex(byUserHashKey, ExpiresInSeconds, selection.id.toString)
+      _ <- redis.setex(byIdKey, ExpiresInSeconds, encodeDocumentIds(selection.documentIds))
+      _ <- redis.setex(warningsKey, ExpiresInSeconds, encodeWarnings(selection.warnings))
+    } yield ()
   }
 
   override def create(userEmail: String, request: SelectionRequest) = {

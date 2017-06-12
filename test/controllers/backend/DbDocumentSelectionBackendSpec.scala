@@ -13,6 +13,12 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
   "DbDocumentSelectionBackend" should {
     "#createSelection" should {
       trait CreateSelectionScope extends DbScope {
+        val documentSet = factory.documentSet(1L)
+        val doc1 = factory.document(documentSetId=1L, id=(1L << 32) | 0L, title="c", text="foo bar baz oneandtwo oneandthree")
+        val doc2 = factory.document(documentSetId=1L, id=(1L << 32) | 1L, title="a", text="moo mar maz oneandtwo twoandthree")
+        val doc3 = factory.document(documentSetId=1L, id=(1L << 32) | 2L, title="b", text="noo nar naz oneandthree twoandthree")
+        val documents = Seq(doc1, doc2, doc3)
+
         val documentIds: Seq[Long] = Seq()
         val tagIds: Seq[Long] = Seq()
         val nodeIds: Seq[Long] = Seq()
@@ -36,13 +42,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
         def searchDocumentIds: DocumentIdSet = DocumentIdSet.empty
         def searchWarnings: List[SearchWarning] = Nil
         def searchResult: SearchResult = SearchResult(searchDocumentIds, searchWarnings)
-        searchBackend.search(any, any) returns Future(searchResult)
-
-        val documentSet = factory.documentSet(1L)
-        val doc1 = factory.document(documentSetId=1L, id=(1L << 32) | 0L, title="c", text="foo bar baz oneandtwo oneandthree")
-        val doc2 = factory.document(documentSetId=1L, id=(1L << 32) | 1L, title="a", text="moo mar maz oneandtwo twoandthree")
-        val doc3 = factory.document(documentSetId=1L, id=(1L << 32) | 2L, title="b", text="noo nar naz oneandthree twoandthree")
-        val documents = Seq(doc1, doc2, doc3)
+        searchBackend.search(any, any) returns Future { searchResult }
 
         private val sortedIds = s"{${doc2.id},${doc3.id},${doc1.id}}"
 
@@ -68,7 +68,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
       "search by q" in new CreateSelectionScope {
         override val q = Some(PhraseQuery(Field.All, "moo"))
         override def searchDocumentIds = DocumentIdSet(Seq(doc2.id))
-        ret.documentIds must beEqualTo(Array(2L))
+        ret.documentIds must beEqualTo(Array(doc2.id))
         there was one(searchBackend).search(documentSet.id, q.get)
       }
 

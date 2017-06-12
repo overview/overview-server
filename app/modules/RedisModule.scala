@@ -2,9 +2,10 @@ package modules
 
 import akka.actor.ActorSystem
 import akka.util.Timeout
-import com.redis.RedisClient
+import redis.RedisClient
 import javax.inject.{Inject,Singleton}
 import play.api.Configuration
+import play.api.inject.ApplicationLifecycle
 import scala.concurrent.Future
 
 class RedisConfiguration(private val config: Configuration) {
@@ -20,18 +21,15 @@ class RedisConfiguration(private val config: Configuration) {
   val port: Int = getInt("redis.port")
 }
 
-/** Provides a RedisClient.
-  *
-  * We don't need to worry about the Lifecycle here. The Redis client runs in
-  * an ActorSystem: once the ActorSystem dies it's gone.
-  */
+/** Provides a RedisClient. */
 @Singleton
-class RedisModule @Inject() (actorSystem: ActorSystem, configuration: Configuration) {
+class RedisModule @Inject() (actorSystem: ActorSystem, configuration: Configuration, lifecycle: ApplicationLifecycle) {
   lazy val client: RedisClient = {
-    implicit val ec = actorSystem.dispatcher
-    implicit val timeout = Timeout(5, java.util.concurrent.TimeUnit.SECONDS)
-
     val config = new RedisConfiguration(configuration)
-    RedisClient(config.host, config.port)(actorSystem)
+    val ret = new RedisClient(config.host, config.port)(actorSystem)
+
+    lifecycle.addStopHook { () => Future.successful(client.stop) }
+
+    ret
   }
 }

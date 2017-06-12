@@ -40,7 +40,9 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
       }
 
       "return a different Selection each time" in new CreateScope {
-        create.id must not(beEqualTo(create.id))
+        create
+        create
+        there were two(dsBackend).createSelection(any)
       }
 
       "pass the SelectionRequest to the dsBackend" in new CreateScope {

@@ -1,6 +1,6 @@
 package controllers.backend
 
-import com.redis.protocol.StringCommands
+import redis.RedisClient
 import java.util.UUID
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits._
@@ -13,6 +13,7 @@ import models.pagination.{Page,PageInfo,PageRequest}
 
 class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   trait BaseScope extends RedisScope {
+    val KeyExpireS: Int = 10 // last during the test, die soon after
     def resultIds: Array[Long] = Array.empty
     def warnings: List[SelectionWarning] = Nil
     def serializedWarnings: Array[Byte] = {
@@ -34,7 +35,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   trait StoreHashExample { self: CreateScopeLike =>
     val selection = go
     val key = s"selection:${documentSetId}:by-user-hash:user@example.org:${request.hash}"
-    await(redis.get(key)) must beSome(selection.id.toString)
+    await(redis.get[String](key)) must beSome(selection.id.toString)
   }
 
   trait ExpireHashExample { self: CreateScopeLike =>
@@ -54,7 +55,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
     ).map(_.toByte)
     val selection = go
     await(redis.get[Array[Byte]](s"selection:${documentSetId}:by-id:${selection.id}:document-ids")) must beSome(bytes)
-    await(redis.get(s"selection:${documentSetId}:by-user-hash:user@example.org:${request.hash}")) must beSome(selection.id.toString)
+    await(redis.get[String](s"selection:${documentSetId}:by-user-hash:user@example.org:${request.hash}")) must beSome(selection.id.toString)
   }
 
   trait StoreWarningsExample { self: CreateScopeLike =>
@@ -68,10 +69,17 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
     def deserialize(bytes: Array[Byte]): Object = {
       import java.io.ByteArrayInputStream
       import java.io.ObjectInputStream
-      new ObjectInputStream(new ByteArrayInputStream(bytes)).readObject()
+      try {
+        new ObjectInputStream(new ByteArrayInputStream(bytes)).readObject
+      } catch {
+        // _return_ the exception, so when tests compare it with something
+        // they'll fail with a helpful error message
+        case e: Exception => e
+      }
     }
 
-    val bytes = await(redis.get[Array[Byte]](s"selection:${documentSetId}:by-id:${selection.id}:warnings")).getOrElse(Array.empty)
+    val warningsKey = s"selection:${documentSetId}:by-id:${selection.id}:warnings"
+    val bytes = await(redis.get[Array[Byte]](warningsKey)).getOrElse(throw new Exception(s"Missing key ${warningsKey}"))
     deserialize(bytes) must beEqualTo(warnings)
   }
 
@@ -125,15 +133,14 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
 
       "when IDs are present but warnings are not" should {
         "return None" in new FindScope {
-          await(redis.set(byIdKey,
+          await(redis.setex(byIdKey, 10,
             Array(
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5
-            ).map(_.toByte),
-            StringCommands.EX(10)
+            ).map(_.toByte)
           ))
           go must beNone
         }
@@ -141,7 +148,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
 
       "when warnings are present but IDs are not" should {
         "return None" in new FindScope {
-          await(redis.set(byIdWarningsKey, serializedWarnings, StringCommands.EX(10)))
+          await(redis.setex(byIdWarningsKey, KeyExpireS, serializedWarnings))
           go must beNone
           there was no(dsBackend).createSelection(any)
         }
@@ -149,17 +156,16 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
 
       "when Selection is present" should {
         trait FindExistsScope extends FindScope {
-          await(redis.set(byIdKey,
+          await(redis.setex(byIdKey, KeyExpireS,
             Array(
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5
-            ).map(_.toByte),
-            StringCommands.EX(10)
+            ).map(_.toByte)
           ))
-          await(redis.set(byIdWarningsKey, serializedWarnings, StringCommands.EX(10)))
+          await(redis.setex(byIdWarningsKey, KeyExpireS, serializedWarnings))
         }
 
         "expire the selection" in new FindExistsScope {
@@ -172,7 +178,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           maybeSelection must beSome
           maybeSelection match {
             case Some(selection) => {
-              await(selection.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L, 4L, 5L))
+              await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
               there was no(dsBackend).createSelection(any)
             }
             case _ =>
@@ -218,24 +224,23 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override val maybeSelectionId = Some(UUID.fromString(selectionId))
           val byIdKey = s"selection:${documentSetId}:by-id:cf2f2f74-a009-48fa-986c-f1f8e5873345:document-ids"
           val byIdWarningsKey = s"selection:${documentSetId}:by-id:cf2f2f74-a009-48fa-986c-f1f8e5873345:warnings"
-          await(redis.set(byIdKey,
+          await(redis.setex(byIdKey, KeyExpireS,
             Array(
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5
-            ).map(_.toByte),
-            StringCommands.EX(10)
+            ).map(_.toByte)
           ))
-          await(redis.set(byIdWarningsKey, serializedWarnings, StringCommands.EX(10)))
+          await(redis.setex(byIdWarningsKey, KeyExpireS, serializedWarnings))
         }
 
         "expire the document IDs" in new SelectionExistsScope with ExpireDocumentIdsExample
         "expire the warnings" in new SelectionExistsScope with ExpireWarningsExample
         "return the Selection" in new SelectionExistsScope {
           val selection = go
-          await(selection.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L, 4L, 5L))
+          await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
           there was no(dsBackend).createSelection(any)
         }
       }
@@ -246,18 +251,17 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           val byUserHashKey = s"selection:${documentSetId}:by-user-hash:user@example.org:${request.hash}"
           val byIdKey = s"selection:${documentSetId}:by-id:cf2f2f74-a009-48fa-986c-f1f8e5873345:document-ids"
           val byIdWarningsKey = s"selection:${documentSetId}:by-id:cf2f2f74-a009-48fa-986c-f1f8e5873345:warnings"
-          await(redis.set(byUserHashKey, selectionId, StringCommands.EX(10)))
-          await(redis.set(byIdKey,
+          await(redis.setex(byUserHashKey, KeyExpireS, selectionId))
+          await(redis.setex(byIdKey, KeyExpireS,
             Array(
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4,
               0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5
-            ).map(_.toByte),
-            StringCommands.EX(10)
+            ).map(_.toByte)
           ))
-          await(redis.set(byIdWarningsKey, serializedWarnings, StringCommands.EX(10)))
+          await(redis.setex(byIdWarningsKey, KeyExpireS, serializedWarnings))
         }
 
         "store the SelectionRequest hash in Redis" in new SelectionExistsScope with StoreHashExample
@@ -269,7 +273,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
 
         "return the Selection" in new SelectionExistsScope {
           val selection = go
-          await(selection.getAllDocumentIds) must beEqualTo(Seq(1L, 2L, 3L, 4L, 5L))
+          await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
           there was no(dsBackend).createSelection(any)
         }
 
@@ -286,7 +290,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         // expiry time is always later than the hash's, it may expire sooner.
         trait SelectionHashExistsScope extends FindOrCreateScope {
           val selectionId = "cf2f2f74-a009-48fa-986c-f1f8e5873345"
-          await(redis.set(s"selection:${documentSetId}:by-user-hash:user@example.org:${request.hash}", selectionId, StringCommands.EX(10)))
+          await(redis.setex(s"selection:${documentSetId}:by-user-hash:user@example.org:${request.hash}", KeyExpireS, selectionId))
         }
 
         "store the SelectionRequest hash in Redis" in new SelectionHashExistsScope with StoreHashExample

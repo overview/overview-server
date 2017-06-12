@@ -35,7 +35,7 @@ object Dependencies {
     val playSlick = "com.typesafe.play" %% "play-slick" % "2.1.0"
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
     val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
-    val redis = "net.debasishg" %% "redisreact" % "0.8"
+    val redis = "com.github.etaty" %% "rediscala" % "1.8.0"
     val slick = "com.typesafe.slick" %% "slick" % "3.2.0"
     val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.2.0"
     val specs2Core = "org.specs2" %% "specs2-core" % "3.8.9"
@@ -56,7 +56,6 @@ object Dependencies {
     deps.pgSlick,
     deps.playJson,
     deps.postgresql,
-    deps.redis,
     deps.slick,
     deps.slickHikariCp,
     deps.akkaTestkit % "test",
@@ -83,6 +82,7 @@ object Dependencies {
     deps.playMailer,
     deps.playPluginsUtil,
     deps.playSlick,
+    deps.redis,
     filters,
     ws,
     deps.joddWot % "test",

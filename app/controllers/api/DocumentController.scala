@@ -31,6 +31,7 @@ class DocumentController @Inject() (
       val jsObjects = documents.items.map(d => Field.formatDocument(documentSet, d, fields))
       val json = JsObject(Seq(
         "selectionId" -> JsString(selection.id.toString),
+        "warnings" -> views.json.api.selectionWarnings(selection.warnings),
         "pagination" -> views.json.api.pagination.PageInfo.show(documents.pageInfo),
         "items" -> JsArray(jsObjects)
       ))
