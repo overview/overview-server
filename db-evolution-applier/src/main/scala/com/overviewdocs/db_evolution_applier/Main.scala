@@ -20,7 +20,7 @@ object Main {
         |# We keep 'db.default' so caller can override via Java system properties
         |db {
         |  default {
-        |    dataSource {
+        |    properties {
         |      serverName="localhost"
         |      portNumber="5432"
         |      databaseName="overview"
@@ -37,7 +37,7 @@ object Main {
         |  }
         |}
         |""".stripMargin)).resolve()
-    val config = entireConfig.getConfig("db.default.dataSource")
+    val config = entireConfig.getConfig("db.default.properties")
 
     val ret = new PGSimpleDataSource
     ret.setServerName(config.getString("serverName"))
