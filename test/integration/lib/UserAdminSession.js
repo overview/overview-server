@@ -10,6 +10,7 @@ module.exports = class UserAdminSession {
       timeout: options.timeout,
       simple: false,
       resolveWithFullResponse: true,
+      headers: { 'X-Requested-With': 'integration tests' },
       jar: request.jar(),
     })
 
