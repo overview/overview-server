@@ -1,5 +1,7 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import models.pagination.{Page,PageRequest}
@@ -7,6 +9,7 @@ import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
 
+@ImplementedBy(classOf[DbDocumentSetBackend])
 trait DocumentSetBackend {
   /** Creates a DocumentSet, a DocumentSetUser, and one View per autocreate Plugin.
     *
@@ -61,7 +64,7 @@ trait DocumentSetBackend {
   def countByOwnerEmail(userEmail: String): Future[Int]
 }
 
-trait DbDocumentSetBackend extends DocumentSetBackend with DbBackend {
+class DbDocumentSetBackend @Inject() extends DocumentSetBackend with DbBackend {
   import database.api._
   import database.executionContext
 
