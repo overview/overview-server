@@ -9,7 +9,7 @@ import java.util.HashSet
 import java.util.zip.CRC32
 import scala.collection.immutable
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.{Future,Promise}
 
 import models.ArchiveEntry
 import controllers.backend.ArchiveEntryBackend // TODO rename controllers.backend => models.backend
@@ -64,43 +64,33 @@ class ZipArchive(
 
   /** CRCs of all files we've streamed.
     *
-    * We show CRCs at the beginning of each file and in the Central Directory
-    * at the end of the zipfile.
+    * We calculate CRCs as we stream files individual files. Then we emit the
+    * Central Directory, which includes them all a second time.
     */
-  private var crcs: mutable.Map[Long,Int] = mutable.Map.empty
+  private val crcs = new mutable.ArrayBuffer[Int](archiveEntries.length)
+
+  // https://github.com/akka/akka/issues/18683
+  // https://github.com/akka/akka/issues/23044
+  // streamCentralDirectory() depends on crcs being full. And by the time
+  // we're streaming the central directory into our output, they are. But
+  // Akka's "Stream.concat" erroneously fetches the first element before
+  // realizing it's supposed to wait -- even with Source.lazily().
+  //
+  // Our workaround: use a Stream.future() to block the first fetch until after
+  // the CRCs are all calculated.
+  private val crcsAllCalculated = Promise[Unit]()
 
   private val timestamp = DosDate.now
 
   def stream: Source[ByteString, akka.NotUsed] = {
-    // https://github.com/akka/akka/issues/18683
-    // https://github.com/akka/akka/issues/23044
-    // streamCentralDirectory() depends on crcs being full. And by the time
-    // we're streaming the central directory into our output, they are. But
-    // Akka's "Stream.concat" erroneously fetches the first element before
-    // realizing it's supposed to wait -- even with Source.lazily().
-    //
-    // Our workaround: assume Akka will only fetch a single element. Compute
-    // that CRC before continuing.
-
-    val loadFirstCrcForAkkaBug18683: Future[Unit] = archiveEntries.headOption match {
-      case None => Future.successful(())
-      case Some(archiveEntry) => computeCrc(archiveEntry).map(crc => crcs(archiveEntry.documentId) = crc)
-    }
-
-    val futureSource = loadFirstCrcForAkkaBug18683.map(_ =>
-      streamLocalFiles
-        .concat(Source.lazily({ () =>
-          // wait lazily for crcs to be computed
-          streamCentralDirectory
-            .concat(Source.single(ByteString(endOfCentralDirectory)))
-        }))
-    )
-
-    Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
+    streamLocalFiles
+      .concat(streamCentralDirectory)
+      .concat(endOfCentralDirectory)
   }
 
   private def streamLocalFiles: Source[ByteString, akka.NotUsed] = {
-    Source(archiveEntries).flatMapConcat(streamLocalFile _)
+    Source(archiveEntries)
+      .flatMapConcat(streamLocalFile _)
   }
 
   /** Stream an ArchiveEntry, and set this.crcs(archiveEntry.documentId) as a
@@ -110,8 +100,13 @@ class ZipArchive(
     val future = for {
       crc <- computeCrc(archiveEntry)
     } yield {
-      crcs(archiveEntry.documentId) = crc
-      val headerBytes = ByteString(localFileHeader(archiveEntry))
+      crcs.+=(crc)
+
+      if (crcs.length == archiveEntries.length) {
+        crcsAllCalculated.success(())
+      }
+
+      val headerBytes = ByteString(localFileHeader(archiveEntry, crc))
 
       Source.single(headerBytes)
         .concat(backend.streamBytes(documentSetId, archiveEntry.documentId))
@@ -121,7 +116,7 @@ class ZipArchive(
       .mapMaterializedValue( _ =>  akka.NotUsed)
   }
 
-  private def localFileHeader(archiveEntry: ArchiveEntry): Array[Byte] = {
+  private def localFileHeader(archiveEntry: ArchiveEntry, crc: Int): Array[Byte] = {
     val buf = ByteBuffer
       .allocate(LocalFileHeaderSize + archiveEntry.filenameUtf8.length)
       .order(ByteOrder.LITTLE_ENDIAN)
@@ -136,7 +131,7 @@ class ZipArchive(
       .putShort(NoCompression)
       .putShort(timestamp.time)
       .putShort(timestamp.date)
-      .putInt(crcs(archiveEntry.documentId))
+      .putInt(crc)
       .putInt(archiveEntry.nBytes.toInt) // compressed size
       .putInt(archiveEntry.nBytes.toInt) // uncompressed size
       .putShort(archiveEntry.filenameUtf8.length.toShort)
@@ -148,26 +143,29 @@ class ZipArchive(
   }
 
   private def streamCentralDirectory: Source[ByteString, akka.NotUsed] = {
-    streamCentralDirectoryFileHeaders
+    val futureSource = crcsAllCalculated.future.map(_ => streamCentralDirectoryFileHeaders)
+
+    Source.fromFutureSource(futureSource)
+      .mapMaterializedValue(_ => akka.NotUsed)
   }
 
   private def streamCentralDirectoryFileHeaders: Source[ByteString, akka.NotUsed] = {
     // Iterate in the same order as we streamed the files, so we can write all
     // the offsets.
     val startIterator = archiveEntries.iterator
-    Source.unfold((startIterator, 0)) { case (iterator: Iterator[ArchiveEntry], curOffset: Int) =>
+    Source.unfold((startIterator, 0, 0)) { case (iterator: Iterator[ArchiveEntry], curOffset: Int, entryIndex: Int) =>
       if (iterator.hasNext) {
         val archiveEntry = iterator.next
         val localFileSize = LocalFileHeaderSize + archiveEntry.filenameUtf8.length + archiveEntry.nBytes
-        val bytes = ByteString(centralDirectoryFileHeader(archiveEntry, curOffset))
-        Some(((iterator, curOffset + localFileSize.toInt), bytes))
+        val bytes = ByteString(centralDirectoryFileHeader(archiveEntry, curOffset, entryIndex))
+        Some(((iterator, curOffset + localFileSize.toInt, entryIndex + 1), bytes))
       } else {
         None
       }
     }
   }
 
-  private def centralDirectoryFileHeader(archiveEntry: ArchiveEntry, localFileOffset: Int): Array[Byte] = {
+  private def centralDirectoryFileHeader(archiveEntry: ArchiveEntry, localFileOffset: Int, entryIndex: Int): Array[Byte] = {
     val buf = ByteBuffer
       .allocate(CentralDirectoryHeaderSize + archiveEntry.filenameUtf8.length)
       .order(ByteOrder.LITTLE_ENDIAN)
@@ -181,7 +179,7 @@ class ZipArchive(
       .putShort(NoCompression)
       .putShort(timestamp.time)
       .putShort(timestamp.date)
-      .putInt(crcs(archiveEntry.documentId))
+      .putInt(crcs(entryIndex))
       .putInt(archiveEntry.nBytes.toInt) // compressed size
       .putInt(archiveEntry.nBytes.toInt) // uncompressed size
       .putShort(archiveEntry.filenameUtf8.length.toShort)
@@ -197,7 +195,7 @@ class ZipArchive(
     buf.array
   }
 
-  private def endOfCentralDirectory: Array[Byte] = {
+  private def endOfCentralDirectory: Source[ByteString, akka.NotUsed] = {
     val buf = ByteBuffer.allocate(EndOfCentralDirectorySize).order(ByteOrder.LITTLE_ENDIAN)
 
     var centralDirectoryStart: Int = archiveEntries.length * LocalFileHeaderSize
@@ -219,7 +217,7 @@ class ZipArchive(
       .putShort(0) // comment size
 
     assert(buf.position == buf.limit)
-    buf.array
+    Source.single(ByteString(buf.array))
   }
 
   /** Compute the CRC of an ArchiveEntry.
