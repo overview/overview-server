@@ -13,7 +13,6 @@ import org.apache.lucene.index.{DirectoryReader,FieldInfo,IndexOptions,IndexRead
 import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery,FuzzyQuery,IndexSearcher,MatchAllDocsQuery,MatchNoDocsQuery,MultiPhraseQuery,MultiTermQuery,PhraseQuery,PrefixQuery,SimpleCollector,Query=>LuceneQuery}
 import org.apache.lucene.store.{Directory,FSDirectory}
 import org.apache.lucene.util.{BytesRef,QueryBuilder}
-import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery
 import play.api.libs.json.{JsNull,JsString}
 import scala.collection.{mutable,immutable}
 

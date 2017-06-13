@@ -16,7 +16,6 @@
   </appender>
 
   <logger name="com.ning.http.client" level="WARN"/>
-  <logger name="org.elasticsearch" level="WARN"/>
   <logger name="akka.event.slf4j.Slf4jEventHandler" level="WARN" /><!-- Shows info on startup -->
   <logger name="com.gargoylesoftware.htmlunit.DefaultCssErrorHandler" level="ERROR" /><!-- CSS errors are built into Bootstrap for IE support -->
   <logger name="com.gargoylesoftware.htmlunit.html.InputElementFactory" level="WARN" /><!-- It warns about <input type="email"> -->
