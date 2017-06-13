@@ -9,6 +9,7 @@ class QueryParserSpec extends Specification {
     case Field.All => ""
     case Field.Title => "title:"
     case Field.Text => "text:"
+    case Field.Metadata(name) => s"META(${name}):"
   }
 
   def repr(node: Query): String = node match {
@@ -69,4 +70,9 @@ class QueryParserSpec extends Specification {
   testGood("foo* bar", "[foo* bar]", "ignore prefix operator in the middle of a phrase")
   testGood("NOT*", "PREF([NOT])", "parse NOT* as a phrase")
   testGood("NOT fo*", "NOT(PREF([fo]))", "parse NOT x* as one would expect")
+  testGood("foo:bar*", "META(foo):PREF([bar])", "parse metadata field name")
+  testGood("'Foo Bar':baz", "META(Foo Bar):[baz]", "parse quoted metadata field name")
+  testGood("foo:bar AND bar:baz", "AND(META(foo):[bar],META(bar):[baz])", "watch for operators in metadata field text")
+  testGood("foo:bar bar:baz", "META(foo):[bar bar:baz]", "do not infer operators where there are none")
+  testGood("NOT:blah", "META(NOT):[blah]", "allow operators as metadata field names")
 }

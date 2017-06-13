@@ -53,7 +53,6 @@ describe('Metadata', function() {
       })
 
       it('should add and remove metadata fields', async function() {
-        this.browser
         await this.browser.click({ link: 'Add new field' })
         await this.browser.sendKeys('baz', '.add-metadata-field input[name=name]')
         await this.browser.click('.add-metadata-field button[type=submit]')
@@ -73,6 +72,16 @@ describe('Metadata', function() {
         await this.browser.click('.document-nav a.next')
         await this.browser.click('.document-nav a.previous')
         await this.browser.assertExists(this.locator, { wait: true })
+      })
+
+      it('should search for metadata', async function() {
+        await this.browser.sendKeys("foo:foo0 OR bar:bar1", '.search input[name=query]')
+        await this.browser.click('.search button')
+
+        const text = await this.browser.getText({ css: '#document-list ul.documents', wait: 'pageLoad' })
+        expect(text).to.match(/First/)
+        expect(text).to.match(/Second/)
+        expect(text).not.to.match(/Third/)
       })
     })
 

@@ -396,6 +396,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   private def fieldToName(field: FieldInSearchIndex): String = field match {
     case Field.Text => "text"
     case Field.Title => "title"
+    case Field.Metadata(name) => s"metadata:${name}"
   }
 
   private def buildFuzzyQuery(field: FieldInSearchIndex, term: String, fuzz: Option[Int]) = {

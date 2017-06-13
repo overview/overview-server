@@ -14,6 +14,7 @@ object selectionWarnings {
   private def fieldName(field: FieldInSearchIndex): String = field match {
     case Field.Text => "text"
     case Field.Title => "title"
+    case Field.Metadata(name) => name
   }
 
   private def applyOne(warning: SelectionWarning): JsObject = {

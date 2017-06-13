@@ -113,6 +113,12 @@ class DocumentSetLuceneIndexSpec extends Specification {
         search(PhraseQuery(Field.Title, "moo1")) must beEqualTo("1")
       }
 
+      "handle metadata query" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L), buildDocument(2L).copy(metadataJson=Json.obj("foo" -> "bar"))))
+        search(PhraseQuery(Field.Metadata("foo"), "bar")) must beEqualTo("2")
+        search(PhraseQuery(Field.Metadata("foo"), "baz")) must beEqualTo("")
+      }
+
       "handle prefix query" in new BaseScope {
         index.addDocuments(Seq(
           buildDocument(1L).copy(text="The cow hopped over the moon"),

@@ -6,6 +6,7 @@ object QueryParser {
   def parse(input: String): Either[SyntaxError,Query] = {
     Grammar.parse(Grammar.phrase(Grammar.expression), input) match {
       case Grammar.Success(node, _) => Right(node)
+      case Grammar.NoSuccess(msg, next) => Left(SyntaxError(msg, next.offset))
       case Grammar.Failure(msg, next) => Left(SyntaxError(msg, next.offset))
       case Grammar.Error(msg, next) => Left(SyntaxError(msg, next.offset))
     }
@@ -39,7 +40,12 @@ object QueryParser {
     def term: Parser[Query] = fieldOrAll ~ (quotedString | unquotedString) ^^ { t => stringToNode(t._1, t._2) }
 
     def fieldOrAll: Parser[Field]
-      = ("title:" ^^^ Field.Title) | ("text:" ^^^ Field.Text) | ("" ^^^ Field.All)
+      = (
+        ("title:" ^^^ Field.Title) |
+        ("text:" ^^^ Field.Text) |
+        ((quotedString | unquotedFieldName) <~ ":" ^^ { s => Field.Metadata(s) }) |
+        ("" ^^^ Field.All)
+      )
 
     def quotedString: Parser[String]
       = (singleQuotedString | doubleQuotedString | smartQuotedString) ~ regex("""~(\d{1,7})""".r).? ^^
@@ -62,6 +68,9 @@ object QueryParser {
 
     def unquotedWord: Parser[String]
       = guard(not(operator)) ~> regex("""[^ ()]+""".r)
+
+    def unquotedFieldName: Parser[String]
+      = regex("""[^ ():]+""".r)
 
     def operator = andOperator | orOperator | notOperator
     // Lookahead (?=) matches "NOT " and "NOT(", but not "NOT*"
