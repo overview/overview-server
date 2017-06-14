@@ -7,6 +7,7 @@ class QueryParserSpec extends Specification {
 
   def repr(field: Field): String = field match {
     case Field.All => ""
+    case Field.Notes => "notes:"
     case Field.Title => "title:"
     case Field.Text => "text:"
     case Field.Metadata(name) => s"META(${name}):"
@@ -57,6 +58,7 @@ class QueryParserSpec extends Specification {
   testGood("'foo bar'~3", "PROX([foo bar],3)", "handle proximity on quoted strings")
   testGood("NOT foo~2", "NOT(FUZZ([foo],2))", "give ~ (fuzzy) higher precedence than NOT")
   testGood("NOT 'foo bar'~2", "NOT(PROX([foo bar],2))", "give ~ (proximity) higher precedence than NOT")
+  testGood("notes:foo bar", "notes:[foo bar]", "specify the notes field")
   testGood("title:foo bar", "title:[foo bar]", "specify the title field")
   testGood("text:foo bar", "text:[foo bar]", "specify the text field")
   testGood("NOT title:foo bar AND bar", "AND(NOT(title:[foo bar]),[bar])", "give field higher precedence than NOT")

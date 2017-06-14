@@ -41,6 +41,7 @@ object QueryParser {
 
     def fieldOrAll: Parser[Field]
       = (
+        ("notes:" ^^^ Field.Notes) |
         ("title:" ^^^ Field.Title) |
         ("text:" ^^^ Field.Text) |
         ((quotedString | unquotedFieldName) <~ ":" ^^ { s => Field.Metadata(s) }) |

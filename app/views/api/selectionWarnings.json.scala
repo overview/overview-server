@@ -12,6 +12,7 @@ object selectionWarnings {
   }
 
   private def fieldName(field: FieldInSearchIndex): String = field match {
+    case Field.Notes => "notes"
     case Field.Text => "text"
     case Field.Title => "title"
     case Field.Metadata(name) => name

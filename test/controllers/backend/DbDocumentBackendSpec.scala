@@ -178,6 +178,11 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
         await(backend.updateMetadataJson(documentSet.id + 1L, document.id, Json.obj("foo" -> "baz")))
         findDocument(document.id).map(_.metadataJson) must beSome(Json.obj("foo" -> "bar"))
       }
+
+      "refresh the searchBackend" in new UpdateMetadataJsonScope {
+        await(backend.updateMetadataJson(documentSet.id, document.id, Json.obj("foo" -> "baz")))
+        there was one(searchBackend).refreshDocument(documentSet.id, document.id)
+      }
     }
 
     "#updatePdfNotes" should {
@@ -190,12 +195,18 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
           PdfNote(1, 2.0, 3.0, 4.0, 5.0, "Foo"),
           PdfNote(2, 3.0, 4.0, 5.0, 6.0, "Bar")
         ))
-        val document = factory.document(documentSetId=documentSet.id, pdfNotes=pdfNotes1)
+        // document ID must be derived from documentSetId for this test
+        val document = factory.document(documentSetId=documentSet.id, id=documentSet.id << 32, pdfNotes=pdfNotes1)
       }
 
       "update pdfNotes" in new UpdatePdfNotesScope {
         await(backend.updatePdfNotes(document.id, pdfNotes2))
         findDocument(document.id).map(_.pdfNotes) must beSome(pdfNotes2)
+      }
+
+      "refresh in searchBackend" in new UpdatePdfNotesScope {
+        await(backend.updatePdfNotes(document.id, pdfNotes2))
+        there was one(searchBackend).refreshDocument(documentSet.id, document.id)
       }
     }
   }

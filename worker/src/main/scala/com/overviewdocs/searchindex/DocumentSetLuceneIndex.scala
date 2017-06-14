@@ -107,6 +107,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     // Instantiate objects once: saves GC. As per
     // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
     val idField = new NumericDocValuesField("id", 0L)
+    val notesField = new LuceneField("notes", "", textFieldType(false))
     val titleField = new LuceneField("title", "", textFieldType(false))
     val textField = new LuceneField("text", "", textFieldType(true))
     val luceneDocument = new LuceneDocument()
@@ -121,6 +122,11 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
       luceneDocument.add(idField)
       luceneDocument.add(titleField)
       luceneDocument.add(textField)
+
+      if (document.pdfNotes.pdfNotes.nonEmpty) {
+        notesField.setStringValue(document.pdfNotes.pdfNotes.map(_.text).mkString("\f"))
+        luceneDocument.add(notesField)
+      }
 
       // Index metadata: different on every doc
       for ((key, value) <- document.metadataJson.value) {
@@ -393,6 +399,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   private def fieldToName(field: FieldInSearchIndex): String = field match {
+    case Field.Notes => "notes"
     case Field.Text => "text"
     case Field.Title => "title"
     case Field.Metadata(name) => s"metadata:${name}"

@@ -17,6 +17,7 @@ sealed trait FieldInSearchIndex
 
 object Field {
   case object All extends Field
+  case object Notes extends Field with FieldInSearchIndex
   case object Text extends Field with FieldInSearchIndex
   case object Title extends Field with FieldInSearchIndex
   case class Metadata(fieldName: String) extends Field with FieldInSearchIndex

@@ -130,11 +130,19 @@ class DbDocumentBackend @Inject() (
   }
 
   override def updateMetadataJson(documentSetId: Long, documentId: Long, metadataJson: JsObject) = {
-    database.runUnit(updateMetadataJsonCompiled(documentSetId, documentId).update(Some(metadataJson)))
+    for {
+      _ <- database.runUnit(updateMetadataJsonCompiled(documentSetId, documentId).update(Some(metadataJson)))
+      _ <- searchBackend.refreshDocument(documentSetId, documentId)
+    } yield ()
   }
 
   override def updatePdfNotes(documentId: Long, pdfNotes: PdfNoteCollection) = {
-    database.runUnit(updatePdfNotesCompiled(documentId).update(Some(pdfNotes)))
+    // Assume documentSetId is the top 32 bits of documentId.
+    val documentSetId = documentId >> 32
+    for {
+      _ <- database.runUnit(updatePdfNotesCompiled(documentId).update(Some(pdfNotes)))
+      _ <- searchBackend.refreshDocument(documentSetId, documentId)
+    } yield ()
   }
 
   protected object InfosByIds {

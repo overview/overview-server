@@ -6,7 +6,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.json.Json
 
-import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNoteCollection}
+import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNote,PdfNoteCollection}
 import com.overviewdocs.query.{Field,FuzzyTermQuery,Query,PhraseQuery,PrefixQuery}
 
 class DocumentSetLuceneIndexSpec extends Specification {
@@ -111,6 +111,15 @@ class DocumentSetLuceneIndexSpec extends Specification {
         index.addDocuments(Seq(buildDocument(1L), buildDocument(2L)))
         search(PhraseQuery(Field.Text, "moo1")) must beEqualTo("")
         search(PhraseQuery(Field.Title, "moo1")) must beEqualTo("1")
+      }
+
+      "handle pdfNotes query" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L), buildDocument(2L).copy(pdfNotes=PdfNoteCollection(Array(
+          PdfNote(0, 0, 0, 0, 0, "The cow jumped"),
+          PdfNote(0, 0, 0, 0, 0, "over the moon")
+        )))))
+        search(PhraseQuery(Field.Notes, "jumped")) must beEqualTo("2")
+        search(PhraseQuery(Field.Title, "jumped")) must beEqualTo("")
       }
 
       "handle metadata query" in new BaseScope {

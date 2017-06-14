@@ -28,8 +28,11 @@ describe('PdfAnnotations', function() {
       await b.find('article iframe', { wait: 'fast' }) // wait for PDF to start loading
 
       await b.switchToFrame('document-contents')
+      await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
+        return document.querySelector('.noteLayer') !== null
+      });
 
-      await b.assertExists('#viewer .textLayer', { wait: 'pageLoad' })
+      await b.assertExists('#viewer .textLayer div', { wait: 'pageLoad' })
       await b.click('button#addNote')
 
       const el = (await b.find({ css: '#viewer .textLayer div' })).driverElement
@@ -67,10 +70,37 @@ describe('PdfAnnotations', function() {
       await b.switchToFrame(null)
     })
 
+    it('should search for annotations', async function() {
+      const b = this.browser
+
+      // we start with a single document selected. in on a single document. This
+      // test searches, automatically de-selecting the document. To reset, we'll
+      // re-select it at the end of the test.
+
+      await b.sendKeys('notes:Hello, world!', '#document-list-params .search input[name=query')
+      await b.click('#document-list-params .search button')
+      await b.sleep(1000) // de-select animation
+
+      const text = await(b.getText({ css: '#document-list ul.documents li', wait: 'pageLoad' }))
+      expect(text).to.match(/doc1\.pdf/)
+
+      // re-select the document for the next test. First nix the search:
+      // otherwise the PDF viewer's find bar will obstruct our note
+      await b.click('#document-list-params .search a.nix')
+      await b.click({ tag: 'h3', contains: 'doc1.pdf', wait: true })
+      await b.sleep(1000) // select animation
+    })
+
     it('should delete annotations', async function() {
       const b = this.browser
 
       await b.switchToFrame('document-contents')
+
+      // Hacky -- we need to wait for the PDF to load because the previous test
+      // left us in an inconsistent state
+      await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
+        return document.querySelector('.noteLayer') !== null
+      });
 
       await b.click('#viewer .noteLayer section')
       await b.click({ css: '.editNoteTool button.editNoteDelete', wait: true })
