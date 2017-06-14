@@ -91,7 +91,7 @@ class DbLuceneReindexer(
 
   private def getDocumentsSource(documentSetId: Long): Source[immutable.Seq[Document], akka.NotUsed] = {
     val query = documentsCompiled(documentSetId)
-    val result = query.result.withStatementParameters(fetchSize=50)
+    val result = query.result.transactionally.withStatementParameters(fetchSize=50)
     val publisher: Publisher[Document] = database.slickDatabase.stream(result)
     Source.fromPublisher(publisher)
       .groupedWeightedWithin(nBufferBytes, writeInterval)(_.nBytesInMemoryEstimate)
