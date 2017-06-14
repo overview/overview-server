@@ -27,6 +27,12 @@ object selectionWarnings {
           "term" -> JsString(term),
           "nExpansions" -> JsNumber(nExpansions)
         ))
+        case SearchWarning.TooMuchFuzz(field, term, allowedFuzz) => JsObject(Seq(
+          "type" -> JsString("TooMuchFuzz"),
+          "field" -> JsString(fieldName(field)),
+          "term" -> JsString(term),
+          "allowedFuzz" -> JsNumber(allowedFuzz)
+        ))
       }
     }
   }

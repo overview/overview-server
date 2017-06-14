@@ -107,6 +107,13 @@ class DocumentSetLuceneIndexSpec extends Specification {
         search(FuzzyTermQuery(Field.All, "foo", Some(1))) must beEqualTo("1,2")
       }
 
+      "avoid Lucene maxEdits error with FuzzyTermQuery" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L), buildDocument(2L)))
+        val result = index.searchForIds(FuzzyTermQuery(Field.Text, "fox", Some(12)))
+        result.documentIds.toArray must beEqualTo(Array(1L, 2L))
+        result.warnings must beEqualTo(List(SearchWarning.TooMuchFuzz(Field.Text, "fox~12", 2)))
+      }
+
       "handle field query" in new BaseScope {
         index.addDocuments(Seq(buildDocument(1L), buildDocument(2L)))
         search(PhraseQuery(Field.Text, "moo1")) must beEqualTo("")

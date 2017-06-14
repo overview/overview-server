@@ -50,7 +50,7 @@ describe('Search', function() {
       await this.browser.click('#document-list-params .search button')
 
       const text = await this.browser.getText({ css: '#document-list ul.warnings li', wait: 'pageLoad' })
-      expect(text).to.eq('This list may be incomplete. “foo*” matched too many words from your document set; we limited our search to 1,000 words.')
+      expect(text).to.eq('This list may be incomplete. “text:foo*” matched too many words from your document set; we limited our search to 1,000 words.')
     })
   })
 })

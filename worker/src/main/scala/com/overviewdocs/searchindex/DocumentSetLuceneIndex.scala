@@ -27,6 +27,7 @@ import com.overviewdocs.models.{Document,DocumentIdSet}
   * methods at a time. They're synchronized, just in case.
   */
 class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1000, val maxNMetadataFields: Int = 100) {
+  private val MaxFuzz: Int = org.apache.lucene.util.automaton.LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE
   private val analyzer = new DocumentSetLuceneIndex.OverviewAnalyzer
   private val queryBuilder = new QueryBuilder(analyzer)
 
@@ -407,14 +408,20 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
   private def buildFuzzyQuery(field: FieldInSearchIndex, term: String, fuzz: Option[Int]) = {
     val luceneTerm = new Term(fieldToName(field), term)
-    val luceneQuery = fuzz match {
-      case None => new FuzzyQuery(luceneTerm)
-      case Some(fuzz) => new FuzzyQuery(luceneTerm, fuzz)
+    val (luceneQuery, warnings) = fuzz match {
+      case None => (new FuzzyQuery(luceneTerm), Nil)
+      case Some(fuzz) => {
+        if (fuzz > MaxFuzz) {
+          (new FuzzyQuery(luceneTerm, 2), List(SearchWarning.TooMuchFuzz(field, term + "~" + fuzz, MaxFuzz)))
+        } else {
+          (new FuzzyQuery(luceneTerm, fuzz), Nil)
+        }
+      }
     }
 
     luceneQuery.setRewriteMethod(MultiTermQuery.CONSTANT_SCORE_REWRITE)
 
-    (luceneQuery, Nil)
+    (luceneQuery, warnings)
   }
 
   private def phraseToTermStrings(field: FieldInSearchIndex, phrase: String): Seq[String] = {

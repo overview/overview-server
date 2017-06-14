@@ -29,4 +29,20 @@ object SearchWarning {
       */
     nExpansions: Int
   ) extends SearchWarning
+
+  /** The user ran a fuzzy query with too much fuzz, so we lowered the amount
+    * of fuzz before running the search.
+    *
+    * Lucene's fuzzy queries max out at fuzz=2, and that's hard-coded.
+    */
+  case class TooMuchFuzz(
+    /** The field the user searched */
+    searchField: FieldInSearchIndex,
+
+    /** The term the user searched for. For example: "a~43" */
+    searchTerm: String,
+
+    /** The amount of fuzz we used (which is the maximum amount of fuzz). */
+    allowedFuzz: Int
+  ) extends SearchWarning
 }

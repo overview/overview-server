@@ -129,6 +129,7 @@ define [
       i18nKey = "warning.#{warning.type}"
       switch warning.type
         when 'TooManyExpansions' then "<li>#{t(i18nKey, warning.field, warning.term, warning.nExpansions)}</li>"
+        when 'TooMuchFuzz' then "<li>#{t(i18nKey, warning.field, warning.term, warning.allowedFuzz)}</li>"
         else
           console.warn("Unhandled warning: #{JSON.stringify(warning)}")
           ""
