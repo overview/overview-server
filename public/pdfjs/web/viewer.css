@@ -1466,18 +1466,16 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-zoomIn.png);
 }
 
-.toolbarButton.addNote::before,
-.toolbarButton.nextNote::before,
-.toolbarButton.previousNote::before {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  background-size: 100%;
+.toolbarButton.addNote::before {
+  content: url(images/toolbarButton-addNote.png);
 }
 
-.toolbarButton.addNote::before {
-  background-image: url(images/toolbarButton-addNote@2x.png);
+.toolbarButton.nextNote::before {
+  content: url(images/toolbarButton-nextNote.png);
+}
+
+.toolbarButton.previousNote::before {
+  content: url(images/toolbarButton-previousNote.png);
 }
 
 @media (min-width: 780px) {
@@ -1497,14 +1495,6 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
     height: auto;
     padding-right: 22px;
   }
-}
-
-.toolbarButton.nextNote::before {
-  background-image: url(images/toolbarButton-nextNote@2x.png);
-}
-
-.toolbarButton.previousNote::before {
-  background-image: url(images/toolbarButton-previousNote@2x.png);
 }
 
 .toolbarButton.presentationMode::before,
@@ -2182,6 +2172,18 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .toolbarButton.zoomOut::before {
     content: url(images/toolbarButton-zoomOut@2x.png);
+  }
+
+  .toolbarButton.addNote::before {
+    content: url(images/toolbarButton-addNote@2x.png);
+  }
+
+  .toolbarButton.nextNote::before {
+    content: url(images/toolbarButton-nextNote@2x.png);
+  }
+
+  .toolbarButton.previousNote::before {
+    content: url(images/toolbarButton-previousNote@2x.png);
   }
 
   .toolbarButton.presentationMode::before,
