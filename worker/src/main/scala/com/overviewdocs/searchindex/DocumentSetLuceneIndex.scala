@@ -35,10 +35,9 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     .setRAMBufferSizeMB(48) // "sweet spot" in https://issues.apache.org/jira/browse/LUCENE-843
     .setCommitOnClose(true) // for when we're evicted from MruLuceneIndexCache
   private val indexWriter = new IndexWriter(directory, indexWriterConfig)
-  private var _directoryReader: Option[DirectoryReader] = None
-  private var _indexReader: Option[IndexReader] = None
+  private var _indexReader: Option[DirectoryReader] = None
   private var _indexSearcher: Option[IndexSearcher] = None
-  private def indexReader = _directoryReader.getOrElse(DirectoryReader.open(directory))
+  private def indexReader = _indexReader.getOrElse(DirectoryReader.open(directory))
   private def indexSearcher = _indexSearcher.getOrElse(new IndexSearcher(indexReader))
   private[searchindex] lazy val metadataFields: mutable.Map[String,LuceneField] = readMetadataFields
 
@@ -145,6 +144,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
   def close: Unit = synchronized {
     indexWriter.close
+    _indexReader.foreach(_.close)
   }
 
   def delete: Unit = synchronized {
@@ -260,7 +260,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   private def commit: Unit = {
     indexWriter.commit
 
-    _directoryReader match {
+    _indexReader match {
       case None => {}
       case Some(reader) => {
         Option(DirectoryReader.openIfChanged(reader)) match {
