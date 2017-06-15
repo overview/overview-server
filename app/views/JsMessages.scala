@@ -1,6 +1,5 @@
 package views
 
-import play.api.Play.current
 import play.api.libs.json.{JsObject,JsString}
 import play.api.i18n.Messages
 import scala.annotation.tailrec
