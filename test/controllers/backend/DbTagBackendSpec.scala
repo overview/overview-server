@@ -4,10 +4,10 @@ import com.overviewdocs.models.Tag
 import com.overviewdocs.models.tables.{DocumentTags,Tags}
 
 class DbTagBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbTagBackend {}
+    val backend = new DbTagBackend(injectedDatabase)
 
     def findTag(id: Long) = {
       blockingDatabase.option(Tags.filter(_.id === id))

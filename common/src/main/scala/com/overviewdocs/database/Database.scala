@@ -194,7 +194,6 @@ class Database(val slickDatabase: slick.jdbc.JdbcBackend.Database) {
   }
 }
 
-
 object Database {
   private lazy val database = new Database(DatabaseFactory.forConfig("db.default"))
   

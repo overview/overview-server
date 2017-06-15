@@ -6,8 +6,8 @@ import com.overviewdocs.models.Plugin
 import com.overviewdocs.models.tables.Plugins
 
 class DbPluginBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbPluginBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbPluginBackend(injectedDatabase)
 
     def findPlugin(id: UUID) = {
       import database.api._

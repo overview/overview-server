@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.ApiToken
 import com.overviewdocs.models.tables.ApiTokens
 
@@ -33,7 +34,7 @@ trait ApiTokenBackend {
   def destroy(token: String): Future[Unit]
 }
 
-class DbApiTokenBackend @Inject() extends ApiTokenBackend with DbBackend {
+class DbApiTokenBackend @Inject() (val database: Database) extends ApiTokenBackend with DbBackend {
   import database.api._
 
   lazy val byCreatedByAndDocumentSetIdCompiled = Compiled { (createdBy: Rep[String], documentSetId: Rep[Option[Long]]) =>

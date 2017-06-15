@@ -5,6 +5,7 @@ import javax.inject.Inject
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 
@@ -62,7 +63,9 @@ trait FileGroupBackend extends Backend {
   def destroy(id: Long): Future[Unit]
 }
 
-class DbFileGroupBackend @Inject() extends FileGroupBackend with DbBackend {
+class DbFileGroupBackend @Inject() (
+  val database: Database
+) extends FileGroupBackend with DbBackend {
   import database.api._
   import database.executionContext
 

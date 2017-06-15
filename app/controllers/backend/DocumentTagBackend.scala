@@ -4,6 +4,8 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
+
 @ImplementedBy(classOf[DbDocumentTagBackend])
 trait DocumentTagBackend extends Backend {
   /** Gives a list of Tag IDs for each Document.
@@ -15,7 +17,9 @@ trait DocumentTagBackend extends Backend {
   def indexMany(documentIds: Seq[Long]): Future[Map[Long,Seq[Long]]]
 }
 
-class DbDocumentTagBackend @Inject() extends DocumentTagBackend with DbBackend {
+class DbDocumentTagBackend @Inject() (
+  val database: Database
+) extends DocumentTagBackend with DbBackend {
   import database.api._
   import database.executionContext
 

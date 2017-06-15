@@ -3,8 +3,8 @@ package controllers.backend
 import models.InMemorySelection
 
 class DbDocumentNodeBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbDocumentNodeBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbDocumentNodeBackend(injectedDatabase)
   }
 
   "DbDocumentNodeBackend" should {

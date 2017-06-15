@@ -3,8 +3,8 @@ package controllers.backend
 import com.overviewdocs.models.File
 
 class DbFileBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbFileBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbFileBackend(injectedDatabase)
   }
 
   "#show" should {

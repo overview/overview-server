@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.Tag
 import com.overviewdocs.models.tables.Tags
 
@@ -32,7 +33,9 @@ trait TagBackend {
   def destroy(documentSetId: Long, id: Long): Future[Unit]
 }
 
-class DbTagBackend @Inject() extends TagBackend with DbBackend {
+class DbTagBackend @Inject() (
+  val database: Database
+) extends TagBackend with DbBackend {
   import database.api._
   import database.executionContext
 

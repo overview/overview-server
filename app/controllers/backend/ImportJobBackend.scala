@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.{CloneImportJob,CloneJob,CsvImport,CsvImportJob,DocumentSet,DocumentCloudImport,DocumentCloudImportJob,DocumentSetUser,FileGroup,FileGroupImportJob,ImportJob}
 import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentCloudImports,DocumentSetUsers,DocumentSets,FileGroups}
 
@@ -19,7 +20,9 @@ trait ImportJobBackend extends Backend {
   def indexByDocumentSet(documentSetId: Long): Future[Seq[ImportJob]]
 }
 
-class DbImportJobBackend @Inject() extends ImportJobBackend with DbBackend {
+class DbImportJobBackend @Inject() (
+  val database: Database
+) extends ImportJobBackend with DbBackend {
   import database.api._
   import database.executionContext
 

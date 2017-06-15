@@ -7,6 +7,7 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.{Document,DocumentDisplayMethod,DocumentHeader,PdfNoteCollection}
 import com.overviewdocs.models.tables.{DocumentInfos,DocumentInfosImpl,Documents,DocumentsImpl,DocumentTags,Tags}
 import com.overviewdocs.query.{Query=>SearchQuery}
@@ -63,6 +64,7 @@ trait DocumentBackend {
 }
 
 class DbDocumentBackend @Inject() (
+  val database: Database,
   val searchBackend: SearchBackend // TODO make writes go through worker, then NIX THIS! WHEE!
 ) extends DocumentBackend with DbBackend {
 

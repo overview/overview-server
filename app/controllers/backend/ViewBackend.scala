@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.View
 import com.overviewdocs.models.tables.Views
 
@@ -45,7 +46,9 @@ trait ViewBackend {
   def destroy(viewId: Long): Future[Unit]
 }
 
-class DbViewBackend @Inject() extends ViewBackend with DbBackend {
+class DbViewBackend @Inject() (
+  val database: Database
+) extends ViewBackend with DbBackend {
   import database.api._
 
   override def index(documentSetId: Long) = database.seq(byDocumentSetIdCompiled(documentSetId))

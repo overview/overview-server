@@ -122,6 +122,7 @@ object SingleUserSessionFactory extends SessionFactory {
 
 object SessionFactory extends SessionFactory {
   // TODO use dependency injection
-  override val sessionBackend = new DbSessionBackend()
-  override val userBackend = new DbUserBackend()
+  import com.overviewdocs.database.Database
+  override val sessionBackend = new DbSessionBackend(Database())
+  override val userBackend = new DbUserBackend(Database())
 }

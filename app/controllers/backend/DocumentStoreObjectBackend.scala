@@ -5,9 +5,10 @@ import javax.inject.Inject
 import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
 
-import models.Selection
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.DocumentStoreObject
 import com.overviewdocs.models.tables.{DocumentStoreObjects,StoreObjects}
+import models.Selection
 
 @ImplementedBy(classOf[DbDocumentStoreObjectBackend])
 trait DocumentStoreObjectBackend extends Backend {
@@ -64,7 +65,9 @@ trait DocumentStoreObjectBackend extends Backend {
   def destroyMany(storeId: Long, entries: Seq[(Long,Long)]): Future[Unit]
 }
 
-class DbDocumentStoreObjectBackend @Inject() extends DocumentStoreObjectBackend with DbBackend {
+class DbDocumentStoreObjectBackend @Inject() (
+  val database: Database
+) extends DocumentStoreObjectBackend with DbBackend {
   import database.api._
   import database.executionContext
 

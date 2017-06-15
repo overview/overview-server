@@ -6,10 +6,10 @@ import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,V
 import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
 class DbDocumentSetBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbDocumentSetBackend {}
+    val backend = new DbDocumentSetBackend(injectedDatabase)
 
     def findDocumentSet(id: Long): Option[DocumentSet] = {
       blockingDatabase.option(DocumentSets.filter(_.id === id))

@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.CloneJob
 import com.overviewdocs.models.tables.CloneJobs
 
@@ -24,7 +25,7 @@ trait CloneJobBackend extends Backend {
   def cancel(documentSetId: Long, id: Int): Future[Unit]
 }
 
-class DbCloneJobBackend @Inject() extends CloneJobBackend with DbBackend {
+class DbCloneJobBackend @Inject() (val database: Database) extends CloneJobBackend with DbBackend {
   import database.api._
   import database.executionContext
 

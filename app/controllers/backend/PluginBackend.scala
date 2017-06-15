@@ -5,6 +5,7 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.Plugin
 import com.overviewdocs.models.tables.Plugins
 
@@ -30,7 +31,7 @@ trait PluginBackend {
   def destroy(id: UUID): Future[Unit]
 }
 
-class DbPluginBackend @Inject() extends PluginBackend with DbBackend {
+class DbPluginBackend @Inject() (val database: Database) extends PluginBackend with DbBackend {
   import database.api._
   import database.executionContext
 

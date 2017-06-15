@@ -7,8 +7,8 @@ import com.overviewdocs.models.Store
 import com.overviewdocs.models.tables.{DocumentStoreObjects,StoreObjects,Stores}
 
 class DbStoreBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbStoreBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbStoreBackend(injectedDatabase)
 
     def findStore(apiToken: String) = {
       import database.api._

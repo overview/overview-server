@@ -4,10 +4,12 @@ import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 import slick.lifted.RunnableCompiled
 
+import com.overviewdocs.database.Database
 import models.pagination.{Page,PageInfo,PageRequest}
-import com.overviewdocs.database.HasDatabase
 
-trait DbBackend extends HasDatabase {
+trait DbBackend {
+  protected val database: Database
+
   import database.api._
 
   /** Returns a Page[T] based on an item query, uncompiled.

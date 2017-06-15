@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.database.exceptions.Conflict
 import com.overviewdocs.models.DocumentSetUser
 import com.overviewdocs.models.DocumentSetUser.Role
@@ -34,7 +35,9 @@ trait DocumentSetUserBackend {
   def destroy(documentSetId: Long, userEmail: String): Future[Unit]
 }
 
-class DbDocumentSetUserBackend @Inject() extends DocumentSetUserBackend with DbBackend {
+class DbDocumentSetUserBackend @Inject() (
+  val database: Database
+) extends DocumentSetUserBackend with DbBackend {
   import database.api._
   import database.executionContext
 

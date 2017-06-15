@@ -12,7 +12,7 @@ import models.{InMemorySelection,SelectionRequest,SelectionWarning}
 class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito {
   "DbDocumentSelectionBackend" should {
     "#createSelection" should {
-      trait CreateSelectionScope extends DbScope {
+      trait CreateSelectionScope extends DbBackendScope {
         val documentSet = factory.documentSet(1L)
         val doc1 = factory.document(documentSetId=1L, id=(1L << 32) | 0L, title="c", text="foo bar baz oneandtwo oneandthree")
         val doc2 = factory.document(documentSetId=1L, id=(1L << 32) | 1L, title="a", text="moo mar maz oneandtwo twoandthree")
@@ -53,7 +53,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
           WHERE id = ${documentSet.id}
         """)
 
-        val backend = new DbDocumentSelectionBackend(searchBackend)
+        val backend = new DbDocumentSelectionBackend(injectedDatabase, searchBackend)
         lazy val ret: InMemorySelection = await(backend.createSelection(request))
       }
 

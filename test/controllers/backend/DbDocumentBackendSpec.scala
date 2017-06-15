@@ -13,14 +13,14 @@ import com.overviewdocs.models.tables.Documents
 import com.overviewdocs.query.{Field,PhraseQuery,Query}
 
 class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbBackendScope {
     import database.api._
     def findDocument(id: Long): Option[Document] = blockingDatabase.option(Documents.filter(_.id === id))
 
     val searchBackend = smartMock[SearchBackend]
     searchBackend.refreshDocument(any, any) returns Future.successful(())
 
-    val backend = new DbDocumentBackend(searchBackend)
+    val backend = new DbDocumentBackend(injectedDatabase, searchBackend)
   }
 
   trait CommonIndexScope extends BaseScope {

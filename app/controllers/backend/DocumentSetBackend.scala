@@ -4,10 +4,11 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
-import models.pagination.{Page,PageRequest}
+import com.overviewdocs.database.Database
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Plugins,Views}
+import models.pagination.{Page,PageRequest}
 
 @ImplementedBy(classOf[DbDocumentSetBackend])
 trait DocumentSetBackend {
@@ -64,7 +65,9 @@ trait DocumentSetBackend {
   def countByOwnerEmail(userEmail: String): Future[Int]
 }
 
-class DbDocumentSetBackend @Inject() extends DocumentSetBackend with DbBackend {
+class DbDocumentSetBackend @Inject() (
+  val database: Database
+) extends DocumentSetBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -193,5 +196,3 @@ class DbDocumentSetBackend @Inject() extends DocumentSetBackend with DbBackend {
       .length
   }
 }
-
-object DocumentSetBackend extends DbDocumentSetBackend

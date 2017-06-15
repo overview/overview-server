@@ -4,8 +4,8 @@ import com.overviewdocs.models.DocumentTag
 import com.overviewdocs.models.tables.DocumentTags
 
 class DbDocumentTagBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbDocumentTagBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbDocumentTagBackend(injectedDatabase)
   }
 
   "DbDocumentTagBackend" should {

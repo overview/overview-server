@@ -12,9 +12,9 @@ import com.overviewdocs.blobstorage.InjectedBlobStorage
 import models.ArchiveEntry
 
 class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbBackendScope {
     val mockBlobStorage = smartMock[InjectedBlobStorage]
-    val backend = new DbArchiveEntryBackend(mockBlobStorage)
+    val backend = new DbArchiveEntryBackend(injectedDatabase, mockBlobStorage)
   }
 
   "#showMany" should {

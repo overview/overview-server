@@ -5,8 +5,8 @@ import java.time.Instant
 import com.overviewdocs.models.{CloneImportJob,CsvImportJob,DocumentSet,DocumentCloudImportJob,DocumentSetUser,FileGroupImportJob,ImportJob}
 
 class DbImportJobBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbImportJobBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbImportJobBackend(injectedDatabase)
   }
 
   "indexByUser" should {

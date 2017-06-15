@@ -15,6 +15,7 @@ import slick.jdbc.JdbcBackend
 import slick.util.DumpInfo
 
 import com.overviewdocs.blobstorage.InjectedBlobStorage
+import com.overviewdocs.database.Database
 import models.ArchiveEntry
 
 @ImplementedBy(classOf[DbArchiveEntryBackend])
@@ -33,7 +34,10 @@ trait ArchiveEntryBackend extends Backend {
   def streamBytes(documentSetId: Long, documentId: Long): Source[ByteString, akka.NotUsed]
 }
 
-class DbArchiveEntryBackend @Inject() (blobStorage: InjectedBlobStorage) extends ArchiveEntryBackend with DbBackend {
+class DbArchiveEntryBackend @Inject() (
+  val database: Database,
+  val blobStorage: InjectedBlobStorage
+) extends ArchiveEntryBackend with DbBackend {
   private class ShowManyAction(documentSetId: Long, documentIds: Seq[Long])
   extends SynchronousDatabaseAction[Seq[ArchiveEntry], NoStream, JdbcBackend, Effect.Read]
   {

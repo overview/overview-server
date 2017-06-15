@@ -7,6 +7,7 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import models.{Session,User}
 import models.tables.{Sessions,Users}
 
@@ -17,10 +18,10 @@ trait SessionBackend extends Backend {
     * This Backend will never return a Session older than this; it will return
     * None instead.
     */
-  val MaxSessionAgeInMs: Long = 30L * 86400 * 1000 // 30 days
+  var maxSessionAgeInMs: Long = 30L * 86400 * 1000 // 30 days
 
   /** Minimum createdAt for a non-expired session (at call time). */
-  protected def minCreatedAt: Timestamp = new Timestamp(System.currentTimeMillis - MaxSessionAgeInMs)
+  protected def minCreatedAt: Timestamp = new Timestamp(System.currentTimeMillis - maxSessionAgeInMs)
 
   /** Finds a Session.
     *
@@ -53,7 +54,9 @@ trait SessionBackend extends Backend {
   def destroyExpiredSessionsForUserId(userId: Long): Future[Unit]
 }
 
-class DbSessionBackend @Inject() extends SessionBackend with DbBackend {
+class DbSessionBackend @Inject() (
+  val database: Database
+) extends SessionBackend with DbBackend {
   import database.api._
 
   private lazy val byIdCompiled = Compiled { (id: Rep[UUID]) => Sessions.filter(_.id === id) }

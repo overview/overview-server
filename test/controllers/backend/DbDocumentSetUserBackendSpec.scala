@@ -5,8 +5,8 @@ import com.overviewdocs.models.DocumentSetUser.Role
 import com.overviewdocs.models.tables.DocumentSetUsers
 
 class DbDocumentSetUserBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbDocumentSetUserBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbDocumentSetUserBackend(injectedDatabase)
 
     def find(documentSetId: Long, userEmail: String): Option[DocumentSetUser] = {
       import database.api._

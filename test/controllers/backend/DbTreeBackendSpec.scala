@@ -4,10 +4,10 @@ import com.overviewdocs.models.{Node,NodeDocument,Tree}
 import com.overviewdocs.models.tables.{Nodes,NodeDocuments,Trees}
 
 class DbTreeBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbTreeBackend {}
+    val backend = new DbTreeBackend(injectedDatabase)
 
     def findTree(id: Long) = {
       blockingDatabase.option(Trees.filter(_.id === id))

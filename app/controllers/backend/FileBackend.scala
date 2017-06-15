@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.File
 import com.overviewdocs.models.tables.Files
 
@@ -13,7 +14,9 @@ trait FileBackend {
   def show(id: Long): Future[Option[File]]
 }
 
-class DbFileBackend @Inject() extends FileBackend with DbBackend {
+class DbFileBackend @Inject() (
+  val database: Database
+) extends FileBackend with DbBackend {
   import database.api._
 
   override def show(id: Long) = database.option(byId(id))

@@ -6,10 +6,11 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
+import com.overviewdocs.models.UserRole
 import models.User
 import models.tables.Users
 import models.pagination.{Page,PageRequest}
-import com.overviewdocs.models.UserRole
 
 @ImplementedBy(classOf[DbUserBackend])
 trait UserBackend extends Backend {
@@ -38,7 +39,9 @@ trait UserBackend extends Backend {
   def destroy(id: Long): Future[Unit]
 }
 
-class DbUserBackend @Inject() extends UserBackend with DbBackend {
+class DbUserBackend @Inject() (
+  val database: Database
+) extends UserBackend with DbBackend {
   import DbUserBackend.q
   import database.api._
 

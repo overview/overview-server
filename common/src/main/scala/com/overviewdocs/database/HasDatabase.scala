@@ -1,6 +1,6 @@
 package com.overviewdocs.database
 
-/** Dependency injection: provides a Database.
+/** Static dependency injection: provides a Database.
   *
   * Users can use dependency injection like this:
   *
@@ -13,6 +13,8 @@ package com.overviewdocs.database
   *   def things: Future[Seq[Thing]] = database.seq(Things)
   * }
   * ```
+  *
+  * (If you're using dynamic dependency injection, you don't need this trait.)
   */
 trait HasDatabase {
   /** The database. */

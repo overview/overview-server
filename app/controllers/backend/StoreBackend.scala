@@ -6,6 +6,7 @@ import play.api.libs.json.JsObject
 import scala.concurrent.Future
 import scala.util.{Failure,Success}
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.database.exceptions
 import com.overviewdocs.models.tables.Stores
 import com.overviewdocs.models.Store
@@ -27,7 +28,7 @@ trait StoreBackend {
   def destroy(apiToken: String): Future[Unit]
 }
 
-class DbStoreBackend @Inject() extends StoreBackend with DbBackend {
+class DbStoreBackend @Inject() (val database: Database) extends StoreBackend with DbBackend {
   import database.api._
   import database.executionContext
 

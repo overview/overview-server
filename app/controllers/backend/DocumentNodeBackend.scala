@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import models.Selection
 
 @ImplementedBy(classOf[DbDocumentNodeBackend])
@@ -29,7 +30,9 @@ trait DocumentNodeBackend extends Backend {
   def countByNode(selection: Selection, nodeIds: Seq[Long]): Future[Map[Long,Int]]
 }
 
-class DbDocumentNodeBackend @Inject() extends DocumentNodeBackend with DbBackend {
+class DbDocumentNodeBackend @Inject() (
+  val database: Database
+) extends DocumentNodeBackend with DbBackend {
   import database.api._
   import database.executionContext
 

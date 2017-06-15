@@ -11,10 +11,10 @@ import com.overviewdocs.database.exceptions
 import com.overviewdocs.models.UserRole
 
 class DbUserBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbUserBackend {}
+    val backend = new DbUserBackend(injectedDatabase)
 
     def insertUser(id: Long, email: String, passwordHash: String = "", role: UserRole.Value = UserRole.NormalUser): User = {
       insertUser(User(id=id, email=email, passwordHash=passwordHash, role=role))

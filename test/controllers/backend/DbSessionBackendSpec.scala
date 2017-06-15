@@ -8,13 +8,12 @@ import models.{Session=>OSession,User} // beware database.Slick.simple.Session
 import models.tables.{Sessions,Users}
 
 class DbSessionBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
+  trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbSessionBackend {
-      override val MaxSessionAgeInMs = 1000L
-      override protected def minCreatedAt = new Timestamp(1000000000000L)
-    }
+    val backend = new DbSessionBackend(injectedDatabase)
+    backend.maxSessionAgeInMs = 1000L
+      //override protected def minCreatedAt = new Timestamp(1000000000000L)
 
     def insertUser(id: Long, email: String): User = {
       val ret = User(id=id, email=email)
@@ -40,9 +39,9 @@ class DbSessionBackendSpec extends DbBackendSpecification {
 
   "#showWithUser" should {
     trait ShowWithUserScope extends BaseScope {
-      val updatedAt1 = new java.util.Date(1000000000000L)
+      val updatedAt1 = new java.util.Date(System.currentTimeMillis - 10)
       val user1 = insertUser(123L, "user@example.org")
-      val session1 = insertSession(user1.id, "192.168.0.1", updatedAt1)
+      lazy val session1 = insertSession(user1.id, "192.168.0.1", updatedAt1)
     }
 
     "find the session with the user" in new ShowWithUserScope {
@@ -58,8 +57,8 @@ class DbSessionBackendSpec extends DbBackendSpecification {
     }
 
     "not find an expired session" in new ShowWithUserScope {
-      val session2 = insertSession(user1.id, "192.168.0.1", new Date(999999999999L))
-      await(backend.showWithUser(session2.id)) must beNone
+      override val updatedAt1 = new java.util.Date(System.currentTimeMillis - 100000)
+      await(backend.showWithUser(session1.id)) must beNone
     }
   }
 
@@ -100,7 +99,7 @@ class DbSessionBackendSpec extends DbBackendSpecification {
 
   "#destroy" should {
     trait DestroyScope extends BaseScope {
-      val updatedAt1 = new java.util.Date(1000000000000L)
+      val updatedAt1 = new java.util.Date(System.currentTimeMillis - 10)
       val user1 = insertUser(123L, "user@example.org")
       val session1 = insertSession(user1.id, "192.168.0.1", updatedAt1)
     }
@@ -120,8 +119,8 @@ class DbSessionBackendSpec extends DbBackendSpecification {
   "#destroyExpiredSessionsForUserId" should {
     trait DestroyExpiredScope extends BaseScope {
       val nDays = 50
-      val recentDate = new java.util.Date(1000000000001L)
-      val oldDate = new java.util.Date(999999999999L)
+      val recentDate = new java.util.Date(System.currentTimeMillis - 10)
+      val oldDate = new java.util.Date(System.currentTimeMillis - 2000)
       val user1 = insertUser(123L, "user@example.org")
 
       def go = await(backend.destroyExpiredSessionsForUserId(user1.id))

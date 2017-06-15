@@ -6,8 +6,8 @@ import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.FileGroups
 
 class DbFileGroupBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbFileGroupBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbFileGroupBackend(injectedDatabase)
 
     def findFileGroups(userEmail: String, apiToken: Option[String], completed: Boolean): Seq[FileGroup] = {
       import database.api._

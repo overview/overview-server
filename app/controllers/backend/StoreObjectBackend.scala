@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.StoreObject
 import com.overviewdocs.models.tables.StoreObjects
 
@@ -63,7 +64,9 @@ trait StoreObjectBackend {
   def destroyMany(storeId: Long, ids: Seq[Long]): Future[Unit]
 }
 
-class DbStoreObjectBackend @Inject() extends StoreObjectBackend with DbBackend {
+class DbStoreObjectBackend @Inject() (
+  val database: Database
+) extends StoreObjectBackend with DbBackend {
   import database.api._
 
   private lazy val byIdCompiled = Compiled { (id: Rep[Long]) =>

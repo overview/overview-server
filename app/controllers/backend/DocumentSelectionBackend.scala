@@ -7,6 +7,7 @@ import scala.collection.{immutable,mutable}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.DocumentIdSet
 import com.overviewdocs.query.{Query=>SearchQuery} // conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
@@ -27,6 +28,7 @@ trait DocumentSelectionBackend {
 }
 
 class DbDocumentSelectionBackend @Inject() (
+  val database: Database,
   val searchBackend: SearchBackend
 ) extends DocumentSelectionBackend with DbBackend {
   import database.api._

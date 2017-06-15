@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import scala.concurrent.Future
 
+import com.overviewdocs.database.Database
 import com.overviewdocs.models.tables.{Documents,Files}
 
 @ImplementedBy(classOf[DbDocumentSetFileBackend])
@@ -12,7 +13,9 @@ trait DocumentSetFileBackend extends Backend {
   def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]): Future[Boolean]
 }
 
-class DbDocumentSetFileBackend @Inject() extends DocumentSetFileBackend with DbBackend {
+class DbDocumentSetFileBackend @Inject() (
+  val database: Database
+) extends DocumentSetFileBackend with DbBackend {
   import database.api._
   import database.executionContext
 

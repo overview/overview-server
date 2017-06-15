@@ -3,8 +3,8 @@ package controllers.backend
 import com.overviewdocs.models.Page
 
 class DbPageBackendSpec extends DbBackendSpecification {
-  trait BaseScope extends DbScope {
-    val backend = new DbPageBackend {}
+  trait BaseScope extends DbBackendScope {
+    val backend = new DbPageBackend(injectedDatabase)
   }
 
   "#show" should {
