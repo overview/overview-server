@@ -53,7 +53,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
           WHERE id = ${documentSet.id}
         """)
 
-        val backend = new DbDocumentSelectionBackend(injectedDatabase, searchBackend)
+        val backend = new DbDocumentSelectionBackend(database, searchBackend)
         lazy val ret: InMemorySelection = await(backend.createSelection(request))
       }
 

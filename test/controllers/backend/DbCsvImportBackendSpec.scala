@@ -5,7 +5,7 @@ import com.overviewdocs.models.tables.CsvImports
 
 class DbCsvImportBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
-    val backend = new DbCsvImportBackend(injectedDatabase)
+    val backend = new DbCsvImportBackend(database)
   }
 
   "#create" should {

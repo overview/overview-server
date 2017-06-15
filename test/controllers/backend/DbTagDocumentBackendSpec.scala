@@ -5,7 +5,7 @@ import com.overviewdocs.models.tables.DocumentTags
 
 class DbTagDocumentBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
-    val backend = new DbTagDocumentBackend(injectedDatabase)
+    val backend = new DbTagDocumentBackend(database)
 
     def findDocumentTag(documentId: Long, tagId: Long) = {
       import database.api._

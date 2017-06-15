@@ -9,7 +9,7 @@ class DbStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbStoreObjectBackend(injectedDatabase)
+    val backend = new DbStoreObjectBackend(database)
 
     def findStoreObject(id: Long) = {
       blockingDatabase.option(StoreObjects.filter(_.id === id))

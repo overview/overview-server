@@ -6,7 +6,7 @@ import com.overviewdocs.models.{CloneImportJob,CsvImportJob,DocumentSet,Document
 
 class DbImportJobBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
-    val backend = new DbImportJobBackend(injectedDatabase)
+    val backend = new DbImportJobBackend(database)
   }
 
   "indexByUser" should {

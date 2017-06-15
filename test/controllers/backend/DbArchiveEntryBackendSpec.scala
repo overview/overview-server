@@ -8,13 +8,13 @@ import org.specs2.mock.Mockito
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import scala.concurrent.Future
 
-import com.overviewdocs.blobstorage.InjectedBlobStorage
+import com.overviewdocs.blobstorage.BlobStorage
 import models.ArchiveEntry
 
 class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
   trait BaseScope extends DbBackendScope {
-    val mockBlobStorage = smartMock[InjectedBlobStorage]
-    val backend = new DbArchiveEntryBackend(injectedDatabase, mockBlobStorage)
+    val mockBlobStorage = smartMock[BlobStorage]
+    val backend = new DbArchiveEntryBackend(database, mockBlobStorage)
   }
 
   "#showMany" should {

@@ -20,7 +20,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     val searchBackend = smartMock[SearchBackend]
     searchBackend.refreshDocument(any, any) returns Future.successful(())
 
-    val backend = new DbDocumentBackend(injectedDatabase, searchBackend)
+    val backend = new DbDocumentBackend(database, searchBackend)
   }
 
   trait CommonIndexScope extends BaseScope {

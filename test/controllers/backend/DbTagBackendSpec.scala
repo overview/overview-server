@@ -7,7 +7,7 @@ class DbTagBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbTagBackend(injectedDatabase)
+    val backend = new DbTagBackend(database)
 
     def findTag(id: Long) = {
       blockingDatabase.option(Tags.filter(_.id === id))

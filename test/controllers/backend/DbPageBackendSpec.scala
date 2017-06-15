@@ -4,7 +4,7 @@ import com.overviewdocs.models.Page
 
 class DbPageBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
-    val backend = new DbPageBackend(injectedDatabase)
+    val backend = new DbPageBackend(database)
   }
 
   "#show" should {

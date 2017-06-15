@@ -5,7 +5,7 @@ import com.overviewdocs.models.tables.Views
 
 class DbViewBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
-    val backend = new DbViewBackend(injectedDatabase)
+    val backend = new DbViewBackend(database)
 
     def findView(id: Long) = {
       import database.api._

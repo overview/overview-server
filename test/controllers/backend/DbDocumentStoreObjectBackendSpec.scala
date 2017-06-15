@@ -9,7 +9,7 @@ import com.overviewdocs.models.tables.DocumentStoreObjects
 
 class DbDocumentStoreObjectBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
-    val backend = new DbDocumentStoreObjectBackend(injectedDatabase)
+    val backend = new DbDocumentStoreObjectBackend(database)
 
     def findDocumentStoreObject(documentId: Long, storeObjectId: Long) = {
       import database.api._

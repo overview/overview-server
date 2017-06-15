@@ -9,7 +9,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbDocumentSetBackend(injectedDatabase)
+    val backend = new DbDocumentSetBackend(database)
 
     def findDocumentSet(id: Long): Option[DocumentSet] = {
       blockingDatabase.option(DocumentSets.filter(_.id === id))

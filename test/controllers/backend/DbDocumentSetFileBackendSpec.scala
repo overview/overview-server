@@ -2,7 +2,7 @@ package controllers.backend
 
 class DbDocumentSetFileBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
-    val backend = new DbDocumentSetFileBackend(injectedDatabase)
+    val backend = new DbDocumentSetFileBackend(database)
     def hex2sha(hex: String): Array[Byte] = {
       hex
         .sliding(2, 2)

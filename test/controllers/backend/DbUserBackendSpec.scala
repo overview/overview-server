@@ -14,7 +14,7 @@ class DbUserBackendSpec extends DbBackendSpecification {
   trait BaseScope extends DbBackendScope {
     import database.api._
 
-    val backend = new DbUserBackend(injectedDatabase)
+    val backend = new DbUserBackend(database)
 
     def insertUser(id: Long, email: String, passwordHash: String = "", role: UserRole.Value = UserRole.NormalUser): User = {
       insertUser(User(id=id, email=email, passwordHash=passwordHash, role=role))
