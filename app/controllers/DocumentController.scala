@@ -7,6 +7,7 @@ import java.io.InputStream
 import java.io.{File => JFile} 
 import javax.inject.Inject
 import play.api.http.HttpEntity
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{JsObject,JsString,Json,Reads,Writes}
@@ -22,11 +23,12 @@ import com.overviewdocs.blobstorage.InjectedBlobStorage
 import com.overviewdocs.models.{Document,File,Page,PdfNote,PdfNoteCollection}
 
 class DocumentController @Inject() (
-  val documentBackend: DocumentBackend,
-  val blobStorage: InjectedBlobStorage,
-  val fileBackend: FileBackend,
-  val pageBackend: PageBackend
-) extends Controller {
+  documentBackend: DocumentBackend,
+  blobStorage: InjectedBlobStorage,
+  fileBackend: FileBackend,
+  pageBackend: PageBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
 
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {

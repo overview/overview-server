@@ -1,7 +1,7 @@
 package controllers
 
 import javax.inject.Inject
-import play.api.i18n.Messages
+import play.api.i18n.{MessagesApi,Messages}
 import play.api.libs.json.{JsArray,JsNumber,JsValue}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -13,9 +13,10 @@ import com.overviewdocs.query.QueryParser
 import com.overviewdocs.searchindex.{Highlight,Utf16Highlight}
 
 class HighlightController @Inject() (
-  val documentBackend: DocumentBackend,
-  val highlightBackend: HighlightBackend
-) extends Controller {
+  documentBackend: DocumentBackend,
+  highlightBackend: HighlightBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
 
   /** Lists highlights: .e.g, `[[2,4],[6,8]]` as UTF-16 offsets
     *

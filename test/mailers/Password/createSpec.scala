@@ -1,15 +1,13 @@
 package mailers.Password
 
-import org.specs2.mock.Mockito
-
+import controllers.util.NullMessagesApi
 import models.User
 
-class createSpec extends mailers.MailerSpecification with Mockito {
+class createSpec extends mailers.MailerSpecification {
   trait OurContext extends MailerScope {
-    trait UserType extends models.OverviewUser with models.ResetPasswordRequest
     val user = User(email="email@example.org", resetPasswordToken=Some("0123456789abcdef"))
 
-    override lazy val mailer = create(user)
+    override lazy val mailer = create(user, "https://reset.me")(NullMessagesApi.messages)
   }
 
   "create()" should {
@@ -18,7 +16,7 @@ class createSpec extends mailers.MailerSpecification with Mockito {
     }
 
     "include the reset-password URL" in new OurContext {
-      mailer.text.must(contain("0123456789abcdef"))
+      mailer.text.must(contain("https://reset.me"))
     }
   }
 }

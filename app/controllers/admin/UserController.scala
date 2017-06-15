@@ -1,5 +1,7 @@
 package controllers.admin
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
@@ -13,8 +15,10 @@ import models.tables.Users
 import models.pagination.PageRequest
 import com.overviewdocs.database.exceptions.Conflict
 
-trait UserController extends Controller {
-  protected val backend: UserBackend
+class UserController @Inject() (
+  backend: UserBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
 
   private[admin] val PageSize = 50
   private val m = views.Magic.scopedMessages("controllers.admin.UserController")
@@ -92,8 +96,4 @@ trait UserController extends Controller {
       })
     }
   }
-}
-
-object UserController extends UserController {
-  override protected val backend = UserBackend
 }

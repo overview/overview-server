@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
 import scala.concurrent.Future
@@ -12,11 +14,12 @@ import controllers.backend.SessionBackend
 import models.{IntercomConfiguration,MailChimp,User}
 import models.tables.Users
 
-object ConfirmationController extends Controller with HasBlockingDatabase {
+class ConfirmationController @Inject() (
+  sessionBackend: SessionBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) with HasBlockingDatabase {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
   private val logger = Logger.forClass(getClass)
-
-  private val sessionBackend = SessionBackend
 
   /** Prompts for a confirmation token.
     */

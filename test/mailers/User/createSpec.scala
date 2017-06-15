@@ -1,10 +1,15 @@
 package mailers.User
 
+import controllers.util.NullMessagesApi
 import models.User
 
 class createSpec extends mailers.MailerSpecification {
   trait OurContext extends MailerScope {
-    override lazy val mailer = create(User(email="user@example.org", confirmationToken=Some("0123456789abcdef")))
+    override lazy val mailer = create(
+      User(email="user@example.org", confirmationToken=Some("0123456789abcdef")),
+      "https://confirm.me",
+      "https://contact.us"
+    )(NullMessagesApi.messages)
   }
 
   "create()" should {
@@ -13,7 +18,7 @@ class createSpec extends mailers.MailerSpecification {
     }
 
     "include the confirmation URL" in new OurContext {
-      mailer.text must contain("0123456789abcdef")
+      mailer.text must contain("https://confirm.me")
     }
   }
 }

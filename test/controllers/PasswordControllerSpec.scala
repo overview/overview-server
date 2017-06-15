@@ -25,11 +25,12 @@ class PasswordControllerSpec extends ControllerSpecification {
     mockStorage.resetPassword(userWithToken, "Ersh3Phowb9") returns Future.successful(())
     mockSessionBackend.create(any[Long], any[String]) returns Future.successful(Session(123L, "127.0.0.1"))
 
-    val controller = new PasswordController with TestController {
-      override val sessionBackend = mockSessionBackend
-      override val storage = mockStorage
-      override val mail = mockMail
-    }
+    val controller = new PasswordController(
+      mockSessionBackend,
+      mockStorage,
+      mockMail,
+      testMessagesApi
+    )
   }
 
   "PasswordController" should {
@@ -92,7 +93,7 @@ class PasswordControllerSpec extends ControllerSpecification {
         }
 
         "email the non-user" in new CreateScopeUserNotFound {
-          there was one(mockMail).sendCreateErrorUserDoesNotExist(any[String])(any[RequestHeader])
+          there was one(mockMail).sendCreateErrorUserDoesNotExist(any, any)(any)
         }
 
         "redirect" in new CreateScopeUserNotFound {
@@ -129,7 +130,7 @@ class PasswordControllerSpec extends ControllerSpecification {
         }
 
         "email the user" in new CreateScopeUserFound {
-          there was one(mockMail).sendCreated(any)(any)
+          there was one(mockMail).sendCreated(any, any)(any)
         }
       }
     }

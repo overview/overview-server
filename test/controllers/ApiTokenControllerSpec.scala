@@ -13,9 +13,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val mockBackend = smartMock[ApiTokenBackend]
 
-    val controller = new ApiTokenController with TestController {
-      override val backend = mockBackend
-    }
+    val controller = new ApiTokenController(mockBackend, testMessagesApi)
   }
 
   "index" should {

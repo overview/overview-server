@@ -6,10 +6,9 @@ import play.api.mvc.RequestHeader
 import mailers.Mailer
 import models.User
 
-case class createErrorUserAlreadyExists(val user: User)(implicit val messages: Messages, val request: RequestHeader) extends Mailer {
+case class createErrorUserAlreadyExists(val user: User, loginUrl: String)(implicit val messages: Messages) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.User.createErrorUserAlreadyExists")
 
-  private val url = controllers.routes.SessionController._new().absoluteURL()
   private val intro = m("intro")
   private val case1 = m("case1")
   private val case2 = m("case2")
@@ -18,7 +17,7 @@ case class createErrorUserAlreadyExists(val user: User)(implicit val messages: M
 
   override val recipients = Seq(user.email)
   override val subject = m("subject")
-  override val text = intro + "\n\n" + case1 + "\n\n" + case2 + "\n\n" + url + "\n\n" + signoff + "\n" + signature
+  override val text = intro + "\n\n" + case1 + "\n\n" + case2 + "\n\n" + loginUrl + "\n\n" + signoff + "\n" + signature
   override val html =
     <html lang={messages.lang.code}>
       <head>
@@ -28,7 +27,7 @@ case class createErrorUserAlreadyExists(val user: User)(implicit val messages: M
         <p>{intro}</p>
         <p>{case1}</p>
         <p>{case2}</p>
-        <p><a href={url}>{url}</a></p>
+        <p><a href={loginUrl}>{loginUrl}</a></p>
         <p>{signoff}<br/>{signature}</p>
       </body>
     </html>

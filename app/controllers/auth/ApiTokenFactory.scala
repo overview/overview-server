@@ -1,6 +1,7 @@
 package controllers.auth
 
 import java.nio.charset.Charset
+import javax.inject.Inject
 import javax.xml.bind.DatatypeConverter
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader,Result,Results}
@@ -17,9 +18,7 @@ import com.overviewdocs.models.ApiToken
   * 1. Fetch the ApiToken from the database (not there? authentication failed)
   * 2. Check if the user is authorized for the task at hand (no? authorization failed)
   */
-trait ApiTokenFactory {
-  protected val backend: ApiTokenBackend
-
+class ApiTokenFactory @Inject() (backend: ApiTokenBackend) {
   private def unauthenticated: Result = {
     Results.Unauthorized(views.json.api.auth.unauthenticated())
   }
@@ -78,8 +77,4 @@ trait ApiTokenFactory {
         }
       }
   }
-}
-
-object ApiTokenFactory extends ApiTokenFactory {
-  override protected val backend = ApiTokenBackend
 }

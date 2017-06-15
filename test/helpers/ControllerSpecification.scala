@@ -3,17 +3,16 @@ package controllers
 import akka.util.Timeout
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
+import play.api.{Configuration,Environment}
+import play.api.i18n.MessagesApi
 import play.api.libs.json.JsValue
 import play.api.mvc.{AnyContent, AnyContentAsFormUrlEncoded, AnyContentAsJson, Headers, Request}
 import play.api.test.{FakeHeaders, FakeRequest}
 import scala.concurrent.ExecutionContext
 
 import controllers.auth.{AuthorizedRequest, OptionallyAuthorizedRequest}
+import controllers.util.NullMessagesApi
 import models.{Session, User}
-
-trait TestController { self: Controller =>
-  override def messagesApi = new test.helpers.MockMessagesApi()
-}
 
 /** A test environment for controllers.
   */
@@ -105,4 +104,7 @@ trait ControllerSpecification extends test.helpers.InAppSpecification with Mocki
   implicit val timeout: Timeout = Timeout(999999, scala.concurrent.duration.MILLISECONDS)
 
   val h = play.api.test.Helpers // rrgh, this should be a trait
+
+  // param in many controllers' ctors
+  def testMessagesApi: MessagesApi = NullMessagesApi.messagesApi
 }

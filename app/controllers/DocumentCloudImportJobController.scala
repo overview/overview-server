@@ -1,5 +1,8 @@
 package controllers
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
@@ -13,11 +16,12 @@ import controllers.backend.DocumentSetBackend
 import controllers.forms.DocumentCloudImportJobForm
 import controllers.util.JobQueueSender
 
-trait DocumentCloudImportJobController extends Controller {
-  protected val documentSetBackend: DocumentSetBackend
-  protected val storage: DocumentCloudImportJobController.Storage
-  protected val jobQueueSender: JobQueueSender
-
+class DocumentCloudImportJobController @Inject() (
+  documentSetBackend: DocumentSetBackend,
+  storage: DocumentCloudImportJobController.Storage,
+  jobQueueSender: JobQueueSender,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   def _new(query: String) = AuthorizedAction(anyUser) { implicit request =>
     Ok(views.html.DocumentCloudImportJob._new(request.user, query))
   }
@@ -54,16 +58,14 @@ trait DocumentCloudImportJobController extends Controller {
   }
 }
 
-object DocumentCloudImportJobController extends DocumentCloudImportJobController {
-  override protected val documentSetBackend = DocumentSetBackend
-  override protected val jobQueueSender = JobQueueSender
-
+object DocumentCloudImportJobController {
+  @ImplementedBy(classOf[DocumentCloudImportJobController.DatabaseStorage])
   trait Storage {
     def insertImport(attributes: DocumentCloudImport.CreateAttributes): Future[DocumentCloudImport]
     def cancelImport(documentSetId: Long, dciId: Int): Future[Unit]
   }
 
-  object DatabaseStorage extends Storage with HasDatabase {
+  class DatabaseStorage @Inject() extends Storage with HasDatabase {
     import database.api._
 
     lazy val inserter = DocumentCloudImports.map(_.createAttributes).returning(DocumentCloudImports)
@@ -82,6 +84,4 @@ object DocumentCloudImportJobController extends DocumentCloudImportJobController
       database.runUnit(canceller(documentSetId, dciId).update(true))
     }
   }
-
-  override protected val storage = DatabaseStorage
 }

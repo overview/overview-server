@@ -8,7 +8,7 @@ import scala.util.Success
 import scala.util.control.Exception.catching
 import scala.concurrent.Future
 
-import controllers.backend.{SessionBackend,UserBackend}
+import controllers.backend.{DbSessionBackend,DbUserBackend,SessionBackend,UserBackend}
 import models.{Session,User}
 import com.overviewdocs.models.UserRole
 
@@ -110,8 +110,8 @@ trait SessionFactory {
 }
 
 object SingleUserSessionFactory extends SessionFactory {
-  override val sessionBackend = SessionBackend // never used
-  override val userBackend = UserBackend // never used
+  override val sessionBackend = null // never used
+  override val userBackend = null // never used
 
   override def loadAuthorizedSession(request: RequestHeader, authority: Authority) = {
     val session = Session(1L, request.remoteAddress)
@@ -121,6 +121,7 @@ object SingleUserSessionFactory extends SessionFactory {
 }
 
 object SessionFactory extends SessionFactory {
-  override val sessionBackend = SessionBackend
-  override val userBackend = UserBackend
+  // TODO use dependency injection
+  override val sessionBackend = new DbSessionBackend()
+  override val userBackend = new DbUserBackend()
 }

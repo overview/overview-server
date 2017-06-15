@@ -23,7 +23,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
       val wantJsonResponse = false
       val mockFileGroupBackend = smartMock[FileGroupBackend]
       val mockUploadBackend = smartMock[GroupedFileUploadBackend]
-      val mockUploadIterateeFactory = mock[(GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]]
+      val mockUploadIterateeFactory = mock[MassUploadControllerMethods.UploadSinkFactory]
 
       lazy val action = MassUploadControllerMethods.Create(
         "user@example.org",
@@ -46,7 +46,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
 
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
       mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
-      mockUploadIterateeFactory(any, any) returns Sink.fold(())((_, _) => ())
+      mockUploadIterateeFactory.build(any, any) returns Sink.fold(())((_, _) => ())
     }
 
     "return BadRequest if missing Content-Length and Content-Range" in new CreateScope {
@@ -135,13 +135,13 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
     "create a GroupedUploadIteratee using Content-Length" in new CreateScope {
       override val headers = Seq("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=foobar.txt")
       h.status(result)
-      there was one(mockUploadIterateeFactory).apply(groupedFileUpload, 0L)
+      there was one(mockUploadIterateeFactory).build(groupedFileUpload, 0L)
     }
 
     "create a GroupedUploadIteratee using Content-Range" in new CreateScope {
       override val headers = Seq("Content-Range" -> "bytes 10-19/20", "Content-Disposition" -> "attachment; filename=foobar.txt")
       h.status(result)
-      there was one(mockUploadIterateeFactory).apply(groupedFileUpload, 10L)
+      there was one(mockUploadIterateeFactory).build(groupedFileUpload, 10L)
     }
 
     "feed data to the enumerator" in new CreateScope {
@@ -151,7 +151,7 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
         ByteString("23456".getBytes("utf-8")) :: Nil
       )
       // Sink pipes everything to buf and returns Future[Unit]
-      mockUploadIterateeFactory(any, any) returns Sink.fold(())((_, b) => { buf ++= b; () })
+      mockUploadIterateeFactory.build(any, any) returns Sink.fold(())((_, b) => { buf ++= b; () })
       h.status(result)
       buf.toArray must beEqualTo("1234523456".getBytes("utf-8"))
     }

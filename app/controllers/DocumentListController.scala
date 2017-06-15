@@ -1,6 +1,7 @@
 package controllers
 
 import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.concurrent.Future
 
@@ -10,12 +11,13 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend, DocumentNodeBackend, DocumentTagBackend, HighlightBackend, SelectionBackend}
 
 class DocumentListController @Inject() (
-  val documentBackend: DocumentBackend,
-  val documentNodeBackend: DocumentNodeBackend,
-  val documentTagBackend: DocumentTagBackend,
-  val highlightBackend: HighlightBackend,
-  val selectionBackend: SelectionBackend
-) extends Controller with SelectionHelpers {
+  documentBackend: DocumentBackend,
+  documentNodeBackend: DocumentNodeBackend,
+  documentTagBackend: DocumentTagBackend,
+  highlightBackend: HighlightBackend,
+  protected val selectionBackend: SelectionBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) with SelectionHelpers {
   private val MaxPageSize = 100
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>

@@ -18,12 +18,13 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
     val mockStoreBackend = mock[StoreBackend]
     val mockViewBackend = mock[ViewBackend]
 
-    val controller = new ViewController with TestController {
-      override protected val storage = mockStorage
-      override protected val apiTokenBackend = mockApiTokenBackend
-      override protected val storeBackend = mockStoreBackend
-      override protected val viewBackend = mockViewBackend
-    }
+    val controller = new ViewController(
+      mockStorage,
+      mockApiTokenBackend,
+      mockStoreBackend,
+      mockViewBackend,
+      testMessagesApi
+    )
 
     def fakeTree(id: Long, jobId: Long) = factory.tree(
       id=id,

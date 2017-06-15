@@ -7,9 +7,7 @@ import models.User
 class TourControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockStorage = mock[TourController.Storage]
-    val controller = new TourController with TestController {
-      override val storage = mockStorage
-    }
+    val controller = new TourController(mockStorage, testMessagesApi)
   }
 
   "TourController" should {

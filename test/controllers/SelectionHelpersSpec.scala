@@ -5,6 +5,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.i18n.MessagesApi
 import play.api.mvc.{Request,Result}
 import play.api.test.FakeRequest
 import scala.concurrent.Future
@@ -13,17 +14,15 @@ import com.overviewdocs.query.{Field,PhraseQuery}
 import com.overviewdocs.util.AwaitMethod
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,SelectionRequest}
-import test.helpers.MockMessagesApi
 
-class SelectionHelpersSpec extends Specification with Mockito with AwaitMethod {
+class SelectionHelpersSpec extends ControllerSpecification with Mockito with AwaitMethod {
   "selectionRequest" should {
     trait SelectionScope extends Scope {
       trait F {
         def f(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest]
       }
-      val controller = new Controller with SelectionHelpers with F with TestController {
+      val controller = new Controller(testMessagesApi) with SelectionHelpers with F {
         override val selectionBackend = smartMock[SelectionBackend]
-        override def messagesApi = new MockMessagesApi()
         override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)
       }
       def f(documentSetId: Long, path: String) = {
@@ -150,11 +149,11 @@ class SelectionHelpersSpec extends Specification with Mockito with AwaitMethod {
       val selectionId = "9cf4d95a-39bd-4463-85a3-cac272a20bc2"
       val mockSelectionBackend = smartMock[SelectionBackend]
 
-      class AController extends Controller with TestController with SelectionHelpers {
+      class AController(i18nComponents: MessagesApi) extends Controller(i18nComponents) with SelectionHelpers {
         override val selectionBackend = mockSelectionBackend
         def go(request: Request[_]) = requestToSelection(documentSetId, userEmail, request)
       }
-      val controller = new AController()
+      val controller = new AController(testMessagesApi)
     }
 
     "use SelectionBackend#find() if selectionId is set" in new RequestToSelectionScope {

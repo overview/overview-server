@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.concurrent.Future
 
@@ -9,7 +11,9 @@ import com.overviewdocs.models.tables.DocumentProcessingErrors
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 
-trait DocumentProcessingErrorController extends Controller {
+class DocumentProcessingErrorController @Inject() (
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) with HasDatabase {
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
@@ -22,19 +26,15 @@ trait DocumentProcessingErrorController extends Controller {
     }
   }
 
-  protected def findDocumentProcessingErrors(documentSetId: Long): Future[Seq[DocumentProcessingError]]
-}
-
-object DocumentProcessingErrorController extends DocumentProcessingErrorController with HasDatabase {
+  // TODO dependeny-inject a backend for this
   import database.api._
-
-  lazy val byDocumentSetId = Compiled { documentSetId: Rep[Long] =>
+  private lazy val byDocumentSetId = Compiled { documentSetId: Rep[Long] =>
     DocumentProcessingErrors
       .filter(_.documentSetId === documentSetId)
       .sortBy(dpe => (dpe.message, dpe.textUrl))
   }
 
-  override protected def findDocumentProcessingErrors(documentSetId: Long) = {
+  private def findDocumentProcessingErrors(documentSetId: Long): Future[Seq[DocumentProcessingError]] = {
     database.seq(byDocumentSetId(documentSetId))
   }
 }

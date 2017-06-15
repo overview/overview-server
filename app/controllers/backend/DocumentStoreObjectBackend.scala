@@ -1,5 +1,7 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import play.api.libs.json.{Json,JsObject}
 import scala.concurrent.Future
 
@@ -7,6 +9,7 @@ import models.Selection
 import com.overviewdocs.models.DocumentStoreObject
 import com.overviewdocs.models.tables.{DocumentStoreObjects,StoreObjects}
 
+@ImplementedBy(classOf[DbDocumentStoreObjectBackend])
 trait DocumentStoreObjectBackend extends Backend {
   /** Fetches a single DocumentStoreObject.
     *
@@ -61,7 +64,7 @@ trait DocumentStoreObjectBackend extends Backend {
   def destroyMany(storeId: Long, entries: Seq[(Long,Long)]): Future[Unit]
 }
 
-trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend with DbBackend {
+class DbDocumentStoreObjectBackend @Inject() extends DocumentStoreObjectBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -191,5 +194,3 @@ trait DbDocumentStoreObjectBackend extends DocumentStoreObjectBackend with DbBac
     """)
   }
 }
-
-object DocumentStoreObjectBackend extends DbDocumentStoreObjectBackend

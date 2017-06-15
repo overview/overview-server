@@ -1,5 +1,6 @@
 package controllers.api
 
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
@@ -8,8 +9,9 @@ import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.anyUser
 import controllers.backend.StoreBackend
 
-trait StoreStateController extends ApiController {
-  protected val backend: StoreBackend
+class StoreStateController @Inject() (
+  backend: StoreBackend
+) extends ApiController {
 
   def show = ApiAuthorizedAction(anyUser).async { request =>
     for {
@@ -29,8 +31,4 @@ trait StoreStateController extends ApiController {
       case None => Future.successful(BadRequest(jsonError("illegal-arguments", "You must POST a JSON Object.")))
     }
   }
-}
-
-object StoreStateController extends StoreStateController {
-  override protected val backend = StoreBackend
 }

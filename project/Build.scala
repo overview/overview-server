@@ -144,7 +144,6 @@ object ApplicationBuild extends Build {
     .settings(ourGlobalSettings: _*)
     .settings(
       version := appVersion,
-      routesGenerator := StaticRoutesGenerator,
       PlayKeys.externalizeResources := false, // so `stage` doesn't nix all assets
       libraryDependencies ++= Dependencies.serverDependencies,
       TwirlKeys.templateImports += "views.Magic._",

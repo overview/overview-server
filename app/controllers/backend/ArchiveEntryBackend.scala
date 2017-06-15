@@ -2,8 +2,10 @@ package controllers.backend
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.google.inject.ImplementedBy
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
+import javax.inject.Inject
 import play.api.libs.iteratee.Enumerator
 import org.postgresql.PGConnection
 import scala.collection.mutable
@@ -12,9 +14,10 @@ import slick.dbio.{DBIOAction,Effect,NoStream,SynchronousDatabaseAction}
 import slick.jdbc.JdbcBackend
 import slick.util.DumpInfo
 
-import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.blobstorage.InjectedBlobStorage
 import models.ArchiveEntry
 
+@ImplementedBy(classOf[DbArchiveEntryBackend])
 trait ArchiveEntryBackend extends Backend {
   /** A list of ArchiveEntries, in arbitrary order. */
   def showMany(documentSetId: Long, documentIds: Seq[Long]): Future[Seq[ArchiveEntry]]
@@ -30,9 +33,7 @@ trait ArchiveEntryBackend extends Backend {
   def streamBytes(documentSetId: Long, documentId: Long): Source[ByteString, akka.NotUsed]
 }
 
-trait DbArchiveEntryBackend extends ArchiveEntryBackend with DbBackend {
-  protected val blobStorage: BlobStorage
-
+class DbArchiveEntryBackend @Inject() (blobStorage: InjectedBlobStorage) extends ArchiveEntryBackend with DbBackend {
   private class ShowManyAction(documentSetId: Long, documentIds: Seq[Long])
   extends SynchronousDatabaseAction[Seq[ArchiveEntry], NoStream, JdbcBackend, Effect.Read]
   {
@@ -158,8 +159,4 @@ trait DbArchiveEntryBackend extends ArchiveEntryBackend with DbBackend {
     Source.fromFutureSource(future)
       .mapMaterializedValue(_ => akka.NotUsed)
   }
-}
-
-object ArchiveEntryBackend extends DbArchiveEntryBackend {
-  override val blobStorage = BlobStorage
 }

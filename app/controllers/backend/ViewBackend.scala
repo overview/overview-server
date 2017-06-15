@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.View
 import com.overviewdocs.models.tables.Views
 
+@ImplementedBy(classOf[DbViewBackend])
 trait ViewBackend {
   /** Lists all Views for a DocumentSet.
     *
@@ -42,7 +45,7 @@ trait ViewBackend {
   def destroy(viewId: Long): Future[Unit]
 }
 
-trait DbViewBackend extends ViewBackend with DbBackend {
+class DbViewBackend @Inject() extends ViewBackend with DbBackend {
   import database.api._
 
   override def index(documentSetId: Long) = database.seq(byDocumentSetIdCompiled(documentSetId))
@@ -75,5 +78,3 @@ trait DbViewBackend extends ViewBackend with DbBackend {
 
   protected val inserter = (Views.map((v) => (v.documentSetId, v.createAttributes)) returning Views)
 }
-
-object ViewBackend extends DbViewBackend

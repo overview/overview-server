@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.DocumentTag
 import com.overviewdocs.models.tables.DocumentTags
 
+@ImplementedBy(classOf[DbTagDocumentBackend])
 trait TagDocumentBackend extends Backend {
   /** Returns a mapping from tag ID to number of documents with that tag.
     *
@@ -34,7 +37,7 @@ trait TagDocumentBackend extends Backend {
   def destroyAll(tagId: Long): Future[Unit]
 }
 
-trait DbTagDocumentBackend extends TagDocumentBackend with DbBackend {
+class DbTagDocumentBackend @Inject() extends TagDocumentBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -108,5 +111,3 @@ trait DbTagDocumentBackend extends TagDocumentBackend with DbBackend {
       .filter(_.tagId === tagId)
   }
 }
-
-object TagDocumentBackend extends DbTagDocumentBackend

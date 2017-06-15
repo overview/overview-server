@@ -41,16 +41,16 @@ extends SearchBackend {
   import akka.util.Timeout
   import scala.concurrent.duration._
 
-  private implicit val system = remoteActorSystemModule.remoteActorSystem
+  private implicit val system = remoteActorSystemModule.actorSystem
   private implicit val timeout = Timeout(30.seconds)
-  private val workerActor = remoteActorSystemModule.workerActor
+  private val messageBroker = remoteActorSystemModule.messageBroker
 
   override def search(documentSetId: Long, query: Query) = {
-    workerActor.ask(DocumentSetReadCommands.Search(documentSetId, query)).mapTo[SearchResult]
+    messageBroker.ask(DocumentSetReadCommands.Search(documentSetId, query)).mapTo[SearchResult]
   }
 
   override def refreshDocument(documentSetId: Long, documentId: Long) = {
-    workerActor.tell(DocumentSetCommands.ReindexDocument(documentSetId, documentId), ActorRef.noSender)
+    messageBroker.tell(DocumentSetCommands.ReindexDocument(documentSetId, documentId), ActorRef.noSender)
 
     // We'll return before write completes. That's iffy, certainly, and the real
     // reason is architectural. But we can rationalize this:

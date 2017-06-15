@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
@@ -9,8 +11,10 @@ import controllers.backend.{SelectionBackend,TagBackend}
 import controllers.forms.TagForm
 import com.overviewdocs.models.Tag
 
-trait TagController extends Controller {
-  protected val tagBackend: TagBackend
+class TagController @Inject() (
+  tagBackend: TagBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   private val selectionIdKey = "selectionId"
 
   def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
@@ -65,8 +69,4 @@ trait TagController extends Controller {
       }
     )
   }
-}
-
-object TagController extends TagController {
-  override protected val tagBackend = TagBackend
 }

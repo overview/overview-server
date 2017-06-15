@@ -13,10 +13,11 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
     val mockBackend = mock[TreeBackend]
     val mockTagBackend = mock[TagBackend]
 
-    val controller = new TreeController with TestController {
-      override val backend = mockBackend
-      override val tagBackend = mockTagBackend
-    }
+    val controller = new TreeController(
+      mockBackend,
+      mockTagBackend,
+      testMessagesApi
+    )
   }
 
   "TreeController#create" should {

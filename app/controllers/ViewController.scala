@@ -1,5 +1,8 @@
 package controllers
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.mvc.Result
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
@@ -12,7 +15,13 @@ import controllers.forms.{ViewForm,ViewUpdateAttributesForm}
 import com.overviewdocs.models.{ApiToken,Tree,View}
 import com.overviewdocs.models.tables.{Trees}
 
-trait ViewController extends Controller {
+class ViewController @Inject() (
+  storage: ViewController.Storage,
+  apiTokenBackend: ApiTokenBackend,
+  storeBackend: StoreBackend,
+  viewBackend: ViewBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   def indexJson(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async {
     val trees = storage.findTrees(documentSetId).map(_.copy()).toArray
 
@@ -57,30 +66,19 @@ trait ViewController extends Controller {
       case None => Future.successful(NotFound) // this is unlikely -- userOwningView() would normally fail
     })
   }
-
-  protected val storage: ViewController.Storage
-
-  protected val apiTokenBackend: ApiTokenBackend
-  protected val storeBackend: StoreBackend
-  protected val viewBackend: ViewBackend
 }
 
-object ViewController extends ViewController {
+object ViewController {
+  @ImplementedBy(classOf[ViewController.BlockingDatabaseStorage])
   trait Storage {
     def findTrees(documentSetId: Long) : Iterable[Tree]
   }
 
-  object DatabaseStorage extends Storage with HasBlockingDatabase {
+  class BlockingDatabaseStorage @Inject() extends Storage with HasBlockingDatabase {
     import database.api._
 
     override def findTrees(documentSetId: Long) = {
       blockingDatabase.seq(Trees.filter(_.documentSetId === documentSetId))
     }
   }
-
-  override protected val storage = DatabaseStorage
-
-  override protected val apiTokenBackend = ApiTokenBackend
-  override protected val storeBackend = StoreBackend
-  override protected val viewBackend = ViewBackend
 }

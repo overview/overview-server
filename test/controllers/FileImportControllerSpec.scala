@@ -15,12 +15,13 @@ class FileImportControllerSpec extends ControllerSpecification {
     val mockImportJobBackend = mock[ImportJobBackend]
     val mockJobQueueSender = mock[JobQueueSender]
 
-    val controller = new FileImportController with TestController {
-      override val documentSetBackend = mockDocumentSetBackend
-      override val fileGroupBackend = mockFileGroupBackend
-      override val importJobBackend = mockImportJobBackend
-      override val jobQueueSender = mockJobQueueSender
-    }
+    val controller = new FileImportController(
+      mockDocumentSetBackend,
+      mockJobQueueSender,
+      mockImportJobBackend,
+      mockFileGroupBackend,
+      testMessagesApi
+    )
   }
 
   "delete" should {

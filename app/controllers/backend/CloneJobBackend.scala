@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.CloneJob
 import com.overviewdocs.models.tables.CloneJobs
 
+@ImplementedBy(classOf[DbCloneJobBackend])
 trait CloneJobBackend extends Backend {
   /** Saves and returns a new CloneJob.
     *
@@ -21,7 +24,7 @@ trait CloneJobBackend extends Backend {
   def cancel(documentSetId: Long, id: Int): Future[Unit]
 }
 
-trait DbCloneJobBackend extends CloneJobBackend with DbBackend {
+class DbCloneJobBackend @Inject() extends CloneJobBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -42,5 +45,3 @@ trait DbCloneJobBackend extends CloneJobBackend with DbBackend {
     database.runUnit(cancelCompiled(documentSetId, id).update(true))
   }
 }
-
-object CloneJobBackend extends DbCloneJobBackend

@@ -1,5 +1,8 @@
 package controllers.admin
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
@@ -11,14 +14,16 @@ import controllers.backend.{CloneJobBackend,CsvImportBackend,FileGroupBackend,Im
 import controllers.util.JobQueueSender
 import controllers.Controller
 
-trait JobController extends Controller {
-  protected val cloneJobBackend: CloneJobBackend
-  protected val csvImportBackend: CsvImportBackend
-  protected val fileGroupBackend: FileGroupBackend
-  protected val importJobBackend: ImportJobBackend
-  protected val jobQueueSender: JobQueueSender
-  protected val treeBackend: TreeBackend
-  protected val storage: JobController.Storage
+class JobController @Inject() (
+  cloneJobBackend: CloneJobBackend,
+  csvImportBackend: CsvImportBackend,
+  fileGroupBackend: FileGroupBackend,
+  importJobBackend: ImportJobBackend,
+  jobQueueSender: JobQueueSender,
+  treeBackend: TreeBackend,
+  storage: JobController.Storage,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
 
   def indexJson = AuthorizedAction(adminUser).async { implicit request =>
     for {
@@ -63,18 +68,13 @@ trait JobController extends Controller {
   }
 }
 
-object JobController extends JobController {
+object JobController {
+  @ImplementedBy(classOf[JobController.DatabaseStorage])
   trait Storage {
     def cancelDocumentCloudImport(id: Int): Future[Unit]
   }
 
-  override protected val cloneJobBackend = CloneJobBackend
-  override protected val csvImportBackend = CsvImportBackend
-  override protected val fileGroupBackend = FileGroupBackend
-  override protected val importJobBackend = ImportJobBackend
-  override protected val jobQueueSender = JobQueueSender
-  override protected val treeBackend = TreeBackend
-  override protected val storage = new Storage with HasDatabase {
+  class DatabaseStorage @Inject() extends Storage with HasDatabase {
     import database.api._
     import com.overviewdocs.models.tables.DocumentCloudImports
 

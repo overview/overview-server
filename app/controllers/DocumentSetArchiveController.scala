@@ -4,6 +4,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import javax.inject.Inject
 import play.api.http.HttpEntity
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Result
 import scala.concurrent.Future
@@ -16,10 +17,11 @@ import models.ArchiveEntry
 import models.archive.{ArchiveFactory,ZipArchive}
 
 class DocumentSetArchiveController @Inject() (
-  val archiveEntryBackend: ArchiveEntryBackend,
-  val archiveFactory: ArchiveFactory,
-  val selectionBackend: SelectionBackend
-) extends Controller with SelectionHelpers {
+  archiveEntryBackend: ArchiveEntryBackend,
+  archiveFactory: ArchiveFactory,
+  protected val selectionBackend: SelectionBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) with SelectionHelpers {
 
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userCanExportDocumentSet(documentSetId)).async { implicit request =>
     requestToSelection(documentSetId, request).flatMap(_ match {

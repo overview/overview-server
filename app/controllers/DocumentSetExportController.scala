@@ -1,10 +1,11 @@
 package controllers
 
 import javax.inject.Inject
-import play.api.mvc.Result
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.{Enumeratee,Enumerator,Iteratee}
 import play.api.libs.json.{Json,JsObject}
+import play.api.mvc.Result
 import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
@@ -20,12 +21,13 @@ import models.export.format.Format
 import models.Selection
 
 class DocumentSetExportController @Inject() (
-  val documentBackend: DocumentBackend,
-  val documentSetBackend: DocumentSetBackend,
-  val documentTagBackend: DocumentTagBackend,
-  val tagBackend: TagBackend,
-  val selectionBackend: SelectionBackend
-) extends Controller with SelectionHelpers {
+  documentBackend: DocumentBackend,
+  documentSetBackend: DocumentSetBackend,
+  documentTagBackend: DocumentTagBackend,
+  tagBackend: TagBackend,
+  protected val selectionBackend: SelectionBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) with SelectionHelpers {
   private val BatchSize = 100
 
   private def serveExport(

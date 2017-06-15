@@ -1,15 +1,18 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.tables.{Documents,Files}
 
+@ImplementedBy(classOf[DbDocumentSetFileBackend])
 trait DocumentSetFileBackend extends Backend {
   /** Returns true if a file with the given sha1 exists in the given docset */
   def existsByIdAndSha1(documentSetId: Long, sha1: Array[Byte]): Future[Boolean]
 }
 
-trait DbDocumentSetFileBackend extends DocumentSetFileBackend with DbBackend {
+class DbDocumentSetFileBackend @Inject() extends DocumentSetFileBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -24,5 +27,3 @@ trait DbDocumentSetFileBackend extends DocumentSetFileBackend with DbBackend {
     database.option(byIdAndSha1(documentSetId, sha1)).map(_.isDefined)
   }
 }
-
-object DocumentSetFileBackend extends DbDocumentSetFileBackend

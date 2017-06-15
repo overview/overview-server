@@ -3,6 +3,8 @@ package controllers
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import java.util.UUID
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
@@ -19,12 +21,14 @@ import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 import models.User
 
-trait MassUploadController extends Controller {
-  protected val documentSetBackend: DocumentSetBackend
-  protected val fileGroupBackend: FileGroupBackend
-  protected val jobQueueSender: JobQueueSender
-  protected val groupedFileUploadBackend: GroupedFileUploadBackend
-  protected val uploadSinkFactory: (GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]
+class MassUploadController @Inject() (
+  documentSetBackend: DocumentSetBackend,
+  fileGroupBackend: FileGroupBackend,
+  jobQueueSender: JobQueueSender,
+  groupedFileUploadBackend: GroupedFileUploadBackend,
+  uploadSinkFactory: MassUploadControllerMethods.UploadSinkFactory,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
 
   /** Calls MassUploadControllerMethods.Create(), returning the result as body.
     *
@@ -197,13 +201,4 @@ trait MassUploadController extends Controller {
         case Some(fileGroup) => groupedFileUploadBackend.find(fileGroup.id, guid)
       })
   }
-}
-
-/** Controller implementation */
-object MassUploadController extends MassUploadController {
-  override protected val documentSetBackend = DocumentSetBackend
-  override protected val fileGroupBackend = FileGroupBackend
-  override protected val jobQueueSender = JobQueueSender
-  override protected val groupedFileUploadBackend = GroupedFileUploadBackend
-  override protected val uploadSinkFactory = GroupedFileUploadIteratee.apply _
 }

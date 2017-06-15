@@ -3,26 +3,45 @@ package controllers.util
 
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
+import com.google.inject.ImplementedBy
 import java.util.UUID
+import javax.inject.Inject
+import play.api.http.HeaderNames
 import play.api.libs.json.{JsObject,Json}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{EssentialAction,RequestHeader,Result}
+import play.api.mvc.{EssentialAction,RequestHeader,Result,Results}
 import scala.concurrent.Future
 import scala.util.Try
 
+import controllers.iteratees.GroupedFileUploadIteratee
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
 import com.overviewdocs.util.ContentDisposition
 
-private[controllers] object MassUploadControllerMethods extends controllers.Controller {
+private[controllers] object MassUploadControllerMethods extends controllers.ControllerHelpers with Results with HeaderNames {
+  @ImplementedBy(classOf[MassUploadControllerMethods.DatabaseUploadSinkFactory])
+  trait UploadSinkFactory {
+    def build(upload: GroupedFileUpload, pos: Long): Sink[ByteString, Future[Unit]]
+  }
+
+  class DatabaseUploadSinkFactory @Inject() (
+    groupedFileUploadBackend: GroupedFileUploadBackend
+  ) extends UploadSinkFactory {
+    // TODO clean this up. There's no design pattern here, just wrestling with
+    // the compiler through years of neglect
+    override def build(upload: GroupedFileUpload, pos: Long) = {
+      new GroupedFileUploadIteratee(groupedFileUploadBackend)(upload, pos)
+    }
+  }
+
   case class Create(
     userEmail: String,
     apiToken: Option[String],
     guid: UUID,
     fileGroupBackend: FileGroupBackend, 
     groupedFileUploadBackend: GroupedFileUploadBackend,
-    uploadSinkFactory: (GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]],
+    uploadSinkFactory: UploadSinkFactory,
     wantJsonResponse: Boolean
   ) extends EssentialAction {
     private case class RequestInfo(
@@ -102,7 +121,7 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
       if (info.start > upload.uploadedSize) {
         badRequest(s"Tried to resume past last uploaded byte. Resumed at byte ${info.start}, but only ${upload.uploadedSize} bytes have been uploaded.")
       } else {
-        Accumulator(uploadSinkFactory(upload, info.start)).map(_ => Created)
+        Accumulator(uploadSinkFactory.build(upload, info.start)).map(_ => Created)
       }
     }
 

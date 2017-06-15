@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.ApiToken
 import com.overviewdocs.models.tables.ApiTokens
 
+@ImplementedBy(classOf[DbApiTokenBackend])
 trait ApiTokenBackend {
   /** Returns all ApiTokens with the given access.
     */
@@ -30,7 +33,7 @@ trait ApiTokenBackend {
   def destroy(token: String): Future[Unit]
 }
 
-trait DbApiTokenBackend extends ApiTokenBackend with DbBackend {
+class DbApiTokenBackend @Inject() extends ApiTokenBackend with DbBackend {
   import database.api._
 
   lazy val byCreatedByAndDocumentSetIdCompiled = Compiled { (createdBy: Rep[String], documentSetId: Rep[Option[Long]]) =>
@@ -58,5 +61,3 @@ trait DbApiTokenBackend extends ApiTokenBackend with DbBackend {
 
   override def destroy(token: String) = database.delete(byTokenCompiled(token))
 }
-
-object ApiTokenBackend extends DbApiTokenBackend

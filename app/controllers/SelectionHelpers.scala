@@ -1,15 +1,17 @@
 package controllers
 
+import play.api.http.HeaderNames
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.i18n.Messages
+import play.api.mvc.{Request,Result,Results}
+import scala.concurrent.Future
+
 import com.overviewdocs.query.{Query, QueryParser}
 import controllers.auth.AuthorizedRequest
 import controllers.backend.SelectionBackend
-import models.{Selection, SelectionRequest}
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Request, Result}
+import models.{Selection,SelectionRequest}
 
-import scala.concurrent.Future
-
-trait SelectionHelpers { self: Controller =>
+trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelpers =>
   protected val selectionBackend: SelectionBackend
 
   private val selectionIdKey: String = "selectionId" // query string parameter
@@ -19,11 +21,11 @@ trait SelectionHelpers { self: Controller =>
     *
     * Returns a Left(Result) if the query string is invalid.
     */
-  protected def selectionRequest(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest] = {
+  protected def selectionRequest(documentSetId: Long, request: Request[_])(implicit messages: Messages): Either[Result,SelectionRequest] = {
     val reqData = RequestData(request)
 
     def syntaxError = {
-      val message = self.messagesApi.preferred(request)("com.overviewdocs.query.SyntaxError")
+      val message = messages("com.overviewdocs.query.SyntaxError")
       BadRequest(jsonError("illegal-arguments", message))
         .withHeaders(CONTENT_TYPE -> "application/json")
     }
@@ -75,11 +77,11 @@ trait SelectionHelpers { self: Controller =>
     * Paths 2 and 3 will always return a Right. Path 1 may return a
     * Left(NotFound), if the selection ID has expired.
     */
-    protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,Selection]] = {
+    protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_])(implicit messages: Messages): Future[Either[Result,Selection]] = {
       requestToSelectionWithQuery(documentSetId, userEmail, request).map(_.right.map(_._1))
     }
  
-    protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_]): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
+    protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_])(implicit messages: Messages): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
       val rd = RequestData(request)
 
       selectionRequest(documentSetId, request) match {
@@ -102,7 +104,7 @@ trait SelectionHelpers { self: Controller =>
       }
   }
 
-  protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_]): Future[Either[Result, Selection]] = {
+  protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_])(implicit messages: Messages): Future[Either[Result, Selection]] = {
     requestToSelection(documentSetId, request.user.email, request)
   }
 }

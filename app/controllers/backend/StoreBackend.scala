@@ -1,5 +1,7 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
 import scala.util.{Failure,Success}
@@ -13,6 +15,7 @@ import com.overviewdocs.models.Store
   * Any valid API token grants access to a single Store object, which holds
   * arbitrary data. That Store object is created on first use.
   */
+@ImplementedBy(classOf[DbStoreBackend])
 trait StoreBackend {
   /** Creates a Store if necessary, and returns it. */
   def showOrCreate(apiToken: String): Future[Store]
@@ -24,7 +27,7 @@ trait StoreBackend {
   def destroy(apiToken: String): Future[Unit]
 }
 
-trait DbStoreBackend extends StoreBackend with DbBackend {
+class DbStoreBackend @Inject() extends StoreBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -109,5 +112,3 @@ trait DbStoreBackend extends StoreBackend with DbBackend {
     """)
   }
 }
-
-object StoreBackend extends DbStoreBackend

@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.{CloneImportJob,CloneJob,CsvImport,CsvImportJob,DocumentSet,DocumentCloudImport,DocumentCloudImportJob,DocumentSetUser,FileGroup,FileGroupImportJob,ImportJob}
 import com.overviewdocs.models.tables.{CloneJobs,CsvImports,DocumentCloudImports,DocumentSetUsers,DocumentSets,FileGroups}
 
+@ImplementedBy(classOf[DbImportJobBackend])
 trait ImportJobBackend extends Backend {
   /** All ImportJobs for the user. */
   def indexByUser(userEmail: String): Future[Seq[ImportJob]]
@@ -16,7 +19,7 @@ trait ImportJobBackend extends Backend {
   def indexByDocumentSet(documentSetId: Long): Future[Seq[ImportJob]]
 }
 
-trait DbImportJobBackend extends ImportJobBackend with DbBackend {
+class DbImportJobBackend @Inject() extends ImportJobBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -135,5 +138,3 @@ trait DbImportJobBackend extends ImportJobBackend with DbBackend {
     }
   }
 }
-
-object ImportJobBackend extends DbImportJobBackend

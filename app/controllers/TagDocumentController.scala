@@ -1,6 +1,7 @@
 package controllers
 
 import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsObject,JsNumber}
 import play.api.mvc.Result
@@ -11,9 +12,10 @@ import controllers.auth.Authorities.{userViewingDocumentSet,userOwningTag}
 import controllers.backend.{TagDocumentBackend,SelectionBackend}
 
 class TagDocumentController @Inject() (
-  val tagDocumentBackend: TagDocumentBackend,
-  val selectionBackend: SelectionBackend
-) extends Controller with SelectionHelpers {
+  tagDocumentBackend: TagDocumentBackend,
+  protected val selectionBackend: SelectionBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) with SelectionHelpers {
 
   def count(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { request =>
     requestToSelection(documentSetId, request).flatMap(_ match {

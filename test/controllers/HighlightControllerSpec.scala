@@ -13,7 +13,7 @@ class HighlightControllerSpec extends ControllerSpecification {
     val mockDocumentBackend = smartMock[DocumentBackend]
     val mockHighlightBackend = smartMock[HighlightBackend]
 
-    val controller = new HighlightController(mockDocumentBackend, mockHighlightBackend)
+    val controller = new HighlightController(mockDocumentBackend, mockHighlightBackend, testMessagesApi)
 
     def foundHighlights: Seq[Utf16Highlight] = Seq()
     def foundText: String = "This is the document text"

@@ -2,7 +2,7 @@ package controllers.api
 
 import play.api.mvc.{Action,Results}
 
-trait CorsOptionsController extends ApiController {
+class CorsOptionsController extends ApiController {
   private val Headers = Seq(
     "Access-Control-Allow-Origin" -> "*",
     "Access-Control-Allow-Methods" -> "DELETE, PUT, POST, GET, OPTIONS", // laziness
@@ -15,5 +15,3 @@ trait CorsOptionsController extends ApiController {
     Results.NoContent.withHeaders(Headers: _*)
   }
 }
-
-object CorsOptionsController extends CorsOptionsController

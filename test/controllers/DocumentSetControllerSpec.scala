@@ -19,20 +19,20 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
     val factory = PodoFactory
 
     val IndexPageSize = 10
+    val mockBackend = smartMock[DocumentSetBackend]
     val mockStorage = smartMock[DocumentSetController.Storage]
     val mockJobQueue = smartMock[JobQueueSender]
     val mockViewBackend = smartMock[ViewBackend]
-    val mockBackend = smartMock[DocumentSetBackend]
     val mockImportJobBackend = smartMock[ImportJobBackend]
 
-    val controller = new DocumentSetController with TestController {
-      override val indexPageSize = IndexPageSize
-      override val storage = mockStorage
-      override val jobQueue = mockJobQueue
-      override val backend = mockBackend
-      override val importJobBackend = mockImportJobBackend
-      override val viewBackend = mockViewBackend
-    }
+    val controller = new DocumentSetController(
+      mockBackend,
+      mockStorage,
+      mockJobQueue,
+      mockImportJobBackend,
+      mockViewBackend,
+      testMessagesApi
+    )
   }
 
   "DocumentSetController" should {

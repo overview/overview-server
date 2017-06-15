@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
 import scala.concurrent.Future
@@ -7,19 +9,24 @@ import scala.concurrent.Future
 import com.overviewdocs.database.HasBlockingDatabase
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
-import controllers.backend.SessionBackend
+import controllers.backend.{SessionBackend,UserBackend}
 import models.{PotentialExistingUser,User}
 import models.tables.Users
 
-trait SessionController extends Controller {
+class SessionController @Inject() (
+  sessionBackend: SessionBackend,
+  userBackend: UserBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   private val loginForm = controllers.forms.LoginForm()
   private val registrationForm = controllers.forms.UserForm()
+  private val NotAllowed = Left("forms.LoginForm.error.invalid_credentials")
+  private val NotConfirmed = Left("forms.LoginForm.error.not_confirmed")
 
   private val m = views.Magic.scopedMessages("controllers.SessionController")
 
-  protected val sessionBackend: SessionBackend
-
   def _new() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+    // Beware: this has been copy/pasted to UserController, too
     request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
       case _ => Ok(views.html.Session._new(loginForm, registrationForm))
@@ -47,7 +54,7 @@ trait SessionController extends Controller {
     boundForm.fold(
       formWithErrors => Future.successful(BadRequest(views.html.Session._new(formWithErrors, registrationForm))),
       potentialExistingUser => {
-        findUser(potentialExistingUser) match {
+        findUser(potentialExistingUser).flatMap(_ match {
           case Left(error) => {
             Future.successful(BadRequest(views.html.Session._new(boundForm.withGlobalError(error), registrationForm)))
           }
@@ -57,7 +64,7 @@ trait SessionController extends Controller {
               session <- sessionBackend.create(user.id, request.remoteAddress)
             } yield AuthResults.loginSucceeded(request, session).flashing("event" -> "session-create")
           }
-        }
+        })
       }
     )
   }
@@ -69,23 +76,12 @@ trait SessionController extends Controller {
     * * The user does not exist or the password doesn't match (we don't leak which error this is).
     * * The user has not yet confirmed.
     */
-  protected def findUser(potentialExistingUser: PotentialExistingUser): Either[String,User]
-}
-
-object SessionController extends SessionController with HasBlockingDatabase {
-  override protected val sessionBackend = SessionBackend
-
-  private val NotAllowed = Left("forms.LoginForm.error.invalid_credentials")
-  private val NotConfirmed = Left("forms.LoginForm.error.not_confirmed")
-
-  override def findUser(potentialExistingUser: PotentialExistingUser) = {
-    import database.api._
-
-    blockingDatabase.option(Users.filter(_.email === potentialExistingUser.email)) match {
+  def findUser(potentialExistingUser: PotentialExistingUser): Future[Either[String, User]] = {
+    userBackend.showByEmail(potentialExistingUser.email).map(_ match {
       case None => NotAllowed
       case Some(user) if !User.passwordMatchesHash(potentialExistingUser.password, user.passwordHash) => NotAllowed
       case Some(user) if user.confirmationToken.nonEmpty => NotConfirmed
       case Some(user) => Right(user)
-    }
+    })
   }
 }

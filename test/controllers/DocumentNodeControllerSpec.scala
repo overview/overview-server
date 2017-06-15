@@ -18,7 +18,8 @@ class DocumentNodeControllerSpec extends ControllerSpecification with JsonMatche
 
     val controller = new DocumentNodeController(
       mockDocumentNodeBackend,
-      mockSelectionBackend
+      mockSelectionBackend,
+      testMessagesApi
     )
   }
 

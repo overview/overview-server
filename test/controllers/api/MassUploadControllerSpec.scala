@@ -14,7 +14,7 @@ import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.models.{FileGroup,GroupedFileUpload}
 import controllers.auth.{ApiAuthorizedRequest,ApiTokenFactory}
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
-import controllers.util.JobQueueSender
+import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 
 class MassUploadControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends Scope {
@@ -22,15 +22,15 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockApiTokenFactory = smartMock[ApiTokenFactory]
     val mockJobQueueSender = smartMock[JobQueueSender]
-    val mockUploadSinkFactory = mock[(GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]]
+    val mockUploadSinkFactory = mock[MassUploadControllerMethods.UploadSinkFactory]
 
-    lazy val controller = new MassUploadController with TestController {
-      override val fileGroupBackend = mockFileGroupBackend
-      override val groupedFileUploadBackend = mockUploadBackend
-      override val apiTokenFactory = mockApiTokenFactory
-      override val jobQueueSender = mockJobQueueSender
-      override val uploadSinkFactory = mockUploadSinkFactory
-    }
+    val controller = new MassUploadController(
+      mockFileGroupBackend,
+      mockJobQueueSender,
+      mockUploadBackend,
+      mockApiTokenFactory,
+      mockUploadSinkFactory
+    )
 
     val factory = com.overviewdocs.test.factories.PodoFactory
     val apiToken = factory.apiToken(createdBy="user@example.org", token="api-token", documentSetId=Some(1L))
@@ -87,7 +87,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       mockApiTokenFactory.loadAuthorizedApiToken(any, any) returns Future.successful(Right(apiToken))
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
       mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
-      mockUploadSinkFactory(any, any) returns Sink.fold(())((_, _) => ())
+      mockUploadSinkFactory.build(any, any) returns Sink.fold(())((_, _) => ())
 
       status(result) must beEqualTo(CREATED)
     }

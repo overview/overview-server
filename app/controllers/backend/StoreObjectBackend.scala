@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.StoreObject
 import com.overviewdocs.models.tables.StoreObjects
 
+@ImplementedBy(classOf[DbStoreObjectBackend])
 trait StoreObjectBackend {
   /** Lists all StoreObjects we can read.
     *
@@ -60,7 +63,7 @@ trait StoreObjectBackend {
   def destroyMany(storeId: Long, ids: Seq[Long]): Future[Unit]
 }
 
-trait DbStoreObjectBackend extends StoreObjectBackend with DbBackend {
+class DbStoreObjectBackend @Inject() extends StoreObjectBackend with DbBackend {
   import database.api._
 
   private lazy val byIdCompiled = Compiled { (id: Rep[Long]) =>
@@ -174,5 +177,3 @@ trait DbStoreObjectBackend extends StoreObjectBackend with DbBackend {
     """)
   }
 }
-
-object StoreObjectBackend extends DbStoreObjectBackend

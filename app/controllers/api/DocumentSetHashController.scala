@@ -6,6 +6,7 @@
 
 package controllers.api
 
+import javax.inject.Inject
 import play.api.mvc.Action
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -15,8 +16,9 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.DocumentSetFileBackend
 import controllers.auth.ApiAuthorizedAction
 
-trait DocumentSetHashController extends ApiController {
-  protected val backend: DocumentSetFileBackend
+class DocumentSetHashController @Inject() (
+  backend: DocumentSetFileBackend
+) extends ApiController {
 
   // This code copied from DocumentSetFileController.scala, boo
   def head(sha1: Array[Byte]) = ApiAuthorizedAction(anyUser).async { request =>
@@ -26,9 +28,4 @@ trait DocumentSetHashController extends ApiController {
       case false => NotFound
     })
   }
-}
-
-
-object DocumentSetHashController extends DocumentSetHashController {
-  override protected val backend = DocumentSetFileBackend
 }

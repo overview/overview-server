@@ -31,5 +31,7 @@ trait ApiAuthorizedAction {
 }
 
 object ApiAuthorizedAction extends ApiAuthorizedAction {
-  override protected val apiTokenFactory = ApiTokenFactory
+  // TODO dependency injection
+  import controllers.backend.DbApiTokenBackend
+  override protected val apiTokenFactory = new ApiTokenFactory(new DbApiTokenBackend)
 }

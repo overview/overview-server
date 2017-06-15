@@ -17,7 +17,8 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
     mockSelectionBackend.findOrCreate(any, any, any) returns Future(selection)
     val controller = new TagDocumentController(
       mockTagDocumentBackend,
-      mockSelectionBackend
+      mockSelectionBackend,
+      testMessagesApi
     )
   }
 

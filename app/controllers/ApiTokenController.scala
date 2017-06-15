@@ -1,6 +1,8 @@
 package controllers
 
+import javax.inject.Inject
 import play.api.data.{Form,Forms}
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action,Result}
 import scala.concurrent.Future
@@ -10,9 +12,10 @@ import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
 import controllers.backend.ApiTokenBackend
 import com.overviewdocs.models.ApiToken
 
-trait ApiTokenController extends Controller {
-  protected val backend: ApiTokenBackend
-
+class ApiTokenController @Inject() (
+  backend: ApiTokenBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   private def indexHtml(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
     Future.successful(Ok(views.html.ApiToken.index(request.user, documentSetId)))
   }
@@ -56,8 +59,4 @@ trait ApiTokenController extends Controller {
     */
   def destroyForDocumentSet(id: Long, token: String) = Action.async { _ => realDestroy(token) }
   def destroy(token: String) = Action.async { _ => realDestroy(token) }
-}
-
-object ApiTokenController extends ApiTokenController {
-  override protected val backend = ApiTokenBackend
 }

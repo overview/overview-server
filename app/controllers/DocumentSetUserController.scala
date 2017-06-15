@@ -1,6 +1,7 @@
-// Document set 
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.data.validation.{Constraints,Invalid,Valid}
 import scala.concurrent.Future
@@ -9,10 +10,11 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{userOwningDocumentSet,userCanExportDocumentSet}
 import controllers.backend.{DocumentSetBackend,DocumentSetUserBackend}
 
-trait DocumentSetUserController extends Controller {
-  protected val backend: DocumentSetUserBackend
-  protected val documentSetBackend: DocumentSetBackend
-
+class DocumentSetUserController @Inject() (
+  val backend: DocumentSetUserBackend,
+  val documentSetBackend: DocumentSetBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       emails <- backend.index(documentSetId).map(_.map(_.userEmail))
@@ -51,9 +53,4 @@ trait DocumentSetUserController extends Controller {
     backend.destroy(documentSetId, userEmail)
       .map(_ => NoContent)
   }
-}
-
-object DocumentSetUserController extends DocumentSetUserController {
-  override val backend = DocumentSetUserBackend
-  override val documentSetBackend = DocumentSetBackend
 }

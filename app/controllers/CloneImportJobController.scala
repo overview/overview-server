@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 
@@ -10,11 +12,12 @@ import controllers.auth.Authorities.{userOwningDocumentSet,userViewingDocumentSe
 import controllers.backend.{CloneJobBackend,DocumentSetBackend}
 import controllers.util.JobQueueSender
 
-trait CloneImportJobController extends Controller {
-  protected val cloneJobBackend: CloneJobBackend
-  protected val documentSetBackend: DocumentSetBackend
-  protected val jobQueueSender: JobQueueSender
-
+class CloneImportJobController @Inject() (
+  cloneJobBackend: CloneJobBackend,
+  documentSetBackend: DocumentSetBackend,
+  jobQueueSender: JobQueueSender,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   def create(sourceDocumentSetId: Long) = AuthorizedAction(userViewingDocumentSet(sourceDocumentSetId)).async { implicit request =>
     documentSetBackend.show(sourceDocumentSetId).flatMap(_ match {
       case None => Future.successful(NotFound) // Extremely unlikely race
@@ -45,10 +48,4 @@ trait CloneImportJobController extends Controller {
     importOverflowCount=documentSet.importOverflowCount,
     metadataSchema=documentSet.metadataSchema
   )
-}
-
-object CloneImportJobController extends CloneImportJobController {
-  override protected val cloneJobBackend = CloneJobBackend
-  override protected val documentSetBackend = DocumentSetBackend
-  override protected val jobQueueSender = JobQueueSender
 }

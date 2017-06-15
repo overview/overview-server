@@ -1,8 +1,11 @@
 package controllers
 
+import com.google.inject.ImplementedBy
 import java.util.Date
+import javax.inject.Inject
+import play.api.i18n.{MessagesApi,Messages}
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Action,AnyContent,Request,RequestHeader}
+import play.api.mvc.{Action,AnyContent,Request}
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
@@ -24,7 +27,12 @@ import models.tables.Users
  * update: (given a token and password) changes the password, clears the token
  *         and logs in
  */
-trait PasswordController extends Controller {
+class PasswordController @Inject() (
+  sessionBackend: SessionBackend,
+  storage: PasswordController.Storage,
+  mail: PasswordController.Mail,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   private lazy val newForm = controllers.forms.NewPasswordForm()
   private lazy val editForm = controllers.forms.EditPasswordForm()
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
@@ -58,11 +66,15 @@ trait PasswordController extends Controller {
         // We got a valid email address, but that doesn't mean this is a real
         // user. We need to send an email to the address either way.
         storage.findUserByEmail(email) match {
-          case None => mail.sendCreateErrorUserDoesNotExist(email)
+          case None => {
+            val resetPasswordFormUrl = routes.PasswordController._new().absoluteURL
+            mail.sendCreateErrorUserDoesNotExist(email, resetPasswordFormUrl)
+          }
           case Some(user) => {
             // Success: generate a token and send an email
             val token = storage.addResetPasswordTokenToUser(user)
-            mail.sendCreated(user.copy(resetPasswordToken=Some(token)))
+            val resetPasswordUrl = routes.PasswordController.edit(token).absoluteURL
+            mail.sendCreated(user.copy(resetPasswordToken=Some(token)), resetPasswordUrl)
           }
         }
 
@@ -94,15 +106,12 @@ trait PasswordController extends Controller {
       }
     }
   }
-
-  protected val sessionBackend: SessionBackend
-  protected val storage: PasswordController.Storage
-  protected val mail: PasswordController.Mail
 }
 
-object PasswordController extends PasswordController {
-  override protected val sessionBackend = SessionBackend
+object PasswordController {
+  val SecondsResetTokenIsValid = 14400 // 4 hours
 
+  @ImplementedBy(classOf[PasswordController.BlockingDatabaseStorage])
   trait Storage {
     def findUserByEmail(email: String): Option[User]
     def findUserByResetToken(token: String): Option[User]
@@ -110,14 +119,13 @@ object PasswordController extends PasswordController {
     def resetPassword(user: User, password: String): Future[Unit]
   }
 
+  @ImplementedBy(classOf[PasswordController.DefaultMail])
   trait Mail {
-    def sendCreated(user: User)(implicit request: RequestHeader) : Unit
-    def sendCreateErrorUserDoesNotExist(email: String)(implicit request: RequestHeader) : Unit
+    def sendCreated(user: User, resetPasswordUrl: String)(implicit messages: Messages) : Unit
+    def sendCreateErrorUserDoesNotExist(email: String, resetPasswordFormUrl: String)(implicit messages: Messages) : Unit
   }
 
-  val SecondsResetTokenIsValid = 14400 // 4 hours
-
-  override protected val storage = new Storage with HasBlockingDatabase {
+  class BlockingDatabaseStorage @Inject() extends Storage with HasBlockingDatabase {
     import database.api._
 
     override def findUserByEmail(email: String) = {
@@ -153,14 +161,14 @@ object PasswordController extends PasswordController {
     }
   }
 
-  override protected val mail = new Mail {
-    override def sendCreated(user: User)(implicit request: RequestHeader) = {
-      val mail = mailers.Password.create(user)
+  class DefaultMail @Inject() extends Mail {
+    override def sendCreated(user: User, resetPasswordUrl: String)(implicit messages: Messages) = {
+      val mail = mailers.Password.create(user, resetPasswordUrl)
       mail.send
     }
 
-    override def sendCreateErrorUserDoesNotExist(email: String)(implicit request: RequestHeader) = {
-      val mail = mailers.Password.createErrorUserDoesNotExist(email)
+    override def sendCreateErrorUserDoesNotExist(email: String, resetPasswordFormUrl: String)(implicit messages: Messages) = {
+      val mail = mailers.Password.createErrorUserDoesNotExist(email, resetPasswordFormUrl)
       mail.send
     }
   }

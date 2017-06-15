@@ -1,5 +1,6 @@
 package controllers.api
 
+import javax.inject.Inject
 import play.api.data.{Form,Forms}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsObject,Json}
@@ -12,9 +13,10 @@ import controllers.backend.{ApiTokenBackend,DocumentSetBackend}
 import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{ApiToken,DocumentSet}
 
-trait DocumentSetController extends ApiController {
-  protected val apiTokenBackend: ApiTokenBackend
-  protected val backend: DocumentSetBackend
+class DocumentSetController @Inject() (
+  apiTokenBackend: ApiTokenBackend,
+  backend: DocumentSetBackend
+) extends ApiController {
 
   private val CreateForm = Form[DocumentSet.CreateAttributes](
     Forms.mapping(
@@ -60,9 +62,4 @@ trait DocumentSetController extends ApiController {
       }
     )
   }
-}
-
-object DocumentSetController extends DocumentSetController {
-  override protected val apiTokenBackend = ApiTokenBackend
-  override protected val backend = DocumentSetBackend
 }

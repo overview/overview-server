@@ -24,7 +24,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     val controller = new DocumentSetArchiveController(
       mockArchiveEntryBackend,
       mockArchiveFactory,
-      mockSelectionBackend
+      mockSelectionBackend,
+      testMessagesApi
     )
   }
 

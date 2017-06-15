@@ -1,13 +1,16 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
 import com.github.tminglei.slickpg.InetString
 import java.sql.Timestamp
 import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import models.{Session,User}
 import models.tables.{Sessions,Users}
 
+@ImplementedBy(classOf[DbSessionBackend])
 trait SessionBackend extends Backend {
   /** Maximum age of a session.
     *
@@ -50,7 +53,7 @@ trait SessionBackend extends Backend {
   def destroyExpiredSessionsForUserId(userId: Long): Future[Unit]
 }
 
-trait DbSessionBackend extends SessionBackend with DbBackend {
+class DbSessionBackend @Inject() extends SessionBackend with DbBackend {
   import database.api._
 
   private lazy val byIdCompiled = Compiled { (id: Rep[UUID]) => Sessions.filter(_.id === id) }
@@ -95,5 +98,3 @@ trait DbSessionBackend extends SessionBackend with DbBackend {
     database.delete(byUserIdAndMaxCreatedAtCompiled(userId, minCreatedAt))
   }
 }
-
-object SessionBackend extends DbSessionBackend

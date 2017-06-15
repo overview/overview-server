@@ -1,5 +1,8 @@
 package controllers
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsError,JsObject,JsResult,JsSuccess}
 import play.api.mvc.BodyParsers.parse
@@ -16,7 +19,14 @@ import controllers.forms.DocumentSetUpdateForm
 import controllers.util.JobQueueSender
 import models.pagination.{Page,PageRequest}
 
-trait DocumentSetController extends Controller {
+class DocumentSetController @Inject() (
+  backend: DocumentSetBackend,
+  storage: DocumentSetController.Storage,
+  jobQueue: JobQueueSender,
+  importJobBackend: ImportJobBackend,
+  viewBackend: ViewBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   import Authorities._
 
   protected val indexPageSize = 10
@@ -144,15 +154,10 @@ trait DocumentSetController extends Controller {
       case Some(JsSuccess(metadataSchema, _)) => backend.updateMetadataSchema(id, metadataSchema).map(_ => NoContent)
     }
   }
-
-  protected val storage: DocumentSetController.Storage
-  protected val jobQueue: JobQueueSender
-  protected val backend: DocumentSetBackend
-  protected val importJobBackend: ImportJobBackend
-  protected val viewBackend: ViewBackend
 }
 
-object DocumentSetController extends DocumentSetController {
+object DocumentSetController {
+  @ImplementedBy(classOf[DocumentSetController.DatabaseStorage])
   trait Storage {
     /** Returns a mapping from DocumentSet ID to nViews+nTrees.
       */
@@ -167,7 +172,7 @@ object DocumentSetController extends DocumentSetController {
     def findTags(documentSetId: Long) : Iterable[Tag]
   }
 
-  object DatabaseStorage extends Storage with HasBlockingDatabase {
+  class DatabaseStorage @Inject() extends Storage with HasBlockingDatabase {
     import database.api._
 
     override def deleteDocumentSet(documentSetId: Long) = {
@@ -222,10 +227,4 @@ object DocumentSetController extends DocumentSetController {
       blockingDatabase.seq(Tags.filter(_.documentSetId === documentSetId))
     }
   }
-
-  override val storage = DatabaseStorage
-  override val jobQueue = JobQueueSender
-  override val backend = DocumentSetBackend
-  override val importJobBackend = ImportJobBackend
-  override val viewBackend = ViewBackend
 }

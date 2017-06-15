@@ -1,6 +1,8 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
 import java.util.UUID
+import javax.inject.Inject
 import org.postgresql.PGConnection
 import scala.concurrent.Future
 
@@ -8,6 +10,7 @@ import com.overviewdocs.database.LargeObject
 import com.overviewdocs.models.GroupedFileUpload
 import com.overviewdocs.models.tables.GroupedFileUploads
 
+@ImplementedBy(classOf[DbGroupedFileUploadBackend])
 trait GroupedFileUploadBackend extends Backend {
   /** Lists GroupedFileUploads in a FileGroup.
     */
@@ -42,7 +45,7 @@ trait GroupedFileUploadBackend extends Backend {
   def writeBytes(id: Long, position: Long, bytes: Array[Byte]): Future[Unit]
 }
 
-trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend with DbBackend {
+class DbGroupedFileUploadBackend @Inject() extends GroupedFileUploadBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -119,5 +122,3 @@ trait DbGroupedFileUploadBackend extends GroupedFileUploadBackend with DbBackend
     database.run(action.transactionally)
   }
 }
-
-object GroupedFileUploadBackend extends DbGroupedFileUploadBackend

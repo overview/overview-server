@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.concurrent.Future
 
@@ -9,11 +11,13 @@ import controllers.auth.Authorities.{anyUser,userOwningDocumentSet,userOwningFil
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,ImportJobBackend}
 import controllers.util.JobQueueSender
 
-trait FileImportController extends Controller {
-  val documentSetBackend: DocumentSetBackend
-  val jobQueueSender: JobQueueSender
-  val importJobBackend: ImportJobBackend
-  val fileGroupBackend: FileGroupBackend
+class FileImportController @Inject() (
+  documentSetBackend: DocumentSetBackend,
+  jobQueueSender: JobQueueSender,
+  importJobBackend: ImportJobBackend,
+  fileGroupBackend: FileGroupBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
 
   def _new = AuthorizedAction(anyUser).async { implicit request =>
     for {
@@ -59,11 +63,4 @@ trait FileImportController extends Controller {
       }
     })
   }
-}
-
-object FileImportController extends FileImportController {
-  override val documentSetBackend = DocumentSetBackend
-  override val fileGroupBackend = FileGroupBackend
-  override val jobQueueSender = JobQueueSender
-  override val importJobBackend = ImportJobBackend
 }

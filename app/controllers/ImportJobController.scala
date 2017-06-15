@@ -1,13 +1,17 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import controllers.auth.Authorities.anyUser
 import controllers.auth.AuthorizedAction
 import controllers.backend.ImportJobBackend
 
-trait ImportJobController extends Controller {
-  val importJobBackend: ImportJobBackend
+class ImportJobController @Inject() (
+  importJobBackend: ImportJobBackend,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
 
   def index = AuthorizedAction(anyUser).async { implicit request =>
     for {
@@ -17,8 +21,4 @@ trait ImportJobController extends Controller {
         .withHeaders(CACHE_CONTROL -> "max-age=0")
     }
   }
-}
-
-object ImportJobController extends ImportJobController {
-  override val importJobBackend = ImportJobBackend
 }

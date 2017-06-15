@@ -1,11 +1,14 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.FileGroup
 import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 
+@ImplementedBy(classOf[DbFileGroupBackend])
 trait FileGroupBackend extends Backend {
   /** Changes a FileGroup from a place where the user uploads to a place where
     * the worker processes.
@@ -59,7 +62,7 @@ trait FileGroupBackend extends Backend {
   def destroy(id: Long): Future[Unit]
 }
 
-trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
+class DbFileGroupBackend @Inject() extends FileGroupBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -149,5 +152,3 @@ trait DbFileGroupBackend extends FileGroupBackend with DbBackend {
     database.runUnit(updateDeletedByIdCompiled(id).update(true))
   }
 }
-
-object FileGroupBackend extends DbFileGroupBackend

@@ -1,20 +1,15 @@
 package controllers.util
 
 import akka.actor.ActorSelection
+import javax.inject.Inject
 
 import com.overviewdocs.messages.DocumentSetCommands
 import modules.RemoteActorSystemModule
 
-trait JobQueueSender {
-  protected def workerActor: ActorSelection
+class JobQueueSender @Inject() (remoteActorSystemModule: RemoteActorSystemModule) {
+  protected def messageBroker: ActorSelection = remoteActorSystemModule.messageBroker
 
   def send(command: DocumentSetCommands.Command): Unit = {
-    workerActor ! command
-  }
-}
-
-object JobQueueSender extends JobQueueSender {
-  override protected lazy val workerActor = {
-    play.api.Play.current.injector.instanceOf[RemoteActorSystemModule].workerActor
+    messageBroker ! command
   }
 }

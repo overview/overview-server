@@ -1,5 +1,7 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.database.exceptions.Conflict
@@ -7,6 +9,7 @@ import com.overviewdocs.models.DocumentSetUser
 import com.overviewdocs.models.DocumentSetUser.Role
 import com.overviewdocs.models.tables.DocumentSetUsers
 
+@ImplementedBy(classOf[DbDocumentSetUserBackend])
 trait DocumentSetUserBackend {
   /** Returns non-owner DocumentSetUsers for a given DocumentSet. */
   def index(documentSetId: Long): Future[Seq[DocumentSetUser]]
@@ -31,7 +34,7 @@ trait DocumentSetUserBackend {
   def destroy(documentSetId: Long, userEmail: String): Future[Unit]
 }
 
-trait DbDocumentSetUserBackend extends DocumentSetUserBackend with DbBackend {
+class DbDocumentSetUserBackend @Inject() extends DocumentSetUserBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -67,5 +70,3 @@ trait DbDocumentSetUserBackend extends DocumentSetUserBackend with DbBackend {
     database.delete(byAll(documentSetId, userEmail))
   }
 }
-
-object DocumentSetUserBackend extends DbDocumentSetUserBackend

@@ -1,11 +1,14 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.database.TreeIdGenerator
 import com.overviewdocs.models.{DocumentSet,DocumentSetUser,Tree}
 import com.overviewdocs.models.tables.{DocumentSets,DocumentSetUsers,Trees}
 
+@ImplementedBy(classOf[DbTreeBackend])
 trait TreeBackend extends Backend {
   /** Creates a Tree.
     */
@@ -32,7 +35,7 @@ trait TreeBackend extends Backend {
   def indexIncompleteWithDocumentSetAndOwnerEmail: Future[Seq[(Tree,DocumentSet,Option[String])]]
 }
 
-trait DbTreeBackend extends TreeBackend with DbBackend {
+class DbTreeBackend @Inject() extends TreeBackend with DbBackend {
   import database.api._
 
   lazy val inserter = Trees.returning(Trees)
@@ -98,5 +101,3 @@ trait DbTreeBackend extends TreeBackend with DbBackend {
     """)
   }
 }
-
-object TreeBackend extends DbTreeBackend

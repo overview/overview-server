@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.Tag
 import com.overviewdocs.models.tables.Tags
 
+@ImplementedBy(classOf[DbTagBackend])
 trait TagBackend {
   /** Lists all Tags for the given DocumentSet. */
   def index(documentSetId: Long): Future[Seq[Tag]]
@@ -29,7 +32,7 @@ trait TagBackend {
   def destroy(documentSetId: Long, id: Long): Future[Unit]
 }
 
-trait DbTagBackend extends TagBackend with DbBackend {
+class DbTagBackend @Inject() extends TagBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -93,5 +96,3 @@ trait DbTagBackend extends TagBackend with DbBackend {
     """)
   }
 }
-
-object TagBackend extends DbTagBackend

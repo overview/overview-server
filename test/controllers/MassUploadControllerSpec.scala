@@ -16,7 +16,7 @@ import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema
 import com.overviewdocs.models.{DocumentSet,FileGroup,GroupedFileUpload}
 import controllers.auth.{AuthorizedRequest}
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
-import controllers.util.JobQueueSender
+import controllers.util.{JobQueueSender,MassUploadControllerMethods}
 import models.{ Session, User }
 
 class MassUploadControllerSpec extends ControllerSpecification {
@@ -25,15 +25,16 @@ class MassUploadControllerSpec extends ControllerSpecification {
     val mockFileGroupBackend = smartMock[FileGroupBackend]
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockJobQueueSender = smartMock[JobQueueSender]
-    val mockUploadSinkFactory = mock[(GroupedFileUpload,Long) => Sink[ByteString, Future[Unit]]]
+    val mockUploadSinkFactory = mock[MassUploadControllerMethods.UploadSinkFactory]
 
-    val controller = new MassUploadController with TestController {
-      override val documentSetBackend = mockDocumentSetBackend
-      override val fileGroupBackend = mockFileGroupBackend
-      override val groupedFileUploadBackend = mockUploadBackend
-      override val uploadSinkFactory = mockUploadSinkFactory
-      override val jobQueueSender = mockJobQueueSender
-    }
+    val controller = new MassUploadController(
+      mockDocumentSetBackend,
+      mockFileGroupBackend,
+      mockJobQueueSender,
+      mockUploadBackend,
+      mockUploadSinkFactory,
+      testMessagesApi
+    )
 
     val factory = com.overviewdocs.test.factories.PodoFactory
   }
@@ -54,7 +55,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val groupedFileUpload = factory.groupedFileUpload(size=20L, uploadedSize=10L)
       mockFileGroupBackend.findOrCreate(any) returns Future.successful(fileGroup)
       mockUploadBackend.findOrCreate(any) returns Future.successful(groupedFileUpload)
-      mockUploadSinkFactory(any, any) returns Sink.fold(())((_, _) => ())
+      mockUploadSinkFactory.build(any, any) returns Sink.fold(())((_, _) => ())
 
       h.status(result) must beEqualTo(h.CREATED)
     }.pendingUntilFixed("AuthorizedBodyParser doesn't allow stubbing")

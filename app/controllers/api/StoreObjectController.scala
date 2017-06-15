@@ -1,5 +1,6 @@
 package controllers.api
 
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsObject,JsPath,JsValue,Reads}
 import scala.concurrent.Future
@@ -10,9 +11,10 @@ import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.{anyUser,userOwningStoreObject}
 import com.overviewdocs.models.StoreObject
 
-trait StoreObjectController extends ApiController {
-  protected val storeBackend: StoreBackend
-  protected val storeObjectBackend: StoreObjectBackend
+class StoreObjectController @Inject() (
+  storeBackend: StoreBackend,
+  storeObjectBackend: StoreObjectBackend
+) extends ApiController {
 
   def index = ApiAuthorizedAction(anyUser).async { request =>
     for {
@@ -89,10 +91,7 @@ trait StoreObjectController extends ApiController {
   }
 }
 
-object StoreObjectController extends StoreObjectController {
-  override protected val storeBackend = StoreBackend
-  override protected val storeObjectBackend = StoreObjectBackend
-
+object StoreObjectController {
   private def createReader[T](ctor: (Option[Long], Option[String], JsObject) => T): Reads[T] = {
     import play.api.libs.functional.syntax._
     import play.api.libs.json.Reads._

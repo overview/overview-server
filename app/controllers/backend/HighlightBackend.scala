@@ -49,15 +49,15 @@ extends HighlightBackend {
   import akka.util.Timeout
   import scala.concurrent.duration._
 
-  private implicit val system = remoteActorSystemModule.remoteActorSystem
+  private implicit val system = remoteActorSystemModule.actorSystem
   private implicit val timeout = Timeout(30.seconds)
-  private val workerActor = remoteActorSystemModule.workerActor
+  private val messageBroker = remoteActorSystemModule.messageBroker
 
   override def highlight(documentSetId: Long, documentId: Long, query: Query) = {
-    workerActor.ask(DocumentSetReadCommands.Highlight(documentSetId, documentId, query)).mapTo[Seq[Utf16Highlight]]
+    messageBroker.ask(DocumentSetReadCommands.Highlight(documentSetId, documentId, query)).mapTo[Seq[Utf16Highlight]]
   }
 
   override def highlights(documentSetId: Long, documentIds: Seq[Long], query: Query) = {
-    workerActor.ask(DocumentSetReadCommands.Highlights(documentSetId, documentIds, query)).mapTo[Map[Long, Seq[Utf16Snippet]]]
+    messageBroker.ask(DocumentSetReadCommands.Highlights(documentSetId, documentIds, query)).mapTo[Map[Long, Seq[Utf16Snippet]]]
   }
 }

@@ -10,10 +10,7 @@ class DocumentSetUserControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockBackend = smartMock[DocumentSetUserBackend]
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
-    val controller = new DocumentSetUserController with TestController {
-      override val backend = mockBackend
-      override val documentSetBackend = mockDocumentSetBackend
-    }
+    val controller = new DocumentSetUserController(mockBackend, mockDocumentSetBackend, testMessagesApi)
     val documentSetId = 123L
   }
 

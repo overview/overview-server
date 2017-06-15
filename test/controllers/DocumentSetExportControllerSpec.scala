@@ -26,7 +26,8 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       mockDocumentSetBackend,
       mockDocumentTagBackend,
       mockTagBackend,
-      mockSelectionBackend
+      mockSelectionBackend,
+      testMessagesApi
     )
 
     def request = fakeAuthorizedRequest

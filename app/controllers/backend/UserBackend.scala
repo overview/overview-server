@@ -1,6 +1,8 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
 import java.sql.Timestamp
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
@@ -9,6 +11,7 @@ import models.tables.Users
 import models.pagination.{Page,PageRequest}
 import com.overviewdocs.models.UserRole
 
+@ImplementedBy(classOf[DbUserBackend])
 trait UserBackend extends Backend {
   /** Returns a page of Users. */
   def indexPage(pageRequest: PageRequest): Future[Page[User]]
@@ -35,7 +38,7 @@ trait UserBackend extends Backend {
   def destroy(id: Long): Future[Unit]
 }
 
-trait DbUserBackend extends UserBackend with DbBackend {
+class DbUserBackend @Inject() extends UserBackend with DbBackend {
   import DbUserBackend.q
   import database.api._
 
@@ -130,5 +133,3 @@ object DbUserBackend {
     lazy val indexLengthCompiled = Compiled { Users.length }
   }
 }
-
-object UserBackend extends DbUserBackend

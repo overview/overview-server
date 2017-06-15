@@ -1,5 +1,8 @@
 package controllers
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
+import play.api.i18n.MessagesApi
 import scala.annotation.tailrec
 
 import com.overviewdocs.database.HasBlockingDatabase
@@ -8,9 +11,11 @@ import com.overviewdocs.models.tables.{Nodes,Trees}
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningTree
 
-trait NodeController extends Controller {
+class NodeController @Inject() (
+  storage: NodeController.Storage,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
-  val storage : NodeController.Storage
 
   def index(treeId: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
     storage.findTree(treeId) match {
@@ -36,7 +41,8 @@ trait NodeController extends Controller {
   }
 }
 
-object NodeController extends NodeController {
+object NodeController {
+  @ImplementedBy(classOf[BlockingDatabaseStorage])
   trait Storage {
     /** A tree of Nodes for the document set, starting at the root.
       *
@@ -52,7 +58,7 @@ object NodeController extends NodeController {
     def findTree(treeId: Long) : Option[Tree]
   }
 
-  override val storage = new Storage with HasBlockingDatabase {
+  class BlockingDatabaseStorage @Inject() extends Storage with HasBlockingDatabase {
     import database.api._
 
     private def childrenOf(nodes: Iterable[Node]) : Iterable[Node] = {

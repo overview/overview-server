@@ -3,40 +3,24 @@ package modules
 import akka.actor.{ActorSelection,ActorSystem}
 import com.typesafe.config.ConfigFactory
 import javax.inject._
-import play.api.Environment
+import play.api.{Configuration,Environment}
 import play.api.inject.ApplicationLifecycle
 import scala.concurrent.Future
 
-/** Provides a RemoteActorSystem, to communicate with worker.
+/** Provides helpers for communicating with the worker.
   *
-  * We have three behaviors:
+  * This assumes Play's actor system is a RemoteActorSystem.
   *
-  * * In production, the actor system starts on first reference and stops on
-  *   shutdown.
-  * * In dev, the actor system stops every time the app shuts down. (This is
-  *   why we *need* this module: otherwise we try to listen on the same port
-  *   every time the server restarts.)
-  * * In test, we never ever reference this ActorSystem.
+  * We make <tt>actorSystem</tt> public so that clients who inject
+  * RemoteActorSystemModule don't need to inject ActorSystem as well.
   */
 @Singleton
-class RemoteActorSystemModule @Inject() (environment: Environment, lifecycle: ApplicationLifecycle) {
-  private lazy val config = ConfigFactory.load.getConfig("worker")
-  private lazy val hostname = config.getString("message_broker_hostname")
-  private lazy val port = config.getInt("message_broker_port")
-  private lazy val rootPath = s"akka.tcp://worker@${hostname}:${port}/user"
+class RemoteActorSystemModule @Inject() (configuration: Configuration, val actorSystem: ActorSystem) {
+  private val hostname = configuration.getString("worker.message_broker_hostname").get
+  private val port = configuration.getInt("worker.message_broker_port").get
+  private val rootPath = s"akka.tcp://worker@${hostname}:${port}/user"
 
-  lazy val remoteActorSystem: ActorSystem = {
-    val ret = ActorSystem.create("worker", config, environment.classLoader)
-
-    lifecycle.addStopHook { () =>
-      ret.terminate
-      Future.successful(())
-    }
-
-    ret
-  }
-
-  lazy val workerActor: ActorSelection = {
-    remoteActorSystem.actorSelection(rootPath + "/DocumentSetMessageBroker")
+  lazy val messageBroker: ActorSelection = {
+    actorSystem.actorSelection(rootPath + "/DocumentSetMessageBroker")
   }
 }

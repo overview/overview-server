@@ -1,14 +1,21 @@
 package controllers
 
+import javax.inject.Inject
+import play.api.Configuration
+import play.api.i18n.MessagesApi
+
 import controllers.auth.OptionallyAuthorizedAction
 import controllers.auth.Authorities.anyUser
 import play.api.Play
 
-object WelcomeController extends Controller {
+class WelcomeController @Inject() (
+  configuration: Configuration,
+  messagesApi: MessagesApi
+) extends Controller(messagesApi) {
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
-  val banner = Play.current.configuration.getString("overview.welcome_banner")
-  val allowRegistration = Play.current.configuration.getBoolean("overview.allow_registration").getOrElse(false)
+  val banner = configuration.getString("overview.welcome_banner")
+  val allowRegistration = configuration.getBoolean("overview.allow_registration").getOrElse(false)
   lazy val is32BitJava = sys.props.get("overview.is32BitJava").isDefined
 
   def show() = OptionallyAuthorizedAction(anyUser) { implicit request =>

@@ -1,11 +1,14 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
 import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.Plugin
 import com.overviewdocs.models.tables.Plugins
 
+@ImplementedBy(classOf[DbPluginBackend])
 trait PluginBackend {
   /** Lists all Plugins, in alphabetical order. */
   def index: Future[Seq[Plugin]]
@@ -27,7 +30,7 @@ trait PluginBackend {
   def destroy(id: UUID): Future[Unit]
 }
 
-trait DbPluginBackend extends PluginBackend with DbBackend {
+class DbPluginBackend @Inject() extends PluginBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -67,5 +70,3 @@ trait DbPluginBackend extends PluginBackend with DbBackend {
     for (p <- Plugins if p.id === id) yield (p.name, p.description, p.url, p.autocreate, p.autocreateOrder)
   }
 }
-
-object PluginBackend extends DbPluginBackend

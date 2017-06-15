@@ -1,10 +1,13 @@
 package controllers.backend
 
+import com.google.inject.ImplementedBy
+import javax.inject.Inject
 import scala.concurrent.Future
 
 import com.overviewdocs.models.CsvImport
 import com.overviewdocs.models.tables.CsvImports
 
+@ImplementedBy(classOf[DbCsvImportBackend])
 trait CsvImportBackend extends Backend {
   /** Saves and returns a new CsvImport.
     *
@@ -23,7 +26,7 @@ trait CsvImportBackend extends Backend {
   def cancel(documentSetId: Long, id: Long): Future[Boolean]
 }
 
-trait DbCsvImportBackend extends CsvImportBackend with DbBackend {
+class DbCsvImportBackend @Inject() extends CsvImportBackend with DbBackend {
   import database.api._
   import database.executionContext
 
@@ -45,5 +48,3 @@ trait DbCsvImportBackend extends CsvImportBackend with DbBackend {
     database.run(cancelCompiled(documentSetId, id).update(true)).map(_ > 0)
   }
 }
-
-object CsvImportBackend extends DbCsvImportBackend
