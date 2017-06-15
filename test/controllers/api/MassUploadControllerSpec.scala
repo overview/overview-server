@@ -29,7 +29,8 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       mockJobQueueSender,
       mockUploadBackend,
       mockApiTokenFactory,
-      mockUploadSinkFactory
+      mockUploadSinkFactory,
+      app.materializer
     )
 
     val factory = com.overviewdocs.test.factories.PodoFactory

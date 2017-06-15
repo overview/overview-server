@@ -33,7 +33,8 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockJobQueueSender,
       mockUploadBackend,
       mockUploadSinkFactory,
-      testMessagesApi
+      testMessagesApi,
+      app.materializer
     )
 
     val factory = com.overviewdocs.test.factories.PodoFactory

@@ -1,5 +1,6 @@
 package controllers.api
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import java.util.UUID
@@ -24,7 +25,8 @@ class MassUploadController @Inject() (
   jobQueueSender: JobQueueSender,
   groupedFileUploadBackend: GroupedFileUploadBackend,
   apiTokenFactory: ApiTokenFactory,
-  uploadSinkFactory: MassUploadControllerMethods.UploadSinkFactory
+  uploadSinkFactory: MassUploadControllerMethods.UploadSinkFactory,
+  materializer: Materializer
 ) extends ApiController {
 
   def index = ApiAuthorizedAction(anyUser).async { request =>
@@ -45,11 +47,12 @@ class MassUploadController @Inject() (
         fileGroupBackend,
         groupedFileUploadBackend,
         uploadSinkFactory,
-        true
+        true,
+        materializer
       )(request)
     })
 
-    Accumulator.flatten(futureAccumulator)(play.api.Play.current.materializer)
+    Accumulator.flatten(futureAccumulator)(materializer)
   }
 
   /** Responds to a HEAD request.

@@ -1,6 +1,7 @@
 // MassUploadController is factored into this file so that both client and API access route to same code
 package controllers.util
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import com.google.inject.ImplementedBy
@@ -42,7 +43,8 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
     fileGroupBackend: FileGroupBackend, 
     groupedFileUploadBackend: GroupedFileUploadBackend,
     uploadSinkFactory: UploadSinkFactory,
-    wantJsonResponse: Boolean
+    wantJsonResponse: Boolean,
+    materializer: Materializer
   ) extends EssentialAction {
     private case class RequestInfo(
       filename: String,
@@ -135,7 +137,7 @@ private[controllers] object MassUploadControllerMethods extends controllers.Cont
               groupedFileUpload <- findOrCreateGroupedFileUpload(fileGroup, info)
             } yield createAccumulator(groupedFileUpload, info)
 
-          Accumulator.flatten(futureAccumulator)(play.api.Play.current.materializer)
+          Accumulator.flatten(futureAccumulator)(materializer)
         }
       }
     }

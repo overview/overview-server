@@ -1,5 +1,6 @@
 package controllers
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import java.util.UUID
@@ -27,7 +28,8 @@ class MassUploadController @Inject() (
   jobQueueSender: JobQueueSender,
   groupedFileUploadBackend: GroupedFileUploadBackend,
   uploadSinkFactory: MassUploadControllerMethods.UploadSinkFactory,
-  messagesApi: MessagesApi
+  messagesApi: MessagesApi,
+  materializer: Materializer
 ) extends Controller(messagesApi) {
 
   /** Calls MassUploadControllerMethods.Create(), returning the result as body.
@@ -43,7 +45,8 @@ class MassUploadController @Inject() (
         fileGroupBackend,
         groupedFileUploadBackend,
         uploadSinkFactory,
-        false
+        false,
+        materializer
       )(request)
         .map(result => Right(result)) // Doesn't matter which it is...
     }

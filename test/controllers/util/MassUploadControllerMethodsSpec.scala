@@ -32,7 +32,8 @@ class MassUploadControllerMethodsSpec extends controllers.ControllerSpecificatio
         mockFileGroupBackend,
         mockUploadBackend,
         mockUploadIterateeFactory,
-        wantJsonResponse
+        wantJsonResponse,
+        app.materializer
       )
 
       val validHeaders: Seq[(String,String)] = Seq("Content-Length" -> "20", "Content-Disposition" -> "attachment; filename=foobar.txt")
