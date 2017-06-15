@@ -1,6 +1,5 @@
 package controllers.filters
 
-import akka.stream.Materializer
 import javax.inject.Inject
 import play.api.mvc.{EssentialAction,EssentialFilter,RequestHeader}
 import play.api.Logger
@@ -8,7 +7,7 @@ import scala.concurrent.ExecutionContext
 
 /** Logs each request and how long it took.
   */
-class LoggingFilter @Inject() (implicit val mat: Materializer, ec: ExecutionContext) extends EssentialFilter {
+class LoggingFilter @Inject() (implicit ec: ExecutionContext) extends EssentialFilter {
   // Copy/paste of http://www.playframework.com/documentation/2.2.1/ScalaHttpFilters
   def apply(nextFilter: EssentialAction) = new EssentialAction {
     def apply(requestHeader: RequestHeader) = {

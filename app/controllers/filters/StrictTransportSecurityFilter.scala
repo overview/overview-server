@@ -4,17 +4,19 @@ import javax.inject.Inject
 import play.api.mvc.{EssentialAction,EssentialFilter,RequestHeader}
 import scala.concurrent.ExecutionContext
 
-/** Adds Access-Control-Allow-Origin headers to successful /api/ responses.
+/** Adds Strict-Transport-Security to all SSL responses.
+  *
+  * https://www.owasp.org/index.php/HTTP_Strict_Transport_Security_Cheat_Sheet
   */
-class CorsFilter @Inject() (implicit ec: ExecutionContext) extends EssentialFilter {
+class StrictTransportSecurityFilter @Inject() (implicit ec: ExecutionContext) extends EssentialFilter {
   private val Headers = Seq(
-    "Access-Control-Allow-Origin" -> "*",
-    "Access-Control-Allow-Headers" -> "origin, authorization, content-type, accept"
+    "Strict-Transport-Security" -> "max-age=31536000"
+    // We'd like to includeSubDomains, but for now we're using HTTP on jenkins-ci.overviewdocs.com
   )
 
   def apply(nextFilter: EssentialAction) = new EssentialAction {
     def apply(requestHeader: RequestHeader) = {
-      if (requestHeader.path.startsWith("/api/")) {
+      if (requestHeader.secure) {
         nextFilter(requestHeader).map(_.withHeaders(Headers: _*))
       } else {
         nextFilter(requestHeader)
