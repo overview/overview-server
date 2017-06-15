@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.{File => JFile} 
 import javax.inject.Inject
+import play.api.Configuration
 import play.api.http.HttpEntity
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
@@ -27,7 +28,8 @@ class DocumentController @Inject() (
   blobStorage: BlobStorage,
   fileBackend: FileBackend,
   pageBackend: PageBackend,
-  messagesApi: MessagesApi
+  messagesApi: MessagesApi,
+  configuration: Configuration
 ) extends Controller(messagesApi) {
 
   def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
@@ -45,7 +47,7 @@ class DocumentController @Inject() (
     if (filename.contains("..") || filename.contains("~") || (filename.indexOf(".pdf")!=filename.length-4)) {
       None
     } else {
-      Some(Play.current.configuration.getString("blobStorage.file.baseDirectory").get + "/user/" + filename)
+      Some(configuration.getString("blobStorage.file.baseDirectory").get + "/user/" + filename)
     }
   }
 

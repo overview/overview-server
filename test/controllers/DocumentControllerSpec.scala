@@ -25,7 +25,8 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
       mockBlobStorage,
       mockFileBackend,
       mockPageBackend,
-      testMessagesApi
+      testMessagesApi,
+      app.configuration
     )
 
     val factory = com.overviewdocs.test.factories.PodoFactory
