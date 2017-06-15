@@ -1,6 +1,7 @@
 package models.archive
 
 import akka.stream.scaladsl.{Sink,Source}
+import akka.stream.Materializer
 import akka.util.ByteString
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee.{Enumerator,Iteratee}
@@ -82,13 +83,13 @@ class ZipArchive(
 
   private val timestamp = DosDate.now
 
-  def stream: Source[ByteString, akka.NotUsed] = {
+  def stream()(implicit mat: Materializer): Source[ByteString, akka.NotUsed] = {
     streamLocalFiles
       .concat(streamCentralDirectory)
       .concat(endOfCentralDirectory)
   }
 
-  private def streamLocalFiles: Source[ByteString, akka.NotUsed] = {
+  private def streamLocalFiles()(implicit mat: Materializer): Source[ByteString, akka.NotUsed] = {
     Source(archiveEntries)
       .flatMapConcat(streamLocalFile _)
   }
@@ -96,7 +97,7 @@ class ZipArchive(
   /** Stream an ArchiveEntry, and set this.crcs(archiveEntry.documentId) as a
     * side-effect.
     */
-  private def streamLocalFile(archiveEntry: ArchiveEntry): Source[ByteString, akka.NotUsed] = {
+  private def streamLocalFile(archiveEntry: ArchiveEntry)(implicit mat: Materializer): Source[ByteString, akka.NotUsed] = {
     val future = for {
       crc <- computeCrc(archiveEntry)
     } yield {
@@ -226,12 +227,12 @@ class ZipArchive(
     * know the size from archiveEntry.) Or find some other way to avoid writing
     * the CRC32 before the file contents (cross-platform).
     */
-  private def computeCrc(archiveEntry: ArchiveEntry): Future[Int] = {
+  private def computeCrc(archiveEntry: ArchiveEntry)(implicit mat: Materializer): Future[Int] = {
     val crc32 = new CRC32()
     val source: Source[ByteString, _] = backend.streamBytes(documentSetId, archiveEntry.documentId)
     val sink = Sink.foreach { (bytes: ByteString) => crc32.update(bytes.toArray) }
     for {
-      _ <- source.runWith(sink)(play.api.Play.current.materializer)
+      _ <- source.runWith(sink)(mat)
     } yield crc32.getValue.toInt
   }
 }

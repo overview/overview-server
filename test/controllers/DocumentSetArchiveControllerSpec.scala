@@ -25,7 +25,8 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       mockArchiveEntryBackend,
       mockArchiveFactory,
       mockSelectionBackend,
-      testMessagesApi
+      testMessagesApi,
+      app.materializer
     )
   }
 

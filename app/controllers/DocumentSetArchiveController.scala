@@ -1,5 +1,6 @@
 package controllers
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import javax.inject.Inject
@@ -20,7 +21,8 @@ class DocumentSetArchiveController @Inject() (
   archiveEntryBackend: ArchiveEntryBackend,
   archiveFactory: ArchiveFactory,
   protected val selectionBackend: SelectionBackend,
-  messagesApi: MessagesApi
+  messagesApi: MessagesApi,
+  materializer: Materializer
 ) extends Controller(messagesApi) with SelectionHelpers {
 
   def archive(documentSetId: Long, filename: String) = AuthorizedAction(userCanExportDocumentSet(documentSetId)).async { implicit request =>
@@ -47,7 +49,7 @@ class DocumentSetArchiveController @Inject() (
   private def streamArchive(archive: ZipArchive, filename: String): Result = {
     val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
-    Ok.sendEntity(HttpEntity.Streamed(archive.stream, Some(archive.size), Some("application/zip")))
+    Ok.sendEntity(HttpEntity.Streamed(archive.stream()(materializer), Some(archive.size), Some("application/zip")))
       .withHeaders(
         CONTENT_DISPOSITION -> contentDisposition
       )
