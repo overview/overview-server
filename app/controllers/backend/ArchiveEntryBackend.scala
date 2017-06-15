@@ -14,7 +14,7 @@ import slick.dbio.{DBIOAction,Effect,NoStream,SynchronousDatabaseAction}
 import slick.jdbc.JdbcBackend
 import slick.util.DumpInfo
 
-import com.overviewdocs.blobstorage.InjectedBlobStorage
+import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.database.Database
 import models.ArchiveEntry
 
@@ -36,7 +36,7 @@ trait ArchiveEntryBackend extends Backend {
 
 class DbArchiveEntryBackend @Inject() (
   val database: Database,
-  val blobStorage: InjectedBlobStorage
+  val blobStorage: BlobStorage
 ) extends ArchiveEntryBackend with DbBackend {
   private class ShowManyAction(documentSetId: Long, documentIds: Seq[Long])
   extends SynchronousDatabaseAction[Seq[ArchiveEntry], NoStream, JdbcBackend, Effect.Read]
