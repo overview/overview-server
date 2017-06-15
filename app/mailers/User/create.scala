@@ -1,9 +1,6 @@
 package mailers.User
 
 import play.api.i18n.Messages
-import play.api.mvc.RequestHeader
-import play.api.Play
-import play.api.Play.current
 import mailers.Mailer
 import models.User
 import scala.xml.Unparsed
