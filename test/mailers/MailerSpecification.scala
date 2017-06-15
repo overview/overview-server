@@ -1,21 +1,20 @@
 package mailers
 
+import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.i18n.{Lang,Messages}
-import play.api.mvc.RequestHeader
-import play.api.test.FakeRequest
+import play.api.i18n.Messages
 
-import models.{User=>UserModel}
 import com.overviewdocs.models.UserRole
+import controllers.util.NullMessagesApi
+import models.{User=>UserModel}
 
-class MailerSpecification extends test.helpers.InAppSpecification {
-  trait MailerScope extends Scope {
+class MailSpecification  extends Specification {
+  trait MailScope extends Scope {
     val factory = com.overviewdocs.test.factories.PodoFactory
     def fakeUser: UserModel = UserModel(email="user@example.org", role=UserRole.NormalUser)
 
-    implicit def request: RequestHeader = FakeRequest()
-    implicit val messages: Messages = new Messages(Lang("en"), new test.helpers.MockMessagesApi())
+    implicit def messages: Messages = NullMessagesApi.messages
 
-    def mailer: Mailer
+    def mail: Mail
   }
 }

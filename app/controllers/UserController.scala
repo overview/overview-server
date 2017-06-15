@@ -12,6 +12,7 @@ import com.overviewdocs.database.exceptions.Conflict
 import com.overviewdocs.models.UserRole
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
+import mailers.Mailer
 import models.{PotentialNewUser,PotentialExistingUser,User}
 import models.tables.Users
 
@@ -99,7 +100,7 @@ object UserController {
     def findUserByEmail(email: String): Option[User]
   }
 
-  class BlockingDatabaseBackendStuff @Inject() extends BackendStuff with HasBlockingDatabase {
+  class BlockingDatabaseBackendStuff @Inject() (mailer: Mailer) extends BackendStuff with HasBlockingDatabase {
     import database.api._
 
     override def createUser(user: PotentialNewUser): User = {
@@ -128,11 +129,13 @@ object UserController {
     }
 
     override def mailNewUser(user: User, url: String, contactUrl: String)(implicit messages: Messages) = {
-      mailers.User.create(user, url, contactUrl).send
+      val mail = mailers.User.create(user, url, contactUrl)
+      mailer.send(mail)
     }
 
     override def mailExistingUser(user: User, loginUrl: String)(implicit messages: Messages) = {
-      mailers.User.createErrorUserAlreadyExists(user, loginUrl).send
+      val mail = mailers.User.createErrorUserAlreadyExists(user, loginUrl)
+      mailer.send(mail)
     }
   }
 }

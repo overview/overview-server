@@ -30,7 +30,7 @@ object Dependencies {
     val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.4"
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.15.0"
     val playJson = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
-    val playMailer = "com.typesafe.play" %% "play-mailer" % "4.0.0-M1"
+    val playMailer = "com.typesafe.play" %% "play-mailer" % "5.0.0"
     val playPluginsUtil = "com.typesafe.play.plugins" %% "play-plugins-util" % "2.3.0"
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
     val postgresql = "org.postgresql" % "postgresql" % "42.1.1"

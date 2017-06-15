@@ -161,15 +161,15 @@ object PasswordController {
     }
   }
 
-  class DefaultMail @Inject() extends Mail {
+  class DefaultMail @Inject() (mailer: Mailer) extends PasswordController.Mail {
     override def sendCreated(user: User, resetPasswordUrl: String)(implicit messages: Messages) = {
       val mail = mailers.Password.create(user, resetPasswordUrl)
-      mail.send
+      mailer.send(mail)
     }
 
     override def sendCreateErrorUserDoesNotExist(email: String, resetPasswordFormUrl: String)(implicit messages: Messages) = {
       val mail = mailers.Password.createErrorUserDoesNotExist(email, resetPasswordFormUrl)
-      mail.send
+      mailer.send(mail)
     }
   }
 }

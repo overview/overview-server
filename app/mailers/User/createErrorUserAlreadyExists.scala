@@ -3,10 +3,10 @@ package mailers.User
 import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 
-import mailers.Mailer
+import mailers.Mail
 import models.User
 
-case class createErrorUserAlreadyExists(val user: User, loginUrl: String)(implicit val messages: Messages) extends Mailer {
+case class createErrorUserAlreadyExists(val user: User, loginUrl: String)(implicit val messages: Messages) extends Mail {
   private val m = views.Magic.scopedMessages("mailers.User.createErrorUserAlreadyExists")
 
   private val intro = m("intro")

@@ -1,11 +1,12 @@
 package mailers.User
 
 import play.api.i18n.Messages
-import mailers.Mailer
-import models.User
 import scala.xml.Unparsed
 
-case class create(val user: User, val url: String, val contactUrl: String)(implicit val messages: Messages) extends Mailer {
+import mailers.Mail
+import models.User
+
+case class create(val user: User, val url: String, val contactUrl: String)(implicit val messages: Messages) extends Mail {
   private val m = views.Magic.scopedMessages("mailers.User.create")
 
   private val body1 = m("body1")

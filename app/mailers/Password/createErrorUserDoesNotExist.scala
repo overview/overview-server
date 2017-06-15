@@ -2,9 +2,9 @@ package mailers.Password
 
 import play.api.i18n.Messages
 
-import mailers.Mailer
+import mailers.Mail
 
-case class createErrorUserDoesNotExist(val email: String, val resetPasswordFormUrl: String)(implicit val messages: Messages) extends Mailer {
+case class createErrorUserDoesNotExist(val email: String, val resetPasswordFormUrl: String)(implicit val messages: Messages) extends Mail {
   private val m = views.Magic.scopedMessages("mailers.Password.createErrorUserDoesNotExist")
 
   private val intro = m("intro")

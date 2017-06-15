@@ -2,9 +2,9 @@ package mailers.Password
 
 import controllers.util.NullMessagesApi
 
-class createErrorUserDoesNotExistSpec extends mailers.MailerSpecification {
-  trait OurContext extends MailerScope {
-    override lazy val mailer = createErrorUserDoesNotExist(
+class createErrorUserDoesNotExistSpec extends mailers.MailSpecification {
+  trait OurContext extends MailScope {
+    override def mail = createErrorUserDoesNotExist(
       "email@example.org",
       "http://example.org"
     )(NullMessagesApi.messages)
@@ -12,7 +12,7 @@ class createErrorUserDoesNotExistSpec extends mailers.MailerSpecification {
 
   "createErrorUserAlreadyExists()" should {
     "send to the user and only the user" in new OurContext {
-      mailer.recipients must beEqualTo(Seq("email@example.org"))
+      mail.recipients must beEqualTo(Seq("email@example.org"))
     }
   }
 }

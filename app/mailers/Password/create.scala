@@ -2,10 +2,10 @@ package mailers.Password
 
 import play.api.i18n.Messages
 
-import mailers.Mailer
+import mailers.Mail
 import models.User
 
-case class create(val user: User, val resetPasswordUrl: String)(implicit val messages: Messages) extends Mailer {
+case class create(val user: User, val resetPasswordUrl: String)(implicit val messages: Messages) extends Mail {
   private val m = views.Magic.scopedMessages("mailers.Password.create")
 
   private val body = m("body")

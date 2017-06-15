@@ -1,19 +1,16 @@
 package mailers.User
 
-import controllers.util.NullMessagesApi
-import models.User
-
-class createErrorUserAlreadyExistsSpec extends mailers.MailerSpecification {
-  trait OurContext extends MailerScope {
-    override lazy val mailer = createErrorUserAlreadyExists(
-      User(email="user@example.org"),
+class createErrorUserAlreadyExistsSpec extends mailers.MailSpecification {
+  trait OurContext extends MailScope {
+    override def mail = createErrorUserAlreadyExists(
+      fakeUser.copy(email="user@example.org"),
       "http://example.org"
-    )(NullMessagesApi.messages)
+    )
   }
 
   "createErrorUserAlreadyExists()" should {
     "send to the user and only the user" in new OurContext {
-      mailer.recipients.must(equalTo(Seq("user@example.org")))
+      mail.recipients.must(equalTo(Seq("user@example.org")))
     }
   }
 }
