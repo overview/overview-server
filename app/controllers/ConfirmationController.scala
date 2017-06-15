@@ -16,7 +16,8 @@ import models.tables.Users
 
 class ConfirmationController @Inject() (
   sessionBackend: SessionBackend,
-  messagesApi: MessagesApi
+  messagesApi: MessagesApi,
+  mailChimp: MailChimp
 ) extends Controller(messagesApi) with HasBlockingDatabase {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
   private val logger = Logger.forClass(getClass)
@@ -58,7 +59,7 @@ class ConfirmationController @Inject() (
             session <- sessionBackend.create(unconfirmedUser.id, request.remoteAddress)
           } yield {
             if (unconfirmedUser.emailSubscriber) {
-              MailChimp.subscribe(unconfirmedUser.email)
+              mailChimp.subscribe(unconfirmedUser.email)
                 .getOrElse(logger.info(s"Did not attempt requested subscription for ${unconfirmedUser.email}"))
             }
 
