@@ -1,7 +1,5 @@
 package controllers.backend
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Source,Sink}
 import akka.util.ByteString
 import org.specs2.mock.Mockito
@@ -68,7 +66,10 @@ class DbArchiveEntryBackendSpec extends DbBackendSpecification with Mockito {
       }
 
       def consume(documentSetId: Long, documentId: Long): String = {
-        implicit val system = ActorSystem()
+        import akka.actor.ActorSystem
+        import akka.stream.ActorMaterializer
+        import com.typesafe.config.ConfigFactory
+        implicit val system = ActorSystem("DbArchiveEntryBackendSpec", ConfigFactory.empty)
         implicit val mat = ActorMaterializer.create(system)
         import system.dispatcher
 
