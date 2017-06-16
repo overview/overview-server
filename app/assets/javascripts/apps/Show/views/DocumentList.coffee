@@ -131,6 +131,7 @@ define [
         when 'TooManyExpansions' then "<li>#{t(i18nKey, warning.field, warning.term, warning.nExpansions)}</li>"
         when 'TooMuchFuzz' then "<li>#{t(i18nKey, warning.field, warning.term, warning.allowedFuzz)}</li>"
         when 'IndexDoesNotExist' then "<li>#{t(i18nKey)}</li>"
+        when 'MissingField' then "<li>#{t(i18nKey, warning.field)}<ul class='validFieldNames'><li>text</li><li>title</li><li>notes</li>#{warning.validFieldNames.map((s) => "<li>#{_.escape(s)}</li>").join('')}</ul></li>"
         else
           console.warn("Unhandled warning: #{JSON.stringify(warning)}")
           ""

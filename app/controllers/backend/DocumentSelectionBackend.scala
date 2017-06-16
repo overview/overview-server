@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
 import com.overviewdocs.database.Database
 import com.overviewdocs.models.DocumentIdSet
-import com.overviewdocs.query.{Query=>SearchQuery} // conflicts with SQL Query
+import com.overviewdocs.query.{Field,Query=>SearchQuery} // conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
 import models.{InMemorySelection,SelectionRequest,SelectionWarning}
@@ -29,7 +29,8 @@ trait DocumentSelectionBackend {
 
 class DbDocumentSelectionBackend @Inject() (
   val database: Database,
-  val searchBackend: SearchBackend
+  val searchBackend: SearchBackend,
+  val documentSetBackend: DocumentSetBackend
 ) extends DocumentSelectionBackend with DbBackend {
   import database.api._
 
@@ -42,11 +43,43 @@ class DbDocumentSelectionBackend @Inject() (
     }
   }
 
+  private def queryMetadataFieldNames(query: SearchQuery): immutable.Set[String] = {
+    val fieldNames = mutable.Set.empty[String]
+    SearchQuery.walkFields(query)(_ match {
+      case Field.Metadata(name) => fieldNames.add(name)
+      case _ => {}
+    })
+    fieldNames.to[immutable.Set]
+  }
+
+  private def findMissingFieldWarnings(documentSetId: Long, query: SearchQuery): Future[List[SelectionWarning]] = {
+    val queryFieldNames = queryMetadataFieldNames(query)
+
+    if (queryFieldNames.isEmpty) {
+      Future.successful(List())
+    } else {
+      documentSetBackend.show(documentSetId).map(_ match {
+        case None => List() // we have bigger problems than a warning
+        case Some(documentSet) => {
+          val validFieldNames: Seq[String] = documentSet.metadataSchema.fields.map(_.name)
+          val invalidFieldNames: Set[String] = queryFieldNames.diff(validFieldNames.toSet)
+          invalidFieldNames.toList.sorted.map(name => SelectionWarning.MissingField(name, validFieldNames))
+        }
+      })
+    }
+  }
+
   /** Returns IDs from the searchindex */
-  private def indexByQ(documentSetId: Long, query: SearchQuery): Future[SearchResult] = {
-    logger.logExecutionTimeAsync("finding document IDs matching '{}'", query.toString) {
+  private def indexByQ(documentSetId: Long, query: SearchQuery): Future[(SearchResult,List[SelectionWarning])] = {
+    val searchResultFuture = logger.logExecutionTimeAsync("finding document IDs matching '{}'", query.toString) {
       searchBackend.search(documentSetId, query)
     }
+    val warningsFuture = findMissingFieldWarnings(documentSetId, query)
+
+    for {
+      searchResult <- searchResultFuture
+      warnings <- warningsFuture
+    } yield (searchResult, warnings)
   }
 
   /** Returns IDs that match the given tags/objects/etc (everything but
@@ -66,7 +99,7 @@ class DbDocumentSelectionBackend @Inject() (
 
   /** Returns a subset of the DocumentSet's Document IDs, sorted. */
   private def indexSelectedIds(request: SelectionRequest): Future[InMemorySelection] = {
-    val byQFuture: Future[Option[SearchResult]] = request.q match {
+    val byQFuture: Future[Option[(SearchResult,List[SelectionWarning])]] = request.q match {
       case None => Future.successful(None)
       case Some(q) => indexByQ(request.documentSetId, q).map(r => Some(r))
     }
@@ -87,20 +120,20 @@ class DbDocumentSelectionBackend @Inject() (
           case (None, None) => {
             InMemorySelection(allSortedIds)
           }
-          case (Some(searchResponse), None) => {
+          case (Some((searchResponse,selectionWarnings)), None) => {
             InMemorySelection(
               allSortedIds.filter(id => searchResponse.documentIds.lowerIds.contains(id.toInt)),
-              searchResponse.warnings.map(w => SelectionWarning.SearchIndexWarning(w))
+              selectionWarnings ++ searchResponse.warnings.map(w => SelectionWarning.SearchIndexWarning(w))
             )
           }
           case (None, Some(dbIds)) => {
             InMemorySelection(allSortedIds.filter(id => dbIds.lowerIds.contains(id.toInt)))
           }
-          case (Some(searchResponse), Some(dbIds)) => {
+          case (Some((searchResponse,selectionWarnings)), Some(dbIds)) => {
             val ids = searchResponse.documentIds.intersect(dbIds)
             InMemorySelection(
               allSortedIds.filter(id => ids.lowerIds.contains(id.toInt)),
-              searchResponse.warnings.map(w => SelectionWarning.SearchIndexWarning(w))
+              selectionWarnings ++ searchResponse.warnings.map(w => SelectionWarning.SearchIndexWarning(w))
             )
           }
         }

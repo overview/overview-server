@@ -25,7 +25,7 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
     val reqData = RequestData(request)
 
     def syntaxError = {
-      val message = messages("com.overviewdocs.query.SyntaxError")
+      val message = messages("com.overviewdocs.query.error.SyntaxError")
       BadRequest(jsonError("illegal-arguments", message))
         .withHeaders(CONTENT_TYPE -> "application/json")
     }

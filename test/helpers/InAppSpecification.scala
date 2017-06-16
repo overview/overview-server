@@ -28,5 +28,6 @@ trait InAppSpecification extends Specification with BeforeAfterAll {
 object InAppSpecification {
   private lazy val app: Application = new GuiceApplicationBuilder()
     .in(Environment(new java.io.File("."), classOf[InAppSpecification].getClassLoader, Mode.Test))
+    .configure("akka.actor.provider" -> "local")
     .build
 }

@@ -76,7 +76,7 @@ models.FileGroupImportJob.starting=processing…
 models.FileGroupImportJob.processing={2,choice,0#0 files|1#1 file|1<{2,number,integer} files} processed…
 models.FileGroupImportJob.cleaning=cleaning up…
 
-com.overviewdocs.query.SyntaxError=Your search is invalid. Check that you have an even number of parentheses and you put AND or OR between terms.
+com.overviewdocs.query.error.SyntaxError=Your search is invalid. Check that you have an even number of parentheses and you put AND or OR between terms.
 
 time_display.shouldFinishIn.zero=should finish any second now
 time_display.shouldFinishIn.seconds=should finish in about {0,choice,1#a second|1<{0,number,integer} seconds}
@@ -513,6 +513,7 @@ views.Tree.show.DocumentList.tag.remove=Remove tag from document
 views.Tree.show.DocumentList.warning.TooManyExpansions=This list may be incomplete. “{0}:{1}” matched too many words from your document set; we limited our search to {2,number,integer} words.
 views.Tree.show.DocumentList.warning.TooMuchFuzz=This list may be incomplete. “{0}:{1}” has too great a distance to search; we limited the distance to {2}.
 views.Tree.show.DocumentList.warning.IndexDoesNotExist=We’re updating our search feature, and your document set is unavailable. Please wait five minutes and try again.
+views.Tree.show.DocumentList.warning.MissingField=There is no “{0}” field. Either create it or search the following fields, capitalized correctly:
 
 views.Tree.show.DocumentListCursor.position_html=Document <strong>{0,number,integer}</strong> of <strong>{1,number,integer}</strong>
 views.Tree.show.DocumentListCursor.backToList=Back to list

@@ -37,6 +37,11 @@ object selectionWarnings {
           "type" -> JsString("IndexDoesNotExist")
         ))
       }
+      case SelectionWarning.MissingField(fieldName, validFieldNames) => JsObject(Seq(
+        "type" -> JsString("MissingField"),
+        "field" -> JsString(fieldName),
+        "validFieldNames" -> JsArray(validFieldNames.map(JsString.apply _))
+      ))
     }
   }
 }

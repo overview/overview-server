@@ -4,7 +4,8 @@ import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import com.overviewdocs.query.{Field,PhraseQuery,Query}
+import com.overviewdocs.query.{AndQuery,Field,PhraseQuery,Query}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.DocumentIdSet
 import com.overviewdocs.searchindex.{SearchResult,SearchWarning}
 import models.{InMemorySelection,SelectionRequest,SelectionWarning}
@@ -53,7 +54,9 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
           WHERE id = ${documentSet.id}
         """)
 
-        val backend = new DbDocumentSelectionBackend(database, searchBackend)
+        val documentSetBackend = smartMock[DocumentSetBackend]
+
+        val backend = new DbDocumentSelectionBackend(database, searchBackend, documentSetBackend)
         lazy val ret: InMemorySelection = await(backend.createSelection(request))
       }
 
@@ -72,13 +75,30 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
         there was one(searchBackend).search(documentSet.id, q.get)
       }
 
-      "pass through warnings in q" in new CreateSelectionScope {
+      "pass through searchindex warnings in q" in new CreateSelectionScope {
         override val q = Some(PhraseQuery(Field.All, "moo"))
         override def searchWarnings = List(
           SearchWarning.TooManyExpansions(Field.Text, "foo", 2),
           SearchWarning.TooManyExpansions(Field.Title, "bar", 2)
         )
         ret.warnings must beEqualTo(searchWarnings.map(w => SelectionWarning.SearchIndexWarning(w)))
+      }
+
+      "warn when query has invalid fields" in new CreateSelectionScope {
+        // The user might not _know_ that search fields are invalid, so we need
+        // to tell them. That involves looking at the MetadataSchema.
+        //
+        // We needn't shelter our search index from missing fields: races mean
+        // we don't even have that option. This is _just_ a usability feature.
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(metadataSchema=MetadataSchema(1, Seq(
+          MetadataField("bar", MetadataFieldType.String),
+          MetadataField("baz", MetadataFieldType.String)
+        )))))
+        override val q = Some(AndQuery(PhraseQuery(Field.Metadata("foo"), "moo"), PhraseQuery(Field.Metadata("foo2"), "moo")))
+        ret.warnings must beEqualTo(List(
+          SelectionWarning.MissingField("foo", Seq("bar", "baz")),
+          SelectionWarning.MissingField("foo2", Seq("bar", "baz"))
+        ))
       }
 
       trait IndexIdsWithTagsScope extends CreateSelectionScope {

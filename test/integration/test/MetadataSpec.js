@@ -83,6 +83,17 @@ describe('Metadata', function() {
         expect(text).to.match(/Second/)
         expect(text).not.to.match(/Third/)
       })
+
+      it('should warn when searching invalid metadata columns', async function() {
+        await this.browser.click('.search a.nix')
+        await this.browser.sendKeys("foo2:x", '.search input[name=query]')
+        await this.browser.click('.search button')
+
+        const text = await this.browser.getText({ css: '#document-list ul.warnings:not(:empty)', wait: 'pageLoad' })
+        expect(text).to.match(/There is no “foo2” field/)
+        expect(text).to.match(/text/) // a hard-coded field
+        expect(text).to.match(/bar/) // a valid field
+      })
     })
 
     describe('GET /documents', function() {

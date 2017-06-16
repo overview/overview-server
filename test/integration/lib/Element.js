@@ -7,6 +7,14 @@ module.exports = class Element {
     this.driverElement = driverElement
   }
 
+  // Empties text from this element, which is an input field.
+  //
+  // Returns once the click is done.
+  async click() {
+    debug('clear')
+    await this.driverElement.clear()
+  }
+
   // Clicks and returns once the click is done.
   async click() {
     debug('click')

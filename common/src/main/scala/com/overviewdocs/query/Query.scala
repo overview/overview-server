@@ -8,11 +8,31 @@ import play.api.libs.json.{Json,JsValue,JsString,JsNumber}
   * http://www.elastic.co/guide/en/elasticsearch/reference/1.x/query-dsl.html
   */
 sealed trait Query
-case object AllQuery extends Query
-case class AndQuery(node1: Query, node2: Query) extends Query
-case class OrQuery(node1: Query, node2: Query) extends Query
-case class NotQuery(node: Query) extends Query
-case class PhraseQuery(field: Field, phrase: String) extends Query
-case class PrefixQuery(field: Field, prefix: String) extends Query
-case class FuzzyTermQuery(field: Field, term: String, fuzziness: Option[Int]) extends Query
-case class ProximityQuery(field: Field, phrase: String, slop: Int) extends Query
+sealed trait BooleanQuery
+sealed trait FieldQuery {
+  val field: Field
+}
+case object AllQuery extends Query with BooleanQuery
+case class AndQuery(node1: Query, node2: Query) extends Query with BooleanQuery
+case class OrQuery(node1: Query, node2: Query) extends Query with BooleanQuery
+case class NotQuery(node: Query) extends Query with BooleanQuery
+case class PhraseQuery(field: Field, phrase: String) extends Query with FieldQuery
+case class PrefixQuery(field: Field, prefix: String) extends Query with FieldQuery
+case class FuzzyTermQuery(field: Field, term: String, fuzziness: Option[Int]) extends Query with FieldQuery
+case class ProximityQuery(field: Field, phrase: String, slop: Int) extends Query with FieldQuery
+
+object Query {
+  def walkFields(query: Query)(f: Field => Unit): Unit = query match {
+    case AllQuery => {}
+    case AndQuery(p1, p2) => {
+      walkFields(p1)(f)
+      walkFields(p2)(f)
+    }
+    case OrQuery(p1, p2) => {
+      walkFields(p1)(f)
+      walkFields(p2)(f)
+    }
+    case NotQuery(p) => walkFields(p)(f)
+    case fq: FieldQuery => f(fq.field)
+  }
+}

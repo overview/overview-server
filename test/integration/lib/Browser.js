@@ -175,6 +175,13 @@ module.exports = class Browser {
     }
   }
 
+  // find(locator).clear()
+  async clear(locator) {
+    debug(`click(${JSON.stringify(locator)})`)
+    const element = await this.find(locator)
+    await element.clear()
+  }
+
   // find(locator).click()
   async click(locator) {
     debug(`click(${JSON.stringify(locator)})`)
