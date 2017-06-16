@@ -79,6 +79,12 @@ class DocumentSetLuceneIndexSpec extends Specification {
         search(PhraseQuery(Field.All, "foo2")) must beEqualTo("")
       }
 
+      "not find documents we have since updated" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L).copy(title="bad title")))
+        index.addDocuments(Seq(buildDocument(1L).copy(title="good title")))
+        search(PhraseQuery(Field.Title, "bad title")) must beEqualTo("")
+      }
+
       "find a term indexed from NFC and searched from NFD" in new BaseScope {
         val document = buildDocument(1L).copy(text="\u00c5oo")
         index.addDocuments(Seq(document))

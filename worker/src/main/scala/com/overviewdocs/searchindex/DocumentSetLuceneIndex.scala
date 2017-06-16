@@ -120,13 +120,20 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     commit
   }
 
+  // Instantiate objects once: saves GC. As per
+  // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
+  private val idField = new NumericDocValuesField("id", 0L)
+  private val notesField = new LuceneField("notes", "", textFieldType(false))
+  private val titleField = new LuceneField("title", "", textFieldType(false))
+  private val textField = new LuceneField("text", "", textFieldType(true))
+
+  private def deleteDocumentsWithIds(ids: Iterable[Long]): Unit = {
+    indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(ids))
+  }
+
   def addDocumentsWithoutFsync(documents: Iterable[Document]): Unit = synchronized {
-    // Instantiate objects once: saves GC. As per
-    // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
-    val idField = new NumericDocValuesField("id", 0L)
-    val notesField = new LuceneField("notes", "", textFieldType(false))
-    val titleField = new LuceneField("title", "", textFieldType(false))
-    val textField = new LuceneField("text", "", textFieldType(true))
+    deleteDocumentsWithIds(documents.map(_.id))
+
     val luceneDocument = new LuceneDocument()
 
     for (document <- documents) {
@@ -211,8 +218,16 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     })
   }
 
-  private def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {
-    val query: LuceneQuery = {
+  private def luceneQueryDocumentsWithOverviewIds(documentIds: Iterable[Long]): LuceneQuery = {
+    val ids = documentIds.toArray
+    assert(ids.headOption.isDefined)
+
+    // Optimization for common case: inserting a bunch of new docs (or editing
+    // a single doc)
+    val isMonotonic = ids.length == 1 || ids.sliding(2).forall { a => a(0) + 1 == a(1) }
+    if (isMonotonic) {
+      NumericDocValuesField.newRangeQuery("id", documentIds.head, documentIds.last)
+    } else {
       import org.apache.lucene.document.NumericDocValuesField
       import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
 
@@ -222,6 +237,10 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
       }
       new ConstantScoreQuery(builder.build)
     }
+  }
+
+  private def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {
+    val query: LuceneQuery = luceneQueryDocumentsWithOverviewIds(documentIds)
 
     val ret = new mutable.ArrayBuffer[(Long,Int)](documentIds.length)
 
@@ -234,6 +253,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
       override def doSetNextReader(context: LeafReaderContext): Unit = {
         leafDocBase = context.docBase
         leafDocumentIds = context.reader.getNumericDocValues("id")
+        assert(leafDocumentIds != null)
       }
 
       override def collect(docId: Int): Unit = {
