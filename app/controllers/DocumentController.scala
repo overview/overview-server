@@ -1,6 +1,6 @@
 package controllers
 
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{FileIO,Source}
 import akka.util.ByteString
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -10,12 +10,11 @@ import play.api.Configuration
 import play.api.http.HttpEntity
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{JsObject,JsString,Json,Reads,Writes}
 import play.api.mvc.ResponseHeader
 import play.api.mvc.Result
 import play.api.{Play,Logger}
-import scala.concurrent.Future
+import scala.concurrent.{Future,blocking}
 
 import controllers.auth.Authorities.{anyUser,userOwningDocument,userOwningDocumentSet,userViewingDocumentSet}
 import controllers.auth.AuthorizedAction
@@ -54,33 +53,26 @@ class DocumentController @Inject() (
   // Handles file:// url by reading from local filesystem
   // We clean the filename first for security -- can only serve from specified directory
   def showFile(filename: String) = AuthorizedAction(anyUser).async { implicit request =>
-    val path = externalFilePath(filename)
-    Logger.info("Retrieving document file: " + path)
-    if (path != None) {
+    Logger.info("Retrieving document file: " + filename)
+    externalFilePath(filename) match {
+      case Some(path) => {
+        try {
+          val f = new JFile(path)
+          val length = blocking { f.length }
+          val body = FileIO.fromPath(f.toPath)
 
-      try {
-        val f = new JFile(path.get)
-        val stream = Enumerator.fromFile(f)
-        val length = f.length
-        Logger.info("File length: " + length.toString)
+          Future.successful(
+            Ok.sendEntity(HttpEntity.Streamed(body, Some(length), Some("application/pdf")))
+              .withHeaders(CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""")
+          )
 
-        Future.successful(
-          Ok.feed(stream)
-            .withHeaders(
-              CONTENT_TYPE -> "application/pdf",
-              CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""",
-              CONTENT_LENGTH -> length.toString
-            )
-        )
-
-      } catch {
-        case ex: Exception => Future.successful(NotFound)
+        } catch {
+          case ex: Exception => Future.successful(NotFound)
+        }
       }
-    } else {
-      Future.successful(NotFound)
+      case None => Future.successful(NotFound)
     }
   }
-
 
   // Handles /documentit/id.pdf url by reading from blob storage
   def showPdf(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
