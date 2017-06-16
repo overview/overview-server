@@ -179,6 +179,19 @@ class DocumentSetLuceneIndexSpec extends Specification {
         result.documentIds.size must beEqualTo(5)
         result.warnings must beEmpty
       }
+
+      "warn when the index does not exist" in new BaseScope {
+        val result = index.searchForIds(PhraseQuery(Field.Text, "hello"))
+        result.documentIds.size must beEqualTo(0)
+        result.warnings must beEqualTo(List(SearchWarning.IndexDoesNotExist))
+      }
+
+      "clear the warning if the search index does not exist, then we add documents" in new BaseScope {
+        val query = PhraseQuery(Field.Text, "hello")
+        index.searchForIds(query).warnings must beEqualTo(List(SearchWarning.IndexDoesNotExist))
+        index.addDocuments(Seq(buildDocument(1L)))
+        index.searchForIds(query).warnings must beEmpty
+      }
     }
 
     "#highlight" should {
@@ -252,6 +265,28 @@ class DocumentSetLuceneIndexSpec extends Specification {
         index.highlights(Seq(1L), PrefixQuery(Field.All, "co")) must beEqualTo(Map(
           1L -> Seq(Utf16Snippet(0, 20, Vector(Utf16Highlight(5, 8))))
         ))
+      }
+    }
+
+    "#delete" should {
+      "work on an empty index" in new BaseScope {
+        index.delete // and don't throw an exception
+        1 must beEqualTo(1)
+      }
+
+      "leave the index in a workable state" in new BaseScope {
+        val query = PrefixQuery(Field.Text, "foo")
+
+        index.addDocuments(Seq(buildDocument(1L)))
+        search(query) must beEqualTo("1")
+        index.delete
+        search(query) must beEqualTo("")
+        index.highlight(1L, query) must beEmpty
+        index.highlights(Seq(1L), query) must beEmpty
+        index.addDocuments(Seq(buildDocument(1L)))
+        search(query) must beEqualTo("1")
+        index.highlight(1L, query) must not(beEmpty)
+        index.highlights(Seq(1L), query) must not(beEmpty)
       }
     }
   }

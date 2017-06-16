@@ -45,4 +45,7 @@ object SearchWarning {
     /** The amount of fuzz we used (which is the maximum amount of fuzz). */
     allowedFuzz: Int
   ) extends SearchWarning
+
+  /** The document set isn't indexed yet. */
+  case object IndexDoesNotExist extends SearchWarning
 }

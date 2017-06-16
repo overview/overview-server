@@ -21,37 +21,43 @@ class ReindexActor(reindexer: Reindexer) extends Actor {
 
   private val logger = Logger.forClass(getClass)
 
-  private case object Start
-  private case object ReindexNextDocumentSet
-  private case object NoMoreDocumentSets
+  override def preStart = clearRunningJobsThenStartReindexing
 
-  override def preStart = self ! Start
+  override def receive = idle
 
-  override def receive = {
-    case Start => clearRunningJobs
-    case ReindexNextDocumentSet => reindexOrStop
-    case NoMoreDocumentSets => context.stop(self)
+  def idle: Receive = {
+    case ReindexActor.ReindexNextDocumentSet => {
+      context.become(reindexing)
+      reindexUntilNoJobsRemain
+    }
   }
 
-  private def clearRunningJobs: Unit = {
+  def reindexing: Receive = {
+    case ReindexActor.ReindexNextDocumentSet => {}
+  }
+
+  private def clearRunningJobsThenStartReindexing: Unit = {
     reindexer.clearRunningJobs.onComplete {
-      case Success(_) => self ! ReindexNextDocumentSet
+      case Success(_) => self ! ReindexActor.ReindexNextDocumentSet
       case Failure(ex) => self ! ex
     }
   }
 
-  private def reindexOrStop: Unit = {
+  private def reindexUntilNoJobsRemain: Unit = {
     reindexer.nextJob.onComplete {
       case Success(Some(job)) => {
         logger.info("Reindexing: {}", job)
         reindexer.runJob(job).onComplete {
-          case Success(()) => self ! ReindexNextDocumentSet
+          case Success(()) => {
+            logger.info("Finished reindexing {}", job)
+            self ! ReindexActor.ReindexNextDocumentSet
+          }
           case Failure(ex) => self ! ex
         }
       }
       case Success(None) => {
         logger.info("All document set indexes are up to date")
-        self ! NoMoreDocumentSets
+        context.become(idle)
       }
       case Failure(ex) => self ! ex
     }
@@ -60,4 +66,6 @@ class ReindexActor(reindexer: Reindexer) extends Actor {
 
 object ReindexActor {
   def props: Props = Props(new ReindexActor(DbLuceneReindexer.singleton))
+
+  case object ReindexNextDocumentSet
 }

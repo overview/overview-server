@@ -41,7 +41,6 @@ class WorkerActorEnvironment {
   // File removal background worker      
   private val fileCleaner = system.actorOf(FileCleaner(), "FileCleaner")
   private val deletedFileRemover = system.actorOf(DeletedFileCleaner(fileCleaner), "DeletedFileCleaner")
-  private val reindexer = system.actorOf(ReindexActor.props, "ReindexActor")
   private val fileRemovalQueue = system.actorOf(FileRemovalRequestQueue(deletedFileRemover), "FileRemovalQueue")
 
   private val documentIdSupplier = system.actorOf(DocumentIdSupplier(), "DocumentIdSupplier")
@@ -56,6 +55,7 @@ class WorkerActorEnvironment {
   private val csvImportWorkBroker = system.actorOf(CsvImportWorkBroker.props, "CsvImportWorkBroker")
   private val documentCloudImportWorkBroker = system.actorOf(DocumentCloudImportWorkBroker.props, "DocumentCloudImportWorkBroker")
   private val indexer = system.actorOf(Indexer.props, "Indexer")
+  private val reindexer = system.actorOf(ReindexActor.props, "ReindexActor")
 
   Seq.tabulate(Configuration.getInt("n_document_converters")) { i =>
     val name = "AddDocumentsWorker-" + i
@@ -72,6 +72,7 @@ class WorkerActorEnvironment {
       csvImportWorkBroker,
       documentCloudImportWorkBroker,
       indexer,
+      reindexer,
       Cloner,
       DocumentSetDeleter
     ),

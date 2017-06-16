@@ -8,6 +8,7 @@ import org.specs2.specification.Scope
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Future,Promise}
 
+import com.overviewdocs.background.reindex.ReindexActor
 import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
@@ -30,6 +31,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       val csvImportWorkBroker = TestProbe()
       val documentCloudImportWorkBroker = TestProbe()
       val indexer = TestProbe()
+      val reindexer = TestProbe()
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val cloner = smartMock[Cloner]
       val subject = TestActorRef(DocumentSetCommandWorker.props(
@@ -38,6 +40,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         csvImportWorkBroker.ref,
         documentCloudImportWorkBroker.ref,
         indexer.ref,
+        reindexer.ref,
         cloner,
         documentSetDeleter
       ))
@@ -157,6 +160,14 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         val command = DocumentSetCommands.ReindexDocument(1L, 2L)
         subject ! command
         indexer.expectMsgPF(Duration.Zero) { case Indexer.DoWorkThenAck(command1, _, _) => () }
+      }
+    }
+
+    "Reindex" should {
+      "forward to reindexer" in new BaseScope {
+        val command = DocumentSetCommands.Reindex(factory.documentSetReindexJob())
+        subject ! command
+        reindexer.expectMsg(ReindexActor.ReindexNextDocumentSet)
       }
     }
 

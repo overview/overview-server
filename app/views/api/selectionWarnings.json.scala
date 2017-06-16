@@ -33,6 +33,9 @@ object selectionWarnings {
           "term" -> JsString(term),
           "allowedFuzz" -> JsNumber(allowedFuzz)
         ))
+        case SearchWarning.IndexDoesNotExist => JsObject(Seq(
+          "type" -> JsString("IndexDoesNotExist")
+        ))
       }
     }
   }

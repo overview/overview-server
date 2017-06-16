@@ -16,8 +16,9 @@ import org.apache.lucene.util.{BytesRef,QueryBuilder}
 import play.api.libs.json.{JsNull,JsString}
 import scala.collection.{mutable,immutable}
 
-import com.overviewdocs.query.{Field,FieldInSearchIndex,Query}
 import com.overviewdocs.models.{Document,DocumentIdSet}
+import com.overviewdocs.query.{Field,FieldInSearchIndex,Query}
+import com.overviewdocs.util.Logger
 
 /** A Lucene index for a given document set.
   *
@@ -28,34 +29,49 @@ import com.overviewdocs.models.{Document,DocumentIdSet}
   */
 class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, val maxExpansionsPerTerm: Int = 1000, val maxNMetadataFields: Int = 100) {
   private val MaxFuzz: Int = org.apache.lucene.util.automaton.LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE
+
+  private val logger = Logger.forClass(getClass)
+
   private val analyzer = new DocumentSetLuceneIndex.OverviewAnalyzer
   private val queryBuilder = new QueryBuilder(analyzer)
 
-  private val indexWriterConfig = new IndexWriterConfig(analyzer)
-    .setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND)
-    .setRAMBufferSizeMB(48) // "sweet spot" in https://issues.apache.org/jira/browse/LUCENE-843
-    .setCommitOnClose(true) // for when we're evicted from MruLuceneIndexCache
-  private val indexWriter = new IndexWriter(directory, indexWriterConfig)
+  private var _indexWriter: Option[IndexWriter] = None
   private var _indexReader: Option[DirectoryReader] = None
   private var _indexSearcher: Option[IndexSearcher] = None
-  private def indexReader = _indexReader.getOrElse(DirectoryReader.open(directory))
-  private def indexSearcher = _indexSearcher.getOrElse(new IndexSearcher(indexReader))
+
+  private def indexWriter = {
+    _indexWriter = Some(_indexWriter.getOrElse(openIndexWriter))
+    _indexWriter.get
+  }
+
+  private def indexReader = {
+    _indexReader = Some(_indexReader.getOrElse(DirectoryReader.open(directory)))
+    _indexReader.get
+  }
+
+  private def indexSearcher = {
+    _indexSearcher = Some(_indexSearcher.getOrElse(new IndexSearcher(indexReader)))
+    _indexSearcher.get
+  }
+
+  private var indexExists: Boolean = directory.listAll.nonEmpty
+  if (!indexExists) logger.debug("Directory is empty: this index does not exist yet")
   private[searchindex] lazy val metadataFields: mutable.Map[String,LuceneField] = readMetadataFields
 
+  private def openIndexWriter = {
+    val indexWriterConfig = new IndexWriterConfig(analyzer)
+      .setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND)
+      .setRAMBufferSizeMB(48) // "sweet spot" in https://issues.apache.org/jira/browse/LUCENE-843
+    new IndexWriter(directory, indexWriterConfig)
+  }
+
   private def readMetadataFields: mutable.Map[String,LuceneField] = {
+    if (!indexExists) return mutable.Map.empty
+
     val ret = mutable.Map.empty[String,LuceneField]
     import scala.collection.JavaConversions
 
-    val leaves = try {
-      JavaConversions.iterableAsScalaIterable(indexReader.leaves)
-    } catch {
-      case e: org.apache.lucene.index.IndexNotFoundException => {
-        // The index has never been saved. That means no metadata.
-        return ret
-      }
-    }
-
-    for (leaf <- leaves) {
+    for (leaf <- JavaConversions.iterableAsScalaIterable(indexReader.leaves)) {
       for (fieldInfo <- JavaConversions.iterableAsScalaIterable(leaf.reader.getFieldInfos)) {
         if (fieldInfo.name.startsWith("metadata:")) {
           val fieldName = fieldInfo.name.substring("metadata:".size)
@@ -150,18 +166,35 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   def close: Unit = synchronized {
-    indexWriter.close
+    logger.debug("Closing Lucene index for document set {}", documentSetId)
+
+    _indexWriter.foreach { indexWriter =>
+      indexWriter.commit
+      indexWriter.close
+    }
     _indexReader.foreach(_.close)
   }
 
   def delete: Unit = synchronized {
-    refresh
-    indexReader.close
-    indexWriter.close
+    logger.debug("Deleting Lucene index for document set {}", documentSetId)
+    _indexWriter.foreach(_.close)
+    _indexReader.foreach(_.close)
+    _indexWriter = None
+    _indexReader = None
+    _indexSearcher = None
 
-    directory match {
-      case fsDirectory: FSDirectory => deletePathRecursively(fsDirectory.getDirectory)
+    for (filename <- directory.listAll) {
+      directory.deleteFile(filename)
     }
+    // Note that we don't delete the _directory_. That's ugly. But at least we
+    // can write to the index after we delete it -- readers expect that.
+    // (There's nothing wrong with deleting and then recreating the directory.
+    // But Lucene creates the directory in the FSDirectory ctor, so we'd open
+    // up edge cases. Better would be to synchronize correctly, using Actors,
+    // so one docset = one Actor, and then destroying the Actor at the same
+    // time as destroying the directory.)
+
+    indexExists = false
   }
 
   private def deletePathRecursively(root: Path): Unit = {
@@ -214,6 +247,8 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   def searchForIds(query: Query): SearchResult = synchronized {
+    if (!indexExists) return SearchResult(DocumentIdSet.empty, List(SearchWarning.IndexDoesNotExist))
+
     val (luceneQuery, warnings) = queryToLuceneQuery(query)
     val lowerIds = new mutable.BitSet
 
@@ -241,6 +276,8 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   def highlight(documentId: Long, query: Query): Seq[Utf16Highlight] = synchronized {
+    if (!indexExists) return Seq.empty
+
     val (luceneQuery, warnings) = queryToLuceneQuery(query)
 
     val highlighter = new LuceneSingleDocumentHighlighter(indexSearcher, analyzer)
@@ -251,6 +288,8 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   def highlights(documentIds: Seq[Long], query: Query): Map[Long,Seq[Utf16Snippet]] = synchronized {
+    if (!indexExists) return Map.empty
+
     val (luceneQuery, warnings) = queryToLuceneQuery(query)
 
     val highlighter = new LuceneMultiDocumentHighlighter(indexSearcher, analyzer)
@@ -265,7 +304,9 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   private def commit: Unit = {
+    logger.debug("Committing Lucene index for document set {}", documentSetId)
     indexWriter.commit
+    indexExists = true
 
     _indexReader match {
       case None => {}

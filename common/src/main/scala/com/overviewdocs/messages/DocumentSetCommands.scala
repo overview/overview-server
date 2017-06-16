@@ -1,6 +1,6 @@
 package com.overviewdocs.messages
 
-import com.overviewdocs.models.{CloneJob,CsvImport,DocumentCloudImport,FileGroup}
+import com.overviewdocs.models.{CloneJob,CsvImport,DocumentCloudImport,DocumentSetReindexJob,FileGroup}
 
 /** Background tasks that must be serialized on a document set.
   *
@@ -56,6 +56,18 @@ object DocumentSetCommands {
     */
   case class CloneDocumentSet(cloneJob: CloneJob) extends Command {
     override val documentSetId = cloneJob.destinationDocumentSetId
+  }
+
+  /** We think the DocumentSet needs to be reindexed.
+    *
+    * Stored as DocumentSetReindexJob.
+    *
+    * Our serialization requirements are a bit different here. We don't wait for
+    * reindex to complete: we just fire the message and forget. (When the user
+    * searches and there is no index, he/she sees a warning.)
+    */
+  case class Reindex(reindexJob: DocumentSetReindexJob) extends Command {
+    override val documentSetId = reindexJob.documentSetId
   }
 
   /** Delete a DocumentSet and all associated information.

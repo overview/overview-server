@@ -121,6 +121,15 @@ trait Factory {
     nPages: Int = 0
   ): DocumentCloudImportIdList
 
+  /** Creates a new DocumentSetReindexJob with the given parameters. */
+  def documentSetReindexJob(
+    id: Long = 0L,
+    documentSetId: Long = 0L,
+    lastRequestedAt: Instant = Instant.now,
+    startedAt: Option[Instant] = None,
+    progress: Double = 0.0
+  ): DocumentSetReindexJob
+
   def documentSetUser(
     documentSetId: Long = 0L,
     userEmail: String = "user@example.com",

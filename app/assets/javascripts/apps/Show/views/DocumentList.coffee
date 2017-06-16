@@ -130,6 +130,7 @@ define [
       switch warning.type
         when 'TooManyExpansions' then "<li>#{t(i18nKey, warning.field, warning.term, warning.nExpansions)}</li>"
         when 'TooMuchFuzz' then "<li>#{t(i18nKey, warning.field, warning.term, warning.allowedFuzz)}</li>"
+        when 'IndexDoesNotExist' then "<li>#{t(i18nKey)}</li>"
         else
           console.warn("Unhandled warning: #{JSON.stringify(warning)}")
           ""

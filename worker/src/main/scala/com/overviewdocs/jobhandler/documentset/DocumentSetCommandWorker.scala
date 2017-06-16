@@ -6,6 +6,7 @@ import scala.util.{Failure,Success}
 
 import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
+import com.overviewdocs.background.reindex.ReindexActor
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
@@ -33,6 +34,7 @@ class DocumentSetCommandWorker(
   val csvImportWorkBroker: ActorRef,
   val documentCloudImportWorkBroker: ActorRef,
   val indexer: ActorRef,
+  val reindexer: ActorRef,
   val cloner: Cloner,
   val documentSetDeleter: DocumentSetDeleter
 ) extends Actor
@@ -94,6 +96,14 @@ class DocumentSetCommandWorker(
         addDocumentsWorkBroker ! message
         sendReady
       }
+      case command: Reindex => {
+        logger.info("Received Reindex command: {}", command)
+        reindexer ! ReindexActor.ReindexNextDocumentSet
+        // We reindex asynchronously and show warnings when the index isn't
+        // up to date.
+        sendDone(command.documentSetId)
+        sendReady
+      }
       case command: ReindexDocument => {
         val message = Indexer.DoWorkThenAck(command, broker, done(command.documentSetId))
         indexer ! message
@@ -146,6 +156,7 @@ object DocumentSetCommandWorker {
     csvImportWorkBroker: ActorRef, 
     documentCloudImportWorkBroker: ActorRef,
     indexer: ActorRef,
+    reindexer: ActorRef,
     cloner: Cloner,
     documentSetDeleter: DocumentSetDeleter
   ): Props = {
@@ -155,6 +166,7 @@ object DocumentSetCommandWorker {
       csvImportWorkBroker,
       documentCloudImportWorkBroker,
       indexer,
+      reindexer,
       cloner,
       documentSetDeleter
     ))

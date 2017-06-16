@@ -190,6 +190,20 @@ object DbFactory extends Factory with HasBlockingDatabase {
     deleted
   ))
 
+  override def documentSetReindexJob(
+    id: Long,
+    documentSetId: Long,
+    lastRequestedAt: Instant,
+    startedAt: Option[Instant],
+    progress: Double
+  ) = run(q.insertDocumentSetReindexJob += podoFactory.documentSetReindexJob(
+    id,
+    documentSetId,
+    lastRequestedAt,
+    startedAt,
+    progress
+  ))
+
   override def documentSetUser(
     documentSetId: Long,
     userEmail: String,
@@ -456,6 +470,7 @@ object DbFactory extends Factory with HasBlockingDatabase {
     val insertDocumentCloudImport = (DocumentCloudImports returning DocumentCloudImports)
     val insertDocumentCloudImportIdList = (DocumentCloudImportIdLists returning DocumentCloudImportIdLists)
     val insertDocumentSet = (DocumentSets returning DocumentSets)
+    val insertDocumentSetReindexJob = (DocumentSetReindexJobs returning DocumentSetReindexJobs)
     val insertDocumentTag = (DocumentTags returning DocumentTags)
     val insertDocumentSetUser = (DocumentSetUsers returning DocumentSetUsers)
     val insertDocumentStoreObject = (DocumentStoreObjects returning DocumentStoreObjects)

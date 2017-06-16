@@ -51,9 +51,7 @@ trait LuceneIndexClient extends IndexClient {
   }
 
   override def removeDocumentSet(id: Long): Future[Unit] = {
-    getIndex(id)
-      .map(_.delete)
-      .map(_ => cache.remove(id))
+    getIndex(id).map(_.delete)
   }
 
   override def addDocuments(id: Long, documents: Iterable[Document]): Future[Unit] = {
@@ -107,7 +105,8 @@ object LuceneIndexClient {
       val lockFactory = new org.apache.lucene.store.SingleInstanceLockFactory
       val directory = org.apache.lucene.store.FSDirectory.open(rootPath, lockFactory)
       val ret = new DocumentSetLuceneIndex(documentSetId, directory)
-      ret.refresh // if it's a new index, write it to disk so we can read from it
+      // If the directory does not exist, that's fine. We special-case empty
+      // indexes.
       ret
     }
   }

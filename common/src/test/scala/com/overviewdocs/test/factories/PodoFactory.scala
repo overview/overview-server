@@ -223,6 +223,20 @@ object PodoFactory extends Factory {
     deleted
   )
 
+  override def documentSetReindexJob(
+    id: Long,
+    documentSetId: Long,
+    lastRequestedAt: Instant,
+    startedAt: Option[Instant],
+    progress: Double
+  ) = DocumentSetReindexJob(
+    getId(id),
+    get32BitId(documentSetId),
+    lastRequestedAt,
+    startedAt,
+    progress
+  )
+
   override def documentSetUser(
     documentSetId: Long,
     userEmail: String,

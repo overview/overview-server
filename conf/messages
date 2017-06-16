@@ -512,6 +512,7 @@ views.Tree.show.DocumentList.placeholder=…
 views.Tree.show.DocumentList.tag.remove=Remove tag from document
 views.Tree.show.DocumentList.warning.TooManyExpansions=This list may be incomplete. “{0}:{1}” matched too many words from your document set; we limited our search to {2,number,integer} words.
 views.Tree.show.DocumentList.warning.TooMuchFuzz=This list may be incomplete. “{0}:{1}” has too great a distance to search; we limited the distance to {2}.
+views.Tree.show.DocumentList.warning.IndexDoesNotExist=We’re updating our search feature, and your document set is unavailable. Please wait five minutes and try again.
 
 views.Tree.show.DocumentListCursor.position_html=Document <strong>{0,number,integer}</strong> of <strong>{1,number,integer}</strong>
 views.Tree.show.DocumentListCursor.backToList=Back to list
