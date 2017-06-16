@@ -77,7 +77,7 @@ describe('PdfAnnotations', function() {
       // test searches, automatically de-selecting the document. To reset, we'll
       // re-select it at the end of the test.
 
-      await b.sendKeys('notes:Hello, world!', '#document-list-params .search input[name=query')
+      await b.sendKeys('notes:Hello, world!', '#document-list-params .search input[name=query]')
       await b.click('#document-list-params .search button')
       await b.sleep(1000) // de-select animation
 
