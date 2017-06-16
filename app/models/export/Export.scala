@@ -1,6 +1,7 @@
 package models.export
 
-import play.api.libs.iteratee.Enumerator
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 
 import models.export.rows.Rows
 import models.export.format.Format
@@ -15,5 +16,5 @@ class Export(rows: Rows, format: Format) {
 
   /** Generate byte data.
     */
-  def bytes: Enumerator[Array[Byte]] = format.bytes(rows)
+  def byteSource: Source[ByteString, akka.NotUsed] = format.byteSource(rows)
 }

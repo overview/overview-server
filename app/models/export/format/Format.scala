@@ -1,6 +1,7 @@
 package models.export.format
 
-import play.api.libs.iteratee.Enumerator
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 
 import models.export.rows.Rows
 
@@ -8,5 +9,5 @@ trait Format {
   /** The Content-Type header for this file. */
   val contentType: String
 
-  def bytes(rows: Rows): Enumerator[Array[Byte]]
+  def byteSource(rows: Rows): Source[ByteString, akka.NotUsed]
 }

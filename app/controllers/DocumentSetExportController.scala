@@ -1,11 +1,15 @@
 package controllers
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import javax.inject.Inject
+import play.api.http.{HttpChunk,HttpEntity}
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.{Enumeratee,Enumerator,Iteratee}
 import play.api.libs.json.{Json,JsObject}
 import play.api.mvc.Result
+import scala.collection.immutable
 import scala.concurrent.Future
 
 import controllers.auth.{AuthorizedAction,AuthorizedRequest}
@@ -35,7 +39,7 @@ class DocumentSetExportController @Inject() (
     filename: String,
     documentSetId: Long,
     request: AuthorizedRequest[_],
-    createRows: (MetadataSchema,Enumerator[(Document,Seq[Long])],Seq[Tag]) => Rows)
+    createRows: (MetadataSchema,Source[(Document,Seq[Long]), akka.NotUsed],Seq[Tag]) => Rows)
   : Future[Result] = {
     val futureStuff = for {
       maybeDocumentSet <- documentSetBackend.show(documentSetId)
@@ -50,14 +54,14 @@ class DocumentSetExportController @Inject() (
 
         for {
           tags <- tagBackend.index(documentSetId)
-          documents <- streamDocumentsWithTagIds(documentSetId, selection)
         } yield {
+          val documents = streamDocumentsWithTagIds(documentSetId, selection)
           val export = new Export(createRows(documentSet.metadataSchema, documents, tags), format)
-          val bytes: Enumerator[Array[Byte]] = export.bytes
+          val bytes: Source[ByteString, _] = export.byteSource
+          val chunks = bytes.map(HttpChunk.Chunk.apply _)
 
-          Ok.feed(bytes)
+          Ok.sendEntity(HttpEntity.Chunked(chunks, Some(export.contentType)))
             .withHeaders(
-              CONTENT_TYPE -> export.contentType,
               CACHE_CONTROL -> "max-age=0",
               CONTENT_DISPOSITION -> contentDisposition
             )
@@ -82,29 +86,26 @@ class DocumentSetExportController @Inject() (
     serveExport(format, filename, documentSetId, request, DocumentsWithColumnTags.apply)
   }
 
-  private def batch[A](n: Int): Enumeratee[A,Seq[A]] = {
-    Enumeratee.grouped(Enumeratee.take(n).transform(Iteratee.getChunks[A]))
-  }
-
-  private def unbatch[A]: Enumeratee[Seq[A],A] = {
-    Enumeratee.mapConcat[Seq[A]](identity)
-  }
-
-  private def documentsWithTagIdsEnumeratee(documentSetId: Long): Enumeratee[Seq[Long],Seq[(Document,Seq[Long])]] = {
-    Enumeratee.mapM { documentIds: Seq[Long] =>
-      for {
-        documents <- documentBackend.index(documentSetId, documentIds)
-        documentIdToTagIds <- documentTagBackend.indexMany(documentIds)
-      } yield documents.map((d) => (d -> documentIdToTagIds(d.id)))
+  private def documentsWithTagIdsSource(documentSetId: Long, documentIds: Seq[Long]): Source[(Document,Seq[Long]), akka.NotUsed] = {
+    val futureSource: Future[Source[(Document,Seq[Long]), akka.NotUsed]] = for {
+      documents <- documentBackend.index(documentSetId, documentIds)
+      documentIdToTagIds <- documentTagBackend.indexMany(documentIds)
+    } yield {
+      val tuples: Seq[(Document,Seq[Long])] = documents.map((d) => (d -> documentIdToTagIds(d.id)))
+      Source(tuples.to[immutable.Iterable])
     }
+
+    Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 
-  private def streamDocumentsWithTagIds(documentSetId: Long, selection: Selection): Future[Enumerator[(Document,Seq[Long])]] = {
-    selection.getAllDocumentIds.map { documentIds =>
-      Enumerator(documentIds: _*)
-        .through(batch(BatchSize))
-        .through(documentsWithTagIdsEnumeratee(documentSetId))
-        .through(unbatch[(Document,Seq[Long])])
+  private def streamDocumentsWithTagIds(documentSetId: Long, selection: Selection): Source[(Document,Seq[Long]), akka.NotUsed] = {
+    val futureSource = selection.getAllDocumentIds.map { documentIds =>
+      val batches = documentIds.grouped(BatchSize)
+
+      Source(batches.to[immutable.Iterable])
+        .flatMapConcat(batch => documentsWithTagIdsSource(documentSetId, batch))
     }
+
+    Source.fromFutureSource(futureSource).mapMaterializedValue(_ => akka.NotUsed)
   }
 }

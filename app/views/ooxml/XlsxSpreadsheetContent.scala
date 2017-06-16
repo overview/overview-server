@@ -1,20 +1,11 @@
 package views.ooxml
 
-import play.api.libs.iteratee.Iteratee
+import akka.stream.scaladsl.Sink
 import scala.concurrent.{ExecutionContext,Future}
 
 import models.export.rows.Rows
 
 object XlsxSpreadsheetContent {
-  def apply(rows: Rows, write: (String => Future[Unit]))(implicit executionContext: ExecutionContext): Future[Unit] = {
-    for {
-      _ <- write(header)
-      _ <- write(row(rows.headers))
-      _ <- rows.rows.run(Iteratee.foreach[Array[String]](values => write(row(values))))
-      _ <- write(footer)
-    } yield ()
-  }
-
   val header: String = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet
     xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"

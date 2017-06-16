@@ -1,5 +1,7 @@
 package models.export
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -10,7 +12,7 @@ import models.export.format.Format
 
 class ExportSpec extends Specification with Mockito {
   trait BaseScope extends Scope {
-    val rows = Rows(Array(), Enumerator())
+    val rows = Rows(Array(), Source.empty)
     val format = smartMock[Format]
     val export = new Export(rows, format)
   }
@@ -22,15 +24,9 @@ class ExportSpec extends Specification with Mockito {
     }
 
     "pass Rows to Format" in new BaseScope {
-      format.bytes(any) returns Enumerator[Array[Byte]]()
-      export.bytes
-      there was one(format).bytes(rows)
-    }
-
-    "return Enumerator from Format" in new BaseScope {
-      val enumerator = Enumerator[Array[Byte]]()
-      format.bytes(any) returns enumerator
-      export.bytes must beEqualTo(enumerator)
+      format.byteSource(any) returns Source.empty[ByteString]
+      export.byteSource
+      there was one(format).byteSource(rows)
     }
   }
 }

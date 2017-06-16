@@ -1,9 +1,9 @@
 package models.export.format
 
-import java.io.{BufferedWriter,OutputStream,OutputStreamWriter}
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
-import play.api.libs.iteratee.Enumerator
 
 import models.export.rows.Rows
 
@@ -32,12 +32,13 @@ object CsvFormat extends Format {
   }
 
   /** Prepares a row of CSV output from the given Array of values. */
-  private def row(values: Array[String]): Array[Byte] = {
-    (values.map(cell).mkString(",") + CRLF).getBytes(Utf8)
+  private def row(values: Array[String]): ByteString = {
+    ByteString((values.map(cell).mkString(",") + CRLF).getBytes(Utf8))
   }
 
-  override def bytes(rows: Rows) = {
-    Enumerator[Array[Byte]](Utf8Bom, row(rows.headers))
-      .andThen(rows.rows.map(row))
+  override def byteSource(rows: Rows) = {
+    Source.single(ByteString(Utf8Bom))
+      .concat(Source.single(row(rows.headers)))
+      .concat(rows.rows.map(arr => row(arr)))
   }
 }

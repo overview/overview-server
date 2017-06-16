@@ -1,5 +1,7 @@
 package models.export.format
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import java.io.{ByteArrayOutputStream,FilterOutputStream,OutputStream}
 import play.api.libs.iteratee.{Enumeratee,Enumerator}
 
@@ -13,8 +15,6 @@ import models.export.rows.Rows
   */
 trait WriteBasedFormat[Context] { self: Format =>
   import WriteBasedFormat.Step
-
-  protected implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
 
   /** Creates the context you'll use to write things.
     *
@@ -49,7 +49,7 @@ trait WriteBasedFormat[Context] { self: Format =>
     */
   protected def writeEnd(context: Context): Unit
 
-  /** Provides an OutputStream for implementations and returns an Enumerator.
+  /** Provides an OutputStream for implementations and returns a Source.
     *
     * Implementations should implement the writeBegin(), writeHeaders(),
     * writeRow() and writeEnd() methods, which will all call write() on some
@@ -57,24 +57,24 @@ trait WriteBasedFormat[Context] { self: Format =>
     * createContext(). This method will call them those methods at the correct
     * moments and re-route their output to the returned enumerator.
     */
-  override def bytes(rows: Rows): Enumerator[Array[Byte]] = {
+  override def byteSource(rows: Rows): Source[ByteString, akka.NotUsed] = {
     val sink = new ByteArrayOutputStream
     val context = createContext(sink)
 
-    val steps = Enumerator[Step](Step.Begin, Step.Headers(rows.headers))
-      .andThen(rows.rows.map(Step.Row))
-      .andThen(Enumerator(Step.End))
-    steps.through(stepper(sink, context))
-  }
+    val steps: Source[Step, akka.NotUsed] = Source.single(Step.Begin)
+      .concat(Source.single(Step.Headers(rows.headers)))
+      .concat(rows.rows.map(Step.Row))
+      .concat(Source.single(Step.End))
 
-  private def stepper(sink: ByteArrayOutputStream, context: Context): Enumeratee[Step,Array[Byte]] = {
-    Enumeratee.map(step => stepToBytes(step, sink, context))
+    steps
+      .map { step => stepToBytes(step, sink, context) }
+      .filter(_.nonEmpty) // an empty chunk ends an HTTP Chunked transfer
   }
 
   /** Calls writeXXX(xxx, context) and then returns the bytes that were
     * written to context.
     */
-  private def stepToBytes(step: Step, sink: ByteArrayOutputStream, context: Context) = {
+  private def stepToBytes(step: Step, sink: ByteArrayOutputStream, context: Context): ByteString = {
     step match {
       case Step.Begin => writeBegin(context)
       case Step.Headers(headers) => writeHeaders(headers, context)
@@ -84,7 +84,7 @@ trait WriteBasedFormat[Context] { self: Format =>
 
     val ret = sink.toByteArray
     sink.reset
-    ret
+    ByteString(ret)
   }
 }
 

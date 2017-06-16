@@ -1,23 +1,24 @@
 package models.export.format
 
-import org.specs2.mutable.Specification
+import akka.stream.scaladsl.{Sink,Source}
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.test.{FutureAwaits,DefaultAwaitTimeout}
+import scala.collection.immutable
 
 import models.export.rows.Rows
+import test.helpers.InAppSpecification // for materializer
 
-class CsvFormatSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
+class CsvFormatSpec extends InAppSpecification with FutureAwaits with DefaultAwaitTimeout {
   trait StringScope extends Scope {
     val headers: Array[String] = Array("col1", "col2", "col3")
-    val rowRows: Enumerator[Array[String]] = Enumerator(
+    val rowRows: Source[Array[String], akka.NotUsed] = Source(immutable.Seq(
       Array("val1", "val2", "val3"),
       Array("val4", "val5", "val6")
-    )
+    ))
 
     val rows = Rows(headers, rowRows)
 
-    def bytes: Array[Byte] = await(CsvFormat.bytes(rows).run(Iteratee.consume()))
+    def bytes: Array[Byte] = await(CsvFormat.byteSource(rows).runWith(Sink.seq)).reduce(_ ++ _).toArray
 
     lazy val parsedCsv: Seq[Array[String]] = {
       import scala.collection.JavaConverters.asScalaBufferConverter

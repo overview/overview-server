@@ -71,12 +71,12 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       }
 
       "set Content-Type header" in new DocumentsWithStringTagsScope {
-        h.header(h.CONTENT_TYPE, result) must beSome("text/csv; charset=\"utf-8\"")
+        h.contentType(result) must beSome("text/csv")
       }
 
       "set contents" in new DocumentsWithStringTagsScope {
         val contents = "\ufeffid,title,text,url,tags\r\n11,doc1,text1,,\"tag five,tag six\"\r\n22,doc2,text2,,tag five\r\n"
-        h.contentAsString(result) must beEqualTo(contents)
+        new String(h.contentAsBytes(result).toArray, "UTF-8") must beEqualTo(contents)
       }
 
       "not send as chunked" in new DocumentsWithStringTagsScope {
@@ -90,7 +90,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       }
 
       "set Content-Type header" in new DocumentsWithColumnTagsScope {
-        h.header(h.CONTENT_TYPE, result) must beSome("text/csv; charset=\"utf-8\"")
+        h.contentType(result) must beSome("text/csv")
       }
 
       "set the proper Content-Disposition" in new DocumentsWithColumnTagsScope {
@@ -104,7 +104,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
 
       "set contents" in new DocumentsWithColumnTagsScope {
         val contents = "\ufeffid,title,text,url,tag five,tag six,tag seven\r\n11,doc1,text1,,1,1,\r\n22,doc2,text2,,1,,\r\n"
-        h.contentAsString(result) must beEqualTo(contents)
+        new String(h.contentAsBytes(result).toArray, "UTF-8") must beEqualTo(contents)
       }
 
       "not send as chunked" in new DocumentsWithColumnTagsScope {

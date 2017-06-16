@@ -1,22 +1,23 @@
 package models.export.rows
 
-import org.specs2.mutable.Specification
+import akka.stream.scaladsl.{Sink,Source}
 import org.specs2.specification.Scope
-import play.api.libs.iteratee.{Enumerator,Iteratee}
 import play.api.libs.json.Json
 import play.api.test.{DefaultAwaitTimeout,FutureAwaits}
+import scala.collection.immutable
 
 import com.overviewdocs.metadata.{Metadata,MetadataField,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{Document,Tag}
+import test.helpers.InAppSpecification // for materializer
 
-class DocumentsWithStringTagsSpec extends Specification with FutureAwaits with DefaultAwaitTimeout {
+class DocumentsWithStringTagsSpec extends InAppSpecification with FutureAwaits with DefaultAwaitTimeout {
   trait BaseScope extends Scope {
     val factory = com.overviewdocs.test.factories.PodoFactory
-    def documents: Enumerator[(Document, Seq[Long])]
+    def documents: Source[(Document, Seq[Long]), akka.NotUsed]
     val metadataSchema: MetadataSchema = MetadataSchema.empty
     val tags: Seq[Tag] = Seq()
     lazy val rows: Rows = DocumentsWithStringTags(metadataSchema, documents, tags)
-    lazy val rowList: List[Array[String]] = await(rows.rows.run(Iteratee.getChunks))
+    lazy val rowList: immutable.Seq[Array[String]] = await(rows.rows.runWith(Sink.seq))
     def headRow = rowList.head
   }
 
@@ -29,7 +30,7 @@ class DocumentsWithStringTagsSpec extends Specification with FutureAwaits with D
       metadataJson=Json.obj()
     )
     val document: (Document,Seq[Long]) = (sampleDocument, Seq())
-    override def documents = Enumerator(document)
+    override def documents = Source.single(document)
   }
 
   "ExportDocumentsWithStringTags" should {

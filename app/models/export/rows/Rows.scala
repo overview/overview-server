@@ -1,6 +1,6 @@
 package models.export.rows
 
-import play.api.libs.iteratee.Enumerator
+import akka.stream.scaladsl.Source
 
 /** Specifies the (unformatted) data to export. */
 case class Rows(
@@ -8,5 +8,5 @@ case class Rows(
   headers: Array[String],
 
   /** Rows of data. */
-  rows: Enumerator[Array[String]]
+  rows: Source[Array[String], akka.NotUsed]
 )
