@@ -24,7 +24,7 @@ wait_for_database() {
 
 start_logging_if_not_started() {
   if [ -z "$LOGS_PID" ]; then
-    docker-compose logs -f &
+    docker-compose logs -f --tail=0 &
     logs_pid=$!
     trap "kill -9 $logs_pid" EXIT
   fi
