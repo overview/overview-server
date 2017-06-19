@@ -230,6 +230,11 @@ class DocumentSetLuceneIndexSpec extends Specification {
         ))
       }
 
+      "return empty result when passed empty query" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L).copy(text="i am cow hear me moo")))
+        index.highlights(Seq(), PhraseQuery(Field.Text, "cow")) must beEqualTo(Map())
+      }
+
       "map documents to each other correctly" in new BaseScope {
         index.addDocuments(Seq(
           buildDocument(1L).copy(text="i am cow hear me moo"),

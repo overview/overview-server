@@ -220,7 +220,9 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
   private def luceneQueryDocumentsWithOverviewIds(documentIds: Iterable[Long]): LuceneQuery = {
     val ids = documentIds.toArray
-    assert(ids.headOption.isDefined)
+    if (ids.isEmpty) {
+      return new MatchNoDocsQuery("Nil documentIds query")
+    }
 
     // Optimization for common case: inserting a bunch of new docs (or editing
     // a single doc)
