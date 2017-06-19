@@ -78,7 +78,8 @@ object Textify {
     apply(new String(rawBytes, charset))
   }
 
-  /** Truncates a String by number of codepoints.
+  /** Truncates a String to the given number of UTF-16 characters, guaranteeing
+    * valid output when given valid input.
     *
     * Do not use String.substring() directly, since it may end the String with
     * a high surrogate.
