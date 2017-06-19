@@ -13,7 +13,7 @@ class Mailer @Inject() (configuration: Configuration, mailerClient: MailerClient
     *
     * Rather than rewrite play-mailer, we coded this runtime check.
     */
-  private lazy val isMock: Boolean = configuration.getString("mail.host").getOrElse("").isEmpty
+  private lazy val isMock: Boolean = configuration.getString("play.mailer.host").getOrElse("").isEmpty
 
   def send(mail: Mail) = {
     val email = mail.toEmail(fromEmail)
