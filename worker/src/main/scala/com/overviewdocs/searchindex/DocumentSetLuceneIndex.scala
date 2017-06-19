@@ -228,13 +228,14 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     // a single doc)
     val isMonotonic = ids.length == 1 || ids.sliding(2).forall { a => a(0) + 1 == a(1) }
     if (isMonotonic) {
-      NumericDocValuesField.newRangeQuery("id", documentIds.head, documentIds.last)
+      NumericDocValuesField.newRangeQuery("id", ids.head, ids.last)
     } else {
       import org.apache.lucene.document.NumericDocValuesField
       import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
 
       val builder = new BooleanQuery.Builder()
-      for (documentId <- documentIds) {
+      builder.setMaxClauseCount(ids.length)
+      for (documentId <- ids) {
         builder.add(NumericDocValuesField.newExactQuery("id", documentId), BooleanClause.Occur.SHOULD)
       }
       new ConstantScoreQuery(builder.build)
