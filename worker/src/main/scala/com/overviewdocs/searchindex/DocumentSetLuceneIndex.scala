@@ -128,7 +128,9 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   private val textField = new LuceneField("text", "", textFieldType(true))
 
   private def deleteDocumentsWithIds(ids: Iterable[Long]): Unit = {
-    indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(ids))
+    for (idGroup <- ids.grouped(BooleanQuery.getMaxClauseCount)) {
+      indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(idGroup))
+    }
   }
 
   def addDocumentsWithoutFsync(documents: Iterable[Document]): Unit = synchronized {
@@ -234,7 +236,6 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
       import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
 
       val builder = new BooleanQuery.Builder()
-      builder.setMaxClauseCount(ids.length)
       for (documentId <- ids) {
         builder.add(NumericDocValuesField.newExactQuery("id", documentId), BooleanClause.Occur.SHOULD)
       }
