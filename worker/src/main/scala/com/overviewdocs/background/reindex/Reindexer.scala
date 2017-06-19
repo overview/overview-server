@@ -25,6 +25,7 @@ trait Reindexer {
 class DbLuceneReindexer(
   indexClient: LuceneIndexClient,
   nBufferBytes: Long = 1024 * 1024 * 50,
+  nDocumentsPerDbFetch: Long = 300,
   writeInterval: FiniteDuration = FiniteDuration(5, TimeUnit.SECONDS)
 ) extends Reindexer with HasDatabase {
   import database.api._
@@ -91,7 +92,7 @@ class DbLuceneReindexer(
 
   private def getDocumentsSource(documentSetId: Long): Source[immutable.Seq[Document], akka.NotUsed] = {
     val query = documentsCompiled(documentSetId)
-    val result = query.result.transactionally.withStatementParameters(fetchSize=50)
+    val result = query.result.transactionally.withStatementParameters(fetchSize=nDocumentsPerDbFetch)
     val publisher: Publisher[Document] = database.slickDatabase.stream(result)
     Source.fromPublisher(publisher)
       .groupedWeightedWithin(nBufferBytes, writeInterval)(_.nBytesInMemoryEstimate)
@@ -102,7 +103,7 @@ class DbLuceneReindexer(
   }
 
   private def indexBatch(documentSetId: Long, documents: immutable.Seq[Document]): Future[Unit] = {
-    indexClient.addDocumentsWithoutFsync(documentSetId, documents)
+    indexClient.addDocuments(documentSetId, documents)
   }
 }
 
