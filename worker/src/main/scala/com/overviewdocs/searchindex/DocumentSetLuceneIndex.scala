@@ -117,24 +117,6 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   def addDocuments(documents: Iterable[Document]): Unit = synchronized {
-    addDocumentsWithoutFsync(documents)
-    commit
-  }
-
-  // Instantiate objects once: saves GC. As per
-  // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
-  private val idField = new NumericDocValuesField("id", 0L)
-  private val notesField = new LuceneField("notes", "", textFieldType(false))
-  private val titleField = new LuceneField("title", "", textFieldType(false))
-  private val textField = new LuceneField("text", "", textFieldType(true))
-
-  private def deleteDocumentsWithIds(ids: Iterable[Long]): Unit = {
-    indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(ids))
-  }
-
-  def addDocumentsWithoutFsync(documents: Iterable[Document]): Unit = synchronized {
-    deleteDocumentsWithIds(documents.map(_.id))
-
     val luceneDocument = new LuceneDocument()
 
     for (document <- documents) {
@@ -171,6 +153,24 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
       indexWriter.addDocument(luceneDocument)
     }
+
+    commit
+  }
+
+  // Instantiate objects once: saves GC. As per
+  // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
+  private val idField = new NumericDocValuesField("id", 0L)
+  private val notesField = new LuceneField("notes", "", textFieldType(false))
+  private val titleField = new LuceneField("title", "", textFieldType(false))
+  private val textField = new LuceneField("text", "", textFieldType(true))
+
+  private def deleteDocumentsWithIds(ids: Iterable[Long]): Unit = {
+    indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(ids))
+  }
+
+  def updateDocuments(documents: Iterable[Document]): Unit = synchronized {
+    deleteDocumentsWithIds(documents.map(_.id))
+    addDocuments(documents)
   }
 
   def close: Unit = synchronized {

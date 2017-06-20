@@ -81,7 +81,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
 
       "not find documents we have since updated" in new BaseScope {
         index.addDocuments(Seq(buildDocument(1L).copy(title="bad title")))
-        index.addDocuments(Seq(buildDocument(1L).copy(title="good title")))
+        index.updateDocuments(Seq(buildDocument(1L).copy(title="good title")))
         search(PhraseQuery(Field.Title, "bad title")) must beEqualTo("")
       }
 

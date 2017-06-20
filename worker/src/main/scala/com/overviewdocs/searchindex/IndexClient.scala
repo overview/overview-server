@@ -44,19 +44,19 @@ trait IndexClient {
     * Be sure to call addDocumentSet() for all relevant document sets before
     * you call this.
     *
-    * Any documents with the same ID in the search index will be overwritten.
+    * Any documents with the same ID in the search index will be duplicated. Use
+    * updateDocuments() in this case.
     *
-    * After this method succeeds, the documents are searchable right away. (It
-    * writes to disk and calls fsync before completing.)
+    * After this method succeeds, the documents are searchable right away.
     */
   def addDocuments(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
 
-  /** Adds Documents, without necessarily writing to disk.
+  /** Deletes and then re-adds Documents.
     *
-    * Call refresh(documentSetId) to make sure the documents are stored and
-    * searchable.
+    * After this method succeeds, the documents are searchable right away.
+    * However, term vectors will be slightly inaccurate.
     */
-  def addDocumentsWithoutFsync(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
+  def updateDocuments(documentSetId: Long, documents: Iterable[Document]): Future[Unit]
 
   /** Returns IDs for matching documents.
     *

@@ -41,8 +41,8 @@ class Indexer(
       respond(sender, indexClient.highlights(documentSetId, documentIds, query))
     }
     case Indexer.DoWorkThenAck(ReindexDocument(documentSetId, documentId), sender, ack) => {
-      val future = documentFinder.findDocument(documentSetId, documentId)
-        .flatMap(maybeDocument => indexClient.addDocuments(documentSetId, maybeDocument.toSeq))
+      documentFinder.findDocument(documentSetId, documentId)
+        .flatMap(maybeDocument => indexClient.updateDocuments(documentSetId, maybeDocument.toSeq))
         .onComplete {
           case Success(()) => sender ! ack
           case Failure(ex) => self ! ex
