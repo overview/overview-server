@@ -9,12 +9,14 @@ describe('PdfAnnotations', function() {
     before(async function() {
       const b = this.browser
       const s = this.browser.shortcuts
+      b.loadShortcuts('documentSet')
       b.loadShortcuts('documentSets')
       b.loadShortcuts('importFiles')
 
       await s.importFiles.open()
       await s.importFiles.addFiles([ 'PdfAnnotations/doc1.pdf', 'PdfAnnotations/doc2.pdf' ])
       await s.importFiles.finish({ name: 'annotations' })
+      await s.documentSet.waitUntilStable()
     })
 
     // These tests form a story. If the first one fails, the rest probably will
@@ -28,7 +30,7 @@ describe('PdfAnnotations', function() {
       await b.find('iframe#document-contents', { wait: 'fast' }) // wait for PDF to start loading
 
       await b.switchToFrame('document-contents')
-      await b.waitUntilBlockReturnsTrue('notes code is loaded', 'slow', function() {
+      await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
         return document.querySelector('.noteLayer') !== null
       });
 
@@ -99,7 +101,7 @@ describe('PdfAnnotations', function() {
 
       // Hacky -- we need to wait for the PDF to load because the previous test
       // left us in an inconsistent state
-      await b.waitUntilBlockReturnsTrue('notes code is loaded', 'slow', function() {
+      await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
         return document.querySelector('.noteLayer') !== null
       });
 
