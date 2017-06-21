@@ -2,6 +2,7 @@ package com.overviewdocs.sort
 
 import akka.util.ByteString
 import java.nio.ByteBuffer
+import java.util.Arrays
 
 /** All the information we need to sort IDs.
   */
@@ -44,4 +45,13 @@ case class Record(
       this.canonicalPosition - that.canonicalPosition
     }
   }
+
+  override def equals(that: Any): Boolean = that match {
+    case Record(thatId, thatCanonicalPosition, thatCollationKey) => {
+      id == thatId && canonicalPosition == thatCanonicalPosition && Arrays.equals(collationKey, thatCollationKey)
+    }
+    case _ => false
+  }
+
+  override def toString: String = s"Record(${id},${canonicalPosition},${collationKey.mkString(" ")})"
 }

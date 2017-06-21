@@ -50,7 +50,34 @@ private[sort] object Steps {
     callOnProgressEveryNRecords: Int
   )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[PageOnDisk]] = ???
 
-  /** Return a single Source that produces the sorted output of all pages.
+  /** like seq.reduce(), but calls fn as few times as possible.
+    *
+    * Scala's `Seq(1,2,3,4,5,6,7,8).reduce(fn)` will expand to
+    * fn(1,fn(2,fn(3,fn(4,fn(5,fn(6,fn(7,8))))))).
+    *
+    * _This_ method is more balanced:
+    * fn(fn(fn(1,2),fn(3,4)),fn(fn(5,6),fn(7,8))).
+    *
+    * [adam, 2017-06-21] I'm not sure whether balancing leads to efficiency.
+    * I believe it does, intuitively, since multiple fn()s can run concurrently.
+    */
+  private def reduceEfficient[A](seq: immutable.IndexedSeq[A])(fn: (A, A) => A): A = {
+    seq.size match {
+      case 0 => ???
+      case 1 => seq(0)
+      case 2 => fn(seq(0), seq(1))
+      case n => fn(reduceEfficient(seq.slice(0, n / 2))(fn), reduceEfficient(seq.slice(n / 2, n))(fn))
+    }
+  }
+
+  private def waitForUnits(left: Future[Unit], right: Future[Unit])(implicit ec: ExecutionContext): Future[Unit] = {
+    for {
+      _ <- left
+      _ <- right
+    } yield ()
+  }
+
+  /** Return a single RecordSource that produces the sorted output of all pages.
     *
     * onProgress() will be called _during_ streaming. Back-pressure
     * will delay calls to onProgress().
@@ -66,7 +93,20 @@ private[sort] object Steps {
     pagesOnDisk: immutable.Seq[PageOnDisk],
     onProgress: Int => Unit,
     callOnProgressEveryNRecords: Int
-  )(implicit mat: Materializer, blockingEc: ExecutionContext): Source[Record, _] = ???
+  )(implicit mat: Materializer, blockingEc: ExecutionContext): RecordSource = {
+    val nRecords = pagesOnDisk.map(_.nRecords).reduce(_ + _)
+    RecordSource(
+      nRecords,
+      reduceEfficient(pagesOnDisk.map(_.toSourceDestructive).toIndexedSeq)(_.mergeSortedMat(_)(waitForUnits))
+        .zipWithIndex.map { t: Tuple2[Record,Long] =>
+          val i = t._2.toInt + 1
+          if (i % callOnProgressEveryNRecords == 0 || i == nRecords) {
+            onProgress(i)
+          }
+          t._1
+        }
+    )
+  }
 
   /** Returns how many record merges will be required, given PageOnDisk sizes.
     *
@@ -99,7 +139,7 @@ private[sort] object Steps {
     mergeFactor: Int,
     onProgress: (Int, Int) => Unit,
     callOnProgressEveryNRecords: Int
-  )(implicit mat: Materializer, blockingEc: ExecutionContext): Source[Record, _] = {
+  )(implicit mat: Materializer, blockingEc: ExecutionContext): RecordSource = {
     val nMerges: Int = calculateNMerges(pagesOnDisk.map(_.nRecords), mergeFactor)
 
     def onProgressPhase1(nMerged: Int): Unit = onProgress(nMerged, nMerges)
@@ -107,9 +147,13 @@ private[sort] object Steps {
 
     val futureSource = for {
       mPages <- mergePagesUntilMRemain(pagesOnDisk, tempDirectory, mergeFactor, onProgressPhase1, callOnProgressEveryNRecords)
-    } yield mergeAllPagesAtOnce(mPages, onProgressPhase2, callOnProgressEveryNRecords)
+    } yield mergeAllPagesAtOnce(mPages, onProgressPhase2, callOnProgressEveryNRecords).records
 
-    Source.fromFutureSource(futureSource)
+    RecordSource(
+      pagesOnDisk.map(_.nRecords).reduce(_ + _),
+      Source.fromFutureSource(futureSource)
+        .mapMaterializedValue(f => f.flatMap(identity)) // Future[Future[Unit]] => Future[Unit]
+    )
   }
 
   /** Converts a RecordSource to an Array of record IDs.

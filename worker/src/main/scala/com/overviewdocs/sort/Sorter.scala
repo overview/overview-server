@@ -1,14 +1,7 @@
 package com.overviewdocs.sort
 
-import akka.stream.scaladsl.Source
 import akka.stream.Materializer
 import scala.concurrent.{ExecutionContext,Future}
-
-/** A producer of Records.
-  *
-  * `nRecords` is used to calculate progress.
-  */
-case class RecordSource(nRecords: Int, records: Source[Record, _])
 
 /** Sort large collections of Records, with progress reporting.
   *
@@ -51,7 +44,7 @@ class Sorter(val config: SortConfig) {
         onProgressMergePass, 
         config.mergeNRecordsPerProgressCall
       )
-      Steps.recordSourceToIdArray(RecordSource(recordSource.nRecords, mergedRecords))
+      Steps.recordSourceToIdArray(mergedRecords)
     }
   }
 }

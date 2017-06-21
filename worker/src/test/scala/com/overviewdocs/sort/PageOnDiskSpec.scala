@@ -8,7 +8,7 @@ import java.nio.{ByteBuffer,ByteOrder}
 import org.specs2.mutable.Specification
 import org.specs2.specification.{After,Scope}
 import scala.collection.immutable
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.util.AwaitMethod
 import com.overviewdocs.test.ActorSystemContext
@@ -20,7 +20,6 @@ class PageOnDiskSpec extends Specification with AwaitMethod {
     implicit val ec = system.dispatcher
     implicit val mat = ActorMaterializer.create(system)
 
-    val tempFiles = Seq.empty[Path]
     val tempDir: Path = Files.createTempDirectory("PageOnDiskSpec")
 
     val records = immutable.Seq(
@@ -97,10 +96,27 @@ class PageOnDiskSpec extends Specification with AwaitMethod {
         // If one of the .sortAndCreate() tests fails, this one will as well.
         val pageOnDisk = await(PageOnDisk.sortAndCreate(tempDir, records))
 
-        val result = await(pageOnDisk.toSourceDestructive.runWith(Sink.seq))
+        val source = pageOnDisk.toSourceDestructive
+        val result = await(source.toMat(Sink.seq) { (a: Future[Unit], b: Future[immutable.Seq[Record]]) =>
+          for {
+            _ <- a
+            records <- b
+          } yield records
+        }.run)
         result.map(_.id) must beEqualTo(records.sorted.map(_.id))
         result.map(_.canonicalPosition) must beEqualTo(records.sorted.map(_.canonicalPosition))
         result.map(_.collationKey.toSeq) must beEqualTo(records.sorted.map(_.collationKey.toSeq))
+      }
+
+      "delete the source file" in new BaseScope {
+        // sloppy testing: rather than write to disk, we'll use .sortAndCreate()
+        //
+        // If one of the .sortAndCreate() tests fails, this one will as well.
+        val pageOnDisk = await(PageOnDisk.sortAndCreate(tempDir, records))
+
+        val source = pageOnDisk.toSourceDestructive
+        await(Sink.seq.runWith(source))
+        Files.exists(pageOnDisk.path) must beEqualTo(false)
       }
     }
   }
