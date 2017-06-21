@@ -113,9 +113,40 @@ private[sort] object Steps {
     * @param recordCounts: Sizes of input pages.
     * @param mergeFactor: How many input pages we merge at a time.
     */
-  def calculateNMerges(recordCounts: immutable.Seq[Int], mergeFactor: Int): Int = {
-    val nRecords: Int = recordCounts.fold(0)(_ + _)
-    (nRecords * Math.log(recordCounts.size.toDouble) / Math.log(mergeFactor.toDouble)).toInt // FIXME test this!
+  private[sort] def calculateNMerges(recordCounts: immutable.Seq[Int], mergeFactor: Int): Int = {
+    assert(mergeFactor > 1) // or we'll get an infinite loop
+
+    if (recordCounts.size == 0) return 0
+
+    var ret: Int = 0
+    var toMerge: immutable.Seq[Int] = recordCounts
+
+    while (toMerge.size > mergeFactor) {
+      val grouped = toMerge.grouped(mergeFactor).zipWithIndex.to[immutable.Seq]
+
+      toMerge = grouped
+        .flatMap { t: Tuple2[immutable.Seq[Int], Int] =>
+          val nRecords = t._1.reduce(_ + _)
+
+          val nPagesMergedBeforeThisOne = t._2
+          if (nPagesMergedBeforeThisOne == grouped.size - 1) {
+            // we're merging the last page. Maybe we can skip this merge?
+            if (nPagesMergedBeforeThisOne + t._1.size <= mergeFactor) {
+              t._1
+            } else {
+              ret += nRecords
+              immutable.Seq(nRecords)
+            }
+          } else {
+            ret += nRecords
+            immutable.Seq(nRecords)
+          }
+        }
+    }
+
+    ret += toMerge.reduce(_ + _)
+
+    ret
   }
 
   /** Calls `mergePagesUntilMRemain()` and then `mergeAllPagesAtOnce()`.

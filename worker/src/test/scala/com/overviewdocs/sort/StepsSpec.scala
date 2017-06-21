@@ -131,5 +131,52 @@ class StepsSpec extends Specification with AwaitMethod {
         reports must beEqualTo(Seq(2, 4, 5))
       }
     }
+
+    "calculateNMerges" should {
+      "count a single source once" in new Scope {
+        Steps.calculateNMerges(immutable.Seq(10), 2) must beEqualTo(10)
+      }
+
+      "calculate a single _merge_ once" in new Scope {
+        Steps.calculateNMerges(immutable.Seq(10, 11, 12), 3) must beEqualTo(33)
+      }
+
+      "not crash if mergeFactor is larger than number of pages" in new Scope {
+        Steps.calculateNMerges(immutable.Seq(10, 11), 3) must beEqualTo(21)
+      }
+
+      "calculate two merges twice" in new Scope {
+        Steps.calculateNMerges(immutable.Seq(1, 2, 3, 4), 2) must beEqualTo(20)
+      }
+
+      "not count a merge for dangling pages" in new Scope {
+        // The "4" in this example will only be processed once. 1+2+3 will be
+        // processed twice.
+        Steps.calculateNMerges(immutable.Seq(1, 2, 3, 4), 3) must beEqualTo(16)
+      }
+
+      "count less-than-mergeFactor sized merges when they are needed" in new Scope {
+        // 1. Merge (1,2,3), (4,5,6), and (7,8)
+        // 2. Merge (123,456,78)
+        // (This isn't optimal, but it's simple)
+        Steps.calculateNMerges(immutable.Seq(1, 2, 3, 4, 5, 6, 7, 8), 3) must beEqualTo(
+          1+2+3 + 4+5+6 + 7+8 +
+          1+2+3+4+5+6+7+8
+        )
+      }
+
+      "skip less-than-mergeFactor sized merges when they are not needed" in new Scope {
+        // 1. Merge (1,2,3,4) and (5,6,7,8)
+        // 2. Merge (1234,5678,9,10)
+        Steps.calculateNMerges(immutable.Seq(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 4) must beEqualTo(
+          1+2+3+4 + 5+6+7+8 +
+          1+2+3+4+5+6+7+8+9+10
+        )
+      }
+
+      "return 0 when there are no pages" in new Scope {
+        Steps.calculateNMerges(immutable.Seq(), 2) must beEqualTo(0)
+      }
+    }
   }
 }
