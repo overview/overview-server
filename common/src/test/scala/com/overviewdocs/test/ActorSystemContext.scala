@@ -12,7 +12,7 @@ trait ActorSystemContext
   with ImplicitSender
   with After
 {
-  implicit lazy val system: ActorSystem = ActorSystem()
+  implicit lazy val system: ActorSystem = ActorSystem("ActorSystemContext")
   implicit val timeout: Timeout = Timeout(21474835000L, java.util.concurrent.TimeUnit.MILLISECONDS)
 
   override def after = shutdown(system)
