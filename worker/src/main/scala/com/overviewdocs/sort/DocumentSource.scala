@@ -43,7 +43,7 @@ class DocumentSource(
 
       val groups: Iterator[Array[Int]] = ids32Bit.grouped(nDocumentsPerFetch)
 
-      val source: Source[Record, _] = Source.fromIterator(() => groups)
+      val source: Source[Record, Future[Unit]] = Source.fromIterator(() => groups)
         .flatMapConcat { someIds32Bit =>
           val someIds = someIds32Bit.map(id32Bit => (documentSetId << 32) | id32Bit)
           val futurePageSource: Future[Source[Record, akka.NotUsed]] = for {
@@ -59,6 +59,7 @@ class DocumentSource(
           }
           Source.fromFutureSource[Record, akka.NotUsed](futurePageSource)
         }
+        .mapMaterializedValue(_ => Future.successful(()))
 
       RecordSource(ids32Bit.size, source)
     }

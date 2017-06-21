@@ -102,6 +102,9 @@ object PageOnDisk {
     * @param records Records to sort and then write to the file.
     */
   def sortAndCreate(directory: Path, records: immutable.Seq[Record])(implicit mat: Materializer, blockingEc: ExecutionContext): Future[PageOnDisk] = {
-    create(directory, RecordSource(records.size, Source(records.sorted)))
+    create(directory, RecordSource(
+      records.size,
+      Source(records.sorted).mapMaterializedValue(_ => Future.successful(()))
+    ))
   }
 }
