@@ -1,6 +1,6 @@
 package com.overviewdocs.sort
 
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink,Source}
 import akka.stream.Materializer
 import java.nio.file.Path
 import scala.collection.{immutable,mutable}
@@ -115,7 +115,7 @@ private[sort] object Steps {
     }
   }
 
-  private def waitForUnits(left: Future[Unit], right: Future[Unit])(implicit ec: ExecutionContext): Future[Unit] = {
+  private def waitForUnits[A,B](left: Future[A], right: Future[B])(implicit ec: ExecutionContext): Future[Unit] = {
     for {
       _ <- left
       _ <- right
@@ -234,5 +234,18 @@ private[sort] object Steps {
 
   /** Converts a RecordSource to an Array of record IDs.
     */
-  def recordSourceToIdArray(recordSource: RecordSource)(implicit mat: Materializer): Future[Array[Int]] = ???
+  def recordSourceToIdArray(recordSource: RecordSource)(implicit mat: Materializer, ec: ExecutionContext): Future[Array[Int]] = {
+    val ret = new Array[Int](recordSource.nRecords)
+    val sink = Sink.foreach { t: Tuple2[Int,Long] =>
+      val id = t._1
+      val index = t._2.toInt
+      ret(index) = id
+    }
+    recordSource.records
+      .map(_.id)
+      .zipWithIndex
+      .toMat(sink)(waitForUnits)
+      .run
+      .map(_ => ret)
+  }
 }

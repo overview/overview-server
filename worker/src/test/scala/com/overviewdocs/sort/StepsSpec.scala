@@ -251,5 +251,21 @@ class StepsSpec extends Specification with AwaitMethod {
         progressReports must beEqualTo(Seq(2, 4, 6, 8, 10, 12, 14, 16))
       }
     }
+
+    "recordSourceToIdArray" should {
+      "create an empty Array" in new BaseScope {
+        val recordSource = RecordSource(
+          4,
+          Source(immutable.Seq(
+            Record(2, 0, Array.empty),
+            Record(1, 0, Array.empty),
+            Record(3, 0, Array.empty),
+            Record(0, 0, Array.empty)
+          )).mapMaterializedValue(_ => Future.successful(()))
+        )
+        val ret = await(Steps.recordSourceToIdArray(recordSource))
+        ret.toSeq must beEqualTo(Seq(2, 1, 3, 0))
+      }
+    }
   }
 }
