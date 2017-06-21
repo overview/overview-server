@@ -1,7 +1,7 @@
 package com.overviewdocs.sort
 
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.{Sink,Source}
 import java.nio.file.{Files,Path}
 import org.specs2.mutable.Specification
 import org.specs2.specification.{After,Scope}
@@ -38,6 +38,10 @@ class StepsSpec extends Specification with AwaitMethod {
         v <- right
       } yield v
     }
+
+    def readAllRecordsAndWaitForFileDelete(records: Source[Record, Future[Unit]]): immutable.Seq[Record] = {
+      await(records.toMat(Sink.seq)(waitLeftThenTakeRight).run)
+    }
   }
 
   "Steps" should {
@@ -46,7 +50,7 @@ class StepsSpec extends Specification with AwaitMethod {
         val records = immutable.Seq(Record(0, 0, Array.empty), Record(1, 1, Array.empty))
         val page = buildPage(records)
         val source = Steps.mergeAllPagesAtOnce(immutable.Seq(page), _ => (), 1)
-        await(source.records.toMat(Sink.seq)(waitLeftThenTakeRight).run) must beEqualTo(records)
+        readAllRecordsAndWaitForFileDelete(source.records) must beEqualTo(records)
       }
 
       "merge two pages" in new BaseScope {
@@ -63,7 +67,7 @@ class StepsSpec extends Specification with AwaitMethod {
           buildPage(records2)
         ), _ => (), 1)
         source.nRecords must beEqualTo(4)
-        await(source.records.toMat(Sink.seq)(waitLeftThenTakeRight).run) must beEqualTo((records1 ++ records2).sorted)
+        readAllRecordsAndWaitForFileDelete(source.records) must beEqualTo((records1 ++ records2).sorted)
       }
 
       "merge three pages" in new BaseScope {
@@ -85,7 +89,7 @@ class StepsSpec extends Specification with AwaitMethod {
           buildPage(records3)
         ), _ => (), 1)
         source.nRecords must beEqualTo(6)
-        await(source.records.toMat(Sink.seq)(waitLeftThenTakeRight).run) must beEqualTo((records1 ++ records2 ++ records3).sorted)
+        readAllRecordsAndWaitForFileDelete(source.records) must beEqualTo((records1 ++ records2 ++ records3).sorted)
       }
 
       "delete files" in new BaseScope {
@@ -176,6 +180,75 @@ class StepsSpec extends Specification with AwaitMethod {
 
       "return 0 when there are no pages" in new Scope {
         Steps.calculateNMerges(immutable.Seq(), 2) must beEqualTo(0)
+      }
+    }
+
+    "mergePagesUntilMRemain" should {
+      trait BaseScopeWith5Pages extends BaseScope {
+        val records1 = immutable.Seq(
+          Record(0, 0, Array.empty),
+          Record(4, 4, Array.empty)
+        )
+        val records2 = immutable.Seq(
+          Record(1, 1, Array.empty),
+          Record(2, 2, Array.empty)
+        )
+        val records3 = immutable.Seq(
+          Record(3, 3, Array.empty),
+          Record(9, 9, Array.empty)
+        )
+        val records4 = immutable.Seq(
+          Record(5, 5, Array.empty),
+          Record(8, 8, Array.empty)
+        )
+        val records5 = immutable.Seq(
+          Record(6, 6, Array.empty),
+          Record(7, 7, Array.empty)
+        )
+        val pages = immutable.Seq(records1, records2, records3, records4, records5).map(buildPage _)
+      }
+
+      "be a no-op if nPages < M" in new BaseScopeWith5Pages {
+        var onProgressCalled = false
+        def onProgress(i: Int): Unit = { onProgressCalled = true }
+
+        val ret = await(Steps.mergePagesUntilMRemain(
+          pages,
+          tempDir,
+          5,
+          onProgress,
+          1
+        ))
+        ret must beEqualTo(pages)
+        onProgressCalled must beEqualTo(false)
+      }
+
+      "call mergeAllPagesAtOnce on sub-lists" in new BaseScopeWith5Pages {
+        val progressReports = mutable.ArrayBuffer.empty[Int]
+        def onProgress(i: Int): Unit = { progressReports.append(i) }
+
+        val ret = await(Steps.mergePagesUntilMRemain(pages, tempDir, 4, onProgress, 2))
+
+        ret.size must beEqualTo(2)
+        ret(0).nRecords must beEqualTo(8)
+        readAllRecordsAndWaitForFileDelete(ret(0).toSourceDestructive).map(_.id) must beEqualTo(
+          Seq(0, 1, 2, 3, 4, 5, 8, 9)
+        )
+        progressReports must beEqualTo(Seq(2, 4, 6, 8))
+      }
+
+      "merge with more than one pass when needed" in new BaseScopeWith5Pages {
+        val progressReports = mutable.ArrayBuffer.empty[Int]
+        def onProgress(i: Int): Unit = { progressReports.append(i) }
+
+        val ret = await(Steps.mergePagesUntilMRemain(pages, tempDir, 2, onProgress, 2))
+
+        ret.size must beEqualTo(2)
+        ret(0).nRecords must beEqualTo(8)
+        readAllRecordsAndWaitForFileDelete(ret(0).toSourceDestructive).map(_.id) must beEqualTo(
+          Seq(0, 1, 2, 3, 4, 5, 8, 9)
+        )
+        progressReports must beEqualTo(Seq(2, 4, 6, 8, 10, 12, 14, 16))
       }
     }
   }

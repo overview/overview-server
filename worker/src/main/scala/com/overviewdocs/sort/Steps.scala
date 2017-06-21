@@ -3,7 +3,7 @@ package com.overviewdocs.sort
 import akka.stream.scaladsl.Source
 import akka.stream.Materializer
 import java.nio.file.Path
-import scala.collection.immutable
+import scala.collection.{immutable,mutable}
 import scala.concurrent.{ExecutionContext,Future}
 
 /** Individual, testable steps of external sort. */
@@ -48,7 +48,52 @@ private[sort] object Steps {
     mergeFactor: Int,
     onProgress: Int => Unit,
     callOnProgressEveryNRecords: Int
-  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[PageOnDisk]] = ???
+  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[PageOnDisk]] = {
+    // Progress reporting will set this as a fraction of calculateNMerges(). So
+    // make sure the logic in this method is the same as the logic in
+    // calculateNMerges().
+    var nRecordsMergedBeforeCurrentMerge = 0
+
+    // to merge one "pass". For instance, merging (1)(2)(3)(4)(5) with M=2, this
+    // would eventually return (1,2)(3,4)(5).
+    def mergeOnePassThenRecurse(thisPassPages: immutable.Seq[PageOnDisk]): Future[immutable.Seq[PageOnDisk]] = {
+      if (thisPassPages.size <= mergeFactor) {
+        return Future.successful(thisPassPages)
+      }
+
+      def mergeOneThenRecurse(thisPassTodo: immutable.Seq[PageOnDisk], nextPass: immutable.Seq[PageOnDisk]): Future[immutable.Seq[PageOnDisk]] = {
+        if (thisPassTodo.size < 2) {
+          // Degenerate cases: no pages left to merge, or just one.
+          // End this pass.
+          return Future.successful(nextPass ++ thisPassTodo)
+        }
+
+        val (thisOneTodo, rest) = thisPassTodo.splitAt(mergeFactor)
+
+        if (rest.isEmpty && nextPass.size + thisOneTodo.size <= mergeFactor) {
+          // the next pass is the final one, and this merge is unnecessary.
+          return Future.successful(nextPass ++ thisOneTodo)
+        }
+
+        val recordSource = mergeAllPagesAtOnce(
+          thisOneTodo,
+          (n) => onProgress(n + nRecordsMergedBeforeCurrentMerge),
+          callOnProgressEveryNRecords
+        )
+
+        PageOnDisk.create(tempDirectory, recordSource).flatMap { pageOnDisk =>
+          nRecordsMergedBeforeCurrentMerge += pageOnDisk.nRecords
+          mergeOneThenRecurse(rest, nextPass :+ pageOnDisk)
+        }
+      }
+
+      mergeOneThenRecurse(thisPassPages, immutable.Seq()).flatMap { nextPassPages =>
+        mergeOnePassThenRecurse(nextPassPages)
+      }
+    }
+
+    mergeOnePassThenRecurse(pagesOnDisk)
+  }
 
   /** like seq.reduce(), but calls fn as few times as possible.
     *
