@@ -3,6 +3,7 @@ package com.overviewdocs.sort
 import akka.stream.scaladsl.Source
 import akka.stream.Materializer
 import java.nio.file.Path
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext,Future}
 
 /** Individual, testable steps of external sort. */
@@ -27,7 +28,7 @@ private[sort] object Steps {
     maxNBytesInMemory: Int,
     onProgress: (Int, Int) => Unit,
     callOnProgressEveryNRecords: Int
-  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[List[PageOnDisk]] = ???
+  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[PageOnDisk]] = ???
 
   /** Repeatedly call mergePages() on the smallest M pages, until fewer than M
     * pages remain.
@@ -42,12 +43,12 @@ private[sort] object Steps {
     * @param blockingEc ExecutionContext to use for file I/O.
     */
   def mergePagesUntilMRemain(
-    pagesOnDisk: List[PageOnDisk],
+    pagesOnDisk: immutable.Seq[PageOnDisk],
     tempDirectory: Path,
     mergeFactor: Int,
     onProgress: Int => Unit,
     callOnProgressEveryNRecords: Int
-  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[List[PageOnDisk]] = ???
+  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[PageOnDisk]] = ???
 
   /** Return a single Source that produces the sorted output of all pages.
     *
@@ -62,7 +63,7 @@ private[sort] object Steps {
     * @param blockingEc ExecutionContext to use for file I/O.
     */
   def mergeAllPagesAtOnce(
-    pagesOnDisk: List[PageOnDisk],
+    pagesOnDisk: immutable.Seq[PageOnDisk],
     onProgress: Int => Unit,
     callOnProgressEveryNRecords: Int
   )(implicit mat: Materializer, blockingEc: ExecutionContext): Source[Record, _] = ???
@@ -72,7 +73,7 @@ private[sort] object Steps {
     * @param recordCounts: Sizes of input pages.
     * @param mergeFactor: How many input pages we merge at a time.
     */
-  def calculateNMerges(recordCounts: List[Int], mergeFactor: Int): Int = {
+  def calculateNMerges(recordCounts: immutable.Seq[Int], mergeFactor: Int): Int = {
     val nRecords: Int = recordCounts.fold(0)(_ + _)
     (nRecords * Math.log(recordCounts.size.toDouble) / Math.log(mergeFactor.toDouble)).toInt // FIXME test this!
   }
@@ -93,7 +94,7 @@ private[sort] object Steps {
     * @param blockingEc ExecutionContext to use for file I/O.
     */
   def mergePages(
-    pagesOnDisk: List[PageOnDisk],
+    pagesOnDisk: immutable.Seq[PageOnDisk],
     tempDirectory: Path,
     mergeFactor: Int,
     onProgress: (Int, Int) => Unit,
