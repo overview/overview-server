@@ -267,5 +267,52 @@ class StepsSpec extends Specification with AwaitMethod {
         ret.toSeq must beEqualTo(Seq(2, 1, 3, 0))
       }
     }
+
+    "recordsToPages" should {
+      trait BaseScopeWith5Records extends BaseScope {
+        // These tests are integration-test-y: we assume Record and PageOnDisk
+        // behave the way we expect.
+
+        val records = immutable.Seq(                                   // nBytesEstimate:
+          Record(0, 5, Array(1.toByte, 2.toByte, 3.toByte)),           // 39 bytes
+          Record(1, 1, Array(1.toByte, 2.toByte)),                     // 38 bytes
+          Record(2, 2, Array(1.toByte, 2.toByte, 3.toByte, 4.toByte)), // 40 bytes
+          Record(4, 4, Array(1.toByte, 2.toByte, 3.toByte, 4.toByte)), // 40 bytes
+          Record(3, 3, Array.empty[Byte])                              // 36 bytes
+        )
+      }
+
+      "write all to a Page" in new BaseScopeWith5Records {
+        val result = await(Steps.recordsToPages(Source(records), tempDir, 1000000, (_, _) => (), 1))
+        result.size must beEqualTo(1)
+        result(0).nRecords must beEqualTo(5)
+        readAllRecordsAndWaitForFileDelete(result(0).toSourceDestructive) must beEqualTo(records.sorted)
+      }
+
+      "report progress while streaming" in new BaseScopeWith5Records {
+        val progress = mutable.ArrayBuffer.empty[(Int,Long)]
+        def onProgress(n: Int, b: Long): Unit = { progress.append((n, b)) }
+        await(Steps.recordsToPages(Source(records), tempDir, 1000000, onProgress, 2))
+        progress must beEqualTo(Seq((2, 77), (4, 157))) //, (5, 193)))
+        // [adam, 2017-06-22] It might be nice to progress-report the final
+        // (5, 193) too, but I can't seem to form an opinion about that and I've
+        // already coded the implementation without it.
+      }
+
+      "divide into many pages" in new BaseScopeWith5Records {
+        val result = await(Steps.recordsToPages(Source(records), tempDir, 100, (_, _) => (), 1))
+        result.size must beEqualTo(3)
+        result.map(_.nRecords) must beEqualTo(Seq(2, 2, 1))
+        readAllRecordsAndWaitForFileDelete(result(0).toSourceDestructive).map(_.id) must beEqualTo(Seq(1, 0))
+        readAllRecordsAndWaitForFileDelete(result(1).toSourceDestructive).map(_.id) must beEqualTo(Seq(2, 4))
+        readAllRecordsAndWaitForFileDelete(result(2).toSourceDestructive).map(_.id) must beEqualTo(Seq(3))
+      }
+
+      "make sure each page has at least one element" in new BaseScopeWith5Records {
+        val result = await(Steps.recordsToPages(Source(records), tempDir, 1, (_, _) => (), 1))
+        result.size must beEqualTo(5)
+        result.map(_.nRecords) must beEqualTo(Seq(1, 1, 1, 1, 1))
+      }
+    }
   }
 }

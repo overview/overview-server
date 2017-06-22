@@ -1,9 +1,10 @@
 package com.overviewdocs.sort
 
-import akka.stream.scaladsl.{Sink,Source}
+import akka.stream.scaladsl.{Flow,Sink,Source}
 import akka.stream.Materializer
 import java.nio.file.Path
 import scala.collection.{immutable,mutable}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext,Future}
 
 /** Individual, testable steps of external sort. */
@@ -26,9 +27,27 @@ private[sort] object Steps {
     records: Source[Record, _],
     tempDirectory: Path,
     maxNBytesInMemory: Int,
-    onProgress: (Int, Int) => Unit,
+    onProgress: (Int, Long) => Unit,
     callOnProgressEveryNRecords: Int
-  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[PageOnDisk]] = ???
+  )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[immutable.Seq[PageOnDisk]] = {
+    val progressReporter = Flow.apply[Record]
+      .scan((0,0L)) { (t: Tuple2[Int,Long], record: Record) => (t._1 + 1, t._2 + record.nBytesEstimate) }
+      .filter { (t: Tuple2[Int,Long]) => t._1 != 0 && t._1 % callOnProgressEveryNRecords == 0 }
+      .to(Sink.foreach(onProgress.tupled))
+
+    // akka-stream has FlowOps.grouped(), which doesn't do weight, and
+    // FlowOps.groupedWeightedWithin(), which does weight but also forces a
+    // timer. We _really_ want groupedWeighted(), but it doesn't exist. A timer
+    // hardly adds any overhead; its real drawback is that it forces me to write
+    // this comment.
+    val practicallyForever = Duration(1, java.util.concurrent.TimeUnit.DAYS)
+
+    records
+      .alsoTo(progressReporter)
+      .groupedWeightedWithin(maxNBytesInMemory, practicallyForever)(_.nBytesEstimate.toLong)
+      .mapAsync(1) { records => PageOnDisk.sortAndCreate(tempDirectory, records) }
+      .runWith(Sink.seq)
+  }
 
   /** Repeatedly call mergePages() on the smallest M pages, until fewer than M
     * pages remain.

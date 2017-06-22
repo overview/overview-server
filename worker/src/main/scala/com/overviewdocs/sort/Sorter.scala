@@ -27,7 +27,7 @@ class Sorter(val config: SortConfig) {
     recordSource: RecordSource,
     onProgress: Double => Unit
   )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[Array[Int]] = {
-    def onProgressReadPass(nRead: Int, nBytesRead: Int): Unit = ???
+    def onProgressReadPass(nRead: Int, nBytesRead: Long): Unit = ???
     def onProgressMergePass(nMerged: Int, nMergesTotal: Int): Unit = ???
 
     Steps.recordsToPages(
