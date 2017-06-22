@@ -44,6 +44,30 @@ class StepsSpec extends Specification with AwaitMethod {
     }
   }
 
+  trait BaseScopeWith5Pages extends BaseScope {
+    val records1 = immutable.Seq(
+      Record(0, 0, Array.empty),
+      Record(4, 4, Array.empty)
+    )
+    val records2 = immutable.Seq(
+      Record(1, 1, Array.empty),
+      Record(2, 2, Array.empty)
+    )
+    val records3 = immutable.Seq(
+      Record(3, 3, Array.empty),
+      Record(9, 9, Array.empty)
+    )
+    val records4 = immutable.Seq(
+      Record(5, 5, Array.empty),
+      Record(8, 8, Array.empty)
+    )
+    val records5 = immutable.Seq(
+      Record(6, 6, Array.empty),
+      Record(7, 7, Array.empty)
+    )
+    val pages = immutable.Seq(records1, records2, records3, records4, records5).map(buildPage _)
+  }
+
   "Steps" should {
     "mergeAllPagesAtOnce" should {
       "merge a single page" in new BaseScope {
@@ -132,7 +156,7 @@ class StepsSpec extends Specification with AwaitMethod {
         ), onProgress, 2)
 
         await(Sink.ignore.runWith(source.records))
-        reports must beEqualTo(Seq(2, 4, 5))
+        reports.toSeq must beEqualTo(Seq(2, 4, 5))
       }
     }
 
@@ -184,30 +208,6 @@ class StepsSpec extends Specification with AwaitMethod {
     }
 
     "mergePagesUntilMRemain" should {
-      trait BaseScopeWith5Pages extends BaseScope {
-        val records1 = immutable.Seq(
-          Record(0, 0, Array.empty),
-          Record(4, 4, Array.empty)
-        )
-        val records2 = immutable.Seq(
-          Record(1, 1, Array.empty),
-          Record(2, 2, Array.empty)
-        )
-        val records3 = immutable.Seq(
-          Record(3, 3, Array.empty),
-          Record(9, 9, Array.empty)
-        )
-        val records4 = immutable.Seq(
-          Record(5, 5, Array.empty),
-          Record(8, 8, Array.empty)
-        )
-        val records5 = immutable.Seq(
-          Record(6, 6, Array.empty),
-          Record(7, 7, Array.empty)
-        )
-        val pages = immutable.Seq(records1, records2, records3, records4, records5).map(buildPage _)
-      }
-
       "be a no-op if nPages < M" in new BaseScopeWith5Pages {
         var onProgressCalled = false
         def onProgress(i: Int): Unit = { onProgressCalled = true }
@@ -249,6 +249,20 @@ class StepsSpec extends Specification with AwaitMethod {
           Seq(0, 1, 2, 3, 4, 5, 8, 9)
         )
         progressReports must beEqualTo(Seq(2, 4, 6, 8, 10, 12, 14, 16))
+      }
+    }
+
+    "mergePages" should {
+      "be consistent in progress reports" in new BaseScopeWith5Pages {
+        val progress = mutable.ArrayBuffer.empty[(Int,Int)]
+        def onProgress(nMerged: Int, nMerges: Int): Unit = { progress.append((nMerged, nMerges)) }
+
+        val recordSource = Steps.mergePages(pages, tempDir, 2, onProgress, 2)
+        await(Sink.ignore.runWith(recordSource.records))
+
+        progress.toSeq must beEqualTo(Seq(
+          (2,28), (4,28), (6,28), (8,28), (10,28), (12,28), (14,28), (16,28), (20,28), (22,28), (24,28), (26,28), (28,28)
+        ))
       }
     }
 
@@ -308,7 +322,7 @@ class StepsSpec extends Specification with AwaitMethod {
         readAllRecordsAndWaitForFileDelete(result(2).toSourceDestructive).map(_.id) must beEqualTo(Seq(3))
       }
 
-      "make sure each page has at least one element" in new BaseScopeWith5Records {
+      "make sure if a record exceeds maxNBytes on its own, it gets a page" in new BaseScopeWith5Records {
         val result = await(Steps.recordsToPages(Source(records), tempDir, 1, (_, _) => (), 1))
         result.size must beEqualTo(5)
         result.map(_.nRecords) must beEqualTo(Seq(1, 1, 1, 1, 1))

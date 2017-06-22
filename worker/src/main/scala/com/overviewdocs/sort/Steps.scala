@@ -236,16 +236,17 @@ private[sort] object Steps {
     callOnProgressEveryNRecords: Int
   )(implicit mat: Materializer, blockingEc: ExecutionContext): RecordSource = {
     val nMerges: Int = calculateNMerges(pagesOnDisk.map(_.nRecords), mergeFactor)
+    val nRecords: Int = pagesOnDisk.map(_.nRecords).reduce(_ + _)
 
     def onProgressPhase1(nMerged: Int): Unit = onProgress(nMerged, nMerges)
-    def onProgressPhase2(nMerged: Int): Unit = onProgress(nMerges - nMerged, nMerged)
+    def onProgressPhase2(nMerged: Int): Unit = onProgress(nMerges - nRecords + nMerged, nMerges)
 
     val futureSource = for {
       mPages <- mergePagesUntilMRemain(pagesOnDisk, tempDirectory, mergeFactor, onProgressPhase1, callOnProgressEveryNRecords)
     } yield mergeAllPagesAtOnce(mPages, onProgressPhase2, callOnProgressEveryNRecords).records
 
     RecordSource(
-      pagesOnDisk.map(_.nRecords).reduce(_ + _),
+      nRecords,
       Source.fromFutureSource(futureSource)
         .mapMaterializedValue(f => f.flatMap(identity)) // Future[Future[Unit]] => Future[Unit]
     )

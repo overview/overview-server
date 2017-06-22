@@ -27,8 +27,30 @@ class Sorter(val config: SortConfig) {
     recordSource: RecordSource,
     onProgress: Double => Unit
   )(implicit mat: Materializer, blockingEc: ExecutionContext): Future[Array[Int]] = {
-    def onProgressReadPass(nRead: Int, nBytesRead: Long): Unit = ???
-    def onProgressMergePass(nMerged: Int, nMergesTotal: Int): Unit = ???
+    var lastReadPassProgress: Double = 0.0
+
+    def onProgressReadPass(nRead: Int, nBytesRead: Long): Unit = {
+      // How many bytes will be on disk once we read all bytes of input?
+      val nBytesInputEst: Double = nBytesRead.toDouble * recordSource.nRecords / nRead
+
+      // How many bytes will we read during merging? Each merge is a write+read
+      val nPages = (nBytesInputEst / config.maxNBytesInMemory).ceil
+      val nMergePassesEst: Int = 1 + (Math.log(nPages) / Math.log(config.mergeFactor.toDouble)).ceil.toInt
+      val nBytesMergeEst: Double = nMergePassesEst * nBytesInputEst
+
+      val totalCost = nBytesInputEst * config.firstReadCostBoost + nBytesMergeEst
+      val progress = nBytesRead * config.firstReadCostBoost / totalCost
+      onProgress(progress)
+
+      lastReadPassProgress = progress
+    }
+
+    def onProgressMergePass(nMerged: Int, nMergesTotal: Int): Unit = {
+      val mergeProgress: Double = nMerged.toDouble / nMergesTotal
+      val remaining = (1.0 - mergeProgress) * (1.0 - lastReadPassProgress)
+      val progress = 1.0 - remaining
+      onProgress(progress)
+    }
 
     Steps.recordsToPages(
       recordSource.records,
