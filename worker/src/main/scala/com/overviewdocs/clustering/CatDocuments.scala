@@ -23,7 +23,7 @@ class CatDocuments(
     import database.api._
     blockingDatabase.option(
       sql"""SELECT sorted_document_ids FROM document_set WHERE id = $documentSetId""".as[Seq[Long]]
-    ).getOrElse(Seq())
+    ).getOrElse(Seq[Long]())
   }
 
   private val taggedIds = {

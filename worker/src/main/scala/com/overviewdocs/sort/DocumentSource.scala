@@ -23,7 +23,7 @@ class DocumentSource(
     for {
       ids <- database.option(sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]])
     } yield {
-      val ids32Bit: Array[Int] = ids.get.toArray.map(_.toInt)
+      val ids32Bit: Array[Int] = ids.getOrElse(Seq.empty[Long]).toArray.map(_.toInt)
 
       val initialPositions = new Array[Int](ids32Bit.max + 1)
       ids32Bit.zipWithIndex.foreach { case (id, position) => initialPositions(id) = position }

@@ -12,7 +12,7 @@ import scala.collection.immutable
   * 10M-element bitset, which is 1.25MB.
   */
 case class DocumentIdSet(
-  /** Document Set ID */
+  /** DocumentSet ID */
   val documentSetId: Int,
 
   /** Set of last 32-bit components of all matching Document IDs. */

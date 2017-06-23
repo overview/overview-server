@@ -27,6 +27,8 @@ trait MyPostgresProfile extends ExPostgresProfile
 
     implicit val jsonTextOptionColumnType = jsonTextColumnType.optionType
 
+    implicit val intArrayColumnType = MappedColumnType.base[Array[Int], List[Int]](_.toList, _.toArray)
+
     implicit val instantColumnType = MappedColumnType.base[Instant, java.sql.Timestamp](
       { i => new java.sql.Timestamp(i.toEpochMilli) },
       { t => Instant.ofEpochMilli(t.getTime) }

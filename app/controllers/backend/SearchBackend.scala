@@ -39,8 +39,10 @@ trait SearchBackend extends Backend {
 /** Akka RemoteActor-backed search backend.
   */
 @Singleton
-class RemoteActorSearchBackend @Inject() (val database: Database, remoteActorSystemModule: RemoteActorSystemModule)
-extends SearchBackend {
+class RemoteActorSearchBackend @Inject() (
+  val database: Database,
+  remoteActorSystemModule: RemoteActorSystemModule
+) extends SearchBackend {
   import akka.actor.ActorRef
   import akka.pattern.ask
   import akka.util.Timeout

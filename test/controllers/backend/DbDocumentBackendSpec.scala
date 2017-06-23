@@ -4,7 +4,6 @@ import org.specs2.mock.Mockito
 import play.api.libs.json.{JsObject,Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.Selection

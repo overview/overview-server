@@ -12,7 +12,7 @@ import com.overviewdocs.util.AwaitMethod
 /**
  * Tests that access the database should extend DbSpecification.
  */
-class DbSpecification extends Specification with AwaitMethod {
+class DbSpecification extends Specification {
   sequential
 
   /** Context for test accessing the database.
@@ -29,7 +29,7 @@ class DbSpecification extends Specification with AwaitMethod {
     *
     * You must only run one test at a time: the database is a global variable.
     */
-  trait DbScope extends Scope with HasBlockingDatabase {
+  trait DbScope extends Scope with AwaitMethod with HasBlockingDatabase {
     val factory = DbFactory
     val podoFactory = PodoFactory
 
@@ -67,7 +67,8 @@ class DbSpecification extends Specification with AwaitMethod {
         q25 AS (DELETE FROM "user"),
         q26 AS (DELETE FROM csv_import),
         q27 AS (DELETE FROM clone_job),
-        q28 AS (DELETE FROM document_set_reindex_job)
+        q28 AS (DELETE FROM document_set_reindex_job),
+        q29 AS (DELETE FROM document_id_list)
         DELETE FROM document_set
       """)
     }
