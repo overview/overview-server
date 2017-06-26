@@ -11,9 +11,12 @@
   }
 
   ul.warnings {
+    margin: 0;
     padding: 0;
     list-style: none;
-    margin: 1rem 0 2rem;
+    &:not(:empty) {
+      margin: 1rem 0 2rem;
+    }
     color: @brand-danger;
 
     li {
@@ -23,7 +26,6 @@
 
   ul.documents {
     margin: 0;
-    margin-top: -.5em; // bring up the first li.document
     padding: 0;
     list-style: none;
   }
@@ -33,32 +35,27 @@
     .flex-direction-row();
 
     cursor: pointer;
-    margin: .75em .1em;
-    .overview-toplevel-box;
-    padding: .5em 1em;
+    margin: 0;
+    padding: 1rem;
     line-height: 1.5;
     background: @body-bg;
-    transition-property: background-color, border-color;
-    transition-duration: .5s;
-    transition-delay: .5s;
-    border: 1px solid @body-bg;
 
     .thumbnail { // legacy: not all documents have thumbnails
       .flex(0 0);
 
       img {
-        width: 75px;
+        // Fit thumbnails in an 8.5x11 rectangle
+        max-height: 97px;
+        max-width: 75px;
         margin-right: 1rem;
+        box-shadow: 0 0 1px @text-muted-light;
       }
     }
 
     div.details {
       -webkit-flex: 1 1 0;
       flex: 1 1 0;
-
-      .description {
-        word-wrap: break-word;
-      }
+      overflow: hidden;
     }
 
     &:hover {
@@ -66,15 +63,11 @@
     }
 
     &.cursor {
-      font-weight: bold;
+      background: @body-bg-dark;
     }
 
     &.selected {
-      // we transition slowly _from_ selected _to_ unselected, but not the reverse
-      transition-duration: 0;
-      transition-delay: 0;
       color: black;
-      font-weight: bold;
       background: @body-bg-dark;
       border-color: @brand-primary;
     }
@@ -88,50 +81,35 @@
   }
   &.loading .loading { display: block; }
 
-  ul:hover li.document {
-    // When hovering over the list, we may be:
-    // A) hovering onto a new element (in which case we should be fast)
-    // B) switching from &.document-selected (in which case we want to see
-    //    the previous selection fade away slowly).
-    // Pick a good compromise.
-    transition-delay: 0;
-    transition-duration: .2s;
-  }
-
-  &.document-selected li.document {
-    // don't animate in the background: if user does this very quickly:
-    // 1. (100ms) Iterate through several documents via j/k keys
-    // 2. (200ms) Exit document-selected through Ctrl+A
-    // Expected behavior: only the most recently selected document animates
-    transition: none;
-  }
-
   h3 {
     margin: 0;
     padding: 0;
     font: inherit;
+    font-weight: bold;
   }
 
-  p.description {
-    margin: 0;
+  p.description, p.snippets {
+    word-wrap: break-word;
+    margin: .25rem 0 0;
+    font-size: .85em;
     padding: 0;
-    .text-overflow();
     .text-muted;
   }
 
-
-  ul.tags {
-    .tag-list-2d();
+  p.description {
+    .text-overflow();
   }
 
   p.snippets {
-    margin-top: 4px;
-
     em {
       font-style: normal;
       font-weight: bold;
       background: @highlight;
     }
+  }
+
+  ul.tags {
+    .tag-list-2d();
   }
 }
 

@@ -11,13 +11,35 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   # Listens to State's `change:document-list`. Doesn't call anything or emit
   # any events.
   class DocumentListTitleView extends Backbone.View
-    id: 'document-list-title'
     tagName: 'h3'
+
+    templates:
+      main: _.template('''
+        <h3><%= t('title_html', length) %></h3>
+        <div class="sort-by"><%= t('sort_by_FIELD').replace('FIELD', sortByFieldHtml) %></div>
+      ''')
+
+      sortByField: _.template('''
+        <div class="sort-by-field dropdown">
+          <a id="DocumentListTitle-sort-by-field" data-target="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+            <%- currentSortBy.label %>
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu" aria-labelledby="DocumentListTitle-sort-by-field">
+            <li><a href="#" data-value="<%- sortByTitle.value %>"><%- sortByTitle.label %></a></li>
+            <% metadataFields.forEach(function(field) { %>
+              <li><a href="#" data-value="metadata:<%- field %>"><%- field %></a></li>
+            <% }) %>
+          </ul>
+        </div>
+      ''')
 
     initialize: ->
       throw new Error('Must supply options.state, a State') if !@options.state
 
       @state = @options.state
+      @documentSet = @state.documentSet
+      @listenTo(@documentSet, 'change:metadataFields', @render)
       @listenTo(@state, 'change:documentList', @_attachDocumentList)
 
       @_attachDocumentList()
@@ -35,6 +57,11 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       length = @documentList?.get('length')
 
       if length?
-        @$el.html(t('title_html', length))
+        fields = @documentSet.get('metadataFields')
+        sortByTitle = { label: t('sort_by.title'), value: 'title' }
+        sortByFieldHtml = @templates.sortByField
+          currentSortBy: sortByTitle,
+          metadataFields: fields
+        @$el.html(@templates.main(t: t, length: length, sortByFieldHtml: sortByFieldHtml))
       else
         @$el.text(t('loading'))
