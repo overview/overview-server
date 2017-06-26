@@ -73,6 +73,14 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
       db.getSortedDocumentIds(1L) must beEqualTo(Some(Seq(3L, 4L, 2L)))
     }
 
+    "delete cached DocumentIdLists" in new AfterScope {
+      db.createDocumentSet(1L)
+      db.createDocument(1L, 2L, "a", "b", None)
+      db.createDocumentIdList(1L, "foo")
+      doAfter(1L)
+      db.getDocumentIdList(1L, "foo") must beNone
+    }
+
     "sort by suppliedId if the title stays the same" in new AfterScope {
       db.createDocumentSet(1L)
       db.createDocument(1L, 2L, "a", "b", None)
@@ -96,8 +104,8 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
   // Utilitity functions we need for these tests. Rather a lot unfortunately.
   class DbMethods extends HasBlockingDatabase {
     import database.api._
-    import com.overviewdocs.models.tables.{Documents,DocumentSets,DocumentProcessingErrors}
-    import com.overviewdocs.models.{Document,DocumentSet,DocumentProcessingError}
+    import com.overviewdocs.models.tables.{Documents,DocumentIdLists,DocumentSets,DocumentProcessingErrors}
+    import com.overviewdocs.models.{Document,DocumentIdList,DocumentSet,DocumentProcessingError}
     import slick.jdbc.GetResult
 
     def createDocumentSet(id: Long): DocumentSet = {
@@ -130,6 +138,15 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
     def createDocumentProcessingError(documentSetId: Long) : Unit = {
       val ret =  DocumentProcessingError(10L, documentSetId, "made up file", "made up error", None, None)
       blockingDatabase.run((DocumentProcessingErrors returning DocumentProcessingErrors).+=(ret))
+    }
+
+    def createDocumentIdList(documentSetId: Long, fieldName: String): Unit = {
+      val ret = DocumentIdList(1L, documentSetId.toInt, fieldName, Array(1, 2, 3))
+      blockingDatabase.run((DocumentIdLists returning DocumentIdLists).+=(ret))
+    }
+
+    def getDocumentIdList(documentSetId: Long, fieldName: String): Option[DocumentIdList] = {
+      blockingDatabase.option(DocumentIdLists.filter(_.documentSetId === documentSetId.toInt).filter(_.fieldName === fieldName))
     }
 
     def getNumDocumentProcessingErrors(documentSetId: Long) : Long = {

@@ -6,6 +6,7 @@ import akka.stream.scaladsl.{Sink,Source,SourceQueueWithComplete}
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject,Singleton}
 import scala.concurrent.{Future,Promise}
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success,Failure}
 
 import com.overviewdocs.database.Database
@@ -41,7 +42,8 @@ trait DocumentIdListBackend {
     *                 MetadataField for the document set, or the sort has been
     *                 interrupted (e.g., because a user edited the field being
     *                 sorted).
-    * fails when: a programmer error occurs.
+    * fails when: there's a timeout (may be network error), or a programmer
+    *             error.
     */
   def createIfMissing(documentSetId: Int, fieldName: String): Source[Progress.Sorting, akka.NotUsed]
 }
@@ -62,6 +64,7 @@ class DbAkkaDocumentIdListBackend @Inject() (
   import database.api._
 
   private[backend] var maxNProgressEventsInBuffer: Int = 1
+  private[backend] var idleTimeout: FiniteDuration = timeout.duration
 
   lazy val showCompiled = Compiled { (documentSetId: Rep[Int], fieldName: Rep[String]) =>
     DocumentIdLists
@@ -105,8 +108,6 @@ class DbAkkaDocumentIdListBackend @Inject() (
       messageBroker.tell(DocumentSetCommands.SortField(documentSetId, fieldName), actorRef)
     }
 
-    val idleTimeout = Flow.idleTimeout(timeout.duration.....
-
     // Monitor the messages from the message broker. We want the Source actor to
     // finish when we receive a Progress.SortDone event. (See Source.actorRef
     // docs.)
@@ -123,7 +124,7 @@ class DbAkkaDocumentIdListBackend @Inject() (
 
     actorSource
       .mapMaterializedValue { actorRef => actorRefPromise.success(actorRef); akka.NotUsed }
-      .via(idleTimeout)
+      .idleTimeout(idleTimeout)
       .alsoTo(finishSink)
       // Only pass through Progress.Sorting events.
       .collect { case progress: Progress.Sorting => progress }

@@ -18,6 +18,7 @@ class DbAkkaDocumentIdListBackendSpec extends DbBackendSpecification with InAppS
     val brokerProbe = remoteActorSystemModule.mockBroker
 
     val backend = new DbAkkaDocumentIdListBackend(database, remoteActorSystemModule)
+    backend.idleTimeout = timeout.duration
   }
 
   "DbAkkaDocumentIdListBackend" should {
@@ -101,6 +102,12 @@ class DbAkkaDocumentIdListBackendSpec extends DbBackendSpecification with InAppS
         """)
         await(backend.createIfMissing(2, "foo").runWith(Sink.ignore))
         brokerProbe.expectNoMsg(Duration.Zero)
+      }
+
+      "crash on timeout" in new BaseScope {
+        factory.documentSet(2L)
+        backend.idleTimeout = scala.concurrent.duration.Duration.Zero
+        await(backend.createIfMissing(2, "foo").runWith(Sink.ignore)) must throwA[java.util.concurrent.TimeoutException]
       }
     }
   }

@@ -5,6 +5,7 @@ import java.util.TimeZone
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import com.overviewdocs.jobhandler.filegroup.task.TempDirectory
 import com.overviewdocs.database.{DanglingNodeDeleter,DanglingCommandFinder,Database}
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.Logger
@@ -13,8 +14,9 @@ object Worker extends App {
   private val logger = Logger.forClass(getClass)
 
   TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
-  jobhandler.filegroup.task.TempDirectory.create // wipe temp dir
-  Database().slickDatabase.createSession.close // Test DB connection, crash if dead
+  TempDirectory.create // wipe temp dir
+  val database = Database()
+  database.slickDatabase.createSession.close // Test DB connection, crash if dead
 
   // Start an ActorSystem so we'll have non-daemon threads running.
   val broker = startMainActorSystem
@@ -43,6 +45,6 @@ object Worker extends App {
 
   private def startMainActorSystem: ActorRef = {
     logger.info("Starting actor system...")
-    new WorkerActorEnvironment().messageBroker
+    new WorkerActorEnvironment(database, TempDirectory.path).messageBroker
   }
 }

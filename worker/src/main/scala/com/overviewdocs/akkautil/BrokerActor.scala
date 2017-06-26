@@ -1,6 +1,6 @@
 package com.overviewdocs.akkautil
 
-import akka.actor.{Actor,ActorRef}
+import akka.actor.{Actor,ActorRef,Props}
 import scala.reflect.runtime.universe.WeakTypeTag
 import scala.collection.mutable.Queue
 
@@ -33,4 +33,6 @@ object BrokerActor {
 
   /** Sent from BrokerActor to WorkerActor in response to request. */
   case class Work[T](message: T, asker: ActorRef)(implicit tt: WeakTypeTag[T])
+
+  def props[T]: Props = Props(new BrokerActor[T])
 }
