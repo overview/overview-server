@@ -1,16 +1,19 @@
 package controllers.backend
 
+import akka.stream.scaladsl.Source
 import org.specs2.mock.Mockito
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.query.{AndQuery,Field,PhraseQuery,Query}
+import com.overviewdocs.messages.Progress
 import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
-import com.overviewdocs.models.DocumentIdSet
+import com.overviewdocs.models.{DocumentIdList,DocumentIdSet}
 import com.overviewdocs.searchindex.{SearchResult,SearchWarning}
 import models.{InMemorySelection,SelectionRequest,SelectionWarning}
+import test.helpers.InAppSpecification
 
-class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito {
+class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSpecification with Mockito {
   "DbDocumentSelectionBackend" should {
     "#createSelection" should {
       trait CreateSelectionScope extends DbBackendScope {
@@ -27,6 +30,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
         val tagged: Option[Boolean] = None
         val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any
         val q: Option[Query] = None
+        val sortByMetadataField: Option[String] = None
 
         def request = SelectionRequest(
           documentSetId=documentSet.id,
@@ -36,7 +40,8 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
           storeObjectIds=storeObjectIds,
           tagged=tagged,
           q=q,
-          tagOperation=tagOperation
+          tagOperation=tagOperation,
+          sortByMetadataField=sortByMetadataField
         )
 
         val searchBackend = smartMock[SearchBackend]
@@ -55,8 +60,10 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
         """)
 
         val documentSetBackend = smartMock[DocumentSetBackend]
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
+        val documentIdListBackend = smartMock[DocumentIdListBackend]
 
-        val backend = new DbDocumentSelectionBackend(database, searchBackend, documentSetBackend)
+        val backend = new DbDocumentSelectionBackend(database, searchBackend, documentSetBackend, documentIdListBackend, app.materializer)
         lazy val ret: InMemorySelection = await(backend.createSelection(request))
       }
 
@@ -66,6 +73,49 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with Mockito
 
       "sort documents by title" in new CreateSelectionScope {
         ret.documentIds must beEqualTo(Array(doc2.id, doc3.id, doc1.id))
+      }
+
+      "sort by custom field" in new CreateSelectionScope {
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
+          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+        )))
+        override val sortByMetadataField = Some("foo")
+        documentIdListBackend.showOrCreate(1, "foo") returns Source(
+          List(Progress.Sorting(0.3), Progress.Sorting(0.6), Progress.Sorting(0.9))
+        ).mapMaterializedValue(_ => Future.successful(Some(DocumentIdList(5, 1, "foo", Array(0, 1, 2)))))
+        ret.documentIds must beEqualTo(Array(doc1.id, doc2.id, doc3.id))
+      }
+
+      "crash when sort fails" in new CreateSelectionScope {
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
+          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+        )))
+        override val sortByMetadataField = Some("foo")
+        val ex = new Exception("foo")
+        documentIdListBackend.showOrCreate(1, "foo") returns Source.failed(ex).mapMaterializedValue(_ => Future.successful(None))
+        ret.documentIds must throwA[Exception]
+      }
+
+      "crash when sort gives empty result (because of a race)" in new CreateSelectionScope {
+        // TODO maybe this should be a warning? Or maybe we should retry indefinitely?
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
+          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+        )))
+        override val sortByMetadataField = Some("foo")
+        documentIdListBackend.showOrCreate(1, "foo") returns Source(
+          List(Progress.Sorting(0.3), Progress.Sorting(0.6), Progress.Sorting(0.9))
+        ).mapMaterializedValue(_ => Future.successful(None))
+        ret.documentIds must throwA[Exception]
+      }
+
+      "refuse to sort by missing metadata field" in new CreateSelectionScope {
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
+          metadataSchema=MetadataSchema(1, Seq(MetadataField("bar", MetadataFieldType.String)))
+        )))
+        override val sortByMetadataField = Some("foo")
+        ret.documentIds must beEqualTo(Array(doc2.id, doc3.id, doc1.id))
+        ret.warnings must beEqualTo(List(SelectionWarning.MissingField("foo", List("bar"))))
+        there was no(documentIdListBackend).showOrCreate(any, any)
       }
 
       "search by q" in new CreateSelectionScope {

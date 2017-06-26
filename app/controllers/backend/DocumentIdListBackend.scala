@@ -2,7 +2,7 @@ package controllers.backend
 
 import akka.actor.{Actor,ActorRef,Props}
 import akka.stream.{OverflowStrategy,QueueOfferResult}
-import akka.stream.scaladsl.{Sink,Source,SourceQueueWithComplete}
+import akka.stream.scaladsl.{Keep,Sink,Source,SourceQueueWithComplete}
 import com.google.inject.ImplementedBy
 import javax.inject.{Inject,Singleton}
 import scala.concurrent.{Future,Promise}
@@ -46,6 +46,21 @@ trait DocumentIdListBackend {
     *             error.
     */
   def createIfMissing(documentSetId: Int, fieldName: String): Source[Progress.Sorting, akka.NotUsed]
+
+  /** Checks if the DocumentIdList exists in the database; if it doesn't, starts
+    * sorting documents and emits progress events until done, then resolves to
+    * the DocumentIdList.
+    *
+    * Be aware of races. This process 1) looks for a cached result; 2) sorts;
+    * and 3) looks for a cached result again. The cached result from step 2 can
+    * disappear before step 3 happens, giving a result of None.
+    *
+    * emits: zero or more SortProgressEvent(f) events.
+    * completes with: a DocumentIdList, or None.
+    * fails when: there's a timeout (may be network error), or a programmer
+    *             error.
+    */
+  def showOrCreate(documentSetId: Int, fieldName: String): Source[Progress.Sorting, Future[Option[DocumentIdList]]]
 }
 
 object DocumentIdListBackend {
@@ -128,5 +143,18 @@ class DbAkkaDocumentIdListBackend @Inject() (
       .alsoTo(finishSink)
       // Only pass through Progress.Sorting events.
       .collect { case progress: Progress.Sorting => progress }
+  }
+
+  override def showOrCreate(documentSetId: Int, fieldName: String): Source[Progress.Sorting, Future[Option[DocumentIdList]]] = {
+    val futureSource = show(documentSetId, fieldName).map(_ match {
+      case x: Some[DocumentIdList] => Source.empty.mapMaterializedValue(_ => Future.successful(x))
+      case None => {
+        createIfMissing(documentSetId, fieldName)
+          .watchTermination()(Keep.right)
+          .mapMaterializedValue { f: Future[akka.Done] => f.flatMap(_ => show(documentSetId, fieldName)) }
+      }
+    })
+    Source.fromFutureSource(futureSource)
+      .mapMaterializedValue { f: Future[Future[Option[DocumentIdList]]] => f.flatMap(x => x) }
   }
 }
