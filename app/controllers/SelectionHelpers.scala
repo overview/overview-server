@@ -53,6 +53,8 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
       case _ => None
     }
 
+    val sortByMetadataField = reqData.getString("sortByMetadataField")
+
     maybeQOrError
       .right.map(SelectionRequest(
         documentSetId,
@@ -62,7 +64,8 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
         storeObjectIds,
         tagged,
         _,
-        tagOperation
+        tagOperation,
+        sortByMetadataField
       ))
   }
 

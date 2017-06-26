@@ -15,7 +15,8 @@ case class SelectionRequest(
   val storeObjectIds: Seq[Long] = Seq(),
   val tagged: Option[Boolean] = None,
   val q: Option[Query] = None,
-  val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any
+  val tagOperation: SelectionRequest.TagOperation = SelectionRequest.TagOperation.Any,
+  val sortByMetadataField: Option[String] = None
 ) {
   lazy val hash = hashCode
 
