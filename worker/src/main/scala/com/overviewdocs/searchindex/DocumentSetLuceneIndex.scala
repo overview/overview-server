@@ -240,6 +240,8 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   private def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {
+    if (documentIds.isEmpty) return Seq.empty
+
     val query: LuceneQuery = luceneQueryDocumentsWithOverviewIds(documentIds)
 
     val ret = new mutable.ArrayBuffer[(Long,Int)](documentIds.length)
