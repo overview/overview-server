@@ -16,7 +16,7 @@ import com.overviewdocs.util.Logger
 class DocumentSetMessageBroker extends Actor {
   private class DocumentSetInfo(val documentSetId: Long) {
     var worker: Option[ActorRef] = None
-    val commands = mutable.Queue[DocumentSetCommands.Command]()
+    val commands = mutable.Queue[(DocumentSetCommands.Command, ActorRef)]()
     val readCommands = mutable.Queue[DocumentSetMessageBroker.ReadCommand]()
   }
 
@@ -38,10 +38,10 @@ class DocumentSetMessageBroker extends Actor {
       if (documentSets.contains(command.documentSetId)) {
         // We don't care whether this is in readyDocumentSets or not: one more
         // command doesn't change the logic.
-        documentSets(command.documentSetId).commands.enqueue(command)
+        documentSets(command.documentSetId).commands.enqueue((command, sender))
       } else {
         val info = new DocumentSetInfo(command.documentSetId)
-        info.commands.enqueue(command)
+        info.commands.enqueue((command, sender))
         documentSets(info.documentSetId) = info
         readyDocumentSets.enqueue(info)
         sendIfAvailable
@@ -92,10 +92,19 @@ class DocumentSetMessageBroker extends Actor {
     if (readyDocumentSets.nonEmpty && readyWorkers.nonEmpty) {
       val worker = readyWorkers.dequeue
       val info = readyDocumentSets.dequeue
-      val command = info.commands.dequeueFirst(_ => true).getOrElse { info.readCommands.dequeue }
-      logger.info("Sending command {}", command)
-      info.worker = Some(worker)
-      worker ! command
+      info.commands.dequeueFirst(_ => true) match {
+        case Some((command, originalSender)) => {
+          logger.info("Sending write command {} from {} to {}", command, sender, worker)
+          info.worker = Some(worker)
+          worker.tell(command, originalSender)
+        }
+        case None => {
+          val command = info.readCommands.dequeue
+          logger.info("Sending read command {} to {}", command)
+          info.worker = Some(worker)
+          worker ! command
+        }
+      }
     }
 
     if (readyWorkers.nonEmpty) {

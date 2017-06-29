@@ -9,7 +9,7 @@ import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, F
 import com.overviewdocs.background.reindex.ReindexActor
 import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.{Database,DocumentSetDeleter}
-import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker,SortRunner,SortWorker}
+import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker,SortRunner,SortWorker,SortBroker}
 import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
 import com.overviewdocs.jobhandler.documentcloud.{DocumentCloudImportWorkBroker,DocumentCloudImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
@@ -72,7 +72,7 @@ class WorkerActorEnvironment(database: Database, tempDirectory: Path) {
     tempDirectory=Files.createDirectory(tempDirectory.resolve("sort")),
     maxNBytesInMemory=1024 * 1024 * Configuration.getInt("max_mb_per_sort")
   ))
-  val sortBroker = system.actorOf(BrokerActor.props[DocumentSetCommands.SortField])
+  val sortBroker = system.actorOf(SortBroker.props)
   Seq.tabulate(Configuration.getInt("n_concurrent_sorts")) { i =>
     system.actorOf(SortWorker.props(sortBroker, sortRunner), "SortWorker-" + i)
   }

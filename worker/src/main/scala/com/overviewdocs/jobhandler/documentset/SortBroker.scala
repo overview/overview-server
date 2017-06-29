@@ -20,9 +20,13 @@ class SortBroker extends Actor {
   override def receive: Actor.Receive = {
     case _work: BrokerActor.Work[_] => {
       val work = _work.asInstanceOf[BrokerActor.Work[SortField]]
-      workers.dequeueFirst(_ => true) match {
-        case None => todo.enqueue(work)
-        case Some(worker) => sendWork(worker, work)
+      if (inProgressByWork.contains(work.message)) {
+        todo.enqueue(work)
+      } else {
+        workers.dequeueFirst(_ => true) match {
+          case None => todo.enqueue(work)
+          case Some(worker) => sendWork(worker, work)
+        }
       }
     }
     case BrokerActor.WorkerReady => {
@@ -31,7 +35,7 @@ class SortBroker extends Actor {
         case Some(message) => inProgressByWork.remove(message)
       }
 
-      todo.dequeueFirst(_ => true) match {
+      todo.dequeueFirst(work => !inProgressByWork.contains(work.message)) match {
         case None => workers.enqueue(sender)
         case Some(work) => sendWork(sender, work)
       }
@@ -39,6 +43,7 @@ class SortBroker extends Actor {
   }
 
   private def sendWork(worker: ActorRef, work: BrokerActor.Work[SortField]): Unit = {
+    logger.info("Trying to send {} to {}; existing work is {}", work, worker, inProgressByWork)
     if (inProgressByWork.contains(work.message)) {
       // There's a worker already running this sort. FIXME send the asker the
       // running worker's progress reports.

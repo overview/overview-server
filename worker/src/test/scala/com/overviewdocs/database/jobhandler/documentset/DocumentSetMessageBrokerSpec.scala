@@ -41,6 +41,23 @@ class DocumentSetMessageBrokerSpec extends Specification {
       worker1.expectMsg(msg.Delete(123L))
     }
 
+    "set the original sender when forwarding a Command" in new BaseScope {
+      // [adam, 2017-06-29] I don't know if it's "right" to use the "sender"
+      // field in this way. Some Akka docs suggest it is; but the Akka-Typed
+      // project suggests senders should be embedded into messages, which I
+      // think is a great ideaj
+      //
+      // Here, the architecture changed: originally, we had mute Commands, and
+      // then we moved on to having Commands that send progress reports to
+      // the original sender. Maybe there's a better way to do this, such as
+      // embedding an ActorRef into a Command.
+      val probe = TestProbe()
+      subject.tell(msg.Delete(123L), probe.ref)
+      subject.tell(msg.Ready, worker1.ref)
+      worker1.expectMsg(msg.Delete(123L))
+      worker1.sender must beEqualTo(probe.ref)
+    }
+
     "queue the workers" in new BaseScope {
       subject.tell(msg.Ready, worker1.ref)
       subject.tell(msg.Ready, worker2.ref)
