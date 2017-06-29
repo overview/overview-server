@@ -3,7 +3,18 @@ define [
   'apps/Show/views/DocumentListTitle'
   'i18n'
 ], (Backbone, DocumentListTitle, i18n) ->
+  class DocumentListParams extends Backbone.Model
+    constructor: (obj) ->
+      Object.assign(this, obj)
+
+    sortedByMetadataField: (s) ->
+      new DocumentListParams(sortByMetadataField: s)
+
   class DocumentList extends Backbone.Model
+    constructor: (attrs) ->
+      super(attrs)
+      @params = new DocumentListParams()
+
     defaults:
       length: null
 
@@ -42,3 +53,37 @@ define [
       @state.set(documentList: list)
       list.set(length: 0)
       expect(@view.$el.find('h3').html()).to.eq('title,0')
+
+    it 'should set number of documents in HTML', ->
+      list = new DocumentList(length: null)
+      @state.set(documentList: list)
+      expect(@view.el.getAttribute('data-n-documents')).to.eq('0')
+      list.set(length: 0)
+      expect(@view.el.getAttribute('data-n-documents')).to.eq('0')
+      list.set(length: 2)
+      expect(@view.el.getAttribute('data-n-documents')).to.eq('2')
+
+    it 'should not show a dropdown when there are no metadata fields', ->
+      @state.set(documentList: new DocumentList(length: 10))
+      expect(@view.$('.sort-by').html()).to.eq('sort_by_sort_by.title')
+      expect(@view.$('.dropdown')).not.to.exist
+
+    it 'should show a dropdown when there are metadata fields', ->
+      @state.set(documentList: new DocumentList(length: 10))
+      @state.documentSet.set('metadataFields', [ 'foo' ])
+      expect(@view.$('.dropdown')).to.exist
+
+    it 'should sort by the clicked field', ->
+      @state.set(documentList: new DocumentList(length: 10))
+      @state.documentSet.set('metadataFields', [ 'foo' ])
+      @state.setDocumentListParams = sinon.stub()
+      @view.$('a[data-sort-by-metadata-field=foo]').click()
+      # The params should change
+      expect(@state.setDocumentListParams).to.have.been.calledWith(new DocumentListParams(sortByMetadataField: 'foo'))
+
+    it 'should render the sorted field name', ->
+      list = new DocumentList(length: 10)
+      list.params.sortByMetadataField = 'foo'
+      @state.documentSet.set('metadataFields', [ 'foo' ])
+      @state.set(documentList: list)
+      expect(@view.$('a[data-toggle=dropdown]').text()).to.eq('foo')
