@@ -319,7 +319,7 @@ define [
           @_receiveError(xhr)
           reject(@get('message'))
 
-        Backbone.$.ajax
+        Backbone.ajax
           type: 'get'
           url: @url
           data: query

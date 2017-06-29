@@ -43,7 +43,7 @@ define [
       @_highlightsFetch.abort() if @_highlightsFetch?
       @set(highlightsQuery: query, highlights: null, highlightsError: null, highlightsIndex: null)
       if query
-        highlightsFetch = @_highlightsFetch = Backbone.$.ajax
+        highlightsFetch = @_highlightsFetch = Backbone.ajax
           url: "/documentsets/#{@get('documentSetId')}/documents/#{@id}/highlights?q=#{encodeURIComponent(query)}"
 
           success: (arrays) =>
@@ -62,7 +62,7 @@ define [
     fetchText: ->
       return if @_textFetch?
       @set(text: null, error: null)
-      @_textFetch = Backbone.$.ajax
+      @_textFetch = Backbone.ajax
         url: "/documents/#{@id}.txt"
         success: (text, __, xhr) => @set(text: text, isFromOcr: xhr.getResponseHeader('Generated-By') == 'tesseract')
         error: (jqXHR, textStatus, errorThrown) =>
