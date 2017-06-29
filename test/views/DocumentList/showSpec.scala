@@ -20,13 +20,14 @@ class showSpec extends Specification with JsonMatchers {
     def warnings: List[SelectionWarning] = List()
     def selection = InMemorySelection(selectionId, Array(doc1.id, doc2.id), warnings)
 
+    def maybeSortKey: Option[String] = None
     def doc1AndIds = (doc1, Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
     def doc2AndIds = (doc2, Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
     def docsAndIds = Seq(doc1AndIds, doc2AndIds)
 
     def resultPage = Page(docsAndIds)
 
-    def result = show(selection, resultPage).toString
+    def result = show(selection, maybeSortKey, resultPage).toString
   }
 
   "DocumentList view generated Json" should {
@@ -105,6 +106,25 @@ class showSpec extends Specification with JsonMatchers {
       override def doc1AndIds = (doc1.copy(text="1 < <2"), Seq(), Seq(), Seq(Utf16Snippet(0, 6, Vector(Utf16Highlight(4, 6)))))
 
       result must /("documents") /#(0) /("snippet" -> "1 &lt; <em>&lt;2</em>")
+    }
+
+    "set a sortKey" in new BaseScope {
+      override def doc1 = factory.document(metadataJson=Json.obj("foo" -> "bar", "bar" -> "baz"))
+      override def maybeSortKey = Some("foo")
+      result must /("documents") /#(0) /("sortKey") /("name" -> "foo")
+      result must /("documents") /#(0) /("sortKey") /("value" -> "bar")
+    }
+
+    "not set a sortKey if the document has no value for the requested sort key" in new BaseScope {
+      override def doc1 = factory.document(metadataJson=Json.obj("foo" -> "bar"))
+      override def maybeSortKey = Some("bar")
+      result must not /("documents") /#(0) /("sortKey")
+    }
+
+    "not set a sortKey if the request has no sortKey" in new BaseScope {
+      override def doc1 = factory.document(metadataJson=Json.obj("foo" -> "bar"))
+      override def maybeSortKey = None
+      result must not /("documents") /#(0) /("sortKey")
     }
   }
 }

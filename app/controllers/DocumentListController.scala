@@ -44,7 +44,7 @@ class DocumentListController @Inject() (
             tagIds.getOrElse(document.id, Seq()),
             snippets.getOrElse(document.id, Seq())
           )}
-          Ok(views.json.DocumentList.show(selection, pageOfItems))
+          Ok(views.json.DocumentList.show(selection, sr.flatMap(_.sortByMetadataField), pageOfItems))
 
         }
       }

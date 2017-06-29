@@ -1,7 +1,7 @@
 package views.json.DocumentList
 
 import java.util.UUID
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsString, JsValue, Json}
 import play.twirl.api.{Html,HtmlFormat}
 import scala.collection.immutable
 
@@ -12,7 +12,7 @@ import com.overviewdocs.models.DocumentHeader
 import com.overviewdocs.searchindex.{Highlight,Snippet}
 
 object show {
-  private def documentToJson(document: DocumentHeader, nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
+  private def documentToJson(maybeSortKey: Option[String])(document: DocumentHeader, nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
     Json.obj(
       "id" -> document.id,
       "documentSetId" -> document.documentSetId.toString,
@@ -20,6 +20,10 @@ object show {
       "title" -> document.title,
       "page_number" -> document.pageNumber,
       "url" -> document.viewUrl,
+      "sortKey" -> maybeSortKey.flatMap(sortKey => document.metadataJson.value.get(sortKey) match {
+        case Some(JsString(s)) => Some(Json.obj("name" -> sortKey, "value" -> s))
+        case _ => None
+      }),
       "nodeids" -> nodeIds,
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),
@@ -41,12 +45,12 @@ object show {
     HtmlFormat.fill(htmls.to[immutable.Seq]).body
   }
 
-  def apply(selection: Selection, documents: Page[(DocumentHeader,Seq[Long],Seq[Long],Seq[Snippet])]) = {
+  def apply(selection: Selection, maybeSortKey: Option[String], documents: Page[(DocumentHeader,Seq[Long],Seq[Long],Seq[Snippet])]) = {
     Json.obj(
       "selection_id" -> selection.id.toString,
       "warnings" -> selectionWarnings(selection.warnings),
       "total_items" -> documents.pageInfo.total,
-      "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq
+      "documents" -> documents.items.map(Function.tupled(documentToJson(maybeSortKey))).toSeq
     )
   }
 }

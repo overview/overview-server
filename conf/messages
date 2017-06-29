@@ -511,6 +511,7 @@ views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words:{0}
 views.Tree.show.DocumentList.loading=…
 views.Tree.show.DocumentList.placeholder=…
+views.Tree.show.DocumentList.sortKey={0}: {1}
 views.Tree.show.DocumentList.tag.remove=Remove tag from document
 views.Tree.show.DocumentList.warning.TooManyExpansions=This list may be incomplete. “{0}:{1}” matched too many words from your document set; we limited our search to {2,number,integer} words.
 views.Tree.show.DocumentList.warning.TooMuchFuzz=This list may be incomplete. “{0}:{1}” has too great a distance to search; we limited the distance to {2}.

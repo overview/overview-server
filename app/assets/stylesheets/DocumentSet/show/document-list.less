@@ -88,7 +88,7 @@
     font-weight: bold;
   }
 
-  p.description, p.snippets {
+  p.sort-key, p.description, p.snippets {
     word-wrap: break-word;
     margin: .25rem 0 0;
     font-size: .85em;
@@ -96,8 +96,12 @@
     .text-muted;
   }
 
-  p.description {
+  p.description, p.sort-key {
     .text-overflow();
+  }
+
+  p.sort-key {
+    font-style: italic;
   }
 
   p.snippets {
