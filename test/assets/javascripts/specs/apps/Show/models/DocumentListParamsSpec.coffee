@@ -15,6 +15,7 @@ define [
       it 'should set q=null by default', -> expect(c().q).to.be.null
       it 'should set tags=null by default', -> expect(c().tags).to.be.null
       it 'should set objects=null by default', -> expect(c().objects).to.be.null
+      it 'should set sortByMetadataField=null by default', -> expect(c().sortByMetadataField).to.be.null
 
       it 'should parse tag NONE op', ->
         expect(c(tags: { ids: [1], tagged: false, operation: 'none' }).tags)
@@ -34,7 +35,7 @@ define [
       it 'should error when given a bad tagged value', ->
         expect(-> c(tags: { tagged: 3 })).to.throw('Invalid option tags.tagged=3')
 
-      it 'shoudl error when given a bad tag key', ->
+      it 'should error when given a bad tag key', ->
         expect(-> c(tags: { foo: 'bar' })).to.throw('Invalid option tags.foo')
 
       it 'should parse an object spec with ids', ->
@@ -44,6 +45,9 @@ define [
       it 'should parse an object spec with nodeIds', ->
         expect(c(objects: { nodeIds: [ 1, 2 ], title: '%s in foo' }).objects)
           .to.deep.eq(nodeIds: [ 1, 2 ], title: '%s in foo')
+
+      it 'should parse an object spec with sortByMetadataField', ->
+        expect(c(sortByMetadataField: 'foo').sortByMetadataField).to.eq('foo')
 
       it 'should error when given neither Object IDs nor Node IDs', ->
         expect(-> c(objects: { title: '%s in foo' })).to.throw('Missing option objects.ids or objects.nodeIds')
@@ -84,10 +88,26 @@ define [
         expect(objects2).to.deep.eq(ids: [ 2 ], title: '%s in bar')
         expect(params1.objects).to.deep.eq(ids: [ 1 ], title: '%s in foo')
 
+    describe 'sortedByMetadataField', ->
+      it 'should clear sortByMetadataField', ->
+        obj = c(sortByMetadataField: 'foo', title: '%s in foo')
+          .sortedByMetadataField()
+        expect(obj.sortByMetadataField).to.be.null
+
+      it 'should replace sortByMetadataField', ->
+        obj = c(sortByMetadataField: 'foo').sortedByMetadataField('bar')
+        expect(obj.sortByMetadataField).to.eq('bar')
+
+      it 'should not modify the original object', ->
+        obj = c(sortByMetadataField: 'foo')
+        obj.sortedByMetadataField('bar')
+        expect(obj.sortByMetadataField).to.eq('foo')
+
     describe 'reset()', ->
       it 'should clear objects', -> expect(c(objects: { ids: [ 1 ], title: '%s in foo' }).reset().objects).to.be.null
       it 'should clear tags', -> expect(c(tags: { ids: [ 1 ] }).reset().tags).to.be.null
       it 'should clear q', -> expect(c(q: 'foo').reset().q).to.be.null
+      it 'should clear sortByMetadataField', -> expect(c(sortByMetadataField: 'foo').reset().sortByMetadataField).to.be.null
 
     describe 'toJSON()', ->
       it 'should give q', -> expect(c(q: 'foo').toJSON()).to.deep.eq(q: 'foo')
@@ -118,6 +138,9 @@ define [
       it 'should not give tagOperation=any, because it is the default', ->
         expect(c(tags: { ids: [ 1, 2 ], operation: 'any' }).toJSON()).to.deep.eq(tags: [ 1, 2 ])
 
+      it 'should give sortByMetadataField', ->
+        expect(c(sortByMetadataField: 'foo').toJSON()).to.deep.eq(sortByMetadataField: 'foo')
+
     describe 'toQueryString()', ->
       it 'should encodeURIComponent() the q parameter', ->
         expect(c(q: 'foo=bar').toQueryString()).to.eq('q=foo%3Dbar')
@@ -139,6 +162,9 @@ define [
 
       it 'should encode tagged=false', ->
         expect(c(tags: { tagged: false }).toQueryString()).to.eq('tagged=false')
+
+      it 'should encode sortByMetadataField', ->
+        expect(c(sortByMetadataField: 'foo').toQueryString()).to.eq('sortByMetadataField=foo')
 
     describe 'equals()', ->
       # Let's not test too completely; it's just a toJSON() match.

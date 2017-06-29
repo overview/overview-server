@@ -16,8 +16,11 @@ define [
       i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentListTitle',
         'title_html': 'title,{0}'
         'loading': 'loading'
+        'sort_by.title': 'sort_by.title'
+        'sort_by_FIELD': 'sort_by_FIELD'
 
-      @state = new State()
+      @state = new State
+      @state.documentSet = new Backbone.Model(metadataFields: [])
       @view = new DocumentListTitle(state: @state)
 
     afterEach ->
@@ -32,10 +35,10 @@ define [
 
     it 'should render a title when a list has a length', ->
       @state.set(documentList: new DocumentList(length: 0))
-      expect(@view.$el.html()).to.eq('title,0')
+      expect(@view.$el.find('h3').html()).to.eq('title,0')
 
     it 'should monitor a loading list and render when it has loaded its length', ->
       list = new DocumentList(length: null)
       @state.set(documentList: list)
       list.set(length: 0)
-      expect(@view.$el.html()).to.eq('title,0')
+      expect(@view.$el.find('h3').html()).to.eq('title,0')

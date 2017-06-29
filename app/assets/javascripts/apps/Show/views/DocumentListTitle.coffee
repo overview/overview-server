@@ -13,6 +13,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
   class DocumentListTitleView extends Backbone.View
     tagName: 'h3'
 
+    events:
+      'click a[data-sort-by-metadata-field]': 'onClickSortByMetadataField'
+
     templates:
       main: _.template('''
         <h3><%= t('title_html', length) %></h3>
@@ -22,13 +25,13 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       sortByField: _.template('''
         <div class="sort-by-field dropdown">
           <a id="DocumentListTitle-sort-by-field" data-target="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-            <%- currentSortBy.label %>
+            <%- currentSortBy %>
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu" role="menu" aria-labelledby="DocumentListTitle-sort-by-field">
-            <li><a href="#" data-value="<%- sortByTitle.value %>"><%- sortByTitle.label %></a></li>
+            <li><a href="#" data-sort-by-metadata-field=""><%- sortByTitle %></a></li>
             <% metadataFields.forEach(function(field) { %>
-              <li><a href="#" data-value="metadata:<%- field %>"><%- field %></a></li>
+              <li><a href="#" data-sort-by-metadata-field="<%- field %>"><%- field %></a></li>
             <% }) %>
           </ul>
         </div>
@@ -58,10 +61,18 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
       if length?
         fields = @documentSet.get('metadataFields')
-        sortByTitle = { label: t('sort_by.title'), value: 'title' }
+        sortByTitle = t('sort_by.title')
         sortByFieldHtml = @templates.sortByField
-          currentSortBy: sortByTitle,
+          currentSortBy: sortByTitle
+          sortByTitle: sortByTitle
           metadataFields: fields
         @$el.html(@templates.main(t: t, length: length, sortByFieldHtml: sortByFieldHtml))
       else
         @$el.text(t('loading'))
+
+    onClickSortByMetadataField: (ev) ->
+      ev.preventDefault()
+
+      oldParams = @state.get('documentList')?.params
+      return if !oldParams
+      @state.setDocumentListParams(oldParams.sortedByMetadataField(ev.target.getAttribute('data-sort-by-metadata-field')))
