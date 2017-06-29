@@ -15,6 +15,7 @@ import org.apache.lucene.store.{Directory,FSDirectory}
 import org.apache.lucene.util.{BytesRef,QueryBuilder}
 import play.api.libs.json.{JsNull,JsString}
 import scala.collection.{mutable,immutable}
+import scala.collection.immutable.NumericRange
 
 import com.overviewdocs.models.{Document,DocumentIdSet}
 import com.overviewdocs.query.{Field,FieldInSearchIndex,Query}
@@ -116,24 +117,6 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
   }
 
   def addDocuments(documents: Iterable[Document]): Unit = synchronized {
-    addDocumentsWithoutFsync(documents)
-    commit
-  }
-
-  // Instantiate objects once: saves GC. As per
-  // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
-  private val idField = new NumericDocValuesField("id", 0L)
-  private val notesField = new LuceneField("notes", "", textFieldType(false))
-  private val titleField = new LuceneField("title", "", textFieldType(false))
-  private val textField = new LuceneField("text", "", textFieldType(true))
-
-  private def deleteDocumentsWithIds(ids: Iterable[Long]): Unit = {
-    indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(ids))
-  }
-
-  def addDocumentsWithoutFsync(documents: Iterable[Document]): Unit = synchronized {
-    deleteDocumentsWithIds(documents.map(_.id))
-
     val luceneDocument = new LuceneDocument()
 
     for (document <- documents) {
@@ -170,6 +153,24 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
       indexWriter.addDocument(luceneDocument)
     }
+
+    commit
+  }
+
+  // Instantiate objects once: saves GC. As per
+  // https://wiki.apache.org/lucene-java/ImproveIndexingSpeed
+  private val idField = new NumericDocValuesField("id", 0L)
+  private val notesField = new LuceneField("notes", "", textFieldType(false))
+  private val titleField = new LuceneField("title", "", textFieldType(false))
+  private val textField = new LuceneField("text", "", textFieldType(true))
+
+  private def deleteDocumentsWithIds(ids: Iterable[Long]): Unit = {
+    indexWriter.deleteDocuments(luceneQueryDocumentsWithOverviewIds(ids))
+  }
+
+  def updateDocuments(documents: Iterable[Document]): Unit = synchronized {
+    deleteDocumentsWithIds(documents.map(_.id))
+    addDocuments(documents)
   }
 
   def close: Unit = synchronized {
@@ -220,23 +221,24 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
   private def luceneQueryDocumentsWithOverviewIds(documentIds: Iterable[Long]): LuceneQuery = {
     val ids = documentIds.toArray
-    assert(ids.headOption.isDefined)
-
-    // Optimization for common case: inserting a bunch of new docs (or editing
-    // a single doc)
-    val isMonotonic = ids.length == 1 || ids.sliding(2).forall { a => a(0) + 1 == a(1) }
-    if (isMonotonic) {
-      NumericDocValuesField.newRangeQuery("id", documentIds.head, documentIds.last)
-    } else {
-      import org.apache.lucene.document.NumericDocValuesField
-      import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
-
-      val builder = new BooleanQuery.Builder()
-      for (documentId <- documentIds) {
-        builder.add(NumericDocValuesField.newExactQuery("id", documentId), BooleanClause.Occur.SHOULD)
-      }
-      new ConstantScoreQuery(builder.build)
+    if (ids.isEmpty) {
+      return new MatchNoDocsQuery("Nil documentIds query")
     }
+
+    val monotonicRanges: List[NumericRange[Long]] = ids.sorted.foldLeft(List.empty[NumericRange[Long]]) { (agg, n) => agg match {
+      case Nil => NumericRange(n, n, 1) :: Nil
+      case range :: rest if range.end + 1 == n => NumericRange(range.start, n, 1) :: rest
+      case _ => NumericRange(n, n, 1) :: agg
+    }}
+
+    import org.apache.lucene.document.NumericDocValuesField
+    import org.apache.lucene.search.{BooleanClause,BooleanQuery,ConstantScoreQuery}
+
+    val builder = new BooleanQuery.Builder()
+    for (range <- monotonicRanges) {
+      builder.add(NumericDocValuesField.newRangeQuery("id", range.start, range.end), BooleanClause.Occur.SHOULD)
+    }
+    new ConstantScoreQuery(builder.build)
   }
 
   private def searchForLuceneIds(documentIds: Seq[Long]): Seq[(Long,Int)] = {

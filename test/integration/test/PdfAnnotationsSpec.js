@@ -9,12 +9,14 @@ describe('PdfAnnotations', function() {
     before(async function() {
       const b = this.browser
       const s = this.browser.shortcuts
+      b.loadShortcuts('documentSet')
       b.loadShortcuts('documentSets')
       b.loadShortcuts('importFiles')
 
       await s.importFiles.open()
       await s.importFiles.addFiles([ 'PdfAnnotations/doc1.pdf', 'PdfAnnotations/doc2.pdf' ])
       await s.importFiles.finish({ name: 'annotations' })
+      await s.documentSet.waitUntilStable()
     })
 
     // These tests form a story. If the first one fails, the rest probably will
@@ -25,7 +27,7 @@ describe('PdfAnnotations', function() {
 
       await b.click({ tag: 'h3', contains: 'doc1.pdf' })
       await b.sleep(1000)                      // animate document selection
-      await b.find('article iframe', { wait: 'fast' }) // wait for PDF to start loading
+      await b.find('iframe#document-contents', { wait: 'fast' }) // wait for PDF to start loading
 
       await b.switchToFrame('document-contents')
       await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
@@ -58,7 +60,7 @@ describe('PdfAnnotations', function() {
 
       await b.click('.document-nav .next')
       await b.click('.document-nav .previous')
-      await b.find('article iframe', { wait: 'fast' })
+      await b.find('iframe#document-contents', { wait: 'fast' })
       await b.switchToFrame('document-contents')
       await b.assertExists({ css: '#viewer .noteLayer section' }, { wait: 'pageLoad' })
 
@@ -94,6 +96,7 @@ describe('PdfAnnotations', function() {
     it('should delete annotations', async function() {
       const b = this.browser
 
+      await b.find('iframe#document-contents', { wait: 'fast' })
       await b.switchToFrame('document-contents')
 
       // Hacky -- we need to wait for the PDF to load because the previous test

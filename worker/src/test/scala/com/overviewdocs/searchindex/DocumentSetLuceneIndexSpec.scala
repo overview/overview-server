@@ -81,7 +81,7 @@ class DocumentSetLuceneIndexSpec extends Specification {
 
       "not find documents we have since updated" in new BaseScope {
         index.addDocuments(Seq(buildDocument(1L).copy(title="bad title")))
-        index.addDocuments(Seq(buildDocument(1L).copy(title="good title")))
+        index.updateDocuments(Seq(buildDocument(1L).copy(title="good title")))
         search(PhraseQuery(Field.Title, "bad title")) must beEqualTo("")
       }
 
@@ -228,6 +228,11 @@ class DocumentSetLuceneIndexSpec extends Specification {
         index.highlights(Seq(1L), PhraseQuery(Field.Text, "cow")) must beEqualTo(Map(
           1L -> Seq(Utf16Snippet(0, 20, Vector(Utf16Highlight(5, 8))))
         ))
+      }
+
+      "return empty result when passed empty query" in new BaseScope {
+        index.addDocuments(Seq(buildDocument(1L).copy(text="i am cow hear me moo")))
+        index.highlights(Seq(), PhraseQuery(Field.Text, "cow")) must beEqualTo(Map())
       }
 
       "map documents to each other correctly" in new BaseScope {

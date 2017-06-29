@@ -50,7 +50,7 @@ class ReindexActor(reindexer: Reindexer) extends Actor {
         reindexer.runJob(job).onComplete {
           case Success(()) => {
             logger.info("Finished reindexing {}", job)
-            self ! ReindexActor.ReindexNextDocumentSet
+            reindexUntilNoJobsRemain
           }
           case Failure(ex) => self ! ex
         }

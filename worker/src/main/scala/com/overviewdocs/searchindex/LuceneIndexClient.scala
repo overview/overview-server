@@ -58,8 +58,8 @@ trait LuceneIndexClient extends IndexClient {
     getIndex(id).map(_.addDocuments(documents))
   }
 
-  override def addDocumentsWithoutFsync(id: Long, documents: Iterable[Document]): Future[Unit] = {
-    getIndex(id).map(_.addDocumentsWithoutFsync(documents))
+  override def updateDocuments(id: Long, documents: Iterable[Document]): Future[Unit] = {
+    getIndex(id).map(_.updateDocuments(documents))
   }
 
   override def searchForIds(id: Long, q: Query) = {
