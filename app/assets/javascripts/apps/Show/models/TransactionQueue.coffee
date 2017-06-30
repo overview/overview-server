@@ -2,8 +2,7 @@ define [
   'underscore'
   'jquery'
   'backbone'
-  'rsvp'
-], (_, $, Backbone, RSVP) ->
+], (_, $, Backbone) ->
   # A set of AJAX operations that execute one at a time.
   #
   # Usage:
@@ -49,7 +48,7 @@ define [
 
     constructor: ->
       @_requests = [] # Array AJAX options
-      @_last = RSVP.resolve(null)
+      @_last = Promise.resolve(null)
 
     # Queues a $.ajax() call.
     #
@@ -62,7 +61,7 @@ define [
     # callback's Promise is. (It may be resolved by the time it's returned.)
     ajax: (options) ->
       @_last.then(=> @_poll())
-      @_last = new RSVP.Promise (resolve, reject) =>
+      @_last = new Promise (resolve, reject) =>
         @_requests.push(options: options, resolve: resolve, reject: reject)
 
     _poll: ->
