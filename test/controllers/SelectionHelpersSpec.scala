@@ -98,7 +98,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       "return a BadRequest on query syntax error" in new SelectionScope {
         f(1L, "/?q=(foo+AND") must beLeft { (result: Result) =>
           result.header.status must beEqualTo(400)
-          result.header.headers.get(CONTENT_TYPE) must beSome("application/json")
+          result.body.contentType must beSome("application/json")
         }
       }
     }

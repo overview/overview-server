@@ -1,5 +1,6 @@
 package controllers
 
+import java.util.UUID
 import play.api.http.HeaderNames
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.i18n.Messages
@@ -27,7 +28,7 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
     def syntaxError = {
       val message = messages("com.overviewdocs.query.error.SyntaxError")
       BadRequest(jsonError("illegal-arguments", message))
-        .withHeaders(CONTENT_TYPE -> "application/json")
+        .as("application/json")
     }
 
     val nodeIds = reqData.getLongs("nodes")
@@ -69,6 +70,52 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
       ))
   }
 
+  protected def parseSelectionRequestAndSelectFast(documentSetId: Long, userEmail: String, request: Request[_])(implicit messages: Messages): Future[SelectionHelpers.FastSelectionResult] = {
+    selectionRequest(documentSetId, request) match {
+      case Left(error) => Future.successful(SelectionHelpers.FastFailure(error))
+      case Right(sr) => {
+        val rd = RequestData(request)
+        val maybeSelectionId = rd.getUUID(selectionIdKey)
+        val refresh = rd.getBoolean(refreshKey).getOrElse(false)
+        selectFast(sr, userEmail, maybeSelectionId, refresh)
+      }
+    }
+  }
+
+  /** Returns a response quickly, or quickly returns a SlowSelectionParameters.
+    *
+    * The logic goes like this:
+    *
+    * * If maybeSelectionId is set and maps to a cached Selection for userEmail,
+    *   return FastSuccess() with the cached Selection.
+    * * If maybeSelectionId is set but incorrect, return FastFailure with a 404.
+    * * Otherwise, return SlowSelectionParameters.
+    */
+  protected def selectFast(selectionRequest: SelectionRequest, userEmail: String, maybeSelectionId: Option[UUID], refresh: Boolean)(implicit messages: Messages): Future[SelectionHelpers.FastSelectionResult] = {
+    maybeSelectionId match {
+      case Some(selectionId) => {
+        selectionBackend.find(selectionRequest.documentSetId, selectionId).map {
+          case Some(selection) => SelectionHelpers.FastSuccess(selectionRequest, selection)
+          case None => SelectionHelpers.FastFailure(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")))
+        }
+      }
+      case None => Future.successful(SelectionHelpers.SlowSelectionParameters(userEmail, selectionRequest, refresh))
+    }
+  }
+
+  /** Returns a Selection.
+    *
+    * This is usually very fast, but it _may_ take seconds/minutes: if that's
+    * the case, onProgres will report progress from 0.0 to 1.0 as time goes on.
+    */
+  protected def selectSlow(params: SelectionHelpers.SlowSelectionParameters, onProgress: Double => Unit): Future[Selection] = {
+    if (params.refresh) {
+      selectionBackend.create(params.userEmail, params.selectionRequest, onProgress)
+    } else {
+      selectionBackend.findOrCreate(params.userEmail, params.selectionRequest, None, onProgress)
+    }
+  }
+
   /** Returns a Selection, using selectionRequest() or a selectionId parameter.
     *
     * This decides among SelectionBackend methods as follows:
@@ -85,32 +132,11 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
     * and 1.0 as sorting progresses.
     */
   protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_], onProgress: Double => Unit)(implicit messages: Messages): Future[Either[Result,Selection]] = {
-    requestToSelectionWithQuery(documentSetId, userEmail, request, onProgress).map(_.right.map(_._1))
-  }
- 
-  protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_], onProgress: Double => Unit = SelectionHelpers.ignoreProgress)(implicit messages: Messages): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
-    val rd = RequestData(request)
-
-    selectionRequest(documentSetId, request) match {
-      case Left(error) => Future.successful(Left(error))
-      case Right(sr) => {
-        rd.getUUID(selectionIdKey) match {
-          case Some(selectionId) => {
-            selectionBackend.find(documentSetId, selectionId).map {
-              case Some(selection) => Right(selection, Some(sr))
-              case None => Left(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")))
-            }
-          }
-          case None => {
-            val selectionFuture = rd.getBoolean(refreshKey) match {
-              case Some(true) => selectionBackend.create(userEmail, sr, onProgress)
-              case _ => selectionBackend.findOrCreate(userEmail, sr, None, onProgress)
-            }
-            selectionFuture.map(Right(_, Some(sr)))
-          }
-        }
-      }
-    }
+    parseSelectionRequestAndSelectFast(documentSetId, userEmail, request).flatMap(_ match {
+      case SelectionHelpers.FastFailure(error) => Future.successful(Left(error))
+      case SelectionHelpers.FastSuccess(_, selection) => Future.successful(Right(selection))
+      case params: SelectionHelpers.SlowSelectionParameters => selectSlow(params, onProgress).map(s => Right(s))
+    })
   }
 
   protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_])(implicit messages: Messages): Future[Either[Result, Selection]] = {
@@ -128,4 +154,18 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
 
 object SelectionHelpers {
   private def ignoreProgress(d: Double): Unit = {}
+
+  /** Response from requestToSelectionFast. */
+  sealed trait FastSelectionResult
+  /** The selection cannot succeed.
+    *
+    * Here are potential responses:
+    * * 400: The request is invalid (e.g., invalid "q" parameter).
+    * * 404: The request asked to look up a selection ID that isn't there.
+    */
+  case class FastFailure(result: Result) extends FastSelectionResult
+  /** The selection was cached; here it is. */
+  case class FastSuccess(selectionRequest: SelectionRequest, selection: Selection) extends FastSelectionResult
+  /** The selection might take longer; call selectSlow() with this object. */
+  case class SlowSelectionParameters(userEmail: String, selectionRequest: SelectionRequest, refresh: Boolean) extends FastSelectionResult
 }

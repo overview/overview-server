@@ -312,7 +312,7 @@ define [
         @set(loading: true)
 
         onSuccess = (data) =>
-          @_receivePage(data)
+          @_receivePage(data[data.length - 1])
           resolve(null)
 
         onError = (xhr) =>

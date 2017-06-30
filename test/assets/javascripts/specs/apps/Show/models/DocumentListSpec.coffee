@@ -78,9 +78,11 @@ define [
         @list.tagLocal(tag)
         expect(@tagCountsChangedSpy).to.have.been.called.once
         @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-          documents: ({ id: x } for x in [ 1 .. @list.nDocumentsPerPage ])
-          total_items: @list.nDocumentsPerPage + 1
-          selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+          [
+            documents: ({ id: x } for x in [ 1 .. @list.nDocumentsPerPage ])
+            total_items: @list.nDocumentsPerPage + 1
+            selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+          ]
         ))
         @promise1.then =>
           expect(@list.getTagCount(tag)).to.deep.eq(n: @list.nDocumentsPerPage + 1, howSure: 'exact')
@@ -98,9 +100,11 @@ define [
       describe 'on zero-doc success', ->
         beforeEach ->
           @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-            documents: []
-            total_items: 0
-            selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+            [
+              documents: []
+              total_items: 0
+              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+            ]
           ))
           @promise1 # mocha-as-promised
 
@@ -115,16 +119,18 @@ define [
         beforeEach ->
           @tag = new Tag(id: 5)
           @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-            documents: [
-              { documentSetId: 1, id: 1, tagids: [ 5 ] }
-              { documentSetId: 1, id: 2, tagids: [ 5 ] }
-              { documentSetId: 1, id: 3 }
+            [
+              documents: [
+                { documentSetId: 1, id: 1, tagids: [ 5 ] }
+                { documentSetId: 1, id: 2, tagids: [ 5 ] }
+                { documentSetId: 1, id: 3 }
+              ]
+              warnings: [
+                { type: 'TooManyExpansions', field: 'text', term: 'foo*', nExpansions: 1000 }
+              ]
+              total_items: 3
+              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
             ]
-            warnings: [
-              { type: 'TooManyExpansions', field: 'text', term: 'foo*', nExpansions: 1000 }
-            ]
-            total_items: 3
-            selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
           ))
           @promise1 # mocha-as-promised
 
@@ -153,9 +159,11 @@ define [
       describe 'on one-page success', ->
         beforeEach ->
           @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-            documents: ({ id: x, tagids: [ 1+x%2 ] } for x in [ 1 .. @list.nDocumentsPerPage ])
-            total_items: @list.nDocumentsPerPage + 1
-            selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+            [
+              documents: ({ id: x, tagids: [ 1+x%2 ] } for x in [ 1 .. @list.nDocumentsPerPage ])
+              total_items: @list.nDocumentsPerPage + 1
+              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+            ]
           ))
           @promise1 # mocha-as-promised
 
@@ -236,9 +244,11 @@ define [
             tag = new Tag(name: 'a tag')
             @list.tagLocal(tag)
             @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-              documents: [ { id: @list.nDocumentsPerPage + 1 } ]
-              total_items: @list.nDocumentsPerPage + 1
-              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+              [
+                documents: [ { id: @list.nDocumentsPerPage + 1 } ]
+                total_items: @list.nDocumentsPerPage + 1
+                selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+              ]
             ))
             @promise2.then =>
               expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.true
@@ -248,9 +258,11 @@ define [
             tag = new Tag(id: 1, name: 'a tag')
             @list.untagLocal(tag)
             @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-              documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
-              total_items: @list.nDocumentsPerPage + 1
-              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+              [
+                documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
+                total_items: @list.nDocumentsPerPage + 1
+                selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+              ]
             ))
             @promise2.then =>
               expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.false
@@ -261,9 +273,11 @@ define [
             expect(@list.getTagCount(tag)).to.deep.eq(n: @list.nDocumentsPerPage>>1, howSure: 'atLeast') # Precondition
 
             @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-              documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
-              total_items: @list.nDocumentsPerPage + 1
-              selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+              [
+                documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
+                total_items: @list.nDocumentsPerPage + 1
+                selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+              ]
             ))
             @promise2.then =>
               expect(@list.getTagCount(tag)).to.deep.eq(n: (@list.nDocumentsPerPage>>1) + 1, howSure: 'exact')
@@ -271,9 +285,11 @@ define [
           describe 'on success', ->
             beforeEach ->
               @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(
-                documents: [ { id: @list.nDocumentsPerPage + 1 } ]
-                total_items: @list.nDocumentsPerPage + 1
-                selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+                [
+                  documents: [ { id: @list.nDocumentsPerPage + 1 } ]
+                  total_items: @list.nDocumentsPerPage + 1
+                  selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+                ]
               ))
               @promise2
 
