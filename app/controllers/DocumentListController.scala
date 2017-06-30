@@ -68,7 +68,7 @@ class DocumentListController @Inject() (
               // because of multithreading. Maybe we ought to change the
               // DocumentSelection API to return a
               // Source[Progress.Sorting,InMemorySelection].
-              chunkQueue.offer(Json.obj("progress" -> progress).toString)
+              chunkQueue.offer(Json.obj("progress" -> progress).toString + ",")
             }
 
             for {
