@@ -102,7 +102,17 @@ define [
     _getQueryStringCached: ->
       if @get('selectionId')
         q = if @params.q then "q=#{@params.q}&" else ""
-        "#{q}selectionId=#{@get('selectionId')}"
+        q = "#{q}selectionId=#{@get('selectionId')}"
+        # XXX ugly bug: the server doesn't cache sortByMetadataField, but it
+        # uses it when outputting results. Tell it which field we're sorting by,
+        # so it will include the field in its output.
+        #
+        # This isn't a proper solution, and it isn't tested. But it's really
+        # easy to implement, and [adam, 2017-06-30] I'm not sure what a proper
+        # solution would look like yet.
+        if @params.sortByMetadataField
+          q = "#{q}&sortByMetadataField=#{encodeURIComponent(@params.sortByMetadataField)}"
+        q
       else
         null
 
