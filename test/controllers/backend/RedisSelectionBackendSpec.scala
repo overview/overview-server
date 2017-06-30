@@ -28,6 +28,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   }
 
   trait CreateScopeLike extends BaseScope {
+    val onProgress: Double => Unit = _ => ()
     val request = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, None)
     def go: Selection
   }
@@ -98,7 +99,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
   "RedisSelectionBackend" should {
     "#create" should {
       trait CreateScope extends CreateScopeLike {
-        def create = await(backend.create("user@example.org", request))
+        def create = await(backend.create("user@example.org", request, onProgress))
         override def go = create
       }
 
@@ -190,7 +191,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
     "#findOrCreate" should {
       trait FindOrCreateScope extends CreateScopeLike {
         val maybeSelectionId: Option[UUID] = None
-        def findOrCreate = await(backend.findOrCreate("user@example.org", request, maybeSelectionId))
+        def findOrCreate = await(backend.findOrCreate("user@example.org", request, maybeSelectionId, onProgress))
         override def go = findOrCreate
       }
 
@@ -206,14 +207,14 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Array(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
-          there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any)
+          there was one(dsBackend).createSelection(request, onProgress)
         }
 
         "return a slice of the Selection" in new FindOrCreateScope {
           override def resultIds = Array(1L, 2L, 3L, 4L, 5L)
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(1, 3)))
-          there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any)
+          there was one(dsBackend).createSelection(request, onProgress)
           documentIds must beEqualTo(Page(Seq(2L, 3L, 4L), PageInfo(PageRequest(1, 3), 5)))
         }
       }
@@ -304,7 +305,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Array(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
-          there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any)
+          there was one(dsBackend).createSelection(request, onProgress)
         }
       }
     }

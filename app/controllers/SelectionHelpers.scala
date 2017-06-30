@@ -79,36 +79,53 @@ trait SelectionHelpers extends HeaderNames with Results { self: ControllerHelper
     *
     * Paths 2 and 3 will always return a Right. Path 1 may return a
     * Left(NotFound), if the selection ID has expired.
+    *
+    * Sorting on a non-default column can take a long time. If this call needs
+    * a sort, onProgress() will be called repeatedly with numbers between 0.0
+    * and 1.0 as sorting progresses.
     */
-    protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_])(implicit messages: Messages): Future[Either[Result,Selection]] = {
-      requestToSelectionWithQuery(documentSetId, userEmail, request).map(_.right.map(_._1))
-    }
+  protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_], onProgress: Double => Unit)(implicit messages: Messages): Future[Either[Result,Selection]] = {
+    requestToSelectionWithQuery(documentSetId, userEmail, request, onProgress).map(_.right.map(_._1))
+  }
  
-    protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_])(implicit messages: Messages): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
-      val rd = RequestData(request)
+  protected def requestToSelectionWithQuery(documentSetId: Long, userEmail: String, request: Request[_], onProgress: Double => Unit = SelectionHelpers.ignoreProgress)(implicit messages: Messages): Future[Either[Result,(Selection, Option[SelectionRequest])]] = {
+    val rd = RequestData(request)
 
-      selectionRequest(documentSetId, request) match {
-        case Left(error) => Future.successful(Left(error))
-        case Right(sr) => {
-          rd.getUUID(selectionIdKey) match {
-            case Some(selectionId) =>
-              selectionBackend.find(documentSetId, selectionId).map {
-                case Some(selection) => Right(selection, Some(sr))
-                case None => Left(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")))
-              }
-            case None =>
-              val selectionFuture = rd.getBoolean(refreshKey) match {
-                case Some(true) => selectionBackend.create(userEmail, sr)
-                case _ => selectionBackend.findOrCreate(userEmail, sr, None)
-              }
-              selectionFuture.map(Right(_, Some(sr)))
+    selectionRequest(documentSetId, request) match {
+      case Left(error) => Future.successful(Left(error))
+      case Right(sr) => {
+        rd.getUUID(selectionIdKey) match {
+          case Some(selectionId) => {
+            selectionBackend.find(documentSetId, selectionId).map {
+              case Some(selection) => Right(selection, Some(sr))
+              case None => Left(NotFound(jsonError("not-found", "There is no Selection with the given selectionId. Perhaps it has expired.")))
+            }
+          }
+          case None => {
+            val selectionFuture = rd.getBoolean(refreshKey) match {
+              case Some(true) => selectionBackend.create(userEmail, sr, onProgress)
+              case _ => selectionBackend.findOrCreate(userEmail, sr, None, onProgress)
+            }
+            selectionFuture.map(Right(_, Some(sr)))
           }
         }
       }
+    }
+  }
+
+  protected def requestToSelection(documentSetId: Long, userEmail: String, request: Request[_])(implicit messages: Messages): Future[Either[Result, Selection]] = {
+    requestToSelection(documentSetId, userEmail, request, SelectionHelpers.ignoreProgress)
+  }
+
+  protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_], onProgress: Double => Unit)(implicit messages: Messages): Future[Either[Result, Selection]] = {
+    requestToSelection(documentSetId, request.user.email, request, onProgress)
   }
 
   protected def requestToSelection(documentSetId: Long, request: AuthorizedRequest[_])(implicit messages: Messages): Future[Either[Result, Selection]] = {
-    requestToSelection(documentSetId, request.user.email, request)
+    requestToSelection(documentSetId, request.user.email, request, SelectionHelpers.ignoreProgress)
   }
 }
 
+object SelectionHelpers {
+  private def ignoreProgress(d: Double): Unit = {}
+}

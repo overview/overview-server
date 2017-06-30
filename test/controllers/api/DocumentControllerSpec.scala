@@ -23,7 +23,8 @@ class DocumentControllerSpec extends ApiControllerSpecification {
     mockDocumentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
     val mockDocumentBackend = smartMock[DocumentBackend]
     val mockSelectionBackend = smartMock[SelectionBackend]
-    mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
+    // We don't report progress in the API.
+    mockSelectionBackend.findOrCreate(any, any, any, any) returns Future { selection }
 
     val controller = new DocumentController(
       mockDocumentSetBackend,

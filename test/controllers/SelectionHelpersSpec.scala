@@ -179,18 +179,27 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
 
     "uses SelectionBackend#create() if refresh=true" in new RequestToSelectionScope {
       val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
-      mockSelectionBackend.create(any, any) returns Future.successful(selection)
+      mockSelectionBackend.create(any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
       await(controller.go(request)) must beEqualTo(Right(selection))
-      there was one(mockSelectionBackend).create(userEmail, selectionRequest)
+      there was one(mockSelectionBackend).create(
+        org.mockito.Matchers.eq(userEmail),
+        org.mockito.Matchers.eq(selectionRequest),
+        any
+      )
     }
 
     "uses SelectionBackend#findOrCreate() as a fallback" in new RequestToSelectionScope {
       val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
-      mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
+      mockSelectionBackend.findOrCreate(any, any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
       await(controller.go(request)) must beEqualTo(Right(selection))
-      there was one(mockSelectionBackend).findOrCreate(userEmail, selectionRequest, None)
+      there was one(mockSelectionBackend).findOrCreate(
+        org.mockito.Matchers.eq(userEmail),
+        org.mockito.Matchers.eq(selectionRequest),
+        org.mockito.Matchers.eq(None),
+        any
+      )
     }
 
     "return BadRequest on invalid search phrase" in new RequestToSelectionScope {

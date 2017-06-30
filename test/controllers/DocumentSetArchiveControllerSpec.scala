@@ -19,7 +19,10 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     val mockArchiveFactory = smartMock[ArchiveFactory]
     def selection = InMemorySelection(Array(2L)) // override for a different selection
     val mockSelectionBackend = smartMock[SelectionBackend]
-    mockSelectionBackend.findOrCreate(any, any, any) returns Future { selection }
+    // We assume this controller doesn't care about onProgress because the user
+    // recently cached a Selection. That's not necessarily true, but it should
+    // hold true most of the time.
+    mockSelectionBackend.findOrCreate(any, any, any, any) returns Future { selection }
 
     val controller = new DocumentSetArchiveController(
       mockArchiveEntryBackend,
