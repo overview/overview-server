@@ -23,10 +23,13 @@ import models.{InMemorySelection,SelectionRequest,SelectionWarning}
   * SelectionBackend loads and saves Selections.
   * DocumentBackend loads and saves Documents.
   * DocumentSelectionBackend creates a Selection by querying services.
+  *
+  * onProgress() will be called with numbers between 0.0 and 1.0, inclusive. It
+  * may be called at any time before the Future is resolved.
   */
 @ImplementedBy(classOf[DbDocumentSelectionBackend])
 trait DocumentSelectionBackend {
-  def createSelection(selectionRequest: SelectionRequest): Future[InMemorySelection]
+  def createSelection(selectionRequest: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection]
 }
 
 class DbDocumentSelectionBackend @Inject() (
@@ -41,7 +44,7 @@ class DbDocumentSelectionBackend @Inject() (
   protected lazy val logger = Logger.forClass(getClass)
 
   /** Returns all a DocumentSet's Document IDs, sorted. */
-  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String]): Future[(Array[Long],List[SelectionWarning])] = {
+  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(Array[Long],List[SelectionWarning])] = {
     logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}, field {}]", documentSet.id, sortByMetadataField) {
       sortByMetadataField match {
         case None => getDefaultSortedIds(documentSet.id).map(ids => (ids, Nil))
@@ -51,7 +54,7 @@ class DbDocumentSelectionBackend @Inject() (
         }
         case Some(field) => {
           documentIdListBackend.showOrCreate(documentSet.id.toInt, field)
-            .to(Sink.ignore)
+            .to(Sink.foreach(progress => onProgress(progress.progress)))
             .run()(materializer)
             .map(_ match {
               case None => throw new Exception("Sort failed. Look for earlier error messages.")
@@ -120,7 +123,7 @@ class DbDocumentSelectionBackend @Inject() (
   }
 
   /** Returns a subset of the DocumentSet's Document IDs, sorted. */
-  private def indexSelectedIds(request: SelectionRequest): Future[InMemorySelection] = {
+  private def indexSelectedIds(request: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection] = {
     documentSetBackend.show(request.documentSetId).flatMap(_ match {
       case None => Future.successful(InMemorySelection(Array.empty[Long]))
       case Some(documentSet) => {
@@ -136,7 +139,7 @@ class DbDocumentSelectionBackend @Inject() (
         }
 
         for {
-          (allSortedIds, sortWarnings) <- getSortedIds(documentSet, request.sortByMetadataField)
+          (allSortedIds, sortWarnings) <- getSortedIds(documentSet, request.sortByMetadataField, onProgress)
           (byQ, byQWarnings) <- byQFuture
           byDb <- byDbFuture
         } yield {
@@ -150,8 +153,8 @@ class DbDocumentSelectionBackend @Inject() (
     })
   }
 
-  override def createSelection(request: SelectionRequest): Future[InMemorySelection] = {
-    indexSelectedIds(request)
+  override def createSelection(request: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection] = {
+    indexSelectedIds(request, onProgress)
   }
 
   protected def idsBySelectionRequestSql(request: SelectionRequest): String = {

@@ -15,7 +15,7 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
     def warnings: List[SelectionWarning] = Nil
     val dsBackend = mock[DocumentSelectionBackend]
     val backend = new NullSelectionBackend(dsBackend)
-    dsBackend.createSelection(any[SelectionRequest]) returns Future.successful(InMemorySelection(resultIds, warnings))
+    dsBackend.createSelection(any[SelectionRequest], any[Double => Unit]) returns Future.successful(InMemorySelection(resultIds, warnings))
 
     val userEmail: String = "user@example.org"
     val documentSetId: Long = 1L
@@ -42,17 +42,17 @@ class NullSelectionBackendSpec extends NullBackendSpecification with Mockito {
       "return a different Selection each time" in new CreateScope {
         create
         create
-        there were two(dsBackend).createSelection(any)
+        there were two(dsBackend).createSelection(any, any)
       }
 
       "pass the SelectionRequest to the dsBackend" in new CreateScope {
         create
-        there was one(dsBackend).createSelection(request)
+        there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any[Double => Unit])
       }
 
       "pass a failure back" in new CreateScope {
         val t = new Throwable("moo")
-        dsBackend.createSelection(any[SelectionRequest]) returns Future.failed(t)
+        dsBackend.createSelection(any[SelectionRequest], any[Double => Unit]) returns Future.failed(t)
         create must throwA[Throwable](message="moo")
       }
     }

@@ -2,6 +2,7 @@ package controllers.backend
 
 import akka.stream.scaladsl.Source
 import org.specs2.mock.Mockito
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -64,7 +65,8 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         val documentIdListBackend = smartMock[DocumentIdListBackend]
 
         val backend = new DbDocumentSelectionBackend(database, searchBackend, documentSetBackend, documentIdListBackend, app.materializer)
-        lazy val ret: InMemorySelection = await(backend.createSelection(request))
+        def onProgress(p: Double): Unit = {}
+        lazy val ret: InMemorySelection = await(backend.createSelection(request, onProgress))
       }
 
       "show all documents by default" in new CreateSelectionScope {
@@ -84,6 +86,20 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
           List(Progress.Sorting(0.3), Progress.Sorting(0.6), Progress.Sorting(0.9))
         ).mapMaterializedValue(_ => Future.successful(Some(DocumentIdList(5, 1, "foo", Array(0, 1, 2)))))
         ret.documentIds must beEqualTo(Array(doc1.id, doc2.id, doc3.id))
+      }
+
+      "report progress during sort" in new CreateSelectionScope {
+        documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(
+          metadataSchema=MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+        )))
+        override val sortByMetadataField = Some("foo")
+        documentIdListBackend.showOrCreate(1, "foo") returns Source(
+          List(Progress.Sorting(0.3), Progress.Sorting(0.6), Progress.Sorting(0.9))
+        ).mapMaterializedValue(_ => Future.successful(Some(DocumentIdList(5, 1, "foo", Array(0, 1, 2)))))
+        val progressReports = mutable.ArrayBuffer.empty[Double]
+        override def onProgress(p: Double): Unit = { progressReports.append(p) }
+        ret
+        progressReports.toList must beEqualTo(Seq(0.3, 0.6, 0.9))
       }
 
       "crash when sort fails" in new CreateSelectionScope {

@@ -22,7 +22,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
       stream.toByteArray
     }
     val dsBackend = mock[DocumentSelectionBackend]
-    dsBackend.createSelection(any[SelectionRequest]) returns Future.successful(InMemorySelection(resultIds, warnings))
+    dsBackend.createSelection(any[SelectionRequest], any) returns Future.successful(InMemorySelection(resultIds, warnings))
     val backend = new RedisSelectionBackend(dsBackend, redisModule)
     val documentSetId = 123L
   }
@@ -127,7 +127,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
       "when Selection is not present" should {
         "return None" in new FindScope {
           go must beNone
-          there was no(dsBackend).createSelection(any)
+          there was no(dsBackend).createSelection(any, any)
         }
       }
 
@@ -150,7 +150,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "return None" in new FindScope {
           await(redis.setex(byIdWarningsKey, KeyExpireS, serializedWarnings))
           go must beNone
-          there was no(dsBackend).createSelection(any)
+          there was no(dsBackend).createSelection(any, any)
         }
       }
 
@@ -179,7 +179,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           maybeSelection match {
             case Some(selection) => {
               await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
-              there was no(dsBackend).createSelection(any)
+              there was no(dsBackend).createSelection(any, any)
             }
             case _ =>
           }
@@ -206,14 +206,14 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Array(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
-          there was one(dsBackend).createSelection(request)
+          there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any)
         }
 
         "return a slice of the Selection" in new FindOrCreateScope {
           override def resultIds = Array(1L, 2L, 3L, 4L, 5L)
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(1, 3)))
-          there was one(dsBackend).createSelection(request)
+          there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any)
           documentIds must beEqualTo(Page(Seq(2L, 3L, 4L), PageInfo(PageRequest(1, 3), 5)))
         }
       }
@@ -241,7 +241,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "return the Selection" in new SelectionExistsScope {
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
-          there was no(dsBackend).createSelection(any)
+          there was no(dsBackend).createSelection(any, any)
         }
       }
 
@@ -274,13 +274,13 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
         "return the Selection" in new SelectionExistsScope {
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(Array(1L, 2L, 3L, 4L, 5L))
-          there was no(dsBackend).createSelection(any)
+          there was no(dsBackend).createSelection(any, any)
         }
 
         "return a slice of the Selection" in new SelectionExistsScope {
           val selection = go
           val documentIds = await(selection.getDocumentIds(PageRequest(1, 3)))
-          there was no(dsBackend).createSelection(any)
+          there was no(dsBackend).createSelection(any, any)
           documentIds must beEqualTo(Page(Seq(2L, 3L, 4L), PageInfo(PageRequest(1, 3), 5)))
         }
       }
@@ -304,7 +304,7 @@ class RedisSelectionBackendSpec extends RedisBackendSpecification with Mockito {
           override def resultIds = Array(1L, 2L, 3L)
           val selection = go
           await(selection.getAllDocumentIds) must beEqualTo(resultIds)
-          there was one(dsBackend).createSelection(request)
+          there was one(dsBackend).createSelection(org.mockito.Matchers.eq(request), any)
         }
       }
     }

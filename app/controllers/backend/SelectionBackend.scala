@@ -57,7 +57,7 @@ class NullSelectionBackend @Inject() (
 ) extends SelectionBackend {
 
   override def create(userEmail: String, request: SelectionRequest) = {
-    documentSelectionBackend.createSelection(request)
+    documentSelectionBackend.createSelection(request, _ => ())
   }
 
   override def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]) = {
@@ -228,7 +228,7 @@ class RedisSelectionBackend @Inject() (
 
   override def create(userEmail: String, request: SelectionRequest) = {
     for {
-      selection <- documentSelectionBackend.createSelection(request)
+      selection <- documentSelectionBackend.createSelection(request, _ => ())
       _ <- writeSelection(userEmail, request, selection)
     } yield selection // return InMemorySelection, not a RedisSelection -- it's faster
   }
