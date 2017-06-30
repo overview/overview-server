@@ -38,11 +38,17 @@ define [
       @view.remove()
 
     it 'should render loading by default', ->
-      expect(@view.$el.html()).to.eq('loading')
+      expect(@view.$el.text()).to.match(/loading/)
+
+    it 'should show a progress bar when loading', ->
+      expect(@view.$('progress')).to.exist
+      @state.set(documentList: new DocumentList(length: null))
+      @state.get('documentList').set(progress: 0.2)
+      expect(@view.$('progress')).to.have.attr('value', '0.2')
 
     it 'should render loading when a list is loading', ->
       @state.set(documentList: new DocumentList(length: null))
-      expect(@view.$el.html()).to.eq('loading')
+      expect(@view.$el.html()).to.match(/loading/)
 
     it 'should render a title when a list has a length', ->
       @state.set(documentList: new DocumentList(length: 0))

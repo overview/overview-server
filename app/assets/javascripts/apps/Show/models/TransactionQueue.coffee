@@ -147,6 +147,9 @@ define [
                 onSuccess()
                 resolve()
               .on 'fail', (report) =>
+                # There's no mechanism to handle the error without triggering
+                # 'error', like we have with .ajax(). But if there were one, it
+                # would go here.
                 console.log('streamJsonArray error:', report.statusCode, report.thrown)
                 if report.statusCode
                   reject(report)

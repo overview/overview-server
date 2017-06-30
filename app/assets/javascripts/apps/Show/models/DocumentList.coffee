@@ -268,6 +268,10 @@ define [
         @_fetchNextPagePromise = @_doFetch()
           .then(=> @_fetchNextPagePromise = null) # returns null
 
+    _receiveProgress: (data) ->
+      if @get('length') == null
+        @set(progress: data.progress)
+
     _receivePage: (data) ->
       newDocuments = (new Document(document, parse: true) for document in data.documents)
 
@@ -292,17 +296,18 @@ define [
 
       @set
         loading: false
+        progress: null
         length: data.total_items
         selectionId: data.selection_id
         warnings: data.warnings
         nPagesFetched: @get('nPagesFetched') + 1
 
-    _receiveError: (xhr) ->
-      message = xhr.responseJSON?.message || xhr.responseText
+    _receiveError: (errorReport) ->
       @set
         loading: false
-        statusCode: xhr.status
-        error: message
+        progress: null
+        statusCode: errorReport.statusCode
+        error: errorReport.thrown?.message
 
     _doFetch: ->
       query = if @get('length') == null
@@ -315,14 +320,18 @@ define [
 
       @set(loading: true)
 
-      @transactionQueue.ajax
-        type: 'get'
-        url: @url
-        data: query
-        success: (data) => @_receivePage(data[data.length - 1])
-        error: (xhr, x, xx, defaultHandler) =>
-          @_receiveError(xhr)
-          defaultHandler()
+      @transactionQueue.streamJsonArray({
+        url: "#{@url}?#{query}"
+        onItem: (item) =>
+          if item.progress
+            @_receiveProgress(item)
+          else
+            @_receivePage(item)
+      })
+        .catch (errorReport) =>
+          @_receiveError(errorReport)
+          Promise.reject(errorReport)
+
 
     _onDocumentTagged: (document, tag, options) ->
       return if options?.fromList

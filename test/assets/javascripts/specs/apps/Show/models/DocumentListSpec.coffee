@@ -55,7 +55,7 @@ define [
         @ajaxPromise1 = new Promise (resolve, reject) =>
           @ajaxResolve1 = resolve
           @ajaxReject1 = reject
-        @transactionQueue.ajax = sinon.stub().returns(@ajaxPromise1)
+        @transactionQueue.streamJsonArray = sinon.stub().returns(@ajaxPromise1)
         @promise1 = @list.fetchNextPage()
         undefined
 
@@ -68,9 +68,8 @@ define [
       it 'should have warnings=[]', -> expect(@list.get('warnings')).to.deep.eq([])
 
       it 'should request /documents', ->
-        expect(@transactionQueue.ajax).to.have.been.calledWithMatch({
-          url: '/documentsets/1/documents',
-          data: 'tags=20&refresh=true&limit=20&offset=0'
+        expect(@transactionQueue.streamJsonArray).to.have.been.calledWithMatch({
+          url: '/documentsets/1/documents?tags=20&refresh=true&limit=20&offset=0'
         })
 
       it 'should return the same promise and not change anything when calling again', ->
@@ -78,43 +77,61 @@ define [
         p2 = @list.fetchNextPage()
         expect(p1).to.eq(p2)
         expect(@docs.length).to.eq(0)
-        expect(@transactionQueue.ajax).to.have.been.called.once
+        expect(@transactionQueue.streamJsonArray).to.have.been.called.once
 
       it 'should have tagCount=n,exact if we tagged before the page loaded', ->
         tag = new Tag(id: 1)
         @list.tagLocal(tag)
         expect(@tagCountsChangedSpy).to.have.been.called.once
 
-        @transactionQueue.ajax.args[0][0].success([
+        @transactionQueue.streamJsonArray.args[0][0].onItem(
           documents: ({ id: x } for x in [ 1 .. @list.nDocumentsPerPage ])
           total_items: @list.nDocumentsPerPage + 1
           selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-        ])
+        )
         @ajaxResolve1()
 
         @promise1.then =>
           expect(@list.getTagCount(tag)).to.deep.eq(n: @list.nDocumentsPerPage + 1, howSure: 'exact')
           expect(@tagCountsChangedSpy).to.have.been.called.twice
 
+      it 'should set progress when streaming', ->
+        @progressChangedSpy = sinon.spy()
+        @list.on('change:progress', @progressChangedSpy)
+        @transactionQueue.streamJsonArray.args[0][0].onItem(progress: 0.3)
+        @transactionQueue.streamJsonArray.args[0][0].onItem(progress: 0.6)
+        @transactionQueue.streamJsonArray.args[0][0].onItem(
+          documents: ({ id: x } for x in [ 1 .. @list.nDocumentsPerPage ])
+          total_items: @list.nDocumentsPerPage + 1
+          selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+        )
+        @ajaxResolve1()
+
+        @promise1.then =>
+          expect(@progressChangedSpy.args.map((a) => a[1])).to.deep.eq([ 0.3, 0.6, null ])
+
       describe 'on error', ->
         beforeEach ->
           @originalErrorHandler = sinon.spy()
-          @transactionQueue.ajax.args[0][0].error({ responseJSON: { message: 'error message' }, status: 400 }, '400', '{ "message": "error message" }', @originalErrorHandler)
-          @ajaxReject1({}, '400', { message: 'error message' })
+          @ajaxReject1({
+            thrown: new Error('error message')
+            statusCode: 400
+          })
+          @promise1.catch((e) =>)
 
         it 'should set loading=false', -> expect(@list.get('loading')).to.be.false
+        it 'should set progress=null', -> expect(@list.get('progress')).to.be.null
         it 'should set statusCode', -> expect(@list.get('statusCode')).to.eq(400)
         it 'should set error', -> expect(@list.get('error')).to.eq('error message')
         it 'should have tagCount=0(atLeast)', -> expect(@list.getTagCount(new Tag())).to.deep.eq(n: 0, howSure: 'atLeast')
-        it 'should call the TransactionQueue default error handler', -> expect(@originalErrorHandler).to.have.been.called
 
       describe 'on zero-doc success', ->
         beforeEach ->
-          @transactionQueue.ajax.args[0][0].success([
+          @transactionQueue.streamJsonArray.args[0][0].onItem(
             documents: []
             total_items: 0
             selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-          ])
+          )
           @ajaxResolve1()
           @promise1 # mocha-as-promised
 
@@ -128,7 +145,7 @@ define [
       describe 'on a-few-docs success', ->
         beforeEach ->
           @tag = new Tag(id: 5)
-          @transactionQueue.ajax.args[0][0].success([
+          @transactionQueue.streamJsonArray.args[0][0].onItem(
             documents: [
               { documentSetId: 1, id: 1, tagids: [ 5 ] }
               { documentSetId: 1, id: 2, tagids: [ 5 ] }
@@ -139,7 +156,7 @@ define [
             ]
             total_items: 3
             selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-          ])
+          )
           @ajaxResolve1()
           @promise1 # mocha-as-promised
 
@@ -167,11 +184,11 @@ define [
 
       describe 'on one-page success', ->
         beforeEach ->
-          @transactionQueue.ajax.args[0][0].success([
+          @transactionQueue.streamJsonArray.args[0][0].onItem(
             documents: ({ id: x, tagids: [ 1+x%2 ] } for x in [ 1 .. @list.nDocumentsPerPage ])
             total_items: @list.nDocumentsPerPage + 1
             selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-          ])
+          )
           @ajaxResolve1()
           @promise1 # mocha-as-promised
 
@@ -239,7 +256,7 @@ define [
             @ajaxPromise2 = new Promise (resolve, reject) =>
               @ajaxResolve2 = resolve
               @ajaxReject2 = reject
-            @transactionQueue.ajax.returns(@ajaxPromise2)
+            @transactionQueue.streamJsonArray.returns(@ajaxPromise2)
             @promise2 = @list.fetchNextPage()
             undefined # mocha-as-promised
 
@@ -247,19 +264,33 @@ define [
           it 'should have loading=true', -> expect(@list.get('loading')).to.be.true
 
           it 'should send a new request with the selectionId', ->
-            expect(@transactionQueue.ajax).to.have.been.calledWithMatch({
-              url: '/documentsets/1/documents',
-              data: 'selectionId=ea21b9a6-4f4b-42f9-a694-f177eba71ed7&limit=20&offset=20'
+            expect(@transactionQueue.streamJsonArray).to.have.been.calledWithMatch({
+              url: '/documentsets/1/documents?selectionId=ea21b9a6-4f4b-42f9-a694-f177eba71ed7&limit=20&offset=20'
             })
+
+          it 'should keep progress==null', ->
+            @onProgressChanged = sinon.spy()
+            @list.on('change:progress', @onProgressChanged)
+            @transactionQueue.streamJsonArray.args[1][0].onItem(
+              { progress: 0.1 },
+              {
+                documents: [ { id: @list.nDocumentsPerPage + 1 } ]
+                total_items: @list.nDocumentsPerPage + 1
+                selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
+              }
+            )
+            @ajaxResolve2()
+            @promise2.then =>
+              expect(@onProgressChanged).not.to.have.been.called
 
           it 'should apply tags to the resulting documents', ->
             tag = new Tag(name: 'a tag')
             @list.tagLocal(tag)
-            @transactionQueue.ajax.args[1][0].success([
+            @transactionQueue.streamJsonArray.args[1][0].onItem(
               documents: [ { id: @list.nDocumentsPerPage + 1 } ]
               total_items: @list.nDocumentsPerPage + 1
               selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-            ])
+            )
             @ajaxResolve2()
             @promise2.then =>
               expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.true
@@ -268,11 +299,11 @@ define [
           it 'should unapply tags from the resulting documents', ->
             tag = new Tag(id: 1, name: 'a tag')
             @list.untagLocal(tag)
-            @transactionQueue.ajax.args[1][0].success([
+            @transactionQueue.streamJsonArray.args[1][0].onItem(
               documents: [ { id: @list.nDocumentsPerPage + 1 } ]
               total_items: @list.nDocumentsPerPage + 1
               selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-            ])
+            )
             @ajaxResolve2()
             @promise2.then =>
               expect(@docs.at(@list.nDocumentsPerPage).hasTag(tag)).to.be.false
@@ -282,22 +313,22 @@ define [
             tag = new Tag(id: 1, name: 'a tag')
             expect(@list.getTagCount(tag)).to.deep.eq(n: @list.nDocumentsPerPage>>1, howSure: 'atLeast') # Precondition
 
-            @transactionQueue.ajax.args[1][0].success([
+            @transactionQueue.streamJsonArray.args[1][0].onItem(
               documents: [ { id: @list.nDocumentsPerPage + 1, tagids: [ 1 ] } ]
               total_items: @list.nDocumentsPerPage + 1
               selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-            ])
+            )
             @ajaxResolve2()
             @promise2.then =>
               expect(@list.getTagCount(tag)).to.deep.eq(n: (@list.nDocumentsPerPage>>1) + 1, howSure: 'exact')
 
           describe 'on success', ->
             beforeEach ->
-              @transactionQueue.ajax.args[1][0].success([
+              @transactionQueue.streamJsonArray.args[1][0].onItem(
                 documents: [ { id: @list.nDocumentsPerPage + 1 } ]
                 total_items: @list.nDocumentsPerPage + 1
                 selection_id: 'ea21b9a6-4f4b-42f9-a694-f177eba71ed7'
-              ])
+              )
               @ajaxResolve2()
               @promise2
 

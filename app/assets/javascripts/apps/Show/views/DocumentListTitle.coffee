@@ -22,6 +22,11 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         <div class="sort-by"><%= t('sort_by_FIELD').replace('FIELD', sortByFieldHtml) %></div>
       ''')
 
+      loading: _.template('''
+        <h3><%= t('loading') %></h3>
+        <progress <%= (progress ? ('value="' + progress + '"') : "") %>></progress>
+      ''')
+
       sortByField: _.template('''
         <div class="sort-by-field dropdown">
           <a id="DocumentListTitle-sort-by-field" data-target="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><%- currentSortBy %><span class="caret"></span></a>
@@ -50,7 +55,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       if documentList != @documentList
         @stopListening(@documentList) if @documentList
         @documentList = documentList
-        @listenTo(@documentList, 'change:length', @render) if @documentList
+        @listenTo(@documentList, 'change:length change:progress', @render) if @documentList
         @render()
 
     render: ->
@@ -70,7 +75,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
           sortByFieldHtml = _.escape(sortByTitle)
         @$el.html(@templates.main(t: t, length: length, sortByFieldHtml: sortByFieldHtml))
       else
-        @$el.text(t('loading'))
+        @$el.html(@templates.loading(t: t, progress: @documentList?.get('progress')))
 
     onClickSortByMetadataField: (ev) ->
       ev.preventDefault()
