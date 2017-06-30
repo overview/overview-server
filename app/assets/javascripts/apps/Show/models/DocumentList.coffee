@@ -17,6 +17,9 @@ define [
   # * the `length` _attribute_, a `Number` representing the number of documents
   #   on the server side. This attribute starts off `null` and changes when the
   #   server responds with some documents.
+  # * the `progress` _attribute_, a `Number` from 0.0 to 1.0 representing how
+  #   far along the server is in preparing results. It only makes sense when
+  #   fetching the first page.
   # * the `selectionId` _attribute_, null to begin with and then a UUID.
   #
   # Invoke it like this:
@@ -53,6 +56,7 @@ define [
       error: null
       warnings: []
       length: null
+      progress: null
       loading: false
       nPagesFetched: 0
       selectionId: null
@@ -60,9 +64,11 @@ define [
 
     initialize: (attributes, options) ->
       throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet?
+      throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue?
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
 
       @documentSet = options.documentSet
+      @transactionQueue = options.transactionQueue
       @params = options.params
       @url = _.result(@documentSet, 'url').replace(/\.json$/, '') + '/documents'
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
@@ -299,33 +305,24 @@ define [
         error: message
 
     _doFetch: ->
-      new Promise (resolve, reject) =>
-        query = if @get('length') == null
-          @_getQueryStringNoCache()
-        else
-          @_getQueryStringCached()
+      query = if @get('length') == null
+        @_getQueryStringNoCache()
+      else
+        @_getQueryStringCached()
 
-        query += "&limit=#{@nDocumentsPerPage}"
-        query += "&offset=#{@get('nPagesFetched') * @nDocumentsPerPage}"
+      query += "&limit=#{@nDocumentsPerPage}"
+      query += "&offset=#{@get('nPagesFetched') * @nDocumentsPerPage}"
 
-        @set(loading: true)
+      @set(loading: true)
 
-        onSuccess = (data) =>
-          @_receivePage(data[data.length - 1])
-          resolve(null)
-
-        onError = (xhr) =>
+      @transactionQueue.ajax
+        type: 'get'
+        url: @url
+        data: query
+        success: (data) => @_receivePage(data[data.length - 1])
+        error: (xhr, x, xx, defaultHandler) =>
           @_receiveError(xhr)
-          reject(@get('message'))
-
-        Backbone.ajax
-          type: 'get'
-          url: @url
-          data: query
-          success: onSuccess
-          error: onError
-
-        undefined
+          defaultHandler()
 
     _onDocumentTagged: (document, tag, options) ->
       return if options?.fromList

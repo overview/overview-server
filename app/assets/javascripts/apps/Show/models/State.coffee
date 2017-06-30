@@ -52,7 +52,10 @@ define [
       @set
         view: view
         document: null
-        documentList: new DocumentList({}, documentSet: @documentSet, params: new DocumentListParams())
+        documentList: new DocumentList {},
+          documentSet: @documentSet
+          transactionQueue: @transactionQueue
+          params: new DocumentListParams()
 
     # Sets new documentList params and unsets document.
     #
@@ -72,7 +75,10 @@ define [
 
       @set
         document: null
-        documentList: new DocumentList({}, documentSet: @documentSet, params: params)
+        documentList: new DocumentList {},
+          documentSet: @documentSet
+          transactionQueue: @transactionQueue
+          params: params
 
     # Sets new documentList params relative to the current ones.
     #
