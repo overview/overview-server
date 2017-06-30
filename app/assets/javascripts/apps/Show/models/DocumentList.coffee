@@ -3,8 +3,7 @@ define [
   'backbone'
   '../collections/Documents'
   '../models/Document'
-  'rsvp'
-], (_, Backbone, Documents, Document, RSVP) ->
+], (_, Backbone, Documents, Document) ->
   # A sorted list of Document objects on the server.
   #
   # A DocumentList is composed of:
@@ -258,7 +257,7 @@ define [
       if @_fetchNextPagePromise?
         @_fetchNextPagePromise
       else if @isComplete()
-        RSVP.resolve(null)
+        Promise.resolve(null)
       else
         @_fetchNextPagePromise = @_doFetch()
           .then(=> @_fetchNextPagePromise = null) # returns null
@@ -300,7 +299,7 @@ define [
         error: message
 
     _doFetch: ->
-      new RSVP.Promise (resolve, reject) =>
+      new Promise (resolve, reject) =>
         query = if @get('length') == null
           @_getQueryStringNoCache()
         else
