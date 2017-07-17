@@ -71,8 +71,21 @@ define [
 
     it 'should not show a dropdown when there are no metadata fields', ->
       @state.set(documentList: new DocumentList(length: 10))
-      expect(@view.$('.sort-by').html()).to.eq('sort_by_sort_by.title')
       expect(@view.$('.dropdown')).not.to.exist
+
+    it 'should reverse sort order', ->
+      @state.set(documentList: new DocumentList(length: 10))
+      @state.setDocumentListParams = sinon.stub()
+      @view.$('input[name=reverse]').prop('checked', true)
+      @view.onChangeReverse()
+      expect(@state.setDocumentListParams).to.have.been.calledWith(new DocumentListParams(), true)
+
+    it 'should un-reverse sort order', ->
+      @state.set(documentList: new DocumentList(length: 10))
+      @state.setDocumentListParams = sinon.stub()
+      @view.$('input[name=reverse]').prop('checked', false)
+      @view.onChangeReverse()
+      expect(@state.setDocumentListParams).to.have.been.calledWith(new DocumentListParams(), false)
 
     it 'should show a dropdown when there are metadata fields', ->
       @state.set(documentList: new DocumentList(length: 10))

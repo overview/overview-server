@@ -40,6 +40,10 @@ class ControllerHelpersSpec extends Specification with JsonMatchers {
       controller.f(FakeRequest(), 1000).offset must beEqualTo(0)
     }
 
+    "default to reverse=false" in new PageScope {
+      controller.f(FakeRequest(), 1000).reverse must beEqualTo(false)
+    }
+
     "let you specify an offset" in new PageScope {
       controller.f(FakeRequest("GET", "/?offset=123"), 1000).offset must beEqualTo(123)
     }
@@ -64,6 +68,14 @@ class ControllerHelpersSpec extends Specification with JsonMatchers {
       controller.f(FakeRequest(), 100).limit must beEqualTo(100)
     }
 
+    "let you set reverse=true" in new PageScope {
+      controller.f(FakeRequest("GET", "/?reverse=true"), 1000).reverse must beEqualTo(true)
+    }
+
+    "let you set reverse=false" in new PageScope {
+      controller.f(FakeRequest("GET", "/?reverse=false"), 1000).reverse must beEqualTo(false)
+    }
+
     "ignore limits that cannot be parsed" in new PageScope {
       controller.f(FakeRequest("GET", "/?limit=10foo"), 1000).limit must beEqualTo(1000)
     }
@@ -81,7 +93,7 @@ class ControllerHelpersSpec extends Specification with JsonMatchers {
     }
 
     "parse both offset and limit in the same request" in new PageScope {
-      controller.f(FakeRequest("GET", "/?offset=20&limit=30"), 1000) must beEqualTo(PageRequest(20, 30))
+      controller.f(FakeRequest("GET", "/?offset=20&limit=30"), 1000) must beEqualTo(PageRequest(20, 30, false))
     }
   }
 }

@@ -39,7 +39,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         val documentSetId = documentSet.id
         val q = ""
         val fields = ""
-        val pageRequest = PageRequest(0, 1000)
+        val pageRequest = PageRequest(0, 1000, false)
         def emptyPage[T] = Page(Seq[T](), PageInfo(pageRequest, 0))
 
         override lazy val request = fakeRequest("GET", "?q=" + q)
@@ -60,34 +60,34 @@ class DocumentControllerSpec extends ApiControllerSpecification {
       "grab pageRequest from the HTTP request" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=2")
         status(result)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), false)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2, false), false)
       }
 
       "set page limit to 1000" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
         status(result)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 1000), false)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 1000, false), false)
       }
 
       "set page limit to 20 when requesting text" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
         override val fields = "id,text"
         status(result)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20, false), true)
       }
 
       "set page limit to 20 when requesting metadata" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
         override val fields = "id,metadata"
         status(result)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20, false), true)
       }
 
       "set page limit to 20 when requesting tokens" in new IndexScope {
         override lazy val request = fakeRequest("GET", "/?offset=1&limit=9999999")
         override val fields = "id,tokens"
         status(result)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20), true)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 20, false), true)
       }
 
       "return an Array of IDs when fields=id" in new IndexScope {
@@ -135,7 +135,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         )
         override lazy val selection = InMemorySelection(Array(documents.map(_.id): _*))
         mockDocumentBackend.index(any, any, any) returns Future(
-          Page(documents, PageInfo(PageRequest(0, 100), documents.length))
+          Page(documents, PageInfo(PageRequest(0, 100, false), documents.length))
         )
       }
 
@@ -202,7 +202,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
         status(result) must beEqualTo(OK)
         contentAsString(result) must /("items") /#(0) /("text" -> "text")
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2, false), true)
       }
 
       "query for tokens when fields includes tokens" in new IndexFieldsScope {
@@ -211,7 +211,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
         status(result) must beEqualTo(OK)
         contentAsString(result) must /("items") /#(0) /("tokens" -> "text")
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2, false), true)
       }
 
       "query for metadata when fields includes metadata" in new IndexFieldsScope {
@@ -220,7 +220,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
         status(result) must beEqualTo(OK)
         contentAsString(result) must /("items") /#(0) /("metadata") /("foo" -> "bar")
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), true)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2, false), true)
       }
 
       "query for isFromOcr when fields includes isFromOcr" in new IndexFieldsScope {
@@ -229,7 +229,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
         status(result) must beEqualTo(OK)
         contentAsString(result) must /("items") /#(0) /("isFromOcr" -> false)
-        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2), false)
+        there was one(mockDocumentBackend).index(selection, PageRequest(1, 2, false), false)
       }
 
       "ensure returned metadata matches the MetadataSchema" in new IndexFieldsScope {

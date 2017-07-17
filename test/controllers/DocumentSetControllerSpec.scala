@@ -259,7 +259,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
 
       "show multiple pages" in new IndexScope {
         val ds = Seq.fill(IndexPageSize) { factory.documentSet() }
-        mockBackend.indexPageByOwner(any, any) returns Future.successful(Page(ds, PageInfo(PageRequest(0, IndexPageSize), IndexPageSize + 1)))
+        mockBackend.indexPageByOwner(any, any) returns Future.successful(Page(ds, PageInfo(PageRequest(0, IndexPageSize, false), IndexPageSize + 1)))
         override def fakeNViews = ds.map{ ds => ds.id -> 3 }.toMap
         h.contentAsString(result) must contain("/documentsets?page=2")
       }

@@ -35,8 +35,14 @@ case class InMemorySelection(
   override val warnings: List[SelectionWarning]
 ) extends Selection {
   override def getDocumentIds(page: PageRequest) = {
+    val iterator = if (page.reverse) {
+      documentIds.reverseIterator
+    } else {
+      documentIds.iterator
+    }
+
     Future.successful(Page(
-      documentIds.drop(page.offset).take(page.limit),
+      iterator.drop(page.offset).take(page.limit).toArray,
       PageInfo(page, documentIds.length)
     ))
   }

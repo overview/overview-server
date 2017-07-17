@@ -15,6 +15,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
     events:
       'click a[data-sort-by-metadata-field]': 'onClickSortByMetadataField'
+      'change input[name=reverse]': 'onChangeReverse'
 
     templates:
       main: _.template('''
@@ -37,6 +38,16 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
             <% }) %>
           </ul>
         </div>
+      ''')
+
+      sortReverse: _.template('''
+        <label class="sort-reverse">
+          <input type="checkbox" name="reverse" <%= reverse ? "checked" : "" %>>
+          <span class="toggle-value">
+            <span class="reverse-false"><i class="icon icon-sort-alpha-asc" aria-hidden="true"></i></span>
+            <span class="reverse-true"><i class="icon icon-sort-alpha-desc" aria-hidden="true"></i></span>
+          </span>
+        </label>
       ''')
 
     initialize: ->
@@ -67,12 +78,13 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         fields = @documentSet.get('metadataFields')
         sortByTitle = t('sort_by.title')
         sortByFieldHtml = if fields?.length
-          @templates.sortByField
+          @templates.sortByField(
             currentSortBy: @documentList?.params?.sortByMetadataField || sortByTitle
             sortByTitle: sortByTitle
             metadataFields: fields
+          ) + @templates.sortReverse(reverse: @documentList?.reverse || false)
         else
-          sortByFieldHtml = _.escape(sortByTitle)
+          _.escape(sortByTitle) + @templates.sortReverse(reverse: @documentList?.reverse || false)
         @$el.html(@templates.main(t: t, length: length, sortByFieldHtml: sortByFieldHtml))
       else
         @$el.html(@templates.loading(t: t, progress: @documentList?.get('progress')))
@@ -83,3 +95,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       oldParams = @documentList?.params
       return if !oldParams
       @state.setDocumentListParams(oldParams.sortedByMetadataField(ev.target.getAttribute('data-sort-by-metadata-field')))
+
+    onChangeReverse: ->
+      oldParams = @documentList?.params
+      return if !oldParams
+
+      reverse = @$('input[name=reverse]').prop('checked')
+      @state.setDocumentListParams(oldParams, reverse)

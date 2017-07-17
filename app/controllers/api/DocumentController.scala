@@ -45,7 +45,7 @@ class DocumentController @Inject() (
     val batchSize = DocumentController.StreamingPageLimit
 
     def fetchPage(pageStart: Int): Future[String] = {
-      documentBackend.index(selection, PageRequest(pageStart, batchSize), Field.needFullDocuments(fields))
+      documentBackend.index(selection, PageRequest(pageStart, batchSize, false), Field.needFullDocuments(fields))
         .map { (documents) =>
           val initialComma = if (pageStart != start && documents.items.nonEmpty) "," else ""
           val jsObjects = documents.items.map(d => Field.formatDocument(documentSet, d, fields))

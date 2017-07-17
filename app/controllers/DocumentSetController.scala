@@ -34,7 +34,7 @@ class DocumentSetController @Inject() (
   def index(page: Int) = AuthorizedAction(anyUser).async { implicit request =>
     val requestedPage: Int = RequestData(request).getInt("page").getOrElse(0)
     val realPage = if (requestedPage <= 0) 1 else requestedPage
-    val pageRequest = PageRequest((realPage - 1) * indexPageSize, indexPageSize)
+    val pageRequest = PageRequest((realPage - 1) * indexPageSize, indexPageSize, false)
 
     for {
       jobs: Seq[ImportJob] <- importJobBackend.indexByUser(request.user.email)

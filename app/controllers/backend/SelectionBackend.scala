@@ -136,10 +136,23 @@ class RedisSelectionBackend @Inject() (
         }
     }
 
+    private def pageRequestToDocumentIds(pageRequest: PageRequest, total: Int): Future[Array[Long]] = {
+      if (pageRequest.reverse) {
+        val (offset, limit) = if (pageRequest.offset + pageRequest.limit > total) {
+          (0, total - pageRequest.offset)
+        } else {
+          (total - pageRequest.offset - pageRequest.limit, pageRequest.limit)
+        }
+        getDocumentIdsArray(offset, limit).map(_.reverse)
+      } else {
+        getDocumentIdsArray(pageRequest.offset, pageRequest.limit)
+      }
+    }
+
     override def getDocumentIds(page: PageRequest): Future[Page[Long]] = {
       for {
         total <- getDocumentCount
-        longs <- getDocumentIdsArray(page.offset, page.limit)
+        longs <- pageRequestToDocumentIds(page, total.toInt)
       } yield Page(longs, PageInfo(page, total.toInt))
     }
 

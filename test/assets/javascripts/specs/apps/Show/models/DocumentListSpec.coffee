@@ -49,6 +49,15 @@ define [
       @list.params = { toJSON: -> tags: [ tag.id ], tagOperation: 'none' }
       expect(@list.getTagCount(tag)).to.deep.eq(n: 0, howSure: 'exact')
 
+    it 'should add &reverse=true to URL when given to constructor', ->
+      # Note: reverse isn't an attribute, since it's only set on the constructor.
+      @list = new DocumentList({}, documentSet: @documentSet, transactionQueue: @transactionQueue, params: @params, reverse: true)
+      @transactionQueue.streamJsonArray = sinon.stub().returns(Promise.resolve(null))
+      @list.fetchNextPage()
+
+      expect(@transactionQueue.streamJsonArray).to.have.been.calledWithMatch({
+        url: '/documentsets/1/documents?tags=20&refresh=true&limit=20&offset=0&reverse=true'
+      })
 
     describe 'on first .fetchNextPage()', ->
       beforeEach ->

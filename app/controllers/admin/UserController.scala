@@ -28,7 +28,7 @@ class UserController @Inject() (
   }
 
   def indexJson(page: Int) = AuthorizedAction(adminUser).async { implicit request =>
-    val pr = PageRequest((RequestData(request).getRequestedPageBase1 - 1) * PageSize, PageSize)
+    val pr = PageRequest((RequestData(request).getRequestedPageBase1 - 1) * PageSize, PageSize, false)
     for {
       page <- backend.indexPage(pr)
     } yield Ok(views.json.admin.User.index(page))

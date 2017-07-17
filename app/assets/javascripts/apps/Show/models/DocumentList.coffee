@@ -46,6 +46,10 @@ define [
   #
   # A DocumentList starts empty. It only ever grows.
   #
+  # You can pass a "reverse" parameter to add "&reverse=true" to requests. The
+  # server will return the last document first in that case. (Pass "reverse"
+  # alongside "params" and "documentSet" as a _parameter_, not an _attribute_.)
+  #
   # Events:
   #
   #   documentList.list-tagged(documentList, tag)
@@ -70,6 +74,7 @@ define [
       @documentSet = options.documentSet
       @transactionQueue = options.transactionQueue
       @params = options.params
+      @reverse = !!options.reverse
       @url = _.result(@documentSet, 'url').replace(/\.json$/, '') + '/documents'
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
       @documents = new Documents([])
@@ -327,6 +332,7 @@ define [
 
       query += "&limit=#{@nDocumentsPerPage}"
       query += "&offset=#{@get('nPagesFetched') * @nDocumentsPerPage}"
+      query += "&reverse=true" if @reverse
 
       @set(loading: true)
 
@@ -341,7 +347,6 @@ define [
         .catch (errorReport) =>
           @_receiveError(errorReport)
           Promise.reject(errorReport)
-
 
     _onDocumentTagged: (document, tag, options) ->
       return if options?.fromList

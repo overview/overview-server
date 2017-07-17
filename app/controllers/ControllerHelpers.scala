@@ -18,6 +18,13 @@ trait ControllerHelpers {
       .filter((i) => i >= 0)
   }
 
+  private def queryStringParamToBoolean(request: RequestHeader, param: String): Option[Boolean] = {
+    request.queryString
+      .getOrElse(param, Seq())
+      .headOption
+      .map(_ == "true")
+  }
+
   /** Returns a Map[String,String]: like requestData() but only the first
     * String.
     */
@@ -113,10 +120,12 @@ trait ControllerHelpers {
   protected def pageRequest(request: RequestHeader, maxLimit: Int): PageRequest = {
     val requestOffset = queryStringParamToUnsignedInt(request, "offset")
     val requestLimit = queryStringParamToUnsignedInt(request, "limit")
+    val requestReverse = queryStringParamToBoolean(request, "reverse")
 
     val offset = requestOffset.getOrElse(0)
     val limit = math.max(1, math.min(maxLimit, requestLimit.getOrElse(maxLimit)))
-    PageRequest(offset, limit)
+    val reverse = requestReverse.getOrElse(false)
+    PageRequest(offset, limit, reverse)
   }
 
   protected def jsonError(code: String, message: String): JsValue = views.json.api.error(code, message)

@@ -46,7 +46,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
       trait IndexJsonScope extends BaseScope {
         val page = 1
         def users : Seq[User]
-        mockBackend.indexPage(any[PageRequest]) answers((_) => Future(Page(users, PageInfo(PageRequest(0, 50), 100))))
+        mockBackend.indexPage(any[PageRequest]) answers((_) => Future(Page(users, PageInfo(PageRequest(0, 50, false), 100))))
         override def result = controller.indexJson(page)(fakeAuthorizedRequest)
       }
 
