@@ -12,7 +12,7 @@ import com.overviewdocs.models.DocumentHeader
 import com.overviewdocs.searchindex.{Highlight,Snippet}
 
 object show {
-  private def documentToJson(maybeSortKey: Option[String])(document: DocumentHeader, nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
+  private def documentToJson(maybeSortKey: Option[String])(document: DocumentHeader, thumbnailUrl: Option[String], nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
     Json.obj(
       "id" -> document.id,
       "documentSetId" -> document.documentSetId.toString,
@@ -27,7 +27,7 @@ object show {
       "nodeids" -> nodeIds,
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),
-      "thumbnailUrl" -> document.thumbnailLocation.map(_ => s"/documents/${document.id}.png")
+      "thumbnailUrl" -> thumbnailUrl
     )
   }
 
@@ -45,7 +45,7 @@ object show {
     HtmlFormat.fill(htmls.to[immutable.Seq]).body
   }
 
-  def apply(selection: Selection, maybeSortKey: Option[String], documents: Page[(DocumentHeader,Seq[Long],Seq[Long],Seq[Snippet])]) = {
+  def apply(selection: Selection, maybeSortKey: Option[String], documents: Page[(DocumentHeader,Option[String],Seq[Long],Seq[Long],Seq[Snippet])]) = {
     Json.obj(
       "selection_id" -> selection.id.toString,
       "warnings" -> selectionWarnings(selection.warnings),

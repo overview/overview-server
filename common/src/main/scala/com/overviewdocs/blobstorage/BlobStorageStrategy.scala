@@ -21,6 +21,23 @@ trait BlobStorageStrategy {
     */
   def get(location: String): Source[ByteString, akka.NotUsed]
 
+  /** Gets a public URL the end-user can use to access the blob for a while.
+    *
+    * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
+    * <tt>"pglo:123456"</tt>.
+    *
+    * This method checks <tt>location</tt> for syntax synchronously. The URL
+    * it returns may fail if there is a network error or permissions problem.
+    *
+    * Beware super-long URLs. One potential implementation is to stream the
+    * entire blob into a data: URL. For large blobs, that can consume lots of
+    * memory.
+    *
+    * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
+    * @throws InvalidArgumentException if <tt>location</tt> is invalid
+    */
+  def getUrl(location: String, mimeType: String): Future[String]
+
   /** Deletes a blob.
     *
     * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or

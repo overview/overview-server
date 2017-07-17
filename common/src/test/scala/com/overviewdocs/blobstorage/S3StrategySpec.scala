@@ -2,10 +2,11 @@ package com.overviewdocs.blobstorage
 
 import com.amazonaws.AmazonClientException
 import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
+import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,GeneratePresignedUrlRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.services.s3.transfer.{Download,TransferManager,Upload}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
 import java.io.{File,InputStream}
+import java.net.URL
 import java.nio.file.Files
 import org.specs2.matcher.{Expectable,Matcher}
 
@@ -83,6 +84,25 @@ class S3StrategySpec extends StrategySpecification {
       TestStrategy.get("s3::bar") must throwA[IllegalArgumentException]
       TestStrategy.get("s3:foo:") must throwA[IllegalArgumentException]
       TestStrategy.get("s3:foo:bar:baz") must throwA[IllegalArgumentException]
+    }
+  }
+
+  "#getUrl" should {
+    "fail when the location is invalid" in new S3BaseScope {
+      TestStrategy.getUrl("foo:bar", "image/png") must throwA[IllegalArgumentException]
+      TestStrategy.getUrl("s3::bar", "image/png") must throwA[IllegalArgumentException]
+      TestStrategy.getUrl("s3:foo:", "image/png") must throwA[IllegalArgumentException]
+      TestStrategy.getUrl("s3:foo:bar:baz", "image/png") must throwA[IllegalArgumentException]
+    }
+
+    "call generatePresignedUrl" in new S3BaseScope { 
+      mockS3.generatePresignedUrl(any) returns new URL("https://yay.com")
+      await(TestStrategy.getUrl("s3:foo:bar", "image/png")) must beEqualTo("https://yay.com")
+      there was one(mockS3).generatePresignedUrl(argThat(beLike[GeneratePresignedUrlRequest] { case actual: GeneratePresignedUrlRequest =>
+        actual.getBucketName must beEqualTo("foo")
+        actual.getKey must beEqualTo("bar")
+        actual.getRequestParameters.get("response-content-type") must beEqualTo("image/png")
+      }))
     }
   }
 

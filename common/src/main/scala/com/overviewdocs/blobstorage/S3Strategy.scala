@@ -4,7 +4,7 @@ import akka.stream.scaladsl.{Source,StreamConverters}
 import akka.util.ByteString
 import com.amazonaws.services.s3.{AmazonS3,AmazonS3Client}
 import com.amazonaws.services.s3.transfer.TransferManager
-import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,MultiObjectDeleteException,ObjectMetadata}
+import com.amazonaws.services.s3.model.{AmazonS3Exception,DeleteObjectsRequest,GeneratePresignedUrlRequest,MultiObjectDeleteException,ObjectMetadata}
 import com.amazonaws.event.{ProgressEvent,ProgressEventType,ProgressListener}
 import java.io.IOException
 import java.nio.file.{Files,Path}
@@ -50,6 +50,16 @@ trait S3Strategy extends BlobStorageStrategy {
     })
     Source.fromFutureSource(futureSource)
       .mapMaterializedValue(_ => akka.NotUsed)
+  }
+
+  override def getUrl(locationString: String, mimeType: String): Future[String] = {
+    val location = stringToLocation(locationString)
+    val request = new GeneratePresignedUrlRequest(location.bucket, location.key)
+    request.addRequestParameter("response-content-type", mimeType)
+    import scala.concurrent.ExecutionContext.Implicits.global
+    Future(blocking {
+      s3.generatePresignedUrl(request).toString
+    })
   }
 
   override def delete(location: String): Future[Unit] = deleteMany(Seq(location))

@@ -39,6 +39,21 @@ class BlobStorageSpec extends Specification with Mockito {
       }
     }
 
+    "#getUrl" should {
+      "resolve a BlobStorageStrategy from the location" in new BaseScope {
+        mockStrategyFactory.forLocation(anyString) returns mock[BlobStorageStrategy]
+        TestBlobStorage.getUrl("s3:foo:bar", "image/png")
+        there was one(mockStrategyFactory).forLocation("s3:foo:bar")
+      }
+
+      "call BlobStorageStrategy#getUrl" in new BaseScope {
+        val mockStrategy = mock[BlobStorageStrategy]
+        mockStrategyFactory.forLocation(anyString) returns mockStrategy
+        mockStrategy.getUrl("s3:foo:bar", "image/png") returns Future.successful("data:foo")
+        await(TestBlobStorage.getUrl("s3:foo:bar", "image/png")) must beEqualTo("data:foo")
+      }
+    }
+
     "#withBlobInTempFile" should {
       trait WithBlobInTempFileScope extends BaseScope with After {
         implicit val system = ActorSystem("WithBlobInTempFileScope")

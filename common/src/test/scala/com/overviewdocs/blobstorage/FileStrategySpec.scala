@@ -92,6 +92,35 @@ class FileStrategySpec extends StrategySpecification {
 //    }
   }
 
+  "#getUrl" should {
+    "throw an exception when delete location does not look like file:BUCKET:KEY" in new ExistingFileScope {
+      (TestFileStrategy.getUrl("fil:BUCKET:KEY", "image/png") must throwA[IllegalArgumentException]) and
+        (TestFileStrategy.getUrl("file::key", "image/png") must throwA[IllegalArgumentException]) and
+        (TestFileStrategy.getUrl("file:bucket:", "image/png") must throwA[IllegalArgumentException])
+    }
+
+    "throw a delayed exception when the key does not exist in the bucket which does" in new ExistingFileScope {
+      val future = TestFileStrategy.getUrl(s"file:$bucket:x$key", "image/png")
+      await(future) must throwA[IOException]
+    }
+
+    "throw a delayed exception when the bucket does not exist" in new ExistingFileScope {
+      val future = TestFileStrategy.getUrl(s"file:x$bucket:$key", "image/png")
+      await(future) must throwA[IOException]
+    }
+
+    "throw a delayed exception when the base directory does not exist" in new ExistingFileScope {
+      rimraf(tmpDir)
+      val future = TestFileStrategy.getUrl(s"file:$bucket:$key", "image/png")
+      await(future) must throwA[IOException]
+    }
+
+    "create a data: URL" in new ExistingFileScope {
+      val future = TestFileStrategy.getUrl(s"file:$bucket:$key", "image/png")
+      await(future) must beEqualTo("data:image/png;base64,ZGF0YTE=")
+    }
+  }
+
   "#delete" should {
     "throw an exception when delete location does not look like file:BUCKET:KEY" in new ExistingFileScope {
       invalidLocationThrowsException(TestFileStrategy.delete)

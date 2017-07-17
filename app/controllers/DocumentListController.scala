@@ -8,6 +8,8 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue,Json}
 import scala.concurrent.Future
 
+import com.overviewdocs.blobstorage.BlobStorage
+import com.overviewdocs.models.DocumentHeader
 import com.overviewdocs.searchindex.Utf16Snippet
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
@@ -20,33 +22,54 @@ class DocumentListController @Inject() (
   documentNodeBackend: DocumentNodeBackend,
   documentTagBackend: DocumentTagBackend,
   highlightBackend: HighlightBackend,
+  blobStorage: BlobStorage,
   protected val selectionBackend: SelectionBackend,
   messagesApi: MessagesApi
 ) extends Controller(messagesApi) with SelectionHelpers {
   private val MaxPageSize = 100
 
   private def buildResult(documentSetId: Long, selection: Selection, selectionRequest: SelectionRequest, pageRequest: PageRequest): Future[JsValue] = {
-    for {
-      page <- documentBackend.index(selection, pageRequest, true)
+    documentBackend.index(selection, pageRequest, true).flatMap { page =>
+      // Collect in parallel: snippets, thumbnails, node+tag IDs.
 
-      snippets <- (page.items.nonEmpty, selectionRequest.q) match {
+      val snippetsFuture = (page.items.nonEmpty, selectionRequest.q) match {
         case (true, Some(q)) => highlightBackend.highlights(documentSetId, page.items.map(_.id), q)
         case _ => Future.successful(Map.empty[Long, Seq[Utf16Snippet]])
       }
 
-      // In serial so as not to bombard Postgres
-      nodeIds <- documentNodeBackend.indexMany(page.items.map(_.id))
-      tagIds <- documentTagBackend.indexMany(page.items.map(_.id))
-    } yield {
-      val pageOfItems = page.map { document => (
-        document,
-        nodeIds.getOrElse(document.id, Seq()),
-        tagIds.getOrElse(document.id, Seq()),
-        snippets.getOrElse(document.id, Seq())
-      )}
+      val idsFutures = for {
+        // In serial so as not to bombard Postgres
+        nodeIds <- documentNodeBackend.indexMany(page.items.map(_.id))
+        tagIds <- documentTagBackend.indexMany(page.items.map(_.id))
+      } yield (nodeIds, tagIds)
 
-      views.json.DocumentList.show(selection, selectionRequest.sortByMetadataField, pageOfItems)
+      val thumbnailUrlsFuture = lookupThumbnailUrls(page.items)
+
+      for {
+        snippets <- snippetsFuture
+        (nodeIds, tagIds) <- idsFutures
+        thumbnailUrls <- thumbnailUrlsFuture
+      } yield {
+        val pageOfItems = page.map { document => (
+          document,
+          thumbnailUrls.get(document.id),
+          nodeIds.getOrElse(document.id, Seq()),
+          tagIds.getOrElse(document.id, Seq()),
+          snippets.getOrElse(document.id, Seq())
+        )}
+
+        views.json.DocumentList.show(selection, selectionRequest.sortByMetadataField, pageOfItems)
+      }
     }
+  }
+
+  private def lookupThumbnailUrls(documents: Seq[DocumentHeader]): Future[Map[Long,String]] = {
+    val futures: Seq[Future[(Long,String)]] = documents
+      .flatMap(d => d.thumbnailLocation.map { loc => (d.id, loc) }) // (id, location) pairs
+      .map(Function.tupled { (id: Long, loc: String) => blobStorage.getUrl(loc, "image/png").map { url => (id, url) } }) // (id, url) pairs
+      .toSeq
+
+    Future.sequence(futures).map(_.toMap)
   }
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>

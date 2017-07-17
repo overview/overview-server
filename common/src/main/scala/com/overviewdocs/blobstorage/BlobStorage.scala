@@ -43,6 +43,26 @@ trait BlobStorage {
     strategyFactory.forLocation(location).get(location)
   }
 
+  /** Gets a public URL the end-user can use to access the blob for a while.
+    *
+    * The <tt>location</tt> should look like <tt>"s3:bucket:key"</tt> or
+    * <tt>"pglo:123456"</tt>.
+    *
+    * This method checks <tt>location</tt> for syntax synchronously. The URL
+    * it returns may fail if there is a network error or permissions problem.
+    *
+    * Beware super-long URLs. One potential implementation is to stream the
+    * entire blob into a data: URL. For large blobs, that can consume lots of
+    * memory.
+    *
+    * @param location Something like <tt>"s3:bucket:key"</tt> or <tt>"pglo:123"</tt>
+    * @param mimeType Something like <tt>"image/png"</tt>, for a data: URL.
+    * @throws InvalidArgumentException if <tt>location</tt> is invalid
+    */
+  def getUrl(location: String, mimeType: String): Future[String] = {
+    strategyFactory.forLocation(location).getUrl(location, mimeType)
+  }
+
   /** Streams the blob into a file, runs the callback, and deletes the file.
     *
     * The File will be deleted after the callback ends, whether it succeeds or

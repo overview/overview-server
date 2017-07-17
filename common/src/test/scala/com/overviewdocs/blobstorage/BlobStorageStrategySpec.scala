@@ -6,6 +6,7 @@ import scala.concurrent.Future
 class BlobStorageStrategySpec extends StrategySpecification {
   trait BlankStrategy extends BlobStorageStrategy {
     override def get(location: String) = ???
+    override def getUrl(location: String, mimeType: String) = ???
     override def delete(location: String): Future[Unit] = ???
     override def create(locationPrefix: String, dataPath: Path): Future[String] = ???
   }
