@@ -1,18 +1,28 @@
 package com.overviewdocs.sort
 
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink,Source}
+import akka.stream.scaladsl.{Flow,Sink,Source}
 import java.nio.file.{Files,Path}
 import org.specs2.mutable.Specification
 import org.specs2.specification.{After,Scope}
 import scala.collection.{immutable,mutable}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext,Future}
 
 import com.overviewdocs.util.AwaitMethod
 import com.overviewdocs.test.ActorSystemContext
 
 class StepsSpec extends Specification with AwaitMethod {
   sequential
+
+  private def consumeRecordSource(recordSource: RecordSource)(implicit executionContext: ExecutionContext, mat: ActorMaterializer): Unit = {
+    // We need to wait for the RecordSource's materialized value (which tells us
+    // cleanup has happened)_and_ the materialized value of Sink.ignore (which
+    // tells us all elements have been read).
+    val runnableGraph = recordSource.records.toMat(Sink.ignore) { case (cleanupFuture, sinkFuture) =>
+      sinkFuture.flatMap(_ => cleanupFuture)
+    }
+    await(runnableGraph.run)
+  }
 
   trait BaseScope extends Scope with ActorSystemContext with After {
     implicit val ec = system.dispatcher
@@ -131,7 +141,7 @@ class StepsSpec extends Specification with AwaitMethod {
         ))
         val source = Steps.mergeAllPagesAtOnce(immutable.Seq(page1, page2, page3), _ => (), 1)
 
-        await(Sink.ignore.runWith(source.records))
+        consumeRecordSource(source)
         Files.exists(page1.path) must beEqualTo(false)
         Files.exists(page2.path) must beEqualTo(false)
         Files.exists(page3.path) must beEqualTo(false)
@@ -155,8 +165,8 @@ class StepsSpec extends Specification with AwaitMethod {
           buildPage(records2)
         ), onProgress, 2)
 
-        await(Sink.ignore.runWith(source.records))
-        reports.toSeq must beEqualTo(Seq(2, 4, 5))
+        consumeRecordSource(source)
+        reports.toList must beEqualTo(List(2, 4, 5))
       }
     }
 
@@ -258,9 +268,9 @@ class StepsSpec extends Specification with AwaitMethod {
         def onProgress(nMerged: Int, nMerges: Int): Unit = { progress.append((nMerged, nMerges)) }
 
         val recordSource = Steps.mergePages(pages, tempDir, 2, onProgress, 2)
-        await(Sink.ignore.runWith(recordSource.records))
+        consumeRecordSource(recordSource)
 
-        progress.toSeq must beEqualTo(Seq(
+        progress.toList must beEqualTo(List(
           (2,28), (4,28), (6,28), (8,28), (10,28), (12,28), (14,28), (16,28), (20,28), (22,28), (24,28), (26,28), (28,28)
         ))
       }
