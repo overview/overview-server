@@ -1,7 +1,8 @@
+@this()
 @(
   documentSets: Iterable[(com.overviewdocs.models.DocumentSet,String)],
   messageScope: String
-)(implicit messages: Messages, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @defining(scopedMessages(messageScope)) { m =>
   <p class="preamble">@m("preamble")</p>

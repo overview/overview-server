@@ -8,7 +8,7 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
-import controllers.auth.AuthorizedRequest
+import controllers.auth.AuthConfig
 import controllers.backend.{ArchiveEntryBackend,SelectionBackend}
 import models.archive.{ArchiveFactory,ZipArchive}
 import models.{ArchiveEntry,InMemorySelection}
@@ -23,12 +23,15 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
     // recently cached a Selection. That's not necessarily true, but it should
     // hold true most of the time.
     mockSelectionBackend.findOrCreate(any, any, any, any) returns Future { selection }
+    val authConfig = smartMock[AuthConfig]
+    authConfig.isAdminOnlyExport returns false
 
     val controller = new DocumentSetArchiveController(
       mockArchiveEntryBackend,
       mockArchiveFactory,
       mockSelectionBackend,
-      testMessagesApi,
+      fakeControllerComponents,
+      authConfig,
       app.materializer
     )
   }
@@ -63,7 +66,7 @@ class DocumentSetArchiveControllerSpec extends ControllerSpecification with Mock
       override def selection = InMemorySelection(Seq.tabulate(65536)(_.toLong).toArray)
       val result = controller.archive(1L, "filename.zip")(fakeAuthorizedRequest)
       h.status(result) must beEqualTo(h.SEE_OTHER)
-      h.flash(result).data must contain("warning" -> controller.messagesApi("controllers.DocumentSetArchiveController.tooManyEntries"))
+      h.flash(result).data must contain("warning" -> "controllers.DocumentSetArchiveController.tooManyEntries")
       there was no(mockArchiveFactory).createZip(any, any)
     }
   }

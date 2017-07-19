@@ -4,8 +4,8 @@ import com.google.inject.ImplementedBy
 import java.util.Date
 import javax.inject.Inject
 import play.api.i18n.{MessagesApi,Messages}
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Action,AnyContent,Request}
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.mvc.{AnyContent,MessagesActionBuilder,PreferredMessagesProvider,RequestHeader}
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
@@ -31,37 +31,40 @@ class PasswordController @Inject() (
   sessionBackend: SessionBackend,
   storage: PasswordController.Storage,
   mail: PasswordController.Mail,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  messagesAction: MessagesActionBuilder,
+  val controllerComponents: ControllerComponents,
+  newHtml: views.html.Password._new,
+  editHtml: views.html.Password.edit,
+  errorHtml: views.html.Password.editError
+) extends BaseController {
   private lazy val newForm = controllers.forms.NewPasswordForm()
   private lazy val editForm = controllers.forms.EditPasswordForm()
-  private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
 
-  def _new() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def _new() = optionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
-      case None => Ok(views.html.Password._new(newForm))
+      case None => Ok(newHtml(newForm))
       case Some(_) => doRedirect
     }
   }
 
-  def edit(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def edit(token: String) = optionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
       case Some(_) => doRedirect
       case None => {
         storage.findUserByResetToken(token) match {
           case None => showInvalidToken
-          case Some(u) => Ok(views.html.Password.edit(u, editForm))
+          case Some(u) => Ok(editHtml(u, editForm))
         }
       }
     }
   }
 
   private def doRedirect = Redirect(routes.WelcomeController.show)
-  private def showInvalidToken(implicit request: Request[AnyContent]) = BadRequest(views.html.Password.editError())
+  private def showInvalidToken(implicit messagesProvider: PreferredMessagesProvider, request: RequestHeader) = BadRequest(errorHtml())
 
-  def create() = Action { implicit request =>
+  def create() = messagesAction { implicit request =>
     newForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(views.html.Password._new(formWithErrors)), // no email address given
+      formWithErrors => BadRequest(newHtml(formWithErrors)), // no email address given
       email => {
         // We got a valid email address, but that doesn't mean this is a real
         // user. We need to send an email to the address either way.
@@ -80,25 +83,25 @@ class PasswordController @Inject() (
 
         // Fake success either way
         doRedirect.flashing(
-          "success" -> m("create.success", email),
+          "success" -> request.messages("controllers.PasswordController.create.success", email),
           "event" -> "password-create"
         )
       }
     )
   }
 
-  def update(token: String) = Action.async { implicit request =>
+  def update(token: String) = messagesAction.async { implicit request =>
     storage.findUserByResetToken(token) match {
       case None => Future.successful(showInvalidToken)
       case Some(user) => {
         editForm.bindFromRequest.fold(
-          formWithErrors => Future.successful(BadRequest(views.html.Password.edit(user, formWithErrors))),
+          formWithErrors => Future.successful(BadRequest(editHtml(user, formWithErrors))),
           newPassword => {
             for {
               _ <- storage.resetPassword(user, newPassword)
               session <- sessionBackend.create(user.id, request.remoteAddress)
             } yield AuthResults.loginSucceeded(request, session).flashing(
-              "success" -> m("update.success"),
+              "success" -> request.messages("controllers.PasswordController.update.success"),
               "event" -> "password-update"
             )
           }

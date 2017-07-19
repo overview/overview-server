@@ -22,7 +22,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
     val controller = new TagDocumentController(
       mockTagDocumentBackend,
       mockSelectionBackend,
-      testMessagesApi
+      fakeControllerComponents
     )
   }
 

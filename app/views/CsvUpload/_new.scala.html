@@ -1,3 +1,6 @@
+@this(
+  mainWithSidebar: views.html.layouts.mainWithSidebar
+)
 @(
   user: User,
   nOwnedDocumentSets: Long
@@ -21,7 +24,7 @@
 )}
 
 @defining(scopedMessages("views.CsvUpload.new")) { m =>
-  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="csv-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+  @mainWithSidebar(user=user, title=m("title"), bodyClass="csv-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"), m("help2"))
   } {

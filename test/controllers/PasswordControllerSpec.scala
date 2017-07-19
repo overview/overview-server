@@ -29,7 +29,11 @@ class PasswordControllerSpec extends ControllerSpecification {
       mockSessionBackend,
       mockStorage,
       mockMail,
-      testMessagesApi
+      fakeMessagesActionBuilder,
+      fakeControllerComponents,
+      mockView[views.html.Password._new],
+      mockView[views.html.Password.edit],
+      mockView[views.html.Password.editError]
     )
   }
 
@@ -62,11 +66,6 @@ class PasswordControllerSpec extends ControllerSpecification {
         h.status(result) must beEqualTo(h.SEE_OTHER)
       }
 
-      "show the edit page" in new EditScope {
-        h.status(result) must beEqualTo(h.OK)
-        h.contentAsString(result) must contain("<form")
-      }
-
       "show an 'invalid token page'" in new EditScope {
         override val token = "bad-token"
         h.status(result) must beEqualTo(h.BAD_REQUEST)
@@ -83,7 +82,6 @@ class PasswordControllerSpec extends ControllerSpecification {
       "return BadRequest and show a form when the user enters an invalid email address" in new CreateScope {
         override val params = Seq("email" -> ".")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
-        h.contentAsString(result) must contain("<form")
       }
 
       "when the user is not found" should {
@@ -152,14 +150,7 @@ class PasswordControllerSpec extends ControllerSpecification {
       "show an error and form when given a bad password" in new UpdateScope {
         override val params = Seq("password" -> "")
         h.status(result) must beEqualTo(h.BAD_REQUEST)
-        h.contentAsString(result) must contain("<form")
         h.session(result).get("AUTH_USER_ID") must beNone
-      }
-
-      "show the actual error message when given a bad password" in new UpdateScope {
-        // Issue #254
-        override val params = Seq("password" -> "a")
-        h.contentAsString(result) must contain("""<fieldset class="control-group error""")
       }
 
       "save the user with a new password" in new UpdateScope {

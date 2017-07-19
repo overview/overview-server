@@ -5,7 +5,7 @@ import play.api.Configuration
 import play.api.libs.mailer.{Email,MailerClient,MockMailer}
 
 class Mailer @Inject() (configuration: Configuration, mailerClient: MailerClient) {
-  private lazy val fromEmail: String = configuration.getString("mail.from").get
+  private lazy val fromEmail: String = configuration.get[String]("mail.from")
 
   /** We use our own mocking config: it's easier for users.
     *
@@ -13,7 +13,7 @@ class Mailer @Inject() (configuration: Configuration, mailerClient: MailerClient
     *
     * Rather than rewrite play-mailer, we coded this runtime check.
     */
-  private lazy val isMock: Boolean = configuration.getString("play.mailer.host").getOrElse("").isEmpty
+  private lazy val isMock: Boolean = configuration.get[String]("play.mailer.host").isEmpty
 
   def send(mail: Mail) = {
     val email = mail.toEmail(fromEmail)

@@ -12,7 +12,7 @@ import com.overviewdocs.test.factories.PodoFactory
 class TagControllerSpec extends ControllerSpecification with JsonMatchers {
   class BaseScope extends Scope {
     val mockTagBackend = mock[TagBackend]
-    val controller = new TagController(mockTagBackend, testMessagesApi)
+    val controller = new TagController(mockTagBackend, fakeControllerComponents)
     val factory = PodoFactory
   }
 

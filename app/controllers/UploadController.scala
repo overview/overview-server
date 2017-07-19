@@ -7,7 +7,7 @@ import java.sql.Connection
 import java.util.UUID
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{ Action, BodyParser, Request, RequestHeader, Result }
 import scala.concurrent.Future
@@ -17,7 +17,6 @@ import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.models.{CsvImport,DocumentSet,Upload,UploadedFile}
 import com.overviewdocs.models.tables.{CsvImports,Uploads,UploadedFiles}
 import controllers.auth.Authorities.anyUser
-import controllers.auth.{AuthorizedAction,AuthorizedBodyParser,Authority,SessionFactory}
 import controllers.backend.DocumentSetBackend
 import controllers.forms.UploadControllerForm
 import controllers.util.{FileUploadIteratee,JobQueueSender}
@@ -31,8 +30,8 @@ import models.User
 class UploadController @Inject() (
   documentSetBackend: DocumentSetBackend,
   components: UploadController.Components,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: ControllerComponents
+) extends BaseController {
   /** Take bytes from the user and feed them into an Upload. */
   def create(guid: UUID) = Action[OverviewUpload](authorizedFileUploadBodyParser(guid)) { request =>
     if (isUploadComplete(request.body)) {
@@ -43,7 +42,7 @@ class UploadController @Inject() (
   }
 
   /** Turn an Upload into a DocumentSet and CsvImport. */
-  def startClustering(guid: UUID) = AuthorizedAction(anyUser).async { request =>
+  def startClustering(guid: UUID) = authorizedAction(anyUser).async { request =>
     UploadControllerForm().bindFromRequest()(request).fold(
       form => Future.successful(BadRequest),
       { data =>
@@ -69,7 +68,7 @@ class UploadController @Inject() (
 
   private def isUploadComplete(upload: OverviewUpload) = upload.uploadedFile.size == upload.size
 
-  def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
+  def show(guid: UUID) = authorizedAction(anyUser) { implicit request =>
     def contentRange(upload: OverviewUpload): String = "bytes 0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
 
@@ -89,7 +88,7 @@ class UploadController @Inject() (
   }
 
   /** Gets the guid and user info to the body parser handling the file upload */
-  def authorizedFileUploadBodyParser(guid: UUID) = AuthorizedBodyParser(anyUser) { user =>
+  def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user =>
     fileUploadBodyParser(user, guid)
   }
 

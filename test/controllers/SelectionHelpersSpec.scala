@@ -14,6 +14,7 @@ import com.overviewdocs.query.{Field,PhraseQuery}
 import com.overviewdocs.util.AwaitMethod
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,SelectionRequest}
+import test.helpers.MockMessages
 
 class SelectionHelpersSpec extends ControllerSpecification with Mockito with AwaitMethod {
   "selectionRequest" should {
@@ -21,10 +22,12 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       trait F {
         def f(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest]
       }
-      val controller = new Controller(testMessagesApi) with SelectionHelpers with F {
-        override val selectionBackend = smartMock[SelectionBackend]
-        override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)
+
+      class AController(val selectionBackend: SelectionBackend, val controllerComponents: ControllerComponents) extends BaseController with SelectionHelpers with F {
+        override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)(MockMessages.default)
       }
+      val controller = new AController(smartMock[SelectionBackend], fakeControllerComponents) 
+
       def f(documentSetId: Long, path: String) = {
         val request = FakeRequest("GET", path)
         controller.f(documentSetId, request)
@@ -157,11 +160,11 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       val selectionId = "9cf4d95a-39bd-4463-85a3-cac272a20bc2"
       val mockSelectionBackend = smartMock[SelectionBackend]
 
-      class AController(i18nComponents: MessagesApi) extends Controller(i18nComponents) with SelectionHelpers {
+      class AController(val controllerComponents: ControllerComponents) extends BaseController with SelectionHelpers {
         override val selectionBackend = mockSelectionBackend
-        def go(request: Request[_]) = requestToSelection(documentSetId, userEmail, request)
+        def go(request: Request[_]) = requestToSelection(documentSetId, userEmail, request)(test.helpers.MockMessages.default)
       }
-      val controller = new AController(testMessagesApi)
+      val controller = new AController(fakeControllerComponents)
     }
 
     "use SelectionBackend#find() if selectionId is set" in new RequestToSelectionScope {

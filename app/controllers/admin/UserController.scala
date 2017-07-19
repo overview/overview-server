@@ -2,14 +2,13 @@ package controllers.admin
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.backend.UserBackend
 import controllers.forms.admin.NewUserForm
-import controllers.Controller
 import models.User
 import models.tables.Users
 import models.pagination.PageRequest
@@ -17,24 +16,24 @@ import com.overviewdocs.database.exceptions.Conflict
 
 class UserController @Inject() (
   backend: UserBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: controllers.ControllerComponents,
+  userIndexHtml: views.html.admin.User.index
+) extends controllers.BaseController {
 
   private[admin] val PageSize = 50
-  private val m = views.Magic.scopedMessages("controllers.admin.UserController")
 
-  def index() = AuthorizedAction(adminUser) { implicit request =>
-    Ok(views.html.admin.User.index(request.user))
+  def index() = authorizedAction(adminUser) { implicit request =>
+    Ok(userIndexHtml(request.user))
   }
 
-  def indexJson(page: Int) = AuthorizedAction(adminUser).async { implicit request =>
+  def indexJson(page: Int) = authorizedAction(adminUser).async { implicit request =>
     val pr = PageRequest((RequestData(request).getRequestedPageBase1 - 1) * PageSize, PageSize, false)
     for {
       page <- backend.indexPage(pr)
     } yield Ok(views.json.admin.User.index(page))
   }
 
-  def create() = AuthorizedAction(adminUser).async { implicit request =>
+  def create() = authorizedAction(adminUser).async { implicit request =>
     NewUserForm().bindFromRequest().fold(
       formWithErrors => Future.successful(BadRequest),
       attributes => {
@@ -45,14 +44,14 @@ class UserController @Inject() (
     )
   }
 
-  def show(email: String) = AuthorizedAction(adminUser).async { implicit request =>
+  def show(email: String) = authorizedAction(adminUser).async { implicit request =>
     backend.showByEmail(email).map(_ match {
       case None => NotFound
       case Some(otherUser) => Ok(views.json.admin.User.show(otherUser))
     })
   }
 
-  def update(email: String) = AuthorizedAction(adminUser).async { implicit request =>
+  def update(email: String) = authorizedAction(adminUser).async { implicit request =>
     if (email == request.user.email) {
       Future.successful(BadRequest)
     } else {
@@ -84,7 +83,7 @@ class UserController @Inject() (
     }
   }
 
-  def delete(email: String) = AuthorizedAction(adminUser).async { implicit request =>
+  def delete(email: String) = authorizedAction(adminUser).async { implicit request =>
     if (email == request.user.email) {
       Future.successful(BadRequest("You cannot delete yourself"))
     } else {

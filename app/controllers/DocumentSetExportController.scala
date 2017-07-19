@@ -5,7 +5,7 @@ import akka.util.ByteString
 import javax.inject.Inject
 import play.api.http.{HttpChunk,HttpEntity}
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.iteratee.{Enumeratee,Enumerator,Iteratee}
 import play.api.libs.json.{Json,JsObject}
 import play.api.mvc.Result
@@ -30,8 +30,8 @@ class DocumentSetExportController @Inject() (
   documentTagBackend: DocumentTagBackend,
   tagBackend: TagBackend,
   protected val selectionBackend: SelectionBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) with SelectionHelpers {
+  val controllerComponents: ControllerComponents
+) extends BaseController with SelectionHelpers {
   private val BatchSize = 100
 
   private def serveExport(
@@ -43,7 +43,7 @@ class DocumentSetExportController @Inject() (
   : Future[Result] = {
     val futureStuff = for {
       maybeDocumentSet <- documentSetBackend.show(documentSetId)
-      selectionOrResponse <- requestToSelection(documentSetId, request)
+      selectionOrResponse <- requestToSelection(documentSetId, request)(request.messages)
     } yield (maybeDocumentSet, selectionOrResponse)
 
     futureStuff.flatMap(_ match {
@@ -74,7 +74,7 @@ class DocumentSetExportController @Inject() (
     format: Format,
     filename: String,
     documentSetId: Long
-  ) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  ) = authorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     serveExport(format, filename, documentSetId, request, DocumentsWithStringTags.apply)
   }
 
@@ -82,7 +82,7 @@ class DocumentSetExportController @Inject() (
     format: Format,
     filename: String,
     documentSetId: Long
-  ) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  ) = authorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     serveExport(format, filename, documentSetId, request, DocumentsWithColumnTags.apply)
   }
 

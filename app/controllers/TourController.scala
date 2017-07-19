@@ -10,9 +10,9 @@ import models.tables.Users
 
 class TourController @Inject() (
   storage: TourController.Storage,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
-  def delete() = AuthorizedAction(Authorities.anyUser) { implicit request =>
+  val controllerComponents: ControllerComponents
+) extends BaseController {
+  def delete() = authorizedAction(Authorities.anyUser) { implicit request =>
     storage.disableTreeTooltipsForEmail(request.user.email)
     NoContent
   }

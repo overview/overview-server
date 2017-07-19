@@ -18,6 +18,7 @@ import controllers.auth.{AuthorizedRequest}
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
 import controllers.util.{JobQueueSender,MassUploadControllerMethods}
 import models.{ Session, User }
+import test.helpers.MockMessagesApi
 
 class MassUploadControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -33,7 +34,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockJobQueueSender,
       mockUploadBackend,
       mockUploadSinkFactory,
-      testMessagesApi,
+      fakeControllerComponents,
       app.materializer
     )
 
@@ -45,7 +46,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       val user = User(id=123L, email="user@example.org")
       val session = Session(123L, "127.0.0.1")
       val baseRequest = FakeRequest().withHeaders("Content-Length" -> "20")
-      lazy val request = new AuthorizedRequest(baseRequest, session, user)
+      lazy val request = new AuthorizedRequest(baseRequest, new MockMessagesApi, session, user)
       val source = Source.empty[ByteString]
       lazy val action: EssentialAction = controller.create(UUID.randomUUID)
       lazy val result = action(request).run(source)
@@ -138,7 +139,12 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
       mockDocumentSetBackend.create(any, any) returns Future.successful(documentSet)
 
-      lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
+      lazy val request = new AuthorizedRequest(
+        FakeRequest().withFormUrlEncodedBody(formData: _*),
+        new MockMessagesApi,
+        Session(user.id, "127.0.0.1"),
+        user
+      )
       lazy val result = controller.startClustering()(request)
     }
 
@@ -206,7 +212,12 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.find(any, any) returns Future.successful(Some(fileGroup))
       mockFileGroupBackend.addToDocumentSet(any, any, any, any, any, any) returns Future.successful(Some(modifiedFileGroup))
 
-      lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user)
+      lazy val request = new AuthorizedRequest(
+        FakeRequest().withFormUrlEncodedBody(formData: _*),
+        new MockMessagesApi,
+        Session(user.id, "127.0.0.1"),
+        user
+      )
       lazy val result = controller.startClusteringExistingDocumentSet(documentSet.id)(request)
     }
 
@@ -245,7 +256,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
       mockFileGroupBackend.destroy(any) returns Future.successful(())
       val user = User(id=123L, email="cancel-user@example.org")
 
-      val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user)
+      val request = new AuthorizedRequest(FakeRequest(), new MockMessagesApi, Session(user.id, "127.0.0.1"), user)
       lazy val result = controller.cancel()(request)
     }
 

@@ -13,11 +13,11 @@ import controllers.auth.Authorities.userOwningTree
 
 class NodeController @Inject() (
   storage: NodeController.Storage,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: ControllerComponents
+) extends BaseController {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
 
-  def index(treeId: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+  def index(treeId: Long) = authorizedAction(userOwningTree(treeId)) { implicit request =>
     storage.findTree(treeId) match {
       case None => NotFound
       case Some(tree) => {
@@ -33,7 +33,7 @@ class NodeController @Inject() (
     }
   }
 
-  def show(treeId: Long, id: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+  def show(treeId: Long, id: Long) = authorizedAction(userOwningTree(treeId)) { implicit request =>
     val nodes = storage.findChildNodes(treeId, id)
 
     Ok(views.json.Node.index(nodes))

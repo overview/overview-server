@@ -23,7 +23,7 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
       mockApiTokenBackend,
       mockStoreBackend,
       mockViewBackend,
-      testMessagesApi
+      fakeControllerComponents
     )
 
     def fakeTree(id: Long, jobId: Long) = factory.tree(

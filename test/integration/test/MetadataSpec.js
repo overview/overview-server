@@ -26,18 +26,19 @@ describe('Metadata', function() {
 
       it('should show new metadata when browsing to a new document', async function() {
         await this.browser.click('.document-nav a.next')
-        const value = await this.browser.getAttribute(this.locator, 'value')
+        const value = await this.browser.getAttribute(this.locatorWithWait, 'value')
         expect(value).to.eq('foo1')
 
         // Reset state
         await this.browser.click('.document-nav a.previous')
-        await this.browser.find(this.locator, { wait: true })
+        await this.browser.find(this.locatorWithWait)
       })
 
       it('should modify metadata', async function() {
         await this.browser.clear(this.locator)
         await this.browser.sendKeys('newFoo', this.locator)
         await this.browser.click('.document-nav a.next')
+        await this.browser.find(this.locatorWithWait)
         await this.browser.click('.document-nav a.previous')
 
         const value = await this.browser.getAttribute(this.locatorWithWait, 'value')

@@ -146,7 +146,7 @@ object ApplicationBuild extends Build {
       version := appVersion,
       PlayKeys.externalizeResources := false, // so `stage` doesn't nix all assets
       libraryDependencies ++= Dependencies.serverDependencies,
-      TwirlKeys.templateImports += "views.Magic._",
+      TwirlKeys.templateImports ++= Seq("views.Magic._", "play.twirl.api.HtmlFormat"),
       RoutesKeys.routesImport += "extensions.Binders._",
       RjsKeys.modules := Seq(
         WebJs.JS.Object("name" -> "bundle/admin/Job/index"),

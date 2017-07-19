@@ -1,6 +1,6 @@
 package controllers.backend
 
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import slick.lifted.RunnableCompiled
 

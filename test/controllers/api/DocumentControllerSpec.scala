@@ -29,7 +29,8 @@ class DocumentControllerSpec extends ApiControllerSpecification {
     val controller = new DocumentController(
       mockDocumentSetBackend,
       mockDocumentBackend,
-      mockSelectionBackend
+      mockSelectionBackend,
+      fakeControllerComponents
     )
   }
 

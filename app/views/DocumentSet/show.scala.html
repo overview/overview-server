@@ -1,11 +1,10 @@
+@this(
+  main: views.html.main
+)
 @(
   user: User,
   documentSet: com.overviewdocs.models.DocumentSet
-)(
-  implicit messages: Messages,
-  flash: Flash,
-  request: RequestHeader
-)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @javascripts = {
   @requireJsBundle("DocumentSet/show")
 

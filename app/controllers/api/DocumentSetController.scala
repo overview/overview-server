@@ -2,12 +2,11 @@ package controllers.api
 
 import javax.inject.Inject
 import play.api.data.{Form,Forms}
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsObject,Json}
 import scala.concurrent.Future
 import scala.util.{Try,Success,Failure}
 
-import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.apiDocumentSetCreator
 import controllers.backend.{ApiTokenBackend,DocumentSetBackend}
 import com.overviewdocs.metadata.MetadataSchema
@@ -15,8 +14,9 @@ import com.overviewdocs.models.{ApiToken,DocumentSet}
 
 class DocumentSetController @Inject() (
   apiTokenBackend: ApiTokenBackend,
-  backend: DocumentSetBackend
-) extends ApiController {
+  backend: DocumentSetBackend,
+  val controllerComponents: ApiControllerComponents
+) extends ApiBaseController {
 
   private val CreateForm = Form[DocumentSet.CreateAttributes](
     Forms.mapping(
@@ -24,7 +24,7 @@ class DocumentSetController @Inject() (
     )((title) => DocumentSet.CreateAttributes(title))((a) => Some(a.title))
   )
 
-  def create = ApiAuthorizedAction(apiDocumentSetCreator).async { request =>
+  def create = apiAuthorizedAction(apiDocumentSetCreator).async { request =>
     CreateForm.bindFromRequest()(request).fold(
       _ => Future.successful(BadRequest(jsonError("illegal-arguments", "You must pass a JSON object with a 'title' attribute."))),
       attributes => {

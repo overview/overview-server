@@ -1,12 +1,15 @@
+@this(
+  iframe: views.html.layouts.iframe
+)
 @(
   user: User,
   documentSetId: Long,
   emails: Seq[String],
   isPublic: Boolean
-)(implicit messages: Messages, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @defining(scopedMessages("views.DocumentSetUser.index")) { m =>
-  @views.html.layouts.iframe(bodyClass="document-set-user-index", javascripts=Html(requireJsBundle("DocumentSetUser/index").toString), jsMessageKeys=Seq("views.DocumentSetUser.index")) {
+  @iframe(bodyClass="document-set-user-index", javascripts=Html(requireJsBundle("DocumentSetUser/index").toString), jsMessageKeys=Seq("views.DocumentSetUser.index")) {
     <div id="app" data-emails="@(play.api.libs.json.JsArray(emails.map(play.api.libs.json.JsString(_))))" data-public="@isPublic" data-admin="@(user.isAdministrator)">
     </div>
   }

@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.messages.DocumentSetCommands
@@ -16,9 +16,9 @@ class CloneImportJobController @Inject() (
   cloneJobBackend: CloneJobBackend,
   documentSetBackend: DocumentSetBackend,
   jobQueueSender: JobQueueSender,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
-  def create(sourceDocumentSetId: Long) = AuthorizedAction(userViewingDocumentSet(sourceDocumentSetId)).async { implicit request =>
+  val controllerComponents: ControllerComponents
+) extends BaseController {
+  def create(sourceDocumentSetId: Long) = authorizedAction(userViewingDocumentSet(sourceDocumentSetId)).async { implicit request =>
     documentSetBackend.show(sourceDocumentSetId).flatMap(_ match {
       case None => Future.successful(NotFound) // Extremely unlikely race
       case Some(originalDocumentSet) => {
@@ -34,7 +34,7 @@ class CloneImportJobController @Inject() (
     })
   }
 
-  def delete(documentSetId: Long, cloneJobId: Int) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def delete(documentSetId: Long, cloneJobId: Int) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       _ <- cloneJobBackend.cancel(documentSetId, cloneJobId)
     } yield Redirect(routes.DocumentSetController.show(documentSetId))

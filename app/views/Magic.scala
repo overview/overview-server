@@ -15,19 +15,19 @@ import play.api.i18n.Messages
  *
  *     val message = Messages("toplevel.key.subkey")
  */
-case class ScopedMessages(scope: String) {
+case class ScopedMessages(scope: String, messages: Messages) {
   /**
    * @return a translated message for the given sub-key
    */
-  def apply(key: String, args: Any*)(implicit messages: Messages) : String = {
-    Messages(scope + "." + key, args : _*)
+  def apply(key: String, args: Any*) : String = {
+    messages(scope + "." + key, args : _*)
   }
 
   /**
    * @return a translated message for the given sub-key, or None if the
    *         key isn't translated.
    */
-  def optional(key: String, args: Any*)(implicit messages: Messages) : Option[String] = {
+  def optional(key: String, args: Any*) : Option[String] = {
     val ret = apply(key, args)
     if (ret == scope + "." + key) {
       None
@@ -42,7 +42,8 @@ case class ScopedMessages(scope: String) {
  */
 object Magic {
   val t = play.api.i18n.Messages
-  val scopedMessages = ScopedMessages
+
+  def scopedMessages(scope: String)(implicit messages: Messages) = ScopedMessages(scope, messages)
 
   private val InvalidCharRegex = """[\x00-\x1f\x7f"*/:<>\?\\|#]""".r
 

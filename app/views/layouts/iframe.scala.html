@@ -1,3 +1,6 @@
+@this(
+  messagesApi: MessagesApi
+)
 @(
   bodyClass: String = "",
   javascripts: Html = Html(""),
@@ -18,7 +21,7 @@
 
     @if(!jsMessageKeys.isEmpty) {
       <script>
-        window.messages = @Html(views.JsMessages(jsMessageKeys));
+        window.messages = @Html(views.JsMessages(messagesApi, jsMessageKeys));
       </script>
     }
 

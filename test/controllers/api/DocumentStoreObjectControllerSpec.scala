@@ -19,7 +19,8 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
     val controller = new DocumentStoreObjectController(
       mockStoreBackend,
       mockObjectBackend,
-      mockSelectionBackend
+      mockSelectionBackend,
+      fakeControllerComponents
     )
   }
 

@@ -2,8 +2,7 @@ package controllers.admin
 
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
-import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
@@ -12,7 +11,6 @@ import controllers.auth.Authorities.adminUser
 import controllers.auth.AuthorizedAction
 import controllers.backend.{CloneJobBackend,CsvImportBackend,FileGroupBackend,ImportJobBackend,TreeBackend}
 import controllers.util.JobQueueSender
-import controllers.Controller
 
 class JobController @Inject() (
   cloneJobBackend: CloneJobBackend,
@@ -22,39 +20,40 @@ class JobController @Inject() (
   jobQueueSender: JobQueueSender,
   treeBackend: TreeBackend,
   storage: JobController.Storage,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: controllers.ControllerComponents,
+  jobIndexHtml: views.html.admin.Job.index
+) extends controllers.BaseController {
 
-  def indexJson = AuthorizedAction(adminUser).async { implicit request =>
+  def indexJson = authorizedAction(adminUser).async { implicit request =>
     for {
       jobs <- importJobBackend.indexWithDocumentSetsAndOwners
       trees <- treeBackend.indexIncompleteWithDocumentSetAndOwnerEmail
     } yield Ok(views.json.admin.Job.index(jobs, trees))
   }
 
-  def index = AuthorizedAction(adminUser) { implicit request =>
-    Ok(views.html.admin.Job.index(request.user))
+  def index = authorizedAction(adminUser) { implicit request =>
+    Ok(jobIndexHtml(request.user))
   }
 
-  def destroyCloneJob(documentSetId: Long, id: Int) = AuthorizedAction(adminUser).async { implicit request =>
+  def destroyCloneJob(documentSetId: Long, id: Int) = authorizedAction(adminUser).async { implicit request =>
     for {
       _ <- cloneJobBackend.cancel(documentSetId, id)
     } yield NoContent
   }
 
-  def destroyCsvImport(documentSetId: Long, id: Long) = AuthorizedAction(adminUser).async { implicit request =>
+  def destroyCsvImport(documentSetId: Long, id: Long) = authorizedAction(adminUser).async { implicit request =>
     for {
       _ <- csvImportBackend.cancel(documentSetId, id)
     } yield NoContent
   }
 
-  def destroyDocumentCloudImport(documentSetId: Long, id: Int) = AuthorizedAction(adminUser).async { implicit request =>
+  def destroyDocumentCloudImport(documentSetId: Long, id: Int) = authorizedAction(adminUser).async { implicit request =>
     for {
       _ <- storage.cancelDocumentCloudImport(id)
     } yield NoContent
   }
 
-  def destroyFileGroup(documentSetId: Long, id: Long) = AuthorizedAction(adminUser).async { implicit request =>
+  def destroyFileGroup(documentSetId: Long, id: Long) = authorizedAction(adminUser).async { implicit request =>
     for {
       _ <- fileGroupBackend.destroy(id)
     } yield {
@@ -63,7 +62,7 @@ class JobController @Inject() (
     }
   }
 
-  def destroyTree(id: Long) = AuthorizedAction(adminUser).async { implicit request =>
+  def destroyTree(id: Long) = authorizedAction(adminUser).async { implicit request =>
     treeBackend.destroy(id).map(_ => NoContent)
   }
 }

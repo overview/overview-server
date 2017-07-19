@@ -1,7 +1,7 @@
 package views
 
 import play.api.libs.json.{JsObject,JsString}
-import play.api.i18n.Messages
+import play.api.i18n.{Messages,MessagesApi}
 import scala.annotation.tailrec
 
 /** Embeds translated messages in a JsObject.
@@ -62,14 +62,15 @@ object JsMessages {
   }
 
   /** Returns a JSON object with translations for some strings.
-    *
-    * Not that this is a bottleneck, but it really ought to be memoized
-    * somehow.
     */
-  def apply(keys: Seq[String])(implicit messages: Messages): String = {
+  def apply(messagesApi: MessagesApi, keys: Seq[String])(implicit messages: Messages): String = {
+    // Not that this is a bottleneck, but it really ought to be memoized
+    // somehow. Also, the "preferredMessagesProvider" is an icky hack, but it
+    // gets at the MessagesApi (to list message keys) without dependency
+    // injection.
     val keySet = keys.toSet
 
-    val m = messages.messages.messages // Messages -> MessagesApi -> Map. Fun!
+    val m: Map[String, Map[String, String]] = messagesApi.messages
     val allMessages = m.get("default").getOrElse(Map.empty) ++ m.get(messages.lang.code).getOrElse(Map.empty)
 
     val jsMessages: Seq[(String,JsString)] = allMessages

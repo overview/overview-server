@@ -8,7 +8,9 @@ class indexSpec extends views.ViewSpecification {
     def documentSets: Seq[(DocumentSet,Set[ImportJob],Int)] = Seq()
     def documentSetsPage = Page(documentSets)
 
-    def result = index(fakeUser, documentSetsPage)
+    val view = new index(new MockMainWithSidebar)
+
+    def result = view(fakeUser, documentSetsPage)
   }
 
   "DocumentSet.index" should {

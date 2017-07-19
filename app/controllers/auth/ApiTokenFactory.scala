@@ -1,15 +1,21 @@
 package controllers.auth
 
+import com.google.inject.ImplementedBy
 import java.nio.charset.Charset
 import javax.inject.Inject
 import javax.xml.bind.DatatypeConverter
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader,Result,Results}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.Exception.catching
 
 import controllers.backend.ApiTokenBackend
 import com.overviewdocs.models.ApiToken
+
+@ImplementedBy(classOf[DefaultApiTokenFactory])
+trait ApiTokenFactory {
+  def loadAuthorizedApiToken(request: RequestHeader, authority: Authority) : Future[Either[Result,ApiToken]]
+}
 
 /** Authorizes API tokens.
   *
@@ -18,7 +24,7 @@ import com.overviewdocs.models.ApiToken
   * 1. Fetch the ApiToken from the database (not there? authentication failed)
   * 2. Check if the user is authorized for the task at hand (no? authorization failed)
   */
-class ApiTokenFactory @Inject() (backend: ApiTokenBackend) {
+class DefaultApiTokenFactory @Inject() (backend: ApiTokenBackend) extends ApiTokenFactory {
   private def unauthenticated: Result = {
     Results.Unauthorized(views.json.api.auth.unauthenticated())
   }

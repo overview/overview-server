@@ -9,7 +9,7 @@ import javax.inject.Inject
 import play.api.Configuration
 import play.api.http.HttpEntity
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsObject,JsString,Json,Reads,Writes}
 import play.api.mvc.ResponseHeader
 import play.api.mvc.Result
@@ -27,11 +27,11 @@ class DocumentController @Inject() (
   blobStorage: BlobStorage,
   fileBackend: FileBackend,
   pageBackend: PageBackend,
-  messagesApi: MessagesApi,
-  configuration: Configuration
-) extends Controller(messagesApi) {
-
-  def showText(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+  val controllerComponents: ControllerComponents,
+  configuration: Configuration,
+  documentShowHtml: views.html.Document.show
+) extends BaseController {
+  def showText(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
       case Some(document) => {
         val extraHeaders: Seq[(String,String)] = if (document.isFromOcr) Seq("Generated-By" -> "tesseract") else Seq()
@@ -46,13 +46,13 @@ class DocumentController @Inject() (
     if (filename.contains("..") || filename.contains("~") || (filename.indexOf(".pdf")!=filename.length-4)) {
       None
     } else {
-      Some(configuration.getString("blobStorage.file.baseDirectory").get + "/user/" + filename)
+      Some(configuration.get[String]("blobStorage.file.baseDirectory") + "/user/" + filename)
     }
   }
 
   // Handles file:// url by reading from local filesystem
   // We clean the filename first for security -- can only serve from specified directory
-  def showFile(filename: String) = AuthorizedAction(anyUser).async { implicit request =>
+  def showFile(filename: String) = authorizedAction(anyUser).async { implicit request =>
     Logger.info("Retrieving document file: " + filename)
     externalFilePath(filename) match {
       case Some(path) => {
@@ -75,7 +75,7 @@ class DocumentController @Inject() (
   }
 
   // Handles /documentit/id.pdf url by reading from blob storage
-  def showPdf(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+  def showPdf(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(document) => {
@@ -90,31 +90,21 @@ class DocumentController @Inject() (
     })
   }
 
-  def showPng(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
-    documentBackend.show(documentId).map(_.flatMap(_.thumbnailLocation) match {
-      case None => NotFound
-      case Some(thumbnailLocation) => {
-        val body = blobStorage.get(thumbnailLocation)
-        Ok.sendEntity(HttpEntity.Streamed(body, None, Some("image/png")))
-      }
-    })
-  }
-
-  def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+  def show(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
     documentBackend.show(documentId).map(_ match {
       case None => NotFound
-      case Some(document) => Ok(views.html.Document.show(document))
+      case Some(document) => Ok(documentShowHtml(document))
     })
   }
 
-  def showJson(documentSetId: Long, documentId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+  def showJson(documentSetId: Long, documentId: Long) = authorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     documentBackend.show(documentSetId, documentId).map(_ match {
       case Some(document) => Ok(views.json.Document.show(document)).withHeaders(CACHE_CONTROL -> "max-age=0")
       case None => NotFound
     })
   }
 
-  def update(documentSetId: Long, documentId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def update(documentSetId: Long, documentId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     val maybeJson: Option[JsObject] = request.body.asJson.flatMap(_.asOpt[JsObject])
     val maybeMetadataJson: Option[JsObject] = maybeJson.flatMap(_.value.get("metadata")).flatMap(_.asOpt[JsObject])
     val maybeTitle: Option[String] = maybeJson.flatMap(_.value.get("title")).flatMap(_.asOpt[JsString]).map(_.value)
@@ -135,7 +125,7 @@ class DocumentController @Inject() (
     }
   }
 
-  def showPdfNotes(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+  def showPdfNotes(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
     val pdfNoteWrites = Json.writes[PdfNote]
     val pdfNoteSeqWrites = Writes.seq(pdfNoteWrites)
 
@@ -147,7 +137,7 @@ class DocumentController @Inject() (
     })
   }
 
-  def updatePdfNotes(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)).async { implicit request =>
+  def updatePdfNotes(documentId: Long) = authorizedAction(userOwningDocument(documentId)).async { implicit request =>
     val pdfNoteReads = Json.reads[PdfNote]
     val pdfNoteSeqFormat = Reads.seq(pdfNoteReads)
 

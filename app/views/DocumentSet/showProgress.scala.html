@@ -1,12 +1,11 @@
+@this(
+  main: views.html.main
+)
 @(
   user: User,
   documentSet: com.overviewdocs.models.DocumentSet,
   importJobs: Seq[com.overviewdocs.models.ImportJob]
-)(
-  implicit messages: Messages,
-  flash: Flash,
-  request: RequestHeader
-)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @javascripts = {
   @requireJsBundle("DocumentSet/show-progress")
 }

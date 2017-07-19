@@ -1,10 +1,13 @@
-@(documentSet: com.overviewdocs.models.DocumentSet)(implicit messages: Messages)
+@this(
+  iframe: views.html.layouts.iframe
+)
+@(documentSet: com.overviewdocs.models.DocumentSet)(implicit messages: PreferredMessagesProvider)
 
 @import models.export.format._
 
 @defining(scopedMessages("views.DocumentSetExport.index")) { m =>
   @defining(escapeFilename(documentSet.title.replace('.', '_') + ".")) { escapedFilenamePart =>
-    @views.html.layouts.iframe(bodyClass="document-set-export-index") {
+    @iframe(bodyClass="document-set-export-index") {
       <p class="preamble">@m("preamble")</p>
       <ul class="formats">
         <li>@m("formats.DocumentsWithStringTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>

@@ -28,8 +28,8 @@ class DefaultRemoteActorSystemModule @Inject() (
   configuration: Configuration,
   val actorSystem: ActorSystem
 ) extends RemoteActorSystemModule {
-  private val hostname = configuration.getString("worker.message_broker_hostname").get
-  private val port = configuration.getInt("worker.message_broker_port").get
+  private val hostname = configuration.get[String]("worker.message_broker_hostname")
+  private val port = configuration.get[Int]("worker.message_broker_port")
   private val rootPath = s"akka.tcp://worker@${hostname}:${port}/user"
 
   override val defaultTimeout = Timeout(30, java.util.concurrent.TimeUnit.SECONDS)

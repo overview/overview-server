@@ -20,7 +20,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
     mockBackend.updatePasswordHash(any, any) returns Future.successful(())
     mockBackend.destroy(any) returns Future.successful(())
 
-    val controller = new UserController(mockBackend, testMessagesApi)
+    val controller = new UserController(mockBackend, fakeControllerComponents, mockView[views.html.admin.User.index])
 
     def result : Future[Result]
   }
@@ -34,10 +34,6 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
 
       "return Ok" in new IndexScope {
         h.status(result) must beEqualTo(h.OK)
-      }
-
-      """render <div class="app" data-admin-email="email"></div>""" in new IndexScope {
-        h.contentAsString(result) must contain(s"""<div class="app" data-admin-email="${request.user.email}"></div>""")
       }
     }
 

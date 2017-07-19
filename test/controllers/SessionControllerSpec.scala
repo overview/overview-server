@@ -15,7 +15,13 @@ class SessionControllerSpec extends ControllerSpecification {
 
     val mockUserBackend = smartMock[UserBackend]
 
-    val controller = new SessionController(mockSessionBackend, mockUserBackend, testMessagesApi)
+    val controller = new SessionController(
+      mockSessionBackend,
+      mockUserBackend,
+      fakeMessagesActionBuilder,
+      fakeControllerComponents,
+      mockView[views.html.Session._new]
+    )
   }
 
   "SessionController" should {

@@ -5,7 +5,7 @@ import javax.inject.Inject
 import play.api.Configuration
 import play.api.i18n.{MessagesApi,I18nSupport,Messages}
 import play.api.data.Form
-import play.api.mvc.{Action,RequestHeader}
+import play.api.mvc.{MessagesActionBuilder,RequestHeader}
 
 import com.overviewdocs.database.HasBlockingDatabase
 import com.overviewdocs.database.exceptions.Conflict
@@ -19,29 +19,30 @@ import models.tables.Users
 class UserController @Inject() (
   configuration: Configuration,
   backendStuff: UserController.BackendStuff,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  messagesAction: MessagesActionBuilder,
+  val controllerComponents: ControllerComponents,
+  sessionNewHtml: views.html.Session._new
+) extends BaseController {
   private val loginForm: Form[PotentialExistingUser] = controllers.forms.LoginForm()
   private val userForm: Form[PotentialNewUser] = controllers.forms.UserForm()
-  private val m = views.Magic.scopedMessages("controllers.UserController")
-  private val authorizedToCreateUsers = configuration.getBoolean("overview.allow_registration").getOrElse(false)
+  private val authorizedToCreateUsers = configuration.get[Boolean]("overview.allow_registration")
 
-  def _new() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def _new() = optionallyAuthorizedAction(anyUser) { implicit request =>
     // Copy/pasted from SessionController
     val loginForm = controllers.forms.LoginForm()
     val registrationForm = controllers.forms.UserForm()
     request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
-      case _ => Ok(views.html.Session._new(loginForm, registrationForm))
+      case _ => Ok(sessionNewHtml(loginForm, registrationForm))
     }
   }
 
-  def create = Action { implicit request =>
+  def create = messagesAction { implicit request =>
     if (!authorizedToCreateUsers) {
       AuthResults.authorizationFailed(request)  // returns 403
     } else {
       userForm.bindFromRequest().fold(
-        formWithErrors => BadRequest(views.html.Session._new(loginForm, formWithErrors)),
+        formWithErrors => BadRequest(sessionNewHtml(loginForm, formWithErrors)),
         potentialNewUser => {
           backendStuff.findUserByEmail(potentialNewUser.email) match {
             case Some(u) => handleExistingUser(u)
@@ -57,7 +58,7 @@ class UserController @Inject() (
     val user = try {
       val user = backendStuff.createUser(potentialUser)
       val url = routes.ConfirmationController.show(user.confirmationToken.get).absoluteURL()
-      val contactUrl = configuration.getString("overview.contact_url").getOrElse(throw new Exception("overview.contact_url not configured"))
+      val contactUrl = configuration.get[String]("overview.contact_url")
       backendStuff.mailNewUser(user, url, contactUrl) // only if the previous line didn't generate an exception
     } catch {
       case _: Conflict => {

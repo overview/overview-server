@@ -1,3 +1,6 @@
+@this(
+  mainWithSidebar: views.html.layouts.mainWithSidebar
+)
 @(
   user: User,
   nOwnedDocumentSets: Long,
@@ -9,7 +12,7 @@
 }
 
 @defining(scopedMessages("views.PublicDocumentSet.index")) { m =>
-  @layouts.mainWithSidebar(user, m("title"), "public-document-set-index", javascripts) {
+  @mainWithSidebar(user, m("title"), "public-document-set-index", javascripts) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"), m("help2"))
   } {

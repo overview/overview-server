@@ -2,11 +2,11 @@ package controllers.auth
 
 import java.util.{Date,UUID}
 import java.sql.Timestamp
-import play.api.libs.concurrent.Execution.Implicits._
+import javax.inject.Inject
 import play.api.mvc.{RequestHeader, Result}
 import scala.util.Success
 import scala.util.control.Exception.catching
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext,Future}
 
 import controllers.backend.{DbSessionBackend,DbUserBackend,SessionBackend,UserBackend}
 import models.{Session,User}
@@ -28,8 +28,13 @@ import com.overviewdocs.models.UserRole
   *
   * For single-user mode, just stub out this trait.
   */
-trait SessionFactory {
-  private[auth] val SessionIdKey = AuthResults.SessionIdKey // TODO find a sensible place for this constant
+class SessionFactory @Inject() (
+  authConfig: AuthConfig,
+  sessionBackend: SessionBackend,
+  userBackend: UserBackend,
+  ec: ExecutionContext
+) {
+  private implicit def executionContext = ec
 
   /** Determines when to log user actions to the database and when to skip it.
     *
@@ -43,15 +48,23 @@ trait SessionFactory {
     */
   private val ActivityLoggingResolutinInMs = 5L * 60L * 1000L
 
-  protected val sessionBackend: SessionBackend
-  protected val userBackend: UserBackend
+  private def loadSingleUserAuthorizedSession(request: RequestHeader, authority: Authority): Future[Either[Result,(Session,User)]] = {
+    val session = Session(1L, request.remoteAddress)
+    val user = User(1L, "admin@overviewdocs.com", role=UserRole.Administrator, treeTooltipsEnabled=false)
+    Future.successful(Right((session, user)))
+  }
 
   /** Returns either a Result (no access) or a (Session,User) (access).
     *
     * See the class documentation for details.
     */
-  def loadAuthorizedSession(request: RequestHeader, authority: Authority) : Future[Either[Result,(Session,User)]] = {
-    loadMultiUserAuthorizedSession(request, authority)
+  def loadAuthorizedSession(request: RequestHeader, authority: Authority): Future[Either[Result,(Session,User)]] = {
+    val f = if (authConfig.isMultiUser) {
+      loadMultiUserAuthorizedSession _
+    } else {
+      loadSingleUserAuthorizedSession _
+    }
+    f(request, authority)
   }
 
   private def maybeLogActivity(request: RequestHeader, session: Session, user: User): Future[Unit] = {
@@ -82,7 +95,7 @@ trait SessionFactory {
     def unauthenticated = AuthResults.authenticationFailed(request)
     def unauthorized = AuthResults.authorizationFailed(request)
 
-    val sessionIdString: Either[Result,String] = request.session.get(SessionIdKey)
+    val sessionIdString: Either[Result,String] = request.session.get(SessionFactory.SessionIdKey)
       .toRight(unauthenticated)
 
     val sessionId: Either[Result,UUID] = sessionIdString
@@ -109,20 +122,6 @@ trait SessionFactory {
   }
 }
 
-object SingleUserSessionFactory extends SessionFactory {
-  override val sessionBackend = null // never used
-  override val userBackend = null // never used
-
-  override def loadAuthorizedSession(request: RequestHeader, authority: Authority) = {
-    val session = Session(1L, request.remoteAddress)
-    val user = User(1L, "admin@overviewdocs.com", role=UserRole.Administrator, treeTooltipsEnabled=false)
-    Future.successful(Right((session, user)))
-  }
-}
-
-object SessionFactory extends SessionFactory {
-  // TODO use dependency injection
-  import com.overviewdocs.database.Database
-  override val sessionBackend = new DbSessionBackend(Database())
-  override val userBackend = new DbUserBackend(Database())
+object SessionFactory {
+  private[auth] val SessionIdKey = AuthResults.SessionIdKey // TODO find a sensible place for this constant
 }

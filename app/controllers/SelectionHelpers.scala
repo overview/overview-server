@@ -2,7 +2,7 @@ package controllers
 
 import java.util.UUID
 import play.api.http.HeaderNames
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.i18n.Messages
 import play.api.mvc.{Request,Result,Results}
 import scala.concurrent.Future

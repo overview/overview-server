@@ -1,3 +1,6 @@
+@this(
+  mainWithSidebar: views.html.layouts.mainWithSidebar
+)
 @(
   user: User,
   nOwnedDocumentSets: Long
@@ -19,7 +22,7 @@
 )}
 
 @defining(scopedMessages("views.DocumentCloudProject.index")) { m =>
-  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="documentcloud-project-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+  @mainWithSidebar(user=user, title=m("title"), bodyClass="documentcloud-project-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"))
   } {

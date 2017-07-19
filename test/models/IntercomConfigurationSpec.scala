@@ -5,39 +5,26 @@ import org.specs2.specification.Scope
 
 class IntercomConfigurationSpec extends Specification {
   trait BaseScope extends Scope {
-    val secretKey : Option[String] = Some("secret")
-    val appId : Option[String] = Some("id")
+    val secretKey: String = "secret"
+    val appId: String = "id"
     val user = User(email="user@example.org", confirmedAt=Some(new java.sql.Timestamp(12345678)))
 
-    def config = new IntercomConfiguration() {
-      override protected def getConfigString(key: String) = key match {
-        case "analytics.intercom.secret_key" => secretKey
-        case "analytics.intercom.app_id" => appId
-        case _ => None
-      }
-    }
+    def config = new DefaultIntercomConfiguration(play.api.Configuration(
+      "analytics.intercom.secret_key" -> secretKey,
+      "analytics.intercom.app_id" -> appId
+    ))
 
     lazy val settings = config.settingsForUser(user)
   }
 
   "IntercomConfiguration" should {
-    "return no settings when there is no app ID" in new BaseScope {
-      override val appId = None
-      settings must beNone
-    }
-
     "return no settings when app ID is empty string" in new BaseScope {
-      override val appId = Some("")
-      settings must beNone
-    }
-
-    "return no settings when there is no secret key" in new BaseScope {
-      override val secretKey = None
+      override val appId = ""
       settings must beNone
     }
 
     "return no settings when the secret key is the empty string" in new BaseScope {
-      override val secretKey = Some("")
+      override val secretKey = ""
       settings must beNone
     }
 

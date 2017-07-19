@@ -1,7 +1,7 @@
 package controllers.auth
 
-import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.{Future,blocking}
+import scala.concurrent.ExecutionContext.Implicits.global
 import slick.jdbc.JdbcBackend.Session
 import slick.lifted.{ConstColumn,Query,RunnableCompiled}
 
@@ -83,9 +83,9 @@ trait Authorities extends HasDatabase {
 
   // Can user export this document set?
   // True if user can view or export not restricted to admin only
-  def userCanExportDocumentSet(id: Long) = new Authority {
+  def userCanExportDocumentSet(authConfig: AuthConfig, id: Long) = new Authority {
     override def apply(user: User) = {
-      if (AuthConfig.isAdminOnlyExport) {
+      if (authConfig.isAdminOnlyExport) {
         if (user.role == UserRole.Administrator) {
           userViewingDocumentSet(id).apply(user)
         } else {

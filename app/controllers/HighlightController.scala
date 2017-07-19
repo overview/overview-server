@@ -15,17 +15,17 @@ import com.overviewdocs.searchindex.{Highlight,Utf16Highlight}
 class HighlightController @Inject() (
   documentBackend: DocumentBackend,
   highlightBackend: HighlightBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: ControllerComponents
+) extends BaseController {
 
   /** Lists highlights: .e.g, `[[2,4],[6,8]]` as UTF-16 offsets
     *
     * Security consideration: the backend must filter by document set ID,
     * because that's how we authorize this action.
     */
-  def index(documentSetId: Long, documentId: Long, queryString: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def index(documentSetId: Long, documentId: Long, queryString: String) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     QueryParser.parse(queryString) match {
-      case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", Messages("com.overviewdocs.query.SyntaxError"))))
+      case Left(_) => Future.successful(BadRequest(jsonError("illegal-arguments", request.messages("com.overviewdocs.query.SyntaxError"))))
       case Right(query) => {
         for {
           highlights <- highlightBackend.highlight(documentSetId, documentId, query)

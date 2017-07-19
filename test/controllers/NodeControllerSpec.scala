@@ -7,7 +7,7 @@ import com.overviewdocs.test.factories.{PodoFactory=>factory}
 class NodeControllerSpec extends ControllerSpecification {
   trait TestScope extends Scope {
     val mockStorage = mock[NodeController.Storage]
-    val controller = new NodeController(mockStorage, testMessagesApi)
+    val controller = new NodeController(mockStorage, fakeControllerComponents)
 
     def index(treeId: Long) = controller.index(treeId)(fakeAuthorizedRequest)
     def show(treeId: Long, nodeId: Long) = controller.show(treeId, nodeId)(fakeAuthorizedRequest)

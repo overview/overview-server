@@ -17,7 +17,7 @@ import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import controllers.util.{MassUploadControllerMethods,JobQueueSender}
 
 class MassUploadControllerSpec extends ApiControllerSpecification {
-  trait BaseScope extends Scope {
+  trait BaseScope extends Scope with ApiControllerScopeHelpers {
     val mockFileGroupBackend = smartMock[FileGroupBackend]
     val mockUploadBackend = smartMock[GroupedFileUploadBackend]
     val mockApiTokenFactory = smartMock[ApiTokenFactory]
@@ -30,11 +30,11 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       mockUploadBackend,
       mockApiTokenFactory,
       mockUploadSinkFactory,
+      fakeControllerComponents,
       app.materializer
     )
 
-    val factory = com.overviewdocs.test.factories.PodoFactory
-    val apiToken = factory.apiToken(createdBy="user@example.org", token="api-token", documentSetId=Some(1L))
+    lazy val apiToken = factory.apiToken(createdBy="user@example.org", token="api-token", documentSetId=Some(1L))
   }
 
   "#index" should {
@@ -70,10 +70,11 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     trait CreateScope extends BaseScope {
       val baseRequest = FakeRequest().withHeaders(
         "Content-Length" -> "20", 
-        "Content-Disposition" -> "attachment; filename=foo.pdf")
+        "Content-Disposition" -> "attachment; filename=foo.pdf"
+      )
       lazy val request = new ApiAuthorizedRequest(baseRequest, apiToken)
       val source = Source.empty[ByteString]
-      lazy val action: EssentialAction = controller.create(UUID.randomUUID)
+      def action: EssentialAction = controller.create(UUID.randomUUID)
       lazy val result = action(request).run(source)
     }
 
@@ -138,7 +139,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       mockFileGroupBackend.find(any, any) returns Future(fileGroup)
       mockUploadBackend.find(any, any) returns Future(groupedFileUpload)
 
-      val request = new ApiAuthorizedRequest(FakeRequest(), apiToken)
+      lazy val request = new ApiAuthorizedRequest(FakeRequest(), apiToken)
       lazy val result = controller.show(guid)(request)
     }
 
@@ -241,7 +242,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
     trait CancelScope extends BaseScope {
       mockFileGroupBackend.destroy(any) returns Future.successful(())
 
-      val request = new ApiAuthorizedRequest(FakeRequest(), apiToken)
+      lazy val request = new ApiAuthorizedRequest(FakeRequest(), apiToken)
       lazy val result = controller.cancel()(request)
     }
 

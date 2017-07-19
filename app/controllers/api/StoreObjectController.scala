@@ -1,29 +1,29 @@
 package controllers.api
 
 import javax.inject.Inject
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsObject,JsPath,JsValue,Reads}
 import scala.concurrent.Future
 import scala.reflect.classTag
 
 import controllers.backend.{StoreBackend,StoreObjectBackend}
-import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.{anyUser,userOwningStoreObject}
 import com.overviewdocs.models.StoreObject
 
 class StoreObjectController @Inject() (
   storeBackend: StoreBackend,
-  storeObjectBackend: StoreObjectBackend
-) extends ApiController {
+  storeObjectBackend: StoreObjectBackend,
+  val controllerComponents: ApiControllerComponents
+) extends ApiBaseController {
 
-  def index = ApiAuthorizedAction(anyUser).async { request =>
+  def index = apiAuthorizedAction(anyUser).async { request =>
     for {
       store <- storeBackend.showOrCreate(request.apiToken.token)
       storeObjects <- storeObjectBackend.index(store.id)
     } yield Ok(views.json.api.StoreObject.index(storeObjects))
   }
 
-  def create = ApiAuthorizedAction(anyUser).async { request =>
+  def create = apiAuthorizedAction(anyUser).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsObject(Seq()))
 
     body.asOpt(StoreObjectController.createJsonReader) match {
@@ -49,14 +49,14 @@ class StoreObjectController @Inject() (
     }
   }
 
-  def show(id: Long) = ApiAuthorizedAction(userOwningStoreObject(id)).async { request =>
+  def show(id: Long) = apiAuthorizedAction(userOwningStoreObject(id)).async { request =>
     storeObjectBackend.show(id).map(_ match {
       case Some(storeObject) => Ok(views.json.api.StoreObject.show(storeObject))
       case None => NotFound
     })
   }
 
-  def update(id: Long) = ApiAuthorizedAction(userOwningStoreObject(id)).async { request =>
+  def update(id: Long) = apiAuthorizedAction(userOwningStoreObject(id)).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsObject(Seq()))
 
     body.asOpt(StoreObjectController.updateJsonReader) match {
@@ -72,11 +72,11 @@ class StoreObjectController @Inject() (
     }
   }
 
-  def destroy(id: Long) = ApiAuthorizedAction(userOwningStoreObject(id)).async {
+  def destroy(id: Long) = apiAuthorizedAction(userOwningStoreObject(id)).async {
     storeObjectBackend.destroy(id).map(Unit => NoContent)
   }
 
-  def destroyMany = ApiAuthorizedAction(anyUser).async { request =>
+  def destroyMany = apiAuthorizedAction(anyUser).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsObject(Seq()))
 
     body.asOpt(StoreObjectController.deleteArrayJsonReader) match {

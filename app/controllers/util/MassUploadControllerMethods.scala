@@ -9,9 +9,9 @@ import java.util.UUID
 import javax.inject.Inject
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsObject,Json}
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{EssentialAction,RequestHeader,Result,Results}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 

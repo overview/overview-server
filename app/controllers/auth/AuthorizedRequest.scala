@@ -1,9 +1,13 @@
 package controllers.auth
 
-import play.api.mvc.{Request,WrappedRequest}
+import play.api.i18n.MessagesApi
+import play.api.mvc.{MessagesRequest,Request}
 
 import models.{Session,User}
 
-case class AuthorizedRequest[A](request: Request[A], val userSession: Session, val user: User)
-  extends WrappedRequest(request) {
-}
+case class AuthorizedRequest[A](
+  request: Request[A],
+  _messagesApi: MessagesApi,
+  userSession: Session,
+  user: User
+) extends MessagesRequest[A](request, _messagesApi)

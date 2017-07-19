@@ -4,8 +4,8 @@ import akka.stream.scaladsl.{Source,SourceQueueWithComplete}
 import akka.stream.OverflowStrategy
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue,Json}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.blobstorage.BlobStorage
@@ -24,8 +24,8 @@ class DocumentListController @Inject() (
   highlightBackend: HighlightBackend,
   blobStorage: BlobStorage,
   protected val selectionBackend: SelectionBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) with SelectionHelpers {
+  val controllerComponents: ControllerComponents
+) extends BaseController with SelectionHelpers {
   private val MaxPageSize = 100
 
   private def buildResult(documentSetId: Long, selection: Selection, selectionRequest: SelectionRequest, pageRequest: PageRequest): Future[JsValue] = {
@@ -72,7 +72,7 @@ class DocumentListController @Inject() (
     Future.sequence(futures).map(_.toMap)
   }
 
-  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def index(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     val pr = pageRequest(request, MaxPageSize)
 
     parseSelectionRequestAndSelectFast(documentSetId, request.user.email, request).flatMap(_ match {
