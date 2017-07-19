@@ -20,7 +20,7 @@ object ApplicationBuild extends Build {
   val appName     = "overview-server"
   val appVersion    = "1.0-SNAPSHOT"
 
-  val ourScalaVersion = "2.11.7"
+  val ourScalaVersion = "2.12.2"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8")
 
   val rootDirectory: String = sys.props("user.dir")

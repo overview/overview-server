@@ -10,7 +10,7 @@ object Dependencies {
     val asyncHttpClient = "com.ning" % "async-http-client" % "1.9.31"
     val awsCore = "com.amazonaws" % "aws-java-sdk-core" % "1.10.32"
     val awsS3 = "com.amazonaws" % "aws-java-sdk-s3" % "1.10.32"
-    val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
+    val bcrypt = "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
     val config = "com.typesafe" % "config" % "1.3.0"
     val flywayDb = "org.flywaydb" % "flyway-core" % "3.2.1"
     val guava = "com.google.guava" % "guava" % "18.0"
@@ -27,7 +27,7 @@ object Dependencies {
     val mockito = "org.mockito" % "mockito-all" % "1.9.5"
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
-    val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.4"
+    val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.5"
     val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.15.0"
     val playIteratees = "com.typesafe.play" %% "play-iteratees" % "2.6.1" // DELETEME
     val playJson = "com.typesafe.play" %% "play-json" % "2.6.2"

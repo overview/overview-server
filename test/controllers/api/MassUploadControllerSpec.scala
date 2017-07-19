@@ -136,8 +136,8 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
       def fileGroup: Option[FileGroup] = Some(factory.fileGroup(id=fileGroupId))
       def groupedFileUpload: Option[GroupedFileUpload] = Some(factory.groupedFileUpload())
 
-      mockFileGroupBackend.find(any, any) returns Future(fileGroup)
-      mockUploadBackend.find(any, any) returns Future(groupedFileUpload)
+      mockFileGroupBackend.find(any, any) returns Future.successful(fileGroup)
+      mockUploadBackend.find(any, any) returns Future.successful(groupedFileUpload)
 
       lazy val request = new ApiAuthorizedRequest(FakeRequest(), apiToken)
       lazy val result = controller.show(guid)(request)
