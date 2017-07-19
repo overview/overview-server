@@ -5,6 +5,8 @@
     </encoder>
   </appender>
 
+  <logger name="com.overviewdocs.database.Slick" level="WARN"/><!-- slick-pg: logger.info(s"\u001B[36m >>> binding $pgType -> $scalaType \u001B[0m") -->
+  <logger name="com.github.tminglei.slickpg.utils.PlainSQLUtils" level="WARN"/><!-- slick-pg: logger.info(s"\u001B[36m >>> binding $pgType -> $scalaType \u001B[0m") -->
   <logger name="com.ning.http.client" level="WARN"/><!-- Noisy Ning -->
   <logger name="org.apache.pdfbox" level="ERROR"/><!-- We know, we know: some PDFs are invalid -->
   <logger name="org.apache.fontbox" level="ERROR"/><!-- We know, we know: some PDFs are invalid -->

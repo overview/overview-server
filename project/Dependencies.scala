@@ -28,7 +28,7 @@ object Dependencies {
     val owaspEncoder = "org.owasp.encoder" % "encoder" % "1.1"
     val parserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6" // QueryParser
     val pdfocr = "org.overviewproject" %% "pdfocr" % "0.0.5"
-    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.15.0"
+    val pgSlick = "com.github.tminglei" %% "slick-pg" % "0.15.1"
     val playIteratees = "com.typesafe.play" %% "play-iteratees" % "2.6.1" // DELETEME
     val playJson = "com.typesafe.play" %% "play-json" % "2.6.2"
     val playMailer = "com.typesafe.play" %% "play-mailer" % "6.0.0"
