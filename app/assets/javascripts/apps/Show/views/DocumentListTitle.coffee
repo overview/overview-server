@@ -30,7 +30,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
       sortByField: _.template('''
         <div class="sort-by-field dropdown">
-          <a id="DocumentListTitle-sort-by-field" data-target="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><%- currentSortBy %><span class="caret"></span></a>
+          <a id="DocumentListTitle-sort-by-field" data-target="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><%- currentSortBy %></a>
           <ul class="dropdown-menu" role="menu" aria-labelledby="DocumentListTitle-sort-by-field">
             <li><a href="#" data-sort-by-metadata-field=""><%- sortByTitle %></a></li>
             <% metadataFields.forEach(function(field) { %>
@@ -43,10 +43,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       sortReverse: _.template('''
         <label class="sort-reverse">
           <input type="checkbox" name="reverse" <%= reverse ? "checked" : "" %>>
-          <span class="toggle-value">
-            <span class="reverse-false"><i class="icon icon-sort-alpha-asc" aria-hidden="true"></i></span>
-            <span class="reverse-true"><i class="icon icon-sort-alpha-desc" aria-hidden="true"></i></span>
-          </span>
+          <span class="sort-display"></span>
         </label>
       ''')
 

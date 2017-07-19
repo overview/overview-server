@@ -20,17 +20,25 @@
   label.sort-reverse {
     display: flex;
     cursor: pointer;
-    margin-left: .8em;
+    margin-left: .5em;
     color: @link-color;
 
     input { display: none; }
 
-    input:checked + .toggle-value {
-      .reverse-false { color: @text-very-muted; }
+    .sort-display {
+      font-size: .9em;
+      position: relative;
+      border: .5em solid @body-bg;
     }
 
-    input:not(:checked) + .toggle-value {
-      .reverse-true { color: @text-very-muted; }
+    input:not(:checked) + .sort-display {
+      border-bottom-color: @link-color;
+      top: -.25em;
+    }
+
+    input:checked + .sort-display {
+      border-top-color: @link-color;
+      top: .5em;
     }
   }
 }
