@@ -87,7 +87,7 @@ trait Main extends HasDatabase {
   }
 
   private def fetchDocuments(dcImport: DocumentCloudImport): Future[Unit] = {
-    if (dcImport.cancelled) return Future.successful(())
+    if (dcImport.cancelled) return Future.unit
 
     val headerProducer = new HeaderProducer(dcImport)
 

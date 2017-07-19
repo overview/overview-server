@@ -138,8 +138,8 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
         val documentSetId = 123L
         val documentId = 124L
 
-        mockDocumentBackend.updateTitle(any, any, any) returns Future.successful(())
-        mockDocumentBackend.updateMetadataJson(any, any, any) returns Future.successful(())
+        mockDocumentBackend.updateTitle(any, any, any) returns Future.unit
+        mockDocumentBackend.updateMetadataJson(any, any, any) returns Future.unit
 
         def input: JsValue = Json.obj()
         lazy val result = controller.update(documentSetId, documentId)(fakeAuthorizedRequest.withJsonBody(input))
@@ -196,7 +196,7 @@ class DocumentControllerSpec extends ControllerSpecification with JsonMatchers {
       trait UpdatePdfNotesScope extends DocumentScope {
         val documentId = 124L
 
-        mockDocumentBackend.updatePdfNotes(any, any) returns Future.successful(())
+        mockDocumentBackend.updatePdfNotes(any, any) returns Future.unit
 
         def input: JsValue = Json.arr()
         lazy val result = controller.updatePdfNotes(documentId)(fakeAuthorizedRequest.withJsonBody(input))

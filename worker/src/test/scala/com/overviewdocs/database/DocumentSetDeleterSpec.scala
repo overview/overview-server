@@ -132,7 +132,7 @@ class DocumentSetDeleterSpec extends DbSpecification with Mockito {
     def numberOfDocuments = 3
 
     val mockIndexClient = smartMock[IndexClient]
-    mockIndexClient.removeDocumentSet(any) returns Future.successful(())
+    mockIndexClient.removeDocumentSet(any) returns Future.unit
     val deleter = new DocumentSetDeleter {
       override protected val indexClient = mockIndexClient
     }

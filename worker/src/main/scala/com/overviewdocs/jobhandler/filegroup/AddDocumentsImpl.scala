@@ -68,7 +68,7 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef)(implicit system: ActorRefFa
                 upload.documentMetadataJson.getOrElse(fileGroup.metadataJson)
               )
             } else {
-              Future.successful(())
+              Future.unit
             }
           }
         })

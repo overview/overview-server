@@ -22,8 +22,8 @@ class AddDocumentsCommonSpec extends DbSpecification with Mockito {
       override protected val indexClient = mockIndexClient
     }
 
-    mockIndexClient.addDocumentSet(any) returns Future.successful(())
-    mockIndexClient.refresh(any) returns Future.successful(())
+    mockIndexClient.addDocumentSet(any) returns Future.unit
+    mockIndexClient.refresh(any) returns Future.unit
   }
 
   "#beforeAddDocuments" should {

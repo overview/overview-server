@@ -17,7 +17,7 @@ class BlobStorageStrategySpec extends StrategySpecification {
       object TestStrategy extends BlankStrategy {
         override def delete(location: String): Future[Unit] = {
           if (location == "foo:bar") {
-            Future.successful(())
+            Future.unit
           } else {
             throw testException // synchronous
           }
@@ -31,7 +31,7 @@ class BlobStorageStrategySpec extends StrategySpecification {
       object TestStrategy extends BlankStrategy {
         override def delete(location: String): Future[Unit] = {
           if (location == "foo:bar") {
-            Future.successful(())
+            Future.unit
           } else {
             Future.failed(testException) // asynchronous
           }
@@ -43,7 +43,7 @@ class BlobStorageStrategySpec extends StrategySpecification {
 
     "succeed if every #delete succeeds" in new BaseScope {
       object TestStrategy extends BlankStrategy {
-        override def delete(location: String) = Future.successful(())
+        override def delete(location: String) = Future.unit
       }
       await(TestStrategy.deleteMany(Seq("foo:bar", "bar:baz"))) must beEqualTo(())
     }

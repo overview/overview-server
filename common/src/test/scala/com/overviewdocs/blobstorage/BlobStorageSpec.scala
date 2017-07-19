@@ -83,7 +83,7 @@ class BlobStorageSpec extends Specification with Mockito {
         val future: Future[Unit] = TestBlobStorage.withBlobInTempFile("bucket:id") { tempFile =>
           file = Some(tempFile)
           throw exception
-          Future.successful(())
+          Future.unit
         }
         await(future) must throwA(exception)
         file.map(_.exists) must beSome(false)
@@ -120,8 +120,8 @@ class BlobStorageSpec extends Specification with Mockito {
       "call BlobStorageStrategy#deleteMany for each strategy" in new BaseScope {
         val mockStrategy1 = mock[BlobStorageStrategy]
         val mockStrategy2 = mock[BlobStorageStrategy]
-        mockStrategy1.deleteMany(any[Seq[String]]) returns(Future.successful(()))
-        mockStrategy2.deleteMany(any[Seq[String]]) returns(Future.successful(()))
+        mockStrategy1.deleteMany(any[Seq[String]]) returns(Future.unit)
+        mockStrategy2.deleteMany(any[Seq[String]]) returns(Future.unit)
         mockStrategyFactory.forLocation("strat1:foo") returns mockStrategy1
         mockStrategyFactory.forLocation("strat2:foo") returns mockStrategy2
         mockStrategyFactory.forLocation("strat2:bar") returns mockStrategy2
@@ -136,7 +136,7 @@ class BlobStorageSpec extends Specification with Mockito {
         val mockStrategy1 = mock[BlobStorageStrategy]
         val mockStrategy2 = mock[BlobStorageStrategy]
         mockStrategy1.deleteMany(any[Seq[String]]) returns(Future.failed(sillyException))
-        mockStrategy2.deleteMany(any[Seq[String]]) returns(Future.successful(()))
+        mockStrategy2.deleteMany(any[Seq[String]]) returns(Future.unit)
         mockStrategyFactory.forLocation("strat1:foo") returns mockStrategy1
         mockStrategyFactory.forLocation("strat2:foo") returns mockStrategy2
         mockStrategyFactory.forLocation("strat2:bar") returns mockStrategy2

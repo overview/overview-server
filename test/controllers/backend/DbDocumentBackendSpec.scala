@@ -17,7 +17,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     def findDocument(id: Long): Option[Document] = blockingDatabase.option(Documents.filter(_.id === id))
 
     val searchBackend = smartMock[SearchBackend]
-    searchBackend.refreshDocument(any, any) returns Future.successful(())
+    searchBackend.refreshDocument(any, any) returns Future.unit
 
     val backend = new DbDocumentBackend(database, searchBackend)
   }

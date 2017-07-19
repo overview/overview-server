@@ -76,7 +76,7 @@ class DocumentSetUserControllerSpec extends ControllerSpecification {
   "#destroy" should {
     trait DestroyScope extends BaseScope {
       val userEmail = "user@example.org"
-      mockBackend.destroy(documentSetId, userEmail) returns Future.successful(())
+      mockBackend.destroy(documentSetId, userEmail) returns Future.unit
       lazy val result = controller.delete(documentSetId, userEmail)(fakeAuthorizedRequest)
     }
 

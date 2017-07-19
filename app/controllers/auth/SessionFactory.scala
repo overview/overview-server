@@ -75,14 +75,14 @@ class SessionFactory @Inject() (
       val attributes = Session.UpdateAttributes(request.remoteAddress, new Date(now))
       sessionBackend.update(session.id, attributes)
     } else {
-      Future.successful(())
+      Future.unit
     }
 
     val future2 = if (user.lastActivityIp != Some(request.remoteAddress)
         || now > user.lastActivityAt.map(_.getTime).getOrElse(0L) + ActivityLoggingResolutinInMs) {
       userBackend.updateLastActivity(user.id, request.remoteAddress, new Timestamp(now))
     } else {
-      Future.successful(())
+      Future.unit
     }
 
     for {

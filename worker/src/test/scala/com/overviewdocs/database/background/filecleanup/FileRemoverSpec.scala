@@ -13,9 +13,9 @@ class FileRemoverSpec extends DbSpecification with Mockito {
       val mockBlobStorage = smartMock[BlobStorage]
       val mockPageRemover = smartMock[PageRemover]
 
-      mockBlobStorage.delete(any) returns Future.successful(())
-      mockBlobStorage.deleteMany(any) returns Future.successful(())
-      mockPageRemover.removeFilePages(any) returns Future.successful(())
+      mockBlobStorage.delete(any) returns Future.unit
+      mockBlobStorage.deleteMany(any) returns Future.unit
+      mockPageRemover.removeFilePages(any) returns Future.unit
 
       val subject = new FileRemover {
         override val blobStorage = mockBlobStorage

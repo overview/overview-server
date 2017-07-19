@@ -42,7 +42,7 @@ class FileImportControllerSpec extends ControllerSpecification {
 
     "deletes the FileGroup and notifies the worker" in new DeleteScope {
       mockFileGroupBackend.find(fileGroupId) returns Future.successful(Some(factory.fileGroup(addToDocumentSetId=Some(2L))))
-      mockFileGroupBackend.destroy(fileGroupId) returns Future.successful(())
+      mockFileGroupBackend.destroy(fileGroupId) returns Future.unit
       h.status(result) must beEqualTo(h.NO_CONTENT)
       there was one(mockFileGroupBackend).destroy(fileGroupId)
       there was one(mockJobQueueSender).send(DocumentSetCommands.CancelAddDocumentsFromFileGroup(2L, 1L))

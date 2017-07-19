@@ -37,7 +37,7 @@ trait FileRemover extends HasDatabase {
     contentIds match {
       case Some((cId, vId)) if (cId != vId) => blobStorage.deleteMany(Seq(cId, vId))
       case Some((cId, _)) => blobStorage.delete(cId)
-      case _ => Future.successful(())
+      case _ => Future.unit
     }
   }
   

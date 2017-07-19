@@ -52,7 +52,7 @@ trait GroupedFileUploadRemover extends HasDatabase {
     """)
 
     def continue(remainingGroups: List[Seq[Long]]): Future[Unit] = remainingGroups match {
-      case List() => Future.successful(())
+      case List() => Future.unit
       case someOids :: moreGroups => for {
         _ <- deleteSome(someOids)
         _ <- continue(moreGroups)

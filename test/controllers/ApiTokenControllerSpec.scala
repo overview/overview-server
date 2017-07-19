@@ -157,7 +157,7 @@ class ApiTokenControllerSpec extends ControllerSpecification with JsonMatchers {
       val request = fakeAuthorizedRequest
       lazy val result = controller.destroyForDocumentSet(documentSetId, token)(request)
 
-      mockBackend.destroy(any) returns Future.successful(())
+      mockBackend.destroy(any) returns Future.unit
     }
 
     "destroy the token" in new DestroyScope {

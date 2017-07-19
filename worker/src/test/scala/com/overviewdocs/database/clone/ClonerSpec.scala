@@ -19,7 +19,7 @@ class ClonerSpec extends DbSpecification with Mockito {
       val stepNumber: Short = 0
       val cancelled: Boolean = false
       val mockIndexer = smartMock[Indexer]
-      mockIndexer.indexDocuments(any) returns Future.successful(())
+      mockIndexer.indexDocuments(any) returns Future.unit
       lazy val cloneJob = factory.cloneJob(
         sourceDocumentSetId=sourceDocumentSet.id,
         destinationDocumentSetId=destinationDocumentSet.id,

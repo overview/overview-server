@@ -25,7 +25,7 @@ class FileCleanerSpec extends Specification with Mockito {
     }
 
     "call FileCleaner.deleteFile" in new FileCleaningScope {
-      mockFileRemover.deleteFile(any) returns Future.successful(())
+      mockFileRemover.deleteFile(any) returns Future.unit
       fileCleaner ! Clean(1L)
 
       expectMsg(CleanComplete(1L))

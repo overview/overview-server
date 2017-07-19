@@ -39,7 +39,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
       lazy val result = controller.create(guid)(request)
 
       components.fileUploadAccumulator(any, any, any) returns Accumulator(Sink.ignore).map(_ => Right(smartMock[OverviewUpload]))
-      components.createCsvImport(any, any, any, any) returns Future.successful(())
+      components.createCsvImport(any, any, any, any) returns Future.unit
     }
 
     "return OK if upload is complete" in new CreateScope {
@@ -62,7 +62,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
       lazy val result = controller.startClustering(guid)(request)
 
       components.fileUploadAccumulator(any, any, any) returns Accumulator(Sink.ignore).map(_ => Right(smartMock[OverviewUpload]))
-      components.createCsvImport(any, any, any, any) returns Future.successful(())
+      components.createCsvImport(any, any, any, any) returns Future.unit
       documentSetBackend.create(any, any) returns Future.successful(factory.documentSet())
     }
 

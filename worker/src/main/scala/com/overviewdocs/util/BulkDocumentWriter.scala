@@ -68,7 +68,7 @@ trait BulkDocumentWriter {
     if (needsFlush) {
       flush
     } else {
-      Future.successful(())
+      Future.unit
     }
   }
 
@@ -78,7 +78,7 @@ trait BulkDocumentWriter {
     */
   def flush: Future[Unit] = synchronized {
     if (currentBuffer.isEmpty) {
-      Future.successful(())
+      Future.unit
     } else {
       val documents = currentBuffer
       currentBuffer = Buffer()

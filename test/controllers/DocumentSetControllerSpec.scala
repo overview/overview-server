@@ -48,7 +48,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def result = controller.update(documentSetId)(request)
 
         mockBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(id=documentSetId)))
-        mockBackend.updatePublic(any, any) returns Future.successful(())
+        mockBackend.updatePublic(any, any) returns Future.unit
       }
 
       "return 204" in new UpdateScope {
@@ -75,7 +75,7 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       trait UpdateJsonScope extends BaseScope {
         val documentSetId = 123L
 
-        mockBackend.updateMetadataSchema(any, any) returns Future.successful(())
+        mockBackend.updateMetadataSchema(any, any) returns Future.unit
 
         def input: JsValue = Json.obj()
         lazy val request = fakeAuthorizedRequest.withJsonBody(input)

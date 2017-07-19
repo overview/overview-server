@@ -147,7 +147,7 @@ class MassUploadController @Inject() (
     fileGroupBackend.find(request.apiToken.createdBy, Some(request.apiToken.token))
       .flatMap(_ match {
         case Some(fileGroup) => fileGroupBackend.destroy(fileGroup.id)
-        case None => Future.successful(())
+        case None => Future.unit
       })
       .map(_ => Accepted)
   }

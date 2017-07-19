@@ -69,10 +69,10 @@ class UserController @Inject() (
               case _ => None
             })
             .map(backend.updateIsAdmin(otherUser.id, _))
-            .getOrElse(Future.successful(()))
+            .getOrElse(Future.unit)
           val setPasswordHashFuture = data.get("password")
             .map(s => backend.updatePasswordHash(otherUser.id, s.bcrypt(models.OverviewUser.BcryptRounds)))
-            .getOrElse(Future.successful(()))
+            .getOrElse(Future.unit)
 
           for {
             _ <- setAdminFuture

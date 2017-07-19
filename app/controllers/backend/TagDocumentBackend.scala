@@ -88,7 +88,7 @@ class DbTagDocumentBackend @Inject() (
         )
       """)
     } else {
-      Future.successful(())
+      Future.unit
     }
   }
 
@@ -101,7 +101,7 @@ class DbTagDocumentBackend @Inject() (
         AND document_id IN (VALUES #${idValues.mkString(",")})
       """)
     } else {
-      Future.successful(())
+      Future.unit
     }
   }
 

@@ -22,7 +22,7 @@ class PasswordControllerSpec extends ControllerSpecification {
     mockStorage.findUserByEmail("user@example.org") returns Some(user)
     mockStorage.findUserByResetToken(any[String]) returns None
     mockStorage.findUserByResetToken("0123456789abcd") returns Some(userWithToken)
-    mockStorage.resetPassword(userWithToken, "Ersh3Phowb9") returns Future.successful(())
+    mockStorage.resetPassword(userWithToken, "Ersh3Phowb9") returns Future.unit
     mockSessionBackend.create(any[Long], any[String]) returns Future.successful(Session(123L, "127.0.0.1"))
 
     val controller = new PasswordController(

@@ -21,7 +21,7 @@ class ProgressReporterSpec extends Specification with Mockito {
       val addDocumentsImpl = mock[AddDocumentsImpl]
       val anInstant: Instant = Instant.ofEpochMilli(123L)
 
-      addDocumentsImpl.writeProgress(any, any, any, any)(any) returns Future.successful(())
+      addDocumentsImpl.writeProgress(any, any, any, any)(any) returns Future.unit
       var nSchedules: Int = 0
 
       class TestProgressReporter()

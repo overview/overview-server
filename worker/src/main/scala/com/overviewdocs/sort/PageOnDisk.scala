@@ -104,7 +104,7 @@ object PageOnDisk {
   def sortAndCreate(directory: Path, records: immutable.Seq[Record])(implicit mat: Materializer, blockingEc: ExecutionContext): Future[PageOnDisk] = {
     create(directory, RecordSource(
       records.size,
-      Source(records.sorted).mapMaterializedValue(_ => Future.successful(()))
+      Source(records.sorted).mapMaterializedValue(_ => Future.unit)
     ))
   }
 }

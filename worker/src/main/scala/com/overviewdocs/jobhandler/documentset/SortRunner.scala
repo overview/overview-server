@@ -29,7 +29,7 @@ class SortRunner(
       case true => {
         logger.info("Sort skipped: it was already finished")
         asker.tell(Progress.SortDone, Actor.noSender)
-        Future.successful(())
+        Future.unit
       }
       case false => {
         for {

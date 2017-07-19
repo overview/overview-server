@@ -77,7 +77,7 @@ class RemoteActorSearchBackend @Inject() (
     database.run(updateReindexJobCompiled(documentSetId).update(Instant.now))
       .flatMap(_ match {
         case 0 => startReindexing(documentSetId)
-        case _ => Future.successful(()) // it's already in the database, so
+        case _ => Future.unit // it's already in the database, so
                                         // assume the worker knows about it
       })
   }
@@ -107,6 +107,6 @@ class RemoteActorSearchBackend @Inject() (
     //    happens. So from the user's perspective, things still appear serial.
     // 2. If the message gets lost, or if there's a race, the consequences are
     //    tiny.
-    Future.successful(())
+    Future.unit
   }
 }

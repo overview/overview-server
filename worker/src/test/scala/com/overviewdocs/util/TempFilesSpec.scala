@@ -23,7 +23,7 @@ class TempFilesSpec extends Specification {
 
     "delete the tempfile" in { implicit ee: EE =>
       var thePath: Option[Path] = None
-      await(TempFiles.withTempFileWithSuffix(".foo", { path => thePath = Some(path); Future.successful(()) }))
+      await(TempFiles.withTempFileWithSuffix(".foo", { path => thePath = Some(path); Future.unit }))
       Files.exists(thePath.get) must beFalse
     }
   }

@@ -16,9 +16,9 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
   trait BaseScope extends Scope {
     val mockBackend = smartMock[UserBackend]
 
-    mockBackend.updateIsAdmin(any, any) returns Future.successful(())
-    mockBackend.updatePasswordHash(any, any) returns Future.successful(())
-    mockBackend.destroy(any) returns Future.successful(())
+    mockBackend.updateIsAdmin(any, any) returns Future.unit
+    mockBackend.updatePasswordHash(any, any) returns Future.unit
+    mockBackend.destroy(any) returns Future.unit
 
     val controller = new UserController(mockBackend, fakeControllerComponents, mockView[views.html.admin.User.index])
 

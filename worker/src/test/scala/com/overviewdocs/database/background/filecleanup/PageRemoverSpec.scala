@@ -23,7 +23,7 @@ class PageRemoverSpec extends DbSpecification with Mockito {
     }
 
     "delete blobs" in new BaseScope {
-      mockBlobStorage.deleteMany(any) returns Future.successful(())
+      mockBlobStorage.deleteMany(any) returns Future.unit
       await(subject.removeFilePages(file.id))
 
       there was one(mockBlobStorage).deleteMany(argThat(beLike[Seq[String]] { case actual: Seq[String] =>

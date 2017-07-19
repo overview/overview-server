@@ -36,7 +36,7 @@ object Indexer extends Indexer with HasDatabase {
       }  yield ()
       step.flatMap(_ => indexRemainingBatches(documentSetId, idsIt))
     } else {
-      Future.successful(())
+      Future.unit
     }
   }
 

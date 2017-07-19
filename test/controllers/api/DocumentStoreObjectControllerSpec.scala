@@ -102,7 +102,7 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
         val body: JsValue = Json.arr()
         override lazy val result = controller.destroyMany(fakeJsonRequest(body))
         mockStoreBackend.showOrCreate(any) returns Future.successful(Store(123L, "foobar", Json.obj()))
-        mockObjectBackend.destroyMany(any[Long], any[Seq[(Long,Long)]]) returns Future.successful(())
+        mockObjectBackend.destroyMany(any[Long], any[Seq[(Long,Long)]]) returns Future.unit
       }
 
       "pass the correct body to backend.destroyMany" in new DestroyManyScope {

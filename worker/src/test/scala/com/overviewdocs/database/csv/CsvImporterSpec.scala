@@ -20,8 +20,8 @@ class CsvImporterSpec extends DbSpecification with Mockito {
 
     val loids = mutable.Buffer[Long]()
     val addDocumentsCommon = smartMock[AddDocumentsCommon]
-    addDocumentsCommon.beforeAddDocuments(any) returns Future.successful(())
-    addDocumentsCommon.afterAddDocuments(any) returns Future.successful(())
+    addDocumentsCommon.beforeAddDocuments(any) returns Future.unit
+    addDocumentsCommon.afterAddDocuments(any) returns Future.unit
 
     def writeLo(bytes: Array[Byte]): Long = {
       val ret = blockingDatabase.run((for {

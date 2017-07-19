@@ -137,7 +137,7 @@ class DocumentWriter(
 
   private def writeErrors(errors: Array[(String,String)]): Future[Unit] = {
     if (errors.length == 0) {
-      Future.successful(())
+      Future.unit
     } else {
       import database.api._
 

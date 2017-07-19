@@ -90,7 +90,7 @@ class CreateOfficeFile(upload: GroupedFileUpload)(implicit ec: ExecutionContext)
       def step: Future[Unit] = {
         Future(blocking(digestStream.read(buf))).flatMap { nBytes =>
           if (nBytes == -1) {
-            Future.successful(())
+            Future.unit
           } else {
             Future(blocking(outputStream.write(buf, 0, nBytes))).flatMap(_ => step)
           }

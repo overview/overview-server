@@ -240,7 +240,7 @@ class MassUploadControllerSpec extends ApiControllerSpecification {
 
   "#cancel" should {
     trait CancelScope extends BaseScope {
-      mockFileGroupBackend.destroy(any) returns Future.successful(())
+      mockFileGroupBackend.destroy(any) returns Future.unit
 
       lazy val request = new ApiAuthorizedRequest(FakeRequest(), apiToken)
       lazy val result = controller.cancel()(request)

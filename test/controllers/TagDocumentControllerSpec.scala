@@ -63,7 +63,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.createMany(documentSetId, tagId)(request)
 
-      mockTagDocumentBackend.createMany(any, any) returns Future.successful(())
+      mockTagDocumentBackend.createMany(any, any) returns Future.unit
     }
 
     "return Created" in new CreateManyScope {
@@ -84,7 +84,7 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
       lazy val request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       lazy val result = controller.destroyMany(documentSetId, tagId)(request)
 
-      mockTagDocumentBackend.destroyMany(any, any) returns Future.successful(())
+      mockTagDocumentBackend.destroyMany(any, any) returns Future.unit
     }
 
     "return NoContent" in new DestroyManyScope {

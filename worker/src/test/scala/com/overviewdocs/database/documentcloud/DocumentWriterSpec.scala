@@ -14,12 +14,12 @@ class DocumentWriterSpec extends DbSpecification with Mockito {
     val documentSet = factory.documentSet()
     val dcImport = factory.documentCloudImport(documentSetId=documentSet.id)
     val bulkDocumentWriter = smartMock[BulkDocumentWriter]
-    bulkDocumentWriter.flush returns Future.successful(())
+    bulkDocumentWriter.flush returns Future.unit
 
     var lastProgress: Int = -1
     def updateProgress(nWritten: Int) = {
       lastProgress = nWritten
-      Future.successful(())
+      Future.unit
     }
 
     val subject = new DocumentWriter(dcImport, updateProgress, bulkDocumentWriter, 1)

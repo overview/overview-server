@@ -24,7 +24,7 @@ class WorkerActorSpec extends Specification {
           Future.failed(exception)
         } else {
           asker ! IGotTheMessage(message.foo)
-          Future.successful(())
+          Future.unit
         }
       }
     })

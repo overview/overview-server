@@ -47,7 +47,7 @@ class SorterSpec extends Specification with AwaitMethod {
           Record(3, 2, Array(1.toByte, 1.toByte, 1.toByte)),
           Record(0, 1, Array(1.toByte, 2.toByte)),
           Record(4, 0, Array(3.toByte, 7.toByte))
-        )).mapMaterializedValue(_ => Future.successful(()))),
+        )).mapMaterializedValue(_ => Future.unit)),
         _ => ()
       ))
       result must beEqualTo(Array(3, 0, 1, 4, 2).map(_.toByte))
@@ -61,7 +61,7 @@ class SorterSpec extends Specification with AwaitMethod {
           Record(3, 2, Array(1.toByte, 1.toByte, 1.toByte)),
           Record(0, 1, Array(1.toByte, 2.toByte)),
           Record(4, 0, Array(3.toByte, 7.toByte))
-        )).mapMaterializedValue(_ => Future.successful(()))),
+        )).mapMaterializedValue(_ => Future.unit)),
         _ => ()
       ))
       Files.list(tempDir).count must beEqualTo(0L)
@@ -78,7 +78,7 @@ class SorterSpec extends Specification with AwaitMethod {
           Record(3, 2, Array(1.toByte, 1.toByte, 1.toByte)),
           Record(0, 1, Array(1.toByte, 2.toByte)),
           Record(4, 0, Array(3.toByte, 7.toByte))
-        )).mapMaterializedValue(_ => Future.successful(()))),
+        )).mapMaterializedValue(_ => Future.unit)),
         onProgress
       ))
 

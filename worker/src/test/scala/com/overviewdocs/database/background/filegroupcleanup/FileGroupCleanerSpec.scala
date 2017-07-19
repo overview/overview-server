@@ -25,7 +25,7 @@ class FileGroupCleanerSpec extends Specification with Mockito {
 
   "FileGroupCleaner" should {
     "start cleaning" in new FileGroupCleanerScope {
-      mockFileGroupRemover.remove(any) returns Future.successful(())
+      mockFileGroupRemover.remove(any) returns Future.unit
       fileGroupCleaner ! Clean(1L)
       there was one(mockFileGroupRemover).remove(1L)
     }

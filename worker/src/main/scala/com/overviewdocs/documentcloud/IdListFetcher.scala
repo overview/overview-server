@@ -88,7 +88,7 @@ extends HasDatabase {
     fetchNextIdListAndUpdateNTotal.flatMap(_ match {
       case Left(message) => {
         error = Some(message)
-        Future.successful(())
+        Future.unit
       }
       case Right(idList) => {
         for {
@@ -101,7 +101,7 @@ extends HasDatabase {
   private def continue: Future[Unit] = {
     reportProgressAndCheckContinue.flatMap { _ =>
       if (error.nonEmpty || Some(nFetched) == nTotal) {
-        Future.successful(())
+        Future.unit
       } else {
         step.flatMap(_ => continue)
       }

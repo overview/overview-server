@@ -59,7 +59,7 @@ class DocumentSource(
           }
           Source.fromFutureSource[Record, akka.NotUsed](futurePageSource)
         }
-        .mapMaterializedValue(_ => Future.successful(()))
+        .mapMaterializedValue(_ => Future.unit)
 
       RecordSource(ids32Bit.size, source)
     }

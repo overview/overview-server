@@ -127,7 +127,7 @@ class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
 
   "#destroy" should {
     trait DestroyScope extends BaseScope {
-      mockBackend.destroy(any) returns Future.successful(())
+      mockBackend.destroy(any) returns Future.unit
       val pluginId = new UUID(1L, 2L)
       val result = controller.destroy(pluginId)(fakeAuthorizedRequest)
     }

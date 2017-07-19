@@ -61,7 +61,7 @@ class ProgressReporter(
       addDocumentsImpl.writeProgress(u.fileGroupId, u.nFilesProcessed, u.nBytesProcessed, u.estimatedCompletionTime)
         .flatMap { _ => flush(updates) }
     } else {
-      Future.successful(())
+      Future.unit
     }
   }
 

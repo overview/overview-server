@@ -10,8 +10,8 @@ class SessionControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockSessionBackend = smartMock[SessionBackend]
     mockSessionBackend.create(any, any) returns Future.successful(Session(123L, "127.0.0.1"))
-    mockSessionBackend.destroy(any) returns Future.successful(())
-    mockSessionBackend.destroyExpiredSessionsForUserId(any) returns Future.successful(())
+    mockSessionBackend.destroy(any) returns Future.unit
+    mockSessionBackend.destroyExpiredSessionsForUserId(any) returns Future.unit
 
     val mockUserBackend = smartMock[UserBackend]
 

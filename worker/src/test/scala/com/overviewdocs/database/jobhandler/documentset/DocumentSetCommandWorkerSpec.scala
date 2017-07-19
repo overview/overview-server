@@ -115,7 +115,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
     "CloneDocumentSet" should {
       "call cloner.run" in new BaseScope {
         val cloneJob = factory.cloneJob()
-        cloner.run(any) returns Future.successful(())
+        cloner.run(any) returns Future.unit
         subject ! DocumentSetCommands.CloneDocumentSet(cloneJob)
         there was one(cloner).run(cloneJob)
       }
@@ -137,7 +137,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
 
     "DeleteDocumentSet" should {
       "call documentSetDeleter.delete" in new BaseScope {
-        documentSetDeleter.delete(1L) returns Future.successful(())
+        documentSetDeleter.delete(1L) returns Future.unit
         subject ! DocumentSetCommands.DeleteDocumentSet(1L)
         there was one(documentSetDeleter).delete(1L)
       }

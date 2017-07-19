@@ -93,7 +93,7 @@ class CsvImporter(
 
   /** Mark stuff in the database so we never resume this import. */
   private def cancel: Future[Unit] = {
-    Future.successful(())
+    Future.unit
   }
 
   /** Process some bytes from the blob, write some documents to the database,

@@ -59,7 +59,7 @@ class HeaderProducer(dcImport: DocumentCloudImport) extends HasDatabase {
   private var hangingHeader: Option[DocumentCloudDocumentHeader] = None
   private var nextIdListNumber: Int = 0
   private var currentIterator: Iterator[IdListRowAndPage] = Iterator()
-  private var currentFetch: Future[Unit] = Future.successful(())
+  private var currentFetch: Future[Unit] = Future.unit
   sealed trait State
   object State {
     case object Normal extends State

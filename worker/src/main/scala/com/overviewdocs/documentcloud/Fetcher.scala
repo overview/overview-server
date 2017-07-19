@@ -20,7 +20,7 @@ class Fetcher(server: DocumentCloudServer = DocumentCloudServer) {
     */
   def run(producer: HeaderProducer, writer: DocumentWriter): Future[Unit] = {
     def continue = run(producer, writer)
-    def end = Future.successful(())
+    def end = Future.unit
 
     producer.next.flatMap(_ match {
       case HeaderProducer.Skip(n) => writer.skip(n); continue

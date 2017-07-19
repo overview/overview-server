@@ -33,7 +33,7 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
     }
 
     "do work" in new BaseScope {
-      impl.processUpload(any, any, any)(any) returns Future.successful(())
+      impl.processUpload(any, any, any)(any) returns Future.unit
       val upload = makeUpload
       subject.tell(HandleUpload(fileGroup, upload), broker.ref)
       there was one(impl).processUpload(Matchers.eq(fileGroup), Matchers.eq(upload), any)(Matchers.eq(subject.dispatcher))
@@ -55,7 +55,7 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
       broker.expectMsg(WorkerReady)
       impl.processUpload(any, any, any)(any) answers { (arguments, _) =>
         progressRetval = arguments.asInstanceOf[Array[Any]](2).asInstanceOf[Double=>Boolean](0.4)
-        Future.successful(())
+        Future.unit
       }
       val upload = makeUpload
       subject.tell(HandleUpload(fileGroup, upload), broker.ref)
@@ -109,14 +109,14 @@ class AddDocumentsWorkerSpec extends Specification with Mockito {
     "send WorkerReady when done work" in new BaseScope {
       broker.expectMsg(WorkerReady)
       val upload = makeUpload
-      impl.processUpload(any, any, any)(any) returns Future.successful(())
+      impl.processUpload(any, any, any)(any) returns Future.unit
       subject.tell(HandleUpload(fileGroup, upload), broker.ref)
       broker.expectMsg(WorkerDoneHandleUpload(fileGroup, upload))
       broker.expectMsg(WorkerReady)
     }
 
     "handle a FinishJob message" in new BaseScope {
-      impl.finishJob(fileGroup)(subject.dispatcher) returns Future.successful(())
+      impl.finishJob(fileGroup)(subject.dispatcher) returns Future.unit
       subject.tell(FinishJob(fileGroup), broker.ref)
       there was one(impl).finishJob(fileGroup)(subject.dispatcher)
     }

@@ -254,7 +254,7 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
 
         val body: JsValue = Json.arr(2L, 3L, 4L)
         override lazy val result = controller.destroyMany()(fakeJsonRequest(body))
-        mockObjectBackend.destroyMany(any[Long], any[Seq[Long]]) returns Future.successful(())
+        mockObjectBackend.destroyMany(any[Long], any[Seq[Long]]) returns Future.unit
       }
 
       "destroy the objects" in new DestroyManyScope {

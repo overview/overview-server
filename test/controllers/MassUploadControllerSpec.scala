@@ -253,7 +253,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
 
   "#cancel" should {
     trait CancelScope extends BaseScope {
-      mockFileGroupBackend.destroy(any) returns Future.successful(())
+      mockFileGroupBackend.destroy(any) returns Future.unit
       val user = User(id=123L, email="cancel-user@example.org")
 
       val request = new AuthorizedRequest(FakeRequest(), new MockMessagesApi, Session(user.id, "127.0.0.1"), user)

@@ -183,9 +183,9 @@ class ViewControllerSpec extends ControllerSpecification with JsonMatchers {
         lazy val request = fakeAuthorizedRequest
         def result = controller.destroy(documentSetId, viewId)(request)
         mockViewBackend.show(any) returns Future.successful(Some(factory.view(id=viewId, apiToken=apiToken)))
-        mockViewBackend.destroy(any) returns Future.successful(())
-        mockStoreBackend.destroy(any) returns Future.successful(())
-        mockApiTokenBackend.destroy(any) returns Future.successful(())
+        mockViewBackend.destroy(any) returns Future.unit
+        mockStoreBackend.destroy(any) returns Future.unit
+        mockApiTokenBackend.destroy(any) returns Future.unit
       }
 
       "return NoContent" in new DestroyScope {
