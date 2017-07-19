@@ -15,14 +15,18 @@ class SessionFactorySpec extends test.helpers.InAppSpecification with Mockito wi
   val h = play.api.test.Helpers
 
   trait BaseScope extends Scope {
-    val authority = mock[Authority]
+    val authority = smartMock[Authority]
+    val authConfig = smartMock[AuthConfig]
+    authConfig.isMultiUser returns true
     val mockSessionBackend = smartMock[SessionBackend]
     val mockUserBackend = smartMock[UserBackend]
 
-    val factory = new SessionFactory {
-      override protected val sessionBackend = mockSessionBackend
-      override protected val userBackend = mockUserBackend
-    }
+    lazy val factory = new SessionFactory(
+      authConfig,
+      mockSessionBackend,
+      mockUserBackend,
+      materializer.executionContext
+    )
 
     case class PossibleSession(id: UUID, user: Option[User]) {
       def sessionAndUser = user.map((u) => (Session(u.id, "127.0.0.1").copy(id=id), u))

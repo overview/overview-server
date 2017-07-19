@@ -43,13 +43,11 @@ object MetadataSchema {
   def empty: MetadataSchema = MetadataSchema(1, Seq())
 
   object Json {
-    import play.api.data.validation.ValidationError
-    import play.api.libs.json.{JsPath,JsResultException}
-    import play.api.libs.json.Reads
+    import play.api.libs.json.{Reads,JsPath,JsResultException,JsonValidationError}
     import play.api.libs.json.Reads._
     import play.api.libs.functional.syntax._
 
-    private val badTypeError = ValidationError("Invalid \"type\" value")
+    private val badTypeError = JsonValidationError("Invalid \"type\" value")
 
     private implicit val metadataFieldTypeReads: Reads[MetadataFieldType] = StringReads.collect(badTypeError) {
       case "String" => MetadataFieldType.String

@@ -5,10 +5,10 @@ import akka.util.ByteString
 import java.util.UUID
 import org.postgresql.PGConnection
 import play.api.http.HeaderNames.{ CONTENT_DISPOSITION, CONTENT_TYPE, CONTENT_RANGE }
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{ RequestHeader, Result }
 import play.api.mvc.Results.BadRequest
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.database.{HasBlockingDatabase,LargeObject}

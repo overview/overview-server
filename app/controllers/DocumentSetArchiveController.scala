@@ -5,13 +5,13 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import javax.inject.Inject
 import play.api.http.HttpEntity
-import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import play.api.i18n.Messages
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc.Result
 import scala.concurrent.Future
 
 import com.overviewdocs.util.ContentDisposition
-import controllers.auth.AuthorizedAction
+import controllers.auth.AuthConfig
 import controllers.auth.Authorities.userCanExportDocumentSet
 import controllers.backend.{ArchiveEntryBackend,SelectionBackend}
 import models.ArchiveEntry
@@ -21,12 +21,13 @@ class DocumentSetArchiveController @Inject() (
   archiveEntryBackend: ArchiveEntryBackend,
   archiveFactory: ArchiveFactory,
   protected val selectionBackend: SelectionBackend,
-  messagesApi: MessagesApi,
+  val controllerComponents: ControllerComponents,
+  authConfig: AuthConfig,
   materializer: Materializer
-) extends Controller(messagesApi) with SelectionHelpers {
+) extends BaseController with SelectionHelpers {
 
-  def archive(documentSetId: Long, filename: String) = AuthorizedAction(userCanExportDocumentSet(documentSetId)).async { implicit request =>
-    requestToSelection(documentSetId, request).flatMap(_ match {
+  def archive(documentSetId: Long, filename: String) = authorizedAction(userCanExportDocumentSet(authConfig, documentSetId)).async { implicit request =>
+    requestToSelection(documentSetId, request)(request.messages).flatMap(_ match {
       case Left(result) => Future.successful(result)
       case Right(selection) => {
         selection.getAllDocumentIds.flatMap(_ match {
@@ -55,9 +56,7 @@ class DocumentSetArchiveController @Inject() (
       )
   }
 
-  private def flashWarning(warning: String): Result = {
-    val m = views.Magic.scopedMessages("controllers.DocumentSetArchiveController")
-
-    Redirect(routes.DocumentSetController.index()).flashing("warning" -> m(warning))
+  private def flashWarning(warning: String)(implicit messages: Messages): Result = {
+    Redirect(routes.DocumentSetController.index()).flashing("warning" -> messages("controllers.DocumentSetArchiveController." + warning))
   }
 }

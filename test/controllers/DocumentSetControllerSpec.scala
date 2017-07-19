@@ -1,6 +1,7 @@
 package controllers
 
-import org.specs2.matcher.JsonMatchers
+import org.mockito.Matchers
+import org.specs2.matcher.{Expectable,JsonMatchers,Matcher}
 import org.specs2.specification.Scope
 import play.api.libs.json.{JsValue,Json}
 import play.api.mvc.AnyContent
@@ -31,7 +32,10 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       mockJobQueue,
       mockImportJobBackend,
       mockViewBackend,
-      testMessagesApi
+      fakeControllerComponents,
+      mockView[views.html.DocumentSet.index],
+      mockView[views.html.DocumentSet.show],
+      mockView[views.html.DocumentSet.showProgress]
     )
   }
 
@@ -210,10 +214,8 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         // Then the "cancel" button... icky test :(
         job.csvImport returns factory.csvImport(documentSetId=1L, id=2L)
         mockImportJobBackend.indexByDocumentSet(documentSetId) returns Future.successful(Seq(job))
-        h.contentAsString(result) must beMatching("""(?s).*progress.*value="0\.123".*""")
-        h.contentAsString(result) must contain("a-description")
-        h.contentAsString(result) must contain("time_display.shouldFinishIn.zero")
-        h.contentAsString(result) must contain("/imports/csv/1/2")
+        h.status(result)
+        there was one(controller.showProgressHtml).apply(any, any, Matchers.eq(Seq(job)))(any, any, any)
       }
     }
 
@@ -231,7 +233,6 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         def request = fakeAuthorizedRequest
 
         lazy val result = controller.index(pageNumber)(request)
-        lazy val j = jodd.lagarto.dom.jerry.Jerry.jerry(h.contentAsString(result))
       }
 
       "return Ok" in new IndexScope {
@@ -254,29 +255,31 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
       "show page 1 if the page number is too low" in new IndexScope {
         override def pageNumber = 0
         h.status(result) must beEqualTo(h.OK) // load page
-        there was one(mockBackend).indexPageByOwner(org.mockito.Matchers.eq(request.user.email), any)
-      }
-
-      "show multiple pages" in new IndexScope {
-        val ds = Seq.fill(IndexPageSize) { factory.documentSet() }
-        mockBackend.indexPageByOwner(any, any) returns Future.successful(Page(ds, PageInfo(PageRequest(0, IndexPageSize), IndexPageSize + 1)))
-        override def fakeNViews = ds.map{ ds => ds.id -> 3 }.toMap
-        h.contentAsString(result) must contain("/documentsets?page=2")
-      }
-
-      "show multiple document sets per page" in new IndexScope {
-        h.contentAsString(result) must not contain ("/documentsets?page=2")
+        there was one(mockBackend).indexPageByOwner(Matchers.eq(request.user.email), any)
       }
 
       "bind nViews to their document sets" in new IndexScope {
         override def fakeDocumentSets = Seq(factory.documentSet(id=1L), factory.documentSet(id=2L))
         override def fakeNViews = Map(1L -> 4, 2L -> 5)
+        h.status(result) // load page
 
-        val ds1 = j.$("[data-document-set-id='1']")
-        val ds2 = j.$("[data-document-set-id='2']")
+        case class haveIdPairs(idPairs: Seq[Tuple2[Long,Int]]) extends Matcher[Page[(DocumentSet,Iterable[ImportJob],Int)]] {
+          def apply[P <: Page[(DocumentSet,Iterable[ImportJob],Int)]](p: Expectable[P]) = {
+            result(
+              p.value.items.map {
+                case (documentSet, jobs, nViews) => (documentSet.id, nViews)
+              } == idPairs,
+              p.description + " has correct IDs",
+              p.description + " has incorrect IDs",
+              p
+            )
+          }
+        }
 
-        ds1.find(".view-count").text() must contain("views.DocumentSet._documentSet.nViews,4")
-        ds2.find(".view-count").text() must contain("views.DocumentSet._documentSet.nViews,5")
+        there was one(controller.indexHtml).apply(
+          any,
+          haveIdPairs(Seq((1, 4), (2, 5)))
+        )(any, any, any)
       }
     }
   }

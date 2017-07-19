@@ -4,6 +4,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import models.export.rows.Rows
 
@@ -12,7 +13,6 @@ object CsvFormat extends Format {
   private val CRLF = "\r\n" // We use String, because String concatenation uses StringBuilder and Array concatenation doesn't
   private val NeedsEscaping: Pattern = Pattern.compile("""[",\r\n]""")
   private val Utf8Bom = Array[Byte](0xef.toByte, 0xbb.toByte, 0xbf.toByte)
-  private implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
 
   override val contentType = """text/csv; charset="utf-8""""
 

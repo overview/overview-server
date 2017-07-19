@@ -31,6 +31,7 @@ trait AddDocumentsCommon extends HasDatabase {
   def afterAddDocuments(documentSetId: Long): Future[Unit] = {
     for {
       _ <- database.runUnit(sqlu"""
+        WITH x AS (DELETE FROM document_id_list WHERE document_set_id = ${documentSetId})
         UPDATE document_set
         SET document_count = (SELECT COUNT(*) FROM document WHERE document_set_id = document_set.id),
             document_processing_error_count = (SELECT COUNT(*) FROM document_processing_error WHERE document_set_id = document_set.id),

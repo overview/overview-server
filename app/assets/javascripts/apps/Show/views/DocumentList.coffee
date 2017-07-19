@@ -16,6 +16,9 @@ define [
         <% } %>
         <div class="details">
           <h3><%- title %></h3>
+          <% if (attrs.sortKey) { %>
+            <p class="sort-key"><%- t('sortKey', attrs.sortKey.name, attrs.sortKey.value) %></p>
+          <% } %>
           <% if (attrs.snippet) { %>
             <p class="snippets"><%= attrs.snippet %></p>
           <% } else { %>

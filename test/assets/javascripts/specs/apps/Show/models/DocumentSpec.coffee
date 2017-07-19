@@ -17,6 +17,14 @@ define [
         document = new Document({ id: 1 }, parse: true)
         expect(document.get('pageNumber')).to.be.null
 
+      it 'should parse a null sortKey by default', ->
+        document = new Document({ id: 1 }, parse: true)
+        expect(document.get('sortKey')).to.be.null
+
+      it 'should parse sortKey', ->
+        document = new Document({ id: 1, sortKey: { name: 'foo', value: 'bar' } }, parse: true)
+        expect(document.get('sortKey')).to.deep.eq(name: 'foo', value: 'bar')
+
     describe 'with a typical document', ->
       beforeEach ->
         @document = new Document({

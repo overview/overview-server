@@ -70,10 +70,10 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     if (!indexExists) return mutable.Map.empty
 
     val ret = mutable.Map.empty[String,LuceneField]
-    import scala.collection.JavaConversions
+    import scala.collection.JavaConverters
 
-    for (leaf <- JavaConversions.iterableAsScalaIterable(indexReader.leaves)) {
-      for (fieldInfo <- JavaConversions.iterableAsScalaIterable(leaf.reader.getFieldInfos)) {
+    for (leaf <- JavaConverters.iterableAsScalaIterable(indexReader.leaves)) {
+      for (fieldInfo <- JavaConverters.iterableAsScalaIterable(leaf.reader.getFieldInfos)) {
         if (fieldInfo.name.startsWith("metadata:")) {
           val fieldName = fieldInfo.name.substring("metadata:".size)
           // Assume all metadata fields were stored with the same options
@@ -421,14 +421,14 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     // org/elasticsearch/common/lucene/search/MultiPhrasePrefixQuery.java with
     // slight Scala modifications. It's Apache-licensed; see ElasticSearch
     // project for copyright details.
-    import scala.collection.JavaConversions
+    import scala.collection.JavaConverters
     import org.apache.lucene.index.TermsEnum
     import org.apache.lucene.util.StringHelper;
 
     // SlowCompositeReaderWrapper could be used... but this would merge all terms from each segment into one terms
     // instance, which is very expensive. Therefore I think it is better to iterate over each leaf individually.
     val leaves = indexReader.leaves
-    for (leaf <- JavaConversions.collectionAsScalaIterable(leaves)) {
+    for (leaf <- JavaConverters.collectionAsScalaIterable(leaves)) {
       val _terms = leaf.reader.terms(fieldName)
       if (_terms != null) {
         val termsEnum = _terms.iterator()

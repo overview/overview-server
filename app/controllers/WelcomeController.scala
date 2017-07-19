@@ -10,19 +10,20 @@ import play.api.Play
 
 class WelcomeController @Inject() (
   configuration: Configuration,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: ControllerComponents,
+  showHtml: views.html.Welcome.show
+) extends BaseController {
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
-  val banner = configuration.getString("overview.welcome_banner")
-  val allowRegistration = configuration.getBoolean("overview.allow_registration").getOrElse(false)
+  val banner = configuration.get[String]("overview.welcome_banner")
+  val allowRegistration = configuration.get[Boolean]("overview.allow_registration")
   lazy val is32BitJava = sys.props.get("overview.is32BitJava").isDefined
 
-  def show() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def show() = optionallyAuthorizedAction(anyUser) { implicit request =>
     request.user.map(user =>
       Redirect(routes.DocumentSetController.index())
     ).getOrElse(
-      Ok(views.html.Welcome.show(loginForm, userForm, is32BitJava, banner, allowRegistration))
+      Ok(showHtml(loginForm, userForm, is32BitJava, banner, allowRegistration))
     )
   }
 

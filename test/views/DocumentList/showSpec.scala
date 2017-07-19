@@ -20,13 +20,14 @@ class showSpec extends Specification with JsonMatchers {
     def warnings: List[SelectionWarning] = List()
     def selection = InMemorySelection(selectionId, Array(doc1.id, doc2.id), warnings)
 
-    def doc1AndIds = (doc1, Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
-    def doc2AndIds = (doc2, Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
+    def maybeSortKey: Option[String] = None
+    def doc1AndIds = (doc1, None.asInstanceOf[Option[String]], Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
+    def doc2AndIds = (doc2, None.asInstanceOf[Option[String]], Seq[Long](), Seq[Long](), Seq[Utf16Snippet]())
     def docsAndIds = Seq(doc1AndIds, doc2AndIds)
 
     def resultPage = Page(docsAndIds)
 
-    def result = show(selection, resultPage).toString
+    def result = show(selection, maybeSortKey, resultPage).toString
   }
 
   "DocumentList view generated Json" should {
@@ -75,12 +76,12 @@ class showSpec extends Specification with JsonMatchers {
     }
 
     "set node IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, Seq[Long](5L, 6L, 7L), Seq[Long](), Seq[Utf16Snippet]())
+      override def doc1AndIds = (doc1, None, Seq[Long](5L, 6L, 7L), Seq[Long](), Seq[Utf16Snippet]())
       result must /("documents") /#(0) /("nodeids") /#(1) /(6)
     }
 
     "set tag IDs" in new BaseScope {
-      override def doc1AndIds = (doc1, Seq[Long](), Seq[Long](5L, 6L, 7L), Seq[Utf16Snippet]())
+      override def doc1AndIds = (doc1, None, Seq[Long](), Seq[Long](5L, 6L, 7L), Seq[Utf16Snippet]())
       result must /("documents") /#(0) /("tagids") /#(1) /(6)
     }
 
@@ -89,22 +90,47 @@ class showSpec extends Specification with JsonMatchers {
       result must /("documents") /#(0) /("url" -> "http://example.org")
     }
 
+    "show a thumbnail" in new BaseScope {
+      override def doc1AndIds = (doc1, Some("https://thumbnail-url"), Seq(), Seq(), Seq())
+
+      result must /("documents") /#(0) /("thumbnailUrl" -> "https://thumbnail-url")
+    }
+
     "show a start snippet" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="This is a start snippet"), Seq(), Seq(), Seq(Utf16Snippet(0, 9, Vector(Utf16Highlight(5, 7)))))
+      override def doc1AndIds = (doc1.copy(text="This is a start snippet"), None, Seq(), Seq(), Seq(Utf16Snippet(0, 9, Vector(Utf16Highlight(5, 7)))))
 
       result must /("documents") /#(0) /("snippet" -> "This <em>is</em> a…")
     }
 
     "show an end snippet" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="This is an end snippet"), Seq(), Seq(), Seq(Utf16Snippet(8, 22, Vector(Utf16Highlight(11, 14)))))
+      override def doc1AndIds = (doc1.copy(text="This is an end snippet"), None, Seq(), Seq(), Seq(Utf16Snippet(8, 22, Vector(Utf16Highlight(11, 14)))))
 
       result must /("documents") /#(0) /("snippet" -> "…an <em>end</em> snippet")
     }
 
     "HTML-escape snippets" in new BaseScope {
-      override def doc1AndIds = (doc1.copy(text="1 < <2"), Seq(), Seq(), Seq(Utf16Snippet(0, 6, Vector(Utf16Highlight(4, 6)))))
+      override def doc1AndIds = (doc1.copy(text="1 < <2"), None, Seq(), Seq(), Seq(Utf16Snippet(0, 6, Vector(Utf16Highlight(4, 6)))))
 
       result must /("documents") /#(0) /("snippet" -> "1 &lt; <em>&lt;2</em>")
+    }
+
+    "set a sortKey" in new BaseScope {
+      override def doc1 = factory.document(metadataJson=Json.obj("foo" -> "bar", "bar" -> "baz"))
+      override def maybeSortKey = Some("foo")
+      result must /("documents") /#(0) /("sortKey") /("name" -> "foo")
+      result must /("documents") /#(0) /("sortKey") /("value" -> "bar")
+    }
+
+    "not set a sortKey if the document has no value for the requested sort key" in new BaseScope {
+      override def doc1 = factory.document(metadataJson=Json.obj("foo" -> "bar"))
+      override def maybeSortKey = Some("bar")
+      result must not /("documents") /#(0) /("sortKey")
+    }
+
+    "not set a sortKey if the request has no sortKey" in new BaseScope {
+      override def doc1 = factory.document(metadataJson=Json.obj("foo" -> "bar"))
+      override def maybeSortKey = None
+      result must not /("documents") /#(0) /("sortKey")
     }
   }
 }

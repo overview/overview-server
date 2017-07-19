@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasDatabase
@@ -12,17 +12,18 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 
 class DocumentProcessingErrorController @Inject() (
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) with HasDatabase {
+  val controllerComponents: ControllerComponents,
+  indexHtml: views.html.DocumentProcessingError.index
+) extends BaseController with HasDatabase {
 
-  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def index(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       errors <- findDocumentProcessingErrors(documentSetId)
     } yield {
       val byStatusMessage = errors.groupBy(_.statusMessage)
       val distinctMessages = byStatusMessage.keySet.toSeq.sorted
       val organizedErrors = distinctMessages.map(m => (m -> byStatusMessage(m)))
-      Ok(views.html.DocumentProcessingError.index(organizedErrors))
+      Ok(indexHtml(organizedErrors))
     }
   }
 

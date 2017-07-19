@@ -1,17 +1,21 @@
 package controllers.auth
 
+import com.google.inject.ImplementedBy
 import play.api.Play
+import javax.inject.{Inject,Singleton}
 
-// This construction of flatMap/getOrElse provides an auth default in case:
-//  - Play can't get the app
-//  - the config is not set
-// In both cases we fail to more restrictive permissions
-private[auth] object AuthConfig {
-  val isMultiUser = Play.maybeApplication
-    .flatMap(_.configuration.getBoolean("overview.multi_user"))
-    .getOrElse(true)
+@ImplementedBy(classOf[DefaultAuthConfig])
+trait AuthConfig {
+  /** If false, the browser is always logged in as a dummy admin User. */
+  val isMultiUser: Boolean
 
-  val isAdminOnlyExport = Play.maybeApplication
-    .flatMap(_.configuration.getBoolean("overview.admin_only_export"))
-    .getOrElse(true)  // default to restricted exports if conf not found
+  /** If true, only administrators are allowed to export document sets. */
+  val isAdminOnlyExport: Boolean
+}
+
+class DefaultAuthConfig @Inject() (
+  configuration: play.api.Configuration
+) extends AuthConfig {
+  override val isMultiUser = configuration.get[Boolean]("overview.multi_user")
+  override val isAdminOnlyExport = configuration.get[Boolean]("overview.admin_only_export")
 }

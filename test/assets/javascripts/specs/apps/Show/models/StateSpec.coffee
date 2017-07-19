@@ -79,6 +79,14 @@ define [
         @state.setDocumentListParams(q: 'foo')
         expect(@state.get('document')).to.eq('foo')
 
+      it 'should set reverse=false on a documentList by default', ->
+        @state.setDocumentListParams(q: 'foo')
+        expect(@state.get('documentList').reverse).to.be.false
+
+      it 'should set reverse=true on a documentList', ->
+        @state.setDocumentListParams({ q: 'foo' }, true)
+        expect(@state.get('documentList').reverse).to.be.true
+
     describe 'refineDocumentListParams', ->
       beforeEach ->
         @buildState()
@@ -94,3 +102,13 @@ define [
         @state.set(document: 'foo')
         @state.refineDocumentListParams(tags: { ids: [ 1 ] })
         expect(@state.get('document')).to.eq('foo')
+
+      it 'should set reverse=true', ->
+        @state.setDocumentListParams(tags: { ids: [ 1 ] })
+        @state.refineDocumentListParams(tags: { ids: [ 1 ] }, reverse: true)
+        expect(@state.get('documentList').reverse).to.be.true
+
+      it 'should set reverse=false', ->
+        @state.setDocumentListParams({ tags: { ids: [ 1 ] } }, true)
+        @state.refineDocumentListParams(reverse: false)
+        expect(@state.get('documentList').reverse).to.be.false

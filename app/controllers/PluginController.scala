@@ -3,7 +3,7 @@ package controllers
 import java.util.UUID
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc.Action
 import scala.concurrent.Future
 
@@ -14,14 +14,14 @@ import controllers.forms.{PluginCreateForm,PluginUpdateForm}
 
 class PluginController @Inject() (
   backend: PluginBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
-  def index = AuthorizedAction(anyUser).async {
+  val controllerComponents: ControllerComponents
+) extends BaseController {
+  def index = authorizedAction(anyUser).async {
     for { plugins <- backend.index }
     yield Ok(views.json.Plugin.index(plugins))
   }
 
-  def create = AuthorizedAction(adminUser).async { implicit request =>
+  def create = authorizedAction(adminUser).async { implicit request =>
     PluginCreateForm().bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest),
       attributes => {
@@ -31,7 +31,7 @@ class PluginController @Inject() (
     )
   }
 
-  def update(id: UUID) = AuthorizedAction(adminUser).async { implicit request =>
+  def update(id: UUID) = authorizedAction(adminUser).async { implicit request =>
     PluginUpdateForm().bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest),
       attributes => {
@@ -44,7 +44,7 @@ class PluginController @Inject() (
     )
   }
 
-  def destroy(id: UUID) = AuthorizedAction(adminUser).async {
+  def destroy(id: UUID) = authorizedAction(adminUser).async {
     backend.destroy(id).map((Unit) => Ok)
   }
 }

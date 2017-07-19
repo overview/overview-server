@@ -14,11 +14,15 @@ class TagDocumentControllerSpec extends ControllerSpecification with JsonMatcher
     val selection = InMemorySelection(Array(2L, 3L, 4L)) // override for a different Selection
     val mockTagDocumentBackend = smartMock[TagDocumentBackend]
     val mockSelectionBackend = smartMock[SelectionBackend]
-    mockSelectionBackend.findOrCreate(any, any, any) returns Future(selection)
+    // We assume this controller doesn't care about onProgress because the user
+    // recently cached a Selection. That's not necessarily true, but it should
+    // hold true most of the time.
+    mockSelectionBackend.findOrCreate(any, any, any, any) returns Future { selection }
+
     val controller = new TagDocumentController(
       mockTagDocumentBackend,
       mockSelectionBackend,
-      testMessagesApi
+      fakeControllerComponents
     )
   }
 

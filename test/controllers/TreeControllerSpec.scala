@@ -16,7 +16,7 @@ class TreeControllerSpec extends ControllerSpecification with JsonMatchers {
     val controller = new TreeController(
       mockBackend,
       mockTagBackend,
-      testMessagesApi
+      fakeControllerComponents
     )
   }
 

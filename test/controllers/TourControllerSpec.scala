@@ -7,7 +7,7 @@ import models.User
 class TourControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockStorage = mock[TourController.Storage]
-    val controller = new TourController(mockStorage, testMessagesApi)
+    val controller = new TourController(mockStorage, fakeControllerComponents)
   }
 
   "TourController" should {

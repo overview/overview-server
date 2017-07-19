@@ -14,6 +14,7 @@ import com.overviewdocs.query.{Field,PhraseQuery}
 import com.overviewdocs.util.AwaitMethod
 import controllers.backend.SelectionBackend
 import models.{InMemorySelection,SelectionRequest}
+import test.helpers.MockMessages
 
 class SelectionHelpersSpec extends ControllerSpecification with Mockito with AwaitMethod {
   "selectionRequest" should {
@@ -21,10 +22,12 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       trait F {
         def f(documentSetId: Long, request: Request[_]): Either[Result,SelectionRequest]
       }
-      val controller = new Controller(testMessagesApi) with SelectionHelpers with F {
-        override val selectionBackend = smartMock[SelectionBackend]
-        override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)
+
+      class AController(val selectionBackend: SelectionBackend, val controllerComponents: ControllerComponents) extends BaseController with SelectionHelpers with F {
+        override def f(documentSetId: Long, request: Request[_]) = selectionRequest(documentSetId, request)(MockMessages.default)
       }
+      val controller = new AController(smartMock[SelectionBackend], fakeControllerComponents) 
+
       def f(documentSetId: Long, path: String) = {
         val request = FakeRequest("GET", path)
         controller.f(documentSetId, request)
@@ -71,6 +74,10 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
         test("/?q=foo", Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
       }
 
+      "make a SelectionRequest with sortMetadataField" in new SelectionScope {
+        test("/?sortByMetadataField=foo", Right(SelectionRequest(1L, sortByMetadataField=Some("foo"))))
+      }
+
       "make a SelectionRequest with tagOperation=all" in new SelectionScope {
         test("/?tagOperation=all", Right(SelectionRequest(1L, tagOperation=SelectionRequest.TagOperation.All)))
       }
@@ -94,7 +101,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       "return a BadRequest on query syntax error" in new SelectionScope {
         f(1L, "/?q=(foo+AND") must beLeft { (result: Result) =>
           result.header.status must beEqualTo(400)
-          result.header.headers.get(CONTENT_TYPE) must beSome("application/json")
+          result.body.contentType must beSome("application/json")
         }
       }
     }
@@ -127,6 +134,10 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       "make a SelectionRequest with q" in new SelectionScope {
         test(Seq("q" -> "foo"), Right(SelectionRequest(1L, q=Some(PhraseQuery(Field.All, "foo")))))
       }
+
+      "make a SelectionRequest with sortMetadataField" in new SelectionScope {
+        test(Seq("sortByMetadataField" -> "foo"), Right(SelectionRequest(1L, sortByMetadataField=Some("foo"))))
+      }
     }
 
     "prefer POST parameters over GET parameters" in new SelectionScope {
@@ -149,11 +160,11 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       val selectionId = "9cf4d95a-39bd-4463-85a3-cac272a20bc2"
       val mockSelectionBackend = smartMock[SelectionBackend]
 
-      class AController(i18nComponents: MessagesApi) extends Controller(i18nComponents) with SelectionHelpers {
+      class AController(val controllerComponents: ControllerComponents) extends BaseController with SelectionHelpers {
         override val selectionBackend = mockSelectionBackend
-        def go(request: Request[_]) = requestToSelection(documentSetId, userEmail, request)
+        def go(request: Request[_]) = requestToSelection(documentSetId, userEmail, request)(test.helpers.MockMessages.default)
       }
-      val controller = new AController(testMessagesApi)
+      val controller = new AController(fakeControllerComponents)
     }
 
     "use SelectionBackend#find() if selectionId is set" in new RequestToSelectionScope {
@@ -171,18 +182,27 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
 
     "uses SelectionBackend#create() if refresh=true" in new RequestToSelectionScope {
       val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
-      mockSelectionBackend.create(any, any) returns Future.successful(selection)
+      mockSelectionBackend.create(any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo", "refresh" -> "true")
       await(controller.go(request)) must beEqualTo(Right(selection))
-      there was one(mockSelectionBackend).create(userEmail, selectionRequest)
+      there was one(mockSelectionBackend).create(
+        org.mockito.Matchers.eq(userEmail),
+        org.mockito.Matchers.eq(selectionRequest),
+        any
+      )
     }
 
     "uses SelectionBackend#findOrCreate() as a fallback" in new RequestToSelectionScope {
       val selectionRequest = SelectionRequest(documentSetId, Seq(), Seq(), Seq(), Seq(), None, Some(PhraseQuery(Field.All, "foo")))
-      mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
+      mockSelectionBackend.findOrCreate(any, any, any, any) returns Future.successful(selection)
       val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "foo")
       await(controller.go(request)) must beEqualTo(Right(selection))
-      there was one(mockSelectionBackend).findOrCreate(userEmail, selectionRequest, None)
+      there was one(mockSelectionBackend).findOrCreate(
+        org.mockito.Matchers.eq(userEmail),
+        org.mockito.Matchers.eq(selectionRequest),
+        org.mockito.Matchers.eq(None),
+        any
+      )
     }
 
     "return BadRequest on invalid search phrase" in new RequestToSelectionScope {

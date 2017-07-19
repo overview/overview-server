@@ -1,8 +1,11 @@
 package controllers.api
 
-import play.api.mvc.{Action,Results}
+import javax.inject.Inject
+import play.api.mvc.{Action,BaseController,ControllerComponents,Results}
 
-class CorsOptionsController extends ApiController {
+class CorsOptionsController @Inject() (
+  val controllerComponents: ControllerComponents
+) extends BaseController {
   private val Headers = Seq(
     "Access-Control-Allow-Origin" -> "*",
     "Access-Control-Allow-Methods" -> "DELETE, PUT, POST, GET, OPTIONS", // laziness

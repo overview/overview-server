@@ -1,8 +1,11 @@
+@this(
+  main: views.html.main
+)
 @(
   loginForm: Form[PotentialExistingUser],
   userForm: Form[PotentialNewUser],
   is32BitJava: Boolean,
-  banner: Option[String],
+  banner: String,
   allowRegistration: Boolean
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
@@ -35,7 +38,7 @@
               </div>
             </div>
           } else {
-            <h1 align="center">@Html(banner.get)</h1>
+            <h1 align="center">@Html(banner)</h1>
           }
         </div>
       </div>

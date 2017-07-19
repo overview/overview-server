@@ -7,9 +7,10 @@ import controllers.auth.OptionallyAuthorizedAction
 import controllers.auth.Authorities.anyUser
 
 class HelpController @Inject() (
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
-  def show() = OptionallyAuthorizedAction(anyUser) { implicit request =>
-    Ok(views.html.Help.show(request.user))
+  val controllerComponents: ControllerComponents,
+  showHtml: views.html.Help.show
+) extends BaseController {
+  def show() = optionallyAuthorizedAction(anyUser) { implicit request =>
+    Ok(showHtml(request.user))
   }
 }

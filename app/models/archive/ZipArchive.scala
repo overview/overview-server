@@ -3,13 +3,13 @@ package models.archive
 import akka.stream.scaladsl.{Sink,Source}
 import akka.stream.Materializer
 import akka.util.ByteString
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee.{Enumerator,Iteratee}
 import java.nio.{ByteBuffer,ByteOrder}
 import java.util.HashSet
 import java.util.zip.CRC32
 import scala.collection.immutable
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,Promise}
 
 import models.ArchiveEntry

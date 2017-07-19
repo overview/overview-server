@@ -18,7 +18,12 @@ class CanonicalHostFilter @Inject() (configuration: Configuration) extends Essen
     val wantHost: String = canonicalUrl.split("/")(2)
   }
 
-  private val maybeConfig: Option[Config] = configuration.getString("overview.canonical_url").map(Config.apply _)
+  private val maybeUrl: Option[String] = configuration.get[Option[String]]("overview.canonical_url") match {
+    case None => None
+    case Some("") => None
+    case Some(s) => Some(s)
+  }
+  private val maybeConfig: Option[Config] = maybeUrl.map(Config.apply _)
 
   def apply(next: EssentialAction) = EssentialAction { requestHeader =>
     maybeConfig match {

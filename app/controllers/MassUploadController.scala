@@ -6,7 +6,7 @@ import akka.util.ByteString
 import java.util.UUID
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc.{Action,BodyParser,Result}
 import scala.concurrent.{Future,blocking}
 
@@ -15,7 +15,6 @@ import com.overviewdocs.metadata.MetadataSchema
 import com.overviewdocs.models.{DocumentSet,GroupedFileUpload}
 import com.overviewdocs.util.ContentDisposition
 import controllers.auth.Authorities.{anyUser,userOwningDocumentSet}
-import controllers.auth.{AuthorizedAction,AuthorizedBodyParser}
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
 import controllers.forms.MassUploadControllerForm
 import controllers.iteratees.GroupedFileUploadIteratee
@@ -28,9 +27,9 @@ class MassUploadController @Inject() (
   jobQueueSender: JobQueueSender,
   groupedFileUploadBackend: GroupedFileUploadBackend,
   uploadSinkFactory: MassUploadControllerMethods.UploadSinkFactory,
-  messagesApi: MessagesApi,
+  val controllerComponents: ControllerComponents,
   materializer: Materializer
-) extends Controller(messagesApi) {
+) extends BaseController {
 
   /** Calls MassUploadControllerMethods.Create(), returning the result as body.
     *
@@ -57,7 +56,7 @@ class MassUploadController @Inject() (
     * Used in create().
     */
   private def createAuthBodyParser(guid: UUID): BodyParser[Result] = {
-    AuthorizedBodyParser(anyUser)(user => createInnerBodyParser(user, guid))
+    authorizedBodyParser(anyUser)(user => createInnerBodyParser(user, guid))
   }
 
   /** Starts or resumes a file upload. */
@@ -85,7 +84,7 @@ class MassUploadController @Inject() (
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def show(guid: UUID) = AuthorizedAction(anyUser).async { request =>
+  def show(guid: UUID) = authorizedAction(anyUser).async { request =>
     def contentDisposition(upload: GroupedFileUpload) = {
       ContentDisposition.fromFilename(upload.name).contentDisposition
     }
@@ -117,7 +116,7 @@ class MassUploadController @Inject() (
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def startClustering = AuthorizedAction(anyUser).async { request =>
+  def startClustering = authorizedAction(anyUser).async { request =>
     MassUploadControllerForm.new_.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
@@ -156,7 +155,7 @@ class MassUploadController @Inject() (
     *
     * Does <em>not</em> create a DocumentSet.
     */
-  def startClusteringExistingDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { request =>
+  def startClusteringExistingDocumentSet(id: Long) = authorizedAction(userOwningDocumentSet(id)).async { request =>
     MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
@@ -188,7 +187,7 @@ class MassUploadController @Inject() (
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def cancel = AuthorizedAction(anyUser).async { request =>
+  def cancel = authorizedAction(anyUser).async { request =>
     fileGroupBackend.find(request.user.email, None)
       .flatMap(_ match {
         case Some(fileGroup) => fileGroupBackend.destroy(fileGroup.id)

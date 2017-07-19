@@ -6,14 +6,14 @@ import akka.util.ByteString
 import java.util.UUID
 import javax.inject.Inject
 import play.api.libs.streams.Accumulator
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc.{EssentialAction,RequestHeader,Result}
 import scala.concurrent.Future
 
 import com.overviewdocs.models.{ApiToken,FileGroup,GroupedFileUpload}
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.ContentDisposition
-import controllers.auth.{ApiAuthorizedAction,ApiTokenFactory}
+import controllers.auth.ApiTokenFactory
 import controllers.auth.Authorities.anyUser
 import controllers.backend.{FileGroupBackend,GroupedFileUploadBackend}
 import controllers.forms.MassUploadControllerForm
@@ -26,10 +26,11 @@ class MassUploadController @Inject() (
   groupedFileUploadBackend: GroupedFileUploadBackend,
   apiTokenFactory: ApiTokenFactory,
   uploadSinkFactory: MassUploadControllerMethods.UploadSinkFactory,
+  val controllerComponents: ApiControllerComponents,
   materializer: Materializer
-) extends ApiController {
+) extends ApiBaseController {
 
-  def index = ApiAuthorizedAction(anyUser).async { request =>
+  def index = apiAuthorizedAction(anyUser).async { request =>
     for {
       fileGroup <- fileGroupBackend.findOrCreate(FileGroup.CreateAttributes(request.apiToken.createdBy, Some(request.apiToken.token)))
       uploads <- groupedFileUploadBackend.index(fileGroup.id)
@@ -77,7 +78,7 @@ class MassUploadController @Inject() (
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def show(guid: UUID) = ApiAuthorizedAction(anyUser).async { request =>
+  def show(guid: UUID) = apiAuthorizedAction(anyUser).async { request =>
     def contentDisposition(upload: GroupedFileUpload) = {
       ContentDisposition.fromFilename(upload.name).contentDisposition
     }
@@ -108,7 +109,7 @@ class MassUploadController @Inject() (
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def startClustering = ApiAuthorizedAction(anyUser).async { request =>
+  def startClustering = apiAuthorizedAction(anyUser).async { request =>
     MassUploadControllerForm.edit.bindFromRequest()(request).fold(
       e => Future(BadRequest),
       values => {
@@ -142,7 +143,7 @@ class MassUploadController @Inject() (
     *
     * TODO refactor into MassUploadControllerMethods
     */
-  def cancel = ApiAuthorizedAction(anyUser).async { request =>
+  def cancel = apiAuthorizedAction(anyUser).async { request =>
     fileGroupBackend.find(request.apiToken.createdBy, Some(request.apiToken.token))
       .flatMap(_ match {
         case Some(fileGroup) => fileGroupBackend.destroy(fileGroup.id)

@@ -20,7 +20,7 @@ class ApiTokenFactorySpec extends test.helpers.InAppSpecification with Mockito w
     val authority = mock[Authority]
     val mockBackend = mock[ApiTokenBackend]
 
-    val factory = new ApiTokenFactory(mockBackend)
+    val factory = new DefaultApiTokenFactory(mockBackend)
 
     val rightToken = ApiToken("12345", new java.sql.Timestamp(0L), "user@example.org", "foo", Some(4L))
     val wrongToken = ApiToken("23456", new java.sql.Timestamp(0L), "user@example.com", "bar", Some(5L))

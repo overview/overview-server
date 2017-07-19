@@ -30,11 +30,11 @@ describe('PdfAnnotations', function() {
       await b.find('iframe#document-contents', { wait: 'fast' }) // wait for PDF to start loading
 
       await b.switchToFrame('document-contents')
+      await b.assertExists('#viewer .textLayer div', { wait: 'pageLoad' })
       await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
         return document.querySelector('.noteLayer') !== null
       });
 
-      await b.assertExists('#viewer .textLayer div', { wait: 'pageLoad' })
       await b.click('button#addNote')
 
       const el = (await b.find({ css: '#viewer .textLayer div' })).driverElement

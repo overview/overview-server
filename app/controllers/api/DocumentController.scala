@@ -3,12 +3,12 @@ package controllers.api
 import akka.stream.scaladsl.{Concat,Source}
 import java.util.UUID
 import javax.inject.Inject
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsArray,JsBoolean,JsNull,JsNumber,JsObject,JsString,JsValue,Json}
 import play.api.mvc.Result
 import scala.concurrent.Future
 
-import controllers.auth.{ApiAuthorizedAction,ApiAuthorizedRequest}
+import controllers.auth.ApiAuthorizedRequest
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend,DocumentSetBackend,SelectionBackend}
 import models.pagination.PageRequest
@@ -19,8 +19,9 @@ import com.overviewdocs.models.{DocumentSet,DocumentHeader}
 class DocumentController @Inject() (
   val documentSetBackend: DocumentSetBackend,
   val documentBackend: DocumentBackend,
-  val selectionBackend: SelectionBackend
-) extends ApiController with ApiSelectionHelpers {
+  val selectionBackend: SelectionBackend,
+  val controllerComponents: ApiControllerComponents
+) extends ApiBaseController with ApiSelectionHelpers {
   import DocumentController.Field
 
   private def _indexDocuments(documentSet: DocumentSet, selection: Selection, pageRequest: PageRequest, fields: Set[Field]): Future[Result] = {
@@ -45,7 +46,7 @@ class DocumentController @Inject() (
     val batchSize = DocumentController.StreamingPageLimit
 
     def fetchPage(pageStart: Int): Future[String] = {
-      documentBackend.index(selection, PageRequest(pageStart, batchSize), Field.needFullDocuments(fields))
+      documentBackend.index(selection, PageRequest(pageStart, batchSize, false), Field.needFullDocuments(fields))
         .map { (documents) =>
           val initialComma = if (pageStart != start && documents.items.nonEmpty) "," else ""
           val jsObjects = documents.items.map(d => Field.formatDocument(documentSet, d, fields))
@@ -83,7 +84,7 @@ class DocumentController @Inject() (
     yield Ok(JsArray(ids.map(JsNumber(_))))
   }
 
-  def index(documentSetId: Long, fields: String) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
+  def index(documentSetId: Long, fields: String) = apiAuthorizedAction(userOwningDocumentSet(documentSetId)).async { request =>
     documentSetBackend.show(documentSetId).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => indexDocumentSet(documentSet, fields)(request)
@@ -122,7 +123,7 @@ class DocumentController @Inject() (
     }
   }
 
-  def show(documentSetId: Long, documentId: Long) = ApiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
+  def show(documentSetId: Long, documentId: Long) = apiAuthorizedAction(userOwningDocumentSet(documentSetId)).async {
     for {
       maybeDocumentSet <- documentSetBackend.show(documentSetId)
       maybeDocument <- documentBackend.show(documentSetId, documentId)

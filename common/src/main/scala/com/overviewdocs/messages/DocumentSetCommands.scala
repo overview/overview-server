@@ -70,6 +70,19 @@ object DocumentSetCommands {
     override val documentSetId = reindexJob.documentSetId
   }
 
+  /** Ensure there is a document_id_list entry for the column.
+    *
+    * Not stored: document_id_list entries are computed lazily, so if the
+    * database goes down we can just compute them next time they're requested.
+    *
+    * The sender will receive zero or more Progress.Sorting messages, followed
+    * by a Progress.SortDone message.
+    */
+  case class SortField(
+    override val documentSetId: Long,
+    fieldName: String
+  ) extends Command
+
   /** Delete a DocumentSet and all associated information.
     *
     * Stored in the database as document_set.deleted.

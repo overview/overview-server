@@ -2,8 +2,8 @@ package controllers
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Action
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.mvc.MessagesActionBuilder
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
@@ -16,26 +16,26 @@ import models.tables.Users
 class SessionController @Inject() (
   sessionBackend: SessionBackend,
   userBackend: UserBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  messagesAction: MessagesActionBuilder,
+  val controllerComponents: ControllerComponents,
+  sessionNewHtml: views.html.Session._new
+) extends BaseController {
   private val loginForm = controllers.forms.LoginForm()
   private val registrationForm = controllers.forms.UserForm()
   private val NotAllowed = Left("forms.LoginForm.error.invalid_credentials")
   private val NotConfirmed = Left("forms.LoginForm.error.not_confirmed")
 
-  private val m = views.Magic.scopedMessages("controllers.SessionController")
-
-  def _new() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+  def _new() = optionallyAuthorizedAction(anyUser) { implicit request =>
     // Beware: this has been copy/pasted to UserController, too
     request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
-      case _ => Ok(views.html.Session._new(loginForm, registrationForm))
+      case _ => Ok(sessionNewHtml(loginForm, registrationForm))
     }
   }
 
-  def delete = OptionallyAuthorizedAction(anyUser).async { implicit request =>
+  def delete = optionallyAuthorizedAction(anyUser).async { implicit request =>
     val result = AuthResults.logoutSucceeded(request).flashing(
-      "success" -> m("delete.success"),
+      "success" -> request.messages("controllers.SessionController.delete.success"),
       "event" -> "session-delete"
     )
 
@@ -49,14 +49,14 @@ class SessionController @Inject() (
     }
   }
 
-  def create = Action.async { implicit request =>
+  def create = messagesAction.async { implicit request =>
     val boundForm = loginForm.bindFromRequest
     boundForm.fold(
-      formWithErrors => Future.successful(BadRequest(views.html.Session._new(formWithErrors, registrationForm))),
+      formWithErrors => Future.successful(BadRequest(sessionNewHtml(formWithErrors, registrationForm))),
       potentialExistingUser => {
         findUser(potentialExistingUser).flatMap(_ match {
           case Left(error) => {
-            Future.successful(BadRequest(views.html.Session._new(boundForm.withGlobalError(error), registrationForm)))
+            Future.successful(BadRequest(sessionNewHtml(boundForm.withGlobalError(error), registrationForm)))
           }
           case Right(user) => {
             for {

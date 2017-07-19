@@ -1,3 +1,9 @@
+@this(
+  configuration: play.api.Configuration,
+  messagesApi: MessagesApi,
+  navbar: views.html.components.navbar,
+  intercomConfiguration: IntercomConfiguration
+)
 @(
   optionalUser: Option[User],
   title: String,
@@ -8,11 +14,7 @@
   optionalDocumentSet: Option[com.overviewdocs.models.DocumentSet]=None
 )(
   content: Html
-)(
-  implicit messages: Messages,
-  flash: Flash,
-  request: RequestHeader
-)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @import play.api.Play
 <!DOCTYPE html>
 <html lang="@messages.lang.code">
@@ -21,31 +23,27 @@
     <title>@title</title>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")" />
     <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
-    @defining(play.filters.csrf.CSRFConfig.global.tokenName) { csrfTokenName =>
-      @for(csrfToken <- play.filters.csrf.CSRF.getToken(request).map(_.value)) {
-        <script>
-          window.csrfTokenName = "@csrfTokenName";
-          window.csrfToken = "@csrfToken";
-          window.csrfTokenHtml = '<input type="hidden" name="@csrfTokenName" value="@csrfToken" />';
-          window.csrfTokenData = { "@csrfTokenName": "@csrfToken" };
-          window.csrfTokenQueryString = "@csrfTokenName=@csrfToken";
-        </script>
-      }
-    }
-    @defining(Play.maybeApplication.flatMap(_.configuration.getString("overview.documentcloud_url")).getOrElse("https://www.documentcloud.org")) { documentCloudUrl =>
+    @defining(play.filters.csrf.CSRF.getToken(request).get) { token =>
       <script>
-        window.documentCloudUrl = "@documentCloudUrl";
+        window.csrfTokenName = "@{token.name}";
+        window.csrfToken = "@{token.value}";
+        window.csrfTokenHtml = '<input type="hidden" name="@{token.name}" value="@{token.value}" />';
+        window.csrfTokenData = { "@{token.name}": "@{token.value}" };
+        window.csrfTokenQueryString = "@{token.name}=@{token.value}";
       </script>
     }
+    <script>
+      window.documentCloudUrl = "@{configuration.get[String]("documentcloud_url")}";
+    </script>
   </head>
   <body class="@bodyClass">
     <!--[if lte IE 9]>
       <div id="ie9-not-supported" style="padding: 2em 10%; background: white; border: 1em solid #ed1c24; font-size: 1.75em; line-height: 1.75;">
-        @Html(Messages("views.main.ie_not_supported_html"))
+        @Html(messages("views.main.ie_not_supported_html"))
       </div>
     <![endif]-->
 
-    @views.html.components.navbar(optionalUser, optionalDocumentSet)
+    @navbar(optionalUser, optionalDocumentSet)
 
     @if(flash.data.nonEmpty) {
       <div id="flash" class="container">
@@ -69,31 +67,14 @@
 
     @if(!jsMessageKeys.isEmpty) {
       <script>
-        window.messages = @Html(views.JsMessages(jsMessageKeys));
+        window.messages = @Html(views.JsMessages(messagesApi, jsMessageKeys));
       </script>
     }
 
     @javascripts
 
-    @defining(Play.maybeApplication.flatMap(_.configuration.getString("analytics.ga_tracking_id")).getOrElse("")) { trackingId =>
-      @if(trackingId.length > 0) {
-        <script>
-          window._gaq = window._gaq || [];
-          _gaq.push(['_setAccount', '@trackingId']);
-          _gaq.push(['_trackPageview']);
-
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        </script>
-        <script src="@routes.Assets.at("javascripts/tracking.js").url"></script>
-      }
-    }
-
     @for(user <- optionalUser;
-         intercomSettings <- IntercomConfiguration.settingsForUser(user)) {
+         intercomSettings <- intercomConfiguration.settingsForUser(user)) {
       <script id="IntercomSettingsScriptTag">
         window.intercomSettings = {
           email: "@intercomSettings.email",
@@ -108,8 +89,22 @@
       </script>
       <script>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://static.intercomcdn.com/intercom.v1.js';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
     }
-    @if(Play.maybeApplication.flatMap(_.configuration.getString("analytics.ga_tracking_id")).getOrElse("").length == 0) {
+
+    @defining(configuration.get[String]("analytics.ga_tracking_id")) { trackingId =>
+      @if(trackingId.nonEmpty) {
+        <script>
+          window._gaq = window._gaq || [];
+          _gaq.push(['_setAccount', '@trackingId']);
+          _gaq.push(['_trackPageview']);
+
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+        </script>
         <script src="@routes.Assets.at("javascripts/tracking.js").url"></script>
+      }
     }
   </body>
 </html>

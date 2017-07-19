@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsObject,JsNumber}
 import play.api.mvc.Result
 import scala.concurrent.Future
@@ -14,11 +14,11 @@ import controllers.backend.{TagDocumentBackend,SelectionBackend}
 class TagDocumentController @Inject() (
   tagDocumentBackend: TagDocumentBackend,
   protected val selectionBackend: SelectionBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) with SelectionHelpers {
+  val controllerComponents: ControllerComponents
+) extends BaseController with SelectionHelpers {
 
-  def count(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { request =>
-    requestToSelection(documentSetId, request).flatMap(_ match {
+  def count(documentSetId: Long) = authorizedAction(userViewingDocumentSet(documentSetId)).async { request =>
+    requestToSelection(documentSetId, request)(request.messages).flatMap(_ match {
       case Left(result) => Future.successful(result)
       case Right(selection) => {
         for {
@@ -36,8 +36,8 @@ class TagDocumentController @Inject() (
     })
   }
 
-  def createMany(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningTag(documentSetId, tagId)).async { request =>
-    requestToSelection(documentSetId, request).flatMap(_ match {
+  def createMany(documentSetId: Long, tagId: Long) = authorizedAction(userOwningTag(documentSetId, tagId)).async { request =>
+    requestToSelection(documentSetId, request)(request.messages).flatMap(_ match {
       case Left(result) => Future.successful(result)
       case Right(selection) => for {
         documentIds <- selection.getAllDocumentIds
@@ -46,8 +46,8 @@ class TagDocumentController @Inject() (
     })
   }
 
-  def destroyMany(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningTag(documentSetId, tagId)).async { implicit request =>
-    requestToSelection(documentSetId, request).flatMap(_ match {
+  def destroyMany(documentSetId: Long, tagId: Long) = authorizedAction(userOwningTag(documentSetId, tagId)).async { implicit request =>
+    requestToSelection(documentSetId, request)(request.messages).flatMap(_ match {
       case Left(result) => Future.successful(result)
       case Right(selection) => for {
         documentIds <- selection.getAllDocumentIds

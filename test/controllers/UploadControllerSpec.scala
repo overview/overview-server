@@ -9,7 +9,7 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AnyContent,Request,RequestHeader,Result}
-import play.api.test.{FakeHeaders,FakeRequest,FakeApplication}
+import play.api.test.{FakeHeaders,FakeRequest}
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
@@ -24,7 +24,7 @@ class UploadControllerSpec extends ControllerSpecification with Mockito {
     val guid = UUID.randomUUID
     val documentSetBackend = smartMock[DocumentSetBackend]
     val components = smartMock[UploadController.Components]
-    val controller = new UploadController(documentSetBackend, components, testMessagesApi)
+    val controller = new UploadController(documentSetBackend, components, fakeControllerComponents)
 
     def dummyUpload(nBytesUploaded: Long, nBytesTotal: Long): OverviewUpload = OverviewUpload(
       factory.upload(totalSize=nBytesTotal),

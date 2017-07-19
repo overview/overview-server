@@ -1,8 +1,10 @@
 package controllers
 
+import org.mockito.Matchers
 import org.specs2.specification.Scope
 import scala.concurrent.Future
 
+import controllers.auth.AuthConfig
 import controllers.backend.{DocumentSetBackend,DocumentSetUserBackend}
 import com.overviewdocs.test.factories.{PodoFactory=>factory}
 
@@ -10,7 +12,15 @@ class DocumentSetUserControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockBackend = smartMock[DocumentSetUserBackend]
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
-    val controller = new DocumentSetUserController(mockBackend, mockDocumentSetBackend, testMessagesApi)
+    val authConfig = smartMock[AuthConfig]
+    authConfig.isAdminOnlyExport returns false
+    val controller = new DocumentSetUserController(
+      mockBackend,
+      mockDocumentSetBackend,
+      fakeControllerComponents,
+      authConfig,
+      mockView[views.html.DocumentSetUser.index]
+    )
     val documentSetId = 123L
   }
 
@@ -23,17 +33,20 @@ class DocumentSetUserControllerSpec extends ControllerSpecification {
 
     "set data-emails" in new IndexScope {
       mockBackend.index(documentSetId) returns Future.successful(Seq(factory.documentSetUser(1L, "user-x@example.org")))
-      h.contentAsString(result) must contain("""data-emails="[&quot;user-x@example.org&quot;]"""")
+      h.contentAsString(result)
+      there was one(controller.indexHtml).apply(any, any, Matchers.eq(Seq("user-x@example.org")), any)(any, any, any)
     }
 
     "set data-public=true" in new IndexScope {
       mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(isPublic=true)))
-      h.contentAsString(result) must contain("""data-public="true"""")
+      h.contentAsString(result)
+      there was one(controller.indexHtml).apply(any, any, any, Matchers.eq(true))(any, any, any)
     }
 
     "set data-public=false" in new IndexScope {
       mockDocumentSetBackend.show(documentSetId) returns Future.successful(Some(factory.documentSet(isPublic=false)))
-      h.contentAsString(result) must contain("""data-public="false"""")
+      h.contentAsString(result)
+      there was one(controller.indexHtml).apply(any, any, any, Matchers.eq(false))(any, any, any)
     }
   }
 

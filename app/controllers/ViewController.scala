@@ -4,7 +4,7 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
 import play.api.mvc.Result
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
@@ -20,9 +20,9 @@ class ViewController @Inject() (
   apiTokenBackend: ApiTokenBackend,
   storeBackend: StoreBackend,
   viewBackend: ViewBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
-  def indexJson(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async {
+  val controllerComponents: ControllerComponents
+) extends BaseController {
+  def indexJson(documentSetId: Long) = authorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
     val trees = storage.findTrees(documentSetId).map(_.copy()).toArray
 
     viewBackend.index(documentSetId)
@@ -30,7 +30,7 @@ class ViewController @Inject() (
       .recover { case t: Throwable => InternalServerError(t.getMessage) }
   }
 
-  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def create(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     val form = ViewForm.create(request.user.email)
     form.bindFromRequest.value match {
       case None => Future.successful(BadRequest("You must POST a 'title' and 'url'."))
@@ -44,7 +44,7 @@ class ViewController @Inject() (
     }
   }
 
-  def update(documentSetId: Long, viewId: Long) = AuthorizedAction(userOwningView(viewId)).async { implicit request =>
+  def update(documentSetId: Long, viewId: Long) = authorizedAction(userOwningView(viewId)).async { implicit request =>
     ViewUpdateAttributesForm().bindFromRequest.fold(
       f => Future.successful(BadRequest),
       attributes => viewBackend.update(viewId, attributes).map(_ match {
@@ -54,7 +54,7 @@ class ViewController @Inject() (
     )
   }
 
-  def destroy(documentSetId: Long, viewId: Long) = AuthorizedAction(userOwningView(viewId)).async { request =>
+  def destroy(documentSetId: Long, viewId: Long) = authorizedAction(userOwningView(viewId)).async { request =>
     viewBackend.show(viewId).flatMap(_ match {
       case Some(view) => {
         for {

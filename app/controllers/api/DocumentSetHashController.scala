@@ -8,20 +8,20 @@ package controllers.api
 
 import javax.inject.Inject
 import play.api.mvc.Action
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.anyUser
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.DocumentSetFileBackend
-import controllers.auth.ApiAuthorizedAction
 
 class DocumentSetHashController @Inject() (
-  backend: DocumentSetFileBackend
-) extends ApiController {
+  backend: DocumentSetFileBackend,
+  val controllerComponents: ApiControllerComponents
+) extends ApiBaseController {
 
   // This code copied from DocumentSetFileController.scala, boo
-  def head(sha1: Array[Byte]) = ApiAuthorizedAction(anyUser).async { request =>
+  def head(sha1: Array[Byte]) = apiAuthorizedAction(anyUser).async { request =>
 
     backend.existsByIdAndSha1(request.apiToken.documentSetId.get, sha1).map(_ match {
       case true => NoContent

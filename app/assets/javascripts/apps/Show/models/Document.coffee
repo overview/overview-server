@@ -29,6 +29,7 @@ define [
       pageNumber: null
       url: null
       metadata: null # We normally *don't* load metadata -- hence null
+      sortKey: null
 
     url: -> "/documentsets/#{@get('documentSetId')}/documents/#{@id}"
 
@@ -47,6 +48,7 @@ define [
       tagids: json.tagids || []
       nodeids: json.nodeids || []
       thumbnailUrl: json.thumbnailUrl || null
+      sortKey: json.sortKey || null
 
     initialize: (attributes, options) ->
       super(attributes, options)

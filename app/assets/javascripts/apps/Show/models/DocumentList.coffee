@@ -3,8 +3,7 @@ define [
   'backbone'
   '../collections/Documents'
   '../models/Document'
-  'rsvp'
-], (_, Backbone, Documents, Document, RSVP) ->
+], (_, Backbone, Documents, Document) ->
   # A sorted list of Document objects on the server.
   #
   # A DocumentList is composed of:
@@ -18,6 +17,9 @@ define [
   # * the `length` _attribute_, a `Number` representing the number of documents
   #   on the server side. This attribute starts off `null` and changes when the
   #   server responds with some documents.
+  # * the `progress` _attribute_, a `Number` from 0.0 to 1.0 representing how
+  #   far along the server is in preparing results. It only makes sense when
+  #   fetching the first page.
   # * the `selectionId` _attribute_, null to begin with and then a UUID.
   #
   # Invoke it like this:
@@ -44,6 +46,10 @@ define [
   #
   # A DocumentList starts empty. It only ever grows.
   #
+  # You can pass a "reverse" parameter to add "&reverse=true" to requests. The
+  # server will return the last document first in that case. (Pass "reverse"
+  # alongside "params" and "documentSet" as a _parameter_, not an _attribute_.)
+  #
   # Events:
   #
   #   documentList.list-tagged(documentList, tag)
@@ -54,6 +60,7 @@ define [
       error: null
       warnings: []
       length: null
+      progress: null
       loading: false
       nPagesFetched: 0
       selectionId: null
@@ -61,10 +68,13 @@ define [
 
     initialize: (attributes, options) ->
       throw 'Must pass options.documentSet, a DocumentSet' if !options.documentSet?
+      throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue?
       throw 'Must pass options.params, a DocumentListParams object' if !options.params?
 
       @documentSet = options.documentSet
+      @transactionQueue = options.transactionQueue
       @params = options.params
+      @reverse = !!options.reverse
       @url = _.result(@documentSet, 'url').replace(/\.json$/, '') + '/documents'
       @nDocumentsPerPage = options.nDocumentsPerPage || 20
       @documents = new Documents([])
@@ -97,7 +107,17 @@ define [
     _getQueryStringCached: ->
       if @get('selectionId')
         q = if @params.q then "q=#{@params.q}&" else ""
-        "#{q}selectionId=#{@get('selectionId')}"
+        q = "#{q}selectionId=#{@get('selectionId')}"
+        # XXX ugly bug: the server doesn't cache sortByMetadataField, but it
+        # uses it when outputting results. Tell it which field we're sorting by,
+        # so it will include the field in its output.
+        #
+        # This isn't a proper solution, and it isn't tested. But it's really
+        # easy to implement, and [adam, 2017-06-30] I'm not sure what a proper
+        # solution would look like yet.
+        if @params.sortByMetadataField
+          q = "#{q}&sortByMetadataField=#{encodeURIComponent(@params.sortByMetadataField)}"
+        q
       else
         null
 
@@ -258,10 +278,14 @@ define [
       if @_fetchNextPagePromise?
         @_fetchNextPagePromise
       else if @isComplete()
-        RSVP.resolve(null)
+        Promise.resolve(null)
       else
         @_fetchNextPagePromise = @_doFetch()
           .then(=> @_fetchNextPagePromise = null) # returns null
+
+    _receiveProgress: (data) ->
+      if @get('length') == null
+        @set(progress: data.progress)
 
     _receivePage: (data) ->
       newDocuments = (new Document(document, parse: true) for document in data.documents)
@@ -287,46 +311,42 @@ define [
 
       @set
         loading: false
+        progress: null
         length: data.total_items
         selectionId: data.selection_id
         warnings: data.warnings
         nPagesFetched: @get('nPagesFetched') + 1
 
-    _receiveError: (xhr) ->
-      message = xhr.responseJSON?.message || xhr.responseText
+    _receiveError: (errorReport) ->
       @set
         loading: false
-        statusCode: xhr.status
-        error: message
+        progress: null
+        statusCode: errorReport.statusCode
+        error: errorReport.thrown?.message
 
     _doFetch: ->
-      new RSVP.Promise (resolve, reject) =>
-        query = if @get('length') == null
-          @_getQueryStringNoCache()
-        else
-          @_getQueryStringCached()
+      query = if @get('length') == null
+        @_getQueryStringNoCache()
+      else
+        @_getQueryStringCached()
 
-        query += "&limit=#{@nDocumentsPerPage}"
-        query += "&offset=#{@get('nPagesFetched') * @nDocumentsPerPage}"
+      query += "&limit=#{@nDocumentsPerPage}"
+      query += "&offset=#{@get('nPagesFetched') * @nDocumentsPerPage}"
+      query += "&reverse=true" if @reverse
 
-        @set(loading: true)
+      @set(loading: true)
 
-        onSuccess = (data) =>
-          @_receivePage(data)
-          resolve(null)
-
-        onError = (xhr) =>
-          @_receiveError(xhr)
-          reject(@get('message'))
-
-        Backbone.$.ajax
-          type: 'get'
-          url: @url
-          data: query
-          success: onSuccess
-          error: onError
-
-        undefined
+      @transactionQueue.streamJsonArray({
+        url: "#{@url}?#{query}"
+        onItem: (item) =>
+          if item.progress
+            @_receiveProgress(item)
+          else
+            @_receivePage(item)
+      })
+        .catch (errorReport) =>
+          @_receiveError(errorReport)
+          Promise.reject(errorReport)
 
     _onDocumentTagged: (document, tag, options) ->
       return if options?.fromList

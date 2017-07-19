@@ -4,9 +4,10 @@ import akka.actor.{Actor,ActorRef,Props}
 import scala.concurrent.{ExecutionContext,Future}
 import scala.util.{Failure,Success}
 
+import com.overviewdocs.akkautil.BrokerActor
+import com.overviewdocs.background.reindex.ReindexActor
 import com.overviewdocs.clone.Cloner
 import com.overviewdocs.database.DocumentSetDeleter
-import com.overviewdocs.background.reindex.ReindexActor
 import com.overviewdocs.jobhandler.csv.CsvImportWorkBroker
 import com.overviewdocs.jobhandler.documentcloud.DocumentCloudImportWorkBroker
 import com.overviewdocs.jobhandler.filegroup.AddDocumentsWorkBroker
@@ -35,6 +36,7 @@ class DocumentSetCommandWorker(
   val documentCloudImportWorkBroker: ActorRef,
   val indexer: ActorRef,
   val reindexer: ActorRef,
+  val sortBroker: ActorRef,
   val cloner: Cloner,
   val documentSetDeleter: DocumentSetDeleter
 ) extends Actor
@@ -94,6 +96,16 @@ class DocumentSetCommandWorker(
         // commands.
         val message = AddDocumentsWorkBroker.DoWorkThenAck(addDocuments, broker, done(addDocuments.documentSetId))
         addDocumentsWorkBroker ! message
+        sendReady
+      }
+      case command: SortField => {
+        // SortField is a special case, because it gets its own scheduler.
+        // The DocumentSetCommandWorker will return right away; that way, the
+        // downstream AddDocumentsWorkBroker can juggle all import+sort jobs at
+        // once, while this DocumentSetCommandWorker can work on other
+        // commands.
+        sortBroker ! BrokerActor.Work(command, sender)
+        sendDone(command.documentSetId)
         sendReady
       }
       case command: Reindex => {
@@ -157,6 +169,7 @@ object DocumentSetCommandWorker {
     documentCloudImportWorkBroker: ActorRef,
     indexer: ActorRef,
     reindexer: ActorRef,
+    sortBroker: ActorRef,
     cloner: Cloner,
     documentSetDeleter: DocumentSetDeleter
   ): Props = {
@@ -167,6 +180,7 @@ object DocumentSetCommandWorker {
       documentCloudImportWorkBroker,
       indexer,
       reindexer,
+      sortBroker,
       cloner,
       documentSetDeleter
     ))

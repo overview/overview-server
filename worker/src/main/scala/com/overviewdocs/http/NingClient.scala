@@ -3,7 +3,7 @@ package com.overviewdocs.http
 import com.ning.http.client.{AsyncCompletionHandler,AsyncHttpClient,AsyncHttpClientConfig,FluentCaseInsensitiveStringsMap,Realm,RequestBuilder,Response=>HttpResponse}
 import com.ning.http.client.Realm.AuthScheme
 import scala.collection.immutable.TreeMap
-import scala.collection.JavaConversions.iterableAsScalaIterable
+import scala.collection.JavaConverters.iterableAsScalaIterable
 import scala.concurrent.{ExecutionContext,Future,Promise}
 
 /** An HTTP Client based on Ning AsyncHttpClient.

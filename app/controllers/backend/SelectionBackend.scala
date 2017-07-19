@@ -34,9 +34,11 @@ trait SelectionBackend extends Backend {
 
   /** Converts a SelectionRequest to a new Selection.
     *
-    * This involves calling findDocumentIds and caching the result.
+    * Sorting on a non-default column can take a long time. If this call needs
+    * a sort, onProgress() will be called repeatedly with numbers between 0.0
+    * and 1.0 as sorting progresses.
     */
-  def create(userEmail: String, request: SelectionRequest): Future[Selection]
+  def create(userEmail: String, request: SelectionRequest, onProgress: Double => Unit): Future[Selection]
 
   /** Returns an existing Selection, if it exists. */
   def find(documentSetId: Long, selectionId: UUID): Future[Option[Selection]]
@@ -48,20 +50,24 @@ trait SelectionBackend extends Backend {
     * 1. If maybeSelectionId exists, search for that Selection and return it.
     * 2. Otherwise, search for a Selection based on request.hash and return it.
     * 3. Otherwise, call create().
+    *
+    * Sorting on a non-default column can take a long time. If this call needs
+    * a sort, onProgress() will be called repeatedly with numbers between 0.0
+    * and 1.0 as sorting progresses.
     */
-  def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]): Future[Selection]
+  def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID], onProgress: Double => Unit): Future[Selection]
 }
 
 class NullSelectionBackend @Inject() (
   override val documentSelectionBackend: DocumentSelectionBackend
 ) extends SelectionBackend {
 
-  override def create(userEmail: String, request: SelectionRequest) = {
-    documentSelectionBackend.createSelection(request)
+  override def create(userEmail: String, request: SelectionRequest, onProgress: Double => Unit) = {
+    documentSelectionBackend.createSelection(request, onProgress)
   }
 
-  override def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]) = {
-    create(userEmail, request)
+  override def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID], onProgress: Double => Unit) = {
+    create(userEmail, request, onProgress)
   }
 
   override def find(documentSetId: Long, selectionId: UUID) = Future.successful(None)
@@ -130,10 +136,23 @@ class RedisSelectionBackend @Inject() (
         }
     }
 
+    private def pageRequestToDocumentIds(pageRequest: PageRequest, total: Int): Future[Array[Long]] = {
+      if (pageRequest.reverse) {
+        val (offset, limit) = if (pageRequest.offset + pageRequest.limit > total) {
+          (0, total - pageRequest.offset)
+        } else {
+          (total - pageRequest.offset - pageRequest.limit, pageRequest.limit)
+        }
+        getDocumentIdsArray(offset, limit).map(_.reverse)
+      } else {
+        getDocumentIdsArray(pageRequest.offset, pageRequest.limit)
+      }
+    }
+
     override def getDocumentIds(page: PageRequest): Future[Page[Long]] = {
       for {
         total <- getDocumentCount
-        longs <- getDocumentIdsArray(page.offset, page.limit)
+        longs <- pageRequestToDocumentIds(page, total.toInt)
       } yield Page(longs, PageInfo(page, total.toInt))
     }
 
@@ -226,9 +245,9 @@ class RedisSelectionBackend @Inject() (
     } yield ()
   }
 
-  override def create(userEmail: String, request: SelectionRequest) = {
+  override def create(userEmail: String, request: SelectionRequest, onProgress: Double => Unit) = {
     for {
-      selection <- documentSelectionBackend.createSelection(request)
+      selection <- documentSelectionBackend.createSelection(request, onProgress)
       _ <- writeSelection(userEmail, request, selection)
     } yield selection // return InMemorySelection, not a RedisSelection -- it's faster
   }
@@ -237,7 +256,7 @@ class RedisSelectionBackend @Inject() (
     findAndExpireSelectionById(documentSetId, selectionId)
   }
 
-  override def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID]) = {
+  override def findOrCreate(userEmail: String, request: SelectionRequest, maybeSelectionId: Option[UUID], onProgress: Double => Unit) = {
     for {
       // 1. Get selection ID if at all possible
       selectionId: Option[UUID] <- (maybeSelectionId
@@ -252,7 +271,7 @@ class RedisSelectionBackend @Inject() (
       // 3. Return the selection, or create a new one if we couldn't find one
       selection: Selection <- (selectionById
         .map(s => Future.successful(s))
-        .getOrElse(create(userEmail, request)))
+        .getOrElse(create(userEmail, request, onProgress)))
     } yield selection
   }
 }

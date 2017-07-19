@@ -14,12 +14,13 @@ class DocumentStoreObjectControllerSpec extends ApiControllerSpecification {
     val mockStoreBackend = smartMock[StoreBackend]
     val mockObjectBackend = smartMock[DocumentStoreObjectBackend]
     val mockSelectionBackend = mock[SelectionBackend]
-    mockSelectionBackend.findOrCreate(any, any, any) returns Future.successful(selection)
+    mockSelectionBackend.findOrCreate(any, any, any, any) returns Future.successful(selection)
 
     val controller = new DocumentStoreObjectController(
       mockStoreBackend,
       mockObjectBackend,
-      mockSelectionBackend
+      mockSelectionBackend,
+      fakeControllerComponents
     )
   }
 

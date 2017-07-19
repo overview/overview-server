@@ -13,7 +13,7 @@ object DocumentSetHelper {
     if (key == "") {
       ""
     } else {
-      val m = views.ScopedMessages("views.ImportJob._documentSetCreationJob.job_state_description")
+      val m = views.ScopedMessages("views.ImportJob._documentSetCreationJob.job_state_description", messages)
       m(keyAndArgs.head, keyAndArgs.drop(1) : _*)
     }
   }

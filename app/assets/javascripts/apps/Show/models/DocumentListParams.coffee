@@ -7,6 +7,7 @@ define [ 'underscore' ], (_) ->
   # * `objects`: { title: <String>, ids: <Array of Object IDs>, nodeIds: <Array of Node IDs> }
   # * `tags`: { ids: <Array of Tag IDs>, tagged: <Boolean>, operation: '<all|any|none, default any>' }
   # * `q`: <String -- empty string for no search>
+  # * `sortByMetadataField`: <String -- empty for default sort, which is by title>
   #
   # Each DocumentListParams is immutable.
   #
@@ -24,6 +25,8 @@ define [ 'underscore' ], (_) ->
   #     # that have tag 345, tag 456 or no tags at all
   #     params.withTags(ids: [ 345, 456 ], tagged: false)
   #
+  #     params.sortedByMetadataField('foo')
+  #
   #     params.reset() # DocumentListParams()
   #
   #     # You can also specify tags as just an Array of IDs
@@ -40,15 +43,41 @@ define [ 'underscore' ], (_) ->
   # * tags: an Array of Tag IDs
   # * tagged: a boolean
   # * tagOperation: 'all', 'none' or undefined (default, 'any')
+  # * sortByMetadataField: a String or null (default null)
   class DocumentListParams
     constructor: (options={}) ->
       @objects = @_parseObjects(options.objects)
       @tags = @_parseTags(options.tags)
       @q = @_parseQ(options.q)
+      @sortByMetadataField = @_parseSortByMetadataField(options.sortByMetadataField)
 
-    withQ: (q) -> new DocumentListParams(objects: @objects, tags: @tags, q: q)
-    withTags: (tags) -> new DocumentListParams(objects: @objects, tags: tags, q: @q)
-    withObjects: (objects) -> new DocumentListParams(objects: objects, tags: @tags, q: @q)
+    withQ: (q) ->
+      new DocumentListParams
+        objects: @objects
+        tags: @tags
+        q: q
+        sortBymetadataField: @sortByMetadataField
+
+    withTags: (tags) ->
+      new DocumentListParams
+        objects: @objects
+        tags: tags
+        q: @q
+        sortBymetadataField: @sortByMetadataField
+
+    withObjects: (objects) ->
+      new DocumentListParams
+        objects: objects
+        tags: @tags
+        q: @q
+        sortBymetadataField: @sortByMetadataField
+
+    sortedByMetadataField: (sortByMetadataField) ->
+      new DocumentListParams
+        objects: @objects
+        tags: @tags
+        q: @q
+        sortByMetadataField: @_parseSortByMetadataField(sortByMetadataField)
 
     # Convenience method: returns new DocumentListParams().
     #
@@ -104,6 +133,15 @@ define [ 'underscore' ], (_) ->
       ret.nodeIds = objects.nodeIds if !_.isEmpty(objects.nodeIds)
       ret
 
+    # Finds the sortByMetadataField from the constructor option `sortByMetadataField`.
+    _parseSortByMetadataField: (sortByMetadataField) ->
+      return null if !sortByMetadataField
+
+      if !_.isString(sortByMetadataField)
+        throw new Error('sortByMetadataField must be a String')
+
+      sortByMetadataField
+
     # Returns a flattened representation, for querying the server.
     toJSON: ->
       ret = {}
@@ -113,6 +151,7 @@ define [ 'underscore' ], (_) ->
       ret.tagged = @tags.tagged if _.isBoolean(@tags?.tagged)
       ret.tagOperation = @tags.operation if _.isString(@tags?.operation) && @tags.operation != 'any'
       ret.q = @q if @q
+      ret.sortByMetadataField = @sortByMetadataField if @sortByMetadataField
       ret
 
     # Returns a String representation, for debugging.

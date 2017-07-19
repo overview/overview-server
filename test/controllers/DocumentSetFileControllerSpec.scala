@@ -8,7 +8,7 @@ import controllers.backend.DocumentSetFileBackend
 class DocumentSetFileControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockBackend = mock[DocumentSetFileBackend]
-    val controller = new DocumentSetFileController(mockBackend, testMessagesApi)
+    val controller = new DocumentSetFileController(mockBackend, fakeControllerComponents)
   }
 
   "#head" should {

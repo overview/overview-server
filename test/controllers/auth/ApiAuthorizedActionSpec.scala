@@ -2,8 +2,8 @@ package controllers.auth
 
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.mvc.{AnyContent, Request, RequestHeader, Results, Result}
-import play.api.test.FakeRequest
+import play.api.mvc.{AnyContent,BodyParsers,Request,RequestHeader,Results,Result}
+import play.api.test.{FakeRequest,StubPlayBodyParsersFactory}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.overviewdocs.models.ApiToken
 
 class ApiAuthorizedActionSpec extends test.helpers.InAppSpecification with Mockito {
-  trait BaseScope extends Scope {
+  trait BaseScope extends Scope with StubPlayBodyParsersFactory {
     val mockApiTokenFactory = mock[ApiTokenFactory]
     val authority = mock[Authority]
     val request: RequestHeader = FakeRequest()
@@ -22,9 +22,11 @@ class ApiAuthorizedActionSpec extends test.helpers.InAppSpecification with Mocki
       mock[Result]
     }
 
-    lazy val actionBuilderFactory = new ApiAuthorizedAction {
-      override protected val apiTokenFactory = mockApiTokenFactory
-    }
+    lazy val actionBuilderFactory = new ApiAuthorizedAction(
+      mockApiTokenFactory,
+      new BodyParsers.Default(stubPlayBodyParsers),
+      materializer.executionContext
+    )
     lazy val actionBuilder = actionBuilderFactory(authority)
     lazy val action = actionBuilder(block(_))
 

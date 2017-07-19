@@ -8,7 +8,10 @@ import com.overviewdocs.models.Tag
 class TagControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
     val mockBackend = mock[TagBackend]
-    val controller = new TagController(mockBackend)
+    val controller = new TagController(
+      mockBackend,
+      fakeControllerComponents
+    )
   }
 
   "index" should {

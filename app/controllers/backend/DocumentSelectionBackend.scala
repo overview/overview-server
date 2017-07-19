@@ -1,5 +1,7 @@
 package controllers.backend
 
+import akka.stream.scaladsl.Sink
+import akka.stream.Materializer
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import play.api.libs.json.JsObject
@@ -8,7 +10,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.DocumentIdSet
+import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet}
 import com.overviewdocs.query.{Field,Query=>SearchQuery} // conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
@@ -21,26 +23,52 @@ import models.{InMemorySelection,SelectionRequest,SelectionWarning}
   * SelectionBackend loads and saves Selections.
   * DocumentBackend loads and saves Documents.
   * DocumentSelectionBackend creates a Selection by querying services.
+  *
+  * onProgress() will be called with numbers between 0.0 and 1.0, inclusive. It
+  * may be called at any time before the Future is resolved.
   */
 @ImplementedBy(classOf[DbDocumentSelectionBackend])
 trait DocumentSelectionBackend {
-  def createSelection(selectionRequest: SelectionRequest): Future[InMemorySelection]
+  def createSelection(selectionRequest: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection]
 }
 
 class DbDocumentSelectionBackend @Inject() (
   val database: Database,
   val searchBackend: SearchBackend,
-  val documentSetBackend: DocumentSetBackend
+  val documentSetBackend: DocumentSetBackend,
+  val documentIdListBackend: DocumentIdListBackend,
+  val materializer: Materializer
 ) extends DocumentSelectionBackend with DbBackend {
   import database.api._
 
   protected lazy val logger = Logger.forClass(getClass)
 
   /** Returns all a DocumentSet's Document IDs, sorted. */
-  private def indexAllIds(documentSetId: Long): Future[Array[Long]] = {
-    logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}]", documentSetId) {
-      database.option(sortedIds(documentSetId)).map(_.map(_.toArray).getOrElse(Array.empty))
+  private def getSortedIds(documentSet: DocumentSet, sortByMetadataField: Option[String], onProgress: Double => Unit): Future[(Array[Long],List[SelectionWarning])] = {
+    logger.logExecutionTimeAsync("fetching sorted document IDs [docset {}, field {}]", documentSet.id, sortByMetadataField) {
+      sortByMetadataField match {
+        case None => getDefaultSortedIds(documentSet.id).map(ids => (ids, Nil))
+        case Some(field) if !validFieldNames(documentSet).contains(field) => {
+          getDefaultSortedIds(documentSet.id)
+            .map(ids => (ids, List(SelectionWarning.MissingField(field, validFieldNames(documentSet)))))
+        }
+        case Some(field) => {
+          documentIdListBackend.showOrCreate(documentSet.id.toInt, field)
+            .to(Sink.foreach(progress => onProgress(progress.progress)))
+            .run()(materializer)
+            .map(_ match {
+              case None => throw new Exception("Sort failed. Look for earlier error messages.")
+              case Some(ids) => (ids.toDocumentIdArray, Nil)
+            })
+        }
+      }
     }
+  }
+
+  private def getDefaultSortedIds(documentSetId: Long): Future[Array[Long]] = {
+    // The ORM is unaware of DocumentSet.sortedDocumentIds
+    val q = sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
+    database.option(q).map(_.map(_.toArray).getOrElse(Array.empty))
   }
 
   private def queryMetadataFieldNames(query: SearchQuery): immutable.Set[String] = {
@@ -52,34 +80,31 @@ class DbDocumentSelectionBackend @Inject() (
     fieldNames.to[immutable.Set]
   }
 
-  private def findMissingFieldWarnings(documentSetId: Long, query: SearchQuery): Future[List[SelectionWarning]] = {
-    val queryFieldNames = queryMetadataFieldNames(query)
+  private def validFieldNames(documentSet: DocumentSet): List[String] = {
+    documentSet.metadataSchema.fields.map(_.name).toList
+  }
 
-    if (queryFieldNames.isEmpty) {
-      Future.successful(List())
-    } else {
-      documentSetBackend.show(documentSetId).map(_ match {
-        case None => List() // we have bigger problems than a warning
-        case Some(documentSet) => {
-          val validFieldNames: Seq[String] = documentSet.metadataSchema.fields.map(_.name)
-          val invalidFieldNames: Set[String] = queryFieldNames.diff(validFieldNames.toSet)
-          invalidFieldNames.toList.sorted.map(name => SelectionWarning.MissingField(name, validFieldNames))
-        }
-      })
-    }
+  private def missingFields(documentSet: DocumentSet, fields: List[String]): List[String] = {
+    fields.diff(validFieldNames(documentSet))
+  }
+
+  private def missingQueryFieldWarnings(documentSet: DocumentSet, query: SearchQuery): List[SelectionWarning] = {
+    val queryFieldNames = queryMetadataFieldNames(query).toList.sorted
+    missingFields(documentSet, queryFieldNames)
+      .map(name => SelectionWarning.MissingField(name, validFieldNames(documentSet)))
   }
 
   /** Returns IDs from the searchindex */
-  private def indexByQ(documentSetId: Long, query: SearchQuery): Future[(SearchResult,List[SelectionWarning])] = {
-    val searchResultFuture = logger.logExecutionTimeAsync("finding document IDs matching '{}'", query.toString) {
-      searchBackend.search(documentSetId, query)
+  private def indexByQ(documentSet: DocumentSet, query: SearchQuery): Future[(DocumentIdFilter,List[SelectionWarning])] = {
+    logger.logExecutionTimeAsync("finding document IDs matching '{}'", query.toString) {
+      val documentSetWarnings = missingQueryFieldWarnings(documentSet, query)
+      for {
+        searchResult <- searchBackend.search(documentSet.id, query)
+      } yield {
+        val searchResultWarnings = searchResult.warnings.map(w => SelectionWarning.SearchIndexWarning(w))
+        (searchResult.documentIds, documentSetWarnings ++ searchResultWarnings)
+      }
     }
-    val warningsFuture = findMissingFieldWarnings(documentSetId, query)
-
-    for {
-      searchResult <- searchResultFuture
-      warnings <- warningsFuture
-    } yield (searchResult, warnings)
   }
 
   /** Returns IDs that match the given tags/objects/etc (everything but
@@ -98,60 +123,38 @@ class DbDocumentSelectionBackend @Inject() (
   }
 
   /** Returns a subset of the DocumentSet's Document IDs, sorted. */
-  private def indexSelectedIds(request: SelectionRequest): Future[InMemorySelection] = {
-    val byQFuture: Future[Option[(SearchResult,List[SelectionWarning])]] = request.q match {
-      case None => Future.successful(None)
-      case Some(q) => indexByQ(request.documentSetId, q).map(r => Some(r))
-    }
+  private def indexSelectedIds(request: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection] = {
+    documentSetBackend.show(request.documentSetId).flatMap(_ match {
+      case None => Future.successful(InMemorySelection(Array.empty[Long]))
+      case Some(documentSet) => {
+        val byQFuture: Future[(DocumentIdFilter,List[SelectionWarning])] = request.q match {
+          case None => Future.successful((DocumentIdFilter.All(request.documentSetId.toInt), Nil))
+          case Some(q) => indexByQ(documentSet, q)
+        }
 
-    val byDbFuture: Future[Option[DocumentIdSet]] = if (request.copy(q=None).isAll) {
-      Future.successful(None)
-    } else {
-      indexByDB(request).map(r => Some(r))
-    }
+        val byDbFuture: Future[DocumentIdFilter] = if (request.copy(q=None).isAll) {
+          Future.successful(DocumentIdFilter.All(request.documentSetId.toInt))
+        } else {
+          indexByDB(request)
+        }
 
-    for {
-      allSortedIds <- indexAllIds(request.documentSetId)
-      byQ <- byQFuture
-      byDb <- byDbFuture
-    } yield {
-      logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
-        (byQ, byDb) match {
-          case (None, None) => {
-            InMemorySelection(allSortedIds)
-          }
-          case (Some((searchResponse,selectionWarnings)), None) => {
-            InMemorySelection(
-              allSortedIds.filter(id => searchResponse.documentIds.lowerIds.contains(id.toInt)),
-              selectionWarnings ++ searchResponse.warnings.map(w => SelectionWarning.SearchIndexWarning(w))
-            )
-          }
-          case (None, Some(dbIds)) => {
-            InMemorySelection(allSortedIds.filter(id => dbIds.lowerIds.contains(id.toInt)))
-          }
-          case (Some((searchResponse,selectionWarnings)), Some(dbIds)) => {
-            val ids = searchResponse.documentIds.intersect(dbIds)
-            InMemorySelection(
-              allSortedIds.filter(id => ids.lowerIds.contains(id.toInt)),
-              selectionWarnings ++ searchResponse.warnings.map(w => SelectionWarning.SearchIndexWarning(w))
-            )
+        for {
+          (allSortedIds, sortWarnings) <- getSortedIds(documentSet, request.sortByMetadataField, onProgress)
+          (byQ, byQWarnings) <- byQFuture
+          byDb <- byDbFuture
+        } yield {
+          logger.logExecutionTime("filtering sorted document IDs [docset {}]", request.documentSetId) {
+            val idsFilter = byQ.intersect(byDb)
+            val sortedIds: Array[Long] = allSortedIds.filter(idsFilter.contains _)
+            InMemorySelection(sortedIds, byQWarnings ++ sortWarnings)
           }
         }
       }
-    }
+    })
   }
 
-  override def createSelection(request: SelectionRequest): Future[InMemorySelection] = {
-    if (request.isAll) {
-      indexAllIds(request.documentSetId).map(ids => InMemorySelection(ids))
-    } else {
-      indexSelectedIds(request)
-    }
-  }
-
-  protected def sortedIds(documentSetId: Long): DBIO[Seq[Seq[Long]]] = {
-    // The ORM is unaware of DocumentSet.sortedDocumentIds
-    sql"SELECT sorted_document_ids FROM document_set WHERE id = ${documentSetId}".as[Seq[Long]]
+  override def createSelection(request: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection] = {
+    indexSelectedIds(request, onProgress)
   }
 
   protected def idsBySelectionRequestSql(request: SelectionRequest): String = {

@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 import play.api.data.{Form,Forms}
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc.{Action,Result}
 import scala.concurrent.Future
 
@@ -14,10 +14,11 @@ import com.overviewdocs.models.ApiToken
 
 class ApiTokenController @Inject() (
   backend: ApiTokenBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: ControllerComponents,
+  apiTokenIndexHtml: views.html.ApiToken.index
+) extends BaseController {
   private def indexHtml(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
-    Future.successful(Ok(views.html.ApiToken.index(request.user, documentSetId)))
+    Future.successful(Ok(apiTokenIndexHtml(request.user, documentSetId)))
   }
 
   private def indexJson(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
@@ -32,10 +33,10 @@ class ApiTokenController @Inject() (
     }
   }
 
-  def indexForDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request
+  def indexForDocumentSet(id: Long) = authorizedAction(userOwningDocumentSet(id)).async { implicit request
     => indexAny(Some(id))
   }
-  def index = AuthorizedAction(anyUser).async { implicit request => indexAny(None) }
+  def index = authorizedAction(anyUser).async { implicit request => indexAny(None) }
 
   private def createAny(documentSetId: Option[Long])(implicit request: AuthorizedRequest[_]): Future[Result] = {
     val description = flatRequestData(request).getOrElse("description", "")
@@ -44,10 +45,10 @@ class ApiTokenController @Inject() (
       .map(token => Ok(views.json.ApiToken.show(token)))
   }
 
-  def createForDocumentSet(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+  def createForDocumentSet(id: Long) = authorizedAction(userOwningDocumentSet(id)).async { implicit request =>
     createAny(Some(id))
   }
-  def create = AuthorizedAction(anyUser).async { implicit request => createAny(None) }
+  def create = authorizedAction(anyUser).async { implicit request => createAny(None) }
 
   private def realDestroy(token: String): Future[Result] = backend.destroy(token).map(_ => NoContent)
 

@@ -18,7 +18,8 @@ class DocumentCloudImportJobControllerSpec extends ControllerSpecification {
       mockDocumentSetBackend,
       mockStorage,
       mockJobQueueSender,
-      testMessagesApi
+      fakeControllerComponents,
+      mockView[views.html.DocumentCloudImportJob._new]
     )
   }
 

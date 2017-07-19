@@ -1,3 +1,6 @@
+@this(
+  mainWithSidebar: views.html.layouts.mainWithSidebar
+)
 @(
   user: User,
   detailedDocumentSets: models.pagination.Page[(com.overviewdocs.models.DocumentSet,Iterable[com.overviewdocs.models.ImportJob],Int)]
@@ -22,7 +25,7 @@
 )}
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
-  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+  @mainWithSidebar(user=user, title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=detailedDocumentSets.pageInfo.total)
   } {
     @if(detailedDocumentSets.items.isEmpty) {

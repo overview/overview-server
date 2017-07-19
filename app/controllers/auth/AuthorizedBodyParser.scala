@@ -1,36 +1,27 @@
 package controllers.auth
 
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{BodyParser,Result}
-import play.api.mvc.BodyParsers.parse
-import scala.concurrent.Future
+import akka.stream.Materializer
+import javax.inject.Inject
+import play.api.mvc.{BodyParser,PlayBodyParsers,RequestHeader,Result}
+import scala.concurrent.{ExecutionContext,Future}
 
 import models.{Session, User}
 
-trait AuthorizedBodyParser {
-  protected val sessionFactory: SessionFactory
-
-  private def await[A](f: => Future[A]): A = scala.concurrent.blocking {
-    // Lazy-coder alert: not figuring out all the Accumulator stuff....
-    scala.concurrent.Await.result(f, scala.concurrent.duration.Duration.Inf)
-  }
-
-  def apply[A](authority: Authority)(parserGenerator: User => BodyParser[A]): BodyParser[A] = {
-    parse.using { implicit request =>
-      await(sessionFactory.loadAuthorizedSession(request, authority)) match {
-        case Left(e: Result) => parse.error(Future.successful(e))
+class AuthorizedBodyParser @Inject() (
+  sessionFactory: SessionFactory,
+  playBodyParsers: PlayBodyParsers,
+  executionContext: ExecutionContext,
+  materializer: Materializer
+) {
+  def apply[A](authority: Authority)(parserGenerator: User => BodyParser[A]): BodyParser[A] = new BodyParser[A] {
+    override def apply(request: RequestHeader) = {
+      val futureBodyParser: Future[BodyParser[A]] = sessionFactory.loadAuthorizedSession(request, authority).map(_ match {
+        case Left(e: Result) => playBodyParsers.error(Future.successful(e))
         case Right((session: Session, user: User)) => parserGenerator(user)
-      }
-    }
-  }
-}
+      })(executionContext)
 
-object AuthorizedBodyParser extends AuthorizedBodyParser {
-  override val sessionFactory = {
-    if (AuthConfig.isMultiUser) {
-      SessionFactory
-    } else {
-      SingleUserSessionFactory
+      val bodyParser = playBodyParsers.flatten(futureBodyParser)(executionContext, materializer)
+      bodyParser(request)
     }
   }
 }

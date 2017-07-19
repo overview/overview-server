@@ -5,7 +5,9 @@ class new_Spec extends views.ViewSpecification {
     val loginForm = controllers.forms.LoginForm()
     val userForm = controllers.forms.UserForm()
 
-    override def result = _new(loginForm, userForm)
+    val view = new _new(new MockMain)
+
+    override def result = view(loginForm, userForm)
   }
 
   "new_()" should {

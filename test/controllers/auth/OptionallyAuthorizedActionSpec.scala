@@ -2,15 +2,15 @@ package controllers.auth
 
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.mvc.{AnyContent, Request, RequestHeader, Results, Result}
-import play.api.test.FakeRequest
+import play.api.mvc.{AnyContent,BodyParsers,RequestHeader,Result}
+import play.api.test.{FakeRequest,StubPlayBodyParsersFactory}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await,Future}
 
 import models.{Session, User}
 
 class OptionallyAuthorizedActionSpec extends test.helpers.InAppSpecification with Mockito {
-  trait BaseScope extends Scope {
+  trait BaseScope extends Scope with StubPlayBodyParsersFactory {
     val mockSessionFactory = mock[SessionFactory]
     val authority = mock[Authority]
     val request: RequestHeader = FakeRequest()
@@ -21,9 +21,12 @@ class OptionallyAuthorizedActionSpec extends test.helpers.InAppSpecification wit
       mock[Result]
     }
 
-    lazy val actionBuilderFactory = new OptionallyAuthorizedAction {
-      override protected val sessionFactory = mockSessionFactory
-    }
+    lazy val actionBuilderFactory = new OptionallyAuthorizedAction(
+      mockSessionFactory,
+      new BodyParsers.Default(stubPlayBodyParsers),
+      new test.helpers.MockMessagesApi(),
+      materializer.executionContext
+    )
 
     lazy val actionBuilder = actionBuilderFactory(authority)
     lazy val action = actionBuilder(block(_))

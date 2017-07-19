@@ -1,3 +1,6 @@
+@this(
+  mainWithSidebar: views.html.layouts.mainWithSidebar
+)
 @(
   user: User,
   documentSet: com.overviewdocs.models.DocumentSet,
@@ -22,7 +25,7 @@
 )}
 
 @defining(scopedMessages("views.FileImport.edit")) { m =>
-  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="file-import-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+  @mainWithSidebar(user=user, title=m("title"), bodyClass="file-import-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"))
   } {

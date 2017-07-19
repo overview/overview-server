@@ -13,7 +13,9 @@ class UserControllerSpec extends ControllerSpecification {
     val controller = new UserController(
       Configuration("overview.contact_url" -> "https://contact.us", "overview.allow_registration" -> true),
       mockBackendStuff,
-      testMessagesApi
+      fakeMessagesActionBuilder,
+      fakeControllerComponents,
+      mockView[views.html.Session._new]
     )
     mockBackendStuff.createUser(any[PotentialNewUser]) answers(_ match {
       case u: PotentialNewUser => {

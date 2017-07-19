@@ -10,7 +10,11 @@ class StoreObjectControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
     val mockStoreBackend = mock[StoreBackend]
     val mockObjectBackend = mock[StoreObjectBackend]
-    val controller = new StoreObjectController(mockStoreBackend, mockObjectBackend)
+    val controller = new StoreObjectController(
+      mockStoreBackend,
+      mockObjectBackend,
+      fakeControllerComponents
+    )
   }
 
   "StoreObjectController" should {

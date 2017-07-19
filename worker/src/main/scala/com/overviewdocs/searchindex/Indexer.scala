@@ -4,7 +4,7 @@ import akka.actor.{Actor,ActorRef,Props}
 import scala.concurrent.Future
 import scala.util.{Success,Failure}
 
-import com.overviewdocs.database.DocumentFinder
+import com.overviewdocs.database.{DocumentIdListDeleter,DocumentFinder}
 import com.overviewdocs.messages.{DocumentSetReadCommands,DocumentSetCommands}
 import com.overviewdocs.util.Logger
 
@@ -19,7 +19,8 @@ import com.overviewdocs.util.Logger
   * for now.)
   */
 class Indexer(
-  documentFinder: DocumentFinder
+  documentFinder: DocumentFinder,
+  documentIdListDeleter: DocumentIdListDeleter
 ) extends Actor {
   import DocumentSetCommands.ReindexDocument
   import DocumentSetReadCommands.{Search,Highlight,Highlights}
@@ -43,6 +44,7 @@ class Indexer(
     case Indexer.DoWorkThenAck(ReindexDocument(documentSetId, documentId), sender, ack) => {
       documentFinder.findDocument(documentSetId, documentId)
         .flatMap(maybeDocument => indexClient.updateDocuments(documentSetId, maybeDocument.toSeq))
+        .flatMap(_ => documentIdListDeleter.deleteByDocumentSet(documentSetId.toInt))
         .onComplete {
           case Success(()) => sender ! ack
           case Failure(ex) => self ! ex
@@ -60,7 +62,7 @@ class Indexer(
 
 object Indexer {
   def props: Props = {
-    Props(new Indexer(DocumentFinder))
+    Props(new Indexer(DocumentFinder, DocumentIdListDeleter))
   }
 
   /** Do the work in `command`, then send `ackMessage` to `receiver`. */

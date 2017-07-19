@@ -9,4 +9,28 @@
     color: @text-color;
     margin: 0;
   }
+
+  .sort-by {
+    display: flex;
+    font-size: .8em;
+
+    .sort-by-field::before { content: ' '; }
+  }
+
+  label.sort-reverse {
+    display: flex;
+    cursor: pointer;
+    margin-left: .8em;
+    color: @link-color;
+
+    input { display: none; }
+
+    input:checked + .toggle-value {
+      .reverse-false { color: @text-very-muted; }
+    }
+
+    input:not(:checked) + .toggle-value {
+      .reverse-true { color: @text-very-muted; }
+    }
+  }
 }

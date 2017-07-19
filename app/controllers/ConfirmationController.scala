@@ -2,12 +2,11 @@ package controllers
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Action
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.mvc.MessagesActionBuilder
 import scala.concurrent.Future
 
 import com.overviewdocs.database.HasBlockingDatabase
-import com.overviewdocs.util.Logger
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.backend.SessionBackend
@@ -16,16 +15,16 @@ import models.tables.Users
 
 class ConfirmationController @Inject() (
   sessionBackend: SessionBackend,
-  messagesApi: MessagesApi,
-  mailChimp: MailChimp
-) extends Controller(messagesApi) with HasBlockingDatabase {
-  private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
-  private val logger = Logger.forClass(getClass)
-
+  mailChimp: MailChimp,
+  messagesAction: MessagesActionBuilder,
+  val controllerComponents: ControllerComponents,
+  confirmationIndexHtml: views.html.Confirmation.index,
+  confirmationShowHtml: views.html.Confirmation.show
+) extends BaseController with HasBlockingDatabase {
   /** Prompts for a confirmation token.
     */
-  def index(email: String) = Action { implicit request =>
-    Ok(views.html.Confirmation.index(email))
+  def index(email: String) = messagesAction { implicit request =>
+    Ok(confirmationIndexHtml(email))
   }
 
   private def findUserByConfirmationToken(token: String): Option[User] = {
@@ -48,25 +47,24 @@ class ConfirmationController @Inject() (
     * Normally, there would be a POST update for confirming. However, we want
     * to confirm via email link, so it must be a GET.
     */
-  def show(token: String) = OptionallyAuthorizedAction(anyUser).async { implicit request =>
+  def show(token: String) = optionallyAuthorizedAction(anyUser).async { implicit request =>
     request.user match {
       case Some(user) => Future.successful(Redirect(routes.WelcomeController.show))
       case None => findUserByConfirmationToken(token) match {
-        case None => Future.successful(BadRequest(views.html.Confirmation.show()))
+        case None => Future.successful(BadRequest(confirmationShowHtml()))
         case Some(unconfirmedUser) => {
           for {
             _ <- confirmUser(unconfirmedUser)
             session <- sessionBackend.create(unconfirmedUser.id, request.remoteAddress)
           } yield {
             if (unconfirmedUser.emailSubscriber) {
-              mailChimp.subscribe(unconfirmedUser.email)
-                .getOrElse(logger.info(s"Did not attempt requested subscription for ${unconfirmedUser.email}"))
+              mailChimp.subscribeInBackground(unconfirmedUser.email)
             }
 
             AuthResults
               .loginSucceeded(request, session)
               .flashing(
-                "success" -> m("show.success"),
+                "success" -> request.messages("controllers.ConfirmationController.show.success"),
                 "event" -> "confirmation-update"
               )
           }

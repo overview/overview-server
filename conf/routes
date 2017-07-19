@@ -32,7 +32,6 @@ GET    /documents/:id.txt                         controllers.DocumentController
 GET    /documents/:id.pdf                         controllers.DocumentController.showPdf(id: Long)
 GET    /documents/:id/notes                       controllers.DocumentController.showPdfNotes(id: Long)
 PUT    /documents/:id/notes                       controllers.DocumentController.updatePdfNotes(id: Long)
-GET    /documents/:id.png                         controllers.DocumentController.showPng(id: Long)
 GET    /documents/:id                             controllers.DocumentController.show(id: Long)
 GET    /documentsets/:documentSetId/documents/:id controllers.DocumentController.showJson(documentSetId: Long, id: Long)
 PATCH  /documentsets/:documentSetId/documents/:id controllers.DocumentController.update(documentSetId: Long, id: Long)

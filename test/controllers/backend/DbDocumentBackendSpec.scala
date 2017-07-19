@@ -4,7 +4,6 @@ import org.specs2.mock.Mockito
 import play.api.libs.json.{JsObject,Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import slick.jdbc.JdbcBackend.Session
 
 import models.pagination.{Page,PageInfo,PageRequest}
 import models.Selection
@@ -35,7 +34,7 @@ class DbDocumentBackendSpec extends DbBackendSpecification with Mockito {
     "#index" should {
       trait IndexScope extends CommonIndexScope {
         val selection = smartMock[Selection]
-        val pageRequest = PageRequest(0, 1000)
+        val pageRequest = PageRequest(0, 1000, false)
         val includeText = false
         selection.getDocumentIds(pageRequest) returns Future.successful(Page(Seq(doc2.id, doc3.id, doc1.id), PageInfo(pageRequest, 3)))
         lazy val ret = await(backend.index(selection, pageRequest, includeText))

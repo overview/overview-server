@@ -110,12 +110,11 @@ object Form {
     * For requests without CSRF tokens (test requests), returns nothing.
     */
   def csrfToken()(implicit request: RequestHeader) : Html = {
-    val name = play.filters.csrf.CSRFConfig.global.tokenName
     val maybeToken = play.filters.csrf.CSRF.getToken(request)
 
     Html(
       maybeToken
-        .map(token => <input type="hidden" name={name} value={token.value} />.buildString(false))
+        .map(token => <input type="hidden" name={token.name} value={token.value} />.buildString(false))
         .getOrElse("")
     )
   }

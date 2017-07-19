@@ -3,7 +3,7 @@ package controllers
 import com.google.inject.ImplementedBy
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsError,JsObject,JsResult,JsSuccess}
 import play.api.mvc.BodyParsers.parse
 import scala.concurrent.Future
@@ -25,16 +25,19 @@ class DocumentSetController @Inject() (
   jobQueue: JobQueueSender,
   importJobBackend: ImportJobBackend,
   viewBackend: ViewBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: ControllerComponents,
+  val indexHtml: views.html.DocumentSet.index,
+  val showHtml: views.html.DocumentSet.show,
+  val showProgressHtml: views.html.DocumentSet.showProgress
+) extends BaseController {
   import Authorities._
 
   protected val indexPageSize = 10
 
-  def index(page: Int) = AuthorizedAction(anyUser).async { implicit request =>
+  def index(page: Int) = authorizedAction(anyUser).async { implicit request =>
     val requestedPage: Int = RequestData(request).getInt("page").getOrElse(0)
     val realPage = if (requestedPage <= 0) 1 else requestedPage
-    val pageRequest = PageRequest((realPage - 1) * indexPageSize, indexPageSize)
+    val pageRequest = PageRequest((realPage - 1) * indexPageSize, indexPageSize, false)
 
     for {
       jobs: Seq[ImportJob] <- importJobBackend.indexByUser(request.user.email)
@@ -52,7 +55,7 @@ class DocumentSetController @Inject() (
             nViewsById.getOrElse(documentSet.id, 0)
           )
         }
-        Ok(views.html.DocumentSet.index(request.user, detailedDocumentSets))
+        Ok(indexHtml(request.user, detailedDocumentSets))
       }
     }
   }
@@ -68,13 +71,13 @@ class DocumentSetController @Inject() (
     *
     * JavaScript will parse the rest of the URL.
     */
-  def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async { implicit request =>
+  def show(id: Long) = authorizedAction(userViewingDocumentSet(id)).async { implicit request =>
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
         importJobBackend.indexByDocumentSet(id).map(_ match {
-          case Seq() => Ok(views.html.DocumentSet.show(request.user, documentSet))
-          case importJobs: Seq[ImportJob] => Ok(views.html.DocumentSet.showProgress(request.user, documentSet, importJobs))
+          case Seq() => Ok(showHtml(request.user, documentSet))
+          case importJobs: Seq[ImportJob] => Ok(showProgressHtml(request.user, documentSet, importJobs))
         })
       }
     })
@@ -82,7 +85,7 @@ class DocumentSetController @Inject() (
 
   def showWithJsParams(id: Long, jsParams: String) = show(id)
 
-  def showHtmlInJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async { implicit request =>
+  def showHtmlInJson(id: Long) = authorizedAction(userViewingDocumentSet(id)).async { implicit request =>
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
@@ -94,7 +97,7 @@ class DocumentSetController @Inject() (
     })
   }
 
-  def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)).async {
+  def showJson(id: Long) = authorizedAction(userViewingDocumentSet(id)).async { implicit request =>
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
@@ -113,13 +116,13 @@ class DocumentSetController @Inject() (
     })
   }
 
-  def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def delete(id: Long) = authorizedAction(userOwningDocumentSet(id)) { implicit request =>
     storage.deleteDocumentSet(id)
     jobQueue.send(DocumentSetCommands.DeleteDocumentSet(id))
     Accepted.flashing("event" -> "document-set-delete")
   }
 
-  def update(id: Long) = AuthorizedAction(adminUser).async { implicit request =>
+  def update(id: Long) = authorizedAction(adminUser).async { implicit request =>
     backend.show(id).flatMap(_ match {
       case None => Future.successful(NotFound)
       case Some(documentSet) => {
@@ -131,7 +134,7 @@ class DocumentSetController @Inject() (
     })
   }
 
-  def updateJson(id: Long) = AuthorizedAction(userOwningDocumentSet(id)).async { implicit request =>
+  def updateJson(id: Long) = authorizedAction(userOwningDocumentSet(id)).async { implicit request =>
     // The interface is complicated enough that we should create error messages
     // ourselves.
     //

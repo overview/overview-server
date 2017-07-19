@@ -1,6 +1,6 @@
 @(
   form: Form[PotentialExistingUser]
-)(implicit messages: Messages, request: RequestHeader)
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @defining(scopedMessages("views.Session._form")) { m =>
   <form method="post" action="@routes.SessionController.create()" class="session-form form-horizontal login-form">

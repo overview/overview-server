@@ -90,7 +90,7 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
 
   "#indexPageByOwner" should {
     trait IndexPageByOwnerScope extends BaseScope {
-      val pageRequest = PageRequest(1, 2)
+      val pageRequest = PageRequest(1, 2, false)
       val email = "user@example.org"
     }
 

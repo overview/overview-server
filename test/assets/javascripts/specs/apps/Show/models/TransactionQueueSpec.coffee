@@ -134,6 +134,113 @@ define [
             @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, '{ "foo": "bar" }')
             expect(@promise1).to.eventually.deep.eq(foo: 'bar')
 
+    describe 'when queueing an Oboe request', ->
+      beforeEach (done) ->
+        @onStart1 = sinon.spy()
+        @onItem1 = sinon.spy()
+        @onSuccess1 = sinon.spy()
+        @promise1 = @tq.streamJsonArray(url: '/foo', onStart: @onStart1, onItem: @onItem1, onSuccess: @onSuccess1)
+
+        @onStart2 = sinon.spy()
+        @onItem2 = sinon.spy()
+        @onSuccess2 = sinon.spy()
+        @promise2 = @tq.streamJsonArray(url: '/bar', onStart: @onStart2, onItem: @onItem2, onSuccess: @onSuccess2)
+
+        @nextTick(done) # wait for promises to catch up
+
+      it 'should be unresolved', ->
+        expect(@promise1).not.to.be.fulfilled
+        undefined
+
+      it 'should send a request', ->
+        req = @sandbox.server.requests[0]
+        expect(req).not.to.be.undefined
+        expect(req.url).to.eq('/foo')
+        expect(req.method).to.eq('GET')
+
+      it 'should not send subsequent requests', ->
+        expect(@sandbox.server.requests.length).to.eq(1)
+
+      describe 'on success', ->
+        beforeEach ->
+          @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '[ [ 1, 2 ], [ 3, 4 ] ]')
+          @promise1
+
+        it 'should call onStart()', ->
+          expect(@onStart1).to.have.been.called
+
+        it 'should call onItem() with each item', ->
+          expect(@onItem1).to.have.been.calledWith([ 1, 2 ])
+          expect(@onItem1).to.have.been.calledWith([ 3, 4 ])
+
+        it 'should call onSuccess()', ->
+          expect(@onSuccess1).to.have.been.called
+
+        it 'should resolve the promise', ->
+          expect(@promise1).to.eventually.be.undefined
+
+        it 'should send the next request', ->
+          req = @sandbox.server.requests[1]
+          expect(req).not.to.be.undefined
+          expect(req.url).to.eq('/bar')
+          expect(req.method).to.eq('GET')
+
+      describe 'on failure (status code)', ->
+        beforeEach (done) ->
+          @sandbox.server.requests[0].respond(404, { 'Content-Type': 'application/json' }, '{ "key": "not-found" }')
+          @nextTick(done)
+
+        it 'should reject the promise', ->
+          expect(@promise1).to.eventually.be.rejected
+
+        it 'should trigger an error event', ->
+          expect(@allSpy).to.have.been.calledWith('error')
+          expect(@allSpy.args[0][1]).to.deep.eq({})
+          expect(@allSpy.args[0][2]).to.eq(404)
+          expect(@promise2).not.to.be.fulfilled
+          undefined
+
+      describe 'on incomplete result (network error)', ->
+        beforeEach (done) ->
+          @sandbox.server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '[ [ 1, 2 ], [ 3, 4')
+          @nextTick(done)
+
+        it 'should call onStart() and onItem() for the parts that succeeded', ->
+          expect(@onStart1).to.have.been.called
+          expect(@onItem1).to.have.been.calledWith([ 1, 2 ])
+          expect(@onItem1).not.to.have.been.calledWith([ 3, 4 ])
+          expect(@onSuccess1).not.to.have.been.called
+
+        it 'should trigger a network-error event', ->
+          expect(@allSpy).to.have.been.calledWith('network-error')
+          expect(@allSpy.args[0][1]).to.deep.eq({})
+          expect(@promise2).not.to.be.fulfilled
+          undefined
+
+        describe 'on retry', ->
+          beforeEach (done) ->
+            retry = @allSpy.args[0][2]
+            retry()
+            @nextTick(done)
+
+          it 'should neither resolve nor reject the promise', ->
+            expect(@promise1).not.to.be.fulfilled
+            undefined
+
+          it 'should re-send the request', ->
+            req = @sandbox.server.requests[1]
+            expect(req).not.to.be.undefined
+            expect(req.url).to.eq('/foo')
+            expect(req.method).to.eq('GET')
+
+          it 'should work on success', ->
+            @sandbox.server.requests[1].respond(200, { 'Content-Type': 'application/json' }, '[ "foo", "bar" ]')
+            expect(@promise1).to.eventually.be.fulfilled
+              .then =>
+                expect(@onItem1).to.have.been.calledWith("foo")
+                expect(@onItem1).to.have.been.calledWith("bar")
+                expect(@onSuccess1).to.have.been.called
+
     describe 'with a custom error handler', ->
       beforeEach ->
         @sandbox.server.respondImmediately = true

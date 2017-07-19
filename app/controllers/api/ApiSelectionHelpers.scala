@@ -9,7 +9,7 @@ import controllers.util.NullMessagesApi
 import controllers.SelectionHelpers
 import models.Selection
 
-trait ApiSelectionHelpers extends SelectionHelpers { self: ApiController =>
+trait ApiSelectionHelpers extends SelectionHelpers { self: ApiBaseController =>
   implicit val messages: Messages = NullMessagesApi.messages
 
   protected def requestToSelection(documentSetId: Long, request: ApiAuthorizedRequest[_]): Future[Either[Result,Selection]] = {

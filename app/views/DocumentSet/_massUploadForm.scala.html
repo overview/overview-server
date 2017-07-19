@@ -1,4 +1,7 @@
-@(hasDocuments: Boolean)(implicit messages: Messages, request: RequestHeader)
+@this()
+@(
+  hasDocuments: Boolean
+)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @defining(scopedMessages("views.DocumentSet._massUploadForm")) { m =>
   @_importPane(h1 = m("h1")) {
     <div class="row">

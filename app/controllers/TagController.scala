@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
@@ -13,11 +13,11 @@ import com.overviewdocs.models.Tag
 
 class TagController @Inject() (
   tagBackend: TagBackend,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
+  val controllerComponents: ControllerComponents
+) extends BaseController {
   private val selectionIdKey = "selectionId"
 
-  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def create(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     TagForm.forCreate.bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest),
       attributes => {
@@ -27,7 +27,7 @@ class TagController @Inject() (
     )
   }
 
-  def indexJson(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def indexJson(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       tagsWithCounts <- tagBackend.indexWithCounts(documentSetId)
     } yield Ok(views.json.Tag.index.withCounts(tagsWithCounts))
@@ -35,7 +35,7 @@ class TagController @Inject() (
   }
 
   private def quote(value: String): String = "\"" + value.replace("\"", "\"\"") + "\""
-  def indexCsv(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def indexCsv(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     for {
       tagsWithCounts <- tagBackend.indexWithCounts(documentSetId)
     } yield {
@@ -53,12 +53,12 @@ class TagController @Inject() (
     }
   }
 
-  def destroy(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def destroy(documentSetId: Long, tagId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     tagBackend.destroy(documentSetId, tagId)
       .map(_ => NoContent)
   }
 
-  def update(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
+  def update(documentSetId: Long, tagId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
     TagForm.forUpdate.bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest),
       attributes => {

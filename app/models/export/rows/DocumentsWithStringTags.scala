@@ -2,7 +2,7 @@
 package models.export.rows
 
 import akka.stream.scaladsl.Source
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.overviewdocs.metadata.{Metadata,MetadataSchema}
 import com.overviewdocs.models.{Document,Tag}

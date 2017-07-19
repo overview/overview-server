@@ -1,21 +1,24 @@
 package com.overviewdocs
 
 import akka.actor.{ActorRef,ActorSystem,UnhandledMessage}
+import java.nio.file.{Files,Path}
 
+import com.overviewdocs.akkautil.BrokerActor
 import com.overviewdocs.background.filecleanup.{ DeletedFileCleaner, FileCleaner, FileRemovalRequestQueue }
 import com.overviewdocs.background.filegroupcleanup.{ DeletedFileGroupCleaner, FileGroupCleaner, FileGroupRemovalRequestQueue }
 import com.overviewdocs.background.reindex.ReindexActor
 import com.overviewdocs.clone.Cloner
-import com.overviewdocs.database.DocumentSetDeleter
-import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker}
+import com.overviewdocs.database.{Database,DocumentSetDeleter}
+import com.overviewdocs.jobhandler.documentset.{DocumentSetCommandWorker,DocumentSetMessageBroker,SortRunner,SortWorker,SortBroker}
 import com.overviewdocs.jobhandler.csv.{CsvImportWorkBroker,CsvImportWorker}
 import com.overviewdocs.jobhandler.documentcloud.{DocumentCloudImportWorkBroker,DocumentCloudImportWorker}
 import com.overviewdocs.jobhandler.filegroup._
 import com.overviewdocs.searchindex.Indexer
+import com.overviewdocs.sort.SortConfig
 import com.overviewdocs.messages.DocumentSetCommands
 import com.overviewdocs.util.{Configuration,Logger}
 
-class WorkerActorEnvironment {
+class WorkerActorEnvironment(database: Database, tempDirectory: Path) {
   private val logger = Logger.forClass(getClass)
 
   val system = ActorSystem("worker")
@@ -65,6 +68,15 @@ class WorkerActorEnvironment {
   system.actorOf(CsvImportWorker.props(csvImportWorkBroker), "CsvImportWorker-1")
   system.actorOf(DocumentCloudImportWorker.props(documentCloudImportWorkBroker), "DocumentCloudWorker-1")
 
+  private val sortRunner = new SortRunner(database, 100, SortConfig(
+    tempDirectory=Files.createDirectory(tempDirectory.resolve("sort")),
+    maxNBytesInMemory=1024 * 1024 * Configuration.getInt("max_mb_per_sort")
+  ))
+  val sortBroker = system.actorOf(SortBroker.props)
+  Seq.tabulate(Configuration.getInt("n_concurrent_sorts")) { i =>
+    system.actorOf(SortWorker.props(sortBroker, sortRunner), "SortWorker-" + i)
+  }
+
   system.actorOf(
     DocumentSetCommandWorker.props(
       messageBroker,
@@ -73,9 +85,8 @@ class WorkerActorEnvironment {
       documentCloudImportWorkBroker,
       indexer,
       reindexer,
+      sortBroker,
       Cloner,
       DocumentSetDeleter
-    ),
-    "DocumentSetCommandWorker"
-  )
+  ), "DocumentSetCommandWorker")
 }

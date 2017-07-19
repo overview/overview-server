@@ -1,11 +1,10 @@
 package controllers.api
 
 import javax.inject.Inject
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.{JsArray,JsNull,JsObject,JsNumber,JsPath,JsSuccess,JsValue,Json,Reads}
 import scala.concurrent.Future
 
-import controllers.auth.ApiAuthorizedAction
 import controllers.auth.Authorities.anyUser
 import controllers.backend.{StoreBackend,DocumentStoreObjectBackend,SelectionBackend}
 import com.overviewdocs.models.DocumentStoreObject
@@ -13,10 +12,11 @@ import com.overviewdocs.models.DocumentStoreObject
 class DocumentStoreObjectController @Inject() (
   val storeBackend: StoreBackend,
   val documentStoreObjectBackend: DocumentStoreObjectBackend,
-  val selectionBackend: SelectionBackend
-) extends ApiController with ApiSelectionHelpers {
+  val selectionBackend: SelectionBackend,
+  val controllerComponents: ApiControllerComponents
+) extends ApiBaseController with ApiSelectionHelpers {
 
-  def createMany = ApiAuthorizedAction(anyUser).async { request =>
+  def createMany = apiAuthorizedAction(anyUser).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsNull)
 
     body.asOpt(DocumentStoreObjectController.createArgsReader) match {
@@ -32,7 +32,7 @@ class DocumentStoreObjectController @Inject() (
     }
   }
 
-  def destroyMany = ApiAuthorizedAction(anyUser).async { request =>
+  def destroyMany = apiAuthorizedAction(anyUser).async { request =>
     val body: JsValue = request.body.asJson.getOrElse(JsNull)
 
     body.asOpt(DocumentStoreObjectController.destroyArgsReader) match {
@@ -48,7 +48,7 @@ class DocumentStoreObjectController @Inject() (
     }
   }
 
-  def countByObject = ApiAuthorizedAction(anyUser).async { request =>
+  def countByObject = apiAuthorizedAction(anyUser).async { request =>
 
     def formatCounts(counts: Map[Long,Int]): JsValue = {
       def tupleToValue(tuple: Tuple2[Long,Int]): Tuple2[String,JsValue] = (tuple._1.toString -> JsNumber(tuple._2))

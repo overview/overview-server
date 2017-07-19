@@ -1,8 +1,6 @@
-@(paragraphs: String*)(implicit messages: Messages)
-@defining(scopedMessages("views.components.helpBox")) { m =>
-  <div class="help-box">
-    @for(paragraph <- paragraphs) {
-      <p>@paragraph</p>
-    }
-  </div>
-}
+@(paragraphs: String*)
+<div class="help-box">
+  @for(paragraph <- paragraphs) {
+    <p>@paragraph</p>
+  }
+</div>

@@ -3,11 +3,10 @@ package com.overviewdocs.blobstorage
 import akka.stream.scaladsl.{FileIO,Source}
 import akka.util.ByteString
 import java.io.File
-import java.nio.file.Path
+import java.nio.file.{Files,Path}
+import java.util.{Base64,UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future,blocking}
-import java.util.UUID
-import java.nio.file.Files
 
 trait FileStrategy extends BlobStorageStrategy {
   protected val config: BlobStorageConfig
@@ -32,6 +31,15 @@ trait FileStrategy extends BlobStorageStrategy {
     val file = keyFile(location)
     FileIO.fromPath(file.toPath)
       .mapMaterializedValue(_ => akka.NotUsed)
+  }
+
+  override def getUrl(locationString: String, mimeType: String): Future[String] = {
+    val location = stringToLocation(locationString)
+    val path = keyFile(location).toPath
+    Future { blocking {
+      val bytes = Files.readAllBytes(path)
+      "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes)
+    }}
   }
 
   override def delete(locationString: String): Future[Unit] = {

@@ -19,7 +19,10 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
     val mockTagBackend = smartMock[TagBackend]
     val mockSelectionBackend = smartMock[SelectionBackend]
     def selection: InMemorySelection = ???
-    mockSelectionBackend.findOrCreate(any, any, any) returns Future { selection }
+    // We assume this controller doesn't care about onProgress because the user
+    // recently cached a Selection. That's not necessarily true, but it should
+    // hold true most of the time.
+    mockSelectionBackend.findOrCreate(any, any, any, any) returns Future { selection }
 
     val controller = new DocumentSetExportController(
       mockDocumentBackend,
@@ -27,7 +30,7 @@ class DocumentSetExportControllerSpec extends ControllerSpecification {
       mockDocumentTagBackend,
       mockTagBackend,
       mockSelectionBackend,
-      testMessagesApi
+      fakeControllerComponents
     )
 
     def request = fakeAuthorizedRequest

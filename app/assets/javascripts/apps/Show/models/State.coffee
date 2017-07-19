@@ -52,7 +52,10 @@ define [
       @set
         view: view
         document: null
-        documentList: new DocumentList({}, documentSet: @documentSet, params: new DocumentListParams())
+        documentList: new DocumentList {},
+          documentSet: @documentSet
+          transactionQueue: @transactionQueue
+          params: new DocumentListParams()
 
     # Sets new documentList params and unsets document.
     #
@@ -60,19 +63,27 @@ define [
     #
     # You may pass a DocumentListParams instance, or you may pass a plain JSON
     # object that will be passed to the DocumentListParams constructor.
-    setDocumentListParams: (options) ->
+    #
+    # Pass `true` as the `reverse` argument to flip the order of documents in
+    # the DocumentList.
+    setDocumentListParams: (options, reverse=false) ->
       oldParams = @get('documentList')?.params
+      oldReverse = @get('documentList')?.reverse || false
 
       params = if options instanceof DocumentListParams
         options
       else
         new DocumentListParams(options)
 
-      return if oldParams?.equals(params)
+      return if oldParams?.equals(params) && oldReverse == reverse
 
       @set
         document: null
-        documentList: new DocumentList({}, documentSet: @documentSet, params: params)
+        documentList: new DocumentList {},
+          documentSet: @documentSet
+          transactionQueue: @transactionQueue
+          params: params,
+          reverse: reverse
 
     # Sets new documentList params relative to the current ones.
     #
@@ -81,13 +92,16 @@ define [
     #     state.setDocumentListParams(tags: { ids: [ 1, 2 ] })
     #     state.refineDocumentListParams(q: 'foo')
     #     state.refineDocumentListParams(q: null)
+    #     state.refineDocumentListParams(reverse: true)
     refineDocumentListParams: (options) ->
       oldParams = @get('documentList')?.params || new DocumentListParams()
+      oldReverse = @get('documentList')?.reverse || false
 
-      @setDocumentListParams
+      @setDocumentListParams({
         q: if _.isUndefined(options.q) then oldParams.q else options.q
         tags: if _.isUndefined(options.tags) then oldParams.tags else options.tags
         objects: if _.isUndefined(options.objects) then oldParams.objects else options.objects
+      }, if _.isUndefined(options.reverse) then oldReverse else options.reverse)
 
     # Switches to a new View.
     #

@@ -36,7 +36,7 @@ class DbUserBackendSpec extends DbBackendSpecification {
       insertUser(User(3L, "user3@example.org", lastActivityAt=None))
       insertUser(User(4L, "user4@example.org", lastActivityAt=Some(new Timestamp(2000L))))
 
-      await(backend.indexPage(PageRequest(0, 4))).items.map(_.id) must beEqualTo(Seq(2L, 4L, 1L, 3L))
+      await(backend.indexPage(PageRequest(0, 4, false))).items.map(_.id) must beEqualTo(Seq(2L, 4L, 1L, 3L))
     }
 
     "return just a page" in new IndexPageScope {
@@ -44,8 +44,8 @@ class DbUserBackendSpec extends DbBackendSpecification {
       insertUser(User(2L, "user2@example.org"))
       insertUser(User(3L, "user3@example.org"))
 
-      await(backend.indexPage(PageRequest(0, 2))).items.map(_.id) must beEqualTo(Seq(1L, 2L))
-      await(backend.indexPage(PageRequest(2, 2))).items.map(_.id) must beEqualTo(Seq(3L))
+      await(backend.indexPage(PageRequest(0, 2, false))).items.map(_.id) must beEqualTo(Seq(1L, 2L))
+      await(backend.indexPage(PageRequest(2, 2, false))).items.map(_.id) must beEqualTo(Seq(3L))
     }
   }
 

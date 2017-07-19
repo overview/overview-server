@@ -20,13 +20,14 @@ class DocumentCloudImportJobController @Inject() (
   documentSetBackend: DocumentSetBackend,
   storage: DocumentCloudImportJobController.Storage,
   jobQueueSender: JobQueueSender,
-  messagesApi: MessagesApi
-) extends Controller(messagesApi) {
-  def _new(query: String) = AuthorizedAction(anyUser) { implicit request =>
-    Ok(views.html.DocumentCloudImportJob._new(request.user, query))
+  val controllerComponents: ControllerComponents,
+  documentCloudImportJobNewHtml: views.html.DocumentCloudImportJob._new
+) extends BaseController {
+  def _new(query: String) = authorizedAction(anyUser) { implicit request =>
+    Ok(documentCloudImportJobNewHtml(request.user, query))
   }
 
-  def create() = AuthorizedAction(anyUser).async { implicit request =>
+  def create() = authorizedAction(anyUser).async { implicit request =>
     DocumentCloudImportJobForm().bindFromRequest().fold(
       f => Future.successful(BadRequest),
       record => {
@@ -51,7 +52,7 @@ class DocumentCloudImportJobController @Inject() (
     )
   }
 
-  def delete(documentSetId: Long, dciId: Int) = AuthorizedAction(userOwningDocumentSet(documentSetId)).async {
+  def delete(documentSetId: Long, dciId: Int) = authorizedAction(userOwningDocumentSet(documentSetId)).async {
     for {
       _ <- storage.cancelImport(documentSetId, dciId)
     } yield NoContent

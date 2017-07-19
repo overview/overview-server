@@ -13,7 +13,7 @@ import com.overviewdocs.test.factories.PodoFactory
 class PluginControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val mockBackend = mock[PluginBackend]
-    val controller = new PluginController(mockBackend, testMessagesApi)
+    val controller = new PluginController(mockBackend, fakeControllerComponents)
     val factory = PodoFactory
   }
 

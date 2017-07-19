@@ -19,10 +19,6 @@ import com.overviewdocs.models.tables.{DanglingNodes,Trees}
   * @param onProgress Function to call when we have progress updates.
   */
 class ClusteringResponseHandler(treeId: Long, onProgress: (Double, String) => Unit) extends HasBlockingDatabase {
-  private sealed trait State
-  private final case object Progress extends State
-  private final case class Documents(nTotal: Int) extends State
-  private final case class Nodes(nTotal: Int) extends State
 
   private val ProgressRegex = """([01]\.\d+)""".r
   private val NDocumentsRegex = """(\d+) DOCUMENTS""".r
@@ -30,7 +26,7 @@ class ClusteringResponseHandler(treeId: Long, onProgress: (Double, String) => Un
   private val NNodesRegex = """(\d+) NODES""".r
   private val NodeRegex = """(\d+)\t(\d*)\t([tf])\t([^\t]*)\t([\d ]+)""".r
 
-  private var state: State = Progress
+  private var state: ClusteringResponseHandler.State = ClusteringResponseHandler.Progress
   private val rootNodeId: Long = (treeId & 0xffffffff00000000L) | ((treeId & 0xfff) << 20L)
   private val documentUpdater = new DocumentUpdater
   private val nodeWriter = new NodeWriter
@@ -81,36 +77,36 @@ class ClusteringResponseHandler(treeId: Long, onProgress: (Double, String) => Un
     */
   def onLine(line: String): Unit = {
     (state, line) match {
-      case (Progress, ProgressRegex(fractionString)) => {
+      case (ClusteringResponseHandler.Progress, ProgressRegex(fractionString)) => {
         onClusterProgress(fractionString.toDouble)
       }
 
-      case (Progress, NDocumentsRegex(nDocumentsString)) => {
+      case (ClusteringResponseHandler.Progress, NDocumentsRegex(nDocumentsString)) => {
         val nTotal = nDocumentsString.toInt
-        state = Documents(nTotal)
+        state = ClusteringResponseHandler.Documents(nTotal)
         nDocumentsPerProgress = math.max(1, nTotal / 10)
         writeNDocuments(nTotal)
         onDocumentsProgress(0, nTotal)
       }
 
-      case (Documents(nTotal), DocumentRegex(idString, keywordsString)) => {
+      case (ClusteringResponseHandler.Documents(nTotal), DocumentRegex(idString, keywordsString)) => {
         documentUpdater.blockingUpdateKeywordsAndFlushIfNeeded(idString.toLong, keywordsString.split(' '))
         nDocumentsWritten += 1
         if (nDocumentsWritten % nDocumentsPerProgress == 0) onDocumentsProgress(nDocumentsWritten, nTotal)
       }
 
-      case (Documents(_), NNodesRegex(nNodesString)) => {
+      case (ClusteringResponseHandler.Documents(_), NNodesRegex(nNodesString)) => {
         documentUpdater.blockingFlush
 
         addDanglingNode
 
         val nTotal = nNodesString.toInt
-        state = Nodes(nTotal)
+        state = ClusteringResponseHandler.Nodes(nTotal)
         nNodesPerProgress = math.max(1, nTotal / 10)
         onNodesProgress(0, nTotal)
       }
 
-      case (Nodes(nTotal), NodeRegex(idString, parentIdString, isLeafString, description, documentIdsString)) => {
+      case (ClusteringResponseHandler.Nodes(nTotal), NodeRegex(idString, parentIdString, isLeafString, description, documentIdsString)) => {
         val id: Long = idString.toLong | rootNodeId
         val parentId: Option[Long] = parentIdString match {
           case "" => None
@@ -135,8 +131,15 @@ class ClusteringResponseHandler(treeId: Long, onProgress: (Double, String) => Un
     nodeWriter.blockingFlush
 
     state match {
-      case Nodes(nTotal) if nNodesWritten == nTotal => finalizeTree
+      case ClusteringResponseHandler.Nodes(nTotal) if nNodesWritten == nTotal => finalizeTree
       case _ => {} // there was an error; things didn't finish
     }
   }
+}
+
+object ClusteringResponseHandler {
+  private sealed trait State
+  private final case object Progress extends State
+  private final case class Documents(nTotal: Int) extends State
+  private final case class Nodes(nTotal: Int) extends State
 }

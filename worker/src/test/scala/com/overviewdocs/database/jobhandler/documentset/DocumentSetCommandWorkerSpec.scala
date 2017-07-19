@@ -32,6 +32,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
       val documentCloudImportWorkBroker = TestProbe()
       val indexer = TestProbe()
       val reindexer = TestProbe()
+      val sortBroker = TestProbe()
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val cloner = smartMock[Cloner]
       val subject = TestActorRef(DocumentSetCommandWorker.props(
@@ -41,6 +42,7 @@ class DocumentSetCommandWorkerSpec extends Specification with Mockito {
         documentCloudImportWorkBroker.ref,
         indexer.ref,
         reindexer.ref,
+        sortBroker.ref,
         cloner,
         documentSetDeleter
       ))

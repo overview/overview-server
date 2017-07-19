@@ -20,7 +20,9 @@ class FileImportControllerSpec extends ControllerSpecification {
       mockJobQueueSender,
       mockImportJobBackend,
       mockFileGroupBackend,
-      testMessagesApi
+      fakeControllerComponents,
+      mockView[views.html.FileImport._new],
+      mockView[views.html.FileImport.edit]
     )
   }
 
