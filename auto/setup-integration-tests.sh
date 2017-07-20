@@ -1,3 +1,3 @@
 #!/bin/bash
 
-(cd "$(dirname $0)/../test/integration" && npm install)
+(cd "$(dirname $0)/../web/test/integration" && npm install)
