@@ -17,9 +17,6 @@ import sbt.Keys._
 import spray.revolver.RevolverPlugin._
 
 object ApplicationBuild extends Build {
-  val appName     = "overview-server"
-  val appVersion    = "1.0-SNAPSHOT"
-
   val ourScalaVersion = "2.12.2"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-encoding", "UTF8")
 
@@ -137,13 +134,13 @@ object ApplicationBuild extends Build {
     )
     .dependsOn(common % "test->test;compile->compile")
 
-  lazy val main = Project(appName, file("."))
+  lazy val main = Project("overview-server", file("."))
     .enablePlugins(play.sbt.PlayScala)
     .enablePlugins(SbtWeb)
     .enablePlugins(JavaAppPackaging)
     .settings(ourGlobalSettings: _*)
     .settings(
-      version := appVersion,
+      version := "1.0-SNAPSHOT",
       PlayKeys.externalizeResources := false, // so `stage` doesn't nix all assets
       libraryDependencies ++= Dependencies.serverDependencies,
       TwirlKeys.templateImports ++= Seq("views.Magic._", "play.twirl.api.HtmlFormat"),
