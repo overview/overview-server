@@ -68,10 +68,10 @@ ls ../worker/$STAGE/lib > worker/classpath.txt
 ln -f ../worker/$STAGE/lib/* lib/
 [[ -d ../worker/$STAGE/bin ]] && cp -f ../worker/$STAGE/bin/* worker/
 
-mkdir frontend
+mkdir web
 ln -f ../web/$STAGE/lib/* lib/
-ls ../web/$STAGE/lib > frontend/classpath.txt
-cp -f ../web/$STAGE/bin/* frontend/
+ls ../web/$STAGE/lib > web/classpath.txt
+cp -f ../web/$STAGE/bin/* web/
 
 mkdir db-evolution-applier
 ln -f ../db-evolution-applier/target/db-evolution-applier/universal/stage/lib/* lib/
