@@ -58,4 +58,4 @@ services_are_online && echo "Services are online" || start_services
 start_logging_if_not_started
 
 echo "Starting..."
-./sbt all/compile db-evolution-applier/run worker/re-start run
+./sbt all/compile db-evolution-applier/run worker/re-start web/run

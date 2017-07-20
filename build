@@ -47,7 +47,7 @@ fi
 # inside from a previous build and complain about "Duplicate mappings"
 rm -rf "$OVERVIEW_DIR"/dist
 
-./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; db-evolution-applier/stage; overview-server/stage; worker/stage'
+./sbt $SBT_OPTIONS -Dsbt.log.noformat=true '; db-evolution-applier/stage; worker/stage; web/stage'
 
 BASE="$OUTPUT_DIRECTORY"
 STAGE="target/universal/stage"
@@ -69,9 +69,9 @@ ln -f ../worker/$STAGE/lib/* lib/
 [[ -d ../worker/$STAGE/bin ]] && cp -f ../worker/$STAGE/bin/* worker/
 
 mkdir frontend
-ln -f ../$STAGE/lib/* lib/
-ls ../$STAGE/lib > frontend/classpath.txt
-cp -f ../$STAGE/bin/* frontend/
+ln -f ../web/$STAGE/lib/* lib/
+ls ../web/$STAGE/lib > frontend/classpath.txt
+cp -f ../web/$STAGE/bin/* frontend/
 
 mkdir db-evolution-applier
 ln -f ../db-evolution-applier/target/db-evolution-applier/universal/stage/lib/* lib/
