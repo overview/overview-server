@@ -28,7 +28,7 @@ auto/setup-coffee-tests.sh
 auto/setup-integration-tests.sh
 
 # Ensure everything compiles, or abort. Suppress excessive output.
-./sbt '; set every logLevel := Level.Warn; common/test:compile; worker/test:compile; overview-server/test:compile; db-evolution-applier/run; test-db-evolution-applier/run'
+./sbt '; set every logLevel := Level.Warn; common/test:compile; worker/test:compile; web/test:compile; db-evolution-applier/run; test-db-evolution-applier/run'
 ./build overview-server.zip
 
 # CoffeeScript tests are the fastest, so run them first
