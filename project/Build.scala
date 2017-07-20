@@ -14,7 +14,7 @@ import play.sbt.routes.RoutesKeys
 import play.twirl.sbt.Import._
 import sbt._
 import sbt.Keys._
-import spray.revolver.RevolverPlugin._
+import spray.revolver.RevolverPlugin.autoImport._
 
 object ApplicationBuild extends Build {
   val appName     = "overview-server"
@@ -133,7 +133,7 @@ object ApplicationBuild extends Build {
       libraryDependencies ++= Dependencies.workerDependencies,
       javaOptions in Test += "-Dconfig.resource=test.conf",
       mainClass in Compile := Some("com.overviewdocs.Worker"),
-      javaOptions in Revolver.reStart ++= devJavaOpts
+      javaOptions in reStart ++= devJavaOpts
     )
     .dependsOn(common % "test->test;compile->compile")
 
