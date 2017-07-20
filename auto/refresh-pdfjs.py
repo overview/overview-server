@@ -33,9 +33,9 @@ def error(message):
 def get_overview_dirname():
     ret = os.path.dirname(os.path.dirname(__file__))
     if ret == '':
-        return '.'
+        return './web'
     else:
-        return ret
+        return ret + '/web'
 
 def check_pdfjs_dirname_is_pdfjs_dir(pdfjs_dirname):
     if not os.path.exists('%s/pdfjs.config' % pdfjs_dirname):
@@ -66,7 +66,7 @@ def copy_document_show_scala(source, destination):
     data = re.sub(rb'^.*?-->', '', data)
 
     # Add Scala method signature
-    data = b'@(document: com.overviewdocs.models.Document)' + data
+    data = b'@this()\n@(document: com.overviewdocs.models.Document)' + data
 
     # Add <base>
     data = data.replace(b'<head>', b'<head><base href="/assets/pdfjs/web/x">')
