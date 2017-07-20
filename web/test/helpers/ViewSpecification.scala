@@ -21,6 +21,7 @@ class ViewSpecification extends test.helpers.InAppSpecification with Mockito wit
 
   trait ViewSpecificationScope[Result] extends Scope {
     class MockMain extends views.html.main(
+      mock[controllers.AssetsFinder],
       mock[play.api.Configuration],
       mock[play.api.i18n.MessagesApi],
       mock[views.html.components.navbar],

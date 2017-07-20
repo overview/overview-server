@@ -1,4 +1,5 @@
 @this(
+  assets: AssetsFinder,
   mainWithSidebar: views.html.layouts.mainWithSidebar
 )
 @(
@@ -8,7 +9,7 @@
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  @requireJsBundle("PublicDocumentSet/index")
+  @requireJsBundle(assets, "PublicDocumentSet/index")
 }
 
 @defining(scopedMessages("views.PublicDocumentSet.index")) { m =>

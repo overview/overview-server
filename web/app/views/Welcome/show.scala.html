@@ -1,4 +1,5 @@
 @this(
+  assets: AssetsFinder,
   main: views.html.main
 )
 @(
@@ -10,7 +11,7 @@
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  @requireJsBundle("Welcome/show")
+  @requireJsBundle(assets, "Welcome/show")
 }
 
 @defining(scopedMessages("views.Welcome.show")) { m =>
@@ -25,7 +26,7 @@
           @if(banner.isEmpty) {
             <div class="col-md-6">
               <div class="splash">
-                <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
+                <img class="big-logo" src="@assets.path("images/logo-large.png")" alt="@m("title")" />
                 <p class="text">@m("p1")</p>
                 <p class="learn"><a href="https://blog.overviewdocs.com">@m("learn")</a></p>
               </div>

@@ -1,4 +1,5 @@
 @this(
+  assets: AssetsFinder,
   main: views.html.main
 )
 @(
@@ -6,7 +7,7 @@
   documentSet: com.overviewdocs.models.DocumentSet
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @javascripts = {
-  @requireJsBundle("DocumentSet/show")
+  @requireJsBundle(assets, "DocumentSet/show")
 
   @* Let's hope there is no end-script tag in _supportedLanguages.... *@
   <script>

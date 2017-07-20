@@ -140,14 +140,7 @@ lazy val web = (project in file("web"))
     sources in doc in Compile := List(), // docs take time; skip 'em
     includeFilter in (Assets, LessKeys.less) := "main.less",
     includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
-    // RJS seems to kill the rest of sbt-web for us. TODO figure this out, so
-    // we can use versioned assets. See
-    // https://groups.google.com/d/topic/play-framework/3DiknO8OGK4/discussion
-    //
-    // ... the difference between us and Play's docs: *we* use RjsKeys.modules
-    // (The Play docs call for Seq(rjs, digest, gzip), which is exactly what
-    // we want.)
-    pipelineStages := Seq(rjs)
+    pipelineStages := Seq(rjs, digest, gzip)
   )
   .dependsOn(common % "test->test;compile->compile;test->compile")
 

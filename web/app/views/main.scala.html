@@ -1,4 +1,5 @@
 @this(
+  assets: AssetsFinder,
   configuration: play.api.Configuration,
   messagesApi: MessagesApi,
   navbar: views.html.components.navbar,
@@ -21,8 +22,8 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>@title</title>
-    <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")" />
-    <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
+    <link rel="shortcut icon" type="image/x-icon" href="@assets.path("images/favicon.ico")" />
+    <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/main.css")" />
     @defining(play.filters.csrf.CSRF.getToken(request).get) { token =>
       <script>
         window.csrfTokenName = "@{token.name}";
@@ -103,7 +104,7 @@
             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
           })();
         </script>
-        <script src="@routes.Assets.at("javascripts/tracking.js").url"></script>
+        <script src="@assets.path("javascripts/tracking.js")"></script>
       }
     }
   </body>

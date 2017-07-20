@@ -1,4 +1,5 @@
 @this(
+  assets: AssetsFinder,
   messagesApi: MessagesApi
 )
 @(
@@ -13,7 +14,7 @@
 <!DOCTYPE html>
 <html lang="@messages.lang.code">
   <head>
-    <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
+    <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/main.css")" />
   </head>
 
   <body class="@bodyClass">

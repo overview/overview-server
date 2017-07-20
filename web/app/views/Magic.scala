@@ -3,6 +3,8 @@ package views
 import java.util.Locale
 import play.api.i18n.Messages
 
+import controllers.AssetsFinder
+
 /**
  * A convenience class on top of Messages.
  *
@@ -75,10 +77,10 @@ object Magic {
     * <tt>requireJsBundle("PublicDocumentSet/index")</tt> will give
     * <tt>&lt;script src="...require.js" data-main=".../PublicDocumentSet/index.js"&gt;&lt;/script&gt;</tt>
     */
-  def requireJsBundle(module: String) = {
+  def requireJsBundle(assets: AssetsFinder, module: String) = {
     <script
-      src={controllers.routes.Assets.at("javascripts/vendor/require.js").url}
-      data-main={controllers.routes.Assets.at(s"javascripts/bundle/${module}.js").url}
+      src={assets.path("javascripts/vendor/require.js")}
+      data-main={assets.path(s"javascripts/bundle/${module}.js")}
       ></script>
   }
 

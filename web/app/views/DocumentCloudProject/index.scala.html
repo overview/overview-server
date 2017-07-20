@@ -1,4 +1,5 @@
 @this(
+  assets: AssetsFinder,
   mainWithSidebar: views.html.layouts.mainWithSidebar
 )
 @(
@@ -7,7 +8,7 @@
 )(implicit messages: Messages, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  @requireJsBundle("DocumentCloudProject/index")
+  @requireJsBundle(assets, "DocumentCloudProject/index")
 
   @* Let's hope there is no end-script tag in _supportedLanguages.... *@
   <script>

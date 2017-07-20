@@ -5,7 +5,10 @@ class new_Spec extends views.ViewSpecification {
     val loginForm = controllers.forms.LoginForm()
     val userForm = controllers.forms.UserForm()
 
-    val view = new _new(new MockMain)
+    val assets = mock[controllers.AssetsFinder]
+    assets.path(anyString) returns "/asset-path"
+
+    val view = new _new(assets, new MockMain)
 
     override def result = view(loginForm, userForm)
   }
