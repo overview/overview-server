@@ -64,7 +64,6 @@ requirejs.config
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
     oboe: 'vendor/oboe-browser-2-1-3'
-    rsvp: 'vendor/rsvp'
     select2: 'vendor/select2'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'

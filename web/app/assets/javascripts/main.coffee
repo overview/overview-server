@@ -81,7 +81,6 @@ requirejs.config
     'mass-upload': 'vendor/mass-upload'
     md5: 'vendor/md5'
     oboe: 'vendor/oboe-browser-2-1-3'
-    rsvp: 'vendor/rsvp'
     select2: 'vendor/select2'
     sha1: 'vendor/git-sha1'
     spectrum: 'vendor/spectrum'

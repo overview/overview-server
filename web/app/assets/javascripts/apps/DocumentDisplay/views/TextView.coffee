@@ -1,12 +1,9 @@
 define [
   'jquery'
   'backbone'
-  'rsvp'
   'i18n'
-], ($, Backbone, RSVP, i18n) ->
+], ($, Backbone, i18n) ->
   t = i18n.namespaced('views.Document.show.TextView')
-
-  WrapString = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
 
   class TextView extends Backbone.View
     className: 'text'

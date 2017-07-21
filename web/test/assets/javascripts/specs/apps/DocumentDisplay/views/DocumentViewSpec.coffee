@@ -1,10 +1,9 @@
 define [
   'jquery'
-  'rsvp'
   'backbone'
   'i18n'
   'apps/DocumentDisplay/views/DocumentView'
-], ($, RSVP, Backbone, i18n, DocumentView) ->
+], ($, Backbone, i18n, DocumentView) ->
   describe 'apps/DocumentDisplay/views/DocumentView', ->
     beforeEach ->
       i18n.reset_messages_namespaced 'views.Document.show.DocumentView',
@@ -72,13 +71,13 @@ define [
         expect($.getScript).to.have.been.called
 
       it 'should do nothing if Twitter is loading', ->
-        window.twttr = { widgets: { createTweet: sinon.stub().returns(new RSVP.resolve(null)) } }
+        window.twttr = { widgets: { createTweet: sinon.stub().returns(Promise.resolve(null)) } }
         @subject.twttrState = 'loading'
         @subject.render()
         expect(window.twttr.widgets.createTweet).not.to.have.been.called
 
       it 'should call twttr.widgets.createTweet if Twitter was loaded', ->
-        window.twttr = { widgets: { createTweet: sinon.stub().returns(new RSVP.resolve(null)) } }
+        window.twttr = { widgets: { createTweet: sinon.stub().returns(Promise.resolve(null)) } }
         @subject.twttrState = 'loaded'
         @subject.render()
         expect(window.twttr.widgets.createTweet).to.have.been.calledWith('1234512321')

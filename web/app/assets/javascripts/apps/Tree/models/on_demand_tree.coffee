@@ -1,11 +1,10 @@
 define [
   'underscore'
   'jquery'
-  'rsvp'
   'backbone'
   './id_tree'
   './lru_paging_strategy'
-], (_, $, RSVP, Backbone, IdTree, LruPagingStrategy) ->
+], (_, $, Backbone, IdTree, LruPagingStrategy) ->
   DEFAULT_OPTIONS = {
     cache_size: 5000,
   }
@@ -222,7 +221,7 @@ define [
     demandNode: (id) ->
       if @nodes[id]?.isLeaf || @id_tree.children[id]?
         # it's already loaded
-        RSVP.resolve(@nodes[id] for id in (@id_tree.children[id] || []))
+        Promise.resolve(@nodes[id] for id in (@id_tree.children[id] || []))
       else
         @_demand("nodes/#{id}")
 

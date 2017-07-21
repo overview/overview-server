@@ -63,7 +63,6 @@ requirejs.config
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
-    rsvp: 'vendor/rsvp'
     select2: 'vendor/select2'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'

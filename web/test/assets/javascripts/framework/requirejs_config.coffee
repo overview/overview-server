@@ -63,7 +63,6 @@ requirejs.config
     typeahead: 'vendor/typeahead.jquery'
     underscore: 'vendor/underscore'
     oboe: 'vendor/oboe-browser-2-1-3'
-    rsvp: 'vendor/rsvp'
     MassUpload: 'vendor/mass-upload'
     'chai': '../../../test/assets/javascripts/autotest/node_modules/chai/chai'
     'sinon': '../../../test/assets/javascripts/autotest/node_modules/sinon/pkg/sinon'

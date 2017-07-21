@@ -1,9 +1,8 @@
 define [
   'underscore'
   'jquery'
-  'rsvp'
   'i18n'
-], (_, $, rsvp, i18n) ->
+], (_, $, i18n) ->
   t = i18n.namespaced('views.Tree.show.Tour')
 
   DoneUrl = '/tour'
@@ -28,10 +27,10 @@ define [
 
       @tour = @_parseTour(tour)
 
-      @_doneDeferred = rsvp.defer()
-      @_donePromise = @_doneDeferred
-        .promise
-        .then(=> @_disableTooltipsOnServer())
+      @_donePromise = (new Promise (resolve, reject) =>
+        @_doneResolve = resolve
+        @_doneReject = reject
+      ).then(=> @_disableTooltipsOnServer())
 
       @listen()
       @start()
@@ -62,7 +61,7 @@ define [
 
     # Returns a Promise
     _disableTooltipsOnServer: ->
-      rsvp.resolve($.ajax(
+      Promise.resolve($.ajax(
         type: 'DELETE'
         url: DoneUrl
       ))
@@ -146,7 +145,7 @@ define [
 
     donePromise: -> @_donePromise
     done: ->
-      @_doneDeferred.resolve(@)
+      @_doneResolve(@)
       @remove()
       @_donePromise
 
@@ -177,5 +176,5 @@ define [
     remove: ->
       @$popover?.remove()
       @$container.off('.tour')
-      @_doneDeferred.reject(null) # presumably, it already resolved, so this is a no-op except in tests
+      @_doneReject(null) # presumably, it already resolved, so this is a no-op except in tests
       undefined

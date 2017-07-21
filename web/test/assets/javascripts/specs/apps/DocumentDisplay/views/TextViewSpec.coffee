@@ -1,10 +1,9 @@
 define [
   'jquery'
   'backbone'
-  'rsvp'
   'i18n'
   'apps/DocumentDisplay/views/TextView'
-], ($, Backbone, RSVP, i18n, TextView) ->
+], ($, Backbone, i18n, TextView) ->
   describe 'apps/DocumentDisplay/views/TextView', ->
     beforeEach ->
       i18n.reset_messages_namespaced 'views.Document.show.TextView',
