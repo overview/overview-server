@@ -123,7 +123,7 @@ class DocumentSetShortcuts {
     // Search for #document-list and _then_ #document-list:not(.loading). That
     // way if #document-list:not(.loading) isn't found, we can diagnose whether
     // our timeout is too short or whether the page isn't loading properly.
-    await this.b.assertExists({ css: '#document-list, wait: 'pageLoad' })
+    await this.b.assertExists({ css: '#document-list', wait: 'pageLoad' })
     await this.b.assertExists({ css: '#document-list:not(.loading)', wait: 'pageLoad' })
   }
 
