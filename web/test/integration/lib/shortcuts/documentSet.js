@@ -120,6 +120,10 @@ class DocumentSetShortcuts {
   // Waits for #document-list:not(.loading) to exist.
   async waitUntilDocumentListLoaded() {
     debug('waitUntilDocumentListLoaded()')
+    // Search for #document-list and _then_ #document-list:not(.loading). That
+    // way if #document-list:not(.loading) isn't found, we can diagnose whether
+    // our timeout is too short or whether the page isn't loading properly.
+    await this.b.assertExists({ css: '#document-list, wait: 'pageLoad' })
     await this.b.assertExists({ css: '#document-list:not(.loading)', wait: 'pageLoad' })
   }
 
@@ -135,7 +139,7 @@ class DocumentSetShortcuts {
 
     await this.s.jquery.waitUntilReady()
     await this.b.waitUntilBlockReturnsTrue('jobs to complete', 'slow', clientTests.noJobsInProgress)
-    await this.b.assertExists({ css: '#document-list:not(.loading)', wait: 'pageLoad' })
+    await this.waitUntilDocumentListLoaded()
     await this.b.waitUntilBlockReturnsTrue('plugin data to load', 'pageLoad', clientTests.pluginDataLoaded)
   }
 }
