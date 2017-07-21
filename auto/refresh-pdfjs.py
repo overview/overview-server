@@ -66,10 +66,15 @@ def copy_document_show_scala(source, destination):
     data = re.sub(rb'^.*?-->', '', data)
 
     # Add Scala method signature
-    data = b'@this()\n@(document: com.overviewdocs.models.Document)' + data
+    data = b'@this(assets: AssetsFinder)\n@(document: com.overviewdocs.models.Document)' + data
 
     # Add <base>
     data = data.replace(b'<head>', b'<head><base href="/assets/pdfjs/web/x">')
+
+    # Set up PDFJS paths
+    data = data.replace(b'<script', b'<script>window.PDFJS = { workerSrc: "@assets.path("pdfjs/build/pdf.worker.js")" };</script><script', 1)
+    data = data.replace(b'"../build/pdf.js"', b'"@assets.path("pdfjs/build/pdf.js")"', 1)
+    data = data.replace(b'"viewer.js"', b'"@assets.path("pdfjs/web/viewer.js")"', 1)
 
     # Add onload
     data = data.replace(b'</body>', b"""<script>document.addEventListener('DOMContentLoaded', function() { PDFViewerApplication.open("@document.viewUrl", null); }, true);</script></body>""")

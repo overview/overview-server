@@ -1,4 +1,4 @@
-@this()
+@this(assets: AssetsFinder)
 @(document: com.overviewdocs.models.Document)<!DOCTYPE html>
 <!--
 Copyright 2012 Mozilla Foundation
@@ -306,8 +306,8 @@ See https://github.com/adobe-type-tools/cmap-resources
     </div> <!-- outerContainer -->
 
 
-    <script src="../build/pdf.js"></script>
-    <script src="viewer.js"></script>
+    <script>window.PDFJS = { workerSrc: "@assets.path("pdfjs/build/pdf.worker.js")" };</script><script src="@assets.path("pdfjs/build/pdf.js")"></script>
+    <script src="@assets.path("pdfjs/web/viewer.js")"></script>
   <script>document.addEventListener('DOMContentLoaded', function() { PDFViewerApplication.open("@document.viewUrl", null); }, true);</script></body>
 </html>
 
