@@ -93,15 +93,15 @@ def run(pdfjs_dirname):
         shutil.rmtree('%s/public/pdfjs' % overview_dirname)
 
     for source_dir, glob, destination_dir in [
-        ('build/minified/build', 'pdf.js', 'build'),
-        ('build/minified/build', 'pdf.worker.js', 'build'),
-        ('build/minified/build', 'pdf.js.map', 'build'),
-        ('build/minified/build', 'pdf.worker.js.map', 'build'),
-        ('build/minified/web', 'viewer.css', 'web'),
-        ('build/minified/web', 'viewer.js', 'web'),
-        ('build/minified/web/images', '*.gif', 'web/images'),
-        ('build/minified/web/images', '*.png', 'web/images'),
-        ('build/minified/web/cmaps', '*.bcmap', 'web/cmaps'),
+        ('build/generic/build', 'pdf.js', 'build'),
+        ('build/generic/build', 'pdf.worker.js', 'build'),
+        ('build/generic/build', 'pdf.js.map', 'build'),
+        ('build/generic/build', 'pdf.worker.js.map', 'build'),
+        ('build/generic/web', 'viewer.css', 'web'),
+        ('build/generic/web', 'viewer.js', 'web'),
+        ('build/generic/web/images', '*.gif', 'web/images'),
+        ('build/generic/web/images', '*.png', 'web/images'),
+        ('build/generic/web/cmaps', '*.bcmap', 'web/cmaps'),
     ]:
         copy(
             '%s/%s' % (pdfjs_dirname, source_dir),
