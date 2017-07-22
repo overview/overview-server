@@ -3,6 +3,8 @@
 DIR="$(dirname "$0")"/..
 
 cd "$DIR"
+# Make $DIR an absolute path, so we can refer to it later
+DIR="$(pwd)"
 
 set -e # any error means the whole thing failed
 set -x
