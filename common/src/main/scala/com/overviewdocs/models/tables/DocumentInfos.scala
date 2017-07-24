@@ -9,11 +9,6 @@ import com.overviewdocs.models.{DocumentDisplayMethod,DocumentInfo}
   * TODO: figure out how to use a Slick TableQuery.map() instead.
   */
 class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
-  implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](
-    _.mkString(" "),
-    _.split(",?\\s+").toSeq
-  )
-
   implicit val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
     d => new java.sql.Timestamp(d.getTime),
     d => new Date(d.getTime)
@@ -21,7 +16,6 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
 
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
-  def keywords = column[Seq[String]]("description")(keywordColumnType)
   def createdAt = column[Date]("created_at")(dateColumnType)
   def url = column[Option[String]]("url")
   def suppliedId = column[Option[String]]("supplied_id")
@@ -46,26 +40,24 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
     documentcloudId,
     title,
     pageNumber,
-    keywords,
     createdAt,
     fileId,
     displayMethod,
     isFromOcr,
     thumbnailLocation
   ).<>(
-    (t: Tuple13[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean], Option[String]]) => DocumentInfo.apply(
-      t._1,
-      t._2,
-      t._3,
+    (t: Tuple12[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Date,Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean], Option[String]]) => DocumentInfo.apply(
+      t._1,                            // id
+      t._2,                            // documentSetId
+      t._3,                            // url
       t._4.orElse(t._5).getOrElse(""), // suppliedId || documentcloudId || ""
       t._6.getOrElse(""),              // title
-      t._7,
-      t._8,
-      t._9,
-      t._11.getOrElse(DocumentDisplayMethod.auto),
-      t._12.getOrElse(false),          // isFromOcr
-      t._10.isDefined,
-      t._13
+      t._7,                            // pageNumber
+      t._8,                            // createdAt
+      t._10.getOrElse(DocumentDisplayMethod.auto),
+      t._11.getOrElse(false),          // isFromOcr
+      t._9.isDefined,                  // hasFileView
+      t._12                            // thumbnailLocation
     ),
     { d: DocumentInfo => Some(
       d.id,
@@ -75,7 +67,6 @@ class DocumentInfosImpl(tag: Tag) extends Table[DocumentInfo](tag, "document") {
       None,
       Some(d.title),
       d.pageNumber,
-      d.keywords,
       d.createdAt,
       None,
       Some(d.displayMethod),

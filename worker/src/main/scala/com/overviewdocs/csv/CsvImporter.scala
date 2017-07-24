@@ -79,15 +79,13 @@ class CsvImporter(
     })
   }
 
-  /** Update document set counts and metadata schema; delete CSV from database;
-    * create Tree.
+  /** Update document set counts and metadata schema; delete CSV from database.
     */
   private def finish(error: Option[String]): Future[Unit] = {
     for {
       _ <- addDocumentsCommon.afterAddDocuments(csvImport.documentSetId)
       _ <- writeMetadataSchema
       _ <- deleteCsvImport(error)
-      _ <- createTree
     } yield ()
   }
 
@@ -239,17 +237,5 @@ class CsvImporter(
         .map(_.metadataSchema)
         .update(metadataSchema)
     )
-  }
-
-  private def createTree: Future[Unit] = {
-    import database.api._
-
-    for {
-      treeId <- TreeIdGenerator.next(csvImport.documentSetId)
-      _ <- database.runUnit(Trees.+=(Tree.CreateAttributes(
-        documentSetId=csvImport.documentSetId,
-        lang=csvImport.lang
-      ).toTreeWithId(treeId)))
-    } yield ()
   }
 }

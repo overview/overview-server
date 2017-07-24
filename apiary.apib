@@ -296,7 +296,6 @@ The Document resource has the following attributes:
 - suppliedId: a String you use to identify the document when you aren't using Overview
 - title: what to call the document in Overview's document list
 - page: if this document represents one page, the page number; `null` otherwise
-- keywords: An Array of Strings that Overview finds interesting about this document (as compared to the other documents in the document set)
 - metadata: An Object containing extra-field values keyed by field name
 - tokens: A space-separated String listing every token in the document, according to [ElasticSearch's Standard Tokenizer](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-standard-tokenizer.html)
 - text: The text of the document
@@ -313,7 +312,6 @@ The Document resource has the following attributes:
             "url": "http://example.org/foo/bar.txt",
             "suppliedId": "foo/bar",
             "title": "Foo Bar",
-            "keywords": [ "foo", "bar" ],
             "text": "foo. bar. foo foo bar bar....",
             "tokens": "foo bar foo foo bar bar ...",
             "metadata": {}
@@ -342,7 +340,7 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
     + objects (optional, string, `456,567,678`) ... A comma-separated list of StoreObject IDs. Return documents matching any StoreObject in the list.
     + selectionId (optional, string, `f121bfdf-2afa-4a54-9e83-ed94047cf093`) ... A UUID returned from a previous request. This is key for pagination. On first request, the server compiles a long list of documents and only returns the first few. `selectionId` ensures you're using the same server-side list.
     + refresh (optional, boolean, `false`) ... Tell the server to skip its cache. Normally, when you request a page of documents, the server computes a long list of all matching documents, even if it only returns a few. For subsequent requests with the same parameters (but different page numbers), the server normally reuses the cached list. If your query relies on tags that have recently been added to and removed from documents, the cached list might not be the list you expect; set `refresh=true` to make sure it's current. If `selectionId` is set, `refresh` is ignored.
-    + fields (optional, string, `id`) ... Defaults to `id,keywords,pageNumber,suppliedId,title,url`. You may include `text`, `tokens` and/or `metadata`; those fields cost bandwidth, and if you aren't streaming they'll reduce the maximum page size. If you specify `id` on its own, the return value will be an Array of Document IDs (without pagination) instead of an Array of Document JSON objects.
+    + fields (optional, string, `id`) ... Defaults to `id,pageNumber,suppliedId,title,url`. You may include `text`, `tokens` and/or `metadata`; those fields cost bandwidth, and if you aren't streaming they'll reduce the maximum page size. If you specify `id` on its own, the return value will be an Array of Document IDs (without pagination) instead of an Array of Document JSON objects.
     + offset (optional, number, `0`) ... We're paginating; skip this many documents in the result list.
     + limit (optional, number, `1000`) ... We're paginating; return at most this many documents.
     + stream (optional, boolean, `true`) ... When `true`, respond with `Transfer-Encoding: chunked` and allow returning an unlimited number of documents.
@@ -361,15 +359,13 @@ Use a streaming-JSON client library such as [Oboe.js](http://oboejs.com/), [Yajl
                     "id": 2,
                     "url": "http://example.org/foo/bar.txt",
                     "suppliedId": "foo/bar",
-                    "title": "Foo Bar",
-                    "keywords": [ "foo", "bar" ]
+                    "title": "Foo Bar"
                 },
                 {
                     "id": 3,
                     "url": "http://example.org/bar/baz.txt",
                     "suppliedId": "bar/baz",
-                    "title": "Bar Baz",
-                    "keywords": [ "bar", "baz" ]
+                    "title": "Bar Baz"
                 }
             ]
         }

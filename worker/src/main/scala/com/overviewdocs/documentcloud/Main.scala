@@ -32,7 +32,6 @@ trait Main extends HasDatabase {
       _ <- fetchDocuments(dcImport2)
       _ <- AddDocumentsCommon.afterAddDocuments(dcImport.documentSetId)
       _ <- cleanUp(dcImport.id)
-      _ <- createTree(dcImport)
     } yield ()
   }
 
@@ -125,18 +124,6 @@ trait Main extends HasDatabase {
       )
       DELETE FROM document_cloud_import WHERE id = $dcImportId
     """)
-  }
-
-  def createTree(dcImport: DocumentCloudImport): Future[Unit] = {
-    import database.api._
-
-    for {
-      treeId <- TreeIdGenerator.next(dcImport.documentSetId)
-      _ <- database.runUnit(Trees.+=(Tree.CreateAttributes(
-        documentSetId=dcImport.documentSetId,
-        lang=dcImport.lang
-      ).toTreeWithId(treeId)))
-    } yield ()
   }
 }
 

@@ -11,7 +11,6 @@ object show {
     Json.obj(
       "documentSetId" -> document.documentSetId,
       "id" -> document.id,
-      "description" -> document.keywords.mkString(" "),
       "title" -> document.title,
       "text" -> document.text,
       "metadata" -> document.metadataJson,

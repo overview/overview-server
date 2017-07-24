@@ -121,13 +121,6 @@ class BulkDocumentWriterSpec extends DbSpecification {
     fetchDocuments(0).text must beEqualTo(text)
   }
 
-  "handle keywords" in new BaseScope {
-    val keywords = Seq("foo", "bar", "baz")
-    add(podoFactory.document(documentSetId=documentSet.id, keywords=keywords))
-    await(subject.flush)
-    fetchDocuments(0).keywords must beEqualTo(keywords)
-  }
-
   "handle displayMethod" in new BaseScope {
     add(podoFactory.document(documentSetId=documentSet.id, displayMethod = DocumentDisplayMethod.auto))
     await(subject.flush)

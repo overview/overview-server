@@ -20,13 +20,13 @@ describe('TreeTour', function() {
 
         await documentSets.open('documents.csv') // reload
 
-        // Flip through all the tooltips
-        for (const title of [ 'Document list', 'Tagging', 'Select', 'Folders' ]) {
+        // Flip through all but the last tooltip
+        for (const title of [ 'Document list', 'Tagging' ]) {
           await this.browser.assertExists({ class: 'popover', contains: title })
           await this.browser.click([ { class: 'popover' }, { link: 'Next' } ])
         }
-        // There's a second "Folders" tooltip
-        await this.browser.assertExists({ class: 'popover', contains: 'Folders' })
+        // The last tooltip
+        await this.browser.assertExists({ class: 'popover', contains: 'Select' })
 
         // click Done -> the tooltips should go away
         await this.browser.click([ { class: 'popover' }, { link: 'Done' } ])

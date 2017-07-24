@@ -5,9 +5,9 @@ import java.time.Instant
 import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext,Future,blocking}
 
-import com.overviewdocs.database.{HasDatabase,TreeIdGenerator}
-import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload,Tree}
-import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads,Trees}
+import com.overviewdocs.database.HasDatabase
+import com.overviewdocs.models.{File,FileGroup,GroupedFileUpload}
+import com.overviewdocs.models.tables.{FileGroups,GroupedFileUploads}
 import com.overviewdocs.util.{AddDocumentsCommon,Logger}
 
 /** Turns GroupedFileUploads into Documents (and DocumentProcessingErrors).
@@ -146,7 +146,6 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef)(implicit system: ActorRefFa
     * 3. Deletes unprocessed GroupedFileUploads. (When the command is cancelled,
     *    GroupedFileUploads that haven't been visited will still be there.)
     * 5. Deletes the FileGroup.
-    * 6. Creates a Tree.
     */
   def finishJob(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
     logger.debug("Completing {}", fileGroup)
@@ -154,7 +153,6 @@ class AddDocumentsImpl(documentIdSupplier: ActorRef)(implicit system: ActorRefFa
     for {
       _ <- AddDocumentsCommon.afterAddDocuments(fileGroup.addToDocumentSetId.get)
       _ <- FileGroupRemover().remove(fileGroup.id)
-      _ <- AddDocumentsImpl.createTree(fileGroup)
     } yield {
       ()
     }
@@ -216,17 +214,5 @@ object AddDocumentsImpl extends HasDatabase {
       _ <- compiledGroupedFileUpload(upload.id).delete
     } yield ()
     database.run(action.transactionally)
-  }
-
-  def createTree(fileGroup: FileGroup)(implicit ec: ExecutionContext): Future[Unit] = {
-    import database.api._
-
-    for {
-      treeId <- TreeIdGenerator.next(fileGroup.addToDocumentSetId.get)
-      _ <- database.runUnit(Trees.+=(Tree.CreateAttributes(
-        documentSetId=fileGroup.addToDocumentSetId.get,
-        lang=fileGroup.lang.get
-      ).toTreeWithId(treeId)))
-    } yield ()
   }
 }

@@ -24,18 +24,6 @@ define [
       bodyHtml: t('select.body_html')
     }
     {
-      find: '#tree-app-tree'
-      placement: 'right'
-      title: t('folders1.title')
-      bodyHtml: t('folders1.body_html')
-    }
-    {
-      find: '#tree-app-tree'
-      placement: 'right'
-      title: t('folders2.title')
-      bodyHtml: t('folders2.body_html')
-    }
-    {
       find: '#Intercom'
       placement: 'bottom'
       title: t('contact.title')

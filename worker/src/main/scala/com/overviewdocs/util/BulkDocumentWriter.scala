@@ -136,7 +136,7 @@ trait BulkDocumentWriter {
     // Tuples
     // Tracks models/tables/Documents.scala and models/Document.scala
     documents.foreach { document =>
-      dataOut.writeShort(15) // Number of fields
+      dataOut.writeShort(14) // Number of fields
 
       writeLong(document.id)
       writeLong(document.documentSetId)
@@ -144,7 +144,6 @@ trait BulkDocumentWriter {
       writeString(document.suppliedId)
       writeString(document.title)
       writeIntOption(document.pageNumber)
-      writeString(document.keywords.mkString(" "))
       writeTimestamp(document.createdAt)
       writeLongOption(document.fileId)
       writeLongOption(document.pageId)
@@ -176,7 +175,6 @@ trait BulkDocumentWriter {
             supplied_id,
             title,
             page_number,
-            description,
             created_at,
             file_id,
             page_id,

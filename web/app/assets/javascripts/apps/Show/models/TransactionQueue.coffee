@@ -147,10 +147,13 @@ define [
                 onSuccess()
                 resolve()
               .on 'fail', (report) =>
+                # HACK: make logged-out-modal pick up on this error.
+                if report.statusCode == 400 && report.jsonBody
+                  $(document).trigger('ajaxError', [ { status: report.statusCode, responseText: report.body }, {}, report ])
+
                 # There's no mechanism to handle the error without triggering
                 # 'error', like we have with .ajax(). But if there were one, it
                 # would go here.
-                console.log('streamJsonArray error:', report.statusCode, report.thrown)
                 if report.statusCode
                   reject(report)
                   @trigger('error', {}, report.statusCode, report.thrown)

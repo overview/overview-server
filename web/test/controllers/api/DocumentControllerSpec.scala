@@ -125,14 +125,13 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         lazy val documents = List(
           factory.document(
             title="foo",
-            keywords=Seq("foo", "bar"),
             suppliedId="supplied 1",
             text="text",
             metadataJson=Json.obj("foo" -> "bar"),
             url=Some("http://example.org"),
             pageNumber=Some(1)
           ),
-          factory.document(title="", keywords=Seq(), suppliedId="", url=None)
+          factory.document(title="", suppliedId="", url=None)
         )
         override lazy val selection = InMemorySelection(Array(documents.map(_.id): _*))
         mockDocumentBackend.index(any, any, any) returns Future(
@@ -146,8 +145,6 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         // specs2 doesn't have a Long JSON matcher
         //json must /("items") /#(0) /("id" -> documents(0).id)
         json must /("items") /#(0) /("title" -> "foo")
-        json must /("items") /#(0) /("keywords") /#(0) /("foo")
-        json must /("items") /#(0) /("keywords") /#(1) /("bar")
         json must /("items") /#(0) /("suppliedId" -> "supplied 1")
         json must /("items") /#(0) /("url" -> "http://example.org")
         json must /("items") /#(0) /("pageNumber" -> 1)
@@ -156,8 +153,6 @@ class DocumentControllerSpec extends ApiControllerSpecification {
 
         //json must /("items") /#(1) /("id" -> documents(1).id)
         json must /("items") /#(1) /("title" -> "")
-        //json must /("items") /#(1) /("keywords")
-        //json must not /("items") /#(1) /("keywords") /#(0)
         json must not /("items") /#(1) /("suppliedId")
         json must not /("items") /#(1) /("url")
         json must not /("items") /#(1) /("text")
@@ -176,20 +171,17 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         json must /("items") /#(0) /("url" -> "http://example.org")
         json must /("items") /#(0) /("suppliedId" -> "supplied 1")
         json must /("items") /#(0) /("title" -> "foo")
-        json must not(beMatching("keywords".r))
         json must not(beMatching("pageNumber".r))
       }
 
       "return specified fields (2/2)" in new IndexFieldsScope {
-        override val fields = "id,keywords,pageNumber"
+        override val fields = "id,pageNumber"
 
         status(result) must beEqualTo(OK)
         val json = contentAsString(result)
 
         // specs2 doesn't have a Long JSON matcher
         //json must /("items") /#(0) /("id" -> documents(0).id)
-        json must /("items") /#(0) /("keywords") /#(0) /("foo")
-        json must /("items") /#(0) /("keywords") /#(1) /("bar")
         json must /("items") /#(0) /("pageNumber" -> 1)
         json must not(beMatching("documentSetId".r))
         json must not(beMatching("url".r))
@@ -335,7 +327,6 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         mockDocumentBackend.show(documentSetId, documentId) returns Future.successful(Some(factory.document(
           id=documentId,
           documentSetId=documentSetId,
-          keywords=Seq("foo", "bar"),
           url=Some("http://example.org"),
           text="text",
           title="title",
@@ -352,8 +343,6 @@ class DocumentControllerSpec extends ApiControllerSpecification {
         // specs2 doesn't have a Long JSON matcher
         //json must /("id" -> documentId)
         json must not /("documentSetId")
-        json must /("keywords") /#(0) /("foo")
-        json must /("keywords") /#(1) /("bar")
         json must /("isFromOcr" -> false)
         json must /("url" -> "http://example.org")
         json must /("title" -> "title")

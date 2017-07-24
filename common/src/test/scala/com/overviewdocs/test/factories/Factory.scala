@@ -68,7 +68,6 @@ trait Factory {
     url: Option[String] = None,
     suppliedId: String = "",
     title: String = "",
-    keywords: Seq[String] = Seq(),
     createdAt: Date = new Date(1234L),
     pageNumber: Option[Int] = None,
     fileId: Option[Long] = None,

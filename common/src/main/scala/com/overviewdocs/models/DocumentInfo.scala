@@ -16,7 +16,6 @@ case class DocumentInfo(
   override val suppliedId: String,
   override val title: String,
   override val pageNumber: Option[Int],
-  override val keywords: Seq[String],
   override val createdAt: Date,
   override val displayMethod: DocumentDisplayMethod.Value,
   override val isFromOcr: Boolean,

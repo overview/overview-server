@@ -19,7 +19,6 @@ case class CsvDocument(
     suppliedId,
     title,
     None,
-    Seq(),
     new java.util.Date(),
     None,
     None,

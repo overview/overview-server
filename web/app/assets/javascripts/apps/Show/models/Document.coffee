@@ -4,7 +4,7 @@ define [
 ], (_, Backbone) ->
   # A Document from the server.
   #
-  # A Document has a title and description.
+  # A Document has a title.
   #
   # It can also contain tags, which are stored in a `tagIds` and a `tagCids`
   # attributes. These are two layers of caches, required because Document
@@ -24,7 +24,6 @@ define [
     defaults:
       documentSetId: null
       title: ''
-      description: ''
       snippet: ''
       pageNumber: null
       url: null
@@ -41,7 +40,6 @@ define [
       id: json.id
       documentSetId: json.documentSetId
       title: json.title
-      description: json.description
       pageNumber: json.page_number || null
       url: json.url || null
       snippet: json.snippet || null

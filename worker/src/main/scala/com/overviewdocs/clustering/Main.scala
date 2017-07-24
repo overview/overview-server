@@ -50,7 +50,7 @@ import com.overviewdocs.nlp.DocumentVectorTypes.{DocumentID,DocumentSetVectors,D
   *     0		f	term1_term2 term4	123 234 ...
   *     1	0	t	term1_term3 term5	123 ...
   *
-  * That's a CSV with the following columns:
+  * That's a TSV with the following columns:
   *
   * * `id` A numeric ID, incrementing from `0`.
   * * `parentId` The ID of the parent. (The `0` node doesn't have a parent).

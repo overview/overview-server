@@ -25,7 +25,6 @@ case class IncompleteDocument(
     suppliedId=filename,
     title=filename,
     pageNumber=pageNumber,
-    keywords=Seq(),
     createdAt=new java.util.Date(createdAt.toEpochMilli),
     fileId=fileId,
     pageId=pageId,

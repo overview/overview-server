@@ -27,7 +27,6 @@ case class DocumentCloudDocumentHeader(
     documentCloudId,
     title,
     pageNumber,
-    Seq(),
     new java.util.Date(),
     None,
     None,

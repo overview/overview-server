@@ -8,11 +8,6 @@ import com.overviewdocs.database.Slick.api._
 import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNote,PdfNoteCollection}
 
 object DocumentsImpl {
-  implicit val keywordColumnType = MappedColumnType.base[Seq[String], String](
-    _.mkString(" "),
-    _.split(" ").toSeq
-  )
-
   implicit val dateColumnType = MappedColumnType.base[Date, java.sql.Timestamp](
     d => new java.sql.Timestamp(d.getTime),
     d => new Date(d.getTime)
@@ -36,7 +31,6 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
 
   def id = column[Long]("id", O.PrimaryKey)
   def documentSetId = column[Long]("document_set_id")
-  def keywords = column[Seq[String]]("description")(keywordColumnType)
   def createdAt = column[Date]("created_at")(dateColumnType)
   def text = column[Option[String]]("text")
   def url = column[Option[String]]("url")
@@ -65,7 +59,6 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     documentcloudId,
     title,
     pageNumber,
-    keywords,
     createdAt,
     fileId,
     pageId,
@@ -76,7 +69,7 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
     pdfNotes,
     text
   ).<>(
-    (t: Tuple17[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Seq[String],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[PdfNoteCollection],Option[String]]) => Document.apply(
+    (t: Tuple16[Long,Long,Option[String],Option[String],Option[String],Option[String],Option[Int],Date,Option[Long],Option[Long],Option[DocumentDisplayMethod.Value],Option[Boolean],Option[JsObject],Option[String],Option[PdfNoteCollection],Option[String]]) => Document.apply(
       t._1,
       t._2,
       t._3,
@@ -86,13 +79,12 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       t._8,
       t._9,
       t._10,
-      t._11,
-      t._12.getOrElse(DocumentDisplayMethod.auto),
-      t._13.getOrElse(false),                      // isFromOcr
-      t._14.getOrElse(JsObject(Seq())),            // metadataJson
-      t._15,                                       // thumbnail
-      t._16.getOrElse(PdfNoteCollection(Array())), // pdfNotes
-      t._17.getOrElse("")                          // text
+      t._11.getOrElse(DocumentDisplayMethod.auto),
+      t._12.getOrElse(false),                      // isFromOcr
+      t._13.getOrElse(JsObject(Seq())),            // metadataJson
+      t._14,                                       // thumbnail
+      t._15.getOrElse(PdfNoteCollection(Array())), // pdfNotes
+      t._16.getOrElse("")                          // text
     ),
     { d: Document => Some(
       d.id,
@@ -102,7 +94,6 @@ class DocumentsImpl(tag: Tag) extends Table[Document](tag, "document") {
       None,
       Some(d.title),
       d.pageNumber,
-      d.keywords,
       d.createdAt,
       d.fileId,
       d.pageId,

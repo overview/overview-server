@@ -10,7 +10,6 @@ class DocumentInfoSpec extends Specification {
     "",
     "",
     None,
-    Seq(),
     new java.util.Date(0L),
     DocumentDisplayMethod.auto,
     false,

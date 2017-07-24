@@ -30,7 +30,6 @@ module.exports = function likeATree(opts) {
         await this.browser.click({ tag: 'h3', contains: document.title })
         await this.browser.sleep(500) // wait for animation
         await this.browser.assertExists({ tag: 'h2', contains: document.title, wait: true })
-        await this.browser.assertExists({ tag: 'div', class: 'keywords', contains: 'Key words:', wait: true })
 
         await extra()
       })

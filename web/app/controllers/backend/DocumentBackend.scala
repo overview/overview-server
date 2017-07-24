@@ -77,7 +77,6 @@ class DbDocumentBackend @Inject() (
     override val suppliedId = ""
     override val title = ""
     override val pageNumber = None
-    override val keywords = Seq()
     override val createdAt = new java.util.Date(0L)
     override val displayMethod = DocumentDisplayMethod.auto
     override val isFromOcr = false

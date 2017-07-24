@@ -28,7 +28,6 @@ class ClusteringResponseHandler(treeId: Long, onProgress: (Double, String) => Un
 
   private var state: ClusteringResponseHandler.State = ClusteringResponseHandler.Progress
   private val rootNodeId: Long = (treeId & 0xffffffff00000000L) | ((treeId & 0xfff) << 20L)
-  private val documentUpdater = new DocumentUpdater
   private val nodeWriter = new NodeWriter
   private var nDocumentsWritten: Int = 0
   private var nNodesWritten: Int = 0
@@ -89,15 +88,14 @@ class ClusteringResponseHandler(treeId: Long, onProgress: (Double, String) => Un
         onDocumentsProgress(0, nTotal)
       }
 
-      case (ClusteringResponseHandler.Documents(nTotal), DocumentRegex(idString, keywordsString)) => {
-        documentUpdater.blockingUpdateKeywordsAndFlushIfNeeded(idString.toLong, keywordsString.split(' '))
+      case (ClusteringResponseHandler.Documents(nTotal), DocumentRegex(idString, keywords)) => {
+        // We don't store keywords anywhere, but they're useful for debugging
+        // the program so we'll leave them in.
         nDocumentsWritten += 1
         if (nDocumentsWritten % nDocumentsPerProgress == 0) onDocumentsProgress(nDocumentsWritten, nTotal)
       }
 
       case (ClusteringResponseHandler.Documents(_), NNodesRegex(nNodesString)) => {
-        documentUpdater.blockingFlush
-
         addDanglingNode
 
         val nTotal = nNodesString.toInt

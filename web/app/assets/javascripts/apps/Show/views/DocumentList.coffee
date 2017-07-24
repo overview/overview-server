@@ -21,8 +21,6 @@ define [
           <% } %>
           <% if (attrs.snippet) { %>
             <p class="snippets"><%= attrs.snippet %></p>
-          <% } else { %>
-            <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
           <% }%>
           <ul class="tags">
             <% _.each(tags, function(tag) { %>

@@ -82,7 +82,6 @@ define [
             </li>
           <% }); %>
         </ul>
-        <div class="keywords"><%- (document && document.get('description')) ? t('description', document.get('description')) : t('description.empty') %></div>
         <div class="document-display-preferences"></div>
       """)
 

@@ -28,7 +28,6 @@ class DocumentSetLuceneIndexSpec extends Specification {
       suppliedId="suppliedId",
       title=s"moo$id",
       pageNumber=None,
-      keywords=Seq(),
       createdAt=new java.util.Date(),
       fileId=None,
       pageId=None,

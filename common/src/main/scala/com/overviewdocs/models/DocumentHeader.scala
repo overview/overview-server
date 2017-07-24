@@ -15,7 +15,6 @@ trait DocumentHeader {
   val suppliedId: String
   val title: String
   val pageNumber: Option[Int]
-  val keywords: Seq[String]
   val createdAt: Date
   val displayMethod: DocumentDisplayMethod
   val isFromOcr: Boolean

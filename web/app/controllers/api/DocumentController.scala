@@ -143,7 +143,6 @@ object DocumentController {
   object Field {
     case object id extends Field
     case object documentSetId extends Field
-    case object keywords extends Field
     case object isFromOcr extends Field
     case object metadata extends Field
     case object pageNumber extends Field
@@ -153,8 +152,8 @@ object DocumentController {
     case object tokens extends Field
     case object url extends Field
 
-    val defaults: Set[Field] = Set(id, keywords, pageNumber, suppliedId, title, url)
-    val all: Set[Field] = Set(id, documentSetId, keywords, isFromOcr, metadata, pageNumber, suppliedId, text, title, tokens, url)
+    val defaults: Set[Field] = Set(id, pageNumber, suppliedId, title, url)
+    val all: Set[Field] = Set(id, documentSetId, isFromOcr, metadata, pageNumber, suppliedId, text, title, tokens, url)
     val fullDocumentKeywords: Set[Field] = Set(text, tokens, metadata)
 
     def needFullDocuments(fields: Set[Field]): Boolean = fields.intersect(fullDocumentKeywords).nonEmpty
@@ -162,7 +161,6 @@ object DocumentController {
     def name(field: Field): String = field match {
       case `id` => "id"
       case `documentSetId` => "documentSetId"
-      case `keywords` => "keywords"
       case `isFromOcr` => "isFromOcr"
       case `metadata` => "metadata"
       case `pageNumber` => "pageNumber"
@@ -176,7 +174,6 @@ object DocumentController {
     def format(field: Field, documentSet: DocumentSet, document: DocumentHeader): JsValue = field match {
       case `id` => JsNumber(document.id)
       case `documentSetId` => JsNumber(document.documentSetId)
-      case `keywords` => JsArray(document.keywords.map(JsString.apply))
       case `isFromOcr` => JsBoolean(document.isFromOcr)
       case `metadata` => Metadata(documentSet.metadataSchema, document.metadataJson).cleanJson
       case `pageNumber` => document.pageNumber.map(JsNumber(_)).getOrElse(JsNull)
@@ -194,7 +191,6 @@ object DocumentController {
     def parseOne(string: String): Option[Field] = string match {
       case "id" => Some(id)
       case "documentSetId" => Some(documentSetId)
-      case "keywords" => Some(keywords)
       case "isFromOcr" => Some(isFromOcr)
       case "metadata" => Some(metadata)
       case "pageNumber" => Some(pageNumber)

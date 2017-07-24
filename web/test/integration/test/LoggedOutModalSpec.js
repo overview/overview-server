@@ -12,14 +12,13 @@ describe('LoggedOutModal', function() {
 
     // These tests tell a story: they must be executed sequentially.
 
-    it('should show a modal when a logged out tries to perform an ajax action', async function() {
+    it('should show a modal when a logged out user tries to perform an ajax action', async function() {
+      // There's a race here: we're loading the document list, _and_ we'll start
+      // a search. Either can cause the error: we don't care which
       await this.b.driver.manage().deleteAllCookies()
-
-      await this.jquery.listenForAjaxComplete()
       await this.b.sendKeys('test\uE007', 'input[name=query]')
-      await this.jquery.waitUntilAjaxComplete()
 
-      await this.b.assertExists('#logged-out-modal')
+      await this.b.assertExists('#logged-out-modal', { wait: 'pageLoad' })
     })
 
     it('should redirect to the login page on clicking the login button', async function() {

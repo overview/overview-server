@@ -16,7 +16,6 @@ object show {
     Json.obj(
       "id" -> document.id,
       "documentSetId" -> document.documentSetId.toString,
-      "description" -> document.keywords,
       "title" -> document.title,
       "page_number" -> document.pageNumber,
       "url" -> document.viewUrl,
