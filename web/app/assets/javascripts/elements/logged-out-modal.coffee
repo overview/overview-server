@@ -1,6 +1,5 @@
 define ['jquery', 'i18n', 'underscore', 'bootstrap-modal'], ($, i18n, _) ->
   $(document).ajaxError((event, jqxhr) ->
-    console.log(jqxhr.status)
     if jqxhr.status == 400
       body = try
         JSON.parse(jqxhr.responseText)
