@@ -54,7 +54,7 @@ class DbDocumentSelectionBackend @Inject() (
         }
         case Some(field) => {
           documentIdListBackend.showOrCreate(documentSet.id.toInt, field)
-            .to(Sink.foreach(progress => onProgress(progress.progress)))
+            .toMat(Sink.foreach(progress => onProgress(progress.progress)))((idsFuture, doneFuture) => doneFuture.flatMap(_ => idsFuture))
             .run()(materializer)
             .map(_ match {
               case None => throw new Exception("Sort failed. Look for earlier error messages.")
