@@ -30,6 +30,7 @@ describe('PdfAnnotations', function() {
       await b.find('iframe#document-contents', { wait: 'fast' }) // wait for PDF to start loading
 
       await b.switchToFrame('document-contents')
+      await b.assertExists('#viewer .textLayer', { wait: 'pageLoad' }) // debugging: Jenkins is failing to find '#viewer .textLayer div'
       await b.assertExists('#viewer .textLayer div', { wait: 'pageLoad' })
       await b.waitUntilBlockReturnsTrue('notes code is loaded', 'pageLoad', function() {
         return document.querySelector('.noteLayer') !== null
