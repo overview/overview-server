@@ -7,7 +7,7 @@ import play.api.libs.json.{JsValue,Json}
 import play.api.mvc.AnyContent
 import scala.concurrent.Future
 
-import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{CsvImportJob,DocumentSet,ImportJob}
 import com.overviewdocs.test.factories.PodoFactory
 import controllers.auth.AuthorizedRequest
@@ -86,14 +86,14 @@ class DocumentSetControllerSpec extends ControllerSpecification with JsonMatcher
         override def input = Json.obj("metadataSchema" -> Json.obj(
             "version" -> 1,
             "fields" -> Json.arr(
-              Json.obj("name" -> "foo", "type" -> "String"),
-              Json.obj("name" -> "bar", "type" -> "String")
+              Json.obj("name" -> "foo", "type" -> "String", "display" -> "TextInput"),
+              Json.obj("name" -> "bar", "type" -> "String", "display" -> "Div")
             )
           )
         )
         val expectSchema = MetadataSchema(1, Seq(
-          MetadataField("foo", MetadataFieldType.String),
-          MetadataField("bar", MetadataFieldType.String)
+          MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
+          MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.Div)
         ))
         h.status(result) must beEqualTo(h.NO_CONTENT)
         there was one(mockBackend).updateMetadataSchema(documentSetId, expectSchema)

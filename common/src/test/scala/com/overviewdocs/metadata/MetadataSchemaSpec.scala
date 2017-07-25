@@ -20,9 +20,10 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     }
 
     "include a String field" in new ToJsonScope {
-      override val fields = Seq(MetadataField("foo", MetadataFieldType.String))
+      override val fields = Seq(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput))
       json must /("fields") /#(0) /("name" -> "foo")
       json must /("fields") /#(0) /("type" -> "String")
+      json must /("fields") /#(0) /("display" -> "TextInput")
     }
   }
 
@@ -44,15 +45,33 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     }
 
     "parse a String field" in new FromJsonScope {
-      from("""{"version":1,"fields":[{"name":"foo","type":"String"}]}""").fields must beEqualTo(Seq(
-        MetadataField("foo", MetadataFieldType.String)
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"}]}""").fields must beEqualTo(Seq(
+        MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
+      ))
+    }
+
+    "parse a Div field" in new FromJsonScope {
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"Div"}]}""").fields must beEqualTo(Seq(
+        MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.Div)
+      ))
+    }
+
+    "parse a Pre field" in new FromJsonScope {
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"Pre"}]}""").fields must beEqualTo(Seq(
+        MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.Pre)
+      ))
+    }
+
+    "default to String+TextInput" in new FromJsonScope {
+      from("""{"version":1,"fields":[{"name":"foo"}]}""").fields must beEqualTo(List(
+        MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
       ))
     }
 
     "parse fields in order" in new FromJsonScope {
-      from("""{"version":1,"fields":[{"name":"foo","type":"String"},{"name":"bar","type":"String"}]}""").fields must beEqualTo(Seq(
-        MetadataField("foo", MetadataFieldType.String),
-        MetadataField("bar", MetadataFieldType.String)
+      from("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"},{"name":"bar","type":"String","display":"TextInput"}]}""").fields must beEqualTo(Seq(
+        MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
+        MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
       ))
     }
 
@@ -60,10 +79,14 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
       from("""{"version":1,"fields":[{"name":"foo","type":"string"}]}""") must throwA[IllegalArgumentException]
     }
 
+    "not parse an invalid display" in new FromJsonScope {
+      from("""{"version":1,"fields":[{"name":"foo","display":"textinput"}]}""") must throwA[IllegalArgumentException]
+    }
+
     "provide an implicit Reads for parsing" in {
       import MetadataSchema.Json.reads
-      val result = Json.parse("""{"version":1,"fields":[{"name":"foo","type":"String"}]}""").as[MetadataSchema]
-      result must beEqualTo(MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String))))
+      val result = Json.parse("""{"version":1,"fields":[{"name":"foo","type":"String","display":"TextInput"}]}""").as[MetadataSchema]
+      result must beEqualTo(MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput))))
     }
   }
 
@@ -79,8 +102,8 @@ class MetadataSchemaSpec extends Specification with JsonMatchers {
     "parse String fields" in new InferScope {
       val result = from("""{"foo":"bar","moo":"mar"}""")
       result.fields must containTheSameElementsAs(Seq(
-        MetadataField("foo", MetadataFieldType.String),
-        MetadataField("moo", MetadataFieldType.String)
+        MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
+        MetadataField("moo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
       ))
     }
 

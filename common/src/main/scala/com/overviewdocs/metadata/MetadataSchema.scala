@@ -18,7 +18,12 @@ case class MetadataSchema(version: Int, fields: Seq[MetadataField]) {
         "name" -> field.name,
         "type" -> (field.fieldType match {
           case MetadataFieldType.String => "String"
-        })
+        }),
+        "display" -> (field.display match {
+          case MetadataFieldDisplay.TextInput => "TextInput"
+          case MetadataFieldDisplay.Div => "Div"
+          case MetadataFieldDisplay.Pre => "Pre"
+        }),
       )
     })
   ))
@@ -48,14 +53,22 @@ object MetadataSchema {
     import play.api.libs.functional.syntax._
 
     private val badTypeError = JsonValidationError("Invalid \"type\" value")
+    private val badDisplayError = JsonValidationError("Invalid \"display\" value")
 
-    private implicit val metadataFieldTypeReads: Reads[MetadataFieldType] = StringReads.collect(badTypeError) {
-      case "String" => MetadataFieldType.String
+    private implicit val metadataFieldTypeReads: Reads[MetadataFieldType] = JsStringReads.collect(badTypeError) {
+      case JsString("String") => MetadataFieldType.String
+    }
+
+    private implicit val metadataFieldDisplayReads: Reads[MetadataFieldDisplay] = JsStringReads.collect(badDisplayError) {
+      case JsString("TextInput") => MetadataFieldDisplay.TextInput
+      case JsString("Div") => MetadataFieldDisplay.Div
+      case JsString("Pre") => MetadataFieldDisplay.Pre
     }
 
     private implicit val metadataFieldReads: Reads[MetadataField] = (
       (JsPath \ "name").read[String] and
-      (JsPath \ "type").read[MetadataFieldType]
+      (JsPath \ "type").readWithDefault(JsString("String")).andThen(metadataFieldTypeReads) and
+      (JsPath \ "display").readWithDefault(JsString("TextInput")).andThen(metadataFieldDisplayReads)
     )(MetadataField.apply _)
 
     implicit val reads: Reads[MetadataSchema] = (

@@ -17,7 +17,7 @@ class DocumentControllerSpec extends ApiControllerSpecification {
   trait BaseScope extends ApiControllerScope {
     lazy val selection = InMemorySelection(Array.empty) // override for a different Selection
     val documentSet = factory.documentSet(metadataSchema = MetadataSchema(1, Seq(
-      MetadataField("foo", MetadataFieldType.String)
+      MetadataField("foo")
     )))
     val mockDocumentSetBackend = smartMock[DocumentSetBackend]
     mockDocumentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))

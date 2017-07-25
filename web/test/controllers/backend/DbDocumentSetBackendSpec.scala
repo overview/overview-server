@@ -1,7 +1,7 @@
 package controllers.backend
 
 import models.pagination.PageRequest
-import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.tables.{ApiTokens,DocumentSetUsers,DocumentSets,Views}
 import com.overviewdocs.models.{ApiToken,DocumentSet,DocumentSetUser,View}
 
@@ -278,8 +278,8 @@ class DbDocumentSetBackendSpec extends DbBackendSpecification {
   "#updateMetadataSchema" should {
     trait UpdateMetadataSchemaScope extends BaseScope {
       val sampleMetadataSchema = MetadataSchema(1, Seq(
-        MetadataField("foo", MetadataFieldType.String),
-        MetadataField("bar", MetadataFieldType.String)
+        MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
+        MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.Div)
       ))
     }
 

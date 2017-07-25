@@ -4,7 +4,7 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 
 import controllers.backend.{ApiTokenBackend,DocumentSetBackend}
-import com.overviewdocs.metadata.{MetadataSchema,MetadataField,MetadataFieldType}
+import com.overviewdocs.metadata.{MetadataSchema,MetadataField,MetadataFieldDisplay,MetadataFieldType}
 import com.overviewdocs.models.DocumentSet
 
 class DocumentSetControllerSpec extends ApiControllerSpecification {
@@ -46,8 +46,8 @@ class DocumentSetControllerSpec extends ApiControllerSpecification {
         "metadataSchema" -> Json.obj(
           "version" -> 1,
           "fields" -> Json.arr(
-            Json.obj("name" -> "foo", "type" -> "String"),
-            Json.obj("name" -> "bar", "type" -> "String")
+            Json.obj("name" -> "foo", "type" -> "String", "display" -> "TextInput"),
+            Json.obj("name" -> "bar", "type" -> "String", "display" -> "Div")
           )
         )
       ))
@@ -58,8 +58,8 @@ class DocumentSetControllerSpec extends ApiControllerSpecification {
           val expect = DocumentSet.CreateAttributes(
             title="foo-title",
             metadataSchema=MetadataSchema(1, Seq(
-              MetadataField("foo", MetadataFieldType.String),
-              MetadataField("bar", MetadataFieldType.String)
+              MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
+              MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.Div),
             ))
           ).copy(createdAt=attributes.createdAt)
           attributes must beEqualTo(expect)

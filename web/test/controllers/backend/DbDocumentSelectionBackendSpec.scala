@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 import com.overviewdocs.query.{AndQuery,Field,PhraseQuery,Query}
 import com.overviewdocs.messages.Progress
-import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{DocumentIdList,DocumentIdSet}
 import com.overviewdocs.searchindex.{SearchResult,SearchWarning}
 import models.{InMemorySelection,SelectionRequest,SelectionWarning}
@@ -157,8 +157,8 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         // We needn't shelter our search index from missing fields: races mean
         // we don't even have that option. This is _just_ a usability feature.
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet.copy(metadataSchema=MetadataSchema(1, Seq(
-          MetadataField("bar", MetadataFieldType.String),
-          MetadataField("baz", MetadataFieldType.String)
+          MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
+          MetadataField("baz", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
         )))))
         override val q = Some(AndQuery(PhraseQuery(Field.Metadata("foo"), "moo"), PhraseQuery(Field.Metadata("foo2"), "moo")))
         ret.warnings must beEqualTo(List(

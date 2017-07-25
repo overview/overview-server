@@ -12,7 +12,7 @@ import play.api.test.FakeRequest
 import scala.concurrent.Future
 
 import com.overviewdocs.messages.DocumentSetCommands
-import com.overviewdocs.metadata.{MetadataField,MetadataFieldType,MetadataSchema}
+import com.overviewdocs.metadata.{MetadataField,MetadataFieldDisplay,MetadataFieldType,MetadataSchema}
 import com.overviewdocs.models.{DocumentSet,FileGroup,GroupedFileUpload}
 import controllers.auth.{AuthorizedRequest}
 import controllers.backend.{DocumentSetBackend,FileGroupBackend,GroupedFileUploadBackend}
@@ -158,7 +158,7 @@ class MassUploadControllerSpec extends ControllerSpecification {
         beLike[DocumentSet.CreateAttributes] { case attributes =>
           attributes.title must beEqualTo("DocumentSet name")
           attributes.metadataSchema must beEqualTo(
-            MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String)))
+            MetadataSchema(1, Seq(MetadataField("foo", MetadataFieldType.String, MetadataFieldDisplay.TextInput)))
           )
         },
         beLike[String] { case s => s must beEqualTo(user.email) }
