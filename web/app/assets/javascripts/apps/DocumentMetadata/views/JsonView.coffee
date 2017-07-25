@@ -39,6 +39,8 @@ define [
       throw 'Must specify model, a Backbone.Model with `fields` and `json` attributes' if !@model
 
       @listenTo(@model, 'change:fields', @render)
+      @listenTo @model, 'change:json', (_1, _2, options) =>
+        @render() if options.cause != 'userEntry'
 
       @render()
 
@@ -55,7 +57,9 @@ define [
       els = @_renderedFields
         .map (f) =>
           if f of alreadyRendered
-            alreadyRendered[f]
+            el = alreadyRendered[f]
+            el.querySelector('input').value = json[f] ? DefaultValue
+            el
           else
             $(@templates.row({ fieldName: f, t: t, value: json[f] ? DefaultValue }))[0]
 
@@ -101,4 +105,4 @@ define [
         $input = $(input)
         json[$input.attr('name')] = $input.val()
 
-      @model.set(json: json)
+      @model.set({ json: json }, cause: 'userEntry')

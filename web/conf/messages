@@ -345,7 +345,6 @@ views.DocumentSet.show.DocumentListTitle.sort_by.title=title
 views.DocumentSet.show.DocumentListTitle.sort_by_FIELD=Sorted by FIELD</strong>
 
 views.DocumentSet.show.DocumentMetadata.App.title=Fields
-views.DocumentSet.show.DocumentMetadata.App.loading=loading…
 views.DocumentSet.show.DocumentMetadata.JsonView.delete=Delete this field
 views.DocumentSet.show.DocumentMetadata.JsonView.confirmDelete=Are you sure? This will remove the “{0}” field from every document in this document set.
 views.DocumentSet.show.DocumentMetadata.JsonView.help_html=Add fields (such as “Author”) to your document set, and you’ll be able to store values for each document.

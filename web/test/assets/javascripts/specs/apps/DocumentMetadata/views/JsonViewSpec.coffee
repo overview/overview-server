@@ -44,9 +44,14 @@ define [
       expect(@subject.$('label:eq(2)')).to.have.text('field2')
 
     it 'should not overwrite HTML when reordering fields', ->
-      @subject.$('input:eq(0)').val('new value')
+      el1 = @subject.el.querySelector('input[name=field1]')
       @model.set(fields: [ 'field3', 'field1', 'field2' ])
-      expect(@subject.$('input:eq(1)')).to.have.value('new value')
+      el2 = @subject.el.querySelector('input[name=field1]')
+      expect(el1).to.eq(el2)
+
+    it 'should render changes when metadata changes (from another source)', ->
+      @model.set(json: { field1: 'value2', field2: 'value3', field3: 'value4' }, cause: 'test')
+      expect(@subject.$('input[name=field1]')).to.have.value('value2')
 
     it 'should add a new field to the end of the list', ->
       @model.set(fields: [ 'field1', 'field2', 'field3', 'foo' ])

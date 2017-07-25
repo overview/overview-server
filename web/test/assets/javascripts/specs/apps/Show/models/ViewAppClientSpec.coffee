@@ -4,18 +4,28 @@ define [
 ], (Backbone, ViewAppClient) ->
   class MockState extends Backbone.Model
     defaults:
-      documentList: 'foo'
+      documentList: { params: 'foo' }
       document: 'bar'
 
   describe 'apps/Show/models/ViewAppClient', ->
     beforeEach ->
+      @sandbox = sinon.sandbox.create()
+      @sandbox.stub(console, 'log')
       @state = new MockState()
+      @state.documentSet = new Backbone.Model(foo: 'bar')
+
+    afterEach ->
+      @sandbox.restore()
 
     describe 'with a complete viewApp', ->
       beforeEach ->
         @viewApp =
           onDocumentListParamsChanged: sinon.spy()
+          onDocumentSetChanged: sinon.spy()
           onDocumentChanged: sinon.spy()
+          notifyDocumentListParams: sinon.spy()
+          notifyDocumentSet: sinon.spy()
+          notifyDocument: sinon.spy()
           onTag: sinon.spy()
           onUntag: sinon.spy()
           remove: sinon.spy()
@@ -31,8 +41,19 @@ define [
         expect(@viewApp.onDocumentListParamsChanged).to.have.been.calledWith('baz')
 
       it 'should invoke onDocumentChanged', ->
-        @state.set(document: 'baz')
-        expect(@viewApp.onDocumentChanged).to.have.been.calledWith('baz')
+        document = new Backbone.Model(foo: 'bar')
+        @state.set(document: document)
+        expect(@viewApp.onDocumentChanged).to.have.been.calledWith(document)
+
+      it 'should invoke onDocumentChanged when the document attributes change', ->
+        document = new Backbone.Model(foo: 'bar')
+        @state.set(document: document)
+        @state.get('document').set(foo: 'baz')
+        expect(@viewApp.onDocumentChanged).to.have.been.called.twice
+
+      it 'should invoke onDocumentSetChanged', ->
+        @state.documentSet.set(foo: 'baz')
+        expect(@viewApp.onDocumentSetChanged).to.have.been.calledWith(@state.documentSet)
 
       it 'should invoke onTag', ->
         @state.trigger('tag', 'foo', 'bar')
@@ -41,6 +62,32 @@ define [
       it 'should invoke onUntag', ->
         @state.trigger('untag', 'foo', 'bar')
         expect(@viewApp.onUntag).to.have.been.calledWith('foo', 'bar')
+
+      it 'should notify documentListParams', ->
+        @subject._onMessage(origin: '', data: { call: 'notifyDocumentListParams' })
+        expect(@viewApp.notifyDocumentListParams).to.have.been.calledWith(@state.get('documentList').params)
+
+      it 'should notify documentSet', ->
+        @subject._onMessage(origin: '', data: { call: 'notifyDocumentSet' })
+        expect(@viewApp.notifyDocumentSet).to.have.been.calledWith(@state.documentSet)
+
+      it 'should notify document', ->
+        @subject._onMessage(origin: '', data: { call: 'notifyDocument' })
+        expect(@viewApp.notifyDocument).to.have.been.calledWith(@state.get('document'))
+
+      it 'should set metadata on document', ->
+        document = new Backbone.Model(id: 2, metadata: { foo: 'bar' })
+        document.save = sinon.spy()
+        @state.set(document: document)
+        @subject._onMessage(origin: '', data: { call: 'patchDocument', args: [ { id: 2, metadata: { foo: 'baz' } } ] })
+        expect(document.save).to.have.been.calledWith({ metadata: { foo: 'baz' } }, patch: true)
+
+      it 'should refuse to set metadata on the wrong document', ->
+        document = new Backbone.Model(id: 2, metadata: { foo: 'bar' })
+        document.save = sinon.spy()
+        @state.set(document: document)
+        @subject._onMessage(origin: '', data: { call: 'patchDocument', args: [ { id: 1, metadata: { foo: 'baz' } } ] })
+        expect(document.save).not.to.have.been.called
 
       describe 'on remove', ->
         beforeEach -> @subject.remove()
@@ -52,7 +99,7 @@ define [
 
           @state.set
             documentList: 'foo2'
-            document: 'bar2'
+            document: new Backbone.Model(foo: 'bar2')
           @state.trigger('tag', 'foo', 'bar')
           @state.trigger('untag', 'foo', 'bar')
 
@@ -75,7 +122,8 @@ define [
       it 'should do nothing', ->
         @state.set
           documentList: 'foo2'
-          document: 'bar2'
+          document: new Backbone.Model(foo: 'bar2')
+        @state.documentSet.set(foo: 'baz')
         @state.trigger('tag', 'foo', 'bar')
         @state.trigger('untag', 'foo', 'bar')
         expect(true).to.be.true # really, we're just testing nothing crashes

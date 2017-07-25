@@ -21,6 +21,7 @@ define [
   class DocumentSet extends Backbone.Model
     defaults:
       metadataFields: []
+      metadataSchema: { version: 1, fields: [] }
 
     url: -> "#{@_urlPrefix()}.json"
 
@@ -38,6 +39,7 @@ define [
       @nDocuments = data.nDocuments
       @name = data.name
 
+      metadataSchema: data.metadataSchema
       metadataFields: @_parseMetadataFields(data.metadataSchema)
 
     # In: a JSON metadataSchema; out: an Array of String metadataFields.
@@ -60,5 +62,5 @@ define [
       schema =
         version: 1
         fields: fields.map((name) -> name: name, type: 'String')
-      @set(metadataFields: fields)
+      @set(metadataSchema: schema, metadataFields: fields)
       @sync('patch', @, _.extend(attrs: { metadataSchema: schema }, options))

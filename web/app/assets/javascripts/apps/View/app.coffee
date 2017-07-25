@@ -35,11 +35,23 @@ define [
       @
 
     onDocumentListParamsChanged: (params) -> @notifyDocumentListParams(params)
+    onDocumentSetChanged: (documentSet) -> @notifyDocumentSet(documentSet)
+    onDocumentChanged: (document) -> @notifyDocument(document)
 
     notifyDocumentListParams: (params) ->
       @_postMessage
         event: 'notify:documentListParams'
         args: [ params.toQueryString() ]
+
+    notifyDocumentSet: (documentSet) ->
+      @_postMessage
+        event: 'notify:documentSet'
+        args: [ documentSet.toJSON() ]
+
+    notifyDocument: (document) ->
+      @_postMessage
+        event: 'notify:document'
+        args: [ document && document.toJSON() ]
 
     _postMessage: (message) ->
       targetOrigin = @view.get('url').split('/')[0...3].join('/')

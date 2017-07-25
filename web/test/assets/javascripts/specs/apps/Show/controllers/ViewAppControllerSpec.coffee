@@ -100,8 +100,9 @@ define [
         expect(options.state).to.eq(@state)
 
       it 'should use ViewAppClient to notify the viewApp of changes', ->
-        @state.set(document: 'document2')
-        expect(@jobViewApp.onDocumentChanged).to.have.been.calledWith('document2')
+        document = new Backbone.Model(foo: 'document2')
+        @state.set(document: document)
+        expect(@jobViewApp.onDocumentChanged).to.have.been.calledWith(document)
 
       describe 'when a new View is set', ->
         beforeEach -> @state.set(view: @treeView)
@@ -111,11 +112,13 @@ define [
         it 'should set state.viewApp', -> expect(@state.get('viewApp')).to.eq(@treeViewApp)
 
         it 'should use ViewAppClient to notify the new viewApp of changes', ->
-          @state.set(document: 'document2')
-          expect(@treeViewApp.onDocumentChanged).to.have.been.calledWith('document2')
+          document = new Backbone.Model(foo: 'document2')
+          @state.set(document: document)
+          expect(@treeViewApp.onDocumentChanged).to.have.been.calledWith(document)
 
         it 'should stop notifying the original ViewAppClient of changes', ->
-          @state.set(document: 'document2')
+          document = new Backbone.Model(foo: 'document2')
+          @state.set(document: document)
           expect(@jobViewApp.onDocumentChanged).not.to.have.been.called
 
       describe 'when the View changes type', ->

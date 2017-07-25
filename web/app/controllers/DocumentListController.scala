@@ -58,7 +58,7 @@ class DocumentListController @Inject() (
           snippets.getOrElse(document.id, Seq())
         )}
 
-        views.json.DocumentList.show(selection, selectionRequest.sortByMetadataField, pageOfItems)
+        views.json.DocumentList.show(selection, pageOfItems)
       }
     }
   }

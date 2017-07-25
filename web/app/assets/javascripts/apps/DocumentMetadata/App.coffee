@@ -30,8 +30,9 @@ define [
 
       @document = null
 
-      @listenTo @model, 'change:json', (__, newJson) =>
-        @document?.save({ metadata: newJson }, patch: true)
+      @listenTo @model, 'change:json', (__, newJson, options) =>
+        if options.cause == 'userEntry'
+          @document?.save({ metadata: newJson }, patch: true)
 
       globalExpanded = options.expanded if options.expanded? # help unit tests start with a clean slate
       @$el.addClass('expanded') if globalExpanded
@@ -44,7 +45,6 @@ define [
 
     initialRender: ->
       @$title = $(_.template('<h4><a href="#" class="expand-metadata"><span><%- title %></span></a></h4>')(title: t('title')))
-      @$loading = $(_.template('<div class="loading"><i class="icon icon-spinner icon-spin"/><%- loading %></div>')(loading: t('loading')))
 
       @jsonView = null
       @addFieldView = null
@@ -63,7 +63,6 @@ define [
         @addFieldView.delegateEvents()
       else if @document?
         @$el.append(@$title)
-        @$el.append(@$loading)
 
       @
 
@@ -71,6 +70,7 @@ define [
     #
     # You can call `getJson()` to access the JSON.
     setNoDocument: ->
+      @stopListening(@document) if @document?
       @document = null
       @jsonView?.remove()
       @addFieldView?.remove()
@@ -97,20 +97,14 @@ define [
       @addFieldView?.remove()
       @addFieldView = null
 
+      @stopListening(@document) if @document?
       @document = document
 
       if @document?
-        Backbone.ajax
-          type: 'GET'
-          url: _.result(@document, 'url')
-          dataType: 'json'
-          success: (data) =>
-            return if @document != document # stale response
-            @model.set(json: data.metadata)
-            @jsonView = new JsonView(model: @model)
-            @addFieldView = new AddFieldView(model: @model)
-
-            @render()
+        @model.set({ json: @document.get('metadata') }, cause: 'newDocument')
+        @listenTo(@document, 'change:metadata', (__, metadata) => @model.set({ json: metadata }, cause: 'documentChange'))
+        @jsonView = new JsonView(model: @model)
+        @addFieldView = new AddFieldView(model: @model)
 
       @render()
 

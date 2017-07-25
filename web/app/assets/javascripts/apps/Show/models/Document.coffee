@@ -27,7 +27,7 @@ define [
       snippet: ''
       pageNumber: null
       url: null
-      metadata: null # We normally *don't* load metadata -- hence null
+      metadata: {}
       sortKey: null
 
     url: -> "/documentsets/#{@get('documentSetId')}/documents/#{@id}"
@@ -45,6 +45,7 @@ define [
       snippet: json.snippet || null
       tagids: json.tagids || []
       nodeids: json.nodeids || []
+      metadata: json.metadata || {}
       thumbnailUrl: json.thumbnailUrl || null
       sortKey: json.sortKey || null
 

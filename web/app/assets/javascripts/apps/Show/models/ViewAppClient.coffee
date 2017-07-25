@@ -15,6 +15,7 @@ define [
       throw 'options.viewApp needs a remove() method which removes all traces of the view' if !@viewApp.remove
 
       @listenTo(@state, 'change:documentList', @onDocumentListChanged)
+      @listenTo(@state.documentSet, 'change', @onDocumentSetChanged)
       @listenTo(@state, 'change:document', @onDocumentChanged)
       @listenTo(@state, 'tag', @onTag)
       @listenTo(@state, 'untag', @onUntag)
@@ -22,9 +23,15 @@ define [
       window.addEventListener('message', @onMessageCallback, false)
 
     onDocumentListChanged: (__, value) -> @viewApp.onDocumentListParamsChanged?(value?.params)
-    onDocumentChanged: (__, value) -> @viewApp.onDocumentChanged?(value)
+    onDocumentSetChanged: (__, value) -> @viewApp.onDocumentSetChanged?(@state.documentSet)
     onTag: (tag, params) -> @viewApp.onTag?(tag, params)
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
+
+    onDocumentChanged: (__, value) ->
+      @stopListening(@document) if @document?
+      @document = value
+      @listenTo(@document, 'change', () => @viewApp.onDocumentChanged?(value)) if @document?
+      @viewApp.onDocumentChanged?(value)
 
     setDocumentListParams: (params) -> @state.setDocumentListParams(params)
 
@@ -37,7 +44,17 @@ define [
 
       switch e.data.call
         when 'notifyDocumentListParams' then @viewApp.notifyDocumentListParams?(@state.get('documentList')?.params)
+        when 'notifyDocumentSet' then @viewApp.notifyDocumentSet?(@state.documentSet)
+        when 'notifyDocument' then @viewApp.notifyDocument?(@state.get('document'))
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
+        when 'patchDocument'
+          attrs = e.data.args[0]
+          if attrs.id != @document?.id
+            console.log("Dropped message concerning document #{attrs.id} because we're on document #{@document?.id} now")
+            return
+          delete attrs.id
+          @document.save(attrs, patch: true)
+
         else console.log("Invalid message from view: #{e.data.call}", e.data)
 
     remove: ->

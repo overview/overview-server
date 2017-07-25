@@ -12,17 +12,14 @@ import com.overviewdocs.models.DocumentHeader
 import com.overviewdocs.searchindex.{Highlight,Snippet}
 
 object show {
-  private def documentToJson(maybeSortKey: Option[String])(document: DocumentHeader, thumbnailUrl: Option[String], nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
+  private def documentToJson(document: DocumentHeader, thumbnailUrl: Option[String], nodeIds: Seq[Long], tagIds: Seq[Long], snippets: Seq[Snippet]) : JsValue = {
     Json.obj(
       "id" -> document.id,
       "documentSetId" -> document.documentSetId.toString,
       "title" -> document.title,
       "page_number" -> document.pageNumber,
       "url" -> document.viewUrl,
-      "sortKey" -> maybeSortKey.flatMap(sortKey => document.metadataJson.value.get(sortKey) match {
-        case Some(JsString(s)) => Some(Json.obj("name" -> sortKey, "value" -> s))
-        case _ => None
-      }),
+      "metadata" -> document.metadataJson,
       "nodeids" -> nodeIds,
       "tagids" -> tagIds,
       "snippet" -> snippetsToHtml(snippets, document.text),
@@ -44,12 +41,12 @@ object show {
     HtmlFormat.fill(htmls.to[immutable.Seq]).body
   }
 
-  def apply(selection: Selection, maybeSortKey: Option[String], documents: Page[(DocumentHeader,Option[String],Seq[Long],Seq[Long],Seq[Snippet])]) = {
+  def apply(selection: Selection, documents: Page[(DocumentHeader,Option[String],Seq[Long],Seq[Long],Seq[Snippet])]) = {
     Json.obj(
       "selection_id" -> selection.id.toString,
       "warnings" -> selectionWarnings(selection.warnings),
       "total_items" -> documents.pageInfo.total,
-      "documents" -> documents.items.map(Function.tupled(documentToJson(maybeSortKey))).toSeq
+      "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq
     )
   }
 }

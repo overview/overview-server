@@ -16,8 +16,8 @@ define [
         <% } %>
         <div class="details">
           <h3><%- title %></h3>
-          <% if (attrs.sortKey) { %>
-            <p class="sort-key"><%- t('sortKey', attrs.sortKey.name, attrs.sortKey.value) %></p>
+          <% if (sortKey) { %>
+            <p class="sort-key"><%- t('sortKey', sortKey, attrs.metadata[sortKey]) %></p>
           <% } %>
           <% if (attrs.snippet) { %>
             <p class="snippets"><%= attrs.snippet %></p>
@@ -122,6 +122,7 @@ define [
         title: DocumentHelper.title(model.attributes)
         model: model
         attrs: model.attributes
+        sortKey: @model.params.sortByMetadataField
         tags: tags
         t: t
         liAttributes: @options.liAttributes || ''

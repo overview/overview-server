@@ -8,7 +8,7 @@ define [
       @sandbox = sinon.sandbox.create()
       @sandbox.stub(Backbone, 'ajax')
 
-      @documentSet = new DocumentSet(id: 12, metadataFields: [ 'foo' ])
+      @documentSet = new DocumentSet(id: 12, metadataSchema: { version: 1, fields: [] }, metadataFields: [ 'foo' ])
 
     afterEach ->
       @sandbox.restore()
@@ -86,7 +86,7 @@ define [
         expect(args).to.have.property('url', '/documentsets/12.json')
         expect(args.data).to.deep.eq(JSON.stringify(metadataSchema: { version: 1, fields: [] }))
         expect(@documentSet.get('metadataFields')).to.deep.eq([])
-        expect(@documentSet.get('metadataSchema')).not.to.exist
+        expect(@documentSet.get('metadataSchema')).to.deep.eq({ version: 1, fields: [] })
         # The server will never respond, and we'll never care whether the
         # request finished. (Rely on TransactionQueue to handle failure.)
 
