@@ -28,7 +28,6 @@ define [
       pageNumber: null
       url: null
       metadata: {}
-      sortKey: null
 
     url: -> "/documentsets/#{@get('documentSetId')}/documents/#{@id}"
 
@@ -47,7 +46,6 @@ define [
       nodeids: json.nodeids || []
       metadata: json.metadata || {}
       thumbnailUrl: json.thumbnailUrl || null
-      sortKey: json.sortKey || null
 
     initialize: (attributes, options) ->
       super(attributes, options)

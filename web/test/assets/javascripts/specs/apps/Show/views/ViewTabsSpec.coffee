@@ -301,7 +301,7 @@ define [
         @view.$('li:eq(0) span.view-info-icon').click()
         expect($popover.position().top).to.eq(21)
         expect($popover.position().left).to.eq(0) # 0-250 -- centering on 89
-        expect($popover.find('.arrow').position().left).to.eq(89)
+        expect(Math.round($popover.find('.arrow').position().left)).to.eq(89)
 
       it 'should update progress', ->
         @tree.set(progress: 0.4)

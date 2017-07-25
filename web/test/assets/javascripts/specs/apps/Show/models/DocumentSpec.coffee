@@ -17,13 +17,13 @@ define [
         document = new Document({ id: 1 }, parse: true)
         expect(document.get('pageNumber')).to.be.null
 
-      it 'should parse a null sortKey by default', ->
+      it 'should parse a null metadata by default', ->
         document = new Document({ id: 1 }, parse: true)
-        expect(document.get('sortKey')).to.be.null
+        expect(document.get('metadata')).to.deep.eq({})
 
-      it 'should parse sortKey', ->
-        document = new Document({ id: 1, sortKey: { name: 'foo', value: 'bar' } }, parse: true)
-        expect(document.get('sortKey')).to.deep.eq(name: 'foo', value: 'bar')
+      it 'should parse metadata', ->
+        document = new Document({ id: 1, metadata: { foo: 'bar' } }, parse: true)
+        expect(document.get('metadata')).to.deep.eq(foo: 'bar')
 
     describe 'with a typical document', ->
       beforeEach ->
