@@ -8,7 +8,14 @@ define [
       @sandbox = sinon.sandbox.create()
       @sandbox.stub(Backbone, 'ajax')
 
-      @documentSet = new DocumentSet(id: 12, metadataSchema: { version: 1, fields: [] }, metadataFields: [ 'foo' ])
+      @documentSet = new DocumentSet
+        id: 12
+        metadataSchema:
+          version: 1,
+          fields: [
+            { name: 'foo', type: 'String', display: 'TextInput' }
+          ]
+        metadataFields: [ 'foo' ]
 
     afterEach ->
       @sandbox.restore()
@@ -25,7 +32,7 @@ define [
     describe 'fetch', ->
       beforeEach ->
         @sampleResponse =
-          metadataSchema: { version: 1, fields: [ 'foo' ] }
+          metadataSchema: { version: 1, fields: [ { name: 'foo', type: 'String', display: 'TextInput' } ] }
           name: 'name'
           tags: []
           views: []
@@ -69,8 +76,8 @@ define [
         response = _.extend(@sampleResponse, metadataSchema:
           version: 1
           fields: [
-            { name: 'foo', type: 'String' }
-            { name: 'bar', type: 'String' }
+            { name: 'foo', type: 'String', display: 'TextInput' }
+            { name: 'bar', type: 'String', display: 'TextInput' }
           ]
         )
         @withAjaxResponse response, =>
@@ -104,3 +111,38 @@ define [
             { name: 'bar', type: 'String' }
           ]
       ))
+
+      it 'should set metadataSchema', ->
+        @documentSet.patchMetadataFields(['foo', 'bar'])
+        expect(@documentSet.get('metadataSchema')).to.deep.eq
+          version: 1
+          fields: [
+            { name: 'foo', type: 'String' }
+            { name: 'bar', type: 'String' }
+          ]
+
+    describe 'patchMetadataSchema', ->
+      it 'should not send a request when there is no change', ->
+        @documentSet.patchMetadataSchema({ version: 1, fields: [ { name: 'foo', type: 'String', display: 'TextInput' } ] })
+        expect(Backbone.ajax).not.to.have.been.called
+
+      it 'should set a new value', ->
+        @documentSet.patchMetadataSchema({ version: 1, fields: [
+          { name: 'foo', type: 'String', display: 'TextInput' }
+          { name: 'bar', type: 'String', display: 'TextInput' }
+        ]})
+        expect(Backbone.ajax).to.have.been.called
+        expect(Backbone.ajax.args[0][0].data).to.deep.eq(JSON.stringify(metadataSchema:
+          version: 1
+          fields: [
+            { name: 'foo', type: 'String', display: 'TextInput' }
+            { name: 'bar', type: 'String', display: 'TextInput' }
+          ]
+      ))
+
+      it 'should update metadataFields', ->
+        @documentSet.patchMetadataSchema({ version: 1, fields: [
+          { name: 'foo', type: 'String', display: 'TextInput' }
+          { name: 'bar', type: 'String', display: 'TextInput' }
+        ]})
+        expect(@documentSet.get('metadataFields')).to.deep.eq([ 'foo', 'bar' ])

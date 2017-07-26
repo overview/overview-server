@@ -19,6 +19,9 @@ define [
       @documentSet = new MockDocumentSet()
       @documentSet.tags = @tags
 
+      @globalActions =
+        openMetadataSchemaEditor: sinon.spy()
+
       @state = new MockState
         documentList: { params: 'documentListParams' }
         document: 'document'
@@ -46,6 +49,7 @@ define [
       @init = =>
         @subject = new ViewAppController
           state: @state
+          globalActions: @globalActions
           transactionQueue: @transactionQueue
           keyboardController: @keyboardController
           viewAppConstructors: @viewAppConstructors

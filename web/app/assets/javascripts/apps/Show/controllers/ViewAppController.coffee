@@ -13,6 +13,7 @@ define [
       throw 'Must pass options.keyboardController, a KeyboardController' if !options.keyboardController
       throw 'Must pass options.transactionQueue, a TransactionQueue' if !options.transactionQueue
       throw 'Must pass options.viewAppConstructors, an Object mapping view type to an App' if !options.viewAppConstructors
+      throw 'Must pass options.globalActions, an Object full of callbacks' if !options.globalActions
 
       @el = options.el
       @$el = $(@el)
@@ -20,6 +21,7 @@ define [
       @keyboardController = options.keyboardController
       @transactionQueue = options.transactionQueue
       @viewAppConstructors = options.viewAppConstructors
+      @globalActions = options.globalActions
 
       @_setView(@state.get('view'))
       @listenTo(@state, 'change:view', (__, view) => @_setView(view))
@@ -57,6 +59,7 @@ define [
 
         @viewAppClient = new ViewAppClient
           viewApp: viewApp
+          globalActions: @globalActions
           state: @state
 
         @view = view

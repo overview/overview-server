@@ -14,6 +14,10 @@ define [
       @state = new MockState()
       @state.documentSet = new Backbone.Model(foo: 'bar')
 
+      @globalActions =
+        openMetadataSchemaEditor: sinon.spy()
+
+
     afterEach ->
       @sandbox.restore()
 
@@ -31,6 +35,7 @@ define [
           remove: sinon.spy()
 
         @subject = new ViewAppClient
+          globalActions: @globalActions
           state: @state
           viewApp: @viewApp
 
@@ -108,12 +113,17 @@ define [
           expect(@viewApp.onTag).not.to.have.been.called
           expect(@viewApp.onUntag).not.to.have.been.called
 
+        it 'should invoke globalActions.openMetadataSchemaEditor()', ->
+          @subject._onMessage(origin: '', data: { call: 'openMetadataSchemaEditor' })
+          expect(@globalActions.openMetadataSchemaEditor).to.have.been.called
+
     describe 'with an viewApp missing methods', ->
       beforeEach ->
         @viewApp =
           remove: sinon.spy()
 
         @subject = new ViewAppClient
+          globalActions: @globalActions
           state: @state
           viewApp: @viewApp
 
@@ -131,6 +141,7 @@ define [
     it 'should throw an error if the viewApp has no remove function', ->
       expect(=>
         new ViewAppClient
+          globalActions: @globalActions
           state: @state
           viewApp: {}
       ).to.throw('options.viewApp needs a remove() method which removes all traces of the view')

@@ -1,7 +1,8 @@
 define [
+  'underscore'
   'jquery'
   'backbone'
-], ($, Backbone) ->
+], (_, $, Backbone) ->
   class ViewApp extends Backbone.View
     template: _.template("""
       <div class="view-app">

@@ -142,7 +142,8 @@ views.components.importNav.copy=Copy a document set:
 views.components.importNav.copy.public=Copy an example document set
 views.components.importNav.copy.shared=Copy document sets shared with you
 
-views.components.navbar.add.files=Add documents
+views.components.navbar.add.files=Add Documents
+views.components.navbar.edit.metadata=Edit Fields
 views.components.navbar.export=Export
 views.components.navbar.share=Share
 views.components.navbar.header.documentSet=Document Set
@@ -410,6 +411,18 @@ views.DocumentSet.show.DocumentDisplayPreferences.openInNewTab=Open in new tab
 
 views.DocumentSet.show.DocumentListParamsSelector.NDocumentsView.loading=Loading documents
 views.DocumentSet.show.DocumentListParamsSelector.NDocumentsView.nDocuments={0,choice,0#no documents|1#1 document|1<{0,number,integer} documents}
+
+views.DocumentSet.show.MetadataSchemaEditor.App.close=Close
+views.DocumentSet.show.MetadataSchemaEditor.App.title=Edit Fields
+views.DocumentSet.show.MetadataSchemaEditor.App.explanation=Each document has a value for each field in this list. You can search documents by these fields and include field values in spreadsheet exports.
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.th.name=Field Name
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.th.display=Display As
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.name.placeholder=e.g., Author
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.display.TextInput=Text
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.display.Div=Read-only text
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.display.Pre=Read-only code
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.addField=Add Field
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.remove=Delete
 
 views.DocumentSet.show.SearchView.query_placeholder=Search
 views.DocumentSet.show.SearchView.button=Search

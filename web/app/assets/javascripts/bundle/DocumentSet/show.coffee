@@ -59,6 +59,7 @@ requirejs.config
     'bootstrap-toggle': 'vendor/bootstrap-toggle'
     'bootstrap-tooltip': 'vendor/bootstrap-tooltip'
     'bootstrap-transition': 'vendor/bootstrap-transition'
+    html5sortable: 'vendor/html5sortable-0-6-1'
     jquery: 'vendor/jquery-2-1-0'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'

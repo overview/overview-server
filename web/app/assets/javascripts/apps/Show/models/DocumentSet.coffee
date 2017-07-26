@@ -64,3 +64,13 @@ define [
         fields: fields.map((name) -> name: name, type: 'String')
       @set(metadataSchema: schema, metadataFields: fields)
       @sync('patch', @, _.extend(attrs: { metadataSchema: schema }, options))
+
+    # Sets metadataSchema and persists the change to the server.
+    #
+    # This recalculates `metadataFields` in the process.
+    patchMetadataSchema: (schema, options={}) ->
+      return if _.isEqual(schema, @get('metadataSchema'))
+
+      fields = schema.fields.map((field) -> field.name)
+      @set(metadataSchema: schema, metadataFields: fields)
+      @sync('patch', @, _.extend(attrs: { metadataSchema: schema }, options))

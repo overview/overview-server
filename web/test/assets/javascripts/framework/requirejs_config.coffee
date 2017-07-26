@@ -41,8 +41,8 @@ requirejs.config
       exports: 'jQuery.fn.mousewheel'
 
   paths:
-    'backbone': 'vendor/backbone'
-    'base64': 'vendor/base64'
+    backbone: 'vendor/backbone'
+    base64: 'vendor/base64'
     'bootstrap-alert': 'vendor/bootstrap-alert'
     'bootstrap-collapse': 'vendor/bootstrap-collapse'
     'bootstrap-dropdown': 'vendor/bootstrap-dropdown'
@@ -52,7 +52,8 @@ requirejs.config
     'bootstrap-toggle': 'vendor/bootstrap-toggle'
     'bootstrap-tooltip': 'vendor/bootstrap-tooltip'
     'bootstrap-transition': 'vendor/bootstrap-transition'
-    'jquery': 'vendor/jquery-2-1-0'
+    html5sortable: 'vendor/html5sortable-0-6-1'
+    jquery: 'vendor/jquery-2-1-0'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
@@ -64,8 +65,8 @@ requirejs.config
     underscore: 'vendor/underscore'
     oboe: 'vendor/oboe-browser-2-1-3'
     MassUpload: 'vendor/mass-upload'
-    'chai': '../../../test/assets/javascripts/autotest/node_modules/chai/chai'
-    'sinon': '../../../test/assets/javascripts/autotest/node_modules/sinon/pkg/sinon'
+    chai: '../../../test/assets/javascripts/autotest/node_modules/chai/chai'
+    sinon: '../../../test/assets/javascripts/autotest/node_modules/sinon/pkg/sinon'
 
   # ask Require.js to load these files (all our tests)
   deps: tests,

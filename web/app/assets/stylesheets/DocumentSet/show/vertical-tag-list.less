@@ -2,6 +2,47 @@
 @import "_variables.less";
 
 .vertical-tag-list {
+  .vertical-form();
+
+  table {
+    // Bootstrap will give the second thead a top border by default. Nix it.
+    thead th { border-top: 0 !important; }
+
+    .tree-count { display: none; }
+    &.has-tree-counts {
+      .no-tree-count { display: none; }
+      thead.tree-count { display: table-header-group; }
+      td.tree-count, th.tree-count { display: table-cell; }
+    }
+  }
+
+  tr.existing {
+    &:hover {
+      background-color: @table-bg-hover;
+    }
+
+    input {
+      background-color: transparent;
+      border-color: transparent;
+      .box-shadow(none);
+
+      // That was fun, but now to get the right stuff to happen on hover/focus
+      // we need to copy/paste from bootstrap
+      &:hover {
+        background-color: @input-bg;
+        border-color: @input-border;
+        .box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
+      }
+
+      &:focus {
+        background-color: @input-bg;
+        border-color: @input-border;
+        border-color: rgba(82,168,236,.8);
+        .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6)");
+      }
+    }
+  }
+
   input[type=color] {
     // height is 30px: by default, 20px high, 4px padding, 1px border
     padding: 2px;
@@ -59,76 +100,21 @@
     }
   }
 
-  table {
-    .table();
-    .table-condensed();
-    width: 100%;
-
-    // Bootstrap will give the second thead a top border by default. Nix it.
-    thead th { border-top: 0 !important; }
-
-    .tree-count { display: none; }
-    &.has-tree-counts {
-      .no-tree-count { display: none; }
-      thead.tree-count { display: table-header-group; }
-      td.tree-count, th.tree-count { display: table-cell; }
-    }
-  }
-
-  form {
-    margin: 0;
-  }
-
   th.name {
     // put it over the tag name, not the color picker
     padding-left: 42px; // got this number from trial-and-error
   }
 
-  tr.existing {
-    &:hover {
-      background-color: @table-bg-hover;
-    }
-
-    input {
-      background-color: transparent;
-      border-color: transparent;
-      .box-shadow(none);
-
-      // That was fun, but now to get the right stuff to happen on hover/focus
-      // we need to copy/paste from bootstrap
-      &:hover {
-        background-color: @input-bg;
-        border-color: @input-border;
-        .box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
-      }
-
-      &:focus {
-        background-color: @input-bg;
-        border-color: @input-border;
-        border-color: rgba(82,168,236,.8);
-        .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6)");
-      }
-    }
-  }
-
-  table > tbody > tr > td { // specificity: override Bootstrap
-    vertical-align: middle;
-  }
-
   th.count-top, th.count, th.tree-count {
     white-space: nowrap;
     text-align: center;
-    width: 1px;
+    width: 2px;
   }
 
   td.count, td.tree-count {
     text-align: right;
     width: 1px;
     .text-muted;
-  }
-
-  a.remove {
-    .faded-link();
   }
 
   tfoot form {

@@ -1,0 +1,49 @@
+@import "../../../mixins.less";
+
+.metadata-schema-editor {
+  .vertical-form();
+
+  table {
+    .table-hover();
+  }
+
+  .sort-handle {
+    text-align: center;
+    padding-right: 0;
+    color: @text-very-muted;
+    cursor: move;
+
+    &:hover {
+      color: @text-muted;
+    }
+  }
+
+  .sortable-placeholder {
+    height: 41px; // trial-and-error
+  }
+
+  select {
+    width: 12em;
+  }
+
+  th.name {
+    padding-left: 16px; // because <input> has border+padding
+  }
+
+  th.display {
+    padding-left: 20px; // because <select> has lots of padding -- tested on Chrome 59
+    width: 1px;
+    white-space: nowrap;
+  }
+
+  td.actions {
+    width: 1px;
+    white-space: nowrap;
+  }
+
+  input[name=name]:not(:hover):not(:focus) {
+    border-color: transparent;
+    box-shadow: none;
+    background: transparent;
+  }
+}

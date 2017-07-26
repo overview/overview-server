@@ -8,9 +8,11 @@ define [
     constructor: (options) ->
       throw 'Must pass options.state, a State' if !options.state
       throw 'Must pass options.viewApp, the View app instance' if !options.viewApp
+      throw 'Must pass options.globalActions, an Object full of callbacks' if !options.globalActions
 
       @state = options.state
       @viewApp = options.viewApp
+      @globalActions = options.globalActions
 
       throw 'options.viewApp needs a remove() method which removes all traces of the view' if !@viewApp.remove
 
@@ -47,6 +49,7 @@ define [
         when 'notifyDocumentSet' then @viewApp.notifyDocumentSet?(@state.documentSet)
         when 'notifyDocument' then @viewApp.notifyDocument?(@state.get('document'))
         when 'setDocumentListParams' then @setDocumentListParams(e.data.args...)
+        when 'openMetadataSchemaEditor' then @globalActions.openMetadataSchemaEditor()
         when 'patchDocument'
           attrs = e.data.args[0]
           if attrs.id != @document?.id

@@ -175,3 +175,23 @@
     text-align: center;
   }
 }
+
+.vertical-form() {
+  table {
+    .table();
+    .table-condensed();
+    width: 100%;
+  }
+
+  form {
+    margin: 0;
+  }
+
+  table > tbody > tr > td { // specificity: override Bootstrap
+    vertical-align: middle;
+  }
+
+  a.remove {
+    .faded-link();
+  }
+}

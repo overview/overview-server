@@ -18,6 +18,7 @@ define [
   './views/DocumentListTitle'
   '../Tree/app'
   '../View/app'
+  '../MetadataSchemaEditor/app'
   '../DocumentListParamsSelector/App'
 ], (_, $, Backbone, \
     DocumentSet, TransactionQueue, State, \
@@ -29,7 +30,7 @@ define [
     ExportDialog, \
     ModeView, VerticalSplitView, \
     DocumentListTitleView, \
-    TreeApp, ViewApp, DocumentListParamsSelectorApp) ->
+    TreeApp, ViewApp, MetadataSchemaEditorApp, DocumentListParamsSelectorApp) ->
 
   class App
     constructor: (options) ->
@@ -122,7 +123,8 @@ define [
           ></div
           ><div id="document-current"></div
         ></div
-        ><div id="transaction-queue-error-monitor"></div>
+        ><div id="transaction-queue-error-monitor"></div
+        ><div id="metadata-schema-editor-app"></div
       """
 
       $(@el).html(html)
@@ -141,6 +143,7 @@ define [
       documentCursor: el('document-current')
       document: el('tree-app-document')
       transactionQueueErrorMonitor: el('transaction-queue-error-monitor')
+      metadataSchemaEditorApp: el('metadata-schema-editor-app')
 
     _initializeTransactionQueue: ->
       transactionQueue = new TransactionQueue()
@@ -192,11 +195,19 @@ define [
 
       new DocumentListParamsSelectorApp(documentSet: @documentSet, state: @state, el: els.documentListParams)
 
+      @metadataSchemaEditorApp = new MetadataSchemaEditorApp(documentSet: @documentSet)
+      els.metadataSchemaEditorApp.appendChild(@metadataSchemaEditorApp.el)
+      @metadataSchemaEditorApp.render()
+
+      @globalActions =
+        openMetadataSchemaEditor: => @metadataSchemaEditorApp.show()
+
       new ViewAppController
         el: els.view
         state: @state
         transactionQueue: @transactionQueue
         keyboardController: keyboardController
+        globalActions: @globalActions
         viewAppConstructors:
           tree: TreeApp
           view: ViewApp
@@ -212,3 +223,6 @@ define [
       $('nav .show-export-options').on 'click', (e) =>
         e.preventDefault()
         ExportDialog.show(documentSet: @documentSet, documentList: @state.get('documentList'))
+
+      $('nav .show-metadata-schema-editor').on 'click', (e) =>
+        @globalActions.openMetadataSchemaEditor()
