@@ -45,9 +45,9 @@ define [
           view = new FocusView({ model: focus, el: div, handleWidth: HANDLE_WIDTH })
 
         it 'should add handles at the edges and a middle', ->
-          $handle1 = $(div).find('.handle.left')
-          $handle2 = $(div).find('.handle.right')
-          $middle = $(div).find('.middle')
+          $handle1 = view.$('.handle.left')
+          $handle2 = view.$('.handle.right')
+          $middle = view.$('.middle')
           expect($handle1.length).to.eq(1)
           expect($handle2.length).to.eq(1)
           expect($middle.length).to.eq(1)

@@ -5,7 +5,7 @@ for file, __ of window.__karma__.files
     tests.push(file)
 
 requirejs.config
-  baseUrl: '/base/app/assets/javascripts'
+  baseUrl: '/base/js'
 
   shim:
     'backbone':
@@ -65,8 +65,8 @@ requirejs.config
     underscore: 'vendor/underscore'
     oboe: 'vendor/oboe-browser-2-1-3'
     MassUpload: 'vendor/mass-upload'
-    chai: '../../../test/assets/javascripts/autotest/node_modules/chai/chai'
-    sinon: '../../../test/assets/javascripts/autotest/node_modules/sinon/pkg/sinon'
+    chai: '../test/assets/javascripts/autotest/node_modules/chai/chai'
+    sinon: '../test/assets/javascripts/autotest/node_modules/sinon/pkg/sinon'
 
   # ask Require.js to load these files (all our tests)
   deps: tests,

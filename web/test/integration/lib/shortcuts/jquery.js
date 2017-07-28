@@ -17,7 +17,7 @@ class JqueryShortcuts {
     await this.browser.waitUntilBlockReturnsTrue(
       'jQuery to load',
       'pageLoad',
-      function() { return window.$ && window.$.isReady }
+      function() { return window.jQuery && window.jQuery.isReady }
     )
   }
 
@@ -26,11 +26,11 @@ class JqueryShortcuts {
     debug('listenForAjaxComplete()')
     await this.browser.execute(function() {
       window.listenForAjaxComplete = false
-      $(document).one('ajaxComplete', function() { window.listenForAjaxComplete = true })
+      jQuery(document).one('ajaxComplete', function() { window.listenForAjaxComplete = true })
     })
   }
 
-  // Finishes when an $.ajaxComplete method is fired.
+  // Finishes when an jQuery.ajaxComplete method is fired.
   //
   // Before calling this, you must call listenForAjaxComplete().
   // waitUntilAjaxComplete() will finish when there has been at least one

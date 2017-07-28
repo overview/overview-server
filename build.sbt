@@ -1,4 +1,4 @@
-import java.io.IOException
+import java.io.{File,IOException}
 
 val rootDirectory = sys.props("user.dir")
 
@@ -112,35 +112,27 @@ lazy val worker = (project in file("worker"))
 // Daemon that communicates with web browsers
 lazy val web = (project in file("web"))
   .enablePlugins(PlayScala)
+  .enablePlugins(PlayNpm)
   .enablePlugins(SbtWeb)
   .enablePlugins(JavaAppPackaging)
+  .settings(PlayNpm.projectSettings)
   .settings(
     PlayKeys.externalizeResources := false, // so `stage` doesn't nix all assets
     libraryDependencies ++= Dependencies.serverDependencies,
     TwirlKeys.templateImports ++= Seq("views.Magic._", "play.twirl.api.HtmlFormat"),
     routesImport += "extensions.Binders._",
-    RjsKeys.modules := Seq(
-      WebJs.JS.Object("name" -> "bundle/admin/Job/index"),
-      WebJs.JS.Object("name" -> "bundle/admin/Plugin/index"),
-      WebJs.JS.Object("name" -> "bundle/admin/User/index"),
-      WebJs.JS.Object("name" -> "bundle/ApiToken/index"),
-      WebJs.JS.Object("name" -> "bundle/CsvUpload/new"),
-      WebJs.JS.Object("name" -> "bundle/DocumentCloudImportJob/new"),
-      WebJs.JS.Object("name" -> "bundle/DocumentCloudProject/index"),
-      WebJs.JS.Object("name" -> "bundle/DocumentSet/index"),
-      WebJs.JS.Object("name" -> "bundle/DocumentSet/show"),
-      WebJs.JS.Object("name" -> "bundle/DocumentSet/show-progress"),
-      WebJs.JS.Object("name" -> "bundle/DocumentSetUser/index"),
-      WebJs.JS.Object("name" -> "bundle/FileImport/new"),
-      WebJs.JS.Object("name" -> "bundle/PublicDocumentSet/index"),
-      WebJs.JS.Object("name" -> "bundle/SharedDocumentSet/index"),
-      WebJs.JS.Object("name" -> "bundle/Welcome/show")
-    ),
     javaOptions in Test += "-Dlogger.resource=logback-test.xml",
     sources in doc in Compile := List(), // docs take time; skip 'em
+    includeFilter in (Assets, digest) := new FileFilter {
+      override def accept(f: File): Boolean = {
+        val pathString = f.getPath.replaceAll(File.pathSeparator, "/")
+        val rightDirectory = pathString.matches(".*/web/public/(fonts|images|javascript-bundles|javascripts/vendor|stylesheets)/.*")
+        val rightExtension = f.getName.matches(".*\\.(css|js|png|jpg|ttf|woff|woff2|svg)")
+        rightDirectory && rightExtension
+      }
+    },
     includeFilter in (Assets, LessKeys.less) := "main.less",
-    includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
-    pipelineStages := Seq(rjs, digest, gzip)
+    pipelineStages := Seq(digest, gzip)
   )
   .dependsOn(common % "test->test;compile->compile;test->compile")
 

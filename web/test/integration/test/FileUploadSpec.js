@@ -45,7 +45,7 @@ describe('FileUpload', function() {
       it('should add more metadata in a second import', async function() {
         // Add another file, with metadata 'moo':'mar'
         await this.b.click([ { tag: 'nav' }, { link: 'metadata-test' } ])
-        await this.b.click({ link: 'Add documents' })
+        await this.b.click({ link: 'Add Documents' })
         await this.importFiles.waitUntilImportPageLoaded()
         await this.importFiles.addFiles(['FileUpload/Cat2.txt'])
         await this.b.click({ button: 'Done adding files' })

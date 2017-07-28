@@ -4,7 +4,6 @@ define [
 ], (Upload, md5) ->
   describe 'util/net/Upload', ->
     upload = undefined
-    md5 = CryptoJS.MD5
 
     makeUUID = (inputString) ->
       hash = md5(inputString).toString()

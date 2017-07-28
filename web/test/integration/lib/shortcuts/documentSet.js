@@ -4,8 +4,8 @@ const debug = require('debug')('shortcuts/documentSet')
 
 const clientTests = {
   noJobsInProgress: function() {
-    return window.$ && window.$.isReady && $('progress').length === 0
-  }, // needs jQuery check because page refreshes
+    return document.querySelector('progress') === null
+  },
 
   pluginDataLoaded: function() {
     return document.querySelector('a[data-plugin-url="about:tree"]') !== null
@@ -137,8 +137,8 @@ class DocumentSetShortcuts {
   async waitUntilStable() {
     debug('waitUntilStable()')
 
-    await this.s.jquery.waitUntilReady()
     await this.b.waitUntilBlockReturnsTrue('jobs to complete', 'slow', clientTests.noJobsInProgress)
+    await this.s.jquery.waitUntilReady()
     await this.waitUntilDocumentListLoaded()
     await this.b.waitUntilBlockReturnsTrue('plugin data to load', 'pageLoad', clientTests.pluginDataLoaded)
   }

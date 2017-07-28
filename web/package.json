@@ -1,0 +1,31 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "description": "Web assets for www.overviewdocs.com",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "dist": "webpack --display-error-details",
+    "dev": "webpack --watch --no-color --display-error-details"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/overview/overview-server.git"
+  },
+  "author": "Adam Hooper <adam@adamhooper.com>",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/overview/overview-server/issues"
+  },
+  "homepage": "https://github.com/overview/overview-server",
+  "dependencies": {
+    "coffee-loader": "^0.7.3",
+    "coffee-script": "^1.12.7",
+    "loader-utils": "^1.1.0",
+    "source-map": "^0.5.6",
+    "uglify-es": "^3.0.26",
+    "webpack": "^3.4.1",
+    "webpack-cleanup-plugin": "^0.5.1"
+  }
+}

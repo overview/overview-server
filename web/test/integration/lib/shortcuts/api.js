@@ -17,7 +17,7 @@ class ApiShortcuts {
     await this.b.waitUntilBlockReturnsTrue(
       'api-token page to load',
       'pageLoad',
-      function() { return window.$ && window.$.isReady && document.querySelector('#api-token-description') !== null; }
+      function() { return window.jQuery && window.jQuery.isReady && document.querySelector('#api-token-description') !== null; }
     )
 
     await this.b.sendKeys(keyName, '#api-token-description')

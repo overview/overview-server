@@ -1,6 +1,6 @@
 module.exports = (config) ->
   base = "../../../.."
-  src = "app/assets/javascripts"
+  src = "js"
   spec = "test/assets/javascripts/specs"
   framework = "test/assets/javascripts/framework"
   modules = "test/assets/javascripts/autotest/node_modules"

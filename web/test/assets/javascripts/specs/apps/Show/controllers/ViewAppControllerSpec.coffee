@@ -80,10 +80,7 @@ define [
 
       it 'should construct a viewApp', -> expect(@viewAppConstructors.job).to.have.been.called
       it 'should set state.viewApp', -> expect(@state.get('viewApp')).to.eq(@jobViewApp)
-
-      it 'should pass view to the viewApp', ->
-        expect(@viewAppConstructors.job).to.have.been.calledWithMatch
-          view: @jobView
+      it 'should pass view to the viewApp', -> expect(@viewAppConstructors.job.args[0][0].view).to.eq(@jobView)
 
       it 'should pass state variables to the viewApp', ->
         expect(@viewAppConstructors.job).to.have.been.calledWithMatch

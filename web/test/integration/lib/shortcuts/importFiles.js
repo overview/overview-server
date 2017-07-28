@@ -30,7 +30,7 @@ class ImportFilesShortcuts {
       'app is initialized and file input is clickable',
       'pageLoad',
       function() {
-        return window.$ && $('.invisible-file-input')
+        return window.jQuery && jQuery('.invisible-file-input')
           .css({ opacity: 1 }) // Selenium needs to see it to click on it
           .length              // If the file input is missing, the app isn't loaded; run this whole block again
       }

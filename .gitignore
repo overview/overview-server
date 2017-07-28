@@ -22,6 +22,8 @@ dist
 /blob-storage/
 /search/
 /node_modules/
+/web/node_modules/
+/web/public/javascript-bundles/
 /bin/
 npm-debug.log
 overview-server*.zip

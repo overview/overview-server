@@ -72,15 +72,14 @@ object Magic {
     locale.getDisplayLanguage(messages.lang.toLocale)
   }
 
-  /** Returns a &lt;script&gt; tag for a RequireJS bundle.
+  /** Returns a &lt;script&gt; tag for a JavaScript bundle.
     *
     * <tt>requireJsBundle("PublicDocumentSet/index")</tt> will give
-    * <tt>&lt;script src="...require.js" data-main=".../PublicDocumentSet/index.js"&gt;&lt;/script&gt;</tt>
+    * <tt>&lt;script src="@assets.path("javascript-bundles/PublicDocumentSet-index")"&gt;&lt;/script&gt;</tt>
     */
   def requireJsBundle(assets: AssetsFinder, module: String) = {
     <script
-      src={assets.path("javascripts/vendor/require.js")}
-      data-main={assets.path(s"javascripts/bundle/${module}.js")}
+      src={assets.path(s"javascript-bundles/${module.replace('/', '-')}.js")}
       ></script>
   }
 
