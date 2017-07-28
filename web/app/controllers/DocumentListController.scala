@@ -7,10 +7,12 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsValue,Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.{Success,Failure}
 
 import com.overviewdocs.blobstorage.BlobStorage
 import com.overviewdocs.models.DocumentHeader
 import com.overviewdocs.searchindex.Utf16Snippet
+import com.overviewdocs.util.Logger
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.backend.{DocumentBackend, DocumentNodeBackend, DocumentTagBackend, HighlightBackend, SelectionBackend}
@@ -27,6 +29,8 @@ class DocumentListController @Inject() (
   val controllerComponents: ControllerComponents
 ) extends BaseController with SelectionHelpers {
   private val MaxPageSize = 100
+
+  private val logger = Logger.forClass(getClass)
 
   private def buildResult(documentSetId: Long, selection: Selection, selectionRequest: SelectionRequest, pageRequest: PageRequest): Future[JsValue] = {
     documentBackend.index(selection, pageRequest, true).flatMap { page =>
@@ -64,12 +68,30 @@ class DocumentListController @Inject() (
   }
 
   private def lookupThumbnailUrls(documents: Seq[DocumentHeader]): Future[Map[Long,String]] = {
-    val futures: Seq[Future[(Long,String)]] = documents
-      .flatMap(d => d.thumbnailLocation.map { loc => (d.id, loc) }) // (id, location) pairs
-      .map(Function.tupled { (id: Long, loc: String) => blobStorage.getUrl(loc, "image/png").map { url => (id, url) } }) // (id, url) pairs
-      .toSeq
+    val futures: Seq[Future[Option[(Long,String)]]] = documents.map(lookupThumbnailUrl)
 
-    Future.sequence(futures).map(_.toMap)
+    Future.sequence(futures).map { pairs =>
+      pairs
+        .flatMap { x: Option[(Long,String)] => x } // Some => keep, None => drop
+        .toMap
+    }
+  }
+
+  private def lookupThumbnailUrl(document: DocumentHeader): Future[Option[(Long,String)]] = {
+    document.thumbnailLocation match {
+      case None => Future.successful(None)
+      case Some(location) => {
+        blobStorage.getUrl(location, "image/png").transform(_ match {
+          case Success(url) => Success(Some((document.id, url)))
+          case Failure(ex) => {
+            // Error in blob storage? Log it, then pretend there's no thumbnail.
+            // This can happen when blob-storage path is misconfigured.
+            logger.warn("Missing thumbnail data in blob storage for document {} at {}", document.id, location)
+            Success(None)
+          }
+        })
+      }
+    }
   }
 
   def index(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)).async { implicit request =>
