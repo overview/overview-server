@@ -1,10 +1,13 @@
 package com.overviewdocs.blobstorage
 
+import akka.stream.scaladsl.{Sink,Source}
+import akka.util.ByteString
 import java.io.{ File, IOException, InputStream }
+import java.nio.charset.StandardCharsets
 import java.nio.file.{ Files, Path }
 import scala.concurrent.Future
-import java.nio.charset.StandardCharsets
-import scala.io.Source
+
+import com.overviewdocs.test.ActorSystemContext
 
 class FileStrategySpec extends StrategySpecification {
   trait FileBaseScope extends BaseScope {
@@ -53,43 +56,46 @@ class FileStrategySpec extends StrategySpecification {
     bucketFile.mkdir()
   }
 
-  trait ExistingFileScope extends FileBaseScope {
+  trait ExistingFileScope extends FileBaseScope with ActorSystemContext {
     // Create key1
     val key = "key1"
     val keyFile = new File(bucketFile.toString, key)
 
     Files.write(keyFile.toPath, "data1".getBytes("utf-8"))
+
+    def readSource(s: Source[ByteString, akka.NotUsed]): Array[Byte] = {
+      val sink = Sink.fold[ByteString, ByteString](ByteString.empty)(_ ++ _)
+      val futureByteString: Future[ByteString] = s.runWith(sink)
+      await(futureByteString).toArray
+    }
   }
 
   "#get" should {
-
     "throw an exception when get location does not look like file:BUCKET:KEY" in new ExistingFileScope {
       invalidLocationThrowsException(TestFileStrategy.get)
     }
 
-    // FIXME uncomment and fix these tests
-    //"throw a delayed exception when the key does not exist in the bucket which does" in new ExistingFileScope {
-    //  val future = TestFileStrategy.get(s"file:$bucket:x$key")
-    //  await(future) must throwA[IOException]
-    //}
+    "throw a delayed exception when the key does not exist in the bucket which does" in new ExistingFileScope {
+      val source = TestFileStrategy.get(s"file:$bucket:x$key")
+      readSource(source) must throwA[IOException]
+    }
 
-    //"throw a delayed exception when the bucket does not exist" in new ExistingFileScope {
-    //  val future = TestFileStrategy.get(s"file:x$bucket:$key")
-    //  await(future) must throwA[IOException]
-    //}
+    "throw a delayed exception when the bucket does not exist" in new ExistingFileScope {
+      val source = TestFileStrategy.get(s"file:x$bucket:$key")
+      readSource(source) must throwA[IOException]
+    }
 
-    //"throw a delayed exception when the base directory does not exist" in new ExistingFileScope {
-    //  rimraf(tmpDir)
-    //  val future = TestFileStrategy.get(s"file:$bucket:$key")
-    //  await(future) must throwA[IOException]
-    //}
-//
-//    "return an Enumerator of the file" in new ExistingFileScope {
-//      val future = TestFileStrategy.get(s"file:$bucket:$key")
-//      val enumerator = await(future)
-//      val byteArray = consume(enumerator)
-//      new String(byteArray, "utf-8") must beEqualTo("data1")
-//    }
+    "throw a delayed exception when the base directory does not exist" in new ExistingFileScope {
+      rimraf(tmpDir)
+      val source = TestFileStrategy.get(s"file:$bucket:$key")
+      readSource(source) must throwA[IOException]
+    }
+
+    "stream the file" in new ExistingFileScope {
+      val source = TestFileStrategy.get(s"file:$bucket:$key")
+      val byteArray = readSource(source)
+      new String(byteArray, "utf-8") must beEqualTo("data1")
+    }
   }
 
   "#getUrl" should {
