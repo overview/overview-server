@@ -15,6 +15,7 @@ object SupportedLanguages {
     "fr" -> "fra",
     "sv" -> "swe",
     "nl" -> "nld",
+    "no" -> "nor",
     "it" -> "ita",
     "pt" -> "por",
     "ro" -> "ron",
