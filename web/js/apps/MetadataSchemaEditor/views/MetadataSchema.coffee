@@ -115,5 +115,8 @@ define [
     onClickRemoveField: (ev) ->
       ev.preventDefault()
       tr = ev.target.parentNode.parentNode
-      tr.parentNode.removeChild(tr)
-      @submit()
+      fieldName = tr.querySelector('input[name=name]').value
+
+      if window.confirm(t('confirmRemove', fieldName))
+        tr.parentNode.removeChild(tr)
+        @submit()

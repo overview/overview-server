@@ -154,7 +154,7 @@ module.exports = {
   ],
   resolve: {
     extensions: [ '.js', '.coffee' ],
-    modules: [ '.' ],
+    modules: [ '.', 'node_modules' ],
     alias: {
       // for our code:
       backbone: 'vendor/backbone',

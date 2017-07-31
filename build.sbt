@@ -132,6 +132,8 @@ lazy val web = (project in file("web"))
       }
     },
     includeFilter in (Assets, LessKeys.less) := "main.less",
+    LessKeys.strictMath in (Assets, LessKeys.less) := true,
+    LessKeys.strictUnits in (Assets, LessKeys.less) := true,
     pipelineStages := Seq(digest, gzip)
   )
   .dependsOn(common % "test->test;compile->compile;test->compile")

@@ -118,19 +118,13 @@ define [
         selection.set({ cursorIndex: 2 })
         expect(displayApp.setDocument).to.have.been.calledWith(documentList.documents.at(2).attributes)
 
-      it 'should call documentMetadataApp.setDocument with a document', ->
-        selection.set(cursorIndex: 2)
-        expect(documentMetadataApp.setDocument).to.have.been.calledWith(documentList.documents.at(2))
-
       it 'should call documentDisplayApp.setDocument with undefined', ->
         selection.set({ cursorIndex: 2 }) # defined
         selection.set({ cursorIndex: 7 }) # undefined
         expect(displayApp.setDocument).to.have.been.calledWith(undefined)
 
-      it 'should call documentMetadataApp.setDocument(null)', ->
-        selection.set(cursorIndex: 2) # defined
-        selection.set(cursorIndex: 7) # undefined
-        expect(documentMetadataApp.setDocument).to.have.been.calledWith(null)
+      it 'should add the documentMetadataApp el', ->
+        expect(view.el.querySelector('.document-metadata-app')).not.to.be.null
 
     it 'should recognize document 0/10 as "1 of 10"', ->
       initAt(0, 10)

@@ -190,17 +190,17 @@ define [
         tagThisEl: els.tagThis
         keyboardController: keyboardController
 
-      document_list_controller(els.documentList, els.documentCursor, @state, keyboardController)
-      new DocumentListTitleView(state: @state).$el.appendTo(els.documentListTitle)
-
-      new DocumentListParamsSelectorApp(documentSet: @documentSet, state: @state, el: els.documentListParams)
-
       @metadataSchemaEditorApp = new MetadataSchemaEditorApp(documentSet: @documentSet)
       els.metadataSchemaEditorApp.appendChild(@metadataSchemaEditorApp.el)
       @metadataSchemaEditorApp.render()
 
       @globalActions =
         openMetadataSchemaEditor: => @metadataSchemaEditorApp.show()
+
+      document_list_controller(els.documentList, els.documentCursor, @state, keyboardController, @globalActions)
+      new DocumentListTitleView(state: @state).$el.appendTo(els.documentListTitle)
+
+      new DocumentListParamsSelectorApp(documentSet: @documentSet, state: @state, el: els.documentListParams)
 
       new ViewAppController
         el: els.view

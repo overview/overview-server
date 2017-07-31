@@ -38,7 +38,7 @@ describe('FileUpload', function() {
         await this.b.click({ link: 'Fields', wait: true })
 
         // wait for metadata to appear
-        const value = await this.b.getAttribute({ tag: 'input', name: 'foo', wait: true }, 'value')
+        const value = await this.b.getAttribute({ css: 'tr[data-field-name=foo] input', wait: true }, 'value')
         expect(value).to.eq('bar')
       })
 
@@ -63,10 +63,10 @@ describe('FileUpload', function() {
         await this.b.sleep(1000) // wait for document to animate in
         await this.b.click({ link: 'Fields', wait: true })
         // wait for metadata to appear
-        const value1 = await this.b.getAttribute({ tag: 'input', name: 'foo', wait: true }, 'value')
+        const value1 = await this.b.getAttribute({ css: 'tr[data-field-name=foo] input', wait: true }, 'value')
         expect(value1).to.eq('bar')
 
-        const value2 = await this.b.getAttribute({ tag: 'input', name: 'moo', wait: true }, 'value')
+        const value2 = await this.b.getAttribute({ css: 'tr[data-field-name=moo] input', wait: true }, 'value')
         expect(value2).to.eq('')
 
         // Check the second document has 'moo':'mar'
@@ -78,10 +78,10 @@ describe('FileUpload', function() {
         await this.b.click({ tag: 'h3', contains: 'Cat2.txt', wait: 'fast' })
         await this.b.sleep(1000) // FIXME debug, figure out why we need this, then remove it
         // wait for metadata to appear
-        const value3 = await this.b.getAttribute({ tag: 'input', name: 'foo', wait: true }, 'value')
+        const value3 = await this.b.getAttribute({ css: 'tr[data-field-name=foo] input', wait: true }, 'value')
         expect(value3).to.eq('')
 
-        const value4 = await this.b.getAttribute({ tag: 'input', name: 'moo', wait: true }, 'value')
+        const value4 = await this.b.getAttribute({ css: 'tr[data-field-name=moo] input', wait: true }, 'value')
         expect(value4).to.eq('mar')
       })
 

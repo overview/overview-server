@@ -1,9 +1,9 @@
 define [
   'underscore'
   'backbone'
-  '../../DocumentMetadata/App'
+  '../../ImportDocumentsMetadata/App'
   'i18n'
-], (_, Backbone, DocumentMetadataApp, i18n) ->
+], (_, Backbone, ImportDocumentsMetadataApp, i18n) ->
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   # Presents an Options in a write-only manner.
@@ -112,10 +112,9 @@ define [
 
       if 'metadata_json' of @model.attributes
         childView = if @model.documentSet
-          DocumentMetadataApp.forDocumentSet(@model.documentSet)
+          ImportDocumentsMetadataApp.forDocumentSet(@model.documentSet)
         else
-          DocumentMetadataApp.forNoDocumentSet()
-        childView.setNoDocument()
+          ImportDocumentsMetadataApp.forNoDocumentSet()
         childView.model.on 'change', (model) =>
           fields = model.get('fields')
           allJson = model.get('json')

@@ -1,10 +1,10 @@
 define [
   'jquery'
   'backbone'
-  'apps/DocumentMetadata/views/AddFieldView'
+  'apps/ImportDocumentsMetadata/views/AddFieldView'
   'i18n'
 ], ($, Backbone, AddFieldView, i18n) ->
-  describe 'apps/DocumentMetadata/views/AddFieldView', ->
+  describe 'apps/ImportDocumentsMetadata/views/AddFieldView', ->
     beforeEach ->
       i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentMetadata.AddFieldView',
         label: 'label'

@@ -423,6 +423,7 @@ views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.display.Div=Rea
 views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.display.Pre=Read-only code
 views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.addField=Add Field
 views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.remove=Delete
+views.DocumentSet.show.MetadataSchemaEditor.views.MetadataSchema.confirmRemove=Are you sure? This will remove the “{0}” field from every document in this document set.
 
 views.DocumentSet.show.SearchView.query_placeholder=Search
 views.DocumentSet.show.SearchView.button=Search

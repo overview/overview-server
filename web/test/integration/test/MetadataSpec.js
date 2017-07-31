@@ -3,6 +3,12 @@
 const asUserWithDocumentSet = require('../support/asUserWithDocumentSet')
 const ApiBrowser = require('../lib/ApiBrowser')
 
+function findInput(fieldName, wait) {
+  const ret = { css: `tr[data-field-name="${fieldName}"] input` }
+  if (wait) ret.wait = wait
+  return ret
+}
+
 describe('Metadata', function() {
   asUserWithDocumentSet('Metadata/basic.csv', function() {
     before(async function() {
@@ -11,8 +17,8 @@ describe('Metadata', function() {
 
     describe('the Show page', function() {
       before(async function() {
-        this.locator = { css: '.metadata-json input[name=foo]' }
-        this.locatorWithWait = { css: '.metadata-json input[name=foo]', wait: 'fast' }
+        this.locator = findInput('foo')
+        this.locatorWithWait = findInput('foo', 'fast')
 
         await this.browser.click({ tag: 'h3', contains: 'First' })
         await this.browser.click({ link: 'Fields', wait: 'fast' })
@@ -54,20 +60,23 @@ describe('Metadata', function() {
       })
 
       it('should add and remove metadata fields', async function() {
-        await this.browser.click({ link: 'Add new field' })
-        await this.browser.sendKeys('baz', '.add-metadata-field input[name=name]')
-        await this.browser.click('.add-metadata-field button[type=submit]')
-        await this.browser.sendKeys('a baz value', '.metadata-json input[name=baz]')
+        await this.browser.click({ link: 'Organize fields' })
+        await this.browser.click({ button: 'Add Field' })
+        await this.browser.sendKeys('baz', '.metadata-schema-editor tbody tr:last-child input')
+        await this.browser.click({ button: 'Close' })
+        await this.browser.sendKeys('a baz value', findInput('baz'))
 
         // Navigate away and come back
         await this.browser.click('.document-nav a.next')
         await this.browser.click('.document-nav a.previous')
-        const value = await this.browser.getAttribute({ css: '.metadata-json input[name=baz]', wait: 'fast' }, 'value')
+        const value = await this.browser.getAttribute(findInput('baz', 'fast'), 'value')
         expect(value).to.eq('a baz value')
 
         // Remove the field
-        await this.browser.click('.metadata-json input[name=baz] + button.delete')
+        await this.browser.click({ link: 'Organize fields' })
+        await this.browser.click('.metadata-schema-editor tbody tr:last-child a.remove')
         await this.browser.alert().accept()
+        await this.browser.click({ button: 'Close' })
 
         // Navigate away and come back, to ensure request was sent
         await this.browser.click('.document-nav a.next')

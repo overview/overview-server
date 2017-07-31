@@ -7,8 +7,8 @@ define [
   '../views/DocumentListCursor'
   './ListSelectionController'
   'apps/DocumentDisplay/app'
-  'apps/DocumentMetadata/App'
-], (_, $, Backbone, ListSelection, DocumentListView, DocumentListCursorView, ListSelectionController, DocumentDisplayApp, DocumentMetadataApp) ->
+  'apps/CurrentDocumentMetadata/App'
+], (_, $, Backbone, ListSelection, DocumentListView, DocumentListCursorView, ListSelectionController, DocumentDisplayApp, CurrentDocumentMetadataApp) ->
   class Controller extends Backbone.Model
     # Properties set on initialize:
     # * documentSet (a DocumentSet)
@@ -24,12 +24,14 @@ define [
     initialize: (attrs, options) ->
       throw 'Must specify options.documentSet, a DocumentSet' if !options.documentSet
       throw 'Must specify options.state, a State' if !options.state
+      throw 'Must specify options.globalActions, an Object of Functions' if !options.globalActions
       throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
       throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
 
       @documentSet = options.documentSet
       @tags = @documentSet.tags
       @state = options.state
+      @globalActions = options.globalActions
 
       @listEl = options.listEl
       @cursorEl = options.cursorEl
@@ -121,7 +123,7 @@ define [
         selection: @listSelection
         documentList: @state.get('documentList')
         documentDisplayApp: DocumentDisplayApp
-        documentMetadataApp: DocumentMetadataApp.forDocumentSet(@documentSet)
+        documentMetadataApp: CurrentDocumentMetadataApp.create(state: @state, globalActions: @globalActions)
         tags: @tags
         el: @cursorEl
 
@@ -130,10 +132,11 @@ define [
 
       @cursorView = view
 
-  document_list_controller = (listDiv, cursorDiv, state, keyboardController) ->
+  document_list_controller = (listDiv, cursorDiv, state, keyboardController, globalActions) ->
     controller = new Controller({},
       documentSet: state.documentSet
       state: state
+      globalActions: globalActions
       listEl: listDiv
       cursorEl: cursorDiv
     )

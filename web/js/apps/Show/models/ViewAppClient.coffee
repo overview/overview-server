@@ -30,9 +30,12 @@ define [
     onUntag: (tag, params) -> @viewApp.onUntag?(tag, params)
 
     onDocumentChanged: (__, value) ->
-      @stopListening(@document) if @document?
+      if @document?
+        @stopListening(@document)
       @document = value
-      @listenTo(@document, 'change', () => @viewApp.onDocumentChanged?(value)) if @document?
+      if @document?
+        @listenTo @document, 'change', () =>
+          @viewApp.onDocumentChanged?(value)
       @viewApp.onDocumentChanged?(value)
 
     setDocumentListParams: (params) -> @state.setDocumentListParams(params)

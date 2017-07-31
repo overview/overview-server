@@ -1,9 +1,9 @@
 define [
   'backbone'
-  'apps/DocumentMetadata/views/JsonView'
+  'apps/ImportDocumentsMetadata/views/JsonView'
   'i18n'
 ], (Backbone, JsonView, i18n) ->
-  describe 'apps/DocumentMetadata/views/JsonView', ->
+  describe 'apps/ImportDocumentsMetadata/views/JsonView', ->
     beforeEach ->
       i18n.reset_messages_namespaced 'views.DocumentSet.show.DocumentMetadata.JsonView',
         help_html: 'help_html'

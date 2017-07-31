@@ -32,8 +32,7 @@ define [
   #   `new options.documentDisplayApp({ el: HTMLElement })` will create an
   #   object with a `setDocument()` method.
   # * documentMetadataApp: a DocumentMetadata/App _instance_, such that
-  #   `options.documentMetadataApp.el` is an HTMLElement and
-  #   `options.documentMetadataApp.setDocument(document)` sets the document.
+  #   `options.documentMetadataApp.el` is an HTMLElement.
   #
   # FIXME this needs a rewrite. The "prev/next" buttons should be distinct from
   # the cursor part. It's all together because I couldn't figure out the CSS
@@ -153,7 +152,6 @@ define [
 
     _renderDocument: (maybeDocument) ->
       @documentDisplayApp.setDocument(maybeDocument?.attributes)
-      @documentMetadataApp.setDocument(maybeDocument ? null)
 
     renderHeader: ->
       maybeDocument = @_getDocument()
