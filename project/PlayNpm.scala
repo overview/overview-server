@@ -42,6 +42,7 @@ object PlayNpm extends AutoPlugin {
     npmPath := "npm",
 
     dist := dist.dependsOn(npmDistTask).value,
+    stage := stage.dependsOn(npmDistTask).value,
     WebKeys.stage := WebKeys.stage.dependsOn(npmDistTask).value,
     Keys.cleanFiles += (Keys.baseDirectory { base => base / "public" / "javascript-bundles" }).value,
     Keys.cleanFiles += (Keys.baseDirectory { base => base / "node_modules" }).value,
