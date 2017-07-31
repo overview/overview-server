@@ -93,7 +93,8 @@ lazy val `test-db-evolution-applier` = (project in file("db-evolution-applier"))
 lazy val common = (project in file("common"))
   .enablePlugins(JavaAppPackaging)
   .settings(
-    libraryDependencies ++= Dependencies.commonDependencies
+    libraryDependencies ++= Dependencies.commonDependencies,
+    sources in doc in Compile := List() // docs take time; skip 'em
   )
 
 // Daemon that executes background tasks
