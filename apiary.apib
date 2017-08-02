@@ -239,8 +239,6 @@ The body is json. Only `lang` is required.
 * `ocr` is `true` by default, meaning when a page has no text we will run Tesseract to extract text from images. If `false`, processing will be faster.
 * `lang` is the two-letter langauge code that will be applied to all new documents. Required. 
 * `split_documents` is `false` by default, meaning each File becomes a Document. If `true`, each File will be split by page boundaries, and each Page will become a Document. (Files that don't have pages, such as `.txt` files, will never be split.)
-* `supplied_stop_words` is a space-separated list of stopwords for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
-* `important_words` is a space-separated list of important words for the next Tree view. (For no good reason, Overview automatically creates a new Tree view after adding documents.)
 * `metadata_json` is a String representation of a JavaScript Object that will be added to every document. Be sure to set `metadataSchema` on the DocumentSet so you can read the values. `metadata_json` will be ignored for every file you uploaded with `Overview-Document-Metadata-JSON`.
 
 + Request (application/json)
@@ -249,8 +247,6 @@ The body is json. Only `lang` is required.
             "ocr": true,
             "lang": "en",
             "split_documents": false,
-            "supplied_stop_words": "",
-            "important_words": "",
             "metadata_json": "{\"foo\":\"bar\"}"
         }
 
