@@ -99,7 +99,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
       }
 
       "return a BadRequest on query syntax error" in new SelectionScope {
-        f(1L, "/?q=(foo+AND") must beLeft { (result: Result) =>
+        f(1L, "/?q=(foo+AND+)") must beLeft { (result: Result) =>
           result.header.status must beEqualTo(400)
           result.body.contentType must beSome("application/json")
         }
@@ -206,7 +206,7 @@ class SelectionHelpersSpec extends ControllerSpecification with Mockito with Awa
     }
 
     "return BadRequest on invalid search phrase" in new RequestToSelectionScope {
-      val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "(foo AND")
+      val request = FakeRequest("POST", "").withFormUrlEncodedBody("q" -> "(foo AND bar))")
       await(controller.go(request)).left.map(_.header.status) must beLeft(400)
     }
   }

@@ -7,7 +7,7 @@ import org.specs2.specification.Scope
 import play.api.libs.json.Json
 
 import com.overviewdocs.models.{Document,DocumentDisplayMethod,PdfNote,PdfNoteCollection}
-import com.overviewdocs.query.{Field,FuzzyTermQuery,Query,PhraseQuery,PrefixQuery}
+import com.overviewdocs.query.{Field,FuzzyTermQuery,Query,PhraseQuery,PrefixQuery,RegexQuery}
 
 class DocumentSetLuceneIndexSpec extends Specification {
   sequential
@@ -159,6 +159,15 @@ class DocumentSetLuceneIndexSpec extends Specification {
 
         search(PrefixQuery(Field.Title, "foo/bar/")) must beEqualTo("1")
         search(PrefixQuery(Field.Title, "foo/")) must beEqualTo("1,2")
+      }
+
+      "pass-through regex query" in new BaseScope {
+        index.addDocuments(Seq(
+          buildDocument(1L).copy(title="foo/bar/baz.txt"),
+          buildDocument(2L).copy(title="foo/baz.txt")
+        ))
+
+        search(RegexQuery(Field.Title, "foo/bar")) must beEqualTo("1,2")
       }
 
       "truncate prefix searches that query for too many terms" in new BaseScope {

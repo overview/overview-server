@@ -22,6 +22,7 @@ class QueryParserSpec extends Specification {
     case PrefixQuery(field, phrase) => s"${repr(field)}PREF([$phrase])"
     case FuzzyTermQuery(field, term, fuzziness) => s"${repr(field)}FUZZ([$term],${fuzziness.fold("AUTO")(_.toString)})"
     case ProximityQuery(field, phrase, slop) => s"${repr(field)}PROX([$phrase],${slop.toString})"
+    case RegexQuery(field, regex) => s"${repr(field)}REGEX([$regex])"
   }
 
   def parse(input: String): Either[SyntaxError,Query] = QueryParser.parse(input)
@@ -35,6 +36,9 @@ class QueryParserSpec extends Specification {
   testGood("foo AND bar", "AND([foo],[bar])", "parse AND as a boolean")
   testGood("foo OR bar", "OR([foo],[bar])", "parse OR as a boolean")
   testGood("NOT foo", "NOT([foo])", "parse NOT as a boolean")
+  testGood("foo NOT bar", "[foo NOT bar]", "make sure NOT is unary, not binary")
+  testGood("AND foo", "[AND foo]", "make sure AND is binary, not unary")
+  testGood("OR foo", "[OR foo]", "make sure OR is binary, not unary")
   testGood("ANDroid ORxata NOThosaurus", "[ANDroid ORxata NOThosaurus]", "parse terms that start with operators")
   testGood("foo AND NOT bar", "AND([foo],NOT([bar]))", "give NOT precedence over AND (right-hand side)")
   testGood("NOT foo AND bar", "AND(NOT([foo]),[bar])", "give NOT precedence over AND (left-hand side)")
@@ -47,11 +51,16 @@ class QueryParserSpec extends Specification {
   testGood("'foo \\'bar'", "[foo 'bar]", "allow escaping single quote with backslash")
   testGood("\"foo \\\"bar\"", "[foo \"bar]", "allow escaping double quote with backslash")
   testGood("'foo \\\\bar'", "[foo \\bar]", "allow escaping backslash")
+  testGood("\"foo", "[\"foo]", "parse never-ending quotes as a single term")
   testGood("foo AND bar OR baz", "OR(AND([foo],[bar]),[baz])", "be left-associative (AND then OR)")
   testGood("foo OR bar AND baz", "AND(OR([foo],[bar]),[baz])", "be left-associative (OR then AND)")
   testGood("foo AND (bar OR baz)", "AND([foo],OR([bar],[baz]))", "group with parentheses")
   testGood("foo AND NOT (bar OR baz)", "AND([foo],NOT(OR([bar],[baz])))", "group with NOT and parentheses")
   testGood("(foo and bar) and not baz", "AND(AND([foo],[bar]),NOT([baz]))", "allow lowercase operators")
+  testGood("foo AND (bar OR", "AND([foo],[(bar OR])", "treat un-closed paren clause as a String token")
+  //TODO: figure out desired behavior
+  //testGood("(foo AND )", "[(foo AND )]", "not parse incomplete parens")
+  //testGood("(foo AND bar))", "AND([foo],[bar)])", "treat extra closing paren as a String token")
   testGood("('and' AND 'or') AND 'not'", "AND(AND([and],[or]),[not])", "allow quoting operators")
   testGood("foo~", "FUZZ([foo],AUTO)", "handle fuzziness")
   testGood("foo~2", "FUZZ([foo],2)", "handle fuzziness with integer")
@@ -77,4 +86,37 @@ class QueryParserSpec extends Specification {
   testGood("foo:bar AND bar:baz", "AND(META(foo):[bar],META(bar):[baz])", "watch for operators in metadata field text")
   testGood("foo:bar bar:baz", "META(foo):[bar bar:baz]", "do not infer operators where there are none")
   testGood("NOT:blah", "META(NOT):[blah]", "allow operators as metadata field names")
+  testGood("text:/foo/", "text:REGEX([foo])", "parse a regex node")
+  testGood("text:/foo bar baz/", "text:REGEX([foo bar baz])", "allow spaces in regexes")
+  testGood("text:/foo AND bar/", "text:REGEX([foo AND bar])", "allow conjunctions in regexes")
+  testGood("text:/foo/ AND bar", "AND(text:REGEX([foo]),[bar])", "allow conjunctions after regexes")
+  testGood("text:/foo", "text:[/foo]", "parse a missing slash as text, not regex")
+  testGood("text:/foo/ bar", "text:[/foo/ bar]", "parse a supposed regex and space and text as one big text")
+  testGood("text:/foo/ AND bar", "AND(text:REGEX([foo]),[bar])", "allow AND after a regex")
+  testGood("text:/foo/ NOT bar", "text:[/foo/ NOT bar]", "not allow NOT after a regex")
+  testGood("text:/foo\\/bar/", "text:REGEX([foo/bar])", "allow backslash-escaping slashes")
+  testGood("text:/foo\\\\bar/", "text:REGEX([foo\\bar])", "allow backslash-escaping backslashes")
+  testGood("text:/foo/bar/", "text:[/foo/bar/]", "not allow inner slashes in regexes")
+  testGood("text:/foo\\\\/bar/", "text:[/foo\\\\/bar/]", "not escape backslashes when not in a regex")
+
+  // Test our documentation
+  testGood("John Smith", "[John Smith]", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [1]")
+  testGood("Pizza~", "FUZZ([Pizza],AUTO)", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [2]")
+  testGood("John Smith AND Alice Smith", "AND([John Smith],[Alice Smith])", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [3]")
+  testGood("John Smith OR Alice Smith", "OR([John Smith],[Alice Smith])", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [4]")
+  testGood("John Smith AND NOT Alice Smith", "AND([John Smith],NOT([Alice Smith]))", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [5]")
+  testGood("Alice AND NOT (Bob OR Carol)", "AND([Alice],NOT(OR([Bob],[Carol])))", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [6]")
+  testGood(""""John and Alice Smith"""", "[John and Alice Smith]", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [7]")
+  testGood("John Smith~2", "PROX([John Smith],2)", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [8]")
+  testGood("Smith*", "PREF([Smith])", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [9]")
+  testGood("title:John Smith", "title:[John Smith]", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [10]")
+  testGood("text:John Smith", "text:[John Smith]", "https://blog.overviewdocs.com/2015/05/29/overviews-search-syntax/ [11]")
+
+  testGood("Date:2015-11-08", "META(Date):[2015-11-08]", "https://blog.overviewdocs.com/2017/06/21/search-in-your-fields/ [1]")
+  testGood("date:2015-11-08", "META(date):[2015-11-08]", "https://blog.overviewdocs.com/2017/06/21/search-in-your-fields/ [2]")
+  testGood(""""Full Name":John Smith""", "META(Full Name):[John Smith]", "https://blog.overviewdocs.com/2017/06/21/search-in-your-fields/ [3]")
+  testGood("Author:Adam H*", "META(Author):PREF([Adam H])", "https://blog.overviewdocs.com/2017/06/21/search-in-your-fields/ [4]")
+  testGood("text:Overview", "text:[Overview]", "https://blog.overviewdocs.com/2017/06/21/search-in-your-fields/ [5]")
+  testGood("title:Overview", "title:[Overview]", "https://blog.overviewdocs.com/2017/06/21/search-in-your-fields/ [6]")
+  testGood(""""text":Overview""", "META(text):[Overview]", "https://blog.overviewdocs.com/2017/06/21/search-in-your-fields/ [7]")
 }

@@ -54,7 +54,7 @@ class HighlightControllerSpec extends ControllerSpecification {
     }
 
     "return BadRequest when the query string is bad" in new IndexScope {
-      override val q = "(foo AND"
+      override val q = "(foo AND )"
       h.status(result) must beEqualTo(h.BAD_REQUEST)
     }
   }

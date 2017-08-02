@@ -516,6 +516,7 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
 
     q match {
       case query.AllQuery => (new MatchAllDocsQuery, Nil)
+      case query.RegexQuery(field, regex) => (new MatchAllDocsQuery, Nil)
       case query.AndQuery(p1, p2) => buildBooleanQuery(p1, p2, BooleanClause.Occur.FILTER)
       case query.OrQuery(p1, p2) => buildBooleanQuery(p1, p2, BooleanClause.Occur.SHOULD)
       case query.NotQuery(p) => {
