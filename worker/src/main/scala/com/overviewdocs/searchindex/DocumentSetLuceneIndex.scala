@@ -452,16 +452,14 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     (ret.toArray, Nil)
   }
 
-  private def buildBooleanQuery(p1: Query, p2: Query, occur: BooleanClause.Occur): (LuceneQuery, List[SearchWarning]) = {
-    val (q1, warnings1) = queryToLuceneQueryInner(p1)
-    val (q2, warnings2) = queryToLuceneQueryInner(p2)
+  private def buildBooleanQuery(queries: immutable.Seq[Query], occur: BooleanClause.Occur): (LuceneQuery, List[SearchWarning]) = {
+    val (luceneQueries, warningLists) = queries.map(queryToLuceneQueryInner _).unzip
 
-    val ret = new BooleanQuery.Builder()
-      .add(q1, occur)
-      .add(q2, occur)
-      .build
+    val builder = new BooleanQuery.Builder()
+    luceneQueries.foreach(q => builder.add(q, occur))
+    val ret = builder.build
 
-    (ret, warnings1 ::: warnings2)
+    (ret, warningLists.toList.flatten)
   }
 
   private def fieldToName(field: FieldInSearchIndex): String = field match {
@@ -517,8 +515,8 @@ class DocumentSetLuceneIndex(val documentSetId: Long, val directory: Directory, 
     q match {
       case query.AllQuery => (new MatchAllDocsQuery, Nil)
       case query.RegexQuery(field, regex) => (new MatchAllDocsQuery, Nil)
-      case query.AndQuery(p1, p2) => buildBooleanQuery(p1, p2, BooleanClause.Occur.FILTER)
-      case query.OrQuery(p1, p2) => buildBooleanQuery(p1, p2, BooleanClause.Occur.SHOULD)
+      case query.AndQuery(nodes) => buildBooleanQuery(nodes, BooleanClause.Occur.FILTER)
+      case query.OrQuery(nodes) => buildBooleanQuery(nodes, BooleanClause.Occur.SHOULD)
       case query.NotQuery(p) => {
         val (innerQuery, warnings) = queryToLuceneQueryInner(p)
         val luceneNotQuery = new BooleanQuery.Builder()
