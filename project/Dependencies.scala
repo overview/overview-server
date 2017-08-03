@@ -35,6 +35,7 @@ object Dependencies {
     val playMailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.0"
     val playTest = "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
     val postgresql = "org.postgresql" % "postgresql" % "42.1.1"
+    val re2j = "com.google.re2j" % "re2j" % "1.1"
     val redis = "com.github.etaty" %% "rediscala" % "1.8.0"
     val slick = "com.typesafe.slick" %% "slick" % "3.2.0"
     val slickHikariCp = "com.typesafe.slick" %% "slick-hikaricp" % "3.2.0"
@@ -82,6 +83,7 @@ object Dependencies {
     deps.playIteratees, // DELETEME
     deps.playMailer,
     deps.playMailerGuice,
+    deps.re2j,
     deps.redis,
     filters,
     guice,

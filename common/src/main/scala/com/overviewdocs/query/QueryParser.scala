@@ -170,7 +170,9 @@ object QueryParser {
 
     def parensExpression: Parser[Query] = regex("\\(\\s*".r) ~> expression <~ regex("\\s*\\)".r)
     def notExpression: Parser[NotQuery] = notOperator ~> unaryExpression ^^ NotQuery.apply _
-    def binaryOperator: Parser[(Query, Query) => Query]
-      = (andOperator ^^^ AndQuery.apply _) | (orOperator ^^^ OrQuery.apply _)
+    def binaryOperator: Parser[(Query, Query) => Query] = (
+      (andOperator ^^^ { (a: Query, b: Query) => AndQuery(Vector(a, b)) }) |
+      (orOperator ^^^ { (a: Query, b: Query) => OrQuery(Vector(a, b)) })
+    )
   }
 }

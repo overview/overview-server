@@ -3,8 +3,6 @@ package com.overviewdocs.query
 import org.specs2.mutable.Specification
 
 class QueryParserSpec extends Specification {
-  sequential
-
   def repr(field: Field): String = field match {
     case Field.All => ""
     case Field.Notes => "notes:"
@@ -15,8 +13,8 @@ class QueryParserSpec extends Specification {
 
   def repr(node: Query): String = node match {
     case AllQuery => "ALL"
-    case AndQuery(node1, node2) => s"AND(${repr(node1)},${repr(node2)})"
-    case OrQuery(node1, node2) => s"OR(${repr(node1)},${repr(node2)})"
+    case AndQuery(nodes) => s"AND(${nodes.map(n => repr(n)).mkString(",")})"
+    case OrQuery(nodes) => s"OR(${nodes.map(n => repr(n)).mkString(",")})"
     case NotQuery(node) => s"NOT(${repr(node)})"
     case PhraseQuery(field, phrase) => s"${repr(field)}[$phrase]"
     case PrefixQuery(field, phrase) => s"${repr(field)}PREF([$phrase])"
