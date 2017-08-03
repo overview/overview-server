@@ -83,9 +83,6 @@ object SplitPdfAndExtractText extends App {
     val it = pdfDocument.pages
 
     try {
-      
-      val renderer = new PDFRenderer(pdfDocument.pdDocument)
-
       while (it.hasNext) {
         currentPageNumber += 1
         val pdfPage = await(it.next)
