@@ -160,7 +160,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
           MetadataField("bar", MetadataFieldType.String, MetadataFieldDisplay.TextInput),
           MetadataField("baz", MetadataFieldType.String, MetadataFieldDisplay.TextInput)
         )))))
-        override val q = Some(AndQuery(PhraseQuery(Field.Metadata("foo"), "moo"), PhraseQuery(Field.Metadata("foo2"), "moo")))
+        override val q = Some(AndQuery(Vector(PhraseQuery(Field.Metadata("foo"), "moo"), PhraseQuery(Field.Metadata("foo2"), "moo"))))
         ret.warnings must beEqualTo(List(
           SelectionWarning.MissingField("foo", Seq("bar", "baz")),
           SelectionWarning.MissingField("foo2", Seq("bar", "baz"))
