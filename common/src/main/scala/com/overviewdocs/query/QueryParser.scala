@@ -5,7 +5,7 @@ import scala.util.parsing.combinator.RegexParsers
 object QueryParser {
   def parse(input: String): Either[SyntaxError,Query] = {
     Grammar.parse(Grammar.phrase(Grammar.expression), input) match {
-      case Grammar.Success(node, _) => Right(node)
+      case Grammar.Success(node, _) => Right(node.flatten)
       case Grammar.NoSuccess(msg, next) => Left(SyntaxError(msg, next.offset))
       case Grammar.Failure(msg, next) => Left(SyntaxError(msg, next.offset))
       case Grammar.Error(msg, next) => Left(SyntaxError(msg, next.offset))
