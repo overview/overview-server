@@ -46,6 +46,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         )
 
         val searchBackend = smartMock[SearchBackend]
+        val documentBackend = smartMock[DocumentBackend]
         def searchDocumentIds: DocumentIdSet = DocumentIdSet.empty
         def searchWarnings: List[SearchWarning] = Nil
         def searchResult: SearchResult = SearchResult(searchDocumentIds, searchWarnings)
@@ -64,7 +65,7 @@ class DbDocumentSelectionBackendSpec extends DbBackendSpecification with InAppSp
         documentSetBackend.show(documentSet.id) returns Future.successful(Some(documentSet))
         val documentIdListBackend = smartMock[DocumentIdListBackend]
 
-        val backend = new DbDocumentSelectionBackend(database, searchBackend, documentSetBackend, documentIdListBackend, app.materializer)
+        val backend = new DbDocumentSelectionBackend(database, documentBackend, searchBackend, documentSetBackend, documentIdListBackend, app.materializer)
         def onProgress(p: Double): Unit = {}
         lazy val ret: InMemorySelection = await(backend.createSelection(request, onProgress))
       }

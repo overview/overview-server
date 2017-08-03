@@ -3,6 +3,7 @@ package controllers.backend
 import akka.stream.scaladsl.Sink
 import akka.stream.Materializer
 import com.google.inject.ImplementedBy
+import com.google.re2j.Pattern
 import javax.inject.Inject
 import play.api.libs.json.JsObject
 import scala.collection.{immutable,mutable}
@@ -10,7 +11,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._ // TODO use another context
 
 import com.overviewdocs.database.Database
-import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet}
+import com.overviewdocs.models.{DocumentIdFilter,DocumentIdSet,DocumentSet,Document}
 import com.overviewdocs.query.{Field,Query=>SearchQuery} // conflicts with SQL Query
 import com.overviewdocs.searchindex.SearchResult
 import com.overviewdocs.util.Logger
@@ -32,8 +33,21 @@ trait DocumentSelectionBackend {
   def createSelection(selectionRequest: SelectionRequest, onProgress: Double => Unit): Future[InMemorySelection]
 }
 
+object DocumentSelectionBackend {
+  protected[backend] case class RegexSearchRule(
+    field: Field,
+    pattern: Pattern,
+    negated: Boolean
+  ) {
+    def matches(document: Document): Boolean = ???
+  }
+
+  protected[backend] def queryToRegexSearchRules(query: SearchQuery): (immutable.Seq[RegexSearchRule], List[SelectionWarning]) = ???
+}
+
 class DbDocumentSelectionBackend @Inject() (
   val database: Database,
+  val documentBackend: DocumentBackend,
   val searchBackend: SearchBackend,
   val documentSetBackend: DocumentSetBackend,
   val documentIdListBackend: DocumentIdListBackend,

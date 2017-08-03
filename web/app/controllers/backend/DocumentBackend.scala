@@ -1,8 +1,11 @@
 package controllers.backend
 
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import com.google.inject.ImplementedBy
 import play.api.libs.json.JsObject
 import javax.inject.Inject
+import scala.collection.immutable
 import scala.collection.mutable.Buffer
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -27,6 +30,9 @@ trait DocumentBackend {
 
   /** Lists all requested Documents, in the requested order. */
   def index(documentSetId: Long, documentIds: Seq[Long]): Future[Seq[Document]]
+
+  /** Streams all requested Documents, in the requested order. */
+  def stream(documentSetId: Long, documentIds: immutable.Seq[Long])(implicit mat: Materializer): Source[Document, akka.NotUsed]
 
   /** Returns a single Document.
     *
@@ -114,6 +120,8 @@ class DbDocumentBackend @Inject() (
       documentIds.collect(map)
     }
   }
+
+  override def stream(documentSetId: Long, documentIds: immutable.Seq[Long])(implicit mat: Materializer) = ???
 
   override def show(documentSetId: Long, documentId: Long) = {
     database.option(byDocumentSetIdAndId(documentSetId, documentId))
